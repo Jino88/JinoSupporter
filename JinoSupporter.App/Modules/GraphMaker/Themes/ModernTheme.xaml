@@ -2,10 +2,10 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
     <Color x:Key="AppBackgroundColor">#E9EEF6</Color>
-    <Color x:Key="PanelColor">#EDF2F9</Color>
+    <Color x:Key="PanelColor">#EDF3FA</Color>
     <Color x:Key="SurfaceColor">#FFFFFF</Color>
-    <Color x:Key="SurfaceMutedColor">#EFF4FB</Color>
-    <Color x:Key="BorderColor">#B8C7DB</Color>
+    <Color x:Key="SurfaceMutedColor">#F5F8FD</Color>
+    <Color x:Key="BorderColor">#D7E2F0</Color>
     <Color x:Key="AccentColor">#0A63C9</Color>
     <Color x:Key="AccentHoverColor">#0955AE</Color>
     <Color x:Key="AccentPressedColor">#074486</Color>
@@ -24,6 +24,9 @@
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
     <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
+    <SolidColorBrush x:Key="CardHeaderBrush" Color="#F4F8FD" />
+    <SolidColorBrush x:Key="CardBorderStrongBrush" Color="#CBD8E8" />
+    <SolidColorBrush x:Key="CardShadowBrush" Color="#140F172A" />
 
     <LinearGradientBrush x:Key="SidebarBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="#F3F7FD" Offset="0" />
@@ -55,8 +58,8 @@
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="0" />
-        <Setter Property="Padding" Value="9" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Padding" Value="12" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
@@ -64,7 +67,7 @@
         <Setter Property="Background" Value="{StaticResource PanelBackgroundBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="CornerRadius" Value="14" />
         <Setter Property="Padding" Value="11" />
     </Style>
 
@@ -146,41 +149,42 @@
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="9" />
+        <Setter Property="Padding" Value="12" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type GroupBox}">
-                    <Grid SnapsToDevicePixels="True">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="16"
+                            Padding="0"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
 
-                        <Border Grid.RowSpan="2"
-                                Margin="0,8,0,0"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="0" />
+                            <Border Grid.Row="0"
+                                    Background="{StaticResource CardHeaderBrush}"
+                                    BorderBrush="{StaticResource CardBorderStrongBrush}"
+                                    BorderThickness="0,0,0,1"
+                                    CornerRadius="16,16,0,0"
+                                    Padding="14,10">
+                                <ContentPresenter ContentSource="Header"
+                                                  RecognizesAccessKey="True"
+                                                  TextElement.Foreground="{StaticResource TextPrimaryBrush}"
+                                                  TextElement.FontWeight="SemiBold" />
+                            </Border>
 
-                        <Border Grid.Row="0"
-                                Margin="10,0,10,0"
-                                Background="{StaticResource PanelBackgroundBrush}"
-                                CornerRadius="0"
-                                Padding="8,2">
-                            <ContentPresenter ContentSource="Header"
-                                              RecognizesAccessKey="True"
-                                              TextElement.Foreground="{StaticResource TextPrimaryBrush}"
-                                              TextElement.FontWeight="SemiBold" />
-                        </Border>
-
-                        <Border Grid.Row="1"
-                                Margin="{TemplateBinding Padding}"
-                                Background="Transparent">
-                            <ContentPresenter />
-                        </Border>
-                    </Grid>
+                            <Border Grid.Row="1"
+                                    Padding="{TemplateBinding Padding}"
+                                    Background="Transparent">
+                                <ContentPresenter />
+                            </Border>
+                        </Grid>
+                    </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -367,21 +371,45 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Padding" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TabControl}">
+                    <Grid KeyboardNavigation.TabNavigation="Local">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TabPanel Grid.Row="0"
+                                  Margin="0,0,0,10"
+                                  IsItemsHost="True"
+                                  Background="Transparent" />
+                        <Border Grid.Row="1"
+                                Background="{StaticResource SurfaceBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="18"
+                                Padding="12">
+                            <ContentPresenter ContentSource="SelectedContent" />
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="{x:Type TabItem}">
-        <Setter Property="Background" Value="{StaticResource PanelBackgroundBrush}" />
+        <Setter Property="Background" Value="#F5F8FC" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-        <Setter Property="Padding" Value="14,8" />
-        <Setter Property="Margin" Value="0,0,6,0" />
+        <Setter Property="Padding" Value="16,10" />
+        <Setter Property="Margin" Value="0,0,8,0" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type TabItem}">
                     <Border x:Name="TabBorder"
-                            CornerRadius="0"
+                            CornerRadius="14"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="1,1,1,0"
+                            BorderThickness="1"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter ContentSource="Header"
                                           HorizontalAlignment="Center"
@@ -390,11 +418,12 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource SurfaceMutedBrush}" />
+                            <Setter TargetName="TabBorder" Property="Background" Value="#ECF4FF" />
+                            <Setter TargetName="TabBorder" Property="BorderBrush" Value="#BDD3EE" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource SurfaceBrush}" />
-                            <Setter TargetName="TabBorder" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                            <Setter TargetName="TabBorder" Property="Background" Value="#DCEBFF" />
+                            <Setter TargetName="TabBorder" Property="BorderBrush" Value="#8DB3E5" />
                             <Setter Property="FontWeight" Value="SemiBold" />
                         </Trigger>
                     </ControlTemplate.Triggers>
