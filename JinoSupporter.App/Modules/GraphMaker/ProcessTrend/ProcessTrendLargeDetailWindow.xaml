@@ -1,0 +1,136 @@
+<Window x:Class="GraphMaker.ProcessTrendLargeDetailWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        mc:Ignorable="d"
+        Title="Process Trend Detail"
+        Width="1700"
+        Height="980"
+        MinWidth="1200"
+        MinHeight="700"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="12">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="390" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" BorderBrush="#D0D7DE" BorderThickness="1" CornerRadius="6" Padding="8">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <GroupBox Grid.Row="0" Grid.Column="0" Margin="0,0,8,8" Header="Trend Graph">
+                    <oxy:PlotView x:Name="LargePlotView" />
+                </GroupBox>
+
+                <GroupBox Grid.Row="0" Grid.Column="1" Margin="8,0,0,8" Header="Normal Distribution">
+                    <oxy:PlotView x:Name="NormalDistributionPlotView" />
+                </GroupBox>
+
+                <GroupBox Grid.Row="1" Grid.Column="0" Margin="0,8,8,0" Header="Element Statistics">
+                    <DataGrid x:Name="ElementStatsGrid"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              HeadersVisibility="Column"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Element" Binding="{Binding Element}" Width="*" />
+                            <DataGridTextColumn Header="Max" Binding="{Binding MaxText}" Width="90" />
+                            <DataGridTextColumn Header="Min" Binding="{Binding MinText}" Width="90" />
+                            <DataGridTextColumn Header="Avg" Binding="{Binding AvgText}" Width="90" />
+                            <DataGridTextColumn Header="Std" Binding="{Binding StdText}" Width="90" />
+                            <DataGridTextColumn Header="CPK" Binding="{Binding CpkText}" Width="90" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </GroupBox>
+                <GroupBox Grid.Row="1" Grid.Column="1" Margin="8,8,0,0" Header="Routing / Reason">
+                    <DataGrid x:Name="RoutingReasonGrid"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              HeadersVisibility="Column"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Target" Binding="{Binding Target}" Width="*" />
+                            <DataGridTextColumn Header="Routing" Binding="{Binding Routing}" Width="120" />
+                            <DataGridTextColumn Header="Reason" Binding="{Binding Reason}" Width="220" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </GroupBox>
+            </Grid>
+        </Border>
+
+        <Border Grid.Column="1" Margin="12,0,0,0" BorderBrush="#D0D7DE" BorderThickness="1" CornerRadius="6" Padding="12">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock x:Name="PairTitleTextBlock" FontSize="16" FontWeight="Bold" TextWrapping="Wrap" />
+                        <TextBlock x:Name="BaseSummaryTextBlock" Margin="0,8,0,0" FontFamily="Consolas" TextWrapping="Wrap" />
+
+                        <Separator Margin="0,12,0,12" />
+
+                        <TextBlock Text="Display Mode" FontWeight="SemiBold" />
+                        <ComboBox x:Name="DisplayModeComboBox" Margin="0,4,0,12" SelectionChanged="DisplayModeComboBox_SelectionChanged">
+                            <ComboBoxItem Content="Split by element" IsSelected="True" />
+                            <ComboBoxItem Content="Combine into one data" />
+                        </ComboBox>
+
+                        <TextBlock Text="Spec Calculation Target" FontWeight="SemiBold" />
+                        <ComboBox x:Name="SpecTargetComboBox" Margin="0,4,0,12" DisplayMemberPath="Label" SelectedValuePath="Key"
+                                  SelectionChanged="SpecTargetComboBox_SelectionChanged" />
+
+                        <TextBlock Text="Desired Spec (Y Mean Target)" FontWeight="SemiBold" />
+                        <TextBox x:Name="DesiredYTextBox" Margin="0,4,0,10" TextChanged="Input_TextChanged" />
+
+                        <TextBlock Text="Defect Rate Setting (%)" FontWeight="SemiBold" />
+                        <TextBox x:Name="DefectRateTextBox" Margin="0,4,0,12" TextChanged="Input_TextChanged" />
+
+                        <Separator Margin="0,12,0,12" />
+
+                        <TextBlock Text="Updated Values" FontWeight="SemiBold" />
+                        <TextBlock x:Name="ComputedSummaryTextBlock" Margin="0,6,0,0" FontFamily="Consolas" TextWrapping="Wrap" />
+
+                        <Separator Margin="0,12,0,12" />
+
+                        <TextBlock Text="Visible Elements" FontWeight="SemiBold" />
+                        <ScrollViewer Margin="0,6,0,0" VerticalScrollBarVisibility="Auto" MaxHeight="220">
+                            <StackPanel x:Name="SeriesVisibilityPanel" />
+                        </ScrollViewer>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <Grid Grid.Row="1" Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="LegendColorsButton" Grid.Column="0" Content="Legend Colors" Width="120" Height="30" Click="LegendColorsButton_Click" />
+                    <Button Grid.Column="2" Content="Save..." Width="90" Height="30" Click="SaveButton_Click" />
+                    <Button Grid.Column="4" Content="Close" Width="90" Height="30" HorizontalAlignment="Right" Click="CloseButton_Click" />
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

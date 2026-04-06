@@ -1,0 +1,62 @@
+<Window x:Class="GraphMaker.MultiColumnResultWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        Title="Value Plot (Multi Column)"
+        Height="980"
+        Width="1700"
+        MinHeight="760"
+        MinWidth="1200"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="320" />
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <TextBlock x:Name="HeaderTextBlock"
+                       Grid.Row="0"
+                       FontSize="16"
+                       FontWeight="SemiBold"
+                       Margin="0,0,0,8" />
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <UniformGrid x:Name="PlotGrid" Columns="2" />
+            </ScrollViewer>
+        </Grid>
+
+        <GroupBox Grid.Column="1" Header="Overall Defect Summary" Margin="8,0,0,0">
+            <StackPanel Margin="10">
+                <TextBlock Text="Rule: If any selected column is out of Upper/Lower at a row, that row is NG."
+                           TextWrapping="Wrap"
+                           Foreground="#475569"
+                           Margin="0,0,0,10" />
+
+                <TextBlock Text="Total Rows" FontWeight="SemiBold" />
+                <TextBox x:Name="OverallTotalRowsTextBox" IsReadOnly="True" Margin="0,4,0,8" />
+
+                <TextBlock Text="NG Rows" FontWeight="SemiBold" />
+                <TextBox x:Name="OverallNgRowsTextBox" IsReadOnly="True" Margin="0,4,0,8" />
+
+                <TextBlock Text="NG Rate (%)" FontWeight="SemiBold" />
+                <TextBox x:Name="OverallNgRateTextBox" IsReadOnly="True" Margin="0,4,0,8" />
+
+                <TextBlock Text="NG PPM" FontWeight="SemiBold" />
+                <TextBox x:Name="OverallPpmTextBox" IsReadOnly="True" Margin="0,4,0,8" />
+
+                <TextBlock Text="Recommended USL / LSL" FontWeight="SemiBold" Margin="0,8,0,4" />
+                <TextBox x:Name="RecommendedLimitsTextBox"
+                         IsReadOnly="True"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto"
+                         MinHeight="280" />
+            </StackPanel>
+        </GroupBox>
+    </Grid>
+</Window>

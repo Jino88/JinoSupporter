@@ -1,0 +1,94 @@
+<Window x:Class="WorkbenchHost.Modules.ScreenCapture.CaptureHotkeyDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Set Capture Shortcut"
+        Width="420"
+        Height="220"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="#F3F7FB"
+        FocusManager.FocusedElement="{Binding RelativeSource={RelativeSource Self}}"
+        Closed="Window_Closed"
+        Loaded="Window_Loaded"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        PreviewKeyUp="Window_PreviewKeyUp">
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock x:Name="TitleTextBlock"
+                   FontSize="17"
+                   FontWeight="SemiBold"
+                   Foreground="#1F3048" />
+
+        <TextBlock Grid.Row="1"
+                   Margin="0,8,0,0"
+                   Foreground="#5E6E84"
+                   Text="Press the new key combination now. Esc cancels, Backspace clears." />
+
+        <Border Grid.Row="2"
+                Margin="0,14,0,14"
+                Padding="16"
+                Background="White"
+                BorderBrush="#C9D6E6"
+                BorderThickness="1"
+                CornerRadius="10">
+            <StackPanel>
+                <TextBlock Text="Current Input"
+                           Foreground="#6A7891"
+                           FontSize="11" />
+                <Border x:Name="GestureDisplayBorder"
+                        Margin="0,10,0,0"
+                        MinHeight="64"
+                        Padding="14,10"
+                        Background="#F6F9FD"
+                        BorderBrush="#B7C8DD"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Focusable="True"
+                        PreviewKeyDown="Window_PreviewKeyDown"
+                        PreviewKeyUp="Window_PreviewKeyUp"
+                        PreviewMouseDown="GestureDisplayBorder_PreviewMouseDown">
+                    <TextBlock x:Name="GestureDisplayTextBlock"
+                               VerticalAlignment="Center"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               FontSize="26"
+                               FontWeight="SemiBold"
+                               Foreground="#264A7E"
+                               Text="Waiting..." />
+                </Border>
+                <TextBlock x:Name="HintTextBlock"
+                           Margin="0,10,0,0"
+                           Foreground="#75839A"
+                           FontSize="11"
+                           Text="Example: Ctrl + Shift + R" />
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="3"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Width="96"
+                    Height="32"
+                    Margin="0,0,8,0"
+                    Content="Clear"
+                    Click="ClearButton_Click" />
+            <Button Width="96"
+                    Height="32"
+                    Margin="0,0,8,0"
+                    Content="Cancel"
+                    IsCancel="True" />
+            <Button Width="96"
+                    Height="32"
+                    Content="Save"
+                    IsDefault="True"
+                    Click="SaveButton_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

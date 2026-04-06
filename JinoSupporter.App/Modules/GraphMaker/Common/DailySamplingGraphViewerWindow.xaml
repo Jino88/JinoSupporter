@@ -1,0 +1,214 @@
+<Window x:Class="GraphMaker.DailySamplingGraphViewerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        Title="Daily Sampling Scatter Plot"
+        Height="860"
+        Width="1480"
+        MinHeight="760"
+        MinWidth="1200"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized">
+    <Grid Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2.2*" />
+            <ColumnDefinition Width="1.35*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <GroupBox Grid.Row="0"
+                  Grid.Column="0"
+                  Margin="0,0,8,8">
+            <GroupBox.Header>
+                <Button Content="Daily Sampling Scatter Plot (with Max/Min/Avg)"
+                        Cursor="Hand"
+                        Padding="0"
+                        Margin="0"
+                        MinHeight="0"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        ToolTip="Click to open large view"
+                        Click="ScatterHeader_Click" />
+            </GroupBox.Header>
+            <oxy:PlotView x:Name="ScatterPlotView" Model="{Binding ScatterPlotModel}" />
+        </GroupBox>
+
+        <GroupBox Grid.Row="0"
+                  Grid.Column="1"
+                  Header="X-axis Statistics Summary"
+                  Margin="8,0,0,8">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="0"
+                               Margin="0,0,8,4"
+                               VerticalAlignment="Center"
+                               Text="From" />
+                    <DatePicker Grid.Row="1"
+                                Grid.Column="0"
+                                x:Name="SummaryFromDatePicker"
+                                Margin="0,0,8,0"
+                                SelectedDateChanged="SummaryPeriodChanged" />
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="1"
+                               Margin="0,0,0,4"
+                               VerticalAlignment="Center"
+                               Text="To" />
+                    <DatePicker Grid.Row="1"
+                                Grid.Column="1"
+                                x:Name="SummaryToDatePicker"
+                                SelectedDateChanged="SummaryPeriodChanged" />
+                </Grid>
+
+                <DockPanel Grid.Row="1" Margin="0,0,0,8">
+                    <TextBlock VerticalAlignment="Center"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Text="Selected period summary across all loaded data." />
+                    <Button Content="Copy Entire Table"
+                            Padding="14,6"
+                            HorizontalAlignment="Right"
+                            DockPanel.Dock="Right"
+                            Click="CopySummaryButton_Click" />
+                </DockPanel>
+
+                <DataGrid Grid.Row="2"
+                          x:Name="SummaryDataGrid"
+                          ItemsSource="{Binding SummaryRows}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          SelectionMode="Single"
+                          EnableRowVirtualization="True"
+                          EnableColumnVirtualization="True"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="X-axis Series"
+                                            Binding="{Binding XAxisSeriesName}"
+                                            Width="2*" />
+                        <DataGridTextColumn Header="Max"
+                                            Binding="{Binding Max, StringFormat={}{0:F2}}"
+                                            Width="*" />
+                        <DataGridTextColumn Header="Min"
+                                            Binding="{Binding Min, StringFormat={}{0:F2}}"
+                                            Width="*" />
+                        <DataGridTextColumn Header="Avg"
+                                            Binding="{Binding Avg, StringFormat={}{0:F2}}"
+                                            Width="*" />
+                        <DataGridTextColumn Header="CPK"
+                                            Binding="{Binding Cpk, TargetNullValue=-, StringFormat={}{0:F2}}"
+                                            Width="*" />
+                        <DataGridTextColumn Header="Total Count"
+                                            Binding="{Binding TotalCount}"
+                                            Width="*" />
+                        <DataGridTextColumn Header="NG Count"
+                                            Binding="{Binding NgCount}"
+                                            Width="*" />
+                        <DataGridTextColumn Header="PPM"
+                                            Binding="{Binding Ppm, StringFormat={}{0:F0}}"
+                                            Width="*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Grid.Row="1"
+                  Grid.Column="0"
+                  Margin="0,8,8,0">
+            <GroupBox.Header>
+                <Button Content="CPK by Date"
+                        Cursor="Hand"
+                        Padding="0"
+                        Margin="0"
+                        MinHeight="0"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        ToolTip="Click to open large view"
+                        Click="CpkHeader_Click" />
+            </GroupBox.Header>
+            <oxy:PlotView x:Name="CpkPlotView" Model="{Binding CpkPlotModel}" />
+        </GroupBox>
+
+        <GroupBox Grid.Row="1"
+                  Grid.Column="1"
+                  Header="Legend Display"
+                  Margin="8,8,0,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="6">
+                    <TextBlock Margin="0,0,0,10"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Text="Toggle graph items and update both charts immediately." />
+                    <WrapPanel>
+                        <CheckBox x:Name="ShowSampleCheckBox"
+                                  Margin="0,0,16,10"
+                                  Content="Sample"
+                                  IsChecked="True"
+                                  Checked="LegendOptionChanged"
+                                  Unchecked="LegendOptionChanged" />
+                        <CheckBox x:Name="ShowAvgCheckBox"
+                                  Margin="0,0,16,10"
+                                  Content="Avg"
+                                  IsChecked="True"
+                                  Checked="LegendOptionChanged"
+                                  Unchecked="LegendOptionChanged" />
+                        <CheckBox x:Name="ShowMaxCheckBox"
+                                  Margin="0,0,16,10"
+                                  Content="Max"
+                                  IsChecked="True"
+                                  Checked="LegendOptionChanged"
+                                  Unchecked="LegendOptionChanged" />
+                        <CheckBox x:Name="ShowMinCheckBox"
+                                  Margin="0,0,16,10"
+                                  Content="Min"
+                                  IsChecked="True"
+                                  Checked="LegendOptionChanged"
+                                  Unchecked="LegendOptionChanged" />
+                        <CheckBox x:Name="ShowSpecCheckBox"
+                                  Margin="0,0,16,10"
+                                  Content="SPEC"
+                                  IsChecked="True"
+                                  Checked="LegendOptionChanged"
+                                  Unchecked="LegendOptionChanged" />
+                        <CheckBox x:Name="ShowUpperLimitCheckBox"
+                                  Margin="0,0,16,10"
+                                  Content="USL"
+                                  IsChecked="True"
+                                  Checked="LegendOptionChanged"
+                                  Unchecked="LegendOptionChanged" />
+                        <CheckBox x:Name="ShowLowerLimitCheckBox"
+                                  Margin="0,0,16,10"
+                                  Content="LSL"
+                                  IsChecked="True"
+                                  Checked="LegendOptionChanged"
+                                  Unchecked="LegendOptionChanged" />
+                        <CheckBox x:Name="ShowCpkCheckBox"
+                                  Margin="0,0,16,10"
+                                  Content="CPK"
+                                  IsChecked="True"
+                                  Checked="LegendOptionChanged"
+                                  Unchecked="LegendOptionChanged" />
+                    </WrapPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </GroupBox>
+    </Grid>
+</Window>

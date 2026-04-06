@@ -1,0 +1,279 @@
+<Window x:Class="DiskTree.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:models="clr-namespace:DiskTree.Models"
+        mc:Ignorable="d"
+        Title="DiskTree"
+        Width="1520"
+        Height="900"
+        MinWidth="1280"
+        MinHeight="760"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Malgun Gothic, Segoe UI"
+        Background="#F5F6FA"
+        Foreground="#1A1D26">
+    <Window.Resources>
+        <SolidColorBrush x:Key="BorderBrushColor" Color="#E4E5EB" />
+        <SolidColorBrush x:Key="SurfaceBrushColor" Color="#FFFFFF" />
+        <SolidColorBrush x:Key="MutedSurfaceBrushColor" Color="#F0F1F5" />
+        <SolidColorBrush x:Key="PrimaryTextBrushColor" Color="#1A1D26" />
+        <SolidColorBrush x:Key="SecondaryTextBrushColor" Color="#6B7280" />
+        <SolidColorBrush x:Key="AccentBrushColor" Color="#4F6BED" />
+
+        <Style TargetType="{x:Type Border}">
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrushColor}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="{StaticResource SurfaceBrushColor}" />
+            <Setter Property="CornerRadius" Value="10" />
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource AppButtonBaseStyle}">
+            <Setter Property="Background" Value="{StaticResource AccentBrushColor}" />
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBrushColor}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style TargetType="{x:Type TextBox}">
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="Padding" Value="8,5" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrushColor}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrushColor}" />
+        </Style>
+
+        <Style TargetType="{x:Type TextBlock}">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrushColor}" />
+        </Style>
+
+        <HierarchicalDataTemplate x:Key="DiskNodeTreeTemplate"
+                                  DataType="{x:Type models:DiskNode}"
+                                  ItemsSource="{Binding Children}">
+            <Grid Margin="0,2"
+                  ToolTip="{Binding FullPath}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="320" />
+                    <ColumnDefinition Width="95" />
+                    <ColumnDefinition Width="120" />
+                    <ColumnDefinition Width="90" />
+                    <ColumnDefinition Width="170" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="{Binding Name}"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center" />
+
+                <TextBlock Grid.Column="1"
+                           Text="{Binding KindText}"
+                           Foreground="{StaticResource SecondaryTextBrushColor}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right" />
+
+                <TextBlock Grid.Column="2"
+                           Text="{Binding SizeText}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right" />
+
+                <TextBlock Grid.Column="3"
+                           Text="{Binding PercentText}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right"
+                           Foreground="{StaticResource SecondaryTextBrushColor}" />
+
+                <ProgressBar Grid.Column="4"
+                             Margin="10,0,0,0"
+                             Height="12"
+                             VerticalAlignment="Center"
+                             Minimum="0"
+                             Maximum="100"
+                             Value="{Binding PercentOfRoot}" />
+            </Grid>
+        </HierarchicalDataTemplate>
+    </Window.Resources>
+
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Padding="12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="120" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="120" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="Root Folder"
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource SecondaryTextBrushColor}" />
+                <TextBox Grid.Column="1"
+                         Margin="0,0,10,0"
+                         x:Name="RootFolderPathTextBox"
+                         IsReadOnly="True" />
+                <Button Grid.Column="2"
+                        x:Name="BrowseRootFolderButton"
+                        Margin="0,0,10,0"
+                        Content="Browse..."
+                        Click="BrowseRootFolderButton_Click" />
+                <Button Grid.Column="3"
+                        x:Name="ScanAndIndexButton"
+                        Content="Scan + Update"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Click="ScanAndIndexButton_Click" />
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1"
+                Margin="0,10,0,0"
+                Padding="12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="120" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="160" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="Compare File"
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource SecondaryTextBrushColor}" />
+                <TextBox Grid.Column="1"
+                         Margin="0,0,10,0"
+                         x:Name="CompareFilePathTextBox"
+                         IsReadOnly="True" />
+                <Button Grid.Column="2"
+                        x:Name="BrowseCompareFileButton"
+                        Margin="0,0,10,0"
+                        Content="Browse..."
+                        Click="BrowseCompareFileButton_Click" />
+                <Button Grid.Column="3"
+                        x:Name="FindIdenticalFilesButton"
+                        Content="Find Identical"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Click="FindIdenticalFilesButton_Click" />
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2"
+                Margin="0,10,0,0"
+                Padding="12"
+                Background="{StaticResource MutedSurfaceBrushColor}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="260" />
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="StatusTextBlock"
+                           Text="Select a root folder and start scanning."
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold" />
+                <ProgressBar Grid.Column="1"
+                             x:Name="OperationProgressBar"
+                             Margin="14,0,0,0"
+                             Height="14"
+                             Minimum="0"
+                             Maximum="100"
+                             IsIndeterminate="False"
+                             Value="0" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="3"
+              Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    Padding="12">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top">
+                        <TextBlock Text="Disk Tree (percentage of selected root)"
+                                   FontSize="15"
+                                   FontWeight="Bold" />
+                        <TextBlock x:Name="TreeSummaryTextBlock"
+                                   Margin="0,4,0,10"
+                                   Foreground="{StaticResource SecondaryTextBrushColor}"
+                                   Text="No scan result." />
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="320" />
+                                <ColumnDefinition Width="95" />
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="170" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Name" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="1" Text="Type" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                            <TextBlock Grid.Column="2" Text="Size" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                            <TextBlock Grid.Column="3" Text="Share" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                            <TextBlock Grid.Column="4" Text="Progress" FontWeight="SemiBold" HorizontalAlignment="Left" Margin="10,0,0,0" />
+                        </Grid>
+                    </StackPanel>
+
+                    <TreeView x:Name="DiskTreeView"
+                              ItemTemplate="{StaticResource DiskNodeTreeTemplate}"
+                              SelectedItemChanged="DiskTreeView_SelectedItemChanged"
+                              Background="Transparent"
+                              BorderThickness="0" />
+                </DockPanel>
+            </Border>
+
+            <Border Grid.Column="2"
+                    Padding="12">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top">
+                        <TextBlock Text="Identical File Results"
+                                   FontSize="15"
+                                   FontWeight="Bold" />
+                        <TextBlock x:Name="DuplicateSummaryTextBlock"
+                                   Margin="0,4,0,10"
+                                   Foreground="{StaticResource SecondaryTextBrushColor}"
+                                   Text="No file comparison yet." />
+                        <TextBlock x:Name="SelectedFileInfoTextBlock"
+                                   Margin="0,0,0,8"
+                                   Foreground="{StaticResource SecondaryTextBrushColor}"
+                                   TextWrapping="Wrap"
+                                   Text="Select a file in the left tree to check identical hashes." />
+                        <TextBlock x:Name="DatabasePathTextBlock"
+                                   Margin="0,0,0,8"
+                                   Foreground="{StaticResource SecondaryTextBrushColor}" />
+                        <Button x:Name="CollectMatchesButton"
+                                Width="170"
+                                HorizontalAlignment="Left"
+                                Content="Collect To Temp"
+                                Click="CollectMatchesButton_Click"
+                                IsEnabled="False" />
+                    </StackPanel>
+
+                    <DataGrid x:Name="DuplicateDataGrid"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              IsReadOnly="True"
+                              HeadersVisibility="Column"
+                              RowHeaderWidth="0">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Path" Binding="{Binding FilePath}" Width="*" />
+                            <DataGridTextColumn Header="Size" Binding="{Binding SizeText}" Width="110" />
+                            <DataGridTextColumn Header="Last Write" Binding="{Binding LastWriteText}" Width="170" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

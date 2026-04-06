@@ -1,0 +1,334 @@
+<UserControl x:Class="GraphMaker.ProcessFlowTrendView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:GraphMaker"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="800"
+             d:DesignWidth="1600">
+    <Grid Style="{StaticResource GraphMakerPageRootGridStyle}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="2.1*" />
+            <RowDefinition Height="3*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <GroupBox Grid.Row="0" Grid.Column="0" Header="Workflow" Style="{StaticResource FilesSectionGroupBoxStyle}">
+            <Grid Style="{StaticResource FilesSectionInnerGridStyle}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2.2*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="2*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        Style="{StaticResource DropZoneBorderStyle}"
+                        Margin="0,0,8,0"
+                        MinHeight="88">
+                    <StackPanel>
+                        <TextBlock Text="Drag data file"
+                                   Style="{StaticResource FileDropHintTextStyle}" />
+                        <Button Content="Browse"
+                                Width="120"
+                                Margin="0,8,0,0"
+                                HorizontalAlignment="Center"
+                                Click="BrowseButton_Click" />
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Grid.Column="1" Style="{StaticResource FileActionStackPanelStyle}">
+                    <Button Content="Remove File"
+                            Width="130"
+                            Click="RemoveFileButton_Click" />
+                </StackPanel>
+
+                <GroupBox Grid.Column="3"
+                          Header="Preview"
+                          Style="{StaticResource PreviewGroupBoxStyle}">
+                    <Grid Margin="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock>
+                            <Run Text="File: " FontWeight="SemiBold" />
+                            <Run x:Name="CurrentFileNameText" Text="(No file)" />
+                        </TextBlock>
+                        <TextBlock Grid.Row="1" Margin="0,4,0,0">
+                            <Run Text="Rows: " FontWeight="SemiBold" />
+                            <Run x:Name="RowCountText" Text="0" />
+                            <Run Text=" | Cols: " FontWeight="SemiBold" />
+                            <Run x:Name="ColumnCountText" Text="0" />
+                        </TextBlock>
+                        <TextBlock Grid.Row="2"
+                                   x:Name="StatusText"
+                                   Margin="0,6,0,0"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="Drop file into the workflow area or click Browse to load data." />
+                    </Grid>
+                </GroupBox>
+            </Grid>
+        </GroupBox>
+
+        <Grid Grid.Row="1" Grid.Column="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="4*" />
+            </Grid.ColumnDefinitions>
+
+            <GroupBox Grid.Column="0" Header="Data Grid" Style="{StaticResource PreviewGroupBoxStyle}">
+                <local:InteractiveDataGrid x:Name="DataPreviewGrid"
+                                           IsReadOnly="True"
+                                           SelectionMode="Single"
+                                           SelectionUnit="FullRow"
+                                           CanUserAddRows="False"
+                                           PreviewMouseMove="DataPreviewGrid_PreviewMouseMove" />
+            </GroupBox>
+
+            <GroupBox Grid.Column="2" Header="Settings">
+                <Grid Margin="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.05*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="1.45*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="1.15*" />
+                    </Grid.ColumnDefinitions>
+
+                    <GroupBox Header="X Axis" Grid.Column="0">
+                        <Grid Margin="8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Select an X-axis column to edit."
+                                       Foreground="#667085"
+                                       TextWrapping="Wrap" />
+                            <ListBox x:Name="XAxisListBox"
+                                     Grid.Row="1"
+                                     Margin="0,8,0,0"
+                                     SelectionChanged="XAxisListBox_SelectionChanged">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="0" />
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="6,4">
+                                            <CheckBox Content="{Binding Name}"
+                                                      IsChecked="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}"
+                                                      IsHitTestVisible="False"
+                                                      Focusable="False" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </GroupBox>
+
+                    <GroupBox Header="Y Axis" Grid.Column="2">
+                        <DockPanel Margin="8">
+                            <StackPanel DockPanel.Dock="Top">
+                                <TextBlock Text="Check Y-axis columns for the selected X-axis."
+                                           Foreground="#667085"
+                                           TextWrapping="Wrap" />
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,8">
+                                    <Button Content="Select All" Width="90" Click="SelectAllButton_Click" />
+                                    <Button Content="Clear All" Width="90" Margin="8,0,0,0" Click="ClearAllButton_Click" />
+                                </StackPanel>
+                            </StackPanel>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel x:Name="YAxisItemsPanel" />
+                            </ScrollViewer>
+                        </DockPanel>
+                    </GroupBox>
+
+                    <GroupBox Header="Group Selected X -> Y" Grid.Column="6">
+                        <Grid Margin="8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="Grouping is done per selected X-axis -> Y-axis relation."
+                                       Foreground="#667085"
+                                       TextWrapping="Wrap" />
+
+                            <StackPanel Grid.Row="1" Margin="0,10,0,0">
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Button Content="Add Group" Width="110" Click="AddGroupButton_Click" />
+                                    <Button Content="Remove Group" Width="118" Margin="8,0,0,0" Click="RemoveGroupButton_Click" />
+                                </StackPanel>
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.1*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="1.45*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="GroupManageComboBox" Grid.Column="0" MinWidth="110" HorizontalAlignment="Stretch" DisplayMemberPath="Value" SelectedValuePath="Key" SelectionChanged="GroupManageComboBox_SelectionChanged" />
+                                    <TextBox x:Name="GroupNameTextBox" Grid.Column="2" MinWidth="120" HorizontalAlignment="Stretch" />
+                                    <Button Content="Apply Name" Grid.Column="4" Width="96" Click="ApplyGroupNameButton_Click" />
+                                </Grid>
+                            </StackPanel>
+
+                            <GroupBox Grid.Row="2" Header="Selected X-axis -> Y-axis Items" Margin="0,12,0,0">
+                                <ListBox x:Name="SelectedYGroupListBox" Margin="8" />
+                            </GroupBox>
+                        </Grid>
+                    </GroupBox>
+
+                    <GroupBox Header="Limit / Options" Grid.Column="4">
+                        <Grid Margin="10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="Drag a row from Data Preview."
+                                               TextWrapping="Wrap"
+                                               Foreground="{StaticResource TextSecondaryBrush}" />
+
+                                    <Border x:Name="SpecRowDropBorder"
+                                            Margin="0,8,0,0"
+                                            Padding="7"
+                                            BorderBrush="#B8C7DB"
+                                            BorderThickness="1"
+                                            Background="#F8FAFC"
+                                            MouseLeftButtonUp="LimitRowBorder_MouseLeftButtonUp"
+                                            AllowDrop="True"
+                                            Drop="LimitRowDropBorder_Drop"
+                                            DragEnter="LimitRowDropBorder_DragEnter"
+                                            DragLeave="LimitRowDropBorder_DragLeave"
+                                            Tag="SPEC">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Edit Values" Click="EditLimitRowMenuItem_Click" CommandParameter="SPEC" />
+                                            <MenuItem Header="Clear" Click="ClearLimitRowMenuItem_Click" CommandParameter="SPEC" />
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
+                                    <TextBlock x:Name="SpecRowTextBlock" Text="SPEC row: not assigned" />
+                                </Border>
+
+                                    <Border x:Name="UpperRowDropBorder"
+                                            Margin="0,6,0,0"
+                                            Padding="7"
+                                            BorderBrush="#B8C7DB"
+                                            BorderThickness="1"
+                                            Background="#F8FAFC"
+                                            MouseLeftButtonUp="LimitRowBorder_MouseLeftButtonUp"
+                                            AllowDrop="True"
+                                            Drop="LimitRowDropBorder_Drop"
+                                            DragEnter="LimitRowDropBorder_DragEnter"
+                                            DragLeave="LimitRowDropBorder_DragLeave"
+                                            Tag="USL">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Edit Values" Click="EditLimitRowMenuItem_Click" CommandParameter="USL" />
+                                            <MenuItem Header="Clear" Click="ClearLimitRowMenuItem_Click" CommandParameter="USL" />
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
+                                    <TextBlock x:Name="UpperRowTextBlock" Text="USL row: not assigned" />
+                                </Border>
+
+                                    <Border x:Name="LowerRowDropBorder"
+                                            Margin="0,6,0,0"
+                                            Padding="7"
+                                            BorderBrush="#B8C7DB"
+                                            BorderThickness="1"
+                                            Background="#F8FAFC"
+                                            MouseLeftButtonUp="LimitRowBorder_MouseLeftButtonUp"
+                                            AllowDrop="True"
+                                            Drop="LimitRowDropBorder_Drop"
+                                            DragEnter="LimitRowDropBorder_DragEnter"
+                                            DragLeave="LimitRowDropBorder_DragLeave"
+                                            Tag="LSL">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Edit Values" Click="EditLimitRowMenuItem_Click" CommandParameter="LSL" />
+                                            <MenuItem Header="Clear" Click="ClearLimitRowMenuItem_Click" CommandParameter="LSL" />
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
+                                    <TextBlock x:Name="LowerRowTextBlock" Text="LSL row: not assigned" />
+                                </Border>
+
+                                    <CheckBox x:Name="UseFirstColumnAsSampleIdCheckBox"
+                                              Margin="0,10,0,0"
+                                              Content="Use first column as sample ID"
+                                              IsChecked="False" />
+                                    <Grid Margin="0,8,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="12" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Max Samples:" VerticalAlignment="Center" />
+                                        <TextBox Grid.Column="2" x:Name="MaxSamplesTextBox" MinWidth="70" MaxWidth="110" HorizontalAlignment="Left" Text="100" />
+                                    </Grid>
+                                    <Grid Margin="0,8,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="12" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Plot Color:" VerticalAlignment="Center" />
+                                        <ComboBox Grid.Column="2" x:Name="PlotColorComboBox" MinWidth="120" HorizontalAlignment="Stretch" />
+                                    </Grid>
+                                    <TextBlock Text="Regression:" Margin="0,10,0,0" FontWeight="SemiBold" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                        <RadioButton x:Name="LinearDegreeRadio"
+                                                     Content="Linear"
+                                                     GroupName="RegressionDegree"
+                                                     IsChecked="True"
+                                                     Margin="0,0,16,0" />
+                                        <RadioButton x:Name="QuadraticDegreeRadio"
+                                                     Content="Quadratic"
+                                                     GroupName="RegressionDegree" />
+                                    </StackPanel>
+                                    <Button Content="Configure Pairs"
+                                            Width="120"
+                                            Margin="0,10,0,0"
+                                            Click="ConfigurePairsButton_Click" />
+                                </StackPanel>
+                            </ScrollViewer>
+
+                            <StackPanel Grid.Row="1"
+                                        Margin="0,12,0,0"
+                                        Orientation="Horizontal"
+                                        HorizontalAlignment="Right">
+                                <Button Content="Load Data"
+                                        Width="110"
+                                        Margin="0,0,8,0"
+                                        Click="LoadStateButton_Click" />
+                                <Button Content="Save Data"
+                                        Width="110"
+                                        Margin="0,0,8,0"
+                                        Click="SaveStateButton_Click" />
+                                <Button Content="Generate Trend"
+                                        Width="140"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        Click="GenerateTrendButton_Click" />
+                            </StackPanel>
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+            </GroupBox>
+        </Grid>
+    </Grid>
+</UserControl>

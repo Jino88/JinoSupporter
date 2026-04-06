@@ -1,0 +1,96 @@
+<Window x:Class="GraphMaker.ValuePlotFileSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Value Plot File Settings"
+        Width="520"
+        Height="520"
+        MinWidth="480"
+        MinHeight="420"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <GroupBox Header="File Format" Margin="0,0,0,8">
+                    <Grid Margin="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Delimiter:" VerticalAlignment="Center" />
+                        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
+                            <RadioButton x:Name="TabDelimiterRadio" Content="Tab" GroupName="Delimiter" Margin="0,0,10,0" />
+                            <RadioButton x:Name="CommaDelimiterRadio" Content="Comma" GroupName="Delimiter" Margin="0,0,10,0" />
+                            <RadioButton x:Name="SpaceDelimiterRadio" Content="Space" GroupName="Delimiter" />
+                        </StackPanel>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Header Row:" VerticalAlignment="Center" Margin="0,8,0,0" />
+                        <TextBox Grid.Row="1" Grid.Column="1" x:Name="HeaderRowTextBox" Width="70" Margin="0,8,0,0" />
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="X Axis" Margin="0,0,0,8">
+                    <StackPanel Margin="10">
+                        <RadioButton x:Name="XAxisDateRadio" Content="Date" GroupName="XAxisType" Margin="0,0,0,4" />
+                        <RadioButton x:Name="XAxisSequenceRadio" Content="Sequence" GroupName="XAxisType" />
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Colors" Margin="0,0,0,8">
+                    <Grid Margin="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Data:" VerticalAlignment="Center" />
+                        <ComboBox Grid.Row="0" Grid.Column="1" x:Name="DataColorComboBox" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="SPEC:" VerticalAlignment="Center" Margin="0,8,0,0" />
+                        <ComboBox Grid.Row="1" Grid.Column="1" x:Name="SpecColorComboBox" Margin="0,8,0,0" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Upper:" VerticalAlignment="Center" Margin="0,8,0,0" />
+                        <ComboBox Grid.Row="2" Grid.Column="1" x:Name="UpperColorComboBox" Margin="0,8,0,0" />
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Lower:" VerticalAlignment="Center" Margin="0,8,0,0" />
+                        <ComboBox Grid.Row="3" Grid.Column="1" x:Name="LowerColorComboBox" Margin="0,8,0,0" />
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="SPEC / Limit Values">
+                    <Grid Margin="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="SPEC:" VerticalAlignment="Center" />
+                        <TextBox Grid.Row="0" Grid.Column="1" x:Name="SpecValueTextBox" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Upper Limit:" VerticalAlignment="Center" Margin="0,8,0,0" />
+                        <TextBox Grid.Row="1" Grid.Column="1" x:Name="UpperLimitValueTextBox" Margin="0,8,0,0" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Lower Limit:" VerticalAlignment="Center" Margin="0,8,0,0" />
+                        <TextBox Grid.Row="2" Grid.Column="1" x:Name="LowerLimitValueTextBox" Margin="0,8,0,0" />
+                    </Grid>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="Cancel" Width="90" Margin="0,0,8,0" Click="CancelButton_Click" />
+            <Button Content="Save" Width="90" Click="SaveButton_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,67 @@
+<Window x:Class="GraphMaker.NoXMultiYResultWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        mc:Ignorable="d"
+        Title="SingleX(No) - Multi Y"
+        Height="900"
+        Width="1500">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="3*" />
+            <RowDefinition Height="2*" />
+        </Grid.RowDefinitions>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock x:Name="HeaderTextBlock"
+                       FontSize="22"
+                       FontWeight="Bold"
+                       Margin="0,0,12,12" />
+
+            <Button Grid.Column="1"
+                    Content="Recommend USL / LSL"
+                    Padding="14,8"
+                    Margin="0,0,0,12"
+                    Click="RecommendLimitsButton_Click" />
+        </Grid>
+
+        <Border Grid.Row="1"
+                BorderThickness="1"
+                BorderBrush="#CBD5E1"
+                Padding="8">
+            <oxy:PlotView x:Name="PlotViewControl" />
+        </Border>
+
+        <DataGrid Grid.Row="2"
+                  x:Name="StatsGrid"
+                  Margin="0,12,0,0"
+                  HorizontalAlignment="Left"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Column" Binding="{Binding ColumnName}" Width="140" />
+                <DataGridTextColumn Header="Count" Binding="{Binding TotalCount}" Width="90" />
+                <DataGridTextColumn Header="NG" Binding="{Binding NgCount}" Width="90" />
+                <DataGridTextColumn Header="NG %" Binding="{Binding NgRatePercent, StringFormat=F3}" Width="90" />
+                <DataGridTextColumn Header="Avg" Binding="{Binding Avg, StringFormat=F3}" Width="100" />
+                <DataGridTextColumn Header="Min" Binding="{Binding Min, StringFormat=F3}" Width="100" />
+                <DataGridTextColumn Header="Max" Binding="{Binding Max, StringFormat=F3}" Width="100" />
+                <DataGridTextColumn Header="StdDev" Binding="{Binding StdDev, StringFormat=F3}" Width="100" />
+                <DataGridTextColumn Header="CPK" Binding="{Binding Cpk, StringFormat=F3}" Width="90" />
+                <DataGridTextColumn Header="Spec" Binding="{Binding Spec, StringFormat=F3}" Width="100" />
+                <DataGridTextColumn Header="Upper" Binding="{Binding Upper, StringFormat=F3}" Width="100" />
+                <DataGridTextColumn Header="Lower" Binding="{Binding Lower, StringFormat=F3}" Width="100" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>

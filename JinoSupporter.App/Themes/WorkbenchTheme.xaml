@@ -1,0 +1,630 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework">
+    <Color x:Key="ShellBackgroundColor">#E9EEF6</Color>
+    <Color x:Key="ShellSurfaceColor">#FFFFFF</Color>
+    <Color x:Key="ShellSurfaceMutedColor">#F3F6FB</Color>
+    <Color x:Key="ShellBorderColor">#B8C7DB</Color>
+    <Color x:Key="ShellAccentColor">#0A63C9</Color>
+    <Color x:Key="ShellAccentHoverColor">#094FA1</Color>
+    <Color x:Key="ShellTextPrimaryColor">#1D2733</Color>
+    <Color x:Key="ShellTextSecondaryColor">#46586E</Color>
+    <Color x:Key="ShellTitleBarColor">#0B64CA</Color>
+    <Color x:Key="ShellTitleBarBorderColor">#084C98</Color>
+
+    <SolidColorBrush x:Key="ShellBackgroundBrush" Color="{StaticResource ShellBackgroundColor}" />
+    <SolidColorBrush x:Key="ShellSurfaceBrush" Color="{StaticResource ShellSurfaceColor}" />
+    <SolidColorBrush x:Key="ShellSurfaceMutedBrush" Color="{StaticResource ShellSurfaceMutedColor}" />
+    <SolidColorBrush x:Key="ShellBorderBrush" Color="{StaticResource ShellBorderColor}" />
+    <SolidColorBrush x:Key="ShellAccentBrush" Color="{StaticResource ShellAccentColor}" />
+    <SolidColorBrush x:Key="ShellAccentHoverBrush" Color="{StaticResource ShellAccentHoverColor}" />
+    <SolidColorBrush x:Key="ShellTextPrimaryBrush" Color="{StaticResource ShellTextPrimaryColor}" />
+    <SolidColorBrush x:Key="ShellTextSecondaryBrush" Color="{StaticResource ShellTextSecondaryColor}" />
+    <SolidColorBrush x:Key="ShellTitleBarBrush" Color="{StaticResource ShellTitleBarColor}" />
+    <SolidColorBrush x:Key="ShellTitleBarBorderBrush" Color="{StaticResource ShellTitleBarBorderColor}" />
+
+    <LinearGradientBrush x:Key="ShellSidebarBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#F2F6FC" Offset="0" />
+        <GradientStop Color="#E8EFF8" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="ShellCanvasBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#F5F8FD" Offset="0" />
+        <GradientStop Color="#ECEFF5" Offset="1" />
+    </LinearGradientBrush>
+
+    <Style x:Key="ShellCaptionButtonStyle" TargetType="{x:Type Button}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="#EAF3FF" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="CaptionButtonBorder"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="0">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#2E83DF" />
+                <Setter Property="Foreground" Value="White" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="#0A4E9C" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="ShellCaptionCloseButtonStyle"
+           TargetType="{x:Type Button}"
+           BasedOn="{StaticResource ShellCaptionButtonStyle}">
+        <Setter Property="Foreground" Value="#FBE6EA" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#D13438" />
+                <Setter Property="Foreground" Value="White" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="#A82A2D" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="ShellWindowStyle" TargetType="{x:Type Window}">
+        <Setter Property="Background" Value="{StaticResource ShellBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+        <Setter Property="WindowStyle" Value="None" />
+        <Setter Property="ResizeMode" Value="CanResize" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="shell:WindowChrome.WindowChrome">
+            <Setter.Value>
+                <shell:WindowChrome CaptionHeight="34"
+                                    ResizeBorderThickness="5"
+                                    CornerRadius="0"
+                                    GlassFrameThickness="0"
+                                    UseAeroCaptionButtons="False" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Window}">
+                    <Border x:Name="OuterBorder"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{StaticResource ShellBorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="0"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="34" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0"
+                                    Background="{StaticResource ShellTitleBarBrush}"
+                                    BorderBrush="{StaticResource ShellTitleBarBorderBrush}"
+                                    BorderThickness="0,0,0,1"
+                                    CornerRadius="0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <DockPanel Margin="10,0,0,0"
+                                               VerticalAlignment="Center">
+                                        <Border Width="18"
+                                                Height="18"
+                                                CornerRadius="2"
+                                                Background="{StaticResource ShellAccentBrush}">
+                                            <TextBlock Text="J"
+                                                   Width="18"
+                                                   Height="18"
+                                                   FontWeight="Bold"
+                                                   TextAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="White" />
+                                        </Border>
+                                        <TextBlock Margin="8,0,0,0"
+                                                   VerticalAlignment="Center"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="White"
+                                                   Text="{TemplateBinding Title}" />
+                                    </DockPanel>
+
+                                    <StackPanel Grid.Column="1"
+                                                Orientation="Horizontal"
+                                                Margin="0,0,4,0"
+                                                VerticalAlignment="Center"
+                                                shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                                        <Button x:Name="MinButton"
+                                                Width="28"
+                                                Height="24"
+                                                Margin="0,0,2,0"
+                                                Content="&#xE921;"
+                                                Style="{StaticResource ShellCaptionButtonStyle}"
+                                                FontFamily="Segoe Fluent Icons"
+                                                shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                                                Command="{x:Static SystemCommands.MinimizeWindowCommand}"
+                                                CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                                                CommandParameter="{Binding RelativeSource={RelativeSource TemplatedParent}}" />
+                                        <Button x:Name="MaxButton"
+                                                Width="28"
+                                                Height="24"
+                                                Margin="0,0,2,0"
+                                                Content="&#xE922;"
+                                                Style="{StaticResource ShellCaptionButtonStyle}"
+                                                FontFamily="Segoe Fluent Icons"
+                                                shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                                                Command="{x:Static SystemCommands.MaximizeWindowCommand}"
+                                                CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                                                CommandParameter="{Binding RelativeSource={RelativeSource TemplatedParent}}" />
+                                        <Button x:Name="RestoreButton"
+                                                Width="28"
+                                                Height="24"
+                                                Margin="0,0,2,0"
+                                                Content="&#xE923;"
+                                                Style="{StaticResource ShellCaptionButtonStyle}"
+                                                FontFamily="Segoe Fluent Icons"
+                                                Visibility="Collapsed"
+                                                shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                                                Command="{x:Static SystemCommands.RestoreWindowCommand}"
+                                                CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                                                CommandParameter="{Binding RelativeSource={RelativeSource TemplatedParent}}" />
+                                        <Button x:Name="CloseButton"
+                                                Width="34"
+                                                Height="24"
+                                                Content="&#xE8BB;"
+                                                Style="{StaticResource ShellCaptionCloseButtonStyle}"
+                                                FontFamily="Segoe Fluent Icons"
+                                                shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                                                Command="{x:Static SystemCommands.CloseWindowCommand}"
+                                                CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                                                CommandParameter="{Binding RelativeSource={RelativeSource TemplatedParent}}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Row="1"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="0">
+                                <AdornerDecorator>
+                                    <ContentPresenter />
+                                </AdornerDecorator>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="ResizeMode" Value="NoResize">
+                            <Setter TargetName="MinButton" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="MaxButton" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="RestoreButton" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="ResizeMode" Value="CanMinimize">
+                            <Setter TargetName="MaxButton" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="RestoreButton" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="WindowState" Value="Maximized">
+                            <Setter TargetName="OuterBorder" Property="CornerRadius" Value="0" />
+                            <Setter TargetName="MaxButton" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="RestoreButton" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="WindowStyle" Value="None">
+                            <Setter TargetName="OuterBorder" Property="CornerRadius" Value="0" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type Window}"
+           BasedOn="{StaticResource ShellWindowStyle}" />
+
+    <Style x:Key="BorderlessRoundedWindowStyle" TargetType="{x:Type Window}">
+        <Setter Property="WindowStyle" Value="None" />
+        <Setter Property="AllowsTransparency" Value="True" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Window}">
+                    <Border CornerRadius="0"
+                            Background="#F5F6FA"
+                            BorderBrush="{StaticResource ShellBorderBrush}"
+                            BorderThickness="1"
+                            Padding="6">
+                        <ContentPresenter />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ShellCardBorderStyle" TargetType="{x:Type Border}">
+        <Setter Property="Background" Value="{StaticResource ShellSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ShellBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="Padding" Value="10" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <Style x:Key="AppButtonBaseStyle" TargetType="{x:Type Button}">
+        <Setter Property="MinHeight" Value="28" />
+        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Background" Value="#FFFFFF" />
+        <Setter Property="BorderBrush" Value="#D5DFEC" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="ButtonBorder"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          RecognizesAccessKey="True" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ButtonBorder" Property="Background" Value="#F7FAFD" />
+                            <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#B7C8DE" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="ButtonBorder" Property="Background" Value="#EEF3F8" />
+                            <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#9EB4CF" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.55" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type Button}"
+           BasedOn="{StaticResource AppButtonBaseStyle}" />
+
+    <Style TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+    </Style>
+
+    <Style TargetType="{x:Type Label}">
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <Style TargetType="{x:Type TextBox}">
+        <Setter Property="MinHeight" Value="28" />
+        <Setter Property="Padding" Value="6,4" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+        <Setter Property="Background" Value="{StaticResource ShellSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ShellBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="AppProgressBarBaseStyle" TargetType="{x:Type ProgressBar}">
+        <Setter Property="Height" Value="5" />
+        <Setter Property="Background" Value="#F0F1F5" />
+        <Setter Property="Foreground" Value="#4F6BED" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ProgressBar}">
+                    <Grid>
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="3" />
+                        <Border x:Name="PART_Track" />
+                        <Border x:Name="PART_Indicator"
+                                HorizontalAlignment="Left"
+                                Background="{TemplateBinding Foreground}"
+                                CornerRadius="3" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type ProgressBar}"
+           BasedOn="{StaticResource AppProgressBarBaseStyle}" />
+
+    <Style x:Key="AppComboBoxToggleButtonStyle" TargetType="{x:Type ToggleButton}">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="ClickMode" Value="Press" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border Background="Transparent"
+                            BorderThickness="0">
+                        <Grid>
+                            <Path HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  Data="M 0 0 L 4 4 L 8 0 Z"
+                                  Fill="{StaticResource ShellTextSecondaryBrush}"
+                                  SnapsToDevicePixels="True" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Opacity" Value="0.8" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="AppComboBoxBaseStyle" TargetType="{x:Type ComboBox}">
+        <Setter Property="MinHeight" Value="28" />
+        <Setter Property="Padding" Value="6,3" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+        <Setter Property="Background" Value="{StaticResource ShellSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ShellBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ComboBox}">
+                    <Grid>
+                        <Border x:Name="OuterBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                SnapsToDevicePixels="True" />
+                        <Grid Margin="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="24" />
+                            </Grid.ColumnDefinitions>
+
+                            <ContentPresenter x:Name="ContentSite"
+                                              Grid.Column="0"
+                                              Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                              IsHitTestVisible="False" />
+
+                            <TextBox x:Name="PART_EditableTextBox"
+                                     Grid.Column="0"
+                                     Margin="{TemplateBinding Padding}"
+                                     HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                     VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="{TemplateBinding Foreground}"
+                                     Focusable="True"
+                                     Visibility="Hidden" />
+
+                            <ToggleButton Grid.Column="1"
+                                          Background="Transparent"
+                                          BorderBrush="Transparent"
+                                          BorderThickness="0"
+                                          Focusable="False"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Style="{StaticResource AppComboBoxToggleButtonStyle}" />
+                        </Grid>
+
+                        <Popup x:Name="Popup"
+                               Placement="Bottom"
+                               AllowsTransparency="True"
+                               Focusable="False"
+                               IsOpen="{TemplateBinding IsDropDownOpen}"
+                               PopupAnimation="Slide">
+                            <Grid MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                  MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                <Border Background="{StaticResource ShellSurfaceBrush}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="5" />
+                                <ScrollViewer Margin="2"
+                                              SnapsToDevicePixels="True">
+                                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
+                                </ScrollViewer>
+                            </Grid>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="HasItems" Value="False">
+                            <Setter TargetName="Popup" Property="MinHeight" Value="24" />
+                        </Trigger>
+                        <Trigger Property="IsEditable" Value="True">
+                            <Setter Property="IsTabStop" Value="False" />
+                            <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="ContentSite" Property="Visibility" Value="Hidden" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="OuterBorder" Property="BorderBrush" Value="#96AEC9" />
+                            <Setter TargetName="OuterBorder" Property="Background" Value="#FCFDFE" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="OuterBorder" Property="BorderBrush" Value="{StaticResource ShellAccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsDropDownOpen" Value="True">
+                            <Setter TargetName="OuterBorder" Property="BorderBrush" Value="{StaticResource ShellAccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.55" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type ComboBox}"
+           BasedOn="{StaticResource AppComboBoxBaseStyle}" />
+
+    <Style x:Key="AppComboBoxItemBaseStyle" TargetType="{x:Type ComboBoxItem}">
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Padding" Value="6,4" />
+        <Setter Property="MinHeight" Value="20" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ComboBoxItem}">
+                    <Border x:Name="ItemBorder"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="4"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="ItemBorder" Property="Background" Value="#EAF2FD" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="ItemBorder" Property="Background" Value="#D8E9FF" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.55" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type ComboBoxItem}"
+           BasedOn="{StaticResource AppComboBoxItemBaseStyle}" />
+
+    <Style TargetType="{x:Type DatePicker}">
+        <Setter Property="MinHeight" Value="28" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <Style TargetType="{x:Type DatePickerTextBox}">
+        <Setter Property="MinHeight" Value="26" />
+        <Setter Property="Padding" Value="6,3" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style TargetType="{x:Type CheckBox}">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Margin" Value="2,2" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+    </Style>
+
+    <Style TargetType="{x:Type RadioButton}">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Margin" Value="2,2" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+    </Style>
+
+    <Style x:Key="ShellNavButtonStyle"
+           TargetType="{x:Type Button}"
+           BasedOn="{StaticResource AppButtonBaseStyle}">
+        <Setter Property="Height" Value="34" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="Background" Value="#FFFFFF" />
+        <Setter Property="BorderBrush" Value="#D5DFEC" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="ButtonBorder"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          RecognizesAccessKey="True" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#F7FAFD" />
+                <Setter Property="BorderBrush" Value="#B7C8DE" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="#EEF3F8" />
+                <Setter Property="BorderBrush" Value="#9EB4CF" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.55" />
+                <Setter Property="Cursor" Value="Arrow" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="ShellNavButtonSelectedStyle"
+           TargetType="{x:Type Button}"
+           BasedOn="{StaticResource ShellNavButtonStyle}">
+        <Setter Property="Background" Value="#F4F8FC" />
+        <Setter Property="BorderBrush" Value="#9EB4CF" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#EEF3F8" />
+                <Setter Property="BorderBrush" Value="#8EA7C5" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="#E8EEF6" />
+                <Setter Property="BorderBrush" Value="#839BB9" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+</ResourceDictionary>

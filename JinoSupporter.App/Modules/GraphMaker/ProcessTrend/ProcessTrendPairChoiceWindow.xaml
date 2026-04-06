@@ -1,0 +1,24 @@
+<Window x:Class="GraphMaker.ProcessTrendPairChoiceWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Select Pair For Calculation"
+        Width="460"
+        Height="520"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock x:Name="HeaderTextBlock" FontWeight="SemiBold" TextWrapping="Wrap" />
+
+        <ListBox x:Name="PairListBox" Grid.Row="1" Margin="0,10,0,10" DisplayMemberPath="PairTitle" />
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="OK" Width="90" Click="OkButton_Click" />
+            <Button Content="Cancel" Width="90" Margin="8,0,0,0" Click="CancelButton_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

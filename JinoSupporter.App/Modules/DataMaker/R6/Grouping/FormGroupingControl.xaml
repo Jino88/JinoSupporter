@@ -1,0 +1,35 @@
+<UserControl x:Class="DataMaker.R6.FormGrouping.FormGroupingControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Width="240" Height="280">
+    <Border Background="White" CornerRadius="8" Padding="8" Margin="2"
+            BorderBrush="#E2E4EA" BorderThickness="1">
+        <DockPanel>
+            <TextBox x:Name="CT_TB_GROUPNAME" DockPanel.Dock="Bottom" Margin="0,6,0,0"
+                     Background="#F5F6FA" Foreground="#1A1D26" BorderBrush="#E2E4EA"
+                     Padding="8,6" FontSize="12"/>
+            <ListBox x:Name="CT_LIST" SelectionMode="Multiple"
+                     Background="#FAFBFC" Foreground="#1A1D26" BorderThickness="0"
+                     Padding="4" FontSize="12">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Foreground" Value="#1A1D26"/>
+                        <Setter Property="Padding" Value="4,2"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#EEF0FF"/>
+                                <Setter Property="Foreground" Value="#4F6BED"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <CheckBox Content="{Binding}" Foreground="#1A1D26"
+                                  IsChecked="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </DockPanel>
+    </Border>
+</UserControl>

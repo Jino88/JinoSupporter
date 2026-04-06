@@ -1,0 +1,137 @@
+<Window x:Class="JinoSupporter.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="JinoSupporter"
+        Width="1780"
+        Height="1040"
+        MinWidth="1500"
+        MinHeight="860"
+        Background="#F3F7FB"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <Style x:Key="MenuNavButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="#1F2937" />
+            <Setter Property="Padding" Value="12,11" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="RootBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="12"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RootBorder" Property="Background" Value="#E8F0FB" />
+                                <Setter TargetName="RootBorder" Property="BorderBrush" Value="#C7D8F2" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="RootBorder" Property="Background" Value="#DCE8FA" />
+                                <Setter TargetName="RootBorder" Property="BorderBrush" Value="#B5CAE9" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0"
+                Background="#F8FBFF"
+                Padding="14">
+            <DockPanel LastChildFill="True">
+                <Grid DockPanel.Dock="Top">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Background="#FFB15E"
+                            Width="42"
+                            Height="42"
+                            CornerRadius="12"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top">
+                        <TextBlock Text="JW"
+                                   Foreground="#6B3F12"
+                                   FontWeight="Bold"
+                                   FontSize="16"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center" />
+                    </Border>
+
+                    <StackPanel Grid.Row="1">
+                        <TextBlock Text="JinoSupporter"
+                                   Margin="0,12,0,4"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="#183153" />
+                        <TextBlock Text="Module workspace"
+                                   Foreground="#6B7C93"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              CanContentScroll="True"
+                              Margin="0,14,0,0">
+                    <StackPanel x:Name="MenuHost" />
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Column="1"
+              Margin="14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border Background="White"
+                    CornerRadius="16"
+                    BorderBrush="#E2E8F0"
+                    BorderThickness="1"
+                    Padding="16">
+                <StackPanel>
+                    <TextBlock x:Name="CurrentModuleTitle"
+                               FontSize="24"
+                               FontWeight="SemiBold"
+                               Foreground="#0F172A"
+                               TextWrapping="Wrap" />
+                    <TextBlock x:Name="CurrentModuleDescription"
+                               Margin="0,8,0,0"
+                               Foreground="#475569"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="1"
+                    Margin="0,12,0,0"
+                    Background="White"
+                    CornerRadius="16"
+                    BorderBrush="#E2E8F0"
+                    BorderThickness="1"
+                    Padding="12">
+                <ContentControl x:Name="EmbeddedModuleHost"
+                                HorizontalContentAlignment="Stretch"
+                                VerticalContentAlignment="Stretch" />
+            </Border>
+        </Grid>
+
+    </Grid>
+</Window>

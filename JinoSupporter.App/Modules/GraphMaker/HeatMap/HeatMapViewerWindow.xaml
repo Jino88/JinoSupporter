@@ -1,0 +1,20 @@
+<Window x:Class="GraphMaker.HeatMapViewerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Heatmap Result"
+        Height="920"
+        Width="1600"
+        MinHeight="760"
+        MinWidth="1200"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="18">
+        <GroupBox Header="Heatmap Result">
+            <oxy:PlotView x:Name="HeatMapPlotView"
+                          Model="{Binding HeatMapModel}" />
+        </GroupBox>
+    </Grid>
+</Window>
