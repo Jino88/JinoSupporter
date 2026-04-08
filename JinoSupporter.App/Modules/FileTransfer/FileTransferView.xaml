@@ -7,26 +7,22 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Border Margin="10"
-                Padding="16"
+        <Border Margin="10,10,10,0"
+                Padding="12,8"
                 Background="White"
                 BorderBrush="#D9E2EC"
                 BorderThickness="1"
-                CornerRadius="12">
+                CornerRadius="10">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock Text="File Transfer"
-                               FontSize="24"
-                               FontWeight="SemiBold"
-                               Foreground="#102A43" />
-                    <TextBlock Margin="0,6,0,0"
-                               Foreground="#486581"
-                               Text="Android device discovery, outbound send flow, inbound receive sessions, and transfer history now run directly in the WPF host." />
-                </StackPanel>
+                <TextBlock Text="File Transfer"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Foreground="#102A43"
+                           VerticalAlignment="Center" />
                 <TextBlock x:Name="StatusTextBlock"
                            Grid.Column="1"
                            VerticalAlignment="Center"

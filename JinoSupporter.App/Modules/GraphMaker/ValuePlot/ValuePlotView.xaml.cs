@@ -53,7 +53,7 @@ namespace GraphMaker
         public ValuePlotDisplayMode SavedDisplayMode { get; set; } = ValuePlotDisplayMode.Combined;
     }
 
-    public partial class ValuePlotView : UserControl, INotifyPropertyChanged
+    public partial class ValuePlotView : GraphViewBase
     {
         private sealed class ValuePlotReportState
         {
@@ -95,13 +95,6 @@ namespace GraphMaker
         {
             get => _cpkPlotModel;
             set { _cpkPlotModel = value; OnPropertyChanged(nameof(CpkPlotModel)); }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public ValuePlotView()

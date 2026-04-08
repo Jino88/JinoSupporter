@@ -23,14 +23,8 @@ using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
 namespace GraphMaker
 {
-    public class HeatMapFileInfo
+    public class HeatMapFileInfo : GraphFileInfoBase
     {
-        public string Name { get; set; } = string.Empty;
-        public string FilePath { get; set; } = string.Empty;
-        public DataTable? FullData { get; set; }
-        public List<string>? HeaderRow { get; set; }
-        public string Delimiter { get; set; } = "\t";
-        public int HeaderRowNumber { get; set; } = 1;
         public int SavedCondition1Index { get; set; } = -1;
         public int SavedCondition2Index { get; set; } = -1;
         public int SavedExtraCondition1Index { get; set; } = -1;
@@ -41,7 +35,7 @@ namespace GraphMaker
         public bool UseFormulaResult { get; set; }
     }
 
-    public partial class HeatMapView : UserControl, INotifyPropertyChanged
+    public partial class HeatMapView : GraphViewBase
     {
         private sealed class HeatMapReportState
         {
@@ -71,14 +65,6 @@ namespace GraphMaker
                 _heatMapModel = value;
                 OnPropertyChanged(nameof(HeatMapModel));
             }
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        public event Action? WebModuleSnapshotChanged;
-
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public HeatMapView()
@@ -1295,10 +1281,6 @@ namespace GraphMaker
             }
         }
 
-        private void NotifyWebModuleSnapshotChanged()
-        {
-            WebModuleSnapshotChanged?.Invoke();
-        }
     }
 }
 

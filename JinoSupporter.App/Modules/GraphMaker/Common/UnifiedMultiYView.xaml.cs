@@ -18,7 +18,7 @@ using UserControl = System.Windows.Controls.UserControl;
 
 namespace GraphMaker
 {
-    public partial class UnifiedMultiYView : UserControl
+    public partial class UnifiedMultiYView : GraphViewBase
     {
         private sealed class UnifiedMultiYReportState
         {
@@ -46,23 +46,18 @@ namespace GraphMaker
         private readonly ObservableCollection<SelectableColumnOption> _columnOptions = new();
         private readonly Dictionary<string, HashSet<string>> _selectedColumnsByFile = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, MultiYInputMode> _inputModesByFile = new(StringComparer.OrdinalIgnoreCase);
-        private readonly List<string> _pendingSetupFilePaths = new();
 
         private FileInfo_DailySampling? _currentFile;
-        private MultiYInputMode _pendingSetupMode = MultiYInputMode.HeaderMultiY;
-        private string _pendingSetupDelimiter = "\t";
-        private int _pendingSetupHeaderRowNumber = 1;
         private bool _combinedYAxisView;
+        private bool _isApplyingAutoDetect;
+        private bool _isApplyingModeUi;
         private string _combinedXAxisColumn = string.Empty;
         private bool _combinedXAxisIsDate = true;
-        public event Action? WebModuleSnapshotChanged;
-
         public UnifiedMultiYView()
         {
             InitializeComponent();
             FileListBox.ItemsSource = _loadedFiles;
             ColumnOptionListBox.ItemsSource = _columnOptions;
-            UpdateModeUi(null);
             NotifyWebModuleSnapshotChanged();
         }
 
@@ -80,19 +75,42 @@ namespace GraphMaker
                 return;
             }
 
-            HandleWebDroppedFiles(dialog.FileNames);
+            foreach (string filePath in dialog.FileNames)
+            {
+                LoadFileDirect(filePath);
+            }
         }
 
-        private (MultiYInputMode Mode, string Delimiter, int HeaderRowNumber)? PromptInputMode(string? previewFilePath = null)
+        private void LoadFileDirect(string filePath)
         {
-            var window = new MultiYInputModeSelectionWindow(previewFilePath)
+            if (_loadedFiles.Any(f => string.Equals(f.FilePath, filePath, StringComparison.OrdinalIgnoreCase)))
             {
-                Owner = Application.Current?.MainWindow ?? Window.GetWindow(this)
-            };
+                FileListBox.SelectedItem = _loadedFiles.First(f => string.Equals(f.FilePath, filePath, StringComparison.OrdinalIgnoreCase));
+                return;
+            }
 
-            return window.ShowDialog() == true
-                ? (window.SelectedMode, window.SelectedDelimiter, window.SelectedHeaderRowNumber)
-                : null;
+            string delimiter = GraphMakerTableHelper.DetectDelimiter(filePath);
+            _isApplyingAutoDetect = true;
+            TabDelimiterRadio.IsChecked = delimiter == "\t";
+            CommaDelimiterRadio.IsChecked = delimiter == ",";
+            SpaceDelimiterRadio.IsChecked = delimiter == " ";
+            if (TabDelimiterRadio.IsChecked != true && CommaDelimiterRadio.IsChecked != true && SpaceDelimiterRadio.IsChecked != true)
+            {
+                TabDelimiterRadio.IsChecked = true;
+                delimiter = "\t";
+            }
+            _isApplyingAutoDetect = false;
+
+            MultiYInputMode mode = GetModeFromRadio();
+            int headerRow = int.TryParse(HeaderRowTextBox?.Text, out int n) && n >= 1 ? n : 1;
+            LoadFile(filePath, mode, delimiter, headerRow);
+        }
+
+        private MultiYInputMode GetModeFromRadio()
+        {
+            if (DateSingleYRadio?.IsChecked == true) return MultiYInputMode.DateSingleY;
+            if (DateNoHeaderMultiYRadio?.IsChecked == true) return MultiYInputMode.DateNoHeaderMultiY;
+            return MultiYInputMode.HeaderMultiY;
         }
 
         private void LoadFile(string filePath, MultiYInputMode mode, string delimiter, int headerRowNumber)
@@ -147,33 +165,50 @@ namespace GraphMaker
 
         private void UpdateModeUi(MultiYInputMode? mode)
         {
+            _isApplyingModeUi = true;
             if (!mode.HasValue)
             {
-                CurrentModeTextBlock.Text = "(No file selected)";
-                CurrentModeDescriptionTextBlock.Text = "Load a file and choose how it should be interpreted.";
-                ModeHintTextBlock.Text = string.Empty;
+                HeaderMultiYRadio.IsChecked = true;
+                ModeHintTextBlock.Text = "Load a file and choose how it should be interpreted.";
                 HeaderRowPanel.Visibility = Visibility.Visible;
+                _isApplyingModeUi = false;
                 return;
             }
 
-            bool isHeaderMode = mode.Value == MultiYInputMode.HeaderMultiY;
-            bool isDateSingleY = mode.Value == MultiYInputMode.DateSingleY;
-            CurrentModeTextBlock.Text = isHeaderMode
-                ? "SingleX(No) - Multi Y"
-                : isDateSingleY
-                    ? "SingleX(Date) - SingleY"
-                    : "SingleX(Date) - Multi Y (No Header)";
-            CurrentModeDescriptionTextBlock.Text = isHeaderMode
-                ? "Normal header row with multiple Y columns."
-                : isDateSingleY
-                    ? "Normal header row where the first column is Date and one Y column is plotted as a trend."
-                    : "First column must be Date. Remaining columns are generated as Value1, Value2, ...";
-            ModeHintTextBlock.Text = isHeaderMode
-                ? "Header row can be changed. All columns are treated as Y columns."
-                : isDateSingleY
-                    ? "Header row can be changed. The first column must be Date and only one Y column should be selected."
-                    : "Header row is not used in this mode. The first column is Date and it is excluded from Y selection.";
+            HeaderMultiYRadio.IsChecked = mode.Value == MultiYInputMode.HeaderMultiY;
+            DateSingleYRadio.IsChecked = mode.Value == MultiYInputMode.DateSingleY;
+            DateNoHeaderMultiYRadio.IsChecked = mode.Value == MultiYInputMode.DateNoHeaderMultiY;
+            ModeHintTextBlock.Text = mode.Value switch
+            {
+                MultiYInputMode.HeaderMultiY => "Header row can be changed. All columns are treated as Y columns.",
+                MultiYInputMode.DateSingleY => "First column must be Date. Only one Y column should be selected.",
+                _ => "No header row. First column is Date; remaining become Value1, Value2, ..."
+            };
             HeaderRowPanel.Visibility = mode.Value == MultiYInputMode.DateNoHeaderMultiY ? Visibility.Collapsed : Visibility.Visible;
+            _isApplyingModeUi = false;
+        }
+
+        private void ModeRadioChanged(object sender, RoutedEventArgs e)
+        {
+            if (_isApplyingModeUi || _currentFile == null || !IsLoaded)
+            {
+                return;
+            }
+
+            MultiYInputMode newMode = GetModeFromRadio();
+            _inputModesByFile[_currentFile.FilePath] = newMode;
+            _currentFile.HeaderRowNumber = newMode == MultiYInputMode.DateNoHeaderMultiY
+                ? 0
+                : (int.TryParse(HeaderRowTextBox?.Text, out int n) && n >= 1 ? n : 1);
+            HeaderRowPanel.Visibility = newMode == MultiYInputMode.DateNoHeaderMultiY ? Visibility.Collapsed : Visibility.Visible;
+            ModeHintTextBlock.Text = newMode switch
+            {
+                MultiYInputMode.HeaderMultiY => "Header row can be changed. All columns are treated as Y columns.",
+                MultiYInputMode.DateSingleY => "First column must be Date. Only one Y column should be selected.",
+                _ => "No header row. First column is Date; remaining become Value1, Value2, ..."
+            };
+            _currentFile.FullData = null!;
+            LoadAndBindCurrentFile();
         }
 
         private void LoadAndBindCurrentFile()
@@ -456,7 +491,7 @@ namespace GraphMaker
 
         private void DelimiterChanged(object sender, RoutedEventArgs e)
         {
-            if (_currentFile == null)
+            if (_isApplyingAutoDetect || _currentFile == null || !IsLoaded)
             {
                 return;
             }
@@ -495,18 +530,12 @@ namespace GraphMaker
                 return;
             }
 
-            var selection = PromptInputMode(files.FirstOrDefault());
-            if (!selection.HasValue)
-            {
-                return;
-            }
-
             foreach (string file in files)
             {
                 string ext = Path.GetExtension(file).ToLowerInvariant();
                 if (ext == ".txt" || ext == ".csv")
                 {
-                    LoadFile(file, selection.Value.Mode, selection.Value.Delimiter, selection.Value.HeaderRowNumber);
+                    LoadFileDirect(file);
                 }
             }
         }
@@ -526,40 +555,12 @@ namespace GraphMaker
                 return;
             }
 
-            System.Diagnostics.Debug.WriteLine($"[GraphDrop:UnifiedMultiY] Accepted files: {string.Join(" | ", accepted)}");
-            _pendingSetupFilePaths.Clear();
-            _pendingSetupFilePaths.AddRange(accepted);
-            _pendingSetupMode = MultiYInputMode.HeaderMultiY;
-            _pendingSetupDelimiter = "\t";
-            _pendingSetupHeaderRowNumber = 1;
+            foreach (string file in accepted)
+            {
+                LoadFileDirect(file);
+            }
+
             NotifyWebModuleSnapshotChanged();
-            ApplyPendingWebSetup();
-        }
-
-        private void ApplyPendingWebSetup()
-        {
-            if (_pendingSetupFilePaths.Count == 0)
-            {
-                return;
-            }
-
-            try
-            {
-                System.Diagnostics.Debug.WriteLine($"[GraphDrop:UnifiedMultiY] ApplyPendingWebSetup mode={_pendingSetupMode}, delimiter={_pendingSetupDelimiter}, headerRow={_pendingSetupHeaderRowNumber}, files={string.Join(" | ", _pendingSetupFilePaths)}");
-                foreach (string file in _pendingSetupFilePaths)
-                {
-                    LoadFile(file, _pendingSetupMode, _pendingSetupDelimiter, _pendingSetupHeaderRowNumber);
-                }
-
-                _pendingSetupFilePaths.Clear();
-                NotifyWebModuleSnapshotChanged();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[GraphDrop:UnifiedMultiY] ApplyPendingWebSetup failed: {ex}");
-                ModeHintTextBlock.Text = ex.Message;
-                NotifyWebModuleSnapshotChanged();
-            }
         }
 
         private void SaveReportButton_Click(object sender, RoutedEventArgs e)
@@ -841,21 +842,16 @@ namespace GraphMaker
                     ? "comma"
                     : "space";
 
+            string currentMode = HeaderMultiYRadio.IsChecked == true ? "Multi Y (Header)"
+                : DateSingleYRadio.IsChecked == true ? "Date → Single Y"
+                : "Date → Multi Y (No Header)";
+
             return new
             {
                 moduleType = "GraphMakerUnifiedMultiY",
                 currentFileName = _currentFile?.Name ?? "(Select a file)",
-                currentMode = CurrentModeTextBlock.Text ?? string.Empty,
-                currentModeDescription = CurrentModeDescriptionTextBlock.Text ?? string.Empty,
+                currentMode,
                 modeHint = ModeHintTextBlock.Text ?? string.Empty,
-                pendingSetup = _pendingSetupFilePaths.Count == 0 ? null : new
-                {
-                    files = _pendingSetupFilePaths.Select(Path.GetFileName).ToArray(),
-                    filePaths = _pendingSetupFilePaths.ToArray(),
-                    mode = _pendingSetupMode.ToString(),
-                    delimiter = _pendingSetupDelimiter == "\t" ? "tab" : _pendingSetupDelimiter == "," ? "comma" : "space",
-                    headerRow = _pendingSetupHeaderRowNumber.ToString()
-                },
                 delimiter,
                 headerRow = HeaderRowTextBox.Text ?? "1",
                 applyToAllColumns = ApplyToAllColumnsCheckBox.IsChecked == true,
@@ -884,28 +880,21 @@ namespace GraphMaker
 
         public object UpdateWebModuleState(JsonElement payload)
         {
-            if (payload.TryGetProperty("pendingMode", out JsonElement pendingModeElement) &&
-                Enum.TryParse(pendingModeElement.GetString(), out MultiYInputMode pendingMode))
+            if (payload.TryGetProperty("inputMode", out JsonElement inputModeElement) &&
+                Enum.TryParse(inputModeElement.GetString(), out MultiYInputMode inputMode) &&
+                IsLoaded)
             {
-                _pendingSetupMode = pendingMode;
-            }
-
-            if (payload.TryGetProperty("pendingDelimiter", out JsonElement pendingDelimiterElement))
-            {
-                string pendingDelimiter = pendingDelimiterElement.GetString() ?? "tab";
-                _pendingSetupDelimiter = pendingDelimiter switch
+                _isApplyingModeUi = true;
+                HeaderMultiYRadio.IsChecked = inputMode == MultiYInputMode.HeaderMultiY;
+                DateSingleYRadio.IsChecked = inputMode == MultiYInputMode.DateSingleY;
+                DateNoHeaderMultiYRadio.IsChecked = inputMode == MultiYInputMode.DateNoHeaderMultiY;
+                _isApplyingModeUi = false;
+                if (_currentFile != null)
                 {
-                    "comma" => ",",
-                    "space" => " ",
-                    _ => "\t"
-                };
-            }
-
-            if (payload.TryGetProperty("pendingHeaderRow", out JsonElement pendingHeaderRowElement) &&
-                int.TryParse(pendingHeaderRowElement.GetString(), out int pendingHeaderRowNumber) &&
-                pendingHeaderRowNumber > 0)
-            {
-                _pendingSetupHeaderRowNumber = pendingHeaderRowNumber;
+                    _inputModesByFile[_currentFile.FilePath] = inputMode;
+                    _currentFile.FullData = null!;
+                    LoadAndBindCurrentFile();
+                }
             }
 
             if (payload.TryGetProperty("delimiter", out JsonElement delimiterElement))
@@ -1016,13 +1005,6 @@ namespace GraphMaker
                 case "generate-graph":
                     GenerateGraphButton_Click(this, new RoutedEventArgs());
                     break;
-                case "apply-inline-setup":
-                    ApplyPendingWebSetup();
-                    break;
-                case "cancel-inline-setup":
-                    _pendingSetupFilePaths.Clear();
-                    NotifyWebModuleSnapshotChanged();
-                    break;
             }
 
             return GetWebModuleSnapshot();
@@ -1048,9 +1030,5 @@ namespace GraphMaker
                 .ToArray();
         }
 
-        private void NotifyWebModuleSnapshotChanged()
-        {
-            WebModuleSnapshotChanged?.Invoke();
-        }
     }
 }

@@ -9,12 +9,151 @@
         Background="#F3F7FB"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
+        <Style x:Key="MenuScrollBarThumbStyle" TargetType="Thumb">
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border Margin="2"
+                                Background="#C7D8EA"
+                                CornerRadius="6" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Thumb">
+                                <Border Margin="2"
+                                        Background="#9FBCE0"
+                                        CornerRadius="6" />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="MenuScrollBarStyle" TargetType="ScrollBar">
+            <Setter Property="Width" Value="10" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="Transparent"
+                              Width="{TemplateBinding Width}">
+                            <Border Margin="2,0"
+                                    Background="#E7EFF8"
+                                    CornerRadius="5" />
+                            <Track x:Name="PART_Track"
+                                   IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.LineUpCommand"
+                                                  Opacity="0"
+                                                  Focusable="False" />
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource MenuScrollBarThumbStyle}" />
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.LineDownCommand"
+                                                  Opacity="0"
+                                                  Focusable="False" />
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Height" Value="10" />
+                    <Setter Property="Width" Value="Auto" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ScrollBar">
+                                <Grid Background="Transparent"
+                                      Height="{TemplateBinding Height}">
+                                    <Border Margin="0,2"
+                                            Background="#E7EFF8"
+                                            CornerRadius="5" />
+                                    <Track x:Name="PART_Track"
+                                           Orientation="Horizontal">
+                                        <Track.DecreaseRepeatButton>
+                                            <RepeatButton Command="ScrollBar.LineLeftCommand"
+                                                          Opacity="0"
+                                                          Focusable="False" />
+                                        </Track.DecreaseRepeatButton>
+                                        <Track.Thumb>
+                                            <Thumb Style="{StaticResource MenuScrollBarThumbStyle}" />
+                                        </Track.Thumb>
+                                        <Track.IncreaseRepeatButton>
+                                            <RepeatButton Command="ScrollBar.LineRightCommand"
+                                                          Opacity="0"
+                                                          Focusable="False" />
+                                        </Track.IncreaseRepeatButton>
+                                    </Track>
+                                </Grid>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="MenuScrollViewerStyle" TargetType="ScrollViewer">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollViewer">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <ScrollContentPresenter Grid.Row="0"
+                                                    Grid.Column="0"
+                                                    Margin="{TemplateBinding Padding}"
+                                                    CanContentScroll="{TemplateBinding CanContentScroll}" />
+
+                            <ScrollBar x:Name="PART_VerticalScrollBar"
+                                       Grid.Row="0"
+                                       Grid.Column="1"
+                                       Margin="8,4,0,4"
+                                       Value="{TemplateBinding VerticalOffset}"
+                                       Maximum="{TemplateBinding ScrollableHeight}"
+                                       ViewportSize="{TemplateBinding ViewportHeight}"
+                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+                                       Style="{StaticResource MenuScrollBarStyle}" />
+
+                            <ScrollBar x:Name="PART_HorizontalScrollBar"
+                                       Grid.Row="1"
+                                       Grid.Column="0"
+                                       Margin="0,8,0,0"
+                                       Orientation="Horizontal"
+                                       Value="{TemplateBinding HorizontalOffset}"
+                                       Maximum="{TemplateBinding ScrollableWidth}"
+                                       ViewportSize="{TemplateBinding ViewportWidth}"
+                                       Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"
+                                       Style="{StaticResource MenuScrollBarStyle}" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="MenuNavButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Foreground" Value="#1F2937" />
-            <Setter Property="Padding" Value="12,11" />
+            <Setter Property="Padding" Value="10,8" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -52,44 +191,39 @@
 
         <Border Grid.Column="0"
                 Background="#F8FBFF"
-                Padding="14">
+                Padding="12">
             <DockPanel LastChildFill="True">
-                <Grid DockPanel.Dock="Top">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-
+                <StackPanel DockPanel.Dock="Top"
+                            Orientation="Horizontal"
+                            Margin="0,0,0,12">
                     <Border Background="#FFB15E"
-                            Width="42"
-                            Height="42"
-                            CornerRadius="12"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Top">
+                            Width="32"
+                            Height="32"
+                            CornerRadius="8"
+                            VerticalAlignment="Center">
                         <TextBlock Text="JW"
                                    Foreground="#6B3F12"
                                    FontWeight="Bold"
-                                   FontSize="16"
+                                   FontSize="13"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center" />
                     </Border>
-
-                    <StackPanel Grid.Row="1">
+                    <StackPanel Margin="10,0,0,0"
+                                VerticalAlignment="Center">
                         <TextBlock Text="JinoSupporter"
-                                   Margin="0,12,0,4"
-                                   FontSize="18"
+                                   FontSize="15"
                                    FontWeight="SemiBold"
                                    Foreground="#183153" />
                         <TextBlock Text="Module workspace"
-                                   Foreground="#6B7C93"
-                                   TextWrapping="Wrap" />
+                                   FontSize="11"
+                                   Foreground="#6B7C93" />
                     </StackPanel>
-                </Grid>
+                </StackPanel>
 
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
                               CanContentScroll="True"
-                              Margin="0,14,0,0">
+                              Style="{StaticResource MenuScrollViewerStyle}">
                     <StackPanel x:Name="MenuHost" />
                 </ScrollViewer>
             </DockPanel>
@@ -103,25 +237,30 @@
             </Grid.RowDefinitions>
 
             <Border Background="White"
-                    CornerRadius="16"
+                    CornerRadius="10"
                     BorderBrush="#E2E8F0"
                     BorderThickness="1"
-                    Padding="16">
-                <StackPanel>
+                    Padding="12,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
                     <TextBlock x:Name="CurrentModuleTitle"
-                               FontSize="24"
+                               FontSize="16"
                                FontWeight="SemiBold"
                                Foreground="#0F172A"
-                               TextWrapping="Wrap" />
+                               VerticalAlignment="Center" />
                     <TextBlock x:Name="CurrentModuleDescription"
-                               Margin="0,8,0,0"
+                               Grid.Column="1"
                                Foreground="#475569"
-                               TextWrapping="Wrap" />
-                </StackPanel>
+                               VerticalAlignment="Center"
+                               Margin="12,0,0,0" />
+                </Grid>
             </Border>
 
             <Border Grid.Row="1"
-                    Margin="0,12,0,0"
+                    Margin="0,8,0,0"
                     Background="White"
                     CornerRadius="16"
                     BorderBrush="#E2E8F0"

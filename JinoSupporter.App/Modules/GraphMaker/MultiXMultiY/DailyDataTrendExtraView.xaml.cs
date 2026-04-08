@@ -27,7 +27,7 @@ using UserControl = System.Windows.Controls.UserControl;
 
 namespace GraphMaker
 {
-    public partial class DailyDataTrendExtraView : UserControl, INotifyPropertyChanged
+    public partial class DailyDataTrendExtraView : GraphViewBase
     {
         private sealed class DailyDataTrendExtraReportState
         {
@@ -64,10 +64,6 @@ namespace GraphMaker
         private string _pendingSetupDelimiter = "\t";
         private int _pendingSetupHeaderRowNumber = 1;
         private bool _isRebuildingLimits;
-        public event Action? WebModuleSnapshotChanged;
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
         public DailyDataTrendExtraView()
         {
             InitializeComponent();
@@ -1403,9 +1399,5 @@ namespace GraphMaker
                 .ToArray();
         }
 
-        private void NotifyWebModuleSnapshotChanged()
-        {
-            WebModuleSnapshotChanged?.Invoke();
-        }
     }
 }

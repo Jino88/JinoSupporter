@@ -43,17 +43,10 @@ namespace GraphMaker
         public int LowerLineStyleIndex { get; set; } = 1;
     }
 
-    public class FileInfo_Custom
+    public class FileInfo_Custom : GraphFileInfoBase
     {
-        public string Name { get; set; }
-        public string FilePath { get; set; }
-        public DataTable FullData { get; set; }
-        public List<string> HeaderRow { get; set; }
         public List<string> FirstColumn { get; set; }
-        public string Delimiter { get; set; } = "\t";
-        public int HeaderRowNumber { get; set; } = 1;
 
-        // ì„¤ì • ì €ìž¥
         public int SavedXAxisIndex { get; set; } = -1;
         public List<int> SavedYAxisIndices { get; set; } = new List<int>();
         public int SavedSpecColumnIndex { get; set; } = -1;
@@ -75,7 +68,7 @@ namespace GraphMaker
         };
     }
 
-    public partial class ScatterPlotView : UserControl, INotifyPropertyChanged
+    public partial class ScatterPlotView : GraphViewBase
     {
         private sealed class ScatterPlotReportState
         {
@@ -139,14 +132,6 @@ namespace GraphMaker
             OxyColors.Gold, OxyColors.Navy, OxyColors.Teal, OxyColors.Maroon,
             OxyColors.Olive, OxyColors.Lime, OxyColors.Pink, OxyColors.Indigo
         };
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        public event Action? WebModuleSnapshotChanged;
-
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
 
         public ScatterPlotView()
         {
@@ -479,6 +464,22 @@ namespace GraphMaker
 
                 XAxisLogScaleCheckBox.IsChecked = true;
                 fileInfo.SavedXAxisLogScale = true;
+
+                // Auto-assign all non-X columns to Group 1 so users can generate immediately
+                if (fileInfo.HeaderRow != null && _groupRows.Count > 0)
+                {
+                    int xColIndex = 0; // XAxisComboBox index 1 → actual column 0
+                    int group1Id = _groupRows[0].GroupId;
+                    for (int i = 0; i < fileInfo.HeaderRow.Count; i++)
+                    {
+                        if (i != xColIndex)
+                        {
+                            _columnGroups[i] = group1Id;
+                        }
+                    }
+
+                    RefreshGroupLists(fileInfo);
+                }
             }
 
             NotifyWebModuleSnapshotChanged();
@@ -984,11 +985,6 @@ namespace GraphMaker
                 .Take(40)
                 .Select(row => columns.Select(column => row[column]?.ToString() ?? string.Empty).ToArray())
                 .ToArray();
-        }
-
-        private void NotifyWebModuleSnapshotChanged()
-        {
-            WebModuleSnapshotChanged?.Invoke();
         }
 
         private static void ApplyLimitSelection(ListBox target, List<string> headers, string? headerName)

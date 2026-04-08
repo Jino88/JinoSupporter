@@ -6,20 +6,19 @@
         Background="#F5F6FA" Foreground="#1A1D26">
 
     <Window.Resources>
-        <Style x:Key="LabelStyle" TargetType="TextBlock">
+        <Style x:Key="LabelStyle" TargetType="TextBlock" BasedOn="{StaticResource AppTextBlockBaseStyle}">
             <Setter Property="Foreground" Value="#6B7280"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Margin" Value="0,0,10,0"/>
         </Style>
-        <Style x:Key="InputStyle" TargetType="TextBox">
+        <Style x:Key="InputStyle" TargetType="TextBox" BasedOn="{StaticResource AppTextBoxBaseStyle}">
             <Setter Property="Background" Value="White"/>
             <Setter Property="Foreground" Value="#1A1D26"/>
             <Setter Property="BorderBrush" Value="#E2E4EA"/>
-            <Setter Property="Padding" Value="8,5"/>
             <Setter Property="FontSize" Value="12"/>
         </Style>
-        <Style x:Key="SectionStyle" TargetType="TextBlock">
+        <Style x:Key="SectionStyle" TargetType="TextBlock" BasedOn="{StaticResource AppTextBlockBaseStyle}">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="#4F6BED"/>

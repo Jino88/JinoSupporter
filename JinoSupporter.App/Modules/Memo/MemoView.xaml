@@ -7,7 +7,7 @@
              d:DesignHeight="700"
              d:DesignWidth="1200">
     <UserControl.Resources>
-        <Style x:Key="MemoEditingTextBoxStyle" TargetType="TextBox">
+        <Style x:Key="MemoEditingTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource AppTextBoxBaseStyle}">
             <Setter Property="AcceptsReturn" Value="True" />
             <Setter Property="TextWrapping" Value="Wrap" />
             <EventSetter Event="PreviewKeyDown" Handler="MemoEditingTextBox_PreviewKeyDown" />

@@ -15,13 +15,11 @@ using MessageBox = System.Windows.MessageBox;
 
 namespace GraphMaker
 {
-    public partial class AudioBusDataView : UserControl
+    public partial class AudioBusDataView : GraphViewBase
     {
         private List<FileInfo> excelFiles = new List<FileInfo>();
         private Dictionary<FileInfo, List<string>> fileSheetMapping = new Dictionary<FileInfo, List<string>>();
         private Dictionary<string, CheckBox> sheetCheckBoxes = new Dictionary<string, CheckBox>();
-        public event Action? WebModuleSnapshotChanged;
-
         public AudioBusDataView()
         {
             InitializeComponent();
@@ -754,9 +752,5 @@ namespace GraphMaker
             return GetWebModuleSnapshot();
         }
 
-        private void NotifyWebModuleSnapshotChanged()
-        {
-            WebModuleSnapshotChanged?.Invoke();
-        }
     }
 }

@@ -35,45 +35,41 @@
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
 
-        <Style TargetType="TextBox">
-            <Setter Property="MinHeight" Value="34" />
-            <Setter Property="Padding" Value="8,5" />
+        <Style TargetType="TextBox"
+               BasedOn="{StaticResource AppTextBoxBaseStyle}">
             <Setter Property="Background" Value="{StaticResource VcSurfaceBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource VcBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Foreground" Value="#1A1D26" />
         </Style>
 
         <Style TargetType="ComboBox" BasedOn="{StaticResource AppComboBoxBaseStyle}">
-            <Setter Property="MinHeight" Value="34" />
-            <Setter Property="Padding" Value="6,4" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="MinHeight" Value="20" />
+            <Setter Property="Padding" Value="4,0" />
             <Setter Property="Background" Value="{StaticResource VcSurfaceBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource VcBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
         </Style>
 
-        <Style TargetType="DataGrid">
+        <Style TargetType="DataGrid"
+               BasedOn="{StaticResource AppDataGridBaseStyle}">
             <Setter Property="Background" Value="{StaticResource VcSurfaceBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource VcBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="AlternationCount" Value="2" />
             <Setter Property="RowBackground" Value="#FFFFFF" />
             <Setter Property="AlternatingRowBackground" Value="#F8F9FC" />
-            <Setter Property="GridLinesVisibility" Value="Horizontal" />
             <Setter Property="HorizontalGridLinesBrush" Value="#E4E5EB" />
             <Setter Property="VerticalGridLinesBrush" Value="#EDEEF3" />
         </Style>
 
-        <Style TargetType="DataGridColumnHeader">
+        <Style TargetType="DataGridColumnHeader"
+               BasedOn="{StaticResource AppDataGridColumnHeaderBaseStyle}">
             <Setter Property="Background" Value="{StaticResource VcPanelBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource VcBorderBrush}" />
-            <Setter Property="BorderThickness" Value="0,0,0,1" />
-            <Setter Property="Padding" Value="8,5" />
-            <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
 
-        <Style TargetType="TextBlock">
+        <Style TargetType="TextBlock"
+               BasedOn="{StaticResource AppTextBlockBaseStyle}">
             <Setter Property="Foreground" Value="#1A1D26" />
         </Style>
 
@@ -318,7 +314,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="FFmpeg Folder" />
                                 <TextBox x:Name="FfmpegFolderTextBox" Grid.Column="1" Margin="6,0,12,0" VerticalContentAlignment="Center" TextChanged="FfmpegFolderTextBox_TextChanged" />
-                                <Button Grid.Column="2" Grid.ColumnSpan="2" HorizontalAlignment="Left" Width="100" Content="Browse..." Click="BrowseFfmpegFolderButton_Click" />
+                                <Button Grid.Column="2" HorizontalAlignment="Left" Width="100" Content="Browse..." Click="BrowseFfmpegFolderButton_Click" />
                             </Grid>
                             <Grid Grid.Row="2" Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
@@ -329,7 +325,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="Output Folder" />
                                 <TextBox x:Name="OutputFolderTextBox" Grid.Column="1" Margin="6,0,12,0" VerticalContentAlignment="Center" />
-                                <Button Grid.Column="2" Grid.ColumnSpan="2" HorizontalAlignment="Left" Width="100" Content="Browse..." Click="BrowseOutputFolderButton_Click" />
+                                <Button Grid.Column="2" HorizontalAlignment="Left" Width="100" Content="Browse..." Click="BrowseOutputFolderButton_Click" />
                             </Grid>
                             <Grid Grid.Row="3">
                                 <Grid.ColumnDefinitions>

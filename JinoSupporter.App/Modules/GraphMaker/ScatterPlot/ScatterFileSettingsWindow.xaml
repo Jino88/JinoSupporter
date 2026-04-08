@@ -12,7 +12,8 @@
                BasedOn="{StaticResource AppComboBoxBaseStyle}">
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Padding" Value="4,0" />
-            <Setter Property="MinHeight" Value="22" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="MinHeight" Value="20" />
         </Style>
         <Style TargetType="{x:Type ComboBoxItem}"
                BasedOn="{StaticResource AppComboBoxItemBaseStyle}">
@@ -20,15 +21,18 @@
             <Setter Property="Padding" Value="4,0" />
             <Setter Property="MinHeight" Value="20" />
         </Style>
-        <Style TargetType="{x:Type TextBox}">
+        <Style TargetType="{x:Type TextBox}"
+               BasedOn="{StaticResource AppTextBoxBaseStyle}">
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Padding" Value="4,0" />
             <Setter Property="MinHeight" Value="22" />
         </Style>
-        <Style TargetType="{x:Type ListBox}">
+        <Style TargetType="{x:Type ListBox}"
+               BasedOn="{StaticResource AppListBoxBaseStyle}">
             <Setter Property="Padding" Value="2" />
         </Style>
-        <Style TargetType="{x:Type ListBoxItem}">
+        <Style TargetType="{x:Type ListBoxItem}"
+               BasedOn="{StaticResource AppListBoxItemBaseStyle}">
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Padding" Value="4,0" />
             <Setter Property="MinHeight" Value="22" />

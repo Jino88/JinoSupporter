@@ -12,7 +12,7 @@
                      Background="#FAFBFC" Foreground="#1A1D26" BorderThickness="0"
                      Padding="4" FontSize="12">
                 <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
+                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource AppListBoxItemBaseStyle}">
                         <Setter Property="Foreground" Value="#1A1D26"/>
                         <Setter Property="Padding" Value="4,2"/>
                         <Style.Triggers>

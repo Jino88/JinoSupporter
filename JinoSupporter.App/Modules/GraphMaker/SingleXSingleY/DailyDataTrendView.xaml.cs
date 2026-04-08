@@ -24,7 +24,7 @@ using UserControl = System.Windows.Controls.UserControl;
 
 namespace GraphMaker
 {
-    public partial class DailyDataTrendView : UserControl, INotifyPropertyChanged
+    public partial class DailyDataTrendView : GraphViewBase
     {
         private sealed class DailyDataTrendReportState
         {
@@ -59,8 +59,7 @@ namespace GraphMaker
         private const string ValueColumnName = "Value";
         private const string DateColumnName = "Date";
         private bool _isRebuildingLimits;
-
-        public event PropertyChangedEventHandler? PropertyChanged;
+        private bool _isApplyingAutoDetect;
 
         public DailyDataTrendView()
         {
@@ -75,7 +74,7 @@ namespace GraphMaker
         {
             PreviewGraphViewBase.WirePreviewGrid(
                 DataPreviewGrid,
-                files => OpenSetupWindow(files),
+                files => LoadFiles(files),
                 DeletePreviewRow,
                 () => StatusText.Text = "Edited Data Preview cell value.",
                 () =>
@@ -117,7 +116,14 @@ namespace GraphMaker
 
         private void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
-            OpenSetupWindow();
+            if (TryBrowseFiles(
+                "Select data files",
+                "Text/CSV files (*.txt;*.csv)|*.txt;*.csv|All files (*.*)|*.*",
+                true,
+                out string[] files))
+            {
+                LoadFiles(files);
+            }
         }
 
         private void DropZone_Drop(object sender, DragEventArgs e)
@@ -133,7 +139,7 @@ namespace GraphMaker
                 return;
             }
 
-            OpenSetupWindow(files);
+            LoadFiles(files);
         }
 
         private void DropZone_DragEnter(object sender, DragEventArgs e)
@@ -142,7 +148,7 @@ namespace GraphMaker
             {
                 e.Effects = DragDropEffects.Copy;
                 StatusText.Foreground = new SolidColorBrush(Colors.Blue);
-                StatusText.Text = "Drop files into the Data Preview grid.";
+                StatusText.Text = "Drop to load files.";
             }
         }
 
@@ -153,22 +159,78 @@ namespace GraphMaker
 
         private void DropZone_DragOver(object sender, DragEventArgs e)
         {
+            e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
             e.Handled = true;
         }
 
-        private void OpenSetupWindow(IEnumerable<string>? initialFiles = null)
+        private void LoadFiles(IEnumerable<string> filePaths)
         {
-            Window? owner = Window.GetWindow(this);
-            var setupWindow = new DailyDataTrendSetupWindow(initialFiles)
+            string[] paths = filePaths
+                .Where(p => !string.IsNullOrWhiteSpace(p) && File.Exists(p))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            if (paths.Length == 0)
             {
-                Owner = owner
-            };
-            if (setupWindow.ShowDialog() != true || setupWindow.ResultFileInfo?.FullData == null)
+                StatusText.Text = "No valid files found.";
+                return;
+            }
+
+            // Auto-detect delimiter from first file and update radio buttons
+            string delimiter = GraphMakerTableHelper.DetectDelimiter(paths[0]);
+            _isApplyingAutoDetect = true;
+            TabDelimiterRadio.IsChecked = delimiter == "\t";
+            CommaDelimiterRadio.IsChecked = delimiter == ",";
+            SpaceDelimiterRadio.IsChecked = delimiter == " ";
+            if (TabDelimiterRadio.IsChecked != true && CommaDelimiterRadio.IsChecked != true && SpaceDelimiterRadio.IsChecked != true)
+            {
+                TabDelimiterRadio.IsChecked = true;
+                delimiter = "\t";
+            }
+            _isApplyingAutoDetect = false;
+
+            ParseAndLoadFiles(paths, delimiter, GetHeaderRowNumber());
+        }
+
+        private void ParseAndLoadFiles(string[] paths, string delimiter, int headerRowNumber)
+        {
+            try
+            {
+                ProcessTrendFileInfo fileInfo = GraphMakerFileViewHelper.LoadAndMergeDailyFiles(paths, delimiter, headerRowNumber);
+                ApplyLoadedFileInfo(fileInfo);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Load Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                StatusText.Text = $"Error: {ex.Message}";
+            }
+        }
+
+        private void DelimiterChanged(object sender, RoutedEventArgs e)
+        {
+            if (_isApplyingAutoDetect || _loadedFilePaths.Count == 0 || !IsLoaded)
             {
                 return;
             }
 
-            ApplyLoadedFileInfo(setupWindow.ResultFileInfo);
+            string delimiter = ResolveDelimiter(TabDelimiterRadio, CommaDelimiterRadio, SpaceDelimiterRadio);
+            ParseAndLoadFiles(_loadedFilePaths.ToArray(), delimiter, GetHeaderRowNumber());
+        }
+
+        private void HeaderRowChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_loadedFilePaths.Count == 0 || !IsLoaded)
+            {
+                return;
+            }
+
+            string delimiter = ResolveDelimiter(TabDelimiterRadio, CommaDelimiterRadio, SpaceDelimiterRadio);
+            ParseAndLoadFiles(_loadedFilePaths.ToArray(), delimiter, GetHeaderRowNumber());
+        }
+
+        private int GetHeaderRowNumber()
+        {
+            return int.TryParse(HeaderRowTextBox?.Text, out int n) && n >= 1 ? n : 1;
         }
 
         private void ApplyLoadedFileInfo(ProcessTrendFileInfo fileInfo)

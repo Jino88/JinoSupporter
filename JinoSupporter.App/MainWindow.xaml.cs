@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using System.Windows.Media;
 using JinoSupporter.App.Infrastructure.Shell;
 using JinoSupporter.App.Modules.FileTransfer;
@@ -18,11 +19,22 @@ namespace JinoSupporter.App;
 
 public partial class MainWindow : Window
 {
+    private const string GraphMakerGroupKey = "GraphMaker";
+
     private static readonly Uri GraphMakerThemeUri =
         new("pack://application:,,,/Modules/GraphMaker/Themes/ModernTheme.xaml", UriKind.Absolute);
 
     private readonly Dictionary<string, ShellModuleDefinition> _modules = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Button> _menuButtons = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _graphMakerTargets = new(StringComparer.Ordinal)
+    {
+        "GraphMaker:ScatterPlot",
+        "GraphMaker:ProcessTrend",
+        "GraphMaker:UnifiedMultiY",
+        "GraphMaker:DailyDataTrendExtra",
+        "GraphMaker:HeatMap",
+        "GraphMaker:AudioBusData"
+    };
 
     private global::DataMaker.MainWindow? _dataMakerWindow;
     private global::DiskTree.MainWindow? _diskTreeWindow;
@@ -43,6 +55,9 @@ public partial class MainWindow : Window
     private FrameworkElement? _dataMakerContent;
     private FrameworkElement? _diskTreeContent;
     private FrameworkElement? _videoConverterContent;
+    private StackPanel? _graphMakerChildrenHost;
+    private TextBlock? _graphMakerChevron;
+    private bool _isGraphMakerExpanded;
     private string? _activeTarget;
 
     public MainWindow()
@@ -118,12 +133,12 @@ public partial class MainWindow : Window
 
     private void RegisterGraphModules()
     {
-        RegisterModule(BuildGraphModule("GraphMaker:ScatterPlot", "GraphMaker - SPL Graph Plot", "Scatter plot workspace.", "Scatter", "Scatter plot workflow.", new[] { "Graph setup and report actions are surfaced in the shell." }, GetScatterPlotView, new[] { new ShellActionDefinition("browse-files", "Browse"), new ShellActionDefinition("remove-selected-file", "Remove Selected"), new ShellActionDefinition("save-report", "Save Report"), new ShellActionDefinition("load-report", "Load Report"), new ShellActionDefinition("generate-graph", "Generate Graph", true) }, view => view.GetWebModuleSnapshot(), (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)), (view, handler) => view.WebModuleSnapshotChanged += handler, (view, handler) => view.WebModuleSnapshotChanged -= handler));
-        RegisterModule(BuildGraphModule("GraphMaker:ProcessTrend", "GraphMaker - Process Trend", "Trend analysis workspace.", "Trend", "Process trend workflow.", new[] { "Selected files, ranges, and generation flow are reflected in the shell." }, GetProcessTrendView, new[] { new ShellActionDefinition("browse-files", "Browse"), new ShellActionDefinition("remove-selected-file", "Remove Selected"), new ShellActionDefinition("save-report", "Save Report"), new ShellActionDefinition("load-report", "Load Report"), new ShellActionDefinition("generate-graph", "Generate Graph", true) }, view => view.GetWebModuleSnapshot(), (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)), (view, handler) => view.WebModuleSnapshotChanged += handler, (view, handler) => view.WebModuleSnapshotChanged -= handler));
-        RegisterModule(BuildGraphModule("GraphMaker:UnifiedMultiY", "GraphMaker - Single X", "Unified multi-series graph workflow.", "MultiY", "Single X graph workflow.", new[] { "File, header, column, and output setup are reflected in the shell." }, GetUnifiedMultiYView, new[] { new ShellActionDefinition("browse-file", "Browse"), new ShellActionDefinition("save-config", "Save Config"), new ShellActionDefinition("load-config", "Load Config"), new ShellActionDefinition("generate-graph", "Generate Graph", true) }, view => view.GetWebModuleSnapshot(), (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)), (view, handler) => view.WebModuleSnapshotChanged += handler, (view, handler) => view.WebModuleSnapshotChanged -= handler));
-        RegisterModule(BuildGraphModule("GraphMaker:DailyDataTrendExtra", "GraphMaker - Multi X", "Expanded daily trend visualization.", "Trend", "Multi X graph workflow.", new[] { "File list, metric selection, and chart generation are reflected in the shell." }, GetDailyTrendExtraView, new[] { new ShellActionDefinition("browse-files", "Browse"), new ShellActionDefinition("remove-selected-file", "Remove Selected"), new ShellActionDefinition("save-config", "Save Config"), new ShellActionDefinition("load-config", "Load Config"), new ShellActionDefinition("generate-graph", "Generate Graph", true) }, view => view.GetWebModuleSnapshot(), (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)), (view, handler) => view.WebModuleSnapshotChanged += handler, (view, handler) => view.WebModuleSnapshotChanged -= handler));
-        RegisterModule(BuildGraphModule("GraphMaker:HeatMap", "GraphMaker - Heat Map", "Heat map generation workflow.", "HeatMap", "Heat map workflow.", new[] { "Source path and generation readiness are reflected in the shell." }, GetHeatMapView, new[] { new ShellActionDefinition("browse-file", "Browse"), new ShellActionDefinition("load-template", "Load Template"), new ShellActionDefinition("generate-heatmap", "Generate Heat Map", true) }, view => view.GetWebModuleSnapshot(), (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)), (view, handler) => view.WebModuleSnapshotChanged += handler, (view, handler) => view.WebModuleSnapshotChanged -= handler));
-        RegisterModule(BuildGraphModule("GraphMaker:AudioBusData", "GraphMaker - Audio Bus Data", "Audio bus visualization workflow.", "Audio", "Audio bus data workflow.", new[] { "Audio-bus file state and generation commands are reflected in the shell." }, GetAudioBusDataView, new[] { new ShellActionDefinition("browse-file", "Browse"), new ShellActionDefinition("load-config", "Load Config"), new ShellActionDefinition("generate-graph", "Generate Graph", true) }, view => view.GetWebModuleSnapshot(), (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)), (view, handler) => view.WebModuleSnapshotChanged += handler, (view, handler) => view.WebModuleSnapshotChanged -= handler));
+        RegisterModule(BuildGraphModule("GraphMaker:ScatterPlot", "SPL Graph Plot", "Scatter plot workspace.", "Scatter", "Scatter plot workflow.", new[] { "Graph setup and report actions are surfaced in the shell." }, GetScatterPlotView, new[] { new ShellActionDefinition("browse-files", "Browse"), new ShellActionDefinition("remove-selected-file", "Remove Selected"), new ShellActionDefinition("save-report", "Save Report"), new ShellActionDefinition("load-report", "Load Report"), new ShellActionDefinition("generate-graph", "Generate Graph", true) }, view => view.GetWebModuleSnapshot(), (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)), (view, handler) => view.WebModuleSnapshotChanged += handler, (view, handler) => view.WebModuleSnapshotChanged -= handler));
+        RegisterModule(BuildGraphModule("GraphMaker:ProcessTrend", "Process Trend", "Trend analysis workspace.", "Trend", "Process trend workflow.", new[] { "Selected files, ranges, and generation flow are reflected in the shell." }, GetProcessTrendView, new[] { new ShellActionDefinition("browse-files", "Browse"), new ShellActionDefinition("remove-selected-file", "Remove Selected"), new ShellActionDefinition("save-report", "Save Report"), new ShellActionDefinition("load-report", "Load Report"), new ShellActionDefinition("generate-graph", "Generate Graph", true) }, view => view.GetWebModuleSnapshot(), (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)), (view, handler) => view.WebModuleSnapshotChanged += handler, (view, handler) => view.WebModuleSnapshotChanged -= handler));
+        RegisterModule(BuildGraphModule("GraphMaker:UnifiedMultiY", "Single X", "Unified multi-series graph workflow.", "MultiY", "Single X graph workflow.", new[] { "File, header, column, and output setup are reflected in the shell." }, GetUnifiedMultiYView, new[] { new ShellActionDefinition("browse-file", "Browse"), new ShellActionDefinition("save-config", "Save Config"), new ShellActionDefinition("load-config", "Load Config"), new ShellActionDefinition("generate-graph", "Generate Graph", true) }, view => view.GetWebModuleSnapshot(), (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)), (view, handler) => view.WebModuleSnapshotChanged += handler, (view, handler) => view.WebModuleSnapshotChanged -= handler));
+        RegisterModule(BuildGraphModule("GraphMaker:DailyDataTrendExtra", "Multi X", "Expanded daily trend visualization.", "Trend", "Multi X graph workflow.", new[] { "File list, metric selection, and chart generation are reflected in the shell." }, GetDailyTrendExtraView, new[] { new ShellActionDefinition("browse-files", "Browse"), new ShellActionDefinition("remove-selected-file", "Remove Selected"), new ShellActionDefinition("save-config", "Save Config"), new ShellActionDefinition("load-config", "Load Config"), new ShellActionDefinition("generate-graph", "Generate Graph", true) }, view => view.GetWebModuleSnapshot(), (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)), (view, handler) => view.WebModuleSnapshotChanged += handler, (view, handler) => view.WebModuleSnapshotChanged -= handler));
+        RegisterModule(BuildGraphModule("GraphMaker:HeatMap", "Heat Map", "Heat map generation workflow.", "HeatMap", "Heat map workflow.", new[] { "Source path and generation readiness are reflected in the shell." }, GetHeatMapView, new[] { new ShellActionDefinition("browse-file", "Browse"), new ShellActionDefinition("load-template", "Load Template"), new ShellActionDefinition("generate-heatmap", "Generate Heat Map", true) }, view => view.GetWebModuleSnapshot(), (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)), (view, handler) => view.WebModuleSnapshotChanged += handler, (view, handler) => view.WebModuleSnapshotChanged -= handler));
+        RegisterModule(BuildGraphModule("GraphMaker:AudioBusData", "Audio Bus Data", "Audio bus visualization workflow.", "Audio", "Audio bus data workflow.", new[] { "Audio-bus file state and generation commands are reflected in the shell." }, GetAudioBusDataView, new[] { new ShellActionDefinition("browse-file", "Browse"), new ShellActionDefinition("load-config", "Load Config"), new ShellActionDefinition("generate-graph", "Generate Graph", true) }, view => view.GetWebModuleSnapshot(), (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)), (view, handler) => view.WebModuleSnapshotChanged += handler, (view, handler) => view.WebModuleSnapshotChanged -= handler));
     }
 
     private void RegisterUtilityModules()
@@ -189,46 +204,16 @@ public partial class MainWindow : Window
     {
         MenuHost.Children.Clear();
         _menuButtons.Clear();
-
-        foreach (string target in new[]
-        {
-            "DataMaker",
-            "GraphMaker:ScatterPlot",
-            "GraphMaker:ProcessTrend",
-            "GraphMaker:UnifiedMultiY",
-            "GraphMaker:DailyDataTrendExtra",
-            "GraphMaker:HeatMap",
-            "GraphMaker:AudioBusData",
-            "DiskTree",
-            "Memo",
-            "VideoConverter",
-            "JsonEditor",
-            "ScreenCapture",
-            "FileTransfer",
-            "Translator",
-            "Settings"
-        })
-        {
-            ShellModuleDefinition module = _modules[target];
-            string icon = GetMenuIcon(target);
-            Button button = new()
-            {
-                Content = BuildMenuButtonContent(icon, module.Title),
-                Margin = new Thickness(0, 0, 0, 6),
-                HorizontalContentAlignment = HorizontalAlignment.Left,
-                VerticalContentAlignment = VerticalAlignment.Center,
-                Background = Brushes.Transparent,
-                Foreground = new SolidColorBrush(Color.FromRgb(31, 41, 55)),
-                BorderBrush = Brushes.Transparent,
-                BorderThickness = new Thickness(1),
-                ToolTip = module.Summary,
-                Style = (Style)FindResource("MenuNavButtonStyle")
-            };
-
-            button.Click += (_, _) => SelectModule(target);
-            MenuHost.Children.Add(button);
-            _menuButtons[target] = button;
-        }
+        AddMenuButton("DataMaker");
+        AddGraphMakerGroup();
+        AddMenuButton("DiskTree");
+        AddMenuButton("Memo");
+        AddMenuButton("VideoConverter");
+        AddMenuButton("JsonEditor");
+        AddMenuButton("ScreenCapture");
+        AddMenuButton("FileTransfer");
+        AddMenuButton("Translator");
+        AddMenuButton("Settings");
     }
 
     private void SelectModule(string target)
@@ -236,6 +221,11 @@ public partial class MainWindow : Window
         if (!_modules.TryGetValue(target, out ShellModuleDefinition? module))
         {
             return;
+        }
+
+        if (IsGraphMakerTarget(target))
+        {
+            SetGraphMakerExpanded(true);
         }
 
         _activeTarget = target;
@@ -250,13 +240,106 @@ public partial class MainWindow : Window
     {
         foreach ((string target, Button button) in _menuButtons)
         {
-            bool selected = string.Equals(target, _activeTarget, StringComparison.Ordinal);
+            bool selected = string.Equals(target, _activeTarget, StringComparison.Ordinal) ||
+                            (string.Equals(target, GraphMakerGroupKey, StringComparison.Ordinal) && IsGraphMakerTarget(_activeTarget));
             button.Background = selected ? new SolidColorBrush(Color.FromRgb(255, 229, 204)) : Brushes.Transparent;
             button.BorderBrush = selected ? new SolidColorBrush(Color.FromRgb(255, 191, 138)) : Brushes.Transparent;
         }
     }
 
-    private static FrameworkElement BuildMenuButtonContent(string icon, string title)
+    private void AddMenuButton(string target, Thickness? margin = null, bool isChild = false)
+    {
+        ShellModuleDefinition module = _modules[target];
+        string icon = GetMenuIcon(target);
+        Button button = new()
+        {
+            Content = BuildMenuButtonContent(icon, module.Title, isChild),
+            Margin = margin ?? new Thickness(0, 0, 0, 4),
+            HorizontalContentAlignment = HorizontalAlignment.Left,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Background = Brushes.Transparent,
+            Foreground = new SolidColorBrush(Color.FromRgb(31, 41, 55)),
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(1),
+            ToolTip = module.Summary,
+            Style = (Style)FindResource("MenuNavButtonStyle")
+        };
+
+        button.Click += (_, _) => SelectModule(target);
+        _menuButtons[target] = button;
+
+        if (isChild && _graphMakerChildrenHost is not null)
+        {
+            _graphMakerChildrenHost.Children.Add(button);
+            return;
+        }
+
+        MenuHost.Children.Add(button);
+    }
+
+    private void AddGraphMakerGroup()
+    {
+        Button parentButton = new()
+        {
+            Content = BuildGraphMakerGroupContent(),
+            Margin = new Thickness(0, 0, 0, 4),
+            HorizontalContentAlignment = HorizontalAlignment.Left,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Background = Brushes.Transparent,
+            Foreground = new SolidColorBrush(Color.FromRgb(31, 41, 55)),
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(1),
+            ToolTip = "GraphMaker modules",
+            Style = (Style)FindResource("MenuNavButtonStyle")
+        };
+
+        parentButton.Click += (_, _) => SetGraphMakerExpanded(!_isGraphMakerExpanded);
+        MenuHost.Children.Add(parentButton);
+        _menuButtons[GraphMakerGroupKey] = parentButton;
+
+        _graphMakerChildrenHost = new StackPanel
+        {
+            Margin = new Thickness(14, 0, 0, 4)
+        };
+
+        MenuHost.Children.Add(_graphMakerChildrenHost);
+
+        foreach (string target in _graphMakerTargets)
+        {
+            AddMenuButton(target, new Thickness(0, 0, 0, 3), isChild: true);
+        }
+
+        SetGraphMakerExpanded(false);
+    }
+
+    private FrameworkElement BuildGraphMakerGroupContent()
+    {
+        Grid grid = new();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        FrameworkElement mainContent = BuildMenuButtonContent(GetMenuIcon(GraphMakerGroupKey), "GraphMaker", isChild: false);
+        Grid.SetColumn(mainContent, 0);
+        Grid.SetColumnSpan(mainContent, 2);
+        grid.Children.Add(mainContent);
+
+        _graphMakerChevron = new TextBlock
+        {
+            Text = "▸",
+            Margin = new Thickness(10, 0, 2, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = new SolidColorBrush(Color.FromRgb(107, 124, 147)),
+            FontSize = 14,
+            FontWeight = FontWeights.SemiBold
+        };
+
+        Grid.SetColumn(_graphMakerChevron, 2);
+        grid.Children.Add(_graphMakerChevron);
+        return grid;
+    }
+
+    private static FrameworkElement BuildMenuButtonContent(string icon, string title, bool isChild)
     {
         StackPanel panel = new()
         {
@@ -265,9 +348,9 @@ public partial class MainWindow : Window
 
         Border iconBadge = new()
         {
-            Width = 26,
-            Height = 26,
-            CornerRadius = new CornerRadius(8),
+            Width = isChild ? 22 : 24,
+            Height = isChild ? 22 : 24,
+            CornerRadius = new CornerRadius(isChild ? 7 : 8),
             Background = new SolidColorBrush(Color.FromRgb(229, 239, 252)),
             BorderBrush = new SolidColorBrush(Color.FromRgb(201, 218, 241)),
             BorderThickness = new Thickness(1),
@@ -278,11 +361,11 @@ public partial class MainWindow : Window
         TextBlock titleBlock = new()
         {
             Text = title,
-            Margin = new Thickness(10, 0, 0, 0),
+            Margin = new Thickness(isChild ? 7 : 8, 0, 0, 0),
             TextWrapping = TextWrapping.Wrap,
             Foreground = new SolidColorBrush(Color.FromRgb(31, 41, 55)),
-            FontSize = 14,
-            FontWeight = FontWeights.SemiBold,
+            FontSize = isChild ? 12 : 13,
+            FontWeight = isChild ? FontWeights.Medium : FontWeights.SemiBold,
             VerticalAlignment = VerticalAlignment.Center
         };
 
@@ -296,16 +379,16 @@ public partial class MainWindow : Window
         Geometry geometry = Geometry.Parse(icon);
         return new Viewbox
         {
-            Width = 14,
-            Height = 14,
+            Width = 13,
+            Height = 13,
             Stretch = Stretch.Uniform,
             Child = new System.Windows.Shapes.Path
             {
                 Data = geometry,
                 Fill = new SolidColorBrush(Color.FromRgb(45, 85, 127)),
                 Stretch = Stretch.Uniform,
-                Width = 14,
-                Height = 14,
+                Width = 13,
+                Height = 13,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             }
@@ -317,6 +400,7 @@ public partial class MainWindow : Window
         return target switch
         {
             "DataMaker" => "F1 M 3,2 L 11,2 L 11,4 L 3,4 Z M 4,5 L 10,5 L 10,6.5 L 4,6.5 Z M 4,7.5 L 10,7.5 L 10,9 L 4,9 Z M 4,10 L 8,10 L 8,11.5 L 4,11.5 Z",
+            GraphMakerGroupKey => "F1 M 2,10 L 3.2,10 L 3.2,11.5 L 2,11.5 Z M 5,7 L 6.2,7 L 6.2,8.2 L 5,8.2 Z M 8.2,4.2 L 9.4,4.2 L 9.4,5.4 L 8.2,5.4 Z M 10.2,8.5 A 1.2,1.2 0 1 1 10.21,8.5 Z",
             "GraphMaker:ScatterPlot" => "F1 M 2,10 L 3.2,10 L 3.2,11.5 L 2,11.5 Z M 5,7 L 6.2,7 L 6.2,8.2 L 5,8.2 Z M 8.2,4.2 L 9.4,4.2 L 9.4,5.4 L 8.2,5.4 Z M 10.2,8.5 A 1.2,1.2 0 1 1 10.21,8.5 Z",
             "GraphMaker:ProcessTrend" => "F1 M 2,9.5 L 4.5,7 L 6.5,8 L 9.5,4.5 L 10.5,5.5 L 6.7,9.3 L 4.4,8.2 L 2.8,9.8 Z",
             "GraphMaker:UnifiedMultiY" => "F1 M 2,10 L 5,6.5 L 7,8.2 L 10,3.5 L 11,4.3 L 7.1,10 L 5,8.3 L 2.7,10.8 Z M 2,3 L 2,4.2 L 4.8,4.2 L 4.8,3 Z",
@@ -335,8 +419,45 @@ public partial class MainWindow : Window
         };
     }
 
+    private void SetGraphMakerExpanded(bool expanded)
+    {
+        _isGraphMakerExpanded = expanded;
+
+        if (_graphMakerChildrenHost is not null)
+        {
+            _graphMakerChildrenHost.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        if (_graphMakerChevron is not null)
+        {
+            _graphMakerChevron.Text = expanded ? "▾" : "▸";
+        }
+    }
+
+    private bool IsGraphMakerTarget(string? target) =>
+        !string.IsNullOrWhiteSpace(target) && _graphMakerTargets.Contains(target);
+
     private void HandleModuleSnapshotChanged()
     {
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        CloseAuxiliaryWindows();
+        base.OnClosed(e);
+
+        if (Application.Current is not null)
+        {
+            Application.Current.Dispatcher.BeginInvoke(
+                DispatcherPriority.Background,
+                new Action(() =>
+                {
+                    if (Application.Current is not null)
+                    {
+                        Application.Current.Shutdown();
+                    }
+                }));
+        }
     }
 
     private global::DataMaker.MainWindow GetDataMakerWindow() => _dataMakerWindow ??= new global::DataMaker.MainWindow();
@@ -415,6 +536,45 @@ public partial class MainWindow : Window
             {
                 Source = GraphMakerThemeUri
             });
+        }
+    }
+
+    private void CloseAuxiliaryWindows()
+    {
+        CloseWindowInstance(_dataMakerWindow);
+        CloseWindowInstance(_diskTreeWindow);
+        CloseWindowInstance(_videoConverterWindow);
+
+        if (Application.Current is null)
+        {
+            return;
+        }
+
+        foreach (Window window in Application.Current.Windows.OfType<Window>().ToList())
+        {
+            if (ReferenceEquals(window, this))
+            {
+                continue;
+            }
+
+            CloseWindowInstance(window);
+        }
+    }
+
+    private static void CloseWindowInstance(Window? window)
+    {
+        if (window is null)
+        {
+            return;
+        }
+
+        try
+        {
+            window.Close();
+        }
+        catch
+        {
+            // Best-effort shutdown cleanup for hosted/hidden windows.
         }
     }
 }

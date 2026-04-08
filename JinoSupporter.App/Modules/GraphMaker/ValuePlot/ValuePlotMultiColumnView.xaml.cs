@@ -20,7 +20,7 @@ using MessageBox = System.Windows.MessageBox;
 
 namespace GraphMaker
 {
-    public partial class ValuePlotMultiColumnView : UserControl
+    public partial class ValuePlotMultiColumnView : GraphViewBase
     {
         private readonly ObservableCollection<FileInfo_DailySampling> _loadedFiles = new();
         private readonly ObservableCollection<SelectableColumnOption> _columnOptions = new();
@@ -32,8 +32,6 @@ namespace GraphMaker
         private bool _combinedYAxisView;
         private string _combinedXAxisColumn = string.Empty;
         private bool _combinedXAxisIsDate = true;
-        public event Action? WebModuleSnapshotChanged;
-
         public ValuePlotMultiColumnView()
         {
             InitializeComponent();
@@ -877,9 +875,5 @@ namespace GraphMaker
             return GetWebModuleSnapshot();
         }
 
-        private void NotifyWebModuleSnapshotChanged()
-        {
-            WebModuleSnapshotChanged?.Invoke();
-        }
     }
 }

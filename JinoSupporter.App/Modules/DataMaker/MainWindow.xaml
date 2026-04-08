@@ -102,8 +102,7 @@
                 </Grid.ColumnDefinitions>
 
                 <DockPanel Grid.Column="0" LastChildFill="True" Margin="0,0,12,0">
-                    <TextBlock Text="ACTIONS" Style="{StaticResource SectionHeader}" DockPanel.Dock="Top"/>
-                        <WrapPanel ItemHeight="32">
+                        <WrapPanel>
                         <Button x:Name="CT_BT_SHOW_GETDATA" Content="Get Data" Style="{StaticResource AccentButton}" Margin="0,3,8,3" Click="CT_BT_SHOW_GETDATA_Click"/>
                         <Button x:Name="CT_BT_LOAD" Content="Load DB..." Style="{StaticResource AccentButton}" Margin="0,3,8,3" Click="CT_BT_LOAD_Click"/>
                         <Button x:Name="CT_BT_MAPPING" Content="Mapping" Style="{StaticResource ModernButton}" Margin="0,3,8,3" Click="CT_BT_MAPPING_Click"/>
@@ -112,12 +111,13 @@
                                 <SolidColorBrush Color="White"/>
                             </Button.Background>
                         </Button>
-                        <Button x:Name="CT_BT_GETREPORT" Content="Get Report" Style="{StaticResource AccentButton}" Margin="12,3,8,3" Click="CT_BT_GETREPORT_Click">
+                        <Separator Width="1" Height="20" Margin="4,3,4,3" Background="#D5DFEC"/>
+                        <Button x:Name="CT_BT_GETREPORT" Content="Get Report" Style="{StaticResource AccentButton}" Margin="0,3,8,3" Click="CT_BT_GETREPORT_Click">
                             <Button.Background>
                                 <SolidColorBrush Color="White"/>
                             </Button.Background>
                         </Button>
-                        <Button x:Name="CT_BT_SETTINGS" Content="Settings" Style="{StaticResource AccentButton}" Margin="12,3,0,3" Click="CT_BT_SETTINGS_Click">
+                        <Button x:Name="CT_BT_SETTINGS" Content="Settings" Style="{StaticResource AccentButton}" Margin="0,3,0,3" Click="CT_BT_SETTINGS_Click">
                             <Button.Background>
                                 <SolidColorBrush Color="White"/>
                             </Button.Background>
@@ -166,7 +166,7 @@
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="600"/>
+                <ColumnDefinition Width="380"/>
             </Grid.ColumnDefinitions>
 
             <Grid Grid.Column="0">

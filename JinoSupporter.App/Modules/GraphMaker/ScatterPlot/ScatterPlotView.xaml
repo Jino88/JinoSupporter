@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="GraphMaker.ScatterPlotView"
+<local:GraphViewBase x:Class="GraphMaker.ScatterPlotView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -13,7 +13,8 @@
                BasedOn="{StaticResource AppComboBoxBaseStyle}">
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Padding" Value="4,0" />
-            <Setter Property="MinHeight" Value="22" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="MinHeight" Value="20" />
         </Style>
         <Style TargetType="{x:Type ComboBoxItem}"
                BasedOn="{StaticResource AppComboBoxItemBaseStyle}">
@@ -21,12 +22,14 @@
             <Setter Property="Padding" Value="4,0" />
             <Setter Property="MinHeight" Value="20" />
         </Style>
-        <Style TargetType="{x:Type TextBox}">
+        <Style TargetType="{x:Type TextBox}"
+               BasedOn="{StaticResource AppTextBoxBaseStyle}">
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Padding" Value="4,0" />
             <Setter Property="MinHeight" Value="22" />
         </Style>
-        <Style TargetType="{x:Type ListBoxItem}">
+        <Style TargetType="{x:Type ListBoxItem}"
+               BasedOn="{StaticResource AppListBoxItemBaseStyle}">
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Padding" Value="4,0" />
             <Setter Property="MinHeight" Value="20" />
@@ -50,7 +53,8 @@
         <Style x:Key="CompactComboBoxStyle"
                TargetType="{x:Type ComboBox}"
                BasedOn="{StaticResource {x:Type ComboBox}}">
-            <Setter Property="MinHeight" Value="22" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="MinHeight" Value="20" />
             <Setter Property="Padding" Value="4,0" />
         </Style>
     </UserControl.Resources>
@@ -148,7 +152,7 @@
                               HorizontalScrollBarVisibility="Disabled">
                     <Grid Margin="8">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="430" />
+                            <ColumnDefinition Width="340" />
                             <ColumnDefinition Width="12" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
@@ -206,7 +210,7 @@
                             <GroupBox Header="Column Groups + REF/UPPER/LOWER Limit">
                                 <Grid Margin="10">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="320" />
+                                        <ColumnDefinition Width="240" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
 
@@ -215,7 +219,7 @@
                                                    FontWeight="SemiBold"
                                                    Margin="0,0,0,6" />
                                         <ListBox x:Name="UnassignedColumnsListBox"
-                                                 Height="520"
+                                                 MinHeight="200"
                                                  SelectionMode="Extended"
                                                  PreviewMouseLeftButtonDown="UnassignedColumnsListBox_PreviewMouseLeftButtonDown"
                                                  PreviewMouseMove="UnassignedColumnsListBox_PreviewMouseMove" />
@@ -291,4 +295,4 @@
             </GroupBox>
         </Grid>
     </Grid>
-</UserControl>
+</local:GraphViewBase>

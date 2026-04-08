@@ -28,13 +28,8 @@ namespace GraphMaker
         public Dictionary<string, string> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     }
 
-    public class ProcessTrendFileInfo
+    public class ProcessTrendFileInfo : GraphFileInfoBase
     {
-        public string Name { get; set; } = string.Empty;
-        public string FilePath { get; set; } = string.Empty;
-        public DataTable? FullData { get; set; }
-        public string Delimiter { get; set; } = "\t";
-        public int HeaderRowNumber { get; set; } = 1;
         public bool UseFirstColumnAsSampleId { get; set; }
         public int MaxSamples { get; set; } = 100;
         public int SavedPlotColorIndex { get; set; }
@@ -60,7 +55,7 @@ namespace GraphMaker
         public int GroupId { get; set; } = 1;
     }
 
-    public partial class ProcessFlowTrendView : UserControl, INotifyPropertyChanged
+    public partial class ProcessFlowTrendView : GraphViewBase
     {
         private sealed class ProcessTrendSavedState
         {
@@ -138,9 +133,6 @@ namespace GraphMaker
             }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        public event Action? WebModuleSnapshotChanged;
-
         public ProcessFlowTrendView()
         {
             InitializeComponent();
@@ -152,10 +144,6 @@ namespace GraphMaker
             NotifyWebModuleSnapshotChanged();
         }
 
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
 
         private void InitializeColorOptions()
         {
@@ -242,6 +230,28 @@ namespace GraphMaker
             {
                 HandleWebDroppedFiles(dialog.FileNames);
             }
+        }
+
+        private void FileDropBorder_DragEnter(object sender, DragEventArgs e)
+        {
+            bool hasFiles = e.Data.GetDataPresent(DataFormats.FileDrop);
+            e.Effects = hasFiles ? DragDropEffects.Copy : DragDropEffects.None;
+            e.Handled = true;
+        }
+
+        private void FileDropBorder_Drop(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                return;
+            }
+
+            if (e.Data.GetData(DataFormats.FileDrop) is string[] filePaths && filePaths.Length > 0)
+            {
+                HandleWebDroppedFiles(filePaths);
+            }
+
+            e.Handled = true;
         }
 
         private void LoadFiles(IEnumerable<string> filePaths)
@@ -1254,14 +1264,20 @@ namespace GraphMaker
             {
                 foreach (var pair in entry.YAxisGroups.OrderBy(pair => pair.Key))
                 {
-                    var rowGrid = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+                    var rowGrid = new Grid
+                    {
+                        Margin = new Thickness(0, 0, 0, 2),
+                        Height = 22
+                    };
                     rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                    rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+                    rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(118) });
 
                     var textBlock = new TextBlock
                     {
                         Text = $"X: {entry.Name} -> Y: {_processNames[pair.Key]}",
-                        VerticalAlignment = System.Windows.VerticalAlignment.Center
+                        VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                        Margin = new Thickness(0, 0, 6, 0),
+                        FontSize = 11
                     };
 
                     var comboBox = new ComboBox
@@ -1269,7 +1285,12 @@ namespace GraphMaker
                         ItemsSource = _pairGroupNames.OrderBy(g => g.Key).ToList(),
                         DisplayMemberPath = "Value",
                         SelectedValuePath = "Key",
-                        SelectedValue = pair.Value
+                        SelectedValue = pair.Value,
+                        Height = 20,
+                        MinHeight = 20,
+                        Padding = new Thickness(4, 0, 4, 0),
+                        FontSize = 11,
+                        VerticalAlignment = System.Windows.VerticalAlignment.Center
                     };
                     int yIndex = pair.Key;
                     comboBox.SelectionChanged += (_, _) =>
@@ -2448,10 +2469,5 @@ namespace GraphMaker
                 .ToArray();
         }
 
-        private void NotifyWebModuleSnapshotChanged()
-        {
-            WebModuleSnapshotChanged?.Invoke();
-        }
     }
 }
-
