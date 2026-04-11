@@ -1,0 +1,84 @@
+@page "/admin/settings"
+@rendermode InteractiveServer
+@using JinoSupporter.Web.Services
+@inject WebRepository Repo
+
+<PageTitle>App Settings</PageTitle>
+
+<AuthorizeView Roles="Admin">
+    <NotAuthorized>
+        <div class="alert alert-danger">Access denied.</div>
+    </NotAuthorized>
+    <Authorized>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h5 class="fw-bold mb-0">App Settings</h5>
+</div>
+
+<div class="card mb-4" style="max-width:560px;">
+    <div class="card-header">Claude API</div>
+    <div class="card-body">
+        <div class="mb-3">
+            <label class="form-label fw-semibold">API Key</label>
+            <div class="input-group">
+                <input type="@(_showKey ? "text" : "password")"
+                       class="form-control font-monospace"
+                       placeholder="sk-ant-api03-..."
+                       @bind="_apiKey" />
+                <button class="btn btn-outline-secondary" type="button"
+                        @onclick="() => _showKey = !_showKey">
+                    @(_showKey ? "Hide" : "Show")
+                </button>
+            </div>
+            <div class="form-text">저장하면 DB에 암호화 없이 보관됩니다. 로컬 네트워크 전용 서버에서만 사용하세요.</div>
+        </div>
+        <button class="btn btn-primary" @onclick="SaveAsync" disabled="@_saving">
+            @(_saving ? "Saving…" : "Save")
+        </button>
+        @if (_saved)
+        {
+            <span class="ms-3 text-success fw-semibold">Saved.</span>
+        }
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="alert alert-danger mt-2">@_error</div>
+        }
+    </div>
+</div>
+
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    private string _apiKey  = string.Empty;
+    private bool   _showKey = false;
+    private bool   _saving  = false;
+    private bool   _saved   = false;
+    private string _error   = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        _apiKey = Repo.GetSetting("Claude:ApiKey") ?? string.Empty;
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        _saved  = false;
+        _error  = string.Empty;
+        try
+        {
+            Repo.SetSetting("Claude:ApiKey", _apiKey.Trim());
+            _saved = true;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+        await Task.CompletedTask;
+    }
+}

@@ -12,13 +12,14 @@ public sealed class ClaudeService
     private readonly HttpClient _http;
     private readonly string     _apiKey;
 
-    public ClaudeService(HttpClient http, IConfiguration config)
+    public ClaudeService(HttpClient http, IConfiguration config, WebRepository repo)
     {
         _http = http;
-        string? configured = config["Claude:ApiKey"];
-        _apiKey = !string.IsNullOrWhiteSpace(configured)
-            ? configured
-            : WpfSettingsReader.TryGetClaudeApiKey() ?? string.Empty;
+        // Priority: DB → WpfSettingsReader (workhost-settings.json) → appsettings.json
+        string? fromDb  = repo.GetSetting("Claude:ApiKey");
+        string? fromWpf = WpfSettingsReader.TryGetClaudeApiKey();
+        string? fromCfg = config["Claude:ApiKey"];
+        _apiKey = fromDb ?? fromWpf ?? fromCfg ?? string.Empty;
     }
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(_apiKey);

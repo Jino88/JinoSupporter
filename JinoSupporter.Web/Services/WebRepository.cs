@@ -182,6 +182,11 @@ public sealed class WebRepository
                 Role         TEXT    NOT NULL DEFAULT 'Viewer',
                 CreatedAt    TEXT    NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS AppSettings (
+                Key   TEXT PRIMARY KEY NOT NULL,
+                Value TEXT NOT NULL DEFAULT ''
+            );
             """;
         cmd.ExecuteNonQuery();
         MigrateSchema(conn);
@@ -203,6 +208,31 @@ public sealed class WebRepository
             alter.CommandText = "ALTER TABLE Reports ADD COLUMN DatasetNames TEXT NOT NULL DEFAULT '';";
             alter.ExecuteNonQuery();
         }
+    }
+
+    // ── App Settings ──────────────────────────────────────────────────────────
+
+    public string? GetSetting(string key)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Value FROM AppSettings WHERE Key = @k;";
+        cmd.Parameters.AddWithValue("@k", key);
+        object? result = cmd.ExecuteScalar();
+        return result is string s && s.Length > 0 ? s : null;
+    }
+
+    public void SetSetting(string key, string value)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO AppSettings (Key, Value) VALUES (@k, @v)
+            ON CONFLICT(Key) DO UPDATE SET Value = excluded.Value;
+            """;
+        cmd.Parameters.AddWithValue("@k", key);
+        cmd.Parameters.AddWithValue("@v", value);
+        cmd.ExecuteNonQuery();
     }
 
     // ── Datasets ──────────────────────────────────────────────────────────────
