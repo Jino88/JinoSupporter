@@ -1,6 +1,7 @@
 <Window x:Class="GraphMaker.NoXMultiYLimitRecommendationWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
@@ -39,7 +40,7 @@
                 <TextBlock Text="Target NG Rate (%)"
                            VerticalAlignment="Center"
                            FontWeight="SemiBold" />
-                <TextBox Grid.Column="1"
+                <app:AppTextBox Grid.Column="1"
                          x:Name="TargetNgRateTextBox"
                          Margin="8,0,0,0"
                          VerticalContentAlignment="Center"
@@ -87,7 +88,7 @@
             </Border>
         </UniformGrid>
 
-        <DataGrid Grid.Row="3"
+        <app:AppDataGrid Grid.Row="3"
                   x:Name="RecommendationGrid"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
@@ -96,7 +97,7 @@
                   IsReadOnly="True"
                   HeadersVisibility="Column"
                   GridLinesVisibility="Horizontal">
-            <DataGrid.Columns>
+            <app:AppDataGrid.Columns>
                 <DataGridTextColumn Header="Area" Binding="{Binding ColumnName}" Width="140" />
                 <DataGridTextColumn Header="Count" Binding="{Binding Count}" Width="80" />
                 <DataGridTextColumn Header="Avg" Binding="{Binding Avg, StringFormat=F4}" Width="90" />
@@ -108,14 +109,14 @@
                 <DataGridTextColumn Header="Pred StdDev" Binding="{Binding TrendStdDev, StringFormat=F4}" Width="100" />
                 <DataGridTextColumn Header="Need LSL (Trend)" Binding="{Binding RequiredLowerTrend, StringFormat=F4}" Width="120" />
                 <DataGridTextColumn Header="Need USL (Trend)" Binding="{Binding RequiredUpperTrend, StringFormat=F4}" Width="120" />
-            </DataGrid.Columns>
-        </DataGrid>
+            </app:AppDataGrid.Columns>
+        </app:AppDataGrid>
 
         <StackPanel Grid.Row="4"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Margin="0,12,0,0">
-            <Button Content="Close"
+            <app:AppButton Content="Close"
                     Width="100"
                     Click="CloseButton_Click" />
         </StackPanel>

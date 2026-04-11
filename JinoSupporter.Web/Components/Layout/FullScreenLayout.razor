@@ -1,0 +1,33 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Nav
+
+<div style="display:flex; height:100vh; overflow:hidden; background:#f1f5f9;">
+
+    <!-- Sidebar (replicates MainLayout sidebar styles without scoped CSS) -->
+    <div style="width:230px; flex-shrink:0; overflow-y:auto; height:100vh;
+                background:linear-gradient(180deg,#0c1322 0%,#12193a 55%,#1e1244 100%);
+                display:flex; flex-direction:column;">
+        <NavMenu />
+    </div>
+
+    <!-- Full-height content area -->
+    <div style="flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; padding:8px;">
+        <AuthorizeView>
+            <Authorized>
+                @Body
+            </Authorized>
+            <NotAuthorized>
+                @{ RedirectToLogin(); }
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
+
+</div>
+
+@code {
+    private void RedirectToLogin()
+    {
+        string encoded = Uri.EscapeDataString(Nav.Uri);
+        Nav.NavigateTo($"/login?returnUrl={encoded}", forceLoad: true);
+    }
+}

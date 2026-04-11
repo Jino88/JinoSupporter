@@ -1,6 +1,7 @@
 <UserControl x:Class="GraphMaker.DateNoHeaderMultiYView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
@@ -11,69 +12,52 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0.72*" />
+            <ColumnDefinition Width="12" />
+            <ColumnDefinition Width="1.28*" />
+        </Grid.ColumnDefinitions>
 
-        <GroupBox Grid.Row="0" Header="Workflow" Style="{StaticResource FilesSectionGroupBoxStyle}">
+        <GroupBox Grid.Row="0" Grid.Column="0" Header="Workflow" Style="{StaticResource FilesSectionGroupBoxStyle}">
             <Grid Style="{StaticResource FilesSectionInnerGridStyle}">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2.2*" />
-                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0"
-                        Style="{StaticResource DropZoneBorderStyle}"
-                        Margin="0,0,8,0"
-                        MinHeight="88"
-                        AllowDrop="True"
-                        Drop="DropZone_Drop"
-                        DragEnter="DropZone_DragEnter"
-                        DragLeave="DropZone_DragLeave"
-                        DragOver="DropZone_DragOver">
-                    <StackPanel>
-                        <TextBlock x:Name="DropZoneText"
-                                   Style="{StaticResource FileDropHintTextStyle}"
-                                   Text="Drag .txt / .csv files without header. First column must be Date."
-                                   />
-                        <Button Content="Browse"
-                                Width="120"
-                                Margin="0,8,0,0"
-                                HorizontalAlignment="Center"
-                                Click="BrowseButton_Click" />
-                    </StackPanel>
-                </Border>
+                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                    <app:AppFileDropBox HintText="Drag .txt / .csv files without header. First column must be Date."
+                            BrowseButtonText="Browse"
+                            AllowMultiple="True"
+                            FilesSelected="FileDropBox_FilesSelected" />
+                    <TextBlock Margin="0,8,0,0"
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource TextSecondaryBrush}">
+                        <Run Text="File: " FontWeight="SemiBold" />
+                        <Run x:Name="CurrentFileNameText" Text="(No file)" />
+                    </TextBlock>
+                    <TextBlock Margin="0,4,0,0"
+                               Foreground="{StaticResource TextSecondaryBrush}">
+                        <Run Text="Rows: " FontWeight="SemiBold" />
+                        <Run x:Name="RowCountText" Text="0" />
+                        <Run Text=" | Cols: " FontWeight="SemiBold" />
+                        <Run x:Name="ColumnCountText" Text="0" />
+                    </TextBlock>
+                    <TextBlock x:Name="StatusText"
+                               Margin="0,4,0,0"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               TextWrapping="Wrap"
+                               Text="Drop file into the workflow area or click Browse to load data." />
+                    <app:AppListBox x:Name="FileListBox"
+                             Visibility="Collapsed"
+                             SelectionChanged="FileListBox_SelectionChanged"
+                             DisplayMemberPath="Name" />
+                </StackPanel>
 
-                <GroupBox Grid.Column="1"
-                          Header="Preview"
-                          Margin="0,0,8,0"
-                          Style="{StaticResource PreviewGroupBoxStyle}">
-                    <Grid Margin="8">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-
-                        <StackPanel>
-                            <TextBlock>
-                                <Run Text="Selected File: " FontWeight="SemiBold" />
-                                <Run Text="{Binding SelectedItem.Name, ElementName=FileListBox, FallbackValue=(None)}" />
-                            </TextBlock>
-                            <TextBlock Margin="0,4,0,0"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
-                                       Text="Loaded files for the current workflow." />
-                        </StackPanel>
-
-                        <ListBox Grid.Row="1"
-                                 x:Name="FileListBox"
-                                 Margin="0,8,0,0"
-                                 MinHeight="88"
-                                 SelectionChanged="FileListBox_SelectionChanged"
-                                 DisplayMemberPath="Name" />
-                    </Grid>
-                </GroupBox>
-
-                <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                    <Button Content="Remove Selected" Width="130" Click="RemoveFileButton_Click" />
-                    <Button Content="Generate Graph"
+                <StackPanel Grid.Column="1" VerticalAlignment="Top">
+                    <app:AppButton Content="Remove Selected" Width="130" Click="RemoveFileButton_Click" />
+                    <app:AppButton Content="Generate Graph"
                             Width="130"
                             Margin="0,8,0,0"
                             Style="{StaticResource PrimaryButtonStyle}"
@@ -82,21 +66,15 @@
             </Grid>
         </GroupBox>
 
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*" />
-                <ColumnDefinition Width="2*" />
-            </Grid.ColumnDefinitions>
+        <GroupBox Grid.Row="1" Grid.Column="0" Header="Data Grid" Margin="0,0,0,8" Style="{StaticResource PreviewGroupBoxStyle}">
+            <app:AppDataGrid x:Name="DataPreviewGrid"
+                      AutoGenerateColumns="True"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      IsReadOnly="True" />
+        </GroupBox>
 
-            <GroupBox Grid.Column="0" Header="Data Grid" Style="{StaticResource PreviewGroupBoxStyle}">
-                <DataGrid x:Name="DataPreviewGrid"
-                          AutoGenerateColumns="True"
-                          CanUserAddRows="False"
-                          CanUserDeleteRows="False"
-                          IsReadOnly="True" />
-            </GroupBox>
-
-            <GroupBox Grid.Column="1" Header="Settings" Style="{StaticResource SettingsGroupBoxStyle}">
+        <GroupBox Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" Header="Settings" Style="{StaticResource SettingsGroupBoxStyle}">
                 <ScrollViewer Style="{StaticResource SettingsScrollViewerStyle}">
                     <StackPanel Style="{StaticResource SettingsStackPanelStyle}">
                         <TextBlock Text="File Format" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
@@ -112,44 +90,43 @@
 
                         <Separator Margin="0,10,0,8" />
 
-                        <CheckBox x:Name="ApplyToAllColumnsCheckBox"
+                        <app:AppCheckBox x:Name="ApplyToAllColumnsCheckBox"
                                   Content="Apply same limits to all columns"
                                   IsChecked="True" />
 
                         <DockPanel Style="{StaticResource SettingsFieldDockPanelStyle}">
                             <TextBlock Text="Spec" Style="{StaticResource SettingsFieldLabelTextStyle}" Width="70" />
-                            <TextBox x:Name="SpecValueTextBox" Height="28" />
+                            <app:AppTextBox x:Name="SpecValueTextBox" Height="28" />
                         </DockPanel>
                         <DockPanel Style="{StaticResource SettingsFieldDockPanelStyle}">
                             <TextBlock Text="Upper" Style="{StaticResource SettingsFieldLabelTextStyle}" Width="70" />
-                            <TextBox x:Name="UpperLimitValueTextBox" Height="28" />
+                            <app:AppTextBox x:Name="UpperLimitValueTextBox" Height="28" />
                         </DockPanel>
                         <DockPanel Style="{StaticResource SettingsFieldDockPanelStyle}">
                             <TextBlock Text="Lower" Style="{StaticResource SettingsFieldLabelTextStyle}" Width="70" />
-                            <TextBox x:Name="LowerLimitValueTextBox" Height="28" />
+                            <app:AppTextBox x:Name="LowerLimitValueTextBox" Height="28" />
                         </DockPanel>
-                        <Button Content="Apply Limits"
+                        <app:AppButton Content="Apply Limits"
                                 Margin="0,8,0,0"
                                 Click="ApplyLimitsButton_Click" />
 
                         <Separator Margin="0,10,0,8" />
 
                         <TextBlock Text="Columns To Plot" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
-                        <ListBox x:Name="ColumnOptionListBox"
+                        <app:AppListBox x:Name="ColumnOptionListBox"
                                  Margin="0,6,0,0"
                                  Style="{StaticResource ColumnSelectionListBoxStyle}">
-                            <ListBox.ItemTemplate>
+                            <app:AppListBox.ItemTemplate>
                                 <DataTemplate>
                                     <DockPanel Style="{StaticResource ColumnOptionItemDockPanelStyle}">
-                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Center" />
+                                        <app:AppCheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Center" />
                                         <TextBlock Text="{Binding ColumnName}" Margin="8,0,0,0" VerticalAlignment="Center" />
                                     </DockPanel>
                                 </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                            </app:AppListBox.ItemTemplate>
+                        </app:AppListBox>
                     </StackPanel>
                 </ScrollViewer>
-            </GroupBox>
-        </Grid>
+        </GroupBox>
     </Grid>
 </UserControl>

@@ -1,6 +1,7 @@
-﻿<Window x:Class="GraphMaker.MainWindow"
+<Window x:Class="GraphMaker.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
@@ -51,23 +52,23 @@
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    FontWeight="SemiBold"
                                    Margin="2,0,0,10" />
-                        <Button x:Name="ScatterPlotButton"
+                        <app:AppButton x:Name="ScatterPlotButton"
                                 Content="SPL Graph Plot"
                                 Style="{StaticResource NavButtonStyle}"
                                 Click="ScatterPlotButton_Click" />
-                        <Button x:Name="ValuePlotButton"
+                        <app:AppButton x:Name="ValuePlotButton"
                                 Content="Daily Sampling Scatter"
                                 Style="{StaticResource NavButtonStyle}"
                                 Click="ValuePlotButton_Click" />
-                        <Button x:Name="UnifiedMultiYButton"
+                        <app:AppButton x:Name="UnifiedMultiYButton"
                                 Content="SingleX / MultiY / SingleY"
                                 Style="{StaticResource NavButtonStyle}"
                                 Click="UnifiedMultiYButton_Click" />
-                        <Button x:Name="HeatMapButton"
+                        <app:AppButton x:Name="HeatMapButton"
                                 Content="Generate Heatmap"
                                 Style="{StaticResource NavButtonStyle}"
                                 Click="HeatMapButton_Click" />
-                        <Button x:Name="AudioBusDataButton"
+                        <app:AppButton x:Name="AudioBusDataButton"
                                 Content="AudioBus Data"
                                 Style="{StaticResource NavButtonStyle}"
                                 Click="AudioBusDataButton_Click" />

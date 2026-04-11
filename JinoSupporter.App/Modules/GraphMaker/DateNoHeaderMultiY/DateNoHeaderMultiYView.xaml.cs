@@ -8,10 +8,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using Microsoft.Win32;
-using DataFormats = System.Windows.DataFormats;
-using DragDropEffects = System.Windows.DragDropEffects;
-using DragEventArgs = System.Windows.DragEventArgs;
+using JinoSupporter.Controls;
 using MessageBox = System.Windows.MessageBox;
 using UserControl = System.Windows.Controls.UserControl;
 
@@ -29,25 +26,14 @@ namespace GraphMaker
             InitializeComponent();
             FileListBox.ItemsSource = _loadedFiles;
             ColumnOptionListBox.ItemsSource = _columnOptions;
+            UpdateWorkflowSummary();
         }
 
-        private void BrowseButton_Click(object sender, RoutedEventArgs e)
+        private void FileDropBox_FilesSelected(object sender, FilesSelectedEventArgs e)
         {
-            var dialog = new OpenFileDialog
+            foreach (var path in e.FilePaths)
             {
-                Title = "Select Data Files",
-                Filter = "Text Files (*.txt)|*.txt|CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
-                Multiselect = true
-            };
-
-            if (dialog.ShowDialog() != true)
-            {
-                return;
-            }
-
-            foreach (string filePath in dialog.FileNames)
-            {
-                LoadFile(filePath);
+                LoadFile(path);
             }
         }
 
@@ -76,6 +62,7 @@ namespace GraphMaker
             {
                 DataPreviewGrid.ItemsSource = null;
                 _columnOptions.Clear();
+                UpdateWorkflowSummary();
                 return;
             }
 
@@ -97,9 +84,11 @@ namespace GraphMaker
                     name => !string.Equals(name, "Date", StringComparison.OrdinalIgnoreCase));
                 DataPreviewGrid.ItemsSource = _currentFile.FullData?.DefaultView;
                 BindColumnOptions(_currentFile);
+                UpdateWorkflowSummary();
             }
             catch (Exception ex)
             {
+                StatusText.Text = $"Failed to load file: {ex.Message}";
                 MessageBox.Show($"Failed to load file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -193,6 +182,7 @@ namespace GraphMaker
                 _currentFile = null;
                 DataPreviewGrid.ItemsSource = null;
                 _columnOptions.Clear();
+                UpdateWorkflowSummary();
                 return;
             }
 
@@ -212,49 +202,6 @@ namespace GraphMaker
 
             _currentFile.FullData = null!;
             LoadAndBindCurrentFile();
-        }
-
-        private void DropZone_Drop(object sender, DragEventArgs e)
-        {
-            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                return;
-            }
-
-            if (e.Data.GetData(DataFormats.FileDrop) is not string[] files)
-            {
-                return;
-            }
-
-            foreach (string file in files)
-            {
-                string ext = Path.GetExtension(file).ToLowerInvariant();
-                if (ext == ".txt" || ext == ".csv")
-                {
-                    LoadFile(file);
-                }
-            }
-        }
-
-        private void DropZone_DragEnter(object sender, DragEventArgs e)
-        {
-            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                return;
-            }
-
-            e.Effects = DragDropEffects.Copy;
-            DropZoneText.Foreground = new SolidColorBrush(Colors.DodgerBlue);
-        }
-
-        private void DropZone_DragLeave(object sender, DragEventArgs e)
-        {
-            DropZoneText.Foreground = (System.Windows.Media.Brush)FindResource("TextSecondaryBrush");
-        }
-
-        private void DropZone_DragOver(object sender, DragEventArgs e)
-        {
-            e.Handled = true;
         }
 
         private FileInfo_DailySampling BuildCombinedFile(FileInfo_DailySampling sourceFile, IReadOnlyCollection<string> selectedColumns)
@@ -304,6 +251,16 @@ namespace GraphMaker
             };
             combinedFile.SavedColumnLimits["Value"] = combinedLimit;
             return combinedFile;
+        }
+
+        private void UpdateWorkflowSummary()
+        {
+            CurrentFileNameText.Text = _currentFile?.Name ?? "(No file)";
+            RowCountText.Text = _currentFile?.FullData?.Rows.Count.ToString("N0") ?? "0";
+            ColumnCountText.Text = _currentFile?.FullData?.Columns.Count.ToString() ?? "0";
+            StatusText.Text = _loadedFiles.Count == 0
+                ? "Drop file into the workflow area or click Browse to load data."
+                : $"Loaded {_loadedFiles.Count:N0} file(s).";
         }
     }
 }

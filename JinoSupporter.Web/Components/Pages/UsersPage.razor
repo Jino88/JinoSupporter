@@ -1,0 +1,186 @@
+@page "/admin/users"
+@rendermode InteractiveServer
+@using JinoSupporter.Web.Services
+@inject WebRepository Repo
+
+<PageTitle>User Management</PageTitle>
+
+<AuthorizeView Roles="Admin">
+    <NotAuthorized>
+        <div class="alert alert-danger">Access denied.</div>
+    </NotAuthorized>
+    <Authorized>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h5 class="fw-bold mb-0">User Management</h5>
+</div>
+
+<!-- User list -->
+<div class="card mb-4">
+    <div class="card-header">Users</div>
+    <div class="card-body p-0">
+        <table class="table table-bordered mb-0">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Created</th>
+                    <th style="width:180px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (UserRecord u in _users)
+                {
+                    <tr>
+                        <td>@u.Username</td>
+                        <td>
+                            <select class="form-select form-select-sm" style="width:auto;"
+                                    value="@u.Role"
+                                    @onchange="e => ChangeRole(u, e.Value?.ToString() ?? u.Role)"
+                                    disabled="@(u.Username.Equals(_currentUser, StringComparison.OrdinalIgnoreCase))">
+                                @foreach (string r in AppRoles.All)
+                                {
+                                    <option value="@r" selected="@(u.Role == r)">@r</option>
+                                }
+                            </select>
+                        </td>
+                        <td class="text-muted small">@u.CreatedAt</td>
+                        <td>
+                            <button class="btn btn-outline-secondary btn-sm me-1"
+                                    @onclick="() => StartResetPassword(u)">
+                                Reset PW
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm"
+                                    @onclick="() => DeleteUser(u)"
+                                    disabled="@(u.Username.Equals(_currentUser, StringComparison.OrdinalIgnoreCase))">
+                                Remove
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add user -->
+<div class="card mb-3">
+    <div class="card-header">Add User</div>
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label">Username</label>
+                <input @bind="_newUsername" class="form-control form-control-sm" placeholder="username" />
+            </div>
+            <div class="col-auto">
+                <label class="form-label">Password</label>
+                <input @bind="_newPassword" type="password" class="form-control form-control-sm" placeholder="password" />
+            </div>
+            <div class="col-auto">
+                <label class="form-label">Role</label>
+                <select @bind="_newRole" class="form-select form-select-sm">
+                    @foreach (string r in AppRoles.All)
+                    {
+                        <option value="@r">@r</option>
+                    }
+                </select>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary btn-sm" @onclick="AddUser">Add</button>
+            </div>
+        </div>
+        @if (!string.IsNullOrEmpty(_addError))
+        {
+            <div class="alert alert-danger py-1 mt-2 small mb-0">@_addError</div>
+        }
+    </div>
+</div>
+
+<!-- Reset password modal -->
+@if (_resetTarget is not null)
+{
+    <div class="paste-modal-backdrop" @onclick="() => _resetTarget = null">
+        <div class="paste-modal" @onclick:stopPropagation="true" style="min-width:320px;">
+            <div class="paste-modal-title">Reset Password — @_resetTarget.Username</div>
+            <div class="paste-modal-body">
+                <input @bind="_resetPassword" type="password" class="form-control mb-3"
+                       placeholder="New password" />
+                <div class="d-flex gap-2 justify-content-center">
+                    <button class="btn btn-primary btn-sm" @onclick="ConfirmResetPassword">Save</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="() => _resetTarget = null">Cancel</button>
+                </div>
+                @if (!string.IsNullOrEmpty(_resetError))
+                {
+                    <div class="alert alert-danger py-1 mt-2 small mb-0">@_resetError</div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    private List<UserRecord> _users = [];
+    private string _currentUser = string.Empty;
+
+    private string _newUsername = string.Empty;
+    private string _newPassword = string.Empty;
+    private string _newRole     = AppRoles.Viewer;
+    private string _addError    = string.Empty;
+
+    private UserRecord? _resetTarget;
+    private string _resetPassword = string.Empty;
+    private string _resetError    = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentUser = (await AuthState).User.Identity?.Name ?? string.Empty;
+        Load();
+    }
+
+    private void Load() => _users = Repo.GetAllUsers();
+
+    private void ChangeRole(UserRecord u, string newRole)
+    {
+        Repo.UpdateUserRole(u.Id, newRole);
+        Load();
+    }
+
+    private void DeleteUser(UserRecord u)
+    {
+        Repo.DeleteUser(u.Id);
+        Load();
+    }
+
+    private void AddUser()
+    {
+        _addError = string.Empty;
+        if (string.IsNullOrWhiteSpace(_newUsername)) { _addError = "Username required."; return; }
+        if (string.IsNullOrWhiteSpace(_newPassword)) { _addError = "Password required."; return; }
+        try
+        {
+            Repo.AddUser(_newUsername.Trim(), AuthService.HashPassword(_newPassword), _newRole);
+            _newUsername = _newPassword = string.Empty;
+            _newRole = AppRoles.Viewer;
+            Load();
+        }
+        catch (Exception ex)
+        {
+            _addError = ex.Message.Contains("UNIQUE") ? "Username already exists." : ex.Message;
+        }
+    }
+
+    private void StartResetPassword(UserRecord u) { _resetTarget = u; _resetPassword = _resetError = string.Empty; }
+
+    private void ConfirmResetPassword()
+    {
+        _resetError = string.Empty;
+        if (string.IsNullOrWhiteSpace(_resetPassword)) { _resetError = "Password required."; return; }
+        Repo.UpdateUserPassword(_resetTarget!.Id, AuthService.HashPassword(_resetPassword));
+        _resetTarget = null;
+    }
+}

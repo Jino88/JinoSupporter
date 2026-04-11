@@ -18,10 +18,8 @@ using OxyPlot.Axes;
 using OxyPlot.Series;
 using Color = System.Windows.Media.Color;
 using Colors = System.Windows.Media.Colors;
+using JinoSupporter.Controls;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
-using DataFormats = System.Windows.DataFormats;
-using DragDropEffects = System.Windows.DragDropEffects;
-using DragEventArgs = System.Windows.DragEventArgs;
 using MessageBox = System.Windows.MessageBox;
 using UserControl = System.Windows.Controls.UserControl;
 
@@ -99,6 +97,11 @@ namespace GraphMaker
             PreviewGraphViewBase.InitializeDefaultColorOptions(PlotColorComboBox, _colorChoices);
         }
 
+        private void FileDropBox_FilesSelected(object sender, FilesSelectedEventArgs e)
+        {
+            OpenSetupWindow(e.FilePaths);
+        }
+
         private void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new OpenFileDialog
@@ -112,42 +115,6 @@ namespace GraphMaker
             {
                 HandleWebDroppedFiles(dialog.FileNames);
             }
-        }
-
-        private void DropZone_Drop(object sender, DragEventArgs e)
-        {
-            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                return;
-            }
-
-            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            if (files == null || files.Length == 0)
-            {
-                return;
-            }
-
-            OpenSetupWindow(files);
-        }
-
-        private void DropZone_DragEnter(object sender, DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                e.Effects = DragDropEffects.Copy;
-                StatusText.Foreground = new SolidColorBrush(Colors.Blue);
-                StatusText.Text = "Drop files to load into Data Preview.";
-            }
-        }
-
-        private void DropZone_DragLeave(object sender, DragEventArgs e)
-        {
-            StatusText.Foreground = new SolidColorBrush(Color.FromRgb(102, 112, 133));
-        }
-
-        private void DropZone_DragOver(object sender, DragEventArgs e)
-        {
-            e.Handled = true;
         }
 
         private void OpenSetupWindow(IEnumerable<string>? initialFiles = null)

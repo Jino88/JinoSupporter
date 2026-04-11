@@ -1,6 +1,7 @@
 <Window x:Class="GraphMaker.DailySamplingGraphViewerWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
         xmlns:oxy="http://oxyplot.org/wpf"
         Title="Daily Sampling Scatter Plot"
         Height="860"
@@ -23,7 +24,7 @@
                   Grid.Column="0"
                   Margin="0,0,8,8">
             <GroupBox.Header>
-                <Button Content="Daily Sampling Scatter Plot (with Max/Min/Avg)"
+                <app:AppButton Content="Daily Sampling Scatter Plot (with Max/Min/Avg)"
                         Cursor="Hand"
                         Padding="0"
                         Margin="0"
@@ -82,14 +83,14 @@
                     <TextBlock VerticalAlignment="Center"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                Text="Selected period summary across all loaded data." />
-                    <Button Content="Copy Entire Table"
+                    <app:AppButton Content="Copy Entire Table"
                             Padding="14,6"
                             HorizontalAlignment="Right"
                             DockPanel.Dock="Right"
                             Click="CopySummaryButton_Click" />
                 </DockPanel>
 
-                <DataGrid Grid.Row="2"
+                <app:AppDataGrid Grid.Row="2"
                           x:Name="SummaryDataGrid"
                           ItemsSource="{Binding SummaryRows}"
                           AutoGenerateColumns="False"
@@ -101,7 +102,7 @@
                           EnableColumnVirtualization="True"
                           VirtualizingPanel.IsVirtualizing="True"
                           VirtualizingPanel.VirtualizationMode="Recycling">
-                    <DataGrid.Columns>
+                    <app:AppDataGrid.Columns>
                         <DataGridTextColumn Header="X-axis Series"
                                             Binding="{Binding XAxisSeriesName}"
                                             Width="2*" />
@@ -126,8 +127,8 @@
                         <DataGridTextColumn Header="PPM"
                                             Binding="{Binding Ppm, StringFormat={}{0:F0}}"
                                             Width="*" />
-                    </DataGrid.Columns>
-                </DataGrid>
+                    </app:AppDataGrid.Columns>
+                </app:AppDataGrid>
             </Grid>
         </GroupBox>
 
@@ -135,7 +136,7 @@
                   Grid.Column="0"
                   Margin="0,8,8,0">
             <GroupBox.Header>
-                <Button Content="CPK by Date"
+                <app:AppButton Content="CPK by Date"
                         Cursor="Hand"
                         Padding="0"
                         Margin="0"
@@ -158,49 +159,49 @@
                                Foreground="{StaticResource TextSecondaryBrush}"
                                Text="Toggle graph items and update both charts immediately." />
                     <WrapPanel>
-                        <CheckBox x:Name="ShowSampleCheckBox"
+                        <app:AppCheckBox x:Name="ShowSampleCheckBox"
                                   Margin="0,0,16,10"
                                   Content="Sample"
                                   IsChecked="True"
                                   Checked="LegendOptionChanged"
                                   Unchecked="LegendOptionChanged" />
-                        <CheckBox x:Name="ShowAvgCheckBox"
+                        <app:AppCheckBox x:Name="ShowAvgCheckBox"
                                   Margin="0,0,16,10"
                                   Content="Avg"
                                   IsChecked="True"
                                   Checked="LegendOptionChanged"
                                   Unchecked="LegendOptionChanged" />
-                        <CheckBox x:Name="ShowMaxCheckBox"
+                        <app:AppCheckBox x:Name="ShowMaxCheckBox"
                                   Margin="0,0,16,10"
                                   Content="Max"
                                   IsChecked="True"
                                   Checked="LegendOptionChanged"
                                   Unchecked="LegendOptionChanged" />
-                        <CheckBox x:Name="ShowMinCheckBox"
+                        <app:AppCheckBox x:Name="ShowMinCheckBox"
                                   Margin="0,0,16,10"
                                   Content="Min"
                                   IsChecked="True"
                                   Checked="LegendOptionChanged"
                                   Unchecked="LegendOptionChanged" />
-                        <CheckBox x:Name="ShowSpecCheckBox"
+                        <app:AppCheckBox x:Name="ShowSpecCheckBox"
                                   Margin="0,0,16,10"
                                   Content="SPEC"
                                   IsChecked="True"
                                   Checked="LegendOptionChanged"
                                   Unchecked="LegendOptionChanged" />
-                        <CheckBox x:Name="ShowUpperLimitCheckBox"
+                        <app:AppCheckBox x:Name="ShowUpperLimitCheckBox"
                                   Margin="0,0,16,10"
                                   Content="USL"
                                   IsChecked="True"
                                   Checked="LegendOptionChanged"
                                   Unchecked="LegendOptionChanged" />
-                        <CheckBox x:Name="ShowLowerLimitCheckBox"
+                        <app:AppCheckBox x:Name="ShowLowerLimitCheckBox"
                                   Margin="0,0,16,10"
                                   Content="LSL"
                                   IsChecked="True"
                                   Checked="LegendOptionChanged"
                                   Unchecked="LegendOptionChanged" />
-                        <CheckBox x:Name="ShowCpkCheckBox"
+                        <app:AppCheckBox x:Name="ShowCpkCheckBox"
                                   Margin="0,0,16,10"
                                   Content="CPK"
                                   IsChecked="True"

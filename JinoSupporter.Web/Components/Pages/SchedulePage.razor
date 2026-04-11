@@ -1,0 +1,517 @@
+@page "/schedule"
+@layout FullScreenLayout
+@rendermode InteractiveServer
+@using JinoSupporter.Web.Components.Layout
+@using JinoSupporter.Web.Services
+@using System.Globalization
+@inject WebRepository Repo
+
+<PageTitle>Schedule</PageTitle>
+
+<div style="display:flex; gap:12px; height:100%; overflow:hidden;">
+
+    <!-- ══ LEFT: Calendar ══════════════════════════════════════════════════════ -->
+    <div style="flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden;">
+        <div class="card shadow-sm" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+
+            <!-- Month navigation -->
+            <div class="card-header d-flex align-items-center gap-2" style="flex-shrink:0;">
+                <button class="btn btn-outline-secondary btn-sm" @onclick="PrevMonth">‹</button>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="NextMonth">›</button>
+                <span class="fw-bold" style="font-size:15px; min-width:148px;">
+                    @(new DateOnly(_year, _month, 1).ToString("MMMM yyyy", CultureInfo.InvariantCulture))
+                </span>
+                <button class="btn btn-outline-primary btn-sm ms-1" @onclick="GoToToday">Today</button>
+                @if (_activeTags.Count > 0)
+                {
+                    <span class="ms-auto text-muted small">Filtered: @string.Join(", ", _activeTags)</span>
+                }
+            </div>
+
+            <!-- Calendar grid: flex column so 6 week rows split height equally -->
+            <div style="flex:1; overflow:hidden; display:flex; flex-direction:column;">
+
+                <!-- Day-of-week headers -->
+                <div style="display:grid; grid-template-columns:repeat(7,1fr); background:#f8fafc;
+                             border-bottom:1px solid #e2e8f0; flex-shrink:0;">
+                    @{string[] dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];}
+                    @for (int i = 0; i < 7; i++)
+                    {
+                        string hdrColor = i == 0 ? "#ef4444" : i == 6 ? "#3b82f6" : "#64748b";
+                        <div style="text-align:center; padding:7px 2px; font-size:11px; font-weight:600; color:@hdrColor;">
+                            @dayNames[i]
+                        </div>
+                    }
+                </div>
+
+                <!-- 6 week rows, each flex:1 to fill remaining height equally -->
+                @for (int w = 0; w < 6; w++)
+                {
+                    int ww = w;
+                    <div style="flex:1; min-height:0; border-top:1px solid #e2e8f0; display:flex; flex-direction:column; overflow:hidden;">
+                        <!-- Day-number row -->
+                        <div style="display:grid; grid-template-columns:repeat(7,1fr); flex-shrink:0;">
+                            @for (int d = 0; d < 7; d++)
+                            {
+                                var day     = _calDays[ww * 7 + d];
+                                bool isToday = day == _today;
+                                bool inMonth = day.Month == _month;
+                                bool isSun   = d == 0;
+                                bool isSat   = d == 6;
+                                string numClr = !inMonth ? "#c8d3df" : isSun ? "#ef4444" : isSat ? "#3b82f6" : "#1e293b";
+                                <div style="border-right:1px solid #f1f5f9; padding:4px 6px;">
+                                    @if (isToday)
+                                    {
+                                        <span style="display:inline-flex; align-items:center; justify-content:center;
+                                                     width:22px; height:22px; border-radius:50%; background:#2563eb;
+                                                     color:#fff; font-size:12px; font-weight:700;">
+                                            @day.Day
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span style="font-size:12px; color:@numClr;">@day.Day</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Event bar lanes -->
+                        @if (_weekLayouts.Count > ww)
+                        {
+                            int maxLane = _weekLayouts[ww].Count > 0 ? _weekLayouts[ww].Max(e => e.Lane) + 1 : 0;
+                            @for (int lane = 0; lane < maxLane; lane++)
+                            {
+                                int ll = lane;
+                                <div style="display:grid; grid-template-columns:repeat(7,1fr); min-height:22px; padding:1px 2px; flex-shrink:0;">
+                                    @foreach (var evtLayout in _weekLayouts[ww].Where(e => e.Lane == ll))
+                                    {
+                                        var evt   = evtLayout.Item;
+                                        string lbl = evt.IsAllDay ? evt.Title : $"{evt.TimeDisplay} {evt.Title}";
+                                        <div style="grid-column:@(evtLayout.StartCol+1)/@(evtLayout.EndCol+2);
+                                                    background:@evt.Color; color:#fff; border-radius:3px;
+                                                    font-size:11px; font-weight:500; padding:2px 5px;
+                                                    overflow:hidden; white-space:nowrap; cursor:pointer; margin:1px 2px;"
+                                             title="@evt.Title"
+                                             @onclick="() => OpenDetail(evt)"
+                                             @onclick:stopPropagation="true">
+                                            @lbl
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ RIGHT: Sidebar ══════════════════════════════════════════════════════ -->
+    <div style="width:340px; flex-shrink:0; display:flex; flex-direction:column; gap:12px; overflow-y:auto;">
+
+        <!-- Tag filters -->
+        @if (_allTags.Count > 0)
+        {
+            <div class="card shadow-sm">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <span>Tag Filter</span>
+                    @if (_activeTags.Count > 0)
+                    {
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="ClearTags">Clear</button>
+                    }
+                </div>
+                <div class="card-body py-2" style="display:flex; flex-wrap:wrap; gap:6px;">
+                    @foreach (string tag in _allTags)
+                    {
+                        bool active = _activeTags.Contains(tag);
+                        <span style="cursor:pointer; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:500;
+                                     background:@(active?"#2563eb":"#f1f5f9"); color:@(active?"#fff":"#475569");
+                                     border:1px solid @(active?"#2563eb":"#e2e8f0"); transition:all .12s;"
+                              @onclick="() => ToggleTag(tag)">
+                            @tag
+                        </span>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- This week -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                This week
+                <span class="text-muted fw-normal small ms-1">
+                    @_today.ToString("MM/dd", CultureInfo.InvariantCulture) – @_today.AddDays(6).ToString("MM/dd", CultureInfo.InvariantCulture)
+                </span>
+            </div>
+            <div class="card-body p-0" style="max-height:240px; overflow-y:auto;">
+                @{
+                    var upcoming = Repo.GetSchedulesInRange(_today, _today.AddDays(6),
+                        _activeTags.Count > 0 ? _activeTags.ToList() : null);
+                }
+                @if (upcoming.Count == 0)
+                {
+                    <div class="text-muted small p-3">No events this week.</div>
+                }
+                @foreach (ScheduleItem s in upcoming)
+                {
+                    string dateStr = s.IsMultiDay
+                        ? $"{s.StartDate.ToString("MM/dd", CultureInfo.InvariantCulture)} – {s.EndDate.ToString("MM/dd", CultureInfo.InvariantCulture)}"
+                        : s.StartDate.ToString("MM/dd (ddd)", CultureInfo.InvariantCulture);
+                    <div style="border-left:4px solid @s.Color; padding:8px 12px; border-bottom:1px solid #f1f5f9; cursor:pointer;"
+                         @onclick="() => OpenDetail(s)">
+                        <div style="font-size:13px; font-weight:600; color:#1e293b;">@s.Title</div>
+                        <div style="font-size:11px; color:#64748b;">@dateStr &nbsp; @s.TimeDisplay</div>
+                        @if (!string.IsNullOrWhiteSpace(s.Description))
+                        {
+                            <div style="font-size:11px; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                @s.Description
+                            </div>
+                        }
+                        @if (s.Tags.Count > 0)
+                        {
+                            <div style="font-size:10px; color:#64748b; margin-top:2px;">🏷 @string.Join(", ", s.Tags)</div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Add schedule form -->
+        <AuthorizeView>
+            <Authorized>
+                @if (AppRoles.CanEdit(context.User))
+                {
+                    <div class="card shadow-sm">
+                        <div class="card-header">New Schedule</div>
+                        <div class="card-body d-flex flex-column gap-2">
+                            <div>
+                                <label class="form-label">Title <span class="text-danger">*</span></label>
+                                <input @bind="_title" class="form-control form-control-sm" placeholder="Event title" />
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label">Start</label>
+                                    <input type="date" @bind="_startDate" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">End</label>
+                                    <input type="date" @bind="_endDate" class="form-control form-control-sm" />
+                                </div>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label">Start time</label>
+                                    <input type="time" @bind="_startTime" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">End time</label>
+                                    <input type="time" @bind="_endTime" class="form-control form-control-sm" />
+                                </div>
+                            </div>
+                            <div>
+                                <label class="form-label">Color</label>
+                                <div class="d-flex gap-1 flex-wrap">
+                                    @foreach (string c in _palette)
+                                    {
+                                        string col = c;
+                                        <div style="width:22px; height:22px; border-radius:50%; background:@col; cursor:pointer;
+                                                    border:@(_addColor == col ? "3px solid #1e293b" : "2px solid #e2e8f0");"
+                                             @onclick="() => _addColor = col">
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            <div>
+                                <label class="form-label">Tags <span class="text-muted fw-normal">(comma-separated)</span></label>
+                                <input @bind="_tagsInput" class="form-control form-control-sm" placeholder="e.g. Meeting, Q1" />
+                            </div>
+                            <div>
+                                <label class="form-label">Description</label>
+                                <textarea @bind="_description" class="form-control form-control-sm" rows="2" />
+                            </div>
+                            @if (!string.IsNullOrEmpty(_addError))
+                            {
+                                <div class="alert alert-danger py-1 small mb-0">@_addError</div>
+                            }
+                            <button class="btn btn-primary btn-sm" @onclick="AddSchedule">Add Schedule</button>
+                        </div>
+                    </div>
+                }
+            </Authorized>
+        </AuthorizeView>
+    </div>
+</div>
+
+<!-- ══ Detail / Edit Modal ════════════════════════════════════════════════════ -->
+@if (_detailItem is not null)
+{
+    <div class="paste-modal-backdrop" @onclick="CloseDetail">
+        <div class="paste-modal" style="min-width:380px; max-width:520px; text-align:left;"
+             @onclick:stopPropagation="true">
+
+            @if (!_editMode)
+            {
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+                    <div style="width:12px; height:12px; border-radius:50%; background:@_detailItem.Color; flex-shrink:0;"></div>
+                    <div class="paste-modal-title" style="margin:0;">@_detailItem.Title</div>
+                </div>
+                <table style="font-size:13px; color:#334155; border-collapse:collapse; width:100%; margin-bottom:12px;">
+                    <tr>
+                        <td style="padding:3px 12px 3px 0; font-weight:600; white-space:nowrap;">Date</td>
+                        <td>
+                            @(_detailItem.IsMultiDay
+                                ? $"{_detailItem.StartDate.ToString("MMM dd", CultureInfo.InvariantCulture)} – {_detailItem.EndDate.ToString("MMM dd, yyyy", CultureInfo.InvariantCulture)}"
+                                : _detailItem.StartDate.ToString("MMM dd, yyyy (ddd)", CultureInfo.InvariantCulture))
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:3px 12px 3px 0; font-weight:600;">Time</td>
+                        <td>@_detailItem.TimeDisplay</td>
+                    </tr>
+                    @if (_detailItem.Tags.Count > 0)
+                    {
+                        <tr>
+                            <td style="padding:3px 12px 3px 0; font-weight:600;">Tags</td>
+                            <td>@string.Join(", ", _detailItem.Tags)</td>
+                        </tr>
+                    }
+                </table>
+                @if (!string.IsNullOrWhiteSpace(_detailItem.Description))
+                {
+                    <div style="font-size:13px; color:#475569; white-space:pre-wrap; margin-bottom:16px;
+                                background:#f8fafc; border-radius:6px; padding:8px 10px;">
+                        @_detailItem.Description
+                    </div>
+                }
+                <div class="d-flex gap-2 justify-content-end">
+                    <AuthorizeView>
+                        <Authorized>
+                            @if (AppRoles.CanEdit(context.User))
+                            {
+                                <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(_detailItem)">Edit</button>
+                                <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteSchedule(_detailItem.Id)">Delete</button>
+                            }
+                        </Authorized>
+                    </AuthorizeView>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="CloseDetail">Close</button>
+                </div>
+            }
+            else
+            {
+                <div class="paste-modal-title">Edit Schedule</div>
+                <div class="d-flex flex-column gap-2">
+                    <div>
+                        <label class="form-label">Title</label>
+                        <input @bind="_title" class="form-control form-control-sm" />
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label">Start</label>
+                            <input type="date" @bind="_startDate" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">End</label>
+                            <input type="date" @bind="_endDate" class="form-control form-control-sm" />
+                        </div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label">Start time</label>
+                            <input type="time" @bind="_startTime" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">End time</label>
+                            <input type="time" @bind="_endTime" class="form-control form-control-sm" />
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Color</label>
+                        <div class="d-flex gap-1 flex-wrap">
+                            @foreach (string c in _palette)
+                            {
+                                string col = c;
+                                <div style="width:22px; height:22px; border-radius:50%; background:@col; cursor:pointer;
+                                            border:@(_addColor == col ? "3px solid #1e293b" : "2px solid #e2e8f0");"
+                                     @onclick="() => _addColor = col">
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Tags</label>
+                        <input @bind="_tagsInput" class="form-control form-control-sm" />
+                    </div>
+                    <div>
+                        <label class="form-label">Description</label>
+                        <textarea @bind="_description" class="form-control form-control-sm" rows="3" />
+                    </div>
+                    @if (!string.IsNullOrEmpty(_addError))
+                    {
+                        <div class="alert alert-danger py-1 small mb-0">@_addError</div>
+                    }
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveEdit">Save</button>
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => _editMode = false">Cancel</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private record CalendarEventLayout(ScheduleItem Item, int StartCol, int EndCol, int Lane);
+
+    private static readonly string[] _palette =
+    [
+        "#3B82F6", "#10B981", "#F59E0B", "#EF4444",
+        "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"
+    ];
+
+    // ── Calendar state ────────────────────────────────────────────────────────
+    private DateOnly _today = DateOnly.FromDateTime(DateTime.Today);
+    private int _year, _month;
+    private DateOnly[] _calDays = new DateOnly[42];
+    private List<List<CalendarEventLayout>> _weekLayouts = [];
+
+    // ── Filter ────────────────────────────────────────────────────────────────
+    private HashSet<string> _activeTags = new(StringComparer.OrdinalIgnoreCase);
+    private List<string>    _allTags    = [];
+
+    // ── Add / Edit form ───────────────────────────────────────────────────────
+    private string    _title       = string.Empty;
+    private string    _description = string.Empty;
+    private DateTime  _startDate   = DateTime.Today;
+    private DateTime  _endDate     = DateTime.Today;
+    private TimeOnly? _startTime;
+    private TimeOnly? _endTime;
+    private string    _addColor    = "#3B82F6";
+    private string    _tagsInput   = string.Empty;
+    private string    _addError    = string.Empty;
+
+    // ── Detail modal ─────────────────────────────────────────────────────────
+    private ScheduleItem? _detailItem;
+    private bool          _editMode;
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    protected override void OnInitialized()
+    {
+        _today = DateOnly.FromDateTime(DateTime.Today);
+        _year  = _today.Year;
+        _month = _today.Month;
+        Load();
+    }
+
+    private void Load()
+    {
+        _allTags = Repo.GetAllScheduleTags();
+        BuildCalendar();
+    }
+
+    private void BuildCalendar()
+    {
+        var first     = new DateOnly(_year, _month, 1);
+        var gridStart = first.AddDays(-(int)first.DayOfWeek);
+        for (int i = 0; i < 42; i++) _calDays[i] = gridStart.AddDays(i);
+
+        var filterTags = _activeTags.Count > 0 ? _activeTags.ToList() : null;
+        var calEvents  = Repo.GetSchedulesInRange(gridStart, _calDays[41], filterTags);
+
+        _weekLayouts = [];
+        for (int w = 0; w < 6; w++)
+        {
+            var weekStart = _calDays[w * 7];
+            var weekEnd   = _calDays[w * 7 + 6];
+            var weekEvts  = calEvents
+                .Where(e => e.StartDate <= weekEnd && e.EndDate >= weekStart)
+                .OrderBy(e => e.StartDate.DayNumber)
+                .ThenByDescending(e => e.EndDate.DayNumber - e.StartDate.DayNumber)
+                .ToList();
+            _weekLayouts.Add(AssignLanes(weekEvts, weekStart));
+        }
+    }
+
+    private static List<CalendarEventLayout> AssignLanes(List<ScheduleItem> events, DateOnly weekStart)
+    {
+        var result        = new List<CalendarEventLayout>();
+        var laneOccupancy = new List<List<(int S, int E)>>();
+
+        foreach (var evt in events)
+        {
+            int sc = Math.Max(0, evt.StartDate.DayNumber - weekStart.DayNumber);
+            int ec = Math.Min(6, evt.EndDate.DayNumber   - weekStart.DayNumber);
+            int lane = 0;
+            for (; lane < laneOccupancy.Count; lane++)
+                if (laneOccupancy[lane].All(o => o.E < sc || o.S > ec)) break;
+            if (lane == laneOccupancy.Count) laneOccupancy.Add([]);
+            laneOccupancy[lane].Add((sc, ec));
+            result.Add(new CalendarEventLayout(evt, sc, ec, lane));
+        }
+        return result;
+    }
+
+    // ── Navigation ────────────────────────────────────────────────────────────
+    private void PrevMonth() { if (_month == 1) { _month = 12; _year--; } else _month--; BuildCalendar(); }
+    private void NextMonth() { if (_month == 12) { _month = 1; _year++; } else _month++; BuildCalendar(); }
+    private void GoToToday()
+    {
+        _today = DateOnly.FromDateTime(DateTime.Today);
+        _year = _today.Year; _month = _today.Month;
+        BuildCalendar();
+    }
+
+    // ── Tags ──────────────────────────────────────────────────────────────────
+    private void ToggleTag(string tag) { if (!_activeTags.Add(tag)) _activeTags.Remove(tag); BuildCalendar(); }
+    private void ClearTags() { _activeTags.Clear(); BuildCalendar(); }
+
+    // ── CRUD ──────────────────────────────────────────────────────────────────
+    private void AddSchedule()
+    {
+        _addError = string.Empty;
+        if (string.IsNullOrWhiteSpace(_title)) { _addError = "Title is required."; return; }
+        var start = DateOnly.FromDateTime(_startDate);
+        var end   = DateOnly.FromDateTime(_endDate);
+        if (end < start) { _addError = "End date must be ≥ start date."; return; }
+        var tags = _tagsInput.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+        Repo.AddSchedule(_title.Trim(), _description, start, end, _addColor, tags, _startTime, _endTime);
+        _title = _description = _tagsInput = string.Empty;
+        _startDate = _endDate = DateTime.Today;
+        _startTime = _endTime = null;
+        _addColor = "#3B82F6";
+        Load();
+    }
+
+    private void OpenDetail(ScheduleItem item) { _detailItem = item; _editMode = false; }
+    private void CloseDetail() { _detailItem = null; _editMode = false; _addError = string.Empty; }
+
+    private void StartEdit(ScheduleItem item)
+    {
+        _detailItem = item; _editMode = true;
+        _title       = item.Title;
+        _description = item.Description;
+        _startDate   = item.StartDate.ToDateTime(TimeOnly.MinValue);
+        _endDate     = item.EndDate.ToDateTime(TimeOnly.MinValue);
+        _startTime   = item.StartTime;
+        _endTime     = item.EndTime;
+        _addColor    = item.Color;
+        _tagsInput   = string.Join(", ", item.Tags);
+        _addError    = string.Empty;
+    }
+
+    private void SaveEdit()
+    {
+        if (_detailItem is null) return;
+        _addError = string.Empty;
+        if (string.IsNullOrWhiteSpace(_title)) { _addError = "Title is required."; return; }
+        var start = DateOnly.FromDateTime(_startDate);
+        var end   = DateOnly.FromDateTime(_endDate);
+        if (end < start) { _addError = "End date must be ≥ start date."; return; }
+        var tags = _tagsInput.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+        Repo.UpdateSchedule(_detailItem.Id, _title.Trim(), _description, start, end, _addColor, tags, _startTime, _endTime);
+        CloseDetail();
+        Load();
+    }
+
+    private void DeleteSchedule(long id) { Repo.DeleteSchedule(id); CloseDetail(); Load(); }
+}

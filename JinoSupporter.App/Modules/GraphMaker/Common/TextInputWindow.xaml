@@ -1,6 +1,7 @@
 <Window x:Class="GraphMaker.TextInputWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
         Title="Rename Column"
         Width="420"
         Height="170"
@@ -23,7 +24,7 @@
                    Margin="0,12,0,4"
                    Text="Name" />
 
-        <TextBox x:Name="InputTextBox"
+        <app:AppTextBox x:Name="InputTextBox"
                  Grid.Row="2"
                  MinWidth="320"
                  VerticalAlignment="Top" />
@@ -32,12 +33,12 @@
                     Margin="0,16,0,0"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
-            <Button Width="84"
+            <app:AppButton Width="84"
                     Margin="0,0,8,0"
                     Content="OK"
                     IsDefault="True"
                     Click="OkButton_Click" />
-            <Button Width="84"
+            <app:AppButton Width="84"
                     Content="Cancel"
                     IsCancel="True"
                     Click="CancelButton_Click" />

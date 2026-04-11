@@ -1,0 +1,83 @@
+<Window x:Class="JinoSupporter.App.Modules.DataInference.GlossaryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Glossary Management" Width="560" Height="480"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="#F4F7FB">
+
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="#22304A"
+                       Text="Glossary" />
+            <TextBlock FontSize="11" Foreground="#617084" Margin="0,4,0,0"
+                       Text="Register proper nouns and abbreviations that AI may not know. These are referenced during data analysis and report generation." />
+
+            <!-- Toolbar -->
+            <DockPanel Margin="0,10,0,0">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button x:Name="DeleteRowButton" Content="Delete Selected"
+                            Padding="10,5" Margin="0,0,0,0" FontSize="11"
+                            Background="#EF4444" Foreground="White"
+                            BorderThickness="0" Cursor="Hand"
+                            Click="DeleteRowButton_Click" />
+                </StackPanel>
+                <Button Content="+ Add Row"
+                        Padding="10,5" Margin="0,0,8,0" FontSize="11"
+                        Background="#3B6EA5" Foreground="White"
+                        BorderThickness="0" Cursor="Hand"
+                        Click="AddRowButton_Click" />
+            </DockPanel>
+        </StackPanel>
+
+        <!-- Grid -->
+        <Border Grid.Row="1" BorderBrush="#D3DCEA" BorderThickness="1" CornerRadius="6">
+            <DataGrid x:Name="GlossaryGrid"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      SelectionMode="Single"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#EEF2F7"
+                      AlternatingRowBackground="#F8FAFD"
+                      RowBackground="White"
+                      BorderThickness="0"
+                      FontSize="12" RowHeight="30">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Term" Binding="{Binding Term, UpdateSourceTrigger=PropertyChanged}"
+                                        Width="150" />
+                    <DataGridTextColumn Header="Description" Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                                        Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- Status -->
+        <TextBlock x:Name="StatusText" Grid.Row="2"
+                   FontSize="11" Foreground="#617084"
+                   Margin="0,8,0,0" Text="" />
+
+        <!-- Buttons -->
+        <DockPanel Grid.Row="3" Margin="0,8,0,0">
+            <Button DockPanel.Dock="Right" Content="Close"
+                    Padding="20,7" Margin="8,0,0,0" FontSize="12"
+                    Background="#E5EAF2" Foreground="#22304A"
+                    BorderThickness="0" Cursor="Hand"
+                    Click="CloseButton_Click" />
+            <Button DockPanel.Dock="Right" Content="Save"
+                    Padding="20,7" FontSize="12" FontWeight="SemiBold"
+                    Background="#3B6EA5" Foreground="White"
+                    BorderThickness="0" Cursor="Hand"
+                    Click="SaveButton_Click" />
+            <FrameworkElement />
+        </DockPanel>
+    </Grid>
+</Window>

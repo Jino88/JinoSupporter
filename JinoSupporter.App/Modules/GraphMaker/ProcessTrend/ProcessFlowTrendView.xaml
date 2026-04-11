@@ -1,6 +1,7 @@
 <local:GraphViewBase x:Class="GraphMaker.ProcessFlowTrendView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
              xmlns:local="clr-namespace:GraphMaker"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -33,60 +34,47 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0"
-                        Style="{StaticResource DropZoneBorderStyle}"
-                        Margin="0,0,8,0"
-                        MinHeight="64"
-                        Padding="10"
-                        AllowDrop="True"
-                        DragEnter="FileDropBorder_DragEnter"
-                        DragOver="FileDropBorder_DragEnter"
-                        Drop="FileDropBorder_Drop">
-                    <StackPanel>
-                        <TextBlock Text="Drag data file"
-                                   Style="{StaticResource FileDropHintTextStyle}" />
-                        <Button Content="Browse"
-                                Width="120"
-                                Margin="0,6,0,0"
-                                HorizontalAlignment="Center"
-                                Click="BrowseButton_Click" />
-                        <TextBlock Margin="0,8,0,0"
-                                   TextWrapping="Wrap"
-                                   Foreground="{StaticResource TextSecondaryBrush}">
-                            <Run Text="File: " FontWeight="SemiBold" />
-                            <Run x:Name="CurrentFileNameText" Text="(No file)" />
-                        </TextBlock>
-                        <TextBlock Margin="0,4,0,0"
-                                   Foreground="{StaticResource TextSecondaryBrush}">
-                            <Run Text="Rows: " FontWeight="SemiBold" />
-                            <Run x:Name="RowCountText" Text="0" />
-                            <Run Text=" | Cols: " FontWeight="SemiBold" />
-                            <Run x:Name="ColumnCountText" Text="0" />
-                        </TextBlock>
-                        <TextBlock x:Name="StatusText"
-                                   Margin="0,4,0,0"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   TextWrapping="Wrap"
-                                   Text="Drop file into the workflow area or click Browse to load data." />
-                    </StackPanel>
-                </Border>
+                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                    <app:AppFileDropBox HintText="Drag data file"
+                            BrowseButtonText="Browse"
+                            AllowMultiple="True"
+                            FilesSelected="FileDropBox_FilesSelected" />
+                    <TextBlock Margin="0,8,0,0"
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource TextSecondaryBrush}">
+                        <Run Text="File: " FontWeight="SemiBold" />
+                        <Run x:Name="CurrentFileNameText" Text="(No file)" />
+                    </TextBlock>
+                    <TextBlock Margin="0,4,0,0"
+                               Foreground="{StaticResource TextSecondaryBrush}">
+                        <Run Text="Rows: " FontWeight="SemiBold" />
+                        <Run x:Name="RowCountText" Text="0" />
+                        <Run Text=" | Cols: " FontWeight="SemiBold" />
+                        <Run x:Name="ColumnCountText" Text="0" />
+                    </TextBlock>
+                    <TextBlock x:Name="StatusText"
+                               Margin="0,4,0,0"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               TextWrapping="Wrap"
+                               Text="Drop file into the workflow area or click Browse to load data." />
+                </StackPanel>
 
                 <StackPanel Grid.Column="1"
                             VerticalAlignment="Top">
-                    <Button Content="Load Data"
+                    <app:AppButton Content="Load Data"
                             Width="130"
                             Margin="0,0,0,8"
                             Click="LoadStateButton_Click" />
-                    <Button Content="Save Data"
+                    <app:AppButton Content="Save Data"
                             Width="130"
                             Margin="0,0,0,8"
                             Click="SaveStateButton_Click" />
-                    <Button Content="Generate Trend"
+                    <app:AppButton Content="Generate Trend"
                             Width="130"
                             Margin="0,0,0,8"
                             Style="{StaticResource PrimaryButtonStyle}"
                             Click="GenerateTrendButton_Click" />
-                    <Button Content="Remove File"
+                    <app:AppButton Content="Remove File"
                             Width="130"
                             Click="RemoveFileButton_Click" />
                 </StackPanel>
@@ -115,27 +103,18 @@
                         <TextBlock Text="Select an X-axis column to edit."
                                    Foreground="#667085"
                                    TextWrapping="Wrap" />
-                        <ListBox x:Name="XAxisListBox"
+                        <app:AppListBox x:Name="XAxisListBox"
                                  Grid.Row="1"
                                  Margin="0,8,0,0"
+                                 DisplayMemberPath="Name"
                                  SelectionChanged="XAxisListBox_SelectionChanged">
-                            <ListBox.ItemContainerStyle>
+                            <app:AppListBox.ItemContainerStyle>
                                 <Style TargetType="ListBoxItem">
                                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Padding" Value="8,6" />
                                 </Style>
-                            </ListBox.ItemContainerStyle>
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Padding="6,4">
-                                        <CheckBox Content="{Binding Name}"
-                                                  IsChecked="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}"
-                                                  IsHitTestVisible="False"
-                                                  Focusable="False" />
-                                    </Border>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                            </app:AppListBox.ItemContainerStyle>
+                        </app:AppListBox>
                     </Grid>
                 </GroupBox>
 
@@ -146,8 +125,8 @@
                                        Foreground="#667085"
                                        TextWrapping="Wrap" />
                             <StackPanel Orientation="Horizontal" Margin="0,10,0,8">
-                                <Button Content="Select All" Width="90" Click="SelectAllButton_Click" />
-                                <Button Content="Clear All" Width="90" Margin="8,0,0,0" Click="ClearAllButton_Click" />
+                                <app:AppButton Content="Select All" Width="90" Click="SelectAllButton_Click" />
+                                <app:AppButton Content="Clear All" Width="90" Margin="8,0,0,0" Click="ClearAllButton_Click" />
                             </StackPanel>
                         </StackPanel>
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -229,7 +208,7 @@
                                     <TextBlock x:Name="LowerRowTextBlock" Text="LSL row: not assigned" />
                                 </Border>
 
-                                <CheckBox x:Name="UseFirstColumnAsSampleIdCheckBox"
+                                <app:AppCheckBox x:Name="UseFirstColumnAsSampleIdCheckBox"
                                           Margin="0,10,0,0"
                                           Content="Use first column as sample ID"
                                           IsChecked="False" />
@@ -240,7 +219,7 @@
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="Max Samples:" VerticalAlignment="Center" />
-                                    <TextBox Grid.Column="2" x:Name="MaxSamplesTextBox" MinWidth="70" MaxWidth="110" HorizontalAlignment="Left" Text="100" />
+                                    <app:AppTextBox Grid.Column="2" x:Name="MaxSamplesTextBox" MinWidth="70" MaxWidth="110" HorizontalAlignment="Left" Text="100" />
                                 </Grid>
                                 <Grid Margin="0,8,0,0">
                                     <Grid.ColumnDefinitions>
@@ -249,7 +228,7 @@
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="Plot Color:" VerticalAlignment="Center" />
-                                    <ComboBox Grid.Column="2" x:Name="PlotColorComboBox" MinWidth="120" HorizontalAlignment="Stretch" />
+                                    <app:AppComboBox Grid.Column="2" x:Name="PlotColorComboBox" MinWidth="120" HorizontalAlignment="Stretch" />
                                 </Grid>
                                 <TextBlock Text="Regression:" Margin="0,10,0,0" FontWeight="SemiBold" />
                                 <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
@@ -262,7 +241,7 @@
                                                  Content="Quadratic"
                                                  GroupName="RegressionDegree" />
                                 </StackPanel>
-                                <Button Content="Configure Pairs"
+                                <app:AppButton Content="Configure Pairs"
                                         Width="120"
                                         Margin="0,10,0,0"
                                         Click="ConfigurePairsButton_Click" />
@@ -285,8 +264,8 @@
 
                             <StackPanel Grid.Row="1" Margin="0,6,0,0">
                                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                                    <Button Content="Add Group" Width="88" Height="26" Padding="8,2" Click="AddGroupButton_Click" />
-                                    <Button Content="Remove Group" Width="104" Height="26" Padding="8,2" Margin="8,0,0,0" Click="RemoveGroupButton_Click" />
+                                    <app:AppButton Content="Add Group" Width="88" Height="26" Padding="8,2" Click="AddGroupButton_Click" />
+                                    <app:AppButton Content="Remove Group" Width="104" Height="26" Padding="8,2" Margin="8,0,0,0" Click="RemoveGroupButton_Click" />
                                 </StackPanel>
                                 <Grid Margin="0,6,0,0">
                                     <Grid.ColumnDefinitions>
@@ -296,14 +275,14 @@
                                         <ColumnDefinition Width="8" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                <ComboBox x:Name="GroupManageComboBox" Grid.Column="0" MinWidth="96" Height="20" MinHeight="20" Padding="4,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" DisplayMemberPath="Value" SelectedValuePath="Key" SelectionChanged="GroupManageComboBox_SelectionChanged" />
-                                <TextBox x:Name="GroupNameTextBox" Grid.Column="2" MinWidth="108" Height="20" MinHeight="20" Padding="4,0" VerticalContentAlignment="Center" VerticalAlignment="Center" HorizontalAlignment="Stretch" />
-                                <Button Content="Apply Name" Grid.Column="4" Width="82" Height="20" Padding="6,0" VerticalAlignment="Center" Click="ApplyGroupNameButton_Click" />
+                                <app:AppComboBox x:Name="GroupManageComboBox" Grid.Column="0" MinWidth="96" Height="20" MinHeight="20" Padding="4,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" DisplayMemberPath="Value" SelectedValuePath="Key" SelectionChanged="GroupManageComboBox_SelectionChanged" />
+                                <app:AppTextBox x:Name="GroupNameTextBox" Grid.Column="2" MinWidth="108" Height="20" MinHeight="20" Padding="4,0" VerticalContentAlignment="Center" VerticalAlignment="Center" HorizontalAlignment="Stretch" />
+                                <app:AppButton Content="Apply Name" Grid.Column="4" Width="82" Height="20" Padding="6,0" VerticalAlignment="Center" Click="ApplyGroupNameButton_Click" />
                                 </Grid>
                             </StackPanel>
 
                         <GroupBox Grid.Row="2" Header="Selected X-axis -> Y-axis Items" Margin="0,12,0,0" MinHeight="150">
-                            <ListBox x:Name="SelectedYGroupListBox"
+                            <app:AppListBox x:Name="SelectedYGroupListBox"
                                      Margin="4"
                                      MinHeight="120"
                                      Padding="0"

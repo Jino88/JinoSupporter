@@ -12,6 +12,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using JinoSupporter.Controls;
 using Microsoft.Win32;
 using OxyPlot;
 using UserControl = System.Windows.Controls.UserControl;
@@ -160,61 +161,13 @@ namespace GraphMaker
             PreviewGraphViewBase.BindColorComboBox(YAxisColorComboBox, _colorOptions);
         }
 
-        #region Drag and Drop
-
-        private void DropZone_Drop(object sender, DragEventArgs e)
+        private void FileDropBox_FilesSelected(object sender, FilesSelectedEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            foreach (var path in e.FilePaths)
             {
-                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                foreach (string file in files)
-                {
-                    string ext = Path.GetExtension(file).ToLower();
-                    if (ext == ".txt" || ext == ".csv")
-                    {
-                        LoadFile(file);
-                    }
-                }
+                LoadFile(path);
             }
         }
-
-        private void DropZone_DragEnter(object sender, DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                e.Effects = DragDropEffects.Copy;
-                SetDropHintForeground(sender, Colors.Blue);
-            }
-            else
-            {
-                e.Effects = DragDropEffects.None;
-            }
-        }
-
-        private void DropZone_DragLeave(object sender, DragEventArgs e)
-        {
-            SetDropHintForeground(sender, Color.FromRgb(102, 102, 102));
-        }
-
-        private void DropZone_DragOver(object sender, DragEventArgs e)
-        {
-            e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
-                ? DragDropEffects.Copy
-                : DragDropEffects.None;
-            e.Handled = true;
-        }
-
-        private static void SetDropHintForeground(object sender, Color color)
-        {
-            if (sender is Border border &&
-                border.Child is Panel panel &&
-                panel.Children.OfType<TextBlock>().FirstOrDefault() is TextBlock textBlock)
-            {
-                textBlock.Foreground = new SolidColorBrush(color);
-            }
-        }
-
-        #endregion
 
         private void BrowseButton_Click(object sender, RoutedEventArgs e)
         {

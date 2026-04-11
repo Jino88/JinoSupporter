@@ -1,0 +1,70 @@
+@page "/login"
+@layout EmptyLayout
+@using JinoSupporter.Web.Components.Layout
+
+@code {
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery] public string? Error     { get; set; }
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — JinoSupporter</title>
+    <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="app.css" />
+    <style>
+        html, body { height: 100%; background: #f1f5f9; }
+        .login-wrap {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px 44px;
+            width: 360px;
+            box-shadow: 0 8px 32px rgba(0,0,0,.08);
+        }
+        .login-logo {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1e293b;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+        .login-sub { font-size: 13px; color: #64748b; margin-bottom: 28px; }
+    </style>
+</head>
+<body>
+<div class="login-wrap">
+    <div class="login-card">
+        <div class="login-logo">JinoSupporter</div>
+        <div class="login-sub">Sign in to continue</div>
+
+        @if (Error == "1")
+        {
+            <div class="alert alert-danger py-2 mb-3 small">Incorrect username or password.</div>
+        }
+
+        <form method="post" action="/auth/login">
+            <input type="hidden" name="returnUrl" value="@(ReturnUrl ?? "/")" />
+
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                <input name="username" class="form-control" autocomplete="username" autofocus required />
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Password</label>
+                <input name="password" type="password" class="form-control" autocomplete="current-password" required />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Sign in</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

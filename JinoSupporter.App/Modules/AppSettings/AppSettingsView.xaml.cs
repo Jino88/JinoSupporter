@@ -158,6 +158,124 @@ public partial class AppSettingsView : UserControl
         OpenPath(StorageRootTextBox.Text.Trim());
     }
 
+    private void SaveClaudeApiKeyButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            WorkbenchSettingsStore.SaveClaudeApiKey(ClaudeApiKeyBox.Password);
+            StatusTextBlock.Text = "Claude API 키가 저장되었습니다.";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Claude API 키 저장에 실패했습니다.\n{ex.Message}", "Settings", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void ClearClaudeApiKeyButton_Click(object sender, RoutedEventArgs e)
+    {
+        ClaudeApiKeyBox.Password = string.Empty;
+        WorkbenchSettingsStore.SaveClaudeApiKey(string.Empty);
+        StatusTextBlock.Text = "Claude API 키가 삭제되었습니다.";
+    }
+
+    private void SaveOpenAiApiKeyButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            WorkbenchSettingsStore.SaveOpenAiApiKey(OpenAiApiKeyBox.Password);
+            StatusTextBlock.Text = "OpenAI API 키가 저장되었습니다.";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"OpenAI API 키 저장에 실패했습니다.\n{ex.Message}", "Settings", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void ClearOpenAiApiKeyButton_Click(object sender, RoutedEventArgs e)
+    {
+        OpenAiApiKeyBox.Password = string.Empty;
+        WorkbenchSettingsStore.SaveOpenAiApiKey(string.Empty);
+        StatusTextBlock.Text = "OpenAI API 키가 삭제되었습니다.";
+    }
+
+    // ── Schedule DB ───────────────────────────────────────────────────────────
+
+    private void BrowseScheduleDbButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new SaveFileDialog
+        {
+            Title            = "Select Schedule database file",
+            Filter           = "SQLite Database (*.db)|*.db|All Files (*.*)|*.*",
+            FileName         = Path.GetFileName(ScheduleDbPathTextBox.Text),
+            InitialDirectory = ResolveInitialDirectory(ScheduleDbPathTextBox.Text)
+        };
+        if (dialog.ShowDialog() == true)
+            ScheduleDbPathTextBox.Text = dialog.FileName;
+    }
+
+    private void SaveScheduleDbButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            WorkbenchSettingsStore.SaveScheduleDatabasePath(ScheduleDbPathTextBox.Text.Trim());
+            RefreshFromCurrentSettings();
+            StatusTextBlock.Text = "Schedule DB 경로가 저장되었습니다. 앱을 재시작해야 적용됩니다.";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"저장 실패.\n{ex.Message}", "Settings", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void ResetScheduleDbButton_Click(object sender, RoutedEventArgs e)
+    {
+        WorkbenchSettingsStore.SaveScheduleDatabasePath(string.Empty);
+        RefreshFromCurrentSettings();
+        StatusTextBlock.Text = "Schedule DB 경로가 기본값으로 초기화되었습니다.";
+    }
+
+    private void OpenScheduleDbFolderButton_Click(object sender, RoutedEventArgs e) =>
+        OpenPath(ScheduleDbPathTextBox.Text.Trim());
+
+    // ── Process-review DB ─────────────────────────────────────────────────────
+
+    private void BrowseProcessReviewDbButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new SaveFileDialog
+        {
+            Title            = "Select Process Review database file",
+            Filter           = "SQLite Database (*.db)|*.db|All Files (*.*)|*.*",
+            FileName         = Path.GetFileName(ProcessReviewDbPathTextBox.Text),
+            InitialDirectory = ResolveInitialDirectory(ProcessReviewDbPathTextBox.Text)
+        };
+        if (dialog.ShowDialog() == true)
+            ProcessReviewDbPathTextBox.Text = dialog.FileName;
+    }
+
+    private void SaveProcessReviewDbButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            WorkbenchSettingsStore.SaveDataInferenceDatabasePath(ProcessReviewDbPathTextBox.Text.Trim());
+            RefreshFromCurrentSettings();
+            StatusTextBlock.Text = "Process Review DB 경로가 저장되었습니다. 앱을 재시작해야 적용됩니다.";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"저장 실패.\n{ex.Message}", "Settings", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void ResetProcessReviewDbButton_Click(object sender, RoutedEventArgs e)
+    {
+        WorkbenchSettingsStore.SaveDataInferenceDatabasePath(string.Empty);
+        RefreshFromCurrentSettings();
+        StatusTextBlock.Text = "Process Review DB 경로가 기본값으로 초기화되었습니다.";
+    }
+
+    private void OpenProcessReviewDbFolderButton_Click(object sender, RoutedEventArgs e) =>
+        OpenPath(ProcessReviewDbPathTextBox.Text.Trim());
+
     private void RefreshButton_Click(object sender, RoutedEventArgs e)
     {
         RefreshFromCurrentSettings();
@@ -178,6 +296,12 @@ public partial class AppSettingsView : UserControl
         BatchDirectoryTextBox.Text = settings.StorageRootDirectory;
         SettingsFilePathTextBox.Text = WorkbenchSettingsStore.SettingsFilePath;
         StorageRootTextBox.Text = AppSettingsPathManager.StorageRootDirectory;
+        ClaudeApiKeyBox.Password = WorkbenchSettingsStore.TryGetClaudeApiKey() ?? string.Empty;
+        OpenAiApiKeyBox.Password = WorkbenchSettingsStore.TryGetOpenAiApiKey() ?? string.Empty;
+
+        // DB paths — show the EFFECTIVE path (what the app actually uses right now)
+        ScheduleDbPathTextBox.Text      = JinoSupporter.App.Modules.Schedule.ScheduleRepository.DatabasePath;
+        ProcessReviewDbPathTextBox.Text = JinoSupporter.App.Modules.DataInference.DataInferenceRepository.DatabasePath;
 
         _entries.Clear();
         AddEntry("Bootstrap pointer", "Custom settings file path pointer", WorkbenchSettingsStore.BootstrapFilePath);
@@ -186,6 +310,8 @@ public partial class AppSettingsView : UserControl
         AddEntry("ScreenCapture hotkeys", "Stored inside the unified settings JSON", CaptureHotkeyManager.SettingsPath);
         AddEntry("VideoConverter settings", "Stored inside the unified settings JSON", VideoConverter.MainWindow.SettingsFilePath);
         AddEntry("Memo database path", "Current memo DB target", settings.Memo.DatabasePath);
+        AddEntry("Schedule database", "Schedule events SQLite DB", JinoSupporter.App.Modules.Schedule.ScheduleRepository.DatabasePath);
+        AddEntry("Process Review database", "Data Inference / Report SQLite DB", JinoSupporter.App.Modules.DataInference.DataInferenceRepository.DatabasePath);
         AddEntry("DiskTree database", "Indexed file metadata database", DiskTree.MainWindow.DefaultDatabasePath);
         AddEntry("BMES credentials", "Stored inside the unified settings JSON", FormSettingBMESWindow.GetCurrentDataFilePath());
     }

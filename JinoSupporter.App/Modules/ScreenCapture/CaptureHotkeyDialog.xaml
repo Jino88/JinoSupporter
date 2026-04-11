@@ -1,6 +1,7 @@
 <Window x:Class="WorkbenchHost.Modules.ScreenCapture.CaptureHotkeyDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
         Title="Set Capture Shortcut"
         Width="420"
         Height="220"
@@ -74,17 +75,17 @@
         <StackPanel Grid.Row="3"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
-            <Button Width="96"
+            <app:AppButton Width="96"
                     Height="32"
                     Margin="0,0,8,0"
                     Content="Clear"
                     Click="ClearButton_Click" />
-            <Button Width="96"
+            <app:AppButton Width="96"
                     Height="32"
                     Margin="0,0,8,0"
                     Content="Cancel"
                     IsCancel="True" />
-            <Button Width="96"
+            <app:AppButton Width="96"
                     Height="32"
                     Content="Save"
                     IsDefault="True"

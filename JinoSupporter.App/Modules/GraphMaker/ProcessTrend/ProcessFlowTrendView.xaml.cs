@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using JinoSupporter.Controls;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
@@ -81,7 +82,7 @@ namespace GraphMaker
             public List<List<string>> Rows { get; init; } = new();
         }
 
-        private sealed class AxisEntry
+        internal sealed class AxisEntry
         {
             public int XAxisProcessIndex { get; init; }
             public string Name { get; init; } = string.Empty;
@@ -217,6 +218,11 @@ namespace GraphMaker
             return OxyColor.FromArgb(c.A, c.R, c.G, c.B);
         }
 
+        private void FileDropBox_FilesSelected(object sender, FilesSelectedEventArgs e)
+        {
+            HandleWebDroppedFiles(e.FilePaths);
+        }
+
         private void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new OpenFileDialog
@@ -230,28 +236,6 @@ namespace GraphMaker
             {
                 HandleWebDroppedFiles(dialog.FileNames);
             }
-        }
-
-        private void FileDropBorder_DragEnter(object sender, DragEventArgs e)
-        {
-            bool hasFiles = e.Data.GetDataPresent(DataFormats.FileDrop);
-            e.Effects = hasFiles ? DragDropEffects.Copy : DragDropEffects.None;
-            e.Handled = true;
-        }
-
-        private void FileDropBorder_Drop(object sender, DragEventArgs e)
-        {
-            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                return;
-            }
-
-            if (e.Data.GetData(DataFormats.FileDrop) is string[] filePaths && filePaths.Length > 0)
-            {
-                HandleWebDroppedFiles(filePaths);
-            }
-
-            e.Handled = true;
         }
 
         private void LoadFiles(IEnumerable<string> filePaths)

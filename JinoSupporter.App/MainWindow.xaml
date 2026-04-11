@@ -1,6 +1,7 @@
 <Window x:Class="JinoSupporter.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
         Title="JinoSupporter"
         Width="1780"
         Height="1040"
@@ -185,13 +186,16 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280" />
+            <ColumnDefinition x:Name="LeftMenuColumn" Width="280" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0"
+        <Border x:Name="LeftMenuBorder"
+                Grid.Column="0"
                 Background="#F8FBFF"
-                Padding="12">
+                Padding="12"
+                MouseEnter="LeftMenuBorder_MouseEnter"
+                MouseLeave="LeftMenuBorder_MouseLeave">
             <DockPanel LastChildFill="True">
                 <StackPanel DockPanel.Dock="Top"
                             Orientation="Horizontal"
@@ -208,7 +212,8 @@
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center" />
                     </Border>
-                    <StackPanel Margin="10,0,0,0"
+                    <StackPanel x:Name="LogoTextPanel"
+                                Margin="10,0,0,0"
                                 VerticalAlignment="Center">
                         <TextBlock Text="JinoSupporter"
                                    FontSize="15"
@@ -229,14 +234,16 @@
             </DockPanel>
         </Border>
 
-        <Grid Grid.Column="1"
+        <Grid x:Name="ContentGrid"
+              Grid.Column="1"
               Margin="14">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Border Background="White"
+            <Border x:Name="ModuleTitleBar"
+                    Background="White"
                     CornerRadius="10"
                     BorderBrush="#E2E8F0"
                     BorderThickness="1"
@@ -260,6 +267,7 @@
             </Border>
 
             <Border Grid.Row="1"
+                    x:Name="ModuleContentBorder"
                     Margin="0,8,0,0"
                     Background="White"
                     CornerRadius="16"

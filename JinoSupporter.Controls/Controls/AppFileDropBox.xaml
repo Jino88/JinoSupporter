@@ -1,0 +1,34 @@
+<UserControl x:Class="JinoSupporter.Controls.AppFileDropBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:JinoSupporter.Controls">
+
+    <Border x:Name="DropZoneBorder"
+            Background="#FAFBFE"
+            BorderBrush="#C8D6E8"
+            BorderThickness="1.5"
+            CornerRadius="8"
+            MinHeight="80"
+            AllowDrop="True"
+            Drop="DropZone_Drop"
+            DragEnter="DropZone_DragEnter"
+            DragLeave="DropZone_DragLeave"
+            DragOver="DropZone_DragOver"
+            SnapsToDevicePixels="True">
+        <StackPanel HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Margin="12">
+            <TextBlock x:Name="HintTextBlock"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,8"
+                       FontSize="11"
+                       Foreground="#64748B"
+                       TextAlignment="Center" />
+            <controls:AppButton x:Name="BrowseButton"
+                                HorizontalAlignment="Center"
+                                Width="100"
+                                Click="BrowseButton_Click" />
+        </StackPanel>
+    </Border>
+
+</UserControl>

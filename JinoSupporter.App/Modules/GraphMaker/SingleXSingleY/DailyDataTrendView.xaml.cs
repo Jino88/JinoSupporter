@@ -16,9 +16,6 @@ using OxyPlot.Axes;
 using OxyPlot.Series;
 using Color = System.Windows.Media.Color;
 using Colors = System.Windows.Media.Colors;
-using DataFormats = System.Windows.DataFormats;
-using DragDropEffects = System.Windows.DragDropEffects;
-using DragEventArgs = System.Windows.DragEventArgs;
 using MessageBox = System.Windows.MessageBox;
 using UserControl = System.Windows.Controls.UserControl;
 
@@ -114,53 +111,9 @@ namespace GraphMaker
             PreviewGraphViewBase.InitializeDefaultColorOptions(PlotColorComboBox, _colorChoices);
         }
 
-        private void BrowseButton_Click(object sender, RoutedEventArgs e)
+        private void FileDropBox_FilesSelected(object sender, JinoSupporter.Controls.FilesSelectedEventArgs e)
         {
-            if (TryBrowseFiles(
-                "Select data files",
-                "Text/CSV files (*.txt;*.csv)|*.txt;*.csv|All files (*.*)|*.*",
-                true,
-                out string[] files))
-            {
-                LoadFiles(files);
-            }
-        }
-
-        private void DropZone_Drop(object sender, DragEventArgs e)
-        {
-            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                return;
-            }
-
-            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            if (files == null || files.Length == 0)
-            {
-                return;
-            }
-
-            LoadFiles(files);
-        }
-
-        private void DropZone_DragEnter(object sender, DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                e.Effects = DragDropEffects.Copy;
-                StatusText.Foreground = new SolidColorBrush(Colors.Blue);
-                StatusText.Text = "Drop to load files.";
-            }
-        }
-
-        private void DropZone_DragLeave(object sender, DragEventArgs e)
-        {
-            StatusText.Foreground = new SolidColorBrush(Color.FromRgb(102, 112, 133));
-        }
-
-        private void DropZone_DragOver(object sender, DragEventArgs e)
-        {
-            e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
-            e.Handled = true;
+            LoadFiles(e.FilePaths);
         }
 
         private void LoadFiles(IEnumerable<string> filePaths)

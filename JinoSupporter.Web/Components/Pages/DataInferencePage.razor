@@ -1,0 +1,1199 @@
+@page "/data-inference"
+@rendermode InteractiveServer
+@using System.Linq
+@implements IAsyncDisposable
+@inject WebRepository Repo
+@inject ClaudeService  Claude
+@inject IJSRuntime     JS
+
+<PageTitle>Data Inference</PageTitle>
+
+@if (!Claude.IsConfigured)
+{
+    <div class="alert alert-warning mb-3">
+        <strong>Claude API key not configured.</strong>
+        Set it in the WPF app Settings → Claude API Key, or in <code>appsettings.json</code>.
+    </div>
+}
+
+<div class="row g-3" style="min-height:0;">
+
+    <!-- ══ Left: Input panel ══════════════════════════════════════════════════ -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold small">Input</div>
+            <div class="card-body d-flex flex-column gap-2 overflow-auto" style="max-height:calc(100vh - 160px);">
+
+                <!-- Dataset name -->
+                <div>
+                    <label class="form-label small fw-semibold mb-1">
+                        Dataset Name <span class="text-danger">*</span>
+                        <span class="text-muted fw-normal">(same name = appended)</span>
+                    </label>
+                    <input @bind="_datasetName" class="form-control form-control-sm"
+                           placeholder="e.g. AudioBus_2024_Q1" />
+                </div>
+
+                <!-- Memo -->
+                <div>
+                    <label class="form-label small fw-semibold mb-1">Memo</label>
+                    <textarea @bind="_memo" class="form-control form-control-sm" rows="2"
+                              placeholder="Purpose / review notes…" />
+                </div>
+
+                <!-- Mode toggle -->
+                <div class="btn-group btn-group-sm w-100" role="group">
+                    <input type="radio" class="btn-check" name="inputMode" id="modeAi" autocomplete="off"
+                           checked="@_useAi" @onchange="() => SetMode(true)" />
+                    <label class="btn btn-outline-primary" for="modeAi">AI Extract</label>
+
+                    <input type="radio" class="btn-check" name="inputMode" id="modeDirect" autocomplete="off"
+                           checked="@(!_useAi)" @onchange="() => SetMode(false)" />
+                    <label class="btn btn-outline-primary" for="modeDirect">Just Input Table</label>
+                </div>
+                <div class="form-check mt-1 mb-0">
+                    <input class="form-check-input" type="checkbox" id="includeImages"
+                           @bind="_includeImagesInAi" />
+                    <label class="form-check-label small fw-semibold" for="includeImages"
+                           style="color:#1e293b; cursor:pointer;">
+                        Include Images in AI Analysis
+                    </label>
+                </div>
+                <div class="text-muted small" style="margin-top:-2px;">
+                    @(_useAi
+                        ? "Claude AI analyzes and extracts table structure."
+                        : "First row = headers, remaining rows = data (no AI).")
+                </div>
+
+                <!-- Data textarea -->
+                <div>
+                    <label class="form-label small fw-semibold mb-1">Table Data</label>
+                    <textarea @bind="_rawInput"
+                              class="form-control font-monospace" rows="9"
+                              placeholder="Select range in Excel → Ctrl+C → paste here…"
+                              style="font-size:12px; resize:vertical;" />
+                </div>
+
+                <!-- Images -->
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <label class="form-label small fw-semibold mb-0">Images</label>
+                        @if (_images.Count > 0)
+                        {
+                            <button class="btn btn-outline-secondary btn-sm" @onclick="ClearImages">
+                                Clear (@_images.Count)
+                            </button>
+                        }
+                    </div>
+                    <div class="d-flex gap-2 mb-1">
+                        <button class="btn btn-outline-primary btn-sm" @onclick="OpenCaptureAsync">
+                            📋 From Clipboard
+                        </button>
+                        <InputFile OnChange="OnImagesSelected" multiple accept="image/*"
+                                   class="form-control form-control-sm" style="font-size:11px;" />
+                    </div>
+                    @if (_images.Count > 0)
+                    {
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            @foreach (ImageEntry img in _images)
+                            {
+                                <div style="position:relative; display:inline-block; cursor:pointer;" @onclick="() => _images.Remove(img)">
+                                    <img src="@img.DataUrl" alt="@img.Name" title="@img.Name (click to remove)"
+                                         style="height:52px; object-fit:cover; border-radius:4px; border:1px solid #ccc; display:block;" />
+                                    <span style="position:absolute; bottom:2px; left:0; right:0; text-align:center; background:rgba(0,0,0,.55); color:#fff; font-size:9px; border-radius:0 0 4px 4px; padding:1px 3px;">
+                                        @FormatBytes(img.SizeBytes)
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Organize / Clear buttons -->
+                @if (CanEdit)
+                {
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary flex-fill" @onclick="OrganizeAsync"
+                                disabled="@(_isBusy || (!Claude.IsConfigured && _useAi) || !CanOrganize)">
+                            @if (_isBusy && _busyStep == "organize")
+                            { <span class="spinner-border spinner-border-sm me-1" /> }
+                            Organize
+                        </button>
+                        <button class="btn btn-outline-secondary" @onclick="ClearAll"
+                                disabled="@_isBusy">
+                            Clear
+                        </button>
+                    </div>
+
+                    <!-- Extract Tags -->
+                    @if (_pendingTables.Count > 0)
+                    {
+                        <button class="btn btn-outline-info btn-sm w-100" @onclick="ExtractTagsAsync"
+                                disabled="@(_isBusy || !Claude.IsConfigured)">
+                            @if (_isBusy && _busyStep == "tags")
+                            { <span class="spinner-border spinner-border-sm me-1" /> }
+                            ✨ Extract Tags
+                        </button>
+
+                        @if (_pendingTags.Count > 0)
+                        {
+                            <div class="d-flex flex-wrap gap-1 p-2 rounded border border-primary-subtle bg-primary-subtle">
+                                @foreach (string tag in _pendingTags)
+                                {
+                                    <span class="badge text-bg-primary">@tag</span>
+                                }
+                            </div>
+                        }
+                    }
+
+                    <!-- Save to DB -->
+                    <button class="btn btn-success w-100" @onclick="SaveToDbAsync"
+                            disabled="@(_isBusy || (_pendingTables.Count == 0 && _images.Count == 0) || (_pendingTables.Count > 0 && !_tagsExtracted))">
+                        @if (_isBusy && _busyStep == "save")
+                        { <span class="spinner-border spinner-border-sm me-1" /> }
+                        Save to DB
+                        @if (_pendingTables.Count > 0 && !_tagsExtracted)
+                        { <span class="ms-1 small fw-normal">(Extract Tags first)</span> }
+                    </button>
+                }
+                else
+                {
+                    <div class="alert alert-warning py-2 small mb-0">View only — editing requires Editor role or above.</div>
+                }
+
+                <!-- Status -->
+                @if (!string.IsNullOrEmpty(_statusMessage))
+                {
+                    <div class="alert @(_statusIsError ? "alert-danger" : "alert-success") py-2 mb-0 small">
+                        @_statusMessage
+                    </div>
+                }
+
+                <!-- DB Info -->
+                <div class="p-2 rounded bg-light border small text-muted">
+                    <div class="fw-semibold text-dark mb-1">DB Info</div>
+                    <div class="text-truncate" title="@_dbPath">📁 @_dbPath</div>
+                    <div>Records: <strong>@_totalRecords</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Right: Results + DB Data tabs ════════════════════════════════════ -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow-sm h-100">
+            <!-- Tab headers -->
+            <div class="card-header p-0">
+                <ul class="nav nav-tabs card-header-tabs">
+                    <li class="nav-item">
+                        <button class="nav-link @(_activeTab == "results" ? "active" : "")"
+                                @onclick='() => SetTab("results")'>
+                            Results
+                            @if (_pendingTables.Count > 0)
+                            {
+                                <span class="badge text-bg-primary ms-1">@_pendingTables.Count</span>
+                            }
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link @(_activeTab == "db" ? "active" : "")"
+                                @onclick='() => SetTab("db")'>
+                            DB Data
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Results tab -->
+            @if (_activeTab == "results")
+            {
+                <div class="card-body overflow-auto" style="max-height:calc(100vh - 200px);">
+                    @if (_pendingTables.Count == 0)
+                    {
+                        <div class="text-center text-muted py-5">
+                            <div class="fw-semibold">No tables yet</div>
+                            <div class="small mt-1">Paste data on the left and click <strong>Organize</strong>.</div>
+                        </div>
+                    }
+                    @foreach (PendingTable table in _pendingTables)
+                    {
+                        <div class="card mb-3 border">
+                            <div class="card-header py-2 d-flex align-items-center gap-2">
+                                <input class="form-control form-control-sm fw-semibold"
+                                       style="max-width:260px; font-size:13px;"
+                                       value="@table.TableName"
+                                       @oninput="e => table.TableName = e.Value?.ToString() ?? table.TableName" />
+                                <span class="text-muted small">@table.Rows.Count rows</span>
+                                <button class="btn btn-danger btn-sm ms-auto"
+                                        @onclick="() => RemovePendingTable(table)">Delete</button>
+                            </div>
+                            <div style="overflow:auto; max-height:260px;">
+                                <table style="font-size:11px; min-width:max-content; border-collapse:collapse; width:100%;">
+                                    <thead style="position:sticky; top:0; z-index:1; background:#f8fafc;">
+                                        <tr>
+                                            @{ int pci = 0; }
+                                            @foreach (ColumnDef col in table.Columns)
+                                            {
+                                                int ci = pci++;
+                                                <th style="padding:6px 10px; font-size:10px; font-weight:700;
+                                                           color:#64748b; text-transform:uppercase; letter-spacing:.4px;
+                                                           white-space:nowrap; border-bottom:2px solid #e2e8f0;
+                                                           cursor:context-menu; user-select:none;"
+                                                    title="Right-click to delete column"
+                                                    @oncontextmenu="e => ShowCtxMenu(e, false, table, -1, ci)"
+                                                    @oncontextmenu:preventDefault="true">
+                                                    @col.Label
+                                                </th>
+                                            }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{ int pri = 0; }
+                                        @foreach (Dictionary<string, string> row in table.Rows.Take(200))
+                                        {
+                                            int ri = pri++;
+                                            <tr style="border-top:1px solid #f1f5f9; cursor:default;"
+                                                @oncontextmenu="e => ShowCtxMenu(e, false, table, ri, -1)"
+                                                @oncontextmenu:preventDefault="true">
+                                                @foreach (ColumnDef col in table.Columns)
+                                                {
+                                                    string cv = row.TryGetValue(col.Field, out string? v) ? v ?? "" : "";
+                                                    <td style="padding:0; border-top:1px solid #f1f5f9;"
+                                                        @onclick:stopPropagation="true">
+                                                        @if (IsEditing(false, table, ri, col.Field))
+                                                        {
+                                                            <input class="di-cell-input"
+                                                                   value="@_editValue"
+                                                                   @oninput="e => _editValue = e.Value?.ToString() ?? _editValue"
+                                                                   @onblur="CommitEdit"
+                                                                   @onkeydown="OnEditKeyDown"
+                                                                   @ref="_editRef" />
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="di-cell-span"
+                                                                  @onclick="() => StartEdit(false, table, ri, col.Field, cv)">
+                                                                @cv
+                                                            </span>
+                                                        }
+                                                    </td>
+                                                }
+                                            </tr>
+                                        }
+                                        @if (table.Rows.Count > 200)
+                                        {
+                                            <tr>
+                                                <td colspan="@table.Columns.Count"
+                                                    style="text-align:center; padding:6px; color:#94a3b8; font-size:10px;">
+                                                    … @(table.Rows.Count - 200) more rows (all will be saved)
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- DB Data tab -->
+            @if (_activeTab == "db")
+            {
+                <div class="card-body p-0 overflow-hidden d-flex flex-column" style="max-height:calc(100vh - 200px);">
+                    <div class="row g-0 flex-grow-1 overflow-hidden">
+
+                        <!-- Dataset list -->
+                        <div class="col-4 border-end d-flex flex-column">
+                            <div class="px-3 py-2 border-bottom bg-light d-flex align-items-center justify-content-between">
+                                <span class="small fw-semibold">Datasets (@_dbSummary.Count)</span>
+                                <button class="btn btn-link btn-sm p-0 text-secondary" @onclick="RefreshDbTab">↻</button>
+                            </div>
+                            <div class="overflow-auto flex-grow-1">
+                                @if (_dbSummary.Count == 0)
+                                {
+                                    <div class="text-muted small p-3">No datasets in DB.</div>
+                                }
+                                @foreach ((string name, int cnt) in _dbSummary)
+                                {
+                                    <button class="list-group-item list-group-item-action small py-2 px-3 border-0 border-bottom
+                                                   @(_selectedDbDataset == name ? "active" : "")"
+                                            @onclick="() => SelectDbDataset(name)">
+                                        <div class="fw-semibold text-truncate">@name</div>
+                                        <div class="@(_selectedDbDataset == name ? "text-white-50" : "text-muted") small">
+                                            @cnt table(s)
+                                        </div>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Right: tables + rows + meta -->
+                        <div class="col-8 d-flex flex-column overflow-hidden">
+                            @if (_selectedDbDataset is null)
+                            {
+                                <div class="text-muted small p-3">Select a dataset.</div>
+                            }
+                            else
+                            {
+                                <!-- Dataset header + actions -->
+                                <div class="px-3 py-2 border-bottom bg-light d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="fw-semibold small">@_selectedDbDataset</span>
+                                    <button class="btn btn-outline-info btn-sm ms-auto"
+                                            @onclick="ReTagAsync"
+                                            disabled="@(_isBusy || !Claude.IsConfigured)">
+                                        @if (_isBusy && _busyStep == "retag")
+                                        { <span class="spinner-border spinner-border-sm me-1" /> }
+                                        Re-tag
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm"
+                                            @onclick="() => DeleteDatasetAsync(_selectedDbDataset)">
+                                        Delete Dataset
+                                    </button>
+                                </div>
+
+                                <!-- Tags + Memo -->
+                                <div class="px-3 py-2 border-bottom d-flex gap-3 align-items-start flex-wrap">
+                                    <!-- Tags -->
+                                    <div class="flex-fill">
+                                        <div class="small fw-semibold text-primary mb-1">Tags</div>
+                                        @if (_dbTags.Count == 0)
+                                        {
+                                            <span class="text-muted small">None</span>
+                                        }
+                                        @foreach (string t in _dbTags)
+                                        { <span class="badge text-bg-primary me-1">@t</span> }
+                                    </div>
+                                    <!-- Memo -->
+                                    <div class="flex-fill">
+                                        <div class="small fw-semibold text-warning-emphasis mb-1">Memo</div>
+                                        <div class="input-group input-group-sm">
+                                            <textarea class="form-control form-control-sm" rows="2" style="font-size:11px;"
+                                                      @bind="_dbMemo" />
+                                            <button class="btn btn-outline-secondary" @onclick="SaveMemoAsync">Save</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tables list -->
+                                <div class="border-bottom" style="max-height:160px; overflow-y:auto;">
+                                    <table class="table table-sm table-hover mb-0" style="font-size:11px;">
+                                        <thead class="table-light" style="position:sticky; top:0;">
+                                            <tr>
+                                                <th>Table</th>
+                                                <th>Rows</th>
+                                                <th>Saved At</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (DataTableInfo t in _dbTables)
+                                            {
+                                                <tr class="@(_selectedDbTable?.Id == t.Id ? "table-primary" : "")"
+                                                    style="cursor:pointer;" @onclick="() => SelectDbTable(t)">
+                                                    <td class="fw-semibold" @onclick:stopPropagation="true">
+                                                        @if (_renamingTableId == t.Id)
+                                                        {
+                                                            <input style="width:100%; font-size:11px; font-weight:600;
+                                                                          padding:1px 4px; border:1px solid #93c5fd;
+                                                                          border-radius:3px; background:#eff6ff; outline:none;"
+                                                                   value="@_renameValue"
+                                                                   @oninput="e => _renameValue = e.Value?.ToString() ?? _renameValue"
+                                                                   @onblur="CommitRename"
+                                                                   @onkeydown="OnRenameKeyDown"
+                                                                   @ref="_renameRef" />
+                                                        }
+                                                        else
+                                                        {
+                                                            <span title="Click to rename" style="cursor:text;"
+                                                                  @onclick="() => StartRename(t)">
+                                                                @t.TableName
+                                                            </span>
+                                                        }
+                                                    </td>
+                                                    <td>@t.RowCount</td>
+                                                    <td>@t.CreatedAtLocal</td>
+                                                    <td>
+                                                        <button class="btn btn-outline-danger btn-sm py-0 px-1"
+                                                                @onclick:stopPropagation="true"
+                                                                @onclick="() => DeleteTableAsync(t.Id)">✕</button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Row detail -->
+                                <div class="overflow-auto flex-grow-1">
+                                    @if (_selectedDbTable is null)
+                                    {
+                                        <div class="text-muted small p-3">Click a table above to view its rows.</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="px-2 pt-1 pb-0 text-muted small">
+                                            @_dbRows.Count rows — @_selectedDbTable.TableName
+                                        </div>
+                                        <div style="overflow:auto;">
+                                            <table style="font-size:11px; min-width:max-content; border-collapse:collapse; width:100%;">
+                                                <thead style="position:sticky; top:0; z-index:1; background:#f8fafc;">
+                                                    <tr>
+                                                        @{ int dci = 0; }
+                                                        @foreach (ColumnDef col in _selectedDbTable.Columns)
+                                                        {
+                                                            int ci = dci++;
+                                                            <th style="padding:6px 10px; font-size:10px; font-weight:700;
+                                                                       color:#64748b; text-transform:uppercase; letter-spacing:.4px;
+                                                                       white-space:nowrap; border-bottom:2px solid #e2e8f0;
+                                                                       cursor:context-menu; user-select:none;"
+                                                                title="Right-click to delete column"
+                                                                @oncontextmenu="e => ShowCtxMenu(e, true, null, -1, ci)"
+                                                                @oncontextmenu:preventDefault="true">
+                                                                @col.Label
+                                                            </th>
+                                                        }
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @{ int dri = 0; }
+                                                    @foreach (Dictionary<string, string> row in _dbDisplayRows)
+                                                    {
+                                                        int ri = dri++;
+                                                        <tr style="border-top:1px solid #f1f5f9;"
+                                                            @oncontextmenu="e => ShowCtxMenu(e, true, null, ri, -1)"
+                                                            @oncontextmenu:preventDefault="true">
+                                                            @foreach (ColumnDef col in _selectedDbTable.Columns)
+                                                            {
+                                                                string cv = row.TryGetValue(col.Field, out string? v) ? v ?? "" : "";
+                                                                string rawCv = ri < _dbRows.Count && _dbRows[ri].TryGetValue(col.Field, out string? rv) ? rv ?? "" : "";
+                                                                <td style="padding:0; border-top:1px solid #f1f5f9;"
+                                                                    @onclick:stopPropagation="true">
+                                                                    @if (IsEditing(true, null, ri, col.Field))
+                                                                    {
+                                                                        <input class="di-cell-input"
+                                                                               value="@_editValue"
+                                                                               @oninput="e => _editValue = e.Value?.ToString() ?? _editValue"
+                                                                               @onblur="CommitEdit"
+                                                                               @onkeydown="OnEditKeyDown"
+                                                                               @ref="_editRef" />
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span class="di-cell-span"
+                                                                              @onclick="() => StartEdit(true, null, ri, col.Field, rawCv)">
+                                                                            @cv
+                                                                        </span>
+                                                                    }
+                                                                </td>
+                                                            }
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ── Context Menu ────────────────────────────────────────────────────── -->
+@if (_showCtxMenu)
+{
+    <div style="position:fixed; inset:0; z-index:9000;"
+         @onclick="CloseCtxMenu"
+         @oncontextmenu="CloseCtxMenu"
+         @oncontextmenu:preventDefault="true"></div>
+    <div style="position:fixed; top:@(_ctxY)px; left:@(_ctxX)px; z-index:9001;
+                background:#fff; border:1px solid #e2e8f0; border-radius:8px;
+                box-shadow:0 4px 20px rgba(0,0,0,.13); padding:4px 0; min-width:150px;">
+        @if (_ctxMode == "row")
+        {
+            <button class="di-ctx-btn di-ctx-danger" @onclick="ExecuteCtxAction">🗑 Delete Row</button>
+        }
+        else
+        {
+            <button class="di-ctx-btn di-ctx-danger" @onclick="ExecuteCtxAction">🗑 Delete Column</button>
+        }
+    </div>
+}
+
+<style>
+    .di-ctx-btn {
+        display: block; width: 100%; padding: 7px 14px;
+        text-align: left; background: transparent; border: none;
+        font-size: 13px; font-weight: 500; cursor: pointer; color: #334155;
+        transition: background .1s;
+    }
+    .di-ctx-btn:hover { background: #f8fafc; }
+    .di-ctx-danger { color: #dc2626 !important; }
+    .di-cell-span {
+        display: block; padding: 5px 8px; min-height: 22px;
+        cursor: text; white-space: nowrap;
+    }
+    .di-cell-span:hover { background: #eff6ff; }
+    .di-cell-input {
+        width: 100%; padding: 4px 8px; font-size: 11px;
+        border: 1px solid #93c5fd; border-radius: 4px; outline: none;
+        background: #eff6ff; min-width: 80px;
+    }
+</style>
+
+<!-- ── Image Paste Modal ───────────────────────────────────────────────── -->
+@if (_showCaptureOverlay)
+{
+    <div class="paste-modal-backdrop" @onclick="CancelCapture">
+        <div class="paste-modal" @onclick:stopPropagation="true">
+            <div class="paste-modal-title">Paste Image</div>
+            <div class="paste-modal-body">
+                <div style="font-size:48px; margin-bottom:12px;">📋</div>
+                <div style="font-size:15px; font-weight:600; color:#1e293b; margin-bottom:6px;">
+                    Press Ctrl+V to paste an image
+                </div>
+                <div style="font-size:12px; color:#94a3b8; margin-bottom:20px;">
+                    Copy a screenshot or image to clipboard, then press Ctrl+V
+                </div>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="CancelCapture">Cancel</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // ── Types ─────────────────────────────────────────────────────────────────
+    private sealed class PendingTable
+    {
+        public string TableName { get; set; } = "";
+        public List<ColumnDef> Columns { get; init; } = [];
+        public List<Dictionary<string, string>> Rows { get; init; } = [];
+    }
+
+    private sealed record ImageEntry(string Name, string MediaType, string Base64, string DataUrl, long SizeBytes);
+
+    // ── Input state ───────────────────────────────────────────────────────────
+    private string _datasetName = string.Empty;
+    private string _memo        = string.Empty;
+    private string _rawInput    = string.Empty;
+    private bool   _useAi       = true;
+
+    private List<PendingTable> _pendingTables    = [];
+    private List<string>       _pendingTags      = [];
+    private bool               _tagsExtracted;
+    private List<ImageEntry>   _images           = [];
+    private bool               _includeImagesInAi;
+
+    private bool CanOrganize =>
+        !string.IsNullOrWhiteSpace(_rawInput) ||
+        (_includeImagesInAi && _images.Count > 0);
+
+    // ── UI state ──────────────────────────────────────────────────────────────
+    private bool   _isBusy;
+    private string _busyStep       = string.Empty;
+    private string _statusMessage  = string.Empty;
+    private bool   _statusIsError;
+    private string _activeTab      = "results";
+
+    private string _dbPath      = string.Empty;
+    private int    _totalRecords;
+
+    // ── Auth ──────────────────────────────────────────────────────────────────
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+    private bool CanEdit => AppRoles.CanEdit(_user);
+
+    // ── Clipboard ─────────────────────────────────────────────────────────────
+    private bool _showCaptureOverlay;
+    private DotNetObjectReference<DataInferencePage>? _dotnetRef;
+
+    // ── DB Data tab state ────────────────────────────────────────────────────
+    private List<(string Name, int TableCount)> _dbSummary      = [];
+    private string?           _selectedDbDataset;
+    private List<DataTableInfo> _dbTables                       = [];
+    private DataTableInfo?    _selectedDbTable;
+    private List<Dictionary<string, string>> _dbRows            = [];
+    private List<Dictionary<string, string>> _dbDisplayRows     = [];
+    private List<string>      _dbTags                           = [];
+    private string            _dbMemo                           = string.Empty;
+
+    // ── Table rename ──────────────────────────────────────────────────────────
+    private long   _renamingTableId = -1;
+    private string _renameValue     = "";
+
+    // ── Context menu ──────────────────────────────────────────────────────────
+    private bool          _showCtxMenu;
+    private double        _ctxX, _ctxY;
+    private string        _ctxMode  = "";      // "row" | "col"
+    private bool          _ctxIsDb;
+    private PendingTable? _ctxTable;
+    private int           _ctxRowIndex = -1;
+    private int           _ctxColIndex = -1;
+
+    // ── Inline cell editing ───────────────────────────────────────────────────
+    private bool          _editIsDb;
+    private PendingTable? _editTable;
+    private int           _editRowIndex  = -1;
+    private string        _editColField  = "";
+    private string        _editValue     = "";
+    private bool          _editNeedFocus;
+    private ElementReference _editRef;
+    private bool          _renameNeedFocus;
+    private ElementReference _renameRef;
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        _user = (await AuthState).User;
+        RefreshDbInfo();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotnetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("pasteImageHandler.init", _dotnetRef);
+        }
+        if (_editNeedFocus)
+        {
+            _editNeedFocus = false;
+            try { await JS.InvokeVoidAsync("eval", "document.querySelector('.di-cell-input')?.focus()"); } catch { }
+        }
+        if (_renameNeedFocus)
+        {
+            _renameNeedFocus = false;
+            try { await _renameRef.FocusAsync(); } catch { }
+        }
+    }
+
+    private void RefreshDbInfo()
+    {
+        _dbPath       = Repo.GetDbPath();
+        _totalRecords = Repo.GetTotalRowCount();
+    }
+
+    // ── Tab switching ─────────────────────────────────────────────────────────
+    private void SetTab(string tab)
+    {
+        _activeTab = tab;
+        if (tab == "db") RefreshDbTab();
+    }
+
+    private void SetMode(bool useAi) => _useAi = useAi;
+
+    // ── Organize ──────────────────────────────────────────────────────────────
+    private async Task OrganizeAsync()
+    {
+        if (!CanOrganize)
+        {
+            SetStatus("Paste data or add an image first.", true);
+            return;
+        }
+
+        if (_includeImagesInAi && _images.Count > 0 && !_useAi)
+        {
+            SetStatus("Image analysis requires AI Extract mode.", true);
+            return;
+        }
+
+        _isBusy = true; _busyStep = "organize"; _statusMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            List<PendingTable> newTables;
+
+            if (_useAi)
+            {
+                List<(string MediaType, string Base64)>? imageList = null;
+                if (_includeImagesInAi && _images.Count > 0)
+                    imageList = _images.Select(i => (i.MediaType, i.Base64)).ToList();
+
+                List<ExtractedTable> extracted = await Claude.ExtractTablesAsync(_rawInput, imageList);
+                if (extracted.Count == 0)
+                {
+                    SetStatus("No tables extracted. Check the input format.", true);
+                    return;
+                }
+                newTables = extracted.Select(t => new PendingTable
+                {
+                    TableName = t.TableName,
+                    Columns   = t.Columns,
+                    Rows      = t.Rows
+                }).ToList();
+            }
+            else
+            {
+                var (cols, rows) = ParseDirect(_rawInput);
+                if (rows.Count == 0)
+                {
+                    SetStatus("No rows found. Make sure the first row contains headers.", true);
+                    return;
+                }
+                newTables = [new PendingTable
+                {
+                    TableName = $"Table {_pendingTables.Count + 1}",
+                    Columns   = cols,
+                    Rows      = rows
+                }];
+            }
+
+            _pendingTables.AddRange(newTables);
+            _rawInput      = string.Empty;
+            _tagsExtracted = false;
+            _pendingTags   = [];
+            _activeTab     = "results";
+            SetStatus($"Organized {newTables.Count} table(s). Total: {_pendingTables.Count}.", false);
+        }
+        catch (Exception ex) { SetStatus($"Error: {ex.Message}", true); }
+        finally { _isBusy = false; _busyStep = string.Empty; }
+    }
+
+    private void RemovePendingTable(PendingTable table)
+    {
+        _pendingTables.Remove(table);
+        if (_pendingTables.Count == 0)
+        {
+            _tagsExtracted = false;
+            _pendingTags   = [];
+        }
+    }
+
+    private void ClearAll()
+    {
+        _rawInput      = string.Empty;
+        _pendingTables = [];
+        _pendingTags   = [];
+        _tagsExtracted = false;
+        _images        = [];
+        _statusMessage = string.Empty;
+    }
+
+    // ── Extract Tags ──────────────────────────────────────────────────────────
+    private async Task ExtractTagsAsync()
+    {
+        _isBusy = true; _busyStep = "tags"; _statusMessage = string.Empty;
+        StateHasChanged();
+        try
+        {
+            string preview = string.Join('\n', _rawInput.Split('\n').Take(5));
+            List<string> cols = _pendingTables.SelectMany(t => t.Columns).Select(c => c.Label).Distinct().ToList();
+            string context = _datasetName + " " + _memo + " " + string.Join(" ", cols);
+            _pendingTags   = await Claude.ExtractTagsAsync(_datasetName, _memo, context);
+            _tagsExtracted = true;
+            SetStatus($"Suggested {_pendingTags.Count} tag(s).", false);
+        }
+        catch (Exception ex) { SetStatus($"Tag error: {ex.Message}", true); }
+        finally { _isBusy = false; _busyStep = string.Empty; }
+    }
+
+    // ── Save to DB ────────────────────────────────────────────────────────────
+    private async Task SaveToDbAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_datasetName))
+        {
+            SetStatus("Dataset name is required.", true);
+            return;
+        }
+
+        _isBusy = true; _busyStep = "save"; _statusMessage = string.Empty;
+        StateHasChanged();
+        try
+        {
+            string dsName = _datasetName.Trim();
+            var tables    = _pendingTables.ToList();
+            var tags      = _pendingTags.ToList();
+            string memo   = _memo;
+
+            await Task.Run(() =>
+            {
+                foreach (PendingTable t in tables)
+                    Repo.SaveTable(dsName, t.TableName, t.Columns, t.Rows);
+                if (tags.Count  > 0) Repo.SaveTags(dsName, tags);
+                if (!string.IsNullOrWhiteSpace(memo)) Repo.SaveMemo(dsName, memo);
+            });
+
+            int rows = tables.Sum(t => t.Rows.Count);
+            SetStatus($"Saved '{dsName}' — {rows:N0} rows, {tags.Count} tags.", false);
+
+            _pendingTables = [];
+            _pendingTags   = [];
+            _tagsExtracted = false;
+            _images        = [];
+            _datasetName   = string.Empty;
+            _memo          = string.Empty;
+            RefreshDbInfo();
+        }
+        catch (Exception ex) { SetStatus($"Save error: {ex.Message}", true); }
+        finally { _isBusy = false; _busyStep = string.Empty; }
+    }
+
+    // ── DB Data tab ───────────────────────────────────────────────────────────
+    private void RefreshDbTab()
+    {
+        _dbSummary = Repo.GetDatasetSummary();
+        if (_selectedDbDataset is not null && !_dbSummary.Any(s => s.Name == _selectedDbDataset))
+            _selectedDbDataset = null;
+        if (_selectedDbDataset is null)
+        {
+            _dbTables         = [];
+            _selectedDbTable  = null;
+            _dbRows           = [];
+            _dbDisplayRows    = [];
+        }
+    }
+
+    private void SelectDbDataset(string name)
+    {
+        _selectedDbDataset = name;
+        _dbTables          = Repo.GetTablesForDataset(name);
+        _selectedDbTable   = null;
+        _dbRows            = [];
+        _dbDisplayRows     = [];
+        _dbTags            = Repo.GetTags(name);
+        _dbMemo            = Repo.GetMemo(name);
+    }
+
+    private void SelectDbTable(DataTableInfo table)
+    {
+        _selectedDbTable = table;
+        _dbRows          = Repo.GetTableRows(table.Id);
+        _dbDisplayRows   = ForwardFill(table, _dbRows);
+    }
+
+    private static List<Dictionary<string, string>> ForwardFill(
+        DataTableInfo table, List<Dictionary<string, string>> rows)
+    {
+        var last    = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var display = new List<Dictionary<string, string>>(rows.Count);
+        foreach (var row in rows)
+        {
+            var d = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (ColumnDef col in table.Columns)
+            {
+                string val = row.TryGetValue(col.Field, out string? v) ? v ?? "" : "";
+                if (string.IsNullOrWhiteSpace(val))
+                    val = last.TryGetValue(col.Field, out string? l) ? l ?? "" : "";
+                else
+                    last[col.Field] = val;
+                d[col.Field] = val;
+            }
+            display.Add(d);
+        }
+        return display;
+    }
+
+    private async Task SaveMemoAsync()
+    {
+        if (_selectedDbDataset is null) return;
+        await Task.Run(() => Repo.SaveMemo(_selectedDbDataset, _dbMemo));
+        SetStatus("Memo saved.", false);
+    }
+
+    private async Task ReTagAsync()
+    {
+        if (_selectedDbDataset is null || !Claude.IsConfigured) return;
+        _isBusy = true; _busyStep = "retag"; StateHasChanged();
+        try
+        {
+            List<string> cols = _dbTables.SelectMany(t => t.Columns).Select(c => c.Label).Distinct().ToList();
+            string memo       = Repo.GetMemo(_selectedDbDataset);
+            _dbTags           = await Claude.ExtractTagsAsync(_selectedDbDataset, memo, string.Join(" ", cols));
+            await Task.Run(() => Repo.SaveTags(_selectedDbDataset, _dbTags));
+            SetStatus($"Re-tagged '{_selectedDbDataset}' with {_dbTags.Count} tag(s).", false);
+        }
+        catch (Exception ex) { SetStatus($"Re-tag error: {ex.Message}", true); }
+        finally { _isBusy = false; _busyStep = string.Empty; }
+    }
+
+    private async Task DeleteTableAsync(long tableId)
+    {
+        await Task.Run(() => Repo.DeleteTable(tableId));
+        if (_selectedDbDataset is not null) SelectDbDataset(_selectedDbDataset);
+        RefreshDbTab();
+        RefreshDbInfo();
+        SetStatus("Table deleted.", false);
+    }
+
+    private async Task DeleteDatasetAsync(string name)
+    {
+        await Task.Run(() => Repo.DeleteDataset(name));
+        _selectedDbDataset = null;
+        RefreshDbTab();
+        RefreshDbInfo();
+        SetStatus($"Dataset '{name}' deleted.", false);
+    }
+
+    // ── Images ────────────────────────────────────────────────────────────────
+    private async Task OnImagesSelected(InputFileChangeEventArgs e)
+    {
+        foreach (IBrowserFile file in e.GetMultipleFiles(10))
+        {
+            if (!file.ContentType.StartsWith("image/")) continue;
+            using var ms = new MemoryStream();
+            await using var stream = file.OpenReadStream(10 * 1024 * 1024);
+            await stream.CopyToAsync(ms);
+            string base64  = Convert.ToBase64String(ms.ToArray());
+            string dataUrl = $"data:{file.ContentType};base64,{base64}";
+            _images.Add(new ImageEntry(file.Name, file.ContentType, base64, dataUrl, file.Size));
+        }
+    }
+
+    private void ClearImages() => _images.Clear();
+
+    private static string FormatBytes(long b)
+    {
+        if (b < 1024) return $"{b} B";
+        if (b < 1024 * 1024) return $"{b / 1024.0:F0} KB";
+        return $"{b / (1024.0 * 1024):F1} MB";
+    }
+
+    private async Task OpenCaptureAsync()
+    {
+        _showCaptureOverlay = true;
+        await JS.InvokeVoidAsync("pasteImageHandler.openCapture");
+    }
+
+    private async Task CancelCapture()
+    {
+        _showCaptureOverlay = false;
+        await JS.InvokeVoidAsync("pasteImageHandler.cancelCapture");
+    }
+
+    [JSInvokable]
+    public void OnImagePasted(string mediaType, string dataUrl)
+    {
+        string ext    = mediaType.Split('/').LastOrDefault() ?? "png";
+        int commaIdx  = dataUrl.IndexOf(',');
+        string base64 = commaIdx >= 0 ? dataUrl[(commaIdx + 1)..] : dataUrl;
+        long sizeBytes = (long)(base64.Length * 3L / 4);
+        _images.Add(new ImageEntry($"clipboard-{DateTime.Now:HHmmss}.{ext}", mediaType, base64, dataUrl, sizeBytes));
+        _showCaptureOverlay = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    // ── Direct parse (no AI) ──────────────────────────────────────────────────
+    private static (List<ColumnDef> Cols, List<Dictionary<string, string>> Rows) ParseDirect(string text)
+    {
+        string[] lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        if (lines.Length < 2) return ([], []);
+
+        string[] headers = lines[0].Split('\t');
+        var seen = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var cols = new List<ColumnDef>();
+        for (int i = 0; i < headers.Length; i++)
+        {
+            string label = headers[i].Trim();
+            string baseF = string.IsNullOrWhiteSpace(label) ? $"col{i}"
+                : System.Text.RegularExpressions.Regex.Replace(label, @"[^a-zA-Z0-9가-힣]", "_");
+            string field = seen.TryGetValue(baseF, out int n)
+                ? (seen[baseF] = n + 1, $"{baseF}_{n + 1}").Item2
+                : (seen[baseF] = 1, baseF).Item2;
+            cols.Add(new ColumnDef { Field = field, Label = label });
+        }
+
+        var rows = new List<Dictionary<string, string>>();
+        for (int li = 1; li < lines.Length; li++)
+        {
+            string line = lines[li].TrimEnd('\r');
+            if (string.IsNullOrWhiteSpace(line)) continue;
+            string[] cells = line.Split('\t');
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            for (int ci = 0; ci < cols.Count; ci++)
+                dict[cols[ci].Field] = ci < cells.Length ? cells[ci] : string.Empty;
+            rows.Add(dict);
+        }
+        return (cols, rows);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    private void SetStatus(string msg, bool isError)
+    {
+        _statusMessage = msg;
+        _statusIsError = isError;
+    }
+
+    // ── Table rename ──────────────────────────────────────────────────────────
+
+    private void StartRename(DataTableInfo t)
+    {
+        if (!CanEdit) return;
+        _renamingTableId = t.Id;
+        _renameValue     = t.TableName;
+        _renameNeedFocus = true;
+    }
+
+    private void CommitRename()
+    {
+        if (_renamingTableId < 0) return;
+        string name = _renameValue.Trim();
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            Repo.RenameTable(_renamingTableId, name);
+            _dbTables = Repo.GetTablesForDataset(_selectedDbDataset!);
+            if (_selectedDbTable?.Id == _renamingTableId)
+                _selectedDbTable = _dbTables.FirstOrDefault(t => t.Id == _renamingTableId);
+        }
+        _renamingTableId = -1;
+    }
+
+    private void OnRenameKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")  CommitRename();
+        if (e.Key == "Escape") _renamingTableId = -1;
+    }
+
+    // ── Context menu ──────────────────────────────────────────────────────────
+
+    private void ShowCtxMenu(MouseEventArgs e, bool isDb, PendingTable? table, int rowIndex, int colIndex)
+    {
+        if (!CanEdit) return;
+        _showCtxMenu  = true;
+        _ctxX         = e.ClientX;
+        _ctxY         = e.ClientY;
+        _ctxIsDb      = isDb;
+        _ctxTable     = table;
+        _ctxRowIndex  = rowIndex;
+        _ctxColIndex  = colIndex;
+        _ctxMode      = rowIndex >= 0 ? "row" : "col";
+    }
+
+    private void CloseCtxMenu() => _showCtxMenu = false;
+
+    private void ExecuteCtxAction()
+    {
+        _showCtxMenu = false;
+        if (_ctxMode == "row") DeleteCtxRow();
+        else                   DeleteCtxCol();
+    }
+
+    private void DeleteCtxRow()
+    {
+        if (_ctxIsDb)
+        {
+            if (_selectedDbTable is null || _ctxRowIndex < 0 || _ctxRowIndex >= _dbRows.Count) return;
+            Repo.DeleteTableRow(_selectedDbTable.Id, _ctxRowIndex);
+            _dbRows.RemoveAt(_ctxRowIndex);
+            _dbDisplayRows = ComputeDisplayRows(_dbRows, _selectedDbTable);
+            // refresh table row count
+            _dbTables = Repo.GetTablesForDataset(_selectedDbDataset!);
+            _selectedDbTable = _dbTables.FirstOrDefault(t => t.Id == _selectedDbTable.Id) ?? _selectedDbTable;
+        }
+        else
+        {
+            if (_ctxTable is null || _ctxRowIndex < 0 || _ctxRowIndex >= _ctxTable.Rows.Count) return;
+            _ctxTable.Rows.RemoveAt(_ctxRowIndex);
+        }
+    }
+
+    private void DeleteCtxCol()
+    {
+        if (_ctxIsDb)
+        {
+            if (_selectedDbTable is null || _ctxColIndex < 0 || _ctxColIndex >= _selectedDbTable.Columns.Count) return;
+            string field = _selectedDbTable.Columns[_ctxColIndex].Field;
+            Repo.DeleteTableColumn(_selectedDbTable.Id, field);
+            // reload
+            _dbTables        = Repo.GetTablesForDataset(_selectedDbDataset!);
+            _selectedDbTable = _dbTables.FirstOrDefault(t => t.Id == _selectedDbTable.Id);
+            if (_selectedDbTable is not null)
+            {
+                _dbRows        = Repo.GetTableRows(_selectedDbTable.Id);
+                _dbDisplayRows = ComputeDisplayRows(_dbRows, _selectedDbTable);
+            }
+        }
+        else
+        {
+            if (_ctxTable is null || _ctxColIndex < 0 || _ctxColIndex >= _ctxTable.Columns.Count) return;
+            string field = _ctxTable.Columns[_ctxColIndex].Field;
+            _ctxTable.Columns.RemoveAt(_ctxColIndex);
+            foreach (var row in _ctxTable.Rows) row.Remove(field);
+        }
+    }
+
+    // ── Inline cell editing ───────────────────────────────────────────────────
+
+    private bool IsEditing(bool isDb, PendingTable? table, int rowIndex, string colField) =>
+        _editIsDb == isDb &&
+        _editTable == table &&
+        _editRowIndex == rowIndex &&
+        _editColField.Equals(colField, StringComparison.OrdinalIgnoreCase);
+
+    private void StartEdit(bool isDb, PendingTable? table, int rowIndex, string colField, string currentValue)
+    {
+        if (!CanEdit) return;
+        _editIsDb      = isDb;
+        _editTable     = table;
+        _editRowIndex  = rowIndex;
+        _editColField  = colField;
+        _editValue     = currentValue;
+        _editNeedFocus = true;
+    }
+
+    private void CommitEdit()
+    {
+        if (_editRowIndex < 0) return;
+
+        if (_editIsDb)
+        {
+            if (_selectedDbTable is null || _editRowIndex >= _dbRows.Count) { CancelEdit(); return; }
+            _dbRows[_editRowIndex][_editColField] = _editValue;
+            Repo.UpdateTableRowData(_selectedDbTable.Id, _editRowIndex, _dbRows[_editRowIndex]);
+            _dbDisplayRows = ComputeDisplayRows(_dbRows, _selectedDbTable);
+        }
+        else
+        {
+            if (_editTable is null || _editRowIndex >= _editTable.Rows.Count) { CancelEdit(); return; }
+            _editTable.Rows[_editRowIndex][_editColField] = _editValue;
+        }
+        CancelEdit();
+    }
+
+    private void CancelEdit()
+    {
+        _editIsDb     = false;
+        _editTable    = null;
+        _editRowIndex = -1;
+        _editColField = "";
+        _editValue    = "";
+    }
+
+    private void OnEditKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")  CommitEdit();
+        if (e.Key == "Escape") CancelEdit();
+    }
+
+    private static List<Dictionary<string, string>> ComputeDisplayRows(
+        List<Dictionary<string, string>> rows, DataTableInfo table)
+    {
+        var last = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var display = new List<Dictionary<string, string>>(rows.Count);
+        foreach (var row in rows)
+        {
+            var d = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (ColumnDef col in table.Columns)
+            {
+                string val = row.TryGetValue(col.Field, out string? v) ? v ?? "" : "";
+                if (string.IsNullOrWhiteSpace(val))
+                    val = last.TryGetValue(col.Field, out string? l) ? l ?? "" : "";
+                else
+                    last[col.Field] = val;
+                d[col.Field] = val;
+            }
+            display.Add(d);
+        }
+        return display;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { await JS.InvokeVoidAsync("pasteImageHandler.cancelPasteCapture"); } catch { }
+        _dotnetRef?.Dispose();
+    }
+}

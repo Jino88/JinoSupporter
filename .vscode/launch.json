@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch JinoSupporter",
+      "name": "WPF App",
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
@@ -10,6 +10,34 @@
       "cwd": "${workspaceFolder}/JinoSupporter.App",
       "console": "internalConsole",
       "stopAtEntry": false
+    },
+    {
+      "name": "Web Server",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "kill-and-build",
+      "program": "${workspaceFolder}/JinoSupporter.Web/bin/Debug/net8.0/JinoSupporter.Web.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/JinoSupporter.Web",
+      "stopAtEntry": false,
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "exceptionOptions": [
+        {
+          "exceptionNames": ["Microsoft.AspNetCore.Components.NavigationException"],
+          "throwAction": "ignore"
+        }
+      ]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Launch All",
+      "configurations": ["WPF App", "Web Server"],
+      "stopAll": true
     }
   ]
 }

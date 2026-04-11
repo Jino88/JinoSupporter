@@ -1,0 +1,72 @@
+@inherits LayoutComponentBase
+@inject ConnectedUsersService UsersService
+@inject UserCircuitHandler    CircuitHandler
+@inject NavigationManager     Nav
+@implements IDisposable
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+
+        <!-- Connected users panel -->
+        <div class="connected-panel">
+            <div class="connected-label">
+                <span class="dot"></span>
+                <span>@UsersService.Count connected</span>
+            </div>
+            @foreach (UserInfo u in UsersService.Users)
+            {
+                <div class="user-row">@u.Name</div>
+            }
+
+            <div class="name-row mt-2">
+                <input class="name-input" @bind="_userName" placeholder="Your name…" />
+                <button class="name-btn" @onclick="SetName">Set</button>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <AuthorizeView>
+            <Authorized>
+                <article class="content px-4">
+                    @Body
+                </article>
+            </Authorized>
+            <NotAuthorized>
+                @{ RedirectToLogin(); }
+            </NotAuthorized>
+        </AuthorizeView>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code {
+    private string _userName = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        UsersService.Changed += OnUsersChanged;
+    }
+
+    private void RedirectToLogin()
+    {
+        string encoded = Uri.EscapeDataString(Nav.Uri);
+        Nav.NavigateTo($"/login?returnUrl={encoded}", forceLoad: true);
+    }
+
+    private void SetName()
+    {
+        if (!string.IsNullOrWhiteSpace(_userName))
+            CircuitHandler.SetName(_userName);
+    }
+
+    private void OnUsersChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => UsersService.Changed -= OnUsersChanged;
+}

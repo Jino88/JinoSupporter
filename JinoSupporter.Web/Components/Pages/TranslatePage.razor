@@ -1,0 +1,144 @@
+@page "/translate"
+@rendermode InteractiveServer
+@inject ClaudeService  Claude
+@inject IJSRuntime     JS
+
+<PageTitle>Translate</PageTitle>
+
+<h4 class="mb-3 fw-semibold">Translate</h4>
+
+@if (!Claude.IsConfigured)
+{
+    <div class="alert alert-warning">
+        <strong>Claude API key not configured.</strong>
+        Open <code>appsettings.json</code> and set <code>Claude:ApiKey</code>.
+    </div>
+}
+
+<div class="row g-3">
+
+    <!-- ── Input ─────────────────────────────────────────────────────────── -->
+    <div class="col-xl-5 col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold small">Source Text</div>
+            <div class="card-body d-flex flex-column gap-2">
+                <textarea @bind="_inputText" class="form-control flex-fill"
+                          rows="14" placeholder="Enter text to translate…"
+                          style="resize: vertical;" />
+
+                <div class="d-flex gap-2 align-items-center">
+                    <label class="form-label small fw-semibold mb-0 text-nowrap">Target:</label>
+                    <select @bind="_targetLanguage" class="form-select form-select-sm">
+                        <option value="Korean">Korean</option>
+                        <option value="English">English</option>
+                        <option value="Japanese">Japanese</option>
+                        <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+                        <option value="Chinese (Traditional)">Chinese (Traditional)</option>
+                        <option value="Spanish">Spanish</option>
+                        <option value="French">French</option>
+                        <option value="German">German</option>
+                        <option value="Vietnamese">Vietnamese</option>
+                    </select>
+                    <button class="btn btn-primary text-nowrap" @onclick="TranslateAsync"
+                            disabled="@(_isLoading || !Claude.IsConfigured)">
+                        @if (_isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" />
+                        }
+                        Translate
+                    </button>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <div class="alert alert-danger small py-2 mb-0">@_error</div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Output ────────────────────────────────────────────────────────── -->
+    <div class="col-xl-7 col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold small d-flex justify-content-between align-items-center">
+                <span>
+                    Translation Result
+                    @if (!string.IsNullOrEmpty(_outputText))
+                    {
+                        <span class="text-muted fw-normal ms-1">— @_targetLanguage</span>
+                    }
+                </span>
+                @if (!string.IsNullOrEmpty(_outputText))
+                {
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="CopyResult">
+                        📋 Copy
+                    </button>
+                }
+            </div>
+            <div class="card-body" style="overflow-y: auto; max-height: 72vh;">
+                @if (_isLoading)
+                {
+                    <div class="d-flex align-items-center gap-2 text-muted">
+                        <span class="spinner-border spinner-border-sm" /> Translating…
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(_outputText))
+                {
+                    <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit; font-size: 14px; line-height: 1.6;">@_outputText</pre>
+                }
+                else
+                {
+                    <p class="text-muted small">Translation will appear here.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private string _inputText      = string.Empty;
+    private string _targetLanguage = "Korean";
+    private string _outputText     = string.Empty;
+    private bool   _isLoading;
+    private string _error          = string.Empty;
+
+    private async Task TranslateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_inputText))
+        {
+            _error = "Please enter text to translate.";
+            return;
+        }
+
+        _isLoading   = true;
+        _error       = string.Empty;
+        _outputText  = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            _outputText = await Claude.TranslateAsync(_inputText, _targetLanguage);
+        }
+        catch (Exception ex)
+        {
+            _error = $"Translation error: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task CopyResult()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", _outputText);
+        }
+        catch
+        {
+            // Clipboard API not available — silently ignore
+        }
+    }
+}

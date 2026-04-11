@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -8,7 +8,10 @@ using System.Windows.Controls;
 using System.Windows.Threading;
 using System.Windows.Media;
 using JinoSupporter.App.Infrastructure.Shell;
+using JinoSupporter.App.Modules.DataInference;
 using JinoSupporter.App.Modules.FileTransfer;
+using JinoSupporter.App.Modules.Home;
+using JinoSupporter.App.Modules.Schedule;
 using JinoSupporter.App.Modules.Translator;
 using WorkbenchHost.Modules.AppSettings;
 using WorkbenchHost.Modules.JsonEditor;
@@ -20,6 +23,7 @@ namespace JinoSupporter.App;
 public partial class MainWindow : Window
 {
     private const string GraphMakerGroupKey = "GraphMaker";
+    private const string DataInferenceGroupKey = "DataInference";
 
     private static readonly Uri GraphMakerThemeUri =
         new("pack://application:,,,/Modules/GraphMaker/Themes/ModernTheme.xaml", UriKind.Absolute);
@@ -36,6 +40,13 @@ public partial class MainWindow : Window
         "GraphMaker:AudioBusData"
     };
 
+    private readonly HashSet<string> _dataInferenceTargets = new(StringComparer.Ordinal)
+    {
+        "DataInference:InputData",
+        "DataInference:Report",
+        "DataInference:TagEdit"
+    };
+
     private global::DataMaker.MainWindow? _dataMakerWindow;
     private global::DiskTree.MainWindow? _diskTreeWindow;
     private global::VideoConverter.MainWindow? _videoConverterWindow;
@@ -45,6 +56,12 @@ public partial class MainWindow : Window
     private global::GraphMaker.DailyDataTrendExtraView? _dailyTrendExtraView;
     private global::GraphMaker.HeatMapView? _heatMapView;
     private global::GraphMaker.AudioBusDataView? _audioBusDataView;
+    private DataInferenceView? _dataInferenceView;
+    private DataInferenceReportView? _dataInferenceReportView;
+    private TagEditView? _tagEditView;
+    private DataInferenceChatGptView? _dataInferenceChatGptView;
+    private ScheduleView? _scheduleView;
+    private HomeView? _homeView;
     private MemoView? _memoView;
     private JsonEditorView? _jsonEditorView;
     private ScreenCaptureView? _screenCaptureView;
@@ -58,18 +75,44 @@ public partial class MainWindow : Window
     private StackPanel? _graphMakerChildrenHost;
     private TextBlock? _graphMakerChevron;
     private bool _isGraphMakerExpanded;
+    private StackPanel? _dataInferenceChildrenHost;
+    private TextBlock? _dataInferenceChevron;
+    private bool _isDataInferenceExpanded;
     private string? _activeTarget;
+
+    private bool _isMenuCollapsed;
+    private readonly List<TextBlock> _menuLabelBlocks = [];
 
     public MainWindow()
     {
         InitializeComponent();
         RegisterModules();
         BuildMenu();
-        SelectModule("DataMaker");
+        SelectModule("Schedule");
     }
 
     private void RegisterModules()
     {
+        RegisterModule(new ShellModuleDefinition(
+            "Schedule",
+            string.Empty,
+            "Schedule",
+            "일정 달력 — 스케쥴을 등록하고 기간을 시각적으로 확인합니다.",
+            "Schedule",
+            "Monthly calendar with schedule management.",
+            new[] { "날짜 셀 클릭 시 해당 날짜가 등록 폼에 자동 입력됩니다.", "기간 스케쥴은 달력에 색상 바로 표시됩니다." },
+            () => _scheduleView ??= new ScheduleView()));
+
+        RegisterModule(new ShellModuleDefinition(
+            "Home",
+            string.Empty,
+            "AI Usage Status",
+            "Codex usage and quick status overview.",
+            "Overview",
+            "AI usage dashboard for ChatGPT and Claude.",
+            new[] { "Codex usage page can be read when a valid ChatGPT session cookie is available.", "Without authentication, the dashboard shows guidance and placeholder values." },
+            () => _homeView ??= new HomeView()));
+
         RegisterModule(new ShellModuleDefinition(
             "DataMaker",
             string.Empty,
@@ -150,6 +193,69 @@ public partial class MainWindow : Window
         RegisterModule(new ShellModuleDefinition("ScreenCapture", string.Empty, "ScreenCapture", "Capture flows and hotkey-based entry.", "Capture", "Screen capture workspace.", new[] { "Capture state and commands can be launched from the shell panel." }, () => _screenCaptureView ??= new ScreenCaptureView(), new DelegateModuleBackend<ScreenCaptureView>("ScreenCapture", new[] { new ShellActionDefinition("capture-full-screen", "Capture Full Screen", true), new ShellActionDefinition("capture-active-window", "Capture Active Window"), new ShellActionDefinition("capture-region", "Capture Region"), new ShellActionDefinition("copy-capture", "Copy"), new ShellActionDefinition("save-capture", "Save PNG"), new ShellActionDefinition("clear-ink", "Clear Ink") }, () => _screenCaptureView ??= new ScreenCaptureView(), view => view.GetWebModuleSnapshot(), async (view, action) => await view.InvokeWebModuleActionAsync(action), (view, handler) => view.WebModuleSnapshotChanged += handler, (view, handler) => view.WebModuleSnapshotChanged -= handler)));
         RegisterModule(new ShellModuleDefinition("FileTransfer", string.Empty, "File Transfer", "Transfer queue and activity dashboard.", "Transfer", "File transfer workspace.", new[] { "Queue count, transfer state, progress, and recent activity are exposed through the shell." }, () => _fileTransferView ??= new FileTransferView(), new DelegateModuleBackend<FileTransferView>("FileTransfer", new[] { new ShellActionDefinition("add-file", "Add File"), new ShellActionDefinition("remove-selected", "Remove Selected"), new ShellActionDefinition("start-transfer", "Start Transfer", true) }, () => _fileTransferView ??= new FileTransferView(), view => view.GetWebModuleSnapshot(), (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)), (view, handler) => view.WebModuleSnapshotChanged += handler, (view, handler) => view.WebModuleSnapshotChanged -= handler)));
         RegisterModule(new ShellModuleDefinition("Translator", string.Empty, "Translator", "Translation workspace with source, result, glossary, and history panes.", "Language", "Translator workspace.", new[] { "Source text, result text, glossary count, and history count are reflected in the shell." }, () => _translatorView ??= new TranslatorView(), new DelegateModuleBackend<TranslatorView>("Translator", new[] { new ShellActionDefinition("translate-text", "Translate", true), new ShellActionDefinition("swap-text", "Swap"), new ShellActionDefinition("clear-text", "Clear") }, () => _translatorView ??= new TranslatorView(), view => view.GetWebModuleSnapshot(), (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)), (view, handler) => view.WebModuleSnapshotChanged += handler, (view, handler) => view.WebModuleSnapshotChanged -= handler)));
+        RegisterModule(new ShellModuleDefinition(
+            "DataInference:InputData",
+            string.Empty,
+            "Input Data",
+            "Paste Excel data and Claude AI will automatically analyze and generate a dashboard.",
+            "AI",
+            "Data inference and AI dashboard generation.",
+            new[] { "Enter Claude API key in Settings.", "Paste tab-delimited data copied from Excel to auto-analyze." },
+            () => _dataInferenceView ??= new DataInferenceView(),
+            new DelegateModuleBackend<DataInferenceView>(
+                "DataInference:InputData",
+                new[]
+                {
+                    new ShellActionDefinition("analyze", "Analyze", true),
+                    new ShellActionDefinition("clear", "Clear")
+                },
+                () => _dataInferenceView ??= new DataInferenceView(),
+                view => view.GetWebModuleSnapshot(),
+                (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)),
+                (view, handler) => view.WebModuleSnapshotChanged += handler,
+                (view, handler) => view.WebModuleSnapshotChanged -= handler)));
+
+        RegisterModule(new ShellModuleDefinition(
+            "DataInference:Report",
+            string.Empty,
+            "Report",
+            "Select stored datasets and generate an HTML report via Claude AI.",
+            "AI",
+            "AI-generated HTML report from stored datasets.",
+            new[] { "Enter Claude API key in Settings.", "Check datasets to include in the report." },
+            () => _dataInferenceReportView ??= new DataInferenceReportView()));
+
+        RegisterModule(new ShellModuleDefinition(
+            "DataInference:TagEdit",
+            string.Empty,
+            "Tag 수정",
+            "DB에 저장된 모든 태그 이름을 확인하고 일괄 변경합니다.",
+            "AI",
+            "Tag rename utility for stored datasets.",
+            new[] { "태그 변경 시 해당 태그를 사용하는 모든 Dataset에 즉시 반영됩니다." },
+            () => _tagEditView ??= new TagEditView()));
+
+        RegisterModule(new ShellModuleDefinition(
+            "DataInferenceChatGpt",
+            string.Empty,
+            "Data-Inference (ChatGPT)",
+            "Paste Excel data and let ChatGPT normalize it into review tables.",
+            "AI",
+            "ChatGPT-based data inference and review dashboard.",
+            new[] { "OpenAI API key can be saved in Settings.", "Paste tab-separated Excel data to analyze with ChatGPT." },
+            () => _dataInferenceChatGptView ??= new DataInferenceChatGptView(),
+            new DelegateModuleBackend<DataInferenceChatGptView>(
+                "DataInferenceChatGpt",
+                new[]
+                {
+                    new ShellActionDefinition("analyze", "Analyze", true),
+                    new ShellActionDefinition("clear", "Clear")
+                },
+                () => _dataInferenceChatGptView ??= new DataInferenceChatGptView(),
+                view => view.GetWebModuleSnapshot(),
+                (view, action) => Task.FromResult<object?>(view.InvokeWebModuleAction(action)),
+                (view, handler) => view.WebModuleSnapshotChanged += handler,
+                (view, handler) => view.WebModuleSnapshotChanged -= handler)));
         RegisterModule(new ShellModuleDefinition("Settings", string.Empty, "Settings", "Host-level app configuration.", "Config", "Shared settings workspace.", new[] { "Settings remains strongly coupled to several concrete modules." }, () => _appSettingsView ??= new AppSettingsView()));
     }
 
@@ -204,6 +310,7 @@ public partial class MainWindow : Window
     {
         MenuHost.Children.Clear();
         _menuButtons.Clear();
+        AddMenuButton("Schedule");
         AddMenuButton("DataMaker");
         AddGraphMakerGroup();
         AddMenuButton("DiskTree");
@@ -213,11 +320,15 @@ public partial class MainWindow : Window
         AddMenuButton("ScreenCapture");
         AddMenuButton("FileTransfer");
         AddMenuButton("Translator");
+        AddDataInferenceGroup();
+        AddMenuButton("DataInferenceChatGpt");
+        AddMenuButton("Home");
         AddMenuButton("Settings");
     }
 
     private void SelectModule(string target)
     {
+
         if (!_modules.TryGetValue(target, out ShellModuleDefinition? module))
         {
             return;
@@ -228,10 +339,20 @@ public partial class MainWindow : Window
             SetGraphMakerExpanded(true);
         }
 
+        if (IsDataInferenceTarget(target))
+        {
+            SetDataInferenceExpanded(true);
+        }
+
         _activeTarget = target;
         CurrentModuleTitle.Text = module.Title;
         CurrentModuleDescription.Text = module.Detail;
         EmbeddedModuleHost.Content = module.CreateContent();
+
+        // Hide title bar for DataInference views; expand content to fill space
+        bool hideTitle = _dataInferenceTargets.Contains(target);
+        ModuleTitleBar.Visibility = hideTitle ? Visibility.Collapsed : Visibility.Visible;
+        ModuleContentBorder.Margin = hideTitle ? new Thickness(0) : new Thickness(0, 8, 0, 0);
 
         UpdateMenuVisualState();
     }
@@ -241,7 +362,8 @@ public partial class MainWindow : Window
         foreach ((string target, Button button) in _menuButtons)
         {
             bool selected = string.Equals(target, _activeTarget, StringComparison.Ordinal) ||
-                            (string.Equals(target, GraphMakerGroupKey, StringComparison.Ordinal) && IsGraphMakerTarget(_activeTarget));
+                            (string.Equals(target, GraphMakerGroupKey, StringComparison.Ordinal) && IsGraphMakerTarget(_activeTarget)) ||
+                            (string.Equals(target, DataInferenceGroupKey, StringComparison.Ordinal) && IsDataInferenceTarget(_activeTarget));
             button.Background = selected ? new SolidColorBrush(Color.FromRgb(255, 229, 204)) : Brushes.Transparent;
             button.BorderBrush = selected ? new SolidColorBrush(Color.FromRgb(255, 191, 138)) : Brushes.Transparent;
         }
@@ -268,9 +390,15 @@ public partial class MainWindow : Window
         button.Click += (_, _) => SelectModule(target);
         _menuButtons[target] = button;
 
-        if (isChild && _graphMakerChildrenHost is not null)
+        if (isChild && _graphMakerTargets.Contains(target) && _graphMakerChildrenHost is not null)
         {
             _graphMakerChildrenHost.Children.Add(button);
+            return;
+        }
+
+        if (isChild && _dataInferenceTargets.Contains(target) && _dataInferenceChildrenHost is not null)
+        {
+            _dataInferenceChildrenHost.Children.Add(button);
             return;
         }
 
@@ -312,6 +440,68 @@ public partial class MainWindow : Window
         SetGraphMakerExpanded(false);
     }
 
+    private void AddDataInferenceGroup()
+    {
+        Button parentButton = new()
+        {
+            Content = BuildDataInferenceGroupContent(),
+            Margin = new Thickness(0, 0, 0, 4),
+            HorizontalContentAlignment = HorizontalAlignment.Left,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Background = Brushes.Transparent,
+            Foreground = new SolidColorBrush(Color.FromRgb(31, 41, 55)),
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(1),
+            ToolTip = "Data Inference modules",
+            Style = (Style)FindResource("MenuNavButtonStyle")
+        };
+
+        parentButton.Click += (_, _) => SetDataInferenceExpanded(!_isDataInferenceExpanded);
+        MenuHost.Children.Add(parentButton);
+        _menuButtons[DataInferenceGroupKey] = parentButton;
+
+        _dataInferenceChildrenHost = new StackPanel
+        {
+            Margin = new Thickness(14, 0, 0, 4)
+        };
+
+        MenuHost.Children.Add(_dataInferenceChildrenHost);
+
+        foreach (string target in _dataInferenceTargets)
+        {
+            AddMenuButton(target, new Thickness(0, 0, 0, 3), isChild: true);
+        }
+
+        SetDataInferenceExpanded(false);
+    }
+
+    private FrameworkElement BuildDataInferenceGroupContent()
+    {
+        Grid grid = new();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        FrameworkElement mainContent = BuildMenuButtonContent(GetMenuIcon(DataInferenceGroupKey), "Data Inference", isChild: false);
+        Grid.SetColumn(mainContent, 0);
+        Grid.SetColumnSpan(mainContent, 2);
+        grid.Children.Add(mainContent);
+
+        _dataInferenceChevron = new TextBlock
+        {
+            Text = "\u25B8",
+            Margin = new Thickness(10, 0, 2, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = new SolidColorBrush(Color.FromRgb(107, 124, 147)),
+            FontSize = 14,
+            FontWeight = FontWeights.SemiBold
+        };
+
+        Grid.SetColumn(_dataInferenceChevron, 2);
+        grid.Children.Add(_dataInferenceChevron);
+        return grid;
+    }
+
     private FrameworkElement BuildGraphMakerGroupContent()
     {
         Grid grid = new();
@@ -326,7 +516,7 @@ public partial class MainWindow : Window
 
         _graphMakerChevron = new TextBlock
         {
-            Text = "▸",
+            Text = "\u25B8",
             Margin = new Thickness(10, 0, 2, 0),
             VerticalAlignment = VerticalAlignment.Center,
             Foreground = new SolidColorBrush(Color.FromRgb(107, 124, 147)),
@@ -339,7 +529,7 @@ public partial class MainWindow : Window
         return grid;
     }
 
-    private static FrameworkElement BuildMenuButtonContent(string icon, string title, bool isChild)
+    private FrameworkElement BuildMenuButtonContent(string icon, string title, bool isChild)
     {
         StackPanel panel = new()
         {
@@ -368,11 +558,50 @@ public partial class MainWindow : Window
             FontWeight = isChild ? FontWeights.Medium : FontWeights.SemiBold,
             VerticalAlignment = VerticalAlignment.Center
         };
+        _menuLabelBlocks.Add(titleBlock);
 
         panel.Children.Add(iconBadge);
         panel.Children.Add(titleBlock);
         return panel;
     }
+
+    private void CollapseMenu()
+    {
+        if (_isMenuCollapsed) return;
+        _isMenuCollapsed = true;
+        LeftMenuColumn.Width  = new GridLength(60);
+        LeftMenuBorder.Padding = new Thickness(6);
+        LogoTextPanel.Visibility = Visibility.Collapsed;
+        foreach (TextBlock tb in _menuLabelBlocks) tb.Visibility = Visibility.Collapsed;
+        if (_graphMakerChevron is not null)    _graphMakerChevron.Visibility    = Visibility.Collapsed;
+        if (_dataInferenceChevron is not null) _dataInferenceChevron.Visibility = Visibility.Collapsed;
+        foreach (Button btn in _menuButtons.Values)
+        {
+            btn.HorizontalContentAlignment = HorizontalAlignment.Center;
+            btn.Padding = new Thickness(0, 7, 0, 7);
+        }
+    }
+
+    private void ExpandMenu()
+    {
+        if (!_isMenuCollapsed) return;
+        _isMenuCollapsed = false;
+        LeftMenuColumn.Width  = new GridLength(280);
+        LeftMenuBorder.Padding = new Thickness(12);
+        LogoTextPanel.Visibility = Visibility.Visible;
+        foreach (TextBlock tb in _menuLabelBlocks) tb.Visibility = Visibility.Visible;
+        if (_graphMakerChevron is not null)    _graphMakerChevron.Visibility    = Visibility.Visible;
+        if (_dataInferenceChevron is not null) _dataInferenceChevron.Visibility = Visibility.Visible;
+        foreach (Button btn in _menuButtons.Values)
+        {
+            btn.HorizontalContentAlignment = HorizontalAlignment.Left;
+            btn.Padding = new Thickness(10, 8, 10, 8);
+        }
+    }
+
+    private void LeftMenuBorder_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e) => ExpandMenu();
+
+    private void LeftMenuBorder_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e) => CollapseMenu();
 
     private static FrameworkElement BuildMenuIcon(string icon)
     {
@@ -400,6 +629,8 @@ public partial class MainWindow : Window
         return target switch
         {
             "DataMaker" => "F1 M 3,2 L 11,2 L 11,4 L 3,4 Z M 4,5 L 10,5 L 10,6.5 L 4,6.5 Z M 4,7.5 L 10,7.5 L 10,9 L 4,9 Z M 4,10 L 8,10 L 8,11.5 L 4,11.5 Z",
+            "Schedule" => "F0 M 4.5,1.5 L 4.5,3 L 3,3 L 3,12 L 11,12 L 11,3 L 9.5,3 L 9.5,1.5 L 8.5,1.5 L 8.5,3 L 5.5,3 L 5.5,1.5 Z",
+            "Home" => "F1 M 2,6.8 L 7,2.5 L 12,6.8 L 11.1,7.8 L 10,6.9 L 10,11.5 L 7.8,11.5 L 7.8,8.8 L 6.2,8.8 L 6.2,11.5 L 4,11.5 L 4,6.9 L 2.9,7.8 Z",
             GraphMakerGroupKey => "F1 M 2,10 L 3.2,10 L 3.2,11.5 L 2,11.5 Z M 5,7 L 6.2,7 L 6.2,8.2 L 5,8.2 Z M 8.2,4.2 L 9.4,4.2 L 9.4,5.4 L 8.2,5.4 Z M 10.2,8.5 A 1.2,1.2 0 1 1 10.21,8.5 Z",
             "GraphMaker:ScatterPlot" => "F1 M 2,10 L 3.2,10 L 3.2,11.5 L 2,11.5 Z M 5,7 L 6.2,7 L 6.2,8.2 L 5,8.2 Z M 8.2,4.2 L 9.4,4.2 L 9.4,5.4 L 8.2,5.4 Z M 10.2,8.5 A 1.2,1.2 0 1 1 10.21,8.5 Z",
             "GraphMaker:ProcessTrend" => "F1 M 2,9.5 L 4.5,7 L 6.5,8 L 9.5,4.5 L 10.5,5.5 L 6.7,9.3 L 4.4,8.2 L 2.8,9.8 Z",
@@ -414,6 +645,11 @@ public partial class MainWindow : Window
             "ScreenCapture" => "F1 M 2,4 L 4.2,4 L 4.2,5.2 L 3.2,5.2 L 3.2,10.8 L 8.8,10.8 L 8.8,9.8 L 10,9.8 L 10,12 L 2,12 Z M 6,2 L 12,2 L 12,8 L 10.8,8 L 10.8,4.1 L 6,4.1 Z",
             "FileTransfer" => "F1 M 2,6 L 7.5,6 L 7.5,4.2 L 11.5,7.1 L 7.5,10 L 7.5,8 L 2,8 Z",
             "Translator" => "F1 M 3,3 L 9,3 L 9,4.2 L 6.8,4.2 L 6.8,5.5 L 8.7,5.5 L 8.7,6.7 L 6.8,6.7 L 6.8,9.5 L 5.3,9.5 L 5.3,6.7 L 3,6.7 L 3,5.5 L 5.3,5.5 L 5.3,4.2 L 3,4.2 Z M 9.4,7.2 L 12,10.8 L 10.8,10.8 L 10.2,10 L 8.8,10 L 8.2,10.8 L 7,10.8 L 9.6,7.2 Z",
+            "DataInference" => "F1 M 2,11 L 2,8.5 L 4.5,5.5 L 7,7.2 L 10,3.2 L 12,5 L 12,11 Z M 10.3,1.5 L 10.8,0.5 L 11.3,1.5 L 12.3,2 L 11.3,2.5 L 10.8,3.5 L 10.3,2.5 L 9.3,2 Z",
+            "DataInference:InputData" => "F1 M 2,11 L 2,8.5 L 4.5,5.5 L 7,7.2 L 10,3.2 L 12,5 L 12,11 Z M 10.3,1.5 L 10.8,0.5 L 11.3,1.5 L 12.3,2 L 11.3,2.5 L 10.8,3.5 L 10.3,2.5 L 9.3,2 Z",
+            "DataInference:Report" => "F1 M 3,2 L 11,2 L 11,4 L 3,4 Z M 4,5 L 10,5 L 10,6.5 L 4,6.5 Z M 4,7.5 L 10,7.5 L 10,9 L 4,9 Z M 4,10 L 8,10 L 8,11.5 L 4,11.5 Z",
+            "DataInference:TagEdit" => "F1 M 2,6.5 L 5.5,3 L 11.5,3 L 11.5,10 L 5.5,10 Z M 2,6.5 L 4,5 L 4,8 Z M 7,5.5 A 1,1 0 1 1 7.01,5.5 Z",
+            "DataInferenceChatGpt" => "F1 M 2,3 L 12,3 L 12,11 L 2,11 Z M 3.2,4.2 L 10.8,4.2 L 10.8,5.2 L 3.2,5.2 Z M 3.2,6.2 L 10.8,6.2 L 10.8,7.2 L 3.2,7.2 Z M 3.2,8.2 L 7.8,8.2 L 7.8,9.2 L 3.2,9.2 Z",
             "Settings" => "F1 M 7,2.2 L 8,2.2 L 8.3,3.5 L 9.4,3.9 L 10.5,3.2 L 11.2,3.9 L 10.5,5 L 10.9,6.1 L 12.2,6.4 L 12.2,7.4 L 10.9,7.7 L 10.5,8.8 L 11.2,9.9 L 10.5,10.6 L 9.4,9.9 L 8.3,10.3 L 8,11.6 L 7,11.6 L 6.7,10.3 L 5.6,9.9 L 4.5,10.6 L 3.8,9.9 L 4.5,8.8 L 4.1,7.7 L 2.8,7.4 L 2.8,6.4 L 4.1,6.1 L 4.5,5 L 3.8,3.9 L 4.5,3.2 L 5.6,3.9 L 6.7,3.5 Z M 7.5,5.3 A 1.7,1.7 0 1 1 7.51,5.3 Z",
             _ => "F1 M 3,3 L 11,3 L 11,11 L 3,11 Z"
         };
@@ -430,12 +666,30 @@ public partial class MainWindow : Window
 
         if (_graphMakerChevron is not null)
         {
-            _graphMakerChevron.Text = expanded ? "▾" : "▸";
+            _graphMakerChevron.Text = expanded ? "\u25BE" : "\u25B8";
         }
     }
 
     private bool IsGraphMakerTarget(string? target) =>
         !string.IsNullOrWhiteSpace(target) && _graphMakerTargets.Contains(target);
+
+    private void SetDataInferenceExpanded(bool expanded)
+    {
+        _isDataInferenceExpanded = expanded;
+
+        if (_dataInferenceChildrenHost is not null)
+        {
+            _dataInferenceChildrenHost.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        if (_dataInferenceChevron is not null)
+        {
+            _dataInferenceChevron.Text = expanded ? "\u25BE" : "\u25B8";
+        }
+    }
+
+    private bool IsDataInferenceTarget(string? target) =>
+        !string.IsNullOrWhiteSpace(target) && _dataInferenceTargets.Contains(target);
 
     private void HandleModuleSnapshotChanged()
     {
@@ -499,6 +753,7 @@ public partial class MainWindow : Window
         EnsureGraphMakerResourcesLoaded();
         return _audioBusDataView ??= new global::GraphMaker.AudioBusDataView();
     }
+
 
     private static FrameworkElement GetHostedWindowContent(Window window, ref FrameworkElement? cache)
     {
@@ -578,3 +833,4 @@ public partial class MainWindow : Window
         }
     }
 }
+

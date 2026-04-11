@@ -1,0 +1,187 @@
+.navbar-toggler {
+    appearance: none;
+    cursor: pointer;
+    width: 3.5rem;
+    height: 2.5rem;
+    color: white;
+    position: absolute;
+    top: 0.5rem;
+    right: 1rem;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 6px;
+    background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255,255,255,0.6%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") no-repeat center/1.5rem rgba(255,255,255,.05);
+}
+
+.navbar-toggler:checked { background-color: rgba(255,255,255,.15); }
+
+/* ── Brand / top row ───────────────────────────────────────────────────── */
+.top-row {
+    height: 56px;
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255,255,255,.07) !important;
+    display: flex;
+    align-items: center;
+    padding: 0 16px !important;
+}
+
+.navbar-brand {
+    font-size: 15px !important;
+    font-weight: 700;
+    color: #ffffff !important;
+    letter-spacing: -0.3px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.navbar-brand::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-radius: 5px;
+    flex-shrink: 0;
+}
+
+/* ── Nav items ─────────────────────────────────────────────────────────── */
+.nav-scrollable {
+    display: none;
+    padding: 10px 10px;
+}
+
+.navbar-toggler:checked ~ .nav-scrollable { display: block; }
+
+.nav-item {
+    font-size: 13px;
+    margin-bottom: 1px;
+}
+
+.nav-item ::deep .nav-link {
+    color: rgba(255,255,255,.55);
+    background: none;
+    border: none;
+    border-radius: 7px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 10px;
+    width: 100%;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background .12s, color .12s;
+    letter-spacing: -0.1px;
+}
+
+.nav-item ::deep .nav-link:hover {
+    background: rgba(255,255,255,.07);
+    color: rgba(255,255,255,.85);
+}
+
+.nav-item ::deep a.active {
+    background: rgba(59,130,246,.25) !important;
+    color: #93c5fd !important;
+    font-weight: 600;
+}
+
+.nav-icon {
+    font-size: 15px;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+    display: inline-block;
+    opacity: .9;
+}
+
+/* ── Section divider ───────────────────────────────────────────────────── */
+.nav-section {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: rgba(255,255,255,.25);
+    padding: 12px 10px 4px;
+}
+
+/* ── Group toggle (parent menu button) ────────────────────────────────── */
+.nav-group-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 10px;
+    height: 38px;
+    color: rgba(255,255,255,.55);
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 7px;
+    transition: background .12s, color .12s;
+    letter-spacing: -0.1px;
+    text-decoration: none;
+}
+
+.nav-group-toggle:hover {
+    background: rgba(255,255,255,.07);
+    color: rgba(255,255,255,.85);
+}
+
+.nav-group-toggle.active {
+    background: rgba(59,130,246,.25) !important;
+    color: #93c5fd !important;
+    font-weight: 600;
+}
+
+.nav-caret {
+    margin-left: auto;
+    font-size: 16px;
+    color: rgba(255,255,255,.3);
+    transition: transform .18s ease;
+    display: inline-block;
+    line-height: 1;
+}
+
+.nav-caret.open {
+    transform: rotate(90deg);
+}
+
+/* ── Submenu ───────────────────────────────────────────────────────────── */
+.nav-submenu {
+    padding-left: 12px;
+    border-left: 1px solid rgba(255,255,255,.08);
+    margin-left: 19px;
+    margin-bottom: 2px;
+}
+
+.nav-sublink {
+    height: 33px !important;
+    font-size: 12px !important;
+    color: rgba(255,255,255,.45) !important;
+    padding: 0 8px !important;
+}
+
+.nav-sublink:hover {
+    background: rgba(255,255,255,.06) !important;
+    color: rgba(255,255,255,.75) !important;
+}
+
+.nav-item ::deep a.nav-sublink.active {
+    background: rgba(59,130,246,.2) !important;
+    color: #93c5fd !important;
+    font-weight: 600 !important;
+}
+
+@media (min-width: 641px) {
+    .navbar-toggler { display: none; }
+
+    .nav-scrollable {
+        display: block;
+        height: calc(100vh - 56px);
+        overflow-y: auto;
+    }
+}

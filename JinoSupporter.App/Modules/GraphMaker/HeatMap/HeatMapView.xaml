@@ -1,6 +1,7 @@
 <local:GraphViewBase x:Class="GraphMaker.HeatMapView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:GraphMaker"
@@ -12,106 +13,72 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0.72*" />
+            <ColumnDefinition Width="12" />
+            <ColumnDefinition Width="1.28*" />
+        </Grid.ColumnDefinitions>
 
-        <GroupBox Grid.Row="0" Header="Workflow" Style="{StaticResource FilesSectionGroupBoxStyle}">
+        <GroupBox Grid.Row="0" Grid.Column="0" Header="Workflow" Style="{StaticResource FilesSectionGroupBoxStyle}">
             <Grid Style="{StaticResource FilesSectionInnerGridStyle}">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2.2*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="8" />
-                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0"
-                        Style="{StaticResource DropZoneBorderStyle}"
-                        Margin="0,0,8,0"
-                        MinHeight="88"
-                        AllowDrop="True"
-                        Drop="DropZone_Drop"
-                        DragEnter="DropZone_DragEnter"
-                        DragLeave="DropZone_DragLeave"
-                        DragOver="DropZone_DragOver">
-                    <StackPanel>
-                        <TextBlock Text="Drag TXT file"
-                                   Style="{StaticResource FileDropHintTextStyle}" />
-                        <Button Content="Browse"
-                                Width="120"
-                                Margin="0,8,0,0"
-                                HorizontalAlignment="Center"
-                                Click="BrowseButton_Click" />
-                    </StackPanel>
-                </Border>
+                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                    <app:AppFileDropBox HintText="Drag TXT file"
+                            BrowseButtonText="Browse"
+                            AllowMultiple="False"
+                            FilesSelected="FileDropBox_FilesSelected" />
+                    <TextBlock Margin="0,8,0,0"
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource TextSecondaryBrush}">
+                        <Run Text="File: " FontWeight="SemiBold" />
+                        <Run x:Name="CurrentFileNameText" Text="(No file)" />
+                    </TextBlock>
+                    <TextBlock Margin="0,4,0,0"
+                               Foreground="{StaticResource TextSecondaryBrush}">
+                        <Run Text="Rows: " FontWeight="SemiBold" />
+                        <Run x:Name="RowCountText" Text="0" />
+                        <Run Text=" | Cols: " FontWeight="SemiBold" />
+                        <Run x:Name="ColumnCountText" Text="0" />
+                    </TextBlock>
+                    <TextBlock x:Name="StatusText"
+                               Margin="0,4,0,0"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               TextWrapping="Wrap"
+                               Text="Drop file into the workflow area or click Browse to load data." />
+                </StackPanel>
 
-                <StackPanel Grid.Column="1" Style="{StaticResource FileActionStackPanelStyle}">
-                    <Button Content="Remove File" Width="130" Click="RemoveFileButton_Click" />
-                    <Button Content="Save Report"
+                <StackPanel Grid.Column="1" VerticalAlignment="Top">
+                    <app:AppButton Content="Remove File" Width="130" Click="RemoveFileButton_Click" />
+                    <app:AppButton Content="Save Report"
                             Width="130"
                             Margin="0,8,0,0"
                             Click="SaveReportButton_Click" />
-                    <Button Content="Load Report"
+                    <app:AppButton Content="Load Report"
                             Width="130"
                             Margin="0,8,0,0"
                             Click="LoadReportButton_Click" />
-                    <Button Content="Generate Heatmap"
+                    <app:AppButton Content="Generate Heatmap"
                             Width="130"
                             Margin="0,8,0,0"
                             Style="{StaticResource PrimaryButtonStyle}"
                             Click="GenerateHeatMapButton_Click" />
                 </StackPanel>
 
-                <GroupBox Grid.Column="3"
-                          Header="Preview"
-                          Margin="0,0,8,0"
-                          Style="{StaticResource PreviewGroupBoxStyle}">
-                    <Grid Margin="8">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
-                        <TextBlock>
-                            <Run Text="File: " FontWeight="SemiBold" />
-                            <Run x:Name="CurrentFileNameText" Text="(No file)" />
-                        </TextBlock>
-                        <TextBlock Grid.Row="1" Margin="0,4,0,0">
-                            <Run Text="Rows: " FontWeight="SemiBold" />
-                            <Run x:Name="RowCountText" Text="0" />
-                            <Run Text=" | Cols: " FontWeight="SemiBold" />
-                            <Run x:Name="ColumnCountText" Text="0" />
-                        </TextBlock>
-                        <TextBlock Grid.Row="2"
-                                   x:Name="StatusText"
-                                   Margin="0,6,0,0"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   TextWrapping="Wrap"
-                                   Text="Load file and select columns." />
-                    </Grid>
-                </GroupBox>
             </Grid>
         </GroupBox>
 
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*" />
-                <ColumnDefinition Width="2*" />
-            </Grid.ColumnDefinitions>
+        <GroupBox Grid.Row="1" Grid.Column="0" Header="Data Grid" Margin="0,0,0,8" Style="{StaticResource PreviewGroupBoxStyle}">
+            <local:InteractiveDataGrid x:Name="DataPreviewGrid"
+                                       IsReadOnly="True"
+                                       CanUserAddRows="False"
+                                       CanUserDeleteRows="False" />
+        </GroupBox>
 
-            <Grid Grid.Column="0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-
-                <GroupBox Grid.Row="0" Header="Data Grid" Margin="0,0,8,8" Style="{StaticResource PreviewGroupBoxStyle}">
-                    <local:InteractiveDataGrid x:Name="DataPreviewGrid"
-                                               IsReadOnly="True"
-                                               CanUserAddRows="False"
-                                               CanUserDeleteRows="False" />
-                </GroupBox>
-            </Grid>
-
-            <GroupBox Grid.Column="1" Header="Settings" Style="{StaticResource SettingsGroupBoxStyle}">
+        <GroupBox Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" Header="Settings" Style="{StaticResource SettingsGroupBoxStyle}">
                 <ScrollViewer Style="{StaticResource SettingsScrollViewerStyle}">
                     <StackPanel Style="{StaticResource SettingsStackPanelStyle}">
                         <GroupBox Header="File Format" Margin="0,0,0,8">
@@ -130,7 +97,7 @@
 
                                 <StackPanel Grid.Row="1" Orientation="Horizontal">
                                     <TextBlock Text="Header Row:" VerticalAlignment="Center" Width="80" />
-                                    <TextBox x:Name="HeaderRowTextBox" Width="70" Text="1" TextChanged="HeaderRowChanged" />
+                                    <app:AppTextBox x:Name="HeaderRowTextBox" Width="70" Text="1" TextChanged="HeaderRowChanged" />
                                 </StackPanel>
                             </Grid>
                         </GroupBox>
@@ -149,13 +116,13 @@
                                 </Grid.ColumnDefinitions>
 
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Condition 1:" VerticalAlignment="Center" />
-                                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="Condition1ComboBox" SelectionChanged="ColumnSelectionChanged" />
+                                <app:AppComboBox Grid.Row="0" Grid.Column="1" x:Name="Condition1ComboBox" SelectionChanged="ColumnSelectionChanged" />
                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Condition 2:" Margin="0,8,0,0" VerticalAlignment="Center" />
-                                <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,8,0,0" x:Name="Condition2ComboBox" SelectionChanged="ColumnSelectionChanged" />
+                                <app:AppComboBox Grid.Row="1" Grid.Column="1" Margin="0,8,0,0" x:Name="Condition2ComboBox" SelectionChanged="ColumnSelectionChanged" />
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Extra 1:" Margin="0,8,0,0" VerticalAlignment="Center" />
-                                <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,8,0,0" x:Name="ExtraCondition1ComboBox" SelectionChanged="ColumnSelectionChanged" />
+                                <app:AppComboBox Grid.Row="2" Grid.Column="1" Margin="0,8,0,0" x:Name="ExtraCondition1ComboBox" SelectionChanged="ColumnSelectionChanged" />
                                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Extra 2:" Margin="0,8,0,0" VerticalAlignment="Center" />
-                                <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,8,0,0" x:Name="ExtraCondition2ComboBox" SelectionChanged="ColumnSelectionChanged" />
+                                <app:AppComboBox Grid.Row="3" Grid.Column="1" Margin="0,8,0,0" x:Name="ExtraCondition2ComboBox" SelectionChanged="ColumnSelectionChanged" />
                             </Grid>
                         </GroupBox>
 
@@ -178,16 +145,15 @@
                                     <RadioButton x:Name="FormulaResultRadio" Content="NG * 1000000 / INPUT" GroupName="ResultMode" Margin="0,4,0,0" Checked="ResultModeChanged" />
                                 </StackPanel>
                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Result:" Margin="0,8,0,0" VerticalAlignment="Center" />
-                                <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,8,0,0" x:Name="ResultColumnComboBox" SelectionChanged="ColumnSelectionChanged" />
+                                <app:AppComboBox Grid.Row="1" Grid.Column="1" Margin="0,8,0,0" x:Name="ResultColumnComboBox" SelectionChanged="ColumnSelectionChanged" />
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="NG:" Margin="0,8,0,0" VerticalAlignment="Center" />
-                                <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,8,0,0" x:Name="NgColumnComboBox" SelectionChanged="ColumnSelectionChanged" />
+                                <app:AppComboBox Grid.Row="2" Grid.Column="1" Margin="0,8,0,0" x:Name="NgColumnComboBox" SelectionChanged="ColumnSelectionChanged" />
                                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Input:" Margin="0,8,0,0" VerticalAlignment="Center" />
-                                <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,8,0,0" x:Name="InputColumnComboBox" SelectionChanged="ColumnSelectionChanged" />
+                                <app:AppComboBox Grid.Row="3" Grid.Column="1" Margin="0,8,0,0" x:Name="InputColumnComboBox" SelectionChanged="ColumnSelectionChanged" />
                             </Grid>
                         </GroupBox>
                     </StackPanel>
                 </ScrollViewer>
-            </GroupBox>
-        </Grid>
+        </GroupBox>
     </Grid>
 </local:GraphViewBase>

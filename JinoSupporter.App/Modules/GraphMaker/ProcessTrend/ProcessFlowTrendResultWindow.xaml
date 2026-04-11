@@ -1,6 +1,7 @@
 <Window x:Class="GraphMaker.ProcessFlowTrendResultWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:oxy="http://oxyplot.org/wpf"
@@ -46,7 +47,7 @@
                                     <oxy:PlotView Model="{Binding PlotModel}" />
                                 </Border>
 
-                                <TextBox Grid.Row="2"
+                                <app:AppTextBox Grid.Row="2"
                                          Margin="0,8,0,0"
                                          Text="{Binding DetailText}"
                                          IsReadOnly="True"

@@ -1,6 +1,7 @@
 <Window x:Class="GraphMaker.ProcessPairSelectionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
@@ -17,14 +18,14 @@
         </Grid.RowDefinitions>
 
         <StackPanel Orientation="Horizontal">
-            <Button Content="Select All" Width="90" Click="SelectAllButton_Click" />
-            <Button Content="Clear All" Width="90" Margin="8,0,0,0" Click="ClearAllButton_Click" />
+            <app:AppButton Content="Select All" Width="90" Click="SelectAllButton_Click" />
+            <app:AppButton Content="Clear All" Width="90" Margin="8,0,0,0" Click="ClearAllButton_Click" />
         </StackPanel>
 
         <StackPanel Grid.Row="1" Margin="0,8,0,2">
             <StackPanel Orientation="Horizontal">
-                <Button Content="Add Group" Width="90" Click="AddGroupButton_Click" />
-                <Button Content="Remove Group" Width="100" Margin="8,0,0,0" Click="RemoveGroupButton_Click" />
+                <app:AppButton Content="Add Group" Width="90" Click="AddGroupButton_Click" />
+                <app:AppButton Content="Remove Group" Width="100" Margin="8,0,0,0" Click="RemoveGroupButton_Click" />
                 <TextBlock Text="Assign process columns to groups."
                            Margin="10,0,0,0"
                            VerticalAlignment="Center"
@@ -32,27 +33,27 @@
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                 <TextBlock Text="Group Name:" VerticalAlignment="Center" Width="85" />
-                <ComboBox x:Name="GroupManageComboBox"
+                <app:AppComboBox x:Name="GroupManageComboBox"
                           Width="120"
                           ItemsSource="{Binding GroupOptions}"
                           DisplayMemberPath="Name"
                           SelectedIndex="0"
                           SelectionChanged="GroupManageComboBox_SelectionChanged" />
-                <TextBox x:Name="GroupNameTextBox" Width="160" Margin="8,0,0,0" />
-                <Button Content="Apply Name" Width="90" Margin="8,0,0,0" Click="ApplyGroupNameButton_Click" />
+                <app:AppTextBox x:Name="GroupNameTextBox" Width="160" Margin="8,0,0,0" />
+                <app:AppButton Content="Apply Name" Width="90" Margin="8,0,0,0" Click="ApplyGroupNameButton_Click" />
             </StackPanel>
         </StackPanel>
 
-        <ListBox Grid.Row="2" x:Name="PairListBox" Margin="0,6,0,10">
-            <ListBox.ItemTemplate>
+        <app:AppListBox Grid.Row="2" x:Name="PairListBox" Margin="0,6,0,10">
+            <app:AppListBox.ItemTemplate>
                 <DataTemplate>
                     <Grid Margin="0,2,0,2">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="130" />
                         </Grid.ColumnDefinitions>
-                        <CheckBox Grid.Column="0" Content="{Binding DisplayName}" IsChecked="{Binding IsSelected}" VerticalAlignment="Center" />
-                        <ComboBox Grid.Column="1"
+                        <app:AppCheckBox Grid.Column="0" Content="{Binding DisplayName}" IsChecked="{Binding IsSelected}" VerticalAlignment="Center" />
+                        <app:AppComboBox Grid.Column="1"
                                   Margin="8,0,0,0"
                                   ItemsSource="{Binding DataContext.GroupOptions, RelativeSource={RelativeSource AncestorType=Window}}"
                                   DisplayMemberPath="Name"
@@ -60,12 +61,12 @@
                                   SelectedValue="{Binding GroupId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
                 </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+            </app:AppListBox.ItemTemplate>
+        </app:AppListBox>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="OK" Width="90" Click="OkButton_Click" />
-            <Button Content="Cancel" Width="90" Margin="8,0,0,0" Click="CancelButton_Click" />
+            <app:AppButton Content="OK" Width="90" Click="OkButton_Click" />
+            <app:AppButton Content="Cancel" Width="90" Margin="8,0,0,0" Click="CancelButton_Click" />
         </StackPanel>
     </Grid>
 </Window>

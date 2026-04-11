@@ -1,0 +1,118 @@
+<UserControl x:Class="JinoSupporter.App.Modules.DataInference.TagEditView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls">
+
+    <Grid Background="{StaticResource ShellCanvasBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Margin="10,10,10,6" Padding="14"
+                Style="{StaticResource ShellCardBorderStyle}" Background="White">
+            <StackPanel>
+                <TextBlock FontSize="20" FontWeight="SemiBold" Foreground="#22304A" Text="Edit Tags" />
+                <TextBlock Margin="0,6,0,0" Foreground="#617084" FontSize="12"
+                           Text="Review all tags saved in the DB and rename them. Changes are applied to all datasets that use the tag." />
+            </StackPanel>
+        </Border>
+
+        <!-- Content -->
+        <Grid Grid.Row="1" Margin="10,0,10,6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: tag list -->
+            <Border Grid.Column="0" Padding="12"
+                    Style="{StaticResource ShellCardBorderStyle}" Background="White">
+                <DockPanel LastChildFill="True">
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                        <app:AppButton DockPanel.Dock="Right" Content="Refresh"
+                                       Click="RefreshButton_Click" />
+                        <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#22304A"
+                                   Text="Tag List" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <Border BorderBrush="#D3DCEA" BorderThickness="1"
+                            CornerRadius="6" Background="#F8FAFD">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel x:Name="TagListPanel" Margin="4" />
+                        </ScrollViewer>
+                    </Border>
+                </DockPanel>
+            </Border>
+
+            <!-- Right: edit panel -->
+            <Border Grid.Column="2" Padding="18"
+                    Style="{StaticResource ShellCardBorderStyle}" Background="White">
+                <StackPanel x:Name="EditPanel" VerticalAlignment="Top">
+                    <TextBlock x:Name="SelectedTagLabel"
+                               FontSize="13" Foreground="#617084"
+                               Text="← Select a tag from the list on the left"
+                               Margin="0,0,0,16" />
+
+                    <TextBlock Text="Current Tag Name" FontSize="11" Foreground="#64748B" Margin="0,0,0,4" />
+                    <TextBox x:Name="CurrentTagBox"
+                             IsReadOnly="True"
+                             Padding="8,6"
+                             FontSize="13"
+                             Background="#F8FAFD"
+                             BorderBrush="#D3DCEA"
+                             BorderThickness="1">
+                        <TextBox.Resources>
+                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                        </TextBox.Resources>
+                    </TextBox>
+
+                    <TextBlock Text="New Tag Name" FontSize="11" Foreground="#64748B"
+                               Margin="0,14,0,4" />
+                    <TextBox x:Name="NewTagBox"
+                             Padding="8,6"
+                             FontSize="13"
+                             BorderBrush="#93C5FD"
+                             BorderThickness="1"
+                             KeyDown="NewTagBox_KeyDown">
+                        <TextBox.Resources>
+                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                        </TextBox.Resources>
+                    </TextBox>
+
+                    <TextBlock x:Name="AffectedLabel"
+                               FontSize="11" Foreground="#64748B"
+                               Margin="0,8,0,0" />
+
+                    <app:AppButton x:Name="RenameButton"
+                                   Content="Rename Tag (Enter)"
+                                   HorizontalAlignment="Left"
+                                   Margin="0,14,0,0"
+                                   IsEnabled="False"
+                                   Click="RenameButton_Click" />
+
+                    <Border x:Name="ResultBorder"
+                            Margin="0,16,0,0"
+                            Padding="10,8"
+                            CornerRadius="6"
+                            Background="#ECFDF5"
+                            BorderBrush="#6EE7B7"
+                            BorderThickness="1"
+                            Visibility="Collapsed">
+                        <TextBlock x:Name="ResultTextBlock"
+                                   FontSize="12" Foreground="#065F46"
+                                   TextWrapping="Wrap" />
+                    </Border>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Status bar -->
+        <Border Grid.Row="2" Margin="10,0,10,10" Padding="10,8"
+                Style="{StaticResource ShellCardBorderStyle}" Background="#F8FAFD">
+            <TextBlock x:Name="StatusTextBlock" Foreground="#4E5A6C" FontSize="11" Text="Ready." />
+        </Border>
+    </Grid>
+</UserControl>

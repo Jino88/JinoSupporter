@@ -6,7 +6,6 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Text.Json;
-using Microsoft.Win32;
 using OfficeOpenXml;
 using ExcelDataReader;
 using UserControl = System.Windows.Controls.UserControl;
@@ -27,6 +26,7 @@ namespace GraphMaker
             ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
             // ExcelDataReader를 위한 Encoding 공급자 등록 (.xls 파일 지원)
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            UpdateWorkflowSummary();
             NotifyWebModuleSnapshotChanged();
         }
 
@@ -49,21 +49,11 @@ namespace GraphMaker
             });
         }
 
-        private void SelectFolderButton_Click(object sender, RoutedEventArgs e)
+        private void FolderDropBox_FolderSelected(object sender, JinoSupporter.Controls.FolderSelectedEventArgs e)
         {
             try
             {
-                var dialog = new OpenFolderDialog
-                {
-                    Title = "Excel 폴더 선택",
-                    Multiselect = false
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    string folderPath = dialog.FolderName;
-                    LoadExcelFilesFromFolder(folderPath);
-                }
+                LoadExcelFilesFromFolder(e.FolderPath);
             }
             catch (Exception ex)
             {
@@ -76,6 +66,7 @@ namespace GraphMaker
         {
             try
             {
+                CurrentFolderText.Text = folderPath;
                 excelFiles.Clear();
                 fileSheetMapping.Clear();
                 FileListBox.Items.Clear();
@@ -116,6 +107,7 @@ namespace GraphMaker
 
                 FileCountText.Text = $"파일: {excelFiles.Count}개";
                 StatusText.Text = $"{excelFiles.Count}개의 Excel 파일 로드 완료";
+                UpdateWorkflowSummary();
 
                 // 모든 파일에 공통으로 존재하는 시트 표시
                 DisplayCommonSheets();
@@ -123,8 +115,19 @@ namespace GraphMaker
             }
             catch (Exception ex)
             {
+                StatusText.Text = "파일 로드 중 오류 발생";
+                UpdateWorkflowSummary();
                 MessageBox.Show($"파일 로드 중 오류 발생:\n{ex.Message}", "오류",
                     MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void UpdateWorkflowSummary()
+        {
+            FileCountValueText.Text = excelFiles.Count.ToString("N0");
+            if (string.IsNullOrWhiteSpace(CurrentFolderText.Text))
+            {
+                CurrentFolderText.Text = "(No folder)";
             }
         }
 
@@ -742,7 +745,7 @@ namespace GraphMaker
             switch (action)
             {
                 case "select-folder":
-                    SelectFolderButton_Click(this, new RoutedEventArgs());
+                    FolderDropBoxControl.Browse();
                     break;
                 case "extract-data":
                     ExtractDataButton_Click(this, new RoutedEventArgs());

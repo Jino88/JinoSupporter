@@ -10,15 +10,13 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using JinoSupporter.Controls;
 using OxyPlot;
 using OxyPlot.Annotations;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using UserControl = System.Windows.Controls.UserControl;
-using DragEventArgs = System.Windows.DragEventArgs;
 using MessageBox = System.Windows.MessageBox;
-using DataFormats = System.Windows.DataFormats;
-using DragDropEffects = System.Windows.DragDropEffects;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
 namespace GraphMaker
@@ -75,59 +73,10 @@ namespace GraphMaker
             NotifyWebModuleSnapshotChanged();
         }
 
-        #region Drag and Drop
-
-        private void DropZone_Drop(object sender, DragEventArgs e)
+        private void FileDropBox_FilesSelected(object sender, FilesSelectedEventArgs e)
         {
-            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                return;
-            }
-
-            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            var firstTxtFile = files.FirstOrDefault(f =>
-                string.Equals(Path.GetExtension(f), ".txt", StringComparison.OrdinalIgnoreCase));
-
-            if (firstTxtFile == null)
-            {
-                MessageBox.Show("Only TXT files are supported.", "Notice",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            LoadFile(firstTxtFile);
+            LoadFile(e.FilePaths[0]);
         }
-
-        private void DropZone_DragEnter(object sender, DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                e.Effects = DragDropEffects.Copy;
-                SetDropHintForeground(sender, Colors.Blue);
-            }
-        }
-
-        private void DropZone_DragLeave(object sender, DragEventArgs e)
-        {
-            SetDropHintForeground(sender, System.Windows.Media.Color.FromRgb(51, 65, 85));
-        }
-
-        private void DropZone_DragOver(object sender, DragEventArgs e)
-        {
-            e.Handled = true;
-        }
-
-        private static void SetDropHintForeground(object sender, System.Windows.Media.Color color)
-        {
-            if (sender is Border border &&
-                border.Child is Panel panel &&
-                panel.Children.OfType<TextBlock>().FirstOrDefault() is TextBlock textBlock)
-            {
-                textBlock.Foreground = new SolidColorBrush(color);
-            }
-        }
-
-        #endregion
 
         private void BrowseButton_Click(object sender, RoutedEventArgs e)
         {

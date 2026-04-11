@@ -1,6 +1,7 @@
 <Window x:Class="WorkbenchHost.Modules.JsonEditor.JsonNodeDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
         Title="Add JSON Node"
         Width="420"
         Height="270"
@@ -20,29 +21,29 @@
 
         <StackPanel Grid.Row="1" Margin="0,16,0,0">
             <TextBlock Text="Key" Foreground="#526178" />
-            <TextBox x:Name="KeyTextBox" Height="30" Padding="8,4" />
+            <app:AppTextBox x:Name="KeyTextBox" Height="30" Padding="8,4" />
         </StackPanel>
 
         <StackPanel Grid.Row="2" Margin="0,12,0,0">
             <TextBlock Text="Type" Foreground="#526178" />
-            <ComboBox x:Name="KindComboBox" Height="20" MinHeight="20" SelectedIndex="0" Padding="4,0">
+            <app:AppComboBox x:Name="KindComboBox" Height="20" MinHeight="20" SelectedIndex="0" Padding="4,0">
                 <ComboBoxItem Content="String" Tag="String" />
                 <ComboBoxItem Content="Number" Tag="Number" />
                 <ComboBoxItem Content="Boolean" Tag="Boolean" />
                 <ComboBoxItem Content="Null" Tag="Null" />
                 <ComboBoxItem Content="Object" Tag="Object" />
                 <ComboBoxItem Content="Array" Tag="Array" />
-            </ComboBox>
+            </app:AppComboBox>
         </StackPanel>
 
         <StackPanel Grid.Row="3" Margin="0,12,0,0">
             <TextBlock Text="Initial Value" Foreground="#526178" />
-            <TextBox x:Name="ValueTextBox" Height="30" Padding="8,4" />
+            <app:AppTextBox x:Name="ValueTextBox" Height="30" Padding="8,4" />
         </StackPanel>
 
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
-            <Button Width="92" Height="32" Margin="0,0,8,0" Click="CancelButton_Click" Content="Cancel" />
-            <Button Width="92" Height="32" Click="OkButton_Click" Content="Add" />
+            <app:AppButton Width="92" Height="32" Margin="0,0,8,0" Click="CancelButton_Click" Content="Cancel" />
+            <app:AppButton Width="92" Height="32" Click="OkButton_Click" Content="Add" />
         </StackPanel>
     </Grid>
 </Window>

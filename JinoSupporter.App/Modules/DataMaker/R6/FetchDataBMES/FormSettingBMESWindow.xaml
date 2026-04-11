@@ -1,6 +1,7 @@
 <Window x:Class="DataMaker.R6.FetchDataBMES.FormSettingBMESWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
         Title="Setting BMES" Width="380" Height="220" MinHeight="220"
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner"
         Background="#F5F6FA">
@@ -18,7 +19,7 @@
 
         <TextBlock Text="ID" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"
                    Foreground="#6B7280" FontSize="13"/>
-        <TextBox x:Name="CT_TB_ID" Grid.Row="0" Grid.Column="1" Margin="0,0,0,8"
+        <app:AppTextBox x:Name="CT_TB_ID" Grid.Row="0" Grid.Column="1" Margin="0,0,0,8"
                  Background="White" Foreground="#1A1D26" BorderBrush="#E2E4EA"
                  Padding="8,6" FontSize="13"/>
 
@@ -29,9 +30,9 @@
                      Padding="8,6" FontSize="13"/>
 
         <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-            <Button x:Name="CT_BT_LOAD" Content="Load" Width="96" Margin="0,0,8,0" Click="CT_BT_LOAD_Click"
+            <app:AppButton x:Name="CT_BT_LOAD" Content="Load" Width="96" Margin="0,0,8,0" Click="CT_BT_LOAD_Click"
                     Background="#F0F1F5" Foreground="#1A1D26" BorderBrush="#E2E4EA" BorderThickness="1" Padding="0,8" Cursor="Hand"/>
-            <Button x:Name="CT_BT_SAVE" Content="Save" Width="96" Click="CT_BT_SAVE_Click"
+            <app:AppButton x:Name="CT_BT_SAVE" Content="Save" Width="96" Click="CT_BT_SAVE_Click"
                     Background="#4F6BED" Foreground="White" BorderThickness="0" Padding="0,8"
                     FontWeight="SemiBold" Cursor="Hand"/>
         </StackPanel>

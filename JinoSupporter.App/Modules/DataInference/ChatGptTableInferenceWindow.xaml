@@ -1,0 +1,124 @@
+<Window x:Class="JinoSupporter.App.Modules.DataInference.ChatGptTableInferenceWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Data Inference (ChatGPT)"
+        Width="1300"
+        Height="860"
+        MinWidth="980"
+        MinHeight="720"
+        Background="#F8FBFF"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Background="#EFF6FF"
+                BorderBrush="#D9E7F7"
+                BorderThickness="1"
+                CornerRadius="16"
+                Padding="18">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="Data Inference (ChatGPT)"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Foreground="#102A43" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="#486581"
+                               Text="Paste table data copied from Excel and it will be automatically converted to the table below." />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Top">
+                    <Button Content="Paste Clipboard"
+                            Width="130"
+                            Margin="0,0,8,0"
+                            Click="PasteClipboardButton_Click" />
+                    <Button Content="Parse Table"
+                            Width="100"
+                            Margin="0,0,8,0"
+                            Click="ParseButton_Click" />
+                    <Button Content="Clear"
+                            Width="90"
+                            Click="ClearButton_Click" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1"
+                Margin="0,12,0,0"
+                Background="#FFFFFF"
+                BorderBrush="#E2E8F0"
+                BorderThickness="1"
+                CornerRadius="16"
+                Padding="16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="160" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Raw Data"
+                           FontSize="15"
+                           FontWeight="SemiBold"
+                           Foreground="#0F172A" />
+
+                <TextBox x:Name="RawInputTextBox"
+                         Grid.Row="1"
+                         Margin="0,10,0,0"
+                         AcceptsReturn="True"
+                         AcceptsTab="True"
+                         VerticalScrollBarVisibility="Auto"
+                         HorizontalScrollBarVisibility="Auto"
+                         TextChanged="RawInputTextBox_TextChanged"
+                         TextWrapping="NoWrap"
+                         FontFamily="Consolas"
+                         FontSize="12" />
+
+                <TextBlock x:Name="StatusTextBlock"
+                           Grid.Row="2"
+                           Margin="0,10,0,0"
+                           Foreground="#475569"
+                           Text="Copy an Excel range, then press Ctrl+V or click Paste Clipboard." />
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2"
+                Margin="0,12,0,0"
+                Background="#FFFFFF"
+                BorderBrush="#E2E8F0"
+                BorderThickness="1"
+                CornerRadius="16"
+                Padding="16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Parsed Table"
+                           FontSize="15"
+                           FontWeight="SemiBold"
+                           Foreground="#0F172A" />
+
+                <DataGrid x:Name="ParsedDataGrid"
+                          Grid.Row="1"
+                          Margin="0,10,0,0"
+                          AutoGenerateColumns="True"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

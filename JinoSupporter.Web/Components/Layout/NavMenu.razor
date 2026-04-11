@@ -1,0 +1,116 @@
+@using JinoSupporter.Web.Services
+@inject NavigationManager Nav
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid px-0">
+        <a class="navbar-brand" href="">JinoSupporter</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" @onclick="OnNavScrollableClick">
+    <nav class="flex-column">
+        <div class="nav-section">Tools</div>
+
+        <!-- Schedule (최상단) -->
+        <div class="nav-item">
+            <NavLink class="nav-link" href="schedule">
+                <span class="nav-icon">📅</span> Schedule
+            </NavLink>
+        </div>
+
+        <!-- Data Inference (서브메뉴) -->
+        <div class="nav-item">
+            <button class="nav-link nav-group-toggle @(IsDataInferenceActive ? "active" : "")"
+                    @onclick="ToggleDataInference"
+                    @onclick:stopPropagation="true">
+                <span class="nav-icon">⚙</span> Data Inference
+                <span class="nav-caret @(_diOpen ? "open" : "")">›</span>
+            </button>
+        </div>
+        @if (_diOpen)
+        {
+            <div class="nav-submenu">
+                <div class="nav-item">
+                    <NavLink class="nav-link nav-sublink" href="data-inference">
+                        <span class="nav-icon" style="font-size:11px;">📥</span> Input Data
+                    </NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="nav-link nav-sublink" href="report">
+                        <span class="nav-icon" style="font-size:11px;">📊</span> Report
+                    </NavLink>
+                </div>
+            </div>
+        }
+
+        <div class="nav-item">
+            <NavLink class="nav-link" href="translate">
+                <span class="nav-icon">🌐</span> Translate
+            </NavLink>
+        </div>
+
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <div class="nav-section" style="margin-top:12px;">Admin</div>
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="admin/users">
+                        <span class="nav-icon">👥</span> Users
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+    </nav>
+
+    @* User info + logout at bottom *@
+    <AuthorizeView>
+        <Authorized>
+            <div style="padding: 12px 14px; margin-top:auto; border-top:1px solid rgba(255,255,255,.08);">
+                <div style="font-size:12px; color:#94a3b8; margin-bottom:2px;">Signed in as</div>
+                <div style="font-size:13px; font-weight:600; color:#e2e8f0; margin-bottom:4px;">
+                    @context.User.Identity?.Name
+                </div>
+                <span style="font-size:10px; font-weight:600; padding:2px 7px; border-radius:4px;
+                             background:rgba(59,130,246,.25); color:#93c5fd; letter-spacing:.3px;">
+                    @context.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value
+                </span>
+                <form method="post" action="/auth/logout" style="margin-top:10px;">
+                    <button type="submit"
+                            style="width:100%; padding:5px 0; font-size:12px; font-weight:500;
+                                   border:1px solid rgba(255,255,255,.15); border-radius:6px;
+                                   background:transparent; color:#94a3b8; cursor:pointer;
+                                   transition:all .15s;">
+                        Sign out
+                    </button>
+                </form>
+            </div>
+        </Authorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    private bool _diOpen;
+
+    protected override void OnInitialized()
+    {
+        // Auto-expand if currently on a Data Inference sub-page
+        _diOpen = IsDataInferenceActive;
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        if (IsDataInferenceActive && !_diOpen)
+            _diOpen = true;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private bool IsDataInferenceActive =>
+        Nav.Uri.Contains("/data-inference", StringComparison.OrdinalIgnoreCase) ||
+        Nav.Uri.Contains("/report", StringComparison.OrdinalIgnoreCase);
+
+    private void ToggleDataInference() => _diOpen = !_diOpen;
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+}

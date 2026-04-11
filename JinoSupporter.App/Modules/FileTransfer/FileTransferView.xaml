@@ -1,6 +1,7 @@
 <UserControl x:Class="JinoSupporter.App.Modules.FileTransfer.FileTransferView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls">
     <Grid Background="#F4F7FB">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -68,11 +69,11 @@
                                        TextWrapping="Wrap" />
                         </StackPanel>
                         <WrapPanel Grid.Column="1" VerticalAlignment="Center">
-                            <Button Content="Refresh"
+                            <app:AppButton Content="Refresh"
                                     Padding="12,7"
                                     Margin="0,0,8,0"
                                     Click="RefreshButton_Click" />
-                            <Button Content="Choose Destination"
+                            <app:AppButton Content="Choose Destination"
                                     Padding="12,7"
                                     Click="ChooseDestinationButton_Click" />
                         </WrapPanel>
@@ -100,7 +101,7 @@
                             <TextBlock Text="Android Devices"
                                        FontSize="16"
                                        FontWeight="SemiBold" />
-                            <ListBox x:Name="DeviceListBox"
+                            <app:AppListBox x:Name="DeviceListBox"
                                      Grid.Row="1"
                                      Margin="0,10,0,0" />
                         </Grid>
@@ -123,15 +124,15 @@
                                        FontWeight="SemiBold" />
                             <WrapPanel Grid.Row="1"
                                        Margin="0,10,0,10">
-                                <Button Content="Choose Files"
+                                <app:AppButton Content="Choose Files"
                                         Padding="12,7"
                                         Margin="0,0,8,0"
                                         Click="ChooseFilesButton_Click" />
-                                <Button Content="Send"
+                                <app:AppButton Content="Send"
                                         Padding="12,7"
                                         Click="SendFilesButton_Click" />
                             </WrapPanel>
-                            <ListBox x:Name="SelectedFileListBox"
+                            <app:AppListBox x:Name="SelectedFileListBox"
                                      Grid.Row="2" />
                         </Grid>
                     </Border>
@@ -151,7 +152,7 @@
                         <TextBlock Text="Inbound Sessions"
                                    FontSize="16"
                                    FontWeight="SemiBold" />
-                        <ListBox x:Name="InboundSessionListBox"
+                        <app:AppListBox x:Name="InboundSessionListBox"
                                  Grid.Row="1"
                                  Margin="0,10,0,0" />
                     </Grid>
@@ -172,7 +173,7 @@
                     <TextBlock Text="Transfer History"
                                FontSize="16"
                                FontWeight="SemiBold" />
-                    <ListBox x:Name="HistoryListBox"
+                    <app:AppListBox x:Name="HistoryListBox"
                              Grid.Row="1"
                              Margin="0,10,0,0" />
                 </Grid>

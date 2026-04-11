@@ -1,0 +1,484 @@
+@page "/report"
+@rendermode InteractiveServer
+@using System.Linq
+@inject WebRepository Repo
+@inject ClaudeService  Claude
+
+<PageTitle>Report</PageTitle>
+
+<h4 class="mb-3 fw-semibold">Report</h4>
+
+<div class="row g-3">
+
+    <!-- ── Left: filters + dataset list ───────────────────────────────────── -->
+    <div class="col-xl-3 col-lg-4 col-md-4">
+
+        <!-- Tag Filter -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+                Tag Filter
+                @if (_filterTags.Count > 0)
+                {
+                    <button class="btn btn-link btn-sm p-0 text-secondary text-decoration-none"
+                            @onclick="ClearTagFilter">Clear</button>
+                }
+            </div>
+            <div class="card-body py-2" style="max-height:180px; overflow-y:auto;">
+                @if (_allTags.Count == 0)
+                {
+                    <span class="text-muted small">No tags found.</span>
+                }
+                @foreach (string tag in _allTags)
+                {
+                    bool active = _filterTags.Contains(tag);
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="tag_@tag"
+                               checked="@active"
+                               @onchange="e => ToggleFilterTag(tag, (bool)(e.Value ?? false))" />
+                        <label class="form-check-label small" for="tag_@tag">@tag</label>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Dataset list (multi-select checkboxes) -->
+        <div class="card shadow-sm">
+            <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+                <span>Datasets (@_datasets.Count)</span>
+                @if (_selected.Count > 0)
+                {
+                    <button class="btn btn-link btn-sm p-0 text-secondary text-decoration-none"
+                            @onclick="ClearSelection">Clear (@_selected.Count)</button>
+                }
+            </div>
+            <div class="list-group list-group-flush" style="max-height:500px; overflow-y:auto;">
+                @if (_datasets.Count == 0)
+                {
+                    <div class="list-group-item text-muted small">No datasets found.</div>
+                }
+                @foreach (string ds in _datasets)
+                {
+                    bool isSelected = _selected.Contains(ds);
+                    bool isActive   = _activeDataset == ds;
+                    <div class="list-group-item small py-2 d-flex align-items-start gap-2"
+                         style="cursor:pointer; @(isSelected ? "background:#eff6ff;" : "") border-left:3px solid @(isActive ? "#2563eb" : "transparent");"
+                         @onclick="() => ToggleDataset(ds)">
+                        <input class="form-check-input mt-0 flex-shrink-0" type="checkbox"
+                               checked="@isSelected"
+                               @onclick:stopPropagation="true"
+                               @onchange="e => ToggleDataset(ds)" />
+                        <span style="color:@(isActive ? "#1d4ed8" : isSelected ? "#2563eb" : "#334155"); font-weight:@(isSelected ? "600" : "400");">
+                            @ds
+                        </span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Right: viewer ───────────────────────────────────────────────────── -->
+    <div class="col-xl-9 col-lg-8 col-md-8">
+
+        @if (_selected.Count == 0)
+        {
+            <div class="text-muted small mt-2">Select one or more datasets from the left.</div>
+        }
+        else
+        {
+            <!-- Top action bar -->
+            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                <span class="small text-muted">@_selected.Count dataset(s) selected</span>
+                <div class="ms-auto d-flex gap-2">
+                    @if (CanAiReport)
+                    {
+                        <button class="btn btn-sm btn-outline-primary"
+                                @onclick="GenerateAiReportAsync"
+                                disabled="@(_isGenerating || !Claude.IsConfigured)">
+                            @if (_isGenerating)
+                            { <span class="spinner-border spinner-border-sm me-1" /> }
+                            Generate AI Report (@_selected.Count)
+                        </button>
+                    }
+                    @if (!string.IsNullOrEmpty(_reportHtml))
+                    {
+                        <button class="btn btn-sm btn-success" @onclick="SaveAiReportAsync">Save Report</button>
+                        <button class="btn btn-sm btn-outline-secondary"
+                                @onclick="() => _showReport = !_showReport">
+                            @(_showReport ? "Hide Report" : "Show Report")
+                        </button>
+                    }
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_reportStatusMessage))
+            {
+                <div class="alert @(_reportStatusError ? "alert-danger" : "alert-success") py-2 small mb-2">
+                    @_reportStatusMessage
+                </div>
+            }
+
+            <!-- AI Report panel -->
+            @if (_showReport && !string.IsNullOrEmpty(_reportHtml))
+            {
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header small fw-semibold d-flex justify-content-between">
+                        AI Generated Report
+                        <button class="btn btn-link btn-sm p-0" @onclick="() => _showReport = false">Close</button>
+                    </div>
+                    <div class="card-body p-0" style="max-height:60vh; overflow:auto;">
+                        <iframe srcdoc="@_reportHtml" style="width:100%; height:55vh; border:none;" />
+                    </div>
+                </div>
+            }
+
+            <!-- Dataset tabs -->
+            @if (_selected.Count > 1)
+            {
+                <ul class="nav nav-tabs mb-0 small" style="border-bottom:none;">
+                    @foreach (string ds in _selected)
+                    {
+                        <li class="nav-item">
+                            <button class="nav-link @(_activeDataset == ds ? "active" : "")"
+                                    style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                                    title="@ds"
+                                    @onclick="() => _activeDataset = ds">
+                                @(ds.Length > 28 ? ds[..25] + "…" : ds)
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+
+            <!-- Active dataset content -->
+            @if (_activeDataset is not null && _views.TryGetValue(_activeDataset, out DatasetView? view))
+            {
+                <div class="card shadow-sm" style="border-radius: @(_selected.Count > 1 ? "0 8px 8px 8px" : "12px");">
+                    <!-- Dataset header -->
+                    <div class="card-header d-flex align-items-center gap-2 flex-wrap py-2">
+                        <span class="fw-semibold small">@_activeDataset</span>
+                        @foreach (string t in Repo.GetTags(_activeDataset))
+                        {
+                            <span class="badge text-bg-secondary">@t</span>
+                        }
+                        @{ string memo = Repo.GetMemo(_activeDataset); }
+                        @if (!string.IsNullOrWhiteSpace(memo))
+                        {
+                            <span class="text-muted small ms-1">— @memo</span>
+                        }
+                    </div>
+
+                    <div class="card-body p-0">
+                        @if (view.Tables.Count == 0)
+                        {
+                            <div class="text-muted small p-3">No tables found for this dataset.</div>
+                        }
+                        else
+                        {
+                            <!-- Table tabs -->
+                            <ul class="nav nav-tabs px-3 pt-2 mb-0 small" style="border-bottom:1px solid #e2e8f0;">
+                                @foreach (DataTableInfo t in view.Tables)
+                                {
+                                    <li class="nav-item">
+                                        <button class="nav-link @(view.SelectedTable?.Id == t.Id ? "active" : "")"
+                                                @onclick="() => SelectTable(view, t)">
+                                            @t.TableName
+                                            <span class="badge @(view.SelectedTable?.Id == t.Id ? "text-bg-primary" : "text-bg-secondary") ms-1">
+                                                @t.RowCount
+                                            </span>
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+
+                            @if (view.SelectedTable is not null)
+                            {
+                                <div style="overflow:auto; max-height:calc(100vh - 340px);">
+                                    <table style="width:100%; min-width:max-content; border-collapse:collapse;">
+                                        <thead>
+                                            <tr style="background:#f8fafc; position:sticky; top:0; z-index:1;
+                                                       box-shadow:0 1px 0 #e2e8f0;">
+                                                @foreach (ColumnDef col in view.SelectedTable.Columns)
+                                                {
+                                                    <th style="padding:9px 14px; text-align:left; font-size:10.5px;
+                                                               font-weight:700; color:#64748b; text-transform:uppercase;
+                                                               letter-spacing:.5px; white-space:nowrap; user-select:none;">
+                                                        @col.Label
+                                                    </th>
+                                                }
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @{ int rowIdx = 0; }
+                                            @foreach (Dictionary<string, string> row in view.DisplayRows)
+                                            {
+                                                string rowBg = rowIdx++ % 2 == 0 ? "#ffffff" : "#f8fafc";
+                                                <tr class="rpt-row" style="background:@rowBg;">
+                                                    @foreach (ColumnDef col in view.SelectedTable.Columns)
+                                                    {
+                                                        string cv = row.TryGetValue(col.Field, out string? v) ? v ?? "" : "";
+                                                        <td style="padding:7px 14px; font-size:12px; color:#334155;
+                                                                   white-space:nowrap; border-top:1px solid #f1f5f9;">
+                                                            @cv
+                                                        </td>
+                                                    }
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div style="padding:6px 14px; font-size:11.5px; color:#94a3b8; border-top:1px solid #f1f5f9;">
+                                    @view.Rows.Count row(s) &mdash; @view.SelectedTable.CreatedAtLocal
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+</div>
+
+@code {
+    // ── Inner type ────────────────────────────────────────────────────────────
+    private sealed class DatasetView
+    {
+        public string                              DatasetName   { get; init; } = "";
+        public List<DataTableInfo>                 Tables        { get; set; }  = [];
+        public DataTableInfo?                      SelectedTable { get; set; }
+        public List<Dictionary<string, string>>    Rows          { get; set; }  = [];
+        public List<Dictionary<string, string>>    DisplayRows   { get; set; }  = [];
+    }
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    private List<string>    _allTags     = [];
+    private HashSet<string> _filterTags  = new(StringComparer.OrdinalIgnoreCase);
+    private List<string>    _datasets    = [];
+
+    // Multi-selection (preserves order of selection)
+    private List<string>                    _selected      = [];
+    private Dictionary<string, DatasetView> _views         = new(StringComparer.OrdinalIgnoreCase);
+    private string?                         _activeDataset;
+
+    // AI report
+    private bool   _isGenerating        = false;
+    private string _reportHtml          = string.Empty;
+    private bool   _showReport          = false;
+    private string _reportStatusMessage = string.Empty;
+    private bool   _reportStatusError   = false;
+
+    // Auth
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+    private bool CanAiReport => AppRoles.CanAiReport(_user);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user     = (await AuthState).User;
+        _allTags  = Repo.GetAllDistinctTags();
+        _datasets = Repo.GetAllDatasets();
+    }
+
+    // ── Dataset selection ─────────────────────────────────────────────────────
+
+    private void ToggleDataset(string ds)
+    {
+        if (_selected.Contains(ds, StringComparer.OrdinalIgnoreCase))
+        {
+            _selected.RemoveAll(s => s.Equals(ds, StringComparison.OrdinalIgnoreCase));
+            _views.Remove(ds);
+            _activeDataset = _selected.Count > 0 ? _selected[^1] : null;
+        }
+        else
+        {
+            _selected.Add(ds);
+            _views[ds] = LoadView(ds);
+            _activeDataset = ds;
+            _reportHtml    = string.Empty;
+            _showReport    = false;
+        }
+    }
+
+    private DatasetView LoadView(string ds)
+    {
+        var tables = Repo.GetTablesForDataset(ds);
+        var first  = tables.FirstOrDefault();
+        var rows   = first is not null ? Repo.GetTableRows(first.Id) : [];
+        var view   = new DatasetView
+        {
+            DatasetName   = ds,
+            Tables        = tables,
+            SelectedTable = first,
+            Rows          = rows,
+        };
+        view.DisplayRows = ComputeDisplayRows(view);
+        return view;
+    }
+
+    private void ClearSelection()
+    {
+        _selected.Clear();
+        _views.Clear();
+        _activeDataset       = null;
+        _reportHtml          = string.Empty;
+        _showReport          = false;
+        _reportStatusMessage = string.Empty;
+    }
+
+    private void SelectTable(DatasetView view, DataTableInfo table)
+    {
+        view.SelectedTable = table;
+        view.Rows          = Repo.GetTableRows(table.Id);
+        view.DisplayRows   = ComputeDisplayRows(view);
+    }
+
+    // ── Tag filter ────────────────────────────────────────────────────────────
+
+    private void ToggleFilterTag(string tag, bool isChecked)
+    {
+        if (isChecked) _filterTags.Add(tag);
+        else           _filterTags.Remove(tag);
+        RefreshDatasets();
+    }
+
+    private void ClearTagFilter()
+    {
+        _filterTags.Clear();
+        RefreshDatasets();
+    }
+
+    private void RefreshDatasets()
+    {
+        _datasets = _filterTags.Count > 0
+            ? Repo.GetDatasetsByTags([.. _filterTags])
+            : Repo.GetAllDatasets();
+
+        // remove selected datasets that are no longer in the filtered list
+        var gone = _selected.Where(s => !_datasets.Contains(s, StringComparer.OrdinalIgnoreCase)).ToList();
+        foreach (string s in gone) { _selected.Remove(s); _views.Remove(s); }
+        if (_activeDataset is not null && !_selected.Contains(_activeDataset, StringComparer.OrdinalIgnoreCase))
+            _activeDataset = _selected.Count > 0 ? _selected[^1] : null;
+    }
+
+    // ── AI Report ─────────────────────────────────────────────────────────────
+
+    private async Task GenerateAiReportAsync()
+    {
+        if (_selected.Count == 0) return;
+
+        _isGenerating        = true;
+        _reportStatusMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var sb = new System.Text.StringBuilder();
+            var allImages = new List<(string FileName, string MediaType, string Base64)>();
+
+            foreach (string ds in _selected)
+            {
+                var tables = Repo.GetTablesForDataset(ds);
+                sb.AppendLine($"══ Dataset: {ds} ══");
+                foreach (DataTableInfo table in tables)
+                {
+                    sb.AppendLine($"  Table: {table.TableName} ({table.RowCount} rows)");
+                    sb.AppendLine("  " + string.Join("\t", table.Columns.Select(c => c.Label)));
+                    foreach (var row in Repo.GetTableRows(table.Id).Take(200))
+                        sb.AppendLine("  " + string.Join("\t", table.Columns.Select(c => row.TryGetValue(c.Field, out string? v) ? v : "")));
+                    sb.AppendLine();
+                }
+                allImages.AddRange(Repo.GetImages(ds));
+            }
+
+            string title = _selected.Count == 1
+                ? _selected[0]
+                : $"{_selected.Count} datasets: {string.Join(", ", _selected.Select(s => s.Length > 20 ? s[..20] + "…" : s))}";
+
+            var images = allImages.Select(i => (i.MediaType, i.Base64)).ToList();
+            _reportHtml = await Claude.GenerateReportAsync(title, sb.ToString(), images);
+
+            if (allImages.Count > 0)
+            {
+                string imgSection = BuildImageSection(allImages);
+                int bodyClose = _reportHtml.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
+                _reportHtml = bodyClose >= 0
+                    ? _reportHtml.Insert(bodyClose, imgSection)
+                    : _reportHtml + imgSection;
+            }
+
+            _showReport          = true;
+            _reportStatusMessage = "Report generated. Click Save Report to store it.";
+        }
+        catch (Exception ex)
+        {
+            _reportStatusMessage = $"Error: {ex.Message}";
+            _reportStatusError   = true;
+        }
+        finally
+        {
+            _isGenerating = false;
+        }
+    }
+
+    private async Task SaveAiReportAsync()
+    {
+        if (string.IsNullOrEmpty(_reportHtml)) return;
+        try
+        {
+            string dsNames = string.Join("; ", _selected);
+            string title   = $"[{_selected.Count} datasets] {DateTime.Now:yyyy-MM-dd HH:mm}";
+            await Task.Run(() => Repo.SaveReport(title, dsNames, _reportHtml));
+            _reportStatusMessage = $"Report saved: {title}";
+            _reportStatusError   = false;
+        }
+        catch (Exception ex)
+        {
+            _reportStatusMessage = $"Save error: {ex.Message}";
+            _reportStatusError   = true;
+        }
+    }
+
+    private static string BuildImageSection(List<(string FileName, string MediaType, string Base64)> images)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<section style=\"margin:40px auto;max-width:1000px;padding:0 24px;\">");
+        sb.Append("<h2 style=\"font-size:18px;font-weight:700;color:#1e293b;border-bottom:2px solid #e2e8f0;padding-bottom:8px;margin-bottom:20px;\">Reference Images</h2>");
+        sb.Append("<div style=\"display:flex;flex-wrap:wrap;gap:16px;\">");
+        foreach ((string fileName, string mediaType, string base64) in images)
+        {
+            string enc = System.Net.WebUtility.HtmlEncode(fileName);
+            sb.Append("<figure style=\"margin:0;text-align:center;\">");
+            sb.Append($"<img src=\"data:{mediaType};base64,{base64}\" alt=\"{enc}\" style=\"max-width:480px;max-height:360px;object-fit:contain;border:1px solid #e2e8f0;border-radius:8px;\" />");
+            sb.Append($"<figcaption style=\"font-size:11px;color:#64748b;margin-top:4px;\">{enc}</figcaption>");
+            sb.Append("</figure>");
+        }
+        sb.Append("</div></section>");
+        return sb.ToString();
+    }
+
+    // ── Fill-down ─────────────────────────────────────────────────────────────
+
+    private static List<Dictionary<string, string>> ComputeDisplayRows(DatasetView view)
+    {
+        if (view.SelectedTable is null || view.Rows.Count == 0) return [];
+
+        var last    = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var display = new List<Dictionary<string, string>>(view.Rows.Count);
+
+        foreach (var row in view.Rows)
+        {
+            var d = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (ColumnDef col in view.SelectedTable.Columns)
+            {
+                string val = row.TryGetValue(col.Field, out string? v) ? v ?? "" : "";
+                if (string.IsNullOrWhiteSpace(val))
+                    val = last.TryGetValue(col.Field, out string? l) ? l ?? "" : "";
+                else
+                    last[col.Field] = val;
+                d[col.Field] = val;
+            }
+            display.Add(d);
+        }
+        return display;
+    }
+}

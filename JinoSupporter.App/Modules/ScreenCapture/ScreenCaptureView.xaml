@@ -1,6 +1,7 @@
 <UserControl x:Class="WorkbenchHost.Modules.ScreenCapture.ScreenCaptureView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
@@ -78,46 +79,46 @@
                 Background="White">
             <DockPanel LastChildFill="True">
                 <WrapPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <Button x:Name="CaptureFullScreenButton"
+                    <app:AppButton x:Name="CaptureFullScreenButton"
                             Content="Capture Full Screen"
                             Style="{StaticResource CaptureActionButtonStyle}"
                             Tag="FullScreen"
                             ToolTip="{Binding FullScreenHotkeyText, RelativeSource={RelativeSource AncestorType=UserControl}}"
                             Click="CaptureFullScreenButton_Click" />
-                    <Button x:Name="CaptureActiveWindowButton"
+                    <app:AppButton x:Name="CaptureActiveWindowButton"
                             Content="Capture Active Window"
                             Style="{StaticResource CaptureActionButtonStyle}"
                             Tag="ActiveWindow"
                             ToolTip="{Binding ActiveWindowHotkeyText, RelativeSource={RelativeSource AncestorType=UserControl}}"
                             Click="CaptureActiveWindowButton_Click" />
-                    <Button x:Name="CaptureRegionButton"
+                    <app:AppButton x:Name="CaptureRegionButton"
                             Content="Capture Region"
                             Style="{StaticResource CaptureActionButtonStyle}"
                             Tag="Region"
                             ToolTip="{Binding RegionHotkeyText, RelativeSource={RelativeSource AncestorType=UserControl}}"
                             Click="CaptureRegionButton_Click" />
-                    <Button Content="Copy"
+                    <app:AppButton Content="Copy"
                             Style="{StaticResource CaptureActionButtonStyle}"
                             Click="CopyButton_Click" />
-                    <Button Content="Save PNG"
+                    <app:AppButton Content="Save PNG"
                             Style="{StaticResource CaptureActionButtonStyle}"
                             Click="SaveButton_Click" />
                 </WrapPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <ToggleButton x:Name="PenToolToggle"
+                    <app:AppToggleButton x:Name="PenToolToggle"
                                   Content="Pen"
                                   Style="{StaticResource CaptureToggleStyle}"
                                   Click="PenToolToggle_Click" />
-                    <ToggleButton x:Name="HighlighterToolToggle"
+                    <app:AppToggleButton x:Name="HighlighterToolToggle"
                                   Content="Highlighter"
                                   Style="{StaticResource CaptureToggleStyle}"
                                   Click="HighlighterToolToggle_Click" />
-                    <ToggleButton x:Name="EraserToolToggle"
+                    <app:AppToggleButton x:Name="EraserToolToggle"
                                   Content="Eraser"
                                   Style="{StaticResource CaptureToggleStyle}"
                                   Click="EraserToolToggle_Click" />
-                    <Button Content="Clear Ink"
+                    <app:AppButton Content="Clear Ink"
                             Style="{StaticResource CaptureActionButtonStyle}"
                             Margin="0,0,0,0"
                             Click="ClearInkButton_Click" />
@@ -147,7 +148,7 @@
                                Text="PicPick-style quick capture and markup inside WorkHost." />
 
                     <TextBlock FontWeight="SemiBold" Foreground="#445269" Text="Stroke Color" />
-                    <ComboBox x:Name="ColorComboBox"
+                    <app:AppComboBox x:Name="ColorComboBox"
                               Margin="0,6,0,12"
                               SelectionChanged="ColorComboBox_SelectionChanged" />
 

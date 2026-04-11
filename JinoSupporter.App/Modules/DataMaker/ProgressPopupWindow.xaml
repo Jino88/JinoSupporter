@@ -1,6 +1,7 @@
 <Window x:Class="DataMaker.ProgressPopupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
         Title="Progress"
         Width="460"
         Height="330"
@@ -93,7 +94,7 @@
                            Foreground="#1F6FEB"
                            Text="0%"/>
             </Grid>
-            <ProgressBar x:Name="CT_PROG_TASK"
+            <app:AppProgressBar x:Name="CT_PROG_TASK"
                          Style="{StaticResource SlimProgressBar}"
                          Grid.Row="4"
                          Minimum="0"
@@ -117,7 +118,7 @@
                            Foreground="#14B8A6"
                            Text="0%"/>
             </Grid>
-            <ProgressBar x:Name="CT_PROG_TOTAL"
+            <app:AppProgressBar x:Name="CT_PROG_TOTAL"
                          Style="{StaticResource SlimProgressBar}"
                          Grid.Row="6"
                          Minimum="0"

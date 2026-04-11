@@ -153,7 +153,7 @@ internal sealed class FileTransferRuntime : IAsyncDisposable
             ContentRootPath = AppContext.BaseDirectory
         });
 
-        builder.WebHost.UseUrls("http://0.0.0.0:5070");
+        builder.WebHost.UseUrls("http://10.6.4.54:5070");
         builder.Services.Configure<FormOptions>(options => options.MultipartBodyLengthLimit = long.MaxValue);
         builder.Services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new UploadOptions()));
         builder.Services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new DiscoveryOptions()));
