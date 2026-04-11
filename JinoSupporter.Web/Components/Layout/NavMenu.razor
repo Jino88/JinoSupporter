@@ -1,5 +1,6 @@
 @using JinoSupporter.Web.Services
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid px-0">
@@ -111,6 +112,12 @@
         Nav.Uri.Contains("/report", StringComparison.OrdinalIgnoreCase);
 
     private void ToggleDataInference() => _diOpen = !_diOpen;
+
+    private async Task OnNavScrollableClick()
+    {
+        // Mobile only: toggle the checkbox-based hamburger menu
+        await JS.InvokeVoidAsync("eval", "var t=document.querySelector('.navbar-toggler');if(t&&window.innerWidth<641)t.click();");
+    }
 
     public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
 }
