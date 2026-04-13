@@ -33,15 +33,42 @@
                         Dataset Name <span class="text-danger">*</span>
                         <span class="text-muted fw-normal">(same name = appended)</span>
                     </label>
-                    <input @bind="_datasetName" class="form-control form-control-sm"
-                           placeholder="e.g. AudioBus_2024_Q1" />
+                    <div class="input-group input-group-sm">
+                        <input @bind="_datasetName" class="form-control form-control-sm"
+                               placeholder="e.g. AudioBus_2024_Q1" />
+                        <select class="form-select form-select-sm" style="max-width:140px;"
+                                @onchange="OnDatasetSelected">
+                            <option value="">Select…</option>
+                            @foreach (var ds in _allDatasets)
+                            {
+                                <option value="@ds">@ds</option>
+                            }
+                        </select>
+                    </div>
                 </div>
 
-                <!-- Memo -->
+                <!-- Purpose -->
                 <div>
-                    <label class="form-label small fw-semibold mb-1">Memo</label>
+                    <label class="form-label small fw-semibold mb-1">Purpose</label>
+                    <input @bind="_purpose" @bind:event="oninput"
+                           class="form-control form-control-sm"
+                           placeholder="e.g. QC Review, Defect Analysis" />
+                    @if (_purpose.Split(',').Any(s => !string.IsNullOrWhiteSpace(s)))
+                    {
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            @foreach (var pt in _purpose.Split(',').Where(s => !string.IsNullOrWhiteSpace(s)))
+                            {
+                                <span class="badge text-bg-secondary">@pt.Trim()</span>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="form-label small fw-semibold mb-1">Description</label>
                     <textarea @bind="_memo" class="form-control form-control-sm" rows="2"
-                              placeholder="Purpose / review notes…" />
+                              placeholder="Review notes, context…" />
                 </div>
 
                 <!-- Mode toggle -->
@@ -360,7 +387,7 @@
                                     </button>
                                 </div>
 
-                                <!-- Tags + Memo -->
+                                <!-- Tags + Purpose + Description -->
                                 <div class="px-3 py-2 border-bottom d-flex gap-3 align-items-start flex-wrap">
                                     <!-- Tags -->
                                     <div class="flex-fill">
@@ -372,9 +399,25 @@
                                         @foreach (string t in _dbTags)
                                         { <span class="badge text-bg-primary me-1">@t</span> }
                                     </div>
-                                    <!-- Memo -->
+                                    <!-- Purpose -->
                                     <div class="flex-fill">
-                                        <div class="small fw-semibold text-warning-emphasis mb-1">Memo</div>
+                                        <div class="small fw-semibold text-success-emphasis mb-1">Purpose</div>
+                                        <input class="form-control form-control-sm mb-1" style="font-size:11px;"
+                                               @bind="_dbPurpose" @bind:event="oninput"
+                                               placeholder="e.g. QC Review, Defect Analysis" />
+                                        @if (_dbPurpose.Split(',').Any(s => !string.IsNullOrWhiteSpace(s)))
+                                        {
+                                            <div class="d-flex flex-wrap gap-1">
+                                                @foreach (var pt in _dbPurpose.Split(',').Where(s => !string.IsNullOrWhiteSpace(s)))
+                                                {
+                                                    <span class="badge text-bg-secondary">@pt.Trim()</span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                    <!-- Description -->
+                                    <div class="flex-fill">
+                                        <div class="small fw-semibold text-warning-emphasis mb-1">Description</div>
                                         <div class="input-group input-group-sm">
                                             <textarea class="form-control form-control-sm" rows="2" style="font-size:11px;"
                                                       @bind="_dbMemo" />
@@ -580,8 +623,10 @@
     private sealed record ImageEntry(string Name, string MediaType, string Base64, string DataUrl, long SizeBytes);
 
     // ── Input state ───────────────────────────────────────────────────────────
-    private string _datasetName = string.Empty;
-    private string _memo        = string.Empty;
+    private string       _datasetName = string.Empty;
+    private string       _purpose     = string.Empty;
+    private string       _memo        = string.Empty;
+    private List<string> _allDatasets = [];
     private string _rawInput    = string.Empty;
     private bool   _useAi       = true;
 
@@ -623,6 +668,7 @@
     private List<Dictionary<string, string>> _dbDisplayRows     = [];
     private List<string>      _dbTags                           = [];
     private string            _dbMemo                           = string.Empty;
+    private string            _dbPurpose                        = string.Empty;
     // 모든 테이블 행을 미리 로드 (스택 뷰용)
     private Dictionary<long, (List<Dictionary<string,string>> Raw, List<Dictionary<string,string>> Display)>
         _allDbTableRows = new();
@@ -699,6 +745,7 @@
     {
         _dbPath       = Repo.GetDbPath();
         _totalRecords = Repo.GetTotalRowCount();
+        _allDatasets  = Repo.GetAllDatasets();
     }
 
     // ── Tab switching ─────────────────────────────────────────────────────────
@@ -816,6 +863,16 @@
         finally { _isBusy = false; _busyStep = string.Empty; }
     }
 
+    // ── Dataset dropdown selection ────────────────────────────────────────────
+    private void OnDatasetSelected(ChangeEventArgs e)
+    {
+        string ds = e.Value?.ToString() ?? string.Empty;
+        if (string.IsNullOrEmpty(ds)) return;
+        _datasetName = ds;
+        _memo        = Repo.GetMemo(ds);
+        _purpose     = Repo.GetPurpose(ds);
+    }
+
     // ── Save to DB ────────────────────────────────────────────────────────────
     private async Task SaveToDbAsync()
     {
@@ -829,17 +886,19 @@
         StateHasChanged();
         try
         {
-            string dsName = _datasetName.Trim();
-            var tables    = _pendingTables.ToList();
-            var tags      = _pendingTags.ToList();
-            string memo   = _memo;
+            string dsName   = _datasetName.Trim();
+            var tables      = _pendingTables.ToList();
+            var tags        = _pendingTags.ToList();
+            string memo     = _memo;
+            string purpose  = _purpose;
 
             await Task.Run(() =>
             {
                 foreach (PendingTable t in tables)
                     Repo.SaveTable(dsName, t.TableName, t.Columns, t.Rows);
                 if (tags.Count  > 0) Repo.SaveTags(dsName, tags);
-                if (!string.IsNullOrWhiteSpace(memo)) Repo.SaveMemo(dsName, memo);
+                if (!string.IsNullOrWhiteSpace(memo))    Repo.SaveMemo(dsName, memo);
+                if (!string.IsNullOrWhiteSpace(purpose)) Repo.SavePurpose(dsName, purpose);
             });
 
             int rows = tables.Sum(t => t.Rows.Count);
@@ -850,6 +909,7 @@
             _tagsExtracted = false;
             _images        = [];
             _datasetName   = string.Empty;
+            _purpose       = string.Empty;
             _memo          = string.Empty;
             RefreshDbInfo();
         }
@@ -881,6 +941,7 @@
         _dbDisplayRows     = [];
         _dbTags            = Repo.GetTags(name);
         _dbMemo            = Repo.GetMemo(name);
+        _dbPurpose         = Repo.GetPurpose(name);
         // 모든 테이블 행 미리 로드
         _allDbTableRows = new();
         foreach (var t in _dbTables)
@@ -954,8 +1015,12 @@
     private async Task SaveMemoAsync()
     {
         if (_selectedDbDataset is null) return;
-        await Task.Run(() => Repo.SaveMemo(_selectedDbDataset, _dbMemo));
-        SetStatus("Memo saved.", false);
+        await Task.Run(() =>
+        {
+            Repo.SaveMemo(_selectedDbDataset, _dbMemo);
+            Repo.SavePurpose(_selectedDbDataset, _dbPurpose);
+        });
+        SetStatus("Saved.", false);
     }
 
     private async Task ReTagAsync()

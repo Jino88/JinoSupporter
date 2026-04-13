@@ -195,6 +195,7 @@ public sealed class WebRepository
     private static void MigrateSchema(SqliteConnection conn)
     {
         bool hasDatasetNames = false;
+        bool hasPurpose      = false;
         using SqliteCommand check = conn.CreateCommand();
         check.CommandText = "PRAGMA table_info(Reports);";
         using (SqliteDataReader r = check.ExecuteReader())
@@ -206,6 +207,20 @@ public sealed class WebRepository
         {
             using SqliteCommand alter = conn.CreateCommand();
             alter.CommandText = "ALTER TABLE Reports ADD COLUMN DatasetNames TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+
+        using SqliteCommand checkMemo = conn.CreateCommand();
+        checkMemo.CommandText = "PRAGMA table_info(DatasetMemo);";
+        using (SqliteDataReader r = checkMemo.ExecuteReader())
+            while (r.Read())
+                if (r.GetString(1).Equals("Purpose", StringComparison.OrdinalIgnoreCase))
+                    hasPurpose = true;
+
+        if (!hasPurpose)
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE DatasetMemo ADD COLUMN Purpose TEXT NOT NULL DEFAULT '';";
             alter.ExecuteNonQuery();
         }
     }
@@ -437,6 +452,32 @@ public sealed class WebRepository
         cmd.Parameters.AddWithValue("@d", datasetName);
         using SqliteDataReader r = cmd.ExecuteReader();
         return r.Read() ? r.GetString(0) : string.Empty;
+    }
+
+    public void SavePurpose(string datasetName, string purpose)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO DatasetMemo (DatasetName, Memo, Purpose, UpdatedAt)
+            VALUES (@d, '', @p, @at)
+            ON CONFLICT(DatasetName) DO UPDATE SET Purpose=@p, UpdatedAt=@at;
+            """;
+        cmd.Parameters.AddWithValue("@d",  datasetName);
+        cmd.Parameters.AddWithValue("@p",  purpose);
+        cmd.Parameters.AddWithValue("@at", DateTime.UtcNow.ToString("O"));
+        cmd.ExecuteNonQuery();
+    }
+
+    public string GetPurpose(string datasetName)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Purpose FROM DatasetMemo WHERE DatasetName=@d;";
+        cmd.Parameters.AddWithValue("@d", datasetName);
+        using SqliteDataReader r = cmd.ExecuteReader();
+        if (!r.Read()) return string.Empty;
+        return r.IsDBNull(0) ? string.Empty : r.GetString(0);
     }
 
     public int RenameTag(string oldTag, string newTag)
