@@ -49,7 +49,23 @@
 
                 <!-- Purpose -->
                 <div>
-                    <label class="form-label small fw-semibold mb-1">Purpose</label>
+                    <div class="d-flex align-items-center gap-1 mb-1">
+                        <label class="form-label small fw-semibold mb-0">Purpose</label>
+                        <button class="btn btn-outline-info btn-sm py-0 px-2"
+                                style="font-size:11px; line-height:1.4;"
+                                @onclick="ExtractPurposeAsync"
+                                disabled="@(_isBusy || !Claude.IsConfigured || _pendingTables.Count == 0)"
+                                title="Extract tags from table data, normalised against existing DB tags">
+                            @if (_isBusy && _busyStep == "purpose")
+                            {
+                                <span class="spinner-border spinner-border-sm" style="width:.65rem;height:.65rem;" />
+                            }
+                            else
+                            {
+                                <span>✨ Extract</span>
+                            }
+                        </button>
+                    </div>
                     <input @bind="_purpose" @bind:event="oninput"
                            class="form-control form-control-sm"
                            placeholder="e.g. QC Review, Defect Analysis" />
@@ -155,35 +171,12 @@
                         </button>
                     </div>
 
-                    <!-- Extract Tags -->
-                    @if (_pendingTables.Count > 0)
-                    {
-                        <button class="btn btn-outline-info btn-sm w-100" @onclick="ExtractTagsAsync"
-                                disabled="@(_isBusy || !Claude.IsConfigured)">
-                            @if (_isBusy && _busyStep == "tags")
-                            { <span class="spinner-border spinner-border-sm me-1" /> }
-                            ✨ Extract Tags
-                        </button>
-
-                        @if (_pendingTags.Count > 0)
-                        {
-                            <div class="d-flex flex-wrap gap-1 p-2 rounded border border-primary-subtle bg-primary-subtle">
-                                @foreach (string tag in _pendingTags)
-                                {
-                                    <span class="badge text-bg-primary">@tag</span>
-                                }
-                            </div>
-                        }
-                    }
-
                     <!-- Save to DB -->
                     <button class="btn btn-success w-100" @onclick="SaveToDbAsync"
-                            disabled="@(_isBusy || (_pendingTables.Count == 0 && _images.Count == 0) || (_pendingTables.Count > 0 && !_tagsExtracted))">
+                            disabled="@(_isBusy || string.IsNullOrWhiteSpace(_datasetName))">
                         @if (_isBusy && _busyStep == "save")
                         { <span class="spinner-border spinner-border-sm me-1" /> }
                         Save to DB
-                        @if (_pendingTables.Count > 0 && !_tagsExtracted)
-                        { <span class="ms-1 small fw-normal">(Extract Tags first)</span> }
                     </button>
                 }
                 else
@@ -249,15 +242,24 @@
                     }
                     @foreach (PendingTable table in _pendingTables)
                     {
-                        <div class="card mb-3 border">
-                            <div class="card-header py-2 d-flex align-items-center gap-2">
+                        <div class="card mb-3 border @(table.IsExisting ? "border-secondary opacity-75" : "")">
+                            <div class="card-header py-2 d-flex align-items-center gap-2"
+                                 style="@(table.IsExisting ? "background:#f1f5f9;" : "")">
                                 <input class="form-control form-control-sm fw-semibold"
                                        style="max-width:260px; font-size:13px;"
                                        value="@table.TableName"
+                                       disabled="@table.IsExisting"
                                        @oninput="e => table.TableName = e.Value?.ToString() ?? table.TableName" />
                                 <span class="text-muted small">@table.Rows.Count rows</span>
-                                <button class="btn btn-danger btn-sm ms-auto"
-                                        @onclick="() => RemovePendingTable(table)">Delete</button>
+                                @if (table.IsExisting)
+                                {
+                                    <span class="badge text-bg-secondary ms-auto">existing</span>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-danger btn-sm ms-auto"
+                                            @onclick="() => RemovePendingTable(table)">Delete</button>
+                                }
                             </div>
                             <div style="overflow:auto; max-height:260px;">
                                 <table style="font-size:11px; min-width:max-content; border-collapse:collapse; width:100%;">
@@ -618,6 +620,7 @@
         public string TableName { get; set; } = "";
         public List<ColumnDef> Columns { get; init; } = [];
         public List<Dictionary<string, string>> Rows { get; init; } = [];
+        public bool IsExisting { get; init; }   // loaded from DB — skip on save
     }
 
     private sealed record ImageEntry(string Name, string MediaType, string Base64, string DataUrl, long SizeBytes);
@@ -631,8 +634,6 @@
     private bool   _useAi       = true;
 
     private List<PendingTable> _pendingTables    = [];
-    private List<string>       _pendingTags      = [];
-    private bool               _tagsExtracted;
     private List<ImageEntry>   _images           = [];
     private bool               _includeImagesInAi;
 
@@ -815,62 +816,99 @@
             }
 
             _pendingTables.AddRange(newTables);
-            _rawInput      = string.Empty;
-            _tagsExtracted = false;
-            _pendingTags   = [];
-            _activeTab     = "results";
+            _rawInput  = string.Empty;
+            _activeTab = "results";
             SetStatus($"Organized {newTables.Count} table(s). Total: {_pendingTables.Count}.", false);
         }
         catch (Exception ex) { SetStatus($"Error: {ex.Message}", true); }
         finally { _isBusy = false; _busyStep = string.Empty; }
     }
 
-    private void RemovePendingTable(PendingTable table)
-    {
-        _pendingTables.Remove(table);
-        if (_pendingTables.Count == 0)
-        {
-            _tagsExtracted = false;
-            _pendingTags   = [];
-        }
-    }
+    private void RemovePendingTable(PendingTable table) => _pendingTables.Remove(table);
 
     private void ClearAll()
     {
         _rawInput      = string.Empty;
         _pendingTables = [];
-        _pendingTags   = [];
-        _tagsExtracted = false;
         _images        = [];
         _statusMessage = string.Empty;
     }
 
-    // ── Extract Tags ──────────────────────────────────────────────────────────
-    private async Task ExtractTagsAsync()
-    {
-        _isBusy = true; _busyStep = "tags"; _statusMessage = string.Empty;
-        StateHasChanged();
-        try
-        {
-            string preview = string.Join('\n', _rawInput.Split('\n').Take(5));
-            List<string> cols = _pendingTables.SelectMany(t => t.Columns).Select(c => c.Label).Distinct().ToList();
-            string context = _datasetName + " " + _memo + " " + string.Join(" ", cols);
-            _pendingTags   = await Claude.ExtractTagsAsync(_datasetName, _memo, context);
-            _tagsExtracted = true;
-            SetStatus($"Suggested {_pendingTags.Count} tag(s).", false);
-        }
-        catch (Exception ex) { SetStatus($"Tag error: {ex.Message}", true); }
-        finally { _isBusy = false; _busyStep = string.Empty; }
-    }
 
     // ── Dataset dropdown selection ────────────────────────────────────────────
     private void OnDatasetSelected(ChangeEventArgs e)
     {
         string ds = e.Value?.ToString() ?? string.Empty;
         if (string.IsNullOrEmpty(ds)) return;
+
         _datasetName = ds;
         _memo        = Repo.GetMemo(ds);
         _purpose     = Repo.GetPurpose(ds);
+
+        // Backwards compat: if no purpose saved yet, pre-fill from existing tags
+        if (string.IsNullOrEmpty(_purpose))
+        {
+            var existingTags = Repo.GetTags(ds);
+            if (existingTags.Count > 0)
+                _purpose = string.Join(", ", existingTags);
+        }
+
+        // Load existing tables into the results panel
+        var tables = Repo.GetTablesForDataset(ds);
+        _pendingTables = tables.Select(t => new PendingTable
+        {
+            TableName  = t.TableName,
+            Columns    = t.Columns,
+            Rows       = Repo.GetTableRows(t.Id),
+            IsExisting = true,
+        }).ToList();
+
+        SetTab("results");
+    }
+
+    // ── Extract Purpose tags ──────────────────────────────────────────────────
+    private async Task ExtractPurposeAsync()
+    {
+        _isBusy = true; _busyStep = "purpose";
+        StateHasChanged();
+        try
+        {
+            // Build context: table names + all distinct column labels + sample values
+            var tableNames = _pendingTables.Select(t => t.TableName);
+            var colLabels  = _pendingTables.SelectMany(t => t.Columns).Select(c => c.Label).Distinct();
+
+            // Sample up to 3 rows per table — non-numeric strings only
+            var sampleValues = _pendingTables
+                .SelectMany(t => t.Rows.Take(3)
+                    .SelectMany(r => r.Values)
+                    .Where(v => !string.IsNullOrWhiteSpace(v)
+                             && !double.TryParse(v, out _)))
+                .Distinct()
+                .Take(60);
+
+            // Words from Description (numbers allowed)
+            var memoWords = _memo
+                .Split([' ', ',', '.', '\n', '\r', '\t', ';', ':', '(', ')'], StringSplitOptions.RemoveEmptyEntries)
+                .Where(w => w.Length > 1)
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+
+            string context = string.Join(" | ",
+                tableNames
+                .Concat(colLabels)
+                .Concat(sampleValues)
+                .Concat(memoWords));
+
+            var existingTags = Repo.GetAllDistinctTags();
+            var tags = await Claude.ExtractPurposeTagsAsync(
+                _datasetName, context, existingTags);
+
+            if (tags.Count > 0)
+                _purpose = string.Join(", ", tags);
+
+            SetStatus($"Extracted {tags.Count} purpose tag(s).", false);
+        }
+        catch (Exception ex) { SetStatus($"Extract error: {ex.Message}", true); }
+        finally { _isBusy = false; _busyStep = string.Empty; }
     }
 
     // ── Save to DB ────────────────────────────────────────────────────────────
@@ -886,27 +924,28 @@
         StateHasChanged();
         try
         {
-            string dsName   = _datasetName.Trim();
-            var tables      = _pendingTables.ToList();
-            var tags        = _pendingTags.ToList();
-            string memo     = _memo;
-            string purpose  = _purpose;
+            string dsName  = _datasetName.Trim();
+            var tables     = _pendingTables.Where(t => !t.IsExisting).ToList();
+            var tags       = _purpose.Split(',')
+                                 .Select(s => s.Trim())
+                                 .Where(s => !string.IsNullOrEmpty(s))
+                                 .ToList();
+            string memo    = _memo;
+            string purpose = _purpose;
 
             await Task.Run(() =>
             {
                 foreach (PendingTable t in tables)
                     Repo.SaveTable(dsName, t.TableName, t.Columns, t.Rows);
-                if (tags.Count  > 0) Repo.SaveTags(dsName, tags);
+                if (tags.Count > 0) Repo.SaveTags(dsName, tags);
                 if (!string.IsNullOrWhiteSpace(memo))    Repo.SaveMemo(dsName, memo);
                 if (!string.IsNullOrWhiteSpace(purpose)) Repo.SavePurpose(dsName, purpose);
             });
 
             int rows = tables.Sum(t => t.Rows.Count);
-            SetStatus($"Saved '{dsName}' — {rows:N0} rows, {tags.Count} tags.", false);
+            SetStatus($"Saved '{dsName}' — {rows:N0} rows.", false);
 
             _pendingTables = [];
-            _pendingTags   = [];
-            _tagsExtracted = false;
             _images        = [];
             _datasetName   = string.Empty;
             _purpose       = string.Empty;

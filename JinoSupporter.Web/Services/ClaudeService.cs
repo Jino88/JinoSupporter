@@ -471,6 +471,43 @@ public sealed class ClaudeService
         return ParseJsonArray<string>(result);
     }
 
+    /// <summary>
+    /// Extract purpose tags from the dataset context, normalising against existing DB tags so
+    /// that semantically equivalent concepts always use the same label.
+    /// </summary>
+    public async Task<List<string>> ExtractPurposeTagsAsync(
+        string           datasetName,
+        string           dataContext,
+        List<string>     existingTags,
+        CancellationToken ct = default)
+    {
+        string existing = existingTags.Count > 0
+            ? string.Join(", ", existingTags)
+            : "(none yet)";
+
+        string prompt = $$"""
+            You are a manufacturing data classifier.
+
+            Dataset name: {{datasetName}}
+            Data context (table names + column labels + sample values):
+            {{dataContext}}
+
+            Tags already used in the database: {{existing}}
+
+            Task: produce 3–8 concise tags that best describe this dataset.
+            Rules:
+            1. If any already-used tag is semantically equivalent or very similar to what you would suggest, use THAT EXACT EXISTING TAG verbatim.
+            2. Only introduce a brand-new tag when no existing tag covers the concept.
+            3. Each tag: 1–3 words, Title Case, English.
+            4. Return ONLY a JSON array of strings. No explanation, no code fences.
+
+            Example output: ["Wire Cutting", "Quality Control", "2024", "Defect Analysis"]
+            """;
+
+        string result = await CallAsync(prompt, 512, ct);
+        return ParseJsonArray<string>(result);
+    }
+
     // ── Translate ─────────────────────────────────────────────────────────────
 
     public async Task<string> TranslateAsync(string text,
