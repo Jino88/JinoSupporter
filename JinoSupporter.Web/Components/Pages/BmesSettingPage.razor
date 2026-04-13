@@ -1,0 +1,293 @@
+@page "/bmes/setting"
+@rendermode InteractiveServer
+@using JinoSupporter.Web.Services
+@inject NgRateSettingsService NgRateSettings
+
+<PageTitle>BMES Setting</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span style="font-size:20px;">⚙️</span>
+    <h5 class="mb-0 fw-semibold">BMES Setting</h5>
+</div>
+
+@if (!string.IsNullOrEmpty(_statusMsg))
+{
+    <div class="alert @(_statusError ? "alert-danger" : "alert-success") py-2 small mb-3 d-flex align-items-center">
+        <span class="flex-fill">@_statusMsg</span>
+        <button class="btn-close btn-sm" @onclick="() => _statusMsg = string.Empty"></button>
+    </div>
+}
+
+<div class="row g-3">
+
+    <!-- ══ Routing Table ═══════════════════════════════════════════════════════ -->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex align-items-center gap-2">
+                <span class="fw-semibold small">Routing Table</span>
+                <span class="badge bg-secondary ms-1" style="font-size:10px;">@_routingRows.Count rows</span>
+                <div class="ms-auto d-flex gap-2">
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="ImportRoutingFromFile"
+                            title="Routing.txt 파일에서 가져오기">
+                        Import from file
+                    </button>
+                    <button class="btn btn-primary btn-sm" @onclick="AddRoutingRow">+ Add Row</button>
+                </div>
+            </div>
+            <div style="overflow-x:auto; max-height:420px; overflow-y:auto;">
+                <table class="bmes-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:160px;">모델명</th>
+                            <th style="min-width:130px;">ProcessCode</th>
+                            <th style="min-width:200px;">ProcessName</th>
+                            <th style="min-width:110px;">ProcessType</th>
+                            <th style="width:60px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in _routingRows)
+                        {
+                            @if (_editRoutingId == r.Id)
+                            {
+                                <tr class="bmes-edit-row">
+                                    <td><input class="bmes-input" @bind="_editRouting.ModelName"   /></td>
+                                    <td><input class="bmes-input" @bind="_editRouting.ProcessCode" /></td>
+                                    <td><input class="bmes-input" @bind="_editRouting.ProcessName" /></td>
+                                    <td><input class="bmes-input" @bind="_editRouting.ProcessType" /></td>
+                                    <td class="bmes-actions">
+                                        <button class="btn btn-success btn-sm py-0 px-2"  @onclick="SaveRoutingEdit">✓</button>
+                                        <button class="btn btn-secondary btn-sm py-0 px-2" @onclick="CancelRoutingEdit">✕</button>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                <tr class="bmes-row" @ondblclick="() => StartRoutingEdit(r)">
+                                    <td>@r.ModelName</td>
+                                    <td>@r.ProcessCode</td>
+                                    <td>@r.ProcessName</td>
+                                    <td>@r.ProcessType</td>
+                                    <td class="bmes-actions">
+                                        <button class="btn btn-outline-primary btn-sm py-0 px-1"  @onclick="() => StartRoutingEdit(r)" title="Edit">✎</button>
+                                        <button class="btn btn-outline-danger  btn-sm py-0 px-1"  @onclick="() => DeleteRoutingRow(r.Id)" title="Delete">✕</button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        @if (_routingRows.Count == 0)
+                        {
+                            <tr><td colspan="5" class="text-center text-muted py-3 small">No rows. Click "+ Add Row" or "Import from file".</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Reason Table ════════════════════════════════════════════════════════ -->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex align-items-center gap-2">
+                <span class="fw-semibold small">Reason Table</span>
+                <span class="badge bg-secondary ms-1" style="font-size:10px;">@_reasonRows.Count rows</span>
+                <div class="ms-auto d-flex gap-2">
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="ImportReasonFromFile"
+                            title="reason.txt 파일에서 가져오기">
+                        Import from file
+                    </button>
+                    <button class="btn btn-primary btn-sm" @onclick="AddReasonRow">+ Add Row</button>
+                </div>
+            </div>
+            <div style="overflow-x:auto; max-height:420px; overflow-y:auto;">
+                <table class="bmes-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:200px;">ProcessName</th>
+                            <th style="min-width:200px;">NgName</th>
+                            <th style="min-width:200px;">Reason</th>
+                            <th style="width:60px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in _reasonRows)
+                        {
+                            @if (_editReasonId == r.Id)
+                            {
+                                <tr class="bmes-edit-row">
+                                    <td><input class="bmes-input" @bind="_editReason.ProcessName" /></td>
+                                    <td><input class="bmes-input" @bind="_editReason.NgName"      /></td>
+                                    <td><input class="bmes-input" @bind="_editReason.Reason"      /></td>
+                                    <td class="bmes-actions">
+                                        <button class="btn btn-success btn-sm py-0 px-2"  @onclick="SaveReasonEdit">✓</button>
+                                        <button class="btn btn-secondary btn-sm py-0 px-2" @onclick="CancelReasonEdit">✕</button>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                <tr class="bmes-row" @ondblclick="() => StartReasonEdit(r)">
+                                    <td>@r.ProcessName</td>
+                                    <td>@r.NgName</td>
+                                    <td>@r.Reason</td>
+                                    <td class="bmes-actions">
+                                        <button class="btn btn-outline-primary btn-sm py-0 px-1"  @onclick="() => StartReasonEdit(r)" title="Edit">✎</button>
+                                        <button class="btn btn-outline-danger  btn-sm py-0 px-1"  @onclick="() => DeleteReasonRow(r.Id)" title="Delete">✕</button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        @if (_reasonRows.Count == 0)
+                        {
+                            <tr><td colspan="4" class="text-center text-muted py-3 small">No rows. Click "+ Add Row" or "Import from file".</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .bmes-table {
+        width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap;
+    }
+    .bmes-table thead th {
+        background: #f1f5f9; font-weight: 700; font-size: 10px; color: #64748b;
+        text-transform: uppercase; letter-spacing: .4px;
+        padding: 6px 10px; border-bottom: 2px solid #e2e8f0;
+        position: sticky; top: 0; z-index: 1;
+    }
+    .bmes-table td {
+        padding: 4px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle;
+    }
+    .bmes-row:hover td { background: #f8fafc; }
+    .bmes-edit-row td { background: #eff6ff; }
+    .bmes-actions { text-align: center; white-space: nowrap; }
+    .bmes-input {
+        width: 100%; font-size: 12px; padding: 2px 6px;
+        border: 1px solid #93c5fd; border-radius: 3px;
+        background: #fff; outline: none;
+    }
+    .bmes-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.15); }
+</style>
+
+@code {
+    private List<RoutingRow> _routingRows = [];
+    private List<ReasonRow>  _reasonRows  = [];
+
+    private long        _editRoutingId = -1;
+    private RoutingRow  _editRouting   = new();
+    private long        _editReasonId  = -1;
+    private ReasonRow   _editReason    = new();
+
+    private string _statusMsg   = string.Empty;
+    private bool   _statusError;
+
+    protected override void OnInitialized()
+    {
+        _routingRows = NgRateSettings.GetRoutingRows();
+        _reasonRows  = NgRateSettings.GetReasonRows();
+    }
+
+    // ── Routing ───────────────────────────────────────────────────────────────
+
+    private void AddRoutingRow()
+    {
+        var newRow = new RoutingRow();
+        var newId  = NgRateSettings.AddRoutingRow(newRow);
+        _routingRows = NgRateSettings.GetRoutingRows();
+        _editRoutingId = newId;
+        _editRouting   = _routingRows.First(r => r.Id == newId);
+        _editRouting   = new RoutingRow { Id = newId };
+    }
+
+    private void StartRoutingEdit(RoutingRow r)
+    {
+        _editRoutingId = r.Id;
+        _editRouting   = new RoutingRow
+        {
+            Id = r.Id, ModelName = r.ModelName, ProcessCode = r.ProcessCode,
+            ProcessName = r.ProcessName, ProcessType = r.ProcessType,
+        };
+    }
+
+    private void SaveRoutingEdit()
+    {
+        NgRateSettings.UpdateRoutingRow(_editRouting);
+        _routingRows   = NgRateSettings.GetRoutingRows();
+        _editRoutingId = -1;
+        SetStatus($"Routing row saved.", false);
+    }
+
+    private void CancelRoutingEdit() => _editRoutingId = -1;
+
+    private void DeleteRoutingRow(long id)
+    {
+        NgRateSettings.DeleteRoutingRow(id);
+        _routingRows = NgRateSettings.GetRoutingRows();
+        if (_editRoutingId == id) _editRoutingId = -1;
+        SetStatus("Routing row deleted.", false);
+    }
+
+    private void ImportRoutingFromFile()
+    {
+        int count = NgRateSettings.ImportRoutingFromFile(NgRateSettings.RoutingFilePath);
+        _routingRows = NgRateSettings.GetRoutingRows();
+        _editRoutingId = -1;
+        SetStatus(count > 0 ? $"Imported {count} routing rows from file." : "File not found or empty.", count == 0);
+    }
+
+    // ── Reason ────────────────────────────────────────────────────────────────
+
+    private void AddReasonRow()
+    {
+        var newRow = new ReasonRow();
+        var newId  = NgRateSettings.AddReasonRow(newRow);
+        _reasonRows  = NgRateSettings.GetReasonRows();
+        _editReasonId = newId;
+        _editReason   = new ReasonRow { Id = newId };
+    }
+
+    private void StartReasonEdit(ReasonRow r)
+    {
+        _editReasonId = r.Id;
+        _editReason   = new ReasonRow
+        {
+            Id = r.Id, ProcessName = r.ProcessName, NgName = r.NgName, Reason = r.Reason,
+        };
+    }
+
+    private void SaveReasonEdit()
+    {
+        NgRateSettings.UpdateReasonRow(_editReason);
+        _reasonRows   = NgRateSettings.GetReasonRows();
+        _editReasonId = -1;
+        SetStatus("Reason row saved.", false);
+    }
+
+    private void CancelReasonEdit() => _editReasonId = -1;
+
+    private void DeleteReasonRow(long id)
+    {
+        NgRateSettings.DeleteReasonRow(id);
+        _reasonRows = NgRateSettings.GetReasonRows();
+        if (_editReasonId == id) _editReasonId = -1;
+        SetStatus("Reason row deleted.", false);
+    }
+
+    private void ImportReasonFromFile()
+    {
+        int count = NgRateSettings.ImportReasonFromFile(NgRateSettings.ReasonFilePath);
+        _reasonRows = NgRateSettings.GetReasonRows();
+        _editReasonId = -1;
+        SetStatus(count > 0 ? $"Imported {count} reason rows from file." : "File not found or empty.", count == 0);
+    }
+
+    private void SetStatus(string msg, bool isError)
+    {
+        _statusMsg   = msg;
+        _statusError = isError;
+    }
+}

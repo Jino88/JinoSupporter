@@ -4,7 +4,7 @@
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid px-0">
-        <a class="navbar-brand" href="">JinoSupporter</a>
+        <a class="navbar-brand" href="">GN LAB Supporter</a>
     </div>
 </div>
 
@@ -12,9 +12,37 @@
 
 <div class="nav-scrollable" @onclick="OnNavScrollableClick">
     <nav class="flex-column">
-        <div class="nav-section">Tools</div>
 
-        <!-- Schedule (최상단) -->
+        <!-- ══ BMES (최상단) ═══════════════════════════════════════════════════ -->
+        <div class="nav-section">BMES</div>
+        <div class="nav-item">
+            <button class="nav-link nav-group-toggle @(IsBmesActive ? "active" : "")"
+                    @onclick="ToggleBmes"
+                    @onclick:stopPropagation="true">
+                <span class="nav-icon">🏭</span> BMES
+                <span class="nav-caret @(_bmesOpen ? "open" : "")">›</span>
+            </button>
+        </div>
+        @if (_bmesOpen)
+        {
+            <div class="nav-submenu">
+                <div class="nav-item">
+                    <NavLink class="nav-link nav-sublink" href="ng-rate">
+                        <span class="nav-icon" style="font-size:11px;">📉</span> Report NG RATE
+                    </NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="nav-link nav-sublink" href="bmes/setting">
+                        <span class="nav-icon" style="font-size:11px;">⚙️</span> Setting
+                    </NavLink>
+                </div>
+            </div>
+        }
+
+        <!-- ══ Tools ═══════════════════════════════════════════════════════════ -->
+        <div class="nav-section" style="margin-top:12px;">Tools</div>
+
+        <!-- Schedule -->
         <div class="nav-item">
             <NavLink class="nav-link" href="schedule">
                 <span class="nav-icon">📅</span> Schedule
@@ -34,8 +62,13 @@
         {
             <div class="nav-submenu">
                 <div class="nav-item">
-                    <NavLink class="nav-link nav-sublink" href="data-inference">
+                    <NavLink class="nav-link nav-sublink" href="data-inference" Match="NavLinkMatch.All">
                         <span class="nav-icon" style="font-size:11px;">📥</span> Input Data
+                    </NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="nav-link nav-sublink" href="data-inference/db">
+                        <span class="nav-icon" style="font-size:11px;">🗄</span> DB Data
                     </NavLink>
                 </div>
                 <div class="nav-item">
@@ -96,31 +129,36 @@
 </div>
 
 @code {
+    private bool _bmesOpen;
     private bool _diOpen;
 
     protected override void OnInitialized()
     {
-        // Auto-expand if currently on a Data Inference sub-page
-        _diOpen = IsDataInferenceActive;
+        _bmesOpen = IsBmesActive;
+        _diOpen   = IsDataInferenceActive;
         Nav.LocationChanged += OnLocationChanged;
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
-        if (IsDataInferenceActive && !_diOpen)
-            _diOpen = true;
+        if (IsBmesActive       && !_bmesOpen) _bmesOpen = true;
+        if (IsDataInferenceActive && !_diOpen)   _diOpen   = true;
         InvokeAsync(StateHasChanged);
     }
 
+    private bool IsBmesActive =>
+        Nav.Uri.Contains("/ng-rate",      StringComparison.OrdinalIgnoreCase) ||
+        Nav.Uri.Contains("/bmes/",        StringComparison.OrdinalIgnoreCase);
+
     private bool IsDataInferenceActive =>
         Nav.Uri.Contains("/data-inference", StringComparison.OrdinalIgnoreCase) ||
-        Nav.Uri.Contains("/report", StringComparison.OrdinalIgnoreCase);
+        Nav.Uri.Contains("/report",         StringComparison.OrdinalIgnoreCase);
 
-    private void ToggleDataInference() => _diOpen = !_diOpen;
+    private void ToggleBmes()          => _bmesOpen = !_bmesOpen;
+    private void ToggleDataInference() => _diOpen   = !_diOpen;
 
     private async Task OnNavScrollableClick()
     {
-        // Mobile only: toggle the checkbox-based hamburger menu
         await JS.InvokeVoidAsync("eval", "var t=document.querySelector('.navbar-toggler');if(t&&window.innerWidth<641)t.click();");
     }
 

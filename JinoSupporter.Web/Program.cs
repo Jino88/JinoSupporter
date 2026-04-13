@@ -38,6 +38,13 @@ builder.Services.AddHttpClient<ClaudeService>(client =>
 // Singleton DB repository (SQLite file shared across all requests)
 builder.Services.AddSingleton<WebRepository>();
 
+// NG Rate settings: singleton (reads/writes ngrate_settings.db)
+builder.Services.AddSingleton<NgRateSettingsService>();
+// NG Rate: scoped (per-connection HTTP client, progress state)
+builder.Services.AddScoped<NgRateService>();
+// NG Rate report: scoped (reads DB files per request)
+builder.Services.AddScoped<NgRateReportService>();
+
 // Connected-users tracking (singleton service + scoped circuit handler)
 builder.Services.AddSingleton<ConnectedUsersService>();
 builder.Services.AddScoped<UserCircuitHandler>();

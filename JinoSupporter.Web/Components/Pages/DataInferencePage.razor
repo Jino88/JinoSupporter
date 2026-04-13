@@ -1,4 +1,5 @@
 @page "/data-inference"
+@page "/data-inference/{InitialTab}"
 @rendermode InteractiveServer
 @using System.Linq
 @implements IAsyncDisposable
@@ -18,7 +19,9 @@
 
 <div class="row g-3" style="min-height:0;">
 
-    <!-- ══ Left: Input panel ══════════════════════════════════════════════════ -->
+    <!-- ══ Left: Input panel (hidden on DB Data view) ════════════════════════ -->
+    @if (_activeTab != "db")
+    {
     <div class="col-xl-4 col-lg-5">
         <div class="card shadow-sm h-100">
             <div class="card-header fw-semibold small">Input</div>
@@ -178,11 +181,18 @@
             </div>
         </div>
     </div>
+    }
 
-    <!-- ══ Right: Results + DB Data tabs ════════════════════════════════════ -->
-    <div class="col-xl-8 col-lg-7">
+    <!-- ══ Right: Results / DB Data ══════════════════════════════════════════ -->
+    <div class="@(_activeTab == "db" ? "col-12" : "col-xl-8 col-lg-7")">
         <div class="card shadow-sm h-100">
-            <!-- Tab headers -->
+            <!-- Tab / title header -->
+            @if (_activeTab == "db")
+            {
+                <div class="card-header fw-semibold small">Data View</div>
+            }
+            else
+            {
             <div class="card-header p-0">
                 <ul class="nav nav-tabs card-header-tabs">
                     <li class="nav-item">
@@ -195,14 +205,9 @@
                             }
                         </button>
                     </li>
-                    <li class="nav-item">
-                        <button class="nav-link @(_activeTab == "db" ? "active" : "")"
-                                @onclick='() => SetTab("db")'>
-                            DB Data
-                        </button>
-                    </li>
                 </ul>
             </div>
+            }
 
             <!-- Results tab -->
             @if (_activeTab == "results")
@@ -237,8 +242,11 @@
                                                 int ci = pci++;
                                                 <th style="padding:6px 10px; font-size:10px; font-weight:700;
                                                            color:#64748b; text-transform:uppercase; letter-spacing:.4px;
-                                                           white-space:nowrap; border-bottom:2px solid #e2e8f0;
-                                                           cursor:context-menu; user-select:none;"
+                                                           white-space:normal; word-break:break-word;
+                                                           min-width:60px; max-width:160px;
+                                                           border-bottom:2px solid #e2e8f0;
+                                                           cursor:context-menu; user-select:none;
+                                                           vertical-align:bottom; line-height:1.3;"
                                                     title="Right-click to delete column"
                                                     @oncontextmenu="e => ShowCtxMenu(e, false, table, -1, ci)"
                                                     @oncontextmenu:preventDefault="true">
@@ -300,16 +308,16 @@
             <!-- DB Data tab -->
             @if (_activeTab == "db")
             {
-                <div class="card-body p-0 overflow-hidden d-flex flex-column" style="max-height:calc(100vh - 200px);">
-                    <div class="row g-0 flex-grow-1 overflow-hidden">
+                <div class="card-body p-0" style="display:flex; flex-direction:column; height:calc(100vh - 160px); overflow:hidden;">
+                    <div style="display:flex; flex:1 1 0; min-height:0; overflow:hidden;">
 
                         <!-- Dataset list -->
-                        <div class="col-4 border-end d-flex flex-column">
+                        <div style="width:320px; min-width:220px; border-right:1px solid #e2e8f0; display:flex; flex-direction:column; min-height:0; flex-shrink:0;">
                             <div class="px-3 py-2 border-bottom bg-light d-flex align-items-center justify-content-between">
                                 <span class="small fw-semibold">Datasets (@_dbSummary.Count)</span>
                                 <button class="btn btn-link btn-sm p-0 text-secondary" @onclick="RefreshDbTab">↻</button>
                             </div>
-                            <div class="overflow-auto flex-grow-1">
+                            <div style="flex:1 1 0; overflow-y:auto; min-height:0;">
                                 @if (_dbSummary.Count == 0)
                                 {
                                     <div class="text-muted small p-3">No datasets in DB.</div>
@@ -329,7 +337,7 @@
                         </div>
 
                         <!-- Right: tables + rows + meta -->
-                        <div class="col-8 d-flex flex-column overflow-hidden">
+                        <div style="flex:1 1 0; display:flex; flex-direction:column; min-height:0; min-width:0;">
                             @if (_selectedDbDataset is null)
                             {
                                 <div class="text-muted small p-3">Select a dataset.</div>
@@ -375,80 +383,57 @@
                                     </div>
                                 </div>
 
-                                <!-- Tables list -->
-                                <div class="border-bottom" style="max-height:160px; overflow-y:auto;">
-                                    <table class="table table-sm table-hover mb-0" style="font-size:11px;">
-                                        <thead class="table-light" style="position:sticky; top:0;">
-                                            <tr>
-                                                <th>Table</th>
-                                                <th>Rows</th>
-                                                <th>Saved At</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (DataTableInfo t in _dbTables)
-                                            {
-                                                <tr class="@(_selectedDbTable?.Id == t.Id ? "table-primary" : "")"
-                                                    style="cursor:pointer;" @onclick="() => SelectDbTable(t)">
-                                                    <td class="fw-semibold" @onclick:stopPropagation="true">
-                                                        @if (_renamingTableId == t.Id)
-                                                        {
-                                                            <input style="width:100%; font-size:11px; font-weight:600;
-                                                                          padding:1px 4px; border:1px solid #93c5fd;
-                                                                          border-radius:3px; background:#eff6ff; outline:none;"
-                                                                   value="@_renameValue"
-                                                                   @oninput="e => _renameValue = e.Value?.ToString() ?? _renameValue"
-                                                                   @onblur="CommitRename"
-                                                                   @onkeydown="OnRenameKeyDown"
-                                                                   @ref="_renameRef" />
-                                                        }
-                                                        else
-                                                        {
-                                                            <span title="Click to rename" style="cursor:text;"
-                                                                  @onclick="() => StartRename(t)">
-                                                                @t.TableName
-                                                            </span>
-                                                        }
-                                                    </td>
-                                                    <td>@t.RowCount</td>
-                                                    <td>@t.CreatedAtLocal</td>
-                                                    <td>
-                                                        <button class="btn btn-outline-danger btn-sm py-0 px-1"
-                                                                @onclick:stopPropagation="true"
-                                                                @onclick="() => DeleteTableAsync(t.Id)">✕</button>
-                                                    </td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
+                                <!-- Stacked tables + images -->
+                                <div style="flex:1 1 0; overflow:auto; min-height:0; padding:10px 14px;">
+                                    @foreach (DataTableInfo t in _dbTables)
+                                    {
+                                        var dispRows = GetDisplayRows(t.Id);
+                                        var rawRows  = GetRawRows(t.Id);
 
-                                <!-- Row detail -->
-                                <div class="overflow-auto flex-grow-1">
-                                    @if (_selectedDbTable is null)
-                                    {
-                                        <div class="text-muted small p-3">Click a table above to view its rows.</div>
-                                    }
-                                    else
-                                    {
-                                        <div class="px-2 pt-1 pb-0 text-muted small">
-                                            @_dbRows.Count rows — @_selectedDbTable.TableName
+                                        <!-- Table section header -->
+                                        <div class="d-flex align-items-center gap-2 mb-1"
+                                             style="border-bottom:2px solid #e2e8f0; padding-bottom:4px; margin-top:12px;">
+                                            @if (_renamingTableId == t.Id)
+                                            {
+                                                <input style="font-size:12px; font-weight:600; padding:1px 6px;
+                                                              border:1px solid #93c5fd; border-radius:3px;
+                                                              background:#eff6ff; outline:none; max-width:260px;"
+                                                       value="@_renameValue"
+                                                       @oninput="e => _renameValue = e.Value?.ToString() ?? _renameValue"
+                                                       @onblur="CommitRename"
+                                                       @onkeydown="OnRenameKeyDown"
+                                                       @ref="_renameRef" />
+                                            }
+                                            else
+                                            {
+                                                <span class="fw-semibold small" style="cursor:text; color:#1e293b;"
+                                                      title="Click to rename" @onclick="() => StartRename(t)">
+                                                    @t.TableName
+                                                </span>
+                                            }
+                                            <span class="text-muted small">@t.RowCount rows · @t.CreatedAtLocal</span>
+                                            <button class="btn btn-outline-danger btn-sm py-0 px-1 ms-auto"
+                                                    @onclick="() => DeleteTableAsync(t.Id)">✕</button>
                                         </div>
-                                        <div style="overflow:auto;">
+
+                                        <!-- Table rows -->
+                                        <div style="overflow-x:auto; margin-bottom:6px;">
                                             <table style="font-size:11px; min-width:max-content; border-collapse:collapse; width:100%;">
                                                 <thead style="position:sticky; top:0; z-index:1; background:#f8fafc;">
                                                     <tr>
-                                                        @{ int dci = 0; }
-                                                        @foreach (ColumnDef col in _selectedDbTable.Columns)
+                                                        @{ int dci2 = 0; }
+                                                        @foreach (ColumnDef col in t.Columns)
                                                         {
-                                                            int ci = dci++;
+                                                            int ci = dci2++;
                                                             <th style="padding:6px 10px; font-size:10px; font-weight:700;
                                                                        color:#64748b; text-transform:uppercase; letter-spacing:.4px;
-                                                                       white-space:nowrap; border-bottom:2px solid #e2e8f0;
-                                                                       cursor:context-menu; user-select:none;"
+                                                                       white-space:normal; word-break:break-word;
+                                                                       min-width:60px; max-width:160px;
+                                                                       border-bottom:2px solid #e2e8f0;
+                                                                       cursor:context-menu; user-select:none;
+                                                                       vertical-align:bottom; line-height:1.3;"
                                                                 title="Right-click to delete column"
-                                                                @oncontextmenu="e => ShowCtxMenu(e, true, null, -1, ci)"
+                                                                @oncontextmenu="e => DbTableCtxMenu(e, t, -1, ci)"
                                                                 @oncontextmenu:preventDefault="true">
                                                                 @col.Label
                                                             </th>
@@ -456,20 +441,20 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    @{ int dri = 0; }
-                                                    @foreach (Dictionary<string, string> row in _dbDisplayRows)
+                                                    @{ int dri2 = 0; }
+                                                    @foreach (Dictionary<string, string> row in dispRows)
                                                     {
-                                                        int ri = dri++;
+                                                        int ri = dri2++;
                                                         <tr style="border-top:1px solid #f1f5f9;"
-                                                            @oncontextmenu="e => ShowCtxMenu(e, true, null, ri, -1)"
+                                                            @oncontextmenu="e => DbTableCtxMenu(e, t, ri, -1)"
                                                             @oncontextmenu:preventDefault="true">
-                                                            @foreach (ColumnDef col in _selectedDbTable.Columns)
+                                                            @foreach (ColumnDef col in t.Columns)
                                                             {
-                                                                string cv = row.TryGetValue(col.Field, out string? v) ? v ?? "" : "";
-                                                                string rawCv = ri < _dbRows.Count && _dbRows[ri].TryGetValue(col.Field, out string? rv) ? rv ?? "" : "";
+                                                                string cv    = row.TryGetValue(col.Field, out string? v)  ? v  ?? "" : "";
+                                                                string rawCv = ri < rawRows.Count && rawRows[ri].TryGetValue(col.Field, out string? rv) ? rv ?? "" : "";
                                                                 <td style="padding:0; border-top:1px solid #f1f5f9;"
                                                                     @onclick:stopPropagation="true">
-                                                                    @if (IsEditing(true, null, ri, col.Field))
+                                                                    @if (_selectedDbTable?.Id == t.Id && IsEditing(true, null, ri, col.Field))
                                                                     {
                                                                         <input class="di-cell-input"
                                                                                value="@_editValue"
@@ -481,7 +466,7 @@
                                                                     else
                                                                     {
                                                                         <span class="di-cell-span"
-                                                                              @onclick="() => StartEdit(true, null, ri, col.Field, rawCv)">
+                                                                              @onclick="() => { SelectTableForEdit(t); StartEdit(true, null, ri, col.Field, rawCv); }">
                                                                             @cv
                                                                         </span>
                                                                     }
@@ -491,6 +476,24 @@
                                                     }
                                                 </tbody>
                                             </table>
+                                        </div>
+                                    }
+
+                                    <!-- Images -->
+                                    @if (_dbImages.Count > 0)
+                                    {
+                                        <div style="margin-top:16px; padding-top:10px; border-top:1px solid #e2e8f0;">
+                                            <div class="small fw-semibold text-muted mb-2">Images (@_dbImages.Count)</div>
+                                            @foreach (var img in _dbImages)
+                                            {
+                                                <div style="margin-bottom:10px;">
+                                                    <div class="small text-muted mb-1" style="font-size:10px;">@img.FileName</div>
+                                                    <img src="data:@img.MediaType;base64,@img.Base64"
+                                                         alt="@img.FileName"
+                                                         style="max-width:100%; height:auto; border-radius:4px;
+                                                                border:1px solid #e2e8f0; display:block;" />
+                                                </div>
+                                            }
                                         </div>
                                     }
                                 </div>
@@ -620,6 +623,10 @@
     private List<Dictionary<string, string>> _dbDisplayRows     = [];
     private List<string>      _dbTags                           = [];
     private string            _dbMemo                           = string.Empty;
+    // 모든 테이블 행을 미리 로드 (스택 뷰용)
+    private Dictionary<long, (List<Dictionary<string,string>> Raw, List<Dictionary<string,string>> Display)>
+        _allDbTableRows = new();
+    private List<(string FileName, string MediaType, string Base64)> _dbImages = [];
 
     // ── Table rename ──────────────────────────────────────────────────────────
     private long   _renamingTableId = -1;
@@ -645,11 +652,28 @@
     private bool          _renameNeedFocus;
     private ElementReference _renameRef;
 
+    [Parameter] public string? InitialTab { get; set; }
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     protected override async Task OnInitializedAsync()
     {
         _user = (await AuthState).User;
+        ApplyInitialTab();
         RefreshDbInfo();
+    }
+
+    protected override Task OnParametersSetAsync()
+    {
+        // 같은 컴포넌트 재사용 시 (예: /data-inference ↔ /data-inference/db) 탭 동기화
+        ApplyInitialTab();
+        return Task.CompletedTask;
+    }
+
+    private void ApplyInitialTab()
+    {
+        var target = string.IsNullOrEmpty(InitialTab) ? "results" : InitialTab.ToLowerInvariant();
+        if (_activeTab != target)
+            SetTab(target);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -857,6 +881,15 @@
         _dbDisplayRows     = [];
         _dbTags            = Repo.GetTags(name);
         _dbMemo            = Repo.GetMemo(name);
+        // 모든 테이블 행 미리 로드
+        _allDbTableRows = new();
+        foreach (var t in _dbTables)
+        {
+            var raw     = Repo.GetTableRows(t.Id);
+            var display = ForwardFill(t, raw);
+            _allDbTableRows[t.Id] = (raw, display);
+        }
+        _dbImages = Repo.GetImages(name);
     }
 
     private void SelectDbTable(DataTableInfo table)
@@ -864,6 +897,36 @@
         _selectedDbTable = table;
         _dbRows          = Repo.GetTableRows(table.Id);
         _dbDisplayRows   = ForwardFill(table, _dbRows);
+    }
+
+    // 스택 뷰에서 셀 클릭/컨텍스트메뉴 전에 호출 — _selectedDbTable + _dbRows/_dbDisplayRows 동기화
+    private void SelectTableForEdit(DataTableInfo t)
+    {
+        if (_selectedDbTable?.Id == t.Id) return;
+        _selectedDbTable = t;
+        if (_allDbTableRows.TryGetValue(t.Id, out var entry))
+        {
+            _dbRows        = entry.Raw;
+            _dbDisplayRows = entry.Display;
+        }
+    }
+
+    private void DbTableCtxMenu(MouseEventArgs e, DataTableInfo t, int rowIndex, int colIndex)
+    {
+        SelectTableForEdit(t);
+        ShowCtxMenu(e, true, null, rowIndex, colIndex);
+    }
+
+    private List<Dictionary<string,string>> GetRawRows(long tableId)
+        => _allDbTableRows.TryGetValue(tableId, out var e) ? e.Raw : [];
+
+    private List<Dictionary<string,string>> GetDisplayRows(long tableId)
+        => _allDbTableRows.TryGetValue(tableId, out var e) ? e.Display : [];
+
+    private void SyncAllTableRows()
+    {
+        if (_selectedDbTable is not null && _allDbTableRows.ContainsKey(_selectedDbTable.Id))
+            _allDbTableRows[_selectedDbTable.Id] = (_dbRows, _dbDisplayRows);
     }
 
     private static List<Dictionary<string, string>> ForwardFill(
@@ -1080,6 +1143,7 @@
             Repo.DeleteTableRow(_selectedDbTable.Id, _ctxRowIndex);
             _dbRows.RemoveAt(_ctxRowIndex);
             _dbDisplayRows = ComputeDisplayRows(_dbRows, _selectedDbTable);
+            SyncAllTableRows();
             // refresh table row count
             _dbTables = Repo.GetTablesForDataset(_selectedDbDataset!);
             _selectedDbTable = _dbTables.FirstOrDefault(t => t.Id == _selectedDbTable.Id) ?? _selectedDbTable;
@@ -1105,6 +1169,7 @@
             {
                 _dbRows        = Repo.GetTableRows(_selectedDbTable.Id);
                 _dbDisplayRows = ComputeDisplayRows(_dbRows, _selectedDbTable);
+                SyncAllTableRows();
             }
         }
         else
@@ -1145,6 +1210,7 @@
             _dbRows[_editRowIndex][_editColField] = _editValue;
             Repo.UpdateTableRowData(_selectedDbTable.Id, _editRowIndex, _dbRows[_editRowIndex]);
             _dbDisplayRows = ComputeDisplayRows(_dbRows, _selectedDbTable);
+            SyncAllTableRows();
         }
         else
         {
