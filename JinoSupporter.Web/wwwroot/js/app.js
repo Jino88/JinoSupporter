@@ -70,6 +70,81 @@ window.ngRateChart = {
     }
 };
 
+// ── File Download ─────────────────────────────────────────────────────────────
+window.downloadBase64File = function (filename, base64, contentType) {
+    const link = document.createElement('a');
+    link.href     = `data:${contentType};base64,${base64}`;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+// ── Data Inference Drag-and-Drop ─────────────────────────────────────────────
+window.diDragDrop = {
+    _dotnet: null,
+    _kind:   null,
+    _idx:    -1,
+
+    init: function (dotnetRef) {
+        this._dotnet = dotnetRef;
+        if (this._bound) return;
+        this._bound = true;
+
+        var self = this;
+
+        document.addEventListener('dragstart', function (e) {
+            var el = e.target.closest('[data-di-kind]');
+            if (!el) return;
+            self._kind = el.dataset.diKind;
+            self._idx  = parseInt(el.dataset.diIdx) || 0;
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.setData('text/plain', self._kind + ':' + self._idx);
+        });
+
+        document.addEventListener('dragover', function (e) {
+            var zone = e.target.closest('[data-di-zone]');
+            if (!zone) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            document.querySelectorAll('.di-dz-active')
+                .forEach(function (z) { if (z !== zone) z.classList.remove('di-dz-active'); });
+            zone.classList.add('di-dz-active');
+        });
+
+        document.addEventListener('dragleave', function (e) {
+            var zone = e.target.closest('[data-di-zone]');
+            if (!zone) return;
+            if (e.relatedTarget && zone.contains(e.relatedTarget)) return;
+            zone.classList.remove('di-dz-active');
+        });
+
+        document.addEventListener('drop', function (e) {
+            var zone = e.target.closest('[data-di-zone]');
+            document.querySelectorAll('.di-dz-active')
+                .forEach(function (z) { z.classList.remove('di-dz-active'); });
+            if (!zone) return;
+            e.preventDefault();
+            if (self._kind && self._dotnet) {
+                var zoneIdx = parseInt(zone.dataset.diZone);
+                self._dotnet.invokeMethodAsync('JsDrop', self._kind, self._idx, zoneIdx);
+            }
+            self._kind = null; self._idx = -1;
+        });
+
+        document.addEventListener('dragend', function () {
+            document.querySelectorAll('.di-dz-active')
+                .forEach(function (z) { z.classList.remove('di-dz-active'); });
+            self._kind = null; self._idx = -1;
+        });
+    },
+
+    destroy: function (ref) {
+        // Only null out if the ref being destroyed is still the active one
+        if (!ref || this._dotnet === ref) this._dotnet = null;
+    }
+};
+
 // ── Paste Image Handler ───────────────────────────────────────────────────────
 window.pasteImageHandler = {
     _dotnetRef: null,

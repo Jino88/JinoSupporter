@@ -18,6 +18,49 @@
     </div>
 }
 
+@{
+    var rFiltered  = GetFilteredRouting();
+    var rsFiltered = GetFilteredReason();
+}
+
+<div class="row g-3 mb-3">
+    <!-- ══ BMES Credentials ═══════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold small">🔑 BMES Credentials <span class="text-muted fw-normal">(NG Rate / Worker Status)</span></div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold mb-1">Login ID</label>
+                    <input class="form-control form-control-sm" @bind="_snap.LoginId" placeholder="BMES 아이디" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold mb-1">Password</label>
+                    <input class="form-control form-control-sm" type="password" @bind="_snap.Password" placeholder="BMES 비밀번호" />
+                </div>
+                <button class="btn btn-primary btn-sm" @onclick="SaveCredentials">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ RWT Credentials ════════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold small">⏱ Request Work Time Credentials</div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold mb-1">Login ID</label>
+                    <input class="form-control form-control-sm" @bind="_snap.RwtLoginId" placeholder="RWT 아이디" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold mb-1">Password</label>
+                    <input class="form-control form-control-sm" type="password" @bind="_snap.RwtPassword" placeholder="RWT 비밀번호" />
+                </div>
+                <button class="btn btn-primary btn-sm" @onclick="SaveCredentials">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row g-3">
 
     <!-- ══ Routing Table ═══════════════════════════════════════════════════════ -->
@@ -26,58 +69,92 @@
             <div class="card-header d-flex align-items-center gap-2">
                 <span class="fw-semibold small">Routing Table</span>
                 <span class="badge bg-secondary ms-1" style="font-size:10px;">@_routingRows.Count rows</span>
+                @if (_anyRoutingSearch)
+                {
+                    <span class="text-muted ms-1" style="font-size:10px;">— @rFiltered.Count shown</span>
+                }
                 <div class="ms-auto d-flex gap-2">
                     <button class="btn btn-outline-secondary btn-sm" @onclick="ImportRoutingFromFile"
-                            title="Routing.txt 파일에서 가져오기">
+                            title="Import from Routing.txt">
                         Import from file
                     </button>
-                    <button class="btn btn-primary btn-sm" @onclick="AddRoutingRow">+ Add Row</button>
                 </div>
             </div>
-            <div style="overflow-x:auto; max-height:420px; overflow-y:auto;">
+            <div style="overflow-x:auto; max-height:460px; overflow-y:auto;">
                 <table class="bmes-table">
                     <thead>
                         <tr>
-                            <th style="min-width:160px;">모델명</th>
+                            <th style="min-width:160px;">Model Name</th>
                             <th style="min-width:130px;">ProcessCode</th>
                             <th style="min-width:200px;">ProcessName</th>
                             <th style="min-width:110px;">ProcessType</th>
                             <th style="width:60px;"></th>
                         </tr>
+                        <tr class="bmes-search-row">
+                            <td><input class="bmes-search-input" placeholder="Search…"
+                                       @bind="_rqModelName"   @bind:event="oninput" @bind:after="OnRoutingSearchChanged" /></td>
+                            <td><input class="bmes-search-input" placeholder="Search…"
+                                       @bind="_rqProcessCode" @bind:event="oninput" @bind:after="OnRoutingSearchChanged" /></td>
+                            <td><input class="bmes-search-input" placeholder="Search…"
+                                       @bind="_rqProcessName" @bind:event="oninput" @bind:after="OnRoutingSearchChanged" /></td>
+                            <td><input class="bmes-search-input" placeholder="Search…"
+                                       @bind="_rqProcessType" @bind:event="oninput" @bind:after="OnRoutingSearchChanged" /></td>
+                            <td></td>
+                        </tr>
                     </thead>
                     <tbody>
-                        @foreach (var r in _routingRows)
+                        @if (!_anyRoutingSearch)
                         {
-                            @if (_editRoutingId == r.Id)
-                            {
-                                <tr class="bmes-edit-row">
-                                    <td><input class="bmes-input" @bind="_editRouting.ModelName"   /></td>
-                                    <td><input class="bmes-input" @bind="_editRouting.ProcessCode" /></td>
-                                    <td><input class="bmes-input" @bind="_editRouting.ProcessName" /></td>
-                                    <td><input class="bmes-input" @bind="_editRouting.ProcessType" /></td>
-                                    <td class="bmes-actions">
-                                        <button class="btn btn-success btn-sm py-0 px-2"  @onclick="SaveRoutingEdit">✓</button>
-                                        <button class="btn btn-secondary btn-sm py-0 px-2" @onclick="CancelRoutingEdit">✕</button>
-                                    </td>
-                                </tr>
-                            }
-                            else
-                            {
-                                <tr class="bmes-row" @ondblclick="() => StartRoutingEdit(r)">
-                                    <td>@r.ModelName</td>
-                                    <td>@r.ProcessCode</td>
-                                    <td>@r.ProcessName</td>
-                                    <td>@r.ProcessType</td>
-                                    <td class="bmes-actions">
-                                        <button class="btn btn-outline-primary btn-sm py-0 px-1"  @onclick="() => StartRoutingEdit(r)" title="Edit">✎</button>
-                                        <button class="btn btn-outline-danger  btn-sm py-0 px-1"  @onclick="() => DeleteRoutingRow(r.Id)" title="Delete">✕</button>
-                                    </td>
-                                </tr>
-                            }
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4 small">
+                                    Type in a search field above to find rows.
+                                </td>
+                            </tr>
                         }
-                        @if (_routingRows.Count == 0)
+                        else if (rFiltered.Count == 0)
                         {
-                            <tr><td colspan="5" class="text-center text-muted py-3 small">No rows. Click "+ Add Row" or "Import from file".</td></tr>
+                            <tr>
+                                <td colspan="5" class="py-3 px-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="text-muted small">No matching rows.</span>
+                                        <button class="btn btn-primary btn-sm" @onclick="AddRoutingFromSearch">
+                                            + Add Row with these values
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var r in rFiltered)
+                            {
+                                @if (_editRoutingId == r.Id)
+                                {
+                                    <tr class="bmes-edit-row">
+                                        <td><input class="bmes-input" @bind="_editRouting.ModelName"   /></td>
+                                        <td><input class="bmes-input" @bind="_editRouting.ProcessCode" /></td>
+                                        <td><input class="bmes-input" @bind="_editRouting.ProcessName" /></td>
+                                        <td><input class="bmes-input" @bind="_editRouting.ProcessType" /></td>
+                                        <td class="bmes-actions">
+                                            <button class="btn btn-success btn-sm py-0 px-2"   @onclick="SaveRoutingEdit">✓</button>
+                                            <button class="btn btn-secondary btn-sm py-0 px-2" @onclick="CancelRoutingEdit">✕</button>
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <tr class="bmes-row" @ondblclick="() => StartRoutingEdit(r)">
+                                        <td>@r.ModelName</td>
+                                        <td>@r.ProcessCode</td>
+                                        <td>@r.ProcessName</td>
+                                        <td>@r.ProcessType</td>
+                                        <td class="bmes-actions">
+                                            <button class="btn btn-outline-primary btn-sm py-0 px-1" @onclick="() => StartRoutingEdit(r)"    title="Edit">✎</button>
+                                            <button class="btn btn-outline-danger  btn-sm py-0 px-1" @onclick="() => DeleteRoutingRow(r.Id)" title="Delete">✕</button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
                         }
                     </tbody>
                 </table>
@@ -91,15 +168,18 @@
             <div class="card-header d-flex align-items-center gap-2">
                 <span class="fw-semibold small">Reason Table</span>
                 <span class="badge bg-secondary ms-1" style="font-size:10px;">@_reasonRows.Count rows</span>
+                @if (_anyReasonSearch)
+                {
+                    <span class="text-muted ms-1" style="font-size:10px;">— @rsFiltered.Count shown</span>
+                }
                 <div class="ms-auto d-flex gap-2">
                     <button class="btn btn-outline-secondary btn-sm" @onclick="ImportReasonFromFile"
-                            title="reason.txt 파일에서 가져오기">
+                            title="Import from reason.txt">
                         Import from file
                     </button>
-                    <button class="btn btn-primary btn-sm" @onclick="AddReasonRow">+ Add Row</button>
                 </div>
             </div>
-            <div style="overflow-x:auto; max-height:420px; overflow-y:auto;">
+            <div style="overflow-x:auto; max-height:460px; overflow-y:auto;">
                 <table class="bmes-table">
                     <thead>
                         <tr>
@@ -108,38 +188,67 @@
                             <th style="min-width:200px;">Reason</th>
                             <th style="width:60px;"></th>
                         </tr>
+                        <tr class="bmes-search-row">
+                            <td><input class="bmes-search-input" placeholder="Search…"
+                                       @bind="_rsqProcessName" @bind:event="oninput" @bind:after="OnReasonSearchChanged" /></td>
+                            <td><input class="bmes-search-input" placeholder="Search…"
+                                       @bind="_rsqNgName"      @bind:event="oninput" @bind:after="OnReasonSearchChanged" /></td>
+                            <td><input class="bmes-search-input" placeholder="Search…"
+                                       @bind="_rsqReason"      @bind:event="oninput" @bind:after="OnReasonSearchChanged" /></td>
+                            <td></td>
+                        </tr>
                     </thead>
                     <tbody>
-                        @foreach (var r in _reasonRows)
+                        @if (!_anyReasonSearch)
                         {
-                            @if (_editReasonId == r.Id)
-                            {
-                                <tr class="bmes-edit-row">
-                                    <td><input class="bmes-input" @bind="_editReason.ProcessName" /></td>
-                                    <td><input class="bmes-input" @bind="_editReason.NgName"      /></td>
-                                    <td><input class="bmes-input" @bind="_editReason.Reason"      /></td>
-                                    <td class="bmes-actions">
-                                        <button class="btn btn-success btn-sm py-0 px-2"  @onclick="SaveReasonEdit">✓</button>
-                                        <button class="btn btn-secondary btn-sm py-0 px-2" @onclick="CancelReasonEdit">✕</button>
-                                    </td>
-                                </tr>
-                            }
-                            else
-                            {
-                                <tr class="bmes-row" @ondblclick="() => StartReasonEdit(r)">
-                                    <td>@r.ProcessName</td>
-                                    <td>@r.NgName</td>
-                                    <td>@r.Reason</td>
-                                    <td class="bmes-actions">
-                                        <button class="btn btn-outline-primary btn-sm py-0 px-1"  @onclick="() => StartReasonEdit(r)" title="Edit">✎</button>
-                                        <button class="btn btn-outline-danger  btn-sm py-0 px-1"  @onclick="() => DeleteReasonRow(r.Id)" title="Delete">✕</button>
-                                    </td>
-                                </tr>
-                            }
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4 small">
+                                    Type in a search field above to find rows.
+                                </td>
+                            </tr>
                         }
-                        @if (_reasonRows.Count == 0)
+                        else if (rsFiltered.Count == 0)
                         {
-                            <tr><td colspan="4" class="text-center text-muted py-3 small">No rows. Click "+ Add Row" or "Import from file".</td></tr>
+                            <tr>
+                                <td colspan="4" class="py-3 px-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="text-muted small">No matching rows.</span>
+                                        <button class="btn btn-primary btn-sm" @onclick="AddReasonFromSearch">
+                                            + Add Row with these values
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var r in rsFiltered)
+                            {
+                                @if (_editReasonId == r.Id)
+                                {
+                                    <tr class="bmes-edit-row">
+                                        <td><input class="bmes-input" @bind="_editReason.ProcessName" /></td>
+                                        <td><input class="bmes-input" @bind="_editReason.NgName"      /></td>
+                                        <td><input class="bmes-input" @bind="_editReason.Reason"      /></td>
+                                        <td class="bmes-actions">
+                                            <button class="btn btn-success btn-sm py-0 px-2"   @onclick="SaveReasonEdit">✓</button>
+                                            <button class="btn btn-secondary btn-sm py-0 px-2" @onclick="CancelReasonEdit">✕</button>
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <tr class="bmes-row" @ondblclick="() => StartReasonEdit(r)">
+                                        <td>@r.ProcessName</td>
+                                        <td>@r.NgName</td>
+                                        <td>@r.Reason</td>
+                                        <td class="bmes-actions">
+                                            <button class="btn btn-outline-primary btn-sm py-0 px-1" @onclick="() => StartReasonEdit(r)"    title="Edit">✎</button>
+                                            <button class="btn btn-outline-danger  btn-sm py-0 px-1" @onclick="() => DeleteReasonRow(r.Id)" title="Delete">✕</button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
                         }
                     </tbody>
                 </table>
@@ -156,8 +265,25 @@
     .bmes-table thead th {
         background: #f1f5f9; font-weight: 700; font-size: 10px; color: #64748b;
         text-transform: uppercase; letter-spacing: .4px;
-        padding: 6px 10px; border-bottom: 2px solid #e2e8f0;
-        position: sticky; top: 0; z-index: 1;
+        padding: 6px 10px; border-bottom: 1px solid #e2e8f0;
+        position: sticky; top: 0; z-index: 2;
+    }
+    .bmes-search-row {
+        position: sticky; top: 29px; z-index: 1; background: #fff;
+    }
+    .bmes-search-row td {
+        padding: 4px 6px; border-bottom: 2px solid #e2e8f0;
+        background: #fff;
+    }
+    .bmes-search-input {
+        width: 100%; font-size: 11px; padding: 3px 6px;
+        border: 1px solid #e2e8f0; border-radius: 3px;
+        background: #f8fafc; outline: none;
+        color: #334155;
+    }
+    .bmes-search-input:focus {
+        border-color: #93c5fd; background: #fff;
+        box-shadow: 0 0 0 2px rgba(147,197,253,.25);
     }
     .bmes-table td {
         padding: 4px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle;
@@ -174,6 +300,8 @@
 </style>
 
 @code {
+    private NgRateSettingsSnapshot _snap = new();
+
     private List<RoutingRow> _routingRows = [];
     private List<ReasonRow>  _reasonRows  = [];
 
@@ -185,22 +313,95 @@
     private string _statusMsg   = string.Empty;
     private bool   _statusError;
 
+    // ── Routing search ────────────────────────────────────────────────────────
+    private string _rqModelName   = string.Empty;
+    private string _rqProcessCode = string.Empty;
+    private string _rqProcessName = string.Empty;
+    private string _rqProcessType = string.Empty;
+    private bool   _anyRoutingSearch;
+
+    // ── Reason search ─────────────────────────────────────────────────────────
+    private string _rsqProcessName = string.Empty;
+    private string _rsqNgName      = string.Empty;
+    private string _rsqReason      = string.Empty;
+    private bool   _anyReasonSearch;
+
     protected override void OnInitialized()
     {
+        _snap        = NgRateSettings.GetSnapshot();
         _routingRows = NgRateSettings.GetRoutingRows();
         _reasonRows  = NgRateSettings.GetReasonRows();
     }
 
+    private void SaveCredentials()
+    {
+        NgRateSettings.ApplySnapshot(_snap);
+        SetStatus("Credentials saved.", false);
+    }
+
+    // ── Filter helpers ────────────────────────────────────────────────────────
+
+    private List<RoutingRow> GetFilteredRouting()
+    {
+        if (!_anyRoutingSearch) return [];
+        return _routingRows.Where(r =>
+            (string.IsNullOrEmpty(_rqModelName)   || r.ModelName.Contains(_rqModelName,     StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(_rqProcessCode) || r.ProcessCode.Contains(_rqProcessCode, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(_rqProcessName) || r.ProcessName.Contains(_rqProcessName, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(_rqProcessType) || r.ProcessType.Contains(_rqProcessType, StringComparison.OrdinalIgnoreCase))
+        ).ToList();
+    }
+
+    private List<ReasonRow> GetFilteredReason()
+    {
+        if (!_anyReasonSearch) return [];
+        return _reasonRows.Where(r =>
+            (string.IsNullOrEmpty(_rsqProcessName) || r.ProcessName.Contains(_rsqProcessName, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(_rsqNgName)      || r.NgName.Contains(_rsqNgName,           StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(_rsqReason)      || r.Reason.Contains(_rsqReason,           StringComparison.OrdinalIgnoreCase))
+        ).ToList();
+    }
+
+    private Task OnRoutingSearchChanged()
+    {
+        _anyRoutingSearch = !string.IsNullOrEmpty(_rqModelName)   ||
+                            !string.IsNullOrEmpty(_rqProcessCode) ||
+                            !string.IsNullOrEmpty(_rqProcessName) ||
+                            !string.IsNullOrEmpty(_rqProcessType);
+        return Task.CompletedTask;
+    }
+
+    private Task OnReasonSearchChanged()
+    {
+        _anyReasonSearch = !string.IsNullOrEmpty(_rsqProcessName) ||
+                           !string.IsNullOrEmpty(_rsqNgName)      ||
+                           !string.IsNullOrEmpty(_rsqReason);
+        return Task.CompletedTask;
+    }
+
     // ── Routing ───────────────────────────────────────────────────────────────
 
-    private void AddRoutingRow()
+    private void AddRoutingFromSearch()
     {
-        var newRow = new RoutingRow();
-        var newId  = NgRateSettings.AddRoutingRow(newRow);
+        var newRow = new RoutingRow
+        {
+            ModelName   = _rqModelName.Trim(),
+            ProcessCode = _rqProcessCode.Trim(),
+            ProcessName = _rqProcessName.Trim(),
+            ProcessType = _rqProcessType.Trim(),
+        };
+        var newId = NgRateSettings.AddRoutingRow(newRow);
         _routingRows = NgRateSettings.GetRoutingRows();
+        // Clear search so the new row is visible
+        _rqModelName = _rqProcessCode = _rqProcessName = _rqProcessType = string.Empty;
+        _anyRoutingSearch = false;
+        // Open in edit mode
         _editRoutingId = newId;
-        _editRouting   = _routingRows.First(r => r.Id == newId);
-        _editRouting   = new RoutingRow { Id = newId };
+        _editRouting   = new RoutingRow
+        {
+            Id = newId, ModelName = newRow.ModelName, ProcessCode = newRow.ProcessCode,
+            ProcessName = newRow.ProcessName, ProcessType = newRow.ProcessType,
+        };
     }
 
     private void StartRoutingEdit(RoutingRow r)
@@ -218,7 +419,7 @@
         NgRateSettings.UpdateRoutingRow(_editRouting);
         _routingRows   = NgRateSettings.GetRoutingRows();
         _editRoutingId = -1;
-        SetStatus($"Routing row saved.", false);
+        SetStatus("Routing row saved.", false);
     }
 
     private void CancelRoutingEdit() => _editRoutingId = -1;
@@ -241,13 +442,25 @@
 
     // ── Reason ────────────────────────────────────────────────────────────────
 
-    private void AddReasonRow()
+    private void AddReasonFromSearch()
     {
-        var newRow = new ReasonRow();
-        var newId  = NgRateSettings.AddReasonRow(newRow);
-        _reasonRows  = NgRateSettings.GetReasonRows();
+        var newRow = new ReasonRow
+        {
+            ProcessName = _rsqProcessName.Trim(),
+            NgName      = _rsqNgName.Trim(),
+            Reason      = _rsqReason.Trim(),
+        };
+        var newId = NgRateSettings.AddReasonRow(newRow);
+        _reasonRows = NgRateSettings.GetReasonRows();
+        // Clear search so the new row is visible
+        _rsqProcessName = _rsqNgName = _rsqReason = string.Empty;
+        _anyReasonSearch = false;
+        // Open in edit mode
         _editReasonId = newId;
-        _editReason   = new ReasonRow { Id = newId };
+        _editReason   = new ReasonRow
+        {
+            Id = newId, ProcessName = newRow.ProcessName, NgName = newRow.NgName, Reason = newRow.Reason,
+        };
     }
 
     private void StartReasonEdit(ReasonRow r)

@@ -8,6 +8,7 @@ public sealed class UserRecord
 {
     public long   Id           { get; init; }
     public string Username     { get; init; } = string.Empty;
+    public string DisplayName  { get; init; } = string.Empty;
     public string PasswordHash { get; init; } = string.Empty;
     public string Role         { get; init; } = string.Empty;
     public string CreatedAt    { get; init; } = string.Empty;
@@ -221,6 +222,21 @@ public sealed class WebRepository
         {
             using SqliteCommand alter = conn.CreateCommand();
             alter.CommandText = "ALTER TABLE DatasetMemo ADD COLUMN Purpose TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+
+        bool hasDisplayName = false;
+        using SqliteCommand checkUsers = conn.CreateCommand();
+        checkUsers.CommandText = "PRAGMA table_info(Users);";
+        using (SqliteDataReader r = checkUsers.ExecuteReader())
+            while (r.Read())
+                if (r.GetString(1).Equals("DisplayName", StringComparison.OrdinalIgnoreCase))
+                    hasDisplayName = true;
+
+        if (!hasDisplayName)
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE Users ADD COLUMN DisplayName TEXT NOT NULL DEFAULT '';";
             alter.ExecuteNonQuery();
         }
     }
@@ -752,7 +768,7 @@ public sealed class WebRepository
     {
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT Id, Username, PasswordHash, Role, CreatedAt FROM Users WHERE Username=@u COLLATE NOCASE LIMIT 1;";
+        cmd.CommandText = "SELECT Id, Username, DisplayName, PasswordHash, Role, CreatedAt FROM Users WHERE Username=@u COLLATE NOCASE LIMIT 1;";
         cmd.Parameters.AddWithValue("@u", username);
         using SqliteDataReader r = cmd.ExecuteReader();
         if (!r.Read()) return null;
@@ -760,9 +776,10 @@ public sealed class WebRepository
         {
             Id           = r.GetInt64(0),
             Username     = r.GetString(1),
-            PasswordHash = r.GetString(2),
-            Role         = r.GetString(3),
-            CreatedAt    = r.GetString(4)
+            DisplayName  = r.IsDBNull(2) ? string.Empty : r.GetString(2),
+            PasswordHash = r.GetString(3),
+            Role         = r.GetString(4),
+            CreatedAt    = r.GetString(5)
         };
     }
 
@@ -770,7 +787,7 @@ public sealed class WebRepository
     {
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT Id, Username, PasswordHash, Role, CreatedAt FROM Users ORDER BY Id;";
+        cmd.CommandText = "SELECT Id, Username, DisplayName, PasswordHash, Role, CreatedAt FROM Users ORDER BY Id;";
         var list = new List<UserRecord>();
         using SqliteDataReader r = cmd.ExecuteReader();
         while (r.Read())
@@ -778,22 +795,34 @@ public sealed class WebRepository
             {
                 Id           = r.GetInt64(0),
                 Username     = r.GetString(1),
-                PasswordHash = r.GetString(2),
-                Role         = r.GetString(3),
-                CreatedAt    = r.GetString(4)
+                DisplayName  = r.IsDBNull(2) ? string.Empty : r.GetString(2),
+                PasswordHash = r.GetString(3),
+                Role         = r.GetString(4),
+                CreatedAt    = r.GetString(5)
             });
         return list;
     }
 
-    public void AddUser(string username, string passwordHash, string role)
+    public void AddUser(string username, string passwordHash, string role, string displayName = "")
     {
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
-        cmd.CommandText = "INSERT INTO Users (Username, PasswordHash, Role, CreatedAt) VALUES (@u, @p, @r, @t);";
-        cmd.Parameters.AddWithValue("@u", username);
-        cmd.Parameters.AddWithValue("@p", passwordHash);
-        cmd.Parameters.AddWithValue("@r", role);
-        cmd.Parameters.AddWithValue("@t", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        cmd.CommandText = "INSERT INTO Users (Username, DisplayName, PasswordHash, Role, CreatedAt) VALUES (@u, @dn, @p, @r, @t);";
+        cmd.Parameters.AddWithValue("@u",  username);
+        cmd.Parameters.AddWithValue("@dn", displayName);
+        cmd.Parameters.AddWithValue("@p",  passwordHash);
+        cmd.Parameters.AddWithValue("@r",  role);
+        cmd.Parameters.AddWithValue("@t",  DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        cmd.ExecuteNonQuery();
+    }
+
+    public void UpdateUserDisplayName(long id, string displayName)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "UPDATE Users SET DisplayName=@dn WHERE Id=@id;";
+        cmd.Parameters.AddWithValue("@dn", displayName);
+        cmd.Parameters.AddWithValue("@id", id);
         cmd.ExecuteNonQuery();
     }
 

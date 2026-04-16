@@ -1,6 +1,7 @@
 @page "/ng-rate"
 @rendermode InteractiveServer
 @using JinoSupporter.Web.Services
+@using System.Text.Json
 @inject NgRateService         NgRate
 @inject NgRateSettingsService NgRateSettings
 @inject NgRateReportService   NgRateReport
@@ -39,6 +40,24 @@
     .json-file-item:hover { background: #f1f5f9; }
     .json-file-item .file-date { font-size: 10px; color: #94a3b8; margin-left: auto; }
     .json-file-item input[type=checkbox] { cursor: pointer; flex-shrink: 0; }
+    /* Product group tabs in Model Files */
+    .pg-tab {
+        font-size: 10px; font-weight: 700; letter-spacing: .4px;
+        padding: 2px 9px; border-radius: 10px; border: 1.5px solid #cbd5e1;
+        background: #f8fafc; color: #64748b; cursor: pointer; white-space: nowrap;
+        transition: all .15s;
+    }
+    .pg-tab:hover { border-color: #6366f1; color: #6366f1; }
+    .pg-tab.active { background: #6366f1; border-color: #4f46e5; color: #fff; }
+    .pg-section-label {
+        font-size: 10px; font-weight: 700; letter-spacing: .4px;
+        padding: 1px 6px; border-radius: 4px; flex-shrink: 0;
+    }
+    .pg-SPK    { background:#fef9c3; color:#854d0e; }
+    .pg-UNIT   { background:#dcfce7; color:#166534; }
+    .pg-MODULE { background:#dbeafe; color:#1e40af; }
+    .pg-TWS    { background:#fce7f3; color:#9d174d; }
+    .pg-ETC    { background:#f1f5f9; color:#475569; }
 
     /* Pivot report tables */
     .pivot-wrap { overflow-x: auto; }
@@ -76,6 +95,30 @@
         color: #94a3b8; cursor: pointer; text-decoration: none;
     }
     .expand-btn:hover { color: #6366f1; }
+    .group-chip {
+        display: inline-block; font-size: 10px; padding: 2px 7px;
+        border-radius: 12px; cursor: pointer; user-select: none;
+        border: 1px solid #6366f1; background: #eef2ff; color: #4f46e5;
+        transition: background .15s, color .15s;
+    }
+    .group-chip:hover { background: #e0e7ff; }
+    .group-chip.active { background: #6366f1; color: #fff; border-color: #4f46e5; }
+    /* Group detail modal overlay */
+    .grp-modal-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+        z-index: 1050; display: flex; align-items: center; justify-content: center;
+    }
+    .grp-modal-box {
+        background: #fff; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        max-width: 92vw; width: 960px; max-height: 80vh;
+        display: flex; flex-direction: column; overflow: hidden;
+    }
+    .grp-modal-header {
+        display: flex; align-items: center; gap: 8px;
+        padding: 10px 14px; border-bottom: 1px solid #e2e8f0;
+        font-weight: 600; font-size: 13px; flex-shrink: 0;
+    }
+    .grp-modal-body { overflow: auto; padding: 10px; flex: 1; }
 </style>
 
 <div class="d-flex align-items-center gap-2 mb-3">
@@ -186,29 +229,52 @@
                 </div>
             </div>
             <div class="card-body p-0 d-flex flex-column">
-                <div class="overflow-auto" style="max-height:200px; flex:1;">
-                    @if (_jsonFiles.Count == 0)
-                    {
-                        <div class="text-muted small p-3">
-                            @if (_jsonFolderExists)
-                            {
-                                <span>No .json files found.</span>
-                            }
-                            else
-                            {
-                                <span>
-                                    Folder not found:<br />
-                                    <span class="font-monospace" style="font-size:10px; word-break:break-all;">
-                                        @JsonFolderPath
-                                    </span>
+
+                @if (_jsonFiles.Count == 0)
+                {
+                    <div class="text-muted small p-3 flex-grow-1">
+                        @if (_jsonFolderExists)
+                        {
+                            <span>No .json files found.</span>
+                        }
+                        else
+                        {
+                            <span>
+                                Folder not found:<br />
+                                <span class="font-monospace" style="font-size:10px; word-break:break-all;">
+                                    @JsonFolderPath
                                 </span>
-                            }
-                        </div>
-                    }
-                    else
-                    {
+                            </span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <!-- ── 1단계: Product Group 탭 ───────────────────────────── -->
+                    <div class="d-flex flex-wrap gap-1 px-2 py-2 border-bottom bg-light">
+                        @foreach (var pg in FileProductGroups)
+                        {
+                            int pgCount = _jsonFiles.Count(f => f.ProductGroup == pg);
+                            int pgSel   = _selectedFiles.Count(p => _jsonFiles.Any(f => f.FullPath == p && f.ProductGroup == pg));
+                            <button class="pg-tab @(_activePg == pg ? "active" : "")"
+                                    @onclick="@(() => _activePg = pg)">
+                                @pg
+                                @if (pgSel > 0)
+                                {
+                                    <span class="ms-1" style="opacity:.85;">(@pgSel)</span>
+                                }
+                                else
+                                {
+                                    <span class="ms-1 opacity-50">@pgCount</span>
+                                }
+                            </button>
+                        }
+                    </div>
+
+                    <!-- ── 2단계: 해당 그룹의 파일 리스트 ──────────────────── -->
+                    <div class="overflow-auto" style="max-height:160px; flex:1;">
                         <div class="px-2 py-1">
-                            @foreach (var f in _jsonFiles)
+                            @foreach (var f in _jsonFiles.Where(f => f.ProductGroup == _activePg))
                             {
                                 bool isChecked = _selectedFiles.Contains(f.FullPath);
                                 <label class="json-file-item" title="@f.FullPath">
@@ -221,9 +287,15 @@
                                     <span class="file-date">@f.Modified</span>
                                 </label>
                             }
+                            @if (!_jsonFiles.Any(f => f.ProductGroup == _activePg))
+                            {
+                                <div class="text-muted small py-2 text-center">
+                                    No files in @_activePg
+                                </div>
+                            }
                         </div>
-                    }
-                </div>
+                    </div>
+                }
 
                 <!-- Get Report button -->
                 <div class="border-top p-2">
@@ -241,7 +313,7 @@
                             @if (_selectedFiles.Count > 0)
                             {
                                 <span class="ms-1 opacity-75"
-                                      style="font-size:10px;">(@_selectedFiles.Count model@(_selectedFiles.Count == 1 ? "" : "s"))</span>
+                                      style="font-size:10px;">(@_selectedFiles.Count file@(_selectedFiles.Count == 1 ? "" : "s"))</span>
                             }
                         }
                     </button>
@@ -322,9 +394,48 @@
 </div>
 
 <!-- ══ REPORT SECTION ══════════════════════════════════════════════════════════ -->
-@if (_report is not null)
+@if (_reports.Count > 0)
 {
     <div class="mt-4">
+
+        <!-- Tabs + Export -->
+        <div class="d-flex align-items-end justify-content-between mb-0">
+            @if (_reports.Count > 1)
+            {
+                <ul class="nav nav-tabs mb-0" style="border-bottom:none;">
+                    @for (int i = 0; i < _reports.Count; i++)
+                    {
+                        int tabIdx = i;
+                        bool active = i == _activeReportTab;
+                        <li class="nav-item">
+                            <button class="nav-link @(active ? "active fw-semibold" : "")"
+                                    style="font-size:13px; padding:6px 14px;"
+                                    @onclick="() => SwitchReportTab(tabIdx)">
+                                @_reports[tabIdx].Label
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div></div>
+            }
+            <button class="btn btn-outline-success btn-sm mb-1"
+                    style="font-size:12px;"
+                    @onclick="ExportExcelAsync"
+                    disabled="@_isExporting">
+                @if (_isExporting)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                }
+                else
+                {
+                    <span>⬇ Export Excel</span>
+                }
+            </button>
+        </div>
+        <div style="border-top:2px solid #e2e8f0; margin-bottom:12px;"></div>
 
         <!-- Report header -->
         <div class="d-flex align-items-center gap-2 mb-3 border-bottom pb-2">
@@ -348,16 +459,26 @@
         <!-- ── Summary ───────────────────────────────────────────────────────── -->
         <div class="card mb-3 shadow-sm">
             <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span>Summary — NG PPM by Process Type</span>
                     @if (_report.GroupNames.Count > 0)
                     {
-                        <span class="badge bg-primary ms-2" style="font-size:10px;">
-                            @string.Join(" / ", _report.GroupNames)
-                        </span>
+                        <div class="d-flex flex-wrap gap-1 ms-1">
+                            @foreach (var grp in _report.GroupNames)
+                            {
+                                <span class="group-chip">@grp</span>
+                            }
+                        </div>
                     }
                 </div>
                 <div class="d-flex gap-2 align-items-center">
+                    @if (_report.GroupSummary.Count > 0)
+                    {
+                        <button class="expand-btn" @onclick="ExpandAllSummary">Expand All</button>
+                        <span class="text-muted" style="font-size:10px;">|</span>
+                        <button class="expand-btn" @onclick="CollapseAllSummary">Collapse All</button>
+                        <span class="text-muted" style="font-size:10px;">|</span>
+                    }
                     @if (_report.DateCols.Count > DateVisibleLimit)
                     {
                         <button class="expand-btn" @onclick="ToggleDateCols">
@@ -383,6 +504,7 @@
                     <table class="pivot-table">
                         <thead>
                             <tr>
+                                <th class="label-th" style="min-width:20px; text-align:center;"></th>
                                 <th class="label-th">Process Type</th>
                                 @foreach (var col in VisibleDateCols)
                                 {
@@ -401,34 +523,77 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var row in _report.Summary)
+                            @foreach (var sumRow in _report.Summary)
                             {
-                                <tr class="@(row.IsTotal ? "total-row" : "")">
-                                    <td class="label-td">@row.ProcessType</td>
+                                bool summaryHasGroups = _report.GroupSummary.Count > 0;
+                                bool summaryExpanded  = _expandedSummary.Contains(sumRow.ProcessType);
+                                string sumPt          = sumRow.ProcessType;
+                                <tr class="@(sumRow.IsTotal ? "total-row" : "rank-row")">
+                                    <td class="toggle-cell" @onclick="@(() => { if (summaryHasGroups) ToggleSummary(sumPt); })">
+                                        @if (summaryHasGroups)
+                                        {
+                                            <span class="toggle-icon">@(summaryExpanded ? "▼" : "▶")</span>
+                                        }
+                                    </td>
+                                    <td class="label-td">@sumRow.ProcessType</td>
                                     @foreach (var col in VisibleDateCols)
                                     {
-                                        double v = row.Ppm.GetValueOrDefault(col.Key);
+                                        double v = sumRow.Ppm.GetValueOrDefault(col.Key);
                                         <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                     }
                                     <td class="sep-td"></td>
                                     @foreach (var col in VisibleWeekCols)
                                     {
-                                        double v = row.Ppm.GetValueOrDefault(col.Key);
+                                        double v = sumRow.Ppm.GetValueOrDefault(col.Key);
                                         <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                     }
                                     <td class="sep-td"></td>
                                     @foreach (var col in VisibleMonthCols)
                                     {
-                                        double v = row.Ppm.GetValueOrDefault(col.Key);
+                                        double v = sumRow.Ppm.GetValueOrDefault(col.Key);
                                         <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                     }
                                 </tr>
+                                @if (summaryExpanded)
+                                {
+                                    @foreach (var grp in _report.GroupNames)
+                                    {
+                                        if (_report.GroupSummary.TryGetValue(grp, out var grpRows))
+                                        {
+                                            var grpRow = grpRows.FirstOrDefault(sr => sr.ProcessType == sumPt);
+                                            if (grpRow is not null)
+                                            {
+                                                <tr class="group-row">
+                                                    <td></td>
+                                                    <td class="label-td group-name-td">↳ @grp</td>
+                                                    @foreach (var col in VisibleDateCols)
+                                                    {
+                                                        double v = grpRow.Ppm.GetValueOrDefault(col.Key);
+                                                        <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                    }
+                                                    <td class="sep-td"></td>
+                                                    @foreach (var col in VisibleWeekCols)
+                                                    {
+                                                        double v = grpRow.Ppm.GetValueOrDefault(col.Key);
+                                                        <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                    }
+                                                    <td class="sep-td"></td>
+                                                    @foreach (var col in VisibleMonthCols)
+                                                    {
+                                                        double v = grpRow.Ppm.GetValueOrDefault(col.Key);
+                                                        <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                    }
+                                                </tr>
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         </tbody>
                     </table>
                 </div>
                 <div style="position:relative; height:200px; margin-top:12px;">
-                    <canvas id="summaryChart"></canvas>
+                    <canvas id="summaryChart_@_activeReportTab"></canvas>
                 </div>
             </div>
         </div>
@@ -649,7 +814,7 @@
         {
             <div class="card mb-3 shadow-sm">
                 <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
-                    <span>Reason — 불량 원인별 분류</span>
+                    <span>Reason — Defect Cause Classification</span>
                     @if (_report.ReasonRows.Any(r => !r.IsTotal && r.Groups.Count > 0))
                     {
                         <div class="d-flex gap-2">
@@ -798,7 +963,9 @@
     private static readonly string JsonFolderPath =
         @"D:\000. MyWorks\000. 일일업무\04. DB\01. NGRATE\ModelBmes";
 
-    private sealed record JsonFileEntry(string Name, string Modified, string FullPath);
+    private sealed record JsonFileEntry(string Name, string Modified, string FullPath, string ProductGroup);
+
+    private static readonly string[] AllProductGroups = ["SPK", "UNIT", "MODULE", "TWS", "ETC"];
 
     // ── Get Data state ────────────────────────────────────────────────────────────
     private DateTime     _startDate    = DateTime.Today;
@@ -812,14 +979,25 @@
     private List<JsonFileEntry> _jsonFiles        = new();
     private bool                _jsonFolderExists = false;
     private HashSet<string>     _selectedFiles    = new();
+    private string              _activePg         = "ETC";
+
+    /// <summary>실제로 파일이 존재하는 ProductGroup만 (AllProductGroups 순서 유지)</summary>
+    private IEnumerable<string> FileProductGroups =>
+        AllProductGroups.Where(pg => _jsonFiles.Any(f => f.ProductGroup == pg));
 
     // ── Report state ──────────────────────────────────────────────────────────────
-    private bool                             _isReportBusy = false;
-    private string                           _reportError  = string.Empty;
-    private NgRateReportService.NgRateReport? _report       = null;
+    private bool   _isReportBusy = false;
+    private string _reportError  = string.Empty;
+    private List<(string Label, NgRateReportService.NgRateReport Report)> _reports = new();
+    private int    _activeReportTab = 0;
+    private NgRateReportService.NgRateReport? _report =>
+        _activeReportTab < _reports.Count ? _reports[_activeReportTab].Report : null;
 
     // ── Chart state ───────────────────────────────────────────────────────────────
     private bool _pendingChartRender = false;
+
+    // ── Export state ──────────────────────────────────────────────────────────────
+    private bool _isExporting = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -893,7 +1071,7 @@
             })
             .ToArray();
 
-        await JS.InvokeVoidAsync("ngRateChart.render", "summaryChart", labels.ToArray(), barDatasets, totalDs);
+        await JS.InvokeVoidAsync("ngRateChart.render", $"summaryChart_{_activeReportTab}", labels.ToArray(), barDatasets, totalDs);
     }
 
     private static double? GetChartVal(Dictionary<string, double> ppm, string key)
@@ -911,19 +1089,27 @@
 
     private async Task ClearReportAsync()
     {
-        await JS.InvokeVoidAsync("ngRateChart.destroy", "summaryChart");
-        _report = null;
+        for (int i = 0; i < _reports.Count; i++)
+            try { await JS.InvokeVoidAsync("ngRateChart.destroy", $"summaryChart_{i}"); } catch { }
+        _reports.Clear();
+        _activeReportTab = 0;
     }
 
     public async ValueTask DisposeAsync()
     {
-        try { await JS.InvokeVoidAsync("ngRateChart.destroy", "summaryChart"); } catch { }
+        for (int i = 0; i < _reports.Count; i++)
+            try { await JS.InvokeVoidAsync("ngRateChart.destroy", $"summaryChart_{i}"); } catch { }
     }
 
     // ── Expand/Collapse state ─────────────────────────────────────────────────────
+    private HashSet<string> _expandedSummary = new();
     private HashSet<int>    _expandedProcess = new();
     private HashSet<int>    _expandedNg      = new();
     private HashSet<string> _expandedReason  = new();
+
+    private void ToggleSummary(string pt)  { if (!_expandedSummary.Remove(pt)) _expandedSummary.Add(pt); }
+    private void ExpandAllSummary()        { _expandedSummary = _report!.Summary.Select(r => r.ProcessType).ToHashSet(); }
+    private void CollapseAllSummary()      { _expandedSummary.Clear(); }
 
     private void ToggleProcess(int rank) { if (!_expandedProcess.Remove(rank)) _expandedProcess.Add(rank); }
     private void ToggleNg(int rank)      { if (!_expandedNg.Remove(rank))      _expandedNg.Add(rank); }
@@ -998,11 +1184,34 @@
             .Select(p => new JsonFileEntry(
                 Path.GetFileName(p),
                 File.GetLastWriteTime(p).ToString("yy-MM-dd HH:mm"),
-                p))
+                p,
+                ReadPgFromFile(p)))
             .ToList();
 
         // Remove stale selections
         _selectedFiles.RemoveWhere(p => !_jsonFiles.Any(f => f.FullPath == p));
+
+        // 현재 탭이 비어있으면 첫 번째 탭으로 이동
+        if (!_jsonFiles.Any(f => f.ProductGroup == _activePg))
+            _activePg = FileProductGroups.FirstOrDefault() ?? "ETC";
+    }
+
+    private static string ReadPgFromFile(string path)
+    {
+        try
+        {
+            using var stream = File.OpenRead(path);
+            using var doc    = JsonDocument.Parse(stream);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object &&
+                root.TryGetProperty("ProductGroup", out var pg))
+            {
+                string v = pg.GetString() ?? "ETC";
+                return Array.IndexOf(new[] { "SPK", "UNIT", "MODULE", "TWS", "ETC" }, v) >= 0 ? v : "ETC";
+            }
+        }
+        catch { }
+        return "ETC";
     }
 
     private void ToggleFile(string fullPath)
@@ -1073,10 +1282,12 @@
 
     private async Task GetReportAsync()
     {
-        _reportError  = string.Empty;
-        _report       = null;
-        _isReportBusy = true;
+        _reportError     = string.Empty;
+        _reports.Clear();
+        _activeReportTab = 0;
+        _isReportBusy    = true;
         _logs.Clear();
+        _expandedSummary.Clear();
         _expandedProcess.Clear();
         _expandedNg.Clear();
         _expandedReason.Clear();
@@ -1093,7 +1304,6 @@
 
         try
         {
-            // Find DB: current session result first, then most recent file in directory
             string? dbPath = _savedDbPath ?? NgRateReport.FindMostRecentDb();
             if (string.IsNullOrEmpty(dbPath) || !File.Exists(dbPath))
             {
@@ -1103,10 +1313,25 @@
 
             progress.Report($"Using DB: {Path.GetFileName(dbPath)}");
 
-            _report = await NgRateReport.GenerateReportAsync(
-                dbPath,
-                _selectedFiles,
-                progress);
+            if (_selectedFiles.Count <= 1)
+            {
+                var r   = await NgRateReport.GenerateReportAsync(dbPath, _selectedFiles, progress);
+                string lbl = _selectedFiles.Count == 1
+                    ? Path.GetFileNameWithoutExtension(_selectedFiles.First())
+                    : "All";
+                _reports.Add((lbl, r));
+            }
+            else
+            {
+                foreach (var file in _selectedFiles.OrderBy(f => f))
+                {
+                    progress.Report($"─── {Path.GetFileNameWithoutExtension(file)}");
+                    var r = await NgRateReport.GenerateReportAsync(
+                        dbPath, new HashSet<string> { file }, progress);
+                    _reports.Add((Path.GetFileNameWithoutExtension(file), r));
+                }
+            }
+
             _pendingChartRender = true;
         }
         catch (Exception ex)
@@ -1121,12 +1346,41 @@
         }
     }
 
+    private async Task ExportExcelAsync()
+    {
+        if (_reports.Count == 0 || _isExporting) return;
+        _isExporting = true;
+        try
+        {
+            var bytes   = await Task.Run(() => NgRateExcelExporter.Export(_reports));
+            string b64  = Convert.ToBase64String(bytes);
+            string name = $"NgRate_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            await JS.InvokeVoidAsync("downloadBase64File", name, b64,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        }
+        finally
+        {
+            _isExporting = false;
+        }
+    }
+
+    private async Task SwitchReportTab(int idx)
+    {
+        try { await JS.InvokeVoidAsync("ngRateChart.destroy", $"summaryChart_{_activeReportTab}"); } catch { }
+        _activeReportTab = idx;
+        _expandedProcess.Clear();
+        _expandedNg.Clear();
+        _expandedReason.Clear();
+        _pendingChartRender = true;
+    }
+
     // ── Utilities ─────────────────────────────────────────────────────────────────
 
     private static string GetLogClass(string line)
     {
         if (line.Contains("[ERROR]")) return "text-danger";
         if (line.Contains("[WARN]"))  return "text-warning";
+        if (line.Contains("───")) return "text-info fw-semibold";
         if (line.Contains("Done") || line.Contains("done") ||
             line.Contains("complete", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Report"))

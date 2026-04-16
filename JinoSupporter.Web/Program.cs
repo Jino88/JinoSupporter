@@ -44,6 +44,8 @@ builder.Services.AddSingleton<NgRateSettingsService>();
 builder.Services.AddScoped<NgRateService>();
 // NG Rate report: scoped (reads DB files per request)
 builder.Services.AddScoped<NgRateReportService>();
+// Worker Status: scoped (per-connection HTTP client)
+builder.Services.AddScoped<WorkerStatusService>();
 
 // Connected-users tracking (singleton service + scoped circuit handler)
 builder.Services.AddSingleton<ConnectedUsersService>();

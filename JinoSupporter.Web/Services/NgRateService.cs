@@ -94,6 +94,8 @@ public sealed class NgRateService(NgRateSettingsService settings)
 
         if (toFetch.Count > 0)
         {
+            progress?.Report($"─── 서버 조회  {toFetch.Min():MM/dd} – {toFetch.Max():MM/dd} ({toFetch.Count}일)");
+
             string loginId  = _settings.LoginId;
             string password = _settings.Password;
             if (string.IsNullOrWhiteSpace(loginId) || string.IsNullOrWhiteSpace(password))
@@ -126,26 +128,30 @@ public sealed class NgRateService(NgRateSettingsService settings)
             }
             progress?.Report("Login successful.");
 
-            // toFetch 날짜 중 최소~최대 범위로 한 번에 요청
-            string fetchStart = toFetch.Min().ToString("yyyy-MM-dd");
-            string fetchEnd   = toFetch.Max().ToString("yyyy-MM-dd");
-
-            progress?.Report($"Fetching WERKS 3200 ({fetchStart} ~ {fetchEnd})…");
-            var rows3200 = await FetchRawRowsAsync(client, "3200", fetchStart, fetchEnd, progress);
-
-            progress?.Report($"Fetching WERKS 3220 ({fetchStart} ~ {fetchEnd})…");
-            var rows3220 = await FetchRawRowsAsync(client, "3220", fetchStart, fetchEnd, progress);
-
+            // 연속된 날짜는 범위로 묶어 요청, 끊기면 별도 요청
             var serverRows = new List<Dictionary<string, string>>();
-            if (rows3200 != null) serverRows.AddRange(rows3200);
-            if (rows3220 != null) serverRows.AddRange(rows3220);
 
-            // toFetch에 포함된 날짜만 필터 (캐시 날짜 데이터 제외)
-            var fetchDateSet = new HashSet<string>(
-                toFetch.Select(d => d.ToString("yyyy-MM-dd")), StringComparer.Ordinal);
-            serverRows = serverRows
-                .Where(r => fetchDateSet.Contains(GetCol(r, "PRODUCT_DATE")))
-                .ToList();
+            var sorted = toFetch.OrderBy(d => d).ToList();
+            var ranges = new List<(DateTime Start, DateTime End)>();
+            var rs = sorted[0]; var re = sorted[0];
+            for (int i = 1; i < sorted.Count; i++)
+            {
+                if (sorted[i] == re.AddDays(1)) { re = sorted[i]; }
+                else { ranges.Add((rs, re)); rs = sorted[i]; re = sorted[i]; }
+            }
+            ranges.Add((rs, re));
+
+            foreach (var (start, end) in ranges)
+            {
+                string s     = start.ToString("yyyy-MM-dd");
+                string e     = end.ToString("yyyy-MM-dd");
+                string label = start == end ? $"{start:MM/dd}" : $"{start:MM/dd} – {end:MM/dd}";
+                progress?.Report($"Fetching {label}…");
+                var rows3200 = await FetchRawRowsAsync(client, "3200", s, e, progress);
+                var rows3220 = await FetchRawRowsAsync(client, "3220", s, e, progress);
+                if (rows3200 != null) serverRows.AddRange(rows3200);
+                if (rows3220 != null) serverRows.AddRange(rows3220);
+            }
 
             progress?.Report($"Collected {serverRows.Count:N0} rows. Removing duplicates…");
             serverRows = RemoveDuplicates(serverRows);
@@ -165,6 +171,9 @@ public sealed class NgRateService(NgRateSettingsService settings)
         }
 
         // ── 3. per-day 캐시 로드 ────────────────────────────────────────────
+        if (toCache.Count > 0)
+            progress?.Report($"─── 캐시 로드  {toCache.Min():MM/dd} – {toCache.Max():MM/dd} ({toCache.Count}일)");
+
         var cachedRows = new List<Dictionary<string, string>>();
         foreach (var date in toCache)
         {

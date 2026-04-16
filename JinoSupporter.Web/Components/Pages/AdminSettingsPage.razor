@@ -93,16 +93,42 @@
 
         <div class="mb-3">
             <label class="form-label small text-muted mb-1">Routing.txt Path</label>
-            <input type="text" class="form-control form-control-sm font-monospace"
-                   @bind="_ng.RoutingFilePath"
-                   placeholder="@NgRateSettingsService.DefaultRoutingFilePath" />
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control form-control-sm font-monospace"
+                       @bind="_ng.RoutingFilePath"
+                       placeholder="@NgRateSettingsService.DefaultRoutingFilePath" />
+                <button class="btn btn-outline-primary btn-sm" type="button"
+                        @onclick="ImportRoutingAsync" disabled="@_routingImporting">
+                    @if (_routingImporting) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                    파일에서 업데이트
+                </button>
+            </div>
+            @if (_routingImportMsg is not null)
+            {
+                <div class="form-text @(_routingImportMsg.StartsWith("✓") ? "text-success" : "text-danger") fw-semibold">
+                    @_routingImportMsg
+                </div>
+            }
         </div>
 
         <div class="mb-3">
             <label class="form-label small text-muted mb-1">reason.txt Path</label>
-            <input type="text" class="form-control form-control-sm font-monospace"
-                   @bind="_ng.ReasonFilePath"
-                   placeholder="@NgRateSettingsService.DefaultReasonFilePath" />
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control form-control-sm font-monospace"
+                       @bind="_ng.ReasonFilePath"
+                       placeholder="@NgRateSettingsService.DefaultReasonFilePath" />
+                <button class="btn btn-outline-primary btn-sm" type="button"
+                        @onclick="ImportReasonAsync" disabled="@_reasonImporting">
+                    @if (_reasonImporting) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                    파일에서 업데이트
+                </button>
+            </div>
+            @if (_reasonImportMsg is not null)
+            {
+                <div class="form-text @(_reasonImportMsg.StartsWith("✓") ? "text-success" : "text-danger") fw-semibold">
+                    @_reasonImportMsg
+                </div>
+            }
         </div>
 
         <div class="d-flex align-items-center gap-3 mt-3">
@@ -150,6 +176,11 @@
     private bool   _ngSaved   = false;
     private string _ngError   = string.Empty;
 
+    private bool    _routingImporting = false;
+    private string? _routingImportMsg = null;
+    private bool    _reasonImporting  = false;
+    private string? _reasonImportMsg  = null;
+
     protected override void OnInitialized()
     {
         _apiKey = Repo.GetSetting("Claude:ApiKey") ?? string.Empty;
@@ -192,5 +223,41 @@
     {
         _ng = new NgRateSettingsSnapshot();
         _ngSaved = false;
+    }
+
+    private async Task ImportRoutingAsync()
+    {
+        _routingImporting = true;
+        _routingImportMsg = null;
+        try
+        {
+            string path = string.IsNullOrWhiteSpace(_ng.RoutingFilePath)
+                ? NgRateSettingsService.DefaultRoutingFilePath
+                : _ng.RoutingFilePath.Trim();
+            int count = await Task.Run(() => NgRateSettings.ImportRoutingFromFile(path));
+            _routingImportMsg = count > 0
+                ? $"✓ {count:N0}행 업데이트 완료"
+                : "✗ 파일이 없거나 데이터가 없습니다";
+        }
+        catch (Exception ex) { _routingImportMsg = $"✗ {ex.Message}"; }
+        finally { _routingImporting = false; }
+    }
+
+    private async Task ImportReasonAsync()
+    {
+        _reasonImporting = true;
+        _reasonImportMsg = null;
+        try
+        {
+            string path = string.IsNullOrWhiteSpace(_ng.ReasonFilePath)
+                ? NgRateSettingsService.DefaultReasonFilePath
+                : _ng.ReasonFilePath.Trim();
+            int count = await Task.Run(() => NgRateSettings.ImportReasonFromFile(path));
+            _reasonImportMsg = count > 0
+                ? $"✓ {count:N0}행 업데이트 완료"
+                : "✗ 파일이 없거나 데이터가 없습니다";
+        }
+        catch (Exception ex) { _reasonImportMsg = $"✗ {ex.Message}"; }
+        finally { _reasonImporting = false; }
     }
 }

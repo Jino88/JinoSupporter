@@ -1,7 +1,8 @@
 @page "/admin/users"
 @rendermode InteractiveServer
 @using JinoSupporter.Web.Services
-@inject WebRepository Repo
+@inject WebRepository         Repo
+@inject ConnectedUsersService ConnectedUsers
 
 <PageTitle>User Management</PageTitle>
 
@@ -23,6 +24,7 @@
             <thead>
                 <tr>
                     <th>Username</th>
+                    <th>Name</th>
                     <th>Role</th>
                     <th>Created</th>
                     <th style="width:180px;">Actions</th>
@@ -31,8 +33,29 @@
             <tbody>
                 @foreach (UserRecord u in _users)
                 {
+                    bool editingName = _editNameId == u.Id;
                     <tr>
                         <td>@u.Username</td>
+                        <td>
+                            @if (editingName)
+                            {
+                                <div class="d-flex gap-1 align-items-center">
+                                    <input class="form-control form-control-sm" style="width:140px;"
+                                           @bind="_editNameValue"
+                                           @onkeydown="@(e => { if (e.Key == "Enter") SaveDisplayName(u.Id); else if (e.Key == "Escape") CancelEditName(); })" />
+                                    <button class="btn btn-success btn-sm py-0 px-2"  @onclick="() => SaveDisplayName(u.Id)">✓</button>
+                                    <button class="btn btn-secondary btn-sm py-0 px-2" @onclick="CancelEditName">✕</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="me-1" style="font-size:13px;">
+                                    @(string.IsNullOrEmpty(u.DisplayName) ? "—" : u.DisplayName)
+                                </span>
+                                <button class="btn btn-link btn-sm p-0 text-secondary" style="font-size:11px;"
+                                        @onclick="() => StartEditName(u)">✎</button>
+                            }
+                        </td>
                         <td>
                             <select class="form-select form-select-sm" style="width:auto;"
                                     value="@u.Role"
@@ -71,6 +94,10 @@
             <div class="col-auto">
                 <label class="form-label">Username</label>
                 <input @bind="_newUsername" class="form-control form-control-sm" placeholder="username" />
+            </div>
+            <div class="col-auto">
+                <label class="form-label">Name</label>
+                <input @bind="_newDisplayName" class="form-control form-control-sm" placeholder="display name" />
             </div>
             <div class="col-auto">
                 <label class="form-label">Password</label>
@@ -127,10 +154,14 @@
     private List<UserRecord> _users = [];
     private string _currentUser = string.Empty;
 
-    private string _newUsername = string.Empty;
-    private string _newPassword = string.Empty;
-    private string _newRole     = AppRoles.Viewer;
-    private string _addError    = string.Empty;
+    private string _newUsername    = string.Empty;
+    private string _newDisplayName = string.Empty;
+    private string _newPassword    = string.Empty;
+    private string _newRole        = AppRoles.Viewer;
+    private string _addError       = string.Empty;
+
+    private long   _editNameId    = -1;
+    private string _editNameValue = string.Empty;
 
     private UserRecord? _resetTarget;
     private string _resetPassword = string.Empty;
@@ -163,8 +194,8 @@
         if (string.IsNullOrWhiteSpace(_newPassword)) { _addError = "Password required."; return; }
         try
         {
-            Repo.AddUser(_newUsername.Trim(), AuthService.HashPassword(_newPassword), _newRole);
-            _newUsername = _newPassword = string.Empty;
+            Repo.AddUser(_newUsername.Trim(), AuthService.HashPassword(_newPassword), _newRole, _newDisplayName.Trim());
+            _newUsername = _newDisplayName = _newPassword = string.Empty;
             _newRole = AppRoles.Viewer;
             Load();
         }
@@ -173,6 +204,27 @@
             _addError = ex.Message.Contains("UNIQUE") ? "Username already exists." : ex.Message;
         }
     }
+
+    private void StartEditName(UserRecord u)
+    {
+        _editNameId    = u.Id;
+        _editNameValue = u.DisplayName;
+    }
+
+    private void SaveDisplayName(long id)
+    {
+        string newName = _editNameValue.Trim();
+        Repo.UpdateUserDisplayName(id, newName);
+        // real-time update for currently connected sessions
+        var target = _users.FirstOrDefault(u => u.Id == id);
+        if (target is not null)
+            ConnectedUsers.UpdateNameByUsername(target.Username,
+                string.IsNullOrEmpty(newName) ? target.Username : newName);
+        _editNameId = -1;
+        Load();
+    }
+
+    private void CancelEditName() => _editNameId = -1;
 
     private void StartResetPassword(UserRecord u) { _resetTarget = u; _resetPassword = _resetError = string.Empty; }
 

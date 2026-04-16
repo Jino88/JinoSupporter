@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
 @inject ConnectedUsersService UsersService
 @inject UserCircuitHandler    CircuitHandler
+@inject WebRepository         Repo
 @inject NavigationManager     Nav
 @implements IDisposable
 
@@ -18,11 +19,6 @@
             {
                 <div class="user-row">@u.Name</div>
             }
-
-            <div class="name-row mt-2">
-                <input class="name-input" @bind="_userName" placeholder="Your name…" />
-                <button class="name-btn" @onclick="SetName">Set</button>
-            </div>
         </div>
     </div>
 
@@ -47,23 +43,26 @@
 </div>
 
 @code {
-    private string _userName = string.Empty;
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         UsersService.Changed += OnUsersChanged;
+
+        var auth = await AuthState;
+        string username = auth.User.Identity?.Name ?? string.Empty;
+        if (!string.IsNullOrEmpty(username))
+        {
+            var record = Repo.GetUser(username);
+            string displayName = record?.DisplayName ?? string.Empty;
+            CircuitHandler.Register(username, displayName);
+        }
     }
 
     private void RedirectToLogin()
     {
         string encoded = Uri.EscapeDataString(Nav.Uri);
         Nav.NavigateTo($"/login?returnUrl={encoded}", forceLoad: true);
-    }
-
-    private void SetName()
-    {
-        if (!string.IsNullOrWhiteSpace(_userName))
-            CircuitHandler.SetName(_userName);
     }
 
     private void OnUsersChanged() => InvokeAsync(StateHasChanged);

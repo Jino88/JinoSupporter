@@ -100,6 +100,8 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         public DateTime GeneratedAt { get; init; } = DateTime.Now;
         public List<string> ModelFilter  { get; init; } = [];
         public List<string> GroupNames   { get; init; } = [];
+        /// <summary>GroupName → Summary by ProcessType (PPM)</summary>
+        public Dictionary<string, List<SummaryPivotRow>> GroupSummary { get; init; } = new();
     }
 
     // ── 내부 집계 단위 ────────────────────────────────────────────────────────────
@@ -116,6 +118,13 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         public int          Index     { get; set; }
         public string       GroupName { get; set; } = string.Empty;
         public List<string> ModelList { get; set; } = [];
+    }
+
+    /// <summary>새 포맷: { ProductGroup, Groups: [...] }</summary>
+    private sealed class ModelFileData
+    {
+        public string              ProductGroup { get; set; } = "ETC";
+        public List<ModelGroupData> Groups      { get; set; } = [];
     }
 
     // ── 내부 행 타입 ──────────────────────────────────────────────────────────────
@@ -160,12 +169,32 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
             {
                 string json = File.ReadAllText(path);
                 List<ModelGroupData>? groups = null;
-                try { groups = JsonSerializer.Deserialize<List<ModelGroupData>>(json, opts); } catch { }
+
+                // 1) 새 포맷: { "ProductGroup": "...", "Groups": [...] }
+                try
+                {
+                    var file = JsonSerializer.Deserialize<ModelFileData>(json, opts);
+                    if (file?.Groups is { Count: > 0 }) groups = file.Groups;
+                }
+                catch { }
+
+                // 2) 구 포맷: [ { "GroupName": ..., "ModelList": [...] }, ... ]
                 if (groups is null || groups.Count == 0)
                 {
-                    var single = JsonSerializer.Deserialize<ModelGroupData>(json, opts);
-                    if (single is not null) groups = [single];
+                    try { groups = JsonSerializer.Deserialize<List<ModelGroupData>>(json, opts); } catch { }
                 }
+
+                // 3) 단일 객체 포맷 (레거시)
+                if (groups is null || groups.Count == 0)
+                {
+                    try
+                    {
+                        var single = JsonSerializer.Deserialize<ModelGroupData>(json, opts);
+                        if (single is not null) groups = [single];
+                    }
+                    catch { }
+                }
+
                 if (groups is null) continue;
                 foreach (var g in groups)
                 {
@@ -307,6 +336,11 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         var reasonLookup = LoadReasonLookup(dbPath);
         var reasonRows   = BuildReasonRows(orgRows, reasonLookup, lineShiftToGroup, dateCols, weekCols, monthCols);
 
+        // 12. 그룹별 Summary (모델명 클릭 시 각 그룹의 불량률)
+        var groupSummary = groupNames.Count > 0
+            ? ComputeGroupSummary(groupNames, dateGrpProc, weekGrpProc, monthGrpProc, dateCols, weekCols, monthCols)
+            : new Dictionary<string, List<SummaryPivotRow>>();
+
         progress?.Report("Report complete.");
         return new NgRateReport
         {
@@ -323,6 +357,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
             TotalRows    = orgRows.Count,
             ModelFilter  = modelLineShifts,
             GroupNames   = groupNames,
+            GroupSummary = groupSummary,
         };
     }
 
@@ -443,9 +478,9 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         Dictionary<(string, string, string), double> dateProcMap,
         Dictionary<(string, string, string), double> weekProcMap,
         Dictionary<(string, string, string), double> monthProcMap,
-        Dictionary<(string, string, string, string), (double I, double N)> dateGrpProc,
-        Dictionary<(string, string, string, string), (double I, double N)> weekGrpProc,
-        Dictionary<(string, string, string, string), (double I, double N)> monthGrpProc,
+        Dictionary<(string, string, string, string), double> dateGrpProc,
+        Dictionary<(string, string, string, string), double> weekGrpProc,
+        Dictionary<(string, string, string, string), double> monthGrpProc,
         List<PeriodColumn> dateCols,
         List<PeriodColumn> weekCols,
         List<PeriodColumn> monthCols)
@@ -485,9 +520,9 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
                 {
                     GroupName = g,
                     Ppm       = BuildPeriodDict(dateCols, weekCols, monthCols,
-                        d => { var v = dateGrpProc.GetValueOrDefault((x.ProcessType, x.ProcessName, g, d)); return CalcPpm(v.I, v.N); },
-                        w => { var v = weekGrpProc.GetValueOrDefault((x.ProcessType, x.ProcessName, g, w)); return CalcPpm(v.I, v.N); },
-                        m => { var v = monthGrpProc.GetValueOrDefault((x.ProcessType, x.ProcessName, g, m)); return CalcPpm(v.I, v.N); }),
+                        d => dateGrpProc.GetValueOrDefault((x.ProcessType, x.ProcessName, g, d)),
+                        w => weekGrpProc.GetValueOrDefault((x.ProcessType, x.ProcessName, g, w)),
+                        m => monthGrpProc.GetValueOrDefault((x.ProcessType, x.ProcessName, g, m))),
                 }).ToList(),
             };
         }).ToList();
@@ -607,16 +642,20 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
     // ── Top10 그룹 Raw 맵 ─────────────────────────────────────────────────────────
 
-    private static Dictionary<(string, string, string, string), (double I, double N)> BuildGroupProcessRaw(
+    // NgName별 PPM을 먼저 구한 뒤 합산 → 부모 행과 동일한 수식
+    private static Dictionary<(string, string, string, string), double> BuildGroupProcessRaw(
         List<OrgRow> rows, Dictionary<string, string> lsToGroup, Func<OrgRow, string> getKey)
         => rows
             .GroupBy(r => (r.ProcessType, r.ProcessName,
                            G: lsToGroup.GetValueOrDefault(r.LineShift, r.LineShift),
-                           K: getKey(r)))
+                           K: getKey(r),
+                           r.NgName))
             .Where(g => !string.IsNullOrEmpty(g.Key.K))
-            .ToDictionary(
-                g => (g.Key.ProcessType, g.Key.ProcessName, g.Key.G, g.Key.K),
-                g => (I: g.Sum(r => r.QtyInput), N: g.Sum(r => r.QtyNg)));
+            .Select(g => (
+                Key: (g.Key.ProcessType, g.Key.ProcessName, g.Key.G, g.Key.K),
+                Ppm: CalcPpm(g.Sum(r => r.QtyInput), g.Sum(r => r.QtyNg))))
+            .GroupBy(x => x.Key)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Ppm));
 
     private static Dictionary<(string, string, string, string, string), (double I, double N)> BuildGroupNgRaw(
         List<OrgRow> rows, Dictionary<string, string> lsToGroup, Func<OrgRow, string> getKey)
@@ -628,6 +667,79 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
             .ToDictionary(
                 g => (g.Key.ProcessType, g.Key.ProcessName, g.Key.NgName, g.Key.G, g.Key.K),
                 g => (I: g.Sum(r => r.QtyInput), N: g.Sum(r => r.QtyNg)));
+
+    // ── 그룹별 Summary (ProcessType × 기간 PPM) ──────────────────────────────────
+
+    private static Dictionary<string, List<SummaryPivotRow>> ComputeGroupSummary(
+        List<string> groupNames,
+        Dictionary<(string, string, string, string), double> dateGrpProc,
+        Dictionary<(string, string, string, string), double> weekGrpProc,
+        Dictionary<(string, string, string, string), double> monthGrpProc,
+        List<PeriodColumn> dateCols,
+        List<PeriodColumn> weekCols,
+        List<PeriodColumn> monthCols)
+    {
+        var result = new Dictionary<string, List<SummaryPivotRow>>(StringComparer.Ordinal);
+
+        foreach (string grp in groupNames)
+        {
+            // (ProcessType, PeriodKey) → sumPpm — 해당 그룹의 모든 ProcessName 합산
+            var datePt = dateGrpProc
+                .Where(kv => kv.Key.Item3 == grp)
+                .GroupBy(kv => (kv.Key.Item1, kv.Key.Item4))
+                .ToDictionary(g => g.Key, g => g.Sum(kv => kv.Value));
+
+            var weekPt = weekGrpProc
+                .Where(kv => kv.Key.Item3 == grp)
+                .GroupBy(kv => (kv.Key.Item1, kv.Key.Item4))
+                .ToDictionary(g => g.Key, g => g.Sum(kv => kv.Value));
+
+            var monthPt = monthGrpProc
+                .Where(kv => kv.Key.Item3 == grp)
+                .GroupBy(kv => (kv.Key.Item1, kv.Key.Item4))
+                .ToDictionary(g => g.Key, g => g.Sum(kv => kv.Value));
+
+            var summary = new List<SummaryPivotRow>();
+
+            var types = datePt .Keys.Select(k => k.Item1)
+                .Concat(weekPt .Keys.Select(k => k.Item1))
+                .Concat(monthPt.Keys.Select(k => k.Item1))
+                .Where(t => !string.IsNullOrEmpty(t))
+                .ToHashSet()
+                .OrderBy(ProcessTypeOrder)
+                .ThenBy(t => t);
+
+            foreach (string pt in types)
+            {
+                summary.Add(new SummaryPivotRow
+                {
+                    ProcessType = pt,
+                    IsTotal     = false,
+                    Ppm         = BuildPeriodDict(dateCols, weekCols, monthCols,
+                        d => datePt .GetValueOrDefault((pt, d)),
+                        w => weekPt .GetValueOrDefault((pt, w)),
+                        m => monthPt.GetValueOrDefault((pt, m))),
+                });
+            }
+
+            // TOTAL = ProcessType 행들의 PPM 합산 (순서상 맨 앞에 삽입)
+            var totalPpm = new Dictionary<string, double>();
+            foreach (var row in summary)
+                foreach (var (k, v) in row.Ppm)
+                    totalPpm[k] = totalPpm.GetValueOrDefault(k) + v;
+
+            summary.Insert(0, new SummaryPivotRow
+            {
+                ProcessType = "TOTAL",
+                IsTotal     = true,
+                Ppm         = totalPpm,
+            });
+
+            result[grp] = summary;
+        }
+
+        return result;
+    }
 
     // ── 그룹별 투입/NG 수량 & Reason ─────────────────────────────────────────────
 
@@ -868,7 +980,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
     private static Dictionary<string, string> LoadReasonLookup(string dbPath)
     {
-        var lookup = new Dictionary<string, string>(StringComparer.Ordinal);
+        var lookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         using var conn = new SqliteConnection($"Data Source={dbPath};Mode=ReadOnly");
         conn.Open();
         if (!TableExists(conn, "Reason")) return lookup;

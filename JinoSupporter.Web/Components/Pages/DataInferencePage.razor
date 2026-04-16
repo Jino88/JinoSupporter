@@ -232,105 +232,218 @@
             <!-- Results tab -->
             @if (_activeTab == "results")
             {
-                <div class="card-body overflow-auto" style="max-height:calc(100vh - 200px);">
-                    @if (_pendingTables.Count == 0)
-                    {
-                        <div class="text-center text-muted py-5">
-                            <div class="fw-semibold">No tables yet</div>
-                            <div class="small mt-1">Paste data on the left and click <strong>Organize</strong>.</div>
+                <div style="display:flex; height:calc(100vh - 200px); overflow:hidden;">
+
+                    <!-- ── Document canvas ── -->
+                    <div style="flex:1; overflow-y:auto; padding:10px 14px; min-width:0;"
+                         @ondragover:preventDefault="true">
+
+                        @* 첫 번째 드롭존 (index 0) *@
+                        <div class="di-dropzone @(_dropZoneActive == 0 ? "di-dz-active" : "")"
+                             @ondragover:preventDefault="true"
+                             @ondragover="() => _dropZoneActive = 0"
+                             @ondragleave="() => { if (_dropZoneActive == 0) _dropZoneActive = -1; }"
+                             @ondrop:preventDefault="true"
+                             @ondrop="() => DropAt(0)">
+                            @if (_docBlocks.Count == 0)
+                            {
+                                <div class="di-dz-hint">
+                                    <span style="font-size:28px;">⬇</span>
+                                    <div style="margin-top:6px; font-weight:600; color:#64748b;">여기에 드래그해서 넣으세요</div>
+                                    <div style="font-size:11px; color:#94a3b8; margin-top:3px;">오른쪽 도구모음에서 테이블·이미지를 드래그</div>
+                                </div>
+                            }
                         </div>
-                    }
-                    @foreach (PendingTable table in _pendingTables)
-                    {
-                        <div class="card mb-3 border @(table.IsExisting ? "border-secondary opacity-75" : "")">
-                            <div class="card-header py-2 d-flex align-items-center gap-2"
-                                 style="@(table.IsExisting ? "background:#f1f5f9;" : "")">
-                                <input class="form-control form-control-sm fw-semibold"
-                                       style="max-width:260px; font-size:13px;"
-                                       value="@table.TableName"
-                                       disabled="@table.IsExisting"
-                                       @oninput="e => table.TableName = e.Value?.ToString() ?? table.TableName" />
-                                <span class="text-muted small">@table.Rows.Count rows</span>
-                                @if (table.IsExisting)
+
+                        @foreach (var block in _docBlocks)
+                        {
+                            var blk = block;
+                            var dzi = _docBlocks.IndexOf(blk) + 1;
+                            <!-- block -->
+                            <div class="di-block">
+                                <div class="di-block-bar">
+                                    <button class="di-slot-btn" title="위로"
+                                            disabled="@(_docBlocks.IndexOf(blk) == 0)"
+                                            @onclick="() => MoveBlock(blk, -1)">▲</button>
+                                    <button class="di-slot-btn" title="아래로"
+                                            disabled="@(_docBlocks.IndexOf(blk) == _docBlocks.Count - 1)"
+                                            @onclick="() => MoveBlock(blk, 1)">▼</button>
+                                    <button class="di-slot-btn" title="@(blk.Span == 2 ? "절반 너비" : "전체 너비")"
+                                            @onclick="() => { blk.Span = blk.Span == 2 ? 1 : 2; }">
+                                        @(blk.Span == 2 ? "⬡" : "⬢")
+                                    </button>
+                                    <span style="flex:1; font-size:11px; color:#64748b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        @(blk.Kind == "table" ? blk.Table?.TableName : blk.Image?.Name)
+                                    </span>
+                                    <button class="di-slot-btn di-slot-remove"
+                                            @onclick="() => _docBlocks.Remove(blk)">✕</button>
+                                </div>
+
+                                @if (blk.Kind == "table" && blk.Table is not null)
                                 {
-                                    <span class="badge text-bg-secondary ms-auto">existing</span>
-                                }
-                                else
-                                {
-                                    <button class="btn btn-danger btn-sm ms-auto"
-                                            @onclick="() => RemovePendingTable(table)">Delete</button>
-                                }
-                            </div>
-                            <div style="overflow:auto; max-height:260px;">
-                                <table style="font-size:11px; min-width:max-content; border-collapse:collapse; width:100%;">
-                                    <thead style="position:sticky; top:0; z-index:1; background:#f8fafc;">
-                                        <tr>
-                                            @{ int pci = 0; }
-                                            @foreach (ColumnDef col in table.Columns)
+                                    var table = blk.Table;
+                                    <div class="card mb-0 border @(table.IsExisting ? "border-secondary opacity-75" : "")"
+                                         style="@(blk.Span == 1 ? "max-width:50%;" : "")">
+                                        <div class="card-header py-2 d-flex align-items-center gap-2"
+                                             style="@(table.IsExisting ? "background:#f1f5f9;" : "")">
+                                            <input class="form-control form-control-sm fw-semibold"
+                                                   style="max-width:260px; font-size:13px;"
+                                                   value="@table.TableName"
+                                                   disabled="@table.IsExisting"
+                                                   @oninput="e => table.TableName = e.Value?.ToString() ?? table.TableName" />
+                                            <span class="text-muted small">@table.Rows.Count rows</span>
+                                            @if (table.IsExisting)
                                             {
-                                                int ci = pci++;
-                                                <th style="padding:6px 10px; font-size:10px; font-weight:700;
-                                                           color:#64748b; text-transform:uppercase; letter-spacing:.4px;
-                                                           white-space:normal; word-break:break-word;
-                                                           min-width:60px; max-width:160px;
-                                                           border-bottom:2px solid #e2e8f0;
-                                                           cursor:context-menu; user-select:none;
-                                                           vertical-align:bottom; line-height:1.3;"
-                                                    title="Right-click to delete column"
-                                                    @oncontextmenu="e => ShowCtxMenu(e, false, table, -1, ci)"
-                                                    @oncontextmenu:preventDefault="true">
-                                                    @col.Label
-                                                </th>
+                                                <span class="badge text-bg-secondary ms-auto">existing</span>
                                             }
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @{ int pri = 0; }
-                                        @foreach (Dictionary<string, string> row in table.Rows.Take(200))
-                                        {
-                                            int ri = pri++;
-                                            <tr style="border-top:1px solid #f1f5f9; cursor:default;"
-                                                @oncontextmenu="e => ShowCtxMenu(e, false, table, ri, -1)"
-                                                @oncontextmenu:preventDefault="true">
-                                                @foreach (ColumnDef col in table.Columns)
-                                                {
-                                                    string cv = row.TryGetValue(col.Field, out string? v) ? v ?? "" : "";
-                                                    <td style="padding:0; border-top:1px solid #f1f5f9;"
-                                                        @onclick:stopPropagation="true">
-                                                        @if (IsEditing(false, table, ri, col.Field))
+                                            else
+                                            {
+                                                <button class="btn btn-danger btn-sm ms-auto"
+                                                        @onclick="() => RemovePendingTable(table)">Delete</button>
+                                            }
+                                        </div>
+                                        <div style="overflow:auto; max-height:260px;">
+                                            <table style="font-size:11px; min-width:max-content; border-collapse:collapse; width:100%;">
+                                                <thead style="position:sticky; top:0; z-index:1; background:#f8fafc;">
+                                                    <tr>
+                                                        @{ int pci = 0; }
+                                                        @foreach (ColumnDef col in table.Columns)
                                                         {
-                                                            <input class="di-cell-input"
-                                                                   value="@_editValue"
-                                                                   @oninput="e => _editValue = e.Value?.ToString() ?? _editValue"
-                                                                   @onblur="CommitEdit"
-                                                                   @onkeydown="OnEditKeyDown"
-                                                                   @ref="_editRef" />
+                                                            int ci = pci++;
+                                                            <th style="padding:6px 10px; font-size:10px; font-weight:700;
+                                                                       color:#64748b; text-transform:uppercase; letter-spacing:.4px;
+                                                                       white-space:normal; word-break:break-word;
+                                                                       min-width:60px; max-width:160px;
+                                                                       border-bottom:2px solid #e2e8f0;
+                                                                       cursor:context-menu; user-select:none;
+                                                                       vertical-align:bottom; line-height:1.3;"
+                                                                title="Right-click to delete column"
+                                                                @oncontextmenu="e => ShowCtxMenu(e, false, table, -1, ci)"
+                                                                @oncontextmenu:preventDefault="true">
+                                                                @col.Label
+                                                            </th>
                                                         }
-                                                        else
-                                                        {
-                                                            <span class="di-cell-span"
-                                                                  @onclick="() => StartEdit(false, table, ri, col.Field, cv)">
-                                                                @cv
-                                                            </span>
-                                                        }
-                                                    </td>
-                                                }
-                                            </tr>
-                                        }
-                                        @if (table.Rows.Count > 200)
-                                        {
-                                            <tr>
-                                                <td colspan="@table.Columns.Count"
-                                                    style="text-align:center; padding:6px; color:#94a3b8; font-size:10px;">
-                                                    … @(table.Rows.Count - 200) more rows (all will be saved)
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @{ int pri = 0; }
+                                                    @foreach (Dictionary<string, string> row in table.Rows.Take(200))
+                                                    {
+                                                        int ri = pri++;
+                                                        <tr style="border-top:1px solid #f1f5f9; cursor:default;"
+                                                            @oncontextmenu="e => ShowCtxMenu(e, false, table, ri, -1)"
+                                                            @oncontextmenu:preventDefault="true">
+                                                            @foreach (ColumnDef col in table.Columns)
+                                                            {
+                                                                string cv = row.TryGetValue(col.Field, out string? v) ? v ?? "" : "";
+                                                                <td style="padding:0; border-top:1px solid #f1f5f9;"
+                                                                    @onclick:stopPropagation="true">
+                                                                    @if (IsEditing(false, table, ri, col.Field))
+                                                                    {
+                                                                        <input class="di-cell-input"
+                                                                               value="@_editValue"
+                                                                               @oninput="e => _editValue = e.Value?.ToString() ?? _editValue"
+                                                                               @onblur="CommitEdit"
+                                                                               @onkeydown="OnEditKeyDown"
+                                                                               @ref="_editRef" />
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span class="di-cell-span"
+                                                                              @onclick="() => StartEdit(false, table, ri, col.Field, cv)">
+                                                                            @cv
+                                                                        </span>
+                                                                    }
+                                                                </td>
+                                                            }
+                                                        </tr>
+                                                    }
+                                                    @if (table.Rows.Count > 200)
+                                                    {
+                                                        <tr>
+                                                            <td colspan="@table.Columns.Count"
+                                                                style="text-align:center; padding:6px; color:#94a3b8; font-size:10px;">
+                                                                … @(table.Rows.Count - 200) more rows (all will be saved)
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                }
+                                else if (blk.Kind == "image" && blk.Image is not null)
+                                {
+                                    <div class="card mb-0 border" style="overflow:hidden; @(blk.Span == 1 ? "max-width:50%;" : "")">
+                                        <img src="@blk.Image.DataUrl" alt="@blk.Image.Name"
+                                             style="width:100%; display:block; object-fit:contain; max-height:400px; background:#f8fafc;" />
+                                    </div>
+                                }
                             </div>
-                        </div>
-                    }
+
+                            @* 각 블록 아래 드롭존 *@
+                            <div class="di-dropzone @(_dropZoneActive == dzi ? "di-dz-active" : "")"
+                                 @ondragover:preventDefault="true"
+                                 @ondragover="() => _dropZoneActive = dzi"
+                                 @ondragleave="() => { if (_dropZoneActive == dzi) _dropZoneActive = -1; }"
+                                 @ondrop:preventDefault="true"
+                                 @ondrop="() => DropAt(dzi)">
+                            </div>
+                        }
+                    </div>
+
+                    <!-- ── Right toolbar ── -->
+                    <div class="di-toolbar">
+                        <div style="font-size:10px; color:#94a3b8; margin-bottom:8px; font-weight:600; letter-spacing:.5px;">드래그해서 배치</div>
+
+                        <div class="di-tb-section">📋 TABLES</div>
+                        @if (_pendingTables.Count == 0)
+                        {
+                            <div class="di-tb-empty">Organize 후 나타납니다</div>
+                        }
+                        @foreach (var tbl in _pendingTables)
+                        {
+                            var tblCap = tbl;
+                            bool inDoc = _docBlocks.Any(b => b.Table == tblCap);
+                            <div class="di-tb-item @(inDoc ? "di-tb-on" : "")"
+                                 draggable="true"
+                                 @ondragstart="() => StartDragTable(tblCap)"
+                                 @ondragend="() => _dropZoneActive = -1"
+                                 title="드래그해서 넣기: @tblCap.TableName">
+                                <span class="di-tb-icon">⠿</span>
+                                <span class="di-tb-label">@tblCap.TableName</span>
+                                @if (inDoc) { <span class="di-tb-check">✓</span> }
+                            </div>
+                        }
+
+                        <div class="di-tb-section" style="margin-top:14px;">🖼 IMAGES</div>
+                        @if (_images.Count == 0)
+                        {
+                            <div class="di-tb-empty">이미지를 추가하세요</div>
+                        }
+                        @foreach (var img in _images)
+                        {
+                            var imgCap = img;
+                            bool inDoc = _docBlocks.Any(b => b.Image == imgCap);
+                            <div class="di-tb-img @(inDoc ? "di-tb-on" : "")"
+                                 draggable="true"
+                                 @ondragstart="() => StartDragImage(imgCap)"
+                                 @ondragend="() => _dropZoneActive = -1"
+                                 title="드래그해서 넣기: @imgCap.Name">
+                                <img src="@imgCap.DataUrl" alt="@imgCap.Name"
+                                     style="width:100%; height:58px; object-fit:cover; border-radius:4px; display:block;" />
+                                @if (inDoc)
+                                {
+                                    <div style="position:absolute; top:3px; right:3px;
+                                                background:#22c55e; border-radius:50%;
+                                                width:16px; height:16px; display:flex;
+                                                align-items:center; justify-content:center;
+                                                font-size:9px; color:#fff; font-weight:700;">✓</div>
+                                }
+                            </div>
+                        }
+                    </div>
+
                 </div>
             }
 
@@ -342,8 +455,33 @@
 
                         <!-- Dataset list -->
                         <div style="width:320px; min-width:220px; border-right:1px solid #e2e8f0; display:flex; flex-direction:column; min-height:0; flex-shrink:0;">
+                            <!-- ── Tag filter bar ───────────────────────────── -->
+                            @if (_allDbTagsForFilter.Count > 0)
+                            {
+                                <div class="px-3 py-2 border-bottom" style="background:#f8fafc;">
+                                    <div class="d-flex align-items-center gap-1 mb-1">
+                                        <span class="small fw-semibold" style="color:#475569;">Tags</span>
+                                        @if (_selectedTagFilters.Count > 0)
+                                        {
+                                            <button class="btn btn-link btn-sm p-0 ms-auto"
+                                                    style="font-size:11px; color:#dc2626; text-decoration:none;"
+                                                    @onclick="ClearTagFilters">Clear</button>
+                                        }
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach (string tag in _allDbTagsForFilter)
+                                        {
+                                            <button class="badge border-0 @(_selectedTagFilters.Contains(tag) ? "text-bg-primary" : "text-bg-secondary")"
+                                                    style="cursor:pointer; font-size:10px; padding:3px 7px;"
+                                                    @onclick="() => ToggleTagFilter(tag)">@tag</button>
+                                        }
+                                    </div>
+                                </div>
+                            }
                             <div class="px-3 py-2 border-bottom bg-light d-flex align-items-center justify-content-between">
-                                <span class="small fw-semibold">Datasets (@_dbSummary.Count)</span>
+                                <span class="small fw-semibold">
+                                    Datasets (@(_selectedTagFilters.Count > 0 ? $"{FilteredSummary.Count()}/" : "")@_dbSummary.Count)
+                                </span>
                                 <button class="btn btn-link btn-sm p-0 text-secondary" @onclick="RefreshDbTab">↻</button>
                             </div>
                             <div style="flex:1 1 0; overflow-y:auto; min-height:0;">
@@ -351,7 +489,11 @@
                                 {
                                     <div class="text-muted small p-3">No datasets in DB.</div>
                                 }
-                                @foreach ((string name, int cnt) in _dbSummary)
+                                else if (_selectedTagFilters.Count > 0 && !FilteredSummary.Any())
+                                {
+                                    <div class="text-muted small p-3">No datasets match selected tags.</div>
+                                }
+                                @foreach ((string name, int cnt) in FilteredSummary)
                                 {
                                     <button class="list-group-item list-group-item-action small py-2 px-3 border-0 border-bottom
                                                    @(_selectedDbDataset == name ? "active" : "")"
@@ -363,6 +505,15 @@
                                     </button>
                                 }
                             </div>
+                            @if (CanEdit)
+                            {
+                                <div class="px-3 py-2 border-top">
+                                    <button class="btn btn-outline-secondary btn-sm w-100"
+                                            @onclick="() => { _showTagRenamePanel = true; _renameTagStatus = string.Empty; }">
+                                        🏷 Tag Rename
+                                    </button>
+                                </div>
+                            }
                         </div>
 
                         <!-- Right: tables + rows + meta -->
@@ -573,6 +724,81 @@
 }
 
 <style>
+    /* ── Canvas layout ────────────────────────────────────────────────── */
+    .di-canvas-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        align-items: start;
+    }
+    .di-canvas-slot { display: flex; flex-direction: column; gap: 0; }
+    .di-slot-bar {
+        display: flex; align-items: center; gap: 3px;
+        padding: 3px 5px; background: #f1f5f9;
+        border: 1px solid #e2e8f0; border-bottom: none;
+        border-radius: 6px 6px 0 0; font-size: 11px;
+    }
+    .di-slot-bar + .card { border-radius: 0 0 6px 6px !important; }
+    .di-slot-btn {
+        background: none; border: 1px solid transparent; border-radius: 3px;
+        padding: 1px 5px; font-size: 12px; cursor: pointer; color: #64748b;
+        line-height: 1.4; transition: background .1s, color .1s;
+    }
+    .di-slot-btn:hover:not(:disabled) { background: #e2e8f0; color: #1e293b; }
+    .di-slot-btn:disabled { opacity: .3; cursor: default; }
+    .di-slot-remove:hover:not(:disabled) { background: #fee2e2 !important; color: #dc2626 !important; }
+    /* ── Drop zones ──────────────────────────────────────────────────── */
+    .di-dropzone {
+        height: 10px; margin: 4px 0; border-radius: 4px;
+        transition: all .15s; box-sizing: border-box;
+    }
+    .di-dz-active {
+        height: 36px; background: #eff6ff;
+        border: 2px dashed #93c5fd;
+    }
+    .di-dz-hint {
+        display: flex; flex-direction: column;
+        align-items: center; padding: 40px;
+    }
+    .di-block { margin-bottom: 4px; }
+    .di-block-bar {
+        display: flex; align-items: center; gap: 3px;
+        padding: 3px 5px; background: #f1f5f9;
+        border: 1px solid #e2e8f0; border-bottom: none;
+        border-radius: 6px 6px 0 0; font-size: 11px;
+    }
+    .di-block-bar + .card { border-radius: 0 0 6px 6px !important; }
+    /* ── Right toolbar ────────────────────────────────────────────────── */
+    .di-toolbar {
+        width: 156px; flex-shrink: 0;
+        border-left: 1px solid #e2e8f0; background: #f8fafc;
+        overflow-y: auto; padding: 10px 8px;
+    }
+    .di-tb-section {
+        font-size: 10px; font-weight: 700; color: #94a3b8;
+        letter-spacing: .6px; margin-bottom: 6px;
+    }
+    .di-tb-empty { font-size: 11px; color: #cbd5e1; padding: 2px 4px; margin-bottom: 4px; }
+    .di-tb-item {
+        display: flex; align-items: center; gap: 5px;
+        padding: 5px 6px; border-radius: 5px; cursor: pointer;
+        font-size: 11px; color: #475569; margin-bottom: 3px;
+        border: 1px solid #e2e8f0; background: #fff;
+        transition: all .12s;
+    }
+    .di-tb-item:hover { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+    .di-tb-on { background: #eff6ff !important; border-color: #93c5fd !important; color: #1e40af !important; }
+    .di-tb-icon { flex-shrink: 0; }
+    .di-tb-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .di-tb-check { flex-shrink: 0; color: #22c55e; font-weight: 700; font-size: 12px; }
+    .di-tb-img {
+        position: relative; border-radius: 5px; overflow: hidden;
+        cursor: pointer; margin-bottom: 5px;
+        border: 2px solid transparent; transition: border-color .12s;
+    }
+    .di-tb-img:hover { border-color: #93c5fd; }
+    .di-tb-img.di-tb-on { border-color: #22c55e; }
+    /* ── Context menu / cells ─────────────────────────────────────────── */
     .di-ctx-btn {
         display: block; width: 100%; padding: 7px 14px;
         text-align: left; background: transparent; border: none;
@@ -592,6 +818,73 @@
         background: #eff6ff; min-width: 80px;
     }
 </style>
+
+<!-- ── Tag Rename Modal ────────────────────────────────────────────────── -->
+@if (_showTagRenamePanel)
+{
+    <div style="position:fixed; inset:0; z-index:1050; background:rgba(0,0,0,.4);"
+         @onclick="() => _showTagRenamePanel = false"></div>
+    <div style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1051;
+                background:#fff; border-radius:12px; box-shadow:0 8px 40px rgba(0,0,0,.2);
+                width:580px; max-width:95vw; max-height:80vh;
+                display:flex; flex-direction:column; overflow:hidden;"
+         @onclick:stopPropagation="true">
+        <div style="padding:14px 20px; border-bottom:1px solid #e2e8f0;
+                    display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-weight:700; font-size:15px;">🏷 Tag Rename</span>
+            <button class="btn-close" @onclick="() => _showTagRenamePanel = false"></button>
+        </div>
+        <div style="display:flex; flex:1; min-height:0; overflow:hidden;">
+            <!-- Left: tag list -->
+            <div style="width:220px; border-right:1px solid #e2e8f0; overflow-y:auto; flex-shrink:0;">
+                @if (_allDbTagsForFilter.Count == 0)
+                {
+                    <div class="text-muted small p-3">No tags found.</div>
+                }
+                @foreach (string tag in _allDbTagsForFilter)
+                {
+                    <button class="list-group-item list-group-item-action small py-2 px-3 border-0 border-bottom @(_renamingTagOld == tag ? "active" : "")"
+                            @onclick="() => SelectTagForRename(tag)">@tag</button>
+                }
+            </div>
+            <!-- Right: rename form -->
+            <div style="flex:1; padding:20px; display:flex; flex-direction:column; gap:14px; overflow-y:auto;">
+                @if (string.IsNullOrEmpty(_renamingTagOld))
+                {
+                    <div class="text-muted small mt-2">← 왼쪽에서 변경할 태그를 선택하세요.</div>
+                }
+                else
+                {
+                    <div>
+                        <div class="small text-muted mb-1">현재 태그</div>
+                        <span class="badge text-bg-secondary fs-6">@_renamingTagOld</span>
+                    </div>
+                    <div>
+                        <label class="form-label small fw-semibold mb-1">변경할 이름</label>
+                        <div class="input-group">
+                            <input class="form-control form-control-sm"
+                                   placeholder="새 태그 이름 입력…"
+                                   @bind="_renamingTagNew"
+                                   @bind:event="oninput" />
+                            <button class="btn btn-primary btn-sm"
+                                    @onclick="RenameTagAsync"
+                                    disabled="@(_isBusy || string.IsNullOrWhiteSpace(_renamingTagNew) || _renamingTagNew.Trim() == _renamingTagOld)">
+                                @if (_isBusy) { <span class="spinner-border spinner-border-sm me-1" style="width:.65rem;height:.65rem;" /> }
+                                저장
+                            </button>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(_renameTagStatus))
+                    {
+                        <div class="small @(_renameTagError ? "text-danger" : "text-success")">
+                            @_renameTagStatus
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
 
 <!-- ── Image Paste Modal ───────────────────────────────────────────────── -->
 @if (_showCaptureOverlay)
@@ -625,6 +918,14 @@
 
     private sealed record ImageEntry(string Name, string MediaType, string Base64, string DataUrl, long SizeBytes);
 
+    private sealed class DocBlock
+    {
+        public string        Kind  { get; init; } = "";   // "table" | "image"
+        public PendingTable? Table { get; init; }
+        public ImageEntry?   Image { get; init; }
+        public int           Span  { get; set; }  = 2;   // 1=절반, 2=전체
+    }
+
     // ── Input state ───────────────────────────────────────────────────────────
     private string       _datasetName = string.Empty;
     private string       _purpose     = string.Empty;
@@ -635,6 +936,11 @@
 
     private List<PendingTable> _pendingTables    = [];
     private List<ImageEntry>   _images           = [];
+    private List<DocBlock>     _docBlocks        = [];
+    private int                _dropZoneActive   = -1;
+    private string?            _dragKind;
+    private PendingTable?      _dragTable;
+    private ImageEntry?        _dragImage;
     private bool               _includeImagesInAi;
 
     private bool CanOrganize =>
@@ -675,6 +981,18 @@
         _allDbTableRows = new();
     private List<(string FileName, string MediaType, string Base64)> _dbImages = [];
 
+    // ── Tag filter ────────────────────────────────────────────────────────────
+    private List<string>                     _allDbTagsForFilter = [];
+    private HashSet<string>                  _selectedTagFilters  = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, List<string>> _datasetTagsCache    = new();
+
+    // ── Tag rename panel ──────────────────────────────────────────────────────
+    private bool   _showTagRenamePanel;
+    private string _renamingTagOld  = "";
+    private string _renamingTagNew  = "";
+    private string _renameTagStatus = "";
+    private bool   _renameTagError;
+
     // ── Table rename ──────────────────────────────────────────────────────────
     private long   _renamingTableId = -1;
     private string _renameValue     = "";
@@ -698,6 +1016,14 @@
     private ElementReference _editRef;
     private bool          _renameNeedFocus;
     private ElementReference _renameRef;
+
+    private IEnumerable<(string Name, int TableCount)> FilteredSummary =>
+        _selectedTagFilters.Count == 0
+            ? _dbSummary
+            : _dbSummary.Where(s =>
+                _datasetTagsCache.TryGetValue(s.Name, out var tags) &&
+                _selectedTagFilters.All(f => tags.Any(t =>
+                    string.Equals(t, f, StringComparison.OrdinalIgnoreCase))));
 
     [Parameter] public string? InitialTab { get; set; }
 
@@ -816,6 +1142,8 @@
             }
 
             _pendingTables.AddRange(newTables);
+            foreach (var t in newTables)
+                _docBlocks.Add(new DocBlock { Kind = "table", Table = t, Span = 2 });
             _rawInput  = string.Empty;
             _activeTab = "results";
             SetStatus($"Organized {newTables.Count} table(s). Total: {_pendingTables.Count}.", false);
@@ -824,14 +1152,57 @@
         finally { _isBusy = false; _busyStep = string.Empty; }
     }
 
-    private void RemovePendingTable(PendingTable table) => _pendingTables.Remove(table);
+    private void RemovePendingTable(PendingTable table)
+    {
+        _pendingTables.Remove(table);
+        var blk = _docBlocks.FirstOrDefault(s => s.Table == table);
+        if (blk is not null) _docBlocks.Remove(blk);
+    }
 
     private void ClearAll()
     {
         _rawInput      = string.Empty;
         _pendingTables = [];
         _images        = [];
+        _docBlocks     = [];
         _statusMessage = string.Empty;
+    }
+
+    // ── Drag-and-drop ─────────────────────────────────────────────────────────
+
+    private void StartDragTable(PendingTable t) => StartDrag("table", t, null);
+    private void StartDragImage(ImageEntry i)   => StartDrag("image", null, i);
+
+    private void StartDrag(string kind, PendingTable? table, ImageEntry? image)
+    {
+        _dragKind  = kind;
+        _dragTable = table;
+        _dragImage = image;
+    }
+
+    private void DropAt(int dropZoneIndex)
+    {
+        if (_dragKind is null) return;
+        var block = new DocBlock
+        {
+            Kind  = _dragKind,
+            Table = _dragTable,
+            Image = _dragImage,
+            Span  = _dragKind == "image" ? 1 : 2
+        };
+        int insertAt = Math.Min(dropZoneIndex, _docBlocks.Count);
+        _docBlocks.Insert(insertAt, block);
+        _dragKind = null; _dragTable = null; _dragImage = null;
+        _dropZoneActive = -1;
+    }
+
+    private void MoveBlock(DocBlock blk, int delta)
+    {
+        int idx    = _docBlocks.IndexOf(blk);
+        int newIdx = idx + delta;
+        if (newIdx < 0 || newIdx >= _docBlocks.Count) return;
+        _docBlocks.RemoveAt(idx);
+        _docBlocks.Insert(newIdx, blk);
     }
 
 
@@ -969,6 +1340,57 @@
             _dbRows           = [];
             _dbDisplayRows    = [];
         }
+        // 태그 필터용 캐시 갱신
+        _datasetTagsCache = _dbSummary
+            .ToDictionary(s => s.Name, s => Repo.GetTags(s.Name));
+        _allDbTagsForFilter = _datasetTagsCache.Values
+            .SelectMany(t => t)
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(t => t)
+            .ToList();
+        // 삭제된 태그는 선택에서 제거
+        _selectedTagFilters.IntersectWith(_allDbTagsForFilter);
+    }
+
+    // ── Tag filter ────────────────────────────────────────────────────────────
+    private void ToggleTagFilter(string tag)
+    {
+        if (!_selectedTagFilters.Add(tag))
+            _selectedTagFilters.Remove(tag);
+    }
+
+    private void ClearTagFilters() => _selectedTagFilters.Clear();
+
+    // ── Tag rename ────────────────────────────────────────────────────────────
+    private void SelectTagForRename(string tag)
+    {
+        _renamingTagOld  = tag;
+        _renamingTagNew  = tag;
+        _renameTagStatus = "";
+    }
+
+    private async Task RenameTagAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_renamingTagOld) || string.IsNullOrWhiteSpace(_renamingTagNew)) return;
+        string newTag = _renamingTagNew.Trim();
+        if (string.Equals(newTag, _renamingTagOld, StringComparison.OrdinalIgnoreCase)) return;
+
+        _isBusy = true; StateHasChanged();
+        try
+        {
+            int updated = await Task.Run(() => Repo.RenameTag(_renamingTagOld, newTag));
+            _renameTagStatus = $"'{_renamingTagOld}' → '{newTag}' ({updated}개 데이터셋 업데이트됨)";
+            _renameTagError  = false;
+            _renamingTagOld  = newTag;
+            _renamingTagNew  = newTag;
+            // 캐시 및 현재 데이터셋 태그 갱신
+            RefreshDbTab();
+            if (_selectedDbDataset is not null)
+                _dbTags = Repo.GetTags(_selectedDbDataset);
+        }
+        catch (Exception ex) { _renameTagStatus = $"오류: {ex.Message}"; _renameTagError = true; }
+        finally { _isBusy = false; }
     }
 
     private void SelectDbDataset(string name)

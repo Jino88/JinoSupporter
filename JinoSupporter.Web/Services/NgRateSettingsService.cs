@@ -31,6 +31,9 @@ public sealed class NgRateSettingsService
     public const string KeyReasonFilePath   = "NgRate:ReasonFilePath";
     public const string KeyLoginId          = "NgRate:LoginId";
     public const string KeyPassword         = "NgRate:Password";
+    // Request Work Time 전용 자격증명
+    public const string KeyRwtLoginId       = "Rwt:LoginId";
+    public const string KeyRwtPassword      = "Rwt:Password";
 
     // ── Constructor ──────────────────────────────────────────────────────────────
     public NgRateSettingsService()
@@ -57,6 +60,15 @@ public sealed class NgRateSettingsService
 
     public bool IsCredentialsConfigured =>
         !string.IsNullOrWhiteSpace(LoginId) && !string.IsNullOrWhiteSpace(Password);
+
+    public string RwtLoginId =>
+        GetSetting(KeyRwtLoginId) ?? string.Empty;
+
+    public string RwtPassword =>
+        GetSetting(KeyRwtPassword) ?? string.Empty;
+
+    public bool IsRwtCredentialsConfigured =>
+        !string.IsNullOrWhiteSpace(RwtLoginId) && !string.IsNullOrWhiteSpace(RwtPassword);
 
     // ── CRUD ─────────────────────────────────────────────────────────────────────
 
@@ -91,6 +103,8 @@ public sealed class NgRateSettingsService
         ReasonFilePath  = ReasonFilePath,
         LoginId         = LoginId,
         Password        = Password,
+        RwtLoginId      = RwtLoginId,
+        RwtPassword     = RwtPassword,
     };
 
     public void ApplySnapshot(NgRateSettingsSnapshot snap)
@@ -100,6 +114,8 @@ public sealed class NgRateSettingsService
         SetSetting(KeyReasonFilePath,  snap.ReasonFilePath.Trim());
         SetSetting(KeyLoginId,         snap.LoginId.Trim());
         SetSetting(KeyPassword,        snap.Password);
+        SetSetting(KeyRwtLoginId,      snap.RwtLoginId.Trim());
+        SetSetting(KeyRwtPassword,     snap.RwtPassword);
     }
 
     // ── Private ──────────────────────────────────────────────────────────────────
@@ -258,6 +274,105 @@ public sealed class NgRateSettingsService
         return count;
     }
 
+    // ── LineShift Scan ────────────────────────────────────────────────────────────
+
+    public List<string> GetAllLineShifts()
+    {
+        var dbDir  = DbSaveDirectory;
+        var result = new HashSet<string>(StringComparer.Ordinal);
+
+        // Collect candidate DB files: top-level + optional "daily" subdirectory
+        var files = new List<string>();
+
+        if (Directory.Exists(dbDir))
+        {
+            files.AddRange(
+                Directory.EnumerateFiles(dbDir, "*.db", SearchOption.TopDirectoryOnly)
+                         .Where(f => !string.Equals(
+                             Path.GetFileName(f), "ngrate_settings.db",
+                             StringComparison.OrdinalIgnoreCase)));
+        }
+
+        var dailyDir = Path.Combine(dbDir, "daily");
+        if (Directory.Exists(dailyDir))
+        {
+            files.AddRange(
+                Directory.EnumerateFiles(dailyDir, "*.db", SearchOption.TopDirectoryOnly)
+                         .Where(f => !string.Equals(
+                             Path.GetFileName(f), "ngrate_settings.db",
+                             StringComparison.OrdinalIgnoreCase)));
+        }
+
+        foreach (var file in files)
+        {
+            try
+            {
+                var cs = new SqliteConnectionStringBuilder
+                {
+                    DataSource = file,
+                    Mode       = SqliteOpenMode.ReadOnly,
+                }.ToString();
+
+                using var conn = new SqliteConnection(cs);
+                conn.Open();
+
+                // Check OrginalTable exists
+                using var checkCmd = conn.CreateCommand();
+                checkCmd.CommandText =
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='OrginalTable';";
+                var tableCount = Convert.ToInt64(checkCmd.ExecuteScalar() ?? 0L);
+                if (tableCount == 0) continue;
+
+                // Check LineShift column exists
+                bool hasLineShift = false;
+                using (var pragmaCmd = conn.CreateCommand())
+                {
+                    pragmaCmd.CommandText = "PRAGMA table_info([OrginalTable]);";
+                    using var rdr = pragmaCmd.ExecuteReader();
+                    while (rdr.Read())
+                    {
+                        if (string.Equals(rdr.GetString(1), "LineShift", StringComparison.Ordinal))
+                        {
+                            hasLineShift = true;
+                            break;
+                        }
+                    }
+                }
+
+                using var selCmd = conn.CreateCommand();
+                if (hasLineShift)
+                {
+                    selCmd.CommandText =
+                        "SELECT DISTINCT [LineShift] FROM [OrginalTable] " +
+                        "WHERE [LineShift] IS NOT NULL AND [LineShift] != '';";
+                }
+                else
+                {
+                    selCmd.CommandText =
+                        "SELECT DISTINCT ([MATERIALNAME] || '_' || [PRODUCTION_LINE]) FROM [OrginalTable] " +
+                        "WHERE [MATERIALNAME] IS NOT NULL AND [MATERIALNAME] != '';";
+                }
+
+                using var selRdr = selCmd.ExecuteReader();
+                while (selRdr.Read())
+                {
+                    if (!selRdr.IsDBNull(0))
+                    {
+                        var val = selRdr.GetString(0);
+                        if (!string.IsNullOrEmpty(val))
+                            result.Add(val);
+                    }
+                }
+            }
+            catch
+            {
+                // swallow per-file exceptions
+            }
+        }
+
+        return result.OrderBy(x => x).ToList();
+    }
+
     // ── Private ──────────────────────────────────────────────────────────────────
 
     private static void EnsureDatabase()
@@ -314,4 +429,6 @@ public sealed class NgRateSettingsSnapshot
     public string ReasonFilePath  { get; set; } = NgRateSettingsService.DefaultReasonFilePath;
     public string LoginId         { get; set; } = string.Empty;
     public string Password        { get; set; } = string.Empty;
+    public string RwtLoginId      { get; set; } = string.Empty;
+    public string RwtPassword     { get; set; } = string.Empty;
 }

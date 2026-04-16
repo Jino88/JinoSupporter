@@ -1,0 +1,349 @@
+@page "/bmes/worker-status"
+@rendermode InteractiveServer
+@using JinoSupporter.Web.Services
+@inject WorkerStatusService WorkerStatus
+
+<PageTitle>Worker Status</PageTitle>
+
+<style>
+    .ws-header-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .ws-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 16px 20px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .ws-card-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #475569;
+        letter-spacing: .3px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .ws-table-wrap { overflow-x: auto; }
+    .ws-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+    .ws-table th {
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 700;
+        font-size: 11px;
+        letter-spacing: .3px;
+        padding: 7px 10px;
+        border-bottom: 2px solid #e2e8f0;
+        white-space: nowrap;
+        text-align: left;
+    }
+    .ws-table td {
+        padding: 6px 10px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+        white-space: nowrap;
+    }
+    .ws-table tr:last-child td { border-bottom: none; }
+    .ws-table tr:hover td { background: #f8fafc; }
+    .ws-badge {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 10px;
+        letter-spacing: .2px;
+    }
+    .ws-in     { background: #dcfce7; color: #166534; }
+    .ws-out    { background: #dbeafe; color: #1e40af; }
+    .ws-absent { background: #fef2f2; color: #b91c1c; }
+    .ws-other  { background: #f1f5f9; color: #475569; }
+    .ws-late   { color: #dc2626; font-weight: 700; }
+    .ws-time   { font-family: monospace; font-size: 12px; }
+    .ws-sched  { color: #94a3b8; font-size: 11px; }
+    .ws-progress {
+        font-size: 11px;
+        font-family: monospace;
+        color: #64748b;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 7px 12px;
+        margin-top: 10px;
+    }
+    .ws-error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        border-radius: 6px;
+        padding: 10px 14px;
+        font-size: 12px;
+        margin-top: 10px;
+    }
+    .ws-empty {
+        text-align: center;
+        padding: 40px 0;
+        color: #94a3b8;
+        font-size: 13px;
+    }
+    .btn-fetch {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 7px;
+        border: none;
+        background: #6366f1;
+        color: #fff;
+        cursor: pointer;
+        transition: background .15s;
+    }
+    .btn-fetch:hover:not(:disabled) { background: #4f46e5; }
+    .btn-fetch:disabled { opacity: .55; cursor: not-allowed; }
+    .ws-stat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 9px;
+        border-radius: 12px;
+        background: #f1f5f9;
+        color: #475569;
+    }
+    .ws-stat-num { font-size: 14px; font-weight: 700; }
+</style>
+
+<div class="ws-header-bar">
+    <span style="font-size:20px;">👷</span>
+    <span style="font-size:18px; font-weight:700; color:#1e293b;">Worker Status</span>
+</div>
+
+<!-- ── Query bar ─────────────────────────────────────────────────────────── -->
+<div class="ws-card" style="margin-bottom:16px;">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <label style="font-size:12px; font-weight:600; color:#475569;">Date</label>
+        <input type="date"
+               class="form-control form-control-sm"
+               style="width:160px;"
+               value="@_date.ToString("yyyy-MM-dd")"
+               @onchange="OnDateChanged"
+               disabled="@_isBusy" />
+
+        <button class="btn-fetch" @onclick="FetchAsync" disabled="@_isBusy">
+            @if (_isBusy)
+            {
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+                <span>Fetching…</span>
+            }
+            else
+            {
+                <span>🔍</span><span>Fetch</span>
+            }
+        </button>
+
+        @if (_result is not null && _result.IsSuccess)
+        {
+            <span style="font-size:11px; color:#94a3b8; margin-left:4px;">
+                fetched @_result.FetchedAt.ToString("HH:mm:ss")
+            </span>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(_progressMsg))
+    {
+        <div class="ws-progress">@_progressMsg</div>
+    }
+    @if (_result is not null && !string.IsNullOrEmpty(_result.ErrorMessage))
+    {
+        <div class="ws-error">⚠ @_result.ErrorMessage</div>
+    }
+</div>
+
+<!-- ── Summary pills ─────────────────────────────────────────────────────── -->
+@if (_result is not null && _result.IsSuccess && _result.Records.Count > 0)
+{
+    int cntTotal   = _result.TotalCount;
+    int cntIn      = _result.Records.Count(r => r.WorkStatus.Contains("office", StringComparison.OrdinalIgnoreCase));
+    int cntCheckedIn  = _result.Records.Count(r => !string.IsNullOrEmpty(r.CheckIn));
+    int cntCheckedOut = _result.Records.Count(r => !string.IsNullOrEmpty(r.CheckOut));
+    int cntLate    = _result.Records.Count(r => IsLate(r));
+
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+        <div class="ws-stat-pill">
+            Total <span class="ws-stat-num">@cntTotal</span>
+        </div>
+        <div class="ws-stat-pill" style="background:#dcfce7; color:#166534;">
+            In Office <span class="ws-stat-num">@cntIn</span>
+        </div>
+        <div class="ws-stat-pill" style="background:#dbeafe; color:#1e40af;">
+            Checked In <span class="ws-stat-num">@cntCheckedIn</span>
+        </div>
+        <div class="ws-stat-pill" style="background:#e0f2fe; color:#0369a1;">
+            Checked Out <span class="ws-stat-num">@cntCheckedOut</span>
+        </div>
+        @if (cntLate > 0)
+        {
+            <div class="ws-stat-pill" style="background:#fef2f2; color:#b91c1c;">
+                Late <span class="ws-stat-num">@cntLate</span>
+            </div>
+        }
+    </div>
+}
+
+<!-- ── Table ──────────────────────────────────────────────────────────────── -->
+<div class="ws-card">
+    <div class="ws-card-title">
+        <span>📋 Attendance</span>
+        @if (_result is not null && _result.IsSuccess)
+        {
+            <span style="font-size:11px; font-weight:400; color:#94a3b8;">
+                @_result.TotalCount records
+            </span>
+        }
+    </div>
+
+    @if (_result is null || !_result.IsSuccess || _result.Records.Count == 0)
+    {
+        <div class="ws-empty">
+            @if (_result is null)
+            {
+                <span>날짜를 선택하고 Fetch를 눌러주세요.</span>
+            }
+            else if (!_result.IsSuccess)
+            {
+                <span>조회에 실패했습니다.</span>
+            }
+            else
+            {
+                <span>조회된 데이터가 없습니다.</span>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="ws-table-wrap">
+            <table class="ws-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Emp No</th>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Day Type</th>
+                        <th>Sched Start</th>
+                        <th>Sched End</th>
+                        <th>Check In</th>
+                        <th>Check Out</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int rowNum = 0; }
+                    @foreach (var rec in _result.Records
+                        .OrderByDescending(r => string.IsNullOrEmpty(r.CheckIn) ? "" : r.CheckIn)
+                        .ThenBy(r => string.IsNullOrEmpty(r.CheckIn) ? r.Name : ""))
+                    {
+                        rowNum++;
+                        bool late = IsLate(rec);
+
+                        string statusClass = rec.WorkStatus switch
+                        {
+                            var s when s.Contains("office", StringComparison.OrdinalIgnoreCase) => "ws-in",
+                            var s when s.Contains("출근",   StringComparison.OrdinalIgnoreCase) => "ws-in",
+                            var s when s.Contains("퇴근",   StringComparison.OrdinalIgnoreCase) => "ws-out",
+                            var s when s.Contains("결근",   StringComparison.OrdinalIgnoreCase) => "ws-absent",
+                            _ => "ws-other"
+                        };
+
+                        <tr>
+                            <td style="color:#94a3b8;">@rowNum</td>
+                            <td style="font-family:monospace; font-size:11px;">@rec.EmpNo</td>
+                            <td style="font-weight:600;">@rec.Name</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(rec.WorkStatus))
+                                {
+                                    <span class="ws-badge @statusClass">@rec.WorkStatus</span>
+                                }
+                            </td>
+                            <td style="font-size:11px; color:#64748b;">@rec.DayType</td>
+                            <td class="ws-time ws-sched">@rec.SchedStart</td>
+                            <td class="ws-time ws-sched">@rec.SchedEnd</td>
+                            <td class="ws-time @(late ? "ws-late" : "")">
+                                @if (string.IsNullOrEmpty(rec.CheckIn))
+                                {
+                                    <span style="color:#94a3b8;">—</span>
+                                }
+                                else
+                                {
+                                    @rec.CheckIn
+                                    @if (late)
+                                    {
+                                        <span style="font-size:10px; margin-left:3px;">▲</span>
+                                    }
+                                }
+                            </td>
+                            <td class="ws-time">
+                                @if (string.IsNullOrEmpty(rec.CheckOut))
+                                {
+                                    <span style="color:#94a3b8;">—</span>
+                                }
+                                else
+                                {
+                                    @rec.CheckOut
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private DateTime                          _date       = DateTime.Today;
+    private bool                              _isBusy;
+    private string                            _progressMsg = string.Empty;
+    private WorkerStatusService.FetchResult?  _result;
+
+    private void OnDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var d))
+            _date = d;
+    }
+
+    private async Task FetchAsync()
+    {
+        _isBusy      = true;
+        _progressMsg = string.Empty;
+        _result      = null;
+        StateHasChanged();
+
+        var progress = new Progress<string>(msg =>
+        {
+            _progressMsg = msg;
+            InvokeAsync(StateHasChanged);
+        });
+
+        _result = await WorkerStatus.FetchAsync(_date, progress);
+        _isBusy = false;
+        StateHasChanged();
+    }
+
+    /// <summary>지각 판단: 실제 출근(CheckIn) > 예정 출근(SchedStart) 이면 지각</summary>
+    private static bool IsLate(WorkerStatusService.WorkerRecord rec)
+    {
+        if (string.IsNullOrEmpty(rec.CheckIn) || string.IsNullOrEmpty(rec.SchedStart))
+            return false;
+        return string.Compare(rec.CheckIn, rec.SchedStart, StringComparison.Ordinal) > 0;
+    }
+}

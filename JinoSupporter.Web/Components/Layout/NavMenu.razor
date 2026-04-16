@@ -32,6 +32,16 @@
                     </NavLink>
                 </div>
                 <div class="nav-item">
+                    <NavLink class="nav-link nav-sublink" href="bmes/worker-status">
+                        <span class="nav-icon" style="font-size:11px;">👷</span> Worker Status
+                    </NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="nav-link nav-sublink" href="bmes/make-model">
+                        <span class="nav-icon" style="font-size:11px;">📦</span> Make Model Data
+                    </NavLink>
+                </div>
+                <div class="nav-item">
                     <NavLink class="nav-link nav-sublink" href="bmes/setting">
                         <span class="nav-icon" style="font-size:11px;">⚙️</span> Setting
                     </NavLink>
@@ -64,6 +74,11 @@
                 <div class="nav-item">
                     <NavLink class="nav-link nav-sublink" href="data-inference" Match="NavLinkMatch.All">
                         <span class="nav-icon" style="font-size:11px;">📥</span> Input Data
+                    </NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="nav-link nav-sublink" href="data-inference-test">
+                        <span class="nav-icon" style="font-size:11px;">🧪</span> Input Data (TEST)
                     </NavLink>
                 </div>
                 <div class="nav-item">
@@ -147,12 +162,15 @@
     }
 
     private bool IsBmesActive =>
-        Nav.Uri.Contains("/ng-rate",      StringComparison.OrdinalIgnoreCase) ||
-        Nav.Uri.Contains("/bmes/",        StringComparison.OrdinalIgnoreCase);
+        Nav.Uri.Contains("/ng-rate",                  StringComparison.OrdinalIgnoreCase) ||
+        Nav.Uri.Contains("/bmes/",                    StringComparison.OrdinalIgnoreCase) ||
+        Nav.Uri.Contains("/bmes/worker-status",       StringComparison.OrdinalIgnoreCase) ||
+        Nav.Uri.Contains("/bmes/make-model",          StringComparison.OrdinalIgnoreCase);
 
     private bool IsDataInferenceActive =>
         Nav.Uri.Contains("/data-inference", StringComparison.OrdinalIgnoreCase) ||
-        Nav.Uri.Contains("/report",         StringComparison.OrdinalIgnoreCase);
+        Nav.Uri.Contains("/report",         StringComparison.OrdinalIgnoreCase) ||
+        Nav.Uri.Contains("/data-inference-test", StringComparison.OrdinalIgnoreCase);
 
     private void ToggleBmes()          => _bmesOpen = !_bmesOpen;
     private void ToggleDataInference() => _diOpen   = !_diOpen;

@@ -2,10 +2,6 @@ using Microsoft.AspNetCore.Components.Server.Circuits;
 
 namespace JinoSupporter.Web.Services;
 
-/// <summary>
-/// Scoped per Blazor Server circuit. Tracks circuit lifecycle and allows
-/// the page to register a display name for the connected user.
-/// </summary>
 public sealed class UserCircuitHandler : CircuitHandler
 {
     private readonly ConnectedUsersService _usersService;
@@ -19,7 +15,7 @@ public sealed class UserCircuitHandler : CircuitHandler
     public override Task OnCircuitOpenedAsync(Circuit circuit, CancellationToken cancellationToken)
     {
         _circuitId = circuit.Id;
-        _usersService.AddUser(circuit.Id, "Anonymous");
+        _usersService.AddUser(circuit.Id);
         return Task.CompletedTask;
     }
 
@@ -29,10 +25,11 @@ public sealed class UserCircuitHandler : CircuitHandler
         return Task.CompletedTask;
     }
 
-    /// <summary>Called from the layout to set the user's display name.</summary>
-    public void SetName(string name)
+    /// <summary>Called from the layout after auth state is resolved.</summary>
+    public void Register(string username, string displayName)
     {
-        if (!string.IsNullOrWhiteSpace(_circuitId) && !string.IsNullOrWhiteSpace(name))
-            _usersService.UpdateName(_circuitId, name.Trim());
+        if (string.IsNullOrWhiteSpace(_circuitId)) return;
+        string name = string.IsNullOrWhiteSpace(displayName) ? username : displayName;
+        _usersService.AddUser(_circuitId, username, name);
     }
 }
