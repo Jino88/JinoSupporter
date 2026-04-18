@@ -6,36 +6,36 @@ using System.Text.RegularExpressions;
 namespace JinoSupporter.Web.Services;
 
 /// <summary>
-/// BMES MES072900/SearchPopupDetail — 근태(출퇴근) 조회 서비스
+/// BMES MES072900/SearchPopupDetail — attendance (check-in/out) fetch service.
 /// </summary>
 public sealed class WorkerStatusService(NgRateSettingsService settings)
 {
     private readonly NgRateSettingsService _settings = settings;
     private const string BaseUrl = "http://bmes.bujeon.com";
 
-    // ── 응답 모델 ─────────────────────────────────────────────────────────────────
+    // ── Response model ────────────────────────────────────────────────────────────
 
     public sealed class WorkerRecord
     {
-        /// <summary>사번 (EMPNO)</summary>
+        /// <summary>Employee number (EMPNO)</summary>
         public string EmpNo       { get; init; } = string.Empty;
-        /// <summary>이름 (FNAME)</summary>
+        /// <summary>Name (FNAME)</summary>
         public string Name        { get; init; } = string.Empty;
-        /// <summary>근무상태 (WKSTA_TX, e.g. "In office")</summary>
+        /// <summary>Work status (WKSTA_TX, e.g. "In office")</summary>
         public string WorkStatus  { get; init; } = string.Empty;
-        /// <summary>근무유형 (DTYPE_TX, e.g. "Normal")</summary>
+        /// <summary>Day type (DTYPE_TX, e.g. "Normal")</summary>
         public string DayType     { get; init; } = string.Empty;
-        /// <summary>출근 예정 시간 (WSTIM)</summary>
+        /// <summary>Scheduled check-in time (WSTIM)</summary>
         public string SchedStart  { get; init; } = string.Empty;
-        /// <summary>퇴근 예정 시간 (WETIM)</summary>
+        /// <summary>Scheduled check-out time (WETIM)</summary>
         public string SchedEnd    { get; init; } = string.Empty;
-        /// <summary>실제 출근 시간 (SDATM)</summary>
+        /// <summary>Actual check-in time (SDATM)</summary>
         public string CheckIn     { get; init; } = string.Empty;
-        /// <summary>실제 퇴근 시간 (EDATM)</summary>
+        /// <summary>Actual check-out time (EDATM)</summary>
         public string CheckOut    { get; init; } = string.Empty;
-        /// <summary>공장코드 (FACCO)</summary>
+        /// <summary>Factory code (FACCO)</summary>
         public string Factory     { get; init; } = string.Empty;
-        /// <summary>원본 JSON 전체</summary>
+        /// <summary>Full original JSON row</summary>
         public Dictionary<string, string> Raw { get; init; } = new();
     }
 

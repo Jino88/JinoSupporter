@@ -6,8 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
-    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="app.css?v=2" />
     <link rel="stylesheet" href="JinoSupporter.Web.styles.css" />
+    <link href="_content/Syncfusion.Blazor.Themes/bootstrap5.css" rel="stylesheet" />
+    <link href="_content/Syncfusion.Blazor.WordProcessor/styles/document-editor/bootstrap5.css" rel="stylesheet" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <HeadOutlet />
 </head>
@@ -17,8 +19,11 @@
         <Routes @rendermode="new InteractiveServerRenderMode()" />
     </CascadingAuthenticationState>
     <script src="_framework/blazor.web.js"></script>
+    <script src="_content/Syncfusion.Blazor.Core/scripts/syncfusion-blazor.min.js" type="text/javascript"></script>
+    <script src="_content/Syncfusion.Blazor.WordProcessor/scripts/syncfusion-blazor-documenteditor.min.js" type="text/javascript"></script>
+    <script src="_content/Syncfusion.Blazor.Spreadsheet/scripts/syncfusion-blazor-spreadsheet.min.js" type="text/javascript"></script>
     <script src="js/chart.umd.min.js?v=1"></script>
-    <script src="js/app.js?v=5"></script>
+    <script src="js/app.js?v=12"></script>
 </body>
 
 </html>

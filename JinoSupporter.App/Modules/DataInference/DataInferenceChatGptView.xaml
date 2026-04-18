@@ -120,26 +120,6 @@
                     <StackPanel Grid.Row="1" Margin="0,0,0,6">
                         <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#22304A"
                                    Text="Table Data Input" Margin="0,0,0,6"/>
-                        <!-- Input mode selector -->
-                        <Border Background="#F0F4F8" CornerRadius="6" Padding="8,6"
-                                BorderBrush="#D3DCEA" BorderThickness="1" Margin="0,0,0,6">
-                            <StackPanel Orientation="Horizontal">
-                                <RadioButton x:Name="RadioAiExtract"
-                                             Content="AI Extract"
-                                             IsChecked="True"
-                                             GroupName="InputMode"
-                                             FontSize="11" FontWeight="SemiBold"
-                                             Foreground="#22304A"
-                                             Margin="0,0,16,0"
-                                             ToolTip="ChatGPT analyzes and extracts table structure" />
-                                <RadioButton x:Name="RadioJustInput"
-                                             Content="Just Input Table"
-                                             GroupName="InputMode"
-                                             FontSize="11" FontWeight="SemiBold"
-                                             Foreground="#22304A"
-                                             ToolTip="First row = headers, rest = data (no AI call)" />
-                            </StackPanel>
-                        </Border>
                         <TextBlock x:Name="InputModeHintText"
                                    FontSize="10" Foreground="#617084" TextWrapping="Wrap"
                                    Text="Select range → Ctrl+C → Ctrl+V here → Organize" />

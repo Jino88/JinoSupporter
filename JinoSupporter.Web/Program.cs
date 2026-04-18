@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Syncfusion.Blazor;
 using JinoSupporter.Web.Components;
 using JinoSupporter.Web.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -35,8 +36,13 @@ builder.Services.AddHttpClient<ClaudeService>(client =>
     client.Timeout     = TimeSpan.FromSeconds(180);
 });
 
+// Syncfusion
+Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(""); // Community license — works without a key
+builder.Services.AddSyncfusionBlazor();
+
 // Singleton DB repository (SQLite file shared across all requests)
 builder.Services.AddSingleton<WebRepository>();
+builder.Services.AddSingleton<MenuPermissionService>();
 
 // NG Rate settings: singleton (reads/writes ngrate_settings.db)
 builder.Services.AddSingleton<NgRateSettingsService>();
@@ -52,8 +58,10 @@ builder.Services.AddSingleton<ConnectedUsersService>();
 builder.Services.AddScoped<UserCircuitHandler>();
 builder.Services.AddScoped<CircuitHandler>(sp => sp.GetRequiredService<UserCircuitHandler>());
 
-// Listen on all interfaces
-builder.WebHost.UseUrls("http://*:5050");
+// Listen on all interfaces. Default 5050 for published/prod runs; dev overrides via ASPNETCORE_URLS
+// (set by launchSettings.json or the VS Code launch config).
+if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
+    builder.WebHost.UseUrls("http://*:5050");
 
 // ── Pipeline ──────────────────────────────────────────────────────────────────
 
@@ -101,6 +109,17 @@ app.MapPost("/auth/logout", async (HttpContext ctx) =>
     await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     ctx.Response.Redirect("/login");
 }).DisableAntiforgery();
+
+// ── Raw file download (DataInference attachments) ─────────────────────────────
+
+app.MapGet("/data-inference/file/{id:long}", (long id, HttpContext ctx) =>
+{
+    if (ctx.User?.Identity?.IsAuthenticated != true) return Results.Unauthorized();
+    var file = repo.GetRawReportFile(id);
+    if (file is null) return Results.NotFound();
+    string safeName = string.IsNullOrEmpty(file.Value.FileName) ? $"file-{id}" : file.Value.FileName;
+    return Results.File(file.Value.Data, file.Value.MediaType, safeName);
+});
 
 // ── Blazor ────────────────────────────────────────────────────────────────────
 

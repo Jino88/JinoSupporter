@@ -1,0 +1,382 @@
+@page "/data-inference/batch"
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+@inject WebRepository Repo
+@inject ClaudeService  Claude
+@inject IJSRuntime     JS
+
+<PageTitle>Data Inference — AI Batch</PageTitle>
+
+<div class="dib-root">
+
+<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<div class="dib-header">
+    <span class="dib-title">🤖 AI Batch Analysis</span>
+    <span class="dib-count">@_unprocessed.Count pending · @_processed.Count done (out of @_reports.Count total)</span>
+    <div style="flex:1;"></div>
+    <button class="btn btn-outline-secondary btn-sm" @onclick="Refresh" disabled="@_isBusy">↻ Refresh</button>
+    <button class="btn btn-primary btn-sm" @onclick="RunBatchAsync"
+            disabled="@(_isBusy || !Claude.IsConfigured || _selected.Count == 0)">
+        @if (_isBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
+        ▶ Analyze Selected (@_selected.Count)
+    </button>
+</div>
+
+@if (!string.IsNullOrEmpty(_status))
+{
+    <div class="dib-status @(_statusError ? "dib-error" : "dib-ok")">@_status</div>
+}
+
+<!-- ── Filter tabs ─────────────────────────────────────────────────────────── -->
+<div class="dib-tabs">
+    <button class="dib-tab @(_filter == Filter.Pending ? "active" : "")"
+            @onclick="() => SetFilter(Filter.Pending)">⏳ Pending (@_unprocessed.Count)</button>
+    <button class="dib-tab @(_filter == Filter.Done ? "active" : "")"
+            @onclick="() => SetFilter(Filter.Done)">✅ Done (@_processed.Count)</button>
+    <button class="dib-tab @(_filter == Filter.All ? "active" : "")"
+            @onclick="() => SetFilter(Filter.All)">All (@_reports.Count)</button>
+    <div style="flex:1;"></div>
+    <button class="btn btn-outline-secondary btn-sm" @onclick="ToggleAllVisible" disabled="@_isBusy">
+        @(AllVisibleSelected ? "☐ Unselect Visible" : "☑ Select Visible")
+    </button>
+</div>
+
+<!-- ── Table ───────────────────────────────────────────────────────────────── -->
+@if (Visible.Count == 0)
+{
+    <div class="dib-empty">
+        @if (_filter == Filter.Pending) { <text>No datasets awaiting AI analysis.</text> }
+        else if (_filter == Filter.Done) { <text>No analyzed datasets yet.</text> }
+        else { <text>No saved datasets — save one from Input Data first.</text> }
+    </div>
+}
+else
+{
+    <div class="dib-table-wrap">
+        <table class="dib-table">
+            <thead>
+                <tr>
+                    <th style="width:28px;"></th>
+                    <th>Dataset Name</th>
+                    <th>Product Type</th>
+                    <th>Date</th>
+                    <th>Images</th>
+                    <th>Measurements</th>
+                    <th>Status</th>
+                    <th style="width:120px;">Progress</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Visible)
+                {
+                    bool isDone = r.MeasurementCount > 0;
+                    string? state = _runState.GetValueOrDefault(r.DatasetName);
+                    <tr>
+                        <td>
+                            <input type="checkbox" checked="@_selected.Contains(r.DatasetName)"
+                                   disabled="@(_isBusy || r.ImageCount == 0)"
+                                   @onchange="e => ToggleSelect(r.DatasetName, (bool)e.Value!)" />
+                        </td>
+                        <td><strong>@r.DatasetName</strong></td>
+                        <td>@r.ProductType</td>
+                        <td>@r.ReportDate</td>
+                        <td class="n">@r.ImageCount</td>
+                        <td class="n">@r.MeasurementCount</td>
+                        <td>
+                            @if (isDone)
+                            {
+                                <span class="dib-badge dib-badge-done">Done</span>
+                            }
+                            else if (r.ImageCount == 0)
+                            {
+                                <span class="dib-badge dib-badge-skip">No image</span>
+                            }
+                            else
+                            {
+                                <span class="dib-badge dib-badge-pending">Pending</span>
+                            }
+                        </td>
+                        <td>
+                            @if (state == "running")
+                            {
+                                <span class="dib-badge dib-badge-run"><span class="spinner-border spinner-border-sm me-1"></span>Analyzing</span>
+                            }
+                            else if (state == "ok")
+                            {
+                                <span class="dib-badge dib-badge-ok">✓</span>
+                            }
+                            else if (state == "err")
+                            {
+                                <button class="dib-badge dib-badge-err dib-badge-btn"
+                                        title="@_runError.GetValueOrDefault(r.DatasetName)"
+                                        @onclick="() => ShowError(r.DatasetName)">✗ Error</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (_errorDialog is not null)
+{
+    <div class="dib-overlay" @onclick="CloseError">
+        <div class="dib-error-dialog" @onclick:stopPropagation="true">
+            <div class="dib-error-head">
+                <span>❌ Analyze Error — @_errorDialog.Value.Name</span>
+                <button class="dib-error-close" @onclick="CloseError">✕</button>
+            </div>
+            <pre class="dib-error-body">@_errorDialog.Value.Message</pre>
+            <div class="dib-error-foot">
+                <button class="btn btn-outline-secondary btn-sm" @onclick="() => CopyErrorAsync()">📋 Copy</button>
+                <button class="btn btn-primary btn-sm" @onclick="CloseError">Close</button>
+            </div>
+        </div>
+    </div>
+}
+
+</div>
+
+<style>
+    .dib-root {
+        flex: 1; min-height: 0; display: flex; flex-direction: column;
+        overflow: hidden; background: #f8fafc;
+    }
+    .dib-header {
+        display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+        background: #fff; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+    }
+    .dib-title   { font-size: 15px; font-weight: 700; color: #1e293b; }
+    .dib-count   { font-size: 12px; color: #94a3b8; }
+    .dib-status  { padding: 5px 14px; font-size: 12px; flex-shrink: 0; }
+    .dib-ok      { color: #16a34a; background: #f0fdf4; border-bottom: 1px solid #bbf7d0; }
+    .dib-error   { color: #dc2626; background: #fef2f2; border-bottom: 1px solid #fecaca; }
+
+    .dib-tabs {
+        display: flex; align-items: center; gap: 6px; padding: 8px 14px;
+        background: #fff; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+    }
+    .dib-tab {
+        padding: 4px 12px; font-size: 12px; font-weight: 600;
+        border: 1px solid #e2e8f0; border-radius: 14px;
+        background: #f8fafc; color: #475569; cursor: pointer; transition: all .12s;
+    }
+    .dib-tab:hover         { background: #f1f5f9; }
+    .dib-tab.active        { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+    .dib-empty { padding: 60px; text-align: center; color: #94a3b8; font-size: 14px; }
+
+    .dib-table-wrap { flex: 1; overflow: auto; }
+    .dib-table      { border-collapse: collapse; width: 100%; font-size: 13px; }
+    .dib-table th, .dib-table td {
+        border-bottom: 1px solid #e2e8f0; padding: 7px 10px; text-align: left;
+    }
+    .dib-table thead th {
+        background: #f1f5f9; font-weight: 600; color: #475569;
+        position: sticky; top: 0; z-index: 1;
+    }
+    td.n { text-align: right; font-variant-numeric: tabular-nums; }
+
+    .dib-badge {
+        display: inline-flex; align-items: center; padding: 2px 9px;
+        border-radius: 10px; font-size: 11px; font-weight: 600;
+    }
+    .dib-badge-done    { background: #dcfce7; color: #166534; }
+    .dib-badge-pending { background: #fef3c7; color: #92400e; }
+    .dib-badge-skip    { background: #e2e8f0; color: #64748b; }
+    .dib-badge-run     { background: #dbeafe; color: #1d4ed8; }
+    .dib-badge-ok      { background: #dcfce7; color: #166534; }
+    .dib-badge-err     { background: #fee2e2; color: #b91c1c; }
+    .dib-badge-btn     { border: none; cursor: pointer; text-decoration: underline dotted; }
+    .dib-badge-btn:hover { background: #fecaca; }
+
+    .dib-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 9000;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .dib-error-dialog {
+        background: #fff; border-radius: 10px; padding: 0;
+        box-shadow: 0 10px 40px rgba(0,0,0,.2);
+        min-width: 480px; max-width: 80vw; max-height: 80vh;
+        display: flex; flex-direction: column;
+    }
+    .dib-error-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 12px 16px; border-bottom: 1px solid #e2e8f0;
+        font-size: 14px; font-weight: 700; color: #b91c1c;
+    }
+    .dib-error-close {
+        border: none; background: transparent; color: #64748b;
+        font-size: 16px; cursor: pointer; padding: 0 4px;
+    }
+    .dib-error-close:hover { color: #dc2626; }
+    .dib-error-body {
+        flex: 1; overflow: auto; margin: 0; padding: 14px 16px;
+        font-size: 12px; color: #0f172a; background: #f8fafc;
+        white-space: pre-wrap; word-break: break-word;
+        font-family: ui-monospace, Consolas, monospace;
+    }
+    .dib-error-foot {
+        display: flex; gap: 8px; justify-content: flex-end;
+        padding: 10px 16px; border-top: 1px solid #e2e8f0;
+    }
+</style>
+
+@code {
+    private enum Filter { Pending, Done, All }
+
+    private List<RawReportInfo>        _reports       = [];
+    private List<RawReportInfo>        _unprocessed   = [];
+    private List<RawReportInfo>        _processed     = [];
+    private HashSet<string>            _selected      = new(StringComparer.Ordinal);
+    private Dictionary<string, string> _runState      = [];
+    private Dictionary<string, string> _runError      = [];
+    private (string Name, string Message)? _errorDialog;
+    private Filter                     _filter        = Filter.Pending;
+    private bool                       _isBusy;
+    private string                     _status        = "";
+    private bool                       _statusError;
+
+    private List<RawReportInfo> Visible => _filter switch
+    {
+        Filter.Pending => _unprocessed,
+        Filter.Done    => _processed,
+        _              => _reports,
+    };
+
+    private bool AllVisibleSelected =>
+        Visible.Count > 0 && Visible.All(r => _selected.Contains(r.DatasetName));
+
+    protected override void OnInitialized() => LoadReports();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await JS.InvokeVoidAsync("diFullPage.enter");
+    }
+
+    private void LoadReports()
+    {
+        _reports     = Repo.GetAllRawReports();
+        _unprocessed = _reports.Where(r => r.MeasurementCount == 0).ToList();
+        _processed   = _reports.Where(r => r.MeasurementCount > 0).ToList();
+    }
+
+    private void Refresh()
+    {
+        LoadReports();
+        _selected.RemoveWhere(n => !_reports.Any(r => r.DatasetName == n));
+    }
+
+    private void SetFilter(Filter f) => _filter = f;
+
+    private void ToggleSelect(string name, bool sel)
+    {
+        if (sel) _selected.Add(name);
+        else     _selected.Remove(name);
+    }
+
+    private void ToggleAllVisible()
+    {
+        if (AllVisibleSelected)
+        {
+            foreach (var r in Visible) _selected.Remove(r.DatasetName);
+        }
+        else
+        {
+            foreach (var r in Visible)
+                if (r.ImageCount > 0) _selected.Add(r.DatasetName);
+        }
+    }
+
+    private async Task RunBatchAsync()
+    {
+        if (_selected.Count == 0) { SetStatus("No datasets selected.", true); return; }
+        _isBusy = true; SetStatus($"Starting batch analysis — {_selected.Count} dataset(s)", false);
+        _runState.Clear(); _runError.Clear();
+
+        var targets = _reports.Where(r => _selected.Contains(r.DatasetName)).ToList();
+        int ok = 0, err = 0;
+
+        foreach (var r in targets)
+        {
+            _runState[r.DatasetName] = "running";
+            StateHasChanged();
+
+            try
+            {
+                var imgs = Repo.GetRawReportImages(r.DatasetName);
+                if (imgs.Count == 0)
+                {
+                    _runState[r.DatasetName] = "err";
+                    _runError[r.DatasetName] = "No images";
+                    err++;
+                    continue;
+                }
+
+                var imageArgs = imgs.Select(i => (
+                    i.MediaType,
+                    Convert.ToBase64String(i.Data))).ToList();
+
+                NormalizeResult result = await Claude.NormalizeFromImagesAsync(
+                    imageArgs, r.DatasetName, r.ProductType, r.ReportDate);
+
+                await Task.Run(() =>
+                {
+                    if (result.Measurements.Count > 0)
+                        Repo.SaveNormalizedMeasurements(r.DatasetName, result.Measurements);
+
+                    string tagsJson = (result.Tags?.Count ?? 0) > 0
+                        ? System.Text.Json.JsonSerializer.Serialize(result.Tags)
+                        : "";
+                    if (!string.IsNullOrEmpty(result.Summary) || !string.IsNullOrEmpty(tagsJson))
+                        Repo.SaveDatasetSummaryRecord(r.DatasetName, r.ProductType,
+                            result.Summary, result.KeyFindings, tagsJson);
+                });
+
+                _runState[r.DatasetName] = "ok";
+                ok++;
+            }
+            catch (Exception ex)
+            {
+                _runState[r.DatasetName] = "err";
+                _runError[r.DatasetName] = $"{ex.GetType().Name}: {ex.Message}\n\n{ex.StackTrace}";
+                err++;
+            }
+            StateHasChanged();
+        }
+
+        _isBusy = false;
+        LoadReports();
+        _selected.Clear();
+        SetStatus($"Done — {ok} success / {err} failed", err > 0);
+    }
+
+    private void SetStatus(string msg, bool err)
+    {
+        _status = msg; _statusError = err;
+    }
+
+    private void ShowError(string name)
+    {
+        string msg = _runError.GetValueOrDefault(name) ?? "(no error detail recorded)";
+        _errorDialog = (name, msg);
+    }
+
+    private void CloseError() => _errorDialog = null;
+
+    private async Task CopyErrorAsync()
+    {
+        if (_errorDialog is null) return;
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", _errorDialog.Value.Message);
+        }
+        catch { }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { await JS.InvokeVoidAsync("diFullPage.leave"); } catch { }
+    }
+}

@@ -1,0 +1,238 @@
+@page "/data-inference/analysis"
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+@inject WebRepository Repo
+@inject IJSRuntime JS
+
+<PageTitle>Data Inference — Analysis</PageTitle>
+
+<div class="dian-root">
+
+<!-- ── Header / Filter bar ───────────────────────────────────────────────── -->
+<div class="dian-header">
+    <span class="dian-title">Normal vs Test Analysis</span>
+    <div style="flex:1;"></div>
+    <select class="form-select form-select-sm" style="width:180px;"
+            value="@(_selectedProductType ?? "")"
+            @onchange="OnProductTypeChange">
+        <option value="">All Products</option>
+        @foreach (var pt in _productTypes)
+        {
+            <option value="@pt">@pt</option>
+        }
+    </select>
+    <select class="form-select form-select-sm" style="width:230px;"
+            value="@(_selectedDataset ?? "")"
+            @onchange="OnDatasetChange">
+        <option value="">All Datasets</option>
+        @foreach (var ds in _datasets)
+        {
+            <option value="@ds">@ds</option>
+        }
+    </select>
+    <button class="btn btn-outline-secondary btn-sm" @onclick="Reload">↻ Refresh</button>
+</div>
+
+<!-- ── Summary chips ─────────────────────────────────────────────────────── -->
+@if (_rows.Count > 0)
+{
+    int improved  = _rows.Count(r => r.ImprovementPct > 0);
+    int regressed = _rows.Count(r => r.ImprovementPct < 0);
+    int noData    = _rows.Count(r => !r.ImprovementPct.HasValue);
+
+    <div class="dian-chips">
+        <span class="dian-chip">@_datasetCount dataset(s)</span>
+        <span class="dian-chip">@_rows.Count item(s)</span>
+        @if (_avgImprovement.HasValue)
+        {
+            <span class="dian-chip @(_avgImprovement.Value >= 0 ? "dian-chip-good" : "dian-chip-bad")">
+                Avg @(_avgImprovement.Value >= 0 ? "+" : "")@_avgImprovement.Value.ToString("F1")%
+            </span>
+        }
+        @if (improved  > 0) { <span class="dian-chip dian-chip-good">▲ @improved improved</span> }
+        @if (regressed > 0) { <span class="dian-chip dian-chip-bad">▼ @regressed regressed</span> }
+        @if (noData    > 0) { <span class="dian-chip">— @noData N/A</span> }
+    </div>
+}
+
+<!-- ── Empty state ───────────────────────────────────────────────────────── -->
+@if (_rows.Count == 0)
+{
+    <div class="dian-empty">
+        No comparison data available.<br />
+        Save a dataset containing both <strong>normal</strong> and <strong>test</strong> groups on Input Data.
+    </div>
+}
+else
+{
+    <!-- ── Table ─────────────────────────────────────────────────────────── -->
+    <div class="dian-table-wrap">
+        <table class="dian-table">
+            <thead>
+                <tr>
+                    <th>Section</th>
+                    <th>Line</th>
+                    <th>Category</th>
+                    <th>Defect Type</th>
+                    <th class="n">Normal NG%</th>
+                    <th class="n">Test NG%</th>
+                    <th class="n">Improvement</th>
+                    <th class="n">N Input</th>
+                    <th class="n">T Input</th>
+                    <th>Intervention</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    string prevDataset = "";
+                }
+                @foreach (var row in _rows)
+                {
+                    @if (row.DatasetName != prevDataset)
+                    {
+                        prevDataset = row.DatasetName;
+                        <tr class="dian-ds-header">
+                            <td colspan="10">
+                                <strong>@row.DatasetName</strong>
+                                <span class="dian-ds-meta">@row.ProductType · @row.TestDate</span>
+                            </td>
+                        </tr>
+                    }
+                    <tr class="dian-row">
+                        <td>@row.VariableDetail</td>
+                        <td>@row.Line</td>
+                        <td>@row.DefectCategory</td>
+                        <td>@row.DefectType</td>
+                        <td class="n">@(row.NormalNgRate.HasValue ? $"{row.NormalNgRate.Value:F2}%" : "—")</td>
+                        <td class="n">@(row.TestNgRate.HasValue   ? $"{row.TestNgRate.Value:F2}%"   : "—")</td>
+                        <td class="n @ImprovementClass(row.ImprovementPct)">@ImprovementText(row.ImprovementPct)</td>
+                        <td class="n">@(row.NormalInputQty > 0 ? row.NormalInputQty.ToString() : "—")</td>
+                        <td class="n">@(row.TestInputQty   > 0 ? row.TestInputQty.ToString()   : "—")</td>
+                        <td>@row.Intervention</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+</div>
+
+<style>
+    .dian-root {
+        flex: 1; min-height: 0; display: flex; flex-direction: column;
+        overflow: hidden; background: #f8fafc;
+    }
+    .dian-header {
+        display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+        background: #fff; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+    }
+    .dian-title { font-size: 15px; font-weight: 700; color: #1e293b; }
+
+    .dian-chips {
+        display: flex; flex-wrap: wrap; gap: 6px;
+        padding: 8px 14px; background: #fff; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+    }
+    .dian-chip {
+        padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+        background: #f1f5f9; color: #475569;
+    }
+    .dian-chip-good { background: #dcfce7; color: #15803d; }
+    .dian-chip-bad  { background: #fee2e2; color: #b91c1c; }
+
+    .dian-empty {
+        padding: 60px; text-align: center; color: #94a3b8; font-size: 14px; line-height: 1.7;
+    }
+
+    .dian-table-wrap { flex: 1; overflow: auto; }
+    .dian-table      { border-collapse: collapse; width: 100%; font-size: 12px; }
+    .dian-table th, .dian-table td {
+        border-bottom: 1px solid #e2e8f0; padding: 5px 9px; text-align: left;
+    }
+    .dian-table thead th {
+        background: #f1f5f9; font-weight: 600; color: #475569; font-size: 11px;
+        position: sticky; top: 0; z-index: 1;
+    }
+    .dian-row:hover { background: #f8fafc; }
+    td.n { text-align: right; font-variant-numeric: tabular-nums; }
+    th.n { text-align: right; }
+
+    .dian-ds-header td {
+        background: #1e293b; color: #e2e8f0; padding: 6px 10px;
+        font-size: 12px; border-bottom: none;
+    }
+    .dian-ds-meta { font-size: 11px; color: #94a3b8; margin-left: 10px; font-weight: 400; }
+
+    .imp-good  { color: #15803d; font-weight: 700; }
+    .imp-bad   { color: #b91c1c; font-weight: 700; }
+    .imp-zero  { color: #64748b; }
+    .imp-na    { color: #cbd5e1; }
+</style>
+
+@code {
+    private List<string>         _productTypes        = [];
+    private List<string>         _datasets            = [];
+    private List<ImprovementRow> _rows                = [];
+    private string?              _selectedProductType = null;
+    private string?              _selectedDataset     = null;
+    private int                  _datasetCount        = 0;
+    private double?              _avgImprovement      = null;
+
+    protected override void OnInitialized()
+    {
+        _productTypes = Repo.GetAllProductTypes();
+        _datasets     = Repo.GetRawReportDatasets();
+        LoadRows();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await JS.InvokeVoidAsync("diFullPage.enter");
+    }
+
+    private void OnProductTypeChange(ChangeEventArgs e)
+    {
+        _selectedProductType = e.Value?.ToString() is { Length: > 0 } s ? s : null;
+        _selectedDataset     = null;
+        _datasets            = Repo.GetRawReportDatasets(_selectedProductType);
+        LoadRows();
+    }
+
+    private void OnDatasetChange(ChangeEventArgs e)
+    {
+        _selectedDataset = e.Value?.ToString() is { Length: > 0 } s ? s : null;
+        LoadRows();
+    }
+
+    private void Reload()
+    {
+        _productTypes = Repo.GetAllProductTypes();
+        _datasets     = Repo.GetRawReportDatasets(_selectedProductType);
+        LoadRows();
+    }
+
+    private void LoadRows()
+    {
+        _rows = Repo.GetImprovementComparisons(_selectedProductType, _selectedDataset);
+        _datasetCount = _rows.Select(r => r.DatasetName).Distinct().Count();
+        var valid = _rows.Where(r => r.ImprovementPct.HasValue).Select(r => r.ImprovementPct!.Value).ToList();
+        _avgImprovement = valid.Count > 0 ? valid.Average() : null;
+    }
+
+    private static string ImprovementClass(double? pct) => pct switch
+    {
+        null   => "imp-na",
+        > 0    => "imp-good",
+        < 0    => "imp-bad",
+        _      => "imp-zero"
+    };
+
+    private static string ImprovementText(double? pct) => pct.HasValue
+        ? (pct.Value >= 0 ? $"+{pct.Value:F1}%" : $"{pct.Value:F1}%")
+        : "—";
+
+    public async ValueTask DisposeAsync()
+    {
+        try { await JS.InvokeVoidAsync("diFullPage.leave"); } catch { }
+    }
+}

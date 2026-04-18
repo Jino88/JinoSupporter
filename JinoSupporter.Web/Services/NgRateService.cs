@@ -8,16 +8,16 @@ using Microsoft.Data.Sqlite;
 namespace JinoSupporter.Web.Services;
 
 /// <summary>
-/// BMES NG Rate 데이터 수집 → SQLite 저장 → Processing 서비스
-/// DataMaker WPF 앱의 clFetchBMES + clFetchBMESNGDATA + clDataProcessor 로직을 웹 환경에 포팅
-/// 경로/자격증명은 NgRateSettingsService에서 읽음
+/// BMES NG Rate data collection → SQLite save → Processing service.
+/// Web port of the DataMaker WPF app's clFetchBMES + clFetchBMESNGDATA + clDataProcessor logic.
+/// Paths / credentials are read from NgRateSettingsService.
 /// </summary>
 public sealed class NgRateService(NgRateSettingsService settings)
 {
     private readonly NgRateSettingsService _settings = settings;
     private const string BaseUrl = "http://bmes.bujeon.com";
 
-    // BMES API 컬럼명 → 내부 컬럼명 (DataMaker CONSTANT._columnMap + ListSTRManager 통합)
+    // BMES API column name → internal column name (merged from DataMaker CONSTANT._columnMap + ListSTRManager)
     private static readonly Dictionary<string, string> ApiColumnMap =
         new(StringComparer.OrdinalIgnoreCase)
         {
@@ -43,7 +43,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
             ["ERDAT"]    = "LASTREGDATE",
         };
 
-    // OrginalTable 컬럼 순서 (DataMaker CONSTANT.ListSTRManager 기준)
+    // OrginalTable column order (per DataMaker CONSTANT.ListSTRManager)
     private static readonly string[] OrgTableColumns =
     {
         "PRODUCTION_LINE", "PROCESSCODE", "PROCESSNAME", "NGCODE", "NGNAME",
@@ -55,27 +55,27 @@ public sealed class NgRateService(NgRateSettingsService settings)
     // ── Public API ──────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// BMES 데이터 수집 → SQLite 저장 → Processing 전체 흐름 실행.
-    /// ─ 3일 이상 지난 날짜: per-day DB 캐시 사용 (없으면 서버 조회 후 캐시 저장)
-    /// ─ 0~2일 전 날짜:      항상 서버에서 조회 (데이터 변경 가능)
-    /// ─ 결과는 temp DB (temp_*.db) 에 병합, 이전 temp DB는 자동 삭제
+    /// Full flow: BMES data fetch → SQLite save → processing.
+    /// - Dates 3+ days ago : use per-day DB cache (fetch + cache if missing)
+    /// - Dates 0–2 days ago: always fetch from server (data may still change)
+    /// - Result is merged into a temp DB (temp_*.db); previous temp DBs are auto-deleted.
     /// </summary>
     public async Task<string?> FetchAndSaveAsync(
         DateTime startDate,
         DateTime endDate,
         IProgress<string>? progress = null)
     {
-        // ── 1. 날짜 분류 ──────────────────────────────────────────────────────
-        // · 오늘 / 어제  → 항상 서버 조회 (데이터 변경 가능)
-        // · 그 외        → per-day DB 파일 있으면 캐시, 없으면 서버 조회
-        var recentCutoff = DateTime.Today.AddDays(-2); // 이 날짜 이상이면 항상 서버 조회 (오늘·어제·2일전)
+        // ── 1. Classify dates ────────────────────────────────────────────────
+        // · Today / yesterday   → always fetch from server (data may still change)
+        // · Otherwise           → use per-day DB cache if present, else fetch
+        var recentCutoff = DateTime.Today.AddDays(-2); // >= this date → always fetch (today / yesterday / 2 days ago)
         var allDates = Enumerable
             .Range(0, (int)(endDate.Date - startDate.Date).TotalDays + 1)
             .Select(i => startDate.Date.AddDays(i))
             .ToList();
 
-        var toFetch = new List<DateTime>(); // BMES 서버 조회 필요
-        var toCache = new List<DateTime>(); // per-day DB 캐시 사용
+        var toFetch = new List<DateTime>(); // needs BMES server fetch
+        var toCache = new List<DateTime>(); // load from per-day DB cache
 
         foreach (var date in allDates)
         {
@@ -86,15 +86,15 @@ public sealed class NgRateService(NgRateSettingsService settings)
         }
 
         progress?.Report(
-            $"날짜 범위: {startDate:MM/dd} – {endDate:MM/dd}  " +
-            $"(서버: {toFetch.Count}일 / 캐시: {toCache.Count}일)");
+            $"Date range: {startDate:MM/dd} – {endDate:MM/dd}  " +
+            $"(server: {toFetch.Count} day(s) / cache: {toCache.Count} day(s))");
 
-        // ── 2. BMES 서버 조회 ────────────────────────────────────────────────
+        // ── 2. BMES server fetch ─────────────────────────────────────────────
         var freshRows = new List<Dictionary<string, string>>();
 
         if (toFetch.Count > 0)
         {
-            progress?.Report($"─── 서버 조회  {toFetch.Min():MM/dd} – {toFetch.Max():MM/dd} ({toFetch.Count}일)");
+            progress?.Report($"─── Server fetch  {toFetch.Min():MM/dd} – {toFetch.Max():MM/dd} ({toFetch.Count} day(s))");
 
             string loginId  = _settings.LoginId;
             string password = _settings.Password;
@@ -128,7 +128,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
             }
             progress?.Report("Login successful.");
 
-            // 연속된 날짜는 범위로 묶어 요청, 끊기면 별도 요청
+            // Merge consecutive dates into ranges; split the request when the sequence breaks
             var serverRows = new List<Dictionary<string, string>>();
 
             var sorted = toFetch.OrderBy(d => d).ToList();
@@ -157,7 +157,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
             serverRows = RemoveDuplicates(serverRows);
             progress?.Report($"{serverRows.Count:N0} rows after deduplication.");
 
-            // 오늘/어제 제외한 날짜 → per-day DB에 캐시 저장 (0건이어도 빈 파일 → 다음 조회 시 서버 생략)
+            // Dates other than today/yesterday → cache to per-day DB (even 0-row → empty file, so next call skips server)
             foreach (var date in toFetch.Where(d => d < recentCutoff))
             {
                 string dateStr = date.ToString("yyyy-MM-dd");
@@ -170,9 +170,9 @@ public sealed class NgRateService(NgRateSettingsService settings)
             freshRows = serverRows;
         }
 
-        // ── 3. per-day 캐시 로드 ────────────────────────────────────────────
+        // ── 3. Load per-day cache ───────────────────────────────────────────
         if (toCache.Count > 0)
-            progress?.Report($"─── 캐시 로드  {toCache.Min():MM/dd} – {toCache.Max():MM/dd} ({toCache.Count}일)");
+            progress?.Report($"─── Cache load  {toCache.Min():MM/dd} – {toCache.Max():MM/dd} ({toCache.Count} day(s))");
 
         var cachedRows = new List<Dictionary<string, string>>();
         foreach (var date in toCache)
@@ -182,7 +182,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
             progress?.Report($"  Cache hit {date:MM/dd}: {rows.Count:N0} rows");
         }
 
-        // ── 4. 병합 ──────────────────────────────────────────────────────────
+        // ── 4. Merge ─────────────────────────────────────────────────────────
         var allRows = new List<Dictionary<string, string>>(freshRows.Count + cachedRows.Count);
         allRows.AddRange(freshRows);
         allRows.AddRange(cachedRows);
@@ -193,7 +193,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
             return null;
         }
 
-        // ── 5. 이전 temp DB 정리 → 새 temp DB 생성 ──────────────────────────
+        // ── 5. Clean up old temp DBs → create new temp DB ───────────────────
         CleanupTempDbs(progress);
 
         string tempPath = GetTempDbPath();
@@ -215,13 +215,13 @@ public sealed class NgRateService(NgRateSettingsService settings)
         return tempPath;
     }
 
-    // ── Per-day DB / Temp DB 헬퍼 ────────────────────────────────────────────
+    // ── Per-day DB / Temp DB helpers ─────────────────────────────────────────
 
-    /// <summary>per-day 캐시 DB 경로: {DbSaveDirectory}/daily/yyyyMMdd.db</summary>
+    /// <summary>Per-day cache DB path: {DbSaveDirectory}/daily/yyyyMMdd.db</summary>
     private string GetPerDayDbPath(DateTime date)
         => Path.Combine(_settings.DbSaveDirectory, "daily", $"{date:yyyyMMdd}.db");
 
-    /// <summary>임시 병합 DB 경로: {DbSaveDirectory}/temp_yyyyMMdd_HHmmss.db</summary>
+    /// <summary>Temp merged DB path: {DbSaveDirectory}/temp_yyyyMMdd_HHmmss.db</summary>
     private string GetTempDbPath()
     {
         string ts = DateTime.Now.ToString("yyyyMMdd_HHmmss");
@@ -238,7 +238,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
 
             if (rows.Count == 0)
             {
-                // 데이터 없는 날짜도 빈 DB 생성 → 다음 조회 시 File.Exists == true → 서버 생략
+                // Create an empty DB even for 0-row days → next call sees File.Exists==true and skips server
                 using var conn = new SqliteConnection($"Data Source={path}");
                 conn.Open();
                 using var cmd = conn.CreateCommand();
@@ -318,7 +318,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
         try
         {
             string html = await client.GetStringAsync(BaseUrl);
-            // value before name 패턴도 처리
+            // Also handle the "value before name" pattern
             var m = Regex.Match(html,
                 @"<input[^>]+name=""__RequestVerificationToken""[^>]+value=""([^""]+)""",
                 RegexOptions.IgnoreCase);
@@ -402,12 +402,12 @@ public sealed class NgRateService(NgRateSettingsService settings)
         }
     }
 
-    // ── Private: 데이터 처리 ─────────────────────────────────────────────────────
+    // ── Private: data processing ─────────────────────────────────────────────────
 
     /// <summary>
-    /// WPF clMakeProcTable.SelectRowsForProcTable 방식 동일.
-    /// 같은 (LINE, CODE, PROCESSNAME, NGNAME, MATERIAL, DATE, SHIFT) 그룹 내에서
-    /// QTYINPUT / QTYNG 비교 후 자동 병합·선택.
+    /// Same behavior as the WPF clMakeProcTable.SelectRowsForProcTable path.
+    /// Within each (LINE, CODE, PROCESSNAME, NGNAME, MATERIAL, DATE, SHIFT) group,
+    /// compare QTYINPUT / QTYNG and auto-merge / auto-pick rows.
     /// </summary>
     private static List<Dictionary<string, string>> RemoveDuplicates(
         List<Dictionary<string, string>> rows)
@@ -433,7 +433,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
                 continue;
             }
 
-            // 마지막 행부터 시작해서 앞쪽 행과 순서대로 비교·병합 (WPF 방식 동일)
+            // Iterate from the last row and compare/merge with preceding rows in order (same as WPF)
             var selected = groupRows[groupRows.Count - 1];
             for (int i = groupRows.Count - 2; i >= 0; i--)
                 selected = ResolveRow(groupRows[i], selected);
@@ -445,12 +445,12 @@ public sealed class NgRateService(NgRateSettingsService settings)
     }
 
     /// <summary>
-    /// WPF TryResolveRowsWithoutPrompt 자동 해결 로직 (프롬프트 없이 규칙만 적용).
-    /// 1. 동일 값이면 → B 유지
-    /// 2. QTYINPUT 다르면 → QTYINPUT 큰 쪽 선택 (WPF는 사용자 선택, 웹은 자동)
-    /// 3. QTYINPUT 같고 QTYNG 한쪽만 0 → non-zero 선택
-    /// 4. QTYINPUT 같고 둘 다 0 → B 유지 (WPF는 사용자 선택, 웹은 자동)
-    /// 5. QTYINPUT 같고 둘 다 non-zero → QTYNG 합산 후 병합
+    /// Auto-resolution rules mirroring WPF TryResolveRowsWithoutPrompt (no prompting):
+    /// 1. Values identical           → keep B
+    /// 2. QTYINPUT differs           → keep the larger QTYINPUT (WPF asks user; web auto)
+    /// 3. QTYINPUT equal, one QTYNG=0 → keep the non-zero one
+    /// 4. QTYINPUT equal, both 0     → keep B (WPF asks user; web auto)
+    /// 5. QTYINPUT equal, both non-zero → merge by summing QTYNG
     /// </summary>
     private static Dictionary<string, string> ResolveRow(
         Dictionary<string, string> optionA, Dictionary<string, string> optionB)
@@ -460,27 +460,27 @@ public sealed class NgRateService(NgRateSettingsService settings)
         double ngA    = ParseDouble(GetCol(optionA, "QTYNG"));
         double ngB    = ParseDouble(GetCol(optionB, "QTYNG"));
 
-        // 1. 동일 값
+        // 1. Identical values
         if (inputA == inputB && ngA == ngB)
             return optionB;
 
-        // 2. QTYINPUT 다름 → 큰 쪽 선택
+        // 2. QTYINPUT differs → pick the larger
         if (inputA != inputB)
             return inputA > inputB ? optionA : optionB;
 
-        // QTYINPUT 같고 QTYNG 다름
+        // QTYINPUT equal, QTYNG differs
         bool aZero = ngA == 0;
         bool bZero = ngB == 0;
 
-        // 3. 한쪽만 0 → non-zero 선택
+        // 3. One side is 0 → pick the non-zero one
         if (aZero != bZero)
             return aZero ? optionB : optionA;
 
-        // 4. 둘 다 0
+        // 4. Both zero
         if (aZero)
             return optionB;
 
-        // 5. 둘 다 non-zero → QTYNG 합산 병합
+        // 5. Both non-zero → merge by summing QTYNG
         var merged = new Dictionary<string, string>(optionB, StringComparer.OrdinalIgnoreCase);
         merged["QTYNG"] = (ngA + ngB).ToString(CultureInfo.InvariantCulture);
         return merged;
@@ -508,7 +508,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
 
     private static void SaveToSqlite(string dbPath, List<Dictionary<string, string>> rows)
     {
-        // 실제 데이터에 있는 키를 파악하여 OrgTableColumns 순서로 정렬
+        // Detect which keys are actually present and order them by OrgTableColumns
         var dataKeys = rows.SelectMany(r => r.Keys)
                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -516,7 +516,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
             .Where(c => dataKeys.Contains(c))
             .ToList();
 
-        // OrgTableColumns에 없는 나머지 컬럼 추가
+        // Append any remaining columns not listed in OrgTableColumns
         foreach (string k in dataKeys)
         {
             if (!columns.Any(c => c.Equals(k, StringComparison.OrdinalIgnoreCase)))
@@ -526,7 +526,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
         using var conn = new SqliteConnection($"Data Source={dbPath}");
         conn.Open();
 
-        // 테이블 생성
+        // Create table
         string colDefs = string.Join(", ", columns.Select(c => $"[{c}] TEXT"));
         using (var cmd = conn.CreateCommand())
         {
@@ -534,7 +534,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
             cmd.ExecuteNonQuery();
         }
 
-        // 행 삽입 (트랜잭션)
+        // Insert rows (transactional)
         string colList  = string.Join(", ", columns.Select(c => $"[{c}]"));
         string paramList = string.Join(", ", columns.Select((_, i) => $"@p{i}"));
         string insertSql = $"INSERT INTO [OrginalTable] ({colList}) VALUES ({paramList})";
@@ -556,7 +556,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
         }
         tx.Commit();
 
-        // 메타 테이블 저장
+        // Persist meta table
         SaveMeta(conn);
     }
 
@@ -579,17 +579,17 @@ public sealed class NgRateService(NgRateSettingsService settings)
     // ── Private: Processing ──────────────────────────────────────────────────────
 
     /// <summary>
-    /// DataMaker clDataProcessor.ProcessData() 와 동일한 흐름:
-    ///   1. RoutingTable 로드 (Routing.txt)
-    ///   2. ReasonTable 로드 (reason.txt)
-    ///   3. OrginalTable LineShift 컬럼 설정
+    /// Same flow as DataMaker clDataProcessor.ProcessData():
+    ///   1. Load RoutingTable (Routing.txt)
+    ///   2. Load ReasonTable  (reason.txt)
+    ///   3. Populate OrginalTable's LineShift column
     /// </summary>
     private void ProcessData(string dbPath, IProgress<string>? progress)
     {
         using var conn = new SqliteConnection($"Data Source={dbPath}");
         conn.Open();
 
-        // Routing — settings DB 우선, 없으면 파일 폴백
+        // Routing — prefer settings DB, fall back to file
         var routingDbRows = _settings.GetRoutingRows();
         if (routingDbRows.Count > 0)
         {
@@ -611,7 +611,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
             progress?.Report("[WARN] No Routing data (settings DB empty, file not found).");
         }
 
-        // Reason — settings DB 우선, 없으면 파일 폴백
+        // Reason — prefer settings DB, fall back to file
         var reasonDbRows = _settings.GetReasonRows();
         if (reasonDbRows.Count > 0)
         {
@@ -640,8 +640,8 @@ public sealed class NgRateService(NgRateSettingsService settings)
     }
 
     /// <summary>
-    /// Tab 구분자 텍스트 파일 → SQLite 테이블 (첫 줄 헤더 스킵, Columns 파라미터 사용)
-    /// clMakeTxtTable.MakeDataTable 동일 로직
+    /// Tab-separated text file → SQLite table (skip header row; use Columns parameter).
+    /// Same logic as clMakeTxtTable.MakeDataTable.
     /// </summary>
     private static void LoadRoutingFromSettings(SqliteConnection conn, List<RoutingRow> rows)
     {
@@ -699,7 +699,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
 
         // Read file
         string[] lines = File.ReadAllLines(filePath, Encoding.UTF8);
-        if (lines.Length < 2) return; // 헤더만 있거나 빈 파일
+        if (lines.Length < 2) return; // header-only or empty file
 
         // Create table
         string colDefs = string.Join(", ", columns.Select(c => $"[{c}] TEXT"));
@@ -709,7 +709,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
             create.ExecuteNonQuery();
         }
 
-        // Insert (첫 줄 = 헤더 스킵)
+        // Insert (skip first line = header)
         string colList  = string.Join(", ", columns.Select(c => $"[{c}]"));
         string paramList = string.Join(", ", columns.Select((_, i) => $"@p{i}"));
 
@@ -731,13 +731,13 @@ public sealed class NgRateService(NgRateSettingsService settings)
     }
 
     /// <summary>
-    /// 지정 컬럼에 CONSTANT.Normalize 동일 정규화 적용 후 재저장
+    /// Apply the same normalization as CONSTANT.Normalize to the given columns and persist.
     /// </summary>
     private static void NormalizeTableColumns(
         SqliteConnection conn, string tableName, string[] columnNames)
     {
-        // 한 컬럼씩 UPDATE로 정규화 적용 (SQLite에서 regex 함수 없으므로 로드 후 재저장)
-        // 행이 많지 않은 마스터 테이블에만 사용
+        // Normalize column-by-column via UPDATE (SQLite has no regex func; load + save approach).
+        // Use only for small master tables.
         using var selCmd = conn.CreateCommand();
         selCmd.CommandText = $"SELECT rowid, {string.Join(", ", columnNames.Select(c => $"[{c}]"))} FROM [{tableName}]";
 
@@ -774,7 +774,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
 
     private static void SetLineShift(SqliteConnection conn)
     {
-        // ADD COLUMN (이미 있으면 무시)
+        // ADD COLUMN (ignore if it already exists)
         try
         {
             using var alter = conn.CreateCommand();

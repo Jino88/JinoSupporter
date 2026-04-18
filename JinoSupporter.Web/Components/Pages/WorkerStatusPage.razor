@@ -217,15 +217,15 @@
         <div class="ws-empty">
             @if (_result is null)
             {
-                <span>날짜를 선택하고 Fetch를 눌러주세요.</span>
+                <span>Pick a date and click Fetch.</span>
             }
             else if (!_result.IsSuccess)
             {
-                <span>조회에 실패했습니다.</span>
+                <span>Fetch failed.</span>
             }
             else
             {
-                <span>조회된 데이터가 없습니다.</span>
+                <span>No records found.</span>
             }
         </div>
     }
@@ -339,7 +339,7 @@
         StateHasChanged();
     }
 
-    /// <summary>지각 판단: 실제 출근(CheckIn) > 예정 출근(SchedStart) 이면 지각</summary>
+    /// <summary>Late if actual check-in (CheckIn) is after the scheduled start (SchedStart).</summary>
     private static bool IsLate(WorkerStatusService.WorkerRecord rec)
     {
         if (string.IsNullOrEmpty(rec.CheckIn) || string.IsNullOrEmpty(rec.SchedStart))

@@ -3,12 +3,12 @@ using Microsoft.Data.Sqlite;
 namespace JinoSupporter.Web.Services;
 
 /// <summary>
-/// NG Rate 전용 설정 DB 서비스.
-/// 설정 파일: D:\000. MyWorks\000. 일일업무\04. DB\01. NGRATE\ModelBmes\ngrate_settings.db
+/// NG Rate settings DB service.
+/// Settings file: D:\000. MyWorks\000. 일일업무\04. DB\01. NGRATE\ModelBmes\ngrate_settings.db
 /// </summary>
 public sealed class NgRateSettingsService
 {
-    // ── 기본값 ──────────────────────────────────────────────────────────────────
+    // ── Defaults ────────────────────────────────────────────────────────────────
     public static readonly string DefaultDbSaveDirectory =
         @"D:\000. MyWorks\000. 일일업무\04. DB\01. NGRATE";
 
@@ -18,7 +18,7 @@ public sealed class NgRateSettingsService
     public static readonly string DefaultReasonFilePath =
         @"D:\000. MyWorks\000. 일일업무\04. DB\01. NGRATE\reason.txt";
 
-    // ── Settings DB 위치 ─────────────────────────────────────────────────────────
+    // ── Settings DB location ─────────────────────────────────────────────────────
     public static readonly string SettingsDbDirectory =
         @"D:\000. MyWorks\000. 일일업무\04. DB\01. NGRATE\ModelBmes";
 
@@ -31,7 +31,7 @@ public sealed class NgRateSettingsService
     public const string KeyReasonFilePath   = "NgRate:ReasonFilePath";
     public const string KeyLoginId          = "NgRate:LoginId";
     public const string KeyPassword         = "NgRate:Password";
-    // Request Work Time 전용 자격증명
+    // Request Work Time-specific credentials
     public const string KeyRwtLoginId       = "Rwt:LoginId";
     public const string KeyRwtPassword      = "Rwt:Password";
 
@@ -95,7 +95,7 @@ public sealed class NgRateSettingsService
         cmd.ExecuteNonQuery();
     }
 
-    /// <summary>현재 저장된 전체 설정을 반환 (UI 바인딩용)</summary>
+    /// <summary>Return the full saved settings (for UI binding)</summary>
     public NgRateSettingsSnapshot GetSnapshot() => new()
     {
         DbSaveDirectory = DbSaveDirectory,
@@ -421,7 +421,7 @@ public sealed class ReasonRow
     public string Reason      { get; set; } = "";
 }
 
-/// <summary>UI 바인딩용 스냅샷 (mutable)</summary>
+/// <summary>Mutable snapshot used for UI binding.</summary>
 public sealed class NgRateSettingsSnapshot
 {
     public string DbSaveDirectory { get; set; } = NgRateSettingsService.DefaultDbSaveDirectory;

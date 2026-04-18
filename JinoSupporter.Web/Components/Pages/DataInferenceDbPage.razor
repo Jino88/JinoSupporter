@@ -1,0 +1,493 @@
+@page "/data-inference/db"
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+@inject WebRepository Repo
+@inject IJSRuntime JS
+
+<PageTitle>Data Inference — DB Data</PageTitle>
+
+<div class="didb-root">
+
+<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<div class="didb-header">
+    <span class="didb-title">Saved Datasets</span>
+    <span class="didb-count">
+        @FilteredReports.Count dataset(s)@(string.IsNullOrEmpty(_productTypeFilter) ? "" : $" / {_reports.Count} total")
+    </span>
+    <div style="flex:1;"></div>
+    <label class="didb-filter-label">Product Type</label>
+    <select class="form-select form-select-sm didb-filter-select" @bind="_productTypeFilter">
+        <option value="">All</option>
+        @foreach (var pt in _productTypeOptions)
+        {
+            <option value="@pt">@pt</option>
+        }
+    </select>
+    <button class="btn btn-outline-secondary btn-sm" @onclick="Refresh">↻ Refresh</button>
+    <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDeleteAll"
+            disabled="@(_reports.Count == 0)">🗑 Delete All</button>
+</div>
+
+<!-- ── Table ────────────────────────────────────────────────────────────────── -->
+@if (_reports.Count == 0)
+{
+    <div class="didb-empty">
+        No saved datasets yet.<br />
+        Go to Input Data, analyze an image, then save.
+    </div>
+}
+else if (FilteredReports.Count == 0)
+{
+    <div class="didb-empty">
+        No datasets match Product Type <strong>"@_productTypeFilter"</strong>.
+    </div>
+}
+else
+{
+    <div class="didb-table-wrap">
+        <table class="didb-table">
+            <thead>
+                <tr>
+                    <th style="width:28px;"></th>
+                    <th>Dataset Name</th>
+                    <th>Product Type</th>
+                    <th>Date</th>
+                    <th>Images</th>
+                    <th>Measurements</th>
+                    <th>Saved</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in FilteredReports)
+                {
+                    bool expanded = _expanded == r.DatasetName;
+                    <tr class="didb-row @(expanded ? "didb-row-open" : "")"
+                        @onclick="() => ToggleExpand(r.DatasetName)">
+                        <td class="didb-caret">@(expanded ? "▾" : "▸")</td>
+                        <td><strong>@r.DatasetName</strong></td>
+                        <td>@r.ProductType</td>
+                        <td>@r.ReportDate</td>
+                        <td class="n">@r.ImageCount</td>
+                        <td class="n">@r.MeasurementCount</td>
+                        <td class="didb-date">@FormatDate(r.CreatedAt)</td>
+                        <td @onclick:stopPropagation="true">
+                            <button class="btn btn-outline-danger btn-sm py-0 px-1"
+                                    style="font-size:12px;"
+                                    @onclick="() => ConfirmDelete(r.DatasetName)">🗑</button>
+                        </td>
+                    </tr>
+
+                    @if (expanded)
+                    {
+                        <!-- Summary row -->
+                        @if (_expandedSummary is not null)
+                        {
+                            <tr class="didb-detail-row">
+                                <td colspan="8" style="padding:0;">
+                                    <div class="didb-summary">
+                                        <strong>Summary:</strong> @_expandedSummary.Summary
+                                        @if (!string.IsNullOrEmpty(_expandedSummary.KeyFindings))
+                                        {
+                                            <div class="didb-findings">@_expandedSummary.KeyFindings</div>
+                                        }
+                                        @if (_expandedSummary.Tags.Count > 0)
+                                        {
+                                            <div class="didb-tags-row">
+                                                @foreach (var t in _expandedSummary.Tags)
+                                                {
+                                                    <span class="didb-tag didb-tag-keyword">
+                                                        🏷 @t
+                                                        <button class="didb-tag-del" title="Remove tag"
+                                                                @onclick="() => RemoveTag(r.DatasetName, t)"
+                                                                @onclick:stopPropagation="true">✕</button>
+                                                    </span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        <!-- Measurements sub-table -->
+                        @if (_expandedMeasurements.Count > 0)
+                        {
+                            <tr class="didb-detail-row">
+                                <td colspan="8" style="padding:0;">
+                                    <div class="didb-sub-wrap">
+                                        <table class="didb-sub">
+                                            <thead>
+                                                <tr>
+                                                    <th>Variable</th>
+                                                    <th>Group</th>
+                                                    <th>Line</th>
+                                                    <th>CheckType</th>
+                                                    <th>Input</th>
+                                                    <th>NG</th>
+                                                    <th>NG%</th>
+                                                    <th>Defect Type</th>
+                                                    <th>Category</th>
+                                                    <th>Count</th>
+                                                    <th>Intervention</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var m in _expandedMeasurements)
+                                                {
+                                                    <tr>
+                                                        <td>@m.Variable</td>
+                                                        <td>@m.VariableGroup</td>
+                                                        <td>@m.Line</td>
+                                                        <td>@m.CheckType</td>
+                                                        <td class="n">@m.InputQty</td>
+                                                        <td class="n">@m.NgTotal</td>
+                                                        <td class="n">@m.NgRate.ToString("F1")%</td>
+                                                        <td>@m.DefectType</td>
+                                                        <td>@m.DefectCategory</td>
+                                                        <td class="n">@m.DefectCount</td>
+                                                        <td>@m.Intervention</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else if (_expandedMeasurements.Count == 0 && _expanded == r.DatasetName)
+                        {
+                            <tr class="didb-detail-row">
+                                <td colspan="8">
+                                    <div style="padding:8px 16px; font-size:12px; color:#94a3b8; font-style:italic;">
+                                        No normalized measurements — run Analyze on Input Data, then Save.
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+
+                        @* Images row *@
+                        @if (_expandedImages.Count > 0)
+                        {
+                            <tr class="didb-detail-row">
+                                <td colspan="8" style="padding:0;">
+                                    <div class="didb-imgs-wrap">
+                                        <div class="didb-imgs-title">🖼 AI Analysis Images (@_expandedImages.Count)</div>
+                                        <div class="didb-imgs-grid">
+                                            @foreach (var (img, idx) in _expandedImages.Select((x, i) => (x, i)))
+                                            {
+                                                <div class="didb-img-thumb" @onclick="() => OpenViewer(img.DataUrl)">
+                                                    <img src="@img.DataUrl" alt="@img.FileName" />
+                                                    <div class="didb-img-num">@(idx + 1)</div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+
+                        @* Backup files row *@
+                        @if (_expandedFiles.Count > 0)
+                        {
+                            <tr class="didb-detail-row">
+                                <td colspan="8" style="padding:0;">
+                                    <div class="didb-imgs-wrap">
+                                        <div class="didb-imgs-title">📎 Backup Files (@_expandedFiles.Count)</div>
+                                        <div class="didb-files-list">
+                                            @foreach (var f in _expandedFiles)
+                                            {
+                                                <a class="didb-file-chip" href="/data-inference/file/@f.Id" download="@f.FileName" target="_blank">
+                                                    <span class="didb-file-icon">📄</span>
+                                                    <span class="didb-file-name" title="@f.FileName">@f.FileName</span>
+                                                    <span class="didb-file-size">@FormatSize(f.FileSize)</span>
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<!-- ── Delete confirm ───────────────────────────────────────────────────────── -->
+@if (_deleteTarget is not null)
+{
+    <div class="didb-overlay" @onclick="CancelDelete">
+        <div class="didb-confirm" @onclick:stopPropagation="true">
+            <div class="didb-confirm-title">Delete Dataset</div>
+            <p style="font-size:13px;">
+                Dataset <strong>@_deleteTarget</strong> and all its images/measurements will be deleted.<br />
+                This action cannot be undone.
+            </p>
+            <div style="display:flex; gap:8px; justify-content:flex-end;">
+                <button class="btn btn-outline-secondary btn-sm" @onclick="CancelDelete">Cancel</button>
+                <button class="btn btn-danger btn-sm" @onclick="ExecuteDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_viewerDataUrl is not null)
+{
+    <div class="didb-viewer-overlay" @onclick="CloseViewer">
+        <img src="@_viewerDataUrl" class="didb-viewer-img" @onclick:stopPropagation="true" />
+        <button class="didb-viewer-close" @onclick="CloseViewer">✕</button>
+    </div>
+}
+
+@if (_showDeleteAll)
+{
+    <div class="didb-overlay" @onclick="CancelDeleteAll">
+        <div class="didb-confirm" @onclick:stopPropagation="true">
+            <div class="didb-confirm-title" style="color:#dc2626;">⚠ Delete ALL Datasets</div>
+            <p style="font-size:13px;">
+                <strong>All saved DataInference data</strong> (images, measurements, summaries, tags) will be deleted.<br />
+                A total of <strong>@_reports.Count</strong> datasets will be permanently removed.<br />
+                <span style="color:#dc2626; font-weight:600;">This action cannot be undone.</span>
+            </p>
+            <div style="display:flex; gap:8px; justify-content:flex-end;">
+                <button class="btn btn-outline-secondary btn-sm" @onclick="CancelDeleteAll">Cancel</button>
+                <button class="btn btn-danger btn-sm" @onclick="ExecuteDeleteAll">Delete All</button>
+            </div>
+        </div>
+    </div>
+}
+
+</div>
+
+<style>
+    .didb-root {
+        flex: 1; min-height: 0; display: flex; flex-direction: column;
+        overflow: hidden; background: #f8fafc;
+    }
+    .didb-header {
+        display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+        background: #fff; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+    }
+    .didb-title  { font-size: 15px; font-weight: 700; color: #1e293b; }
+    .didb-count  { font-size: 12px; color: #94a3b8; }
+    .didb-filter-label  { font-size: 12px; font-weight: 600; color: #64748b; white-space: nowrap; }
+    .didb-filter-select { width: 160px; }
+    .didb-empty  {
+        padding: 60px; text-align: center; color: #94a3b8; font-size: 14px; line-height: 1.7;
+    }
+    .didb-table-wrap { flex: 1; overflow: auto; }
+    .didb-table      { border-collapse: collapse; width: 100%; font-size: 13px; }
+    .didb-table th, .didb-table td {
+        border-bottom: 1px solid #e2e8f0; padding: 7px 10px; text-align: left;
+    }
+    .didb-table thead th {
+        background: #f1f5f9; font-weight: 600; color: #475569;
+        position: sticky; top: 0; z-index: 1;
+    }
+    .didb-row        { cursor: pointer; transition: background .1s; }
+    .didb-row:hover  { background: #f1f5f9; }
+    .didb-row-open   { background: #f0f9ff; }
+    .didb-caret      { color: #94a3b8; font-size: 11px; width: 28px; text-align: center; }
+    .didb-date       { font-size: 11px; color: #94a3b8; }
+    td.n             { text-align: right; font-variant-numeric: tabular-nums; }
+
+    .didb-detail-row td { padding: 0 !important; background: #f8fafc; border-top: none; }
+    .didb-summary    {
+        padding: 8px 16px 8px 40px; font-size: 12px; color: #334155;
+        background: #f0f9ff; border-bottom: 1px solid #bae6fd;
+    }
+    .didb-findings   { font-size: 11px; color: #475569; white-space: pre-wrap; margin-top: 4px; }
+    .didb-tags-row   { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+    .didb-tag        {
+        display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px;
+        font-size: 10px; font-weight: 600; line-height: 1.4;
+    }
+    .didb-tag-keyword { background: #e0e7ff; color: #4338ca; }
+    .didb-tag-del     {
+        margin-left: 4px; border: none; background: transparent; padding: 0;
+        color: inherit; opacity: .5; cursor: pointer; font-size: 9px; line-height: 1;
+        font-weight: 700;
+    }
+    .didb-tag-del:hover { opacity: 1; color: #dc2626; }
+
+    /* Images */
+    .didb-imgs-wrap  {
+        padding: 10px 16px 12px 40px; background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+    }
+    .didb-imgs-title { font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+    .didb-imgs-grid  { display: flex; flex-wrap: wrap; gap: 8px; }
+    .didb-img-thumb  {
+        position: relative; width: 120px; height: 120px; border-radius: 6px;
+        overflow: hidden; border: 1px solid #e2e8f0; background: #fff;
+        cursor: pointer; transition: transform .12s, box-shadow .12s;
+    }
+    .didb-img-thumb:hover { transform: scale(1.03); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+    .didb-img-thumb img   { width: 100%; height: 100%; object-fit: cover; }
+    .didb-img-num    {
+        position: absolute; bottom: 3px; left: 5px; font-size: 10px;
+        color: rgba(255,255,255,.95); text-shadow: 0 1px 3px rgba(0,0,0,.7); font-weight: 700;
+    }
+
+    /* Viewer */
+    .didb-viewer-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 9500;
+        display: flex; align-items: center; justify-content: center; cursor: zoom-out;
+    }
+    .didb-viewer-img     { max-width: 94vw; max-height: 92vh; object-fit: contain; cursor: auto; }
+    .didb-viewer-close   {
+        position: absolute; top: 16px; right: 20px; width: 36px; height: 36px;
+        border-radius: 50%; border: none; background: rgba(255,255,255,.2);
+        color: #fff; font-size: 18px; cursor: pointer;
+    }
+    .didb-viewer-close:hover { background: rgba(255,255,255,.35); }
+
+    /* Backup files */
+    .didb-files-list  { display: flex; flex-wrap: wrap; gap: 6px; }
+    .didb-file-chip   {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 14px;
+        padding: 4px 10px; font-size: 12px; color: #334155; text-decoration: none;
+        transition: all .12s;
+    }
+    .didb-file-chip:hover { background: #e0e7ff; border-color: #4338ca; color: #1e293b; }
+    .didb-file-icon   { font-size: 13px; }
+    .didb-file-name   { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .didb-file-size   { color: #94a3b8; font-size: 10px; }
+    .didb-sub-wrap   { max-height: 280px; overflow: auto; padding-left: 40px; }
+    .didb-sub        { border-collapse: collapse; font-size: 11px; width: 100%; }
+    .didb-sub th, .didb-sub td {
+        border: 1px solid #e2e8f0; padding: 3px 7px; white-space: nowrap;
+    }
+    .didb-sub th     { background: #f8fafc; font-weight: 600; color: #64748b; }
+
+    /* Delete confirm */
+    .didb-overlay    {
+        position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 9000;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .didb-confirm    {
+        background: #fff; border-radius: 10px; padding: 20px 24px;
+        box-shadow: 0 10px 40px rgba(0,0,0,.2); min-width: 340px; max-width: 480px;
+    }
+    .didb-confirm-title { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 10px; }
+</style>
+
+@code {
+    private sealed record ImgThumb(string MediaType, string DataUrl, string FileName);
+
+    private List<RawReportInfo>          _reports              = [];
+    private string                       _productTypeFilter    = "";
+    private string?                      _expanded             = null;
+
+    private List<string> _productTypeOptions => _reports
+        .Select(r => r.ProductType)
+        .Where(p => !string.IsNullOrWhiteSpace(p))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+    private List<RawReportInfo> FilteredReports => string.IsNullOrEmpty(_productTypeFilter)
+        ? _reports
+        : _reports.Where(r => string.Equals(r.ProductType, _productTypeFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private List<NormalizedMeasurement>  _expandedMeasurements = [];
+    private DatasetSummaryRecord?        _expandedSummary      = null;
+    private List<ImgThumb>               _expandedImages       = [];
+    private List<RawFileInfo>            _expandedFiles        = [];
+    private string?                      _deleteTarget         = null;
+    private bool                         _showDeleteAll        = false;
+    private string?                      _viewerDataUrl        = null;
+
+    protected override void OnInitialized() => _reports = Repo.GetAllRawReports();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await JS.InvokeVoidAsync("diFullPage.enter");
+    }
+
+    private void Refresh() => _reports = Repo.GetAllRawReports();
+
+    private void ToggleExpand(string name)
+    {
+        if (_expanded == name)
+        {
+            _expanded = null; _expandedMeasurements = []; _expandedSummary = null;
+            _expandedImages = []; _expandedFiles = [];
+        }
+        else
+        {
+            _expanded             = name;
+            _expandedMeasurements = Repo.GetNormalizedMeasurements(name);
+            _expandedSummary      = Repo.GetDatasetSummaryRecord(name);
+            _expandedImages       = Repo.GetRawReportImages(name).Select((img, i) =>
+            {
+                string b64     = Convert.ToBase64String(img.Data);
+                string dataUrl = $"data:{img.MediaType};base64,{b64}";
+                string fname   = img.FileName.Length > 0 ? img.FileName : $"img-{i + 1}";
+                return new ImgThumb(img.MediaType, dataUrl, fname);
+            }).ToList();
+            _expandedFiles        = Repo.GetRawReportFileInfos(name);
+        }
+    }
+
+    private void ConfirmDelete(string name) => _deleteTarget = name;
+    private void CancelDelete()             => _deleteTarget = null;
+
+    private void ExecuteDelete()
+    {
+        if (_deleteTarget is null) return;
+        if (_expanded == _deleteTarget)
+        {
+            _expanded = null; _expandedMeasurements = []; _expandedSummary = null; _expandedImages = []; _expandedFiles = [];
+        }
+        Repo.DeleteRawReport(_deleteTarget);
+        _deleteTarget = null;
+        _reports = Repo.GetAllRawReports();
+    }
+
+    private void OpenViewer(string dataUrl) => _viewerDataUrl = dataUrl;
+    private void CloseViewer()               => _viewerDataUrl = null;
+
+    private void RemoveTag(string datasetName, string tag)
+    {
+        if (_expandedSummary is null || _expanded != datasetName) return;
+        if (!_expandedSummary.Tags.Remove(tag)) return;
+
+        string tagsJson = _expandedSummary.Tags.Count > 0
+            ? System.Text.Json.JsonSerializer.Serialize(_expandedSummary.Tags)
+            : "";
+        Repo.UpdateDatasetTags(datasetName, tagsJson);
+    }
+
+    private void ConfirmDeleteAll() => _showDeleteAll = true;
+    private void CancelDeleteAll()  => _showDeleteAll = false;
+
+    private void ExecuteDeleteAll()
+    {
+        Repo.DeleteAllDataInference();
+        _expanded = null; _expandedMeasurements = []; _expandedSummary = null; _expandedImages = []; _expandedFiles = [];
+        _showDeleteAll = false;
+        _reports = Repo.GetAllRawReports();
+    }
+
+    private static string FormatSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / 1024.0 / 1024.0:F1} MB";
+    }
+
+    private static string FormatDate(string iso)
+    {
+        if (DateTime.TryParse(iso, null, System.Globalization.DateTimeStyles.RoundtripKind, out DateTime dt))
+            return dt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+        return iso;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { await JS.InvokeVoidAsync("diFullPage.leave"); } catch { }
+    }
+}

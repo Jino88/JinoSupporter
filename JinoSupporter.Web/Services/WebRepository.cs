@@ -188,6 +188,94 @@ public sealed class WebRepository
                 Key   TEXT PRIMARY KEY NOT NULL,
                 Value TEXT NOT NULL DEFAULT ''
             );
+
+            CREATE TABLE IF NOT EXISTS DatasetImages (
+                Id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                DatasetName TEXT    NOT NULL,
+                FileName    TEXT    NOT NULL DEFAULT '',
+                ImageData   BLOB    NOT NULL,
+                CreatedAt   TEXT    NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_di_dataset ON DatasetImages(DatasetName);
+
+            CREATE TABLE IF NOT EXISTS RawReports (
+                Id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                DatasetName TEXT    NOT NULL UNIQUE,
+                ProductType TEXT    NOT NULL DEFAULT '',
+                ReportDate  TEXT    NOT NULL DEFAULT '',
+                CreatedAt   TEXT    NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_rr_name ON RawReports(DatasetName);
+
+            CREATE TABLE IF NOT EXISTS RawReportImages (
+                Id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                DatasetName TEXT    NOT NULL,
+                FileName    TEXT    NOT NULL DEFAULT '',
+                SortOrder   INTEGER NOT NULL DEFAULT 0,
+                MediaType   TEXT    NOT NULL DEFAULT 'image/png',
+                ImageData   BLOB    NOT NULL,
+                CreatedAt   TEXT    NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_rri_dataset ON RawReportImages(DatasetName);
+
+            CREATE TABLE IF NOT EXISTS RawReportFiles (
+                Id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                DatasetName TEXT    NOT NULL,
+                FileName    TEXT    NOT NULL DEFAULT '',
+                MediaType   TEXT    NOT NULL DEFAULT 'application/octet-stream',
+                FileSize    INTEGER NOT NULL DEFAULT 0,
+                FileData    BLOB    NOT NULL,
+                CreatedAt   TEXT    NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_rrf_dataset ON RawReportFiles(DatasetName);
+
+            CREATE TABLE IF NOT EXISTS NormalizedMeasurements (
+                Id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                DatasetName    TEXT    NOT NULL,
+                ProductType    TEXT    NOT NULL DEFAULT '',
+                TestDate       TEXT    NOT NULL DEFAULT '',
+                Line           TEXT    NOT NULL DEFAULT '',
+                CheckType      TEXT    NOT NULL DEFAULT '',
+                Variable       TEXT    NOT NULL DEFAULT '',
+                VariableDetail TEXT    NOT NULL DEFAULT '',
+                VariableGroup  TEXT    NOT NULL DEFAULT '',
+                Intervention   TEXT    NOT NULL DEFAULT '',
+                InputQty       INTEGER NOT NULL DEFAULT 0,
+                OkQty          INTEGER NOT NULL DEFAULT 0,
+                NgTotal        INTEGER NOT NULL DEFAULT 0,
+                NgRate         REAL    NOT NULL DEFAULT 0,
+                DefectCategory TEXT    NOT NULL DEFAULT '',
+                DefectType     TEXT    NOT NULL DEFAULT '',
+                DefectCount    INTEGER NOT NULL DEFAULT 0,
+                CreatedAt      TEXT    NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_nm_dataset ON NormalizedMeasurements(DatasetName);
+
+            CREATE TABLE IF NOT EXISTS DatasetSummary (
+                Id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                DatasetName TEXT    NOT NULL UNIQUE,
+                ProductType TEXT    NOT NULL DEFAULT '',
+                Summary     TEXT    NOT NULL DEFAULT '',
+                KeyFindings TEXT    NOT NULL DEFAULT '',
+                CreatedAt   TEXT    NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_dsum_name ON DatasetSummary(DatasetName);
+
+            CREATE TABLE IF NOT EXISTS AskAiHistory (
+                Id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+                Question           TEXT    NOT NULL,
+                ProductTypeFilter  TEXT    NOT NULL DEFAULT '',
+                Overall            TEXT    NOT NULL DEFAULT '',
+                PerDatasetJson     TEXT    NOT NULL DEFAULT '[]',
+                CreatedAt          TEXT    NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_askai_created ON AskAiHistory(CreatedAt DESC);
+
+            CREATE TABLE IF NOT EXISTS MenuPermissions (
+                Role   TEXT NOT NULL,
+                MenuId TEXT NOT NULL,
+                PRIMARY KEY (Role, MenuId)
+            );
             """;
         cmd.ExecuteNonQuery();
         MigrateSchema(conn);
@@ -239,6 +327,62 @@ public sealed class WebRepository
             alter.CommandText = "ALTER TABLE Users ADD COLUMN DisplayName TEXT NOT NULL DEFAULT '';";
             alter.ExecuteNonQuery();
         }
+
+        bool hasEditorHtml  = false;
+        bool hasProductType = false;
+        using SqliteCommand checkEh = conn.CreateCommand();
+        checkEh.CommandText = "PRAGMA table_info(DatasetMemo);";
+        using (SqliteDataReader r = checkEh.ExecuteReader())
+            while (r.Read())
+            {
+                string col = r.GetString(1);
+                if (col.Equals("EditorHtml",  StringComparison.OrdinalIgnoreCase)) hasEditorHtml  = true;
+                if (col.Equals("ProductType", StringComparison.OrdinalIgnoreCase)) hasProductType = true;
+            }
+
+        if (!hasEditorHtml)
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE DatasetMemo ADD COLUMN EditorHtml TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+
+        if (!hasProductType)
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE DatasetMemo ADD COLUMN ProductType TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+
+        bool hasTags = false;
+        using SqliteCommand checkTags = conn.CreateCommand();
+        checkTags.CommandText = "PRAGMA table_info(DatasetSummary);";
+        using (SqliteDataReader r = checkTags.ExecuteReader())
+            while (r.Read())
+                if (r.GetString(1).Equals("Tags", StringComparison.OrdinalIgnoreCase))
+                    hasTags = true;
+
+        if (!hasTags)
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE DatasetSummary ADD COLUMN Tags TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+
+        using SqliteCommand ensureFiles = conn.CreateCommand();
+        ensureFiles.CommandText = """
+            CREATE TABLE IF NOT EXISTS RawReportFiles (
+                Id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                DatasetName TEXT    NOT NULL,
+                FileName    TEXT    NOT NULL DEFAULT '',
+                MediaType   TEXT    NOT NULL DEFAULT 'application/octet-stream',
+                FileSize    INTEGER NOT NULL DEFAULT 0,
+                FileData    BLOB    NOT NULL,
+                CreatedAt   TEXT    NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_rrf_dataset ON RawReportFiles(DatasetName);
+            """;
+        ensureFiles.ExecuteNonQuery();
     }
 
     // ── App Settings ──────────────────────────────────────────────────────────
@@ -490,6 +634,600 @@ public sealed class WebRepository
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT Purpose FROM DatasetMemo WHERE DatasetName=@d;";
+        cmd.Parameters.AddWithValue("@d", datasetName);
+        using SqliteDataReader r = cmd.ExecuteReader();
+        if (!r.Read()) return string.Empty;
+        return r.IsDBNull(0) ? string.Empty : r.GetString(0);
+    }
+
+    public void SaveEditorHtml(string datasetName, string html)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO DatasetMemo (DatasetName, Memo, Purpose, EditorHtml, UpdatedAt)
+            VALUES (@d, '', '', @h, @at)
+            ON CONFLICT(DatasetName) DO UPDATE SET EditorHtml=@h, UpdatedAt=@at;
+            """;
+        cmd.Parameters.AddWithValue("@d",  datasetName);
+        cmd.Parameters.AddWithValue("@h",  html);
+        cmd.Parameters.AddWithValue("@at", DateTime.UtcNow.ToString("O"));
+        cmd.ExecuteNonQuery();
+    }
+
+    public string GetEditorHtml(string datasetName)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT EditorHtml FROM DatasetMemo WHERE DatasetName=@d;";
+        cmd.Parameters.AddWithValue("@d", datasetName);
+        using SqliteDataReader r = cmd.ExecuteReader();
+        if (!r.Read()) return string.Empty;
+        return r.IsDBNull(0) ? string.Empty : r.GetString(0);
+    }
+
+    // ── RawReports ────────────────────────────────────────────────────────────
+
+    public void SaveRawReport(string name, string productType, string date,
+                               List<(string MediaType, byte[] Data, string FileName)> images)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteTransaction tx = conn.BeginTransaction();
+
+        using var meta = conn.CreateCommand();
+        meta.Transaction = tx;
+        meta.CommandText = """
+            INSERT INTO RawReports (DatasetName, ProductType, ReportDate, CreatedAt)
+            VALUES (@n, @p, @d, @at)
+            ON CONFLICT(DatasetName) DO UPDATE SET ProductType=@p, ReportDate=@d;
+            """;
+        meta.Parameters.AddWithValue("@n",  name);
+        meta.Parameters.AddWithValue("@p",  productType);
+        meta.Parameters.AddWithValue("@d",  date);
+        meta.Parameters.AddWithValue("@at", DateTime.UtcNow.ToString("O"));
+        meta.ExecuteNonQuery();
+
+        using var del = conn.CreateCommand();
+        del.Transaction = tx;
+        del.CommandText = "DELETE FROM RawReportImages WHERE DatasetName=@n;";
+        del.Parameters.AddWithValue("@n", name);
+        del.ExecuteNonQuery();
+
+        for (int i = 0; i < images.Count; i++)
+        {
+            using var ins = conn.CreateCommand();
+            ins.Transaction = tx;
+            ins.CommandText = """
+                INSERT INTO RawReportImages (DatasetName, FileName, SortOrder, MediaType, ImageData, CreatedAt)
+                VALUES (@n, @f, @s, @m, @d, @at);
+                """;
+            ins.Parameters.AddWithValue("@n",  name);
+            ins.Parameters.AddWithValue("@f",  images[i].FileName);
+            ins.Parameters.AddWithValue("@s",  i);
+            ins.Parameters.AddWithValue("@m",  images[i].MediaType);
+            ins.Parameters.AddWithValue("@d",  images[i].Data);
+            ins.Parameters.AddWithValue("@at", DateTime.UtcNow.ToString("O"));
+            ins.ExecuteNonQuery();
+        }
+
+        tx.Commit();
+    }
+
+    public List<RawReportInfo> GetAllRawReports()
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT r.Id, r.DatasetName, r.ProductType, r.ReportDate, r.CreatedAt,
+                   (SELECT COUNT(*) FROM RawReportImages WHERE DatasetName=r.DatasetName) AS ImgCnt,
+                   (SELECT COUNT(*) FROM NormalizedMeasurements WHERE DatasetName=r.DatasetName) AS MeasCnt
+            FROM RawReports r
+            ORDER BY r.CreatedAt DESC;
+            """;
+        var list = new List<RawReportInfo>();
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+            list.Add(new RawReportInfo(r.GetInt64(0), r.GetString(1), r.GetString(2),
+                                       r.GetString(3), r.GetInt32(5), r.GetInt32(6),
+                                       r.GetString(4)));
+        return list;
+    }
+
+    public List<(string MediaType, byte[] Data, string FileName)> GetRawReportImages(string name)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT MediaType, ImageData, FileName FROM RawReportImages WHERE DatasetName=@n ORDER BY SortOrder;";
+        cmd.Parameters.AddWithValue("@n", name);
+        var list = new List<(string, byte[], string)>();
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+            list.Add((r.GetString(0), (byte[])r["ImageData"], r.GetString(2)));
+        return list;
+    }
+
+    public void SaveNormalizedMeasurements(string name, List<NormalizedMeasurement> measurements)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteTransaction tx = conn.BeginTransaction();
+
+        using var del = conn.CreateCommand();
+        del.Transaction = tx;
+        del.CommandText = "DELETE FROM NormalizedMeasurements WHERE DatasetName=@n;";
+        del.Parameters.AddWithValue("@n", name);
+        del.ExecuteNonQuery();
+
+        foreach (NormalizedMeasurement m in measurements)
+        {
+            using var ins = conn.CreateCommand();
+            ins.Transaction = tx;
+            ins.CommandText = """
+                INSERT INTO NormalizedMeasurements (
+                    DatasetName, ProductType, TestDate, Line, CheckType,
+                    Variable, VariableDetail, VariableGroup, Intervention,
+                    InputQty, OkQty, NgTotal, NgRate,
+                    DefectCategory, DefectType, DefectCount, CreatedAt)
+                VALUES (@dn,@pt,@td,@li,@ct,@va,@vd,@vg,@iv,@iq,@oq,@nt,@nr,@dc,@dt,@dct,@at);
+                """;
+            ins.Parameters.AddWithValue("@dn",  name);
+            ins.Parameters.AddWithValue("@pt",  m.ProductType);
+            ins.Parameters.AddWithValue("@td",  m.TestDate);
+            ins.Parameters.AddWithValue("@li",  m.Line);
+            ins.Parameters.AddWithValue("@ct",  m.CheckType);
+            ins.Parameters.AddWithValue("@va",  m.Variable);
+            ins.Parameters.AddWithValue("@vd",  m.VariableDetail);
+            ins.Parameters.AddWithValue("@vg",  m.VariableGroup);
+            ins.Parameters.AddWithValue("@iv",  m.Intervention);
+            ins.Parameters.AddWithValue("@iq",  m.InputQty);
+            ins.Parameters.AddWithValue("@oq",  m.OkQty);
+            ins.Parameters.AddWithValue("@nt",  m.NgTotal);
+            ins.Parameters.AddWithValue("@nr",  m.NgRate);
+            ins.Parameters.AddWithValue("@dc",  m.DefectCategory);
+            ins.Parameters.AddWithValue("@dt",  m.DefectType);
+            ins.Parameters.AddWithValue("@dct", m.DefectCount);
+            ins.Parameters.AddWithValue("@at",  DateTime.UtcNow.ToString("O"));
+            ins.ExecuteNonQuery();
+        }
+
+        tx.Commit();
+    }
+
+    public List<NormalizedMeasurement> GetNormalizedMeasurements(string name)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT ProductType, TestDate, Line, CheckType, Variable, VariableDetail,
+                   VariableGroup, Intervention, InputQty, OkQty, NgTotal, NgRate,
+                   DefectCategory, DefectType, DefectCount
+            FROM NormalizedMeasurements WHERE DatasetName=@n ORDER BY Id;
+            """;
+        cmd.Parameters.AddWithValue("@n", name);
+        var list = new List<NormalizedMeasurement>();
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+            list.Add(new NormalizedMeasurement
+            {
+                ProductType    = r.GetString(0),
+                TestDate       = r.GetString(1),
+                Line           = r.GetString(2),
+                CheckType      = r.GetString(3),
+                Variable       = r.GetString(4),
+                VariableDetail = r.GetString(5),
+                VariableGroup  = r.GetString(6),
+                Intervention   = r.GetString(7),
+                InputQty       = r.GetInt32(8),
+                OkQty          = r.GetInt32(9),
+                NgTotal        = r.GetInt32(10),
+                NgRate         = r.GetDouble(11),
+                DefectCategory = r.GetString(12),
+                DefectType     = r.GetString(13),
+                DefectCount    = r.GetInt32(14),
+            });
+        return list;
+    }
+
+    public void SaveDatasetSummaryRecord(string name, string productType, string summary, string keyFindings, string tagsJson = "")
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO DatasetSummary (DatasetName, ProductType, Summary, KeyFindings, Tags, CreatedAt)
+            VALUES (@n, @p, @s, @k, @t, @at)
+            ON CONFLICT(DatasetName) DO UPDATE SET ProductType=@p, Summary=@s, KeyFindings=@k, Tags=@t, CreatedAt=@at;
+            """;
+        cmd.Parameters.AddWithValue("@n",  name);
+        cmd.Parameters.AddWithValue("@p",  productType);
+        cmd.Parameters.AddWithValue("@s",  summary);
+        cmd.Parameters.AddWithValue("@k",  keyFindings);
+        cmd.Parameters.AddWithValue("@t",  tagsJson ?? "");
+        cmd.Parameters.AddWithValue("@at", DateTime.UtcNow.ToString("O"));
+        cmd.ExecuteNonQuery();
+    }
+
+    // ── Raw attached files (any type — Excel, PDF, etc.) ─────────────────────
+
+    public void AppendRawReportFiles(string name, List<(string MediaType, byte[] Data, string FileName)> files)
+    {
+        if (files.Count == 0) return;
+
+        using SqliteConnection conn = OpenConnection();
+        using SqliteTransaction tx = conn.BeginTransaction();
+
+        foreach (var (mediaType, data, fileName) in files)
+        {
+            using SqliteCommand ins = conn.CreateCommand();
+            ins.Transaction = tx;
+            ins.CommandText = """
+                INSERT INTO RawReportFiles (DatasetName, FileName, MediaType, FileSize, FileData, CreatedAt)
+                VALUES (@n, @fn, @mt, @sz, @d, @at);
+                """;
+            ins.Parameters.AddWithValue("@n",  name);
+            ins.Parameters.AddWithValue("@fn", fileName ?? "");
+            ins.Parameters.AddWithValue("@mt", string.IsNullOrEmpty(mediaType) ? "application/octet-stream" : mediaType);
+            ins.Parameters.AddWithValue("@sz", (long)data.Length);
+            ins.Parameters.AddWithValue("@d",  data);
+            ins.Parameters.AddWithValue("@at", DateTime.UtcNow.ToString("O"));
+            ins.ExecuteNonQuery();
+        }
+        tx.Commit();
+    }
+
+    public List<RawFileInfo> GetRawReportFileInfos(string name)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT Id, FileName, MediaType, FileSize, CreatedAt
+            FROM RawReportFiles WHERE DatasetName=@n ORDER BY Id;
+            """;
+        cmd.Parameters.AddWithValue("@n", name);
+        List<RawFileInfo> list = [];
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            list.Add(new RawFileInfo(
+                r.GetInt64(0),
+                r.GetString(1),
+                r.GetString(2),
+                r.GetInt64(3),
+                r.GetString(4)));
+        }
+        return list;
+    }
+
+    public (string FileName, string MediaType, byte[] Data)? GetRawReportFile(long fileId)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT FileName, MediaType, FileData FROM RawReportFiles WHERE Id=@id;";
+        cmd.Parameters.AddWithValue("@id", fileId);
+        using SqliteDataReader r = cmd.ExecuteReader();
+        if (!r.Read()) return null;
+
+        string fn = r.GetString(0);
+        string mt = r.GetString(1);
+        using var ms = new MemoryStream();
+        using var stream = r.GetStream(2);
+        stream.CopyTo(ms);
+        return (fn, mt, ms.ToArray());
+    }
+
+    public void DeleteRawReportFile(long fileId)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM RawReportFiles WHERE Id=@id;";
+        cmd.Parameters.AddWithValue("@id", fileId);
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>Distinct tags across all DatasetSummary.Tags JSON blobs.</summary>
+    public List<string> GetAllDataInferenceTags()
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Tags FROM DatasetSummary WHERE Tags IS NOT NULL AND Tags != '';";
+        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            string json = r.GetString(0);
+            if (string.IsNullOrWhiteSpace(json)) continue;
+            try
+            {
+                var tags = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json) ?? [];
+                foreach (string t in tags)
+                    if (!string.IsNullOrWhiteSpace(t)) set.Add(t.Trim());
+            }
+            catch { }
+        }
+        return [.. set.Order(StringComparer.OrdinalIgnoreCase)];
+    }
+
+    /// <summary>DataInference datasets whose Tags include ALL of the given tags.</summary>
+    public List<string> GetDataInferenceDatasetsByTags(IReadOnlyList<string> filterTags)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT r.DatasetName, s.Tags
+            FROM RawReports r
+            LEFT JOIN DatasetSummary s ON s.DatasetName = r.DatasetName
+            ORDER BY r.CreatedAt DESC;
+            """;
+
+        var list = new List<string>();
+        using SqliteDataReader rd = cmd.ExecuteReader();
+        while (rd.Read())
+        {
+            string name = rd.GetString(0);
+            string json = rd.IsDBNull(1) ? "" : rd.GetString(1);
+
+            if (filterTags.Count == 0) { list.Add(name); continue; }
+            if (string.IsNullOrWhiteSpace(json)) continue;
+
+            List<string> tags;
+            try { tags = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json) ?? []; }
+            catch { continue; }
+
+            bool hasAll = filterTags.All(f =>
+                tags.Any(t => string.Equals(t, f, StringComparison.OrdinalIgnoreCase)));
+            if (hasAll) list.Add(name);
+        }
+        return list;
+    }
+
+    public void UpdateDatasetTags(string name, string tagsJson)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "UPDATE DatasetSummary SET Tags=@t WHERE DatasetName=@n;";
+        cmd.Parameters.AddWithValue("@n", name);
+        cmd.Parameters.AddWithValue("@t", tagsJson ?? "");
+        cmd.ExecuteNonQuery();
+    }
+
+    public DatasetSummaryRecord? GetDatasetSummaryRecord(string name)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Summary, KeyFindings, Tags FROM DatasetSummary WHERE DatasetName=@n;";
+        cmd.Parameters.AddWithValue("@n", name);
+        using SqliteDataReader r = cmd.ExecuteReader();
+        if (!r.Read()) return null;
+
+        string summary     = r.GetString(0);
+        string keyFindings = r.GetString(1);
+        string tagsJson    = r.IsDBNull(2) ? "" : r.GetString(2);
+
+        List<string> tags = [];
+        if (!string.IsNullOrWhiteSpace(tagsJson))
+        {
+            try
+            {
+                tags = System.Text.Json.JsonSerializer.Deserialize<List<string>>(
+                    tagsJson, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+            }
+            catch { }
+        }
+
+        return new DatasetSummaryRecord { Summary = summary, KeyFindings = keyFindings, Tags = tags };
+    }
+
+    // ── AskAi history ─────────────────────────────────────────────────────────
+
+    public long SaveAskAiHistory(string question, string productTypeFilter, string overall, string perDatasetJson)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO AskAiHistory (Question, ProductTypeFilter, Overall, PerDatasetJson, CreatedAt)
+            VALUES (@q, @pt, @o, @p, @c);
+            SELECT last_insert_rowid();
+            """;
+        cmd.Parameters.AddWithValue("@q",  question ?? "");
+        cmd.Parameters.AddWithValue("@pt", productTypeFilter ?? "");
+        cmd.Parameters.AddWithValue("@o",  overall ?? "");
+        cmd.Parameters.AddWithValue("@p",  perDatasetJson ?? "[]");
+        cmd.Parameters.AddWithValue("@c",  DateTime.UtcNow.ToString("o"));
+        return (long)(cmd.ExecuteScalar() ?? 0L);
+    }
+
+    public List<AskAiHistoryRecord> GetAskAiHistory(int limit = 100)
+    {
+        var list = new List<AskAiHistoryRecord>();
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT Id, Question, ProductTypeFilter, Overall, PerDatasetJson, CreatedAt
+            FROM AskAiHistory
+            ORDER BY Id DESC
+            LIMIT @lim;
+            """;
+        cmd.Parameters.AddWithValue("@lim", limit);
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            list.Add(new AskAiHistoryRecord(
+                r.GetInt64(0), r.GetString(1), r.GetString(2),
+                r.GetString(3), r.GetString(4), r.GetString(5)));
+        }
+        return list;
+    }
+
+    public AskAiHistoryRecord? GetAskAiHistoryById(long id)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT Id, Question, ProductTypeFilter, Overall, PerDatasetJson, CreatedAt
+            FROM AskAiHistory WHERE Id=@i;
+            """;
+        cmd.Parameters.AddWithValue("@i", id);
+        using SqliteDataReader r = cmd.ExecuteReader();
+        if (!r.Read()) return null;
+        return new AskAiHistoryRecord(
+            r.GetInt64(0), r.GetString(1), r.GetString(2),
+            r.GetString(3), r.GetString(4), r.GetString(5));
+    }
+
+    public void DeleteAskAiHistory(long id)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM AskAiHistory WHERE Id=@i;";
+        cmd.Parameters.AddWithValue("@i", id);
+        cmd.ExecuteNonQuery();
+    }
+
+    public void DeleteAllAskAiHistory()
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM AskAiHistory;";
+        cmd.ExecuteNonQuery();
+    }
+
+    public void DeleteRawReport(string name)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteTransaction tx = conn.BeginTransaction();
+        foreach (string table in new[] { "RawReportImages", "RawReportFiles", "NormalizedMeasurements", "DatasetSummary", "RawReports" })
+        {
+            using var del = conn.CreateCommand();
+            del.Transaction = tx;
+            del.CommandText = $"DELETE FROM {table} WHERE DatasetName=@n;";
+            del.Parameters.AddWithValue("@n", name);
+            del.ExecuteNonQuery();
+        }
+        tx.Commit();
+    }
+
+    public void DeleteAllDataInference()
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteTransaction tx = conn.BeginTransaction();
+        foreach (string table in new[] { "RawReportImages", "RawReportFiles", "NormalizedMeasurements", "DatasetSummary", "RawReports" })
+        {
+            using var del = conn.CreateCommand();
+            del.Transaction = tx;
+            del.CommandText = $"DELETE FROM {table};";
+            del.ExecuteNonQuery();
+        }
+        tx.Commit();
+    }
+
+    public List<string> GetAllProductTypes()
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT DISTINCT ProductType FROM RawReports WHERE ProductType != '' ORDER BY ProductType;";
+        var list = new List<string>();
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read()) list.Add(r.GetString(0));
+        return list;
+    }
+
+    public List<string> GetRawReportDatasets(string? productType = null)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        if (string.IsNullOrEmpty(productType))
+        {
+            cmd.CommandText = "SELECT DatasetName FROM RawReports ORDER BY CreatedAt DESC;";
+        }
+        else
+        {
+            cmd.CommandText = "SELECT DatasetName FROM RawReports WHERE ProductType=@p ORDER BY CreatedAt DESC;";
+            cmd.Parameters.AddWithValue("@p", productType);
+        }
+        var list = new List<string>();
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read()) list.Add(r.GetString(0));
+        return list;
+    }
+
+    public List<ImprovementRow> GetImprovementComparisons(string? productType = null, string? datasetName = null)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+
+        var where = new List<string> { "VariableGroup IN ('normal','test')" };
+        if (!string.IsNullOrEmpty(productType)) where.Add("ProductType=@pt");
+        if (!string.IsNullOrEmpty(datasetName)) where.Add("DatasetName=@dn");
+
+        cmd.CommandText = $"""
+            SELECT DatasetName,
+                   MAX(ProductType)                                    AS ProductType,
+                   MAX(TestDate)                                       AS TestDate,
+                   Line,
+                   MAX(CheckType)                                      AS CheckType,
+                   VariableDetail,
+                   DefectCategory,
+                   DefectType,
+                   MAX(CASE WHEN VariableGroup='normal' THEN NgRate   END) AS NormalNgRate,
+                   MAX(CASE WHEN VariableGroup='test'   THEN NgRate   END) AS TestNgRate,
+                   MAX(CASE WHEN VariableGroup='normal' THEN InputQty END) AS NormalInputQty,
+                   MAX(CASE WHEN VariableGroup='test'   THEN InputQty END) AS TestInputQty,
+                   MAX(CASE WHEN VariableGroup='test'   THEN Intervention END) AS Intervention
+            FROM NormalizedMeasurements
+            WHERE {string.Join(" AND ", where)}
+            GROUP BY DatasetName, Line, VariableDetail, DefectCategory, DefectType
+            ORDER BY DatasetName, Line, VariableDetail, DefectCategory, DefectType;
+            """;
+
+        if (!string.IsNullOrEmpty(productType)) cmd.Parameters.AddWithValue("@pt", productType);
+        if (!string.IsNullOrEmpty(datasetName)) cmd.Parameters.AddWithValue("@dn", datasetName);
+
+        var list = new List<ImprovementRow>();
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            double? normalRate = r.IsDBNull(8)  ? null : r.GetDouble(8);
+            double? testRate   = r.IsDBNull(9)  ? null : r.GetDouble(9);
+            double? impPct     = (normalRate.HasValue && testRate.HasValue && normalRate.Value > 0)
+                                  ? (normalRate.Value - testRate.Value) / normalRate.Value * 100.0
+                                  : null;
+            list.Add(new ImprovementRow(
+                DatasetName    : r.GetString(0),
+                ProductType    : r.IsDBNull(1)  ? "" : r.GetString(1),
+                TestDate       : r.IsDBNull(2)  ? "" : r.GetString(2),
+                Line           : r.GetString(3),
+                CheckType      : r.IsDBNull(4)  ? "" : r.GetString(4),
+                VariableDetail : r.GetString(5),
+                DefectCategory : r.GetString(6),
+                DefectType     : r.GetString(7),
+                NormalNgRate   : normalRate,
+                TestNgRate     : testRate,
+                ImprovementPct : impPct,
+                NormalInputQty : r.IsDBNull(10) ? 0 : r.GetInt32(10),
+                TestInputQty   : r.IsDBNull(11) ? 0 : r.GetInt32(11),
+                Intervention   : r.IsDBNull(12) ? "" : r.GetString(12)));
+        }
+        return list;
+    }
+
+    public void SaveProductType(string datasetName, string productType)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO DatasetMemo (DatasetName, Memo, Purpose, ProductType, UpdatedAt)
+            VALUES (@d, '', '', @p, @at)
+            ON CONFLICT(DatasetName) DO UPDATE SET ProductType=@p, UpdatedAt=@at;
+            """;
+        cmd.Parameters.AddWithValue("@d",  datasetName);
+        cmd.Parameters.AddWithValue("@p",  productType);
+        cmd.Parameters.AddWithValue("@at", DateTime.UtcNow.ToString("O"));
+        cmd.ExecuteNonQuery();
+    }
+
+    public string GetProductType(string datasetName)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT ProductType FROM DatasetMemo WHERE DatasetName=@d;";
         cmd.Parameters.AddWithValue("@d", datasetName);
         using SqliteDataReader r = cmd.ExecuteReader();
         if (!r.Read()) return string.Empty;
@@ -853,6 +1591,136 @@ public sealed class WebRepository
         cmd.Parameters.AddWithValue("@p", passwordHash);
         cmd.Parameters.AddWithValue("@id", id);
         cmd.ExecuteNonQuery();
+    }
+
+    // ── Menu permissions ──────────────────────────────────────────────────────
+
+    public HashSet<string> GetMenuPermissionsForRole(string role)
+    {
+        var set = new HashSet<string>(StringComparer.Ordinal);
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT MenuId FROM MenuPermissions WHERE Role=@r;";
+        cmd.Parameters.AddWithValue("@r", role);
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read()) set.Add(r.GetString(0));
+        return set;
+    }
+
+    public Dictionary<string, HashSet<string>> GetAllMenuPermissions()
+    {
+        var map = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Role, MenuId FROM MenuPermissions;";
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            string role   = r.GetString(0);
+            string menuId = r.GetString(1);
+            if (!map.TryGetValue(role, out var set))
+            {
+                set = new HashSet<string>(StringComparer.Ordinal);
+                map[role] = set;
+            }
+            set.Add(menuId);
+        }
+        return map;
+    }
+
+    public void SetMenuPermission(string role, string menuId, bool allowed)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        if (allowed)
+        {
+            cmd.CommandText = "INSERT OR IGNORE INTO MenuPermissions (Role, MenuId) VALUES (@r, @m);";
+        }
+        else
+        {
+            cmd.CommandText = "DELETE FROM MenuPermissions WHERE Role=@r AND MenuId=@m;";
+        }
+        cmd.Parameters.AddWithValue("@r", role);
+        cmd.Parameters.AddWithValue("@m", menuId);
+        cmd.ExecuteNonQuery();
+    }
+
+    public void SeedDefaultMenuPermissionsIfEmpty()
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cnt = conn.CreateCommand();
+        cnt.CommandText = "SELECT COUNT(*) FROM MenuPermissions;";
+        long existing = (long)(cnt.ExecuteScalar() ?? 0L);
+        if (existing > 0) return;
+
+        using SqliteTransaction tx = conn.BeginTransaction();
+        using SqliteCommand ins = conn.CreateCommand();
+        ins.Transaction = tx;
+        ins.CommandText = "INSERT OR IGNORE INTO MenuPermissions (Role, MenuId) VALUES (@r, @m);";
+        var pr = ins.Parameters.Add("@r", SqliteType.Text);
+        var pm = ins.Parameters.Add("@m", SqliteType.Text);
+
+        foreach ((string role, string[] menus) in AppMenus.DefaultsByRole)
+        foreach (string menu in menus)
+        {
+            pr.Value = role;
+            pm.Value = menu;
+            ins.ExecuteNonQuery();
+        }
+        tx.Commit();
+    }
+
+    public void ReplaceDatasetEditorImages(string datasetName, List<(string Slug, byte[] Data)> images)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteTransaction tx  = conn.BeginTransaction();
+        using (SqliteCommand del = conn.CreateCommand())
+        {
+            del.Transaction = tx;
+            del.CommandText = "DELETE FROM DatasetImages WHERE DatasetName=@d AND FileName LIKE 'di-img-%';";
+            del.Parameters.AddWithValue("@d", datasetName);
+            del.ExecuteNonQuery();
+        }
+        string now = DateTime.UtcNow.ToString("O");
+        foreach (var (slug, data) in images)
+        {
+            using SqliteCommand ins = conn.CreateCommand();
+            ins.Transaction = tx;
+            ins.CommandText = "INSERT INTO DatasetImages (DatasetName, FileName, ImageData, CreatedAt) VALUES (@d, @f, @img, @at);";
+            ins.Parameters.AddWithValue("@d",   datasetName);
+            ins.Parameters.AddWithValue("@f",   slug);
+            ins.Parameters.AddWithValue("@img", data);
+            ins.Parameters.AddWithValue("@at",  now);
+            ins.ExecuteNonQuery();
+        }
+        tx.Commit();
+    }
+
+    public Dictionary<string, string> GetEditorImageDataUrls(string datasetName)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT FileName, ImageData FROM DatasetImages WHERE DatasetName=@d AND FileName LIKE 'di-img-%' ORDER BY Id;";
+        cmd.Parameters.AddWithValue("@d", datasetName);
+        var result = new Dictionary<string, string>();
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            string fileName = r.IsDBNull(0) ? "image" : r.GetString(0);
+            long   byteLen  = r.GetBytes(1, 0, null, 0, 0);
+            byte[] buf      = new byte[byteLen];
+            r.GetBytes(1, 0, buf, 0, (int)byteLen);
+            string ext = Path.GetExtension(fileName).TrimStart('.').ToLowerInvariant();
+            string mediaType = ext switch
+            {
+                "jpg" or "jpeg" => "image/jpeg",
+                "gif"           => "image/gif",
+                "webp"          => "image/webp",
+                _               => "image/png"
+            };
+            result[fileName] = $"data:{mediaType};base64,{Convert.ToBase64String(buf)}";
+        }
+        return result;
     }
 
     // Returns (FileName, MediaType, Base64) for all images attached to a dataset.

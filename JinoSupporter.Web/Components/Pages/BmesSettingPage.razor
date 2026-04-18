@@ -31,11 +31,11 @@
             <div class="card-body">
                 <div class="mb-2">
                     <label class="form-label small fw-semibold mb-1">Login ID</label>
-                    <input class="form-control form-control-sm" @bind="_snap.LoginId" placeholder="BMES 아이디" />
+                    <input class="form-control form-control-sm" @bind="_snap.LoginId" placeholder="BMES ID" />
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-semibold mb-1">Password</label>
-                    <input class="form-control form-control-sm" type="password" @bind="_snap.Password" placeholder="BMES 비밀번호" />
+                    <input class="form-control form-control-sm" type="password" @bind="_snap.Password" placeholder="BMES Password" />
                 </div>
                 <button class="btn btn-primary btn-sm" @onclick="SaveCredentials">Save</button>
             </div>
@@ -49,11 +49,11 @@
             <div class="card-body">
                 <div class="mb-2">
                     <label class="form-label small fw-semibold mb-1">Login ID</label>
-                    <input class="form-control form-control-sm" @bind="_snap.RwtLoginId" placeholder="RWT 아이디" />
+                    <input class="form-control form-control-sm" @bind="_snap.RwtLoginId" placeholder="RWT ID" />
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-semibold mb-1">Password</label>
-                    <input class="form-control form-control-sm" type="password" @bind="_snap.RwtPassword" placeholder="RWT 비밀번호" />
+                    <input class="form-control form-control-sm" type="password" @bind="_snap.RwtPassword" placeholder="RWT Password" />
                 </div>
                 <button class="btn btn-primary btn-sm" @onclick="SaveCredentials">Save</button>
             </div>

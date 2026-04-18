@@ -6,16 +6,16 @@ using Microsoft.Data.Sqlite;
 namespace JinoSupporter.Web.Services;
 
 /// <summary>
-/// NG Rate 피벗 리포트 서비스 (WPF DataMaker 방식 동일)
-/// ─ PPM 계산: 각 (ProcessName, NgName, Date) 조합별 PPM을 먼저 구한 후 합산
-/// ─ TOTAL = 모든 ProcessType PPM 합산
-/// ─ 열 구조: 날짜(내림차순) | 빈열 | 주차(내림차순) | 빈열 | 월(내림차순)
+/// NG Rate pivot report service (same behavior as WPF DataMaker).
+/// - PPM calc: compute PPM per (ProcessName, NgName, Date) combo, then sum.
+/// - TOTAL = sum of PPM across all ProcessTypes.
+/// - Column layout: dates (desc) | blank | weeks (desc) | blank | months (desc).
 /// </summary>
 public sealed class NgRateReportService(NgRateSettingsService settings)
 {
     private readonly NgRateSettingsService _settings = settings;
 
-    // ── 공개 타입 ─────────────────────────────────────────────────────────────────
+    // ── Public types ──────────────────────────────────────────────────────────────
 
     public sealed record PeriodColumn(string Key, string Header);
 
@@ -104,14 +104,14 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         public Dictionary<string, List<SummaryPivotRow>> GroupSummary { get; init; } = new();
     }
 
-    // ── 내부 집계 단위 ────────────────────────────────────────────────────────────
+    // ── Internal aggregation unit ─────────────────────────────────────────────────
 
-    /// <summary>(ProcessType, ProcessName, NgName, PeriodKey) 단위의 PPM</summary>
+    /// <summary>PPM keyed by (ProcessType, ProcessName, NgName, PeriodKey).</summary>
     private sealed record ComboAgg(
         string ProcessType, string ProcessName, string NgName,
         string PeriodKey, double Ppm);
 
-    // ── JSON 역직렬화용 ───────────────────────────────────────────────────────────
+    // ── JSON deserialization ──────────────────────────────────────────────────────
 
     private sealed class ModelGroupData
     {
@@ -120,14 +120,14 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         public List<string> ModelList { get; set; } = [];
     }
 
-    /// <summary>새 포맷: { ProductGroup, Groups: [...] }</summary>
+    /// <summary>New format: { ProductGroup, Groups: [...] }.</summary>
     private sealed class ModelFileData
     {
         public string              ProductGroup { get; set; } = "ETC";
         public List<ModelGroupData> Groups      { get; set; } = [];
     }
 
-    // ── 내부 행 타입 ──────────────────────────────────────────────────────────────
+    // ── Internal row type ─────────────────────────────────────────────────────────
 
     private sealed class OrgRow
     {
@@ -142,7 +142,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         public double QtyNg        { get; set; }
     }
 
-    // ── 공개 API ──────────────────────────────────────────────────────────────────
+    // ── Public API ────────────────────────────────────────────────────────────────
 
     public string? FindMostRecentDb()
     {
@@ -170,7 +170,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
                 string json = File.ReadAllText(path);
                 List<ModelGroupData>? groups = null;
 
-                // 1) 새 포맷: { "ProductGroup": "...", "Groups": [...] }
+                // 1) New format: { "ProductGroup": "...", "Groups": [...] }
                 try
                 {
                     var file = JsonSerializer.Deserialize<ModelFileData>(json, opts);
@@ -178,13 +178,13 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
                 }
                 catch { }
 
-                // 2) 구 포맷: [ { "GroupName": ..., "ModelList": [...] }, ... ]
+                // 2) Legacy format: [ { "GroupName": ..., "ModelList": [...] }, ... ]
                 if (groups is null || groups.Count == 0)
                 {
                     try { groups = JsonSerializer.Deserialize<List<ModelGroupData>>(json, opts); } catch { }
                 }
 
-                // 3) 단일 객체 포맷 (레거시)
+                // 3) Single-object legacy format
                 if (groups is null || groups.Count == 0)
                 {
                     try
@@ -217,7 +217,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         return (models.ToList(), groupNames, lineShiftToGroup);
     }
 
-    // 하위 호환용
+    // Backwards compatibility
     public List<string> LoadModelListFromJsonFiles(IEnumerable<string> jsonPaths)
         => LoadJsonInfo(jsonPaths).ModelList;
 
@@ -227,14 +227,14 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         IProgress<string>? progress = null)
         => Task.Run(() => GenerateReport(dbPath, selectedJsonPaths, progress));
 
-    // ── 리포트 생성 ───────────────────────────────────────────────────────────────
+    // ── Report build ──────────────────────────────────────────────────────────────
 
     private NgRateReport GenerateReport(
         string dbPath,
         IEnumerable<string> selectedJsonPaths,
         IProgress<string>? progress)
     {
-        // 1. JSON 파싱
+        // 1. Parse JSON
         progress?.Report("Loading model definitions from JSON…");
         var jsonList = selectedJsonPaths.ToList();
         var (modelLineShifts, groupNames, lineShiftToGroup) = jsonList.Count > 0
@@ -249,14 +249,14 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         progress?.Report("Loading ProcessType lookup…");
         var ptLookup = LoadProcessTypeLookup(dbPath);
 
-        // 3. OrginalTable 로드
+        // 3. Load OrginalTable
         progress?.Report("Loading OrginalTable…");
         var orgRows = LoadOrginalRows(dbPath, modelSet);
         progress?.Report($"  {orgRows.Count:N0} rows loaded.");
         if (orgRows.Count == 0)
             return new NgRateReport { DbPath = dbPath, ModelFilter = modelLineShifts, GroupNames = groupNames };
 
-        // 4. ProcessType 매핑
+        // 4. Map ProcessType
         foreach (var r in orgRows)
         {
             if (!string.IsNullOrEmpty(r.ProcessType)) continue;
@@ -266,19 +266,19 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
                 r.ProcessType = pt2;
         }
 
-        // 5. 기간별 조합 PPM 계산 (WPF 방식: 조합 단위 PPM 합산)
+        // 5. Compute PPM per (combo, period) — WPF approach: sum of combo PPMs
         progress?.Report("Pre-aggregating by period…");
         var byDate  = BuildComboPpm(orgRows, r => r.ProductDate);
         var byWeek  = BuildComboPpm(orgRows, r => GetWeekKey(r.ProductDate));
         var byMonth = BuildComboPpm(orgRows, r => GetMonthKey(r.ProductDate));
 
-        // 6. 기간 컬럼 추출
+        // 6. Extract period columns
         var dateCols  = ExtractCols(byDate,  k => FormatDateHeader(k));
         var weekCols  = ExtractCols(byWeek,  k => "W" + int.Parse(k[4..]));
         var monthCols = ExtractCols(byMonth, k => "M" + int.Parse(k[4..]));
         progress?.Report($"  {dateCols.Count} dates · {weekCols.Count} weeks · {monthCols.Count} months");
 
-        // 7. 집계 Lookup 빌드
+        // 7. Build aggregation lookup
         // (ProcessType, PeriodKey) → sumPpm
         var datePtMap  = BuildPtMap(byDate);
         var weekPtMap  = BuildPtMap(byWeek);
@@ -289,12 +289,12 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         var weekTotalMap  = BuildTotalMap(byWeek);
         var monthTotalMap = BuildTotalMap(byMonth);
 
-        // (ProcessType, ProcessName, PeriodKey) → sumPpm  ← Process 10 NG용
+        // (ProcessType, ProcessName, PeriodKey) → sumPpm  ← for Process Top 10 NG
         var dateProcessMap  = BuildProcessMap(byDate);
         var weekProcessMap  = BuildProcessMap(byWeek);
         var monthProcessMap = BuildProcessMap(byMonth);
 
-        // (ProcessType, ProcessName, NgName, PeriodKey) → Ppm  ← Worst 10 NG용
+        // (ProcessType, ProcessName, NgName, PeriodKey) → Ppm  ← for Worst 10 NG
         var dateNgMap  = BuildNgMap(byDate);
         var weekNgMap  = BuildNgMap(byWeek);
         var monthNgMap = BuildNgMap(byMonth);
@@ -329,14 +329,14 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
             dateGrpNg, weekGrpNg, monthGrpNg,
             dateCols, weekCols, monthCols);
 
-        // 11. 그룹별 투입/NG 수량 & Reason 리포트
+        // 11. Per-group input/NG quantities & Reason report
         progress?.Report("Computing group detail rows…");
         var inputQtyRows = BuildInputQtyRows(orgRows, lineShiftToGroup, dateCols);
         var ngQtyRows    = BuildNgQtyRows(orgRows, lineShiftToGroup, dateCols);
         var reasonLookup = LoadReasonLookup(dbPath);
         var reasonRows   = BuildReasonRows(orgRows, reasonLookup, lineShiftToGroup, dateCols, weekCols, monthCols);
 
-        // 12. 그룹별 Summary (모델명 클릭 시 각 그룹의 불량률)
+        // 12. Per-group summary (each group's defect rate shown on model click)
         var groupSummary = groupNames.Count > 0
             ? ComputeGroupSummary(groupNames, dateGrpProc, weekGrpProc, monthGrpProc, dateCols, weekCols, monthCols)
             : new Dictionary<string, List<SummaryPivotRow>>();
@@ -361,11 +361,11 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         };
     }
 
-    // ── 핵심 집계 빌더 ────────────────────────────────────────────────────────────
+    // ── Core aggregation builder ──────────────────────────────────────────────────
 
     /// <summary>
-    /// (ProcessType, ProcessName, NgName, PeriodKey) 단위로 PPM 계산
-    /// WPF와 동일: 각 조합의 PPM = QTYNG/QTYINPUT * 1,000,000
+    /// Compute PPM per (ProcessType, ProcessName, NgName, PeriodKey).
+    /// Same as WPF: PPM of each combo = QTYNG / QTYINPUT * 1,000,000.
     /// </summary>
     private static List<ComboAgg> BuildComboPpm(List<OrgRow> rows, Func<OrgRow, string> getKey)
     {
@@ -445,7 +445,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
                 m => monthTotalMap.GetValueOrDefault(m)),
         });
 
-        // ProcessType별 (WPF 순서: SUB→MAIN→FUNCTION→VISUAL→기타)
+        // By ProcessType (WPF order: SUB → MAIN → FUNCTION → VISUAL → others)
         var types = byDate
             .Select(x => x.ProcessType)
             .Concat(byWeek.Select(x => x.ProcessType))
@@ -485,7 +485,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         List<PeriodColumn> weekCols,
         List<PeriodColumn> monthCols)
     {
-        // 직전 주(weekCols[1]) 기준 내림차순 정렬, 주차 없으면 최신 주
+        // Sort desc by prior week (weekCols[1]); if no weeks, use the most recent
         var prevWeekKeyProc = weekCols.Count >= 2 ? weekCols[1].Key : weekCols.FirstOrDefault()?.Key ?? string.Empty;
 
         var allProcPpm = byDate
@@ -542,7 +542,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         List<PeriodColumn> weekCols,
         List<PeriodColumn> monthCols)
     {
-        // 직전 주(weekCols[1]) 기준 내림차순 정렬, 주차 없으면 최신 주
+        // Sort desc by prior week (weekCols[1]); if no weeks, use the most recent
         var prevWeekKeyNg = weekCols.Count >= 2 ? weekCols[1].Key : weekCols.FirstOrDefault()?.Key ?? string.Empty;
 
         var allNgPpm = byDate
@@ -586,7 +586,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         }).ToList();
     }
 
-    // ── Pivot 딕셔너리 빌더 ───────────────────────────────────────────────────────
+    // ── Pivot dictionary builder ──────────────────────────────────────────────────
 
     private static Dictionary<string, double> BuildPeriodDict(
         List<PeriodColumn> dateCols,
@@ -603,7 +603,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         return dict;
     }
 
-    // ── 헬퍼 ─────────────────────────────────────────────────────────────────────
+    // ── Helpers ──────────────────────────────────────────────────────────────────
 
     private static double CalcPpm(double input, double ng)
     {
@@ -640,9 +640,9 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         return date.Length >= 5 ? date[^5..] : date;
     }
 
-    // ── Top10 그룹 Raw 맵 ─────────────────────────────────────────────────────────
+    // ── Top-10 group raw map ──────────────────────────────────────────────────────
 
-    // NgName별 PPM을 먼저 구한 뒤 합산 → 부모 행과 동일한 수식
+    // Compute PPM per NgName first, then sum — matches the parent row formula
     private static Dictionary<(string, string, string, string), double> BuildGroupProcessRaw(
         List<OrgRow> rows, Dictionary<string, string> lsToGroup, Func<OrgRow, string> getKey)
         => rows
@@ -668,7 +668,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
                 g => (g.Key.ProcessType, g.Key.ProcessName, g.Key.NgName, g.Key.G, g.Key.K),
                 g => (I: g.Sum(r => r.QtyInput), N: g.Sum(r => r.QtyNg)));
 
-    // ── 그룹별 Summary (ProcessType × 기간 PPM) ──────────────────────────────────
+    // ── Per-group summary (ProcessType × period PPM) ─────────────────────────────
 
     private static Dictionary<string, List<SummaryPivotRow>> ComputeGroupSummary(
         List<string> groupNames,
@@ -683,7 +683,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
         foreach (string grp in groupNames)
         {
-            // (ProcessType, PeriodKey) → sumPpm — 해당 그룹의 모든 ProcessName 합산
+            // (ProcessType, PeriodKey) → sumPpm — sum over all ProcessNames in this group
             var datePt = dateGrpProc
                 .Where(kv => kv.Key.Item3 == grp)
                 .GroupBy(kv => (kv.Key.Item1, kv.Key.Item4))
@@ -722,7 +722,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
                 });
             }
 
-            // TOTAL = ProcessType 행들의 PPM 합산 (순서상 맨 앞에 삽입)
+            // TOTAL = sum of PPM across ProcessType rows (insert at the front)
             var totalPpm = new Dictionary<string, double>();
             foreach (var row in summary)
                 foreach (var (k, v) in row.Ppm)
@@ -741,7 +741,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         return result;
     }
 
-    // ── 그룹별 투입/NG 수량 & Reason ─────────────────────────────────────────────
+    // ── Per-group input/NG quantities & Reason ───────────────────────────────────
 
     private static List<InputQtyRow> BuildInputQtyRows(
         List<OrgRow> rows,
@@ -891,7 +891,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         static double ToPpm(double input, double ng)
             => input > 0 ? Math.Round((ng / input) * 1_000_000, 0) : 0;
 
-        // 직전 주(weekCols[1]) PPM 합산으로 Reason 정렬 (높은 순)
+        // Sort Reasons desc by prior-week PPM sum (weekCols[1])
         var prevWeekKeyReason = weekCols.Count >= 2 ? weekCols[1].Key : weekCols.FirstOrDefault()?.Key ?? string.Empty;
 
         var reasonGroups = aggDate.Keys
@@ -910,7 +910,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         var result = new List<ReasonRow>();
         foreach (var (reason, _) in reasonGroups)
         {
-            // 해당 Reason의 (ProcessType, ProcessName, NgName) 조합 — 직전 주 PPM 내림차순
+            // Combos (ProcessType, ProcessName, NgName) for this Reason — desc by prior-week PPM
             var combos = aggDate.Keys
                 .Where(k => k.Reason == reason)
                 .GroupBy(k => (k.ProcessType, k.ProcessName, k.NgName))
@@ -923,7 +923,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
                 .Take(10)
                 .ToList();
 
-            // Total 행
+            // Total row
             result.Add(new ReasonRow
             {
                 Reason  = reason,
@@ -937,7 +937,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
                                               aggMonth.GetValueOrDefault((reason, c.ProcessType, c.ProcessName, c.NgName, m)).Ng))),
             });
 
-            // 개별 행
+            // Individual rows
             for (int i = 0; i < combos.Count; i++)
             {
                 var (pt, pn, ng, _) = combos[i];

@@ -21,7 +21,7 @@
       "command": "powershell",
       "args": [
         "-NoProfile", "-NonInteractive", "-Command",
-        "$p = Get-NetTCPConnection -LocalPort 5050 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; if ($p) { Stop-Process -Id $p -Force -ErrorAction SilentlyContinue; Write-Host \"Killed PID $p\" } else { Write-Host 'No process on :5050' }"
+        "$p = Get-NetTCPConnection -LocalPort 5080 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; if ($p) { Stop-Process -Id $p -Force -ErrorAction SilentlyContinue; Write-Host \"Killed PID $p\" } else { Write-Host 'No process on :5080' }"
       ],
       "problemMatcher": [],
       "presentation": { "reveal": "silent", "panel": "shared" }
@@ -29,6 +29,37 @@
     {
       "label": "kill-and-build",
       "dependsOn": ["kill-web-server", "build"],
+      "dependsOrder": "sequence",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "kill-snapshot",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-NonInteractive", "-Command",
+        "$p = Get-NetTCPConnection -LocalPort 5050 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; if ($p) { Stop-Process -Id $p -Force -ErrorAction SilentlyContinue; Write-Host \"Killed PID $p\" } else { Write-Host 'No process on :5050' }"
+      ],
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent", "panel": "shared" }
+    },
+    {
+      "label": "publish-snapshot",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "publish",
+        "${workspaceFolder}/JinoSupporter.Web/JinoSupporter.Web.csproj",
+        "-c", "Debug",
+        "-o", "D:/temp/jino-web-snapshot",
+        "--no-self-contained"
+      ],
+      "problemMatcher": "$msCompile",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "kill-and-publish-snapshot",
+      "dependsOn": ["kill-snapshot", "publish-snapshot"],
       "dependsOrder": "sequence",
       "problemMatcher": "$msCompile"
     }

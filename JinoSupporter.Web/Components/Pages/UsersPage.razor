@@ -3,6 +3,7 @@
 @using JinoSupporter.Web.Services
 @inject WebRepository         Repo
 @inject ConnectedUsersService ConnectedUsers
+@inject MenuPermissionService Perms
 
 <PageTitle>User Management</PageTitle>
 
@@ -123,6 +124,68 @@
     </div>
 </div>
 
+<!-- Menu permissions matrix -->
+<div class="card mb-4">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <span>Menu Permissions (by Role)</span>
+        <span class="text-muted small">
+            체크박스 클릭 즉시 자동 저장됩니다. Admin 역할은 항상 전체 메뉴 접근 가능합니다.
+            @if (_permsSavedFlash)
+            {
+                <span class="badge bg-success ms-2">✓ 저장됨</span>
+            }
+        </span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm mb-0 perms-table">
+                <thead>
+                    <tr>
+                        <th style="min-width:180px;">Menu</th>
+                        @foreach (string role in AppRoles.All)
+                        {
+                            <th class="text-center">@role</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var grp in AppMenus.All.GroupBy(m => m.Group))
+                    {
+                        <tr class="perms-group-row">
+                            <td colspan="@(AppRoles.All.Length + 1)">@grp.Key</td>
+                        </tr>
+                        @foreach (var m in grp)
+                        {
+                            <tr>
+                                <td>@m.Label <span class="text-muted small">(@m.Id)</span></td>
+                                @foreach (string role in AppRoles.All)
+                                {
+                                    bool isAdmin = role == AppRoles.Admin;
+                                    bool allowed = isAdmin || (_perms.TryGetValue(role, out var set) && set.Contains(m.Id));
+                                    <td class="text-center">
+                                        <input type="checkbox"
+                                               checked="@allowed"
+                                               disabled="@isAdmin"
+                                               @onchange="async e => await TogglePermission(role, m.Id, (bool)e.Value!)" />
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .perms-table th, .perms-table td { font-size: 12px; vertical-align: middle; }
+    .perms-group-row td {
+        background: #f1f5f9; font-weight: 700; color: #475569;
+        font-size: 11px; letter-spacing: .3px; text-transform: uppercase;
+    }
+</style>
+
 <!-- Reset password modal -->
 @if (_resetTarget is not null)
 {
@@ -153,6 +216,9 @@
 
     private List<UserRecord> _users = [];
     private string _currentUser = string.Empty;
+    private Dictionary<string, HashSet<string>> _perms = new(StringComparer.Ordinal);
+    private bool   _permsSavedFlash;
+    private CancellationTokenSource? _flashCts;
 
     private string _newUsername    = string.Empty;
     private string _newDisplayName = string.Empty;
@@ -173,7 +239,35 @@
         Load();
     }
 
-    private void Load() => _users = Repo.GetAllUsers();
+    private void Load()
+    {
+        _users = Repo.GetAllUsers();
+        _perms = Repo.GetAllMenuPermissions();
+    }
+
+    private async Task TogglePermission(string role, string menuId, bool allowed)
+    {
+        Repo.SetMenuPermission(role, menuId, allowed);
+        if (!_perms.TryGetValue(role, out var set))
+        {
+            set = new HashSet<string>(StringComparer.Ordinal);
+            _perms[role] = set;
+        }
+        if (allowed) set.Add(menuId); else set.Remove(menuId);
+
+        _flashCts?.Cancel();
+        _flashCts = new CancellationTokenSource();
+        CancellationToken token = _flashCts.Token;
+        _permsSavedFlash = true;
+        StateHasChanged();
+        try
+        {
+            await Task.Delay(1500, token);
+            _permsSavedFlash = false;
+            StateHasChanged();
+        }
+        catch (TaskCanceledException) { }
+    }
 
     private void ChangeRole(UserRecord u, string newRole)
     {

@@ -32,7 +32,7 @@
                     @(_showKey ? "Hide" : "Show")
                 </button>
             </div>
-            <div class="form-text">저장하면 DB에 암호화 없이 보관됩니다. 로컬 네트워크 전용 서버에서만 사용하세요.</div>
+            <div class="form-text">Stored unencrypted in the DB. Use only on trusted local-network servers.</div>
         </div>
         <button class="btn btn-primary" @onclick="SaveClaudeAsync" disabled="@_claudeSaving">
             @(_claudeSaving ? "Saving…" : "Save")
@@ -100,7 +100,7 @@
                 <button class="btn btn-outline-primary btn-sm" type="button"
                         @onclick="ImportRoutingAsync" disabled="@_routingImporting">
                     @if (_routingImporting) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                    파일에서 업데이트
+                    Update from file
                 </button>
             </div>
             @if (_routingImportMsg is not null)
@@ -120,7 +120,7 @@
                 <button class="btn btn-outline-primary btn-sm" type="button"
                         @onclick="ImportReasonAsync" disabled="@_reasonImporting">
                     @if (_reasonImporting) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                    파일에서 업데이트
+                    Update from file
                 </button>
             </div>
             @if (_reasonImportMsg is not null)
@@ -236,8 +236,8 @@
                 : _ng.RoutingFilePath.Trim();
             int count = await Task.Run(() => NgRateSettings.ImportRoutingFromFile(path));
             _routingImportMsg = count > 0
-                ? $"✓ {count:N0}행 업데이트 완료"
-                : "✗ 파일이 없거나 데이터가 없습니다";
+                ? $"✓ {count:N0} rows updated"
+                : "✗ File missing or empty";
         }
         catch (Exception ex) { _routingImportMsg = $"✗ {ex.Message}"; }
         finally { _routingImporting = false; }
@@ -254,8 +254,8 @@
                 : _ng.ReasonFilePath.Trim();
             int count = await Task.Run(() => NgRateSettings.ImportReasonFromFile(path));
             _reasonImportMsg = count > 0
-                ? $"✓ {count:N0}행 업데이트 완료"
-                : "✗ 파일이 없거나 데이터가 없습니다";
+                ? $"✓ {count:N0} rows updated"
+                : "✗ File missing or empty";
         }
         catch (Exception ex) { _reasonImportMsg = $"✗ {ex.Message}"; }
         finally { _reasonImporting = false; }

@@ -1,5 +1,6 @@
-@page "/ng-rate"
+@page "/ng-rate-all"
 @rendermode InteractiveServer
+@* TODO: NG Rate All — copy of NgRatePage.razor, to be customised later. Admin-only. *@
 @using JinoSupporter.Web.Services
 @using System.Text.Json
 @inject NgRateService         NgRate
@@ -347,7 +348,7 @@
                 else if (_logs.Count > 0)
                 {
                     <div class="progress mb-2" style="height:5px;">
-                        <div class="progress-bar @(_savedDbPath != null || _report != null ? "bg-success" : "bg-danger")"
+                        <div class="progress-bar @(_savedDbPath != null || _reports.Count > 0 ? "bg-success" : "bg-danger")"
                              style="width:100%;"></div>
                     </div>
                     <div class="small text-muted font-monospace">@_logs[^1]</div>
@@ -398,548 +399,287 @@
 {
     <div class="mt-4">
 
-        <!-- Tabs + Export -->
-        <div class="d-flex align-items-end justify-content-between mb-0">
-            @if (_reports.Count > 1)
-            {
-                <ul class="nav nav-tabs mb-0" style="border-bottom:none;">
-                    @for (int i = 0; i < _reports.Count; i++)
+        <!-- Section tabs (defect report type) + global controls + Export -->
+        <div class="d-flex align-items-end justify-content-between mb-0 flex-wrap gap-2">
+            <ul class="nav nav-tabs mb-0" style="border-bottom:none;">
+                @foreach (var s in SectionTabs)
+                {
+                    string sk = s.Key;
+                    bool active = _activeSection == sk;
+                    <li class="nav-item">
+                        <button class="nav-link @(active ? "active fw-semibold" : "")"
+                                style="font-size:13px; padding:6px 14px;"
+                                @onclick="@(() => SwitchSectionAsync(sk))">
+                            @s.Label
+                        </button>
+                    </li>
+                }
+            </ul>
+            <div class="d-flex gap-2 align-items-center">
+                @{
+                    int maxDateCols  = _reports.Max(r => r.Report.DateCols.Count);
+                    int maxWeekCols  = _reports.Max(r => r.Report.WeekCols.Count);
+                    int maxMonthCols = _reports.Max(r => r.Report.MonthCols.Count);
+                }
+                @if (maxDateCols > DateVisibleLimit)
+                {
+                    <button class="expand-btn" @onclick="ToggleDateCols">
+                        Date @(_dateExpanded ? "▼" : $"▶ +{maxDateCols - DateVisibleLimit}")
+                    </button>
+                }
+                @if (maxWeekCols > WeekVisibleLimit)
+                {
+                    <button class="expand-btn" @onclick="ToggleWeekCols">
+                        Week @(_weekExpanded ? "▼" : $"▶ +{maxWeekCols - WeekVisibleLimit}")
+                    </button>
+                }
+                @if (maxMonthCols > MonthVisibleLimit)
+                {
+                    <button class="expand-btn" @onclick="ToggleMonthCols">
+                        Month @(_monthExpanded ? "▼" : $"▶ +{maxMonthCols - MonthVisibleLimit}")
+                    </button>
+                }
+                <button class="btn btn-outline-success btn-sm"
+                        style="font-size:12px;"
+                        @onclick="ExportExcelAsync"
+                        disabled="@_isExporting">
+                    @if (_isExporting)
                     {
-                        int tabIdx = i;
-                        bool active = i == _activeReportTab;
-                        <li class="nav-item">
-                            <button class="nav-link @(active ? "active fw-semibold" : "")"
-                                    style="font-size:13px; padding:6px 14px;"
-                                    @onclick="() => SwitchReportTab(tabIdx)">
-                                @_reports[tabIdx].Label
-                            </button>
-                        </li>
+                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
                     }
-                </ul>
-            }
-            else
-            {
-                <div></div>
-            }
-            <button class="btn btn-outline-success btn-sm mb-1"
-                    style="font-size:12px;"
-                    @onclick="ExportExcelAsync"
-                    disabled="@_isExporting">
-                @if (_isExporting)
-                {
-                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                }
-                else
-                {
-                    <span>⬇ Export Excel</span>
-                }
-            </button>
+                    else
+                    {
+                        <span>⬇ Export Excel</span>
+                    }
+                </button>
+                <button class="btn btn-link btn-sm p-0 text-secondary"
+                        @onclick="ClearReportAsync">✕ Clear</button>
+            </div>
         </div>
         <div style="border-top:2px solid #e2e8f0; margin-bottom:12px;"></div>
 
-        <!-- Report header -->
-        <div class="d-flex align-items-center gap-2 mb-3 border-bottom pb-2">
-            <span style="font-size:18px;">📊</span>
-            <h6 class="mb-0 fw-semibold">Report</h6>
-            <span class="small text-muted ms-1">
-                @Path.GetFileName(_report.DbPath) ·
-                @_report.TotalRows.ToString("N0") rows ·
-                @_report.GeneratedAt.ToString("HH:mm:ss")
-            </span>
-            @if (_report.ModelFilter.Count > 0)
-            {
-                <span class="badge bg-secondary ms-1" style="font-size:10px;">
-                    @_report.ModelFilter.Count model@(_report.ModelFilter.Count == 1 ? "" : "s") filtered
-                </span>
-            }
-            <button class="btn btn-link btn-sm p-0 ms-auto text-secondary"
-                    @onclick="ClearReportAsync">✕ Clear</button>
-        </div>
-
-        <!-- ── Summary ───────────────────────────────────────────────────────── -->
-        <div class="card mb-3 shadow-sm">
-            <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span>Summary — NG PPM by Process Type</span>
-                    @if (_report.GroupNames.Count > 0)
-                    {
-                        <div class="d-flex flex-wrap gap-1 ms-1">
-                            @foreach (var grp in _report.GroupNames)
-                            {
-                                <span class="group-chip">@grp</span>
-                            }
-                        </div>
-                    }
-                </div>
-                <div class="d-flex gap-2 align-items-center">
-                    @if (_report.GroupSummary.Count > 0)
-                    {
-                        <button class="expand-btn" @onclick="ExpandAllSummary">Expand All</button>
-                        <span class="text-muted" style="font-size:10px;">|</span>
-                        <button class="expand-btn" @onclick="CollapseAllSummary">Collapse All</button>
-                        <span class="text-muted" style="font-size:10px;">|</span>
-                    }
-                    @if (_report.DateCols.Count > DateVisibleLimit)
-                    {
-                        <button class="expand-btn" @onclick="ToggleDateCols">
-                            Date @(_dateExpanded ? "▼" : $"▶ +{_report.DateCols.Count - DateVisibleLimit}")
-                        </button>
-                    }
-                    @if (_report.WeekCols.Count > WeekVisibleLimit)
-                    {
-                        <button class="expand-btn" @onclick="ToggleWeekCols">
-                            Week @(_weekExpanded ? "▼" : $"▶ +{_report.WeekCols.Count - WeekVisibleLimit}")
-                        </button>
-                    }
-                    @if (_report.MonthCols.Count > MonthVisibleLimit)
-                    {
-                        <button class="expand-btn" @onclick="ToggleMonthCols">
-                            Month @(_monthExpanded ? "▼" : $"▶ +{_report.MonthCols.Count - MonthVisibleLimit}")
-                        </button>
-                    }
-                </div>
-            </div>
-            <div class="card-body p-2">
-                <div class="pivot-wrap">
-                    <table class="pivot-table">
-                        <thead>
-                            <tr>
-                                <th class="label-th" style="min-width:20px; text-align:center;"></th>
-                                <th class="label-th">Process Type</th>
-                                @foreach (var col in VisibleDateCols)
-                                {
-                                    <th>@col.Header</th>
-                                }
-                                <th class="sep-th"></th>
-                                @foreach (var col in VisibleWeekCols)
-                                {
-                                    <th>@col.Header</th>
-                                }
-                                <th class="sep-th"></th>
-                                @foreach (var col in VisibleMonthCols)
-                                {
-                                    <th>@col.Header</th>
-                                }
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var sumRow in _report.Summary)
-                            {
-                                bool summaryHasGroups = _report.GroupSummary.Count > 0;
-                                bool summaryExpanded  = _expandedSummary.Contains(sumRow.ProcessType);
-                                string sumPt          = sumRow.ProcessType;
-                                <tr class="@(sumRow.IsTotal ? "total-row" : "rank-row")">
-                                    <td class="toggle-cell" @onclick="@(() => { if (summaryHasGroups) ToggleSummary(sumPt); })">
-                                        @if (summaryHasGroups)
-                                        {
-                                            <span class="toggle-icon">@(summaryExpanded ? "▼" : "▶")</span>
-                                        }
-                                    </td>
-                                    <td class="label-td">@sumRow.ProcessType</td>
-                                    @foreach (var col in VisibleDateCols)
-                                    {
-                                        double v = sumRow.Ppm.GetValueOrDefault(col.Key);
-                                        <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                    }
-                                    <td class="sep-td"></td>
-                                    @foreach (var col in VisibleWeekCols)
-                                    {
-                                        double v = sumRow.Ppm.GetValueOrDefault(col.Key);
-                                        <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                    }
-                                    <td class="sep-td"></td>
-                                    @foreach (var col in VisibleMonthCols)
-                                    {
-                                        double v = sumRow.Ppm.GetValueOrDefault(col.Key);
-                                        <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                    }
-                                </tr>
-                                @if (summaryExpanded)
-                                {
-                                    @foreach (var grp in _report.GroupNames)
-                                    {
-                                        if (_report.GroupSummary.TryGetValue(grp, out var grpRows))
-                                        {
-                                            var grpRow = grpRows.FirstOrDefault(sr => sr.ProcessType == sumPt);
-                                            if (grpRow is not null)
-                                            {
-                                                <tr class="group-row">
-                                                    <td></td>
-                                                    <td class="label-td group-name-td">↳ @grp</td>
-                                                    @foreach (var col in VisibleDateCols)
-                                                    {
-                                                        double v = grpRow.Ppm.GetValueOrDefault(col.Key);
-                                                        <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                                    }
-                                                    <td class="sep-td"></td>
-                                                    @foreach (var col in VisibleWeekCols)
-                                                    {
-                                                        double v = grpRow.Ppm.GetValueOrDefault(col.Key);
-                                                        <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                                    }
-                                                    <td class="sep-td"></td>
-                                                    @foreach (var col in VisibleMonthCols)
-                                                    {
-                                                        double v = grpRow.Ppm.GetValueOrDefault(col.Key);
-                                                        <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                                    }
-                                                </tr>
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        </tbody>
-                    </table>
-                </div>
-                <div style="position:relative; height:200px; margin-top:12px;">
-                    <canvas id="summaryChart_@_activeReportTab"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Process 10 NG ─────────────────────────────────────────────────── -->
-        <div class="card mb-3 shadow-sm">
-            <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
-                <span>Process 10 NG — Top 10 Worst Processes by PPM</span>
-                @if (_report.Top10Process.Any(r => r.Groups.Count > 0))
-                {
-                    <div class="d-flex gap-2">
-                        <button class="expand-btn" @onclick="ExpandAllProcess">Expand All</button>
-                        <span class="text-muted" style="font-size:10px;">|</span>
-                        <button class="expand-btn" @onclick="CollapseAllProcess">Collapse All</button>
-                    </div>
-                }
-            </div>
-            <div class="card-body p-2">
-                <div class="pivot-wrap">
-                    <table class="pivot-table">
-                        <thead>
-                            <tr>
-                                <th class="label-th" style="min-width:28px; text-align:center;">#</th>
-                                <th class="label-th" style="min-width:72px;">Type</th>
-                                <th class="label-th" style="min-width:150px;">Process Name</th>
-                                @foreach (var col in VisibleDateCols)
-                                {
-                                    <th>@col.Header</th>
-                                }
-                                <th class="sep-th"></th>
-                                @foreach (var col in VisibleWeekCols)
-                                {
-                                    <th>@col.Header</th>
-                                }
-                                <th class="sep-th"></th>
-                                @foreach (var col in VisibleMonthCols)
-                                {
-                                    <th>@col.Header</th>
-                                }
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var row in _report.Top10Process)
-                            {
-                                bool procExpanded = _expandedProcess.Contains(row.Rank);
-                                <tr class="rank-row">
-                                    <td class="toggle-cell" @onclick="@(() => ToggleProcess(row.Rank))">
-                                        @if (row.Groups.Count > 0)
-                                        {
-                                            <span class="toggle-icon">@(procExpanded ? "▼" : "▶")</span>
-                                        }
-                                        @row.Rank
-                                    </td>
-                                    <td class="label-td"><span class="pt-badge">@row.ProcessType</span></td>
-                                    <td class="label-td">@row.ProcessName</td>
-                                    @foreach (var col in VisibleDateCols)
-                                    {
-                                        double v = row.Ppm.GetValueOrDefault(col.Key);
-                                        <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                    }
-                                    <td class="sep-td"></td>
-                                    @foreach (var col in VisibleWeekCols)
-                                    {
-                                        double v = row.Ppm.GetValueOrDefault(col.Key);
-                                        <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                    }
-                                    <td class="sep-td"></td>
-                                    @foreach (var col in VisibleMonthCols)
-                                    {
-                                        double v = row.Ppm.GetValueOrDefault(col.Key);
-                                        <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                    }
-                                </tr>
-                                @if (procExpanded)
-                                {
-                                    @foreach (var grp in row.Groups)
-                                    {
-                                        <tr class="group-row">
-                                            <td></td>
-                                            <td></td>
-                                            <td class="label-td group-name-td">↳ @grp.GroupName</td>
-                                            @foreach (var col in VisibleDateCols)
-                                            {
-                                                double v = grp.Ppm.GetValueOrDefault(col.Key);
-                                                <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                            }
-                                            <td class="sep-td"></td>
-                                            @foreach (var col in VisibleWeekCols)
-                                            {
-                                                double v = grp.Ppm.GetValueOrDefault(col.Key);
-                                                <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                            }
-                                            <td class="sep-td"></td>
-                                            @foreach (var col in VisibleMonthCols)
-                                            {
-                                                double v = grp.Ppm.GetValueOrDefault(col.Key);
-                                                <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                            }
-                                        </tr>
-                                    }
-                                }
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Worst 10 NG ───────────────────────────────────────────────────── -->
-        <div class="card mb-3 shadow-sm">
-            <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
-                <span>Worst 10 NG — Top 10 Worst NG Names by PPM</span>
-                @if (_report.Top10Ng.Any(r => r.Groups.Count > 0))
-                {
-                    <div class="d-flex gap-2">
-                        <button class="expand-btn" @onclick="ExpandAllNg">Expand All</button>
-                        <span class="text-muted" style="font-size:10px;">|</span>
-                        <button class="expand-btn" @onclick="CollapseAllNg">Collapse All</button>
-                    </div>
-                }
-            </div>
-            <div class="card-body p-2">
-                <div class="pivot-wrap">
-                    <table class="pivot-table">
-                        <thead>
-                            <tr>
-                                <th class="label-th" style="min-width:28px; text-align:center;">#</th>
-                                <th class="label-th" style="min-width:72px;">Type</th>
-                                <th class="label-th" style="min-width:150px;">Process Name</th>
-                                <th class="label-th" style="min-width:130px;">NG Name</th>
-                                @foreach (var col in VisibleDateCols)
-                                {
-                                    <th>@col.Header</th>
-                                }
-                                <th class="sep-th"></th>
-                                @foreach (var col in VisibleWeekCols)
-                                {
-                                    <th>@col.Header</th>
-                                }
-                                <th class="sep-th"></th>
-                                @foreach (var col in VisibleMonthCols)
-                                {
-                                    <th>@col.Header</th>
-                                }
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var row in _report.Top10Ng)
-                            {
-                                bool ngExpanded = _expandedNg.Contains(row.Rank);
-                                <tr class="rank-row">
-                                    <td class="toggle-cell" @onclick="@(() => ToggleNg(row.Rank))">
-                                        @if (row.Groups.Count > 0)
-                                        {
-                                            <span class="toggle-icon">@(ngExpanded ? "▼" : "▶")</span>
-                                        }
-                                        @row.Rank
-                                    </td>
-                                    <td class="label-td"><span class="pt-badge">@row.ProcessType</span></td>
-                                    <td class="label-td">@row.ProcessName</td>
-                                    <td class="label-td">@row.NgName</td>
-                                    @foreach (var col in VisibleDateCols)
-                                    {
-                                        double v = row.Ppm.GetValueOrDefault(col.Key);
-                                        <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                    }
-                                    <td class="sep-td"></td>
-                                    @foreach (var col in VisibleWeekCols)
-                                    {
-                                        double v = row.Ppm.GetValueOrDefault(col.Key);
-                                        <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                    }
-                                    <td class="sep-td"></td>
-                                    @foreach (var col in VisibleMonthCols)
-                                    {
-                                        double v = row.Ppm.GetValueOrDefault(col.Key);
-                                        <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                    }
-                                </tr>
-                                @if (ngExpanded)
-                                {
-                                    @foreach (var grp in row.Groups)
-                                    {
-                                        <tr class="group-row">
-                                            <td></td>
-                                            <td></td>
-                                            <td class="label-td group-name-td">↳ @grp.GroupName</td>
-                                            <td></td>
-                                            @foreach (var col in VisibleDateCols)
-                                            {
-                                                double v = grp.Ppm.GetValueOrDefault(col.Key);
-                                                <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                            }
-                                            <td class="sep-td"></td>
-                                            @foreach (var col in VisibleWeekCols)
-                                            {
-                                                double v = grp.Ppm.GetValueOrDefault(col.Key);
-                                                <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                            }
-                                            <td class="sep-td"></td>
-                                            @foreach (var col in VisibleMonthCols)
-                                            {
-                                                double v = grp.Ppm.GetValueOrDefault(col.Key);
-                                                <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
-                                            }
-                                        </tr>
-                                    }
-                                }
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Reason ─────────────────────────────────────────────────────────── -->
-        @if (_report.ReasonRows.Count > 0)
+        <!-- ── Per-model sections (vertically stacked) ──────────────────────── -->
+        @for (int _mi = 0; _mi < _reports.Count; _mi++)
         {
-            <div class="card mb-3 shadow-sm">
-                <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
-                    <span>Reason — Defect Cause Classification</span>
-                    @if (_report.ReasonRows.Any(r => !r.IsTotal && r.Groups.Count > 0))
-                    {
-                        <div class="d-flex gap-2">
-                            <button class="expand-btn" @onclick="ExpandAllReason">Expand All</button>
-                            <span class="text-muted" style="font-size:10px;">|</span>
-                            <button class="expand-btn" @onclick="CollapseAllReason">Collapse All</button>
+            int mi      = _mi;
+            var rpt     = _reports[mi].Report;
+            string lbl  = _reports[mi].Label;
+            var dateCols  = GetVisibleDateCols(rpt).ToList();
+            var weekCols  = GetVisibleWeekCols(rpt).ToList();
+            var monthCols = GetVisibleMonthCols(rpt).ToList();
+
+            <!-- Model header -->
+            <div class="d-flex align-items-center gap-2 mb-2 @(mi > 0 ? "mt-4 pt-3 border-top" : "mt-2")">
+                <span class="badge bg-secondary" style="font-size:11px;">@(mi + 1)</span>
+                <h6 class="mb-0 fw-semibold" style="color:#1e40af;">@lbl</h6>
+                <span class="small text-muted ms-1">
+                    @Path.GetFileName(rpt.DbPath) ·
+                    @rpt.TotalRows.ToString("N0") rows ·
+                    @rpt.GeneratedAt.ToString("HH:mm:ss")
+                </span>
+            </div>
+
+            @if (_activeSection == "summary")
+            {
+                <!-- ── Summary ───────────────────────────────────────────── -->
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span>Summary — NG PPM by Process Type</span>
+                            @if (rpt.GroupNames.Count > 0)
+                            {
+                                <div class="d-flex flex-wrap gap-1 ms-1">
+                                    @foreach (var grp in rpt.GroupNames)
+                                    {
+                                        <span class="group-chip">@grp</span>
+                                    }
+                                </div>
+                            }
                         </div>
-                    }
-                </div>
-                <div class="card-body p-2">
-                    <div class="pivot-wrap">
-                        <table class="pivot-table">
-                            <thead>
-                                <tr>
-                                    <th class="label-th" style="min-width:90px;">Reason</th>
-                                    <th class="label-th" style="min-width:28px; text-align:center;">No</th>
-                                    <th class="label-th" style="min-width:72px;">Type</th>
-                                    <th class="label-th" style="min-width:160px;">Process Name</th>
-                                    <th class="label-th" style="min-width:120px;">NG Name</th>
-                                    @foreach (var col in VisibleDateCols)
+                        @if (rpt.GroupSummary.Count > 0)
+                        {
+                            <div class="d-flex gap-2 align-items-center">
+                                <button class="expand-btn" @onclick="@(() => ExpandAllSummaryFor(mi))">Expand All</button>
+                                <span class="text-muted" style="font-size:10px;">|</span>
+                                <button class="expand-btn" @onclick="@(() => CollapseAllSummaryFor(mi))">Collapse All</button>
+                            </div>
+                        }
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="pivot-wrap">
+                            <table class="pivot-table">
+                                <thead>
+                                    <tr>
+                                        <th class="label-th" style="min-width:20px; text-align:center;"></th>
+                                        <th class="label-th">Process Type</th>
+                                        @foreach (var col in dateCols)  { <th>@col.Header</th> }
+                                        <th class="sep-th"></th>
+                                        @foreach (var col in weekCols)  { <th>@col.Header</th> }
+                                        <th class="sep-th"></th>
+                                        @foreach (var col in monthCols) { <th>@col.Header</th> }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var sumRow in rpt.Summary)
                                     {
-                                        <th>@col.Header</th>
-                                    }
-                                    <th class="sep-th"></th>
-                                    @foreach (var col in VisibleWeekCols)
-                                    {
-                                        <th>@col.Header</th>
-                                    }
-                                    <th class="sep-th"></th>
-                                    @foreach (var col in VisibleMonthCols)
-                                    {
-                                        <th>@col.Header</th>
-                                    }
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @{ string? lastReason = null; }
-                                @foreach (var row in _report.ReasonRows)
-                                {
-                                    bool reasonChanged = row.Reason != lastReason;
-                                    lastReason = row.Reason;
-                                    if (row.IsTotal)
-                                    {
-                                        <tr class="total-row">
-                                            <td class="label-td fw-bold">@row.Reason</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td class="label-td text-muted" style="font-size:10px;">Total</td>
-                                            <td></td>
-                                            @foreach (var col in VisibleDateCols)
+                                        bool summaryHasGroups = rpt.GroupSummary.Count > 0;
+                                        string sumPt          = sumRow.ProcessType;
+                                        string sumKey         = $"{mi}|{sumPt}";
+                                        bool summaryExpanded  = _expandedSummary.Contains(sumKey);
+                                        <tr class="@(sumRow.IsTotal ? "total-row" : "rank-row")">
+                                            <td class="toggle-cell" @onclick="@(() => { if (summaryHasGroups) ToggleSummary(mi, sumPt); })">
+                                                @if (summaryHasGroups)
+                                                {
+                                                    <span class="toggle-icon">@(summaryExpanded ? "▼" : "▶")</span>
+                                                }
+                                            </td>
+                                            <td class="label-td">@sumRow.ProcessType</td>
+                                            @foreach (var col in dateCols)
                                             {
-                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                double v = sumRow.Ppm.GetValueOrDefault(col.Key);
                                                 <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                             }
                                             <td class="sep-td"></td>
-                                            @foreach (var col in VisibleWeekCols)
+                                            @foreach (var col in weekCols)
                                             {
-                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                double v = sumRow.Ppm.GetValueOrDefault(col.Key);
                                                 <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                             }
                                             <td class="sep-td"></td>
-                                            @foreach (var col in VisibleMonthCols)
+                                            @foreach (var col in monthCols)
                                             {
-                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                double v = sumRow.Ppm.GetValueOrDefault(col.Key);
                                                 <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                             }
                                         </tr>
+                                        @if (summaryExpanded)
+                                        {
+                                            @foreach (var grp in rpt.GroupNames)
+                                            {
+                                                if (rpt.GroupSummary.TryGetValue(grp, out var grpRows))
+                                                {
+                                                    var grpRow = grpRows.FirstOrDefault(sr => sr.ProcessType == sumPt);
+                                                    if (grpRow is not null)
+                                                    {
+                                                        <tr class="group-row">
+                                                            <td></td>
+                                                            <td class="label-td group-name-td">↳ @grp</td>
+                                                            @foreach (var col in dateCols)
+                                                            {
+                                                                double v = grpRow.Ppm.GetValueOrDefault(col.Key);
+                                                                <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                            }
+                                                            <td class="sep-td"></td>
+                                                            @foreach (var col in weekCols)
+                                                            {
+                                                                double v = grpRow.Ppm.GetValueOrDefault(col.Key);
+                                                                <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                            }
+                                                            <td class="sep-td"></td>
+                                                            @foreach (var col in monthCols)
+                                                            {
+                                                                double v = grpRow.Ppm.GetValueOrDefault(col.Key);
+                                                                <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                            }
+                                                        </tr>
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
-                                    else
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="position:relative; height:200px; margin-top:12px;">
+                            <canvas id="@($"summaryChart_m{mi}")"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (_activeSection == "process")
+            {
+                <!-- ── Process 10 NG ─────────────────────────────────────── -->
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+                        <span>Process 10 NG — Top 10 Worst Processes by PPM</span>
+                        @if (rpt.Top10Process.Any(r => r.Groups.Count > 0))
+                        {
+                            <div class="d-flex gap-2">
+                                <button class="expand-btn" @onclick="@(() => ExpandAllProcessFor(mi))">Expand All</button>
+                                <span class="text-muted" style="font-size:10px;">|</span>
+                                <button class="expand-btn" @onclick="@(() => CollapseAllProcessFor(mi))">Collapse All</button>
+                            </div>
+                        }
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="pivot-wrap">
+                            <table class="pivot-table">
+                                <thead>
+                                    <tr>
+                                        <th class="label-th" style="min-width:28px; text-align:center;">#</th>
+                                        <th class="label-th" style="min-width:72px;">Type</th>
+                                        <th class="label-th" style="min-width:150px;">Process Name</th>
+                                        @foreach (var col in dateCols)  { <th>@col.Header</th> }
+                                        <th class="sep-th"></th>
+                                        @foreach (var col in weekCols)  { <th>@col.Header</th> }
+                                        <th class="sep-th"></th>
+                                        @foreach (var col in monthCols) { <th>@col.Header</th> }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in rpt.Top10Process)
                                     {
-                                        string reasonKey = row.Reason + "|" + row.No;
-                                        bool reasonExpanded = _expandedReason.Contains(reasonKey);
+                                        string procKey    = $"{mi}|{row.Rank}";
+                                        bool procExpanded = _expandedProcess.Contains(procKey);
                                         <tr class="rank-row">
-                                            <td class="label-td" style="color:#94a3b8; font-size:10px;">@(reasonChanged ? row.Reason : "")</td>
-                                            <td class="toggle-cell" @onclick="@(() => ToggleReason(reasonKey))">
+                                            <td class="toggle-cell" @onclick="@(() => ToggleProcess(mi, row.Rank))">
                                                 @if (row.Groups.Count > 0)
                                                 {
-                                                    <span class="toggle-icon">@(reasonExpanded ? "▼" : "▶")</span>
+                                                    <span class="toggle-icon">@(procExpanded ? "▼" : "▶")</span>
                                                 }
-                                                @row.No
+                                                @row.Rank
                                             </td>
                                             <td class="label-td"><span class="pt-badge">@row.ProcessType</span></td>
                                             <td class="label-td">@row.ProcessName</td>
-                                            <td class="label-td">@row.NgName</td>
-                                            @foreach (var col in VisibleDateCols)
+                                            @foreach (var col in dateCols)
                                             {
                                                 double v = row.Ppm.GetValueOrDefault(col.Key);
                                                 <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                             }
                                             <td class="sep-td"></td>
-                                            @foreach (var col in VisibleWeekCols)
+                                            @foreach (var col in weekCols)
                                             {
                                                 double v = row.Ppm.GetValueOrDefault(col.Key);
                                                 <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                             }
                                             <td class="sep-td"></td>
-                                            @foreach (var col in VisibleMonthCols)
+                                            @foreach (var col in monthCols)
                                             {
                                                 double v = row.Ppm.GetValueOrDefault(col.Key);
                                                 <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                             }
                                         </tr>
-                                        @if (reasonExpanded)
+                                        @if (procExpanded)
                                         {
                                             @foreach (var grp in row.Groups)
                                             {
                                                 <tr class="group-row">
                                                     <td></td>
                                                     <td></td>
-                                                    <td></td>
                                                     <td class="label-td group-name-td">↳ @grp.GroupName</td>
-                                                    <td></td>
-                                                    @foreach (var col in VisibleDateCols)
+                                                    @foreach (var col in dateCols)
                                                     {
                                                         double v = grp.Ppm.GetValueOrDefault(col.Key);
                                                         <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                                     }
                                                     <td class="sep-td"></td>
-                                                    @foreach (var col in VisibleWeekCols)
+                                                    @foreach (var col in weekCols)
                                                     {
                                                         double v = grp.Ppm.GetValueOrDefault(col.Key);
                                                         <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                                     }
                                                     <td class="sep-td"></td>
-                                                    @foreach (var col in VisibleMonthCols)
+                                                    @foreach (var col in monthCols)
                                                     {
                                                         double v = grp.Ppm.GetValueOrDefault(col.Key);
                                                         <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
@@ -948,12 +688,253 @@
                                             }
                                         }
                                     }
-                                }
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
+            }
+            else if (_activeSection == "ng")
+            {
+                <!-- ── Worst 10 NG ───────────────────────────────────────── -->
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+                        <span>Worst 10 NG — Top 10 Worst NG Names by PPM</span>
+                        @if (rpt.Top10Ng.Any(r => r.Groups.Count > 0))
+                        {
+                            <div class="d-flex gap-2">
+                                <button class="expand-btn" @onclick="@(() => ExpandAllNgFor(mi))">Expand All</button>
+                                <span class="text-muted" style="font-size:10px;">|</span>
+                                <button class="expand-btn" @onclick="@(() => CollapseAllNgFor(mi))">Collapse All</button>
+                            </div>
+                        }
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="pivot-wrap">
+                            <table class="pivot-table">
+                                <thead>
+                                    <tr>
+                                        <th class="label-th" style="min-width:28px; text-align:center;">#</th>
+                                        <th class="label-th" style="min-width:72px;">Type</th>
+                                        <th class="label-th" style="min-width:150px;">Process Name</th>
+                                        <th class="label-th" style="min-width:130px;">NG Name</th>
+                                        @foreach (var col in dateCols)  { <th>@col.Header</th> }
+                                        <th class="sep-th"></th>
+                                        @foreach (var col in weekCols)  { <th>@col.Header</th> }
+                                        <th class="sep-th"></th>
+                                        @foreach (var col in monthCols) { <th>@col.Header</th> }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in rpt.Top10Ng)
+                                    {
+                                        string ngKey    = $"{mi}|{row.Rank}";
+                                        bool ngExpanded = _expandedNg.Contains(ngKey);
+                                        <tr class="rank-row">
+                                            <td class="toggle-cell" @onclick="@(() => ToggleNg(mi, row.Rank))">
+                                                @if (row.Groups.Count > 0)
+                                                {
+                                                    <span class="toggle-icon">@(ngExpanded ? "▼" : "▶")</span>
+                                                }
+                                                @row.Rank
+                                            </td>
+                                            <td class="label-td"><span class="pt-badge">@row.ProcessType</span></td>
+                                            <td class="label-td">@row.ProcessName</td>
+                                            <td class="label-td">@row.NgName</td>
+                                            @foreach (var col in dateCols)
+                                            {
+                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                            }
+                                            <td class="sep-td"></td>
+                                            @foreach (var col in weekCols)
+                                            {
+                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                            }
+                                            <td class="sep-td"></td>
+                                            @foreach (var col in monthCols)
+                                            {
+                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                            }
+                                        </tr>
+                                        @if (ngExpanded)
+                                        {
+                                            @foreach (var grp in row.Groups)
+                                            {
+                                                <tr class="group-row">
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td class="label-td group-name-td">↳ @grp.GroupName</td>
+                                                    <td></td>
+                                                    @foreach (var col in dateCols)
+                                                    {
+                                                        double v = grp.Ppm.GetValueOrDefault(col.Key);
+                                                        <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                    }
+                                                    <td class="sep-td"></td>
+                                                    @foreach (var col in weekCols)
+                                                    {
+                                                        double v = grp.Ppm.GetValueOrDefault(col.Key);
+                                                        <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                    }
+                                                    <td class="sep-td"></td>
+                                                    @foreach (var col in monthCols)
+                                                    {
+                                                        double v = grp.Ppm.GetValueOrDefault(col.Key);
+                                                        <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                    }
+                                                </tr>
+                                            }
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (_activeSection == "reason")
+            {
+                <!-- ── Reason ─────────────────────────────────────────────── -->
+                @if (rpt.ReasonRows.Count > 0)
+                {
+                    <div class="card mb-3 shadow-sm">
+                        <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+                            <span>Reason — Defect Cause Classification</span>
+                            @if (rpt.ReasonRows.Any(r => !r.IsTotal && r.Groups.Count > 0))
+                            {
+                                <div class="d-flex gap-2">
+                                    <button class="expand-btn" @onclick="@(() => ExpandAllReasonFor(mi))">Expand All</button>
+                                    <span class="text-muted" style="font-size:10px;">|</span>
+                                    <button class="expand-btn" @onclick="@(() => CollapseAllReasonFor(mi))">Collapse All</button>
+                                </div>
+                            }
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="pivot-wrap">
+                                <table class="pivot-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="label-th" style="min-width:90px;">Reason</th>
+                                            <th class="label-th" style="min-width:28px; text-align:center;">No</th>
+                                            <th class="label-th" style="min-width:72px;">Type</th>
+                                            <th class="label-th" style="min-width:160px;">Process Name</th>
+                                            <th class="label-th" style="min-width:120px;">NG Name</th>
+                                            @foreach (var col in dateCols)  { <th>@col.Header</th> }
+                                            <th class="sep-th"></th>
+                                            @foreach (var col in weekCols)  { <th>@col.Header</th> }
+                                            <th class="sep-th"></th>
+                                            @foreach (var col in monthCols) { <th>@col.Header</th> }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{ string? lastReason = null; }
+                                        @foreach (var row in rpt.ReasonRows)
+                                        {
+                                            bool reasonChanged = row.Reason != lastReason;
+                                            lastReason = row.Reason;
+                                            if (row.IsTotal)
+                                            {
+                                                <tr class="total-row">
+                                                    <td class="label-td fw-bold">@row.Reason</td>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td class="label-td text-muted" style="font-size:10px;">Total</td>
+                                                    <td></td>
+                                                    @foreach (var col in dateCols)
+                                                    {
+                                                        double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                        <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                    }
+                                                    <td class="sep-td"></td>
+                                                    @foreach (var col in weekCols)
+                                                    {
+                                                        double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                        <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                    }
+                                                    <td class="sep-td"></td>
+                                                    @foreach (var col in monthCols)
+                                                    {
+                                                        double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                        <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                    }
+                                                </tr>
+                                            }
+                                            else
+                                            {
+                                                string reasonKey = $"{mi}|{row.Reason}|{row.No}";
+                                                bool reasonExpanded = _expandedReason.Contains(reasonKey);
+                                                <tr class="rank-row">
+                                                    <td class="label-td" style="color:#94a3b8; font-size:10px;">@(reasonChanged ? row.Reason : "")</td>
+                                                    <td class="toggle-cell" @onclick="@(() => ToggleReason(reasonKey))">
+                                                        @if (row.Groups.Count > 0)
+                                                        {
+                                                            <span class="toggle-icon">@(reasonExpanded ? "▼" : "▶")</span>
+                                                        }
+                                                        @row.No
+                                                    </td>
+                                                    <td class="label-td"><span class="pt-badge">@row.ProcessType</span></td>
+                                                    <td class="label-td">@row.ProcessName</td>
+                                                    <td class="label-td">@row.NgName</td>
+                                                    @foreach (var col in dateCols)
+                                                    {
+                                                        double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                        <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                    }
+                                                    <td class="sep-td"></td>
+                                                    @foreach (var col in weekCols)
+                                                    {
+                                                        double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                        <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                    }
+                                                    <td class="sep-td"></td>
+                                                    @foreach (var col in monthCols)
+                                                    {
+                                                        double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                        <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                    }
+                                                </tr>
+                                                @if (reasonExpanded)
+                                                {
+                                                    @foreach (var grp in row.Groups)
+                                                    {
+                                                        <tr class="group-row">
+                                                            <td></td>
+                                                            <td></td>
+                                                            <td></td>
+                                                            <td class="label-td group-name-td">↳ @grp.GroupName</td>
+                                                            <td></td>
+                                                            @foreach (var col in dateCols)
+                                                            {
+                                                                double v = grp.Ppm.GetValueOrDefault(col.Key);
+                                                                <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                            }
+                                                            <td class="sep-td"></td>
+                                                            @foreach (var col in weekCols)
+                                                            {
+                                                                double v = grp.Ppm.GetValueOrDefault(col.Key);
+                                                                <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                            }
+                                                            <td class="sep-td"></td>
+                                                            @foreach (var col in monthCols)
+                                                            {
+                                                                double v = grp.Ppm.GetValueOrDefault(col.Key);
+                                                                <td class="@(v <= 0 ? "ppm-zero" : "")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                            }
+                                                        </tr>
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
         }
 
     </div>
@@ -989,9 +970,16 @@
     private bool   _isReportBusy = false;
     private string _reportError  = string.Empty;
     private List<(string Label, NgRateReportService.NgRateReport Report)> _reports = new();
-    private int    _activeReportTab = 0;
-    private NgRateReportService.NgRateReport? _report =>
-        _activeReportTab < _reports.Count ? _reports[_activeReportTab].Report : null;
+
+    // Section tabs (defect report type)
+    private static readonly (string Key, string Label)[] SectionTabs = new[]
+    {
+        ("summary", "Summary"),
+        ("process", "Process 10 NG"),
+        ("ng",      "Worst 10 NG"),
+        ("reason",  "Reason"),
+    };
+    private string _activeSection = "summary";
 
     // ── Chart state ───────────────────────────────────────────────────────────────
     private bool _pendingChartRender = false;
@@ -1001,20 +989,22 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_pendingChartRender && _report is not null)
+        if (_pendingChartRender && _activeSection == "summary" && _reports.Count > 0)
         {
             _pendingChartRender = false;
-            await RenderSummaryChartAsync();
+            for (int i = 0; i < _reports.Count; i++)
+                await RenderSummaryChartAsync(i);
         }
     }
 
-    private async Task RenderSummaryChartAsync()
+    private async Task RenderSummaryChartAsync(int modelIdx)
     {
-        if (_report is null) return;
+        if (modelIdx < 0 || modelIdx >= _reports.Count) return;
+        var rpt = _reports[modelIdx].Report;
 
-        var dateCols  = VisibleDateCols.ToList();
-        var weekCols  = VisibleWeekCols.ToList();
-        var monthCols = VisibleMonthCols.ToList();
+        var dateCols  = GetVisibleDateCols(rpt).ToList();
+        var weekCols  = GetVisibleWeekCols(rpt).ToList();
+        var monthCols = GetVisibleMonthCols(rpt).ToList();
         bool hasWeek  = weekCols.Count > 0;
         bool hasMonth = monthCols.Count > 0;
 
@@ -1035,7 +1025,7 @@
         }
 
         // TOTAL line chart
-        var totalRow = _report.Summary.FirstOrDefault(r => r.IsTotal);
+        var totalRow = rpt.Summary.FirstOrDefault(r => r.IsTotal);
         object? totalDs = totalRow is null ? null : new
         {
             label           = "TOTAL",
@@ -1053,7 +1043,7 @@
 
         // ProcessType bars
         int fi = 0;
-        var barDatasets = _report.Summary
+        var barDatasets = rpt.Summary
             .Where(r => !r.IsTotal)
             .Select(r =>
             {
@@ -1071,7 +1061,7 @@
             })
             .ToArray();
 
-        await JS.InvokeVoidAsync("ngRateChart.render", $"summaryChart_{_activeReportTab}", labels.ToArray(), barDatasets, totalDs);
+        await JS.InvokeVoidAsync("ngRateChart.render", $"summaryChart_m{modelIdx}", labels.ToArray(), barDatasets, totalDs);
     }
 
     private static double? GetChartVal(Dictionary<string, double> ppm, string key)
@@ -1087,40 +1077,82 @@
         return fb[fi % fb.Length];
     }
 
+    private async Task DestroyAllChartsAsync()
+    {
+        for (int i = 0; i < _reports.Count; i++)
+            try { await JS.InvokeVoidAsync("ngRateChart.destroy", $"summaryChart_m{i}"); } catch { }
+    }
+
     private async Task ClearReportAsync()
     {
-        for (int i = 0; i < _reports.Count; i++)
-            try { await JS.InvokeVoidAsync("ngRateChart.destroy", $"summaryChart_{i}"); } catch { }
+        await DestroyAllChartsAsync();
         _reports.Clear();
-        _activeReportTab = 0;
+        _activeSection = "summary";
+        _expandedSummary.Clear();
+        _expandedProcess.Clear();
+        _expandedNg.Clear();
+        _expandedReason.Clear();
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        for (int i = 0; i < _reports.Count; i++)
-            try { await JS.InvokeVoidAsync("ngRateChart.destroy", $"summaryChart_{i}"); } catch { }
-    }
+    public async ValueTask DisposeAsync() => await DestroyAllChartsAsync();
 
-    // ── Expand/Collapse state ─────────────────────────────────────────────────────
+    // ── Expand/Collapse state (keys are model-prefixed: "{mi}|...") ──────────────
     private HashSet<string> _expandedSummary = new();
-    private HashSet<int>    _expandedProcess = new();
-    private HashSet<int>    _expandedNg      = new();
+    private HashSet<string> _expandedProcess = new();
+    private HashSet<string> _expandedNg      = new();
     private HashSet<string> _expandedReason  = new();
 
-    private void ToggleSummary(string pt)  { if (!_expandedSummary.Remove(pt)) _expandedSummary.Add(pt); }
-    private void ExpandAllSummary()        { _expandedSummary = _report!.Summary.Select(r => r.ProcessType).ToHashSet(); }
-    private void CollapseAllSummary()      { _expandedSummary.Clear(); }
+    private void ToggleSummary(int mi, string pt)
+    {
+        string key = $"{mi}|{pt}";
+        if (!_expandedSummary.Remove(key)) _expandedSummary.Add(key);
+    }
+    private void ExpandAllSummaryFor(int mi)
+    {
+        foreach (var r in _reports[mi].Report.Summary)
+            _expandedSummary.Add($"{mi}|{r.ProcessType}");
+    }
+    private void CollapseAllSummaryFor(int mi)
+        => _expandedSummary.RemoveWhere(k => k.StartsWith($"{mi}|"));
 
-    private void ToggleProcess(int rank) { if (!_expandedProcess.Remove(rank)) _expandedProcess.Add(rank); }
-    private void ToggleNg(int rank)      { if (!_expandedNg.Remove(rank))      _expandedNg.Add(rank); }
-    private void ToggleReason(string key){ if (!_expandedReason.Remove(key))   _expandedReason.Add(key); }
+    private void ToggleProcess(int mi, int rank)
+    {
+        string key = $"{mi}|{rank}";
+        if (!_expandedProcess.Remove(key)) _expandedProcess.Add(key);
+    }
+    private void ToggleNg(int mi, int rank)
+    {
+        string key = $"{mi}|{rank}";
+        if (!_expandedNg.Remove(key)) _expandedNg.Add(key);
+    }
+    private void ToggleReason(string key)
+    {
+        if (!_expandedReason.Remove(key)) _expandedReason.Add(key);
+    }
 
-    private void ExpandAllProcess()   { _expandedProcess = _report!.Top10Process.Select(r => r.Rank).ToHashSet(); }
-    private void CollapseAllProcess() { _expandedProcess.Clear(); }
-    private void ExpandAllNg()        { _expandedNg = _report!.Top10Ng.Select(r => r.Rank).ToHashSet(); }
-    private void CollapseAllNg()      { _expandedNg.Clear(); }
-    private void ExpandAllReason()    { _expandedReason = _report!.ReasonRows.Where(r => !r.IsTotal).Select(r => r.Reason + "|" + r.No).ToHashSet(); }
-    private void CollapseAllReason()  { _expandedReason.Clear(); }
+    private void ExpandAllProcessFor(int mi)
+    {
+        foreach (var r in _reports[mi].Report.Top10Process)
+            _expandedProcess.Add($"{mi}|{r.Rank}");
+    }
+    private void CollapseAllProcessFor(int mi)
+        => _expandedProcess.RemoveWhere(k => k.StartsWith($"{mi}|"));
+
+    private void ExpandAllNgFor(int mi)
+    {
+        foreach (var r in _reports[mi].Report.Top10Ng)
+            _expandedNg.Add($"{mi}|{r.Rank}");
+    }
+    private void CollapseAllNgFor(int mi)
+        => _expandedNg.RemoveWhere(k => k.StartsWith($"{mi}|"));
+
+    private void ExpandAllReasonFor(int mi)
+    {
+        foreach (var r in _reports[mi].Report.ReasonRows.Where(r => !r.IsTotal))
+            _expandedReason.Add($"{mi}|{r.Reason}|{r.No}");
+    }
+    private void CollapseAllReasonFor(int mi)
+        => _expandedReason.RemoveWhere(k => k.StartsWith($"{mi}|"));
 
     // ── Column visibility ─────────────────────────────────────────────────────────
     private const int DateVisibleLimit  = 14;
@@ -1131,38 +1163,20 @@
     private bool _weekExpanded  = false;
     private bool _monthExpanded = false;
 
-    private IEnumerable<NgRateReportService.PeriodColumn> VisibleDateCols
-    {
-        get
-        {
-            if (_report is null) return [];
-            return !_dateExpanded && _report.DateCols.Count > DateVisibleLimit
-                ? _report.DateCols.Take(DateVisibleLimit)
-                : _report.DateCols;
-        }
-    }
+    private IEnumerable<NgRateReportService.PeriodColumn> GetVisibleDateCols(NgRateReportService.NgRateReport rpt)
+        => !_dateExpanded && rpt.DateCols.Count > DateVisibleLimit
+            ? rpt.DateCols.Take(DateVisibleLimit)
+            : rpt.DateCols;
 
-    private IEnumerable<NgRateReportService.PeriodColumn> VisibleWeekCols
-    {
-        get
-        {
-            if (_report is null) return [];
-            return !_weekExpanded && _report.WeekCols.Count > WeekVisibleLimit
-                ? _report.WeekCols.Take(WeekVisibleLimit)
-                : _report.WeekCols;
-        }
-    }
+    private IEnumerable<NgRateReportService.PeriodColumn> GetVisibleWeekCols(NgRateReportService.NgRateReport rpt)
+        => !_weekExpanded && rpt.WeekCols.Count > WeekVisibleLimit
+            ? rpt.WeekCols.Take(WeekVisibleLimit)
+            : rpt.WeekCols;
 
-    private IEnumerable<NgRateReportService.PeriodColumn> VisibleMonthCols
-    {
-        get
-        {
-            if (_report is null) return [];
-            return !_monthExpanded && _report.MonthCols.Count > MonthVisibleLimit
-                ? _report.MonthCols.Take(MonthVisibleLimit)
-                : _report.MonthCols;
-        }
-    }
+    private IEnumerable<NgRateReportService.PeriodColumn> GetVisibleMonthCols(NgRateReportService.NgRateReport rpt)
+        => !_monthExpanded && rpt.MonthCols.Count > MonthVisibleLimit
+            ? rpt.MonthCols.Take(MonthVisibleLimit)
+            : rpt.MonthCols;
 
     private void ToggleDateCols()  { _dateExpanded  = !_dateExpanded;  _pendingChartRender = true; }
     private void ToggleWeekCols()  { _weekExpanded  = !_weekExpanded;  _pendingChartRender = true; }
@@ -1283,8 +1297,9 @@
     private async Task GetReportAsync()
     {
         _reportError     = string.Empty;
+        await DestroyAllChartsAsync();
         _reports.Clear();
-        _activeReportTab = 0;
+        _activeSection = "summary";
         _isReportBusy    = true;
         _logs.Clear();
         _expandedSummary.Clear();
@@ -1364,14 +1379,14 @@
         }
     }
 
-    private async Task SwitchReportTab(int idx)
+    private async Task SwitchSectionAsync(string section)
     {
-        try { await JS.InvokeVoidAsync("ngRateChart.destroy", $"summaryChart_{_activeReportTab}"); } catch { }
-        _activeReportTab = idx;
-        _expandedProcess.Clear();
-        _expandedNg.Clear();
-        _expandedReason.Clear();
-        _pendingChartRender = true;
+        if (_activeSection == section) return;
+        if (_activeSection == "summary")
+            await DestroyAllChartsAsync();
+        _activeSection = section;
+        if (section == "summary")
+            _pendingChartRender = true;
     }
 
     // ── Utilities ─────────────────────────────────────────────────────────────────

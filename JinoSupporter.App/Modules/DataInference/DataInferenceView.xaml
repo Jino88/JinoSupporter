@@ -89,7 +89,7 @@
                 <StackPanel>
                     <TextBlock FontSize="20" FontWeight="SemiBold" Foreground="#22304A" Text="Data Inference" />
                     <TextBlock Margin="0,6,0,0" Foreground="#617084" FontSize="12"
-                               Text="Enter filename → Organize each table → Ctrl+V image → Save to DB" />
+                               Text="Enter filename → Apply each table (AI) → Ctrl+V image → Save to DB" />
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -148,26 +148,6 @@
                     <StackPanel Grid.Row="1" Margin="0,0,0,6">
                         <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#22304A"
                                    Text="Table Data Input" Margin="0,0,0,6"/>
-                        <!-- Input mode selector -->
-                        <Border Background="#F0F4F8" CornerRadius="6" Padding="8,6"
-                                BorderBrush="#D3DCEA" BorderThickness="1" Margin="0,0,0,6">
-                            <StackPanel Orientation="Horizontal">
-                                <RadioButton x:Name="RadioAiExtract"
-                                             Content="AI Extract"
-                                             IsChecked="True"
-                                             GroupName="InputMode"
-                                             FontSize="11" FontWeight="SemiBold"
-                                             Foreground="#22304A"
-                                             Margin="0,0,16,0"
-                                             ToolTip="Claude AI analyzes and extracts table structure" />
-                                <RadioButton x:Name="RadioJustInput"
-                                             Content="Just Input Table"
-                                             GroupName="InputMode"
-                                             FontSize="11" FontWeight="SemiBold"
-                                             Foreground="#22304A"
-                                             ToolTip="First row = headers, rest = data (no AI call)" />
-                            </StackPanel>
-                        </Border>
                         <CheckBox x:Name="IncludeImagesCheckBox"
                                   Content="Include Images in AI Analysis"
                                   FontSize="11" FontWeight="SemiBold"
@@ -179,7 +159,7 @@
                         <TextBlock x:Name="InputModeHintText"
                                    FontSize="10" Foreground="#617084" TextWrapping="Wrap"
                                    Margin="0,4,0,0"
-                                   Text="Select range → Ctrl+C → Ctrl+V here → Organize" />
+                                   Text="Select range → Ctrl+C → Ctrl+V here → Apply" />
                     </StackPanel>
 
                     <!-- TextArea: Border click passes focus to TextBox -->
@@ -202,7 +182,7 @@
                     <StackPanel Grid.Row="3" Margin="0,10,0,0">
 
                         <app:AppButton x:Name="OrganizeButton"
-                                Content="Organize"
+                                Content="Apply"
                                 HorizontalAlignment="Stretch"
                                 Margin="0,0,0,6"
                                 Click="AnalyzeButton_Click" />

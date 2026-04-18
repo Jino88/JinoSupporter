@@ -150,73 +150,44 @@ public partial class DataInferenceChatGptView : UserControl
     {
         if (_isBusy) return;
 
-        bool useAiText = RadioAiExtract.IsChecked == true;
         string rawData = NormalizeMergedCellsFillDown(DataInputTextBox.Text).Trim();
 
-        if (useAiText)
+        if (string.IsNullOrWhiteSpace(rawData))
         {
-            if (string.IsNullOrWhiteSpace(rawData))
-            {
-                SetStatus("Paste table data into the left input area first.");
-                return;
-            }
-
-            string? apiKey = WorkbenchSettingsStore.TryGetOpenAiApiKey();
-            if (string.IsNullOrWhiteSpace(apiKey))
-            {
-                SetStatus("OpenAI API key is missing. Go to Settings > OpenAI API Key.");
-                return;
-            }
-
-            await RunBusyAsync(async ct =>
-            {
-                int tableNo = _pendingTables.Count + 1;
-                SetStatus($"Organizing table {tableNo} via ChatGPT...");
-
-                (List<ColumnDef> columns, List<Dictionary<string, string>> rows, int inTok, int outTok)
-                    = await CallOpenAiAsync(apiKey, rawData, ct);
-
-                if (rows.Count == 0)
-                {
-                    SetStatus("No data extracted. Check the input format.");
-                    return;
-                }
-
-                AddPendingTable(tableNo, columns, rows);
-
-                _sessionInputTokens  += inTok;
-                _sessionOutputTokens += outTok;
-                int total = inTok + outTok;
-                UpdateTokenDisplay();
-                SetStatus($"Table {tableNo} done - {rows.Count:N0} rows  |  " +
-                          $"Tokens: in {inTok:N0} + out {outTok:N0} = {total:N0}");
-            });
+            SetStatus("Paste table data into the left input area first.");
+            return;
         }
-        else
+
+        string? apiKey = WorkbenchSettingsStore.TryGetOpenAiApiKey();
+        if (string.IsNullOrWhiteSpace(apiKey))
         {
-            // Just Input Table: parse tab-separated text directly (no AI)
-            if (string.IsNullOrWhiteSpace(rawData))
+            SetStatus("OpenAI API key is missing. Go to Settings > OpenAI API Key.");
+            return;
+        }
+
+        await RunBusyAsync(async ct =>
+        {
+            int tableNo = _pendingTables.Count + 1;
+            SetStatus($"Organizing table {tableNo} via ChatGPT...");
+
+            (List<ColumnDef> columns, List<Dictionary<string, string>> rows, int inTok, int outTok)
+                = await CallOpenAiAsync(apiKey, rawData, ct);
+
+            if (rows.Count == 0)
             {
-                SetStatus("Paste table data into the left input area first.");
+                SetStatus("No data extracted. Check the input format.");
                 return;
             }
 
-            await RunBusyAsync(_ =>
-            {
-                int tableNo = _pendingTables.Count + 1;
-                (List<ColumnDef> columns, List<Dictionary<string, string>> rows) = ParseTabSeparated(rawData);
+            AddPendingTable(tableNo, columns, rows);
 
-                if (rows.Count == 0)
-                {
-                    SetStatus("No rows found. Make sure the first row contains headers.");
-                    return Task.CompletedTask;
-                }
-
-                AddPendingTable(tableNo, columns, rows);
-                SetStatus($"Table {tableNo} loaded - {rows.Count:N0} rows (direct input, no AI)");
-                return Task.CompletedTask;
-            });
-        }
+            _sessionInputTokens  += inTok;
+            _sessionOutputTokens += outTok;
+            int total = inTok + outTok;
+            UpdateTokenDisplay();
+            SetStatus($"Table {tableNo} done - {rows.Count:N0} rows  |  " +
+                      $"Tokens: in {inTok:N0} + out {outTok:N0} = {total:N0}");
+        });
     }
 
     private void AddPendingTable(int tableNo, List<ColumnDef> columns, List<Dictionary<string, string>> rows)

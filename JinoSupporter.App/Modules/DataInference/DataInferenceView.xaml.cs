@@ -325,27 +325,17 @@ public partial class DataInferenceView : UserControl
             return;
         }
 
-        bool useAi = RadioAiExtract.IsChecked == true;
-
-        if (includeImages && hasImages && !useAi)
+        string? apiKey = WorkbenchSettingsStore.TryGetClaudeApiKey();
+        if (string.IsNullOrWhiteSpace(apiKey))
         {
-            SetStatus("Image analysis requires AI Extract mode. Switch to AI Extract.");
+            SetStatus("Claude API key is missing. Go to Settings > Claude API Key.");
             return;
         }
 
-        if (useAi)
+        List<PendingImage> imagesToSend = (includeImages && hasImages) ? [.. _pendingImages] : [];
+
+        await RunBusyAsync(async ct =>
         {
-            string? apiKey = WorkbenchSettingsStore.TryGetClaudeApiKey();
-            if (string.IsNullOrWhiteSpace(apiKey))
-            {
-                SetStatus("Claude API key is missing. Go to Settings > Claude API Key.");
-                return;
-            }
-
-            List<PendingImage> imagesToSend = (includeImages && hasImages) ? [.. _pendingImages] : [];
-
-            await RunBusyAsync(async ct =>
-            {
                 string glossary = _repository.GetGlossaryText();
 
                 // If multiple images: each image → its own table
@@ -397,27 +387,7 @@ public partial class DataInferenceView : UserControl
 
                 int made = calls.Count;
                 SetStatus($"{made} table(s) done | tokens {totalIn + totalOut:N0}");
-            });
-        }
-        else
-        {
-            // Just Input Table: parse tab-separated text directly (no AI)
-            await RunBusyAsync(_ =>
-            {
-                int tableNo = _pendingTables.Count + 1;
-                (List<ColumnDef> columns, List<Dictionary<string, string>> rows) = ParseTabSeparated(rawData);
-
-                if (rows.Count == 0)
-                {
-                    SetStatus("No rows found. Make sure the first row contains headers.");
-                    return Task.CompletedTask;
-                }
-
-                AddPendingTable(tableNo, columns, rows);
-                SetStatus($"Table {tableNo} loaded - {rows.Count:N0} rows (direct input, no AI)");
-                return Task.CompletedTask;
-            });
-        }
+        });
     }
 
     private void AddPendingTable(int tableNo, List<ColumnDef> columns, List<Dictionary<string, string>> rows)

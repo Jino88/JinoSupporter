@@ -519,7 +519,7 @@
             List<JsonGroupItem>? items = null;
             string loadedPg = "ETC";
 
-            // 새 포맷 시도
+            // Try new format
             try
             {
                 var wrapper = JsonSerializer.Deserialize<JsonFileWrapper>(content, opts);
@@ -531,7 +531,7 @@
             }
             catch { }
 
-            // 구 포맷 시도
+            // Fall back to legacy format
             if (items is null || items.Count == 0)
             {
                 try { items = JsonSerializer.Deserialize<List<JsonGroupItem>>(content, opts); }

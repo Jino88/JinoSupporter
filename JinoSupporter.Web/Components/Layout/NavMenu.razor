@@ -1,6 +1,8 @@
 @using JinoSupporter.Web.Services
-@inject NavigationManager Nav
-@inject IJSRuntime JS
+@inject NavigationManager      Nav
+@inject IJSRuntime             JS
+@inject MenuPermissionService  Perms
+@implements IDisposable
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid px-0">
@@ -13,7 +15,26 @@
 <div class="nav-scrollable" @onclick="OnNavScrollableClick">
     <nav class="flex-column">
 
-        <!-- ══ BMES (최상단) ═══════════════════════════════════════════════════ -->
+<AuthorizeView>
+    <Authorized>
+    @{
+        string userRole = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+        bool can(string id) => Perms.IsAllowed(userRole, id);
+
+        bool showBmes =
+            can(AppMenus.NgRate) || can(AppMenus.NgRateAll) || can(AppMenus.BmesWorkerStatus) ||
+            can(AppMenus.BmesMakeModel) || can(AppMenus.BmesSetting);
+
+        bool showDi =
+            can(AppMenus.DiInput) || can(AppMenus.DiDb) || can(AppMenus.DiBatch) ||
+            can(AppMenus.DiAnalysis) || can(AppMenus.DiAsk) || can(AppMenus.Report);
+
+        bool showAdmin = can(AppMenus.AdminUsers) || can(AppMenus.AdminSettings);
+        bool showTools = can(AppMenus.Schedule) || can(AppMenus.Translate) || showDi;
+    }
+
+    @if (showBmes)
+    {
         <div class="nav-section">BMES</div>
         <div class="nav-item">
             <button class="nav-link nav-group-toggle @(IsBmesActive ? "active" : "")"
@@ -26,95 +47,160 @@
         @if (_bmesOpen)
         {
             <div class="nav-submenu">
-                <div class="nav-item">
-                    <NavLink class="nav-link nav-sublink" href="ng-rate">
-                        <span class="nav-icon" style="font-size:11px;">📉</span> Report NG RATE
-                    </NavLink>
-                </div>
-                <div class="nav-item">
-                    <NavLink class="nav-link nav-sublink" href="bmes/worker-status">
-                        <span class="nav-icon" style="font-size:11px;">👷</span> Worker Status
-                    </NavLink>
-                </div>
-                <div class="nav-item">
-                    <NavLink class="nav-link nav-sublink" href="bmes/make-model">
-                        <span class="nav-icon" style="font-size:11px;">📦</span> Make Model Data
-                    </NavLink>
-                </div>
-                <div class="nav-item">
-                    <NavLink class="nav-link nav-sublink" href="bmes/setting">
-                        <span class="nav-icon" style="font-size:11px;">⚙️</span> Setting
-                    </NavLink>
-                </div>
+                @if (can(AppMenus.NgRate))
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="ng-rate">
+                            <span class="nav-icon" style="font-size:11px;">📉</span> Report NG RATE
+                        </NavLink>
+                    </div>
+                }
+                @if (can(AppMenus.NgRateAll))
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="ng-rate-all">
+                            <span class="nav-icon" style="font-size:11px;">📊</span> Report NG RATE All
+                        </NavLink>
+                    </div>
+                }
+                @if (can(AppMenus.BmesWorkerStatus))
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="bmes/worker-status">
+                            <span class="nav-icon" style="font-size:11px;">👷</span> Worker Status
+                        </NavLink>
+                    </div>
+                }
+                @if (can(AppMenus.BmesMakeModel))
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="bmes/make-model">
+                            <span class="nav-icon" style="font-size:11px;">📦</span> Make Model Data
+                        </NavLink>
+                    </div>
+                }
+                @if (can(AppMenus.BmesSetting))
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="bmes/setting">
+                            <span class="nav-icon" style="font-size:11px;">⚙️</span> Setting
+                        </NavLink>
+                    </div>
+                }
             </div>
         }
+    }
 
-        <!-- ══ Tools ═══════════════════════════════════════════════════════════ -->
+    @if (showTools)
+    {
         <div class="nav-section" style="margin-top:12px;">Tools</div>
 
-        <!-- Schedule -->
-        <div class="nav-item">
-            <NavLink class="nav-link" href="schedule">
-                <span class="nav-icon">📅</span> Schedule
-            </NavLink>
-        </div>
-
-        <!-- Data Inference (서브메뉴) -->
-        <div class="nav-item">
-            <button class="nav-link nav-group-toggle @(IsDataInferenceActive ? "active" : "")"
-                    @onclick="ToggleDataInference"
-                    @onclick:stopPropagation="true">
-                <span class="nav-icon">⚙</span> Data Inference
-                <span class="nav-caret @(_diOpen ? "open" : "")">›</span>
-            </button>
-        </div>
-        @if (_diOpen)
+        @if (can(AppMenus.Schedule))
         {
-            <div class="nav-submenu">
-                <div class="nav-item">
-                    <NavLink class="nav-link nav-sublink" href="data-inference" Match="NavLinkMatch.All">
-                        <span class="nav-icon" style="font-size:11px;">📥</span> Input Data
-                    </NavLink>
-                </div>
-                <div class="nav-item">
-                    <NavLink class="nav-link nav-sublink" href="data-inference-test">
-                        <span class="nav-icon" style="font-size:11px;">🧪</span> Input Data (TEST)
-                    </NavLink>
-                </div>
-                <div class="nav-item">
-                    <NavLink class="nav-link nav-sublink" href="data-inference/db">
-                        <span class="nav-icon" style="font-size:11px;">🗄</span> DB Data
-                    </NavLink>
-                </div>
-                <div class="nav-item">
-                    <NavLink class="nav-link nav-sublink" href="report">
-                        <span class="nav-icon" style="font-size:11px;">📊</span> Report
-                    </NavLink>
-                </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="schedule">
+                    <span class="nav-icon">📅</span> Schedule
+                </NavLink>
             </div>
         }
 
-        <div class="nav-item">
-            <NavLink class="nav-link" href="translate">
-                <span class="nav-icon">🌐</span> Translate
-            </NavLink>
-        </div>
+        @if (showDi)
+        {
+            <div class="nav-item">
+                <button class="nav-link nav-group-toggle @(IsDataInferenceActive ? "active" : "")"
+                        @onclick="ToggleDataInference"
+                        @onclick:stopPropagation="true">
+                    <span class="nav-icon">⚙</span> Data Inference
+                    <span class="nav-caret @(_diOpen ? "open" : "")">›</span>
+                </button>
+            </div>
+            @if (_diOpen)
+            {
+                <div class="nav-submenu">
+                    @if (can(AppMenus.DiInput))
+                    {
+                        <div class="nav-item">
+                            <NavLink class="nav-link nav-sublink" href="data-inference" Match="NavLinkMatch.All">
+                                <span class="nav-icon" style="font-size:11px;">📥</span> Input Data
+                            </NavLink>
+                        </div>
+                    }
+                    @if (can(AppMenus.DiDb))
+                    {
+                        <div class="nav-item">
+                            <NavLink class="nav-link nav-sublink" href="data-inference/db">
+                                <span class="nav-icon" style="font-size:11px;">🗄</span> DB Data
+                            </NavLink>
+                        </div>
+                    }
+                    @if (can(AppMenus.DiBatch))
+                    {
+                        <div class="nav-item">
+                            <NavLink class="nav-link nav-sublink" href="data-inference/batch">
+                                <span class="nav-icon" style="font-size:11px;">🤖</span> AI Batch
+                            </NavLink>
+                        </div>
+                    }
+                    @if (can(AppMenus.DiAnalysis))
+                    {
+                        <div class="nav-item">
+                            <NavLink class="nav-link nav-sublink" href="data-inference/analysis">
+                                <span class="nav-icon" style="font-size:11px;">📈</span> Analysis
+                            </NavLink>
+                        </div>
+                    }
+                    @if (can(AppMenus.DiAsk))
+                    {
+                        <div class="nav-item">
+                            <NavLink class="nav-link nav-sublink" href="data-inference/ask">
+                                <span class="nav-icon" style="font-size:11px;">💬</span> Ask AI
+                            </NavLink>
+                        </div>
+                    }
+                    @if (can(AppMenus.Report))
+                    {
+                        <div class="nav-item">
+                            <NavLink class="nav-link nav-sublink" href="report">
+                                <span class="nav-icon" style="font-size:11px;">📊</span> Report
+                            </NavLink>
+                        </div>
+                    }
+                </div>
+            }
+        }
 
-        <AuthorizeView Roles="Admin">
-            <Authorized>
-                <div class="nav-section" style="margin-top:12px;">Admin</div>
-                <div class="nav-item">
-                    <NavLink class="nav-link" href="admin/users">
-                        <span class="nav-icon">👥</span> Users
-                    </NavLink>
-                </div>
-                <div class="nav-item">
-                    <NavLink class="nav-link" href="admin/settings">
-                        <span class="nav-icon">🔑</span> Settings
-                    </NavLink>
-                </div>
-            </Authorized>
-        </AuthorizeView>
+        @if (can(AppMenus.Translate))
+        {
+            <div class="nav-item">
+                <NavLink class="nav-link" href="translate">
+                    <span class="nav-icon">🌐</span> Translate
+                </NavLink>
+            </div>
+        }
+    }
+
+    @if (showAdmin)
+    {
+        <div class="nav-section" style="margin-top:12px;">Admin</div>
+        @if (can(AppMenus.AdminUsers))
+        {
+            <div class="nav-item">
+                <NavLink class="nav-link" href="admin/users">
+                    <span class="nav-icon">👥</span> Users
+                </NavLink>
+            </div>
+        }
+        @if (can(AppMenus.AdminSettings))
+        {
+            <div class="nav-item">
+                <NavLink class="nav-link" href="admin/settings">
+                    <span class="nav-icon">🔑</span> Settings
+                </NavLink>
+            </div>
+        }
+    }
+    </Authorized>
+</AuthorizeView>
     </nav>
 
     @* User info + logout at bottom *@
@@ -163,14 +249,14 @@
 
     private bool IsBmesActive =>
         Nav.Uri.Contains("/ng-rate",                  StringComparison.OrdinalIgnoreCase) ||
+        Nav.Uri.Contains("/ng-rate-all",              StringComparison.OrdinalIgnoreCase) ||
         Nav.Uri.Contains("/bmes/",                    StringComparison.OrdinalIgnoreCase) ||
         Nav.Uri.Contains("/bmes/worker-status",       StringComparison.OrdinalIgnoreCase) ||
         Nav.Uri.Contains("/bmes/make-model",          StringComparison.OrdinalIgnoreCase);
 
     private bool IsDataInferenceActive =>
         Nav.Uri.Contains("/data-inference", StringComparison.OrdinalIgnoreCase) ||
-        Nav.Uri.Contains("/report",         StringComparison.OrdinalIgnoreCase) ||
-        Nav.Uri.Contains("/data-inference-test", StringComparison.OrdinalIgnoreCase);
+        Nav.Uri.Contains("/report",         StringComparison.OrdinalIgnoreCase);
 
     private void ToggleBmes()          => _bmesOpen = !_bmesOpen;
     private void ToggleDataInference() => _diOpen   = !_diOpen;

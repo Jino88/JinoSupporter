@@ -1,1248 +1,594 @@
-@page "/data-inference-test"
-@page "/data-inference-test/{InitialTab}"
+@page "/data-inference"
 @rendermode InteractiveServer
-@using System.Linq
 @implements IAsyncDisposable
 @inject WebRepository Repo
 @inject ClaudeService  Claude
 @inject IJSRuntime     JS
 
-<PageTitle>Data Inference TEST</PageTitle>
+<PageTitle>Data Inference — Input Data</PageTitle>
+
+<div class="di-root">
 
 @if (!Claude.IsConfigured)
 {
-    <div class="alert alert-warning mb-2 py-2 small">
-        <strong>Claude API key not configured.</strong>
+    <div class="alert alert-warning mb-0 py-2 small" style="flex-shrink:0; margin:8px 14px 0;">
+        <strong>Claude API key not configured.</strong> Go to Admin → Settings to add your key.
     </div>
 }
 
-<!-- ══ Top bar ══════════════════════════════════════════════════════════════ -->
+<!-- ── Top bar ──────────────────────────────────────────────────────────────── -->
 <div class="di-topbar">
-    <div class="input-group input-group-sm" style="max-width:340px; flex-shrink:0;">
-        <input @bind="_datasetName" class="form-control" placeholder="Dataset name…" />
-        <select class="form-select" style="max-width:120px;" @onchange="OnDatasetSelected">
-            <option value="">Select…</option>
-            @foreach (var ds in _allDatasets)
+    <div class="di-topbar-left">
+        <label class="di-label">Dataset</label>
+        <input @bind="_datasetName" class="form-control form-control-sm di-input-name"
+               placeholder="Dataset name…" />
+        <label class="di-label">Product Type</label>
+        <input @bind="_productType" class="form-control form-control-sm" style="width:160px;"
+               list="productTypeOptions" placeholder="e.g. BRS-161016" autocomplete="off" />
+        <datalist id="productTypeOptions">
+            @foreach (var pt in _productTypeOptions)
             {
-                <option value="@ds">@ds</option>
+                <option value="@pt"></option>
+            }
+        </datalist>
+        <label class="di-label">Date</label>
+        <input type="date" value="@_testDate"
+               @onchange="@(e => _testDate = e.Value?.ToString() ?? _testDate)"
+               class="form-control form-control-sm" style="width:145px;" />
+    </div>
+    <div class="di-topbar-right">
+        <select class="form-select form-select-sm" style="width:220px;" @onchange="OnLoadExisting">
+            <option value="">Load existing…</option>
+            @foreach (var r in _allReports)
+            {
+                <option value="@r.DatasetName">@r.DatasetName</option>
             }
         </select>
-    </div>
-
-    @if (CanEdit)
-    {
-        <button class="btn btn-success btn-sm" @onclick="SaveToDbAsync"
+        <button class="btn btn-primary btn-sm" @onclick="AnalyzeAsync"
+                disabled="@(_images.Count == 0 || _isBusy || !Claude.IsConfigured)">
+            @if (_isBusy && _busyStep == "analyze") { <span class="spinner-border spinner-border-sm me-1"></span> }
+            Analyze
+        </button>
+        <button class="btn btn-success btn-sm" @onclick="SaveAsync"
                 disabled="@(_isBusy || string.IsNullOrWhiteSpace(_datasetName))">
-            @if (_isBusy && _busyStep == "save")
-            { <span class="spinner-border spinner-border-sm me-1" /> }
+            @if (_isBusy && _busyStep == "save") { <span class="spinner-border spinner-border-sm me-1"></span> }
             Save
         </button>
-    }
-
-    @if (!string.IsNullOrEmpty(_statusMessage))
-    {
-        <span class="small @(_statusIsError ? "text-danger" : "text-success")">@_statusMessage</span>
-    }
-
-    <div style="flex:1;"></div>
-    <button class="btn btn-outline-secondary btn-sm" @onclick="ClearAll" disabled="@_isBusy">Clear</button>
+        <button class="btn btn-outline-secondary btn-sm" @onclick="Clear" disabled="@_isBusy">Clear</button>
+    </div>
 </div>
 
-<!-- ══ Main: document canvas + right sidebar ═══════════════════════════════ -->
-<div class="di-editor-wrap">
-
-    <!-- ── Document page background ── -->
-    <div class="di-page-bg">
-        <div class="di-doc-page">
-
-            <!-- ══ Report Header ══════════════════════════════════════════════ -->
-            <table class="di-rpt-hdr">
-                <tbody>
-                    <tr>
-                        <td class="di-rpt-title-lbl" rowspan="3">TITLE</td>
-                        <td class="di-rpt-title-txt" rowspan="3">
-                            <input class="di-rpt-title-input"
-                                   value="@_reportTitle"
-                                   @oninput="e => _reportTitle = e.Value?.ToString() ?? _reportTitle"
-                                   placeholder="Report Title…" />
-                        </td>
-                        <td class="di-rpt-meta-lbl">Dept</td>
-                        <td class="di-rpt-meta-val">
-                            <input class="di-rpt-meta-input" value="@_reportDept"
-                                   @oninput="e => _reportDept = e.Value?.ToString() ?? _reportDept" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="di-rpt-meta-lbl">Date</td>
-                        <td class="di-rpt-meta-val">
-                            <input class="di-rpt-meta-input" value="@_reportDate"
-                                   @oninput="e => _reportDate = e.Value?.ToString() ?? _reportDate" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="di-rpt-meta-lbl">Marker</td>
-                        <td class="di-rpt-meta-val">
-                            <input class="di-rpt-meta-input" value="@_reportMarker"
-                                   @oninput="e => _reportMarker = e.Value?.ToString() ?? _reportMarker" />
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <!-- ══ I. Purpose ═════════════════════════════════════════════════ -->
-            <div class="di-rpt-sec">
-                <div class="di-rpt-sec-hd">I. Purpose.</div>
-                <textarea class="di-rpt-sec-body"
-                          value="@_secPurpose"
-                          @oninput="e => _secPurpose = e.Value?.ToString() ?? _secPurpose"
-                          placeholder="- 목적을 입력하세요…"
-                          rows="3"></textarea>
-            </div>
-
-            <!-- ══ II. Content ════════════════════════════════════════════════ -->
-            <div class="di-rpt-sec">
-                <div class="di-rpt-sec-hd">II. Content.</div>
-                <textarea class="di-rpt-sec-body"
-                          value="@_secContent"
-                          @oninput="e => _secContent = e.Value?.ToString() ?? _secContent"
-                          placeholder="- 내용을 입력하세요…"
-                          rows="3"></textarea>
-            </div>
-
-            <!-- ══ III. Result ════════════════════════════════════════════════ -->
-            <div class="di-rpt-sec">
-                <div class="di-rpt-sec-hd">III. Result</div>
-
-                <!-- Drop zone 0 -->
-                <div class="di-dropzone" data-di-zone="0">
-                    @if (_docBlocks.Count == 0)
-                    {
-                        <div class="di-dz-hint" style="padding:30px 20px;">
-                            <span style="font-size:28px; opacity:.3;">⬇</span>
-                            <div style="margin-top:6px; font-size:13px; color:#94a3b8;">
-                                오른쪽에서 테이블·이미지를 드래그하거나 텍스트를 추가하세요
-                            </div>
-                            <button class="di-add-text-btn" @onclick="() => AddTextBlock(0)">＋ 텍스트 추가</button>
-                        </div>
-                    }
-                    else
-                    {
-                        <button class="di-add-text-inline" @onclick="() => AddTextBlock(0)">＋</button>
-                    }
-                </div>
-
-                @foreach (var block in _docBlocks)
-                {
-                    var blk    = block;
-                    var blkIdx = _docBlocks.IndexOf(blk);
-                    var dzi    = blkIdx + 1;
-
-                    <div class="di-block">
-                        <div class="di-block-bar">
-                            <button class="di-slot-btn" title="위로"
-                                    disabled="@(blkIdx == 0)"
-                                    @onclick="() => MoveBlock(blk, -1)">▲</button>
-                            <button class="di-slot-btn" title="아래로"
-                                    disabled="@(blkIdx == _docBlocks.Count - 1)"
-                                    @onclick="() => MoveBlock(blk, 1)">▼</button>
-                            <button class="di-slot-btn" title="@(blk.Span == 2 ? "절반 너비로" : "전체 너비로")"
-                                    @onclick="() => { blk.Span = blk.Span == 2 ? 1 : 2; }">
-                                @(blk.Span == 2 ? "⬡" : "⬢")
-                            </button>
-                            <span style="flex:1; font-size:11px; color:#64748b;
-                                         overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0 4px;">
-                                @(blk.Kind == "table" ? blk.Table?.TableName : blk.Kind == "image" ? blk.Image?.Name : "Text")
-                            </span>
-                            <button class="di-slot-btn di-slot-remove" title="제거"
-                                    @onclick="() => _docBlocks.Remove(blk)">✕</button>
-                        </div>
-
-                        @if (blk.Kind == "table" && blk.Table is not null)
-                        {
-                            var table = blk.Table;
-                            <div class="card mb-0 border @(table.IsExisting ? "border-secondary opacity-75" : "")"
-                                 style="@(blk.Span == 1 ? "max-width:50%;" : "")">
-                                <div class="card-header py-2 d-flex align-items-center gap-2"
-                                     style="@(table.IsExisting ? "background:#f1f5f9;" : "")">
-                                    <input class="form-control form-control-sm fw-semibold"
-                                           style="max-width:260px; font-size:13px;"
-                                           value="@table.TableName"
-                                           disabled="@table.IsExisting"
-                                           @oninput="e => table.TableName = e.Value?.ToString() ?? table.TableName" />
-                                    <span class="text-muted small">@table.Rows.Count rows</span>
-                                    @if (table.IsExisting)
-                                    {
-                                        <span class="badge text-bg-secondary ms-auto">existing</span>
-                                    }
-                                    else
-                                    {
-                                        <button class="btn btn-danger btn-sm ms-auto"
-                                                @onclick="() => RemovePendingTable(table)">Delete</button>
-                                    }
-                                </div>
-                                <div style="overflow:auto; max-height:320px;">
-                                    <table style="font-size:11px; min-width:max-content;
-                                                  border-collapse:collapse; width:100%;">
-                                        <thead style="position:sticky; top:0; z-index:1; background:#f8fafc;">
-                                            @if (table.HeaderRows != null)
-                                            {
-                                                @foreach (var hrow in table.HeaderRows)
-                                                {
-                                                    <tr>
-                                                        @foreach (var hcell in hrow)
-                                                        {
-                                                            <th colspan="@hcell.Colspan" rowspan="@hcell.Rowspan"
-                                                                style="padding:6px 10px; font-size:10px; font-weight:700;
-                                                                       color:#64748b; text-transform:uppercase; letter-spacing:.4px;
-                                                                       white-space:normal; word-break:break-word;
-                                                                       min-width:60px; max-width:160px;
-                                                                       border-bottom:2px solid #e2e8f0;
-                                                                       border-right:1px solid #e2e8f0;
-                                                                       vertical-align:middle; line-height:1.3; text-align:center;">
-                                                                @hcell.Label
-                                                            </th>
-                                                        }
-                                                    </tr>
-                                                }
-                                            }
-                                            else
-                                            {
-                                                <tr>
-                                                    @{ int pci = 0; }
-                                                    @foreach (ColumnDef col in table.Columns)
-                                                    {
-                                                        int ci = pci++;
-                                                        <th style="padding:6px 10px; font-size:10px; font-weight:700;
-                                                                   color:#64748b; text-transform:uppercase; letter-spacing:.4px;
-                                                                   white-space:normal; word-break:break-word;
-                                                                   min-width:60px; max-width:160px;
-                                                                   border-bottom:2px solid #e2e8f0;
-                                                                   cursor:context-menu; user-select:none;
-                                                                   vertical-align:bottom; line-height:1.3;"
-                                                            title="Right-click to delete column"
-                                                            @oncontextmenu="e => ShowCtxMenu(e, table, -1, ci)"
-                                                            @oncontextmenu:preventDefault="true">
-                                                            @col.Label
-                                                        </th>
-                                                    }
-                                                </tr>
-                                            }
-                                        </thead>
-                                        <tbody>
-                                            @{ int pri = 0; }
-                                            @foreach (Dictionary<string, string> row in table.Rows.Take(200))
-                                            {
-                                                int ri = pri++;
-                                                <tr style="border-top:1px solid #f1f5f9;"
-                                                    @oncontextmenu="e => ShowCtxMenu(e, table, ri, -1)"
-                                                    @oncontextmenu:preventDefault="true">
-                                                    @foreach (ColumnDef col in table.Columns)
-                                                    {
-                                                        string cv = row.TryGetValue(col.Field, out string? v) ? v ?? "" : "";
-                                                        <td style="padding:0; border-top:1px solid #f1f5f9;"
-                                                            @onclick:stopPropagation="true">
-                                                            @if (IsEditing(table, ri, col.Field))
-                                                            {
-                                                                <input class="di-cell-input"
-                                                                       value="@_editValue"
-                                                                       @oninput="e => _editValue = e.Value?.ToString() ?? _editValue"
-                                                                       @onblur="CommitEdit"
-                                                                       @onkeydown="OnEditKeyDown"
-                                                                       @ref="_editRef" />
-                                                            }
-                                                            else
-                                                            {
-                                                                <span class="di-cell-span"
-                                                                      @onclick="() => StartEdit(table, ri, col.Field, cv)">
-                                                                    @cv
-                                                                </span>
-                                                            }
-                                                        </td>
-                                                    }
-                                                </tr>
-                                            }
-                                            @if (table.Rows.Count > 200)
-                                            {
-                                                <tr>
-                                                    <td colspan="@table.Columns.Count"
-                                                        style="text-align:center; padding:6px; color:#94a3b8; font-size:10px;">
-                                                        … @(table.Rows.Count - 200) more rows
-                                                    </td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        }
-                        else if (blk.Kind == "image" && blk.Image is not null)
-                        {
-                            <div class="card mb-0 border"
-                                 style="overflow:hidden; @(blk.Span == 1 ? "max-width:50%;" : "")">
-                                <img src="@blk.Image.DataUrl" alt="@blk.Image.Name"
-                                     style="width:100%; display:block; object-fit:contain;
-                                            max-height:480px; background:#f8fafc;" />
-                            </div>
-                        }
-                        else if (blk.Kind == "text")
-                        {
-                            <textarea class="di-text-block"
-                                      style="@(blk.Span == 1 ? "max-width:50%;" : "")"
-                                      placeholder="텍스트를 입력하세요…"
-                                      rows="3"
-                                      value="@blk.Text"
-                                      @oninput="e => blk.Text = e.Value?.ToString() ?? blk.Text"
-                                      @onkeydown:stopPropagation="true"></textarea>
-                        }
-                    </div>
-
-                    <div class="di-dropzone" data-di-zone="@dzi">
-                        <button class="di-add-text-inline" @onclick="() => AddTextBlock(dzi)">＋</button>
-                    </div>
-                }
-
-            </div>
-
-            <!-- ══ IV. Decision ══════════════════════════════════════════════ -->
-            <div class="di-rpt-sec di-rpt-sec-last">
-                <div class="di-rpt-sec-hd">IV. Decision</div>
-                <textarea class="di-rpt-sec-body"
-                          value="@_secDecision"
-                          @oninput="e => _secDecision = e.Value?.ToString() ?? _secDecision"
-                          placeholder="- 내용을 입력하세요…"
-                          rows="3"></textarea>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- ══ Center: Tool Menu ═══════════════════════════════════════════════════ -->
-    <div class="di-center-menu">
-        <button class="di-menu-btn @(_toolsTab == "table" ? "di-menu-active" : "")"
-                @onclick="SelectTableTab">
-            <div class="di-menu-icon">📋</div>
-            <div class="di-menu-label">Table</div>
-        </button>
-        <button class="di-menu-btn @(_toolsTab == "image" ? "di-menu-active" : "")"
-                @onclick="SelectImageTab">
-            <div class="di-menu-icon">🖼</div>
-            <div class="di-menu-label">Image</div>
-        </button>
-    </div>
-
-    <!-- ══ Right: Registration Panel ════════════════════════════════════════════ -->
-    <div class="di-reg-panel">
-
-        <!-- ── Table 등록 ── -->
-        @if (_toolsTab == "table")
-        {
-            <div class="di-rp-hd">📋 Table 등록</div>
-            <div class="di-rp-body">
-
-                <div class="di-rp-hint">
-                    Excel에서 범위 선택 후 <strong>Ctrl+C</strong> → 아래에 붙여넣기
-                    <br/><span>탭 구분 데이터는 자동으로 표가 생성됩니다</span>
-                </div>
-
-                <textarea class="di-rp-paste font-monospace"
-                          value="@_rawInput"
-                          @oninput="OnTableInputChanged"
-                          placeholder="Ctrl+V 로 붙여넣기…"
-                          rows="12" spellcheck="false"></textarea>
-
-                @if (_useAi && CanOrganize)
-                {
-                    <button class="btn btn-primary btn-sm w-100 mt-2" @onclick="OrganizeAsync"
-                            disabled="@_isBusy">
-                        @if (_isBusy && _busyStep == "organize")
-                        { <span class="spinner-border spinner-border-sm me-1" /> }
-                        AI 분석으로 표 생성
-                    </button>
-                }
-
-                <div class="d-flex align-items-center gap-2 mt-2">
-                    <span class="di-mode-lbl">모드</span>
-                    <div class="btn-group btn-group-sm">
-                        <input type="radio" class="btn-check" id="tp-ai" name="tp-mode"
-                               checked="@_useAi" @onchange="() => SetMode(true)" />
-                        <label class="btn btn-outline-primary" for="tp-ai">AI</label>
-                        <input type="radio" class="btn-check" id="tp-direct" name="tp-mode"
-                               checked="@(!_useAi)" @onchange="() => SetMode(false)" />
-                        <label class="btn btn-outline-primary" for="tp-direct">Direct</label>
-                    </div>
-                    @if (!_useAi)
-                    {
-                        <span class="di-mode-lbl" style="color:#22c55e;">자동 파싱</span>
-                    }
-                </div>
-
-                @if (_pendingTables.Count > 0)
-                {
-                    <div class="di-rp-list-hd">등록된 테이블 — 드래그해서 배치</div>
-                    @for (int ti = 0; ti < _pendingTables.Count; ti++)
-                    {
-                        var tblCap = _pendingTables[ti];
-                        bool inDoc = _docBlocks.Any(b => b.Table == tblCap);
-                        int  tidx  = ti;
-                        <div class="di-tb-item @(inDoc ? "di-tb-on" : "")"
-                             draggable="true"
-                             data-di-kind="table"
-                             data-di-idx="@tidx"
-                             title="@tblCap.TableName">
-                            <span class="di-tb-icon">⠿</span>
-                            <span class="di-tb-label">@tblCap.TableName</span>
-                            <span class="di-tb-meta">@(tblCap.Rows.Count)행</span>
-                            @if (inDoc) { <span class="di-tb-check">✓</span> }
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="di-tb-empty" style="margin-top:12px; text-align:center;">
-                        붙여넣기하면 표가 나타납니다
-                    </div>
-                }
-
-            </div>
-        }
-
-        <!-- ── Image 등록 ── -->
-        @if (_toolsTab == "image")
-        {
-            <div class="di-rp-hd">🖼 Image 등록</div>
-            <div class="di-rp-body">
-
-                <button class="btn btn-outline-primary btn-sm w-100 mb-2"
-                        @onclick="OpenCaptureAsync">
-                    📋 클립보드에서 붙여넣기 (Ctrl+V)
-                </button>
-                <InputFile OnChange="OnImagesSelected" multiple accept="image/*"
-                           class="form-control form-control-sm" style="font-size:11px;" />
-
-                @if (_images.Count > 0)
-                {
-                    <div class="di-rp-list-hd">등록된 이미지 — 드래그해서 배치</div>
-                    @for (int ii = 0; ii < _images.Count; ii++)
-                    {
-                        var imgCap = _images[ii];
-                        bool inDoc = _docBlocks.Any(b => b.Image == imgCap);
-                        int  iidx  = ii;
-                        <div class="di-tb-img @(inDoc ? "di-tb-on" : "")"
-                             draggable="true"
-                             data-di-kind="image"
-                             data-di-idx="@iidx"
-                             title="@imgCap.Name">
-                            <img src="@imgCap.DataUrl" alt="@imgCap.Name"
-                                 style="width:100%; height:72px; object-fit:cover; border-radius:4px; display:block;" />
-                            @if (inDoc)
-                            {
-                                <div style="position:absolute;top:4px;right:4px;background:#22c55e;
-                                            border-radius:50%;width:18px;height:18px;display:flex;
-                                            align-items:center;justify-content:center;
-                                            font-size:10px;color:#fff;font-weight:700;">✓</div>
-                            }
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="di-tb-empty" style="margin-top:12px; text-align:center;">
-                        이미지를 추가하면 나타납니다
-                    </div>
-                }
-
-            </div>
-        }
-
-    </div>
-
-</div>
-
-<!-- ── Context Menu ────────────────────────────────────────────────────── -->
-@if (_showCtxMenu)
+@if (!string.IsNullOrEmpty(_status))
 {
-    <div style="position:fixed; inset:0; z-index:9000;"
-         @onclick="CloseCtxMenu"
-         @oncontextmenu="CloseCtxMenu"
-         @oncontextmenu:preventDefault="true"></div>
-    <div style="position:fixed; top:@(_ctxY)px; left:@(_ctxX)px; z-index:9001;
-                background:#fff; border:1px solid #e2e8f0; border-radius:8px;
-                box-shadow:0 4px 20px rgba(0,0,0,.13); padding:4px 0; min-width:150px;">
-        @if (_ctxMode == "row")
+    <div class="di-status-bar @(_statusError ? "di-error" : "di-ok")">@_status</div>
+}
+
+<!-- ── Image zone ───────────────────────────────────────────────────────────── -->
+<div class="di-image-section">
+    @if (_images.Count == 0)
+    {
+        <div class="di-drop-zone" @onclick="EnablePaste">
+            <div class="di-drop-icon">📋</div>
+            <div class="di-drop-title">Click here, then press Ctrl+V to paste a screenshot</div>
+            <div class="di-drop-sub">Or use the file upload below</div>
+        </div>
+    }
+    else
+    {
+        <div class="di-thumb-grid" @onclick="EnablePaste">
+            @foreach (var (img, idx) in _images.Select((x, i) => (x, i)))
+            {
+                <div class="di-thumb" @onclick:stopPropagation="true">
+                    <img src="@img.DataUrl" alt="@(idx+1)" />
+                    <button class="di-thumb-del" @onclick="() => RemoveImage(img)">✕</button>
+                    <div class="di-thumb-num">@(idx+1)</div>
+                </div>
+            }
+            <div class="di-thumb-add" @onclick:stopPropagation="true" @onclick="EnablePaste">
+                <div style="font-size:22px; line-height:1;">＋</div>
+                <div style="font-size:10px; color:#94a3b8; margin-top:3px;">Paste more</div>
+            </div>
+        </div>
+    }
+    <div class="di-upload-row">
+        <InputFile OnChange="OnFilesSelected" multiple accept="image/*" style="font-size:12px; color:#64748b;" />
+        <span class="di-img-count">@_images.Count image(s)</span>
+    </div>
+</div>
+
+<!-- ── Attached files (backup, any type) ────────────────────────────────────── -->
+<div class="di-files-section">
+    <div class="di-files-header">
+        <span class="di-files-title">📎 Backup Files (original files kept for archive — not used by AI)</span>
+        <span class="di-img-count">@_files.Count file(s)</span>
+    </div>
+    <div id="bf-drop-zone" class="bf-drop-zone" @onclick="EnableFilePaste">
+        <span class="bf-drop-icon">⬇</span>
+        <span><strong>Drag & drop</strong> files here, or click and press <strong>Ctrl+V</strong> to paste</span>
+    </div>
+    @if (_files.Count > 0)
+    {
+        <div class="di-files-list">
+            @foreach (var (f, idx) in _files.Select((x, i) => (x, i)))
+            {
+                <div class="di-file-chip">
+                    <span class="di-file-icon">📄</span>
+                    <span class="di-file-name" title="@f.FileName">@f.FileName</span>
+                    <span class="di-file-size">@FormatSize(f.Data.Length)</span>
+                    <button class="di-file-del" title="Remove" @onclick="() => RemoveFile(f)">✕</button>
+                </div>
+            }
+        </div>
+    }
+    <InputFile OnChange="OnBackupFilesSelected" multiple style="font-size:12px; color:#64748b; margin-top:4px;" />
+</div>
+
+<!-- ── Results ──────────────────────────────────────────────────────────────── -->
+@if (!string.IsNullOrEmpty(_summary) || _measurements.Count > 0)
+{
+    <div class="di-results">
+        @if (!string.IsNullOrEmpty(_summary))
         {
-            <button class="di-ctx-btn di-ctx-danger" @onclick="ExecuteCtxAction">🗑 Delete Row</button>
+            <div class="di-summary-box">
+                <div class="di-summary-title">📊 Summary</div>
+                <p class="mb-1" style="font-size:13px;">@_summary</p>
+                @if (!string.IsNullOrEmpty(_keyFindings))
+                {
+                    <div class="di-key-findings">@_keyFindings</div>
+                }
+                @if (_tags.Count > 0)
+                {
+                    <div class="di-tags-row">
+                        @foreach (var t in _tags)
+                        {
+                            <span class="di-tag di-tag-keyword">
+                                🏷 @t
+                                <button class="di-tag-del" title="Remove tag"
+                                        @onclick="() => RemoveTag(t)">✕</button>
+                            </span>
+                        }
+                    </div>
+                }
+            </div>
         }
-        else
+        @if (_measurements.Count > 0)
         {
-            <button class="di-ctx-btn di-ctx-danger" @onclick="ExecuteCtxAction">🗑 Delete Column</button>
+            <div class="di-results-header">
+                Extracted Data — @_measurements.Count row(s)
+            </div>
+            <div class="di-table-wrap">
+                <table class="di-table">
+                    <thead>
+                        <tr>
+                            <th style="width:32px;"></th>
+                            <th>Variable</th>
+                            <th>Group</th>
+                            <th>Line</th>
+                            <th>CheckType</th>
+                            <th>Input</th>
+                            <th>NG</th>
+                            <th>NG%</th>
+                            <th>Defect Type</th>
+                            <th>Category</th>
+                            <th>Count</th>
+                            <th>Intervention</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in _measurements)
+                        {
+                            <tr>
+                                <td class="di-row-del-cell">
+                                    <button class="di-row-del" title="Remove row"
+                                            @onclick="() => RemoveMeasurement(m)">✕</button>
+                                </td>
+                                <td>@m.Variable</td>
+                                <td>@m.VariableGroup</td>
+                                <td>@m.Line</td>
+                                <td>@m.CheckType</td>
+                                <td class="n">@m.InputQty</td>
+                                <td class="n">@m.NgTotal</td>
+                                <td class="n">@m.NgRate.ToString("F1")%</td>
+                                <td>@m.DefectType</td>
+                                <td>@m.DefectCategory</td>
+                                <td class="n">@m.DefectCount</td>
+                                <td>@m.Intervention</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         }
     </div>
 }
 
+</div>
+
 <style>
+    .di-root {
+        flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
+        background: #f8fafc;
+    }
     .di-topbar {
-        display: flex; align-items: center; gap: 8px;
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
         padding: 8px 14px; background: #fff; flex-shrink: 0;
         border-bottom: 1px solid #e2e8f0; flex-wrap: wrap;
     }
-    .di-editor-wrap {
-        display: flex; flex: 1; min-height: 0; height: calc(100vh - 48px); overflow: hidden;
+    .di-topbar-left  { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .di-topbar-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .di-label        { font-size: 12px; font-weight: 600; color: #64748b; white-space: nowrap; }
+    .di-input-name   { width: 200px; }
+    .di-status-bar   { padding: 4px 14px; font-size: 12px; flex-shrink: 0; }
+    .di-ok           { color: #16a34a; background: #f0fdf4; border-bottom: 1px solid #bbf7d0; }
+    .di-error        { color: #dc2626; background: #fef2f2; border-bottom: 1px solid #fecaca; }
+
+    /* Image zone */
+    .di-image-section {
+        flex-shrink: 0; padding: 10px 14px 6px;
+        background: #fff; border-bottom: 1px solid #e2e8f0;
     }
-    .di-page-bg {
-        flex: 1; min-width: 0; background: #8796aa; overflow-y: auto;
-        padding: 12px 8px;
+    .di-drop-zone {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        border: 2px dashed #cbd5e1; border-radius: 10px; padding: 28px 20px;
+        cursor: pointer; transition: all .15s; color: #94a3b8;
     }
-    .di-doc-page {
-        background: #fff; width: 100%; min-height: 500px;
-        box-shadow: 0 2px 12px rgba(0,0,0,.18);
-        border-radius: 2px; padding: 28px 36px 40px;
-        box-sizing: border-box;
+    .di-drop-zone:hover { border-color: #94a3b8; background: #f8fafc; }
+    .di-drop-icon  { font-size: 32px; margin-bottom: 8px; }
+    .di-drop-title { font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+    .di-drop-sub   { font-size: 12px; }
+    .di-thumb-grid {
+        display: flex; flex-wrap: wrap; gap: 8px; padding: 6px;
+        border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer;
+        min-height: 90px; background: #f8fafc;
     }
-    /* ── Report template ──────────────────────────────────────────────── */
-    .di-rpt-hdr {
-        width: 100%; border-collapse: collapse; margin-bottom: 18px;
-        border: 1.5px solid #334155;
+    .di-thumb {
+        position: relative; width: 80px; height: 80px; border-radius: 6px;
+        overflow: hidden; border: 1px solid #e2e8f0; flex-shrink: 0;
+        background: #fff;
     }
-    .di-rpt-hdr td { border: 1px solid #64748b; padding: 0; }
-    .di-rpt-title-lbl {
-        width: 52px; text-align: center; font-size: 11px; font-weight: 700;
-        color: #475569; background: #f1f5f9; vertical-align: middle;
-        letter-spacing: .3px;
+    .di-thumb img    { width: 100%; height: 100%; object-fit: cover; }
+    .di-thumb-del    {
+        position: absolute; top: 2px; right: 2px; width: 18px; height: 18px;
+        border-radius: 50%; border: none; background: rgba(220,38,38,.85);
+        color: #fff; font-size: 9px; line-height: 18px; text-align: center;
+        cursor: pointer; padding: 0; display: none;
     }
-    .di-rpt-title-txt { padding: 0 !important; }
-    .di-rpt-title-input {
-        width: 100%; border: none; outline: none; padding: 8px 12px;
-        font-size: 13px; font-weight: 700; color: #0f172a; background: transparent;
-        text-align: center; letter-spacing: .3px;
+    .di-thumb:hover .di-thumb-del { display: block; }
+    .di-thumb-num    {
+        position: absolute; bottom: 2px; left: 4px; font-size: 9px;
+        color: rgba(255,255,255,.9); text-shadow: 0 1px 3px rgba(0,0,0,.6); font-weight: 700;
     }
-    .di-rpt-title-input::placeholder { color: #cbd5e1; font-weight: 400; }
-    .di-rpt-meta-lbl {
-        width: 52px; text-align: center; font-size: 10px; font-weight: 700;
-        color: #475569; background: #f1f5f9; padding: 4px 6px !important;
-        white-space: nowrap;
+    .di-thumb-add    {
+        width: 80px; height: 80px; border-radius: 6px; border: 2px dashed #cbd5e1;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        cursor: pointer; color: #94a3b8; flex-shrink: 0; transition: all .12s;
     }
-    .di-rpt-meta-val { width: 80px; padding: 0 !important; }
-    .di-rpt-meta-input {
-        width: 100%; border: none; outline: none; padding: 4px 8px;
-        font-size: 12px; color: #1e293b; background: transparent;
+    .di-thumb-add:hover { border-color: #94a3b8; background: #fff; }
+    .di-upload-row   {
+        display: flex; align-items: center; gap: 10px; margin-top: 6px;
     }
-    .di-rpt-meta-input::placeholder { color: #cbd5e1; }
-    /* ── Report sections ──────────────────────────────────────────────── */
-    .di-rpt-sec { border: 1.5px solid #334155; border-top: none; }
-    .di-rpt-hdr + .di-rpt-sec { border-top: 1.5px solid #334155; }
-    .di-rpt-sec-hd {
-        font-size: 12px; font-weight: 700; color: #0f172a; padding: 5px 12px;
-        background: #f8fafc; border-bottom: 1px solid #e2e8f0; letter-spacing: .2px;
+    .di-img-count    { font-size: 11px; color: #94a3b8; }
+
+    /* Backup files */
+    .di-files-section {
+        flex-shrink: 0; padding: 8px 14px 10px;
+        background: #fff; border-bottom: 1px solid #e2e8f0;
     }
-    .di-rpt-sec-body {
-        width: 100%; border: none; outline: none; resize: none; overflow: hidden;
-        padding: 8px 16px; font-size: 13px; line-height: 1.8;
-        color: #1e293b; background: transparent; font-family: inherit;
-        box-sizing: border-box; min-height: 64px;
-        field-sizing: content;
+    .di-files-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .di-files-title  { font-size: 12px; font-weight: 600; color: #475569; }
+    .di-files-list   { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+    .di-file-chip    {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 14px;
+        padding: 3px 6px 3px 10px; font-size: 11px; color: #334155;
     }
-    .di-rpt-sec-body::placeholder { color: #cbd5e1; }
-    .di-rpt-sec-last { margin-bottom: 0; }
-    /* ── Drop zones (JS handles di-dz-active class) ──────────────────── */
-    .di-dropzone {
-        min-height: 12px; margin: 6px 0; border-radius: 4px;
-        border: 2px dashed transparent; transition: all .12s; box-sizing: border-box;
+    .di-file-icon    { font-size: 12px; }
+    .di-file-name    { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .di-file-size    { color: #94a3b8; font-size: 10px; }
+    .di-file-del     {
+        width: 18px; height: 18px; border-radius: 50%; border: none;
+        background: transparent; color: #94a3b8; font-size: 10px; cursor: pointer; padding: 0;
     }
-    .di-dropzone.di-dz-active {
-        min-height: 40px; background: #eff6ff; border-color: #93c5fd;
+    .di-file-del:hover { background: #dc2626; color: #fff; }
+
+    .bf-drop-zone {
+        display: flex; align-items: center; gap: 8px; justify-content: center;
+        padding: 10px 14px; margin-bottom: 6px;
+        border: 2px dashed #cbd5e1; border-radius: 8px;
+        font-size: 12px; color: #64748b; background: #f8fafc;
+        cursor: pointer; transition: all .12s;
     }
-    .di-dz-hint {
-        display: flex; flex-direction: column; align-items: center;
-        padding: 60px 20px; text-align: center;
+    .bf-drop-zone:hover      { border-color: #94a3b8; color: #334155; }
+    .bf-drop-zone.bf-drop-active {
+        border-color: #3b82f6; background: #dbeafe; color: #1d4ed8;
     }
-    .di-block { margin-bottom: 4px; }
-    .di-block-bar {
-        display: flex; align-items: center; gap: 3px;
-        padding: 3px 5px; background: #f1f5f9;
-        border: 1px solid #e2e8f0; border-bottom: none;
-        border-radius: 6px 6px 0 0; font-size: 11px;
+    .bf-drop-icon { font-size: 14px; }
+
+    /* Results */
+    .di-results {
+        flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px;
     }
-    .di-block-bar + .card { border-radius: 0 0 6px 6px !important; }
-    .di-slot-btn {
-        background: none; border: 1px solid transparent; border-radius: 3px;
-        padding: 1px 5px; font-size: 12px; cursor: pointer; color: #64748b;
-        line-height: 1.4; transition: background .1s;
+    .di-summary-box {
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+        padding: 12px 14px; margin-bottom: 12px;
     }
-    .di-slot-btn:hover:not(:disabled) { background: #e2e8f0; color: #1e293b; }
-    .di-slot-btn:disabled { opacity: .3; cursor: default; }
-    .di-slot-remove:hover:not(:disabled) { background: #fee2e2 !important; color: #dc2626 !important; }
-    /* ── Center menu ─────────────────────────────────────────────────── */
-    .di-center-menu {
-        width: 76px; flex-shrink: 0;
-        background: #1e293b; display: flex; flex-direction: column;
-        align-items: center; padding: 10px 0; gap: 4px;
-        border-left: 1px solid #0f172a;
+    .di-summary-title { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+    .di-key-findings  { font-size: 12px; color: #475569; white-space: pre-wrap; margin-top: 6px; }
+    .di-tags-row      { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .di-tag           {
+        display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px;
+        font-size: 11px; font-weight: 600; line-height: 1.4;
     }
-    .di-menu-btn {
-        display: flex; flex-direction: column; align-items: center; gap: 3px;
-        width: 64px; padding: 10px 4px; border: none; border-radius: 8px;
-        background: transparent; cursor: pointer; color: #64748b; transition: all .15s;
+    .di-tag-keyword   { background: #e0e7ff; color: #4338ca; }
+    .di-tag-del       {
+        margin-left: 4px; border: none; background: transparent; padding: 0;
+        color: inherit; opacity: .5; cursor: pointer; font-size: 10px; line-height: 1;
+        font-weight: 700;
     }
-    .di-menu-btn:hover { background: rgba(255,255,255,.07); color: #cbd5e1; }
-    .di-menu-active { background: rgba(59,130,246,.2) !important; color: #93c5fd !important; }
-    .di-menu-icon { font-size: 22px; line-height: 1; }
-    .di-menu-label { font-size: 10px; font-weight: 600; letter-spacing: .2px; }
-    /* ── Registration panel ───────────────────────────────────────────── */
-    .di-reg-panel {
-        flex: 0 0 360px;
-        border-left: 1px solid #e2e8f0; background: #f8fafc;
-        display: flex; flex-direction: column; overflow: hidden;
+    .di-tag-del:hover { opacity: 1; color: #dc2626; }
+    .di-results-header {
+        font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;
     }
-    .di-rp-hd {
-        padding: 11px 14px; font-size: 13px; font-weight: 700; color: #1e293b;
-        border-bottom: 1px solid #e2e8f0; background: #fff; flex-shrink: 0;
+    .di-table-wrap { overflow-x: auto; }
+    .di-table {
+        border-collapse: collapse; font-size: 12px; width: max-content; min-width: 100%;
     }
-    .di-rp-body { flex: 1; overflow-y: auto; padding: 12px 10px; }
-    .di-rp-hint {
-        font-size: 11px; color: #475569; margin-bottom: 8px; line-height: 1.6;
-        padding: 8px 10px; background: #eff6ff; border-radius: 6px; border: 1px solid #bfdbfe;
+    .di-table th, .di-table td {
+        border: 1px solid #e2e8f0; padding: 4px 8px; white-space: nowrap;
+        text-align: left;
     }
-    .di-rp-hint span { font-size: 10px; color: #60a5fa; }
-    .di-rp-paste {
-        width: 100%; font-size: 11px; resize: none; border: 1.5px solid #e2e8f0;
-        border-radius: 6px; padding: 8px; background: #fff; transition: border-color .15s;
-        box-sizing: border-box;
+    .di-table th { background: #f1f5f9; font-weight: 600; color: #475569; }
+    .di-table td.n { text-align: right; font-variant-numeric: tabular-nums; }
+    .di-table tbody tr:hover { background: #f8fafc; }
+    .di-row-del-cell { text-align: center; padding: 2px !important; }
+    .di-row-del {
+        width: 22px; height: 22px; border-radius: 50%; border: 1px solid #fecaca;
+        background: #fff; color: #dc2626; font-size: 11px; font-weight: 700;
+        line-height: 1; cursor: pointer; padding: 0; transition: all .12s;
     }
-    .di-rp-paste:focus { border-color: #93c5fd; outline: none; }
-    .di-rp-list-hd {
-        font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: .5px;
-        text-transform: uppercase; margin: 14px 0 6px; padding-bottom: 4px;
-        border-bottom: 1px solid #e2e8f0;
-    }
-    .di-mode-lbl { font-size: 10px; color: #94a3b8; font-weight: 600; }
-    .di-tb-meta { font-size: 9px; color: #94a3b8; flex-shrink: 0; }
-    .di-tb-section { font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: .6px; margin-bottom: 6px; }
-    .di-tb-empty { font-size: 11px; color: #cbd5e1; padding: 2px 4px; margin-bottom: 4px; }
-    .di-tb-item {
-        display: flex; align-items: center; gap: 5px; padding: 5px 6px; border-radius: 5px;
-        cursor: grab; font-size: 11px; color: #475569; margin-bottom: 3px;
-        border: 1px solid #e2e8f0; background: #fff; transition: all .12s;
-        user-select: none;
-    }
-    .di-tb-item:hover { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
-    .di-tb-on { background: #eff6ff !important; border-color: #93c5fd !important; color: #1e40af !important; }
-    .di-tb-icon { flex-shrink: 0; }
-    .di-tb-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .di-tb-check { flex-shrink: 0; color: #22c55e; font-weight: 700; font-size: 12px; }
-    .di-tb-img {
-        position: relative; border-radius: 5px; overflow: hidden;
-        cursor: grab; margin-bottom: 5px; border: 2px solid transparent;
-        transition: border-color .12s; user-select: none;
-    }
-    .di-tb-img:hover { border-color: #93c5fd; }
-    .di-tb-img.di-tb-on { border-color: #22c55e; }
-    .di-ctx-btn {
-        display: block; width: 100%; padding: 7px 14px; text-align: left;
-        background: transparent; border: none; font-size: 13px; cursor: pointer;
-        color: #334155; transition: background .1s;
-    }
-    .di-ctx-btn:hover { background: #f8fafc; }
-    .di-ctx-danger { color: #dc2626 !important; }
-    .di-text-block {
-        width: 100%; padding: 10px 12px; font-size: 13px; line-height: 1.7;
-        border: 1px solid #e2e8f0; border-radius: 0 0 6px 6px;
-        resize: vertical; min-height: 60px; font-family: inherit;
-        background: #fff; color: #1e293b; outline: none; box-sizing: border-box;
-        transition: border-color .15s;
-    }
-    .di-text-block:focus { border-color: #93c5fd; background: #f8fbff; }
-    .di-add-text-btn {
-        margin-top: 16px; padding: 7px 20px; font-size: 13px; font-weight: 600;
-        border: 2px dashed #cbd5e1; border-radius: 8px; background: transparent;
-        color: #94a3b8; cursor: pointer; transition: all .15s;
-    }
-    .di-add-text-btn:hover { border-color: #93c5fd; color: #3b82f6; background: #eff6ff; }
-    .di-dropzone { position: relative; }
-    .di-add-text-inline {
-        display: none; position: absolute; left: 50%; top: 50%;
-        transform: translate(-50%, -50%);
-        padding: 1px 10px; font-size: 14px; font-weight: 700;
-        border: 1px dashed #cbd5e1; border-radius: 4px; background: #fff;
-        color: #94a3b8; cursor: pointer; white-space: nowrap; transition: all .12s;
-        z-index: 1;
-    }
-    .di-dropzone:hover .di-add-text-inline,
-    .di-dropzone.di-dz-active .di-add-text-inline { display: block; }
-    .di-add-text-inline:hover { border-color: #93c5fd; color: #3b82f6; background: #eff6ff; }
-    .di-cell-span { display: block; padding: 5px 8px; min-height: 22px; cursor: text; white-space: nowrap; }
-    .di-cell-span:hover { background: #eff6ff; }
-    .di-cell-input {
-        width: 100%; padding: 4px 8px; font-size: 11px;
-        border: 1px solid #93c5fd; border-radius: 4px; outline: none;
-        background: #eff6ff; min-width: 80px;
-    }
-    .paste-modal-backdrop {
-        position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,.5);
-        display: flex; align-items: center; justify-content: center;
-    }
-    .paste-modal {
-        background: #fff; border-radius: 16px;
-        box-shadow: 0 20px 60px rgba(0,0,0,.3); width: 400px; max-width: 95vw; overflow: hidden;
-    }
-    .paste-modal-title { padding: 16px 20px; font-size: 16px; font-weight: 700; border-bottom: 1px solid #e2e8f0; }
-    .paste-modal-body { padding: 32px 24px; text-align: center; }
+    .di-row-del:hover { background: #dc2626; color: #fff; border-color: #dc2626; }
 </style>
 
-@if (_showCaptureOverlay)
-{
-    <div class="paste-modal-backdrop" @onclick="CancelCapture">
-        <div class="paste-modal" @onclick:stopPropagation="true">
-            <div class="paste-modal-title">Paste Image</div>
-            <div class="paste-modal-body">
-                <div style="font-size:48px; margin-bottom:12px;">📋</div>
-                <div style="font-size:15px; font-weight:600; color:#1e293b; margin-bottom:6px;">
-                    Press Ctrl+V to paste an image
-                </div>
-                <div style="font-size:12px; color:#94a3b8; margin-bottom:20px;">
-                    Copy a screenshot or image to clipboard, then press Ctrl+V
-                </div>
-                <button class="btn btn-outline-secondary btn-sm" @onclick="CancelCapture">Cancel</button>
-            </div>
-        </div>
-    </div>
-}
-
 @code {
-    // ── Header cell for multi-level table headers ─────────────────────────────
-    private sealed class HeaderCell
-    {
-        public string Label   { get; init; } = "";
-        public int    Colspan { get; init; } = 1;
-        public int    Rowspan { get; init; } = 1;
-    }
+    private sealed record ImageEntry(string FileName, string MediaType, string Base64, string DataUrl);
+    private sealed record FileEntry(string FileName, string MediaType, byte[] Data, long? ExistingId);
 
-    // ── Result of ParseDirect ─────────────────────────────────────────────────
-    private sealed class ParsedResult
-    {
-        public List<ColumnDef>                     Cols       { get; init; } = [];
-        public List<Dictionary<string, string>>    Rows       { get; init; } = [];
-        public List<List<HeaderCell>>?             HeaderRows { get; init; }   // null = single-row header
-    }
-
-    private sealed class PendingTable
-    {
-        public string TableName { get; set; } = "";
-        public List<ColumnDef> Columns { get; init; } = [];
-        public List<Dictionary<string, string>> Rows { get; init; } = [];
-        public bool IsExisting { get; init; }
-        public List<List<HeaderCell>>? HeaderRows { get; init; }  // multi-level header; null = flat
-    }
-
-    private sealed record ImageEntry(string Name, string MediaType, string Base64, string DataUrl, long SizeBytes);
-
-    private sealed class DocBlock
-    {
-        public string        Kind  { get; init; } = "";
-        public PendingTable? Table { get; init; }
-        public ImageEntry?   Image { get; init; }
-        public string        Text  { get; set; }  = "";
-        public int           Span  { get; set; }  = 2;
-    }
-
-    // ── State ─────────────────────────────────────────────────────────────────
-    private string       _datasetName    = string.Empty;
-    private string       _purpose        = string.Empty;
-    private string       _memo           = string.Empty;
-    private List<string> _allDatasets    = [];
-    private string       _rawInput       = string.Empty;
-    private bool   _useAi    = false;   // default: Direct (auto-parse on paste)
-    private string _toolsTab = "table";
-
-    private List<PendingTable> _pendingTables = [];
-    private List<ImageEntry>   _images        = [];
-    private List<DocBlock>     _docBlocks     = [];
-
-    private bool CanOrganize => !string.IsNullOrWhiteSpace(_rawInput);
+    private string            _datasetName  = "";
+    private string            _productType  = "";
+    private string            _testDate     = DateTime.Today.ToString("yyyy-MM-dd");
+    private List<ImageEntry>  _images       = [];
+    private List<FileEntry>   _files        = [];
+    private List<NormalizedMeasurement> _measurements = [];
+    private string            _summary      = "";
+    private string            _keyFindings  = "";
+    private List<string>      _tags         = [];
+    private List<RawReportInfo> _allReports = [];
+    private List<string>        _productTypeOptions = [];
 
     private bool   _isBusy;
-    private string _busyStep      = string.Empty;
-    private string _statusMessage = string.Empty;
-    private bool   _statusIsError;
+    private string _busyStep    = "";
+    private string _status      = "";
+    private bool   _statusError;
+
+    private DotNetObjectReference<DataInferencePage_Test>? _ref;
 
     [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
-    private System.Security.Claims.ClaimsPrincipal _user = new();
-    private bool CanEdit => AppRoles.CanEdit(_user);
 
-    // ── Report template fields ────────────────────────────────────────────────
-    private string _reportTitle  = "";
-    private string _reportDept   = "";
-    private string _reportDate   = "";
-    private string _reportMarker = "";
-    private string _secPurpose   = "";
-    private string _secContent   = "";
-    private string _secDecision  = "";
-
-    private bool _showCaptureOverlay;
-    private DotNetObjectReference<DataInferencePage_Test>? _dotnetRef;
-
-    // ── Context menu ──────────────────────────────────────────────────────────
-    private bool          _showCtxMenu;
-    private double        _ctxX, _ctxY;
-    private string        _ctxMode     = "";
-    private PendingTable? _ctxTable;
-    private int           _ctxRowIndex = -1;
-    private int           _ctxColIndex = -1;
-
-    // ── Inline editing ────────────────────────────────────────────────────────
-    private PendingTable? _editTable;
-    private int           _editRowIndex = -1;
-    private string        _editColField = "";
-    private string        _editValue    = "";
-    private bool          _editNeedFocus;
-    private ElementReference _editRef;
-
-    [Parameter] public string? InitialTab { get; set; }
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        _user        = (await AuthState).User;
-        _allDatasets = Repo.GetAllDatasets();
+        _allReports = Repo.GetAllRawReports();
+        RefreshProductTypeOptions();
+    }
+
+    private void RefreshProductTypeOptions()
+    {
+        _productTypeOptions = _allReports
+            .Select(r => r.ProductType)
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            _dotnetRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("pasteImageHandler.init", _dotnetRef);
-            await JS.InvokeVoidAsync("diDragDrop.init", _dotnetRef);
-        }
-        if (_editNeedFocus)
-        {
-            _editNeedFocus = false;
-            try { await JS.InvokeVoidAsync("eval", "document.querySelector('.di-cell-input')?.focus()"); } catch { }
+            await JS.InvokeVoidAsync("diFullPage.enter");
+            _ref = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("pasteImageHandler.init", _ref);
+            await JS.InvokeVoidAsync("pasteImageHandler.openCapture");
+            await JS.InvokeVoidAsync("backupFileHandler.init", _ref, "bf-drop-zone");
         }
     }
 
-    private void SetMode(bool useAi) => _useAi = useAi;
-    private void SelectTableTab() => _toolsTab = "table";
-    private void SelectImageTab() => _toolsTab = "image";
-
-    // ── Table auto-parse on paste ─────────────────────────────────────────────
-    private void OnTableInputChanged(ChangeEventArgs e)
+    private async Task EnablePaste()
     {
-        _rawInput = e.Value?.ToString() ?? "";
-
-        // Direct mode: auto-parse when tab-separated data detected (Excel paste)
-        if (!_useAi && _rawInput.Contains('\t'))
-        {
-            var pr = ParseDirect(_rawInput);
-            if (pr.Rows.Count > 0)
-            {
-                _pendingTables.Add(new PendingTable
-                {
-                    TableName  = $"Table {_pendingTables.Count + 1}",
-                    Columns    = pr.Cols,
-                    Rows       = pr.Rows,
-                    HeaderRows = pr.HeaderRows
-                });
-                _rawInput = string.Empty;
-                SetStatus($"표 자동 생성: {pr.Rows.Count}행 {pr.Cols.Count}열", false);
-            }
-        }
-    }
-
-    // ── JS Drop handler (called from JavaScript) ───────────────────────────────
-    [JSInvokable]
-    public void JsDrop(string kind, int itemIdx, int zoneIdx)
-    {
-        DocBlock? block = null;
-        if (kind == "table" && itemIdx >= 0 && itemIdx < _pendingTables.Count)
-            block = new DocBlock { Kind = "table", Table = _pendingTables[itemIdx], Span = 2 };
-        else if (kind == "image" && itemIdx >= 0 && itemIdx < _images.Count)
-            block = new DocBlock { Kind = "image", Image = _images[itemIdx], Span = 1 };
-
-        if (block is null) return;
-        _docBlocks.Insert(Math.Min(zoneIdx, _docBlocks.Count), block);
-        InvokeAsync(StateHasChanged);
-    }
-
-    // ── Add text block directly ───────────────────────────────────────────────
-    private void AddTextBlock(int zoneIdx)
-    {
-        var block = new DocBlock { Kind = "text", Text = "", Span = 2 };
-        _docBlocks.Insert(Math.Min(zoneIdx, _docBlocks.Count), block);
-    }
-
-    // ── Block controls ────────────────────────────────────────────────────────
-    private void MoveBlock(DocBlock blk, int delta)
-    {
-        int idx = _docBlocks.IndexOf(blk);
-        int newIdx = idx + delta;
-        if (newIdx < 0 || newIdx >= _docBlocks.Count) return;
-        _docBlocks.RemoveAt(idx);
-        _docBlocks.Insert(newIdx, blk);
-    }
-
-    // ── Organize ──────────────────────────────────────────────────────────────
-    private async Task OrganizeAsync()
-    {
-        if (!CanOrganize) { SetStatus("데이터를 먼저 붙여넣으세요.", true); return; }
-
-        _isBusy = true; _busyStep = "organize"; _statusMessage = string.Empty;
-        StateHasChanged();
-        try
-        {
-            List<PendingTable> newTables;
-            if (_useAi)
-            {
-                List<ExtractedTable> extracted = await Claude.ExtractTablesAsync(_rawInput, null);
-                if (extracted.Count == 0) { SetStatus("No tables extracted.", true); return; }
-                newTables = extracted.Select(t => new PendingTable
-                {
-                    TableName = t.TableName, Columns = t.Columns, Rows = t.Rows
-                }).ToList();
-            }
-            else
-            {
-                var pr = ParseDirect(_rawInput);
-                if (pr.Rows.Count == 0) { SetStatus("No rows found.", true); return; }
-                newTables = [new PendingTable
-                {
-                    TableName  = $"Table {_pendingTables.Count + 1}",
-                    Columns    = pr.Cols,
-                    Rows       = pr.Rows,
-                    HeaderRows = pr.HeaderRows
-                }];
-            }
-
-            _pendingTables.AddRange(newTables);
-            _rawInput = string.Empty;
-            SetStatus($"{newTables.Count}개 테이블 등록됨. 드래그하여 배치하세요.", false);
-        }
-        catch (Exception ex) { SetStatus($"Error: {ex.Message}", true); }
-        finally { _isBusy = false; _busyStep = string.Empty; }
-    }
-
-    private void RemovePendingTable(PendingTable table)
-    {
-        _pendingTables.Remove(table);
-        var blk = _docBlocks.FirstOrDefault(s => s.Table == table);
-        if (blk is not null) _docBlocks.Remove(blk);
-    }
-
-    private void ClearAll()
-    {
-        _rawInput = string.Empty; _pendingTables = []; _images = [];
-        _docBlocks = []; _statusMessage = string.Empty;
-        _reportTitle = ""; _reportDept = ""; _reportDate = ""; _reportMarker = "";
-        _secPurpose = ""; _secContent = ""; _secDecision = "";
-    }
-
-    // ── Dataset selection ─────────────────────────────────────────────────────
-    private void OnDatasetSelected(ChangeEventArgs e)
-    {
-        string ds = e.Value?.ToString() ?? string.Empty;
-        if (string.IsNullOrEmpty(ds)) return;
-        _datasetName = ds;
-        _memo        = Repo.GetMemo(ds);
-        _purpose     = Repo.GetPurpose(ds);
-        if (string.IsNullOrEmpty(_purpose))
-        {
-            var tags = Repo.GetTags(ds);
-            if (tags.Count > 0) _purpose = string.Join(", ", tags);
-        }
-        var tables = Repo.GetTablesForDataset(ds);
-        _pendingTables = tables.Select(t => new PendingTable
-        {
-            TableName = t.TableName, Columns = t.Columns,
-            Rows = Repo.GetTableRows(t.Id), IsExisting = true,
-        }).ToList();
-        _docBlocks.Clear();
-        SetStatus($"'{ds}' 로드됨. 오른쪽에서 드래그하여 배치하세요.", false);
-    }
-
-    // ── Save to DB ────────────────────────────────────────────────────────────
-    private async Task SaveToDbAsync()
-    {
-        if (string.IsNullOrWhiteSpace(_datasetName)) { SetStatus("Dataset name required.", true); return; }
-        _isBusy = true; _busyStep = "save"; _statusMessage = string.Empty;
-        StateHasChanged();
-        try
-        {
-            string dsName = _datasetName.Trim();
-            var tables    = _pendingTables.Where(t => !t.IsExisting).ToList();
-            var tags      = _purpose.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToList();
-            await Task.Run(() =>
-            {
-                foreach (var t in tables) Repo.SaveTable(dsName, t.TableName, t.Columns, t.Rows);
-                if (tags.Count > 0) Repo.SaveTags(dsName, tags);
-                if (!string.IsNullOrWhiteSpace(_memo))    Repo.SaveMemo(dsName, _memo);
-                if (!string.IsNullOrWhiteSpace(_purpose)) Repo.SavePurpose(dsName, _purpose);
-            });
-            SetStatus($"Saved '{dsName}' — {tables.Sum(t => t.Rows.Count):N0} rows.", false);
-            _pendingTables = []; _images = []; _datasetName = string.Empty;
-            _purpose = string.Empty; _memo = string.Empty;
-            _allDatasets = Repo.GetAllDatasets();
-        }
-        catch (Exception ex) { SetStatus($"Save error: {ex.Message}", true); }
-        finally { _isBusy = false; _busyStep = string.Empty; }
-    }
-
-    // ── Images ────────────────────────────────────────────────────────────────
-    private async Task OnImagesSelected(InputFileChangeEventArgs e)
-    {
-        foreach (IBrowserFile file in e.GetMultipleFiles(10))
-        {
-            if (!file.ContentType.StartsWith("image/")) continue;
-            using var ms = new MemoryStream();
-            await using var stream = file.OpenReadStream(10 * 1024 * 1024);
-            await stream.CopyToAsync(ms);
-            string base64  = Convert.ToBase64String(ms.ToArray());
-            string dataUrl = $"data:{file.ContentType};base64,{base64}";
-            _images.Add(new ImageEntry(file.Name, file.ContentType, base64, dataUrl, file.Size));
-        }
-    }
-
-    private async Task OpenCaptureAsync()
-    {
-        _showCaptureOverlay = true;
         await JS.InvokeVoidAsync("pasteImageHandler.openCapture");
-    }
-
-    private async Task CancelCapture()
-    {
-        _showCaptureOverlay = false;
-        await JS.InvokeVoidAsync("pasteImageHandler.cancelCapture");
     }
 
     [JSInvokable]
     public void OnImagePasted(string mediaType, string dataUrl)
     {
-        string ext    = mediaType.Split('/').LastOrDefault() ?? "png";
-        int commaIdx  = dataUrl.IndexOf(',');
-        string base64 = commaIdx >= 0 ? dataUrl[(commaIdx + 1)..] : dataUrl;
-        _images.Add(new ImageEntry($"clipboard-{DateTime.Now:HHmmss}.{ext}", mediaType,
-                                   base64, dataUrl, (long)(base64.Length * 3L / 4)));
-        _showCaptureOverlay = false;
+        int comma  = dataUrl.IndexOf(',');
+        string b64 = comma >= 0 ? dataUrl[(comma + 1)..] : dataUrl;
+
+        (string finalB64, string finalMt) = ImageCompressor.CompressIfLarge(b64, mediaType);
+        string finalDataUrl = $"data:{finalMt};base64,{finalB64}";
+        string ext = finalMt.Split('/').LastOrDefault() ?? "png";
+
+        _images.Add(new ImageEntry($"paste-{DateTime.Now:HHmmss}.{ext}", finalMt, finalB64, finalDataUrl));
+        _ = JS.InvokeVoidAsync("pasteImageHandler.openCapture");
         InvokeAsync(StateHasChanged);
     }
 
-    // ── Direct parse (with colspan/rowspan and fill-down) ─────────────────────
-    private static ParsedResult ParseDirect(string text)
+    private async Task OnFilesSelected(InputFileChangeEventArgs e)
     {
-        // Trim \r and drop blank lines
-        string[] lines = text.Split('\n')
-            .Select(l => l.TrimEnd('\r'))
-            .Where(l => !string.IsNullOrWhiteSpace(l))
-            .ToArray();
-        if (lines.Length < 2) return new ParsedResult();
-
-        string[] row0     = lines[0].Split('\t');
-        int      colCount = row0.Length;
-
-        // ── Detect multi-row header ──────────────────────────────────────────
-        // Condition: row0 has empty cells AND lines[1] fills some of those empties
-        bool      row0HasEmpty  = row0.Any(string.IsNullOrWhiteSpace);
-        bool      isMultiHeader = false;
-        string[]? row1          = null;
-
-        if (row0HasEmpty && lines.Length > 2)
+        foreach (IBrowserFile file in e.GetMultipleFiles(20))
         {
-            row1 = lines[1].Split('\t');
-            if (row1.Length > colCount) colCount = row1.Length;
-            isMultiHeader = row0
-                .Select((v, i) => (v, i))
-                .Where(x => string.IsNullOrWhiteSpace(x.v))
-                .Any(x => x.i < row1.Length && !string.IsNullOrWhiteSpace(row1[x.i]));
+            if (!file.ContentType.StartsWith("image/")) continue;
+            using var ms = new MemoryStream();
+            await using var stream = file.OpenReadStream(20 * 1024 * 1024);
+            await stream.CopyToAsync(ms);
+            string b64 = Convert.ToBase64String(ms.ToArray());
+
+            (string finalB64, string finalMt) = ImageCompressor.CompressIfLarge(b64, file.ContentType);
+            string dataUrl = $"data:{finalMt};base64,{finalB64}";
+            _images.Add(new ImageEntry(file.Name, finalMt, finalB64, dataUrl));
         }
+    }
 
-        var cols      = new List<ColumnDef>();
-        var seen      = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        int dataStart;
-        List<List<HeaderCell>>? headerRows = null;
+    private void RemoveImage(ImageEntry img) => _images.Remove(img);
 
-        if (isMultiHeader && row1 != null)
+    private async Task OnBackupFilesSelected(InputFileChangeEventArgs e)
+    {
+        foreach (IBrowserFile file in e.GetMultipleFiles(20))
         {
-            // ── Build two-row header with colspan / rowspan ──────────────────
-            dataStart = 2;
-            string[] r0 = PadToLength(row0, colCount);
-            string[] r1 = PadToLength(row1, colCount);
+            using var ms = new MemoryStream();
+            await using var stream = file.OpenReadStream(100 * 1024 * 1024); // 100 MB
+            await stream.CopyToAsync(ms);
+            string mt = string.IsNullOrEmpty(file.ContentType) ? "application/octet-stream" : file.ContentType;
+            _files.Add(new FileEntry(file.Name, mt, ms.ToArray(), null));
+        }
+    }
 
-            var topRow = new List<HeaderCell>();
-            var botRow = new List<HeaderCell>();
+    private void RemoveFile(FileEntry f) => _files.Remove(f);
 
-            int ci = 0;
-            while (ci < colCount)
+    private async Task EnableFilePaste()
+    {
+        await JS.InvokeVoidAsync("backupFileHandler.enableCapture");
+    }
+
+    [JSInvokable]
+    public void OnBackupFileDropped(string fileName, string mediaType, string dataUrl)
+    {
+        int comma = dataUrl.IndexOf(',');
+        if (comma < 0) return;
+        string b64 = dataUrl[(comma + 1)..];
+        byte[] bytes;
+        try { bytes = Convert.FromBase64String(b64); }
+        catch { return; }
+        string mt = string.IsNullOrEmpty(mediaType) ? "application/octet-stream" : mediaType;
+        _files.Add(new FileEntry(fileName, mt, bytes, null));
+        InvokeAsync(StateHasChanged);
+    }
+
+    private static string FormatSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / 1024.0 / 1024.0:F1} MB";
+    }
+
+    private void RemoveMeasurement(NormalizedMeasurement m) => _measurements.Remove(m);
+
+    private void RemoveTag(string t) => _tags.Remove(t);
+
+    private async Task AnalyzeAsync()
+    {
+        if (_images.Count == 0) { SetStatus("Paste an image first.", true); return; }
+        _isBusy = true; _busyStep = "analyze"; _status = "";
+        StateHasChanged();
+        try
+        {
+            var imageArgs = _images.Select(i => (i.MediaType, i.Base64)).ToList();
+            string dsName = string.IsNullOrWhiteSpace(_datasetName) ? "dataset" : _datasetName.Trim();
+            NormalizeResult result = await Claude.NormalizeFromImagesAsync(
+                imageArgs, dsName, _productType.Trim(), _testDate);
+            _measurements = result.Measurements;
+            _summary      = result.Summary;
+            _keyFindings  = result.KeyFindings;
+            _tags         = result.Tags ?? [];
+            SetStatus($"Analysis complete — {_measurements.Count} row(s) extracted.", false);
+        }
+        catch (Exception ex) { SetStatus($"Analyze error: {ex.Message}", true); }
+        finally { _isBusy = false; _busyStep = ""; }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_datasetName)) { SetStatus("Dataset name required.", true); return; }
+        _isBusy = true; _busyStep = "save"; _status = "";
+        StateHasChanged();
+        try
+        {
+            string name = _datasetName.Trim();
+            var imgs = _images.Select(i => (i.MediaType, Convert.FromBase64String(i.Base64), i.FileName)).ToList();
+            string tagsJson = _tags.Count > 0
+                ? System.Text.Json.JsonSerializer.Serialize(_tags)
+                : "";
+            var newFiles = _files
+                .Where(f => !f.ExistingId.HasValue)
+                .Select(f => (f.MediaType, f.Data, f.FileName))
+                .ToList();
+            var keptIds = _files.Where(f => f.ExistingId.HasValue).Select(f => f.ExistingId!.Value).ToHashSet();
+            await Task.Run(() =>
             {
-                string topLbl = r0[ci].Trim();
+                Repo.SaveRawReport(name, _productType, _testDate, imgs);
 
-                if (!string.IsNullOrWhiteSpace(topLbl))
-                {
-                    // Count horizontal span (consecutive empty r0 cells that follow)
-                    int span = 1;
-                    while (ci + span < colCount && string.IsNullOrWhiteSpace(r0[ci + span]))
-                        span++;
+                // Sync backup files: delete removed, append new
+                foreach (var fi in Repo.GetRawReportFileInfos(name))
+                    if (!keptIds.Contains(fi.Id)) Repo.DeleteRawReportFile(fi.Id);
+                if (newFiles.Count > 0) Repo.AppendRawReportFiles(name, newFiles);
 
-                    // Does this group have sub-labels in r1?
-                    bool hasSub = false;
-                    for (int s = 0; s < span; s++)
-                        if (ci + s < r1.Length && !string.IsNullOrWhiteSpace(r1[ci + s]))
-                        { hasSub = true; break; }
-
-                    if (hasSub)
-                    {
-                        // Group header: spans multiple columns
-                        topRow.Add(new HeaderCell { Label = topLbl, Colspan = span, Rowspan = 1 });
-                        for (int s = 0; s < span; s++)
-                        {
-                            string subLbl = (ci + s < r1.Length) ? r1[ci + s].Trim() : "";
-                            if (string.IsNullOrWhiteSpace(subLbl)) subLbl = $"{topLbl}_{s + 1}";
-                            botRow.Add(new HeaderCell { Label = subLbl, Colspan = 1, Rowspan = 1 });
-                            cols.Add(MakeCol(subLbl, seen));
-                        }
-                    }
-                    else
-                    {
-                        // Standalone column: spans both header rows
-                        topRow.Add(new HeaderCell { Label = topLbl, Colspan = span, Rowspan = 2 });
-                        for (int s = 0; s < span; s++)
-                            cols.Add(MakeCol(span > 1 ? $"{topLbl}_{s + 1}" : topLbl, seen));
-                        // Nothing added to botRow (rowspan=2 covers it)
-                    }
-                    ci += span;
-                }
-                else
-                {
-                    // Orphaned empty r0 cell → use r1 value
-                    string subLbl = (ci < r1.Length) ? r1[ci].Trim() : "";
-                    if (string.IsNullOrWhiteSpace(subLbl)) subLbl = $"col{ci}";
-                    topRow.Add(new HeaderCell { Label = "",     Colspan = 1, Rowspan = 1 });
-                    botRow.Add(new HeaderCell { Label = subLbl, Colspan = 1, Rowspan = 1 });
-                    cols.Add(MakeCol(subLbl, seen));
-                    ci++;
-                }
-            }
-            headerRows = [topRow, botRow];
+                if (_measurements.Count > 0) Repo.SaveNormalizedMeasurements(name, _measurements);
+                if (!string.IsNullOrEmpty(_summary) || !string.IsNullOrEmpty(tagsJson))
+                    Repo.SaveDatasetSummaryRecord(name, _productType, _summary, _keyFindings, tagsJson);
+            });
+            SetStatus($"Saved — '{name}'", false);
+            _allReports = Repo.GetAllRawReports();
+            RefreshProductTypeOptions();
         }
-        else
+        catch (Exception ex) { SetStatus($"Save error: {ex.Message}", true); }
+        finally { _isBusy = false; _busyStep = ""; }
+    }
+
+    private async Task OnLoadExisting(ChangeEventArgs e)
+    {
+        string name = e.Value?.ToString() ?? "";
+        if (string.IsNullOrEmpty(name)) return;
+        var info = _allReports.FirstOrDefault(r => r.DatasetName == name);
+        if (info is null) return;
+
+        _datasetName  = info.DatasetName;
+        _productType  = info.ProductType;
+        _testDate     = info.ReportDate;
+        _measurements = Repo.GetNormalizedMeasurements(name);
+        var summ = Repo.GetDatasetSummaryRecord(name);
+        _summary     = summ?.Summary     ?? "";
+        _keyFindings = summ?.KeyFindings ?? "";
+        _tags        = summ?.Tags        ?? [];
+
+        var storedImgs = Repo.GetRawReportImages(name);
+        _images = storedImgs.Select((img, i) =>
         {
-            // ── Single-row header: fill-forward for empty header cells ───────
-            dataStart = 1;
-            string prevLbl = "";
-            foreach (string raw in row0)
-            {
-                string lbl = raw.Trim();
-                if (string.IsNullOrWhiteSpace(lbl))
-                    lbl = string.IsNullOrWhiteSpace(prevLbl) ? $"col{cols.Count}" : prevLbl;
-                else
-                    prevLbl = lbl;
-                cols.Add(MakeCol(lbl, seen));
-            }
-        }
+            string b64    = Convert.ToBase64String(img.Data);
+            string dataUrl = $"data:{img.MediaType};base64,{b64}";
+            string fname   = img.FileName.Length > 0 ? img.FileName : $"img-{i + 1}";
+            return new ImageEntry(fname, img.MediaType, b64, dataUrl);
+        }).ToList();
 
-        // ── Parse data rows with fill-down for vertically merged cells ───────
-        var rows = new List<Dictionary<string, string>>();
-        Dictionary<string, string>? prevRow = null;
+        _files = Repo.GetRawReportFileInfos(name)
+            .Select(fi => new FileEntry(fi.FileName, fi.MediaType, [], fi.Id))
+            .ToList();
 
-        for (int li = dataStart; li < lines.Length; li++)
-        {
-            string[] cells = lines[li].Split('\t');
-            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            for (int ci = 0; ci < cols.Count; ci++)
-            {
-                string val = ci < cells.Length ? cells[ci].Trim() : "";
-                // Fill-down: empty cell inherits value from previous row (vertical merge)
-                if (string.IsNullOrEmpty(val) && prevRow != null &&
-                    prevRow.TryGetValue(cols[ci].Field, out string? pv))
-                    val = pv ?? "";
-                dict[cols[ci].Field] = val;
-            }
-            rows.Add(dict);
-            prevRow = dict;
-        }
-
-        return new ParsedResult { Cols = cols, Rows = rows, HeaderRows = headerRows };
+        SetStatus($"Loaded '{name}' — {_measurements.Count} measurement(s)", false);
     }
 
-    private static string[] PadToLength(string[] arr, int length)
+    private void Clear()
     {
-        if (arr.Length >= length) return arr;
-        var result = new string[length];
-        arr.CopyTo(result, 0);
-        for (int i = arr.Length; i < length; i++) result[i] = "";
-        return result;
+        _datasetName = ""; _productType = ""; _testDate = DateTime.Today.ToString("yyyy-MM-dd");
+        _images = []; _files = []; _measurements = []; _summary = ""; _keyFindings = "";
+        _tags = []; _status = "";
     }
 
-    private static ColumnDef MakeCol(string label, Dictionary<string, int> seen)
-    {
-        string baseF = string.IsNullOrWhiteSpace(label) ? "col"
-            : System.Text.RegularExpressions.Regex.Replace(label, @"[^a-zA-Z0-9가-힣]", "_");
-        if (string.IsNullOrEmpty(baseF)) baseF = "col";
-        string field = seen.TryGetValue(baseF, out int n)
-            ? (seen[baseF] = n + 1, $"{baseF}_{n + 1}").Item2
-            : (seen[baseF] = 1, baseF).Item2;
-        return new ColumnDef { Field = field, Label = label };
-    }
-
-    // ── Context menu ──────────────────────────────────────────────────────────
-    private void ShowCtxMenu(MouseEventArgs e, PendingTable? table, int rowIndex, int colIndex)
-    {
-        if (!CanEdit) return;
-        _showCtxMenu = true; _ctxX = e.ClientX; _ctxY = e.ClientY;
-        _ctxTable = table; _ctxRowIndex = rowIndex; _ctxColIndex = colIndex;
-        _ctxMode = rowIndex >= 0 ? "row" : "col";
-    }
-
-    private void CloseCtxMenu() => _showCtxMenu = false;
-
-    private void ExecuteCtxAction()
-    {
-        _showCtxMenu = false;
-        if (_ctxMode == "row")
-        {
-            if (_ctxTable is null || _ctxRowIndex < 0 || _ctxRowIndex >= _ctxTable.Rows.Count) return;
-            _ctxTable.Rows.RemoveAt(_ctxRowIndex);
-        }
-        else
-        {
-            if (_ctxTable is null || _ctxColIndex < 0 || _ctxColIndex >= _ctxTable.Columns.Count) return;
-            string field = _ctxTable.Columns[_ctxColIndex].Field;
-            _ctxTable.Columns.RemoveAt(_ctxColIndex);
-            foreach (var row in _ctxTable.Rows) row.Remove(field);
-        }
-    }
-
-    // ── Inline cell editing ───────────────────────────────────────────────────
-    private bool IsEditing(PendingTable? table, int rowIndex, string colField) =>
-        _editTable == table && _editRowIndex == rowIndex &&
-        _editColField.Equals(colField, StringComparison.OrdinalIgnoreCase);
-
-    private void StartEdit(PendingTable? table, int rowIndex, string colField, string currentValue)
-    {
-        if (!CanEdit) return;
-        _editTable = table; _editRowIndex = rowIndex;
-        _editColField = colField; _editValue = currentValue; _editNeedFocus = true;
-    }
-
-    private void CommitEdit()
-    {
-        if (_editRowIndex < 0 || _editTable is null || _editRowIndex >= _editTable.Rows.Count)
-        { CancelEdit(); return; }
-        _editTable.Rows[_editRowIndex][_editColField] = _editValue;
-        CancelEdit();
-    }
-
-    private void CancelEdit() { _editTable = null; _editRowIndex = -1; _editColField = ""; _editValue = ""; }
-
-    private void OnEditKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")  CommitEdit();
-        if (e.Key == "Escape") CancelEdit();
-    }
-
-    private void SetStatus(string msg, bool isError) { _statusMessage = msg; _statusIsError = isError; }
+    private void SetStatus(string msg, bool err) { _status = msg; _statusError = err; }
 
     public async ValueTask DisposeAsync()
     {
+        try { await JS.InvokeVoidAsync("diFullPage.leave"); } catch { }
         try { await JS.InvokeVoidAsync("pasteImageHandler.cancelPasteCapture"); } catch { }
-        try { await JS.InvokeVoidAsync("diDragDrop.destroy", _dotnetRef); } catch { }
-        _dotnetRef?.Dispose();
+        try { await JS.InvokeVoidAsync("backupFileHandler.dispose"); } catch { }
+        _ref?.Dispose();
     }
 }

@@ -23,7 +23,7 @@
                             @onclick="ClearTagFilter">Clear</button>
                 }
             </div>
-            <div class="card-body py-2" style="max-height:180px; overflow-y:auto;">
+            <div class="card-body py-2" style="max-height:220px; overflow-y:auto;">
                 @if (_allTags.Count == 0)
                 {
                     <span class="text-muted small">No tags found.</span>
@@ -56,10 +56,11 @@
                 {
                     <div class="list-group-item text-muted small">No datasets found.</div>
                 }
-                @foreach (string ds in _datasets)
+                @foreach (RawReportInfo r in _datasets)
                 {
-                    bool isSelected = _selected.Contains(ds);
-                    bool isActive   = _activeDataset == ds;
+                    string ds          = r.DatasetName;
+                    bool   isSelected  = _selected.Contains(ds);
+                    bool   isActive    = _activeDataset == ds;
                     <div class="list-group-item small py-2 d-flex align-items-start gap-2"
                          style="cursor:pointer; @(isSelected ? "background:#eff6ff;" : "") border-left:3px solid @(isActive ? "#2563eb" : "transparent");"
                          @onclick="() => ToggleDataset(ds)">
@@ -67,9 +68,16 @@
                                checked="@isSelected"
                                @onclick:stopPropagation="true"
                                @onchange="e => ToggleDataset(ds)" />
-                        <span style="color:@(isActive ? "#1d4ed8" : isSelected ? "#2563eb" : "#334155"); font-weight:@(isSelected ? "600" : "400");">
-                            @ds
-                        </span>
+                        <div style="flex:1; min-width:0;">
+                            <div style="color:@(isActive ? "#1d4ed8" : isSelected ? "#2563eb" : "#334155"); font-weight:@(isSelected ? "600" : "500"); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                @ds
+                            </div>
+                            <div class="text-muted" style="font-size:10.5px;">
+                                @r.ProductType · @r.ReportDate
+                                <span class="ms-1">· 🖼 @r.ImageCount</span>
+                                <span class="ms-1">· ∑ @r.MeasurementCount</span>
+                            </div>
+                        </div>
                     </div>
                 }
             </div>
@@ -156,77 +164,85 @@
                     <!-- Dataset header -->
                     <div class="card-header d-flex align-items-center gap-2 flex-wrap py-2">
                         <span class="fw-semibold small">@_activeDataset</span>
-                        @foreach (string t in Repo.GetTags(_activeDataset))
+                        <span class="text-muted small">· @view.ProductType · @view.TestDate</span>
+                        @foreach (string t in view.Tags)
                         {
                             <span class="badge text-bg-secondary">@t</span>
-                        }
-                        @{ string memo = Repo.GetMemo(_activeDataset); }
-                        @if (!string.IsNullOrWhiteSpace(memo))
-                        {
-                            <span class="text-muted small ms-1">— @memo</span>
                         }
                     </div>
 
                     <div class="card-body p-0">
-                        @if (view.Tables.Count == 0)
+                        <!-- Summary + KeyFindings -->
+                        @if (!string.IsNullOrEmpty(view.Summary) || !string.IsNullOrEmpty(view.KeyFindings))
                         {
-                            <div class="text-muted small p-3">No tables found for this dataset.</div>
+                            <div style="padding:10px 14px; background:#f0f9ff; border-bottom:1px solid #bae6fd;">
+                                @if (!string.IsNullOrEmpty(view.Summary))
+                                {
+                                    <div style="font-size:12.5px; color:#0c4a6e;">
+                                        <strong>Summary:</strong> @view.Summary
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(view.KeyFindings))
+                                {
+                                    <div style="font-size:11.5px; color:#475569; white-space:pre-wrap; margin-top:4px;">
+                                        @view.KeyFindings
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <!-- Measurements -->
+                        @if (view.Measurements.Count == 0)
+                        {
+                            <div class="text-muted small p-3">No normalized measurements for this dataset.</div>
                         }
                         else
                         {
-                            <!-- All tables stacked vertically -->
-                            @foreach (DataTableInfo t in view.Tables)
-                            {
-                                <div style="border-bottom:2px solid #e2e8f0;">
-                                    <div style="padding:6px 14px; background:#f8fafc; font-size:11px; font-weight:700;
-                                                color:#475569; text-transform:uppercase; letter-spacing:.5px;
-                                                border-bottom:1px solid #e2e8f0; display:flex; align-items:center; gap:8px;">
-                                        @t.TableName
-                                        <span style="font-size:10px; font-weight:500; background:#e2e8f0; color:#64748b;
-                                                     padding:1px 7px; border-radius:10px;">@t.RowCount rows</span>
-                                        <span style="font-size:10px; color:#94a3b8; font-weight:400; margin-left:auto;">@t.CreatedAtLocal</span>
-                                    </div>
-                                    <div style="overflow-x:auto;">
-                                        <table style="width:100%; min-width:max-content; border-collapse:collapse;">
-                                            <thead>
-                                                <tr style="background:#f8fafc; position:sticky; top:0; z-index:1;
-                                                           box-shadow:0 1px 0 #e2e8f0;">
-                                                    @foreach (ColumnDef col in t.Columns)
-                                                    {
-                                                        <th style="padding:8px 14px; text-align:left; font-size:10.5px;
-                                                                   font-weight:700; color:#64748b; text-transform:uppercase;
-                                                                   letter-spacing:.5px; white-space:normal; word-break:break-word;
-                                                                   min-width:60px; max-width:160px;
-                                                                   user-select:none; vertical-align:bottom; line-height:1.3;">
-                                                            @col.Label
-                                                        </th>
-                                                    }
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @{ int rowIdx = 0; }
-                                                @foreach (Dictionary<string, string> row in view.TableDisplayRows.GetValueOrDefault(t.Id, []))
-                                                {
-                                                    string rowBg = rowIdx++ % 2 == 0 ? "#ffffff" : "#f8fafc";
-                                                    <tr class="rpt-row" style="background:@rowBg;">
-                                                        @foreach (ColumnDef col in t.Columns)
-                                                        {
-                                                            string cv = row.TryGetValue(col.Field, out string? v) ? v ?? "" : "";
-                                                            <td style="padding:7px 14px; font-size:12px; color:#334155;
-                                                                       white-space:nowrap; border-top:1px solid #f1f5f9;">
-                                                                @cv
-                                                            </td>
-                                                        }
-                                                    </tr>
-                                                }
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            }
+                            <div style="padding:6px 14px; background:#f8fafc; font-size:11px; font-weight:700;
+                                        color:#475569; text-transform:uppercase; letter-spacing:.5px;
+                                        border-bottom:1px solid #e2e8f0;">
+                                Normalized Measurements
+                                <span style="font-size:10px; font-weight:500; background:#e2e8f0; color:#64748b;
+                                             padding:1px 7px; border-radius:10px; margin-left:6px;">@view.Measurements.Count rows</span>
+                            </div>
+                            <div style="overflow-x:auto;">
+                                <table style="width:100%; min-width:max-content; border-collapse:collapse;">
+                                    <thead>
+                                        <tr style="background:#f8fafc; position:sticky; top:0; z-index:1; box-shadow:0 1px 0 #e2e8f0;">
+                                            @foreach (string col in MeasurementColumns)
+                                            {
+                                                <th style="padding:8px 12px; text-align:left; font-size:10.5px;
+                                                           font-weight:700; color:#64748b; text-transform:uppercase;
+                                                           letter-spacing:.4px; white-space:nowrap;">@col</th>
+                                            }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{ int rowIdx = 0; }
+                                        @foreach (NormalizedMeasurement m in view.Measurements)
+                                        {
+                                            string bg = rowIdx++ % 2 == 0 ? "#ffffff" : "#f8fafc";
+                                            <tr style="background:@bg;">
+                                                <td style="padding:6px 12px; font-size:12px;">@m.Variable</td>
+                                                <td style="padding:6px 12px; font-size:12px;">@m.VariableDetail</td>
+                                                <td style="padding:6px 12px; font-size:12px;">@m.VariableGroup</td>
+                                                <td style="padding:6px 12px; font-size:12px;">@m.Line</td>
+                                                <td style="padding:6px 12px; font-size:12px;">@m.CheckType</td>
+                                                <td style="padding:6px 12px; font-size:12px; text-align:right;">@m.InputQty</td>
+                                                <td style="padding:6px 12px; font-size:12px; text-align:right;">@m.NgTotal</td>
+                                                <td style="padding:6px 12px; font-size:12px; text-align:right;">@m.NgRate.ToString("F1")%</td>
+                                                <td style="padding:6px 12px; font-size:12px;">@m.DefectType</td>
+                                                <td style="padding:6px 12px; font-size:12px;">@m.DefectCategory</td>
+                                                <td style="padding:6px 12px; font-size:12px; text-align:right;">@m.DefectCount</td>
+                                                <td style="padding:6px 12px; font-size:12px;">@m.Intervention</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
                         }
 
-                        <!-- Images (if any) -->
+                        <!-- Images -->
                         @if (view.Images.Count > 0)
                         {
                             <div style="padding:12px 14px; border-top:2px solid #e2e8f0;">
@@ -237,13 +253,43 @@
                                 <div style="display:flex; flex-wrap:wrap; gap:16px;">
                                     @foreach ((string fileName, string mediaType, string base64) in view.Images)
                                     {
+                                        string dataUrl = $"data:{mediaType};base64,{base64}";
                                         <figure style="margin:0; text-align:center;">
-                                            <img src="data:@mediaType;base64,@base64"
+                                            <img src="@dataUrl"
                                                  alt="@fileName"
+                                                 title="Click to enlarge"
+                                                 @onclick="() => OpenViewer(dataUrl)"
                                                  style="max-width:480px; max-height:360px; object-fit:contain;
-                                                        border:1px solid #e2e8f0; border-radius:8px; display:block;" />
+                                                        border:1px solid #e2e8f0; border-radius:8px; display:block;
+                                                        cursor:zoom-in; transition:transform .12s, box-shadow .12s;"
+                                                 onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,.15)';"
+                                                 onmouseout="this.style.boxShadow='none';" />
                                             <figcaption style="font-size:11px; color:#64748b; margin-top:4px;">@fileName</figcaption>
                                         </figure>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Backup files -->
+                        @if (view.Files.Count > 0)
+                        {
+                            <div style="padding:12px 14px; border-top:2px solid #e2e8f0;">
+                                <div style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase;
+                                            letter-spacing:.5px; margin-bottom:10px;">
+                                    📎 Backup Files (@view.Files.Count)
+                                </div>
+                                <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                                    @foreach (RawFileInfo f in view.Files)
+                                    {
+                                        <a href="/data-inference/file/@f.Id" download="@f.FileName" target="_blank"
+                                           style="display:inline-flex; align-items:center; gap:6px;
+                                                  background:#f1f5f9; border:1px solid #e2e8f0; border-radius:14px;
+                                                  padding:4px 10px; font-size:12px; color:#334155; text-decoration:none;">
+                                            <span>📄</span>
+                                            <span style="font-weight:600; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="@f.FileName">@f.FileName</span>
+                                            <span style="color:#94a3b8; font-size:10px;">@FormatSize(f.FileSize)</span>
+                                        </a>
                                     }
                                 </div>
                             </div>
@@ -256,26 +302,60 @@
 
 </div>
 
+@if (_viewerDataUrl is not null)
+{
+    <div class="rpt-viewer-overlay" @onclick="CloseViewer">
+        <img src="@_viewerDataUrl" class="rpt-viewer-img" @onclick:stopPropagation="true" />
+        <button class="rpt-viewer-close" @onclick="CloseViewer">✕</button>
+    </div>
+}
+
+<style>
+    .rpt-viewer-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 9500;
+        display: flex; align-items: center; justify-content: center; cursor: zoom-out;
+    }
+    .rpt-viewer-img  { max-width: 94vw; max-height: 92vh; object-fit: contain; cursor: auto; }
+    .rpt-viewer-close {
+        position: absolute; top: 16px; right: 20px; width: 36px; height: 36px;
+        border-radius: 50%; border: none; background: rgba(255,255,255,.2);
+        color: #fff; font-size: 18px; cursor: pointer;
+    }
+    .rpt-viewer-close:hover { background: rgba(255,255,255,.35); }
+</style>
+
 @code {
+    private static readonly string[] MeasurementColumns =
+    [
+        "Variable", "Detail", "Group", "Line", "CheckType",
+        "Input", "NG", "NG%", "DefectType", "Category", "Count", "Intervention",
+    ];
+
     // ── Inner type ────────────────────────────────────────────────────────────
     private sealed class DatasetView
     {
-        public string              DatasetName      { get; init; } = "";
-        public List<DataTableInfo> Tables           { get; set; }  = [];
-        // tableId → fill-down rows
-        public Dictionary<long, List<Dictionary<string, string>>> TableDisplayRows { get; set; } = [];
-        public List<(string FileName, string MediaType, string Base64)> Images { get; set; } = [];
+        public string                      DatasetName  { get; init; } = "";
+        public string                      ProductType  { get; init; } = "";
+        public string                      TestDate     { get; init; } = "";
+        public string                      Summary      { get; init; } = "";
+        public string                      KeyFindings  { get; init; } = "";
+        public List<string>                Tags         { get; init; } = [];
+        public List<NormalizedMeasurement> Measurements { get; init; } = [];
+        public List<(string FileName, string MediaType, string Base64)> Images { get; init; } = [];
+        public List<RawFileInfo>           Files        { get; init; } = [];
     }
 
     // ── State ─────────────────────────────────────────────────────────────────
-    private List<string>    _allTags     = [];
-    private HashSet<string> _filterTags  = new(StringComparer.OrdinalIgnoreCase);
-    private List<string>    _datasets    = [];
+    private List<string>         _allTags    = [];
+    private HashSet<string>      _filterTags = new(StringComparer.OrdinalIgnoreCase);
+    private List<RawReportInfo>  _datasets   = [];
 
-    // Multi-selection (preserves order of selection)
     private List<string>                    _selected      = [];
     private Dictionary<string, DatasetView> _views         = new(StringComparer.OrdinalIgnoreCase);
     private string?                         _activeDataset;
+
+    // Image viewer
+    private string? _viewerDataUrl;
 
     // AI report
     private bool   _isGenerating        = false;
@@ -292,8 +372,8 @@
     protected override async Task OnInitializedAsync()
     {
         _user     = (await AuthState).User;
-        _allTags  = Repo.GetAllDistinctTags();
-        _datasets = Repo.GetAllDatasets();
+        _allTags  = Repo.GetAllDataInferenceTags();
+        _datasets = Repo.GetAllRawReports();
     }
 
     // ── Dataset selection ─────────────────────────────────────────────────────
@@ -318,19 +398,24 @@
 
     private DatasetView LoadView(string ds)
     {
-        var tables = Repo.GetTablesForDataset(ds);
-        var tableDisplayRows = new Dictionary<long, List<Dictionary<string, string>>>();
-        foreach (var t in tables)
-        {
-            var rows = Repo.GetTableRows(t.Id);
-            tableDisplayRows[t.Id] = ComputeDisplayRows(t, rows);
-        }
+        RawReportInfo? info = _datasets.FirstOrDefault(r => r.DatasetName == ds);
+        DatasetSummaryRecord? summ = Repo.GetDatasetSummaryRecord(ds);
+
+        var imgs = Repo.GetRawReportImages(ds)
+            .Select(i => (i.FileName, i.MediaType, Convert.ToBase64String(i.Data)))
+            .ToList();
+
         return new DatasetView
         {
-            DatasetName      = ds,
-            Tables           = tables,
-            TableDisplayRows = tableDisplayRows,
-            Images           = Repo.GetImages(ds),
+            DatasetName  = ds,
+            ProductType  = info?.ProductType ?? "",
+            TestDate     = info?.ReportDate  ?? "",
+            Summary      = summ?.Summary     ?? "",
+            KeyFindings  = summ?.KeyFindings ?? "",
+            Tags         = summ?.Tags        ?? [],
+            Measurements = Repo.GetNormalizedMeasurements(ds),
+            Images       = imgs,
+            Files        = Repo.GetRawReportFileInfos(ds),
         };
     }
 
@@ -361,12 +446,23 @@
 
     private void RefreshDatasets()
     {
-        _datasets = _filterTags.Count > 0
-            ? Repo.GetDatasetsByTags([.. _filterTags])
-            : Repo.GetAllDatasets();
+        List<RawReportInfo> all = Repo.GetAllRawReports();
+        if (_filterTags.Count == 0)
+        {
+            _datasets = all;
+        }
+        else
+        {
+            var allowed = new HashSet<string>(
+                Repo.GetDataInferenceDatasetsByTags([.. _filterTags]),
+                StringComparer.OrdinalIgnoreCase);
+            _datasets = all.Where(r => allowed.Contains(r.DatasetName)).ToList();
+        }
 
-        // remove selected datasets that are no longer in the filtered list
-        var gone = _selected.Where(s => !_datasets.Contains(s, StringComparer.OrdinalIgnoreCase)).ToList();
+        var visible = new HashSet<string>(
+            _datasets.Select(r => r.DatasetName),
+            StringComparer.OrdinalIgnoreCase);
+        var gone = _selected.Where(s => !visible.Contains(s)).ToList();
         foreach (string s in gone) { _selected.Remove(s); _views.Remove(s); }
         if (_activeDataset is not null && !_selected.Contains(_activeDataset, StringComparer.OrdinalIgnoreCase))
             _activeDataset = _selected.Count > 0 ? _selected[^1] : null;
@@ -389,17 +485,41 @@
 
             foreach (string ds in _selected)
             {
-                var tables = Repo.GetTablesForDataset(ds);
+                if (!_views.TryGetValue(ds, out DatasetView? view)) continue;
+
                 sb.AppendLine($"══ Dataset: {ds} ══");
-                foreach (DataTableInfo table in tables)
+                sb.AppendLine($"ProductType: {view.ProductType} | TestDate: {view.TestDate}");
+                if (view.Tags.Count > 0)
+                    sb.AppendLine($"Tags: {string.Join(", ", view.Tags)}");
+                if (!string.IsNullOrEmpty(view.Summary))
+                    sb.AppendLine($"Summary: {view.Summary}");
+                if (!string.IsNullOrEmpty(view.KeyFindings))
+                    sb.AppendLine($"KeyFindings: {view.KeyFindings}");
+
+                if (view.Measurements.Count > 0)
                 {
-                    sb.AppendLine($"  Table: {table.TableName} ({table.RowCount} rows)");
-                    sb.AppendLine("  " + string.Join("\t", table.Columns.Select(c => c.Label)));
-                    foreach (var row in Repo.GetTableRows(table.Id).Take(200))
-                        sb.AppendLine("  " + string.Join("\t", table.Columns.Select(c => row.TryGetValue(c.Field, out string? v) ? v : "")));
                     sb.AppendLine();
+                    sb.AppendLine("Measurements:");
+                    sb.AppendLine("  " + string.Join("\t", MeasurementColumns));
+                    foreach (var m in view.Measurements.Take(300))
+                    {
+                        sb.Append("  ")
+                          .Append(m.Variable).Append('\t')
+                          .Append(m.VariableDetail).Append('\t')
+                          .Append(m.VariableGroup).Append('\t')
+                          .Append(m.Line).Append('\t')
+                          .Append(m.CheckType).Append('\t')
+                          .Append(m.InputQty).Append('\t')
+                          .Append(m.NgTotal).Append('\t')
+                          .Append(m.NgRate.ToString("F1")).Append("%\t")
+                          .Append(m.DefectType).Append('\t')
+                          .Append(m.DefectCategory).Append('\t')
+                          .Append(m.DefectCount).Append('\t')
+                          .AppendLine(m.Intervention);
+                    }
                 }
-                allImages.AddRange(Repo.GetImages(ds));
+                sb.AppendLine();
+                allImages.AddRange(view.Images);
             }
 
             string title = _selected.Count == 1
@@ -468,30 +588,13 @@
         return sb.ToString();
     }
 
-    // ── Fill-down ─────────────────────────────────────────────────────────────
+    private void OpenViewer(string dataUrl) => _viewerDataUrl = dataUrl;
+    private void CloseViewer()               => _viewerDataUrl = null;
 
-    private static List<Dictionary<string, string>> ComputeDisplayRows(
-        DataTableInfo table, List<Dictionary<string, string>> rows)
+    private static string FormatSize(long bytes)
     {
-        if (rows.Count == 0) return [];
-
-        var last    = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var display = new List<Dictionary<string, string>>(rows.Count);
-
-        foreach (var row in rows)
-        {
-            var d = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (ColumnDef col in table.Columns)
-            {
-                string val = row.TryGetValue(col.Field, out string? v) ? v ?? "" : "";
-                if (string.IsNullOrWhiteSpace(val))
-                    val = last.TryGetValue(col.Field, out string? l) ? l ?? "" : "";
-                else
-                    last[col.Field] = val;
-                d[col.Field] = val;
-            }
-            display.Add(d);
-        }
-        return display;
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / 1024.0 / 1024.0:F1} MB";
     }
 }

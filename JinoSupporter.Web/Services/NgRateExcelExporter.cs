@@ -168,7 +168,7 @@ public static class NgRateExcelExporter
         return row;
     }
 
-    // ── 헬퍼 ─────────────────────────────────────────────────────────────────────
+    // ── Helpers ──────────────────────────────────────────────────────────────────
 
     private static List<NgRateReportService.PeriodColumn> AllCols(
         NgRateReportService.NgRateReport r)

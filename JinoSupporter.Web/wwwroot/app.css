@@ -303,3 +303,35 @@ h1:focus { outline: none; }
     from { transform: scale(.92); opacity: 0; }
     to   { transform: scale(1);   opacity: 1; }
 }
+
+/* ── TipTap / ProseMirror editor (global — bypasses Blazor scoping) ───── */
+.ProseMirror {
+    background: #fff;
+    min-height: calc(100vh - 90px);
+    padding: 12px 16px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #0f172a;
+    outline: none;
+    box-sizing: border-box;
+}
+.ProseMirror > * + * { margin-top: 0; }
+.ProseMirror p { margin: 2px 0 4px; }
+.ProseMirror h1 { font-size: 14px; font-weight: 700; margin: 8px -16px 4px; padding: 5px 16px; background: #94a3b8; border-top: 1px solid #475569; border-bottom: 1px solid #475569; color: #0f172a; }
+.ProseMirror h2 { font-size: 12px; font-weight: 700; margin: 6px -16px 4px; padding: 3px 16px; background: #bcc5cc; border-top: 1px solid #555; border-bottom: 1px solid #555; color: #0f172a; }
+.ProseMirror h3 { font-size: 12px; font-weight: 700; margin: 8px 0 4px; color: #334155; }
+.ProseMirror ul, .ProseMirror ol { padding-left: 20px; margin: 4px 0 6px; }
+.ProseMirror li { margin: 2px 0; }
+.ProseMirror hr { border: none; border-top: 1px solid #cbd5e1; margin: 8px 0; }
+.ProseMirror table { border-collapse: collapse !important; width: auto !important; margin: 4px 0 !important; font-size: 13px !important; table-layout: auto !important; border: 1px solid #333 !important; }
+.ProseMirror table.rpt-header { width: 100% !important; table-layout: fixed !important; }
+.ProseMirror th { background: #bcc5cc !important; font-weight: 700 !important; color: #0f172a !important; text-align: center !important; }
+.ProseMirror td, .ProseMirror th { border: 1px solid #333 !important; padding: 4px 8px !important; vertical-align: middle !important; min-width: 30px !important; position: relative; overflow: visible; text-align: left !important; }
+.ProseMirror td img { max-width: 100%; height: auto; display: block; }
+.ProseMirror th { text-align: center !important; }
+.ProseMirror tr:hover > td { background: #f0f6fb; }
+.ProseMirror .selectedCell::after { background: rgba(59,130,246,.1); content: ''; position: absolute; inset: 0; pointer-events: none; }
+.ProseMirror .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background-color: #2563eb; cursor: col-resize; z-index: 20; }
+.ProseMirror.resize-cursor { cursor: col-resize; }
+.ProseMirror img { max-width: 100%; height: auto; display: block; margin: 6px auto; }
+.ProseMirror p.is-empty::before { content: attr(data-placeholder); color: #cbd5e1; float: left; pointer-events: none; height: 0; }

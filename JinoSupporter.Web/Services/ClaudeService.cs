@@ -1,13 +1,16 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace JinoSupporter.Web.Services;
 
 public sealed class ClaudeService
 {
     private const string DefaultModel = "claude-haiku-4-5-20251001";
-    private const long   MaxImageBytes = 4_500_000; // 4.5 MB safe margin under the 5 MB limit
+    // Claude's 5 MB limit applies to the base64-encoded payload; base64 grows ~33% over raw bytes.
+    // Target 3.5 MB of raw bytes → ~4.67 MB base64, comfortably under the 5 MB cap.
+    private const long   MaxImageBytes = 3_500_000;
 
     private readonly HttpClient _http;
     private readonly string     _apiKey;
@@ -49,14 +52,15 @@ public sealed class ClaudeService
     /// <summary>Sends a multi-part message (text + image blocks) using JsonNode to avoid List&lt;object&gt; serialization issues.</summary>
     private async Task<string> CallWithContentAsync(JsonArray contentBlocks,
                                                     int maxTokens = 8192,
-                                                    CancellationToken ct = default)
+                                                    CancellationToken ct = default,
+                                                    string? model = null)
     {
         if (!IsConfigured)
             throw new InvalidOperationException("Claude API key is not configured.");
 
         var body = new JsonObject
         {
-            ["model"]      = DefaultModel,
+            ["model"]      = model ?? DefaultModel,
             ["max_tokens"] = maxTokens,
             ["messages"]   = new JsonArray
             {
@@ -340,68 +344,9 @@ public sealed class ClaudeService
             _            => "image/png"
         };
 
-    /// <summary>
-    /// If the decoded byte size exceeds MaxImageBytes, scales the image down until it fits.
-    /// Uses System.Drawing (available via Microsoft.AspNetCore.App on Windows) or falls back gracefully.
-    /// </summary>
+    /// <summary>Compresses via <see cref="ImageCompressor"/> (quality-first, near-lossless).</summary>
     private static string ResizeImageBase64(string base64, string mediaType)
-    {
-        byte[] data;
-        try { data = Convert.FromBase64String(base64); }
-        catch { return base64; }
-
-        if (data.Length <= MaxImageBytes) return base64;
-
-        try
-        {
-            // Estimate scale factor from size ratio (pixel area ~ file size)
-            double scale = Math.Sqrt((double)MaxImageBytes / data.Length) * 0.85;
-
-            using var inputMs = new MemoryStream(data);
-            using var bmp = System.Drawing.Image.FromStream(inputMs);
-
-            int newW = Math.Max(400, (int)(bmp.Width  * scale));
-            int newH = Math.Max(300, (int)(bmp.Height * scale));
-
-            // Try progressively smaller sizes
-            for (int attempt = 0; attempt < 5; attempt++)
-            {
-                using var resized = new System.Drawing.Bitmap(newW, newH);
-                using (var g = System.Drawing.Graphics.FromImage(resized))
-                {
-                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                    g.Clear(System.Drawing.Color.White);
-                    g.DrawImage(bmp, 0, 0, newW, newH);
-                }
-
-                using var outMs = new MemoryStream();
-                // Save as PNG for lossless; if still too big try JPEG
-                resized.Save(outMs, System.Drawing.Imaging.ImageFormat.Png);
-                if (outMs.Length <= MaxImageBytes)
-                    return Convert.ToBase64String(outMs.ToArray());
-
-                // Try JPEG
-                using var jpgMs = new MemoryStream();
-                var jpgEncoder = System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders()
-                    .First(e => e.FormatID == System.Drawing.Imaging.ImageFormat.Jpeg.Guid);
-                var encParams = new System.Drawing.Imaging.EncoderParameters(1);
-                encParams.Param[0] = new System.Drawing.Imaging.EncoderParameter(
-                    System.Drawing.Imaging.Encoder.Quality, 70L);
-                resized.Save(jpgMs, jpgEncoder, encParams);
-                if (jpgMs.Length <= MaxImageBytes)
-                    return Convert.ToBase64String(jpgMs.ToArray());
-
-                newW = (int)(newW * 0.7);
-                newH = (int)(newH * 0.7);
-            }
-        }
-        catch
-        {
-            // If resize fails, return original and let API reject if too large
-        }
-
-        return base64;
-    }
+        => ImageCompressor.CompressIfLarge(base64, mediaType).Base64;
 
     // ── Generate HTML report ──────────────────────────────────────────────────
 
@@ -447,6 +392,230 @@ public sealed class ClaudeService
         }
 
         return await CallAsync(prompt, 8192, ct);
+    }
+
+    // ── Normalize from images ─────────────────────────────────────────────────
+
+    public async Task<NormalizeResult> NormalizeFromImagesAsync(
+        List<(string MediaType, string Base64)> images,
+        string datasetName,
+        string productType,
+        string testDate,
+        CancellationToken ct = default)
+    {
+        if (!IsConfigured)
+            throw new InvalidOperationException("Claude API key is not configured.");
+
+        var blocks = new JsonArray();
+        foreach ((string mediaType, string base64) in images)
+        {
+            string resized  = ResizeImageBase64(base64, mediaType);
+            string detected = DetectMediaType(resized, mediaType);
+            blocks.Add(new JsonObject
+            {
+                ["type"]   = "image",
+                ["source"] = new JsonObject
+                {
+                    ["type"]       = "base64",
+                    ["media_type"] = detected,
+                    ["data"]       = resized
+                }
+            });
+        }
+
+        string prompt = $$"""
+            You are a manufacturing quality data extraction specialist.
+
+            Context:
+            - Dataset: {{datasetName}}
+            - Default product type: {{productType}}
+            - Default test date: {{testDate}}
+
+            The attached image(s) are screenshots of Excel manufacturing inspection reports.
+
+            ══ STEP 1: IDENTIFY ALL TABLES AND SECTIONS ══
+            A report may contain MULTIPLE TABLES (e.g. "RESULT CHECK PROCESS AI COIL", "RESULT CHECK PROCESS SPOT WELDING").
+            A table may also contain MULTIPLE PRODUCT SECTIONS (e.g. TIA-338L rows vs TIA-338R rows in different merged-cell groups).
+
+            For each table:
+            → Read the TABLE NAME/HEADER → store in variableDetail for every row belonging to that table.
+              Example: rows from "RESULT CHECK PROCESS AI COIL" get variableDetail = "AI COIL"
+                       rows from "RESULT CHECK PROCESS SPOT WELDING" get variableDetail = "SPOT WELDING"
+              This is CRITICAL — it is the only way to distinguish rows with the same variable name across tables.
+
+            ══ STEP 2: READ MERGED CELLS CORRECTLY ══
+            Merged cells span multiple rows. For each row group/section:
+            - Model/product column → productType (if "{{productType}}" was given and image shows same, keep it)
+            - Date column → testDate (YYYY-MM-DD; "12-Feb" with no year → "{{testDate}}"[..4] + "-02-12")
+            - Line column → line (e.g. "C1120R", "C2-2B", "C2-1B")
+            CRITICAL: Each product section has its OWN line. NEVER carry over a line from a different section.
+
+            ══ STEP 3: DETERMINE variableGroup SEMANTICS ══
+            variableGroup must reflect the ACTUAL comparison relationship:
+
+            Row label contains "Before Ass'y" / "After Ass'y"  → "before" / "after"
+            Row is test/modified condition (e.g. "Test ...", "New lot")  → "test" / "new_lot"
+            Row is baseline/normal condition (e.g. "Normal ...", "Old lot")  → "normal" / "old_lot"
+            Row label is just a Worker name with no phase  → leave variableGroup blank ""
+            Row has "retrained" label  → variableGroup = "after", intervention = "retrained"
+
+            ══ STEP 4: READ EACH DATA ROW ══
+            For every non-total data row:
+            - variable: primary identifier from Type/Worker/Condition column
+            - variableDetail: TABLE NAME of the table this row belongs to (see STEP 1)
+            - variableGroup: see STEP 3
+            - intervention: "retrained" if row contains "retrained" or "재교육" (any language), else ""
+            - inputQty: INTEGER from Input column — read every digit carefully
+            - okQty: INTEGER from OK column
+            - ngTotal: INTEGER from Total NG / Q'ty NG column
+            - ngRate: FLOAT from NG rate column (strip %, e.g. "33.3%" → 33.3)
+            - checkType: "process" / "function" / "visual_inspection" based on table context
+
+            ══ STEP 5: WIDE → LONG TRANSFORM (DEDUPLICATED) ══
+            Count how many defect columns have NON-ZERO values in each physical row, then apply:
+
+            CASE A — 0 non-zero defect columns (clean row):
+              → emit EXACTLY 1 entry with defectType="", defectCount=0,
+                ngTotal/ngRate = row totals (may be 0).
+
+            CASE B — EXACTLY 1 non-zero defect column (most common):
+              → emit EXACTLY 1 entry MERGED:
+                defectType = column label, defectCount = that cell value,
+                ngTotal/ngRate = row totals, InputQty/OkQty = row values.
+              → DO NOT also emit a separate "total" entry. This avoids duplication.
+
+            CASE C — 2+ non-zero defect columns (multi-defect row):
+              → emit 1 "total" entry (defectType="", defectCount=0,
+                ngTotal/ngRate = row totals) — needed to preserve the aggregate
+              → PLUS one entry per non-zero defect column
+                (defectType = column label, defectCount = cell value).
+              → All entries share the same InputQty/OkQty/ngTotal/ngRate.
+
+            Zero-count defect columns are ALWAYS omitted — never create zero-count entries.
+
+            ══ STEP 6: SKIP AGGREGATE ROWS ══
+            Skip rows labeled "Total", "Grand Total", "Sum", sub-total rows.
+            Extract only individual data rows.
+
+            ══ STEP 7: DEFECT CATEGORY MAPPING ══
+            assembly_defect    → VP+CD separate, glue, clamp, bond, coil separate
+            cosmetic_defect    → damage, particle, scratch, burn, defrom/deform
+            function_spl       → SPL NG, audiobus SPL
+            function_thd       → THD NG
+            function_hearing   → noise, hearing, audiobus
+            wire_defect        → wire offset, wire forming, wire cutting, wire clamp, wire pad offset, solder weak
+            magnetic_defect    → Gauss low/NG
+            rear_visual_damage → rear damage position N
+            other              → anything else not clearly listed above
+
+            ══ STEP 8: TAG EXTRACTION — purpose-first, NOT column dump ══
+            You must UNDERSTAND the report's intent, not list every value.
+            Produce 4–10 high-signal tags. Quality over quantity.
+
+            LANGUAGE RULE: **All tags MUST be in English only.**
+            Translate any Korean terms from the source into concise English equivalents.
+            Do NOT output Korean characters in tags under any circumstances.
+
+            REQUIRED tags (include each if determinable from the report):
+
+            1) **Main purpose (1 keyword)** — the single-word essence of why this report exists.
+               Pick the closest English tag (lowercase, hyphen-free, short):
+                 "lot-comparison", "process-improvement", "worker-evaluation",
+                 "training-effect", "root-cause", "variation-analysis",
+                 "new-lot-validation", "condition-optimization", "mold-comparison"
+               Base it on the Purpose/Objective section AND the overall comparison
+               structure — not on column names.
+
+            2) **Review type(s)** — pick from actual sections seen (English only):
+                 "process-inspection", "function-inspection",
+                 "visual-inspection", "reliability-inspection"
+               If multiple check types appear, include each.
+
+            3) **Product/model** — as it appears: e.g. "TIU-C11-20", "BRS-161016", "TIA-338".
+               Product codes are already English — keep as-is.
+
+            OPTIONAL tags (include only if they add signal, English only):
+
+            4) **Process or sub-process name** — the assembly/manufacturing step being
+               evaluated, drawn from section headers or the Purpose text (NOT column headers).
+               Translate any Korean to English:
+                 e.g. "UV-drying" (not "UV 건조"),
+                      "FPCB-assembly" (not "FPCB 조립"),
+                      "VP-assembly", "AI-coil-process"
+
+            5) **Key comparison variable** — what is being varied. English only:
+                 e.g. "drying-time" (not "건조 시간"),
+                      "mold-number" (not "Mold 번호"),
+                      "lot-date", "worker-variance"
+
+            6) **Intervention or action** — English only:
+                 e.g. "retraining" (not "재교육"),
+                      "lot-change", "condition-change"
+
+            DO NOT output:
+            - ❌ Any Korean characters (translate to English).
+            - ❌ Defect/NG column names: "SPL", "Noise", "Touch", "THD", "Gauss low",
+              "wire offset", "VP+CD separate", "Rear damage position 5", etc.
+              These live in defectType/defectCategory fields already — DO NOT duplicate.
+            - ❌ Specific numbers / percentages / counts: "3.6%", "477G".
+            - ❌ Every row label verbatim: "Test level 1", "Test Dry UV Yoke 1 min",
+              "Normal (AWF#1)". These are measurement rows, not tags.
+            - ❌ Category enum values: "function_spl", "wire_defect", "assembly_defect".
+            - ❌ Generic English words copied from table headers: "Input", "OK", "Total NG".
+            - ❌ File/image metadata, dates, line codes.
+
+            De-duplicate aggressively. Prefer semantic intent over surface wording.
+
+            ══ OUTPUT ══
+            Return ONLY valid JSON — no markdown fences, no extra text:
+            {
+              "measurements": [
+                {
+                  "productType": "",
+                  "testDate": "",
+                  "line": "",
+                  "checkType": "",
+                  "variable": "",
+                  "variableDetail": "",
+                  "variableGroup": "",
+                  "intervention": "",
+                  "inputQty": 0,
+                  "okQty": 0,
+                  "ngTotal": 0,
+                  "ngRate": 0.0,
+                  "defectCategory": "",
+                  "defectType": "",
+                  "defectCount": 0
+                }
+              ],
+              "summary": "1–2 sentence description",
+              "keyFindings": "Key findings (use \\n between bullet points)",
+              "tags": ["keyword1", "keyword2", "..."]
+            }
+            """;
+
+        blocks.Add(new JsonObject { ["type"] = "text", ["text"] = prompt });
+
+        string raw = await CallWithContentAsync(blocks, 8192, ct, "claude-sonnet-4-6");
+        raw = raw.Trim();
+        if (raw.StartsWith("```"))
+        {
+            int nl = raw.IndexOf('\n');
+            if (nl >= 0) raw = raw[(nl + 1)..];
+            if (raw.TrimEnd().EndsWith("```")) raw = raw[..raw.LastIndexOf("```")];
+        }
+        int open  = raw.IndexOf('{');
+        int close = raw.LastIndexOf('}');
+        if (open >= 0 && close > open) raw = raw[open..(close + 1)];
+        try
+        {
+            return JsonSerializer.Deserialize<NormalizeResult>(raw.Trim(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new NormalizeResult();
+        }
+        catch
+        {
+            return new NormalizeResult { Summary = "JSON parse error — check Claude response." };
+        }
     }
 
     // ── Extract tags ──────────────────────────────────────────────────────────
@@ -506,6 +675,94 @@ public sealed class ClaudeService
 
         string result = await CallAsync(prompt, 512, ct);
         return ParseJsonArray<string>(result);
+    }
+
+    // ── Ask AI from registered reports ────────────────────────────────────────
+
+    public sealed class AskAiPerDataset
+    {
+        [JsonPropertyName("datasetName")] public string DatasetName { get; set; } = "";
+        [JsonPropertyName("answer")]      public string Answer      { get; set; } = "";
+    }
+
+    public sealed class AskAiResult
+    {
+        [JsonPropertyName("overall")]    public string                 Overall    { get; set; } = "";
+        [JsonPropertyName("perDataset")] public List<AskAiPerDataset>  PerDataset { get; set; } = [];
+    }
+
+    /// <summary>
+    /// Answers <paramref name="question"/> using ONLY the provided registered dataset contexts.
+    /// Returns an overall recommendation plus a per-dataset answer for every dataset that
+    /// genuinely informs the answer.
+    /// </summary>
+    public async Task<AskAiResult> AskAiAsync(string question,
+                                              string datasetsContext,
+                                              CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(datasetsContext))
+        {
+            return new AskAiResult
+            {
+                Overall    = "등록된 리포트가 없어 답변할 수 없습니다. 먼저 Input Data 에서 리포트를 저장해주세요.",
+                PerDataset = []
+            };
+        }
+
+        string prompt = $$"""
+            You are a manufacturing quality improvement assistant.
+
+            A user has asked a question about a production problem. Answer it USING ONLY the information found in the registered dataset reports below.
+
+            ══ STRICT RULES ══
+            1. Do NOT use external/general knowledge. Only use facts present in the reports below.
+            2. If no registered report contains relevant information, set "overall" to a short Korean notice that no relevant data was found, and return an empty "perDataset" array. Do not invent an answer.
+            3. Produce ONE entry in "perDataset" for EVERY dataset that genuinely contributes to the answer. Copy "datasetName" VERBATIM from the "Dataset:" header in the context (full string, including numeric prefixes and spaces).
+            4. In each per-dataset "answer": explain in Korean (한국어) what this SPECIFIC dataset shows and how it addresses the user's question. Cite concrete values from that dataset only (NG rate, defect type, product type, date, specific findings). 2–5 sentences is ideal.
+            5. Do NOT include datasets that are irrelevant to the question.
+            6. In "overall": give a 2–3 sentence Korean synthesis across the per-dataset findings — top recommendations in priority order. If there is only one relevant dataset, you may leave "overall" empty.
+            7. Return ONLY valid JSON — no markdown fences, no extra commentary.
+
+            ══ OUTPUT JSON SCHEMA ══
+            {
+              "overall": "2–3 sentence Korean overall recommendation across all datasets (may be empty).",
+              "perDataset": [
+                {
+                  "datasetName": "<verbatim Dataset name>",
+                  "answer": "Korean, dataset-specific answer with concrete numbers from this dataset."
+                }
+              ]
+            }
+
+            ══ USER QUESTION ══
+            {{question}}
+
+            ══ REGISTERED DATASET REPORTS ══
+            {{datasetsContext}}
+            """;
+
+        string raw = await CallAsync(prompt, 4096, ct);
+        raw = raw.Trim();
+        if (raw.StartsWith("```"))
+        {
+            int nl = raw.IndexOf('\n');
+            if (nl >= 0) raw = raw[(nl + 1)..];
+            if (raw.TrimEnd().EndsWith("```")) raw = raw[..raw.LastIndexOf("```")];
+        }
+        int open  = raw.IndexOf('{');
+        int close = raw.LastIndexOf('}');
+        if (open >= 0 && close > open) raw = raw[open..(close + 1)];
+
+        try
+        {
+            return JsonSerializer.Deserialize<AskAiResult>(raw.Trim(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                ?? new AskAiResult { Overall = "(응답 파싱 실패)" };
+        }
+        catch
+        {
+            return new AskAiResult { Overall = raw };
+        }
     }
 
     // ── Translate ─────────────────────────────────────────────────────────────

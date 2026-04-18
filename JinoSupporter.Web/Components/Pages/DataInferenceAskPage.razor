@@ -1,0 +1,507 @@
+@page "/data-inference/ask"
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+@inject WebRepository Repo
+@inject ClaudeService  Claude
+@inject IJSRuntime     JS
+
+<PageTitle>Data Inference — Ask AI</PageTitle>
+
+<div class="diask-root">
+
+@if (!Claude.IsConfigured)
+{
+    <div class="alert alert-warning mb-0 py-2 small" style="flex-shrink:0; margin:8px 14px 0;">
+        <strong>Claude API key not configured.</strong> Go to Admin → Settings to add your key.
+    </div>
+}
+
+<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<div class="diask-header">
+    <span class="diask-title">💬 Ask AI</span>
+    <span class="diask-count">@_reports.Count registered dataset(s)</span>
+    <div style="flex:1;"></div>
+    <label class="diask-filter-label">Product Type</label>
+    <select class="form-select form-select-sm diask-filter-select" @bind="_productTypeFilter">
+        <option value="">All</option>
+        @foreach (var pt in _productTypeOptions)
+        {
+            <option value="@pt">@pt</option>
+        }
+    </select>
+    <span class="diask-count-right">사용 대상: @FilteredReports.Count 건</span>
+    <button class="btn btn-outline-secondary btn-sm" @onclick="ToggleHistory" disabled="@_isBusy">
+        @(_showHistory ? "✕ History" : "🗂 History")
+    </button>
+</div>
+
+<div class="diask-main">
+
+<!-- ── Main column ─────────────────────────────────────────────────────────── -->
+<div class="diask-main-col">
+
+<!-- Question area -->
+<div class="diask-question-wrap">
+    <label class="diask-label">질문</label>
+    <textarea class="form-control diask-question" rows="4"
+              @bind="_question"
+              @bind:event="oninput"
+              placeholder="예) BRS-161016 제품에서 SPL NG가 자주 발생하는데, 어떻게 개선하면 좋을까요?"></textarea>
+    <div class="diask-actions">
+        @if (!string.IsNullOrEmpty(_status))
+        {
+            <span class="diask-status @(_statusError ? "diask-error" : "diask-ok")">@_status</span>
+        }
+        <div style="flex:1;"></div>
+        <button class="btn btn-outline-secondary btn-sm" @onclick="Clear" disabled="@_isBusy">Clear</button>
+        <button class="btn btn-primary btn-sm" @onclick="AskAsync"
+                disabled="@(_isBusy || string.IsNullOrWhiteSpace(_question) || !Claude.IsConfigured || FilteredReports.Count == 0)">
+            @if (_isBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            Ask AI
+        </button>
+    </div>
+</div>
+
+<!-- Answer area -->
+<div class="diask-answer-wrap">
+    @if (_isBusy)
+    {
+        <div class="diask-placeholder">
+            <div class="spinner-border spinner-border-sm me-2"></div>
+            등록된 리포트에서 관련 내용을 분석 중입니다…
+        </div>
+    }
+    else if (_answer is null)
+    {
+        <div class="diask-placeholder">
+            질문을 입력하고 <strong>Ask AI</strong> 를 누르면 이때까지 등록된 리포트를 기반으로 답변해 드립니다.
+        </div>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(_answer.Overall))
+        {
+            <div class="diask-answer-card diask-overall">
+                <div class="diask-answer-title">🤖 종합 답변</div>
+                <div class="diask-answer-body">@_answer.Overall</div>
+            </div>
+        }
+
+        @if (_answer.PerDataset.Count > 0)
+        {
+            <div class="diask-perds-title">📄 데이터셋별 답변 (@_answer.PerDataset.Count)</div>
+            @foreach (var pd in _answer.PerDataset)
+            {
+                var info = _reports.FirstOrDefault(r => r.DatasetName == pd.DatasetName);
+                <div class="diask-ds-card">
+                    <div class="diask-ds-head">
+                        <a class="diask-ds-link"
+                           href="@DetailUrl(pd.DatasetName)" target="_blank" rel="noopener">
+                            🔗 @pd.DatasetName
+                        </a>
+                        @if (info is not null)
+                        {
+                            <span class="diask-ds-meta">
+                                @(string.IsNullOrEmpty(info.ProductType) ? "—" : info.ProductType)
+                                · @info.ReportDate
+                                · @info.MeasurementCount row(s)
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="diask-ds-meta diask-ds-missing">(삭제되었거나 이름 불일치)</span>
+                        }
+                    </div>
+                    <div class="diask-ds-body">@pd.Answer</div>
+                </div>
+            }
+        }
+        else if (string.IsNullOrWhiteSpace(_answer.Overall))
+        {
+            <div class="diask-empty-note">관련 리포트를 찾지 못해 답변을 생성할 수 없습니다.</div>
+        }
+    }
+</div>
+
+</div>
+
+<!-- ── History panel (right side) ─────────────────────────────────────────── -->
+@if (_showHistory)
+{
+    <div class="diask-history-col">
+        <div class="diask-history-head">
+            <span>🗂 Q/A 이력 (@_history.Count)</span>
+            <button class="btn btn-outline-danger btn-sm py-0 px-2"
+                    @onclick="ConfirmClearHistory"
+                    disabled="@(_history.Count == 0 || _isBusy)">전체 삭제</button>
+        </div>
+        @if (_history.Count == 0)
+        {
+            <div class="diask-history-empty">저장된 이력이 없습니다.</div>
+        }
+        else
+        {
+            <div class="diask-history-list">
+                @foreach (var h in _history)
+                {
+                    bool isActive = _activeHistoryId == h.Id;
+                    <div class="diask-history-item @(isActive ? "active" : "")"
+                         @onclick="() => LoadHistory(h.Id)">
+                        <div class="diask-history-q">@Truncate(h.Question, 80)</div>
+                        <div class="diask-history-meta">
+                            @FormatDate(h.CreatedAt)
+                            @if (!string.IsNullOrEmpty(h.ProductTypeFilter))
+                            {
+                                <text> · @h.ProductTypeFilter</text>
+                            }
+                        </div>
+                        <button class="diask-history-del"
+                                title="삭제"
+                                @onclick="() => DeleteHistory(h.Id)"
+                                @onclick:stopPropagation="true">✕</button>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+</div>
+
+@if (_showClearConfirm)
+{
+    <div class="diask-overlay" @onclick="() => _showClearConfirm = false">
+        <div class="diask-confirm" @onclick:stopPropagation="true">
+            <div class="diask-confirm-title">전체 이력 삭제</div>
+            <p style="font-size:13px;">저장된 모든 Q/A 이력이 삭제됩니다. 계속하시겠습니까?</p>
+            <div style="display:flex; gap:8px; justify-content:flex-end;">
+                <button class="btn btn-outline-secondary btn-sm"
+                        @onclick="() => _showClearConfirm = false">Cancel</button>
+                <button class="btn btn-danger btn-sm" @onclick="ClearAllHistory">전체 삭제</button>
+            </div>
+        </div>
+    </div>
+}
+
+</div>
+
+<style>
+    .diask-root {
+        flex: 1; min-height: 0; display: flex; flex-direction: column;
+        overflow: hidden; background: #f8fafc;
+    }
+    .diask-header {
+        display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+        background: #fff; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+    }
+    .diask-title       { font-size: 15px; font-weight: 700; color: #1e293b; }
+    .diask-count       { font-size: 12px; color: #94a3b8; }
+    .diask-count-right { font-size: 12px; color: #64748b; font-weight: 600; }
+    .diask-filter-label  { font-size: 12px; font-weight: 600; color: #64748b; white-space: nowrap; }
+    .diask-filter-select { width: 160px; }
+
+    .diask-main {
+        flex: 1; min-height: 0; display: flex; overflow: hidden;
+    }
+    .diask-main-col {
+        flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    .diask-question-wrap {
+        padding: 12px 14px; background: #fff; border-bottom: 1px solid #e2e8f0;
+        flex-shrink: 0;
+    }
+    .diask-label    { font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px; }
+    .diask-question { font-size: 13px; resize: vertical; }
+    .diask-actions  { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .diask-status   { font-size: 12px; }
+    .diask-ok       { color: #16a34a; }
+    .diask-error    { color: #dc2626; }
+
+    .diask-answer-wrap {
+        flex: 1; min-height: 0; overflow-y: auto; padding: 14px;
+    }
+    .diask-placeholder {
+        display: flex; align-items: center; justify-content: center;
+        padding: 60px 20px; color: #94a3b8; font-size: 13px; text-align: center;
+    }
+    .diask-answer-card {
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+        padding: 14px 16px; margin-bottom: 12px;
+    }
+    .diask-overall { border-left: 4px solid #3b82f6; background: #f8fafc; }
+    .diask-answer-title {
+        font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 8px;
+    }
+    .diask-answer-body {
+        font-size: 13px; color: #0f172a; line-height: 1.65; white-space: pre-wrap;
+    }
+    .diask-perds-title {
+        font-size: 12px; font-weight: 700; color: #475569; margin: 6px 2px 8px; letter-spacing: .3px;
+    }
+    .diask-ds-card {
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+        margin-bottom: 8px; overflow: hidden;
+    }
+    .diask-ds-head {
+        display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+        padding: 8px 14px; background: #f0f9ff; border-bottom: 1px solid #bae6fd;
+    }
+    .diask-ds-link {
+        font-size: 13px; font-weight: 700; color: #1d4ed8; text-decoration: none;
+    }
+    .diask-ds-link:hover { text-decoration: underline; color: #1e3a8a; }
+    .diask-ds-meta    { font-size: 11px; color: #64748b; }
+    .diask-ds-missing { color: #b45309; font-style: italic; }
+    .diask-ds-body    { padding: 10px 14px; font-size: 13px; color: #0f172a; line-height: 1.6; white-space: pre-wrap; }
+    .diask-empty-note {
+        background: #fef9c3; border: 1px solid #fde68a; color: #78350f;
+        padding: 10px 14px; border-radius: 8px; font-size: 12px;
+    }
+
+    /* History panel */
+    .diask-history-col {
+        width: 320px; flex-shrink: 0; display: flex; flex-direction: column;
+        background: #fff; border-left: 1px solid #e2e8f0; overflow: hidden;
+    }
+    .diask-history-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 10px 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+        font-size: 12px; font-weight: 700; color: #334155;
+    }
+    .diask-history-empty { padding: 40px 14px; text-align: center; color: #94a3b8; font-size: 12px; }
+    .diask-history-list  { flex: 1; overflow-y: auto; padding: 6px; }
+    .diask-history-item  {
+        position: relative; padding: 8px 10px 8px 10px; margin-bottom: 4px;
+        border-radius: 6px; cursor: pointer; transition: background .12s;
+    }
+    .diask-history-item:hover   { background: #f1f5f9; }
+    .diask-history-item.active  { background: #dbeafe; }
+    .diask-history-q    { font-size: 12px; font-weight: 600; color: #1e293b; padding-right: 18px; }
+    .diask-history-meta { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+    .diask-history-del  {
+        position: absolute; top: 4px; right: 4px; width: 18px; height: 18px;
+        border-radius: 50%; border: none; background: transparent;
+        color: #94a3b8; font-size: 10px; cursor: pointer; padding: 0;
+    }
+    .diask-history-del:hover { background: #dc2626; color: #fff; }
+
+    .diask-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 9000;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .diask-confirm {
+        background: #fff; border-radius: 10px; padding: 20px 24px;
+        box-shadow: 0 10px 40px rgba(0,0,0,.2); min-width: 340px;
+    }
+    .diask-confirm-title { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 10px; }
+</style>
+
+@code {
+    private List<RawReportInfo>        _reports           = [];
+    private string                     _productTypeFilter = "";
+    private string                     _question          = "";
+    private ClaudeService.AskAiResult? _answer            = null;
+    private bool                       _isBusy;
+    private string                     _status            = "";
+    private bool                       _statusError;
+
+    private bool                       _showHistory       = false;
+    private List<AskAiHistoryRecord>   _history           = [];
+    private long?                      _activeHistoryId   = null;
+    private bool                       _showClearConfirm  = false;
+
+    private List<string> _productTypeOptions => _reports
+        .Select(r => r.ProductType)
+        .Where(p => !string.IsNullOrWhiteSpace(p))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+    private List<RawReportInfo> FilteredReports => string.IsNullOrEmpty(_productTypeFilter)
+        ? _reports
+        : _reports.Where(r => string.Equals(r.ProductType, _productTypeFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    protected override void OnInitialized()
+    {
+        _reports = Repo.GetAllRawReports();
+        _history = Repo.GetAskAiHistory();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await JS.InvokeVoidAsync("diFullPage.enter");
+    }
+
+    private static string DetailUrl(string datasetName)
+        => $"/data-inference/detail?name={Uri.EscapeDataString(datasetName)}";
+
+    private void ToggleHistory() => _showHistory = !_showHistory;
+
+    private async Task AskAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_question))
+        {
+            SetStatus("질문을 입력해주세요.", true);
+            return;
+        }
+
+        _isBusy = true;
+        _status = "";
+        _answer = null;
+        _activeHistoryId = null;
+        StateHasChanged();
+
+        try
+        {
+            string context = await Task.Run(BuildDatasetsContext);
+            if (string.IsNullOrWhiteSpace(context))
+            {
+                SetStatus("선택된 조건에 해당하는 AI 분석 리포트가 없습니다.", true);
+                return;
+            }
+
+            _answer = await Claude.AskAiAsync(_question.Trim(), context);
+
+            // Persist to DB
+            string perDsJson = System.Text.Json.JsonSerializer.Serialize(_answer.PerDataset);
+            long id = Repo.SaveAskAiHistory(
+                _question.Trim(), _productTypeFilter, _answer.Overall, perDsJson);
+            _activeHistoryId = id;
+            _history = Repo.GetAskAiHistory();
+
+            SetStatus($"답변 생성 완료 — 데이터셋별 답변 {_answer.PerDataset.Count}건", false);
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"오류: {ex.Message}", true);
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private void LoadHistory(long id)
+    {
+        AskAiHistoryRecord? h = Repo.GetAskAiHistoryById(id);
+        if (h is null) return;
+        _question          = h.Question;
+        _productTypeFilter = h.ProductTypeFilter;
+        _activeHistoryId   = h.Id;
+
+        List<ClaudeService.AskAiPerDataset> per = [];
+        try
+        {
+            per = System.Text.Json.JsonSerializer.Deserialize<List<ClaudeService.AskAiPerDataset>>(
+                h.PerDatasetJson,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+        }
+        catch { }
+
+        _answer = new ClaudeService.AskAiResult
+        {
+            Overall    = h.Overall,
+            PerDataset = per
+        };
+        SetStatus($"이력 불러오기 — {FormatDate(h.CreatedAt)}", false);
+    }
+
+    private void DeleteHistory(long id)
+    {
+        Repo.DeleteAskAiHistory(id);
+        _history = Repo.GetAskAiHistory();
+        if (_activeHistoryId == id)
+        {
+            _activeHistoryId = null;
+            _answer = null;
+        }
+    }
+
+    private void ConfirmClearHistory() => _showClearConfirm = true;
+
+    private void ClearAllHistory()
+    {
+        Repo.DeleteAllAskAiHistory();
+        _history = [];
+        _activeHistoryId = null;
+        _answer = null;
+        _showClearConfirm = false;
+    }
+
+    private string BuildDatasetsContext()
+    {
+        var sb = new System.Text.StringBuilder();
+        int idx = 1;
+        foreach (RawReportInfo r in FilteredReports)
+        {
+            DatasetSummaryRecord? summ = Repo.GetDatasetSummaryRecord(r.DatasetName);
+            string summary     = summ?.Summary     ?? "";
+            string keyFindings = summ?.KeyFindings ?? "";
+            List<string> tags  = summ?.Tags        ?? [];
+
+            if (string.IsNullOrWhiteSpace(summary)
+                && string.IsNullOrWhiteSpace(keyFindings)
+                && tags.Count == 0
+                && r.MeasurementCount == 0)
+            {
+                continue;
+            }
+
+            List<NormalizedMeasurement> meas = Repo.GetNormalizedMeasurements(r.DatasetName);
+            string defectsStat = BuildDefectStats(meas);
+
+            sb.Append("───── [").Append(idx++).Append("] Dataset: ").AppendLine(r.DatasetName);
+            if (!string.IsNullOrWhiteSpace(r.ProductType)) sb.Append("    ProductType: ").AppendLine(r.ProductType);
+            if (!string.IsNullOrWhiteSpace(r.ReportDate))  sb.Append("    Date: ").AppendLine(r.ReportDate);
+            if (tags.Count > 0) sb.Append("    Tags: ").AppendLine(string.Join(", ", tags));
+            if (!string.IsNullOrWhiteSpace(summary))     sb.Append("    Summary: ").AppendLine(summary);
+            if (!string.IsNullOrWhiteSpace(keyFindings)) sb.Append("    KeyFindings: ").AppendLine(keyFindings);
+            if (!string.IsNullOrWhiteSpace(defectsStat)) sb.Append("    TopDefects: ").AppendLine(defectsStat);
+            sb.AppendLine();
+        }
+        return sb.ToString();
+    }
+
+    private static string BuildDefectStats(List<NormalizedMeasurement> meas)
+    {
+        if (meas.Count == 0) return "";
+        var topDefects = meas
+            .Where(m => !string.IsNullOrWhiteSpace(m.DefectType) && m.DefectCount > 0)
+            .GroupBy(m => m.DefectType)
+            .Select(g => new { Type = g.Key, Count = g.Sum(x => x.DefectCount) })
+            .OrderByDescending(x => x.Count)
+            .Take(5)
+            .ToList();
+        double maxNg = meas.Max(m => m.NgRate);
+        string defects = topDefects.Count > 0
+            ? string.Join(", ", topDefects.Select(d => $"{d.Type}({d.Count})"))
+            : "none";
+        return $"maxNgRate={maxNg:F1}%, topDefects=[{defects}]";
+    }
+
+    private void Clear()
+    {
+        _question = "";
+        _answer   = null;
+        _status   = "";
+        _activeHistoryId = null;
+    }
+
+    private void SetStatus(string msg, bool err) { _status = msg; _statusError = err; }
+
+    private static string Truncate(string s, int len)
+        => (s?.Length ?? 0) <= len ? (s ?? "") : s![..len] + "…";
+
+    private static string FormatDate(string iso)
+    {
+        if (DateTime.TryParse(iso, null, System.Globalization.DateTimeStyles.RoundtripKind, out DateTime dt))
+            return dt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+        return iso;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { await JS.InvokeVoidAsync("diFullPage.leave"); } catch { }
+    }
+}
