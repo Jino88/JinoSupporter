@@ -1,0 +1,225 @@
+@using JinoSupporter.Web.Services
+@inject WebRepository Repo
+@inject ClaudeService Claude
+
+@if (DatasetName is not null)
+{
+    <div class="ocr-overlay" @onclick="Close">
+        <div class="ocr-dialog" @onclick:stopPropagation="true">
+            <div class="ocr-head">
+                <span>📝 OCR Text — @DatasetName</span>
+                <div class="d-flex gap-2 align-items-center">
+                    @if (!_hasCache)
+                    {
+                        <span class="badge bg-warning text-dark" style="font-size:10px;">no cache</span>
+                    }
+                    <button class="ocr-close" @onclick="Close">✕</button>
+                </div>
+            </div>
+
+            <div class="ocr-body">
+                @if (_isBusy)
+                {
+                    <div class="text-center p-5">
+                        <span class="spinner-border me-2"></span>@_busyMessage
+                    </div>
+                }
+                else
+                {
+                    <textarea class="form-control font-monospace"
+                              style="flex:1; min-height:400px; white-space:pre; overflow:auto; font-size:11px;"
+                              spellcheck="false"
+                              @bind="_buffer" @bind:event="oninput"></textarea>
+
+                    @if (!string.IsNullOrEmpty(_status))
+                    {
+                        <div class="mt-2 small @(_statusError ? "text-danger" : "text-success")">@_status</div>
+                    }
+                }
+            </div>
+
+            <div class="ocr-foot">
+                <div class="small text-muted me-auto">
+                    @if (_hasCache)
+                    {
+                        <span>Cached OCR. Edit freely — save writes back to DB, or re-analyze to regenerate measurements.</span>
+                    }
+                    else
+                    {
+                        <span>No OCR cache yet. Click <strong>📷 Extract from images</strong> to OCR once.</span>
+                    }
+                </div>
+                <button class="btn btn-outline-secondary btn-sm"
+                        @onclick="ExtractFromImagesAsync"
+                        disabled="@_isBusy"
+                        title="Vision OCR 호출해서 이미지를 마크다운으로 추출 (캐시 덮어씀)">
+                    📷 Extract from images
+                </button>
+                <button class="btn btn-outline-primary btn-sm"
+                        @onclick="SaveAsync"
+                        disabled="@(_isBusy || !_hasCache && string.IsNullOrWhiteSpace(_buffer))">
+                    💾 Save text
+                </button>
+                <button class="btn btn-success btn-sm"
+                        @onclick="ReanalyzeFromTextAsync"
+                        disabled="@(_isBusy || string.IsNullOrWhiteSpace(_buffer))">
+                    🔄 Re-analyze from text
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="Close">Close</button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .ocr-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 9600;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .ocr-dialog {
+        background: #fff; border-radius: 10px;
+        box-shadow: 0 10px 50px rgba(0,0,0,.3);
+        width: 90vw; max-width: 1100px; height: 85vh;
+        display: flex; flex-direction: column;
+    }
+    .ocr-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 10px 16px; border-bottom: 1px solid #e2e8f0;
+        font-size: 14px; font-weight: 700; color: #1e293b;
+    }
+    .ocr-close {
+        border: none; background: transparent; color: #64748b;
+        font-size: 16px; cursor: pointer;
+    }
+    .ocr-close:hover { color: #dc2626; }
+    .ocr-body  { flex: 1; display: flex; flex-direction: column; padding: 10px 16px; overflow: auto; }
+    .ocr-foot  {
+        display: flex; gap: 8px; align-items: center; padding: 10px 16px;
+        border-top: 1px solid #e2e8f0; flex-wrap: wrap;
+    }
+</style>
+
+@code {
+    [Parameter] public string? DatasetName          { get; set; }
+    [Parameter] public string  ProductType          { get; set; } = "";
+    [Parameter] public string  ReportDate           { get; set; } = "";
+    [Parameter] public EventCallback OnClose        { get; set; }
+    [Parameter] public EventCallback OnReanalyzed   { get; set; }
+
+    private string  _buffer        = string.Empty;
+    private bool    _hasCache      = false;
+    private bool    _isBusy;
+    private string  _busyMessage   = "";
+    private string  _status        = "";
+    private bool    _statusError;
+
+    private string? _lastDataset;
+
+    protected override void OnParametersSet()
+    {
+        if (DatasetName != _lastDataset)
+        {
+            _lastDataset = DatasetName;
+            _status      = "";
+            _statusError = false;
+            if (DatasetName is not null)
+            {
+                string? cached = Repo.GetExtractedText(DatasetName);
+                _buffer   = cached ?? "";
+                _hasCache = !string.IsNullOrWhiteSpace(cached);
+            }
+        }
+    }
+
+    private async Task Close()
+    {
+        if (OnClose.HasDelegate) await OnClose.InvokeAsync();
+    }
+
+    private async Task ExtractFromImagesAsync()
+    {
+        if (DatasetName is null) return;
+        _isBusy = true;
+        _busyMessage = "Claude vision으로 OCR 실행 중…";
+        _status = ""; _statusError = false;
+        StateHasChanged();
+        try
+        {
+            var imgs = Repo.GetRawReportImages(DatasetName);
+            if (imgs.Count == 0)
+                throw new InvalidOperationException("No images available.");
+
+            var imageArgs = imgs.Select(i =>
+                (i.MediaType, Convert.ToBase64String(i.Data))).ToList();
+
+            string text = await Claude.ExtractStructuredTextAsync(
+                imageArgs, DatasetName, ProductType, ReportDate);
+            Repo.SaveExtractedText(DatasetName, text);
+            _buffer  = text;
+            _hasCache = true;
+            _status  = "✓ OCR 완료 — 텍스트가 캐시에 저장됨";
+        }
+        catch (Exception ex)
+        {
+            _statusError = true;
+            _status = $"OCR 실패: {ex.Message}";
+        }
+        finally { _isBusy = false; }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (DatasetName is null) return;
+        try
+        {
+            Repo.SaveExtractedText(DatasetName, _buffer ?? "");
+            _hasCache = true;
+            _status = "✓ 저장 완료";
+            _statusError = false;
+        }
+        catch (Exception ex)
+        {
+            _statusError = true;
+            _status = $"저장 실패: {ex.Message}";
+        }
+        await Task.CompletedTask;
+    }
+
+    private async Task ReanalyzeFromTextAsync()
+    {
+        if (DatasetName is null || string.IsNullOrWhiteSpace(_buffer)) return;
+        _isBusy = true;
+        _busyMessage = "텍스트 기반 재분석 중…";
+        _status = ""; _statusError = false;
+        StateHasChanged();
+        try
+        {
+            // Save buffer first so future calls use the edited version
+            Repo.SaveExtractedText(DatasetName, _buffer);
+            _hasCache = true;
+
+            NormalizeResult result = await Claude.NormalizeFromTextAsync(
+                _buffer, DatasetName, ProductType, ReportDate);
+
+            if (result.Measurements.Count > 0)
+                Repo.SaveNormalizedMeasurements(DatasetName, result.Measurements);
+
+            string tagsJson = (result.Tags?.Count ?? 0) > 0
+                ? System.Text.Json.JsonSerializer.Serialize(result.Tags) : "";
+            if (!string.IsNullOrEmpty(result.Summary) || !string.IsNullOrEmpty(tagsJson))
+                Repo.SaveDatasetSummaryRecord(DatasetName, ProductType,
+                    result.Summary, result.KeyFindings, tagsJson,
+                    result.Purpose, result.TestConditions, result.RootCause,
+                    result.Decision, result.RecommendedAction);
+
+            _status = $"✓ 재분석 완료 — {result.Measurements.Count} rows 저장";
+            if (OnReanalyzed.HasDelegate) await OnReanalyzed.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _statusError = true;
+            _status = $"재분석 실패: {ex.Message}";
+        }
+        finally { _isBusy = false; }
+    }
+}

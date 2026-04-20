@@ -43,6 +43,7 @@ builder.Services.AddSyncfusionBlazor();
 // Singleton DB repository (SQLite file shared across all requests)
 builder.Services.AddSingleton<WebRepository>();
 builder.Services.AddSingleton<MenuPermissionService>();
+builder.Services.AddSingleton<ClaudeUsageScraper>();
 
 // NG Rate settings: singleton (reads/writes ngrate_settings.db)
 builder.Services.AddSingleton<NgRateSettingsService>();
@@ -119,6 +120,25 @@ app.MapGet("/data-inference/file/{id:long}", (long id, HttpContext ctx) =>
     if (file is null) return Results.NotFound();
     string safeName = string.IsNullOrEmpty(file.Value.FileName) ? $"file-{id}" : file.Value.FileName;
     return Results.File(file.Value.Data, file.Value.MediaType, safeName);
+});
+
+// Export full dataset bundle (images + measurements + summary + issues) as a ZIP,
+// intended for feeding back to Claude / external review.
+app.MapGet("/data-inference/export/{datasetName}", (string datasetName, HttpContext ctx) =>
+{
+    if (ctx.User?.Identity?.IsAuthenticated != true) return Results.Unauthorized();
+    byte[] zip = DatasetExportBuilder.BuildZip(repo, datasetName);
+    string safeName = System.Text.RegularExpressions.Regex.Replace(datasetName, @"[^\w\-.]+", "_");
+    return Results.File(zip, "application/zip", $"{safeName}.zip");
+});
+
+// Export all datasets that have validation issues as one ZIP (each nested as /<name>/...).
+app.MapGet("/data-inference/export-all", (HttpContext ctx) =>
+{
+    if (ctx.User?.Identity?.IsAuthenticated != true) return Results.Unauthorized();
+    byte[] zip = DatasetExportBuilder.BuildAllFlaggedZip(repo);
+    string ts = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+    return Results.File(zip, "application/zip", $"flagged_datasets_{ts}.zip");
 });
 
 // ── Blazor ────────────────────────────────────────────────────────────────────

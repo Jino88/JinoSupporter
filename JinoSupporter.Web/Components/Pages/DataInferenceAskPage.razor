@@ -451,13 +451,26 @@
             List<NormalizedMeasurement> meas = Repo.GetNormalizedMeasurements(r.DatasetName);
             string defectsStat = BuildDefectStats(meas);
 
+            string purpose           = summ?.Purpose           ?? "";
+            string testConditions    = summ?.TestConditions    ?? "";
+            string rootCause         = summ?.RootCause         ?? "";
+            string decision          = summ?.Decision          ?? "";
+            string recommendedAction = summ?.RecommendedAction ?? "";
+            string normalVsTest      = BuildNormalVsTestStats(meas);
+
             sb.Append("───── [").Append(idx++).Append("] Dataset: ").AppendLine(r.DatasetName);
             if (!string.IsNullOrWhiteSpace(r.ProductType)) sb.Append("    ProductType: ").AppendLine(r.ProductType);
             if (!string.IsNullOrWhiteSpace(r.ReportDate))  sb.Append("    Date: ").AppendLine(r.ReportDate);
             if (tags.Count > 0) sb.Append("    Tags: ").AppendLine(string.Join(", ", tags));
+            if (!string.IsNullOrWhiteSpace(purpose))           sb.Append("    Purpose: ").AppendLine(purpose);
+            if (!string.IsNullOrWhiteSpace(testConditions))    sb.Append("    TestConditions: ").AppendLine(testConditions);
+            if (!string.IsNullOrWhiteSpace(rootCause))         sb.Append("    RootCause: ").AppendLine(rootCause);
+            if (!string.IsNullOrWhiteSpace(decision))          sb.Append("    Decision: ").AppendLine(decision);
+            if (!string.IsNullOrWhiteSpace(recommendedAction)) sb.Append("    RecommendedAction: ").AppendLine(recommendedAction);
             if (!string.IsNullOrWhiteSpace(summary))     sb.Append("    Summary: ").AppendLine(summary);
             if (!string.IsNullOrWhiteSpace(keyFindings)) sb.Append("    KeyFindings: ").AppendLine(keyFindings);
             if (!string.IsNullOrWhiteSpace(defectsStat)) sb.Append("    TopDefects: ").AppendLine(defectsStat);
+            if (!string.IsNullOrWhiteSpace(normalVsTest)) sb.Append("    NormalVsTest: ").AppendLine(normalVsTest);
             sb.AppendLine();
         }
         return sb.ToString();
@@ -478,6 +491,63 @@
             ? string.Join(", ", topDefects.Select(d => $"{d.Type}({d.Count})"))
             : "none";
         return $"maxNgRate={maxNg:F1}%, topDefects=[{defects}]";
+    }
+
+    /// <summary>
+    /// Computes Normal-vs-Test comparison stats + best/worst condition.
+    /// Ignored when the dataset doesn't use normal/test variableGroup semantics.
+    /// </summary>
+    private static string BuildNormalVsTestStats(List<NormalizedMeasurement> meas)
+    {
+        if (meas.Count == 0) return "";
+
+        // Weighted average NG rate per variableGroup (input-weighted)
+        double AvgNg(string grp)
+        {
+            var rows = meas
+                .Where(m => string.Equals(m.VariableGroup, grp, StringComparison.OrdinalIgnoreCase)
+                            && string.IsNullOrWhiteSpace(m.DefectType))  // aggregate rows only
+                .ToList();
+            if (rows.Count == 0) return double.NaN;
+            long totInput = rows.Sum(m => (long)m.InputQty);
+            long totNg    = rows.Sum(m => (long)m.NgTotal);
+            return totInput > 0 ? (totNg * 100.0 / totInput) : double.NaN;
+        }
+
+        double normal = AvgNg("normal");
+        double test   = AvgNg("test");
+        var parts = new List<string>();
+
+        if (!double.IsNaN(normal)) parts.Add($"normal={normal:F1}%");
+        if (!double.IsNaN(test))   parts.Add($"test={test:F1}%");
+        if (!double.IsNaN(normal) && !double.IsNaN(test) && normal > 0)
+        {
+            double improvement = (normal - test) / normal * 100.0;
+            parts.Add($"improvement={improvement:F0}%");
+        }
+
+        // Best / Worst test conditions by NG rate
+        var testAggs = meas
+            .Where(m => string.Equals(m.VariableGroup, "test", StringComparison.OrdinalIgnoreCase)
+                        && string.IsNullOrWhiteSpace(m.DefectType))
+            .GroupBy(m => (m.Variable, m.VariableDetail))
+            .Select(g => new
+            {
+                g.Key.Variable,
+                NgRate = g.Average(x => x.NgRate),
+            })
+            .OrderBy(x => x.NgRate)
+            .ToList();
+
+        if (testAggs.Count >= 2)
+        {
+            var best  = testAggs.First();
+            var worst = testAggs.Last();
+            parts.Add($"best={best.Variable}({best.NgRate:F1}%)");
+            parts.Add($"worst={worst.Variable}({worst.NgRate:F1}%)");
+        }
+
+        return parts.Count == 0 ? "" : string.Join(", ", parts);
     }
 
     private void Clear()

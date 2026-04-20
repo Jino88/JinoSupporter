@@ -199,11 +199,12 @@ public sealed class WebRepository
             CREATE INDEX IF NOT EXISTS idx_di_dataset ON DatasetImages(DatasetName);
 
             CREATE TABLE IF NOT EXISTS RawReports (
-                Id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                DatasetName TEXT    NOT NULL UNIQUE,
-                ProductType TEXT    NOT NULL DEFAULT '',
-                ReportDate  TEXT    NOT NULL DEFAULT '',
-                CreatedAt   TEXT    NOT NULL
+                Id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                DatasetName   TEXT    NOT NULL UNIQUE,
+                ProductType   TEXT    NOT NULL DEFAULT '',
+                ReportDate    TEXT    NOT NULL DEFAULT '',
+                CreatedAt     TEXT    NOT NULL,
+                BatchExcluded INTEGER NOT NULL DEFAULT 0
             );
             CREATE INDEX IF NOT EXISTS idx_rr_name ON RawReports(DatasetName);
 
@@ -252,14 +253,25 @@ public sealed class WebRepository
             CREATE INDEX IF NOT EXISTS idx_nm_dataset ON NormalizedMeasurements(DatasetName);
 
             CREATE TABLE IF NOT EXISTS DatasetSummary (
-                Id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                DatasetName TEXT    NOT NULL UNIQUE,
-                ProductType TEXT    NOT NULL DEFAULT '',
-                Summary     TEXT    NOT NULL DEFAULT '',
-                KeyFindings TEXT    NOT NULL DEFAULT '',
-                CreatedAt   TEXT    NOT NULL
+                Id                INTEGER PRIMARY KEY AUTOINCREMENT,
+                DatasetName       TEXT    NOT NULL UNIQUE,
+                ProductType       TEXT    NOT NULL DEFAULT '',
+                Summary           TEXT    NOT NULL DEFAULT '',
+                KeyFindings       TEXT    NOT NULL DEFAULT '',
+                CreatedAt         TEXT    NOT NULL,
+                Purpose           TEXT    NOT NULL DEFAULT '',
+                TestConditions    TEXT    NOT NULL DEFAULT '',
+                RootCause         TEXT    NOT NULL DEFAULT '',
+                Decision          TEXT    NOT NULL DEFAULT '',
+                RecommendedAction TEXT    NOT NULL DEFAULT ''
             );
             CREATE INDEX IF NOT EXISTS idx_dsum_name ON DatasetSummary(DatasetName);
+
+            CREATE TABLE IF NOT EXISTS RawReportText (
+                DatasetName   TEXT PRIMARY KEY,
+                ExtractedText TEXT NOT NULL DEFAULT '',
+                CreatedAt     TEXT NOT NULL
+            );
 
             CREATE TABLE IF NOT EXISTS AskAiHistory (
                 Id                 INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -369,6 +381,37 @@ public sealed class WebRepository
             alter.ExecuteNonQuery();
         }
 
+        // DatasetSummary: add structured context columns (Purpose/TestConditions/RootCause/Decision/RecommendedAction)
+        var existingDsumCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using (SqliteCommand checkDsum = conn.CreateCommand())
+        {
+            checkDsum.CommandText = "PRAGMA table_info(DatasetSummary);";
+            using SqliteDataReader r = checkDsum.ExecuteReader();
+            while (r.Read()) existingDsumCols.Add(r.GetString(1));
+        }
+        foreach (string newCol in new[] { "Purpose", "TestConditions", "RootCause", "Decision", "RecommendedAction" })
+        {
+            if (existingDsumCols.Contains(newCol)) continue;
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = $"ALTER TABLE DatasetSummary ADD COLUMN {newCol} TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+
+        bool hasBatchExcluded = false;
+        using SqliteCommand checkRr = conn.CreateCommand();
+        checkRr.CommandText = "PRAGMA table_info(RawReports);";
+        using (SqliteDataReader r = checkRr.ExecuteReader())
+            while (r.Read())
+                if (r.GetString(1).Equals("BatchExcluded", StringComparison.OrdinalIgnoreCase))
+                    hasBatchExcluded = true;
+
+        if (!hasBatchExcluded)
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE RawReports ADD COLUMN BatchExcluded INTEGER NOT NULL DEFAULT 0;";
+            alter.ExecuteNonQuery();
+        }
+
         using SqliteCommand ensureFiles = conn.CreateCommand();
         ensureFiles.CommandText = """
             CREATE TABLE IF NOT EXISTS RawReportFiles (
@@ -383,6 +426,67 @@ public sealed class WebRepository
             CREATE INDEX IF NOT EXISTS idx_rrf_dataset ON RawReportFiles(DatasetName);
             """;
         ensureFiles.ExecuteNonQuery();
+
+        using SqliteCommand ensureText = conn.CreateCommand();
+        ensureText.CommandText = """
+            CREATE TABLE IF NOT EXISTS RawReportText (
+                DatasetName   TEXT PRIMARY KEY,
+                ExtractedText TEXT NOT NULL DEFAULT '',
+                CreatedAt     TEXT NOT NULL
+            );
+            """;
+        ensureText.ExecuteNonQuery();
+    }
+
+    // ── Raw report text (OCR cache) ───────────────────────────────────────────
+
+    public void SaveExtractedText(string datasetName, string text)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO RawReportText (DatasetName, ExtractedText, CreatedAt)
+            VALUES (@n, @t, @at)
+            ON CONFLICT(DatasetName) DO UPDATE SET ExtractedText=@t, CreatedAt=@at;
+            """;
+        cmd.Parameters.AddWithValue("@n",  datasetName);
+        cmd.Parameters.AddWithValue("@t",  text ?? "");
+        cmd.Parameters.AddWithValue("@at", DateTime.UtcNow.ToString("O"));
+        cmd.ExecuteNonQuery();
+    }
+
+    public string? GetExtractedText(string datasetName)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT ExtractedText FROM RawReportText WHERE DatasetName=@n;";
+        cmd.Parameters.AddWithValue("@n", datasetName);
+        object? r = cmd.ExecuteScalar();
+        return r is string s ? s : null;
+    }
+
+    /// <summary>
+    /// Returns the set of DatasetNames that currently have cached OCR text
+    /// (non-empty ExtractedText). Cheap single-query lookup to avoid per-row DB hits.
+    /// </summary>
+    public HashSet<string> GetDatasetsWithExtractedText()
+    {
+        var set = new HashSet<string>(StringComparer.Ordinal);
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT DatasetName FROM RawReportText WHERE LENGTH(TRIM(ExtractedText)) > 0;";
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read()) set.Add(r.GetString(0));
+        return set;
+    }
+
+    public void DeleteExtractedText(string datasetName)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM RawReportText WHERE DatasetName=@n;";
+        cmd.Parameters.AddWithValue("@n", datasetName);
+        cmd.ExecuteNonQuery();
     }
 
     // ── App Settings ──────────────────────────────────────────────────────────
@@ -720,7 +824,8 @@ public sealed class WebRepository
         cmd.CommandText = """
             SELECT r.Id, r.DatasetName, r.ProductType, r.ReportDate, r.CreatedAt,
                    (SELECT COUNT(*) FROM RawReportImages WHERE DatasetName=r.DatasetName) AS ImgCnt,
-                   (SELECT COUNT(*) FROM NormalizedMeasurements WHERE DatasetName=r.DatasetName) AS MeasCnt
+                   (SELECT COUNT(*) FROM NormalizedMeasurements WHERE DatasetName=r.DatasetName) AS MeasCnt,
+                   r.BatchExcluded
             FROM RawReports r
             ORDER BY r.CreatedAt DESC;
             """;
@@ -729,8 +834,18 @@ public sealed class WebRepository
         while (r.Read())
             list.Add(new RawReportInfo(r.GetInt64(0), r.GetString(1), r.GetString(2),
                                        r.GetString(3), r.GetInt32(5), r.GetInt32(6),
-                                       r.GetString(4)));
+                                       r.GetString(4), r.GetInt32(7) != 0));
         return list;
+    }
+
+    public void SetRawReportBatchExcluded(string datasetName, bool excluded)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "UPDATE RawReports SET BatchExcluded=@e WHERE DatasetName=@n;";
+        cmd.Parameters.AddWithValue("@e", excluded ? 1 : 0);
+        cmd.Parameters.AddWithValue("@n", datasetName);
+        cmd.ExecuteNonQuery();
     }
 
     public List<(string MediaType, byte[] Data, string FileName)> GetRawReportImages(string name)
@@ -797,7 +912,7 @@ public sealed class WebRepository
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
         cmd.CommandText = """
-            SELECT ProductType, TestDate, Line, CheckType, Variable, VariableDetail,
+            SELECT Id, ProductType, TestDate, Line, CheckType, Variable, VariableDetail,
                    VariableGroup, Intervention, InputQty, OkQty, NgTotal, NgRate,
                    DefectCategory, DefectType, DefectCount
             FROM NormalizedMeasurements WHERE DatasetName=@n ORDER BY Id;
@@ -808,33 +923,77 @@ public sealed class WebRepository
         while (r.Read())
             list.Add(new NormalizedMeasurement
             {
-                ProductType    = r.GetString(0),
-                TestDate       = r.GetString(1),
-                Line           = r.GetString(2),
-                CheckType      = r.GetString(3),
-                Variable       = r.GetString(4),
-                VariableDetail = r.GetString(5),
-                VariableGroup  = r.GetString(6),
-                Intervention   = r.GetString(7),
-                InputQty       = r.GetInt32(8),
-                OkQty          = r.GetInt32(9),
-                NgTotal        = r.GetInt32(10),
-                NgRate         = r.GetDouble(11),
-                DefectCategory = r.GetString(12),
-                DefectType     = r.GetString(13),
-                DefectCount    = r.GetInt32(14),
+                Id             = r.GetInt64(0),
+                ProductType    = r.GetString(1),
+                TestDate       = r.GetString(2),
+                Line           = r.GetString(3),
+                CheckType      = r.GetString(4),
+                Variable       = r.GetString(5),
+                VariableDetail = r.GetString(6),
+                VariableGroup  = r.GetString(7),
+                Intervention   = r.GetString(8),
+                InputQty       = r.GetInt32(9),
+                OkQty          = r.GetInt32(10),
+                NgTotal        = r.GetInt32(11),
+                NgRate         = r.GetDouble(12),
+                DefectCategory = r.GetString(13),
+                DefectType     = r.GetString(14),
+                DefectCount    = r.GetInt32(15),
             });
         return list;
     }
 
-    public void SaveDatasetSummaryRecord(string name, string productType, string summary, string keyFindings, string tagsJson = "")
+    private static readonly HashSet<string> _editableMeasurementFields = new(StringComparer.Ordinal)
+    {
+        "Variable", "VariableDetail", "VariableGroup", "Line", "CheckType",
+        "InputQty", "OkQty", "NgTotal", "NgRate",
+        "DefectType", "DefectCategory", "DefectCount", "Intervention",
+    };
+
+    public void UpdateNormalizedMeasurementField(long id, string field, string value)
+    {
+        if (!_editableMeasurementFields.Contains(field))
+            throw new ArgumentException($"Field '{field}' is not editable.");
+
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = $"UPDATE NormalizedMeasurements SET {field} = @v WHERE Id = @id;";
+        cmd.Parameters.AddWithValue("@id", id);
+
+        // Type-aware binding
+        switch (field)
+        {
+            case "InputQty" or "OkQty" or "NgTotal" or "DefectCount":
+                cmd.Parameters.AddWithValue("@v",
+                    int.TryParse(value, out int i) ? i : 0);
+                break;
+            case "NgRate":
+                string v = value.Trim().TrimEnd('%').Trim();
+                cmd.Parameters.AddWithValue("@v",
+                    double.TryParse(v, System.Globalization.NumberStyles.Float,
+                                    System.Globalization.CultureInfo.InvariantCulture, out double d) ? d : 0.0);
+                break;
+            default:
+                cmd.Parameters.AddWithValue("@v", value ?? "");
+                break;
+        }
+        cmd.ExecuteNonQuery();
+    }
+
+    public void SaveDatasetSummaryRecord(string name, string productType, string summary, string keyFindings, string tagsJson = "",
+        string purpose = "", string testConditions = "", string rootCause = "",
+        string decision = "", string recommendedAction = "")
     {
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
         cmd.CommandText = """
-            INSERT INTO DatasetSummary (DatasetName, ProductType, Summary, KeyFindings, Tags, CreatedAt)
-            VALUES (@n, @p, @s, @k, @t, @at)
-            ON CONFLICT(DatasetName) DO UPDATE SET ProductType=@p, Summary=@s, KeyFindings=@k, Tags=@t, CreatedAt=@at;
+            INSERT INTO DatasetSummary
+                (DatasetName, ProductType, Summary, KeyFindings, Tags, CreatedAt,
+                 Purpose, TestConditions, RootCause, Decision, RecommendedAction)
+            VALUES (@n, @p, @s, @k, @t, @at, @pu, @tc, @rc, @de, @ra)
+            ON CONFLICT(DatasetName) DO UPDATE SET
+                ProductType=@p, Summary=@s, KeyFindings=@k, Tags=@t, CreatedAt=@at,
+                Purpose=@pu, TestConditions=@tc, RootCause=@rc, Decision=@de, RecommendedAction=@ra;
             """;
         cmd.Parameters.AddWithValue("@n",  name);
         cmd.Parameters.AddWithValue("@p",  productType);
@@ -842,6 +1001,11 @@ public sealed class WebRepository
         cmd.Parameters.AddWithValue("@k",  keyFindings);
         cmd.Parameters.AddWithValue("@t",  tagsJson ?? "");
         cmd.Parameters.AddWithValue("@at", DateTime.UtcNow.ToString("O"));
+        cmd.Parameters.AddWithValue("@pu", purpose           ?? "");
+        cmd.Parameters.AddWithValue("@tc", testConditions    ?? "");
+        cmd.Parameters.AddWithValue("@rc", rootCause         ?? "");
+        cmd.Parameters.AddWithValue("@de", decision          ?? "");
+        cmd.Parameters.AddWithValue("@ra", recommendedAction ?? "");
         cmd.ExecuteNonQuery();
     }
 
@@ -992,14 +1156,23 @@ public sealed class WebRepository
     {
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT Summary, KeyFindings, Tags FROM DatasetSummary WHERE DatasetName=@n;";
+        cmd.CommandText = """
+            SELECT Summary, KeyFindings, Tags,
+                   Purpose, TestConditions, RootCause, Decision, RecommendedAction
+            FROM DatasetSummary WHERE DatasetName=@n;
+            """;
         cmd.Parameters.AddWithValue("@n", name);
         using SqliteDataReader r = cmd.ExecuteReader();
         if (!r.Read()) return null;
 
-        string summary     = r.GetString(0);
-        string keyFindings = r.GetString(1);
-        string tagsJson    = r.IsDBNull(2) ? "" : r.GetString(2);
+        string summary           = r.GetString(0);
+        string keyFindings       = r.GetString(1);
+        string tagsJson          = r.IsDBNull(2) ? "" : r.GetString(2);
+        string purpose           = r.IsDBNull(3) ? "" : r.GetString(3);
+        string testConditions    = r.IsDBNull(4) ? "" : r.GetString(4);
+        string rootCause         = r.IsDBNull(5) ? "" : r.GetString(5);
+        string decision          = r.IsDBNull(6) ? "" : r.GetString(6);
+        string recommendedAction = r.IsDBNull(7) ? "" : r.GetString(7);
 
         List<string> tags = [];
         if (!string.IsNullOrWhiteSpace(tagsJson))
@@ -1012,7 +1185,17 @@ public sealed class WebRepository
             catch { }
         }
 
-        return new DatasetSummaryRecord { Summary = summary, KeyFindings = keyFindings, Tags = tags };
+        return new DatasetSummaryRecord
+        {
+            Summary           = summary,
+            KeyFindings       = keyFindings,
+            Tags              = tags,
+            Purpose           = purpose,
+            TestConditions    = testConditions,
+            RootCause         = rootCause,
+            Decision          = decision,
+            RecommendedAction = recommendedAction,
+        };
     }
 
     // ── AskAi history ─────────────────────────────────────────────────────────
@@ -1647,13 +1830,18 @@ public sealed class WebRepository
 
     public void SeedDefaultMenuPermissionsIfEmpty()
     {
+        // Per-role seeding: if a role has NO entries in MenuPermissions, seed it
+        // from DefaultsByRole. This preserves admin-customised permissions for
+        // existing roles while auto-populating NEW roles added in later releases
+        // (e.g., ManagerAi) without manual DB surgery.
         using SqliteConnection conn = OpenConnection();
-        using SqliteCommand cnt = conn.CreateCommand();
-        cnt.CommandText = "SELECT COUNT(*) FROM MenuPermissions;";
-        long existing = (long)(cnt.ExecuteScalar() ?? 0L);
-        if (existing > 0) return;
-
         using SqliteTransaction tx = conn.BeginTransaction();
+
+        using SqliteCommand check = conn.CreateCommand();
+        check.Transaction = tx;
+        check.CommandText = "SELECT COUNT(*) FROM MenuPermissions WHERE Role = @r;";
+        var pcr = check.Parameters.Add("@r", SqliteType.Text);
+
         using SqliteCommand ins = conn.CreateCommand();
         ins.Transaction = tx;
         ins.CommandText = "INSERT OR IGNORE INTO MenuPermissions (Role, MenuId) VALUES (@r, @m);";
@@ -1661,11 +1849,17 @@ public sealed class WebRepository
         var pm = ins.Parameters.Add("@m", SqliteType.Text);
 
         foreach ((string role, string[] menus) in AppMenus.DefaultsByRole)
-        foreach (string menu in menus)
         {
+            pcr.Value = role;
+            long existing = (long)(check.ExecuteScalar() ?? 0L);
+            if (existing > 0) continue;
+
             pr.Value = role;
-            pm.Value = menu;
-            ins.ExecuteNonQuery();
+            foreach (string menu in menus)
+            {
+                pm.Value = menu;
+                ins.ExecuteNonQuery();
+            }
         }
         tx.Commit();
     }

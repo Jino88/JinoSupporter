@@ -13,26 +13,44 @@ namespace JinoSupporter.Web.Services;
 [SupportedOSPlatform("windows6.1")]
 public static class ImageCompressor
 {
-    // Claude's 5 MB limit applies to the base64-encoded payload.
-    // Target 3.5 MB of raw bytes → ~4.67 MB base64, safely under the 5 MB cap.
-    private const long TargetRawBytes = 3_500_000;
+    // Default per-image target when sending a SINGLE image: 3.5 MB of raw bytes
+    // (~4.67 MB base64), safely under Anthropic's per-image cap.
+    public const long DefaultTargetRawBytes = 3_500_000;
 
     // Quality ladder: start near-lossless, step down only if needed.
     private static readonly int[] QualityLadder = [95, 90, 85, 80, 75, 65];
 
     /// <summary>
-    /// If <paramref name="base64"/> decodes to more than <see cref="TargetRawBytes"/>,
+    /// Computes a per-image raw-bytes budget that keeps the TOTAL request under
+    /// Anthropic's vision-request size limit (≈8 MB base64). Divides ~5.5 MB raw
+    /// budget across the image count, clamping each image to a reasonable minimum.
+    /// </summary>
+    public static long BudgetPerImage(int imageCount)
+    {
+        if (imageCount <= 1) return DefaultTargetRawBytes;              // 3.5 MB
+        // Keep total base64 under ~7.2 MB → raw ≈ 5.4 MB total
+        const long TotalRawBudget = 5_400_000;
+        long perImage = TotalRawBudget / imageCount;
+        // Floor to 900 KB (enough for readable text at moderate resolution)
+        return Math.Max(900_000, perImage);
+    }
+
+    /// <summary>
+    /// If <paramref name="base64"/> decodes to more than the target,
     /// re-encodes to JPEG with the highest quality that fits. Downscales dimensions
     /// only when even the lowest quality still exceeds the target.
     /// Returns the new (base64, mediaType) — or the originals if already small enough.
     /// </summary>
-    public static (string Base64, string MediaType) CompressIfLarge(string base64, string mediaType)
+    public static (string Base64, string MediaType) CompressIfLarge(
+        string base64, string mediaType, long? targetRawBytes = null)
     {
+        long target = targetRawBytes ?? DefaultTargetRawBytes;
+
         byte[] data;
         try { data = Convert.FromBase64String(base64); }
         catch { return (base64, mediaType); }
 
-        if (data.Length <= TargetRawBytes) return (base64, mediaType);
+        if (data.Length <= target) return (base64, mediaType);
 
         try
         {
@@ -46,7 +64,7 @@ public static class ImageCompressor
             foreach (int q in QualityLadder)
             {
                 byte[] bytes = EncodeJpeg(src, w, h, q);
-                if (bytes.Length <= TargetRawBytes)
+                if (bytes.Length <= target)
                     return (Convert.ToBase64String(bytes), "image/jpeg");
             }
 
@@ -57,7 +75,7 @@ public static class ImageCompressor
                 int nw = Math.Max(600, (int)(w * scale));
                 int nh = Math.Max(400, (int)(h * scale));
                 byte[] bytes = EncodeJpeg(src, nw, nh, 85);
-                if (bytes.Length <= TargetRawBytes)
+                if (bytes.Length <= target)
                     return (Convert.ToBase64String(bytes), "image/jpeg");
                 scale *= 0.8;
             }

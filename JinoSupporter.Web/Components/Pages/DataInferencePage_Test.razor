@@ -359,9 +359,14 @@
     private List<ImageEntry>  _images       = [];
     private List<FileEntry>   _files        = [];
     private List<NormalizedMeasurement> _measurements = [];
-    private string            _summary      = "";
-    private string            _keyFindings  = "";
-    private List<string>      _tags         = [];
+    private string            _summary           = "";
+    private string            _keyFindings       = "";
+    private List<string>      _tags              = [];
+    private string            _purpose           = "";
+    private string            _testConditions    = "";
+    private string            _rootCause         = "";
+    private string            _decision          = "";
+    private string            _recommendedAction = "";
     private List<RawReportInfo> _allReports = [];
     private List<string>        _productTypeOptions = [];
 
@@ -495,10 +500,15 @@
             string dsName = string.IsNullOrWhiteSpace(_datasetName) ? "dataset" : _datasetName.Trim();
             NormalizeResult result = await Claude.NormalizeFromImagesAsync(
                 imageArgs, dsName, _productType.Trim(), _testDate);
-            _measurements = result.Measurements;
-            _summary      = result.Summary;
-            _keyFindings  = result.KeyFindings;
-            _tags         = result.Tags ?? [];
+            _measurements      = result.Measurements;
+            _summary           = result.Summary;
+            _keyFindings       = result.KeyFindings;
+            _tags              = result.Tags ?? [];
+            _purpose           = result.Purpose;
+            _testConditions    = result.TestConditions;
+            _rootCause         = result.RootCause;
+            _decision          = result.Decision;
+            _recommendedAction = result.RecommendedAction;
             SetStatus($"Analysis complete — {_measurements.Count} row(s) extracted.", false);
         }
         catch (Exception ex) { SetStatus($"Analyze error: {ex.Message}", true); }
@@ -533,7 +543,8 @@
 
                 if (_measurements.Count > 0) Repo.SaveNormalizedMeasurements(name, _measurements);
                 if (!string.IsNullOrEmpty(_summary) || !string.IsNullOrEmpty(tagsJson))
-                    Repo.SaveDatasetSummaryRecord(name, _productType, _summary, _keyFindings, tagsJson);
+                    Repo.SaveDatasetSummaryRecord(name, _productType, _summary, _keyFindings, tagsJson,
+                        _purpose, _testConditions, _rootCause, _decision, _recommendedAction);
             });
             SetStatus($"Saved — '{name}'", false);
             _allReports = Repo.GetAllRawReports();
@@ -555,9 +566,14 @@
         _testDate     = info.ReportDate;
         _measurements = Repo.GetNormalizedMeasurements(name);
         var summ = Repo.GetDatasetSummaryRecord(name);
-        _summary     = summ?.Summary     ?? "";
-        _keyFindings = summ?.KeyFindings ?? "";
-        _tags        = summ?.Tags        ?? [];
+        _summary           = summ?.Summary           ?? "";
+        _keyFindings       = summ?.KeyFindings       ?? "";
+        _tags              = summ?.Tags              ?? [];
+        _purpose           = summ?.Purpose           ?? "";
+        _testConditions    = summ?.TestConditions    ?? "";
+        _rootCause         = summ?.RootCause         ?? "";
+        _decision          = summ?.Decision          ?? "";
+        _recommendedAction = summ?.RecommendedAction ?? "";
 
         var storedImgs = Repo.GetRawReportImages(name);
         _images = storedImgs.Select((img, i) =>
@@ -579,6 +595,7 @@
     {
         _datasetName = ""; _productType = ""; _testDate = DateTime.Today.ToString("yyyy-MM-dd");
         _images = []; _files = []; _measurements = []; _summary = ""; _keyFindings = "";
+        _purpose = ""; _testConditions = ""; _rootCause = ""; _decision = ""; _recommendedAction = "";
         _tags = []; _status = "";
     }
 

@@ -20,16 +20,17 @@ public static class AppMenus
     public const string DiDb             = "di-db";
     public const string DiBatch          = "di-batch";
     public const string DiAnalysis       = "di-analysis";
+    public const string DiValidation     = "di-validation";
     public const string DiAsk            = "di-ask";
     public const string Report           = "report";
     public const string Translate        = "translate";
     public const string AdminUsers       = "admin-users";
     public const string AdminSettings    = "admin-settings";
+    public const string AdminAiUsages    = "admin-ai-usages";
 
     public static readonly MenuItemDef[] All =
     [
         new(NgRate,           "Report NG RATE",       "BMES"),
-        new(NgRateAll,        "Report NG RATE All",   "BMES"),
         new(BmesWorkerStatus, "Worker Status",        "BMES"),
         new(BmesMakeModel,    "Make Model Data",  "BMES"),
         new(BmesSetting,      "BMES Setting",     "BMES"),
@@ -38,11 +39,13 @@ public static class AppMenus
         new(DiDb,             "DI — DB Data",     "Data Inference"),
         new(DiBatch,          "DI — AI Batch",    "Data Inference"),
         new(DiAnalysis,       "DI — Analysis",    "Data Inference"),
+        new(DiValidation,     "DI — Validation",  "Data Inference"),
         new(DiAsk,            "DI — Ask AI",      "Data Inference"),
         new(Report,           "Report",           "Data Inference"),
         new(Translate,        "Translate",        "Tools"),
         new(AdminUsers,       "Users",            "Admin"),
         new(AdminSettings,    "Settings",         "Admin"),
+        new(AdminAiUsages,    "AI Usages",        "Admin"),
     ];
 
     /// <summary>
@@ -55,21 +58,26 @@ public static class AppMenus
         [AppRoles.Manager] =
         [
             NgRate, BmesWorkerStatus, BmesMakeModel, BmesSetting, Schedule,
-            DiInput, DiDb, DiBatch, DiAnalysis, DiAsk, Report, Translate
+            DiInput, DiDb, DiBatch, DiAnalysis, DiValidation, DiAsk, Report, Translate
+        ],
+        [AppRoles.ManagerAi] =
+        [
+            NgRate, BmesWorkerStatus, BmesMakeModel, BmesSetting, Schedule,
+            DiInput, DiDb, DiBatch, DiAnalysis, DiValidation, DiAsk, Report, Translate
         ],
         [AppRoles.Leader] =
         [
             NgRate, BmesWorkerStatus, BmesMakeModel, Schedule,
-            DiInput, DiDb, DiBatch, DiAnalysis, DiAsk, Report, Translate
+            DiInput, DiDb, DiBatch, DiAnalysis, DiValidation, DiAsk, Report, Translate
         ],
         [AppRoles.Editor] =
         [
             NgRate, BmesWorkerStatus, BmesMakeModel, Schedule,
-            DiInput, DiDb, DiBatch, DiAnalysis, DiAsk, Report, Translate
+            DiInput, DiDb, DiBatch, DiAnalysis, DiValidation, DiAsk, Report, Translate
         ],
         [AppRoles.Viewer] =
         [
-            NgRate, BmesWorkerStatus, Schedule, DiDb, DiAnalysis, DiAsk, Report, Translate
+            NgRate, BmesWorkerStatus, Schedule, DiDb, DiAnalysis, DiValidation, DiAsk, Report, Translate
         ],
     };
 }

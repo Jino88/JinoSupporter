@@ -431,14 +431,6 @@ Claude가 저장 시 자동으로 태깅.
 
 | 단계 | 내용 | 상태 |
 |---|---|---|
-| 1 | 이미지 기반 Input Data 화면 (Ctrl+V 붙여넣기) | ✅ 완료 |
-| 2 | Claude Analyze: 이미지 → NormalizedMeasurements 추출 | ✅ 완료 |
-| 3 | DB Data 화면 (저장 목록 + 측정값 조회) | ✅ 완료 |
-| 4 | 프롬프트 개선: Normal/Test 구분, variableDetail 테이블명, Wide→Long | ✅ 완료 |
-| 5 | 분석 페이지: Normal 대비 개선율 계산 및 시각화 | ✅ 완료 |
-| 5a | Dataset 태그 시스템 (내용 기반 키워드 자동 추출) | ✅ 완료 |
-| 5b | Extracted Data 행 삭제 버튼 (Save 전 수동 보정) | ✅ 완료 |
-| 5c | DB Data 화면 Delete All 버튼 | ✅ 완료 |
 | 6 | 유사 사례 검색: 불량 유형 입력 → 관련 과거 데이터 + Summary | ⬜ 예정 |
 | 7 | Claude 자동 개선 제안: 불량 발생 시 어떤 공정 확인해야 하는지 | ⬜ 예정 |
 | 8 | 키워드 태그 기반 필터/검색 (DB Data 화면) | ⬜ 예정 |

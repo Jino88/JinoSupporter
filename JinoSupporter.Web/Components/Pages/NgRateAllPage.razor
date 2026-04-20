@@ -60,6 +60,27 @@
     .pg-TWS    { background:#fce7f3; color:#9d174d; }
     .pg-ETC    { background:#f1f5f9; color:#475569; }
 
+    /* Delete-files confirm modal */
+    .ngrate-del-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 9500;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .ngrate-del-dialog {
+        background: #fff; border-radius: 10px; padding: 0;
+        box-shadow: 0 10px 40px rgba(0,0,0,.25);
+        min-width: 420px; max-width: 80vw; max-height: 80vh;
+        display: flex; flex-direction: column;
+    }
+    .ngrate-del-head {
+        padding: 12px 16px; border-bottom: 1px solid #e2e8f0;
+        font-size: 14px; font-weight: 700; color: #b91c1c;
+    }
+    .ngrate-del-body { flex: 1; overflow: auto; padding: 12px 16px; }
+    .ngrate-del-foot {
+        display: flex; gap: 8px; justify-content: flex-end;
+        padding: 10px 16px; border-top: 1px solid #e2e8f0;
+    }
+
     /* Pivot report tables */
     .pivot-wrap { overflow-x: auto; }
     .pivot-table { font-size: 11px; white-space: nowrap; border-collapse: collapse; }
@@ -125,6 +146,16 @@
 <div class="d-flex align-items-center gap-2 mb-3">
     <span style="font-size:20px;">📉</span>
     <h5 class="mb-0 fw-semibold">NG Rate</h5>
+    <div class="ms-3 btn-group btn-group-sm" role="group" aria-label="View mode">
+        <a href="/ng-rate" class="btn btn-outline-secondary"
+           title="모델별 탭 뷰로 전환 — 모델 하나씩 Summary/Detail/Chart 전체 표시">
+            🎯 By Model
+        </a>
+        <button type="button" class="btn btn-primary" disabled
+                title="현재 뷰: 섹션별 — 여러 모델을 Summary/Process/NG/Reason 섹션 단위로 세로 정렬">
+            📑 By Section
+        </button>
+    </div>
 </div>
 
 <div class="ngrate-grid">
@@ -221,6 +252,11 @@
                         <span class="badge bg-primary" style="font-size:10px;">
                             @_selectedFiles.Count selected
                         </span>
+                        <button class="btn btn-outline-danger btn-sm py-0 px-2"
+                                style="font-size:10px; line-height:1.4;"
+                                @onclick="() => _showDeleteFiles = true"
+                                disabled="@_isBusy"
+                                title="선택한 파일 삭제">🗑 선택 삭제</button>
                     }
                     <span class="text-muted" style="font-size:11px;">
                         @(_jsonFiles.Count) file@(_jsonFiles.Count == 1 ? "" : "s")
@@ -329,6 +365,35 @@
             </div>
         </div>
     </div>
+
+    @if (_showDeleteFiles)
+    {
+        <div class="ngrate-del-overlay" @onclick="CancelDeleteFiles">
+            <div class="ngrate-del-dialog" @onclick:stopPropagation="true">
+                <div class="ngrate-del-head">🗑 선택 파일 삭제</div>
+                <div class="ngrate-del-body">
+                    <p class="small mb-2">
+                        아래 <strong>@_selectedFiles.Count</strong>개 파일이 디스크에서 <strong class="text-danger">영구 삭제</strong>됩니다. 되돌릴 수 없습니다.
+                    </p>
+                    <ul class="small font-monospace mb-2"
+                        style="max-height:200px; overflow:auto; background:#f8fafc; padding:8px 16px; border:1px solid #e2e8f0; border-radius:4px;">
+                        @foreach (string p in _selectedFiles)
+                        {
+                            <li>@Path.GetFileName(p)</li>
+                        }
+                    </ul>
+                    @if (!string.IsNullOrEmpty(_deleteFilesError))
+                    {
+                        <div class="alert alert-danger small mb-0" style="white-space:pre-wrap;">@_deleteFilesError</div>
+                    }
+                </div>
+                <div class="ngrate-del-foot">
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="CancelDeleteFiles">Cancel</button>
+                    <button class="btn btn-danger btn-sm" @onclick="ExecuteDeleteFiles">Delete @_selectedFiles.Count file(s)</button>
+                </div>
+            </div>
+        </div>
+    }
 
     <!-- ══ ROW 2, COL 1 — Progress ══════════════════════════════════════════════ -->
     <div class="ngrate-cell-bl">
@@ -961,6 +1026,8 @@
     private bool                _jsonFolderExists = false;
     private HashSet<string>     _selectedFiles    = new();
     private string              _activePg         = "ETC";
+    private bool                _showDeleteFiles  = false;
+    private string?             _deleteFilesError = null;
 
     /// <summary>Only ProductGroups that actually have files (preserves AllProductGroups order)</summary>
     private IEnumerable<string> FileProductGroups =>
@@ -1232,6 +1299,42 @@
     {
         if (!_selectedFiles.Remove(fullPath))
             _selectedFiles.Add(fullPath);
+    }
+
+    // ── Delete selected files ─────────────────────────────────────────────────────
+    private void CancelDeleteFiles()
+    {
+        _showDeleteFiles  = false;
+        _deleteFilesError = null;
+    }
+
+    private void ExecuteDeleteFiles()
+    {
+        _deleteFilesError = null;
+        var targets = _selectedFiles.ToList();
+        var failed  = new List<string>();
+
+        foreach (string path in targets)
+        {
+            try
+            {
+                if (File.Exists(path)) File.Delete(path);
+                _selectedFiles.Remove(path);
+            }
+            catch (Exception ex)
+            {
+                failed.Add($"{Path.GetFileName(path)}: {ex.Message}");
+            }
+        }
+
+        RefreshJsonFiles();
+        _showDeleteFiles = false;
+
+        if (failed.Count > 0)
+        {
+            _deleteFilesError = $"{failed.Count}개 삭제 실패:\n" + string.Join("\n", failed);
+            _showDeleteFiles  = true;
+        }
     }
 
     // ── Get Data ──────────────────────────────────────────────────────────────────

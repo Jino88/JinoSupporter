@@ -71,7 +71,22 @@ else
                         <td class="n">@r.ImageCount</td>
                         <td class="n">@r.MeasurementCount</td>
                         <td class="didb-date">@FormatDate(r.CreatedAt)</td>
-                        <td @onclick:stopPropagation="true">
+                        <td @onclick:stopPropagation="true" style="white-space:nowrap;">
+                            <button class="btn btn-sm py-0 px-1 me-1 @(r.BatchExcluded ? "btn-warning" : "btn-outline-secondary")"
+                                    style="font-size:12px;"
+                                    title="@(r.BatchExcluded ? "AI 배치에서 제외됨 — 클릭하면 포함" : "AI 배치에 포함됨 — 클릭하면 제외")"
+                                    @onclick="() => ToggleBatchExcluded(r.DatasetName, r.BatchExcluded)">
+                                @(r.BatchExcluded ? "🚫" : "🤖")
+                            </button>
+                            @{
+                                bool hasOcr = _ocrCached.Contains(r.DatasetName);
+                            }
+                            <button class="btn btn-sm py-0 px-1 me-1 @(hasOcr ? "btn-info" : "btn-outline-secondary")"
+                                    style="font-size:12px;"
+                                    title="@(hasOcr ? "OCR 캐시 있음 — 보기/편집" : "OCR 미수집 — 클릭해서 추출 가능")"
+                                    @onclick="() => OpenOcrEditor(r.DatasetName, r.ProductType, r.ReportDate)">
+                                @(hasOcr ? "📑" : "📝")
+                            </button>
                             <button class="btn btn-outline-danger btn-sm py-0 px-1"
                                     style="font-size:12px;"
                                     @onclick="() => ConfirmDelete(r.DatasetName)">🗑</button>
@@ -86,6 +101,26 @@ else
                             <tr class="didb-detail-row">
                                 <td colspan="8" style="padding:0;">
                                     <div class="didb-summary">
+                                        @if (!string.IsNullOrEmpty(_expandedSummary.Purpose))
+                                        {
+                                            <div class="didb-ctx-row"><span class="didb-ctx-key">🎯 Purpose</span> @_expandedSummary.Purpose</div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(_expandedSummary.TestConditions))
+                                        {
+                                            <div class="didb-ctx-row"><span class="didb-ctx-key">🧪 TestConditions</span> @_expandedSummary.TestConditions</div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(_expandedSummary.RootCause))
+                                        {
+                                            <div class="didb-ctx-row"><span class="didb-ctx-key">🔎 RootCause</span> @_expandedSummary.RootCause</div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(_expandedSummary.Decision))
+                                        {
+                                            <div class="didb-ctx-row"><span class="didb-ctx-key">⚖ Decision</span> @_expandedSummary.Decision</div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(_expandedSummary.RecommendedAction))
+                                        {
+                                            <div class="didb-ctx-row"><span class="didb-ctx-key">➡ RecommendedAction</span> @_expandedSummary.RecommendedAction</div>
+                                        }
                                         <strong>Summary:</strong> @_expandedSummary.Summary
                                         @if (!string.IsNullOrEmpty(_expandedSummary.KeyFindings))
                                         {
@@ -135,17 +170,17 @@ else
                                                 @foreach (var m in _expandedMeasurements)
                                                 {
                                                     <tr>
-                                                        <td>@m.Variable</td>
-                                                        <td>@m.VariableGroup</td>
-                                                        <td>@m.Line</td>
-                                                        <td>@m.CheckType</td>
-                                                        <td class="n">@m.InputQty</td>
-                                                        <td class="n">@m.NgTotal</td>
-                                                        <td class="n">@m.NgRate.ToString("F1")%</td>
-                                                        <td>@m.DefectType</td>
-                                                        <td>@m.DefectCategory</td>
-                                                        <td class="n">@m.DefectCount</td>
-                                                        <td>@m.Intervention</td>
+                                                        @RenderEditable(m, "Variable",       m.Variable)
+                                                        @RenderEditable(m, "VariableGroup",  m.VariableGroup)
+                                                        @RenderEditable(m, "Line",           m.Line)
+                                                        @RenderEditable(m, "CheckType",      m.CheckType)
+                                                        @RenderEditable(m, "InputQty",       m.InputQty.ToString(), numeric:true)
+                                                        @RenderEditable(m, "NgTotal",        m.NgTotal.ToString(),  numeric:true)
+                                                        @RenderEditable(m, "NgRate",         m.NgRate.ToString("F1") + "%", numeric:true)
+                                                        @RenderEditable(m, "DefectType",     m.DefectType)
+                                                        @RenderEditable(m, "DefectCategory", m.DefectCategory)
+                                                        @RenderEditable(m, "DefectCount",    m.DefectCount.ToString(), numeric:true)
+                                                        @RenderEditable(m, "Intervention",   m.Intervention)
                                                     </tr>
                                                 }
                                             </tbody>
@@ -240,6 +275,12 @@ else
     </div>
 }
 
+<OcrTextEditor DatasetName="@_ocrDataset"
+               ProductType="@_ocrProductType"
+               ReportDate="@_ocrReportDate"
+               OnClose="CloseOcrEditor"
+               OnReanalyzed="OnOcrReanalyzed" />
+
 @if (_showDeleteAll)
 {
     <div class="didb-overlay" @onclick="CancelDeleteAll">
@@ -298,6 +339,11 @@ else
         background: #f0f9ff; border-bottom: 1px solid #bae6fd;
     }
     .didb-findings   { font-size: 11px; color: #475569; white-space: pre-wrap; margin-top: 4px; }
+    .didb-ctx-row    { font-size: 11px; color: #1e293b; margin-bottom: 3px; }
+    .didb-ctx-key    {
+        display: inline-block; min-width: 125px; font-weight: 600; color: #0369a1;
+        margin-right: 4px;
+    }
     .didb-tags-row   { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
     .didb-tag        {
         display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px;
@@ -361,6 +407,13 @@ else
         border: 1px solid #e2e8f0; padding: 3px 7px; white-space: nowrap;
     }
     .didb-sub th     { background: #f8fafc; font-weight: 600; color: #64748b; }
+    .didb-edit-cell  { cursor: text; }
+    .didb-edit-cell:hover { background: #f0f9ff; outline: 1px dashed #93c5fd; }
+    .didb-edit-input {
+        width: 100%; border: 1px solid #3b82f6; border-radius: 2px;
+        padding: 1px 4px; font: inherit; box-sizing: border-box;
+        background: #fff;
+    }
 
     /* Delete confirm */
     .didb-overlay    {
@@ -400,14 +453,20 @@ else
     private bool                         _showDeleteAll        = false;
     private string?                      _viewerDataUrl        = null;
 
-    protected override void OnInitialized() => _reports = Repo.GetAllRawReports();
+    protected override void OnInitialized() => ReloadReports();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender) await JS.InvokeVoidAsync("diFullPage.enter");
     }
 
-    private void Refresh() => _reports = Repo.GetAllRawReports();
+    private void Refresh() => ReloadReports();
+
+    private void ReloadReports()
+    {
+        _reports    = Repo.GetAllRawReports();
+        _ocrCached  = Repo.GetDatasetsWithExtractedText();
+    }
 
     private void ToggleExpand(string name)
     {
@@ -435,6 +494,109 @@ else
     private void ConfirmDelete(string name) => _deleteTarget = name;
     private void CancelDelete()             => _deleteTarget = null;
 
+    private void ToggleBatchExcluded(string name, bool currentlyExcluded)
+    {
+        Repo.SetRawReportBatchExcluded(name, !currentlyExcluded);
+        ReloadReports();
+    }
+
+    // ── OCR text editor ───────────────────────────────────────────────────────
+    private string?         _ocrDataset;
+    private string          _ocrProductType = "";
+    private string          _ocrReportDate  = "";
+    private HashSet<string> _ocrCached      = new(StringComparer.Ordinal);
+
+    private void OpenOcrEditor(string name, string productType, string reportDate)
+    {
+        _ocrDataset     = name;
+        _ocrProductType = productType;
+        _ocrReportDate  = reportDate;
+    }
+
+    private void CloseOcrEditor()
+    {
+        _ocrDataset = null;
+        _ocrCached  = Repo.GetDatasetsWithExtractedText();
+    }
+
+    private void OnOcrReanalyzed()
+    {
+        // refresh expanded panel if the same dataset is open
+        if (_expanded is not null)
+        {
+            _expandedMeasurements = Repo.GetNormalizedMeasurements(_expanded);
+            _expandedSummary      = Repo.GetDatasetSummaryRecord(_expanded);
+        }
+        ReloadReports();
+    }
+
+    // ── Inline cell editing ────────────────────────────────────────────────
+    private long    _editId;
+    private string? _editField;
+    private string  _editBuffer = string.Empty;
+
+    private RenderFragment RenderEditable(NormalizedMeasurement m, string field, string display, bool numeric = false)
+        => builder =>
+    {
+        bool isEditing = _editId == m.Id && _editField == field;
+        builder.OpenElement(0, "td");
+        builder.AddAttribute(1, "class", numeric ? "n didb-edit-cell" : "didb-edit-cell");
+        if (isEditing)
+        {
+            builder.OpenElement(2, "input");
+            builder.AddAttribute(3, "type", "text");
+            builder.AddAttribute(4, "class", "didb-edit-input" + (numeric ? " text-end" : ""));
+            builder.AddAttribute(5, "value", _editBuffer);
+            builder.AddAttribute(6, "oninput",
+                EventCallback.Factory.Create<ChangeEventArgs>(this, e => _editBuffer = e.Value?.ToString() ?? ""));
+            builder.AddAttribute(7, "onblur",
+                EventCallback.Factory.Create(this, () => CommitEdit(m, field)));
+            builder.AddAttribute(8, "onkeydown",
+                EventCallback.Factory.Create<KeyboardEventArgs>(this, ev => OnEditKey(ev, m, field)));
+            builder.AddAttribute(9, "autofocus", true);
+            builder.CloseElement();
+        }
+        else
+        {
+            builder.AddAttribute(10, "ondblclick",
+                EventCallback.Factory.Create(this, () => StartEdit(m, field, display)));
+            builder.AddAttribute(11, "title", "Double-click to edit");
+            builder.AddContent(12, display);
+        }
+        builder.CloseElement();
+    };
+
+    private void StartEdit(NormalizedMeasurement m, string field, string display)
+    {
+        _editId     = m.Id;
+        _editField  = field;
+        _editBuffer = field == "NgRate" ? display.TrimEnd('%').Trim() : display;
+    }
+
+    private void CancelEdit()
+    {
+        _editId = 0; _editField = null; _editBuffer = string.Empty;
+    }
+
+    private async Task OnEditKey(KeyboardEventArgs ev, NormalizedMeasurement m, string field)
+    {
+        if (ev.Key == "Enter")   await CommitEdit(m, field);
+        else if (ev.Key == "Escape") CancelEdit();
+    }
+
+    private async Task CommitEdit(NormalizedMeasurement m, string field)
+    {
+        try
+        {
+            Repo.UpdateNormalizedMeasurementField(m.Id, field, _editBuffer);
+            if (_expanded is not null)
+                _expandedMeasurements = Repo.GetNormalizedMeasurements(_expanded);
+        }
+        catch { /* swallow — keeps UI responsive */ }
+        CancelEdit();
+        await Task.CompletedTask;
+    }
+
     private void ExecuteDelete()
     {
         if (_deleteTarget is null) return;
@@ -444,7 +606,7 @@ else
         }
         Repo.DeleteRawReport(_deleteTarget);
         _deleteTarget = null;
-        _reports = Repo.GetAllRawReports();
+        ReloadReports();
     }
 
     private void OpenViewer(string dataUrl) => _viewerDataUrl = dataUrl;
@@ -469,7 +631,7 @@ else
         Repo.DeleteAllDataInference();
         _expanded = null; _expandedMeasurements = []; _expandedSummary = null; _expandedImages = []; _expandedFiles = [];
         _showDeleteAll = false;
-        _reports = Repo.GetAllRawReports();
+        ReloadReports();
     }
 
     private static string FormatSize(long bytes)

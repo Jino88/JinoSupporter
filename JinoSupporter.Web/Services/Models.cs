@@ -40,6 +40,7 @@ public sealed class ExtractedTable
 
 public sealed class NormalizedMeasurement
 {
+    [JsonIgnore] public long Id { get; set; }
     [JsonPropertyName("productType")]    public string ProductType    { get; set; } = "";
     [JsonPropertyName("testDate")]       public string TestDate       { get; set; } = "";
     [JsonPropertyName("line")]           public string Line           { get; set; } = "";
@@ -59,17 +60,31 @@ public sealed class NormalizedMeasurement
 
 public sealed class NormalizeResult
 {
-    [JsonPropertyName("measurements")] public List<NormalizedMeasurement> Measurements { get; set; } = [];
-    [JsonPropertyName("summary")]      public string       Summary     { get; set; } = "";
-    [JsonPropertyName("keyFindings")]  public string       KeyFindings { get; set; } = "";
-    [JsonPropertyName("tags")]         public List<string> Tags        { get; set; } = [];
+    [JsonPropertyName("measurements")]        public List<NormalizedMeasurement> Measurements { get; set; } = [];
+    [JsonPropertyName("summary")]             public string       Summary             { get; set; } = "";
+    [JsonPropertyName("keyFindings")]         public string       KeyFindings         { get; set; } = "";
+    [JsonPropertyName("tags")]                public List<string> Tags                { get; set; } = [];
+
+    // Structured context fields for AI Ask — extract from report's common sections
+    [JsonPropertyName("purpose")]             public string       Purpose             { get; set; } = "";
+    [JsonPropertyName("testConditions")]      public string       TestConditions      { get; set; } = "";
+    [JsonPropertyName("rootCause")]           public string       RootCause           { get; set; } = "";
+    [JsonPropertyName("decision")]            public string       Decision            { get; set; } = "";
+    [JsonPropertyName("recommendedAction")]   public string       RecommendedAction   { get; set; } = "";
 }
 
 public sealed class DatasetSummaryRecord
 {
-    public string       Summary     { get; set; } = "";
-    public string       KeyFindings { get; set; } = "";
-    public List<string> Tags        { get; set; } = [];
+    public string       Summary           { get; set; } = "";
+    public string       KeyFindings       { get; set; } = "";
+    public List<string> Tags              { get; set; } = [];
+
+    // Extended structured fields
+    public string       Purpose           { get; set; } = "";
+    public string       TestConditions    { get; set; } = "";
+    public string       RootCause         { get; set; } = "";
+    public string       Decision          { get; set; } = "";
+    public string       RecommendedAction { get; set; } = "";
 }
 
 public sealed record RawFileInfo(
@@ -94,7 +109,8 @@ public sealed record RawReportInfo(
     string ReportDate,
     int    ImageCount,
     int    MeasurementCount,
-    string CreatedAt);
+    string CreatedAt,
+    bool   BatchExcluded);
 
 public sealed record ImprovementRow(
     string  DatasetName,

@@ -14,6 +14,24 @@
     <span class="dib-title">🤖 AI Batch Analysis</span>
     <span class="dib-count">@_unprocessed.Count pending · @_processed.Count done (out of @_reports.Count total)</span>
     <div style="flex:1;"></div>
+
+    <div class="btn-group btn-group-sm" role="group" title="분석 방식 선택">
+        <button type="button"
+                class="btn @(_mode == AnalysisMode.Vision ? "btn-primary" : "btn-outline-secondary")"
+                disabled="@_isBusy"
+                @onclick="() => _mode = AnalysisMode.Vision"
+                title="이미지를 Claude vision에 바로 전달 (1 API call)">
+            🖼 Vision
+        </button>
+        <button type="button"
+                class="btn @(_mode == AnalysisMode.OcrText ? "btn-primary" : "btn-outline-secondary")"
+                disabled="@_isBusy"
+                @onclick="() => _mode = AnalysisMode.OcrText"
+                title="이미지 → OCR 마크다운 → 텍스트 분석 (2 API call, 캐시됨: 재분석 시 1 call)">
+            📝 OCR→Text
+        </button>
+    </div>
+
     <button class="btn btn-outline-secondary btn-sm" @onclick="Refresh" disabled="@_isBusy">↻ Refresh</button>
     <button class="btn btn-primary btn-sm" @onclick="RunBatchAsync"
             disabled="@(_isBusy || !Claude.IsConfigured || _selected.Count == 0)">
@@ -33,6 +51,8 @@
             @onclick="() => SetFilter(Filter.Pending)">⏳ Pending (@_unprocessed.Count)</button>
     <button class="dib-tab @(_filter == Filter.Done ? "active" : "")"
             @onclick="() => SetFilter(Filter.Done)">✅ Done (@_processed.Count)</button>
+    <button class="dib-tab @(_filter == Filter.Issues ? "active" : "")"
+            @onclick="() => SetFilter(Filter.Issues)">⚠ Issues (@_issueDatasets.Count)</button>
     <button class="dib-tab @(_filter == Filter.All ? "active" : "")"
             @onclick="() => SetFilter(Filter.All)">All (@_reports.Count)</button>
     <div style="flex:1;"></div>
@@ -85,7 +105,16 @@ else
                         <td>
                             @if (isDone)
                             {
+                                int issueCount = _issueCount.GetValueOrDefault(r.DatasetName);
                                 <span class="dib-badge dib-badge-done">Done</span>
+                                @if (issueCount > 0)
+                                {
+                                    <a class="dib-badge dib-badge-warn ms-1 text-decoration-none"
+                                       href="/data-inference/validation" target="_blank"
+                                       title="체크섬 불일치 @issueCount 건 — Validation 페이지 확인">
+                                        ⚠ @issueCount
+                                    </a>
+                                }
                             }
                             else if (r.ImageCount == 0)
                             {
@@ -188,6 +217,8 @@ else
     .dib-badge-run     { background: #dbeafe; color: #1d4ed8; }
     .dib-badge-ok      { background: #dcfce7; color: #166534; }
     .dib-badge-err     { background: #fee2e2; color: #b91c1c; }
+    .dib-badge-warn    { background: #fef3c7; color: #b45309; cursor: pointer; }
+    .dib-badge-warn:hover { background: #fde68a; }
     .dib-badge-btn     { border: none; cursor: pointer; text-decoration: underline dotted; }
     .dib-badge-btn:hover { background: #fecaca; }
 
@@ -224,24 +255,30 @@ else
 </style>
 
 @code {
-    private enum Filter { Pending, Done, All }
+    private enum Filter { Pending, Done, Issues, All }
+    private enum AnalysisMode { Vision, OcrText }
 
-    private List<RawReportInfo>        _reports       = [];
-    private List<RawReportInfo>        _unprocessed   = [];
-    private List<RawReportInfo>        _processed     = [];
-    private HashSet<string>            _selected      = new(StringComparer.Ordinal);
-    private Dictionary<string, string> _runState      = [];
-    private Dictionary<string, string> _runError      = [];
+    private AnalysisMode _mode = AnalysisMode.Vision;
+
+    private List<RawReportInfo>        _reports        = [];
+    private List<RawReportInfo>        _unprocessed    = [];
+    private List<RawReportInfo>        _processed      = [];
+    private List<RawReportInfo>        _issueDatasets  = [];
+    private Dictionary<string, int>    _issueCount     = new(StringComparer.Ordinal);
+    private HashSet<string>            _selected       = new(StringComparer.Ordinal);
+    private Dictionary<string, string> _runState       = [];
+    private Dictionary<string, string> _runError       = [];
     private (string Name, string Message)? _errorDialog;
-    private Filter                     _filter        = Filter.Pending;
+    private Filter                     _filter         = Filter.Pending;
     private bool                       _isBusy;
-    private string                     _status        = "";
+    private string                     _status         = "";
     private bool                       _statusError;
 
     private List<RawReportInfo> Visible => _filter switch
     {
         Filter.Pending => _unprocessed,
         Filter.Done    => _processed,
+        Filter.Issues  => _issueDatasets,
         _              => _reports,
     };
 
@@ -257,9 +294,19 @@ else
 
     private void LoadReports()
     {
-        _reports     = Repo.GetAllRawReports();
+        _reports     = Repo.GetAllRawReports().Where(r => !r.BatchExcluded).ToList();
         _unprocessed = _reports.Where(r => r.MeasurementCount == 0).ToList();
         _processed   = _reports.Where(r => r.MeasurementCount > 0).ToList();
+
+        // Run checksum validator per done dataset
+        _issueCount.Clear();
+        foreach (var r in _processed)
+        {
+            var rows   = Repo.GetNormalizedMeasurements(r.DatasetName);
+            var issues = MeasurementValidator.FindIssues(rows);
+            if (issues.Count > 0) _issueCount[r.DatasetName] = issues.Count;
+        }
+        _issueDatasets = _processed.Where(r => _issueCount.ContainsKey(r.DatasetName)).ToList();
     }
 
     private void Refresh()
@@ -292,7 +339,9 @@ else
     private async Task RunBatchAsync()
     {
         if (_selected.Count == 0) { SetStatus("No datasets selected.", true); return; }
-        _isBusy = true; SetStatus($"Starting batch analysis — {_selected.Count} dataset(s)", false);
+        _isBusy = true;
+        string modeLabel = _mode == AnalysisMode.OcrText ? "OCR→Text" : "Vision";
+        SetStatus($"Starting batch analysis [{modeLabel}] — {_selected.Count} dataset(s)", false);
         _runState.Clear(); _runError.Clear();
 
         var targets = _reports.Where(r => _selected.Contains(r.DatasetName)).ToList();
@@ -318,8 +367,30 @@ else
                     i.MediaType,
                     Convert.ToBase64String(i.Data))).ToList();
 
-                NormalizeResult result = await Claude.NormalizeFromImagesAsync(
-                    imageArgs, r.DatasetName, r.ProductType, r.ReportDate);
+                NormalizeResult result;
+                if (_mode == AnalysisMode.OcrText)
+                {
+                    // Use cached OCR text if present; otherwise run vision OCR once and cache.
+                    string? cached = Repo.GetExtractedText(r.DatasetName);
+                    string text;
+                    if (!string.IsNullOrWhiteSpace(cached))
+                    {
+                        text = cached!;
+                    }
+                    else
+                    {
+                        text = await Claude.ExtractStructuredTextAsync(
+                            imageArgs, r.DatasetName, r.ProductType, r.ReportDate);
+                        Repo.SaveExtractedText(r.DatasetName, text);
+                    }
+                    result = await Claude.NormalizeFromTextAsync(
+                        text, r.DatasetName, r.ProductType, r.ReportDate);
+                }
+                else
+                {
+                    result = await Claude.NormalizeFromImagesAsync(
+                        imageArgs, r.DatasetName, r.ProductType, r.ReportDate);
+                }
 
                 await Task.Run(() =>
                 {
@@ -331,7 +402,9 @@ else
                         : "";
                     if (!string.IsNullOrEmpty(result.Summary) || !string.IsNullOrEmpty(tagsJson))
                         Repo.SaveDatasetSummaryRecord(r.DatasetName, r.ProductType,
-                            result.Summary, result.KeyFindings, tagsJson);
+                            result.Summary, result.KeyFindings, tagsJson,
+                            result.Purpose, result.TestConditions, result.RootCause,
+                            result.Decision, result.RecommendedAction);
                 });
 
                 _runState[r.DatasetName] = "ok";

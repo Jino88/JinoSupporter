@@ -22,14 +22,15 @@
         bool can(string id) => Perms.IsAllowed(userRole, id);
 
         bool showBmes =
-            can(AppMenus.NgRate) || can(AppMenus.NgRateAll) || can(AppMenus.BmesWorkerStatus) ||
+            can(AppMenus.NgRate) || can(AppMenus.BmesWorkerStatus) ||
             can(AppMenus.BmesMakeModel) || can(AppMenus.BmesSetting);
 
         bool showDi =
             can(AppMenus.DiInput) || can(AppMenus.DiDb) || can(AppMenus.DiBatch) ||
-            can(AppMenus.DiAnalysis) || can(AppMenus.DiAsk) || can(AppMenus.Report);
+            can(AppMenus.DiAnalysis) || can(AppMenus.DiValidation) ||
+            can(AppMenus.DiAsk) || can(AppMenus.Report);
 
-        bool showAdmin = can(AppMenus.AdminUsers) || can(AppMenus.AdminSettings);
+        bool showAdmin = can(AppMenus.AdminUsers) || can(AppMenus.AdminSettings) || can(AppMenus.AdminAiUsages);
         bool showTools = can(AppMenus.Schedule) || can(AppMenus.Translate) || showDi;
     }
 
@@ -52,14 +53,6 @@
                     <div class="nav-item">
                         <NavLink class="nav-link nav-sublink" href="ng-rate">
                             <span class="nav-icon" style="font-size:11px;">📉</span> Report NG RATE
-                        </NavLink>
-                    </div>
-                }
-                @if (can(AppMenus.NgRateAll))
-                {
-                    <div class="nav-item">
-                        <NavLink class="nav-link nav-sublink" href="ng-rate-all">
-                            <span class="nav-icon" style="font-size:11px;">📊</span> Report NG RATE All
                         </NavLink>
                     </div>
                 }
@@ -149,6 +142,14 @@
                             </NavLink>
                         </div>
                     }
+                    @if (can(AppMenus.DiValidation))
+                    {
+                        <div class="nav-item">
+                            <NavLink class="nav-link nav-sublink" href="data-inference/validation">
+                                <span class="nav-icon" style="font-size:11px;">🧪</span> Validation
+                            </NavLink>
+                        </div>
+                    }
                     @if (can(AppMenus.DiAsk))
                     {
                         <div class="nav-item">
@@ -195,6 +196,14 @@
             <div class="nav-item">
                 <NavLink class="nav-link" href="admin/settings">
                     <span class="nav-icon">🔑</span> Settings
+                </NavLink>
+            </div>
+        }
+        @if (can(AppMenus.AdminAiUsages))
+        {
+            <div class="nav-item">
+                <NavLink class="nav-link" href="admin/ai-usages">
+                    <span class="nav-icon">💳</span> AI Usages
                 </NavLink>
             </div>
         }
@@ -249,7 +258,6 @@
 
     private bool IsBmesActive =>
         Nav.Uri.Contains("/ng-rate",                  StringComparison.OrdinalIgnoreCase) ||
-        Nav.Uri.Contains("/ng-rate-all",              StringComparison.OrdinalIgnoreCase) ||
         Nav.Uri.Contains("/bmes/",                    StringComparison.OrdinalIgnoreCase) ||
         Nav.Uri.Contains("/bmes/worker-status",       StringComparison.OrdinalIgnoreCase) ||
         Nav.Uri.Contains("/bmes/make-model",          StringComparison.OrdinalIgnoreCase);
