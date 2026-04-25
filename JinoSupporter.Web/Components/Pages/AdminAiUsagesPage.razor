@@ -36,17 +36,17 @@
             <button class="btn btn-primary btn-sm" @onclick="LoginAsync"
                     disabled="@(_loginBusy || _scrapeBusy)">
                 @if (_loginBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                🔐 Login (browser 열기)
+                🔐 Login (open browser)
             </button>
             <button class="btn btn-success btn-sm" @onclick="RefreshAsync"
                     disabled="@(_loginBusy || _scrapeBusy || !Scraper.SessionProfileExists)">
                 @if (_scrapeBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                ↻ Refresh (자동 가져오기)
+                ↻ Refresh (auto-fetch)
             </button>
             <button class="btn btn-outline-danger btn-sm" @onclick="DeleteSession"
                     disabled="@(_loginBusy || _scrapeBusy || !Scraper.SessionProfileExists)"
-                    title="세션 프로필 삭제">
-                🗑 세션 삭제
+                    title="Delete session profile">
+                🗑 Delete session
             </button>
         </div>
 
@@ -56,15 +56,15 @@
         }
 
         <div class="form-text mt-2">
-            최초 1회만 <strong>Login</strong> 을 클릭 → 브라우저 창이 열리고 <strong>탭이 2개</strong> 뜹니다
-            (platform.claude.com, claude.ai). <strong>두 탭 모두</strong> 각각 로그인한 뒤 창을 닫으면 세션 저장 →
-            이후 <strong>Refresh</strong> 로 값 자동 갱신.
+            Click <strong>Login</strong> once on first use. A browser window opens with <strong>2 tabs</strong>
+            (platform.claude.com, claude.ai). Sign in on <strong>both tabs</strong>, then close the window to save
+            the session. After that, use <strong>Refresh</strong> to auto-update values.
         </div>
         <div class="form-text" style="color:#b45309;">
-            ⚠ 두 도메인은 별도 로그인이 필요합니다. 한쪽만 로그인하면 다른 쪽은 "로그인 풀림" 으로 표시됩니다.
+            ⚠ The two domains require separate logins. If only one is signed in, the other will show as "signed out".
         </div>
         <div class="form-text">
-            프로필 경로: <code class="small">@Scraper.ProfileDirectory</code>
+            Profile path: <code class="small">@Scraper.ProfileDirectory</code>
         </div>
     </div>
 </div>
@@ -74,7 +74,7 @@
     <div class="alert alert-info d-flex align-items-center" role="alert">
         <span class="me-2">↻</span>
         <div>
-            <strong>자동 수집한 값이 채워졌습니다.</strong> 값이 맞는지 확인 후 각 섹션의 <kbd>Save</kbd> 를 누르세요.
+            <strong>Auto-fetched values have been filled in.</strong> Verify them, then click <kbd>Save</kbd> in each section.
         </div>
     </div>
 }
@@ -92,7 +92,7 @@
 
         <div class="row g-3 align-items-end">
             <div class="col-sm-6">
-                <label class="form-label small text-muted mb-1">API 크레딧 잔액 (USD)</label>
+                <label class="form-label small text-muted mb-1">API credit balance (USD)</label>
                 <div class="input-group">
                     <span class="input-group-text">$</span>
                     <input type="text" class="form-control font-monospace text-end"
@@ -121,7 +121,7 @@
         @if (!string.IsNullOrEmpty(_billingSnippet))
         {
             <details class="mt-2 small">
-                <summary class="text-muted" style="cursor:pointer;">📄 Raw page snippet (디버그)</summary>
+                <summary class="text-muted" style="cursor:pointer;">📄 Raw page snippet (debug)</summary>
                 <pre class="small mt-2"
                      style="max-height:220px; overflow:auto; background:#f8fafc; padding:8px; border:1px solid #e2e8f0; font-size:11px; white-space:pre-wrap; word-break:break-word;">@_billingSnippet</pre>
             </details>
@@ -142,11 +142,11 @@
 
         <!-- 현재 세션 -->
         <div class="mb-3">
-            <label class="form-label small text-muted mb-1">현재 세션 사용률</label>
+            <label class="form-label small text-muted mb-1">Current session usage</label>
             <div class="input-group input-group-sm">
-                <span class="input-group-text small">현재 세션</span>
+                <span class="input-group-text small">Current session</span>
                 <input type="text" class="form-control form-control-sm font-monospace text-end"
-                       placeholder="예: 42%"
+                       placeholder="e.g. 42%"
                        @bind="_sessionUsage" />
             </div>
             @if (TryParsePct(_sessionUsage) is double su)
@@ -159,12 +159,12 @@
 
         <!-- 주간 한도 -->
         <div class="mb-3">
-            <label class="form-label small text-muted mb-1">주간 한도 사용률</label>
+            <label class="form-label small text-muted mb-1">Weekly limit usage</label>
 
             <div class="input-group input-group-sm mb-1">
-                <span class="input-group-text small" style="width:120px;">모든 모델</span>
+                <span class="input-group-text small" style="width:120px;">All models</span>
                 <input type="text" class="form-control form-control-sm font-monospace text-end"
-                       placeholder="예: 41%" @bind="_weeklyAllModels" />
+                       placeholder="e.g. 41%" @bind="_weeklyAllModels" />
             </div>
             @if (TryParsePct(_weeklyAllModels) is double wa)
             {
@@ -174,9 +174,9 @@
             }
 
             <div class="input-group input-group-sm mb-1">
-                <span class="input-group-text small" style="width:120px;">Sonnet만</span>
+                <span class="input-group-text small" style="width:120px;">Sonnet only</span>
                 <input type="text" class="form-control form-control-sm font-monospace text-end"
-                       placeholder="예: 27%" @bind="_weeklySonnet" />
+                       placeholder="e.g. 27%" @bind="_weeklySonnet" />
             </div>
             @if (TryParsePct(_weeklySonnet) is double ws)
             {
@@ -188,7 +188,7 @@
             <div class="input-group input-group-sm mb-1">
                 <span class="input-group-text small" style="width:120px;">Claude Design</span>
                 <input type="text" class="form-control form-control-sm font-monospace text-end"
-                       placeholder="예: 0%" @bind="_weeklyClaudeDesign" />
+                       placeholder="e.g. 0%" @bind="_weeklyClaudeDesign" />
             </div>
             @if (TryParsePct(_weeklyClaudeDesign) is double wd)
             {
@@ -200,11 +200,11 @@
 
         <!-- 추가 사용량 / 잔액 -->
         <div class="mb-3">
-            <label class="form-label small text-muted mb-1">추가 사용량 / 잔액 (USD)</label>
+            <label class="form-label small text-muted mb-1">Extra usage / balance (USD)</label>
             <div class="row g-2">
                 <div class="col-sm-5">
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text small">추가 사용</span>
+                        <span class="input-group-text small">Extra usage</span>
                         <span class="input-group-text">$</span>
                         <input type="text" class="form-control form-control-sm font-monospace text-end"
                                placeholder="0.00"
@@ -214,7 +214,7 @@
                 <div class="col-sm-2 text-center align-self-center text-muted">/</div>
                 <div class="col-sm-5">
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text small">잔액</span>
+                        <span class="input-group-text small">Balance</span>
                         <span class="input-group-text">$</span>
                         <input type="text" class="form-control form-control-sm font-monospace text-end"
                                placeholder="0.00"
@@ -245,13 +245,13 @@
         @if (!string.IsNullOrEmpty(_usageSnippet))
         {
             <details class="mt-2 small">
-                <summary class="text-muted" style="cursor:pointer;">📄 Raw page snippet (디버그)</summary>
+                <summary class="text-muted" style="cursor:pointer;">📄 Raw page snippet (debug)</summary>
                 <pre class="small mt-2"
                      style="max-height:220px; overflow:auto; background:#f8fafc; padding:8px; border:1px solid #e2e8f0; font-size:11px; white-space:pre-wrap; word-break:break-word;">@_usageSnippet</pre>
             </details>
         }
         <div class="form-text mt-2">
-            디버그 덤프 폴더: <code class="small">@Scraper.DebugDirectory</code> (스크린샷 + 전체 텍스트)
+            Debug dump folder: <code class="small">@Scraper.DebugDirectory</code> (screenshots + full text)
         </div>
     </div>
 </div>
@@ -307,17 +307,17 @@
     private async Task LoginAsync()
     {
         _loginBusy = true; _sessionError = false;
-        _sessionStatus = "브라우저를 여는 중… (최초 실행 시 Chromium 다운로드 ~300MB)";
+        _sessionStatus = "Opening browser… (first run downloads Chromium, ~300MB)";
         StateHasChanged();
         try
         {
             await Scraper.OpenLoginBrowserAsync();
-            _sessionStatus = "✓ 세션이 저장되었습니다. 이제 Refresh 를 눌러 값을 가져오세요.";
+            _sessionStatus = "✓ Session saved. Click Refresh to fetch values.";
         }
         catch (Exception ex)
         {
             _sessionError = true;
-            _sessionStatus = $"Login 실패: {ex.Message}";
+            _sessionStatus = $"Login failed: {ex.Message}";
         }
         finally { _loginBusy = false; }
     }
@@ -325,7 +325,7 @@
     private async Task RefreshAsync()
     {
         _scrapeBusy = true; _sessionError = false;
-        _sessionStatus = "자동 수집 중…";
+        _sessionStatus = "Auto-fetching…";
         _billingScrapeError = _usageScrapeError = string.Empty;
         StateHasChanged();
         try
@@ -348,14 +348,14 @@
 
             _imported = true;
             _sessionStatus = result.BillingError is null && result.UsageError is null
-                ? "✓ 자동 수집 완료 — 값 확인 후 Save"
-                : "⚠ 일부 페이지를 가져오지 못했습니다 (아래 경고 참조)";
+                ? "✓ Auto-fetch complete — review values, then Save"
+                : "⚠ Some pages could not be fetched (see warnings below)";
             _sessionError = result.BillingError is not null || result.UsageError is not null;
         }
         catch (Exception ex)
         {
             _sessionError = true;
-            _sessionStatus = $"Refresh 실패: {ex.Message}";
+            _sessionStatus = $"Refresh failed: {ex.Message}";
         }
         finally { _scrapeBusy = false; }
     }
@@ -363,7 +363,7 @@
     private void DeleteSession()
     {
         Scraper.DeleteSession();
-        _sessionStatus = "세션이 삭제되었습니다. 다시 Login 하세요.";
+        _sessionStatus = "Session deleted. Please Login again.";
         _sessionError = false;
         _imported = false;
     }
@@ -406,7 +406,7 @@
     }
 
     private static string FormatTs(string? ts)
-        => string.IsNullOrWhiteSpace(ts) ? "(기록 없음)" : ts;
+        => string.IsNullOrWhiteSpace(ts) ? "(no record)" : ts;
 
     private static double? TryParsePct(string? s)
     {

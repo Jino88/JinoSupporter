@@ -9,27 +9,20 @@ public static class MeasurementValidator
 {
     public sealed record Issue(string Variable, string VariableDetail, string Kind, string Message);
 
-    public static List<Issue> FindIssues(IReadOnlyList<NormalizedMeasurement> rows)
+    public static List<Issue> FindIssues(
+        IReadOnlyList<NormalizedMeasurement> rows,
+        string? excelPasteText = null)
     {
         var issues = new List<Issue>();
         if (rows.Count == 0) return issues;
 
-        // Pre-compute: does each TABLE (variableDetail) contain at least one row with
-        // a non-empty defectType? If not, the source report had no per-defect columns
-        // for that table — every row being `defectType=""` is legitimate, not a bug.
-        //
-        // This correctly distinguishes:
-        //   (a) RA-line / OQC sub-tables with only Input/OK/Total NG    → skip all
-        //   (b) Standard tables where AI dropped some rows' defects     → still flag
-        // without relying on fragile `ngTotal <= 5` heuristics.
-        var tableHasDefects = rows
-            .GroupBy(r => r.VariableDetail ?? "")
-            .ToDictionary(
-                g => g.Key,
-                g => g.Any(r => !string.IsNullOrWhiteSpace(r.DefectType)));
-
+        // Group by the logical unit-row (Variable, Group, Line, CheckType, Input, OK, NG).
+        // VariableDetail is intentionally excluded: the AI sometimes splits one logical
+        // row into multiple VariableDetail buckets (e.g. "Normal – aggregate" vs
+        // "Normal – per defect") and each bucket holds only a partial defect list.
+        // Summing defect counts across those buckets recovers the true per-row total.
         var groups = rows
-            .GroupBy(r => (r.Variable, r.VariableDetail, r.VariableGroup, r.Line, r.CheckType,
+            .GroupBy(r => (r.Variable, r.VariableGroup, r.Line, r.CheckType,
                            r.InputQty, r.OkQty, r.NgTotal));
 
         foreach (var g in groups)
@@ -37,17 +30,22 @@ public static class MeasurementValidator
             var list = g.ToList();
             int ngTotal = g.Key.NgTotal;
 
+            // Representative detail for Issue messages — distinct VariableDetails joined.
+            string variableDetail = string.Join(
+                " / ",
+                list.Select(m => m.VariableDetail ?? "").Where(s => s.Length > 0).Distinct());
+
             // Direct alignment-error marker from prompt
             if (list.Any(m => m.DefectType == "__ALIGN_ERROR__"))
             {
-                issues.Add(new Issue(g.Key.Variable, g.Key.VariableDetail, "align",
-                    "컬럼 정렬 실패 — 값 일부가 비어있거나 섹션 경계를 잘못 읽었을 가능성."));
+                issues.Add(new Issue(g.Key.Variable, variableDetail, "align",
+                    "Column alignment failed — some values may be empty or a section boundary was read incorrectly."));
                 continue;
             }
 
-            // Skip: entire table (variableDetail) is aggregate-only (no defect columns
-            // in source). The AI correctly emitted single empty rows throughout — not a bug.
-            if (!tableHasDefects.GetValueOrDefault(g.Key.VariableDetail ?? "", false))
+            // Skip: this logical row has no per-defect columns in the source report
+            // (aggregate-only). Every row being `defectType=""` is legitimate.
+            if (!list.Any(m => !string.IsNullOrWhiteSpace(m.DefectType)))
                 continue;
 
             // Skip: criterion-level evaluation (Wire Moving / Frame Deform / Hearing OQC
@@ -65,24 +63,79 @@ public static class MeasurementValidator
                 .Where(m => !string.IsNullOrWhiteSpace(m.DefectType))
                 .Sum(m => m.DefectCount);
 
+            // Skip overcount silently: happens when two legitimately distinct sub-tables
+            // happen to share (Variable, Group, Line, CheckType, Input, NG) and each
+            // carries a full defect breakdown. Rare; not an undercount.
+            if (ngTotal > 0 && sumDefects > ngTotal)
+                continue;
+
             if (ngTotal > 0 && sumDefects == 0)
             {
-                issues.Add(new Issue(g.Key.Variable, g.Key.VariableDetail, "missing",
-                    $"NG Total={ngTotal} 인데 defect 행이 하나도 없음 — 항목 누락 의심."));
+                issues.Add(new Issue(g.Key.Variable, variableDetail, "missing",
+                    $"NG Total={ngTotal} but no defect rows found — suspected missing entries."));
             }
             else if (ngTotal > 0 && sumDefects < ngTotal)
             {
-                issues.Add(new Issue(g.Key.Variable, g.Key.VariableDetail, "undercount",
-                    $"defect count 합={sumDefects} < NG Total={ngTotal} — 하나 이상의 결함 행이 누락됐을 수 있음."));
+                issues.Add(new Issue(g.Key.Variable, variableDetail, "undercount",
+                    $"Sum of defect counts={sumDefects} < NG Total={ngTotal} — one or more defect rows may be missing."));
             }
             else if (ngTotal == 0 && sumDefects > 0)
             {
-                issues.Add(new Issue(g.Key.Variable, g.Key.VariableDetail, "contradict",
-                    $"NG Total=0 인데 defect count 합={sumDefects} — 모순."));
+                issues.Add(new Issue(g.Key.Variable, variableDetail, "contradict",
+                    $"NG Total=0 but sum of defect counts={sumDefects} — contradiction."));
+            }
+        }
+
+        // Cross-check stored InputQty values against the human-pasted Excel ground
+        // truth (when available). If the AI extracted an Input value that does not
+        // appear verbatim in the source workbook, it likely misread the cell.
+        if (!string.IsNullOrWhiteSpace(excelPasteText))
+        {
+            // Commas in thousand separators ("3,600") would break a digit-run match —
+            // strip them before scanning.
+            string haystack = excelPasteText.Replace(",", "");
+
+            var seen = new HashSet<(string Variable, string Detail, int Input)>();
+            foreach (var r in rows)
+            {
+                if (r.InputQty < 10) continue;                 // too-small ≈ noise
+                if (r.DefectType == "__ALIGN_ERROR__") continue;
+
+                var key = (r.Variable ?? "", r.VariableDetail ?? "", r.InputQty);
+                if (!seen.Add(key)) continue;
+
+                if (!ContainsWholeNumber(haystack, r.InputQty))
+                {
+                    issues.Add(new Issue(
+                        r.Variable ?? "", r.VariableDetail ?? "",
+                        "excel-mismatch",
+                        $"InputQty={r.InputQty} not found in Excel paste — value may be mis-read."));
+                }
             }
         }
 
         return issues;
+    }
+
+    /// <summary>
+    /// True when the decimal representation of <paramref name="value"/> appears in
+    /// <paramref name="text"/> as a standalone number (no adjacent digit on either side).
+    /// Example: <c>ContainsWholeNumber("total 100", 100) = true</c>,
+    /// <c>ContainsWholeNumber("item 1000", 100) = false</c>.
+    /// </summary>
+    private static bool ContainsWholeNumber(string text, int value)
+    {
+        string needle = value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        int idx = 0;
+        while ((idx = text.IndexOf(needle, idx, StringComparison.Ordinal)) >= 0)
+        {
+            bool leftOk  = idx == 0                    || !char.IsDigit(text[idx - 1]);
+            bool rightOk = idx + needle.Length == text.Length
+                           || !char.IsDigit(text[idx + needle.Length]);
+            if (leftOk && rightOk) return true;
+            idx++;
+        }
+        return false;
     }
 
     private static bool IsCriterionLabel(string defectType)

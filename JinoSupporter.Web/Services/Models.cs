@@ -110,7 +110,8 @@ public sealed record RawReportInfo(
     int    ImageCount,
     int    MeasurementCount,
     string CreatedAt,
-    bool   BatchExcluded);
+    bool   BatchExcluded,
+    string BatchedAt = "");
 
 public sealed record ImprovementRow(
     string  DatasetName,
@@ -127,3 +128,62 @@ public sealed record ImprovementRow(
     int     NormalInputQty,
     int     TestInputQty,
     string  Intervention);
+
+public sealed class ModelGroupRecord
+{
+    public long                 Id           { get; set; }
+    public string               Name         { get; set; } = string.Empty;   // 대그룹 이름
+    public string               ProductGroup { get; set; } = "ETC";          // SPK / UNIT / MODULE / TWS / ETC
+    public int                  SortOrder    { get; set; }
+    public List<MidGroupRecord> MidGroups    { get; set; } = new();
+}
+
+public sealed class MidGroupRecord
+{
+    public string                Material  { get; set; } = string.Empty;   // 중그룹 (MAKTX)
+    public List<SubGroupRecord>  SubGroups { get; set; } = new();          // 세그룹 (recursive tree)
+
+    /// <summary>Flattened view across the entire sub-group subtree. Read-only shim so
+    /// existing report code (By Model / By Group) keeps working without caring about
+    /// sub-group structure.</summary>
+    public IReadOnlyList<string> LineShifts =>
+        SubGroups.SelectMany(s => s.AllLineShifts).ToList();
+}
+
+public sealed class SubGroupRecord
+{
+    public string               Name       { get; set; } = string.Empty;   // 비어 있으면 "기본" 버킷
+    public List<string>         LineShifts { get; set; } = new();
+    public List<SubGroupRecord> SubGroups  { get; set; } = new();          // 중첩 서브그룹 (재귀)
+
+    /// <summary>Depth-first flattening of LineShifts across this node and all descendants.</summary>
+    public IEnumerable<string> AllLineShifts =>
+        LineShifts.Concat(SubGroups.SelectMany(s => s.AllLineShifts));
+}
+
+public sealed class BmesMaterial
+{
+    public string Matnr      { get; set; } = string.Empty;
+    public string Maktx      { get; set; } = string.Empty;
+    public string Meins      { get; set; } = string.Empty;
+    public string Injtp      { get; set; } = string.Empty;
+    public string Mtype      { get; set; } = string.Empty;
+    public string Btype      { get; set; } = string.Empty;
+    public string MngCode    { get; set; } = string.Empty;
+    public string ModNameB   { get; set; } = string.Empty;
+    public string LotQt      { get; set; } = string.Empty;
+    public string Bunch      { get; set; } = string.Empty;
+    public string NgTar      { get; set; } = string.Empty;
+    public string McLv1Tx    { get; set; } = string.Empty;
+    public string McLv2Tx    { get; set; } = string.Empty;
+    public string McLv3Tx    { get; set; } = string.Empty;
+    public string McLv4Tx    { get; set; } = string.Empty;
+    public string McLv5Tx    { get; set; } = string.Empty;
+    public string McLv6Tx    { get; set; } = string.Empty;
+    public string Ernam      { get; set; } = string.Empty;
+    public string Erdat      { get; set; } = string.Empty;
+    public string Grcod      { get; set; } = string.Empty;
+    public string Grnam      { get; set; } = string.Empty;
+    public string MfPhi      { get; set; } = string.Empty;
+    public string FetchedAt  { get; set; } = string.Empty;
+}

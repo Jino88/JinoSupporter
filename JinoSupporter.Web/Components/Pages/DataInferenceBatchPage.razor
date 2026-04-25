@@ -15,19 +15,19 @@
     <span class="dib-count">@_unprocessed.Count pending · @_processed.Count done (out of @_reports.Count total)</span>
     <div style="flex:1;"></div>
 
-    <div class="btn-group btn-group-sm" role="group" title="분석 방식 선택">
+    <div class="btn-group btn-group-sm" role="group" title="Select analysis mode">
         <button type="button"
                 class="btn @(_mode == AnalysisMode.Vision ? "btn-primary" : "btn-outline-secondary")"
                 disabled="@_isBusy"
                 @onclick="() => _mode = AnalysisMode.Vision"
-                title="이미지를 Claude vision에 바로 전달 (1 API call)">
+                title="Send images directly to Claude vision (1 API call)">
             🖼 Vision
         </button>
         <button type="button"
                 class="btn @(_mode == AnalysisMode.OcrText ? "btn-primary" : "btn-outline-secondary")"
                 disabled="@_isBusy"
                 @onclick="() => _mode = AnalysisMode.OcrText"
-                title="이미지 → OCR 마크다운 → 텍스트 분석 (2 API call, 캐시됨: 재분석 시 1 call)">
+                title="Image → OCR markdown → text analysis (2 API calls, cached: 1 call on re-analysis)">
             📝 OCR→Text
         </button>
     </div>
@@ -37,6 +37,10 @@
             disabled="@(_isBusy || !Claude.IsConfigured || _selected.Count == 0)">
         @if (_isBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
         ▶ Analyze Selected (@_selected.Count)
+    </button>
+    <button class="btn btn-success btn-sm" @onclick="LaunchCliBatch"
+            title="Open terminal with Claude CLI — processes all pending datasets using the Claude Code subscription (no Anthropic API credit).">
+        🖥 Run via CLI
     </button>
 </div>
 
@@ -53,6 +57,11 @@
             @onclick="() => SetFilter(Filter.Done)">✅ Done (@_processed.Count)</button>
     <button class="dib-tab @(_filter == Filter.Issues ? "active" : "")"
             @onclick="() => SetFilter(Filter.Issues)">⚠ Issues (@_issueDatasets.Count)</button>
+    <button class="dib-tab @(_filter == Filter.NoOcr ? "active" : "")"
+            @onclick="() => SetFilter(Filter.NoOcr)"
+            title="Show only datasets without cached OCR text (images only). Run OCR→Text mode for batch OCR.">
+        📝 No OCR (@_noOcrDatasets.Count)
+    </button>
     <button class="dib-tab @(_filter == Filter.All ? "active" : "")"
             @onclick="() => SetFilter(Filter.All)">All (@_reports.Count)</button>
     <div style="flex:1;"></div>
@@ -67,6 +76,7 @@
     <div class="dib-empty">
         @if (_filter == Filter.Pending) { <text>No datasets awaiting AI analysis.</text> }
         else if (_filter == Filter.Done) { <text>No analyzed datasets yet.</text> }
+        else if (_filter == Filter.NoOcr) { <text>All datasets have cached OCR text.</text> }
         else { <text>No saved datasets — save one from Input Data first.</text> }
     </div>
 }
@@ -83,6 +93,7 @@ else
                     <th>Images</th>
                     <th>Measurements</th>
                     <th>Status</th>
+                    <th style="width:140px;">Batched At</th>
                     <th style="width:120px;">Progress</th>
                 </tr>
             </thead>
@@ -111,7 +122,7 @@ else
                                 {
                                     <a class="dib-badge dib-badge-warn ms-1 text-decoration-none"
                                        href="/data-inference/validation" target="_blank"
-                                       title="체크섬 불일치 @issueCount 건 — Validation 페이지 확인">
+                                       title="@issueCount checksum mismatch(es) — see Validation page">
                                         ⚠ @issueCount
                                     </a>
                                 }
@@ -123,6 +134,16 @@ else
                             else
                             {
                                 <span class="dib-badge dib-badge-pending">Pending</span>
+                            }
+                        </td>
+                        <td class="dib-batched-at">
+                            @if (isDone && !string.IsNullOrEmpty(r.BatchedAt))
+                            {
+                                <span title="@r.BatchedAt">@FormatBatchedAt(r.BatchedAt)</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
                             }
                         </td>
                         <td>
@@ -221,6 +242,7 @@ else
     .dib-badge-warn:hover { background: #fde68a; }
     .dib-badge-btn     { border: none; cursor: pointer; text-decoration: underline dotted; }
     .dib-badge-btn:hover { background: #fecaca; }
+    .dib-batched-at    { font-size: 11px; color: #64748b; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
     .dib-overlay {
         position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 9000;
@@ -255,7 +277,7 @@ else
 </style>
 
 @code {
-    private enum Filter { Pending, Done, Issues, All }
+    private enum Filter { Pending, Done, Issues, NoOcr, All }
     private enum AnalysisMode { Vision, OcrText }
 
     private AnalysisMode _mode = AnalysisMode.Vision;
@@ -264,6 +286,8 @@ else
     private List<RawReportInfo>        _unprocessed    = [];
     private List<RawReportInfo>        _processed      = [];
     private List<RawReportInfo>        _issueDatasets  = [];
+    private List<RawReportInfo>        _noOcrDatasets  = [];
+    private HashSet<string>            _ocrCached      = new(StringComparer.Ordinal);
     private Dictionary<string, int>    _issueCount     = new(StringComparer.Ordinal);
     private HashSet<string>            _selected       = new(StringComparer.Ordinal);
     private Dictionary<string, string> _runState       = [];
@@ -279,6 +303,7 @@ else
         Filter.Pending => _unprocessed,
         Filter.Done    => _processed,
         Filter.Issues  => _issueDatasets,
+        Filter.NoOcr   => _noOcrDatasets,
         _              => _reports,
     };
 
@@ -297,6 +322,11 @@ else
         _reports     = Repo.GetAllRawReports().Where(r => !r.BatchExcluded).ToList();
         _unprocessed = _reports.Where(r => r.MeasurementCount == 0).ToList();
         _processed   = _reports.Where(r => r.MeasurementCount > 0).ToList();
+
+        _ocrCached     = Repo.GetDatasetsWithExtractedText();
+        _noOcrDatasets = _reports
+            .Where(r => r.ImageCount > 0 && !_ocrCached.Contains(r.DatasetName))
+            .ToList();
 
         // Run checksum validator per done dataset
         _issueCount.Clear();
@@ -367,6 +397,12 @@ else
                     i.MediaType,
                     Convert.ToBase64String(i.Data))).ToList();
 
+                // Excel paste (human-verified ground truth from the source workbook).
+                // Used as an authoritative-values tiebreaker by both OCR Extract and
+                // Vision Normalize. Not a substitute for OCR — stored under a different
+                // kind so it doesn't short-circuit the OCR cache check above.
+                string? excelPaste = Repo.GetExtractedText(r.DatasetName, WebRepository.TextKindExcelPaste);
+
                 NormalizeResult result;
                 if (_mode == AnalysisMode.OcrText)
                 {
@@ -380,7 +416,8 @@ else
                     else
                     {
                         text = await Claude.ExtractStructuredTextAsync(
-                            imageArgs, r.DatasetName, r.ProductType, r.ReportDate);
+                            imageArgs, r.DatasetName, r.ProductType, r.ReportDate,
+                            rawExcelText: excelPaste);
                         Repo.SaveExtractedText(r.DatasetName, text);
                     }
                     result = await Claude.NormalizeFromTextAsync(
@@ -389,7 +426,8 @@ else
                 else
                 {
                     result = await Claude.NormalizeFromImagesAsync(
-                        imageArgs, r.DatasetName, r.ProductType, r.ReportDate);
+                        imageArgs, r.DatasetName, r.ProductType, r.ReportDate,
+                        rawText: excelPaste);
                 }
 
                 await Task.Run(() =>
@@ -430,6 +468,61 @@ else
         _status = msg; _statusError = err;
     }
 
+    private void LaunchCliBatch()
+    {
+        string workDir = FindRepoRoot();
+        string prompt  = "CLI_AI_BATCH.md 읽고 AI Batch 실행해";
+
+        // 1) Prefer Windows Terminal (wt.exe) — native UTF-8 + Korean font fallback.
+        // 2) Fallback to cmd.exe with chcp 65001 (Consolas/Lucida lacks full Hangul glyphs,
+        //    so tofu may still appear; user can switch cmd font to "맑은 고딕" or "D2Coding").
+        try
+        {
+            var wt = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName         = "wt.exe",
+                Arguments        = $"-d \"{workDir}\" cmd /k chcp 65001>nul && title AI Batch (Claude CLI) && claude \"{prompt}\"",
+                UseShellExecute  = true,
+                CreateNoWindow   = false,
+            };
+            System.Diagnostics.Process.Start(wt);
+            SetStatus($"Claude CLI terminal launched at {workDir}. Watch the new window; Refresh when done.", false);
+            return;
+        }
+        catch { /* wt.exe not installed — fall through */ }
+
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName         = "cmd.exe",
+                Arguments        = $"/k chcp 65001>nul && title AI Batch (Claude CLI) && claude \"{prompt}\"",
+                WorkingDirectory = workDir,
+                UseShellExecute  = true,
+                CreateNoWindow   = false,
+            };
+            System.Diagnostics.Process.Start(psi);
+            SetStatus($"Claude CLI terminal launched (cmd fallback) at {workDir}. If Hangul is garbled, change cmd font to 맑은 고딕 or D2Coding.", false);
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Failed to launch Claude CLI: {ex.Message}", true);
+        }
+    }
+
+    private static string FindRepoRoot()
+    {
+        string dir = AppContext.BaseDirectory;
+        for (int i = 0; i < 8; i++)
+        {
+            if (File.Exists(Path.Combine(dir, "CLI_AI_BATCH.md"))) return dir;
+            string? parent = Path.GetDirectoryName(dir.TrimEnd('\\', '/'));
+            if (string.IsNullOrEmpty(parent) || parent == dir) break;
+            dir = parent;
+        }
+        return AppContext.BaseDirectory;
+    }
+
     private void ShowError(string name)
     {
         string msg = _runError.GetValueOrDefault(name) ?? "(no error detail recorded)";
@@ -451,5 +544,13 @@ else
     public async ValueTask DisposeAsync()
     {
         try { await JS.InvokeVoidAsync("diFullPage.leave"); } catch { }
+    }
+
+    private static string FormatBatchedAt(string iso)
+    {
+        if (string.IsNullOrEmpty(iso)) return "";
+        if (DateTime.TryParse(iso, null, System.Globalization.DateTimeStyles.RoundtripKind, out DateTime dt))
+            return dt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+        return iso;
     }
 }

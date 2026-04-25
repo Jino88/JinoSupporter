@@ -1,0 +1,87 @@
+@using JinoSupporter.Web.Services
+
+@* Recursive sub-group renderer. A sub-group can contain LineShifts AND further
+   nested SubGroupNode components. The "default bucket" (Depth 0 && empty Name && only
+   sub-group in mid) is rendered header-less for backward-compatible look. *@
+
+<div class="sub-grp @(IsActive(Node) ? "sub-active" : "")"
+     style="margin-left: @(Depth * 10)px;"
+     @onclick="() => OnSelect.InvokeAsync(Node)"
+     @onclick:stopPropagation="true">
+    @if (!HideHeader)
+    {
+        <div class="sub-grp-head">
+            @if (IsActive(Node))
+            {
+                <span class="grp-active-dot" title="LineShifts go into this sub-group">●</span>
+            }
+            <span class="sub-badge">Sub</span>
+            <input class="sub-name-input"
+                   value="@Node.Name"
+                   @onchange="e => OnRename.InvokeAsync((Node, e.Value?.ToString() ?? string.Empty))"
+                   @onclick:stopPropagation="true"
+                   placeholder="Sub-group name" />
+            <span class="text-muted ms-1" style="font-size:10px;">@Node.TotalLineShifts</span>
+            <button class="btn btn-sm btn-outline-primary py-0 px-1 ms-auto"
+                    style="font-size:9px; line-height:1.2;"
+                    title="Add nested sub-group"
+                    @onclick="() => OnAddNested.InvokeAsync(Node)"
+                    @onclick:stopPropagation="true">+ Sub</button>
+            <button class="btn btn-sm btn-outline-danger py-0 px-1"
+                    style="font-size:9px; line-height:1.2;"
+                    title="Remove sub-group"
+                    @onclick="() => OnRemove.InvokeAsync(Node)"
+                    @onclick:stopPropagation="true">✕</button>
+        </div>
+    }
+    @if (Node.LineShifts.Count == 0 && Node.SubGroups.Count == 0)
+    {
+        <div class="text-muted small ps-3 py-1" style="font-size:10px;">(empty)</div>
+    }
+    @if (Node.LineShifts.Count > 0)
+    {
+        <ul class="grp-list">
+            @foreach (var ls in Node.LineShifts)
+            {
+                var lsCap = ls;
+                <li>
+                    <span>@lsCap</span>
+                    <button class="ls-remove"
+                            title="Remove"
+                            @onclick="() => OnRemoveLineShift.InvokeAsync((Node, lsCap))"
+                            @onclick:stopPropagation="true">✕</button>
+                </li>
+            }
+        </ul>
+    }
+    @if (Node.SubGroups.Count > 0)
+    {
+        <div class="sub-list">
+            @foreach (var child in Node.SubGroups)
+            {
+                <SubGroupNode Node="@child"
+                              Depth="@(Depth + 1)"
+                              HideHeader="false"
+                              IsActive="@IsActive"
+                              OnSelect="@OnSelect"
+                              OnAddNested="@OnAddNested"
+                              OnRemove="@OnRemove"
+                              OnRename="@OnRename"
+                              OnRemoveLineShift="@OnRemoveLineShift" />
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public BmesMakeModelGroupPage.SubGroupVm Node { get; set; } = default!;
+    [Parameter]                 public int  Depth      { get; set; } = 0;
+    [Parameter]                 public bool HideHeader { get; set; } = false;
+    [Parameter, EditorRequired] public Func<BmesMakeModelGroupPage.SubGroupVm, bool> IsActive { get; set; } = default!;
+
+    [Parameter] public EventCallback<BmesMakeModelGroupPage.SubGroupVm> OnSelect     { get; set; }
+    [Parameter] public EventCallback<BmesMakeModelGroupPage.SubGroupVm> OnAddNested  { get; set; }
+    [Parameter] public EventCallback<BmesMakeModelGroupPage.SubGroupVm> OnRemove     { get; set; }
+    [Parameter] public EventCallback<(BmesMakeModelGroupPage.SubGroupVm, string)>      OnRename          { get; set; }
+    [Parameter] public EventCallback<(BmesMakeModelGroupPage.SubGroupVm, string)>      OnRemoveLineShift { get; set; }
+}

@@ -110,8 +110,8 @@ public sealed class ClaudeUsageScraper
         catch (Exception ex)
         {
             throw new InvalidOperationException(
-                "Edge/Chrome/Chromium 모두 실행 실패. Windows Edge 는 보통 기본 설치되어 있습니다. " +
-                $"원인: {lastErr?.Message ?? ex.Message}", ex);
+                "Failed to launch Edge/Chrome/Chromium. Windows Edge is typically installed by default. " +
+                $"Cause: {lastErr?.Message ?? ex.Message}", ex);
         }
     }
 
@@ -194,17 +194,17 @@ public sealed class ClaudeUsageScraper
 
                 if (IsCloudflareChallenge(billingText))
                 {
-                    billingErr = "Cloudflare 봇 탐지에 막혔습니다. 브라우저 창에서 CAPTCHA 를 직접 확인한 뒤 다시 Refresh 해주세요.";
+                    billingErr = "Blocked by Cloudflare bot detection. Solve the CAPTCHA in the browser window, then click Refresh again.";
                 }
                 else if (LooksLikeAuthRedirect(finalUrl, BillingUrl))
                 {
-                    billingErr = $"로그인이 풀렸습니다 (리다이렉트: {finalUrl}). 다시 Login 해주세요.";
+                    billingErr = $"Session expired (redirected to: {finalUrl}). Please Login again.";
                 }
                 else
                 {
                     apiBalance = ExtractBalance(billingText);
                     if (string.IsNullOrEmpty(apiBalance))
-                        billingErr = "Balance 값을 찾지 못했습니다. 세션 만료이거나 DOM 구조가 달라졌을 수 있습니다. (아래 Raw snippet 확인)";
+                        billingErr = "Could not find the Balance value. Session may be expired or the DOM structure may have changed. (See Raw snippet below)";
                 }
             }
             catch (Exception ex) { billingErr = ex.Message; }
@@ -216,11 +216,11 @@ public sealed class ClaudeUsageScraper
 
                 if (IsCloudflareChallenge(usageText))
                 {
-                    usageErr = "Cloudflare 봇 탐지에 막혔습니다. 브라우저 창이 떠 있는 동안 CAPTCHA 체크박스를 직접 클릭하거나, Login 버튼으로 다시 접속해 수동 확인을 완료한 뒤 Refresh 해주세요.";
+                    usageErr = "Blocked by Cloudflare bot detection. While the browser window is open, click the CAPTCHA checkbox directly, or reconnect via the Login button and complete manual verification, then click Refresh.";
                 }
                 else if (LooksLikeAuthRedirect(finalUrl, UsageUrl))
                 {
-                    usageErr = $"claude.ai 로그인이 풀렸습니다 (리다이렉트: {finalUrl}). Login 버튼을 눌러 **두 번째 탭(claude.ai)** 에서도 로그인한 뒤 다시 Refresh 해주세요.";
+                    usageErr = $"claude.ai session expired (redirected to: {finalUrl}). Click Login and sign in on the **second tab (claude.ai)** as well, then click Refresh again.";
                 }
                 else
                 {
@@ -240,7 +240,7 @@ public sealed class ClaudeUsageScraper
                                         string.IsNullOrEmpty(extraUsage)   &&
                                         string.IsNullOrEmpty(extraBalance);
                     if (nothingFound)
-                        usageErr = "usage 페이지에서 라벨(현재 세션/모든 모델/Sonnet만/잔액 등) 근처 값을 찾지 못했습니다. 세션 만료이거나 페이지 구조가 바뀌었을 수 있습니다. (Raw snippet 확인)";
+                        usageErr = "Could not find values near the labels (current session / all models / Sonnet only / balance, etc.) on the usage page. Session may be expired or the page structure may have changed. (See Raw snippet)";
                 }
             }
             catch (Exception ex) { usageErr = ex.Message; }

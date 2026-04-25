@@ -1,29 +1,25 @@
 using Microsoft.Data.Sqlite;
+using System.Text.RegularExpressions;
 
 namespace JinoSupporter.Web.Services;
 
 /// <summary>
 /// NG Rate settings DB service.
-/// Settings file: D:\000. MyWorks\000. 일일업무\04. DB\01. NGRATE\ModelBmes\ngrate_settings.db
+/// Settings file location is now configurable via <see cref="AppPathsService"/>
+/// (see Admin → Paths). Defaults: %LOCALAPPDATA%\…\NGRATE\ModelBmes\ngrate_settings.db.
 /// </summary>
 public sealed class NgRateSettingsService
 {
-    // ── Defaults ────────────────────────────────────────────────────────────────
-    public static readonly string DefaultDbSaveDirectory =
-        @"D:\000. MyWorks\000. 일일업무\04. DB\01. NGRATE";
+    private readonly AppPathsService _appPaths;
 
-    public static readonly string DefaultRoutingFilePath =
-        @"D:\000. MyWorks\000. 일일업무\04. DB\01. NGRATE\Routing.txt";
-
-    public static readonly string DefaultReasonFilePath =
-        @"D:\000. MyWorks\000. 일일업무\04. DB\01. NGRATE\reason.txt";
+    // ── Defaults (sourced from AppPathsService → webapp-paths.json) ─────────────
+    public string DefaultDbSaveDirectory     => _appPaths.Current.NgRateDbSaveDirectory;
+    public string DefaultRoutingFilePath     => _appPaths.Current.NgRateRoutingFilePath;
+    public string DefaultReasonFilePath      => _appPaths.Current.NgRateReasonFilePath;
 
     // ── Settings DB location ─────────────────────────────────────────────────────
-    public static readonly string SettingsDbDirectory =
-        @"D:\000. MyWorks\000. 일일업무\04. DB\01. NGRATE\ModelBmes";
-
-    public static readonly string SettingsDbPath =
-        Path.Combine(SettingsDbDirectory, "ngrate_settings.db");
+    public string SettingsDbDirectory => _appPaths.Current.NgRateSettingsDbDirectory;
+    public string SettingsDbPath      => Path.Combine(SettingsDbDirectory, "ngrate_settings.db");
 
     // ── Setting keys ─────────────────────────────────────────────────────────────
     public const string KeyDbSaveDirectory  = "NgRate:DbSaveDirectory";
@@ -36,8 +32,9 @@ public sealed class NgRateSettingsService
     public const string KeyRwtPassword      = "Rwt:Password";
 
     // ── Constructor ──────────────────────────────────────────────────────────────
-    public NgRateSettingsService()
+    public NgRateSettingsService(AppPathsService appPaths)
     {
+        _appPaths = appPaths;
         EnsureDatabase();
     }
 
@@ -120,7 +117,7 @@ public sealed class NgRateSettingsService
 
     // ── Private ──────────────────────────────────────────────────────────────────
 
-    private static SqliteConnection Open()
+    private SqliteConnection Open()
     {
         var conn = new SqliteConnection($"Data Source={SettingsDbPath}");
         conn.Open();
@@ -249,6 +246,312 @@ public sealed class NgRateSettingsService
         cmd.ExecuteNonQuery();
     }
 
+    /// <summary>
+    /// Reads the standalone BMES routing dump (bmes_routing_raw.db) produced by
+    /// BmesRoutingScrapeService and inserts rows missing from RoutingTable.
+    /// Mapping:
+    ///   MAKTX    → ModelName
+    ///   VLSCH    → ProcessCode
+    ///   VLSCH_TX → ProcessName
+    ///   LGUBN_TX → ProcessType (Main Assy→MAIN, Sub Assy→SUB,
+    ///                           Final Visual→VISUAL, Function→FUNCTION,
+    ///                           others: raw value)
+    /// Model/Code/Name are NormalizeText-ed on both sides before comparison
+    /// (and on insert), matching the normalization applied downstream in
+    /// Get Data's temp DB.
+    /// </summary>
+    public int MergeRoutingFromRawDb(string rawDbPath, IProgress<string>? progress = null)
+    {
+        if (!File.Exists(rawDbPath))
+        {
+            progress?.Report($"[WARN] Raw routing DB not found: {rawDbPath}");
+            return 0;
+        }
+
+        var rawDedup = new Dictionary<(string Model, string Code, string Name), string>();
+        int rawTotal = 0;
+        try
+        {
+            var cs = new SqliteConnectionStringBuilder
+            {
+                DataSource = rawDbPath,
+                Mode       = SqliteOpenMode.ReadOnly,
+            }.ToString();
+            using var conn = new SqliteConnection(cs);
+            conn.Open();
+
+            using (var check = conn.CreateCommand())
+            {
+                check.CommandText =
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='BmesRouting';";
+                if (Convert.ToInt64(check.ExecuteScalar() ?? 0L) == 0)
+                {
+                    progress?.Report("[WARN] BmesRouting table not found in raw DB.");
+                    return 0;
+                }
+            }
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT MAKTX, VLSCH, VLSCH_TX, LGUBN_TX FROM BmesRouting;";
+            using var rdr = cmd.ExecuteReader();
+            while (rdr.Read())
+            {
+                rawTotal++;
+                string model = NormalizeText(rdr.IsDBNull(0) ? string.Empty : rdr.GetString(0));
+                string code  = NormalizeText(rdr.IsDBNull(1) ? string.Empty : rdr.GetString(1));
+                string name  = NormalizeText(rdr.IsDBNull(2) ? string.Empty : rdr.GetString(2));
+                string lgTx  = rdr.IsDBNull(3) ? string.Empty : rdr.GetString(3).Trim();
+                if (model.Length == 0 || code.Length == 0 || name.Length == 0) continue;
+                rawDedup.TryAdd((model, code, name), MapProcessType(lgTx));
+            }
+        }
+        catch (Exception ex)
+        {
+            progress?.Report($"[ERROR] Read raw DB failed: {ex.Message}");
+            return 0;
+        }
+
+        progress?.Report($"Raw: {rawTotal:N0} rows → {rawDedup.Count:N0} unique (Model, Code, Name) tuples.");
+
+        var existing = GetRoutingRows()
+            .Select(r => (
+                Model: NormalizeText(r.ModelName),
+                Code:  NormalizeText(r.ProcessCode),
+                Name:  NormalizeText(r.ProcessName)))
+            .ToHashSet();
+
+        var missing = rawDedup.Where(kv => !existing.Contains(kv.Key)).ToList();
+        if (missing.Count == 0)
+        {
+            progress?.Report("No new routing rows to add.");
+            return 0;
+        }
+
+        using var wconn = Open();
+        using var tx    = wconn.BeginTransaction();
+        foreach (var kv in missing)
+        {
+            var (model, code, name) = kv.Key;
+            using var ins = wconn.CreateCommand();
+            ins.CommandText =
+                "INSERT INTO RoutingTable (ModelName, ProcessCode, ProcessName, ProcessType) " +
+                "VALUES (@m, @pc, @pn, @pt);";
+            ins.Parameters.AddWithValue("@m",  model);
+            ins.Parameters.AddWithValue("@pc", code);
+            ins.Parameters.AddWithValue("@pn", name);
+            ins.Parameters.AddWithValue("@pt", kv.Value);
+            ins.ExecuteNonQuery();
+        }
+        tx.Commit();
+
+        progress?.Report($"Added {missing.Count:N0} new row(s) to RoutingTable.");
+        return missing.Count;
+    }
+
+    private static string MapProcessType(string lgubnTx) => lgubnTx.Trim() switch
+    {
+        "Main Assy"    => "MAIN",
+        "Sub Assy"     => "SUB",
+        "Final Visual" => "VISUAL",
+        "Function"     => "FUNCTION",
+        _              => lgubnTx.Trim(),
+    };
+
+    /// <summary>
+    /// Scans all *.db files in DbSaveDirectory (top-level + "daily" subfolder),
+    /// unions DISTINCT (PROCESSNAME, NGNAME) pairs from each OrginalTable,
+    /// applies NormalizeText to both columns, then inserts any pair not already
+    /// present in ReasonTable (comparison is normalized on both sides).
+    /// Returns the number of newly inserted rows.
+    /// </summary>
+    public int RefreshReasonFromDailyDbs(IProgress<string>? progress = null)
+    {
+        var dailyPairs = new HashSet<(string Pn, string Ng)>();
+        var files      = EnumerateDbFilesForScan();
+
+        progress?.Report($"Scanning {files.Count} DB file(s)…");
+        int scanned = 0;
+        foreach (var file in files)
+        {
+            scanned++;
+            try
+            {
+                var cs = new SqliteConnectionStringBuilder
+                {
+                    DataSource = file,
+                    Mode       = SqliteOpenMode.ReadOnly,
+                }.ToString();
+
+                using var conn = new SqliteConnection(cs);
+                conn.Open();
+
+                using (var check = conn.CreateCommand())
+                {
+                    check.CommandText =
+                        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='OrginalTable';";
+                    if (Convert.ToInt64(check.ExecuteScalar() ?? 0L) == 0) continue;
+                }
+
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText =
+                    "SELECT DISTINCT [PROCESSNAME], [NGNAME] FROM [OrginalTable] " +
+                    "WHERE [PROCESSNAME] IS NOT NULL AND [NGNAME] IS NOT NULL;";
+                using var rdr = cmd.ExecuteReader();
+                while (rdr.Read())
+                {
+                    string pn = NormalizeText(rdr.IsDBNull(0) ? string.Empty : rdr.GetString(0));
+                    string ng = NormalizeText(rdr.IsDBNull(1) ? string.Empty : rdr.GetString(1));
+                    if (pn.Length == 0 && ng.Length == 0) continue;
+                    dailyPairs.Add((pn, ng));
+                }
+            }
+            catch (Exception ex)
+            {
+                progress?.Report($"[WARN] {Path.GetFileName(file)}: {ex.Message}");
+            }
+        }
+
+        progress?.Report($"Collected {dailyPairs.Count} distinct pair(s) from {scanned} DB file(s).");
+
+        var existing = GetReasonRows()
+            .Select(r => (Pn: NormalizeText(r.ProcessName), Ng: NormalizeText(r.NgName)))
+            .ToHashSet();
+
+        var missing = dailyPairs.Where(p => !existing.Contains(p)).ToList();
+        if (missing.Count == 0)
+        {
+            progress?.Report("No new pairs to add.");
+            return 0;
+        }
+
+        using var wconn = Open();
+        using var tx    = wconn.BeginTransaction();
+        foreach (var (pn, ng) in missing)
+        {
+            using var ins = wconn.CreateCommand();
+            ins.CommandText = "INSERT INTO ReasonTable (ProcessName,NgName,Reason) VALUES (@pn,@ng,'');";
+            ins.Parameters.AddWithValue("@pn", pn);
+            ins.Parameters.AddWithValue("@ng", ng);
+            ins.ExecuteNonQuery();
+        }
+        tx.Commit();
+
+        progress?.Report($"Added {missing.Count} new row(s) to ReasonTable.");
+        return missing.Count;
+    }
+
+    /// <summary>
+    /// Scans all daily *.db files for DISTINCT (PROCESSNAME, NGNAME) pairs whose
+    /// [MATERIALNAME] contains <paramref name="materialNamePattern"/> (case-insensitive,
+    /// SQLite LIKE). Used by the Reason Table page to discover which reasons are still
+    /// missing for a given model.
+    /// </summary>
+    public List<(string ProcessName, string NgName)> GetProcessNgPairsByMaterial(
+        string materialNamePattern, IProgress<string>? progress = null)
+    {
+        var pairs = new HashSet<(string Pn, string Ng)>();
+        if (string.IsNullOrWhiteSpace(materialNamePattern)) return pairs.ToList();
+
+        var files = EnumerateDbFilesForScan();
+        progress?.Report($"Scanning {files.Count} DB file(s) for material LIKE '{materialNamePattern}'…");
+
+        string pattern = "%" + materialNamePattern.Trim() + "%";
+        int scanned = 0;
+        foreach (var file in files)
+        {
+            scanned++;
+            try
+            {
+                var cs = new SqliteConnectionStringBuilder
+                {
+                    DataSource = file,
+                    Mode       = SqliteOpenMode.ReadOnly,
+                }.ToString();
+
+                using var conn = new SqliteConnection(cs);
+                conn.Open();
+
+                using (var check = conn.CreateCommand())
+                {
+                    check.CommandText =
+                        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='OrginalTable';";
+                    if (Convert.ToInt64(check.ExecuteScalar() ?? 0L) == 0) continue;
+                }
+
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText =
+                    "SELECT DISTINCT [PROCESSNAME], [NGNAME] FROM [OrginalTable] " +
+                    "WHERE [PROCESSNAME] IS NOT NULL AND [NGNAME] IS NOT NULL " +
+                    "AND [MATERIALNAME] IS NOT NULL " +
+                    "AND [MATERIALNAME] LIKE @mn COLLATE NOCASE;";
+                cmd.Parameters.AddWithValue("@mn", pattern);
+                using var rdr = cmd.ExecuteReader();
+                while (rdr.Read())
+                {
+                    string pn = NormalizeText(rdr.IsDBNull(0) ? string.Empty : rdr.GetString(0));
+                    string ng = NormalizeText(rdr.IsDBNull(1) ? string.Empty : rdr.GetString(1));
+                    if (pn.Length == 0 && ng.Length == 0) continue;
+                    pairs.Add((pn, ng));
+                }
+            }
+            catch (Exception ex)
+            {
+                progress?.Report($"[WARN] {Path.GetFileName(file)}: {ex.Message}");
+            }
+        }
+
+        progress?.Report($"Found {pairs.Count} distinct pair(s) across {scanned} DB file(s).");
+        return pairs
+            .OrderBy(p => p.Pn, StringComparer.Ordinal)
+            .ThenBy(p => p.Ng, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Collect *.db files from DbSaveDirectory top-level + "daily" subfolder,
+    /// excluding ngrate_settings.db.
+    /// </summary>
+    private List<string> EnumerateDbFilesForScan()
+    {
+        var dbDir = DbSaveDirectory;
+        var files = new List<string>();
+
+        if (Directory.Exists(dbDir))
+        {
+            files.AddRange(
+                Directory.EnumerateFiles(dbDir, "*.db", SearchOption.TopDirectoryOnly)
+                         .Where(f => !string.Equals(
+                             Path.GetFileName(f), "ngrate_settings.db",
+                             StringComparison.OrdinalIgnoreCase)));
+        }
+        var dailyDir = Path.Combine(dbDir, "daily");
+        if (Directory.Exists(dailyDir))
+        {
+            files.AddRange(
+                Directory.EnumerateFiles(dailyDir, "*.db", SearchOption.TopDirectoryOnly)
+                         .Where(f => !string.Equals(
+                             Path.GetFileName(f), "ngrate_settings.db",
+                             StringComparison.OrdinalIgnoreCase)));
+        }
+        return files;
+    }
+
+    /// <summary>
+    /// Same logic as NgRateService.NormalizeText — duplicated here to avoid a
+    /// circular dependency (NgRateService already depends on this class).
+    /// </summary>
+    private static string NormalizeText(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+        input = input.Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ");
+        input = input.Replace("‘", "'").Replace("’", "'")
+                     .Replace("“", "\"").Replace("”", "\"");
+        input = input.Replace("'", " ").Replace("\"", " ").Replace("~", " ");
+        input = input.Replace("[", "").Replace("]", "_").Replace("+", " ");
+        input = Regex.Replace(input, @"\s{2,}", " ");
+        return input.Trim();
+    }
+
     public int ImportReasonFromFile(string filePath)
     {
         if (!File.Exists(filePath)) return 0;
@@ -373,9 +676,105 @@ public sealed class NgRateSettingsService
         return result.OrderBy(x => x).ToList();
     }
 
+    /// <summary>
+    /// Returns distinct LineShift values from OrginalTable rows whose MATERIALNAME
+    /// matches the given value. Scans the same set of *.db files as GetAllLineShifts.
+    /// </summary>
+    public List<string> GetLineShiftsByMaterialName(string materialName)
+    {
+        var result = new HashSet<string>(StringComparer.Ordinal);
+        if (string.IsNullOrWhiteSpace(materialName)) return new List<string>();
+
+        var dbDir = DbSaveDirectory;
+        var files = new List<string>();
+        if (Directory.Exists(dbDir))
+        {
+            files.AddRange(
+                Directory.EnumerateFiles(dbDir, "*.db", SearchOption.TopDirectoryOnly)
+                         .Where(f => !string.Equals(
+                             Path.GetFileName(f), "ngrate_settings.db",
+                             StringComparison.OrdinalIgnoreCase)));
+        }
+        var dailyDir = Path.Combine(dbDir, "daily");
+        if (Directory.Exists(dailyDir))
+        {
+            files.AddRange(
+                Directory.EnumerateFiles(dailyDir, "*.db", SearchOption.TopDirectoryOnly)
+                         .Where(f => !string.Equals(
+                             Path.GetFileName(f), "ngrate_settings.db",
+                             StringComparison.OrdinalIgnoreCase)));
+        }
+
+        foreach (var file in files)
+        {
+            try
+            {
+                var cs = new SqliteConnectionStringBuilder
+                {
+                    DataSource = file,
+                    Mode       = SqliteOpenMode.ReadOnly,
+                }.ToString();
+
+                using var conn = new SqliteConnection(cs);
+                conn.Open();
+
+                using var checkCmd = conn.CreateCommand();
+                checkCmd.CommandText =
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='OrginalTable';";
+                var tableCount = Convert.ToInt64(checkCmd.ExecuteScalar() ?? 0L);
+                if (tableCount == 0) continue;
+
+                bool hasLineShift = false;
+                using (var pragmaCmd = conn.CreateCommand())
+                {
+                    pragmaCmd.CommandText = "PRAGMA table_info([OrginalTable]);";
+                    using var rdr = pragmaCmd.ExecuteReader();
+                    while (rdr.Read())
+                    {
+                        if (string.Equals(rdr.GetString(1), "LineShift", StringComparison.Ordinal))
+                        {
+                            hasLineShift = true;
+                            break;
+                        }
+                    }
+                }
+
+                using var selCmd = conn.CreateCommand();
+                if (hasLineShift)
+                {
+                    selCmd.CommandText =
+                        "SELECT DISTINCT [LineShift] FROM [OrginalTable] " +
+                        "WHERE [MATERIALNAME] = @mn " +
+                        "AND [LineShift] IS NOT NULL AND [LineShift] != '';";
+                }
+                else
+                {
+                    selCmd.CommandText =
+                        "SELECT DISTINCT ([MATERIALNAME] || '_' || [PRODUCTION_LINE]) FROM [OrginalTable] " +
+                        "WHERE [MATERIALNAME] = @mn " +
+                        "AND [MATERIALNAME] IS NOT NULL AND [MATERIALNAME] != '';";
+                }
+                selCmd.Parameters.AddWithValue("@mn", materialName);
+
+                using var selRdr = selCmd.ExecuteReader();
+                while (selRdr.Read())
+                {
+                    if (!selRdr.IsDBNull(0))
+                    {
+                        var val = selRdr.GetString(0);
+                        if (!string.IsNullOrEmpty(val)) result.Add(val);
+                    }
+                }
+            }
+            catch { }
+        }
+
+        return result.OrderBy(x => x).ToList();
+    }
+
     // ── Private ──────────────────────────────────────────────────────────────────
 
-    private static void EnsureDatabase()
+    private void EnsureDatabase()
     {
         Directory.CreateDirectory(SettingsDbDirectory);
         using var conn = new SqliteConnection($"Data Source={SettingsDbPath}");
@@ -421,12 +820,13 @@ public sealed class ReasonRow
     public string Reason      { get; set; } = "";
 }
 
-/// <summary>Mutable snapshot used for UI binding.</summary>
+/// <summary>Mutable snapshot used for UI binding. Path defaults are filled in by
+/// <see cref="NgRateSettingsService.GetSnapshot"/> (sourced from AppPathsService).</summary>
 public sealed class NgRateSettingsSnapshot
 {
-    public string DbSaveDirectory { get; set; } = NgRateSettingsService.DefaultDbSaveDirectory;
-    public string RoutingFilePath { get; set; } = NgRateSettingsService.DefaultRoutingFilePath;
-    public string ReasonFilePath  { get; set; } = NgRateSettingsService.DefaultReasonFilePath;
+    public string DbSaveDirectory { get; set; } = string.Empty;
+    public string RoutingFilePath { get; set; } = string.Empty;
+    public string ReasonFilePath  { get; set; } = string.Empty;
     public string LoginId         { get; set; } = string.Empty;
     public string Password        { get; set; } = string.Empty;
     public string RwtLoginId      { get; set; } = string.Empty;

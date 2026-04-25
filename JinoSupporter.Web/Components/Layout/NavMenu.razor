@@ -23,14 +23,15 @@
 
         bool showBmes =
             can(AppMenus.NgRate) || can(AppMenus.BmesWorkerStatus) ||
-            can(AppMenus.BmesMakeModel) || can(AppMenus.BmesSetting);
+            can(AppMenus.BmesMakeModelGroup) ||
+            can(AppMenus.BmesSetting);
 
         bool showDi =
             can(AppMenus.DiInput) || can(AppMenus.DiDb) || can(AppMenus.DiBatch) ||
             can(AppMenus.DiAnalysis) || can(AppMenus.DiValidation) ||
             can(AppMenus.DiAsk) || can(AppMenus.Report);
 
-        bool showAdmin = can(AppMenus.AdminUsers) || can(AppMenus.AdminSettings) || can(AppMenus.AdminAiUsages);
+        bool showAdmin = can(AppMenus.AdminUsers) || can(AppMenus.AdminSettings) || can(AppMenus.AdminAiUsages) || can(AppMenus.AdminPaths);
         bool showTools = can(AppMenus.Schedule) || can(AppMenus.Translate) || showDi;
     }
 
@@ -64,11 +65,11 @@
                         </NavLink>
                     </div>
                 }
-                @if (can(AppMenus.BmesMakeModel))
+                @if (can(AppMenus.BmesMakeModelGroup))
                 {
                     <div class="nav-item">
-                        <NavLink class="nav-link nav-sublink" href="bmes/make-model">
-                            <span class="nav-icon" style="font-size:11px;">📦</span> Make Model Data
+                        <NavLink class="nav-link nav-sublink" href="bmes/make-model-group">
+                            <span class="nav-icon" style="font-size:11px;">🗂️</span> Make ModelGroup Data
                         </NavLink>
                     </div>
                 }
@@ -204,6 +205,14 @@
             <div class="nav-item">
                 <NavLink class="nav-link" href="admin/ai-usages">
                     <span class="nav-icon">💳</span> AI Usages
+                </NavLink>
+            </div>
+        }
+        @if (can(AppMenus.AdminPaths))
+        {
+            <div class="nav-item">
+                <NavLink class="nav-link" href="admin/paths">
+                    <span class="nav-icon">📁</span> App Paths
                 </NavLink>
             </div>
         }

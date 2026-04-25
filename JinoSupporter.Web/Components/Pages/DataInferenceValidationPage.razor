@@ -25,13 +25,13 @@
     </button>
     <button class="btn btn-warning btn-sm" @onclick="ReanalyzeAllFlaggedAsync"
             disabled="@(_isBusy || _flagged.Count == 0 || !Claude.IsConfigured)"
-            title="flagged dataset 전부를 Claude API로 다시 분석">
+            title="Re-analyze all flagged datasets via the Claude API">
         @if (_isBusy && _reanalyzing.Count > 0)
         { <span class="spinner-border spinner-border-sm me-1"></span> }
-        🔄 전체 재분석 (@_flagged.Count)
+        🔄 Re-analyze All (@_flagged.Count)
     </button>
     <a class="btn btn-outline-primary btn-sm" href="/data-inference/export-all"
-       target="_blank" title="Issue 있는 dataset 전부를 ZIP 하나로 내려받기"
+       target="_blank" title="Download all datasets with issues as a single ZIP"
        style="pointer-events:@(_flagged.Count == 0 ? "none" : "auto");
               opacity:@(_flagged.Count == 0 ? "0.5" : "1");">
         📦 Export All Flagged (@_flagged.Count)
@@ -103,25 +103,25 @@ else
                         <td @onclick:stopPropagation="true" style="white-space:nowrap;">
                             <button class="btn btn-outline-warning btn-sm py-0 px-2 me-1"
                                     style="font-size:11px;"
-                                    title="Claude API로 이 dataset 이미지를 다시 분석 (OCR 캐시 있으면 text-only 사용)"
+                                    title="Re-analyze this dataset's images via Claude API (uses text-only when OCR cache exists)"
                                     disabled="@(_isBusy || _reanalyzing.Contains(r.DatasetName) || !Claude.IsConfigured)"
                                     @onclick="() => ReanalyzeAsync(r.DatasetName, r.ProductType, r.ReportDate)">
                                 @if (_reanalyzing.Contains(r.DatasetName))
                                 { <span class="spinner-border spinner-border-sm me-1"></span><text>…</text> }
-                                else { <text>🔄 재분석</text> }
+                                else { <text>🔄 Re-analyze</text> }
                             </button>
                             @{
                                 bool hasOcr = _ocrCached.Contains(r.DatasetName);
                             }
                             <button class="btn btn-sm py-0 px-2 me-1 @(hasOcr ? "btn-info" : "btn-outline-secondary")"
                                     style="font-size:11px;"
-                                    title="@(hasOcr ? "OCR 캐시 있음 — 보기/편집 (text-only 재분석 가능)" : "OCR 미수집 — 클릭해서 추출 가능")"
+                                    title="@(hasOcr ? "OCR cached — view/edit (text-only re-analysis available)" : "No OCR yet — click to extract")"
                                     @onclick="() => OpenOcrEditor(r.DatasetName, r.ProductType, r.ReportDate)">
                                 @(hasOcr ? "📑 OCR✓" : "📝 OCR")
                             </button>
                             <a class="btn btn-outline-success btn-sm py-0 px-2 me-1"
                                style="font-size:11px;"
-                               title="이미지 + 측정값 + 이슈 + 파일 묶어서 ZIP 다운로드"
+                               title="Download a ZIP with images + measurements + issues + files"
                                href="/data-inference/export/@Uri.EscapeDataString(r.DatasetName)"
                                target="_blank">📦 Export</a>
                             <a class="btn btn-outline-primary btn-sm py-0 px-2"
@@ -180,12 +180,15 @@ else
                         @* Measurements *@
                         @if (_expandedMeasurements.Count > 0)
                         {
+                            var issueKeys = new HashSet<(string, string)>(
+                                issues.Select(i => (i.Variable ?? "", i.VariableDetail ?? "")));
                             <tr class="div-detail-row">
                                 <td colspan="7" style="padding:0;">
                                     <div style="max-height:280px; overflow:auto; padding:8px 16px; background:#fff;">
                                         <table class="div-sub">
                                             <thead>
                                                 <tr>
+                                                    <th></th>
                                                     <th>Variable</th><th>Group</th><th>Line</th><th>CheckType</th>
                                                     <th>Input</th><th>NG</th><th>NG%</th>
                                                     <th>Defect Type</th><th>Category</th><th>Count</th><th>Intervention</th>
@@ -194,8 +197,11 @@ else
                                             <tbody>
                                                 @foreach (var m in _expandedMeasurements)
                                                 {
-                                                    bool isAlign = m.DefectType == "__ALIGN_ERROR__";
-                                                    <tr class="@(isAlign ? "div-row-align" : "")">
+                                                    bool isAlign  = m.DefectType == "__ALIGN_ERROR__";
+                                                    bool isIssue  = issueKeys.Contains((m.Variable ?? "", m.VariableDetail ?? ""));
+                                                    string rowCls = isAlign ? "div-row-align" : (isIssue ? "div-row-issue" : "");
+                                                    <tr class="@rowCls">
+                                                        <td class="div-row-mark">@(isIssue || isAlign ? "⚠" : "")</td>
                                                         <td>@m.Variable</td>
                                                         <td>@m.VariableGroup</td>
                                                         <td>@m.Line</td>
@@ -320,6 +326,9 @@ else
     .div-sub th, .div-sub td { border:1px solid #e2e8f0; padding:3px 7px; white-space:nowrap; }
     .div-sub th { background:#f8fafc; font-weight:600; color:#64748b; }
     .div-row-align { background:#fef2f2; color:#b91c1c; font-weight:600; }
+    .div-row-issue { background:#fee2e2; color:#991b1b; }
+    .div-row-issue td { border-color:#fca5a5 !important; }
+    .div-row-mark  { color:#dc2626; font-weight:700; text-align:center; width:22px; }
 
     .div-viewer-overlay {
         position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:9999;
@@ -387,8 +396,9 @@ else
                 foreach (var r in _reports)
                 {
                     if (r.MeasurementCount == 0) continue;
-                    var rows = Repo.GetNormalizedMeasurements(r.DatasetName);
-                    var issues = MeasurementValidator.FindIssues(rows);
+                    var rows       = Repo.GetNormalizedMeasurements(r.DatasetName);
+                    string? excel  = Repo.GetExtractedText(r.DatasetName, WebRepository.TextKindExcelPaste);
+                    var issues     = MeasurementValidator.FindIssues(rows, excel);
                     if (issues.Count > 0)
                         map[r.DatasetName] = issues;
                 }
@@ -480,7 +490,8 @@ else
                 (i.MediaType, Convert.ToBase64String(i.Data))).ToList();
 
             // Prefer cached OCR text if available — much cheaper + deterministic.
-            string? cached = Repo.GetExtractedText(datasetName);
+            string? cached     = Repo.GetExtractedText(datasetName);
+            string? excelPaste = Repo.GetExtractedText(datasetName, WebRepository.TextKindExcelPaste);
             NormalizeResult result;
             if (!string.IsNullOrWhiteSpace(cached))
             {
@@ -490,7 +501,8 @@ else
             else
             {
                 result = await Claude.NormalizeFromImagesAsync(
-                    imageArgs, datasetName, productType, reportDate);
+                    imageArgs, datasetName, productType, reportDate,
+                    rawText: excelPaste);
             }
 
             await Task.Run(() =>
@@ -507,7 +519,7 @@ else
                         result.Decision, result.RecommendedAction);
             });
 
-            _reanalyzeStatus = $"✓ {datasetName} — 재분석 완료 ({result.Measurements.Count} rows)";
+            _reanalyzeStatus = $"✓ {datasetName} — Re-analysis complete ({result.Measurements.Count} rows)";
             ok = true;
         }
         catch (Exception ex)
@@ -544,7 +556,7 @@ else
                 if (ok) okCount++; else errCount++;
             }
 
-            _reanalyzeStatus = $"전체 재분석 완료 — {okCount} success / {errCount} failed";
+            _reanalyzeStatus = $"Re-analyze All complete — {okCount} success / {errCount} failed";
             _reanalyzeError  = errCount > 0;
         }
         finally { _isBusy = false; }

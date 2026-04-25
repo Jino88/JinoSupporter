@@ -52,7 +52,7 @@
                 <button class="btn btn-outline-secondary btn-sm"
                         @onclick="ExtractFromImagesAsync"
                         disabled="@_isBusy"
-                        title="Vision OCR 호출해서 이미지를 마크다운으로 추출 (캐시 덮어씀)">
+                        title="Run Vision OCR to extract images into markdown (overwrites cache)">
                     📷 Extract from images
                 </button>
                 <button class="btn btn-outline-primary btn-sm"
@@ -140,7 +140,7 @@
     {
         if (DatasetName is null) return;
         _isBusy = true;
-        _busyMessage = "Claude vision으로 OCR 실행 중…";
+        _busyMessage = "Running OCR with Claude vision…";
         _status = ""; _statusError = false;
         StateHasChanged();
         try
@@ -157,12 +157,12 @@
             Repo.SaveExtractedText(DatasetName, text);
             _buffer  = text;
             _hasCache = true;
-            _status  = "✓ OCR 완료 — 텍스트가 캐시에 저장됨";
+            _status  = "✓ OCR complete — text saved to cache";
         }
         catch (Exception ex)
         {
             _statusError = true;
-            _status = $"OCR 실패: {ex.Message}";
+            _status = $"OCR failed: {ex.Message}";
         }
         finally { _isBusy = false; }
     }
@@ -174,13 +174,13 @@
         {
             Repo.SaveExtractedText(DatasetName, _buffer ?? "");
             _hasCache = true;
-            _status = "✓ 저장 완료";
+            _status = "✓ Saved";
             _statusError = false;
         }
         catch (Exception ex)
         {
             _statusError = true;
-            _status = $"저장 실패: {ex.Message}";
+            _status = $"Save failed: {ex.Message}";
         }
         await Task.CompletedTask;
     }
@@ -189,7 +189,7 @@
     {
         if (DatasetName is null || string.IsNullOrWhiteSpace(_buffer)) return;
         _isBusy = true;
-        _busyMessage = "텍스트 기반 재분석 중…";
+        _busyMessage = "Re-analyzing from text…";
         _status = ""; _statusError = false;
         StateHasChanged();
         try
@@ -212,13 +212,13 @@
                     result.Purpose, result.TestConditions, result.RootCause,
                     result.Decision, result.RecommendedAction);
 
-            _status = $"✓ 재분석 완료 — {result.Measurements.Count} rows 저장";
+            _status = $"✓ Re-analysis complete — {result.Measurements.Count} rows saved";
             if (OnReanalyzed.HasDelegate) await OnReanalyzed.InvokeAsync();
         }
         catch (Exception ex)
         {
             _statusError = true;
-            _status = $"재분석 실패: {ex.Message}";
+            _status = $"Re-analysis failed: {ex.Message}";
         }
         finally { _isBusy = false; }
     }

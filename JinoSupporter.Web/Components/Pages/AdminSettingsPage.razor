@@ -47,7 +47,7 @@
     <div class="card-header d-flex align-items-center gap-2">
         <span>📉 NG Rate Settings</span>
         <span class="badge bg-secondary ms-auto" style="font-size:10px; font-weight:500;">
-            @NgRateSettingsService.SettingsDbPath
+            @NgRateSettings.SettingsDbPath
         </span>
     </div>
     <div class="card-body">
@@ -87,7 +87,7 @@
             <label class="form-label small text-muted mb-1">DB Save Directory</label>
             <input type="text" class="form-control form-control-sm font-monospace"
                    @bind="_ng.DbSaveDirectory"
-                   placeholder="@NgRateSettingsService.DefaultDbSaveDirectory" />
+                   placeholder="@NgRateSettings.DefaultDbSaveDirectory" />
             <div class="form-text">Collected .db files will be saved here.</div>
         </div>
 
@@ -96,7 +96,7 @@
             <div class="input-group input-group-sm">
                 <input type="text" class="form-control form-control-sm font-monospace"
                        @bind="_ng.RoutingFilePath"
-                       placeholder="@NgRateSettingsService.DefaultRoutingFilePath" />
+                       placeholder="@NgRateSettings.DefaultRoutingFilePath" />
                 <button class="btn btn-outline-primary btn-sm" type="button"
                         @onclick="ImportRoutingAsync" disabled="@_routingImporting">
                     @if (_routingImporting) { <span class="spinner-border spinner-border-sm me-1"></span> }
@@ -116,7 +116,7 @@
             <div class="input-group input-group-sm">
                 <input type="text" class="form-control form-control-sm font-monospace"
                        @bind="_ng.ReasonFilePath"
-                       placeholder="@NgRateSettingsService.DefaultReasonFilePath" />
+                       placeholder="@NgRateSettings.DefaultReasonFilePath" />
                 <button class="btn btn-outline-primary btn-sm" type="button"
                         @onclick="ImportReasonAsync" disabled="@_reasonImporting">
                     @if (_reasonImporting) { <span class="spinner-border spinner-border-sm me-1"></span> }
@@ -232,7 +232,7 @@
         try
         {
             string path = string.IsNullOrWhiteSpace(_ng.RoutingFilePath)
-                ? NgRateSettingsService.DefaultRoutingFilePath
+                ? NgRateSettings.DefaultRoutingFilePath
                 : _ng.RoutingFilePath.Trim();
             int count = await Task.Run(() => NgRateSettings.ImportRoutingFromFile(path));
             _routingImportMsg = count > 0
@@ -250,7 +250,7 @@
         try
         {
             string path = string.IsNullOrWhiteSpace(_ng.ReasonFilePath)
-                ? NgRateSettingsService.DefaultReasonFilePath
+                ? NgRateSettings.DefaultReasonFilePath
                 : _ng.ReasonFilePath.Trim();
             int count = await Task.Run(() => NgRateSettings.ImportReasonFromFile(path));
             _reasonImportMsg = count > 0

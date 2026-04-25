@@ -1,7 +1,23 @@
 {
   "permissions": {
     "allow": [
-      "Bash(where.exe claude:*)"
-    ]
+      "Bash",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "Agent",
+      "WebFetch",
+      "WebSearch",
+      "NotebookEdit",
+      "PowerShell(sqlite3 \"D:\\\\000. MyWorks\\\\000. ????\\\\04. DB\\\\process-review.db\" \"SELECT Id, Name, ProductGroup FROM ModelGroups WHERE Name LIKE '%C1120%' OR Name LIKE '%D3%' LIMIT 10;\")",
+      "PowerShell($env:PYTHONIOENCODING='utf-8'; $dbPath = [char[]]\\(\"D:\\\\000. MyWorks\\\\000. \"+[char]0xC77C+[char]0xC77C+[char]0xC5C5+[char]0xBB34+\"\\\\04. DB\\\\process-review.db\"\\) -join ''; Write-Host \"Path: $dbPath\"; Test-Path $dbPath)",
+      "PowerShell($dbPath = [char[]]\\(\"D:\\\\000. MyWorks\\\\000. \"+[char]0xC77C+[char]0xC77C+[char]0xC5C5+[char]0xBB34+\"\\\\04. DB\\\\process-review.db\"\\) -join ''; Copy-Item $dbPath \"d:\\\\000. MyWorks\\\\005. Program\\\\Repository\\\\JinoSupporter\\\\tmp\\\\inspect.db\" -Force; sqlite3 \"d:\\\\000. MyWorks\\\\005. Program\\\\Repository\\\\JinoSupporter\\\\tmp\\\\inspect.db\" \"SELECT Id, Name, ProductGroup FROM ModelGroups WHERE Name LIKE '%C1120%' OR Name LIKE '%D3%' LIMIT 10;\")",
+      "PowerShell($dDb = [char[]]\\(\"D:\\\\000. MyWorks\\\\000. \"+[char]0xC77C+[char]0xC77C+[char]0xC5C5+[char]0xBB34+\"\\\\04. DB\\\\process-review.db\"\\) -join ''; $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'; $bak = \"$dDb.bak.$stamp\"; Copy-Item $dDb $bak; Write-Host \"Backed up to: $bak\"; $size = \\(Get-Item $bak\\).Length; Write-Host \"Backup size: $size bytes\")",
+      "PowerShell($tmp = \"d:\\\\000. MyWorks\\\\005. Program\\\\Repository\\\\JinoSupporter\\\\tmp\"; $dDb = [char[]]\\(\"D:\\\\000. MyWorks\\\\000. \"+[char]0xC77C+[char]0xC77C+[char]0xC5C5+[char]0xBB34+\"\\\\04. DB\\\\process-review.db\"\\) -join ''; Copy-Item \"$env:LOCALAPPDATA\\\\JinoWorkHost\\\\process-review.db\" \"$tmp\\\\src.db\" -Force; Copy-Item $dDb \"$tmp\\\\dst.db\" -Force; Write-Host \"Copied to ASCII paths in tmp\\\\\")",
+      "PowerShell($tmp = \"d:\\\\000. MyWorks\\\\005. Program\\\\Repository\\\\JinoSupporter\\\\tmp\"; $dDb = [char[]]\\(\"D:\\\\000. MyWorks\\\\000. \"+[char]0xC77C+[char]0xC77C+[char]0xC5C5+[char]0xBB34+\"\\\\04. DB\\\\process-review.db\"\\) -join ''; try { Copy-Item \"$tmp\\\\dst.db\" $dDb -Force; Write-Host \"OK: copied tmp\\\\dst.db -> $dDb\" } catch { Write-Host \"FAILED: $_\"; Write-Host \"If the Web server is running, stop it first then re-run.\"; exit 1 })"
+    ],
+    "defaultMode": "bypassPermissions"
   }
 }

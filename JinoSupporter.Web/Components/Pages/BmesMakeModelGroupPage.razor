@@ -1,0 +1,808 @@
+@page "/bmes/make-model-group"
+@rendermode InteractiveServer
+@using JinoSupporter.Web.Services
+@inject WebRepository         Repo
+@inject NgRateSettingsService NgRateSettings
+
+<PageTitle>Make ModelGroup Data</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span style="font-size:20px;">🗂️</span>
+    <h5 class="mb-0 fw-semibold">Make ModelGroup Data</h5>
+    <span class="badge bg-secondary" style="font-size:11px;">@_rows.Count distinct</span>
+    <button class="btn btn-outline-secondary btn-sm ms-auto" @onclick="Reload">↻ Refresh</button>
+    <button class="btn btn-primary btn-sm"
+            @onclick="SaveAsync"
+            disabled="@_saving">
+        @if (_saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+        💾 Save
+    </button>
+    <button class="btn btn-outline-danger btn-sm"
+            @onclick="ClearGroups"
+            disabled="@(_groups.Count <= 1 && _groups.All(g => g.MidGroups.Count == 0))">🗑 Clear groups</button>
+</div>
+
+@if (!string.IsNullOrEmpty(_saveStatus))
+{
+    <div class="alert @(_saveError ? "alert-danger" : "alert-success") py-1 px-2 small mb-2">@_saveStatus</div>
+}
+
+<div class="row g-3">
+
+    <!-- ══ Left: accumulated groups ════════════════════════════════════════ -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold small d-flex align-items-center gap-2">
+                <span>🧱 Groups</span>
+                <span class="badge bg-secondary" style="font-size:10px;">@_groups.Count</span>
+                <button class="btn btn-sm btn-primary py-0 px-2 ms-auto"
+                        title="Add new group (subsequent selections go here)"
+                        @onclick="AddNewGroup">+ New group</button>
+            </div>
+            <div style="max-height:70vh; overflow:auto;" class="p-2">
+                @for (int gi = 0; gi < _groups.Count; gi++)
+                {
+                    var g       = _groups[gi];
+                    var idx     = gi;
+                    bool active = idx == _activeGroupIdx;
+                    <div @key="g" class="grp-box mb-2 @(active ? "grp-active" : "")"
+                         @onclick="() => SetActive(idx)">
+                        <div class="grp-head">
+                            @if (active)
+                            {
+                                <span class="grp-active-dot" title="Selections go into this group">●</span>
+                            }
+                            <input class="grp-name-input"
+                                   value="@g.GroupName"
+                                   @onchange="e => OnRenameGroup(idx, e.Value?.ToString() ?? string.Empty)"
+                                   @onclick:stopPropagation="true"
+                                   placeholder="Group name" />
+                            <button class="btn btn-sm btn-outline-primary py-0 px-2 ms-auto"
+                                    title="Add mid-group"
+                                    @onclick="() => AddMidGroup(idx)"
+                                    @onclick:stopPropagation="true">+ Mid-group</button>
+                            <button class="btn btn-sm btn-outline-danger py-0 px-2"
+                                    title="Remove group"
+                                    @onclick="() => RemoveGroup(idx)"
+                                    @onclick:stopPropagation="true">✕</button>
+                        </div>
+                        <div class="pg-row" @onclick:stopPropagation="true">
+                            <span class="pg-row-label">Product</span>
+                            @foreach (string pg in ProductGroups)
+                            {
+                                <button class="pg-pill pg-@pg @(g.ProductGroup == pg ? "pg-pill-on" : "")"
+                                        @onclick="() => OnChangeProductGroup(idx, pg)">@pg</button>
+                            }
+                        </div>
+                        @if (g.MidGroups.Count == 0)
+                        {
+                            <div class="text-muted small ps-2 py-1">(empty — click a LineShift in the right panel or click "+ Mid-group")</div>
+                        }
+                        else
+                        {
+                            <div class="ps-2 pt-1 pb-2">
+                                @for (int mi = 0; mi < g.MidGroups.Count; mi++)
+                                {
+                                    var mid     = g.MidGroups[mi];
+                                    var gidx    = idx;
+                                    var midx    = mi;
+                                    bool midAct = active && midx == _activeMidIdx;
+                                    <div @key="mid" class="mid-grp @(midAct ? "mid-active" : "")"
+                                         @onclick="() => SetActiveMid(gidx, midx)"
+                                         @onclick:stopPropagation="true">
+                                        <div class="mid-grp-head">
+                                            @if (midAct)
+                                            {
+                                                <span class="grp-active-dot"
+                                                      title="LineShifts go into the active sub-group">●</span>
+                                            }
+                                            <span class="mid-badge">Mid-group</span>
+                                            <input class="mid-name-input"
+                                                   value="@mid.Material"
+                                                   @onchange="e => OnRenameMid(gidx, midx, e.Value?.ToString() ?? string.Empty)"
+                                                   @onclick:stopPropagation="true"
+                                                   placeholder="Material" />
+                                            <span class="text-muted ms-1" style="font-size:10px;">@mid.TotalLineShifts</span>
+                                            <button class="btn btn-sm btn-outline-primary py-0 px-2 ms-auto"
+                                                    title="Add sub-group"
+                                                    @onclick="() => AddSubGroupAtMidTop(gidx, midx)"
+                                                    @onclick:stopPropagation="true">+ Sub</button>
+                                            <button class="btn btn-sm btn-outline-danger py-0 px-2"
+                                                    title="Remove mid-group"
+                                                    @onclick="() => RemoveMidGroupAt(gidx, midx)"
+                                                    @onclick:stopPropagation="true">✕</button>
+                                        </div>
+                                        <div class="sub-list">
+                                            @foreach (var sub in mid.SubGroups)
+                                            {
+                                                bool hideHeader = mid.SubGroups.Count == 1
+                                                                  && string.IsNullOrEmpty(sub.Name)
+                                                                  && sub.SubGroups.Count == 0;
+                                                <SubGroupNode @key="sub"
+                                                              Node="@sub"
+                                                              Depth="0"
+                                                              HideHeader="@hideHeader"
+                                                              IsActive="@IsActiveSub"
+                                                              OnSelect="SetActiveSubRef"
+                                                              OnAddNested="AddSubGroupUnder"
+                                                              OnRemove="RemoveSub"
+                                                              OnRename="@(tup => RenameSub(tup.Item1, tup.Item2))"
+                                                              OnRemoveLineShift="@(tup => RemoveLineShiftFromSub(tup.Item1, tup.Item2))" />
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Middle: distinct (Maktx, Mtype) with search ════════════════════════ -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold small">
+                📋 BMES Materials — distinct (Maktx, Mtype)
+            </div>
+            <div class="p-2 border-bottom">
+                <input class="form-control form-control-sm"
+                       placeholder="Search Maktx / Mtype…"
+                       @bind="_search" @bind:event="oninput" />
+            </div>
+            <div style="max-height:70vh; overflow:auto;">
+                @{
+                    var filtered = Filtered;
+                }
+                @if (_rows.Count == 0)
+                {
+                    <div class="text-center text-muted py-5 small">
+                        No data in BmesMaterials table.<br />
+                        Please run "Fetch all materials" in BMES Setting first.
+                    </div>
+                }
+                else if (filtered.Count == 0)
+                {
+                    <div class="text-center text-muted py-4 small">No matches.</div>
+                }
+                else
+                {
+                    <table class="mmg-table">
+                        <thead>
+                            <tr>
+                                <th style="width:38px;">#</th>
+                                <th>Maktx</th>
+                                <th style="width:130px;">Category</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < filtered.Count; i++)
+                            {
+                                var (maktx, mtype) = filtered[i];
+                                bool isSel = _selectedMaktx == maktx && _selectedMtype == mtype;
+                                <tr class="@(isSel ? "row-selected" : "row-click")"
+                                    @onclick="() => OnSelectRow(maktx, mtype)">
+                                    <td class="n text-muted">@(i + 1)</td>
+                                    <td>@maktx</td>
+                                    <td title="@mtype">@ResolveCategory(mtype)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Right: LineShifts for selected Maktx ═════════════════════════════ -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold small d-flex align-items-center gap-2">
+                <span>🧭 LineShifts</span>
+                @if (!string.IsNullOrEmpty(_selectedMaktx))
+                {
+                    <span class="text-muted" style="font-size:11px;">— @_selectedMaktx</span>
+                    <span class="badge bg-secondary ms-auto" style="font-size:10px;">@_lineShifts.Count</span>
+                }
+            </div>
+            <div style="max-height:70vh; overflow:auto;">
+                @if (string.IsNullOrEmpty(_selectedMaktx))
+                {
+                    <div class="text-center text-muted py-4 small">
+                        Select a Maktx row in the middle panel.
+                    </div>
+                }
+                else if (_loadingMid)
+                {
+                    <div class="text-center text-muted py-4 small">
+                        <span class="spinner-border spinner-border-sm me-1"></span>Loading…
+                    </div>
+                }
+                else if (_lineShifts.Count == 0)
+                {
+                    <div class="text-center text-muted py-4 small">
+                        No LineShift in DB for this MATERIALNAME.
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted small px-2 py-1">Click a row to add it to the active mid-group</div>
+                    <table class="mmg-table">
+                        <thead>
+                            <tr>
+                                <th style="width:38px;">#</th>
+                                <th>LineShift</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < _lineShifts.Count; i++)
+                            {
+                                var ls = _lineShifts[i];
+                                <tr class="row-click" @onclick="() => AddLineShiftToActiveMid(ls)">
+                                    <td class="n text-muted">@(i + 1)</td>
+                                    <td>@ls</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .mmg-table {
+        width: 100%; border-collapse: collapse; font-size: 12px;
+    }
+    .mmg-table thead th {
+        position: sticky; top: 0; z-index: 1;
+        background: #f1f5f9; font-weight: 700; font-size: 10px; color: #64748b;
+        text-transform: uppercase; letter-spacing: .4px;
+        padding: 6px 10px; border-bottom: 1px solid #e2e8f0;
+        text-align: left;
+    }
+    .mmg-table td {
+        padding: 4px 10px; border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle; white-space: nowrap;
+    }
+    .mmg-table td.n { text-align: right; font-variant-numeric: tabular-nums; }
+    .row-click { cursor: pointer; }
+    .row-click:hover td { background: #f8fafc; }
+    .row-selected td { background: #e0e7ff !important; color: #3730a3; font-weight: 600; }
+
+    .grp-box {
+        border: 1px solid #e2e8f0; border-radius: 6px; background: #fff;
+        cursor: pointer; transition: border-color .12s, box-shadow .12s;
+    }
+    .grp-box:hover { border-color: #cbd5e1; }
+    .grp-box.grp-active {
+        border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,.18);
+    }
+    .grp-active .grp-head { background: #eef2ff; }
+    .grp-head {
+        display: flex; align-items: center; gap: 6px;
+        padding: 5px 8px; border-bottom: 1px solid #f1f5f9;
+        background: #f8fafc; border-top-left-radius: 6px; border-top-right-radius: 6px;
+    }
+    .grp-active-dot { color: #6366f1; font-size: 9px; }
+    .grp-name-input {
+        flex: 1 1 auto; min-width: 0;
+        border: 1px solid transparent; background: transparent;
+        font-size: 12px; font-weight: 700; color: #1e293b;
+        padding: 2px 6px; border-radius: 4px;
+    }
+    .grp-name-input:hover  { border-color: #e2e8f0; background: #fff; }
+    .grp-name-input:focus  {
+        outline: none; border-color: #93c5fd; background: #fff;
+        box-shadow: 0 0 0 2px rgba(147,197,253,.25);
+    }
+    .grp-list {
+        list-style: none; margin: 0; padding: 4px 8px 6px 16px;
+        font-size: 11px; font-family: monospace; color: #334155;
+    }
+    .grp-list li { padding: 1px 0; }
+
+    .mid-grp {
+        border: 1px solid #e5e7eb; border-radius: 5px;
+        background: #fafbff; margin-bottom: 4px;
+    }
+    .mid-grp-head {
+        display: flex; align-items: center; gap: 4px;
+        padding: 4px 8px; border-bottom: 1px solid #eef2ff;
+        background: #f3f4ff; border-top-left-radius: 5px; border-top-right-radius: 5px;
+        font-size: 12px;
+    }
+    .mid-badge {
+        display: inline-block; font-size: 9px; font-weight: 700;
+        padding: 1px 5px; border-radius: 3px;
+        background: #14b8a6; color: #fff;
+    }
+    .mid-name { font-size: 12px; color: #1e293b; }
+    .mid-name-input {
+        flex: 1 1 auto; min-width: 0;
+        border: 1px solid transparent; background: transparent;
+        font-size: 12px; font-weight: 600; color: #1e293b;
+        padding: 1px 5px; border-radius: 3px;
+    }
+    .mid-name-input:hover { border-color: #e2e8f0; background: #fff; }
+    .mid-name-input:focus {
+        outline: none; border-color: #93c5fd; background: #fff;
+        box-shadow: 0 0 0 2px rgba(147,197,253,.25);
+    }
+    .mid-grp.mid-active { border-color: #14b8a6; box-shadow: 0 0 0 2px rgba(20,184,166,.18); }
+
+    .pg-row {
+        display: flex; align-items: center; gap: 4px;
+        padding: 4px 8px; border-bottom: 1px solid #f1f5f9;
+        background: #fcfcfd;
+    }
+    .pg-row-label {
+        font-size: 9px; font-weight: 700; color: #64748b;
+        letter-spacing: .4px; text-transform: uppercase;
+        margin-right: 4px;
+    }
+    .pg-pill {
+        font-size: 10px; font-weight: 700; letter-spacing: .3px;
+        padding: 1px 8px; border-radius: 10px;
+        border: 1.5px solid #e2e8f0; background: #fff; color: #94a3b8;
+        cursor: pointer; transition: all .12s;
+    }
+    .pg-pill:hover { border-color: #cbd5e1; color: #475569; }
+    .pg-pill.pg-pill-on { color: #fff; }
+    .pg-pill.pg-pill-on.pg-SPK    { background:#ca8a04; border-color:#a16207; }
+    .pg-pill.pg-pill-on.pg-UNIT   { background:#16a34a; border-color:#15803d; }
+    .pg-pill.pg-pill-on.pg-MODULE { background:#2563eb; border-color:#1d4ed8; }
+    .pg-pill.pg-pill-on.pg-TWS    { background:#db2777; border-color:#be185d; }
+    .pg-pill.pg-pill-on.pg-ETC    { background:#64748b; border-color:#475569; }
+
+    .sub-list { padding: 3px 6px 5px 6px; }
+    .sub-grp {
+        border: 1px dashed #d1d5db; border-radius: 4px; background: #fff;
+        margin-top: 3px; cursor: pointer; transition: border-color .12s, box-shadow .12s;
+    }
+    .sub-grp:hover { border-color: #a5b4fc; }
+    .sub-grp.sub-active {
+        border-style: solid; border-color: #a855f7;
+        box-shadow: 0 0 0 2px rgba(168,85,247,.15);
+    }
+    .sub-grp-head {
+        display: flex; align-items: center; gap: 4px;
+        padding: 3px 6px; border-bottom: 1px dashed #eef2ff;
+    }
+    .sub-badge {
+        display: inline-block; font-size: 9px; font-weight: 700;
+        padding: 1px 5px; border-radius: 3px;
+        background: #a855f7; color: #fff;
+    }
+    .sub-name-input {
+        flex: 1 1 auto; min-width: 0;
+        border: 1px solid transparent; background: transparent;
+        font-size: 11px; font-weight: 600; color: #1e293b;
+        padding: 1px 5px; border-radius: 3px;
+    }
+    .sub-name-input:hover { border-color: #e2e8f0; background: #fff; }
+    .sub-name-input:focus {
+        outline: none; border-color: #c4b5fd; background: #fff;
+        box-shadow: 0 0 0 2px rgba(196,181,253,.3);
+    }
+
+    .grp-list li {
+        display: flex; align-items: center; gap: 4px;
+        padding: 1px 0;
+    }
+    .grp-list li .ls-remove {
+        margin-left: auto; font-size: 9px; line-height: 1;
+        border: none; background: transparent; color: #cbd5e1;
+        padding: 0 4px; cursor: pointer; border-radius: 3px;
+    }
+    .grp-list li:hover .ls-remove { color: #ef4444; background: #fef2f2; }
+</style>
+
+@code {
+    private static readonly string[] ProductGroups = ["SPK", "UNIT", "MODULE", "TWS", "ETC"];
+
+    private sealed class GroupVm
+    {
+        public string           GroupName    { get; set; } = string.Empty;
+        public string           ProductGroup { get; set; } = "ETC";
+        public List<MidGroupVm> MidGroups    { get; set; } = new();
+    }
+
+    private sealed class MidGroupVm
+    {
+        public string             Material  { get; set; } = string.Empty;
+        public List<SubGroupVm>   SubGroups { get; set; } = new();
+
+        public int TotalLineShifts => SubGroups.Sum(s => s.TotalLineShifts);
+    }
+
+    /// <summary>Recursive sub-group VM — a sub-group can contain LineShifts AND further nested sub-groups.</summary>
+    public sealed class SubGroupVm
+    {
+        public string            Name       { get; set; } = string.Empty;
+        public List<string>      LineShifts { get; set; } = new();
+        public List<SubGroupVm>  SubGroups  { get; set; } = new();
+
+        public int TotalLineShifts => LineShifts.Count + SubGroups.Sum(s => s.TotalLineShifts);
+    }
+
+    private List<(string Maktx, string Mtype)> _rows = new();
+    private Dictionary<string, string> _mtypeMap = new(StringComparer.OrdinalIgnoreCase);
+    private string       _search = string.Empty;
+    private string       _selectedMaktx = string.Empty;
+    private string       _selectedMtype = string.Empty;
+    private List<string> _lineShifts = new();
+    private bool         _loadingMid;
+    private List<GroupVm> _groups = new() { new GroupVm { GroupName = "Group 1" } };
+    private int          _activeGroupIdx;
+    private int          _activeMidIdx = -1;
+    private SubGroupVm?  _activeSub    = null;   // direct reference to the active sub-group (any depth)
+
+    private string ResolveCategory(string mtype)
+    {
+        if (string.IsNullOrEmpty(mtype)) return "";
+        return _mtypeMap.TryGetValue(mtype, out string? n) && !string.IsNullOrEmpty(n)
+            ? n : mtype;
+    }
+    private bool         _saving;
+    private string       _saveStatus = string.Empty;
+    private bool         _saveError;
+
+    private List<(string Maktx, string Mtype)> Filtered
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_search)) return _rows;
+            // AND of whitespace-separated tokens — each token must appear (case-insensitive)
+            // in Maktx, Mtype, or the resolved category name. Order-independent.
+            var tokens = _search.Split(
+                (char[]?)null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (tokens.Length == 0) return _rows;
+            return _rows.Where(r =>
+            {
+                string hay = $"{r.Maktx}{r.Mtype}{ResolveCategory(r.Mtype)}";
+                foreach (string t in tokens)
+                    if (hay.IndexOf(t, StringComparison.OrdinalIgnoreCase) < 0) return false;
+                return true;
+            }).ToList();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Reload();
+        LoadGroupsFromDb();
+    }
+
+    private void Reload()
+    {
+        _rows     = Repo.GetBmesMaktxMtypeDistinct();
+        _mtypeMap = Repo.GetMtypeCategoryMap();
+    }
+
+    private void LoadGroupsFromDb()
+    {
+        var saved = Repo.GetModelGroups();
+        if (saved.Count > 0)
+        {
+            _groups = saved.Select(s => new GroupVm
+            {
+                GroupName    = s.Name,
+                ProductGroup = ProductGroups.Contains(s.ProductGroup) ? s.ProductGroup : "ETC",
+                MidGroups    = s.MidGroups.Select(m => new MidGroupVm
+                {
+                    Material  = m.Material,
+                    SubGroups = m.SubGroups.Count > 0
+                        ? m.SubGroups.Select(SubRecordToVm).ToList()
+                        : new List<SubGroupVm> { new SubGroupVm() },
+                }).ToList(),
+            }).ToList();
+            _activeGroupIdx = 0;
+        }
+    }
+
+    private static SubGroupVm SubRecordToVm(SubGroupRecord s) => new SubGroupVm
+    {
+        Name       = s.Name ?? string.Empty,
+        LineShifts = s.LineShifts.ToList(),
+        SubGroups  = s.SubGroups.Select(SubRecordToVm).ToList(),
+    };
+
+    private static SubGroupRecord SubVmToRecord(SubGroupVm s) => new SubGroupRecord
+    {
+        Name       = s.Name ?? string.Empty,
+        LineShifts = s.LineShifts.ToList(),
+        SubGroups  = s.SubGroups.Select(SubVmToRecord).ToList(),
+    };
+
+    private void OnRenameGroup(int idx, string newName)
+    {
+        if (idx < 0 || idx >= _groups.Count) return;
+        _groups[idx].GroupName = newName;
+    }
+
+    private void OnChangeProductGroup(int idx, string pg)
+    {
+        if (idx < 0 || idx >= _groups.Count) return;
+        _groups[idx].ProductGroup = ProductGroups.Contains(pg) ? pg : "ETC";
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_saving) return;
+        _saving     = true;
+        _saveStatus = string.Empty;
+        _saveError  = false;
+        StateHasChanged();
+
+        try
+        {
+            var records = _groups.Select((g, i) => new ModelGroupRecord
+            {
+                Name         = g.GroupName,
+                ProductGroup = ProductGroups.Contains(g.ProductGroup) ? g.ProductGroup : "ETC",
+                SortOrder    = i,
+                MidGroups    = g.MidGroups.Select(m => new MidGroupRecord
+                {
+                    Material  = m.Material,
+                    SubGroups = m.SubGroups.Select(SubVmToRecord).ToList(),
+                }).ToList(),
+            }).ToList();
+
+            await Task.Run(() => Repo.SaveModelGroups(records));
+            int totalLs = records.Sum(r => r.MidGroups.Sum(m => m.LineShifts.Count));
+            int midCount = records.Sum(r => r.MidGroups.Count);
+            int subCount = records.Sum(r => r.MidGroups.Sum(m => CountSubs(m.SubGroups)));
+            _saveStatus = $"✓ Saved {records.Count} group(s), {midCount} mid-group(s), {subCount} sub-group(s), {totalLs} line-shift(s).";
+        }
+        catch (Exception ex)
+        {
+            _saveError  = true;
+            _saveStatus = $"Save failed: {ex.Message}";
+        }
+        finally
+        {
+            _saving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnSelectRow(string maktx, string mtype)
+    {
+        _selectedMaktx = maktx;
+        _selectedMtype = mtype;
+        _loadingMid    = true;
+        _lineShifts    = new();
+        StateHasChanged();
+
+        try
+        {
+            _lineShifts = await Task.Run(() =>
+                NgRateSettings.GetLineShiftsByMaterialName(maktx));
+        }
+        finally
+        {
+            _loadingMid = false;
+        }
+    }
+
+    private void RemoveMidGroup(int groupIdx, string material)
+    {
+        if (groupIdx < 0 || groupIdx >= _groups.Count) return;
+        _groups[groupIdx].MidGroups.RemoveAll(m => m.Material == material);
+        if (_activeMidIdx >= _groups[groupIdx].MidGroups.Count) _activeMidIdx = -1;
+    }
+
+    private void RemoveMidGroupAt(int groupIdx, int midIdx)
+    {
+        if (groupIdx < 0 || groupIdx >= _groups.Count) return;
+        var grp = _groups[groupIdx];
+        if (midIdx < 0 || midIdx >= grp.MidGroups.Count) return;
+        grp.MidGroups.RemoveAt(midIdx);
+        if (_activeGroupIdx == groupIdx && _activeMidIdx >= grp.MidGroups.Count)
+            _activeMidIdx = grp.MidGroups.Count - 1;
+    }
+
+    private void AddMidGroup(int groupIdx)
+    {
+        if (groupIdx < 0 || groupIdx >= _groups.Count) return;
+        var newMid = new MidGroupVm { Material = "" };
+        var defaultSub = new SubGroupVm();
+        newMid.SubGroups.Add(defaultSub);
+        _groups[groupIdx].MidGroups.Add(newMid);
+        _activeGroupIdx = groupIdx;
+        _activeMidIdx   = _groups[groupIdx].MidGroups.Count - 1;
+        _activeSub      = defaultSub;
+    }
+
+    private void OnRenameMid(int groupIdx, int midIdx, string newName)
+    {
+        if (groupIdx < 0 || groupIdx >= _groups.Count) return;
+        var grp = _groups[groupIdx];
+        if (midIdx < 0 || midIdx >= grp.MidGroups.Count) return;
+        grp.MidGroups[midIdx].Material = newName;
+    }
+
+    private void SetActiveMid(int groupIdx, int midIdx)
+    {
+        SetActive(groupIdx);
+        if (_activeMidIdx != midIdx) _activeSub = null;
+        _activeMidIdx = midIdx;
+    }
+
+    /// <summary>Add a new sub-group as a child of <paramref name="parent"/>.
+    /// If parent is null, adds to the currently-active mid-group's top level.</summary>
+    private void AddSubGroupUnder(SubGroupVm? parent)
+    {
+        var list = parent is null
+            ? ResolveActiveMid()?.SubGroups
+            : parent.SubGroups;
+        if (list is null) return;
+        var newSub = new SubGroupVm { Name = $"Sub {list.Count + 1}" };
+        list.Add(newSub);
+        _activeSub = newSub;
+    }
+
+    private void AddSubGroupAtMidTop(int groupIdx, int midIdx)
+    {
+        if (groupIdx < 0 || groupIdx >= _groups.Count) return;
+        var grp = _groups[groupIdx];
+        if (midIdx < 0 || midIdx >= grp.MidGroups.Count) return;
+        var mid = grp.MidGroups[midIdx];
+        var newSub = new SubGroupVm { Name = $"Sub {mid.SubGroups.Count + 1}" };
+        mid.SubGroups.Add(newSub);
+        _activeGroupIdx = groupIdx;
+        _activeMidIdx   = midIdx;
+        _activeSub      = newSub;
+    }
+
+    private void RenameSub(SubGroupVm sub, string newName)
+    {
+        sub.Name = newName;
+    }
+
+    /// <summary>Remove <paramref name="target"/> from whatever parent list contains it.</summary>
+    private void RemoveSub(SubGroupVm target)
+    {
+        foreach (var grp in _groups)
+            foreach (var mid in grp.MidGroups)
+            {
+                if (mid.SubGroups.Remove(target))
+                {
+                    if (mid.SubGroups.Count == 0) mid.SubGroups.Add(new SubGroupVm());
+                    if (ReferenceEquals(_activeSub, target)) _activeSub = null;
+                    return;
+                }
+                if (RemoveSubFromTree(mid.SubGroups, target))
+                {
+                    if (ReferenceEquals(_activeSub, target)) _activeSub = null;
+                    return;
+                }
+            }
+    }
+
+    private static bool RemoveSubFromTree(List<SubGroupVm> list, SubGroupVm target)
+    {
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i].SubGroups.Remove(target)) return true;
+            if (RemoveSubFromTree(list[i].SubGroups, target)) return true;
+        }
+        return false;
+    }
+
+    private void SetActiveSubRef(SubGroupVm sub)
+    {
+        _activeSub = sub;
+    }
+
+    public bool IsActiveSub(SubGroupVm s) => ReferenceEquals(_activeSub, s);
+
+    private MidGroupVm? ResolveActiveMid()
+    {
+        if (_activeGroupIdx < 0 || _activeGroupIdx >= _groups.Count) return null;
+        var grp = _groups[_activeGroupIdx];
+        if (_activeMidIdx < 0 || _activeMidIdx >= grp.MidGroups.Count) return null;
+        return grp.MidGroups[_activeMidIdx];
+    }
+
+    private void AddLineShiftToActiveMid(string lineShift)
+    {
+        if (string.IsNullOrEmpty(lineShift)) return;
+        if (_groups.Count == 0)
+        {
+            _groups.Add(new GroupVm { GroupName = "Group 1" });
+            _activeGroupIdx = 0;
+        }
+        if (_activeGroupIdx < 0 || _activeGroupIdx >= _groups.Count)
+            _activeGroupIdx = _groups.Count - 1;
+
+        var grp = _groups[_activeGroupIdx];
+        if (_activeMidIdx < 0 || _activeMidIdx >= grp.MidGroups.Count)
+        {
+            var newMid = new MidGroupVm
+            {
+                Material = !string.IsNullOrEmpty(_selectedMaktx) ? _selectedMaktx : "",
+            };
+            var defaultSub = new SubGroupVm();
+            newMid.SubGroups.Add(defaultSub);
+            grp.MidGroups.Add(newMid);
+            _activeMidIdx = grp.MidGroups.Count - 1;
+            _activeSub    = defaultSub;
+        }
+
+        var mid = grp.MidGroups[_activeMidIdx];
+        if (mid.SubGroups.Count == 0) mid.SubGroups.Add(new SubGroupVm());
+
+        // If active sub is set and still in this mid's tree, use it; otherwise fall back to first top-level sub.
+        if (_activeSub is null || !SubBelongsToMid(_activeSub, mid))
+            _activeSub = mid.SubGroups[0];
+
+        if (!_activeSub.LineShifts.Contains(lineShift, StringComparer.Ordinal))
+            _activeSub.LineShifts.Add(lineShift);
+    }
+
+    private static bool SubBelongsToMid(SubGroupVm target, MidGroupVm mid)
+    {
+        foreach (var s in mid.SubGroups)
+            if (SubContains(s, target)) return true;
+        return false;
+    }
+
+    private static bool SubContains(SubGroupVm parent, SubGroupVm target)
+    {
+        if (ReferenceEquals(parent, target)) return true;
+        foreach (var c in parent.SubGroups)
+            if (SubContains(c, target)) return true;
+        return false;
+    }
+
+    private void RemoveLineShiftFromSub(SubGroupVm sub, string lineShift)
+    {
+        sub.LineShifts.Remove(lineShift);
+    }
+
+    private static int CountSubs(IEnumerable<SubGroupRecord> list)
+    {
+        int n = 0;
+        foreach (var s in list) n += 1 + CountSubs(s.SubGroups);
+        return n;
+    }
+
+    private void AddNewGroup()
+    {
+        _groups.Add(new GroupVm { GroupName = $"Group {_groups.Count + 1}" });
+        _activeGroupIdx = _groups.Count - 1;
+    }
+
+    private void SetActive(int idx)
+    {
+        if (idx < 0 || idx >= _groups.Count) return;
+        if (_activeGroupIdx != idx) { _activeMidIdx = -1; _activeSub = null; }
+        _activeGroupIdx = idx;
+    }
+
+    private void RemoveGroup(int idx)
+    {
+        if (idx < 0 || idx >= _groups.Count) return;
+        _groups.RemoveAt(idx);
+        if (_groups.Count == 0)
+        {
+            _groups.Add(new GroupVm { GroupName = "Group 1" });
+            _activeGroupIdx = 0;
+        }
+        else if (_activeGroupIdx >= _groups.Count)
+        {
+            _activeGroupIdx = _groups.Count - 1;
+        }
+    }
+
+    private void ClearGroups()
+    {
+        _groups = new() { new GroupVm { GroupName = "Group 1" } };
+        _activeGroupIdx = 0;
+    }
+}

@@ -1,7 +1,11 @@
 @page "/bmes/setting"
 @rendermode InteractiveServer
 @using JinoSupporter.Web.Services
-@inject NgRateSettingsService NgRateSettings
+@using Microsoft.AspNetCore.Components.Web
+@inject NgRateSettingsService    NgRateSettings
+@inject BmesMaterialService      BmesMaterials
+@inject BmesRoutingScrapeService BmesRoutingScrape
+@inject WebRepository            Repo
 
 <PageTitle>BMES Setting</PageTitle>
 
@@ -59,6 +63,47 @@
             </div>
         </div>
     </div>
+
+    <!-- ══ BMES Material Fetch (test) ═════════════════════════════════════════ -->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex align-items-center gap-2">
+                <span class="fw-semibold small">🧪 BMES Material Fetch (MES020010)</span>
+                <span class="badge bg-secondary" style="font-size:10px;">DB rows: @_materialCount</span>
+                <div class="ms-auto">
+                    <button class="btn btn-primary btn-sm"
+                            @onclick="FetchAllMaterialsAsync"
+                            disabled="@_fetchBusy">
+                        @if (_fetchBusy)
+                        { <span class="spinner-border spinner-border-sm me-1"></span><text>Fetching…</text> }
+                        else { <text>▶ Fetch all materials</text> }
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(_fetchLog))
+                {
+                    <pre class="small mb-2" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; max-height:160px; overflow:auto;">@_fetchLog</pre>
+                }
+                @if (_latest is not null)
+                {
+                    <div class="small">
+                        <div><strong>MATNR:</strong> @_latest.Matnr</div>
+                        <div><strong>MAKTX:</strong> @_latest.Maktx</div>
+                        <div><strong>MTYPE/BTYPE:</strong> @_latest.Mtype / @_latest.Btype</div>
+                        <div><strong>ModNameB:</strong> @_latest.ModNameB</div>
+                        <div><strong>LotQt / Bunch:</strong> @_latest.LotQt / @_latest.Bunch</div>
+                        <div><strong>ERNAM / ERDAT:</strong> @_latest.Ernam / @_latest.Erdat</div>
+                        <div class="text-muted mt-1">FetchedAt: @_latest.FetchedAt</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted small">No material saved yet.</div>
+                }
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="row g-3">
@@ -73,8 +118,24 @@
                 {
                     <span class="text-muted ms-1" style="font-size:10px;">— @rFiltered.Count shown</span>
                 }
-                <div class="ms-auto d-flex gap-2">
+                <div class="ms-auto d-flex gap-2 align-items-center">
+                    @if (_routingScrapeBusy)
+                    {
+                        <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                    }
+                    @if (!string.IsNullOrEmpty(_routingScrapeMsg))
+                    {
+                        <span class="small @(_routingScrapeError ? "text-danger" : "text-success") fw-semibold">
+                            @_routingScrapeMsg
+                        </span>
+                    }
+                    <button class="btn btn-outline-primary btn-sm" @onclick="RefreshRoutingFromBmes"
+                            disabled="@_routingScrapeBusy"
+                            title="Scrape MES020240/SearchList for WERKS 3200/3210/3220 → bmes_routing_raw.db">
+                        Refresh from BMES
+                    </button>
                     <button class="btn btn-outline-secondary btn-sm" @onclick="ImportRoutingFromFile"
+                            disabled="@_routingScrapeBusy"
                             title="Import from Routing.txt">
                         Import from file
                     </button>
@@ -168,12 +229,60 @@
             <div class="card-header d-flex align-items-center gap-2">
                 <span class="fw-semibold small">Reason Table</span>
                 <span class="badge bg-secondary ms-1" style="font-size:10px;">@_reasonRows.Count rows</span>
-                @if (_anyReasonSearch)
+                @if (_modelScanActive)
+                {
+                    <span class="text-muted ms-1" style="font-size:10px;">— @_modelPairs.Count distinct pair(s) for "@_rsqModel"</span>
+                }
+                else if (_anyReasonSearch)
                 {
                     <span class="text-muted ms-1" style="font-size:10px;">— @rsFiltered.Count shown</span>
                 }
-                <div class="ms-auto d-flex gap-2">
+
+                <div class="d-flex align-items-center gap-1 ms-3">
+                    <input class="form-control form-control-sm"
+                           style="max-width:240px; font-size:11px;"
+                           placeholder="Model (Material) — Enter to scan"
+                           @bind="_rsqModel"
+                           @bind:event="oninput"
+                           @onkeydown="OnModelSearchKeyDown" />
+                    <button class="btn btn-outline-primary btn-sm py-0 px-2"
+                            style="font-size:11px;"
+                            disabled="@(_modelScanBusy || string.IsNullOrWhiteSpace(_rsqModel))"
+                            @onclick="RunModelScan"
+                            title="Scan daily DBs for distinct (ProcessName, NgName) pairs whose MATERIALNAME contains this model.">
+                        @if (_modelScanBusy)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" style="width:10px; height:10px;"></span>
+                        }
+                        Scan
+                    </button>
+                    @if (_modelScanActive)
+                    {
+                        <button class="btn btn-link btn-sm py-0 px-1 text-secondary"
+                                style="font-size:11px;"
+                                @onclick="ClearModelScan"
+                                title="Clear model scan and return to Reason Table search">✕</button>
+                    }
+                </div>
+
+                <div class="ms-auto d-flex gap-2 align-items-center">
+                    @if (_reasonRefreshBusy)
+                    {
+                        <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                    }
+                    @if (!string.IsNullOrEmpty(_reasonRefreshMsg))
+                    {
+                        <span class="small @(_reasonRefreshError ? "text-danger" : "text-success") fw-semibold">
+                            @_reasonRefreshMsg
+                        </span>
+                    }
+                    <button class="btn btn-outline-primary btn-sm" @onclick="RefreshReasonFromDailyDbs"
+                            disabled="@_reasonRefreshBusy"
+                            title="Scan all Daily DBs and add missing (ProcessName, NgName) pairs">
+                        Refresh from Daily DBs
+                    </button>
                     <button class="btn btn-outline-secondary btn-sm" @onclick="ImportReasonFromFile"
+                            disabled="@_reasonRefreshBusy"
                             title="Import from reason.txt">
                         Import from file
                     </button>
@@ -199,7 +308,75 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (!_anyReasonSearch)
+                        @if (_modelScanActive)
+                        {
+                            @if (_modelPairs.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4 small">
+                                        @(_modelScanBusy
+                                            ? "Scanning…"
+                                            : "No (PROCESSNAME, NGNAME) pair found in daily DBs for this model.")
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var p in ModelPairsFiltered())
+                                {
+                                    var existing = FindReasonRow(p.ProcessName, p.NgName);
+                                    bool missing = existing is null;
+                                    bool editing = existing is not null && _editReasonId == existing.Id;
+
+                                    @if (editing)
+                                    {
+                                        <tr class="bmes-edit-row">
+                                            <td><input class="bmes-input" @bind="_editReason.ProcessName" /></td>
+                                            <td><input class="bmes-input" @bind="_editReason.NgName"      /></td>
+                                            <td><input class="bmes-input" @bind="_editReason.Reason"      /></td>
+                                            <td class="bmes-actions">
+                                                <button class="btn btn-success btn-sm py-0 px-2"   @onclick="SaveReasonEdit">✓</button>
+                                                <button class="btn btn-secondary btn-sm py-0 px-2" @onclick="CancelReasonEdit">✕</button>
+                                            </td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        var pn = p.ProcessName; var ng = p.NgName;
+                                        <tr class="bmes-row @(missing ? "bmes-row-missing" : "")">
+                                            <td>@pn</td>
+                                            <td>@ng</td>
+                                            <td>
+                                                @if (missing)
+                                                {
+                                                    <span class="text-danger small fst-italic">(not in Reason Table)</span>
+                                                }
+                                                else
+                                                {
+                                                    @existing!.Reason
+                                                }
+                                            </td>
+                                            <td class="bmes-actions">
+                                                @if (missing)
+                                                {
+                                                    <button class="btn btn-outline-primary btn-sm py-0 px-1"
+                                                            @onclick="() => AddReasonFromPair(pn, ng)"
+                                                            title="Add to Reason Table">+</button>
+                                                }
+                                                else
+                                                {
+                                                    <button class="btn btn-outline-primary btn-sm py-0 px-1"
+                                                            @onclick="() => StartReasonEdit(existing)"   title="Edit">✎</button>
+                                                    <button class="btn btn-outline-danger  btn-sm py-0 px-1"
+                                                            @onclick="() => DeleteReasonRow(existing.Id)" title="Delete">✕</button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        }
+                        else if (!_anyReasonSearch)
                         {
                             <tr>
                                 <td colspan="4" class="text-center text-muted py-4 small">
@@ -289,6 +466,8 @@
         padding: 4px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle;
     }
     .bmes-row:hover td { background: #f8fafc; }
+    .bmes-row-missing td { background: #fef2f2; }
+    .bmes-row-missing:hover td { background: #fee2e2; }
     .bmes-edit-row td { background: #eff6ff; }
     .bmes-actions { text-align: center; white-space: nowrap; }
     .bmes-input {
@@ -326,11 +505,65 @@
     private string _rsqReason      = string.Empty;
     private bool   _anyReasonSearch;
 
+    // ── Reason: scan distinct (PN, NG) by Material model name ─────────────────
+    private string _rsqModel       = string.Empty;
+    private bool   _modelScanBusy;
+    private bool   _modelScanActive;
+    private List<(string ProcessName, string NgName)> _modelPairs = new();
+
+    // ── BMES material fetch state ────────────────────────────────────────────
+    private bool           _fetchBusy;
+    private string         _fetchLog       = string.Empty;
+    private BmesMaterial?  _latest;
+    private int            _materialCount;
+
     protected override void OnInitialized()
     {
         _snap        = NgRateSettings.GetSnapshot();
         _routingRows = NgRateSettings.GetRoutingRows();
         _reasonRows  = NgRateSettings.GetReasonRows();
+
+        _latest         = Repo.GetLatestBmesMaterial();
+        _materialCount  = Repo.GetBmesMaterialCount();
+    }
+
+    private async Task FetchAllMaterialsAsync()
+    {
+        if (_fetchBusy) return;
+        _fetchBusy = true;
+        _fetchLog  = string.Empty;
+        StateHasChanged();
+
+        var progress = new Progress<string>(msg =>
+        {
+            _fetchLog += (_fetchLog.Length > 0 ? "\n" : "") + msg;
+            InvokeAsync(StateHasChanged);
+        });
+
+        try
+        {
+            int saved = await BmesMaterials.FetchAllAsync(progress);
+            if (saved > 0)
+            {
+                _latest        = Repo.GetLatestBmesMaterial();
+                _materialCount = Repo.GetBmesMaterialCount();
+                SetStatus($"Saved {saved} material(s). Total in DB: {_materialCount}", false);
+            }
+            else
+            {
+                SetStatus("Fetch failed — see log below.", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Unexpected error: {ex.Message}", true);
+            _fetchLog += "\n" + ex;
+        }
+        finally
+        {
+            _fetchBusy = false;
+            StateHasChanged();
+        }
     }
 
     private void SaveCredentials()
@@ -440,6 +673,50 @@
         SetStatus(count > 0 ? $"Imported {count} routing rows from file." : "File not found or empty.", count == 0);
     }
 
+    // ── Refresh Routing raw dump from BMES ────────────────────────────────────
+    private bool   _routingScrapeBusy;
+    private string _routingScrapeMsg   = string.Empty;
+    private bool   _routingScrapeError;
+
+    private async Task RefreshRoutingFromBmes()
+    {
+        if (_routingScrapeBusy) return;
+        _routingScrapeBusy  = true;
+        _routingScrapeMsg   = string.Empty;
+        _routingScrapeError = false;
+        StateHasChanged();
+
+        try
+        {
+            var progress = new Progress<string>(msg =>
+            {
+                _routingScrapeMsg = msg;
+                InvokeAsync(StateHasChanged);
+            });
+
+            int saved = await BmesRoutingScrape.FetchAllAsync(progress);
+            if (saved < 0)
+            {
+                _routingScrapeError = true;
+            }
+            else
+            {
+                _routingRows  = NgRateSettings.GetRoutingRows();
+                _editRoutingId = -1;
+            }
+        }
+        catch (Exception ex)
+        {
+            _routingScrapeError = true;
+            _routingScrapeMsg   = $"✗ {ex.Message}";
+        }
+        finally
+        {
+            _routingScrapeBusy = false;
+            StateHasChanged();
+        }
+    }
+
     // ── Reason ────────────────────────────────────────────────────────────────
 
     private void AddReasonFromSearch()
@@ -490,12 +767,118 @@
         SetStatus("Reason row deleted.", false);
     }
 
+    // ── Reason: model (Material) scan ────────────────────────────────────────
+
+    private async Task OnModelSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await RunModelScan();
+    }
+
+    private async Task RunModelScan()
+    {
+        if (_modelScanBusy) return;
+        if (string.IsNullOrWhiteSpace(_rsqModel)) { ClearModelScan(); return; }
+
+        _modelScanBusy   = true;
+        _modelScanActive = true;
+        _modelPairs      = new();
+        StateHasChanged();
+
+        try
+        {
+            string pattern = _rsqModel;
+            var pairs = await Task.Run(() => NgRateSettings.GetProcessNgPairsByMaterial(pattern));
+            _modelPairs = pairs;
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Model scan failed: {ex.Message}", true);
+        }
+        finally
+        {
+            _modelScanBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearModelScan()
+    {
+        _modelScanActive = false;
+        _modelPairs.Clear();
+    }
+
+    /// <summary>Returns scanned pairs further filtered by the in-table PN/NG search inputs
+    /// (the Reason input has no effect here — Reason is derived from ReasonTable lookup).</summary>
+    private IEnumerable<(string ProcessName, string NgName)> ModelPairsFiltered()
+    {
+        IEnumerable<(string ProcessName, string NgName)> q = _modelPairs;
+        if (!string.IsNullOrEmpty(_rsqProcessName))
+            q = q.Where(p => p.ProcessName.Contains(_rsqProcessName, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrEmpty(_rsqNgName))
+            q = q.Where(p => p.NgName.Contains(_rsqNgName, StringComparison.OrdinalIgnoreCase));
+        return q;
+    }
+
+    private ReasonRow? FindReasonRow(string pn, string ng)
+        => _reasonRows.FirstOrDefault(r =>
+               string.Equals(r.ProcessName, pn, StringComparison.Ordinal)
+            && string.Equals(r.NgName,      ng, StringComparison.Ordinal));
+
+    private void AddReasonFromPair(string pn, string ng)
+    {
+        var newRow = new ReasonRow { ProcessName = pn, NgName = ng, Reason = string.Empty };
+        var newId  = NgRateSettings.AddReasonRow(newRow);
+        _reasonRows = NgRateSettings.GetReasonRows();
+        _editReasonId = newId;
+        _editReason   = new ReasonRow { Id = newId, ProcessName = pn, NgName = ng, Reason = string.Empty };
+    }
+
     private void ImportReasonFromFile()
     {
         int count = NgRateSettings.ImportReasonFromFile(NgRateSettings.ReasonFilePath);
         _reasonRows = NgRateSettings.GetReasonRows();
         _editReasonId = -1;
         SetStatus(count > 0 ? $"Imported {count} reason rows from file." : "File not found or empty.", count == 0);
+    }
+
+    // ── Refresh Reason from Daily DBs ─────────────────────────────────────────
+    private bool   _reasonRefreshBusy;
+    private string _reasonRefreshMsg   = string.Empty;
+    private bool   _reasonRefreshError;
+
+    private async Task RefreshReasonFromDailyDbs()
+    {
+        if (_reasonRefreshBusy) return;
+        _reasonRefreshBusy  = true;
+        _reasonRefreshMsg   = string.Empty;
+        _reasonRefreshError = false;
+        StateHasChanged();
+
+        try
+        {
+            var progress = new Progress<string>(msg =>
+            {
+                _reasonRefreshMsg = msg;
+                InvokeAsync(StateHasChanged);
+            });
+
+            int added = await Task.Run(() => NgRateSettings.RefreshReasonFromDailyDbs(progress));
+            _reasonRows    = NgRateSettings.GetReasonRows();
+            _editReasonId  = -1;
+            _reasonRefreshMsg = added > 0
+                ? $"✓ Added {added} new pair(s)."
+                : "✓ No new pairs — ReasonTable already covers all DB values.";
+        }
+        catch (Exception ex)
+        {
+            _reasonRefreshError = true;
+            _reasonRefreshMsg   = $"✗ {ex.Message}";
+        }
+        finally
+        {
+            _reasonRefreshBusy = false;
+            StateHasChanged();
+        }
     }
 
     private void SetStatus(string msg, bool isError)

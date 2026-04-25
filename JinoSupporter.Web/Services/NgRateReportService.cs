@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Data.Sqlite;
 
@@ -84,6 +83,38 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         public List<GroupPivotRow>        Groups { get; init; } = [];
     }
 
+    /// <summary>Detail row keyed by (LineShift, ProcessType, ProcessName, NgName) with per-period PPM dicts.</summary>
+    public sealed class LineShiftNgDetail
+    {
+        public required string LineShift   { get; init; }
+        public required string ProcessType { get; init; }
+        public required string ProcessName { get; init; }
+        public required string NgName      { get; init; }
+        public required Dictionary<string, double> DatePpm  { get; init; }
+        public required Dictionary<string, double> WeekPpm  { get; init; }
+        public required Dictionary<string, double> MonthPpm { get; init; }
+    }
+
+    /// <summary>Per-(group, period) raw Input/NG quantities — used to compute weighted sumNg/sumInput PPM.</summary>
+    public sealed class GroupRawQtyReport
+    {
+        public List<PeriodColumn> DateCols  { get; init; } = [];
+        public List<PeriodColumn> WeekCols  { get; init; } = [];
+        public List<PeriodColumn> MonthCols { get; init; } = [];
+        /// <summary>group → (period → (sumInput, sumNg))</summary>
+        public Dictionary<string, Dictionary<string, (double Input, double Ng)>> Date  { get; init; } = new();
+        public Dictionary<string, Dictionary<string, (double Input, double Ng)>> Week  { get; init; } = new();
+        public Dictionary<string, Dictionary<string, (double Input, double Ng)>> Month { get; init; } = new();
+    }
+
+    public sealed class LineShiftNgReport
+    {
+        public List<PeriodColumn>       DateCols  { get; init; } = [];
+        public List<PeriodColumn>       WeekCols  { get; init; } = [];
+        public List<PeriodColumn>       MonthCols { get; init; } = [];
+        public List<LineShiftNgDetail>  Details   { get; init; } = [];
+    }
+
     public sealed class NgRateReport
     {
         public List<PeriodColumn>    DateCols     { get; init; } = [];
@@ -102,6 +133,17 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         public List<string> GroupNames   { get; init; } = [];
         /// <summary>GroupName → Summary by ProcessType (PPM)</summary>
         public Dictionary<string, List<SummaryPivotRow>> GroupSummary { get; init; } = new();
+
+        /// <summary>
+        /// Per-group raw input/NG counts keyed at the finest granularity we aggregate
+        /// at: (ProcessType, ProcessName, NgName, Group, PeriodKey) → (Input, Ng).
+        /// Exposed so the UI can correctly combine multiple selected groups using
+        /// PPM = Σngs / Σinputs · 1M per (PT/PN/NG/period) instead of averaging or
+        /// summing pre-computed per-group PPMs (both of which misreport the true
+        /// merged defect rate when input sizes differ).
+        /// </summary>
+        public Dictionary<(string PT, string PN, string NG, string Group, string PeriodKey), (double I, double N)>
+            GroupRawIn { get; init; } = new();
     }
 
     // ── Internal aggregation unit ─────────────────────────────────────────────────
@@ -110,22 +152,6 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
     private sealed record ComboAgg(
         string ProcessType, string ProcessName, string NgName,
         string PeriodKey, double Ppm);
-
-    // ── JSON deserialization ──────────────────────────────────────────────────────
-
-    private sealed class ModelGroupData
-    {
-        public int          Index     { get; set; }
-        public string       GroupName { get; set; } = string.Empty;
-        public List<string> ModelList { get; set; } = [];
-    }
-
-    /// <summary>New format: { ProductGroup, Groups: [...] }.</summary>
-    private sealed class ModelFileData
-    {
-        public string              ProductGroup { get; set; } = "ETC";
-        public List<ModelGroupData> Groups      { get; set; } = [];
-    }
 
     // ── Internal row type ─────────────────────────────────────────────────────────
 
@@ -155,91 +181,65 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
             .FirstOrDefault();
     }
 
-    public (List<string> ModelList, List<string> GroupNames, Dictionary<string, string> LineShiftToGroup) LoadJsonInfo(IEnumerable<string> jsonPaths)
-    {
-        var models           = new HashSet<string>(StringComparer.Ordinal);
-        var groupNames       = new List<string>();
-        var lineShiftToGroup = new Dictionary<string, string>(StringComparer.Ordinal);
-        var opts             = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-
-        foreach (string path in jsonPaths)
-        {
-            if (!File.Exists(path)) continue;
-            try
-            {
-                string json = File.ReadAllText(path);
-                List<ModelGroupData>? groups = null;
-
-                // 1) New format: { "ProductGroup": "...", "Groups": [...] }
-                try
-                {
-                    var file = JsonSerializer.Deserialize<ModelFileData>(json, opts);
-                    if (file?.Groups is { Count: > 0 }) groups = file.Groups;
-                }
-                catch { }
-
-                // 2) Legacy format: [ { "GroupName": ..., "ModelList": [...] }, ... ]
-                if (groups is null || groups.Count == 0)
-                {
-                    try { groups = JsonSerializer.Deserialize<List<ModelGroupData>>(json, opts); } catch { }
-                }
-
-                // 3) Single-object legacy format
-                if (groups is null || groups.Count == 0)
-                {
-                    try
-                    {
-                        var single = JsonSerializer.Deserialize<ModelGroupData>(json, opts);
-                        if (single is not null) groups = [single];
-                    }
-                    catch { }
-                }
-
-                if (groups is null) continue;
-                foreach (var g in groups)
-                {
-                    foreach (string m in g.ModelList)
-                    {
-                        if (!string.IsNullOrWhiteSpace(m))
-                        {
-                            string trimmed = m.Trim();
-                            models.Add(trimmed);
-                            if (!string.IsNullOrWhiteSpace(g.GroupName))
-                                lineShiftToGroup[trimmed] = g.GroupName.Trim();
-                        }
-                    }
-                    if (!string.IsNullOrWhiteSpace(g.GroupName))
-                        groupNames.Add(g.GroupName.Trim());
-                }
-            }
-            catch { }
-        }
-        return (models.ToList(), groupNames, lineShiftToGroup);
-    }
-
-    // Backwards compatibility
-    public List<string> LoadModelListFromJsonFiles(IEnumerable<string> jsonPaths)
-        => LoadJsonInfo(jsonPaths).ModelList;
-
+    /// <summary>
+    /// Report generator. All callers (By Model, By Group) provide a pre-built
+    /// (LineShift → GroupName) mapping sourced from the ModelGroups DB.
+    /// </summary>
     public Task<NgRateReport> GenerateReportAsync(
         string dbPath,
-        IEnumerable<string> selectedJsonPaths,
+        IReadOnlyDictionary<string, string> lineShiftToGroup,
+        IReadOnlyList<string> groupNames,
         IProgress<string>? progress = null)
-        => Task.Run(() => GenerateReport(dbPath, selectedJsonPaths, progress));
+        => Task.Run(() =>
+        {
+            var modelLineShifts = lineShiftToGroup.Keys.ToList();
+            var mapping         = new Dictionary<string, string>(lineShiftToGroup, StringComparer.Ordinal);
+            var groups          = groupNames.ToList();
+            return GenerateReportCore(dbPath, modelLineShifts, groups, mapping, progress);
+        });
+
+    /// <summary>
+    /// Multi-valued overload: a single LineShift can belong to several groups at once
+    /// (e.g. a root group, its named sub-groups, and the LineShift-as-its-own-group leaf).
+    /// Each membership contributes a separate row to <c>GroupSummary</c>, so the Summary
+    /// drill-down under every ProcessType exposes the full tree.
+    /// </summary>
+    public Task<NgRateReport> GenerateReportAsync(
+        string dbPath,
+        IReadOnlyDictionary<string, IReadOnlyList<string>> lineShiftToGroups,
+        IReadOnlyList<string> groupNames,
+        IProgress<string>? progress = null)
+        => Task.Run(() =>
+        {
+            var modelLineShifts = lineShiftToGroups.Keys.ToList();
+            var multi = lineShiftToGroups.ToDictionary(
+                kv => kv.Key,
+                kv => kv.Value.ToList(),
+                StringComparer.Ordinal);
+            // Single-valued projection used by legacy call sites — first membership wins.
+            var primary = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var kv in multi)
+                if (kv.Value.Count > 0) primary[kv.Key] = kv.Value[0];
+            return GenerateReportCore(
+                dbPath, modelLineShifts, groupNames.ToList(), primary, progress, multi);
+        });
 
     // ── Report build ──────────────────────────────────────────────────────────────
 
-    private NgRateReport GenerateReport(
+    private NgRateReport GenerateReportCore(
         string dbPath,
-        IEnumerable<string> selectedJsonPaths,
-        IProgress<string>? progress)
+        List<string> modelLineShifts,
+        List<string> groupNames,
+        Dictionary<string, string> lineShiftToGroup,
+        IProgress<string>? progress,
+        Dictionary<string, List<string>>? lineShiftToGroupsMulti = null)
     {
-        // 1. Parse JSON
-        progress?.Report("Loading model definitions from JSON…");
-        var jsonList = selectedJsonPaths.ToList();
-        var (modelLineShifts, groupNames, lineShiftToGroup) = jsonList.Count > 0
-            ? LoadJsonInfo(jsonList)
-            : (new List<string>(), new List<string>(), new Dictionary<string, string>());
+        // If caller didn't supply multi-mapping (e.g. the By-Group overload from
+        // ModelGroups DB, which is inherently single-group), promote the single-valued
+        // dict to a singleton-list form so all downstream helpers can use one path.
+        var lsToGroups = lineShiftToGroupsMulti
+            ?? lineShiftToGroup.ToDictionary(
+                kv => kv.Key, kv => new List<string> { kv.Value }, StringComparer.Ordinal);
 
         var modelSet = modelLineShifts.Count > 0
             ? new HashSet<string>(modelLineShifts, StringComparer.Ordinal)
@@ -309,9 +309,9 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
         // 9. Process 10 NG
         progress?.Report("Computing Top 10 Processes…");
-        var dateGrpProc  = BuildGroupProcessRaw(orgRows, lineShiftToGroup, r => r.ProductDate);
-        var weekGrpProc  = BuildGroupProcessRaw(orgRows, lineShiftToGroup, r => GetWeekKey(r.ProductDate));
-        var monthGrpProc = BuildGroupProcessRaw(orgRows, lineShiftToGroup, r => GetMonthKey(r.ProductDate));
+        var dateGrpProc  = BuildGroupProcessRaw(orgRows, lsToGroups, r => r.ProductDate);
+        var weekGrpProc  = BuildGroupProcessRaw(orgRows, lsToGroups, r => GetWeekKey(r.ProductDate));
+        var monthGrpProc = BuildGroupProcessRaw(orgRows, lsToGroups, r => GetMonthKey(r.ProductDate));
         var top10Process = ComputeTop10Process(
             byDate, byWeek, byMonth,
             dateProcessMap, weekProcessMap, monthProcessMap,
@@ -320,9 +320,9 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
         // 10. Worst 10 NG
         progress?.Report("Computing Worst 10 NG Names…");
-        var dateGrpNg  = BuildGroupNgRaw(orgRows, lineShiftToGroup, r => r.ProductDate);
-        var weekGrpNg  = BuildGroupNgRaw(orgRows, lineShiftToGroup, r => GetWeekKey(r.ProductDate));
-        var monthGrpNg = BuildGroupNgRaw(orgRows, lineShiftToGroup, r => GetMonthKey(r.ProductDate));
+        var dateGrpNg  = BuildGroupNgRaw(orgRows, lsToGroups, r => r.ProductDate);
+        var weekGrpNg  = BuildGroupNgRaw(orgRows, lsToGroups, r => GetWeekKey(r.ProductDate));
+        var monthGrpNg = BuildGroupNgRaw(orgRows, lsToGroups, r => GetMonthKey(r.ProductDate));
         var top10Ng = ComputeTop10Ng(
             byDate, byWeek, byMonth,
             dateNgMap, weekNgMap, monthNgMap,
@@ -331,15 +331,26 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
         // 11. Per-group input/NG quantities & Reason report
         progress?.Report("Computing group detail rows…");
-        var inputQtyRows = BuildInputQtyRows(orgRows, lineShiftToGroup, dateCols);
-        var ngQtyRows    = BuildNgQtyRows(orgRows, lineShiftToGroup, dateCols);
+        var inputQtyRows = BuildInputQtyRows(orgRows, lsToGroups, dateCols);
+        var ngQtyRows    = BuildNgQtyRows(orgRows, lsToGroups, dateCols);
         var reasonLookup = LoadReasonLookup(dbPath);
-        var reasonRows   = BuildReasonRows(orgRows, reasonLookup, lineShiftToGroup, dateCols, weekCols, monthCols);
+        var reasonRows   = BuildReasonRows(orgRows, reasonLookup, lsToGroups, dateCols, weekCols, monthCols);
 
         // 12. Per-group summary (each group's defect rate shown on model click)
         var groupSummary = groupNames.Count > 0
             ? ComputeGroupSummary(groupNames, dateGrpProc, weekGrpProc, monthGrpProc, dateCols, weekCols, monthCols)
             : new Dictionary<string, List<SummaryPivotRow>>();
+
+        // 13. Per-group raw Input/NG at finest granularity — merged across period kinds.
+        // Used by the UI to correctly combine multiple selected chips via
+        // PPM = Σng / Σinput · 1M (not by summing or averaging pre-computed group PPMs).
+        var groupRawIn = new Dictionary<(string PT, string PN, string NG, string G, string PeriodKey), (double I, double N)>();
+        foreach (var kv in dateGrpNg)
+            groupRawIn[(kv.Key.Item1, kv.Key.Item2, kv.Key.Item3, kv.Key.Item4, kv.Key.Item5)] = kv.Value;
+        foreach (var kv in weekGrpNg)
+            groupRawIn[(kv.Key.Item1, kv.Key.Item2, kv.Key.Item3, kv.Key.Item4, kv.Key.Item5)] = kv.Value;
+        foreach (var kv in monthGrpNg)
+            groupRawIn[(kv.Key.Item1, kv.Key.Item2, kv.Key.Item3, kv.Key.Item4, kv.Key.Item5)] = kv.Value;
 
         progress?.Report("Report complete.");
         return new NgRateReport
@@ -358,6 +369,246 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
             ModelFilter  = modelLineShifts,
             GroupNames   = groupNames,
             GroupSummary = groupSummary,
+            GroupRawIn   = groupRawIn,
+        };
+    }
+
+    // ── Per-group weighted (sumNg/sumInput) raw aggregation ──────────────────────
+
+    public Task<GroupRawQtyReport> ComputeGroupRawQtyAsync(
+        string dbPath,
+        IReadOnlyDictionary<string, string> lineShiftToGroup,
+        IProgress<string>? progress = null)
+        => Task.Run(() => ComputeGroupRawQty(dbPath, lineShiftToGroup, progress));
+
+    private GroupRawQtyReport ComputeGroupRawQty(
+        string dbPath,
+        IReadOnlyDictionary<string, string> lineShiftToGroup,
+        IProgress<string>? progress)
+    {
+        if (lineShiftToGroup.Count == 0) return new GroupRawQtyReport();
+
+        var modelSet = new HashSet<string>(lineShiftToGroup.Keys, StringComparer.Ordinal);
+        progress?.Report("Loading OrginalTable (group raw qty)…");
+        var orgRows = LoadOrginalRows(dbPath, modelSet);
+        if (orgRows.Count == 0) return new GroupRawQtyReport();
+
+        static Dictionary<string, Dictionary<string, (double Input, double Ng)>> BuildByPeriod(
+            List<OrgRow> rows,
+            IReadOnlyDictionary<string, string> lsToGroup,
+            Func<OrgRow, string> getKey)
+        {
+            // Input은 같은 (LS, PT, PN, period) 안에서 NgName마다 중복되어 있을 수 있으므로
+            // NgName 차원을 먼저 접어 Input은 MAX로 한 번만 카운트하고 Ng는 합산.
+            var collapsed = rows
+                .Where(r => !string.IsNullOrEmpty(getKey(r)))
+                .Where(r => !string.IsNullOrEmpty(r.LineShift) && lsToGroup.ContainsKey(r.LineShift))
+                .GroupBy(r => (r.LineShift, r.ProcessType, r.ProcessName, K: getKey(r)))
+                .Select(g => (
+                    LineShift: g.Key.LineShift,
+                    K:         g.Key.K,
+                    Input:     g.Max(r => r.QtyInput),
+                    Ng:        g.Sum(r => r.QtyNg)))
+                .ToList();
+
+            var outer = new Dictionary<string, Dictionary<string, (double, double)>>(StringComparer.Ordinal);
+            foreach (var x in collapsed)
+            {
+                string grp = lsToGroup[x.LineShift];
+                if (!outer.TryGetValue(grp, out var inner))
+                {
+                    inner = new Dictionary<string, (double, double)>(StringComparer.Ordinal);
+                    outer[grp] = inner;
+                }
+                var (i, n) = inner.GetValueOrDefault(x.K);
+                inner[x.K] = (i + x.Input, n + x.Ng);
+            }
+            return outer;
+        }
+
+        var date  = BuildByPeriod(orgRows, lineShiftToGroup, r => r.ProductDate);
+        var week  = BuildByPeriod(orgRows, lineShiftToGroup, r => GetWeekKey(r.ProductDate));
+        var month = BuildByPeriod(orgRows, lineShiftToGroup, r => GetMonthKey(r.ProductDate));
+
+        var dateKeys  = date .Values.SelectMany(d => d.Keys).ToHashSet(StringComparer.Ordinal);
+        var weekKeys  = week .Values.SelectMany(d => d.Keys).ToHashSet(StringComparer.Ordinal);
+        var monthKeys = month.Values.SelectMany(d => d.Keys).ToHashSet(StringComparer.Ordinal);
+
+        var dateCols  = dateKeys .OrderByDescending(k => k).Select(k => new PeriodColumn(k, FormatDateHeader(k))).ToList();
+        var weekCols  = weekKeys .OrderByDescending(k => k).Select(k => new PeriodColumn(k, "W" + int.Parse(k[4..]))).ToList();
+        var monthCols = monthKeys.OrderByDescending(k => k).Select(k => new PeriodColumn(k, "M" + int.Parse(k[4..]))).ToList();
+
+        return new GroupRawQtyReport
+        {
+            DateCols  = dateCols,
+            WeekCols  = weekCols,
+            MonthCols = monthCols,
+            Date      = date,
+            Week      = week,
+            Month     = month,
+        };
+    }
+
+    // ── Per-LineShift × Process × NG detail aggregation ──────────────────────────
+
+    /// <summary>
+    /// Returns per-(LineShift, ProcessType, ProcessName, NgName) PPM broken down by
+    /// date / week / month. Used by the "By Group" view's top-10 per group table.
+    /// </summary>
+    public Task<LineShiftNgReport> ComputeLineShiftNgDetailsAsync(
+        string dbPath,
+        IReadOnlyCollection<string> lineShifts,
+        IProgress<string>? progress = null)
+        => Task.Run(() => ComputeLineShiftNgDetails(dbPath, lineShifts, progress));
+
+    /// <summary>
+    /// Same as ComputeLineShiftNgDetailsAsync but aggregates LineShifts per supplied mapping.
+    /// Returned `LineShiftNgDetail.LineShift` holds the group key (e.g. "대그룹::Material").
+    /// PPMs are combo-merged (weighted) per (group, PT, PN, NgName, period).
+    /// </summary>
+    public Task<LineShiftNgReport> ComputeGroupedNgDetailsAsync(
+        string dbPath,
+        IReadOnlyDictionary<string, string> lineShiftToGroup,
+        IProgress<string>? progress = null)
+        => Task.Run(() => ComputeGroupedNgDetails(dbPath, lineShiftToGroup, progress));
+
+    private LineShiftNgReport ComputeGroupedNgDetails(
+        string dbPath,
+        IReadOnlyDictionary<string, string> lineShiftToGroup,
+        IProgress<string>? progress)
+    {
+        if (lineShiftToGroup.Count == 0) return new LineShiftNgReport();
+
+        var modelSet = new HashSet<string>(lineShiftToGroup.Keys, StringComparer.Ordinal);
+        progress?.Report("Loading ProcessType lookup (grouped NG detail)…");
+        var ptLookup = LoadProcessTypeLookup(dbPath);
+
+        progress?.Report("Loading OrginalTable (grouped NG detail)…");
+        var orgRows = LoadOrginalRows(dbPath, modelSet);
+        if (orgRows.Count == 0) return new LineShiftNgReport();
+
+        foreach (var r in orgRows)
+        {
+            if (!string.IsNullOrEmpty(r.ProcessType)) continue;
+            if (ptLookup.TryGetValue((r.MaterialName, r.ProcessCode, r.ProcessName), out string? pt))
+                r.ProcessType = pt;
+            else if (ptLookup.TryGetValue((string.Empty, r.ProcessCode, r.ProcessName), out string? pt2))
+                r.ProcessType = pt2;
+        }
+
+        progress?.Report("Aggregating by (Group, Process, NG)…");
+        var details = new List<LineShiftNgDetail>();
+        foreach (var g in orgRows
+                     .Where(r => lineShiftToGroup.ContainsKey(r.LineShift))
+                     .GroupBy(r => (Grp: lineShiftToGroup[r.LineShift],
+                                    r.ProcessType, r.ProcessName, r.NgName)))
+        {
+            var datePpm  = g.GroupBy(r => r.ProductDate)
+                .Where(x => !string.IsNullOrEmpty(x.Key))
+                .ToDictionary(x => x.Key, x => CalcPpm(x.Sum(r => r.QtyInput), x.Sum(r => r.QtyNg)));
+            var weekPpm  = g.GroupBy(r => GetWeekKey(r.ProductDate))
+                .Where(x => !string.IsNullOrEmpty(x.Key))
+                .ToDictionary(x => x.Key, x => CalcPpm(x.Sum(r => r.QtyInput), x.Sum(r => r.QtyNg)));
+            var monthPpm = g.GroupBy(r => GetMonthKey(r.ProductDate))
+                .Where(x => !string.IsNullOrEmpty(x.Key))
+                .ToDictionary(x => x.Key, x => CalcPpm(x.Sum(r => r.QtyInput), x.Sum(r => r.QtyNg)));
+
+            details.Add(new LineShiftNgDetail
+            {
+                LineShift   = g.Key.Grp,      // now holds the group key
+                ProcessType = g.Key.ProcessType,
+                ProcessName = g.Key.ProcessName,
+                NgName      = g.Key.NgName,
+                DatePpm     = datePpm,
+                WeekPpm     = weekPpm,
+                MonthPpm    = monthPpm,
+            });
+        }
+
+        var dateKeys  = details.SelectMany(d => d.DatePpm.Keys).ToHashSet(StringComparer.Ordinal);
+        var weekKeys  = details.SelectMany(d => d.WeekPpm.Keys).ToHashSet(StringComparer.Ordinal);
+        var monthKeys = details.SelectMany(d => d.MonthPpm.Keys).ToHashSet(StringComparer.Ordinal);
+
+        var dateCols  = dateKeys .OrderByDescending(k => k).Select(k => new PeriodColumn(k, FormatDateHeader(k))).ToList();
+        var weekCols  = weekKeys .OrderByDescending(k => k).Select(k => new PeriodColumn(k, "W" + int.Parse(k[4..]))).ToList();
+        var monthCols = monthKeys.OrderByDescending(k => k).Select(k => new PeriodColumn(k, "M" + int.Parse(k[4..]))).ToList();
+
+        progress?.Report($"  {details.Count:N0} (Group×Process×NG) combos.");
+        return new LineShiftNgReport
+        {
+            DateCols = dateCols, WeekCols = weekCols, MonthCols = monthCols, Details = details,
+        };
+    }
+
+    private LineShiftNgReport ComputeLineShiftNgDetails(
+        string dbPath,
+        IReadOnlyCollection<string> lineShifts,
+        IProgress<string>? progress)
+    {
+        var modelSet = lineShifts.Count > 0
+            ? new HashSet<string>(lineShifts, StringComparer.Ordinal)
+            : null;
+
+        progress?.Report("Loading ProcessType lookup (LS×NG detail)…");
+        var ptLookup = LoadProcessTypeLookup(dbPath);
+
+        progress?.Report("Loading OrginalTable (LS×NG detail)…");
+        var orgRows = LoadOrginalRows(dbPath, modelSet);
+        if (orgRows.Count == 0) return new LineShiftNgReport();
+
+        foreach (var r in orgRows)
+        {
+            if (!string.IsNullOrEmpty(r.ProcessType)) continue;
+            if (ptLookup.TryGetValue((r.MaterialName, r.ProcessCode, r.ProcessName), out string? pt))
+                r.ProcessType = pt;
+            else if (ptLookup.TryGetValue((string.Empty, r.ProcessCode, r.ProcessName), out string? pt2))
+                r.ProcessType = pt2;
+        }
+
+        progress?.Report("Aggregating by (LineShift, Process, NG)…");
+        var details = new List<LineShiftNgDetail>();
+        foreach (var g in orgRows
+                     .Where(r => !string.IsNullOrEmpty(r.LineShift))
+                     .GroupBy(r => (r.LineShift, r.ProcessType, r.ProcessName, r.NgName)))
+        {
+            var datePpm  = g.GroupBy(r => r.ProductDate)
+                .Where(x => !string.IsNullOrEmpty(x.Key))
+                .ToDictionary(x => x.Key, x => CalcPpm(x.Sum(r => r.QtyInput), x.Sum(r => r.QtyNg)));
+            var weekPpm  = g.GroupBy(r => GetWeekKey(r.ProductDate))
+                .Where(x => !string.IsNullOrEmpty(x.Key))
+                .ToDictionary(x => x.Key, x => CalcPpm(x.Sum(r => r.QtyInput), x.Sum(r => r.QtyNg)));
+            var monthPpm = g.GroupBy(r => GetMonthKey(r.ProductDate))
+                .Where(x => !string.IsNullOrEmpty(x.Key))
+                .ToDictionary(x => x.Key, x => CalcPpm(x.Sum(r => r.QtyInput), x.Sum(r => r.QtyNg)));
+
+            details.Add(new LineShiftNgDetail
+            {
+                LineShift   = g.Key.LineShift,
+                ProcessType = g.Key.ProcessType,
+                ProcessName = g.Key.ProcessName,
+                NgName      = g.Key.NgName,
+                DatePpm     = datePpm,
+                WeekPpm     = weekPpm,
+                MonthPpm    = monthPpm,
+            });
+        }
+
+        // Collect distinct period keys across all details.
+        var dateKeys  = details.SelectMany(d => d.DatePpm.Keys).ToHashSet(StringComparer.Ordinal);
+        var weekKeys  = details.SelectMany(d => d.WeekPpm.Keys).ToHashSet(StringComparer.Ordinal);
+        var monthKeys = details.SelectMany(d => d.MonthPpm.Keys).ToHashSet(StringComparer.Ordinal);
+
+        var dateCols  = dateKeys .OrderByDescending(k => k).Select(k => new PeriodColumn(k, FormatDateHeader(k))).ToList();
+        var weekCols  = weekKeys .OrderByDescending(k => k).Select(k => new PeriodColumn(k, "W" + int.Parse(k[4..]))).ToList();
+        var monthCols = monthKeys.OrderByDescending(k => k).Select(k => new PeriodColumn(k, "M" + int.Parse(k[4..]))).ToList();
+
+        progress?.Report($"  {details.Count:N0} (LS×Process×NG) combos.");
+        return new LineShiftNgReport
+        {
+            DateCols  = dateCols,
+            WeekCols  = weekCols,
+            MonthCols = monthCols,
+            Details   = details,
         };
     }
 
@@ -642,31 +893,42 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
     // ── Top-10 group raw map ──────────────────────────────────────────────────────
 
+    // Expand each OrgRow into one entry per group it belongs to, so a LineShift that
+    // sits in both a leaf group and its umbrella parent contributes to BOTH aggregates.
+    private static IEnumerable<string> GroupsOf(
+        Dictionary<string, List<string>> map, string lineShift)
+    {
+        if (map.TryGetValue(lineShift, out var list) && list.Count > 0) return list;
+        return new[] { lineShift };
+    }
+
     // Compute PPM per NgName first, then sum — matches the parent row formula
     private static Dictionary<(string, string, string, string), double> BuildGroupProcessRaw(
-        List<OrgRow> rows, Dictionary<string, string> lsToGroup, Func<OrgRow, string> getKey)
+        List<OrgRow> rows, Dictionary<string, List<string>> lsToGroups, Func<OrgRow, string> getKey)
         => rows
-            .GroupBy(r => (r.ProcessType, r.ProcessName,
-                           G: lsToGroup.GetValueOrDefault(r.LineShift, r.LineShift),
-                           K: getKey(r),
-                           r.NgName))
+            .SelectMany(r => GroupsOf(lsToGroups, r.LineShift).Select(g => (r, G: g)))
+            .GroupBy(x => (x.r.ProcessType, x.r.ProcessName,
+                           x.G,
+                           K: getKey(x.r),
+                           x.r.NgName))
             .Where(g => !string.IsNullOrEmpty(g.Key.K))
             .Select(g => (
                 Key: (g.Key.ProcessType, g.Key.ProcessName, g.Key.G, g.Key.K),
-                Ppm: CalcPpm(g.Sum(r => r.QtyInput), g.Sum(r => r.QtyNg))))
+                Ppm: CalcPpm(g.Sum(x => x.r.QtyInput), g.Sum(x => x.r.QtyNg))))
             .GroupBy(x => x.Key)
             .ToDictionary(g => g.Key, g => g.Sum(x => x.Ppm));
 
     private static Dictionary<(string, string, string, string, string), (double I, double N)> BuildGroupNgRaw(
-        List<OrgRow> rows, Dictionary<string, string> lsToGroup, Func<OrgRow, string> getKey)
+        List<OrgRow> rows, Dictionary<string, List<string>> lsToGroups, Func<OrgRow, string> getKey)
         => rows
-            .GroupBy(r => (r.ProcessType, r.ProcessName, r.NgName,
-                           G: lsToGroup.GetValueOrDefault(r.LineShift, r.LineShift),
-                           K: getKey(r)))
+            .SelectMany(r => GroupsOf(lsToGroups, r.LineShift).Select(g => (r, G: g)))
+            .GroupBy(x => (x.r.ProcessType, x.r.ProcessName, x.r.NgName,
+                           x.G,
+                           K: getKey(x.r)))
             .Where(g => !string.IsNullOrEmpty(g.Key.K))
             .ToDictionary(
                 g => (g.Key.ProcessType, g.Key.ProcessName, g.Key.NgName, g.Key.G, g.Key.K),
-                g => (I: g.Sum(r => r.QtyInput), N: g.Sum(r => r.QtyNg)));
+                g => (I: g.Sum(x => x.r.QtyInput), N: g.Sum(x => x.r.QtyNg)));
 
     // ── Per-group summary (ProcessType × period PPM) ─────────────────────────────
 
@@ -745,7 +1007,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
     private static List<InputQtyRow> BuildInputQtyRows(
         List<OrgRow> rows,
-        Dictionary<string, string> lineShiftToGroup,
+        Dictionary<string, List<string>> lineShiftToGroups,
         List<PeriodColumn> dateCols)
     {
         if (dateCols.Count == 0) return [];
@@ -753,10 +1015,11 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
         var aggDict = rows
             .Where(r => dateKeys.Contains(r.ProductDate))
-            .GroupBy(r => (r.ProcessType, r.ProcessName,
-                           Group: lineShiftToGroup.GetValueOrDefault(r.LineShift, r.LineShift),
-                           r.ProductDate))
-            .ToDictionary(g => g.Key, g => (long)g.Sum(r => r.QtyInput));
+            .SelectMany(r => GroupsOf(lineShiftToGroups, r.LineShift).Select(g => (r, Group: g)))
+            .GroupBy(x => (x.r.ProcessType, x.r.ProcessName,
+                           x.Group,
+                           x.r.ProductDate))
+            .ToDictionary(g => g.Key, g => (long)g.Sum(x => x.r.QtyInput));
 
         var procList = aggDict.Keys
             .Select(k => (k.ProcessType, k.ProcessName))
@@ -795,7 +1058,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
     private static List<NgQtyRow> BuildNgQtyRows(
         List<OrgRow> rows,
-        Dictionary<string, string> lineShiftToGroup,
+        Dictionary<string, List<string>> lineShiftToGroups,
         List<PeriodColumn> dateCols)
     {
         if (dateCols.Count == 0) return [];
@@ -803,10 +1066,11 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
         var aggDict = rows
             .Where(r => dateKeys.Contains(r.ProductDate) && r.QtyNg > 0)
-            .GroupBy(r => (r.ProcessType, r.ProcessName, r.NgName,
-                           Group: lineShiftToGroup.GetValueOrDefault(r.LineShift, r.LineShift),
-                           r.ProductDate))
-            .ToDictionary(g => g.Key, g => (long)g.Sum(r => r.QtyNg));
+            .SelectMany(r => GroupsOf(lineShiftToGroups, r.LineShift).Select(g => (r, Group: g)))
+            .GroupBy(x => (x.r.ProcessType, x.r.ProcessName, x.r.NgName,
+                           x.Group,
+                           x.r.ProductDate))
+            .ToDictionary(g => g.Key, g => (long)g.Sum(x => x.r.QtyNg));
 
         var comboList = aggDict.Keys
             .Select(k => (k.ProcessType, k.ProcessName, k.NgName))
@@ -847,7 +1111,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
     private static List<ReasonRow> BuildReasonRows(
         List<OrgRow> rows,
         Dictionary<string, string> reasonLookup,
-        Dictionary<string, string> lineShiftToGroup,
+        Dictionary<string, List<string>> lineShiftToGroups,
         List<PeriodColumn> dateCols,
         List<PeriodColumn> weekCols,
         List<PeriodColumn> monthCols)
@@ -857,8 +1121,9 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
         var tagged = rows
             .Where(r => dateKeys.Contains(r.ProductDate))
-            .Select(r => (r, Reason: reasonLookup.GetValueOrDefault(r.ProcessName + "\0" + r.NgName, ""),
-                            Group:  lineShiftToGroup.GetValueOrDefault(r.LineShift, r.LineShift)))
+            .SelectMany(r => GroupsOf(lineShiftToGroups, r.LineShift)
+                .Select(g => (r, Reason: reasonLookup.GetValueOrDefault(r.ProcessName + "\0" + r.NgName, ""),
+                                 Group:  g)))
             .Where(x => !string.IsNullOrEmpty(x.Reason))
             .ToList();
 

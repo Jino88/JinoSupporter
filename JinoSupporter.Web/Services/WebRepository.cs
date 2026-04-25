@@ -268,9 +268,11 @@ public sealed class WebRepository
             CREATE INDEX IF NOT EXISTS idx_dsum_name ON DatasetSummary(DatasetName);
 
             CREATE TABLE IF NOT EXISTS RawReportText (
-                DatasetName   TEXT PRIMARY KEY,
+                DatasetName   TEXT NOT NULL,
+                Kind          TEXT NOT NULL DEFAULT 'ocr',
                 ExtractedText TEXT NOT NULL DEFAULT '',
-                CreatedAt     TEXT NOT NULL
+                CreatedAt     TEXT NOT NULL,
+                PRIMARY KEY (DatasetName, Kind)
             );
 
             CREATE TABLE IF NOT EXISTS AskAiHistory (
@@ -288,13 +290,169 @@ public sealed class WebRepository
                 MenuId TEXT NOT NULL,
                 PRIMARY KEY (Role, MenuId)
             );
+
+            CREATE TABLE IF NOT EXISTS MtypeCategories (
+                Code TEXT PRIMARY KEY,
+                Name TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE TABLE IF NOT EXISTS ModelGroups (
+                Id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                Name         TEXT    NOT NULL DEFAULT '',
+                ProductGroup TEXT    NOT NULL DEFAULT 'ETC',
+                SortOrder    INTEGER NOT NULL DEFAULT 0,
+                UpdatedAt    TEXT    NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS ModelGroupItems (
+                Id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                GroupId   INTEGER NOT NULL REFERENCES ModelGroups(Id) ON DELETE CASCADE,
+                LineShift TEXT    NOT NULL DEFAULT '',
+                Material  TEXT    NOT NULL DEFAULT '',
+                SubGroup  TEXT    NOT NULL DEFAULT '',
+                SortOrder INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS idx_mgi_group ON ModelGroupItems(GroupId);
+
+            CREATE TABLE IF NOT EXISTS BmesMaterials (
+                Matnr     TEXT PRIMARY KEY,
+                Maktx     TEXT NOT NULL DEFAULT '',
+                Meins     TEXT NOT NULL DEFAULT '',
+                Injtp     TEXT NOT NULL DEFAULT '',
+                Mtype     TEXT NOT NULL DEFAULT '',
+                Btype     TEXT NOT NULL DEFAULT '',
+                MngCode   TEXT NOT NULL DEFAULT '',
+                ModNameB  TEXT NOT NULL DEFAULT '',
+                LotQt     TEXT NOT NULL DEFAULT '',
+                Bunch     TEXT NOT NULL DEFAULT '',
+                NgTar     TEXT NOT NULL DEFAULT '',
+                McLv1Tx   TEXT NOT NULL DEFAULT '',
+                McLv2Tx   TEXT NOT NULL DEFAULT '',
+                McLv3Tx   TEXT NOT NULL DEFAULT '',
+                McLv4Tx   TEXT NOT NULL DEFAULT '',
+                McLv5Tx   TEXT NOT NULL DEFAULT '',
+                McLv6Tx   TEXT NOT NULL DEFAULT '',
+                Ernam     TEXT NOT NULL DEFAULT '',
+                Erdat     TEXT NOT NULL DEFAULT '',
+                Grcod     TEXT NOT NULL DEFAULT '',
+                Grnam     TEXT NOT NULL DEFAULT '',
+                MfPhi     TEXT NOT NULL DEFAULT '',
+                FetchedAt TEXT NOT NULL
+            );
             """;
         cmd.ExecuteNonQuery();
         MigrateSchema(conn);
+        SeedMtypeCategories(conn);
+    }
+
+    /// <summary>
+    /// Idempotent seed of the Mtype → Category-name mapping. Uses INSERT OR IGNORE so
+    /// that any user renames done later are preserved on subsequent starts.
+    /// </summary>
+    private static void SeedMtypeCategories(SqliteConnection conn)
+    {
+        (string Code, string Name)[] seed =
+        [
+            ("D001", "RA1(L)"),       ("D002", "RA2(L)"),       ("D003", "RM(L)"),
+            ("D004", "RA1(R)"),       ("D005", "RA2(R)"),       ("D006", "RM(R)"),
+            ("D007", "BUDASSY(L)"),   ("D008", "BUDASSY(R)"),   ("D009", "INSPECTION(L)"),
+            ("D010", "INSPECTION(R)"),("D011", "SRVC"),         ("D012", "SPEAKER"),
+            ("D013", "MODULE"),       ("D014", "SPK(ZZ)"),      ("D015", "UNIT(ZZ)"),
+            ("D016", "FPBA"),         ("D017", "EXCITER"),      ("D018", "HEADSET"),
+            ("D019", "RECEIVER"),     ("D020", "SFPRECEIVER"),  ("D021", "ACCESSORY"),
+            ("D022", "ACCESSORYSUB"), ("D023", "FRONT(L)"),     ("D024", "FRONT(R)"),
+            ("D025", "CKD"),          ("D026", "TAG"),          ("D028", "FA2(L)"),
+            ("D029", "FA2(R)"),       ("D030", "SUB2(L)"),      ("D031", "SUB2(R)"),
+            ("D032", "RA(L)"),        ("D033", "RA(R)"),        ("D034", "FA1(L)"),
+            ("D035", "FA1(R)"),       ("D036", "SUB3FRONT"),    ("D037", "SUB3REAR"),
+            ("D038", "BUZZERASSY"),   ("D039", "KITTING"),      ("D040", "CRADLE"),
+            ("D041", "PACKING"),      ("D042", "CRADLE-SRVC"),  ("D043", "POGOASSY(L)"),
+            ("D044", "POGOASSY(R)"),  ("D046", "RM(L)"),        ("D047", "RM(R)"),
+            ("D048", "FRONTASSY(L)"), ("D049", "FRONTASSY(R)"), ("D052", "REARASSY(L)"),
+            ("D053", "REARASSY(R)"),  ("D054", "FRONTASSY(L)"), ("D055", "FRONTASSY(R)"),
+            ("D999", "OTHER"),
+        ];
+
+        using SqliteTransaction tx = conn.BeginTransaction();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = "INSERT OR IGNORE INTO MtypeCategories (Code, Name) VALUES (@c, @n);";
+        SqliteParameter pC = cmd.Parameters.Add("@c", SqliteType.Text);
+        SqliteParameter pN = cmd.Parameters.Add("@n", SqliteType.Text);
+        foreach (var (code, name) in seed)
+        {
+            pC.Value = code;
+            pN.Value = name;
+            cmd.ExecuteNonQuery();
+        }
+        tx.Commit();
     }
 
     private static void MigrateSchema(SqliteConnection conn)
     {
+        // ModelGroupItems.Material (for 중그룹 Material)
+        bool hasMaterial = false;
+        using (SqliteCommand ck = conn.CreateCommand())
+        {
+            ck.CommandText = "PRAGMA table_info(ModelGroupItems);";
+            using SqliteDataReader r = ck.ExecuteReader();
+            while (r.Read())
+                if (r.GetString(1).Equals("Material", StringComparison.OrdinalIgnoreCase))
+                    hasMaterial = true;
+        }
+        if (!hasMaterial)
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE ModelGroupItems ADD COLUMN Material TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+
+        // ModelGroupItems.SubGroup (optional sub-grouping inside a mid-group)
+        bool hasSubGroup = false;
+        using (SqliteCommand ck = conn.CreateCommand())
+        {
+            ck.CommandText = "PRAGMA table_info(ModelGroupItems);";
+            using SqliteDataReader r = ck.ExecuteReader();
+            while (r.Read())
+                if (r.GetString(1).Equals("SubGroup", StringComparison.OrdinalIgnoreCase))
+                    hasSubGroup = true;
+        }
+        if (!hasSubGroup)
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE ModelGroupItems ADD COLUMN SubGroup TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+
+        // ModelGroups.ProductGroup (SPK/UNIT/MODULE/TWS/ETC — replaces per-JSON-file attribute)
+        bool hasProductGroup = false;
+        using (SqliteCommand ck = conn.CreateCommand())
+        {
+            ck.CommandText = "PRAGMA table_info(ModelGroups);";
+            using SqliteDataReader r = ck.ExecuteReader();
+            while (r.Read())
+                if (r.GetString(1).Equals("ProductGroup", StringComparison.OrdinalIgnoreCase))
+                    hasProductGroup = true;
+        }
+        if (!hasProductGroup)
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE ModelGroups ADD COLUMN ProductGroup TEXT NOT NULL DEFAULT 'ETC';";
+            alter.ExecuteNonQuery();
+        }
+
+        // One-shot tracker for data migrations that should only run once.
+        using (SqliteCommand mig = conn.CreateCommand())
+        {
+            mig.CommandText = """
+                CREATE TABLE IF NOT EXISTS AppMigrations (
+                    Name      TEXT PRIMARY KEY,
+                    AppliedAt TEXT NOT NULL
+                );
+                """;
+            mig.ExecuteNonQuery();
+        }
+
         bool hasDatasetNames = false;
         bool hasPurpose      = false;
         using SqliteCommand check = conn.CreateCommand();
@@ -430,62 +588,127 @@ public sealed class WebRepository
         using SqliteCommand ensureText = conn.CreateCommand();
         ensureText.CommandText = """
             CREATE TABLE IF NOT EXISTS RawReportText (
-                DatasetName   TEXT PRIMARY KEY,
+                DatasetName   TEXT NOT NULL,
+                Kind          TEXT NOT NULL DEFAULT 'ocr',
                 ExtractedText TEXT NOT NULL DEFAULT '',
-                CreatedAt     TEXT NOT NULL
+                CreatedAt     TEXT NOT NULL,
+                PRIMARY KEY (DatasetName, Kind)
             );
             """;
         ensureText.ExecuteNonQuery();
+
+        // Migration: RawReportText originally had only DatasetName as PK with no Kind column.
+        // Add Kind + rebuild table with composite PK, classifying existing rows as
+        // 'ocr' (structured markdown transcript) vs 'excel_paste' (raw tab-separated
+        // text pasted from Excel) by content heuristic.
+        bool hasKind = false;
+        using (SqliteCommand ck = conn.CreateCommand())
+        {
+            ck.CommandText = "PRAGMA table_info(RawReportText);";
+            using SqliteDataReader r = ck.ExecuteReader();
+            while (r.Read())
+                if (r.GetString(1).Equals("Kind", StringComparison.OrdinalIgnoreCase))
+                    hasKind = true;
+        }
+        if (!hasKind)
+        {
+            using SqliteCommand migrate = conn.CreateCommand();
+            migrate.CommandText = """
+                ALTER TABLE RawReportText ADD COLUMN Kind TEXT NOT NULL DEFAULT 'ocr';
+
+                UPDATE RawReportText
+                   SET Kind = 'excel_paste'
+                 WHERE ExtractedText NOT LIKE '%### Table:%'
+                   AND ExtractedText NOT LIKE '%## I. Purpose%'
+                   AND ExtractedText NOT LIKE '%Columns:%';
+
+                CREATE TABLE RawReportText_new (
+                    DatasetName   TEXT NOT NULL,
+                    Kind          TEXT NOT NULL DEFAULT 'ocr',
+                    ExtractedText TEXT NOT NULL DEFAULT '',
+                    CreatedAt     TEXT NOT NULL,
+                    PRIMARY KEY (DatasetName, Kind)
+                );
+                INSERT INTO RawReportText_new (DatasetName, Kind, ExtractedText, CreatedAt)
+                SELECT DatasetName, Kind, ExtractedText, CreatedAt FROM RawReportText;
+                DROP TABLE RawReportText;
+                ALTER TABLE RawReportText_new RENAME TO RawReportText;
+                """;
+            migrate.ExecuteNonQuery();
+        }
     }
 
-    // ── Raw report text (OCR cache) ───────────────────────────────────────────
+    // ── Raw report text ───────────────────────────────────────────────────────
+    // Two kinds live side-by-side per dataset:
+    //   "ocr"         — structured markdown transcript produced by Vision OCR.
+    //                   Batch normalize-from-text flow consumes this.
+    //   "excel_paste" — raw tab-separated text pasted from Excel at Input time.
+    //                   Passed as auxiliary rawText to NormalizeFromImagesAsync;
+    //                   NOT a substitute for OCR markdown.
 
-    public void SaveExtractedText(string datasetName, string text)
+    public const string TextKindOcr        = "ocr";
+    public const string TextKindExcelPaste = "excel_paste";
+
+    public void SaveExtractedText(string datasetName, string text, string kind = TextKindOcr)
     {
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
         cmd.CommandText = """
-            INSERT INTO RawReportText (DatasetName, ExtractedText, CreatedAt)
-            VALUES (@n, @t, @at)
-            ON CONFLICT(DatasetName) DO UPDATE SET ExtractedText=@t, CreatedAt=@at;
+            INSERT INTO RawReportText (DatasetName, Kind, ExtractedText, CreatedAt)
+            VALUES (@n, @k, @t, @at)
+            ON CONFLICT(DatasetName, Kind) DO UPDATE SET ExtractedText=@t, CreatedAt=@at;
             """;
         cmd.Parameters.AddWithValue("@n",  datasetName);
+        cmd.Parameters.AddWithValue("@k",  kind);
         cmd.Parameters.AddWithValue("@t",  text ?? "");
         cmd.Parameters.AddWithValue("@at", DateTime.UtcNow.ToString("O"));
         cmd.ExecuteNonQuery();
     }
 
-    public string? GetExtractedText(string datasetName)
+    public string? GetExtractedText(string datasetName, string kind = TextKindOcr)
     {
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT ExtractedText FROM RawReportText WHERE DatasetName=@n;";
+        cmd.CommandText = "SELECT ExtractedText FROM RawReportText WHERE DatasetName=@n AND Kind=@k;";
         cmd.Parameters.AddWithValue("@n", datasetName);
+        cmd.Parameters.AddWithValue("@k", kind);
         object? r = cmd.ExecuteScalar();
         return r is string s ? s : null;
     }
 
     /// <summary>
-    /// Returns the set of DatasetNames that currently have cached OCR text
-    /// (non-empty ExtractedText). Cheap single-query lookup to avoid per-row DB hits.
+    /// Returns the set of DatasetNames that have non-empty text of the given
+    /// <paramref name="kind"/> cached. Default kind is "ocr" so callers asking
+    /// "which datasets have OCR cache" need no change.
     /// </summary>
-    public HashSet<string> GetDatasetsWithExtractedText()
+    public HashSet<string> GetDatasetsWithExtractedText(string kind = TextKindOcr)
     {
         var set = new HashSet<string>(StringComparer.Ordinal);
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT DatasetName FROM RawReportText WHERE LENGTH(TRIM(ExtractedText)) > 0;";
+        cmd.CommandText = "SELECT DatasetName FROM RawReportText WHERE Kind=@k AND LENGTH(TRIM(ExtractedText)) > 0;";
+        cmd.Parameters.AddWithValue("@k", kind);
         using SqliteDataReader r = cmd.ExecuteReader();
         while (r.Read()) set.Add(r.GetString(0));
         return set;
     }
 
-    public void DeleteExtractedText(string datasetName)
+    /// <summary>Delete a specific kind (default "ocr") or all kinds when <paramref name="kind"/> is null.</summary>
+    public void DeleteExtractedText(string datasetName, string? kind = TextKindOcr)
     {
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
-        cmd.CommandText = "DELETE FROM RawReportText WHERE DatasetName=@n;";
-        cmd.Parameters.AddWithValue("@n", datasetName);
+        if (kind is null)
+        {
+            cmd.CommandText = "DELETE FROM RawReportText WHERE DatasetName=@n;";
+            cmd.Parameters.AddWithValue("@n", datasetName);
+        }
+        else
+        {
+            cmd.CommandText = "DELETE FROM RawReportText WHERE DatasetName=@n AND Kind=@k;";
+            cmd.Parameters.AddWithValue("@n", datasetName);
+            cmd.Parameters.AddWithValue("@k", kind);
+        }
         cmd.ExecuteNonQuery();
     }
 
@@ -825,7 +1048,12 @@ public sealed class WebRepository
             SELECT r.Id, r.DatasetName, r.ProductType, r.ReportDate, r.CreatedAt,
                    (SELECT COUNT(*) FROM RawReportImages WHERE DatasetName=r.DatasetName) AS ImgCnt,
                    (SELECT COUNT(*) FROM NormalizedMeasurements WHERE DatasetName=r.DatasetName) AS MeasCnt,
-                   r.BatchExcluded
+                   r.BatchExcluded,
+                   COALESCE(
+                     (SELECT CreatedAt FROM DatasetSummary WHERE DatasetName=r.DatasetName),
+                     (SELECT MAX(CreatedAt) FROM NormalizedMeasurements WHERE DatasetName=r.DatasetName),
+                     ''
+                   ) AS BatchedAt
             FROM RawReports r
             ORDER BY r.CreatedAt DESC;
             """;
@@ -834,7 +1062,8 @@ public sealed class WebRepository
         while (r.Read())
             list.Add(new RawReportInfo(r.GetInt64(0), r.GetString(1), r.GetString(2),
                                        r.GetString(3), r.GetInt32(5), r.GetInt32(6),
-                                       r.GetString(4), r.GetInt32(7) != 0));
+                                       r.GetString(4), r.GetInt32(7) != 0,
+                                       r.IsDBNull(8) ? "" : r.GetString(8)));
         return list;
     }
 
@@ -2066,5 +2295,578 @@ public sealed class WebRepository
         cmd.CommandText = "DELETE FROM Schedules WHERE Id=@id;";
         cmd.Parameters.AddWithValue("@id", id);
         cmd.ExecuteNonQuery();
+    }
+
+    // ── BMES Materials ───────────────────────────────────────────────────────
+
+    public void UpsertBmesMaterial(BmesMaterial m)
+        => UpsertBmesMaterials(new[] { m });
+
+    public int UpsertBmesMaterials(IEnumerable<BmesMaterial> materials)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteTransaction tx = conn.BeginTransaction();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = """
+            INSERT INTO BmesMaterials
+                (Matnr, Maktx, Meins, Injtp, Mtype, Btype, MngCode, ModNameB,
+                 LotQt, Bunch, NgTar,
+                 McLv1Tx, McLv2Tx, McLv3Tx, McLv4Tx, McLv5Tx, McLv6Tx,
+                 Ernam, Erdat, Grcod, Grnam, MfPhi, FetchedAt)
+            VALUES
+                (@Matnr, @Maktx, @Meins, @Injtp, @Mtype, @Btype, @MngCode, @ModNameB,
+                 @LotQt, @Bunch, @NgTar,
+                 @McLv1Tx, @McLv2Tx, @McLv3Tx, @McLv4Tx, @McLv5Tx, @McLv6Tx,
+                 @Ernam, @Erdat, @Grcod, @Grnam, @MfPhi, @FetchedAt)
+            ON CONFLICT(Matnr) DO UPDATE SET
+                Maktx     = excluded.Maktx,
+                Meins     = excluded.Meins,
+                Injtp     = excluded.Injtp,
+                Mtype     = excluded.Mtype,
+                Btype     = excluded.Btype,
+                MngCode   = excluded.MngCode,
+                ModNameB  = excluded.ModNameB,
+                LotQt     = excluded.LotQt,
+                Bunch     = excluded.Bunch,
+                NgTar     = excluded.NgTar,
+                McLv1Tx   = excluded.McLv1Tx,
+                McLv2Tx   = excluded.McLv2Tx,
+                McLv3Tx   = excluded.McLv3Tx,
+                McLv4Tx   = excluded.McLv4Tx,
+                McLv5Tx   = excluded.McLv5Tx,
+                McLv6Tx   = excluded.McLv6Tx,
+                Ernam     = excluded.Ernam,
+                Erdat     = excluded.Erdat,
+                Grcod     = excluded.Grcod,
+                Grnam     = excluded.Grnam,
+                MfPhi     = excluded.MfPhi,
+                FetchedAt = excluded.FetchedAt;
+            """;
+        SqliteParameter pMatnr    = cmd.Parameters.Add("@Matnr",     SqliteType.Text);
+        SqliteParameter pMaktx    = cmd.Parameters.Add("@Maktx",     SqliteType.Text);
+        SqliteParameter pMeins    = cmd.Parameters.Add("@Meins",     SqliteType.Text);
+        SqliteParameter pInjtp    = cmd.Parameters.Add("@Injtp",     SqliteType.Text);
+        SqliteParameter pMtype    = cmd.Parameters.Add("@Mtype",     SqliteType.Text);
+        SqliteParameter pBtype    = cmd.Parameters.Add("@Btype",     SqliteType.Text);
+        SqliteParameter pMng      = cmd.Parameters.Add("@MngCode",   SqliteType.Text);
+        SqliteParameter pMod      = cmd.Parameters.Add("@ModNameB",  SqliteType.Text);
+        SqliteParameter pLot      = cmd.Parameters.Add("@LotQt",     SqliteType.Text);
+        SqliteParameter pBunch    = cmd.Parameters.Add("@Bunch",     SqliteType.Text);
+        SqliteParameter pNgTar    = cmd.Parameters.Add("@NgTar",     SqliteType.Text);
+        SqliteParameter pLv1      = cmd.Parameters.Add("@McLv1Tx",   SqliteType.Text);
+        SqliteParameter pLv2      = cmd.Parameters.Add("@McLv2Tx",   SqliteType.Text);
+        SqliteParameter pLv3      = cmd.Parameters.Add("@McLv3Tx",   SqliteType.Text);
+        SqliteParameter pLv4      = cmd.Parameters.Add("@McLv4Tx",   SqliteType.Text);
+        SqliteParameter pLv5      = cmd.Parameters.Add("@McLv5Tx",   SqliteType.Text);
+        SqliteParameter pLv6      = cmd.Parameters.Add("@McLv6Tx",   SqliteType.Text);
+        SqliteParameter pErnam    = cmd.Parameters.Add("@Ernam",     SqliteType.Text);
+        SqliteParameter pErdat    = cmd.Parameters.Add("@Erdat",     SqliteType.Text);
+        SqliteParameter pGrcod    = cmd.Parameters.Add("@Grcod",     SqliteType.Text);
+        SqliteParameter pGrnam    = cmd.Parameters.Add("@Grnam",     SqliteType.Text);
+        SqliteParameter pMf       = cmd.Parameters.Add("@MfPhi",     SqliteType.Text);
+        SqliteParameter pFetched  = cmd.Parameters.Add("@FetchedAt", SqliteType.Text);
+
+        int n = 0;
+        foreach (var m in materials)
+        {
+            if (string.IsNullOrWhiteSpace(m.Matnr)) continue;
+            pMatnr.Value   = m.Matnr;
+            pMaktx.Value   = m.Maktx;
+            pMeins.Value   = m.Meins;
+            pInjtp.Value   = m.Injtp;
+            pMtype.Value   = m.Mtype;
+            pBtype.Value   = m.Btype;
+            pMng.Value     = m.MngCode;
+            pMod.Value     = m.ModNameB;
+            pLot.Value     = m.LotQt;
+            pBunch.Value   = m.Bunch;
+            pNgTar.Value   = m.NgTar;
+            pLv1.Value     = m.McLv1Tx;
+            pLv2.Value     = m.McLv2Tx;
+            pLv3.Value     = m.McLv3Tx;
+            pLv4.Value     = m.McLv4Tx;
+            pLv5.Value     = m.McLv5Tx;
+            pLv6.Value     = m.McLv6Tx;
+            pErnam.Value   = m.Ernam;
+            pErdat.Value   = m.Erdat;
+            pGrcod.Value   = m.Grcod;
+            pGrnam.Value   = m.Grnam;
+            pMf.Value      = m.MfPhi;
+            pFetched.Value = m.FetchedAt;
+            cmd.ExecuteNonQuery();
+            n++;
+        }
+        tx.Commit();
+        return n;
+    }
+
+    public int GetBmesMaterialCount()
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM BmesMaterials;";
+        object? o = cmd.ExecuteScalar();
+        return o is null ? 0 : Convert.ToInt32(o);
+    }
+
+    // ── Mtype → Category name map ────────────────────────────────────────────
+
+    public Dictionary<string, string> GetMtypeCategoryMap()
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Code, Name FROM MtypeCategories;";
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            string code = r.IsDBNull(0) ? "" : r.GetString(0);
+            string name = r.IsDBNull(1) ? "" : r.GetString(1);
+            if (code.Length > 0) map[code] = name;
+        }
+        return map;
+    }
+
+    // ── Model Groups ─────────────────────────────────────────────────────────
+
+    public List<ModelGroupRecord> GetModelGroups()
+    {
+        var groups = new List<ModelGroupRecord>();
+        using SqliteConnection conn = OpenConnection();
+
+        using (SqliteCommand g = conn.CreateCommand())
+        {
+            g.CommandText = "SELECT Id, Name, ProductGroup, SortOrder FROM ModelGroups ORDER BY SortOrder, Id;";
+            using SqliteDataReader r = g.ExecuteReader();
+            while (r.Read())
+                groups.Add(new ModelGroupRecord
+                {
+                    Id           = r.GetInt64(0),
+                    Name         = r.IsDBNull(1) ? "" : r.GetString(1),
+                    ProductGroup = r.IsDBNull(2) || string.IsNullOrEmpty(r.GetString(2)) ? "ETC" : r.GetString(2),
+                    SortOrder    = r.GetInt32(3),
+                });
+        }
+
+        foreach (var grp in groups)
+        {
+            using SqliteCommand i = conn.CreateCommand();
+            i.CommandText =
+                "SELECT LineShift, Material, SubGroup FROM ModelGroupItems " +
+                "WHERE GroupId=@gid ORDER BY SortOrder, Id;";
+            i.Parameters.AddWithValue("@gid", grp.Id);
+            using SqliteDataReader r = i.ExecuteReader();
+
+            // Preserve insertion order; group first by Material, then rebuild the
+            // (potentially-nested) sub-group tree from the SubGroup-path column.
+            var midIdx = new Dictionary<string, int>(StringComparer.Ordinal);
+            while (r.Read())
+            {
+                string ls       = r.IsDBNull(0) ? "" : r.GetString(0);
+                string material = r.IsDBNull(1) ? "" : r.GetString(1);
+                string subPath  = r.IsDBNull(2) ? "" : r.GetString(2);
+
+                // Legacy rows without material → derive from LineShift (split at last '_').
+                if (string.IsNullOrEmpty(material) && !string.IsNullOrEmpty(ls))
+                {
+                    int idx = ls.LastIndexOf('_');
+                    material = idx > 0 ? ls.Substring(0, idx) : ls;
+                }
+
+                if (!midIdx.TryGetValue(material, out int mi))
+                {
+                    grp.MidGroups.Add(new MidGroupRecord { Material = material });
+                    mi = grp.MidGroups.Count - 1;
+                    midIdx[material] = mi;
+                }
+
+                var mid = grp.MidGroups[mi];
+                var target = ResolveOrCreateSubPath(mid.SubGroups, subPath);
+                if (!string.IsNullOrEmpty(ls))
+                    target.LineShifts.Add(ls);
+            }
+        }
+        return groups;
+    }
+
+    /// <summary>Sub-group path separator (unit separator control char — impossible in user input).</summary>
+    private const char SubPathSep = '';
+
+    /// <summary>Navigate the sub-group tree by name-path, creating nodes as needed. Returns the leaf.</summary>
+    private static SubGroupRecord ResolveOrCreateSubPath(List<SubGroupRecord> rootList, string path)
+    {
+        // Empty path → the "default" (unnamed) sub-group at the top of this material's tree.
+        var segments = string.IsNullOrEmpty(path)
+            ? new[] { "" }
+            : path.Split(SubPathSep);
+
+        List<SubGroupRecord> list = rootList;
+        SubGroupRecord? cur = null;
+        foreach (string seg in segments)
+        {
+            cur = list.FirstOrDefault(s => string.Equals(s.Name, seg, StringComparison.Ordinal));
+            if (cur is null)
+            {
+                cur = new SubGroupRecord { Name = seg };
+                list.Add(cur);
+            }
+            list = cur.SubGroups;
+        }
+        return cur!;
+    }
+
+    /// <summary>Replaces all model groups with the provided list (atomic).</summary>
+    public void SaveModelGroups(IReadOnlyList<ModelGroupRecord> groups)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteTransaction tx = conn.BeginTransaction();
+
+        using (SqliteCommand del = conn.CreateCommand())
+        {
+            del.Transaction  = tx;
+            del.CommandText  = "DELETE FROM ModelGroupItems; DELETE FROM ModelGroups;";
+            del.ExecuteNonQuery();
+        }
+
+        string nowStr = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+        using SqliteCommand gIns = conn.CreateCommand();
+        gIns.Transaction = tx;
+        gIns.CommandText = """
+            INSERT INTO ModelGroups (Name, ProductGroup, SortOrder, UpdatedAt)
+            VALUES (@name, @pg, @sort, @ts);
+            SELECT last_insert_rowid();
+            """;
+        SqliteParameter pName = gIns.Parameters.Add("@name", SqliteType.Text);
+        SqliteParameter pPg   = gIns.Parameters.Add("@pg",   SqliteType.Text);
+        SqliteParameter pSort = gIns.Parameters.Add("@sort", SqliteType.Integer);
+        SqliteParameter pTs   = gIns.Parameters.Add("@ts",   SqliteType.Text);
+
+        using SqliteCommand iIns = conn.CreateCommand();
+        iIns.Transaction = tx;
+        iIns.CommandText = """
+            INSERT INTO ModelGroupItems (GroupId, LineShift, Material, SubGroup, SortOrder)
+            VALUES (@gid, @ls, @mat, @sub, @sort);
+            """;
+        SqliteParameter pGid   = iIns.Parameters.Add("@gid",  SqliteType.Integer);
+        SqliteParameter pLs    = iIns.Parameters.Add("@ls",   SqliteType.Text);
+        SqliteParameter pMat   = iIns.Parameters.Add("@mat",  SqliteType.Text);
+        SqliteParameter pSub   = iIns.Parameters.Add("@sub",  SqliteType.Text);
+        SqliteParameter pISort = iIns.Parameters.Add("@sort", SqliteType.Integer);
+
+        for (int gi = 0; gi < groups.Count; gi++)
+        {
+            var grp = groups[gi];
+            pName.Value = grp.Name ?? "";
+            pPg.Value   = NormalizeProductGroup(grp.ProductGroup);
+            pSort.Value = gi;
+            pTs.Value   = nowStr;
+            long newId  = Convert.ToInt64(gIns.ExecuteScalar());
+
+            int sortCounter = 0;
+            void WriteSubTree(MidGroupRecord ownerMid, SubGroupRecord node, string path)
+            {
+                foreach (var ls in node.LineShifts)
+                {
+                    pGid.Value   = newId;
+                    pLs.Value    = ls ?? "";
+                    pMat.Value   = ownerMid.Material ?? "";
+                    pSub.Value   = path;
+                    pISort.Value = sortCounter++;
+                    iIns.ExecuteNonQuery();
+                }
+                foreach (var child in node.SubGroups)
+                {
+                    string childPath = string.IsNullOrEmpty(path)
+                        ? (child.Name ?? "")
+                        : path + SubPathSep + (child.Name ?? "");
+                    WriteSubTree(ownerMid, child, childPath);
+                }
+            }
+
+            foreach (var mid in grp.MidGroups)
+            {
+                foreach (var sub in mid.SubGroups)
+                    WriteSubTree(mid, sub, path: sub.Name ?? "");
+            }
+        }
+
+        tx.Commit();
+    }
+
+    private static readonly string[] _knownProductGroups = ["SPK", "UNIT", "MODULE", "TWS", "ETC"];
+
+    private static string NormalizeProductGroup(string? pg)
+    {
+        if (string.IsNullOrWhiteSpace(pg)) return "ETC";
+        foreach (string k in _knownProductGroups)
+            if (string.Equals(k, pg, StringComparison.OrdinalIgnoreCase)) return k;
+        return "ETC";
+    }
+
+    // ── One-shot JSON → ModelGroups import ──────────────────────────────────────
+
+    /// <summary>
+    /// One-time migration that merges the legacy ModelBmes/*.json definitions into the
+    /// ModelGroups DB. Tracked in AppMigrations so it runs at most once.
+    /// - Existing group with the same Name: ProductGroup is set (if still default 'ETC')
+    ///   and missing LineShifts are appended under Material=''.
+    /// - Otherwise: a new group is inserted with Material='' for all LineShifts.
+    /// Safe to call repeatedly.
+    /// </summary>
+    public void ImportModelBmesJsonIfNeeded(string jsonFolderPath)
+    {
+        const string MigrationName = "import_modelbmes_json_v1";
+
+        if (!Directory.Exists(jsonFolderPath)) return;
+
+        using SqliteConnection conn = OpenConnection();
+
+        using (SqliteCommand chk = conn.CreateCommand())
+        {
+            chk.CommandText = "SELECT 1 FROM AppMigrations WHERE Name=@n LIMIT 1;";
+            chk.Parameters.AddWithValue("@n", MigrationName);
+            if (chk.ExecuteScalar() is not null) return;
+        }
+
+        var jsonFiles = Directory.GetFiles(jsonFolderPath, "*.json", SearchOption.TopDirectoryOnly);
+        if (jsonFiles.Length == 0)
+        {
+            RecordMigration(conn, MigrationName);
+            return;
+        }
+
+        var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+        using SqliteTransaction tx = conn.BeginTransaction();
+        string nowStr = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+        foreach (string path in jsonFiles)
+        {
+            string productGroup;
+            List<(string GroupName, List<string> ModelList)> groups;
+            try
+            {
+                string text = File.ReadAllText(path);
+                using JsonDocument doc = JsonDocument.Parse(text);
+                var root = doc.RootElement;
+
+                productGroup = "ETC";
+                if (root.ValueKind == JsonValueKind.Object &&
+                    root.TryGetProperty("ProductGroup", out var pgEl) &&
+                    pgEl.ValueKind == JsonValueKind.String)
+                {
+                    productGroup = NormalizeProductGroup(pgEl.GetString());
+                }
+
+                groups = new();
+                JsonElement? groupsEl = null;
+                if (root.ValueKind == JsonValueKind.Object &&
+                    root.TryGetProperty("Groups", out var gEl))
+                {
+                    groupsEl = gEl;
+                }
+                else if (root.ValueKind == JsonValueKind.Array)
+                {
+                    groupsEl = root;
+                }
+
+                if (groupsEl is null) continue;
+                foreach (var g in groupsEl.Value.EnumerateArray())
+                {
+                    string name = "";
+                    if (g.TryGetProperty("GroupName", out var n) && n.ValueKind == JsonValueKind.String)
+                        name = n.GetString() ?? "";
+                    var list = new List<string>();
+                    if (g.TryGetProperty("ModelList", out var ml) && ml.ValueKind == JsonValueKind.Array)
+                        foreach (var it in ml.EnumerateArray())
+                            if (it.ValueKind == JsonValueKind.String)
+                            {
+                                string? s = it.GetString();
+                                if (!string.IsNullOrWhiteSpace(s)) list.Add(s.Trim());
+                            }
+                    if (!string.IsNullOrWhiteSpace(name) && list.Count > 0)
+                        groups.Add((name.Trim(), list));
+                }
+            }
+            catch
+            {
+                continue;
+            }
+
+            foreach (var (gName, modelList) in groups)
+            {
+                long existingId = -1;
+                string existingPg = "";
+                using (SqliteCommand find = conn.CreateCommand())
+                {
+                    find.Transaction = tx;
+                    find.CommandText = "SELECT Id, ProductGroup FROM ModelGroups WHERE Name=@n LIMIT 1;";
+                    find.Parameters.AddWithValue("@n", gName);
+                    using SqliteDataReader r = find.ExecuteReader();
+                    if (r.Read())
+                    {
+                        existingId = r.GetInt64(0);
+                        existingPg = r.IsDBNull(1) ? "" : r.GetString(1);
+                    }
+                }
+
+                if (existingId < 0)
+                {
+                    long newId;
+                    using (SqliteCommand ins = conn.CreateCommand())
+                    {
+                        ins.Transaction = tx;
+                        ins.CommandText = """
+                            INSERT INTO ModelGroups (Name, ProductGroup, SortOrder, UpdatedAt)
+                            VALUES (@n, @pg, (SELECT COALESCE(MAX(SortOrder)+1, 0) FROM ModelGroups), @ts);
+                            SELECT last_insert_rowid();
+                            """;
+                        ins.Parameters.AddWithValue("@n",  gName);
+                        ins.Parameters.AddWithValue("@pg", productGroup);
+                        ins.Parameters.AddWithValue("@ts", nowStr);
+                        newId = Convert.ToInt64(ins.ExecuteScalar());
+                    }
+                    InsertLineShiftsForImport(conn, tx, newId, modelList);
+                }
+                else
+                {
+                    // If existing row still has default PG, backfill from JSON.
+                    if (string.Equals(existingPg, "ETC", StringComparison.OrdinalIgnoreCase) &&
+                        !string.Equals(productGroup, "ETC", StringComparison.OrdinalIgnoreCase))
+                    {
+                        using SqliteCommand upd = conn.CreateCommand();
+                        upd.Transaction = tx;
+                        upd.CommandText = "UPDATE ModelGroups SET ProductGroup=@pg WHERE Id=@id;";
+                        upd.Parameters.AddWithValue("@pg", productGroup);
+                        upd.Parameters.AddWithValue("@id", existingId);
+                        upd.ExecuteNonQuery();
+                    }
+
+                    var existingLs = new HashSet<string>(StringComparer.Ordinal);
+                    using (SqliteCommand q = conn.CreateCommand())
+                    {
+                        q.Transaction = tx;
+                        q.CommandText = "SELECT LineShift FROM ModelGroupItems WHERE GroupId=@id;";
+                        q.Parameters.AddWithValue("@id", existingId);
+                        using SqliteDataReader r = q.ExecuteReader();
+                        while (r.Read())
+                            if (!r.IsDBNull(0)) existingLs.Add(r.GetString(0));
+                    }
+
+                    var missing = modelList.Where(ls => !existingLs.Contains(ls)).ToList();
+                    if (missing.Count > 0)
+                        InsertLineShiftsForImport(conn, tx, existingId, missing);
+                }
+            }
+        }
+
+        RecordMigration(conn, MigrationName, tx);
+        tx.Commit();
+    }
+
+    private static void InsertLineShiftsForImport(
+        SqliteConnection conn, SqliteTransaction tx, long groupId, IEnumerable<string> lineShifts)
+    {
+        using SqliteCommand q = conn.CreateCommand();
+        q.Transaction = tx;
+        q.CommandText = "SELECT COALESCE(MAX(SortOrder)+1, 0) FROM ModelGroupItems WHERE GroupId=@g;";
+        q.Parameters.AddWithValue("@g", groupId);
+        int sortStart = Convert.ToInt32(q.ExecuteScalar());
+
+        using SqliteCommand ins = conn.CreateCommand();
+        ins.Transaction = tx;
+        ins.CommandText = """
+            INSERT INTO ModelGroupItems (GroupId, LineShift, Material, SubGroup, SortOrder)
+            VALUES (@g, @ls, '', '', @s);
+            """;
+        SqliteParameter pG = ins.Parameters.Add("@g",  SqliteType.Integer);
+        SqliteParameter pL = ins.Parameters.Add("@ls", SqliteType.Text);
+        SqliteParameter pS = ins.Parameters.Add("@s",  SqliteType.Integer);
+        pG.Value = groupId;
+        int s = sortStart;
+        foreach (string ls in lineShifts)
+        {
+            pL.Value = ls ?? "";
+            pS.Value = s++;
+            ins.ExecuteNonQuery();
+        }
+    }
+
+    private static void RecordMigration(SqliteConnection conn, string name, SqliteTransaction? tx = null)
+    {
+        using SqliteCommand cmd = conn.CreateCommand();
+        if (tx is not null) cmd.Transaction = tx;
+        cmd.CommandText = "INSERT OR IGNORE INTO AppMigrations (Name, AppliedAt) VALUES (@n, @ts);";
+        cmd.Parameters.AddWithValue("@n",  name);
+        cmd.Parameters.AddWithValue("@ts", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>Returns distinct (Maktx, Mtype) pairs from BmesMaterials, ordered by Maktx.</summary>
+    public List<(string Maktx, string Mtype)> GetBmesMaktxMtypeDistinct()
+    {
+        var list = new List<(string Maktx, string Mtype)>();
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT DISTINCT Maktx, Mtype
+            FROM BmesMaterials
+            ORDER BY Maktx, Mtype;
+            """;
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            string maktx = r.IsDBNull(0) ? string.Empty : r.GetString(0);
+            string mtype = r.IsDBNull(1) ? string.Empty : r.GetString(1);
+            list.Add((maktx, mtype));
+        }
+        return list;
+    }
+
+    public BmesMaterial? GetLatestBmesMaterial()
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT * FROM BmesMaterials ORDER BY FetchedAt DESC LIMIT 1;";
+        using SqliteDataReader r = cmd.ExecuteReader();
+        if (!r.Read()) return null;
+        return ReadBmesMaterial(r);
+    }
+
+    private static BmesMaterial ReadBmesMaterial(SqliteDataReader r)
+    {
+        string G(string col)
+        {
+            int ord = r.GetOrdinal(col);
+            return r.IsDBNull(ord) ? string.Empty : r.GetString(ord);
+        }
+        return new BmesMaterial
+        {
+            Matnr     = G("Matnr"),
+            Maktx     = G("Maktx"),
+            Meins     = G("Meins"),
+            Injtp     = G("Injtp"),
+            Mtype     = G("Mtype"),
+            Btype     = G("Btype"),
+            MngCode   = G("MngCode"),
+            ModNameB  = G("ModNameB"),
+            LotQt     = G("LotQt"),
+            Bunch     = G("Bunch"),
+            NgTar     = G("NgTar"),
+            McLv1Tx   = G("McLv1Tx"),
+            McLv2Tx   = G("McLv2Tx"),
+            McLv3Tx   = G("McLv3Tx"),
+            McLv4Tx   = G("McLv4Tx"),
+            McLv5Tx   = G("McLv5Tx"),
+            McLv6Tx   = G("McLv6Tx"),
+            Ernam     = G("Ernam"),
+            Erdat     = G("Erdat"),
+            Grcod     = G("Grcod"),
+            Grnam     = G("Grnam"),
+            MfPhi     = G("MfPhi"),
+            FetchedAt = G("FetchedAt"),
+        };
     }
 }

@@ -8,11 +8,11 @@
 
 @if (string.IsNullOrWhiteSpace(Name))
 {
-    <div class="didet-empty">데이터셋 이름이 지정되지 않았습니다.</div>
+    <div class="didet-empty">No dataset name specified.</div>
 }
 else if (_info is null)
 {
-    <div class="didet-empty">데이터셋 <strong>@Name</strong> 을(를) 찾을 수 없습니다.</div>
+    <div class="didet-empty">Dataset <strong>@Name</strong> not found.</div>
 }
 else
 {

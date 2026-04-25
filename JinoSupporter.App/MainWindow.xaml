@@ -3,12 +3,18 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:app="clr-namespace:JinoSupporter.Controls;assembly=JinoSupporter.Controls"
         Title="JinoSupporter"
-        Width="1780"
-        Height="1040"
-        MinWidth="1500"
-        MinHeight="860"
-        Background="#F3F7FB"
-        WindowStartupLocation="CenterScreen">
+        Width="116"
+        Height="240"
+        MinWidth="116"
+        MinHeight="120"
+        SizeToContent="Height"
+        Background="#1E1E1E"
+        WindowStartupLocation="Manual"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="True"
+        AllowsTransparency="False"
+        Loaded="MainWindow_Loaded">
     <Window.Resources>
         <Style x:Key="MenuScrollBarThumbStyle" TargetType="Thumb">
             <Setter Property="OverridesDefaultStyle" Value="True" />
@@ -17,7 +23,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Thumb">
                         <Border Margin="2"
-                                Background="#C7D8EA"
+                                Background="#5A5A5C"
                                 CornerRadius="6" />
                     </ControlTemplate>
                 </Setter.Value>
@@ -28,7 +34,7 @@
                         <Setter.Value>
                             <ControlTemplate TargetType="Thumb">
                                 <Border Margin="2"
-                                        Background="#9FBCE0"
+                                        Background="#7A7A7C"
                                         CornerRadius="6" />
                             </ControlTemplate>
                         </Setter.Value>
@@ -46,7 +52,7 @@
                         <Grid Background="Transparent"
                               Width="{TemplateBinding Width}">
                             <Border Margin="2,0"
-                                    Background="#E7EFF8"
+                                    Background="#1A1A1A"
                                     CornerRadius="5" />
                             <Track x:Name="PART_Track"
                                    IsDirectionReversed="True">
@@ -78,7 +84,7 @@
                                 <Grid Background="Transparent"
                                       Height="{TemplateBinding Height}">
                                     <Border Margin="0,2"
-                                            Background="#E7EFF8"
+                                            Background="#1A1A1A"
                                             CornerRadius="5" />
                                     <Track x:Name="PART_Track"
                                            Orientation="Horizontal">
@@ -153,7 +159,7 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="#1F2937" />
+            <Setter Property="Foreground" Value="#D4D4D4" />
             <Setter Property="Padding" Value="10,8" />
             <Setter Property="Template">
                 <Setter.Value>
@@ -170,12 +176,12 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="RootBorder" Property="Background" Value="#E8F0FB" />
-                                <Setter TargetName="RootBorder" Property="BorderBrush" Value="#C7D8F2" />
+                                <Setter TargetName="RootBorder" Property="Background" Value="#3E3E42" />
+                                <Setter TargetName="RootBorder" Property="BorderBrush" Value="#5A5A5C" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="RootBorder" Property="Background" Value="#DCE8FA" />
-                                <Setter TargetName="RootBorder" Property="BorderBrush" Value="#B5CAE9" />
+                                <Setter TargetName="RootBorder" Property="Background" Value="#505056" />
+                                <Setter TargetName="RootBorder" Property="BorderBrush" Value="#6A6A6C" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -184,101 +190,34 @@
         </Style>
     </Window.Resources>
 
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition x:Name="LeftMenuColumn" Width="280" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-
-        <Border x:Name="LeftMenuBorder"
-                Grid.Column="0"
-                Background="#F8FBFF"
-                Padding="12"
-                MouseEnter="LeftMenuBorder_MouseEnter"
-                MouseLeave="LeftMenuBorder_MouseLeave">
-            <DockPanel LastChildFill="True">
-                <StackPanel DockPanel.Dock="Top"
-                            Orientation="Horizontal"
-                            Margin="0,0,0,12">
-                    <Border Background="#FFB15E"
-                            Width="32"
-                            Height="32"
-                            CornerRadius="8"
-                            VerticalAlignment="Center">
-                        <TextBlock Text="JW"
-                                   Foreground="#6B3F12"
-                                   FontWeight="Bold"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center" />
-                    </Border>
-                    <StackPanel x:Name="LogoTextPanel"
-                                Margin="10,0,0,0"
-                                VerticalAlignment="Center">
-                        <TextBlock Text="JinoSupporter"
-                                   FontSize="15"
-                                   FontWeight="SemiBold"
-                                   Foreground="#183153" />
-                        <TextBlock Text="Module workspace"
-                                   FontSize="11"
-                                   Foreground="#6B7C93" />
-                    </StackPanel>
-                </StackPanel>
-
-                <ScrollViewer VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled"
-                              CanContentScroll="True"
-                              Style="{StaticResource MenuScrollViewerStyle}">
-                    <StackPanel x:Name="MenuHost" />
-                </ScrollViewer>
-            </DockPanel>
-        </Border>
-
-        <Grid x:Name="ContentGrid"
-              Grid.Column="1"
-              Margin="14">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-
-            <Border x:Name="ModuleTitleBar"
-                    Background="White"
-                    CornerRadius="10"
-                    BorderBrush="#E2E8F0"
-                    BorderThickness="1"
-                    Padding="12,8">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock x:Name="CurrentModuleTitle"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Foreground="#0F172A"
-                               VerticalAlignment="Center" />
-                    <TextBlock x:Name="CurrentModuleDescription"
-                               Grid.Column="1"
-                               Foreground="#475569"
-                               VerticalAlignment="Center"
-                               Margin="12,0,0,0" />
-                </Grid>
-            </Border>
-
-            <Border Grid.Row="1"
-                    x:Name="ModuleContentBorder"
-                    Margin="0,8,0,0"
-                    Background="White"
-                    CornerRadius="16"
-                    BorderBrush="#E2E8F0"
-                    BorderThickness="1"
-                    Padding="12">
-                <ContentControl x:Name="EmbeddedModuleHost"
-                                HorizontalContentAlignment="Stretch"
-                                VerticalContentAlignment="Stretch" />
-            </Border>
-        </Grid>
-
-    </Grid>
+    <!-- ════ Toolbar-only window — every menu opens its module in a separate window ════ -->
+    <Border x:Name="ToolbarBorder"
+            Background="#252526"
+            BorderBrush="#1A1A1A"
+            BorderThickness="0"
+            Padding="2"
+            Cursor="SizeAll"
+            Focusable="False"
+            PreviewMouseLeftButtonDown="ToolbarBorder_MouseLeftButtonDown">
+        <Border.ContextMenu>
+            <ContextMenu>
+                <MenuItem Header="✕  Close JinoSupporter" Click="CloseAppButton_Click" />
+            </ContextMenu>
+        </Border.ContextMenu>
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      CanContentScroll="False"
+                      Focusable="False"
+                      FocusVisualStyle="{x:Null}"
+                      Background="Transparent"
+                      Style="{StaticResource MenuScrollViewerStyle}">
+            <WrapPanel x:Name="MenuHost"
+                       Orientation="Horizontal"
+                       Background="Transparent"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Top"
+                       ItemWidth="32"
+                       ItemHeight="32" />
+        </ScrollViewer>
+    </Border>
 </Window>

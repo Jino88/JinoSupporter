@@ -2,10 +2,10 @@
 @rendermode InteractiveServer
 @* TODO: NG Rate All — copy of NgRatePage.razor, to be customised later. Admin-only. *@
 @using JinoSupporter.Web.Services
-@using System.Text.Json
 @inject NgRateService         NgRate
 @inject NgRateSettingsService NgRateSettings
 @inject NgRateReportService   NgRateReport
+@inject WebRepository         Repo
 @inject IJSRuntime            JS
 @implements IAsyncDisposable
 
@@ -41,6 +41,8 @@
     .json-file-item:hover { background: #f1f5f9; }
     .json-file-item .file-date { font-size: 10px; color: #94a3b8; margin-left: auto; }
     .json-file-item input[type=checkbox] { cursor: pointer; flex-shrink: 0; }
+    .json-file-item.sub-row { padding-left: 22px; color: #64748b; font-size: 11px; }
+    .json-file-item.sub-row .file-date { color: #cbd5e1; }
     /* Product group tabs in Model Files */
     .pg-tab {
         font-size: 10px; font-weight: 700; letter-spacing: .4px;
@@ -148,13 +150,17 @@
     <h5 class="mb-0 fw-semibold">NG Rate</h5>
     <div class="ms-3 btn-group btn-group-sm" role="group" aria-label="View mode">
         <a href="/ng-rate" class="btn btn-outline-secondary"
-           title="모델별 탭 뷰로 전환 — 모델 하나씩 Summary/Detail/Chart 전체 표시">
+           title="Switch to By Model view — show full Summary/Detail/Chart per model, one at a time">
             🎯 By Model
         </a>
         <button type="button" class="btn btn-primary" disabled
-                title="현재 뷰: 섹션별 — 여러 모델을 Summary/Process/NG/Reason 섹션 단위로 세로 정렬">
+                title="Current view: By Section — multiple models stacked vertically by Summary/Process/NG/Reason sections">
             📑 By Section
         </button>
+        <a href="/ng-rate-by-group" class="btn btn-outline-secondary"
+           title="Switch to By Group view">
+            🧩 By Group
+        </a>
     </div>
 </div>
 
@@ -241,58 +247,42 @@
         </div>
     </div>
 
-    <!-- ══ ROW 1, COL 2 — Model JSON file list ══════════════════════════════════ -->
+    <!-- ══ ROW 1, COL 2 — Model Groups (from DB) ════════════════════════════════ -->
     <div class="ngrate-cell-tr">
         <div class="card shadow-sm h-100">
             <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
-                <span>Model Files</span>
+                <span>Model Groups</span>
                 <div class="d-flex align-items-center gap-2">
-                    @if (_selectedFiles.Count > 0)
+                    @{ int totalSel = _selectedGroupIds.Count + _selectedSubEntries.Count; }
+                    @if (totalSel > 0)
                     {
                         <span class="badge bg-primary" style="font-size:10px;">
-                            @_selectedFiles.Count selected
+                            @totalSel selected
                         </span>
-                        <button class="btn btn-outline-danger btn-sm py-0 px-2"
-                                style="font-size:10px; line-height:1.4;"
-                                @onclick="() => _showDeleteFiles = true"
-                                disabled="@_isBusy"
-                                title="선택한 파일 삭제">🗑 선택 삭제</button>
                     }
                     <span class="text-muted" style="font-size:11px;">
-                        @(_jsonFiles.Count) file@(_jsonFiles.Count == 1 ? "" : "s")
+                        @(_dbGroups.Count) group@(_dbGroups.Count == 1 ? "" : "s")
                     </span>
                     <button class="btn btn-link btn-sm p-0 text-secondary"
-                            @onclick="RefreshJsonFiles" title="Refresh">⟳</button>
+                            @onclick="RefreshGroups" title="Refresh">⟳</button>
                 </div>
             </div>
             <div class="card-body p-0 d-flex flex-column">
 
-                @if (_jsonFiles.Count == 0)
+                @if (_dbGroups.Count == 0)
                 {
                     <div class="text-muted small p-3 flex-grow-1">
-                        @if (_jsonFolderExists)
-                        {
-                            <span>No .json files found.</span>
-                        }
-                        else
-                        {
-                            <span>
-                                Folder not found:<br />
-                                <span class="font-monospace" style="font-size:10px; word-break:break-all;">
-                                    @JsonFolderPath
-                                </span>
-                            </span>
-                        }
+                        <span>No groups found. Define groups on the <a href="/bmes/make-model-group">Make ModelGroup Data</a> page.</span>
                     </div>
                 }
                 else
                 {
                     <!-- ── Step 1: Product Group tabs ───────────────────────── -->
                     <div class="d-flex flex-wrap gap-1 px-2 py-2 border-bottom bg-light">
-                        @foreach (var pg in FileProductGroups)
+                        @foreach (var pg in GroupProductGroups)
                         {
-                            int pgCount = _jsonFiles.Count(f => f.ProductGroup == pg);
-                            int pgSel   = _selectedFiles.Count(p => _jsonFiles.Any(f => f.FullPath == p && f.ProductGroup == pg));
+                            int pgCount = _dbGroups.Count(g => g.ProductGroup == pg);
+                            int pgSel   = _selectedGroupIds.Count(id => _dbGroups.Any(g => g.Id == id && g.ProductGroup == pg));
                             <button class="pg-tab @(_activePg == pg ? "active" : "")"
                                     @onclick="@(() => _activePg = pg)">
                                 @pg
@@ -308,26 +298,41 @@
                         }
                     </div>
 
-                    <!-- ── Step 2: File list for selected group ───────────── -->
-                    <div class="overflow-auto" style="max-height:160px; flex:1;">
+                    <!-- ── Step 2: Groups for active ProductGroup ──────────── -->
+                    <div class="overflow-auto" style="max-height:240px; flex:1;">
                         <div class="px-2 py-1">
-                            @foreach (var f in _jsonFiles.Where(f => f.ProductGroup == _activePg))
+                            @foreach (var g in _dbGroups.Where(g => g.ProductGroup == _activePg))
                             {
-                                bool isChecked = _selectedFiles.Contains(f.FullPath);
-                                <label class="json-file-item" title="@f.FullPath">
+                                bool isChecked = _selectedGroupIds.Contains(g.Id);
+                                int lsCount = g.MidGroups.Sum(m => m.LineShifts.Count);
+                                <label class="json-file-item" title="@g.Name">
                                     <input type="checkbox"
                                            class="form-check-input"
                                            checked="@isChecked"
-                                           @onchange="@(_ => ToggleFile(f.FullPath))" />
-                                    <span style="color:#6366f1; font-size:13px;">{ }</span>
-                                    <span>@f.Name</span>
-                                    <span class="file-date">@f.Modified</span>
+                                           @onchange="@(_ => ToggleGroup(g.Id))" />
+                                    <span style="color:#6366f1; font-size:13px;">▣</span>
+                                    <span>@g.Name</span>
+                                    <span class="file-date">@lsCount LS</span>
                                 </label>
+                                @foreach (var entry in FirstLevelChildren(g))
+                                {
+                                    var cap = entry;
+                                    bool subChecked = _selectedSubEntries.Contains(cap.Key);
+                                    <label class="json-file-item sub-row" title="@cap.Label">
+                                        <input type="checkbox"
+                                               class="form-check-input"
+                                               checked="@subChecked"
+                                               @onchange="@(_ => ToggleSubEntry(cap.Key))" />
+                                        <span style="color:#94a3b8; font-size:11px;">↳</span>
+                                        <span>@cap.Label</span>
+                                        <span class="file-date">@cap.LsCount LS</span>
+                                    </label>
+                                }
                             }
-                            @if (!_jsonFiles.Any(f => f.ProductGroup == _activePg))
+                            @if (!_dbGroups.Any(g => g.ProductGroup == _activePg))
                             {
                                 <div class="text-muted small py-2 text-center">
-                                    No files in @_activePg
+                                    No groups in @_activePg
                                 </div>
                             }
                         </div>
@@ -346,11 +351,12 @@
                         }
                         else
                         {
+                            int btnSel = _selectedGroupIds.Count + _selectedSubEntries.Count;
                             <span>Get Report</span>
-                            @if (_selectedFiles.Count > 0)
+                            @if (btnSel > 0)
                             {
                                 <span class="ms-1 opacity-75"
-                                      style="font-size:10px;">(@_selectedFiles.Count file@(_selectedFiles.Count == 1 ? "" : "s"))</span>
+                                      style="font-size:10px;">(@btnSel group@(btnSel == 1 ? "" : "s"))</span>
                             }
                         }
                     </button>
@@ -360,40 +366,8 @@
                     }
                 </div>
             </div>
-            <div class="card-footer py-1" style="font-size:10px; color:#94a3b8; word-break:break-all;">
-                @JsonFolderPath
-            </div>
         </div>
     </div>
-
-    @if (_showDeleteFiles)
-    {
-        <div class="ngrate-del-overlay" @onclick="CancelDeleteFiles">
-            <div class="ngrate-del-dialog" @onclick:stopPropagation="true">
-                <div class="ngrate-del-head">🗑 선택 파일 삭제</div>
-                <div class="ngrate-del-body">
-                    <p class="small mb-2">
-                        아래 <strong>@_selectedFiles.Count</strong>개 파일이 디스크에서 <strong class="text-danger">영구 삭제</strong>됩니다. 되돌릴 수 없습니다.
-                    </p>
-                    <ul class="small font-monospace mb-2"
-                        style="max-height:200px; overflow:auto; background:#f8fafc; padding:8px 16px; border:1px solid #e2e8f0; border-radius:4px;">
-                        @foreach (string p in _selectedFiles)
-                        {
-                            <li>@Path.GetFileName(p)</li>
-                        }
-                    </ul>
-                    @if (!string.IsNullOrEmpty(_deleteFilesError))
-                    {
-                        <div class="alert alert-danger small mb-0" style="white-space:pre-wrap;">@_deleteFilesError</div>
-                    }
-                </div>
-                <div class="ngrate-del-foot">
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="CancelDeleteFiles">Cancel</button>
-                    <button class="btn btn-danger btn-sm" @onclick="ExecuteDeleteFiles">Delete @_selectedFiles.Count file(s)</button>
-                </div>
-            </div>
-        </div>
-    }
 
     <!-- ══ ROW 2, COL 1 — Progress ══════════════════════════════════════════════ -->
     <div class="ngrate-cell-bl">
@@ -895,15 +869,29 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @{ string? lastReason = null; }
-                                        @foreach (var row in rpt.ReasonRows)
+                                        @{
+                                            string? lastReason = null;
+                                            var reasonRowsToShow = rpt.ReasonRows
+                                                .Where(r => r.IsTotal || r.Ppm.Values.Any(v => v > 0));
+                                        }
+                                        @foreach (var row in reasonRowsToShow)
                                         {
                                             bool reasonChanged = row.Reason != lastReason;
                                             lastReason = row.Reason;
+                                            string reasonCatKey = $"{mi}|{row.Reason}";
+                                            bool categoryCollapsed = _collapsedReasonCategory.Contains(reasonCatKey);
+                                            if (!row.IsTotal && categoryCollapsed)
+                                            {
+                                                continue;
+                                            }
                                             if (row.IsTotal)
                                             {
                                                 <tr class="total-row">
-                                                    <td class="label-td fw-bold">@row.Reason</td>
+                                                    <td class="toggle-cell label-td fw-bold"
+                                                        @onclick="@(() => ToggleReasonCategory(reasonCatKey))">
+                                                        <span class="toggle-icon">@(categoryCollapsed ? "▶" : "▼")</span>
+                                                        @row.Reason
+                                                    </td>
                                                     <td></td>
                                                     <td></td>
                                                     <td class="label-td text-muted" style="font-size:10px;">Total</td>
@@ -1006,11 +994,6 @@
 }
 
 @code {
-    private static readonly string JsonFolderPath =
-        @"D:\000. MyWorks\000. 일일업무\04. DB\01. NGRATE\ModelBmes";
-
-    private sealed record JsonFileEntry(string Name, string Modified, string FullPath, string ProductGroup);
-
     private static readonly string[] AllProductGroups = ["SPK", "UNIT", "MODULE", "TWS", "ETC"];
 
     // ── Get Data state ────────────────────────────────────────────────────────────
@@ -1021,17 +1004,36 @@
     private string?      _errorMessage = null;
     private List<string> _logs         = new();
 
-    // ── Model Files state ─────────────────────────────────────────────────────────
-    private List<JsonFileEntry> _jsonFiles        = new();
-    private bool                _jsonFolderExists = false;
-    private HashSet<string>     _selectedFiles    = new();
-    private string              _activePg         = "ETC";
-    private bool                _showDeleteFiles  = false;
-    private string?             _deleteFilesError = null;
+    // ── Model Groups state (from ModelGroups DB) ─────────────────────────────────
+    private List<ModelGroupRecord> _dbGroups           = new();
+    private HashSet<long>          _selectedGroupIds   = new();
+    private HashSet<string>        _selectedSubEntries = new(StringComparer.Ordinal);
+    private string                 _activePg           = "ETC";
 
-    /// <summary>Only ProductGroups that actually have files (preserves AllProductGroups order)</summary>
-    private IEnumerable<string> FileProductGroups =>
-        AllProductGroups.Where(pg => _jsonFiles.Any(f => f.ProductGroup == pg));
+    private IEnumerable<string> GroupProductGroups =>
+        AllProductGroups.Where(pg => _dbGroups.Any(g => g.ProductGroup == pg));
+
+    /// <summary>Indented first-level row — one per mid-group Material.</summary>
+    private sealed record ChildEntry(string Key, string Label, int LsCount);
+
+    private static IEnumerable<ChildEntry> FirstLevelChildren(ModelGroupRecord g)
+    {
+        bool skipMidWhenSingle = g.MidGroups.Count == 1
+            && string.Equals(g.MidGroups[0].Material, g.Name, StringComparison.Ordinal);
+
+        foreach (var mid in g.MidGroups)
+        {
+            int midLs = mid.LineShifts.Count;
+            if (midLs == 0) continue;
+            if (skipMidWhenSingle) continue;
+            if (string.IsNullOrEmpty(mid.Material)) continue;
+
+            yield return new ChildEntry(
+                Key:     $"{g.Id}|mid|{mid.Material}",
+                Label:   mid.Material,
+                LsCount: midLs);
+        }
+    }
 
     // ── Report state ──────────────────────────────────────────────────────────────
     private bool   _isReportBusy = false;
@@ -1159,6 +1161,7 @@
         _expandedProcess.Clear();
         _expandedNg.Clear();
         _expandedReason.Clear();
+        _collapsedReasonCategory.Clear();
     }
 
     public async ValueTask DisposeAsync() => await DestroyAllChartsAsync();
@@ -1168,6 +1171,7 @@
     private HashSet<string> _expandedProcess = new();
     private HashSet<string> _expandedNg      = new();
     private HashSet<string> _expandedReason  = new();
+    private HashSet<string> _collapsedReasonCategory = new();
 
     private void ToggleSummary(int mi, string pt)
     {
@@ -1195,6 +1199,10 @@
     private void ToggleReason(string key)
     {
         if (!_expandedReason.Remove(key)) _expandedReason.Add(key);
+    }
+    private void ToggleReasonCategory(string key)
+    {
+        if (!_collapsedReasonCategory.Remove(key)) _collapsedReasonCategory.Add(key);
     }
 
     private void ExpandAllProcessFor(int mi)
@@ -1249,92 +1257,68 @@
     private void ToggleWeekCols()  { _weekExpanded  = !_weekExpanded;  _pendingChartRender = true; }
     private void ToggleMonthCols() { _monthExpanded = !_monthExpanded; _pendingChartRender = true; }
 
-    protected override void OnInitialized() => RefreshJsonFiles();
+    protected override void OnInitialized() => RefreshGroups();
 
-    // ── Model Files helpers ───────────────────────────────────────────────────────
+    // ── Model Groups helpers ─────────────────────────────────────────────────────
 
-    private void RefreshJsonFiles()
+    private void RefreshGroups()
     {
-        _jsonFiles.Clear();
-        _jsonFolderExists = Directory.Exists(JsonFolderPath);
-        if (!_jsonFolderExists) return;
-
-        _jsonFiles = Directory
-            .GetFiles(JsonFolderPath, "*.json", SearchOption.TopDirectoryOnly)
-            .OrderByDescending(File.GetLastWriteTime)
-            .Select(p => new JsonFileEntry(
-                Path.GetFileName(p),
-                File.GetLastWriteTime(p).ToString("yy-MM-dd HH:mm"),
-                p,
-                ReadPgFromFile(p)))
-            .ToList();
-
-        // Remove stale selections
-        _selectedFiles.RemoveWhere(p => !_jsonFiles.Any(f => f.FullPath == p));
-
-        // If the current tab is empty, jump to the first tab
-        if (!_jsonFiles.Any(f => f.ProductGroup == _activePg))
-            _activePg = FileProductGroups.FirstOrDefault() ?? "ETC";
+        _dbGroups = Repo.GetModelGroups();
+        _selectedGroupIds.RemoveWhere(id => !_dbGroups.Any(g => g.Id == id));
+        var live = _dbGroups.SelectMany(FirstLevelChildren).Select(c => c.Key).ToHashSet(StringComparer.Ordinal);
+        _selectedSubEntries.RemoveWhere(k => !live.Contains(k));
+        if (!_dbGroups.Any(g => g.ProductGroup == _activePg))
+            _activePg = GroupProductGroups.FirstOrDefault() ?? "ETC";
     }
 
-    private static string ReadPgFromFile(string path)
+    private void ToggleGroup(long id)
     {
-        try
+        if (!_selectedGroupIds.Remove(id))
+            _selectedGroupIds.Add(id);
+    }
+
+    private void ToggleSubEntry(string key)
+    {
+        if (!_selectedSubEntries.Remove(key))
+            _selectedSubEntries.Add(key);
+    }
+
+    private static (Dictionary<string, string> mapping, List<string> groups) BuildGroupMapping(
+        IEnumerable<ModelGroupRecord> selected)
+    {
+        var mapping = new Dictionary<string, string>(StringComparer.Ordinal);
+        var groups  = new List<string>();
+        foreach (var g in selected)
         {
-            using var stream = File.OpenRead(path);
-            using var doc    = JsonDocument.Parse(stream);
-            var root = doc.RootElement;
-            if (root.ValueKind == JsonValueKind.Object &&
-                root.TryGetProperty("ProductGroup", out var pg))
-            {
-                string v = pg.GetString() ?? "ETC";
-                return Array.IndexOf(new[] { "SPK", "UNIT", "MODULE", "TWS", "ETC" }, v) >= 0 ? v : "ETC";
-            }
+            if (!groups.Contains(g.Name)) groups.Add(g.Name);
+            foreach (var mid in g.MidGroups)
+                foreach (var ls in mid.LineShifts)
+                    if (!string.IsNullOrEmpty(ls))
+                        mapping[ls] = g.Name;
         }
-        catch { }
-        return "ETC";
+        return (mapping, groups);
     }
 
-    private void ToggleFile(string fullPath)
+    /// <summary>Resolves a <see cref="ChildEntry.Key"/> into a flat mapping scoped to that
+    /// mid-group only. One section is emitted per selected mid-group.</summary>
+    private (string label, Dictionary<string, string> mapping, List<string> groupList)?
+        BuildChildEntryMapping(string key)
     {
-        if (!_selectedFiles.Remove(fullPath))
-            _selectedFiles.Add(fullPath);
-    }
+        var parts = key.Split('|');
+        if (parts.Length != 3 || parts[1] != "mid") return null;
+        if (!long.TryParse(parts[0], out long gid)) return null;
+        var g = _dbGroups.FirstOrDefault(x => x.Id == gid);
+        if (g is null) return null;
 
-    // ── Delete selected files ─────────────────────────────────────────────────────
-    private void CancelDeleteFiles()
-    {
-        _showDeleteFiles  = false;
-        _deleteFilesError = null;
-    }
+        string material = parts[2];
+        var mid = g.MidGroups.FirstOrDefault(m => m.Material == material);
+        if (mid is null) return null;
 
-    private void ExecuteDeleteFiles()
-    {
-        _deleteFilesError = null;
-        var targets = _selectedFiles.ToList();
-        var failed  = new List<string>();
-
-        foreach (string path in targets)
-        {
-            try
-            {
-                if (File.Exists(path)) File.Delete(path);
-                _selectedFiles.Remove(path);
-            }
-            catch (Exception ex)
-            {
-                failed.Add($"{Path.GetFileName(path)}: {ex.Message}");
-            }
-        }
-
-        RefreshJsonFiles();
-        _showDeleteFiles = false;
-
-        if (failed.Count > 0)
-        {
-            _deleteFilesError = $"{failed.Count}개 삭제 실패:\n" + string.Join("\n", failed);
-            _showDeleteFiles  = true;
-        }
+        var mapping = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var ls in mid.LineShifts)
+            if (!string.IsNullOrEmpty(ls)) mapping[ls] = material;
+        if (mapping.Count == 0) return null;
+        return (material, mapping, new List<string> { material });
     }
 
     // ── Get Data ──────────────────────────────────────────────────────────────────
@@ -1374,7 +1358,7 @@
             else
             {
                 _savedDbPath = dbPath;
-                RefreshJsonFiles();
+                RefreshGroups();
             }
         }
         catch (Exception ex)
@@ -1409,6 +1393,7 @@
         _expandedProcess.Clear();
         _expandedNg.Clear();
         _expandedReason.Clear();
+        _collapsedReasonCategory.Clear();
         _dateExpanded  = false;
         _weekExpanded  = false;
         _monthExpanded = false;
@@ -1431,22 +1416,49 @@
 
             progress.Report($"Using DB: {Path.GetFileName(dbPath)}");
 
-            if (_selectedFiles.Count <= 1)
+            if (_selectedGroupIds.Count == 0 && _selectedSubEntries.Count == 0)
             {
-                var r   = await NgRateReport.GenerateReportAsync(dbPath, _selectedFiles, progress);
-                string lbl = _selectedFiles.Count == 1
-                    ? Path.GetFileNameWithoutExtension(_selectedFiles.First())
-                    : "All";
-                _reports.Add((lbl, r));
+                // No selection → single "All" section across every group.
+                var (mapping, groupList) = BuildGroupMapping(_dbGroups);
+                if (mapping.Count == 0)
+                {
+                    _reportError = "No LineShift found in the selected groups.";
+                    return;
+                }
+                var r = await NgRateReport.GenerateReportAsync(dbPath, mapping, groupList, progress);
+                _reports.Add(("All", r));
             }
             else
             {
-                foreach (var file in _selectedFiles.OrderBy(f => f))
+                // Whole-group selections: one section each.
+                foreach (var g in _dbGroups
+                    .Where(g => _selectedGroupIds.Contains(g.Id))
+                    .OrderBy(g => g.Name, StringComparer.Ordinal))
                 {
-                    progress.Report($"─── {Path.GetFileNameWithoutExtension(file)}");
+                    progress.Report($"─── {g.Name}");
+                    var (mapping, groupList) = BuildGroupMapping(new[] { g });
+                    if (mapping.Count == 0)
+                    {
+                        progress.Report($"  (skipped: no LineShift)");
+                        continue;
+                    }
+                    var r = await NgRateReport.GenerateReportAsync(dbPath, mapping, groupList, progress);
+                    _reports.Add((g.Name, r));
+                }
+
+                // Mid-group selections: one section scoped to that Material only.
+                foreach (string key in _selectedSubEntries.OrderBy(k => k, StringComparer.Ordinal))
+                {
+                    var spec = BuildChildEntryMapping(key);
+                    if (spec is null)
+                    {
+                        progress.Report($"─── {key}  (skipped: not found)");
+                        continue;
+                    }
+                    progress.Report($"─── {spec.Value.label}");
                     var r = await NgRateReport.GenerateReportAsync(
-                        dbPath, new HashSet<string> { file }, progress);
-                    _reports.Add((Path.GetFileNameWithoutExtension(file), r));
+                        dbPath, spec.Value.mapping, spec.Value.groupList, progress);
+                    _reports.Add((spec.Value.label, r));
                 }
             }
 

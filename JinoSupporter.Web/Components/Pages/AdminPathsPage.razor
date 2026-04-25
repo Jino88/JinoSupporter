@@ -1,0 +1,207 @@
+@page "/admin/paths"
+@rendermode InteractiveServer
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
+@using JinoSupporter.Web.Services
+@inject AppPathsService Paths
+
+<PageTitle>App Paths</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span style="font-size:20px;">📁</span>
+    <h5 class="mb-0 fw-semibold">App Paths</h5>
+    <span class="badge bg-secondary ms-2" style="font-size:10px;">
+        Config: @Paths.ConfigFilePath
+    </span>
+</div>
+
+<p class="small text-muted">
+    All file/folder locations the app reads or writes. Edit a path and click <strong>Save</strong>.
+    Items marked <span class="badge bg-warning text-dark">restart</span> require an app restart to take effect.
+</p>
+
+<div class="card" style="max-width:1080px;">
+    <div class="card-body">
+
+        @* ── Application Databases ──────────────────────────────────────────── *@
+        <h6 class="fw-semibold mb-2">Application Databases</h6>
+        <div class="mb-3">
+            <label class="form-label small mb-1">
+                Main DB <code>(process-review.db)</code>
+                <span class="badge bg-warning text-dark ms-1">restart</span>
+            </label>
+            <input class="form-control form-control-sm font-monospace" @bind="_form.MainDbPath" />
+            <small class="text-muted">Stores users, model groups, datasets, reports, AI usage, etc.</small>
+        </div>
+        <div class="mb-4">
+            <label class="form-label small mb-1">
+                Schedule DB <code>(schedule.db)</code>
+                <span class="badge bg-warning text-dark ms-1">restart</span>
+            </label>
+            <input class="form-control form-control-sm font-monospace" @bind="_form.ScheduleDbPath" />
+            <small class="text-muted">Calendar / schedule entries shared with the WPF app.</small>
+        </div>
+
+        @* ── NG Rate ────────────────────────────────────────────────────────── *@
+        <h6 class="fw-semibold mb-2">NG Rate Storage</h6>
+        <div class="mb-3">
+            <label class="form-label small mb-1">NG Rate DB Save Directory</label>
+            <input class="form-control form-control-sm font-monospace" @bind="_form.NgRateDbSaveDirectory" />
+            <small class="text-muted">Where daily *.db dumps are written and scanned by reports.</small>
+        </div>
+        <div class="mb-3">
+            <label class="form-label small mb-1">Routing Source File</label>
+            <input class="form-control form-control-sm font-monospace" @bind="_form.NgRateRoutingFilePath" />
+            <small class="text-muted">Routing.txt — used by "Refresh Routing" import.</small>
+        </div>
+        <div class="mb-3">
+            <label class="form-label small mb-1">Reason Source File</label>
+            <input class="form-control form-control-sm font-monospace" @bind="_form.NgRateReasonFilePath" />
+            <small class="text-muted">reason.txt — used by "Import from file" on the Reason Table.</small>
+        </div>
+        <div class="mb-3">
+            <label class="form-label small mb-1">
+                NG Rate Settings DB Directory
+                <span class="badge bg-warning text-dark ms-1">restart</span>
+            </label>
+            <input class="form-control form-control-sm font-monospace" @bind="_form.NgRateSettingsDbDirectory" />
+            <small class="text-muted">
+                Folder containing <code>ngrate_settings.db</code> + <code>bmes_routing_raw.db</code>.
+                Changing this moves the per-app NG Rate settings DB on next startup.
+            </small>
+        </div>
+        <div class="mb-4">
+            <label class="form-label small mb-1">Model BMES JSON Folder</label>
+            <input class="form-control form-control-sm font-monospace" @bind="_form.ModelBmesJsonFolder" />
+            <small class="text-muted">
+                Legacy <code>*.json</code> model definition folder. Scanned once at startup to backfill
+                ModelGroups DB; safe to leave on a network share.
+            </small>
+        </div>
+
+        @* ── Actions ────────────────────────────────────────────────────────── *@
+        <div class="d-flex gap-2 align-items-center">
+            <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_saving">
+                @if (_saving)
+                {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                }
+                💾 Save
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="ResetToDefaults">
+                ↺ Reset to defaults
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="ReloadFromDisk">
+                ⟳ Reload from disk
+            </button>
+            @if (!string.IsNullOrEmpty(_status))
+            {
+                <span class="small @(_statusError ? "text-danger" : "text-success") fw-semibold ms-2">
+                    @_status
+                </span>
+            }
+        </div>
+
+        @if (_savedRequiresRestart)
+        {
+            <div class="alert alert-warning mt-3 mb-0 small">
+                <strong>Restart required.</strong> One or more changed paths only take effect after the
+                JinoSupporter.Web process restarts.
+            </div>
+        }
+
+    </div>
+</div>
+
+@code {
+    private AppPathsConfig _form = new();
+    private bool   _saving;
+    private bool   _savedRequiresRestart;
+    private string _status      = string.Empty;
+    private bool   _statusError;
+
+    // Snapshot of restart-bound fields the last time the page loaded the config.
+    // We compare against the form on save to decide whether to flash the warning.
+    private string _origMainDb           = string.Empty;
+    private string _origScheduleDb       = string.Empty;
+    private string _origSettingsDbDir    = string.Empty;
+
+    protected override void OnInitialized() => CopyFromCurrent();
+
+    private void CopyFromCurrent()
+    {
+        var c = Paths.Current;
+        _form = new AppPathsConfig
+        {
+            MainDbPath                = c.MainDbPath,
+            ScheduleDbPath            = c.ScheduleDbPath,
+            NgRateDbSaveDirectory     = c.NgRateDbSaveDirectory,
+            NgRateRoutingFilePath     = c.NgRateRoutingFilePath,
+            NgRateReasonFilePath      = c.NgRateReasonFilePath,
+            NgRateSettingsDbDirectory = c.NgRateSettingsDbDirectory,
+            ModelBmesJsonFolder       = c.ModelBmesJsonFolder,
+        };
+        _origMainDb        = c.MainDbPath;
+        _origScheduleDb    = c.ScheduleDbPath;
+        _origSettingsDbDir = c.NgRateSettingsDbDirectory;
+        _savedRequiresRestart = false;
+        _status = string.Empty;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_saving) return;
+        _saving = true;
+        _status = string.Empty;
+        _statusError = false;
+        StateHasChanged();
+        try
+        {
+            await Task.Run(() => Paths.Save(_form));
+            _savedRequiresRestart =
+                !PathEquals(_form.MainDbPath,                _origMainDb)        ||
+                !PathEquals(_form.ScheduleDbPath,            _origScheduleDb)    ||
+                !PathEquals(_form.NgRateSettingsDbDirectory, _origSettingsDbDir);
+            CopyFromCurrent();   // refresh originals so subsequent saves don't repeat the warning
+            _status = "✓ Saved.";
+        }
+        catch (Exception ex)
+        {
+            _statusError = true;
+            _status      = $"✗ {ex.Message}";
+        }
+        finally
+        {
+            _saving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ResetToDefaults()
+    {
+        var def = AppPathsService.Defaults();
+        _form = new AppPathsConfig
+        {
+            MainDbPath                = def.MainDbPath,
+            ScheduleDbPath            = def.ScheduleDbPath,
+            NgRateDbSaveDirectory     = def.NgRateDbSaveDirectory,
+            NgRateRoutingFilePath     = def.NgRateRoutingFilePath,
+            NgRateReasonFilePath      = def.NgRateReasonFilePath,
+            NgRateSettingsDbDirectory = def.NgRateSettingsDbDirectory,
+            ModelBmesJsonFolder       = def.ModelBmesJsonFolder,
+        };
+        _status = "Form reset to platform defaults — click Save to persist.";
+        _statusError = false;
+    }
+
+    private void ReloadFromDisk()
+    {
+        // AppPathsService.Current was loaded once at startup; for hot-reload we re-create.
+        // Easiest: just re-run CopyFromCurrent (it always reflects whatever the service holds).
+        CopyFromCurrent();
+        _status = "Reloaded from current in-memory config.";
+        _statusError = false;
+    }
+
+    private static bool PathEquals(string a, string b) =>
+        string.Equals((a ?? "").Trim(), (b ?? "").Trim(), StringComparison.OrdinalIgnoreCase);
+}

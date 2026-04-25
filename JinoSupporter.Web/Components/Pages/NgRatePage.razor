@@ -1,10 +1,10 @@
 @page "/ng-rate"
 @rendermode InteractiveServer
 @using JinoSupporter.Web.Services
-@using System.Text.Json
 @inject NgRateService         NgRate
 @inject NgRateSettingsService NgRateSettings
 @inject NgRateReportService   NgRateReport
+@inject WebRepository         Repo
 @inject IJSRuntime            JS
 @implements IAsyncDisposable
 
@@ -40,6 +40,8 @@
     .json-file-item:hover { background: #f1f5f9; }
     .json-file-item .file-date { font-size: 10px; color: #94a3b8; margin-left: auto; }
     .json-file-item input[type=checkbox] { cursor: pointer; flex-shrink: 0; }
+    .json-file-item.sub-row { padding-left: 22px; color: #64748b; font-size: 11px; }
+    .json-file-item.sub-row .file-date { color: #cbd5e1; }
     /* Product group tabs in Model Files */
     .pg-tab {
         font-size: 10px; font-weight: 700; letter-spacing: .4px;
@@ -124,6 +126,28 @@
     }
     .group-chip:hover { background: #e0e7ff; }
     .group-chip.active { background: #6366f1; color: #fff; border-color: #4f46e5; }
+    .group-chip.empty  {
+        background: #f8fafc; color: #cbd5e1; border-color: #e2e8f0;
+        cursor: not-allowed; opacity: .55; text-decoration: line-through;
+    }
+    .group-chip.empty:hover { background: #f8fafc; }
+    .group-chip-clear {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 10px; font-weight: 600; padding: 2px 9px;
+        border-radius: 12px; cursor: pointer; user-select: none;
+        border: 1px solid #ef4444; background: #fef2f2; color: #b91c1c;
+        transition: background .15s, color .15s;
+    }
+    .group-chip-clear:hover { background: #fee2e2; }
+
+    /* Row-hide ✕ button shown on each expanded group sub-row */
+    .row-hide-cell { width: 22px; text-align: center; padding: 0 !important; }
+    .row-hide-btn  {
+        width: 16px; height: 16px; padding: 0; line-height: 1;
+        font-size: 10px; color: #94a3b8; cursor: pointer;
+        background: transparent; border: 1px solid transparent; border-radius: 3px;
+    }
+    .row-hide-btn:hover { color: #b91c1c; background: #fee2e2; border-color: #fecaca; }
     /* Group detail modal overlay */
     .grp-modal-overlay {
         position: fixed; inset: 0; background: rgba(0,0,0,0.35);
@@ -147,12 +171,16 @@
     <h5 class="mb-0 fw-semibold">NG Rate</h5>
     <div class="ms-3 btn-group btn-group-sm" role="group" aria-label="View mode">
         <button type="button" class="btn btn-primary" disabled
-                title="현재 뷰: 모델별 탭 — 모델 하나씩 Summary/Detail/Chart 전체 표시">
+                title="Current view: By Model — show full Summary/Detail/Chart per model, one at a time">
             🎯 By Model
         </button>
         <a href="/ng-rate-all" class="btn btn-outline-secondary"
-           title="섹션별 뷰로 전환 — 여러 모델을 Summary/Process/NG/Reason 섹션 단위로 세로 정렬">
+           title="Switch to By Section view — multiple models stacked vertically by Summary/Process/NG/Reason sections">
             📑 By Section
+        </a>
+        <a href="/ng-rate-by-group" class="btn btn-outline-secondary"
+           title="Switch to By Group view">
+            🧩 By Group
         </a>
     </div>
 </div>
@@ -240,58 +268,42 @@
         </div>
     </div>
 
-    <!-- ══ ROW 1, COL 2 — Model JSON file list ══════════════════════════════════ -->
+    <!-- ══ ROW 1, COL 2 — Model Groups (from DB) ════════════════════════════════ -->
     <div class="ngrate-cell-tr">
         <div class="card shadow-sm h-100">
             <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
-                <span>Model Files</span>
+                <span>Model Groups</span>
                 <div class="d-flex align-items-center gap-2">
-                    @if (_selectedFiles.Count > 0)
+                    @{ int totalSel = _selectedGroupIds.Count + _selectedSubEntries.Count; }
+                    @if (totalSel > 0)
                     {
                         <span class="badge bg-primary" style="font-size:10px;">
-                            @_selectedFiles.Count selected
+                            @totalSel selected
                         </span>
-                        <button class="btn btn-outline-danger btn-sm py-0 px-2"
-                                style="font-size:10px; line-height:1.4;"
-                                @onclick="() => _showDeleteFiles = true"
-                                disabled="@(_isBusy || _isReportBusy)"
-                                title="선택한 파일 삭제">🗑 선택 삭제</button>
                     }
                     <span class="text-muted" style="font-size:11px;">
-                        @(_jsonFiles.Count) file@(_jsonFiles.Count == 1 ? "" : "s")
+                        @(_dbGroups.Count) group@(_dbGroups.Count == 1 ? "" : "s")
                     </span>
                     <button class="btn btn-link btn-sm p-0 text-secondary"
-                            @onclick="RefreshJsonFiles" title="Refresh">⟳</button>
+                            @onclick="RefreshGroups" title="Refresh">⟳</button>
                 </div>
             </div>
             <div class="card-body p-0 d-flex flex-column">
 
-                @if (_jsonFiles.Count == 0)
+                @if (_dbGroups.Count == 0)
                 {
                     <div class="text-muted small p-3 flex-grow-1">
-                        @if (_jsonFolderExists)
-                        {
-                            <span>No .json files found.</span>
-                        }
-                        else
-                        {
-                            <span>
-                                Folder not found:<br />
-                                <span class="font-monospace" style="font-size:10px; word-break:break-all;">
-                                    @JsonFolderPath
-                                </span>
-                            </span>
-                        }
+                        <span>No groups found. Define groups on the <a href="/bmes/make-model-group">Make ModelGroup Data</a> page.</span>
                     </div>
                 }
                 else
                 {
                     <!-- ── Step 1: Product Group tabs ───────────────────────── -->
                     <div class="d-flex flex-wrap gap-1 px-2 py-2 border-bottom bg-light">
-                        @foreach (var pg in FileProductGroups)
+                        @foreach (var pg in GroupProductGroups)
                         {
-                            int pgCount = _jsonFiles.Count(f => f.ProductGroup == pg);
-                            int pgSel   = _selectedFiles.Count(p => _jsonFiles.Any(f => f.FullPath == p && f.ProductGroup == pg));
+                            int pgCount = _dbGroups.Count(g => g.ProductGroup == pg);
+                            int pgSel   = _selectedGroupIds.Count(id => _dbGroups.Any(g => g.Id == id && g.ProductGroup == pg));
                             <button class="pg-tab @(_activePg == pg ? "active" : "")"
                                     @onclick="@(() => _activePg = pg)">
                                 @pg
@@ -307,26 +319,45 @@
                         }
                     </div>
 
-                    <!-- ── Step 2: File list for selected group ───────────── -->
-                    <div class="overflow-auto" style="max-height:160px; flex:1;">
+                    <!-- ── Step 2: Groups for active ProductGroup ──────────── -->
+                    <div class="overflow-auto" style="max-height:240px; flex:1;">
                         <div class="px-2 py-1">
-                            @foreach (var f in _jsonFiles.Where(f => f.ProductGroup == _activePg))
+                            @foreach (var g in _dbGroups.Where(g => g.ProductGroup == _activePg))
                             {
-                                bool isChecked = _selectedFiles.Contains(f.FullPath);
-                                <label class="json-file-item" title="@f.FullPath">
+                                bool isChecked = _selectedGroupIds.Contains(g.Id);
+                                int lsCount = g.MidGroups.Sum(m => m.LineShifts.Count);
+                                <label class="json-file-item" title="@g.Name">
                                     <input type="checkbox"
                                            class="form-check-input"
                                            checked="@isChecked"
-                                           @onchange="@(_ => ToggleFile(f.FullPath))" />
-                                    <span style="color:#6366f1; font-size:13px;">{ }</span>
-                                    <span>@f.Name</span>
-                                    <span class="file-date">@f.Modified</span>
+                                           @onchange="@(_ => ToggleGroup(g.Id))" />
+                                    <span style="color:#6366f1; font-size:13px;">▣</span>
+                                    <span>@g.Name</span>
+                                    <span class="file-date">@lsCount LS</span>
                                 </label>
+
+                                @* First-level children — mid-groups (Material) that differ from the root name.
+                                   Named top-level sub-groups surface here too so the user can report on a
+                                   named slice without opening the whole tree. *@
+                                @foreach (var entry in FirstLevelChildren(g))
+                                {
+                                    var cap = entry;
+                                    bool subChecked = _selectedSubEntries.Contains(cap.Key);
+                                    <label class="json-file-item sub-row" title="@cap.Label">
+                                        <input type="checkbox"
+                                               class="form-check-input"
+                                               checked="@subChecked"
+                                               @onchange="@(_ => ToggleSubEntry(cap.Key))" />
+                                        <span style="color:#94a3b8; font-size:11px;">↳</span>
+                                        <span>@cap.Label</span>
+                                        <span class="file-date">@cap.LsCount LS</span>
+                                    </label>
+                                }
                             }
-                            @if (!_jsonFiles.Any(f => f.ProductGroup == _activePg))
+                            @if (!_dbGroups.Any(g => g.ProductGroup == _activePg))
                             {
                                 <div class="text-muted small py-2 text-center">
-                                    No files in @_activePg
+                                    No groups in @_activePg
                                 </div>
                             }
                         </div>
@@ -345,11 +376,12 @@
                         }
                         else
                         {
+                            int btnSel = _selectedGroupIds.Count + _selectedSubEntries.Count;
                             <span>Get Report</span>
-                            @if (_selectedFiles.Count > 0)
+                            @if (btnSel > 0)
                             {
                                 <span class="ms-1 opacity-75"
-                                      style="font-size:10px;">(@_selectedFiles.Count file@(_selectedFiles.Count == 1 ? "" : "s"))</span>
+                                      style="font-size:10px;">(@btnSel group@(btnSel == 1 ? "" : "s"))</span>
                             }
                         }
                     </button>
@@ -359,40 +391,8 @@
                     }
                 </div>
             </div>
-            <div class="card-footer py-1" style="font-size:10px; color:#94a3b8; word-break:break-all;">
-                @JsonFolderPath
-            </div>
         </div>
     </div>
-
-    @if (_showDeleteFiles)
-    {
-        <div class="ngrate-del-overlay" @onclick="CancelDeleteFiles">
-            <div class="ngrate-del-dialog" @onclick:stopPropagation="true">
-                <div class="ngrate-del-head">🗑 선택 파일 삭제</div>
-                <div class="ngrate-del-body">
-                    <p class="small mb-2">
-                        아래 <strong>@_selectedFiles.Count</strong>개 파일이 디스크에서 <strong class="text-danger">영구 삭제</strong>됩니다. 되돌릴 수 없습니다.
-                    </p>
-                    <ul class="small font-monospace mb-2"
-                        style="max-height:200px; overflow:auto; background:#f8fafc; padding:8px 16px; border:1px solid #e2e8f0; border-radius:4px;">
-                        @foreach (string p in _selectedFiles)
-                        {
-                            <li>@Path.GetFileName(p)</li>
-                        }
-                    </ul>
-                    @if (!string.IsNullOrEmpty(_deleteFilesError))
-                    {
-                        <div class="alert alert-danger small mb-0" style="white-space:pre-wrap;">@_deleteFilesError</div>
-                    }
-                </div>
-                <div class="ngrate-del-foot">
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="CancelDeleteFiles">Cancel</button>
-                    <button class="btn btn-danger btn-sm" @onclick="ExecuteDeleteFiles">Delete @_selectedFiles.Count file(s)</button>
-                </div>
-            </div>
-        </div>
-    }
 
     <!-- ══ ROW 2, COL 1 — Progress ══════════════════════════════════════════════ -->
     <div class="ngrate-cell-bl">
@@ -526,14 +526,11 @@
             <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span>Summary — NG PPM by Process Type</span>
-                    @if (_report.GroupNames.Count > 0)
+                    @if (_hiddenGroups.Count > 0)
                     {
-                        <div class="d-flex flex-wrap gap-1 ms-1">
-                            @foreach (var grp in _report.GroupNames)
-                            {
-                                <span class="group-chip">@grp</span>
-                            }
-                        </div>
+                        <button class="group-chip-clear ms-2" type="button"
+                                title="Restore all hidden group rows"
+                                @onclick="ClearHiddenGroups">✕ Clear hidden (@_hiddenGroups.Count)</button>
                     }
                 </div>
                 <div class="d-flex gap-2 align-items-center">
@@ -588,9 +585,11 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var sumRow in _report.Summary)
+                            @foreach (var sumRow in EffectiveSummary)
                             {
-                                bool summaryHasGroups = _report.GroupSummary.Count > 0;
+                                // When a chip is selected, the rows are already scoped to that
+                                // single model — disable per-group expansion rows.
+                                bool summaryHasGroups = NoChipSelected && _report.GroupSummary.Count > 0;
                                 bool summaryExpanded  = _expandedSummary.Contains(sumRow.ProcessType);
                                 string sumPt          = sumRow.ProcessType;
                                 <tr class="@(sumRow.IsTotal ? "total-row" : "rank-row")">
@@ -623,13 +622,19 @@
                                 {
                                     @foreach (var grp in _report.GroupNames)
                                     {
+                                        if (_hiddenGroups.Contains(grp)) continue;
                                         if (_report.GroupSummary.TryGetValue(grp, out var grpRows))
                                         {
                                             var grpRow = grpRows.FirstOrDefault(sr => sr.ProcessType == sumPt);
                                             if (grpRow is not null)
                                             {
+                                                var g = grp;
                                                 <tr class="group-row">
-                                                    <td></td>
+                                                    <td class="row-hide-cell">
+                                                        <button class="row-hide-btn" type="button"
+                                                                title="Hide this group row (Clear to restore)"
+                                                                @onclick="() => HideGroup(g)">✕</button>
+                                                    </td>
                                                     <td class="label-td group-name-td">↳ @grp</td>
                                                     @foreach (var col in VisibleDateCols)
                                                     {
@@ -701,40 +706,45 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var row in _report.Top10Process)
+                            @{ int procDisplay = 0; }
+                            @foreach (var row in SortedTop10Process)
                             {
-                                bool procExpanded = _expandedProcess.Contains(row.Rank);
+                                procDisplay++;
+                                int procRank       = NoChipSelected ? row.Rank : procDisplay;
+                                bool procHasGroups = NoChipSelected && row.Groups.Count > 0;
+                                bool procExpanded  = procHasGroups && _expandedProcess.Contains(row.Rank);
+                                var procPpm        = PpmForRow(row, row.Ppm, row.Groups);
                                 <tr class="rank-row">
-                                    <td class="toggle-cell" @onclick="@(() => ToggleProcess(row.Rank))">
-                                        @if (row.Groups.Count > 0)
+                                    <td class="toggle-cell" @onclick="@(() => { if (procHasGroups) ToggleProcess(row.Rank); })">
+                                        @if (procHasGroups)
                                         {
                                             <span class="toggle-icon">@(procExpanded ? "▼" : "▶")</span>
                                         }
-                                        @row.Rank
+                                        @procRank
                                     </td>
                                     <td class="label-td"><span class="pt-badge">@row.ProcessType</span></td>
                                     <td class="label-td">@row.ProcessName</td>
                                     @foreach (var col in VisibleDateCols)
                                     {
-                                        double v = row.Ppm.GetValueOrDefault(col.Key);
+                                        double v = procPpm.GetValueOrDefault(col.Key);
                                         <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                     }
                                     <td class="sep-td"></td>
                                     @foreach (var col in VisibleWeekCols)
                                     {
-                                        double v = row.Ppm.GetValueOrDefault(col.Key);
+                                        double v = procPpm.GetValueOrDefault(col.Key);
                                         <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                     }
                                     <td class="sep-td"></td>
                                     @foreach (var col in VisibleMonthCols)
                                     {
-                                        double v = row.Ppm.GetValueOrDefault(col.Key);
+                                        double v = procPpm.GetValueOrDefault(col.Key);
                                         <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                     }
                                 </tr>
                                 @if (procExpanded)
                                 {
-                                    @foreach (var grp in row.Groups)
+                                    @foreach (var grp in row.Groups.Where(g => !_hiddenGroups.Contains(g.GroupName)))
                                     {
                                         <tr class="group-row">
                                             <td></td>
@@ -806,41 +816,46 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var row in _report.Top10Ng)
+                            @{ int ngDisplay = 0; }
+                            @foreach (var row in SortedTop10Ng)
                             {
-                                bool ngExpanded = _expandedNg.Contains(row.Rank);
+                                ngDisplay++;
+                                int ngRank       = NoChipSelected ? row.Rank : ngDisplay;
+                                bool ngHasGroups = NoChipSelected && row.Groups.Count > 0;
+                                bool ngExpanded  = ngHasGroups && _expandedNg.Contains(row.Rank);
+                                var ngPpm        = PpmForRow(row, row.Ppm, row.Groups);
                                 <tr class="rank-row">
-                                    <td class="toggle-cell" @onclick="@(() => ToggleNg(row.Rank))">
-                                        @if (row.Groups.Count > 0)
+                                    <td class="toggle-cell" @onclick="@(() => { if (ngHasGroups) ToggleNg(row.Rank); })">
+                                        @if (ngHasGroups)
                                         {
                                             <span class="toggle-icon">@(ngExpanded ? "▼" : "▶")</span>
                                         }
-                                        @row.Rank
+                                        @ngRank
                                     </td>
                                     <td class="label-td"><span class="pt-badge">@row.ProcessType</span></td>
                                     <td class="label-td">@row.ProcessName</td>
                                     <td class="label-td">@row.NgName</td>
                                     @foreach (var col in VisibleDateCols)
                                     {
-                                        double v = row.Ppm.GetValueOrDefault(col.Key);
+                                        double v = ngPpm.GetValueOrDefault(col.Key);
                                         <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                     }
                                     <td class="sep-td"></td>
                                     @foreach (var col in VisibleWeekCols)
                                     {
-                                        double v = row.Ppm.GetValueOrDefault(col.Key);
+                                        double v = ngPpm.GetValueOrDefault(col.Key);
                                         <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                     }
                                     <td class="sep-td"></td>
                                     @foreach (var col in VisibleMonthCols)
                                     {
-                                        double v = row.Ppm.GetValueOrDefault(col.Key);
+                                        double v = ngPpm.GetValueOrDefault(col.Key);
                                         <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                     }
                                 </tr>
                                 @if (ngExpanded)
                                 {
-                                    @foreach (var grp in row.Groups)
+                                    @foreach (var grp in row.Groups.Where(g => !_hiddenGroups.Contains(g.GroupName)))
                                     {
                                         <tr class="group-row">
                                             <td></td>
@@ -917,45 +932,56 @@
                             </thead>
                             <tbody>
                                 @{ string? lastReason = null; }
-                                @foreach (var row in _report.ReasonRows)
+                                @foreach (var row in SortedReasonRows)
                                 {
                                     bool reasonChanged = row.Reason != lastReason;
                                     lastReason = row.Reason;
+                                    var rowPpm = PpmForRow(row, row.Ppm, row.Groups);
+                                    bool categoryCollapsed = _collapsedReasonCategory.Contains(row.Reason);
+                                    if (!row.IsTotal && categoryCollapsed)
+                                    {
+                                        continue;
+                                    }
                                     if (row.IsTotal)
                                     {
                                         <tr class="total-row">
-                                            <td class="label-td fw-bold">@row.Reason</td>
+                                            <td class="toggle-cell label-td fw-bold"
+                                                @onclick="@(() => ToggleReasonCategory(row.Reason))">
+                                                <span class="toggle-icon">@(categoryCollapsed ? "▶" : "▼")</span>
+                                                @row.Reason
+                                            </td>
                                             <td></td>
                                             <td></td>
                                             <td class="label-td text-muted" style="font-size:10px;">Total</td>
                                             <td></td>
                                             @foreach (var col in VisibleDateCols)
                                             {
-                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                double v = rowPpm.GetValueOrDefault(col.Key);
                                                 <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                             }
                                             <td class="sep-td"></td>
                                             @foreach (var col in VisibleWeekCols)
                                             {
-                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                double v = rowPpm.GetValueOrDefault(col.Key);
                                                 <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                             }
                                             <td class="sep-td"></td>
                                             @foreach (var col in VisibleMonthCols)
                                             {
-                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                double v = rowPpm.GetValueOrDefault(col.Key);
                                                 <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                             }
                                         </tr>
                                     }
                                     else
                                     {
-                                        string reasonKey = row.Reason + "|" + row.No;
-                                        bool reasonExpanded = _expandedReason.Contains(reasonKey);
+                                        string reasonKey   = row.Reason + "|" + row.No;
+                                        bool rsnHasGroups  = NoChipSelected && row.Groups.Count > 0;
+                                        bool reasonExpanded = rsnHasGroups && _expandedReason.Contains(reasonKey);
                                         <tr class="rank-row">
                                             <td class="label-td" style="color:#94a3b8; font-size:10px;">@(reasonChanged ? row.Reason : "")</td>
-                                            <td class="toggle-cell" @onclick="@(() => ToggleReason(reasonKey))">
-                                                @if (row.Groups.Count > 0)
+                                            <td class="toggle-cell" @onclick="@(() => { if (rsnHasGroups) ToggleReason(reasonKey); })">
+                                                @if (rsnHasGroups)
                                                 {
                                                     <span class="toggle-icon">@(reasonExpanded ? "▼" : "▶")</span>
                                                 }
@@ -966,25 +992,25 @@
                                             <td class="label-td">@row.NgName</td>
                                             @foreach (var col in VisibleDateCols)
                                             {
-                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                double v = rowPpm.GetValueOrDefault(col.Key);
                                                 <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                             }
                                             <td class="sep-td"></td>
                                             @foreach (var col in VisibleWeekCols)
                                             {
-                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                double v = rowPpm.GetValueOrDefault(col.Key);
                                                 <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                             }
                                             <td class="sep-td"></td>
                                             @foreach (var col in VisibleMonthCols)
                                             {
-                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                double v = rowPpm.GetValueOrDefault(col.Key);
                                                 <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
                                             }
                                         </tr>
                                         @if (reasonExpanded)
                                         {
-                                            @foreach (var grp in row.Groups)
+                                            @foreach (var grp in row.Groups.Where(g => !_hiddenGroups.Contains(g.GroupName)))
                                             {
                                                 <tr class="group-row">
                                                     <td></td>
@@ -1025,11 +1051,6 @@
 }
 
 @code {
-    private static readonly string JsonFolderPath =
-        @"D:\000. MyWorks\000. 일일업무\04. DB\01. NGRATE\ModelBmes";
-
-    private sealed record JsonFileEntry(string Name, string Modified, string FullPath, string ProductGroup);
-
     private static readonly string[] AllProductGroups = ["SPK", "UNIT", "MODULE", "TWS", "ETC"];
 
     // ── Get Data state ────────────────────────────────────────────────────────────
@@ -1040,17 +1061,40 @@
     private string?      _errorMessage = null;
     private List<string> _logs         = new();
 
-    // ── Model Files state ─────────────────────────────────────────────────────────
-    private List<JsonFileEntry> _jsonFiles        = new();
-    private bool                _jsonFolderExists = false;
-    private HashSet<string>     _selectedFiles    = new();
-    private string              _activePg         = "ETC";
-    private bool                _showDeleteFiles  = false;
-    private string?             _deleteFilesError = null;
+    // ── Model Groups state (from ModelGroups DB) ─────────────────────────────────
+    private List<ModelGroupRecord> _dbGroups         = new();
+    private HashSet<long>          _selectedGroupIds = new();
+    private HashSet<string>        _selectedSubEntries = new(StringComparer.Ordinal);
+    private string                 _activePg         = "ETC";
 
-    /// <summary>Only ProductGroups that actually have files (preserves AllProductGroups order)</summary>
-    private IEnumerable<string> FileProductGroups =>
-        AllProductGroups.Where(pg => _jsonFiles.Any(f => f.ProductGroup == pg));
+    /// <summary>Key for a first-level child row: "groupId|mid|material".</summary>
+    private sealed record ChildEntry(string Key, string Label, int LsCount);
+
+    /// <summary>First-level children of <paramref name="g"/> shown as indented rows in the picker —
+    /// each mid-group (Material) with LineShifts. A single mid-group whose Material equals the
+    /// root group name is suppressed to avoid a redundant duplicate row.</summary>
+    private static IEnumerable<ChildEntry> FirstLevelChildren(ModelGroupRecord g)
+    {
+        bool skipMidWhenSingle = g.MidGroups.Count == 1
+            && string.Equals(g.MidGroups[0].Material, g.Name, StringComparison.Ordinal);
+
+        foreach (var mid in g.MidGroups)
+        {
+            int midLs = mid.LineShifts.Count;
+            if (midLs == 0) continue;
+            if (skipMidWhenSingle) continue;
+            if (string.IsNullOrEmpty(mid.Material)) continue;
+
+            yield return new ChildEntry(
+                Key:     $"{g.Id}|mid|{mid.Material}",
+                Label:   mid.Material,
+                LsCount: midLs);
+        }
+    }
+
+    /// <summary>Only ProductGroups that actually have groups (preserves AllProductGroups order)</summary>
+    private IEnumerable<string> GroupProductGroups =>
+        AllProductGroups.Where(pg => _dbGroups.Any(g => g.ProductGroup == pg));
 
     // ── Report state ──────────────────────────────────────────────────────────────
     private bool   _isReportBusy = false;
@@ -1101,11 +1145,19 @@
             return d.ToArray();
         }
 
+        // When a chip is selected, chart scopes to that group's Summary rows.
+        var chartSummary = EffectiveSummary;
+
         // TOTAL line chart
-        var totalRow = _report.Summary.FirstOrDefault(r => r.IsTotal);
+        var totalRow = chartSummary.FirstOrDefault(r => r.IsTotal);
+        string totalLabel = NoChipSelected
+            ? "TOTAL"
+            : (_selectedChips.Count == 1
+                ? $"TOTAL — {_selectedChips.First()}"
+                : $"TOTAL — Combined ({_selectedChips.Count})");
         object? totalDs = totalRow is null ? null : new
         {
-            label           = "TOTAL",
+            label           = totalLabel,
             data            = BuildData(totalRow.Ppm),
             borderColor     = "#3b82f6",
             backgroundColor = "rgba(59,130,246,0.08)",
@@ -1120,7 +1172,7 @@
 
         // ProcessType bars
         int fi = 0;
-        var barDatasets = _report.Summary
+        var barDatasets = chartSummary
             .Where(r => !r.IsTotal)
             .Select(r =>
             {
@@ -1172,7 +1224,330 @@
     private HashSet<string> _expandedSummary = new();
     private HashSet<int>    _expandedProcess = new();
     private HashSet<int>    _expandedNg      = new();
+
+    // Group names the user hid from the Summary expansion rows. Hiding is global
+    // across all ProcessType sections (hiding C1120-D3-L removes its ↳ row from
+    // TOTAL, SUB, MAIN, FUNCTION, and VISUAL). Cleared via the Clear-hidden
+    // button in the card header; does not affect chart or totals.
+    private HashSet<string> _hiddenGroups = new(StringComparer.Ordinal);
+
+    private void HideGroup(string grp)
+    {
+        if (_hiddenGroups.Add(grp)) StateHasChanged();
+    }
+
+    private void ClearHiddenGroups()
+    {
+        if (_hiddenGroups.Count == 0) return;
+        _hiddenGroups.Clear();
+        StateHasChanged();
+    }
+
+    // Retained-but-unused chip state (the chip UI was replaced by per-row hide
+    // buttons; filter helpers below all take the no-chip fast path and behave as
+    // a pass-through over the original report data).
+    private HashSet<string> _selectedChips = new(StringComparer.Ordinal);
+
+    private bool NoChipSelected => _selectedChips.Count == 0;
+
+    private void OnChipSelectionChanged()
+    {
+        // Expansion rows are meaningless when scoped to a selection — clear them.
+        _expandedSummary.Clear();
+        _expandedProcess.Clear();
+        _expandedNg.Clear();
+        _pendingChartRender = true;
+        RebuildCombinedRaw();
+        RebuildRowPpmCache();
+    }
+
+    // Per-row combined PPM, pre-computed once whenever chip selection changes.
+    // Keyed by the row object reference so Reason Total rows — which can't be
+    // derived from a single (PT, PN, NG) triple — get their PPM as the sum of
+    // their Reason's combo-row combined PPMs.
+    private readonly Dictionary<object, Dictionary<string, double>> _combinedRowPpm = new();
+
+    private void RebuildRowPpmCache()
+    {
+        _combinedRowPpm.Clear();
+        if (_report is null || _selectedChips.Count < 2) return;
+
+        foreach (var row in _report.Top10Process)
+            _combinedRowPpm[row] = ComputeCombinedPpmByFilter(
+                (pt, pn, _) => pt == row.ProcessType && pn == row.ProcessName);
+
+        foreach (var row in _report.Top10Ng)
+            _combinedRowPpm[row] = ComputeCombinedPpmByFilter(
+                (pt, pn, ng) => pt == row.ProcessType && pn == row.ProcessName && ng == row.NgName);
+
+        // Reason combos first; each Reason's Total row is the period-wise sum of its
+        // combo-row combined PPMs (matches within-Reason additive semantics).
+        foreach (var grp in _report.ReasonRows.GroupBy(r => r.Reason))
+        {
+            var comboPpms = new List<Dictionary<string, double>>();
+            foreach (var c in grp.Where(r => !r.IsTotal))
+            {
+                var ppm = ComputeCombinedPpmByFilter(
+                    (pt, pn, ng) => pt == c.ProcessType && pn == c.ProcessName && ng == c.NgName);
+                _combinedRowPpm[c] = ppm;
+                comboPpms.Add(ppm);
+            }
+            var total = grp.FirstOrDefault(r => r.IsTotal);
+            if (total is not null)
+            {
+                var totalPpm = new Dictionary<string, double>(StringComparer.Ordinal);
+                foreach (var p in comboPpms)
+                    foreach (var (k, v) in p)
+                        totalPpm[k] = totalPpm.GetValueOrDefault(k) + v;
+                _combinedRowPpm[total] = totalPpm;
+            }
+        }
+    }
+
+    // Cache of per-(PT, PN, NG) → per-period summed (Input, NG) across the current
+    // chip selection. Rebuilt whenever the selection changes so that subsequent
+    // row-level PPM queries are O(1) filter hits over this small indexed dict.
+    private Dictionary<(string PT, string PN, string NG), Dictionary<string, (double I, double N)>> _combinedRaw
+        = new();
+
+    private void RebuildCombinedRaw()
+    {
+        _combinedRaw.Clear();
+        if (_report is null || _selectedChips.Count < 2) return;
+        foreach (var kv in _report.GroupRawIn)
+        {
+            if (!_selectedChips.Contains(kv.Key.Group)) continue;
+            var rowKey = (kv.Key.PT, kv.Key.PN, kv.Key.NG);
+            if (!_combinedRaw.TryGetValue(rowKey, out var perPeriod))
+            {
+                perPeriod = new Dictionary<string, (double I, double N)>(StringComparer.Ordinal);
+                _combinedRaw[rowKey] = perPeriod;
+            }
+            var prev = perPeriod.GetValueOrDefault(kv.Key.PeriodKey);
+            perPeriod[kv.Key.PeriodKey] = (prev.I + kv.Value.I, prev.N + kv.Value.N);
+        }
+    }
+
+    // Re-aggregates PPM correctly from raw Σinput / Σng across selected chips.
+    // filter: decide whether each row-key (PT, PN, NG) contributes to the
+    // requested aggregation. Per-key combined PPM = Σng / Σinput · 1M, then summed
+    // across qualifying keys — mirrors the within-group NgName-sum semantic of the
+    // original ComputeGroupSummary so single-chip and multi-chip values stay
+    // comparable.
+    private Dictionary<string, double> ComputeCombinedPpmByFilter(
+        Func<string /*PT*/, string /*PN*/, string /*NG*/, bool> filter)
+    {
+        var result = new Dictionary<string, double>(StringComparer.Ordinal);
+        foreach (var (rowKey, perPeriod) in _combinedRaw)
+        {
+            if (!filter(rowKey.PT, rowKey.PN, rowKey.NG)) continue;
+            foreach (var (periodKey, raw) in perPeriod)
+            {
+                if (raw.I <= 0) continue;
+                double ppm = raw.N / raw.I * 1_000_000;
+                result[periodKey] = result.GetValueOrDefault(periodKey) + ppm;
+            }
+        }
+        return result;
+    }
+
+    // Merge PPM dicts from multiple sources by per-key sum.
+    private static Dictionary<string, double> CombinePpm(IEnumerable<Dictionary<string, double>> dicts)
+    {
+        var result = new Dictionary<string, double>(StringComparer.Ordinal);
+        foreach (var d in dicts)
+            if (d is not null)
+                foreach (var (k, v) in d)
+                    result[k] = result.GetValueOrDefault(k) + v;
+        return result;
+    }
+
+    // Scale every PPM value by 1/divisor. Used to turn a chip-wise SUM into an
+    // arithmetic mean so that selecting two similar groups doesn't double the
+    // displayed defect rate. Divisor of 0/1 returns the input unchanged.
+    private static Dictionary<string, double> ScalePpm(
+        Dictionary<string, double> src, int divisor)
+    {
+        if (divisor <= 1) return src;
+        var result = new Dictionary<string, double>(src.Count, StringComparer.Ordinal);
+        double inv = 1.0 / divisor;
+        foreach (var (k, v) in src) result[k] = v * inv;
+        return result;
+    }
+
+    // Effective Summary row list. Combined multi-chip view is rebuilt from raw
+    // Input/NG per (PT, PN, NG, G, period) so the displayed PPM is the TRUE
+    // merged defect rate (Σng / Σinput · 1M), not an average of pre-computed
+    // per-group PPMs.
+    private IReadOnlyList<NgRateReportService.SummaryPivotRow> EffectiveSummary
+    {
+        get
+        {
+            if (_report is null)
+                return Array.Empty<NgRateReportService.SummaryPivotRow>();
+            if (NoChipSelected)
+                return _report.Summary;
+            if (_selectedChips.Count == 1
+                && _report.GroupSummary.TryGetValue(_selectedChips.First(), out var singleRows))
+                return singleRows;
+
+            // Multi-chip: recompute per-ProcessType PPM from combined raw data.
+            var ptOrder = _report.Summary
+                .Where(r => !r.IsTotal)
+                .Select(r => r.ProcessType)
+                .ToList();
+
+            var rebuilt = new List<NgRateReportService.SummaryPivotRow>();
+            var totalPpm = new Dictionary<string, double>(StringComparer.Ordinal);
+            foreach (string pt in ptOrder)
+            {
+                var ppm = ComputeCombinedPpmByFilter((p, _, _) => p == pt);
+                rebuilt.Add(new NgRateReportService.SummaryPivotRow
+                {
+                    ProcessType = pt,
+                    IsTotal     = false,
+                    Ppm         = ppm,
+                });
+                foreach (var (k, v) in ppm)
+                    totalPpm[k] = totalPpm.GetValueOrDefault(k) + v;
+            }
+            rebuilt.Insert(0, new NgRateReportService.SummaryPivotRow
+            {
+                ProcessType = "TOTAL",
+                IsTotal     = true,
+                Ppm         = totalPpm,
+            });
+            return rebuilt;
+        }
+    }
+
+    // Picks the right Ppm dict for a Top-10 / Reason row given the current chip set.
+    //   No chips     → row's overall Ppm (everything combined, server-computed).
+    //   Single chip  → that group's own Ppm from row.Groups.
+    //   Multi chips  → input-weighted Σng/Σinput re-aggregation cached by rowRef.
+    private Dictionary<string, double> PpmForRow(
+        object rowRef,
+        Dictionary<string, double> overallPpm,
+        IReadOnlyList<NgRateReportService.GroupPivotRow> groups)
+    {
+        if (NoChipSelected) return overallPpm;
+        if (_selectedChips.Count == 1)
+        {
+            string only = _selectedChips.First();
+            var g = groups.FirstOrDefault(x => x.GroupName == only);
+            return g?.Ppm ?? new Dictionary<string, double>();
+        }
+        return _combinedRowPpm.GetValueOrDefault(rowRef) ?? new Dictionary<string, double>();
+    }
+
+    // A group "has data" when its Summary TOTAL row contains at least one non-zero
+    // PPM across all visible periods. Empty groups are disabled as chips.
+    private bool GroupHasData(string grp)
+    {
+        if (_report is null) return false;
+        if (!_report.GroupSummary.TryGetValue(grp, out var rows)) return false;
+        foreach (var r in rows)
+            foreach (var v in r.Ppm.Values)
+                if (v > 0) return true;
+        return false;
+    }
+
+    // Sort-reference key for re-ranking when a chip is active. Mirrors the
+    // NgRateByGroupPage convention: previous week (Week[1]) if ≥2 weeks are
+    // visible, else current week, else most-recent date. Empty key disables re-sort.
+    private string SortRefKey()
+    {
+        var weeks = VisibleWeekCols.ToList();
+        var dates = VisibleDateCols.ToList();
+        if (weeks.Count >= 2) return weeks[1].Key;
+        if (weeks.Count == 1) return weeks[0].Key;
+        if (dates.Count > 0)  return dates[0].Key;
+        return "";
+    }
+
+    // Chip-scoped prior-week PPM used as the re-sort key for Top-10 / Reason rows.
+    private double RefPpmForRow(
+        object rowRef,
+        Dictionary<string, double> overallPpm,
+        IReadOnlyList<NgRateReportService.GroupPivotRow> groups)
+    {
+        string k = SortRefKey();
+        if (string.IsNullOrEmpty(k)) return 0;
+        return PpmForRow(rowRef, overallPpm, groups).GetValueOrDefault(k);
+    }
+
+    // Re-ranked top-10 rows: unchanged when no chip is selected, otherwise
+    // sorted by the chip's previous-week PPM descending.
+    private IReadOnlyList<NgRateReportService.ProcessPivotRow> SortedTop10Process
+    {
+        get
+        {
+            if (_report is null) return Array.Empty<NgRateReportService.ProcessPivotRow>();
+            if (NoChipSelected) return _report.Top10Process;
+            return _report.Top10Process
+                .OrderByDescending(r => RefPpmForRow(r, r.Ppm, r.Groups))
+                .ToList();
+        }
+    }
+
+    private IReadOnlyList<NgRateReportService.NgPivotRow> SortedTop10Ng
+    {
+        get
+        {
+            if (_report is null) return Array.Empty<NgRateReportService.NgPivotRow>();
+            if (NoChipSelected) return _report.Top10Ng;
+            return _report.Top10Ng
+                .OrderByDescending(r => RefPpmForRow(r, r.Ppm, r.Groups))
+                .ToList();
+        }
+    }
+
+    // Re-ranked Reason rows: keeps each Reason's Total row at the top of its
+    // section, sorts combo rows within a section by chip-scoped prior-week PPM
+    // descending, and orders whole Reason sections by their Total's ref PPM.
+    // Non-Total rows whose chip-scoped PPM is entirely zero across the period
+    // are hidden.
+    private IReadOnlyList<NgRateReportService.ReasonRow> SortedReasonRows
+    {
+        get
+        {
+            if (_report is null) return Array.Empty<NgRateReportService.ReasonRow>();
+
+            bool HasAnyPpm(NgRateReportService.ReasonRow r)
+                => PpmForRow(r, r.Ppm, r.Groups).Values.Any(v => v > 0);
+
+            if (NoChipSelected)
+                return _report.ReasonRows
+                    .Where(r => r.IsTotal || HasAnyPpm(r))
+                    .ToList();
+
+            var byReason = _report.ReasonRows
+                .GroupBy(r => r.Reason)
+                .Select(g =>
+                {
+                    var list = g.ToList();
+                    var total = list.FirstOrDefault(r => r.IsTotal);
+                    var combos = list.Where(r => !r.IsTotal && HasAnyPpm(r))
+                        .OrderByDescending(r => RefPpmForRow(r, r.Ppm, r.Groups))
+                        .ToList();
+                    double totalPpm = total is null ? combos.Sum(r => RefPpmForRow(r, r.Ppm, r.Groups))
+                                                   : RefPpmForRow(total, total.Ppm, total.Groups);
+                    return (TotalPpm: totalPpm, Total: total, Combos: combos);
+                })
+                .OrderByDescending(x => x.TotalPpm)
+                .ToList();
+
+            var result = new List<NgRateReportService.ReasonRow>();
+            foreach (var section in byReason)
+            {
+                if (section.Total is not null) result.Add(section.Total);
+                result.AddRange(section.Combos);
+            }
+            return result;
+        }
+    }
     private HashSet<string> _expandedReason  = new();
+    private HashSet<string> _collapsedReasonCategory = new();
 
     private void ToggleSummary(string pt)  { if (!_expandedSummary.Remove(pt)) _expandedSummary.Add(pt); }
     private void ExpandAllSummary()        { _expandedSummary = _report!.Summary.Select(r => r.ProcessType).ToHashSet(); }
@@ -1181,6 +1556,10 @@
     private void ToggleProcess(int rank) { if (!_expandedProcess.Remove(rank)) _expandedProcess.Add(rank); }
     private void ToggleNg(int rank)      { if (!_expandedNg.Remove(rank))      _expandedNg.Add(rank); }
     private void ToggleReason(string key){ if (!_expandedReason.Remove(key))   _expandedReason.Add(key); }
+    private void ToggleReasonCategory(string reason)
+    {
+        if (!_collapsedReasonCategory.Remove(reason)) _collapsedReasonCategory.Add(reason);
+    }
 
     private void ExpandAllProcess()   { _expandedProcess = _report!.Top10Process.Select(r => r.Rank).ToHashSet(); }
     private void CollapseAllProcess() { _expandedProcess.Clear(); }
@@ -1235,92 +1614,176 @@
     private void ToggleWeekCols()  { _weekExpanded  = !_weekExpanded;  _pendingChartRender = true; }
     private void ToggleMonthCols() { _monthExpanded = !_monthExpanded; _pendingChartRender = true; }
 
-    protected override void OnInitialized() => RefreshJsonFiles();
+    protected override void OnInitialized() => RefreshGroups();
 
-    // ── Model Files helpers ───────────────────────────────────────────────────────
+    // ── Model Groups helpers ─────────────────────────────────────────────────────
 
-    private void RefreshJsonFiles()
+    private void RefreshGroups()
     {
-        _jsonFiles.Clear();
-        _jsonFolderExists = Directory.Exists(JsonFolderPath);
-        if (!_jsonFolderExists) return;
+        _dbGroups = Repo.GetModelGroups();
+        _selectedGroupIds.RemoveWhere(id => !_dbGroups.Any(g => g.Id == id));
+        var live = _dbGroups.SelectMany(FirstLevelChildren).Select(c => c.Key).ToHashSet(StringComparer.Ordinal);
+        _selectedSubEntries.RemoveWhere(k => !live.Contains(k));
+        if (!_dbGroups.Any(g => g.ProductGroup == _activePg))
+            _activePg = GroupProductGroups.FirstOrDefault() ?? "ETC";
+    }
 
-        _jsonFiles = Directory
-            .GetFiles(JsonFolderPath, "*.json", SearchOption.TopDirectoryOnly)
-            .OrderByDescending(File.GetLastWriteTime)
-            .Select(p => new JsonFileEntry(
-                Path.GetFileName(p),
-                File.GetLastWriteTime(p).ToString("yy-MM-dd HH:mm"),
-                p,
-                ReadPgFromFile(p)))
+    private void ToggleGroup(long id)
+    {
+        if (!_selectedGroupIds.Remove(id))
+            _selectedGroupIds.Add(id);
+    }
+
+    private void ToggleSubEntry(string key)
+    {
+        if (!_selectedSubEntries.Remove(key))
+            _selectedSubEntries.Add(key);
+    }
+
+    /// <summary>Builds the (LineShift → GroupName) mapping + group list for the DB-overload
+    /// of NgRateReportService.GenerateReportAsync. Produces the same shape the JSON path
+    /// used to produce, so the report output is identical.</summary>
+    private static (Dictionary<string, string> mapping, List<string> groups) BuildGroupMapping(
+        IEnumerable<ModelGroupRecord> selected)
+    {
+        var mapping = new Dictionary<string, string>(StringComparer.Ordinal);
+        var groups  = new List<string>();
+        foreach (var g in selected)
+        {
+            if (!groups.Contains(g.Name)) groups.Add(g.Name);
+            foreach (var mid in g.MidGroups)
+                foreach (var ls in mid.LineShifts)
+                    if (!string.IsNullOrEmpty(ls))
+                        mapping[ls] = g.Name;
+        }
+        return (mapping, groups);
+    }
+
+    /// <summary>
+    /// Builds a multi-valued mapping so each LineShift contributes to every level of
+    /// the hierarchy it belongs to. The returned <c>groups</c> list defines the drill-down
+    /// row order shown under each ProcessType in the Summary:
+    ///   1) root group name (the whole ModelGroup),
+    ///   2) each mid-group (Material) that holds LineShifts,
+    ///   3) every named sub-group (DFS pre-order, all depths),
+    ///   4) individual LineShift leaves (DFS leaf order).
+    /// A sub-group's row is de-duplicated against the mid-group row above it when both
+    /// labels match exactly, to avoid a double row when a named sub-group shares the
+    /// same label as its material.
+    /// </summary>
+    private static (Dictionary<string, IReadOnlyList<string>> mapping, List<string> groups)
+        BuildTreeMultiMapping(ModelGroupRecord g)
+    {
+        var raw    = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var groups = new List<string>();
+
+        void Attach(string ls, string group)
+        {
+            if (string.IsNullOrEmpty(group)) return;
+            if (!raw.TryGetValue(ls, out var list))
+            {
+                list = new List<string>();
+                raw[ls] = list;
+            }
+            if (!list.Contains(group, StringComparer.Ordinal)) list.Add(group);
+            if (!groups.Contains(group, StringComparer.Ordinal)) groups.Add(group);
+        }
+
+        // 1) Root
+        var allLs = g.MidGroups
+            .SelectMany(m => m.SubGroups.SelectMany(s => s.AllLineShifts))
+            .Where(ls => !string.IsNullOrEmpty(ls))
+            .Distinct(StringComparer.Ordinal)
             .ToList();
-
-        // Remove stale selections
-        _selectedFiles.RemoveWhere(p => !_jsonFiles.Any(f => f.FullPath == p));
-
-        // If the current tab is empty, jump to the first tab
-        if (!_jsonFiles.Any(f => f.ProductGroup == _activePg))
-            _activePg = FileProductGroups.FirstOrDefault() ?? "ETC";
-    }
-
-    private static string ReadPgFromFile(string path)
-    {
-        try
+        if (allLs.Count == 0)
         {
-            using var stream = File.OpenRead(path);
-            using var doc    = JsonDocument.Parse(stream);
-            var root = doc.RootElement;
-            if (root.ValueKind == JsonValueKind.Object &&
-                root.TryGetProperty("ProductGroup", out var pg))
-            {
-                string v = pg.GetString() ?? "ETC";
-                return Array.IndexOf(new[] { "SPK", "UNIT", "MODULE", "TWS", "ETC" }, v) >= 0 ? v : "ETC";
-            }
+            return (new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal), groups);
         }
-        catch { }
-        return "ETC";
-    }
+        foreach (var ls in allLs) Attach(ls, g.Name);
 
-    private void ToggleFile(string fullPath)
-    {
-        if (!_selectedFiles.Remove(fullPath))
-            _selectedFiles.Add(fullPath);
-    }
-
-    // ── Delete selected files ─────────────────────────────────────────────────────
-    private void CancelDeleteFiles()
-    {
-        _showDeleteFiles  = false;
-        _deleteFilesError = null;
-    }
-
-    private void ExecuteDeleteFiles()
-    {
-        _deleteFilesError = null;
-        var targets = _selectedFiles.ToList();
-        var failed  = new List<string>();
-
-        foreach (string path in targets)
+        // 2) Mid-groups (Material) — only when more than one mid-group OR the single
+        // mid-group's label differs from the root group name (avoid a redundant duplicate row).
+        bool includeMids = g.MidGroups.Count > 1
+            || (g.MidGroups.Count == 1 &&
+                !string.Equals(g.MidGroups[0].Material, g.Name, StringComparison.Ordinal));
+        if (includeMids)
         {
-            try
+            foreach (var mid in g.MidGroups)
             {
-                if (File.Exists(path)) File.Delete(path);
-                _selectedFiles.Remove(path);
-            }
-            catch (Exception ex)
-            {
-                failed.Add($"{Path.GetFileName(path)}: {ex.Message}");
+                if (string.IsNullOrEmpty(mid.Material)) continue;
+                foreach (var ls in mid.SubGroups.SelectMany(s => s.AllLineShifts))
+                    if (!string.IsNullOrEmpty(ls)) Attach(ls, mid.Material);
             }
         }
 
-        RefreshJsonFiles();
-        _showDeleteFiles = false;
+        // 3) Named sub-groups (DFS pre-order, "parent / child" labels)
+        foreach (var mid in g.MidGroups)
+            foreach (var sub in mid.SubGroups)
+                CollectSubGroupMulti(sub, prefix: string.Empty, Attach);
 
-        if (failed.Count > 0)
+        // 4) Individual LineShifts (DFS leaf order)
+        foreach (var mid in g.MidGroups)
+            foreach (var sub in mid.SubGroups)
+                CollectLineShiftLeaves(sub, Attach);
+
+        var ro = raw.ToDictionary(
+            kv => kv.Key,
+            kv => (IReadOnlyList<string>)kv.Value,
+            StringComparer.Ordinal);
+        return (ro, groups);
+    }
+
+    private static void CollectSubGroupMulti(SubGroupRecord node, string prefix, Action<string, string> attach)
+    {
+        string label = string.IsNullOrEmpty(prefix)
+            ? (node.Name ?? string.Empty)
+            : prefix + " / " + (node.Name ?? string.Empty);
+
+        if (!string.IsNullOrEmpty(node.Name))
         {
-            _deleteFilesError = $"{failed.Count}개 삭제 실패:\n" + string.Join("\n", failed);
-            _showDeleteFiles  = true;   // keep modal open to show error
+            foreach (var ls in node.AllLineShifts)
+                if (!string.IsNullOrEmpty(ls)) attach(ls, label);
         }
+
+        foreach (var child in node.SubGroups)
+        {
+            string childPrefix = string.IsNullOrEmpty(node.Name) ? prefix : label;
+            CollectSubGroupMulti(child, childPrefix, attach);
+        }
+    }
+
+    private static void CollectLineShiftLeaves(SubGroupRecord node, Action<string, string> attach)
+    {
+        foreach (var ls in node.LineShifts)
+            if (!string.IsNullOrEmpty(ls)) attach(ls, ls);
+        foreach (var child in node.SubGroups)
+            CollectLineShiftLeaves(child, attach);
+    }
+
+    /// <summary>Resolves a <see cref="ChildEntry.Key"/> into a scoped multi-mapping:
+    /// the mid-group becomes the synthetic "root" of its own drill-down tree.</summary>
+    private (string label,
+             Dictionary<string, IReadOnlyList<string>> multi,
+             List<string> groupList)? BuildChildEntryReport(string key)
+    {
+        var parts = key.Split('|');
+        if (parts.Length != 3 || parts[1] != "mid") return null;
+        if (!long.TryParse(parts[0], out long gid)) return null;
+        var g = _dbGroups.FirstOrDefault(x => x.Id == gid);
+        if (g is null) return null;
+
+        string material = parts[2];
+        var mid = g.MidGroups.FirstOrDefault(m => m.Material == material);
+        if (mid is null) return null;
+        var virt = new ModelGroupRecord
+        {
+            Id           = g.Id,
+            Name         = material,
+            ProductGroup = g.ProductGroup,
+            MidGroups    = new List<MidGroupRecord> { mid },
+        };
+        var (multi, groupList) = BuildTreeMultiMapping(virt);
+        return (material, multi, groupList);
     }
 
     // ── Get Data ──────────────────────────────────────────────────────────────────
@@ -1360,7 +1823,7 @@
             else
             {
                 _savedDbPath = dbPath;
-                RefreshJsonFiles();
+                RefreshGroups();
             }
         }
         catch (Exception ex)
@@ -1394,6 +1857,7 @@
         _expandedProcess.Clear();
         _expandedNg.Clear();
         _expandedReason.Clear();
+        _collapsedReasonCategory.Clear();
         _dateExpanded  = false;
         _weekExpanded  = false;
         _monthExpanded = false;
@@ -1416,26 +1880,64 @@
 
             progress.Report($"Using DB: {Path.GetFileName(dbPath)}");
 
-            if (_selectedFiles.Count <= 1)
+            if (_selectedGroupIds.Count == 0 && _selectedSubEntries.Count == 0)
             {
-                var r   = await NgRateReport.GenerateReportAsync(dbPath, _selectedFiles, progress);
-                string lbl = _selectedFiles.Count == 1
-                    ? Path.GetFileNameWithoutExtension(_selectedFiles.First())
-                    : "All";
-                _reports.Add((lbl, r));
+                // No selection → single "All" report across every group (no tree expansion).
+                var (mapping, groupList) = BuildGroupMapping(_dbGroups);
+                if (mapping.Count == 0)
+                {
+                    _reportError = "No LineShift found in the selected groups.";
+                    return;
+                }
+                var r = await NgRateReport.GenerateReportAsync(dbPath, mapping, groupList, progress);
+                _reports.Add(("All", r));
             }
             else
             {
-                foreach (var file in _selectedFiles.OrderBy(f => f))
+                // Whole-group selections: full-tree drill-down.
+                foreach (var g in _dbGroups
+                    .Where(g => _selectedGroupIds.Contains(g.Id))
+                    .OrderBy(g => g.Name, StringComparer.Ordinal))
                 {
-                    progress.Report($"─── {Path.GetFileNameWithoutExtension(file)}");
+                    progress.Report($"─── {g.Name}");
+                    var (multi, groupList) = BuildTreeMultiMapping(g);
+                    if (multi.Count == 0)
+                    {
+                        progress.Report($"  (skipped: no LineShift)");
+                        continue;
+                    }
+                    var r = await NgRateReport.GenerateReportAsync(dbPath, multi, groupList, progress);
+                    _reports.Add((g.Name, r));
+                }
+
+                // First-level child selections (mid-group Material or top-level named sub-group):
+                // scoped drill-down over just that sub-tree.
+                foreach (string key in _selectedSubEntries.OrderBy(k => k, StringComparer.Ordinal))
+                {
+                    var spec = BuildChildEntryReport(key);
+                    if (spec is null)
+                    {
+                        progress.Report($"─── {key}  (skipped: not found)");
+                        continue;
+                    }
+                    progress.Report($"─── {spec.Value.label}");
                     var r = await NgRateReport.GenerateReportAsync(
-                        dbPath, new HashSet<string> { file }, progress);
-                    _reports.Add((Path.GetFileNameWithoutExtension(file), r));
+                        dbPath, spec.Value.multi, spec.Value.groupList, progress);
+                    _reports.Add((spec.Value.label, r));
+                }
+
+                if (_reports.Count == 0)
+                {
+                    _reportError = "No LineShift found in the selected groups.";
+                    return;
                 }
             }
 
             _pendingChartRender = true;
+            // Fresh reports → caches may reference stale rows from the prior report.
+            _selectedChips.Clear();
+            RebuildCombinedRaw();
+            RebuildRowPpmCache();
         }
         catch (Exception ex)
         {
@@ -1474,7 +1976,12 @@
         _expandedProcess.Clear();
         _expandedNg.Clear();
         _expandedReason.Clear();
+        _collapsedReasonCategory.Clear();
         _pendingChartRender = true;
+        // Chip selection is per-session, not per-tab — rebuild caches from the newly
+        // active report so multi-chip totals reflect the tab's own raw data.
+        RebuildCombinedRaw();
+        RebuildRowPpmCache();
     }
 
     // ── Utilities ─────────────────────────────────────────────────────────────────

@@ -21,7 +21,7 @@
       "command": "powershell",
       "args": [
         "-NoProfile", "-NonInteractive", "-Command",
-        "$p = Get-NetTCPConnection -LocalPort 5080 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; if ($p) { Stop-Process -Id $p -Force -ErrorAction SilentlyContinue; Write-Host \"Killed PID $p\" } else { Write-Host 'No process on :5080' }"
+        "$p = Get-NetTCPConnection -LocalPort 5050 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; if ($p) { Stop-Process -Id $p -Force -ErrorAction SilentlyContinue; Write-Host \"Killed PID $p\" } else { Write-Host 'No process on :5050' }"
       ],
       "problemMatcher": [],
       "presentation": { "reveal": "silent", "panel": "shared" }

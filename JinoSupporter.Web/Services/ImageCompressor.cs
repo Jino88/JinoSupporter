@@ -17,6 +17,11 @@ public static class ImageCompressor
     // (~4.67 MB base64), safely under Anthropic's per-image cap.
     public const long DefaultTargetRawBytes = 3_500_000;
 
+    // Anthropic vision hard cap: 8000 px on any side. Pre-scale any image whose
+    // longer side exceeds this BEFORE byte-budget compression, or the request
+    // is rejected with HTTP 400.
+    public const int MaxDimensionPx = 7900;
+
     // Quality ladder: start near-lossless, step down only if needed.
     private static readonly int[] QualityLadder = [95, 90, 85, 80, 75, 65];
 
@@ -50,7 +55,18 @@ public static class ImageCompressor
         try { data = Convert.FromBase64String(base64); }
         catch { return (base64, mediaType); }
 
-        if (data.Length <= target) return (base64, mediaType);
+        int probeW = 0, probeH = 0;
+        try
+        {
+            using var probeMs = new MemoryStream(data);
+            using var probe   = Image.FromStream(probeMs);
+            probeW = probe.Width;
+            probeH = probe.Height;
+        }
+        catch { }
+
+        bool dimensionTooLarge = probeW > MaxDimensionPx || probeH > MaxDimensionPx;
+        if (data.Length <= target && !dimensionTooLarge) return (base64, mediaType);
 
         try
         {
@@ -59,6 +75,14 @@ public static class ImageCompressor
 
             int w = src.Width;
             int h = src.Height;
+
+            // Pre-scale if any side exceeds Anthropic's 8000 px hard limit.
+            if (w > MaxDimensionPx || h > MaxDimensionPx)
+            {
+                double capScale = (double)MaxDimensionPx / Math.Max(w, h);
+                w = Math.Max(600, (int)(w * capScale));
+                h = Math.Max(400, (int)(h * capScale));
+            }
 
             // Try quality-only compression at full resolution first.
             foreach (int q in QualityLadder)

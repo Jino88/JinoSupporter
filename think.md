@@ -451,3 +451,4 @@ Claude가 저장 시 자동으로 태깅.
 - variableGroup 레이블: 중간 → Normal/Test 확인 필수
 - defectCategory 매핑: 중간 → 주요 불량 유형 확인 권장
 ```
+ㅊ

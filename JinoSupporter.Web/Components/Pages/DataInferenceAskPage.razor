@@ -29,7 +29,7 @@
             <option value="@pt">@pt</option>
         }
     </select>
-    <span class="diask-count-right">사용 대상: @FilteredReports.Count 건</span>
+    <span class="diask-count-right">In scope: @FilteredReports.Count item(s)</span>
     <button class="btn btn-outline-secondary btn-sm" @onclick="ToggleHistory" disabled="@_isBusy">
         @(_showHistory ? "✕ History" : "🗂 History")
     </button>
@@ -42,23 +42,42 @@
 
 <!-- Question area -->
 <div class="diask-question-wrap">
-    <label class="diask-label">질문</label>
+    <label class="diask-label">Question</label>
     <textarea class="form-control diask-question" rows="4"
               @bind="_question"
               @bind:event="oninput"
-              placeholder="예) BRS-161016 제품에서 SPL NG가 자주 발생하는데, 어떻게 개선하면 좋을까요?"></textarea>
+              placeholder="e.g. BRS-161016 frequently has SPL NG — how should we improve this?"></textarea>
     <div class="diask-actions">
         @if (!string.IsNullOrEmpty(_status))
         {
             <span class="diask-status @(_statusError ? "diask-error" : "diask-ok")">@_status</span>
         }
         <div style="flex:1;"></div>
+        <label class="diask-lang-label">Answer in</label>
+        <select class="form-select form-select-sm diask-lang-select"
+                @bind="_answerLanguage" disabled="@_isBusy">
+            <option value="English">English</option>
+            <option value="Korean">Korean</option>
+            <option value="Vietnamese">Vietnamese</option>
+        </select>
         <button class="btn btn-outline-secondary btn-sm" @onclick="Clear" disabled="@_isBusy">Clear</button>
         <button class="btn btn-primary btn-sm" @onclick="AskAsync"
                 disabled="@(_isBusy || string.IsNullOrWhiteSpace(_question) || !Claude.IsConfigured || FilteredReports.Count == 0)">
-            @if (_isBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            @if (_isBusy && !_isWaitingCli) { <span class="spinner-border spinner-border-sm me-1"></span> }
             Ask AI
         </button>
+        <button class="btn btn-success btn-sm" @onclick="LaunchCliAskAsync"
+                disabled="@(_isBusy || string.IsNullOrWhiteSpace(_question) || FilteredReports.Count == 0)"
+                title="Launch Claude CLI in a new terminal — uses Claude Code subscription. The answer will auto-appear here when CLI finishes.">
+            🖥 Ask via CLI
+        </button>
+        @if (_isWaitingCli)
+        {
+            <button class="btn btn-outline-danger btn-sm" @onclick="CancelCliWait"
+                    title="Stop polling for CLI result. The CLI terminal keeps running; reopen History to load manually.">
+                ✕ Cancel wait
+            </button>
+        }
     </div>
 </div>
 
@@ -68,13 +87,13 @@
     {
         <div class="diask-placeholder">
             <div class="spinner-border spinner-border-sm me-2"></div>
-            등록된 리포트에서 관련 내용을 분석 중입니다…
+            Analyzing relevant content from registered reports…
         </div>
     }
     else if (_answer is null)
     {
         <div class="diask-placeholder">
-            질문을 입력하고 <strong>Ask AI</strong> 를 누르면 이때까지 등록된 리포트를 기반으로 답변해 드립니다.
+            Enter a question and click <strong>Ask AI</strong> to get an answer based on all reports registered so far.
         </div>
     }
     else
@@ -82,14 +101,14 @@
         @if (!string.IsNullOrWhiteSpace(_answer.Overall))
         {
             <div class="diask-answer-card diask-overall">
-                <div class="diask-answer-title">🤖 종합 답변</div>
+                <div class="diask-answer-title">🤖 Overall Answer</div>
                 <div class="diask-answer-body">@_answer.Overall</div>
             </div>
         }
 
         @if (_answer.PerDataset.Count > 0)
         {
-            <div class="diask-perds-title">📄 데이터셋별 답변 (@_answer.PerDataset.Count)</div>
+            <div class="diask-perds-title">📄 Per-dataset Answers (@_answer.PerDataset.Count)</div>
             @foreach (var pd in _answer.PerDataset)
             {
                 var info = _reports.FirstOrDefault(r => r.DatasetName == pd.DatasetName);
@@ -109,7 +128,7 @@
                         }
                         else
                         {
-                            <span class="diask-ds-meta diask-ds-missing">(삭제되었거나 이름 불일치)</span>
+                            <span class="diask-ds-meta diask-ds-missing">(deleted or name mismatch)</span>
                         }
                     </div>
                     <div class="diask-ds-body">@pd.Answer</div>
@@ -118,7 +137,7 @@
         }
         else if (string.IsNullOrWhiteSpace(_answer.Overall))
         {
-            <div class="diask-empty-note">관련 리포트를 찾지 못해 답변을 생성할 수 없습니다.</div>
+            <div class="diask-empty-note">Could not generate an answer — no matching reports found.</div>
         }
     }
 </div>
@@ -130,14 +149,14 @@
 {
     <div class="diask-history-col">
         <div class="diask-history-head">
-            <span>🗂 Q/A 이력 (@_history.Count)</span>
+            <span>🗂 Q/A History (@_history.Count)</span>
             <button class="btn btn-outline-danger btn-sm py-0 px-2"
                     @onclick="ConfirmClearHistory"
-                    disabled="@(_history.Count == 0 || _isBusy)">전체 삭제</button>
+                    disabled="@(_history.Count == 0 || _isBusy)">Clear all</button>
         </div>
         @if (_history.Count == 0)
         {
-            <div class="diask-history-empty">저장된 이력이 없습니다.</div>
+            <div class="diask-history-empty">No saved history.</div>
         }
         else
         {
@@ -156,7 +175,7 @@
                             }
                         </div>
                         <button class="diask-history-del"
-                                title="삭제"
+                                title="Delete"
                                 @onclick="() => DeleteHistory(h.Id)"
                                 @onclick:stopPropagation="true">✕</button>
                     </div>
@@ -172,12 +191,12 @@
 {
     <div class="diask-overlay" @onclick="() => _showClearConfirm = false">
         <div class="diask-confirm" @onclick:stopPropagation="true">
-            <div class="diask-confirm-title">전체 이력 삭제</div>
-            <p style="font-size:13px;">저장된 모든 Q/A 이력이 삭제됩니다. 계속하시겠습니까?</p>
+            <div class="diask-confirm-title">Clear All History</div>
+            <p style="font-size:13px;">All saved Q/A history will be deleted. Continue?</p>
             <div style="display:flex; gap:8px; justify-content:flex-end;">
                 <button class="btn btn-outline-secondary btn-sm"
                         @onclick="() => _showClearConfirm = false">Cancel</button>
-                <button class="btn btn-danger btn-sm" @onclick="ClearAllHistory">전체 삭제</button>
+                <button class="btn btn-danger btn-sm" @onclick="ClearAllHistory">Clear all</button>
             </div>
         </div>
     </div>
@@ -199,6 +218,8 @@
     .diask-count-right { font-size: 12px; color: #64748b; font-weight: 600; }
     .diask-filter-label  { font-size: 12px; font-weight: 600; color: #64748b; white-space: nowrap; }
     .diask-filter-select { width: 160px; }
+    .diask-lang-label    { font-size: 12px; font-weight: 600; color: #64748b; white-space: nowrap; margin-bottom: 0; }
+    .diask-lang-select   { width: 130px; }
 
     .diask-main {
         flex: 1; min-height: 0; display: flex; overflow: hidden;
@@ -301,6 +322,7 @@
     private List<RawReportInfo>        _reports           = [];
     private string                     _productTypeFilter = "";
     private string                     _question          = "";
+    private string                     _answerLanguage    = "English";
     private ClaudeService.AskAiResult? _answer            = null;
     private bool                       _isBusy;
     private string                     _status            = "";
@@ -310,6 +332,10 @@
     private List<AskAiHistoryRecord>   _history           = [];
     private long?                      _activeHistoryId   = null;
     private bool                       _showClearConfirm  = false;
+
+    // CLI flow
+    private bool                       _isWaitingCli;
+    private System.Threading.CancellationTokenSource? _cliCts;
 
     private List<string> _productTypeOptions => _reports
         .Select(r => r.ProductType)
@@ -342,7 +368,7 @@
     {
         if (string.IsNullOrWhiteSpace(_question))
         {
-            SetStatus("질문을 입력해주세요.", true);
+            SetStatus("Please enter a question.", true);
             return;
         }
 
@@ -357,11 +383,11 @@
             string context = await Task.Run(BuildDatasetsContext);
             if (string.IsNullOrWhiteSpace(context))
             {
-                SetStatus("선택된 조건에 해당하는 AI 분석 리포트가 없습니다.", true);
+                SetStatus("No AI analysis reports match the selected filter.", true);
                 return;
             }
 
-            _answer = await Claude.AskAiAsync(_question.Trim(), context);
+            _answer = await Claude.AskAiAsync(_question.Trim(), context, _answerLanguage);
 
             // Persist to DB
             string perDsJson = System.Text.Json.JsonSerializer.Serialize(_answer.PerDataset);
@@ -370,16 +396,164 @@
             _activeHistoryId = id;
             _history = Repo.GetAskAiHistory();
 
-            SetStatus($"답변 생성 완료 — 데이터셋별 답변 {_answer.PerDataset.Count}건", false);
+            SetStatus($"Answer generated — {_answer.PerDataset.Count} per-dataset answer(s)", false);
         }
         catch (Exception ex)
         {
-            SetStatus($"오류: {ex.Message}", true);
+            SetStatus($"Error: {ex.Message}", true);
         }
         finally
         {
             _isBusy = false;
         }
+    }
+
+    private async Task LaunchCliAskAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_question))
+        {
+            SetStatus("Please enter a question.", true);
+            return;
+        }
+
+        string workDir = FindRepoRoot();
+        string tmpDir  = Path.Combine(workDir, "tmp");
+        Directory.CreateDirectory(tmpDir);
+
+        string pendingQuestion  = _question.Trim();
+        DateTime pendingStarted = DateTime.UtcNow;
+
+        var req = new
+        {
+            question          = pendingQuestion,
+            language          = _answerLanguage,
+            productTypeFilter = _productTypeFilter ?? "",
+            createdAt         = pendingStarted.ToString("O"),
+        };
+        try
+        {
+            File.WriteAllText(Path.Combine(tmpDir, "ask_request.json"),
+                System.Text.Json.JsonSerializer.Serialize(req,
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Failed to write ask_request.json: {ex.Message}", true);
+            return;
+        }
+
+        // Launch Windows Terminal (falls back to cmd).
+        bool launched = false;
+        string prompt = "CLI_ASK_AI.md 읽고 실행해";
+        try
+        {
+            var wt = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName         = "wt.exe",
+                Arguments        = $"-d \"{workDir}\" cmd /k chcp 65001>nul && title Ask AI (Claude CLI) && claude \"{prompt}\"",
+                UseShellExecute  = true,
+                CreateNoWindow   = false,
+            };
+            System.Diagnostics.Process.Start(wt);
+            launched = true;
+        }
+        catch { }
+        if (!launched)
+        {
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName         = "cmd.exe",
+                    Arguments        = $"/k chcp 65001>nul && title Ask AI (Claude CLI) && claude \"{prompt}\"",
+                    WorkingDirectory = workDir,
+                    UseShellExecute  = true,
+                    CreateNoWindow   = false,
+                };
+                System.Diagnostics.Process.Start(psi);
+                launched = true;
+            }
+            catch (Exception ex)
+            {
+                SetStatus($"Failed to launch Claude CLI: {ex.Message}", true);
+                return;
+            }
+        }
+
+        _isBusy        = true;
+        _isWaitingCli  = true;
+        _answer        = null;
+        SetStatus("Claude CLI launched — waiting for answer to land in AskAiHistory…", false);
+        StateHasChanged();
+
+        _cliCts?.Cancel(); _cliCts?.Dispose();
+        _cliCts = new System.Threading.CancellationTokenSource(TimeSpan.FromMinutes(10));
+        var token = _cliCts.Token;
+
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2), token);
+
+                // Look for a newly-committed AskAiHistory row with the same question
+                // created after we launched the CLI.
+                var recent = await Task.Run(() => Repo.GetAskAiHistory(limit: 30));
+                AskAiHistoryRecord? hit = null;
+                foreach (var h in recent)
+                {
+                    if (!string.Equals(h.Question?.Trim(), pendingQuestion, StringComparison.Ordinal)) continue;
+                    if (!DateTime.TryParse(h.CreatedAt, null, System.Globalization.DateTimeStyles.RoundtripKind, out DateTime dt)) continue;
+                    if (dt >= pendingStarted) { hit = h; break; }
+                }
+                if (hit is not null)
+                {
+                    _history = recent;
+                    LoadHistory(hit.Id);
+                    SetStatus($"CLI answer received — {_answer?.PerDataset.Count ?? 0} per-dataset answer(s)", false);
+                    break;
+                }
+            }
+            if (token.IsCancellationRequested && _answer is null)
+            {
+                SetStatus("Wait cancelled or timed out (10min). Open History to load the answer manually when CLI finishes.", true);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            if (_answer is null)
+                SetStatus("Wait cancelled. Open History to load the answer manually when CLI finishes.", true);
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Polling error: {ex.Message}", true);
+        }
+        finally
+        {
+            _cliCts?.Dispose();
+            _cliCts       = null;
+            _isWaitingCli = false;
+            _isBusy       = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CancelCliWait()
+    {
+        try { _cliCts?.Cancel(); } catch { }
+    }
+
+    private static string FindRepoRoot()
+    {
+        string dir = AppContext.BaseDirectory;
+        for (int i = 0; i < 8; i++)
+        {
+            if (File.Exists(Path.Combine(dir, "CLI_ASK_AI.md"))) return dir;
+            string? parent = Path.GetDirectoryName(dir.TrimEnd('\\', '/'));
+            if (string.IsNullOrEmpty(parent) || parent == dir) break;
+            dir = parent;
+        }
+        return AppContext.BaseDirectory;
     }
 
     private void LoadHistory(long id)
@@ -404,7 +578,7 @@
             Overall    = h.Overall,
             PerDataset = per
         };
-        SetStatus($"이력 불러오기 — {FormatDate(h.CreatedAt)}", false);
+        SetStatus($"History loaded — {FormatDate(h.CreatedAt)}", false);
     }
 
     private void DeleteHistory(long id)
@@ -572,6 +746,7 @@
 
     public async ValueTask DisposeAsync()
     {
+        try { _cliCts?.Cancel(); _cliCts?.Dispose(); } catch { }
         try { await JS.InvokeVoidAsync("diFullPage.leave"); } catch { }
     }
 }

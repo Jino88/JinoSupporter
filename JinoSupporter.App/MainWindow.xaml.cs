@@ -1,10 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Threading;
 using System.Windows.Media;
 using JinoSupporter.App.Infrastructure.Shell;
@@ -83,12 +88,28 @@ public partial class MainWindow : Window
     private bool _isMenuCollapsed;
     private readonly List<TextBlock> _menuLabelBlocks = [];
 
+    // ── Toolbar / dock layout ────────────────────────────────────────────────
+    private const double ToolbarWidth = 116.0;
+    private const string WebServerTarget = "WebServer";
+    private const string WebServerUrl    = "http://localhost:5050";
+    private Process? _webServerProcess;
+    private readonly Dictionary<string, Window> _moduleWindows = new(StringComparer.Ordinal);
+
     public MainWindow()
     {
         InitializeComponent();
         RegisterModules();
         BuildMenu();
-        SelectModule("Schedule");
+        // Start in icon-only mode and stay that way; menu labels never shown.
+        CollapseMenu();
+    }
+
+    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        // Snug dock at the right edge — height is auto-fit to the icon grid (SizeToContent="Height").
+        var work = SystemParameters.WorkArea;
+        Top  = work.Top;
+        Left = work.Right - ActualWidth;
     }
 
     private void RegisterModules()
@@ -257,6 +278,18 @@ public partial class MainWindow : Window
                 (view, handler) => view.WebModuleSnapshotChanged += handler,
                 (view, handler) => view.WebModuleSnapshotChanged -= handler)));
         RegisterModule(new ShellModuleDefinition("Settings", string.Empty, "Settings", "Host-level app configuration.", "Config", "Shared settings workspace.", new[] { "Settings remains strongly coupled to several concrete modules." }, () => _appSettingsView ??= new AppSettingsView()));
+
+        // Web Server launcher — replaces the old DataMaker (DB LOAD) entry.
+        // Click handling is special-cased in SelectModule (no view, just launches the server + browser).
+        RegisterModule(new ShellModuleDefinition(
+            WebServerTarget,
+            string.Empty,
+            "Web Server",
+            "Open the JinoSupporter Web app at " + WebServerUrl,
+            "Web",
+            "Quick launcher for the JinoSupporter Web server.",
+            new[] { "Click to open the web app. Server is auto-started if not already running." },
+            () => new TextBlock { Text = "Launching Web Server…" }));
     }
 
     private void RegisterModule(ShellModuleDefinition definition)
@@ -310,51 +343,322 @@ public partial class MainWindow : Window
     {
         MenuHost.Children.Clear();
         _menuButtons.Clear();
-        AddMenuButton("Schedule");
-        AddMenuButton("DataMaker");
-        AddGraphMakerGroup();
+        // Flat icon-grid order (3 cols × N rows). Group children flatten to top-level.
+        // Removed by user request: DataMaker (DB LOAD), Schedule, Memo, JsonEditor,
+        // entire DataInference family (InputData / Report / TagEdit / ChatGpt), and Home (AI Usage).
+        AddMenuButton(WebServerTarget);
+        foreach (string t in _graphMakerTargets) AddMenuButton(t);
         AddMenuButton("DiskTree");
-        AddMenuButton("Memo");
         AddMenuButton("VideoConverter");
-        AddMenuButton("JsonEditor");
         AddMenuButton("ScreenCapture");
         AddMenuButton("FileTransfer");
         AddMenuButton("Translator");
-        AddDataInferenceGroup();
-        AddMenuButton("DataInferenceChatGpt");
-        AddMenuButton("Home");
         AddMenuButton("Settings");
     }
 
     private void SelectModule(string target)
     {
+        // Web Server is an action, not a content view: launch + open browser, then bail.
+        if (string.Equals(target, WebServerTarget, StringComparison.Ordinal))
+        {
+            OpenWebServer();
+            return;
+        }
 
         if (!_modules.TryGetValue(target, out ShellModuleDefinition? module))
         {
             return;
         }
 
-        if (IsGraphMakerTarget(target))
+        OpenModuleWindow(target, module);
+    }
+
+    /// <summary>Opens a module's view in a non-modal stand-alone window with a dark custom
+    /// title bar (clear minimize/maximize/close glyphs). Re-clicking the same toolbar button
+    /// brings the existing window to the front; the toolbar stays fully interactive.</summary>
+    private void OpenModuleWindow(string target, ShellModuleDefinition module)
+    {
+        if (_moduleWindows.TryGetValue(target, out Window? existing))
         {
-            SetGraphMakerExpanded(true);
+            if (existing.WindowState == WindowState.Minimized)
+                existing.WindowState = WindowState.Normal;
+            existing.Activate();
+            return;
         }
 
-        if (IsDataInferenceTarget(target))
+        FrameworkElement content = module.CreateContent();
+        DetachFromParent(content);
+
+        var win = new Window
         {
-            SetDataInferenceExpanded(true);
+            Title                 = module.Title,
+            Background            = new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E)),
+            Width                 = 1180,
+            Height                = 820,
+            MinWidth              = 480,
+            MinHeight             = 320,
+            WindowStartupLocation = WindowStartupLocation.CenterScreen,
+            ShowInTaskbar         = true,
+            WindowStyle           = WindowStyle.None,
+            ResizeMode            = ResizeMode.CanResize,
+            AllowsTransparency    = false,
+            // Owner intentionally NOT set → the toolbar window stays independently focusable
+            // and the module window does not get pinned/minimized with it.
+        };
+
+        win.Tag     = content;   // remember inner view so we can detach it on close
+        win.Content = WrapWithDarkChrome(content, module.Title, win);
+        win.Closed += (_, _) =>
+        {
+            // Detach so the cached view can be re-parented when the user re-opens it.
+            if (win.Tag is FrameworkElement inner) DetachFromParent(inner);
+            win.Content = null;
+            _moduleWindows.Remove(target);
+        };
+        win.Show();
+        _moduleWindows[target] = win;
+    }
+
+    private static FrameworkElement WrapWithDarkChrome(FrameworkElement content, string title, Window owner)
+    {
+        var root = new Grid();
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+        var titleBar = new Grid
+        {
+            Background = new SolidColorBrush(Color.FromRgb(0x2D, 0x2D, 0x30)),
+            Height     = 32,
+            Cursor     = Cursors.Arrow,
+        };
+        // Drag the window from the title bar (no WindowChrome, so handle it ourselves).
+        titleBar.MouseLeftButtonDown += (_, e) =>
+        {
+            if (e.ChangedButton != MouseButton.Left) return;
+            // Don't drag when the click is on a button (chrome buttons handle it themselves).
+            DependencyObject? hit = e.OriginalSource as DependencyObject;
+            while (hit is not null)
+            {
+                if (hit is Button) return;
+                hit = VisualTreeHelper.GetParent(hit);
+            }
+            // Double-click → toggle maximize.
+            if (e.ClickCount == 2)
+            {
+                owner.WindowState = owner.WindowState == WindowState.Maximized
+                    ? WindowState.Normal
+                    : WindowState.Maximized;
+                return;
+            }
+            owner.DragMove();
+        };
+        titleBar.ColumnDefinitions.Add(new ColumnDefinition());
+        titleBar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        titleBar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        titleBar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var titleText = new TextBlock
+        {
+            Text                = title,
+            Foreground          = new SolidColorBrush(Color.FromRgb(0xD4, 0xD4, 0xD4)),
+            FontSize            = 12,
+            FontWeight          = FontWeights.SemiBold,
+            VerticalAlignment   = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Margin              = new Thickness(12, 0, 0, 0),
+            IsHitTestVisible    = false,   // let WindowChrome's caption drag through
+        };
+        Grid.SetColumn(titleText, 0);
+        titleBar.Children.Add(titleText);
+
+        Button minBtn = MakeChromeButton("–", "Minimize",
+            () => owner.WindowState = WindowState.Minimized);
+        Grid.SetColumn(minBtn, 1);
+        titleBar.Children.Add(minBtn);
+
+        Button maxBtn = MakeChromeButton("□", "Maximize / Restore",
+            () => owner.WindowState = owner.WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized);
+        Grid.SetColumn(maxBtn, 2);
+        titleBar.Children.Add(maxBtn);
+
+        Button closeBtn = MakeChromeButton("✕", "Close",
+            owner.Close, isClose: true);
+        Grid.SetColumn(closeBtn, 3);
+        titleBar.Children.Add(closeBtn);
+
+        Grid.SetRow(titleBar, 0);
+        root.Children.Add(titleBar);
+
+        Grid.SetRow(content, 1);
+        root.Children.Add(content);
+
+        return root;
+    }
+
+    private static Button MakeChromeButton(string glyph, string tip, Action action, bool isClose = false)
+    {
+        var idleFg  = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0));
+        var hoverBg = isClose
+            ? new SolidColorBrush(Color.FromRgb(0xE8, 0x11, 0x23))   // Windows-style red hover
+            : new SolidColorBrush(Color.FromRgb(0x3E, 0x3E, 0x42));
+        var hoverFg = isClose ? Brushes.White : (Brush)idleFg;
+
+        var btn = new Button
+        {
+            Content             = glyph,
+            Width               = 46,
+            Height              = 32,
+            FontSize            = 14,
+            Background          = Brushes.Transparent,
+            BorderBrush         = Brushes.Transparent,
+            BorderThickness     = new Thickness(0),
+            Foreground          = idleFg,
+            Cursor              = Cursors.Arrow,
+            ToolTip             = tip,
+            FocusVisualStyle    = null,
+        };
+
+        // Bypass the toolbar's MenuNavButtonStyle (rounded blue) — these are window chrome buttons.
+        btn.Click += (_, _) => action();
+
+        btn.MouseEnter += (_, _) => { btn.Background = hoverBg; btn.Foreground = hoverFg; };
+        btn.MouseLeave += (_, _) => { btn.Background = Brushes.Transparent; btn.Foreground = idleFg; };
+
+        return btn;
+    }
+
+    private static void DetachFromParent(FrameworkElement element)
+    {
+        switch (element.Parent)
+        {
+            case ContentControl cc when ReferenceEquals(cc.Content, element):
+                cc.Content = null;
+                break;
+            case ContentPresenter cp when ReferenceEquals(cp.Content, element):
+                cp.Content = null;
+                break;
+            case Decorator dec when ReferenceEquals(dec.Child, element):
+                dec.Child = null;
+                break;
+            case Panel panel when panel.Children.Contains(element):
+                panel.Children.Remove(element);
+                break;
+            case Window w when ReferenceEquals(w.Content, element):
+                w.Content = null;
+                break;
+        }
+    }
+
+    /// <summary>Drag the window from any non-button area of the toolbar body.</summary>
+    private void ToolbarBorder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Left) return;
+        // Walk up the visual tree from the original source — if it's inside a Button,
+        // let the button handle the click instead of starting a window drag.
+        DependencyObject? hit = e.OriginalSource as DependencyObject;
+        while (hit is not null)
+        {
+            if (hit is Button) return;
+            hit = VisualTreeHelper.GetParent(hit);
+        }
+        DragMove();
+    }
+
+    private void CloseAppButton_Click(object sender, RoutedEventArgs e) => Close();
+
+    // ── Web Server launcher ──────────────────────────────────────────────────
+
+    private void OpenWebServer()
+    {
+        if (!IsWebServerRunning())
+        {
+            TryStartWebServer();
+        }
+        try
+        {
+            Process.Start(new ProcessStartInfo { FileName = WebServerUrl, UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Failed to open browser: {ex.Message}", "Web Server",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private static bool IsWebServerRunning()
+    {
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromMilliseconds(600) };
+            // Any HTTP response (even 4xx/5xx) means the socket is bound.
+            using var resp = client.GetAsync(WebServerUrl,
+                HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private void TryStartWebServer()
+    {
+        string? exe = LocateWebServerExe();
+        if (exe is null)
+        {
+            MessageBox.Show(this,
+                "JinoSupporter.Web.exe not found. Build the Web project first.",
+                "Web Server", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
         }
 
-        _activeTarget = target;
-        CurrentModuleTitle.Text = module.Title;
-        CurrentModuleDescription.Text = module.Detail;
-        EmbeddedModuleHost.Content = module.CreateContent();
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName         = exe,
+                WorkingDirectory = Path.GetDirectoryName(exe)!,
+                UseShellExecute  = false,
+                CreateNoWindow   = false,
+            };
+            psi.EnvironmentVariables["ASPNETCORE_URLS"]        = "http://*:5050";
+            psi.EnvironmentVariables["ASPNETCORE_ENVIRONMENT"] = "Development";
+            _webServerProcess = Process.Start(psi);
 
-        // Hide title bar for DataInference views; expand content to fill space
-        bool hideTitle = _dataInferenceTargets.Contains(target);
-        ModuleTitleBar.Visibility = hideTitle ? Visibility.Collapsed : Visibility.Visible;
-        ModuleContentBorder.Margin = hideTitle ? new Thickness(0) : new Thickness(0, 8, 0, 0);
+            // Brief wait for the server to bind 5050 before we ask the browser to hit it.
+            int waited = 0;
+            while (waited < 4000 && !IsWebServerRunning())
+            {
+                Thread.Sleep(200);
+                waited += 200;
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Failed to launch Web Server: {ex.Message}",
+                "Web Server", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
 
-        UpdateMenuVisualState();
+    private static string? LocateWebServerExe()
+    {
+        DirectoryInfo? dir = new(AppContext.BaseDirectory);
+        while (dir is not null)
+        {
+            string candidate = Path.Combine(dir.FullName,
+                "JinoSupporter.Web", "bin", "Debug", "net8.0", "JinoSupporter.Web.exe");
+            if (File.Exists(candidate)) return candidate;
+
+            // Also try Release build location.
+            string release = Path.Combine(dir.FullName,
+                "JinoSupporter.Web", "bin", "Release", "net8.0", "JinoSupporter.Web.exe");
+            if (File.Exists(release)) return release;
+
+            dir = dir.Parent;
+        }
+        return null;
     }
 
     private void UpdateMenuVisualState()
@@ -364,8 +668,8 @@ public partial class MainWindow : Window
             bool selected = string.Equals(target, _activeTarget, StringComparison.Ordinal) ||
                             (string.Equals(target, GraphMakerGroupKey, StringComparison.Ordinal) && IsGraphMakerTarget(_activeTarget)) ||
                             (string.Equals(target, DataInferenceGroupKey, StringComparison.Ordinal) && IsDataInferenceTarget(_activeTarget));
-            button.Background = selected ? new SolidColorBrush(Color.FromRgb(255, 229, 204)) : Brushes.Transparent;
-            button.BorderBrush = selected ? new SolidColorBrush(Color.FromRgb(255, 191, 138)) : Brushes.Transparent;
+            button.Background = selected ? new SolidColorBrush(Color.FromRgb(0x37, 0x4A, 0x5C)) : Brushes.Transparent;
+            button.BorderBrush = selected ? new SolidColorBrush(Color.FromRgb(0x4F, 0x6B, 0x8A)) : Brushes.Transparent;
         }
     }
 
@@ -376,14 +680,18 @@ public partial class MainWindow : Window
         Button button = new()
         {
             Content = BuildMenuButtonContent(icon, module.Title, isChild),
-            Margin = margin ?? new Thickness(0, 0, 0, 4),
-            HorizontalContentAlignment = HorizontalAlignment.Left,
+            // Width/Height/Margin intentionally NOT set — WrapPanel.ItemWidth/Height
+            // (32 each) sizes every cell uniformly so columns/rows align perfectly.
+            Cursor = Cursors.Arrow,   // override toolbar's SizeAll drag-cursor
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment   = VerticalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
             Background = Brushes.Transparent,
-            Foreground = new SolidColorBrush(Color.FromRgb(31, 41, 55)),
+            Foreground = new SolidColorBrush(Color.FromRgb(0xD4, 0xD4, 0xD4)),
             BorderBrush = Brushes.Transparent,
             BorderThickness = new Thickness(1),
-            ToolTip = module.Summary,
+            ToolTip = module.Title,
             Style = (Style)FindResource("MenuNavButtonStyle")
         };
 
@@ -414,7 +722,7 @@ public partial class MainWindow : Window
             HorizontalContentAlignment = HorizontalAlignment.Left,
             VerticalContentAlignment = VerticalAlignment.Center,
             Background = Brushes.Transparent,
-            Foreground = new SolidColorBrush(Color.FromRgb(31, 41, 55)),
+            Foreground = new SolidColorBrush(Color.FromRgb(0xD4, 0xD4, 0xD4)),
             BorderBrush = Brushes.Transparent,
             BorderThickness = new Thickness(1),
             ToolTip = "GraphMaker modules",
@@ -449,7 +757,7 @@ public partial class MainWindow : Window
             HorizontalContentAlignment = HorizontalAlignment.Left,
             VerticalContentAlignment = VerticalAlignment.Center,
             Background = Brushes.Transparent,
-            Foreground = new SolidColorBrush(Color.FromRgb(31, 41, 55)),
+            Foreground = new SolidColorBrush(Color.FromRgb(0xD4, 0xD4, 0xD4)),
             BorderBrush = Brushes.Transparent,
             BorderThickness = new Thickness(1),
             ToolTip = "Data Inference modules",
@@ -492,7 +800,7 @@ public partial class MainWindow : Window
             Text = "\u25B8",
             Margin = new Thickness(10, 0, 2, 0),
             VerticalAlignment = VerticalAlignment.Center,
-            Foreground = new SolidColorBrush(Color.FromRgb(107, 124, 147)),
+            Foreground = new SolidColorBrush(Color.FromRgb(0x9D, 0xA3, 0xAE)),
             FontSize = 14,
             FontWeight = FontWeights.SemiBold
         };
@@ -519,7 +827,7 @@ public partial class MainWindow : Window
             Text = "\u25B8",
             Margin = new Thickness(10, 0, 2, 0),
             VerticalAlignment = VerticalAlignment.Center,
-            Foreground = new SolidColorBrush(Color.FromRgb(107, 124, 147)),
+            Foreground = new SolidColorBrush(Color.FromRgb(0x9D, 0xA3, 0xAE)),
             FontSize = 14,
             FontWeight = FontWeights.SemiBold
         };
@@ -538,11 +846,11 @@ public partial class MainWindow : Window
 
         Border iconBadge = new()
         {
-            Width = isChild ? 22 : 24,
-            Height = isChild ? 22 : 24,
-            CornerRadius = new CornerRadius(isChild ? 7 : 8),
-            Background = new SolidColorBrush(Color.FromRgb(229, 239, 252)),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(201, 218, 241)),
+            Width = 22,
+            Height = 22,
+            CornerRadius = new CornerRadius(6),
+            Background = new SolidColorBrush(Color.FromRgb(0x2D, 0x2D, 0x30)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(0x3F, 0x3F, 0x46)),
             BorderThickness = new Thickness(1),
             VerticalAlignment = VerticalAlignment.Center,
             Child = BuildMenuIcon(icon)
@@ -553,7 +861,7 @@ public partial class MainWindow : Window
             Text = title,
             Margin = new Thickness(isChild ? 7 : 8, 0, 0, 0),
             TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.FromRgb(31, 41, 55)),
+            Foreground = new SolidColorBrush(Color.FromRgb(0xD4, 0xD4, 0xD4)),
             FontSize = isChild ? 12 : 13,
             FontWeight = isChild ? FontWeights.Medium : FontWeights.SemiBold,
             VerticalAlignment = VerticalAlignment.Center
@@ -565,43 +873,22 @@ public partial class MainWindow : Window
         return panel;
     }
 
+    /// <summary>Collapses every menu button to icon-only inside the narrow toolbar column.
+    /// Called once at startup; the toolbar is always icon-only by design.</summary>
     private void CollapseMenu()
     {
         if (_isMenuCollapsed) return;
         _isMenuCollapsed = true;
-        LeftMenuColumn.Width  = new GridLength(60);
-        LeftMenuBorder.Padding = new Thickness(6);
-        LogoTextPanel.Visibility = Visibility.Collapsed;
+        // Padding is set on ToolbarBorder in XAML; keep this method limited to button-level state.
         foreach (TextBlock tb in _menuLabelBlocks) tb.Visibility = Visibility.Collapsed;
         if (_graphMakerChevron is not null)    _graphMakerChevron.Visibility    = Visibility.Collapsed;
         if (_dataInferenceChevron is not null) _dataInferenceChevron.Visibility = Visibility.Collapsed;
         foreach (Button btn in _menuButtons.Values)
         {
             btn.HorizontalContentAlignment = HorizontalAlignment.Center;
-            btn.Padding = new Thickness(0, 7, 0, 7);
+            btn.Padding = new Thickness(0);
         }
     }
-
-    private void ExpandMenu()
-    {
-        if (!_isMenuCollapsed) return;
-        _isMenuCollapsed = false;
-        LeftMenuColumn.Width  = new GridLength(280);
-        LeftMenuBorder.Padding = new Thickness(12);
-        LogoTextPanel.Visibility = Visibility.Visible;
-        foreach (TextBlock tb in _menuLabelBlocks) tb.Visibility = Visibility.Visible;
-        if (_graphMakerChevron is not null)    _graphMakerChevron.Visibility    = Visibility.Visible;
-        if (_dataInferenceChevron is not null) _dataInferenceChevron.Visibility = Visibility.Visible;
-        foreach (Button btn in _menuButtons.Values)
-        {
-            btn.HorizontalContentAlignment = HorizontalAlignment.Left;
-            btn.Padding = new Thickness(10, 8, 10, 8);
-        }
-    }
-
-    private void LeftMenuBorder_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e) => ExpandMenu();
-
-    private void LeftMenuBorder_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e) => CollapseMenu();
 
     private static FrameworkElement BuildMenuIcon(string icon)
     {
@@ -614,7 +901,7 @@ public partial class MainWindow : Window
             Child = new System.Windows.Shapes.Path
             {
                 Data = geometry,
-                Fill = new SolidColorBrush(Color.FromRgb(45, 85, 127)),
+                Fill = new SolidColorBrush(Color.FromRgb(0xCB, 0xD5, 0xE1)),
                 Stretch = Stretch.Uniform,
                 Width = 13,
                 Height = 13,
@@ -651,6 +938,7 @@ public partial class MainWindow : Window
             "DataInference:TagEdit" => "F1 M 2,6.5 L 5.5,3 L 11.5,3 L 11.5,10 L 5.5,10 Z M 2,6.5 L 4,5 L 4,8 Z M 7,5.5 A 1,1 0 1 1 7.01,5.5 Z",
             "DataInferenceChatGpt" => "F1 M 2,3 L 12,3 L 12,11 L 2,11 Z M 3.2,4.2 L 10.8,4.2 L 10.8,5.2 L 3.2,5.2 Z M 3.2,6.2 L 10.8,6.2 L 10.8,7.2 L 3.2,7.2 Z M 3.2,8.2 L 7.8,8.2 L 7.8,9.2 L 3.2,9.2 Z",
             "Settings" => "F1 M 7,2.2 L 8,2.2 L 8.3,3.5 L 9.4,3.9 L 10.5,3.2 L 11.2,3.9 L 10.5,5 L 10.9,6.1 L 12.2,6.4 L 12.2,7.4 L 10.9,7.7 L 10.5,8.8 L 11.2,9.9 L 10.5,10.6 L 9.4,9.9 L 8.3,10.3 L 8,11.6 L 7,11.6 L 6.7,10.3 L 5.6,9.9 L 4.5,10.6 L 3.8,9.9 L 4.5,8.8 L 4.1,7.7 L 2.8,7.4 L 2.8,6.4 L 4.1,6.1 L 4.5,5 L 3.8,3.9 L 4.5,3.2 L 5.6,3.9 L 6.7,3.5 Z M 7.5,5.3 A 1.7,1.7 0 1 1 7.51,5.3 Z",
+            WebServerTarget => "F1 M 7,1.5 A 5.5,5.5 0 1 1 6.99,1.5 Z M 1.5,7 L 12.5,7 M 7,1.5 C 4.2,4 4.2,10 7,12.5 M 7,1.5 C 9.8,4 9.8,10 7,12.5 M 2.6,4.5 L 11.4,4.5 M 2.6,9.5 L 11.4,9.5",
             _ => "F1 M 3,3 L 11,3 L 11,11 L 3,11 Z"
         };
     }

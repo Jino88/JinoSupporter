@@ -55,6 +55,7 @@ else
                     <th>Images</th>
                     <th>Measurements</th>
                     <th>Saved</th>
+                    <th>AI Batched</th>
                     <th></th>
                 </tr>
             </thead>
@@ -71,10 +72,20 @@ else
                         <td class="n">@r.ImageCount</td>
                         <td class="n">@r.MeasurementCount</td>
                         <td class="didb-date">@FormatDate(r.CreatedAt)</td>
+                        <td class="didb-date">
+                            @if (!string.IsNullOrEmpty(r.BatchedAt))
+                            {
+                                <span title="@r.BatchedAt">@FormatDate(r.BatchedAt)</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
                         <td @onclick:stopPropagation="true" style="white-space:nowrap;">
                             <button class="btn btn-sm py-0 px-1 me-1 @(r.BatchExcluded ? "btn-warning" : "btn-outline-secondary")"
                                     style="font-size:12px;"
-                                    title="@(r.BatchExcluded ? "AI 배치에서 제외됨 — 클릭하면 포함" : "AI 배치에 포함됨 — 클릭하면 제외")"
+                                    title="@(r.BatchExcluded ? "Excluded from AI batch — click to include" : "Included in AI batch — click to exclude")"
                                     @onclick="() => ToggleBatchExcluded(r.DatasetName, r.BatchExcluded)">
                                 @(r.BatchExcluded ? "🚫" : "🤖")
                             </button>
@@ -83,7 +94,7 @@ else
                             }
                             <button class="btn btn-sm py-0 px-1 me-1 @(hasOcr ? "btn-info" : "btn-outline-secondary")"
                                     style="font-size:12px;"
-                                    title="@(hasOcr ? "OCR 캐시 있음 — 보기/편집" : "OCR 미수집 — 클릭해서 추출 가능")"
+                                    title="@(hasOcr ? "OCR cached — view/edit" : "No OCR yet — click to extract")"
                                     @onclick="() => OpenOcrEditor(r.DatasetName, r.ProductType, r.ReportDate)">
                                 @(hasOcr ? "📑" : "📝")
                             </button>
@@ -99,7 +110,7 @@ else
                         @if (_expandedSummary is not null)
                         {
                             <tr class="didb-detail-row">
-                                <td colspan="8" style="padding:0;">
+                                <td colspan="9" style="padding:0;">
                                     <div class="didb-summary">
                                         @if (!string.IsNullOrEmpty(_expandedSummary.Purpose))
                                         {
@@ -148,7 +159,7 @@ else
                         @if (_expandedMeasurements.Count > 0)
                         {
                             <tr class="didb-detail-row">
-                                <td colspan="8" style="padding:0;">
+                                <td colspan="9" style="padding:0;">
                                     <div class="didb-sub-wrap">
                                         <table class="didb-sub">
                                             <thead>
@@ -192,9 +203,75 @@ else
                         else if (_expandedMeasurements.Count == 0 && _expanded == r.DatasetName)
                         {
                             <tr class="didb-detail-row">
-                                <td colspan="8">
+                                <td colspan="9">
                                     <div style="padding:8px 16px; font-size:12px; color:#94a3b8; font-style:italic;">
                                         No normalized measurements — run Analyze on Input Data, then Save.
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+
+                        @* Source text comparison — OCR markdown vs Excel paste ground truth *@
+                        @if (_expanded == r.DatasetName
+                             && (!string.IsNullOrWhiteSpace(_expandedOcrText)
+                                 || !string.IsNullOrWhiteSpace(_expandedExcelPaste)))
+                        {
+                            <tr class="didb-detail-row">
+                                <td colspan="9" style="padding:0;">
+                                    <div class="didb-src-wrap">
+                                        <div class="didb-src-head">
+                                            <span class="didb-src-title">📝 Source Text</span>
+                                            <div class="didb-src-tabs">
+                                                <button class="didb-src-tab @(_sourceView == "ocr" ? "active" : "")"
+                                                        @onclick='() => SetSourceView("ocr")'
+                                                        disabled="@string.IsNullOrWhiteSpace(_expandedOcrText)">
+                                                    OCR markdown
+                                                    @if (!string.IsNullOrWhiteSpace(_expandedOcrText))
+                                                    { <span class="didb-src-len">@_expandedOcrText.Length</span> }
+                                                    else { <span class="didb-src-missing">—</span> }
+                                                </button>
+                                                <button class="didb-src-tab @(_sourceView == "excel" ? "active" : "")"
+                                                        @onclick='() => SetSourceView("excel")'
+                                                        disabled="@string.IsNullOrWhiteSpace(_expandedExcelPaste)">
+                                                    Excel paste
+                                                    @if (!string.IsNullOrWhiteSpace(_expandedExcelPaste))
+                                                    { <span class="didb-src-len">@_expandedExcelPaste.Length</span> }
+                                                    else { <span class="didb-src-missing">—</span> }
+                                                </button>
+                                                <button class="didb-src-tab @(_sourceView == "split" ? "active" : "")"
+                                                        @onclick='() => SetSourceView("split")'
+                                                        disabled="@(string.IsNullOrWhiteSpace(_expandedOcrText) || string.IsNullOrWhiteSpace(_expandedExcelPaste))">
+                                                    Split compare
+                                                </button>
+                                            </div>
+                                        </div>
+                                        @if (_sourceView == "split"
+                                             && !string.IsNullOrWhiteSpace(_expandedOcrText)
+                                             && !string.IsNullOrWhiteSpace(_expandedExcelPaste))
+                                        {
+                                            <div class="didb-src-split">
+                                                <div class="didb-src-pane">
+                                                    <div class="didb-src-pane-label">OCR markdown</div>
+                                                    <pre class="didb-src-pre">@_expandedOcrText</pre>
+                                                </div>
+                                                <div class="didb-src-pane">
+                                                    <div class="didb-src-pane-label">Excel paste (ground truth)</div>
+                                                    <pre class="didb-src-pre">@_expandedExcelPaste</pre>
+                                                </div>
+                                            </div>
+                                        }
+                                        else if (_sourceView == "excel" && !string.IsNullOrWhiteSpace(_expandedExcelPaste))
+                                        {
+                                            <pre class="didb-src-pre didb-src-single">@_expandedExcelPaste</pre>
+                                        }
+                                        else if (!string.IsNullOrWhiteSpace(_expandedOcrText))
+                                        {
+                                            <pre class="didb-src-pre didb-src-single">@_expandedOcrText</pre>
+                                        }
+                                        else if (!string.IsNullOrWhiteSpace(_expandedExcelPaste))
+                                        {
+                                            <pre class="didb-src-pre didb-src-single">@_expandedExcelPaste</pre>
+                                        }
                                     </div>
                                 </td>
                             </tr>
@@ -204,7 +281,7 @@ else
                         @if (_expandedImages.Count > 0)
                         {
                             <tr class="didb-detail-row">
-                                <td colspan="8" style="padding:0;">
+                                <td colspan="9" style="padding:0;">
                                     <div class="didb-imgs-wrap">
                                         <div class="didb-imgs-title">🖼 AI Analysis Images (@_expandedImages.Count)</div>
                                         <div class="didb-imgs-grid">
@@ -225,7 +302,7 @@ else
                         @if (_expandedFiles.Count > 0)
                         {
                             <tr class="didb-detail-row">
-                                <td colspan="8" style="padding:0;">
+                                <td colspan="9" style="padding:0;">
                                     <div class="didb-imgs-wrap">
                                         <div class="didb-imgs-title">📎 Backup Files (@_expandedFiles.Count)</div>
                                         <div class="didb-files-list">
@@ -425,6 +502,32 @@ else
         box-shadow: 0 10px 40px rgba(0,0,0,.2); min-width: 340px; max-width: 480px;
     }
     .didb-confirm-title { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 10px; }
+
+    /* Source-text comparison panel */
+    .didb-src-wrap       { padding: 10px 16px; background: #fff; }
+    .didb-src-head       { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .didb-src-title      { font-size: 12px; font-weight: 700; color: #475569; }
+    .didb-src-tabs       { display: flex; gap: 4px; }
+    .didb-src-tab {
+        padding: 3px 10px; font-size: 11px; font-weight: 600;
+        border: 1px solid #e2e8f0; border-radius: 12px;
+        background: #f8fafc; color: #64748b; cursor: pointer;
+    }
+    .didb-src-tab:hover:not(:disabled)   { background: #f1f5f9; }
+    .didb-src-tab.active                 { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+    .didb-src-tab:disabled               { opacity: .5; cursor: not-allowed; }
+    .didb-src-len        { margin-left: 4px; color: #94a3b8; font-weight: 500; }
+    .didb-src-tab.active .didb-src-len   { color: rgba(255,255,255,.8); }
+    .didb-src-missing    { margin-left: 4px; color: #cbd5e1; }
+    .didb-src-pre {
+        background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;
+        padding: 8px 10px; font-size: 11px; line-height: 1.5;
+        color: #334155; white-space: pre-wrap; word-break: break-word;
+        max-height: 360px; overflow: auto; margin: 0;
+    }
+    .didb-src-single     { /* already bounded */ }
+    .didb-src-split      { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .didb-src-pane-label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; }
 </style>
 
 @code {
@@ -449,6 +552,9 @@ else
     private DatasetSummaryRecord?        _expandedSummary      = null;
     private List<ImgThumb>               _expandedImages       = [];
     private List<RawFileInfo>            _expandedFiles        = [];
+    private string                       _expandedOcrText      = "";
+    private string                       _expandedExcelPaste   = "";
+    private string                       _sourceView           = "ocr";  // "ocr" | "excel" | "split"
     private string?                      _deleteTarget         = null;
     private bool                         _showDeleteAll        = false;
     private string?                      _viewerDataUrl        = null;
@@ -468,12 +574,15 @@ else
         _ocrCached  = Repo.GetDatasetsWithExtractedText();
     }
 
+    private void SetSourceView(string view) => _sourceView = view;
+
     private void ToggleExpand(string name)
     {
         if (_expanded == name)
         {
             _expanded = null; _expandedMeasurements = []; _expandedSummary = null;
             _expandedImages = []; _expandedFiles = [];
+            _expandedOcrText = ""; _expandedExcelPaste = "";
         }
         else
         {
@@ -488,6 +597,8 @@ else
                 return new ImgThumb(img.MediaType, dataUrl, fname);
             }).ToList();
             _expandedFiles        = Repo.GetRawReportFileInfos(name);
+            _expandedOcrText      = Repo.GetExtractedText(name, WebRepository.TextKindOcr) ?? "";
+            _expandedExcelPaste   = Repo.GetExtractedText(name, WebRepository.TextKindExcelPaste) ?? "";
         }
     }
 
@@ -602,7 +713,7 @@ else
         if (_deleteTarget is null) return;
         if (_expanded == _deleteTarget)
         {
-            _expanded = null; _expandedMeasurements = []; _expandedSummary = null; _expandedImages = []; _expandedFiles = [];
+            _expanded = null; _expandedMeasurements = []; _expandedSummary = null; _expandedImages = []; _expandedFiles = []; _expandedOcrText = ""; _expandedExcelPaste = "";
         }
         Repo.DeleteRawReport(_deleteTarget);
         _deleteTarget = null;
@@ -629,7 +740,7 @@ else
     private void ExecuteDeleteAll()
     {
         Repo.DeleteAllDataInference();
-        _expanded = null; _expandedMeasurements = []; _expandedSummary = null; _expandedImages = []; _expandedFiles = [];
+        _expanded = null; _expandedMeasurements = []; _expandedSummary = null; _expandedImages = []; _expandedFiles = []; _expandedOcrText = ""; _expandedExcelPaste = "";
         _showDeleteAll = false;
         ReloadReports();
     }

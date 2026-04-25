@@ -432,7 +432,8 @@ public sealed class ClaudeService
         string datasetName,
         string productType,
         string testDate,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        string? rawExcelText = null)
     {
         if (!IsConfigured)
             throw new InvalidOperationException("Claude API key is not configured.");
@@ -543,7 +544,21 @@ public sealed class ClaudeService
 
         blocks.Add(new JsonObject { ["type"] = "text", ["text"] = prompt });
 
-        string raw = await CallWithContentAsync(blocks, 16384, ct, "claude-sonnet-4-6");
+        if (!string.IsNullOrWhiteSpace(rawExcelText))
+        {
+            blocks.Add(new JsonObject
+            {
+                ["type"] = "text",
+                ["text"] =
+                    "AUTHORITATIVE RAW EXCEL TEXT (tab-separated paste from the source " +
+                    "workbook). When a cell value in the screenshot is ambiguous or OCR'd " +
+                    "digits could be misread, PREFER the corresponding value from this raw " +
+                    "text. Still transcribe every table structure from the image — use this " +
+                    "only as a tiebreaker for cell values:\n```\n" + rawExcelText.Trim() + "\n```\n",
+            });
+        }
+
+        string raw = await CallWithContentAsync(blocks, 64000, ct, "claude-sonnet-4-6");
         return raw.Trim();
     }
 
@@ -623,9 +638,22 @@ public sealed class ClaudeService
 
             • checkType: "process" / "function" / "visual_inspection" from table context.
 
+            • ngRate: ALWAYS in PERCENT scale — number only, no "%" sign.
+              "33.3%" → 33.3,  "100%" → 100.0,  "0.05%" → 0.05,  "5%" → 5.0
+              NEVER store fractions. Do NOT output ngTotal/inputQty as a ratio —
+              4/4 must be 100.0, not 1.0. If the report omits the % column but
+              shows counts, compute (ngTotal / inputQty) * 100 and store THAT.
+
             • defectCategory mapping (use only these enums):
               assembly_defect / cosmetic_defect / function_spl / function_thd /
               function_hearing / wire_defect / magnetic_defect / rear_visual_damage / other.
+              Header-group rule (resolves Audiobus ambiguity):
+                - EVERY sub-column under a "NG AUDIOBUS" header  → function_spl
+                  (SPL, SPL+RB, RB, No sound — ALL of them, including bare "RB")
+                - EVERY sub-column under a "NG HEARING" header   → function_hearing
+                  (Noise, Touch, Hearing)
+                - "THD" column or "NG THD"                        → function_thd
+                  (only literal THD — do NOT map RB / rear-buzz to function_thd)
 
             ══ STRUCTURED CONTEXT FIELDS ══
 
@@ -686,7 +714,7 @@ public sealed class ClaudeService
             """;
 
         var blocks = new JsonArray { new JsonObject { ["type"] = "text", ["text"] = prompt } };
-        string raw = await CallWithContentAsync(blocks, 16384, ct, "claude-sonnet-4-6");
+        string raw = await CallWithContentAsync(blocks, 64000, ct, "claude-sonnet-4-6");
         raw = raw.Trim();
         if (raw.StartsWith("```"))
         {
@@ -715,7 +743,8 @@ public sealed class ClaudeService
         string datasetName,
         string productType,
         string testDate,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        string? rawText = null)
     {
         if (!IsConfigured)
             throw new InvalidOperationException("Claude API key is not configured.");
@@ -732,6 +761,18 @@ public sealed class ClaudeService
                     ["media_type"] = detected,
                     ["data"]       = resized
                 }
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(rawText))
+        {
+            blocks.Add(new JsonObject
+            {
+                ["type"] = "text",
+                ["text"] =
+                    "AUTHORITATIVE RAW EXCEL TEXT (use this for exact cell values; " +
+                    "prefer it over OCR'd numbers from the screenshot when they disagree):\n" +
+                    "```\n" + rawText.Trim() + "\n```\n",
             });
         }
 
@@ -859,7 +900,12 @@ public sealed class ClaudeService
               For FUNNEL: use THAT stage's NG count, NOT the row-level Total NG.
               For CRITERION: use MAX of criterion NG counts.
               For PICTURE SAMPLE / VISUAL REF: set to 0 (no count available).
-            - ngRate: FLOAT from NG rate column (strip %, e.g. "33.3%" → 33.3).
+            - ngRate: FLOAT in PERCENT scale (number only, no "%" sign).
+              Examples: "33.3%" → 33.3,  "100%" → 100.0,  "0.05%" → 0.05,  "5%" → 5.0
+              NEVER store fractions. Do NOT compute ngTotal/inputQty as a ratio
+              (e.g. 4/4 must NOT become 1.0 — the correct value is 100.0).
+              If the report omits the rate column but shows counts, compute it as
+              (ngTotal / inputQty) * 100 and store the PERCENT result.
               For PICTURE SAMPLE ppm: divide by 10000 (15383 ppm → 1.5383).
             - checkType: "process" / "function" / "visual_inspection" based on table context
 
@@ -989,13 +1035,21 @@ public sealed class ClaudeService
             ══ STEP 7: DEFECT CATEGORY MAPPING ══
             assembly_defect    → VP+CD separate, glue, clamp, bond, coil separate
             cosmetic_defect    → damage, particle, scratch, burn, defrom/deform
-            function_spl       → SPL NG, audiobus SPL
-            function_thd       → THD NG
-            function_hearing   → noise, hearing, audiobus
+            function_spl       → ANY sub-column under "NG AUDIOBUS" header
+                                 (SPL, SPL+RB, RB, No sound — ALL of them,
+                                 including bare "RB" and "SPL+RB")
+            function_thd       → literal "THD" / "NG THD" column ONLY.
+                                 RB (rear-buzz) under Audiobus is NOT THD.
+            function_hearing   → ANY sub-column under "NG HEARING" header
+                                 (Noise, Touch, Hearing)
             wire_defect        → wire offset, wire forming, wire cutting, wire clamp, wire pad offset, solder weak
             magnetic_defect    → Gauss low/NG
             rear_visual_damage → rear damage position N
             other              → anything else not clearly listed above
+
+            ↳ Category decisions are driven by the PARENT MERGED-HEADER, not the
+              bare sub-label. "RB" under "NG AUDIOBUS" is function_spl; "THD"
+              under some other header is function_thd. Always look at the parent.
 
             ══ STEP 8: TAG EXTRACTION — purpose-first, NOT column dump ══
             You must UNDERSTAND the report's intent, not list every value.
@@ -1168,9 +1222,9 @@ public sealed class ClaudeService
 
         blocks.Add(new JsonObject { ["type"] = "text", ["text"] = prompt });
 
-        // 16384 tokens: reports with 30+ rows × multi-defect breakdown can exceed 8192
-        // and get truncated, producing partial JSON that parses with missing per-defect rows.
-        string raw = await CallWithContentAsync(blocks, 16384, ct, "claude-sonnet-4-6");
+        // 64000 tokens: large Normal-rich reports with 30+ rows × multi-defect breakdown
+        // can exceed 32k and get truncated, producing partial JSON with missing per-defect rows.
+        string raw = await CallWithContentAsync(blocks, 64000, ct, "claude-sonnet-4-6");
         raw = raw.Trim();
         if (raw.StartsWith("```"))
         {
@@ -1272,16 +1326,19 @@ public sealed class ClaudeService
     /// </summary>
     public async Task<AskAiResult> AskAiAsync(string question,
                                               string datasetsContext,
+                                              string answerLanguage = "English",
                                               CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(datasetsContext))
         {
             return new AskAiResult
             {
-                Overall    = "등록된 리포트가 없어 답변할 수 없습니다. 먼저 Input Data 에서 리포트를 저장해주세요.",
+                Overall    = "No registered reports — cannot answer. Please save a report from Input Data first.",
                 PerDataset = []
             };
         }
+
+        string lang = string.IsNullOrWhiteSpace(answerLanguage) ? "English" : answerLanguage.Trim();
 
         string prompt = $$"""
             You are a manufacturing quality improvement assistant.
@@ -1290,20 +1347,21 @@ public sealed class ClaudeService
 
             ══ STRICT RULES ══
             1. Do NOT use external/general knowledge. Only use facts present in the reports below.
-            2. If no registered report contains relevant information, set "overall" to a short Korean notice that no relevant data was found, and return an empty "perDataset" array. Do not invent an answer.
+            2. If no registered report contains relevant information, set "overall" to a short {{lang}} notice that no relevant data was found, and return an empty "perDataset" array. Do not invent an answer.
             3. Produce ONE entry in "perDataset" for EVERY dataset that genuinely contributes to the answer. Copy "datasetName" VERBATIM from the "Dataset:" header in the context (full string, including numeric prefixes and spaces).
-            4. In each per-dataset "answer": explain in Korean (한국어) what this SPECIFIC dataset shows and how it addresses the user's question. Cite concrete values from that dataset only (NG rate, defect type, product type, date, specific findings). 2–5 sentences is ideal.
+            4. In each per-dataset "answer": explain in {{lang}} what this SPECIFIC dataset shows and how it addresses the user's question. Cite concrete values from that dataset only (NG rate, defect type, product type, date, specific findings). 2–5 sentences is ideal.
             5. Do NOT include datasets that are irrelevant to the question.
-            6. In "overall": give a 2–3 sentence Korean synthesis across the per-dataset findings — top recommendations in priority order. If there is only one relevant dataset, you may leave "overall" empty.
-            7. Return ONLY valid JSON — no markdown fences, no extra commentary.
+            6. In "overall": give a 2–3 sentence {{lang}} synthesis across the per-dataset findings — top recommendations in priority order. If there is only one relevant dataset, you may leave "overall" empty.
+            7. ALL human-readable text in the output ("overall" and every "answer") MUST be written in {{lang}}. Keep dataset names, product codes, defect type labels, and numeric values as-is.
+            8. Return ONLY valid JSON — no markdown fences, no extra commentary.
 
             ══ OUTPUT JSON SCHEMA ══
             {
-              "overall": "2–3 sentence Korean overall recommendation across all datasets (may be empty).",
+              "overall": "2–3 sentence {{lang}} overall recommendation across all datasets (may be empty).",
               "perDataset": [
                 {
                   "datasetName": "<verbatim Dataset name>",
-                  "answer": "Korean, dataset-specific answer with concrete numbers from this dataset."
+                  "answer": "{{lang}} dataset-specific answer with concrete numbers from this dataset."
                 }
               ]
             }
@@ -1331,7 +1389,7 @@ public sealed class ClaudeService
         {
             return JsonSerializer.Deserialize<AskAiResult>(raw.Trim(),
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-                ?? new AskAiResult { Overall = "(응답 파싱 실패)" };
+                ?? new AskAiResult { Overall = "(Failed to parse response)" };
         }
         catch
         {

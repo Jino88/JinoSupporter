@@ -8,6 +8,15 @@ using Microsoft.AspNetCore.Components.Server.Circuits;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ── App paths (centralized) ───────────────────────────────────────────────────
+// Loaded BEFORE service registration so the DB / NgRate paths in
+// AppPathsConfig become the authoritative defaults for everything below.
+var appPathsService = new AppPathsService();
+var appPaths = appPathsService.Current;
+builder.Configuration["Database:Path"] = appPaths.MainDbPath;
+builder.Configuration["Schedule:Path"] = appPaths.ScheduleDbPath;
+builder.Services.AddSingleton(appPathsService);
+
 // ── Services ──────────────────────────────────────────────────────────────────
 
 builder.Services.AddRazorComponents()
@@ -33,7 +42,7 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpClient<ClaudeService>(client =>
 {
     client.BaseAddress = new Uri("https://api.anthropic.com/v1/");
-    client.Timeout     = TimeSpan.FromSeconds(180);
+    client.Timeout     = TimeSpan.FromSeconds(420);
 });
 
 // Syncfusion
@@ -53,6 +62,10 @@ builder.Services.AddScoped<NgRateService>();
 builder.Services.AddScoped<NgRateReportService>();
 // Worker Status: scoped (per-connection HTTP client)
 builder.Services.AddScoped<WorkerStatusService>();
+// BMES material master: scoped (per-connection HTTP client)
+builder.Services.AddScoped<BmesMaterialService>();
+// BMES routing scrape: scoped (per-connection HTTP client)
+builder.Services.AddScoped<BmesRoutingScrapeService>();
 
 // Connected-users tracking (singleton service + scoped circuit handler)
 builder.Services.AddSingleton<ConnectedUsersService>();
@@ -72,6 +85,9 @@ var app = builder.Build();
 var repo = app.Services.GetRequiredService<WebRepository>();
 if (repo.GetAllUsers().Count == 0)
     repo.AddUser("admin", AuthService.HashPassword("admin123"), AppRoles.Admin);
+
+// One-shot: import legacy ModelBmes/*.json files into ModelGroups DB.
+repo.ImportModelBmesJsonIfNeeded(appPaths.ModelBmesJsonFolder);
 
 if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error", createScopeForErrors: true);

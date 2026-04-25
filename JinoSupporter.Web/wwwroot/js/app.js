@@ -70,6 +70,125 @@ window.ngRateChart = {
     }
 };
 
+// ── Auto-reload on Blazor reconnect ──────────────────────────────────────────
+// Blazor Server는 서버 재시작 시 "Attempting to reconnect" 모달을 띄우고 기본 8회 재시도 후 실패하면 멈춥니다.
+// 우리는 재연결 모달이 뜨는 즉시 주기적으로 서버를 핑하고, 응답이 오면 페이지를 하드 리로드해서
+// 사용자가 직접 새로고침하지 않아도 새 빌드가 자동 반영되게 합니다.
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('components-reconnect-modal');
+    if (!modal) return;
+
+    let pollTimer = null;
+    const startPoll = () => {
+        if (pollTimer) return;
+        pollTimer = setInterval(async () => {
+            try {
+                const res = await fetch(window.location.pathname, {
+                    method: 'HEAD',
+                    cache:  'no-store',
+                });
+                if (res.ok) {
+                    clearInterval(pollTimer);
+                    location.reload();
+                }
+            } catch (_) { /* server still down */ }
+        }, 1500);
+    };
+    const stopPoll = () => {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    };
+
+    const shouldPoll = () =>
+        modal.classList.contains('components-reconnect-show')     ||
+        modal.classList.contains('components-reconnect-failed')   ||
+        modal.classList.contains('components-reconnect-rejected');
+
+    new MutationObserver(() => {
+        if (shouldPoll()) startPoll(); else stopPoll();
+    }).observe(modal, { attributes: true, attributeFilter: ['class', 'style'] });
+});
+
+// ── NG Rate By-Group Line Chart ───────────────────────────────────────────────
+window.ngRateGroupChart = {
+    _instances: {},
+    _palette: [
+        '#6366f1', '#14b8a6', '#f97316', '#ef4444', '#8b5cf6',
+        '#0ea5e9', '#f59e0b', '#10b981', '#ec4899', '#64748b',
+        '#a855f7', '#22c55e', '#eab308', '#06b6d4', '#dc2626'
+    ],
+
+    render: function (canvasId, labels, series) {
+        if (this._instances[canvasId]) {
+            this._instances[canvasId].destroy();
+            delete this._instances[canvasId];
+        }
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+
+        // Separator indices: positions where label === '' (used to visually divide Date / Week / Month blocks).
+        const sepIdx = new Set(labels.reduce((acc, l, i) => { if (l === '') acc.push(i); return acc; }, []));
+
+        const datasets = series.map((s, i) => {
+            const color = this._palette[i % this._palette.length];
+            return {
+                label: s.name,
+                data: s.values,
+                borderColor: color,
+                backgroundColor: color + '22',
+                borderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                spanGaps: false, // don't bridge across separators / missing points
+                tension: 0.25,
+            };
+        });
+
+        this._instances[canvasId] = new Chart(canvas, {
+            type: 'line',
+            data: { labels: labels, datasets: datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 12, padding: 8, font: { size: 10 } }
+                    },
+                    tooltip: {
+                        filter: item => !sepIdx.has(item.dataIndex),
+                        callbacks: {
+                            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toLocaleString() : '-'}`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            font: { size: 10 },
+                            maxRotation: 0,
+                            callback: function (val, i) { return sepIdx.has(i) ? '' : labels[i]; }
+                        },
+                        grid: { color: ctx => sepIdx.has(ctx.index) ? '#94a3b8' : '#f1f5f9' }
+                    },
+                    y: {
+                        ticks: { font: { size: 10 }, callback: v => v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v },
+                        grid: { color: '#e2e8f0' },
+                        beginAtZero: true,
+                    }
+                }
+            }
+        });
+    },
+
+    destroy: function (canvasId) {
+        if (this._instances[canvasId]) {
+            this._instances[canvasId].destroy();
+            delete this._instances[canvasId];
+        }
+    }
+};
+
 // ── File Download ─────────────────────────────────────────────────────────────
 window.downloadBase64File = function (filename, base64, contentType) {
     const link = document.createElement('a');

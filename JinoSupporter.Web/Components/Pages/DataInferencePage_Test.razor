@@ -63,36 +63,49 @@
     <div class="di-status-bar @(_statusError ? "di-error" : "di-ok")">@_status</div>
 }
 
-<!-- ── Image zone ───────────────────────────────────────────────────────────── -->
-<div class="di-image-section">
-    @if (_images.Count == 0)
-    {
-        <div class="di-drop-zone" @onclick="EnablePaste">
-            <div class="di-drop-icon">📋</div>
-            <div class="di-drop-title">Click here, then press Ctrl+V to paste a screenshot</div>
-            <div class="di-drop-sub">Or use the file upload below</div>
-        </div>
-    }
-    else
-    {
-        <div class="di-thumb-grid" @onclick="EnablePaste">
-            @foreach (var (img, idx) in _images.Select((x, i) => (x, i)))
-            {
-                <div class="di-thumb" @onclick:stopPropagation="true">
-                    <img src="@img.DataUrl" alt="@(idx+1)" />
-                    <button class="di-thumb-del" @onclick="() => RemoveImage(img)">✕</button>
-                    <div class="di-thumb-num">@(idx+1)</div>
-                </div>
-            }
-            <div class="di-thumb-add" @onclick:stopPropagation="true" @onclick="EnablePaste">
-                <div style="font-size:22px; line-height:1;">＋</div>
-                <div style="font-size:10px; color:#94a3b8; margin-top:3px;">Paste more</div>
+<!-- ── Screenshot (left) + Raw text (right) ─────────────────────────────────── -->
+<div class="di-split">
+    <div class="di-split-col di-image-section">
+        @if (_images.Count == 0)
+        {
+            <div class="di-drop-zone" @onclick="EnablePaste">
+                <div class="di-drop-icon">📋</div>
+                <div class="di-drop-title">Click here, then press Ctrl+V to paste a screenshot</div>
+                <div class="di-drop-sub">Or use the file upload below</div>
             </div>
+        }
+        else
+        {
+            <div class="di-thumb-grid" @onclick="EnablePaste">
+                @foreach (var (img, idx) in _images.Select((x, i) => (x, i)))
+                {
+                    <div class="di-thumb" @onclick:stopPropagation="true">
+                        <img src="@img.DataUrl" alt="@(idx+1)" />
+                        <button class="di-thumb-del" @onclick="() => RemoveImage(img)">✕</button>
+                        <div class="di-thumb-num">@(idx+1)</div>
+                    </div>
+                }
+                <div class="di-thumb-add" @onclick:stopPropagation="true" @onclick="EnablePaste">
+                    <div style="font-size:22px; line-height:1;">＋</div>
+                    <div style="font-size:10px; color:#94a3b8; margin-top:3px;">Paste more</div>
+                </div>
+            </div>
+        }
+        <div class="di-upload-row">
+            <InputFile OnChange="OnFilesSelected" multiple accept="image/*" style="font-size:12px; color:#64748b;" />
+            <span class="di-img-count">@_images.Count image(s)</span>
         </div>
-    }
-    <div class="di-upload-row">
-        <InputFile OnChange="OnFilesSelected" multiple accept="image/*" style="font-size:12px; color:#64748b;" />
-        <span class="di-img-count">@_images.Count image(s)</span>
+    </div>
+
+    <div class="di-split-col di-text-section">
+        <div class="di-text-head">
+            <span>📝 Raw Excel text <span class="text-muted" style="font-weight:400;">(paste full Excel cells — higher accuracy)</span></span>
+            <span class="di-img-count ms-auto">@(_pastedText?.Length ?? 0) chars</span>
+        </div>
+        <textarea class="di-text-area"
+                  placeholder="Paste your Excel cell range here (Ctrl+C → Ctrl+V). Sent to AI with screenshots to improve numeric accuracy."
+                  spellcheck="false"
+                  @bind="_pastedText" @bind:event="oninput"></textarea>
     </div>
 </div>
 
@@ -223,6 +236,28 @@
     .di-error        { color: #dc2626; background: #fef2f2; border-bottom: 1px solid #fecaca; }
 
     /* Image zone */
+    .di-split {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        padding: 0 14px; flex-shrink: 0;
+    }
+    @@media (max-width: 900px) { .di-split { grid-template-columns: 1fr; } }
+    .di-split-col { min-height: 160px; display: flex; flex-direction: column; }
+    .di-text-section { gap: 4px; }
+    .di-text-head {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 12px; font-weight: 600; color: #475569;
+        padding: 6px 2px;
+    }
+    .di-text-area {
+        flex: 1 1 auto; min-height: 160px;
+        border: 1px solid #cbd5e1; border-radius: 6px;
+        padding: 8px 10px; font-family: ui-monospace, Consolas, monospace;
+        font-size: 11px; color: #334155; background: #fff;
+        resize: vertical; outline: none; white-space: pre; overflow: auto;
+    }
+    .di-text-area:focus {
+        border-color: #93c5fd; box-shadow: 0 0 0 2px rgba(147,197,253,.25);
+    }
     .di-image-section {
         flex-shrink: 0; padding: 10px 14px 6px;
         background: #fff; border-bottom: 1px solid #e2e8f0;
@@ -360,6 +395,7 @@
     private List<FileEntry>   _files        = [];
     private List<NormalizedMeasurement> _measurements = [];
     private string            _summary           = "";
+    private string            _pastedText        = "";
     private string            _keyFindings       = "";
     private List<string>      _tags              = [];
     private string            _purpose           = "";
@@ -499,7 +535,8 @@
             var imageArgs = _images.Select(i => (i.MediaType, i.Base64)).ToList();
             string dsName = string.IsNullOrWhiteSpace(_datasetName) ? "dataset" : _datasetName.Trim();
             NormalizeResult result = await Claude.NormalizeFromImagesAsync(
-                imageArgs, dsName, _productType.Trim(), _testDate);
+                imageArgs, dsName, _productType.Trim(), _testDate,
+                rawText: _pastedText);
             _measurements      = result.Measurements;
             _summary           = result.Summary;
             _keyFindings       = result.KeyFindings;
@@ -545,6 +582,8 @@
                 if (!string.IsNullOrEmpty(_summary) || !string.IsNullOrEmpty(tagsJson))
                     Repo.SaveDatasetSummaryRecord(name, _productType, _summary, _keyFindings, tagsJson,
                         _purpose, _testConditions, _rootCause, _decision, _recommendedAction);
+                if (!string.IsNullOrWhiteSpace(_pastedText))
+                    Repo.SaveExtractedText(name, _pastedText, WebRepository.TextKindExcelPaste);
             });
             SetStatus($"Saved — '{name}'", false);
             _allReports = Repo.GetAllRawReports();
@@ -566,6 +605,7 @@
         _testDate     = info.ReportDate;
         _measurements = Repo.GetNormalizedMeasurements(name);
         var summ = Repo.GetDatasetSummaryRecord(name);
+        _pastedText        = Repo.GetExtractedText(name, WebRepository.TextKindExcelPaste) ?? "";
         _summary           = summ?.Summary           ?? "";
         _keyFindings       = summ?.KeyFindings       ?? "";
         _tags              = summ?.Tags              ?? [];
@@ -594,7 +634,7 @@
     private void Clear()
     {
         _datasetName = ""; _productType = ""; _testDate = DateTime.Today.ToString("yyyy-MM-dd");
-        _images = []; _files = []; _measurements = []; _summary = ""; _keyFindings = "";
+        _images = []; _files = []; _measurements = []; _summary = ""; _keyFindings = ""; _pastedText = "";
         _purpose = ""; _testConditions = ""; _rootCause = ""; _decision = ""; _recommendedAction = "";
         _tags = []; _status = "";
     }
