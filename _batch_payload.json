@@ -1,0 +1,80 @@
+{
+  "name": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222",
+  "result": {
+    "schema_version": "0.1",
+    "document": {
+      "document_id": "",
+      "source_file": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222",
+      "source_sheet": "Sheet1, VP CO, FR VP, THD, IMP, SET MASK, SET GRAPH(전체), 그래프",
+      "title": "TIM-338-R WF 센터돔 불량 샘플 측정 Data",
+      "model": "TIM-338-R",
+      "report_date": "2025-12-22",
+      "department": "",
+      "marker": "",
+      "line": "",
+      "report_type": "measurement_spec",
+      "primary_defect": {"canonical_name": "Center Dome Defect", "aliases_in_document": ["센터돔 불량", "WF defect"]},
+      "related_defects": ["Frequency Response Variation", "Dimension Variation"],
+      "parts": ["WF", "Center Dome", "VP Coil", "FR VP", "Grill", "Mold"],
+      "processes": ["Measurement", "Mold (Grill)"],
+      "purpose": "Measure WF samples of TIM-338-R with center-dome defect and compare frequency response (THD/IMP/VP COIL/FR VP at various masses) plus development-vs-mass-production grill mold dimensions.",
+      "content": [
+        "WF/THD/RnB/FFT/MIC/LOOP graph sheets with SET MASK upper/lower spec bands.",
+        "VP CO sheet: SPL vs frequency for VP COIL samples at 0.05/0.14/0.2 mg with PV2 GN REF baseline.",
+        "FR VP sheet: SPL vs frequency for FR VP samples at 0.3/0.4/0.5 mg with PV2 GN REF baseline.",
+        "Sheet1: TOP/BOTTOM PORON 0.3T mold dimension table for 개발 금형(development) vs 양산 금형(mass-production) grill, MAX/MIN/MAX-MIN per grill #."
+      ],
+      "source_cells": {"title": ["Sheet1!C2"], "date": [], "purpose": [], "content": []}
+    },
+    "test_conditions": [
+      {"condition_id": "c1", "condition_group": "mold_comparison", "line": "", "process": "Mold", "changed_factor": "Grill mold (development vs mass production)", "before_value": "개발 금형", "after_value": "양산 금형", "unit": "", "machine": null, "jig": null, "material_lot": null, "supplier": null, "dry_time_sec": null, "temperature": null, "pressure": null, "bond_amount": null, "uv_energy": null, "source_file": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222", "sheet_name": "Sheet1", "source_cells": ["K10","L11:O23"]},
+      {"condition_id": "c2", "condition_group": "vp_coil_mass", "line": "", "process": "Assembly", "changed_factor": "VP COIL bond mass (mg)", "before_value": "0.05mg", "after_value": "0.20mg", "unit": "mg", "machine": null, "jig": null, "material_lot": null, "supplier": null, "dry_time_sec": null, "temperature": null, "pressure": null, "bond_amount": "0.05 / 0.14 / 0.20", "uv_energy": null, "source_file": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222", "sheet_name": "VP CO", "source_cells": ["VP CO!C1:AP1"]},
+      {"condition_id": "c3", "condition_group": "fr_vp_mass", "line": "", "process": "Assembly", "changed_factor": "FR VP bond mass (mg)", "before_value": "0.3mg", "after_value": "0.5mg", "unit": "mg", "machine": null, "jig": null, "material_lot": null, "supplier": null, "dry_time_sec": null, "temperature": null, "pressure": null, "bond_amount": "0.3 / 0.4 / 0.5", "uv_energy": null, "source_file": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222", "sheet_name": "FR VP", "source_cells": ["FR VP!C1:AW1"]}
+    ],
+    "results": [
+      {"result_id": "r1", "condition_id": "c1", "measurement_type": "Dimension", "condition_group": "mold_comparison", "date": "2025-12-22", "line": "", "input_count": 5, "ok_count": null, "ng_count": null, "ng_rate_decimal": null, "ng_rate_percent": null, "metric_name": "Development Grill Avg(MAX-MIN)", "metric_value": 0.01666666666666657, "unit": "mm", "judgement": "REFERENCE", "ng_breakdown": {}, "source_file": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222", "sheet_name": "Sheet1", "source_cells": ["P11"]},
+      {"result_id": "r2", "condition_id": "c1", "measurement_type": "Dimension", "condition_group": "mold_comparison", "date": "2025-12-22", "line": "", "input_count": 7, "ok_count": null, "ng_count": null, "ng_rate_decimal": null, "ng_rate_percent": null, "metric_name": "Mass-Production Grill Avg(MAX-MIN)", "metric_value": 0.008285714285714261, "unit": "mm", "judgement": "BETTER", "ng_breakdown": {}, "source_file": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222", "sheet_name": "Sheet1", "source_cells": ["P17"]},
+      {"result_id": "r3", "condition_id": "c2", "measurement_type": "SPL_Frequency", "condition_group": "vp_coil_mass", "date": "2025-12-22", "line": "", "input_count": 13, "ok_count": null, "ng_count": null, "ng_rate_decimal": null, "ng_rate_percent": null, "metric_name": "VP COIL 0.05mg @ 20Hz mean SPL", "metric_value": null, "unit": "dB", "judgement": null, "ng_breakdown": {}, "source_file": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222", "sheet_name": "VP CO", "source_cells": ["C2:O2"]},
+      {"result_id": "r4", "condition_id": "c3", "measurement_type": "SPL_Frequency", "condition_group": "fr_vp_mass", "date": "2025-12-22", "line": "", "input_count": 20, "ok_count": null, "ng_count": null, "ng_rate_decimal": null, "ng_rate_percent": null, "metric_name": "FR VP 0.3mg samples (20 units) SPL sweep vs PV2 GN REF", "metric_value": null, "unit": "dB", "judgement": null, "ng_breakdown": {}, "source_file": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222", "sheet_name": "FR VP", "source_cells": ["C1:V155"]}
+    ],
+    "conclusions": [
+      {"conclusion_id": "k1", "topic": "Mold Dimension", "statement_from_report": "양산 금형 그릴 MAX-MIN 평균 0.0083mm, 개발 금형 0.0167mm.", "normalized_interpretation": "Mass-production grill mold averaged 0.0083mm MAX-MIN spread (n=7) versus 0.0167mm for the development grill (n=5) — 50.4% tighter dimension spread on the mass-production mold.", "source_file": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222", "sheet_name": "Sheet1", "source_cells": ["P11","P17"]},
+      {"conclusion_id": "k2", "topic": "VP COIL bond mass effect", "statement_from_report": "VP COIL 0.05/0.14/0.20mg 샘플별 SPL 주파수 응답 측정.", "normalized_interpretation": "13 samples per mass condition were measured against PV2 GN REF for SPL frequency response; sheet preserves per-frequency dB values for downstream mask/limit evaluation. No NG-rate aggregation in the workbook.", "source_file": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222", "sheet_name": "VP CO", "source_cells": ["C1:AP155"]}
+    ],
+    "troubleshooting_index": {
+      "defect_name": "Center Dome Defect",
+      "when_user_asks": ["center dome NG", "WF SPL deviation", "VP COIL mass"],
+      "suggested_checks": [
+        {"check_item": "Verify mass-production grill mold dimension MAX-MIN ≤ 0.01mm", "reason": "Mass-production mold already shows 0.0083mm spread vs 0.0167mm on development mold; tighter mold control halved dimensional spread.", "evidence_strength": "medium", "related_process": "Mold", "related_part": "Grill", "source_file": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222", "sheet_name": "Sheet1", "source_cells": ["P11","P17"]},
+        {"check_item": "Compare VP COIL bond mass 0.05/0.14/0.20mg SPL curves against PV2 GN REF mask", "reason": "Workbook holds 13 samples per bond-mass condition; deviations from REF curve identify defective coil bonding mass band.", "evidence_strength": "medium", "related_process": "Assembly", "related_part": "VP Coil", "source_file": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222", "sheet_name": "VP CO", "source_cells": ["C1:AP155"]}
+      ],
+      "limitations": ["No NG-rate or count table — measurement-only spreadsheet; pass/fail must be derived from SET MASK upper/lower limits."]
+    },
+    "ai_extraction_log": {
+      "confidence": 0.55,
+      "assumptions": ["Treated 'PV2 GN REF' as the baseline SPL curve.", "Sheet1's TOP/BOTTOM PORON header is part of the same mold comparison context."],
+      "warnings": ["Raw per-frequency SPL values were not normalized into AiResults rows; only summary metrics stored.","Original 그래프 sheet relies on embedded charts that were stripped from text-only render."],
+      "decision_rationale": "Classified as measurement_spec because the dominant evidence is frequency-by-frequency SPL and dimensional MAX/MIN tables, not NG-rate comparison. Mass-production grill shows 50.4% tighter dimensional spread than development grill within the same workbook event."
+    }
+  },
+  "translations": {
+    "ko": {
+      "document": {"title": "TIM-338-R WF 센터돔 불량 샘플 측정 Data", "purpose": "TIM-338-R 센터돔 불량 샘플의 WF 주파수 응답(THD/IMP/VP COIL/FR VP, 본드량별) 및 개발 금형 vs 양산 금형 그릴 치수를 측정·비교한다.", "content": ["WF/THD/RnB/FFT/MIC/LOOP 그래프와 SET MASK 상·하한 스펙 시트.","VP CO 시트: VP COIL 0.05/0.14/0.20mg 샘플별 주파수-SPL, PV2 GN REF 기준.","FR VP 시트: FR VP 0.3/0.4/0.5mg 샘플별 주파수-SPL, PV2 GN REF 기준.","Sheet1: 개발 금형(5종) vs 양산 금형(7종) 그릴 MAX/MIN/MAX-MIN 치수표."]},
+      "conclusions": {"k1": {"topic": "금형 치수", "statement_from_report": "양산 금형 그릴 MAX-MIN 평균 0.0083mm, 개발 금형 0.0167mm.", "normalized_interpretation": "양산 금형 그릴 7개의 MAX-MIN 편차 평균은 0.0083mm 로, 개발 금형 5개 평균 0.0167mm 대비 50.4% 더 타이트하다."}, "k2": {"topic": "VP COIL 본드량 영향", "statement_from_report": "VP COIL 0.05/0.14/0.20mg 샘플별 SPL 주파수 응답 측정.", "normalized_interpretation": "본드량 조건별 13개 샘플의 주파수별 SPL 데이터를 PV2 GN REF 기준과 함께 보존. 워크북에는 NG율 집계가 없으므로 SET MASK 한계로 합부 판정 필요."}},
+      "hints": {"hint_0": {"check_item": "양산 금형 그릴 MAX-MIN ≤ 0.01mm 유지 여부 확인", "reason": "양산 금형은 0.0083mm 편차로 개발 금형(0.0167mm) 대비 절반 수준 — 금형 관리 강화로 dimension spread를 줄임."}, "hint_1": {"check_item": "VP COIL 본드량 0.05/0.14/0.20mg SPL 곡선을 PV2 GN REF 마스크와 비교", "reason": "본드량별 13개 샘플 데이터 보존 — REF 곡선 이탈로 불량 본드량 구간 식별 가능."}},
+      "log": {"assumptions": ["'PV2 GN REF' 는 기준 SPL 곡선으로 처리.","Sheet1 의 TOP/BOTTOM PORON 헤더는 동일 금형 비교 맥락의 일부."], "warnings": ["주파수별 raw SPL 은 AiResults 행으로 정규화하지 않고 요약 지표만 저장.","그래프 시트는 임베디드 차트 의존이라 text-only 렌더에서 제거됨."], "decision_rationale": "지배적 증거가 주파수별 SPL 과 치수 MAX/MIN 표이고 NG율 비교가 아니어서 measurement_spec 로 분류. 동일 워크북 내 양산 금형 그릴이 개발 금형 대비 dimension spread 50.4% 더 좁음."}
+    },
+    "en": {
+      "document": {"title": "TIM-338-R WF Center-Dome Defect Sample Measurement Data", "purpose": "Measure WF samples of TIM-338-R with center-dome defect: SPL frequency response (THD/IMP/VP COIL/FR VP at multiple bond masses) and development-vs-mass-production grill mold dimensions.", "content": ["WF/THD/RnB/FFT/MIC/LOOP graph sheets with SET MASK upper/lower limit bands.","VP CO sheet: SPL vs Hz for VP COIL at 0.05/0.14/0.20mg, baseline PV2 GN REF.","FR VP sheet: SPL vs Hz for FR VP at 0.3/0.4/0.5mg, baseline PV2 GN REF.","Sheet1: grill dimension table MAX/MIN/MAX-MIN for development mold (5 grills) vs mass-production mold (7 grills)."]},
+      "conclusions": {"k1": {"topic": "Mold Dimension", "statement_from_report": "Mass-production grill MAX-MIN avg 0.0083mm; development grill 0.0167mm.", "normalized_interpretation": "Mass-production grill (n=7) averaged 0.0083mm MAX-MIN spread vs 0.0167mm on the development grill (n=5) — 50.4% tighter dimensional spread."}, "k2": {"topic": "VP COIL bond-mass effect", "statement_from_report": "SPL frequency response measured for VP COIL at 0.05/0.14/0.20mg.", "normalized_interpretation": "13 samples per bond-mass condition were measured per Hz against PV2 GN REF. Workbook has no aggregated NG rate; pass/fail must come from SET MASK limits."}},
+      "hints": {"hint_0": {"check_item": "Verify mass-production grill MAX-MIN ≤ 0.01mm", "reason": "Mass-production grill already shows 0.0083mm spread vs development grill 0.0167mm — tighter mold control halves dimensional spread."}, "hint_1": {"check_item": "Compare VP COIL 0.05/0.14/0.20mg SPL curves to PV2 GN REF mask", "reason": "13 samples per bond-mass condition retained — REF-curve deviation identifies defective bond-mass band."}},
+      "log": {"assumptions": ["Treated PV2 GN REF as the baseline SPL curve.","Sheet1 TOP/BOTTOM PORON header is part of the same mold-comparison context."], "warnings": ["Per-frequency raw SPL not normalized into AiResults rows — only summary metrics stored.","그래프 sheet depends on embedded charts that were stripped from text-only render."], "decision_rationale": "Classified as measurement_spec since dominant evidence is per-Hz SPL plus dimensional MAX/MIN tables, not NG-rate comparison. Within the same workbook the mass-production grill is 50.4% tighter than the development grill."}
+    },
+    "vi": {
+      "document": {"title": "Dữ liệu đo mẫu lỗi vòm trung tâm WF TIM-338-R", "purpose": "Đo mẫu TIM-338-R bị lỗi vòm trung tâm: phản hồi tần số SPL (THD/IMP/VP COIL/FR VP theo lượng bond) và kích thước khuôn grill phát triển vs sản xuất hàng loạt.", "content": ["Các sheet đồ thị WF/THD/RnB/FFT/MIC/LOOP với dải spec trên/dưới SET MASK.","Sheet VP CO: SPL theo Hz cho VP COIL ở 0.05/0.14/0.20mg, chuẩn PV2 GN REF.","Sheet FR VP: SPL theo Hz cho FR VP ở 0.3/0.4/0.5mg, chuẩn PV2 GN REF.","Sheet1: bảng kích thước grill MAX/MIN/MAX-MIN cho khuôn phát triển (5 grill) so với khuôn sản xuất hàng loạt (7 grill)."]},
+      "conclusions": {"k1": {"topic": "Kích thước khuôn", "statement_from_report": "Khuôn sản xuất MAX-MIN trung bình 0.0083mm; khuôn phát triển 0.0167mm.", "normalized_interpretation": "Grill khuôn sản xuất (n=7) trung bình 0.0083mm so với khuôn phát triển (n=5) 0.0167mm — chênh lệch kích thước hẹp hơn 50.4%."}, "k2": {"topic": "Ảnh hưởng lượng bond VP COIL", "statement_from_report": "Đo phản hồi tần số SPL của VP COIL ở 0.05/0.14/0.20mg.", "normalized_interpretation": "13 mẫu cho mỗi điều kiện bond được đo theo Hz so với PV2 GN REF. Workbook không có NG rate tổng hợp; pass/fail dùng SET MASK."}},
+      "hints": {"hint_0": {"check_item": "Kiểm tra grill khuôn sản xuất MAX-MIN ≤ 0.01mm", "reason": "Khuôn sản xuất đã đạt 0.0083mm so với khuôn phát triển 0.0167mm — kiểm soát khuôn chặt hơn làm giảm chênh lệch kích thước một nửa."}, "hint_1": {"check_item": "So sánh đường SPL VP COIL 0.05/0.14/0.20mg với mask PV2 GN REF", "reason": "Giữ 13 mẫu cho mỗi điều kiện bond — sai lệch khỏi đường REF xác định dải bond lỗi."}},
+      "log": {"assumptions": ["Coi PV2 GN REF là đường SPL chuẩn.","Tiêu đề TOP/BOTTOM PORON trên Sheet1 thuộc cùng ngữ cảnh so sánh khuôn."], "warnings": ["SPL thô theo từng Hz không được chuẩn hóa thành dòng AiResults — chỉ lưu chỉ số tóm tắt.","Sheet 그래프 phụ thuộc đồ thị nhúng đã bị loại bỏ trong bản render text-only."], "decision_rationale": "Phân loại measurement_spec vì bằng chứng chính là SPL theo Hz và bảng MAX/MIN kích thước, không phải so sánh NG rate. Trong cùng workbook, grill khuôn sản xuất hẹp hơn khuôn phát triển 50.4%."}
+    }
+  }
+}

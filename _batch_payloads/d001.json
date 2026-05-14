@@ -1,0 +1,75 @@
+{
+  "name": "47. TIU L5S3-01 R Report test F-PCB PRESS JIG cutting 0.1mm to improve NG Frame deform -  date 2026.01.02",
+  "result": {
+    "schema_version": "0.1",
+    "document": {
+      "document_id": "doc_47_tiu_l5s3_fpcb_jig_cut01",
+      "source_file": "47. TIU L5S3-01 R Report test F-PCB PRESS JIG cutting 0.1mm to improve NG Frame deform -  date 2026.01.02",
+      "source_sheet": "Test",
+      "title": "TIU L5S3-01 [R] Report test F-PCB Press JIG cutting 0.1mm",
+      "model": "TIU L5S3-01",
+      "report_date": "2026-01-02",
+      "department": "ME",
+      "marker": "Nhung",
+      "line": "R",
+      "report_type": "normal_comparison",
+      "primary_defect": {"canonical_name": "Frame Deform NG", "aliases_in_document": ["Frame deform"]},
+      "related_defects": ["F-PCB separate", "Bako FRF high"],
+      "parts": ["Frame", "F-PCB"],
+      "processes": ["Semi Sub 3", "F-PCB Press JIG"],
+      "purpose": "Verify whether cutting F-PCB Press JIG by 0.1mm reduces Semi Sub 3 frame deform NG.",
+      "content": ["Make semi sub 3 with JIG cutting 0.1mm", "Check NG rate frame deform and F-PCB separate", "Cross-check hearing/bako function"],
+      "source_cells": {"title": ["Test!D2"], "date": ["Test!U3"], "purpose": ["Test!B6"], "content": ["Test!B8"]}
+    },
+    "test_conditions": [
+      {"condition_id": "c1", "condition_group": "Frame deform improvement", "line": "Line R", "process": "F-PCB Press JIG", "changed_factor": "JIG cutting amount", "before_value": "0.0mm", "after_value": "0.1mm", "unit": "mm", "machine": null, "jig": "F-PCB PRESS JIG cut 0.1mm", "material_lot": null, "supplier": null, "dry_time_sec": 540, "temperature": "300", "pressure": null, "bond_amount": null, "uv_energy": null, "source_file": "47. TIU L5S3-01 R Report test F-PCB PRESS JIG cutting 0.1mm to improve NG Frame deform -  date 2026.01.02", "sheet_name": "Test", "source_cells": ["Test!F16", "Test!L16"]},
+      {"condition_id": "c2", "condition_group": "Frame deform improvement", "line": "Line L", "process": "F-PCB Press JIG", "changed_factor": "JIG cutting amount", "before_value": "0.0mm", "after_value": "0.1mm", "unit": "mm", "machine": null, "jig": "F-PCB PRESS JIG cut 0.1mm", "material_lot": null, "supplier": null, "dry_time_sec": null, "temperature": null, "pressure": null, "bond_amount": null, "uv_energy": null, "source_file": "47. TIU L5S3-01 R Report test F-PCB PRESS JIG cutting 0.1mm to improve NG Frame deform -  date 2026.01.02", "sheet_name": "Test", "source_cells": ["Test!F17"]}
+    ],
+    "results": [
+      {"result_id": "r1", "condition_id": "c1", "measurement_type": "Frame deform / F-PCB separate", "condition_group": "Line R JIG cut 0.1mm", "date": "2026-01-02", "line": "Line R", "input_count": 24, "ok_count": 24, "ng_count": 0, "ng_rate_decimal": 0.0, "ng_rate_percent": 0.0, "metric_name": "Frame deform NG rate", "metric_value": 0.0, "unit": "%", "judgement": "OK", "ng_breakdown": {"Frame deform": {"count": 0, "rate": 0.0}, "F-PCB separate": {"count": 0, "rate": 0.0}}, "source_file": "47. TIU L5S3-01 R Report test F-PCB PRESS JIG cutting 0.1mm to improve NG Frame deform -  date 2026.01.02", "sheet_name": "Test", "source_cells": ["Test!C16:K16"]},
+      {"result_id": "r2", "condition_id": "c2", "measurement_type": "Frame deform / F-PCB separate", "condition_group": "Line L JIG cut 0.1mm", "date": "2026-01-02", "line": "Line L", "input_count": 24, "ok_count": 24, "ng_count": 0, "ng_rate_decimal": 0.0, "ng_rate_percent": 0.0, "metric_name": "Frame deform NG rate", "metric_value": 0.0, "unit": "%", "judgement": "OK", "ng_breakdown": {"Frame deform": {"count": 0, "rate": 0.0}, "F-PCB separate": {"count": 0, "rate": 0.0}}, "source_file": "47. TIU L5S3-01 R Report test F-PCB PRESS JIG cutting 0.1mm to improve NG Frame deform -  date 2026.01.02", "sheet_name": "Test", "source_cells": ["Test!C17:K17"]},
+      {"result_id": "r3", "condition_id": "c1", "measurement_type": "Function", "condition_group": "Line R JIG Test", "date": "2026-01-02", "line": "Line R", "input_count": 18, "ok_count": 18, "ng_count": 2, "ng_rate_decimal": 0.1111, "ng_rate_percent": 11.11, "metric_name": "Total Function NG rate (Bako+Hearing)", "metric_value": 11.11, "unit": "%", "judgement": "Test", "ng_breakdown": {"Bako FRF high": {"count": 2, "rate": 0.1111}, "Hearing Touch": {"count": 0, "rate": 0.0}, "Hearing Noise": {"count": 0, "rate": 0.0}}, "source_file": "47. TIU L5S3-01 R Report test F-PCB PRESS JIG cutting 0.1mm to improve NG Frame deform -  date 2026.01.02", "sheet_name": "Test", "source_cells": ["Test!C27:T27"]},
+      {"result_id": "r4", "condition_id": null, "measurement_type": "Function", "condition_group": "Line R Normal", "date": "2026-01-02", "line": "Line R", "input_count": 20, "ok_count": 20, "ng_count": 6, "ng_rate_decimal": 0.3, "ng_rate_percent": 30.0, "metric_name": "Total Function NG rate (Bako+Hearing)", "metric_value": 30.0, "unit": "%", "judgement": "Normal", "ng_breakdown": {"Bako FRF high": {"count": 6, "rate": 0.3}}, "source_file": "47. TIU L5S3-01 R Report test F-PCB PRESS JIG cutting 0.1mm to improve NG Frame deform -  date 2026.01.02", "sheet_name": "Test", "source_cells": ["Test!C29:T29"]},
+      {"result_id": "r5", "condition_id": "c2", "measurement_type": "Function", "condition_group": "Line L JIG Test", "date": "2026-01-02", "line": "Line L", "input_count": 22, "ok_count": 22, "ng_count": 3, "ng_rate_decimal": 0.1364, "ng_rate_percent": 13.64, "metric_name": "Total Function NG rate (Bako+Hearing)", "metric_value": 13.64, "unit": "%", "judgement": "Test", "ng_breakdown": {"Bako FRF high": {"count": 3, "rate": 0.1364}}, "source_file": "47. TIU L5S3-01 R Report test F-PCB PRESS JIG cutting 0.1mm to improve NG Frame deform -  date 2026.01.02", "sheet_name": "Test", "source_cells": ["Test!C31:T31"]},
+      {"result_id": "r6", "condition_id": null, "measurement_type": "Function", "condition_group": "Line L Normal", "date": "2026-01-02", "line": "Line L", "input_count": 20, "ok_count": 20, "ng_count": 6, "ng_rate_decimal": 0.3, "ng_rate_percent": 30.0, "metric_name": "Total Function NG rate (Bako+Hearing)", "metric_value": 30.0, "unit": "%", "judgement": "Normal", "ng_breakdown": {"Bako FRF high": {"count": 5, "rate": 0.25}, "Bako FRF low": {"count": 1, "rate": 0.05}}, "source_file": "47. TIU L5S3-01 R Report test F-PCB PRESS JIG cutting 0.1mm to improve NG Frame deform -  date 2026.01.02", "sheet_name": "Test", "source_cells": ["Test!C33:T33"]}
+    ],
+    "conclusions": [
+      {"conclusion_id": "cn1", "topic": "JIG cutting 0.1mm decision", "statement_from_report": "Result JIG test is OK", "normalized_interpretation": "Same-event Normal vs JIG cut 0.1mm Test: Frame deform NG = 0% on both sides (no defects observed); Function NG Line R 11.11% vs Normal 30% = 0.37x, 62.96% improved; Line L 13.64% vs Normal 30% = 0.45x, 54.55% improved. JIG cutting 0.1mm passes for frame-deform and improves function.", "source_file": "47. TIU L5S3-01 R Report test F-PCB PRESS JIG cutting 0.1mm to improve NG Frame deform -  date 2026.01.02", "sheet_name": "Test", "source_cells": ["Test!B37"]}
+    ],
+    "troubleshooting_index": {
+      "defect_name": "Frame Deform NG",
+      "when_user_asks": ["frame deform", "F-PCB press JIG", "Semi Sub 3 deform"],
+      "suggested_checks": [
+        {"hint_id": "h1", "check_item": "Apply F-PCB Press JIG with 0.1mm cut", "reason": "Test (n=48 across both lines) produced 0 frame deform NG; function NG also improved 55-63% vs same-event normal.", "evidence_strength": "medium", "related_process": "F-PCB Press / Semi Sub 3", "related_part": "F-PCB Press JIG", "source_file": "47. TIU L5S3-01 R Report test F-PCB PRESS JIG cutting 0.1mm to improve NG Frame deform -  date 2026.01.02", "sheet_name": "Test", "source_cells": ["Test!C16:K17", "Test!B37"]},
+        {"hint_id": "h2", "check_item": "Verify dry time 9-10min and 300°C with cut JIG", "reason": "Note column records these conditions next to the cut JIG row; required to reproduce result.", "evidence_strength": "weak", "related_process": "Dry / Press", "related_part": "F-PCB", "source_file": "47. TIU L5S3-01 R Report test F-PCB PRESS JIG cutting 0.1mm to improve NG Frame deform -  date 2026.01.02", "sheet_name": "Test", "source_cells": ["Test!L16"]}
+      ],
+      "limitations": ["Sample size small (n=24 per line for frame deform; n=18-22 per line for function)."]
+    },
+    "ai_extraction_log": {
+      "confidence": 0.78,
+      "assumptions": ["Total NG rate 0.30 for normal lines means 6/20 Bako FRF high failures.", "Dry time 9-10min recorded only on row 16 was carried to row 17 by visual continuation rule."],
+      "warnings": ["Bako breakdown rows (28,30,32,34) are percentage subrows under count rows; stored only as evidence, not as standalone results."],
+      "decision_rationale": "Frame deform = 0% on JIG-cut runs vs Normal not reported (only function block has Normal). Function NG dropped ~55-63% on both lines under same-event JIG-cut vs Normal. Decision matches author's 'OK'."
+    }
+  },
+  "translations": {
+    "ko": {
+      "document": {"title": "TIU L5S3-01 [R] F-PCB Press JIG 0.1mm 컷팅 테스트 리포트", "purpose": "Semi Sub 3 Frame deform 개선을 위해 F-PCB Press JIG 0.1mm 컷팅 효과를 검증.", "content": ["JIG 0.1mm 컷팅 적용한 Semi Sub 3 제작", "Frame deform 및 F-PCB separate NG rate 측정", "Bako/Hearing 기능 NG 동시 확인"]},
+      "conclusions": {"cn1": {"topic": "JIG 0.1mm 컷팅 판정", "statement_from_report": "JIG 테스트 결과 OK", "normalized_interpretation": "동일 이벤트 Normal 대비 JIG cut 0.1mm Test: Frame deform NG 양 라인 모두 0% (불량 없음). Function NG는 Line R 11.11% vs Normal 30% = 0.37배, 62.96% 개선; Line L 13.64% vs Normal 30% = 0.45배, 54.55% 개선. JIG 0.1mm 컷팅 채택 가능."}},
+      "hints": {"h1": {"check_item": "F-PCB Press JIG 0.1mm 컷팅 적용", "reason": "양 라인 합 n=48 테스트에서 frame deform NG 0건, 동일 이벤트 Normal 대비 function NG 55-63% 개선."}, "h2": {"check_item": "건조 시간 9-10분, 300°C 조건 재현 확인", "reason": "노트 컬럼에 컷 JIG 행 옆에 기록되어 있어 결과 재현 시 필요."}},
+      "log": {"assumptions": ["Normal 라인 Total NG rate 0.30은 Bako FRF high 6/20를 의미.", "row 16의 건조시간 9-10분은 시각적 연속 규칙에 따라 row 17에도 적용."], "warnings": ["행 28,30,32,34는 카운트 행 아래의 백분율 subrow이므로 standalone 결과로 보지 않고 evidence로만 저장."], "decision_rationale": "JIG 컷팅 테스트에서 Frame deform 0%, 동일 이벤트 Normal 대비 Function NG 양 라인 55-63% 개선. 작성자 'OK' 판정과 일치."}
+    },
+    "en": {
+      "document": {"title": "TIU L5S3-01 [R] F-PCB Press JIG 0.1mm cut test report", "purpose": "Verify whether cutting F-PCB Press JIG by 0.1mm reduces Semi Sub 3 frame deform NG.", "content": ["Make Semi Sub 3 with JIG cut 0.1mm applied", "Measure Frame deform and F-PCB separate NG rate", "Cross-check Bako/Hearing function NG"]},
+      "conclusions": {"cn1": {"topic": "JIG 0.1mm cut decision", "statement_from_report": "JIG test result is OK", "normalized_interpretation": "Same-event Normal vs JIG cut 0.1mm Test: Frame deform NG = 0% on both lines (no defects). Function NG Line R 11.11% vs Normal 30% = 0.37x, 62.96% improved; Line L 13.64% vs Normal 30% = 0.45x, 54.55% improved. JIG cut 0.1mm can be adopted."}},
+      "hints": {"h1": {"check_item": "Apply F-PCB Press JIG 0.1mm cut", "reason": "Combined n=48 test produced 0 frame deform NG and 55-63% function NG improvement vs same-event normal."}, "h2": {"check_item": "Reproduce dry 9-10min and 300°C with the cut JIG", "reason": "Note column records these conditions next to the cut JIG row; needed to reproduce the result."}},
+      "log": {"assumptions": ["Normal-line Total NG 0.30 means 6/20 Bako FRF high failures.", "Dry 9-10min from row 16 carried to row 17 per visual continuation rule."], "warnings": ["Rows 28,30,32,34 are percentage subrows under count rows; kept as evidence only, not standalone results."], "decision_rationale": "JIG-cut test had 0% frame deform and 55-63% function NG improvement vs same-event normal on both lines, matching author's OK."}
+    },
+    "vi": {
+      "document": {"title": "Báo cáo test F-PCB Press JIG cắt 0.1mm – TIU L5S3-01 [R]", "purpose": "Kiểm tra xem việc cắt JIG ép F-PCB thêm 0.1mm có giảm NG frame deform ở Semi Sub 3 không.", "content": ["Làm Semi Sub 3 với JIG cắt 0.1mm", "Đo NG rate frame deform và F-PCB separate", "Đối chiếu Bako/Hearing function NG"]},
+      "conclusions": {"cn1": {"topic": "Đánh giá JIG cắt 0.1mm", "statement_from_report": "Kết quả JIG test OK", "normalized_interpretation": "So với Normal cùng sự kiện: JIG cắt 0.1mm cho frame deform NG = 0% cả hai line; Function NG Line R 11.11% vs Normal 30% = 0.37 lần, cải thiện 62.96%; Line L 13.64% vs Normal 30% = 0.45 lần, cải thiện 54.55%. Có thể áp dụng JIG cắt 0.1mm."}},
+      "hints": {"h1": {"check_item": "Áp dụng JIG ép F-PCB cắt 0.1mm", "reason": "n=48 cộng dồn cho 0 NG frame deform và function NG cải thiện 55-63% so với normal cùng sự kiện."}, "h2": {"check_item": "Tái lập điều kiện dry 9-10 phút, 300°C khi dùng JIG cắt", "reason": "Cột Note ghi điều kiện này cạnh dòng JIG cắt; cần để tái lập kết quả."}},
+      "log": {"assumptions": ["Tổng NG 0.30 của line Normal nghĩa là 6/20 lỗi Bako FRF high.", "Dry 9-10 phút ở row 16 áp dụng sang row 17 theo quy tắc kế thừa thị giác."], "warnings": ["Các hàng 28,30,32,34 là sub-row phần trăm dưới hàng count; chỉ lưu làm evidence, không phải kết quả độc lập."], "decision_rationale": "JIG cắt cho frame deform 0% và function NG cải thiện 55-63% so với normal cùng sự kiện trên cả hai line, khớp với đánh giá OK của tác giả."}
+    }
+  }
+}

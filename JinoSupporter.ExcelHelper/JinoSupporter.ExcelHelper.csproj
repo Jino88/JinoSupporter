@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- net8.0-windows because we use WindowsForms (FolderBrowserDialog) and the
+         ExcelExporter submodule's Excel COM + clipboard-driven shape rendering. -->
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>JinoSupporter.ExcelHelper</RootNamespace>
+    <AssemblyName>JinoSupporter.ExcelHelper</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\External\ExcelExporter\src\ExcelExporter\ExcelExporter.csproj" />
+  </ItemGroup>
+
+  <!-- Office Core PIA (`office.dll` — Microsoft.Office.Core types). Excel COM
+       references it transitively on Workbook.Names / Application property
+       access and at COM-release time, but it isn't on nuget.org. The user's
+       machine has Office installed so we resolve the assembly at runtime by
+       probing the well-known Office install paths and seeding a private copy
+       next to our exe (see Program.cs `EnsureOfficeCorePia()`). -->
+
+</Project>

@@ -1,0 +1,71 @@
+{
+  "name": "45.BRS-2015 Report Test suspension pad offset date 17.5.2024",
+  "result": {
+    "schema_version": "0.1",
+    "document": {
+      "source_file": "45.BRS-2015 Report Test suspension pad offset date 17.5.2024",
+      "source_sheet": "201506",
+      "title": "BRS-201506 Report test suspension pad offset",
+      "model": "BRS-201506",
+      "report_date": "2024-05-17",
+      "department": "ME",
+      "marker": "Thao",
+      "line": "E2-4B",
+      "report_type": "image_dependent",
+      "primary_defect": {"canonical_name": "NG Pad offset (Suspension)", "aliases_in_document": ["suspension pad offset", "spot vision offset"]},
+      "related_defects": ["G2 separate glue"],
+      "parts": ["Suspension", "Pad"],
+      "processes": ["Spot vision", "Spot welding"],
+      "purpose": "Make standard suspension pad offset.",
+      "content": [
+        "Test suspension pad offset",
+        "Make 30 samples",
+        "Check pictures at process Spot vision"
+      ],
+      "source_cells": {"title": ["201506!C2"], "date": ["201506!Q3"], "purpose": ["201506!B6"], "content": ["201506!B9", "201506!B10", "201506!B11", "201506!B12"]}
+    },
+    "test_conditions": [
+      {"condition_id": "c1", "condition_group": "Suspension pad offset standard", "line": "E2-4B", "process": "Spot vision", "changed_factor": "suspension pad offset standardization", "source_file": "45.BRS-2015 Report Test suspension pad offset date 17.5.2024", "sheet_name": "201506", "source_cells": ["201506!C19:F20"]}
+    ],
+    "results": [
+      {"result_id": "r1", "condition_id": "c1", "measurement_type": "Spot vision NG", "date": "2024-05-16", "line": "E2-4B", "input_count": 30, "ok_count": 27, "ng_count": 0, "ng_rate_decimal": 0.0, "ng_rate_percent": 0.0, "metric_name": "Total NG rate", "judgement": "PASS", "ng_breakdown": {"OK G2": {"count": 3, "rate": 0.10}, "NG offset": {"count": 0, "rate": 0.0}}, "source_file": "...", "sheet_name": "201506", "source_cells": ["201506!C19:L20"]}
+    ],
+    "conclusions": [
+      {"conclusion_id": "k1", "topic": "Suspension pad offset standard - decision", "statement_from_report": "Result checking Spot welding NG 0/30pcs => CAN USE.", "normalized_interpretation": "No NG offset on 30 pieces; 3/30 are graded G2 (acceptable with note). No same-event baseline available - apply ng_without_baseline interpretation: standard accepted.", "source_file": "...", "sheet_name": "201506", "source_cells": ["201506!B74", "201506!B75"]}
+    ],
+    "troubleshooting_index": {
+      "defect_name": "Suspension pad offset",
+      "when_user_asks": ["suspension pad offset", "BRS-201506 pad offset standard"],
+      "suggested_checks": [
+        {"check_item": "Use 2024-05-16 30-piece vision result (3 G2, 0 NG) as suspension pad offset standard", "reason": "Decision is 'CAN USE'.", "evidence_strength": "medium", "related_process": "Spot vision", "related_part": "Suspension pad", "source_file": "...", "sheet_name": "201506", "source_cells": ["201506!C19:L20", "201506!B74:B75"]}
+      ],
+      "limitations": ["Sample size 30, single line E2-4B, no Normal baseline."]
+    },
+    "ai_extraction_log": {
+      "confidence": 0.70,
+      "assumptions": ["G2 photos treated as conditionally OK rather than NG."],
+      "warnings": ["Per-piece evidence is photo-based; image data was stripped from workbook copy."],
+      "decision_rationale": "Single 30-piece event without same-event Normal. Used ng_without_baseline narrative for absolute NG rate (0%). Report author classified result as CAN USE."
+    }
+  },
+  "translations": {
+    "ko": {
+      "document": {"title": "BRS-201506 Suspension Pad Offset 표준화 시험", "purpose": "Suspension Pad Offset 표준 수립.", "content": ["Suspension Pad Offset 시험", "샘플 30개 제작", "Spot vision 공정에서 사진 검사", "시험 수량 30pcs"]},
+      "conclusions": {"k1": {"topic": "Pad Offset 표준 - 판정", "statement_from_report": "Spot welding NG 0/30pcs => 사용 가능.", "normalized_interpretation": "30pcs에서 NG offset 없음, 3/30 G2 등급(주의 후 가능). 같은 이벤트 baseline 없음 - ng_without_baseline로 해석, 표준 채택."}},
+      "hints": {"hint_0": {"check_item": "2024-05-16 30pcs vision 결과(NG 0, G2 3)를 Suspension Pad Offset 표준으로 사용", "reason": "판정 결과: CAN USE."}},
+      "log": {"assumptions": ["G2 사진은 NG가 아닌 조건부 OK로 처리."], "warnings": ["피스 단위 근거는 사진이며, 워크북 복사본에서 이미지 제거됨."], "decision_rationale": "30pcs 단일 이벤트, 같은 이벤트 Normal 없음. 절대 NG 0%에 ng_without_baseline 적용. 작성자 판정: CAN USE."}
+    },
+    "en": {
+      "document": {"title": "BRS-201506 Suspension pad offset standardization test", "purpose": "Establish suspension pad offset standard.", "content": ["Test suspension pad offset", "Make 30 samples", "Check pictures at Spot vision", "Test quantity 30pcs"]},
+      "conclusions": {"k1": {"topic": "Pad offset standard - decision", "statement_from_report": "Spot welding NG 0/30pcs => CAN USE.", "normalized_interpretation": "No NG offset on 30 pieces, 3/30 are G2 (conditional OK). No same-event baseline - ng_without_baseline narrative: standard accepted."}},
+      "hints": {"hint_0": {"check_item": "Use 2024-05-16 30pcs vision result (0 NG, 3 G2) as pad offset standard", "reason": "Decision: CAN USE."}},
+      "log": {"assumptions": ["G2 photos treated as conditional OK, not NG."], "warnings": ["Per-piece evidence is photo-based; workbook copy has images stripped."], "decision_rationale": "Single 30pcs event with no same-event Normal. ng_without_baseline applied for absolute 0% NG. Author decision: CAN USE."}
+    },
+    "vi": {
+      "document": {"title": "BRS-201506 Thử nghiệm chuẩn hóa Suspension Pad Offset", "purpose": "Xác lập tiêu chuẩn Suspension Pad Offset.", "content": ["Thử suspension pad offset", "Làm 30 mẫu", "Kiểm tra hình ảnh tại Spot vision", "Số lượng thử 30pcs"]},
+      "conclusions": {"k1": {"topic": "Tiêu chuẩn Pad Offset - quyết định", "statement_from_report": "Spot welding NG 0/30pcs => CAN USE.", "normalized_interpretation": "Không có NG offset trên 30 mẫu, 3/30 G2 (OK có điều kiện). Không có baseline cùng sự kiện - dùng ng_without_baseline, chấp nhận tiêu chuẩn."}},
+      "hints": {"hint_0": {"check_item": "Dùng kết quả vision 30pcs ngày 2024-05-16 (0 NG, 3 G2) làm chuẩn pad offset", "reason": "Quyết định: CAN USE."}},
+      "log": {"assumptions": ["G2 được xử lý như OK có điều kiện, không phải NG."], "warnings": ["Bằng chứng theo mẫu là ảnh, bản copy workbook đã loại bỏ ảnh."], "decision_rationale": "Một sự kiện 30pcs không có Normal cùng sự kiện. Áp dụng ng_without_baseline cho NG 0%. Quyết định tác giả: CAN USE."}
+    }
+  }
+}

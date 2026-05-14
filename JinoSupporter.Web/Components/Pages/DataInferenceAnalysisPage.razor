@@ -4,232 +4,648 @@
 @inject WebRepository Repo
 @inject IJSRuntime JS
 
-<PageTitle>Data Inference — Analysis</PageTitle>
+<PageTitle>Data Inference - Aggregated Results</PageTitle>
 
 <div class="dian-root">
-
-<!-- ── Header / Filter bar ───────────────────────────────────────────────── -->
-<div class="dian-header">
-    <span class="dian-title">Normal vs Test Analysis</span>
-    <div style="flex:1;"></div>
-    <select class="form-select form-select-sm" style="width:180px;"
-            value="@(_selectedProductType ?? "")"
-            @onchange="OnProductTypeChange">
-        <option value="">All Products</option>
-        @foreach (var pt in _productTypes)
-        {
-            <option value="@pt">@pt</option>
-        }
-    </select>
-    <select class="form-select form-select-sm" style="width:230px;"
-            value="@(_selectedDataset ?? "")"
-            @onchange="OnDatasetChange">
-        <option value="">All Datasets</option>
-        @foreach (var ds in _datasets)
-        {
-            <option value="@ds">@ds</option>
-        }
-    </select>
-    <button class="btn btn-outline-secondary btn-sm" @onclick="Reload">↻ Refresh</button>
-</div>
-
-<!-- ── Summary chips ─────────────────────────────────────────────────────── -->
-@if (_rows.Count > 0)
-{
-    int improved  = _rows.Count(r => r.ImprovementPct > 0);
-    int regressed = _rows.Count(r => r.ImprovementPct < 0);
-    int noData    = _rows.Count(r => !r.ImprovementPct.HasValue);
-
-    <div class="dian-chips">
-        <span class="dian-chip">@_datasetCount dataset(s)</span>
-        <span class="dian-chip">@_rows.Count item(s)</span>
-        @if (_avgImprovement.HasValue)
-        {
-            <span class="dian-chip @(_avgImprovement.Value >= 0 ? "dian-chip-good" : "dian-chip-bad")">
-                Avg @(_avgImprovement.Value >= 0 ? "+" : "")@_avgImprovement.Value.ToString("F1")%
-            </span>
-        }
-        @if (improved  > 0) { <span class="dian-chip dian-chip-good">▲ @improved improved</span> }
-        @if (regressed > 0) { <span class="dian-chip dian-chip-bad">▼ @regressed regressed</span> }
-        @if (noData    > 0) { <span class="dian-chip">— @noData N/A</span> }
+    <div class="dian-header">
+        <div>
+            <div class="dian-title">Aggregated Results</div>
+            <div class="dian-subtitle">AI analyzed reports grouped by tags. Select a tag, then a file, then review the Excel sheet data.</div>
+        </div>
+        <div class="dian-spacer"></div>
+        <input class="form-control form-control-sm dian-search"
+               placeholder="Search tag or file"
+               value="@_search"
+               @oninput="OnSearchChanged" />
+        <button class="btn btn-outline-secondary btn-sm" @onclick="Reload">Refresh</button>
     </div>
-}
 
-<!-- ── Empty state ───────────────────────────────────────────────────────── -->
-@if (_rows.Count == 0)
-{
-    <div class="dian-empty">
-        No comparison data available.<br />
-        Save a dataset containing both <strong>normal</strong> and <strong>test</strong> groups on Input Data.
+    <div class="dian-statbar">
+        <span class="dian-stat">@_items.Count analyzed file(s)</span>
+        <span class="dian-stat">@_tagSummaries.Count tag(s)</span>
+        @if (!string.IsNullOrWhiteSpace(_selectedTag))
+        {
+            <span class="dian-stat dian-stat-active">@FilteredItems.Count item(s) for @_selectedTag</span>
+        }
     </div>
-}
-else
-{
-    <!-- ── Table ─────────────────────────────────────────────────────────── -->
-    <div class="dian-table-wrap">
-        <table class="dian-table">
-            <thead>
-                <tr>
-                    <th>Section</th>
-                    <th>Line</th>
-                    <th>Category</th>
-                    <th>Defect Type</th>
-                    <th class="n">Normal NG%</th>
-                    <th class="n">Test NG%</th>
-                    <th class="n">Improvement</th>
-                    <th class="n">N Input</th>
-                    <th class="n">T Input</th>
-                    <th>Intervention</th>
-                </tr>
-            </thead>
-            <tbody>
-                @{
-                    string prevDataset = "";
-                }
-                @foreach (var row in _rows)
-                {
-                    @if (row.DatasetName != prevDataset)
+
+    @if (_items.Count == 0)
+    {
+        <div class="dian-empty">
+            No AI analyzed reports are available yet.
+        </div>
+    }
+    else
+    {
+        <div class="dian-workspace">
+            <aside class="dian-tags-pane">
+                <div class="dian-pane-head">
+                    <strong>Tags</strong>
+                    <button class="dian-link-btn" @onclick="ClearTag" disabled="@string.IsNullOrWhiteSpace(_selectedTag)">All</button>
+                </div>
+                <div class="dian-tags-list">
+                    @foreach (var tag in VisibleTags)
                     {
-                        prevDataset = row.DatasetName;
-                        <tr class="dian-ds-header">
-                            <td colspan="10">
-                                <strong>@row.DatasetName</strong>
-                                <span class="dian-ds-meta">@row.ProductType · @row.TestDate</span>
-                            </td>
-                        </tr>
+                        <button class="dian-tag-btn @(IsSelectedTag(tag.Tag) ? "active" : "")"
+                                title="@tag.Tag"
+                                @onclick="() => SelectTag(tag.Tag)">
+                            <span>@tag.Tag</span>
+                            <em>@tag.Count</em>
+                        </button>
                     }
-                    <tr class="dian-row">
-                        <td>@row.VariableDetail</td>
-                        <td>@row.Line</td>
-                        <td>@row.DefectCategory</td>
-                        <td>@row.DefectType</td>
-                        <td class="n">@(row.NormalNgRate.HasValue ? $"{row.NormalNgRate.Value:F2}%" : "—")</td>
-                        <td class="n">@(row.TestNgRate.HasValue   ? $"{row.TestNgRate.Value:F2}%"   : "—")</td>
-                        <td class="n @ImprovementClass(row.ImprovementPct)">@ImprovementText(row.ImprovementPct)</td>
-                        <td class="n">@(row.NormalInputQty > 0 ? row.NormalInputQty.ToString() : "—")</td>
-                        <td class="n">@(row.TestInputQty   > 0 ? row.TestInputQty.ToString()   : "—")</td>
-                        <td>@row.Intervention</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
+                </div>
+            </aside>
 
+            <aside class="dian-files-pane">
+                <div class="dian-pane-head">
+                    <strong>Files</strong>
+                    <span>@FilteredItems.Count</span>
+                </div>
+                <div class="dian-file-list">
+                    @foreach (var item in FilteredItems)
+                    {
+                        <button class="dian-file-btn @(IsSelectedDataset(item.DatasetName) ? "active" : "")"
+                                @onclick="() => SelectDataset(item.DatasetName)">
+                            <span class="dian-file-name">@item.DatasetName</span>
+                            <span class="dian-file-title">@ShortText(item.Title, 120)</span>
+                            <span class="dian-file-meta">
+                                @if (!string.IsNullOrWhiteSpace(item.ReportType))
+                                {
+                                    <span>@item.ReportType</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(item.PrimaryDefect))
+                                {
+                                    <span>@item.PrimaryDefect</span>
+                                }
+                                @if (item.ResultCount > 0)
+                                {
+                                    <span>@item.ResultCount result(s)</span>
+                                }
+                            </span>
+                        </button>
+                    }
+                </div>
+            </aside>
+
+            <main class="dian-excel-pane">
+                @if (SelectedItem is null)
+                {
+                    <div class="dian-empty dian-empty-fill">
+                        Select a tag and file to show the Excel sheet data.
+                    </div>
+                }
+                else
+                {
+                    <div class="dian-excel-head">
+                        <div>
+                            <div class="dian-excel-file">@SelectedItem.DatasetName</div>
+                            <div class="dian-excel-title">@SelectedItem.Title</div>
+                        </div>
+                        <div class="dian-view-toggle">
+                            <button class="dian-view-btn @(_excelView == "table" ? "active" : "")"
+                                    @onclick='() => _excelView = "table"'
+                                    disabled="@string.IsNullOrWhiteSpace(_selectedExcelPaste)">Table</button>
+                            <button class="dian-view-btn @(_excelView == "text" ? "active" : "")"
+                                    @onclick='() => _excelView = "text"'
+                                    disabled="@string.IsNullOrWhiteSpace(_selectedExcelPaste)">Text</button>
+                        </div>
+                    </div>
+
+                    @if (SelectedItem.Tags.Count > 0)
+                    {
+                        <div class="dian-selected-tags">
+                            @foreach (var t in SelectedItem.Tags.Take(18))
+                            {
+                                <button @onclick="() => SelectTag(t)" class="dian-mini-tag">@t</button>
+                            }
+                        </div>
+                    }
+
+                    @if (string.IsNullOrWhiteSpace(_selectedExcelPaste))
+                    {
+                        <div class="dian-empty dian-empty-fill">
+                            This file has no saved Excel paste data.
+                        </div>
+                    }
+                    else if (_excelView == "text")
+                    {
+                        <pre class="dian-excel-text">@_selectedExcelPaste</pre>
+                    }
+                    else
+                    {
+                        <div class="dian-table-preview">
+                            @foreach (var sheet in ParsePastedTsv(_selectedExcelPaste))
+                            {
+                                <div class="dian-sheet-name">@sheet.Name</div>
+                                <div class="dian-sheet-scroll">
+                                    <table class="dian-preview-table">
+                                        <tbody>
+                                            @foreach (var row in sheet.Rows)
+                                            {
+                                                <tr>
+                                                    @foreach (var cell in row)
+                                                    {
+                                                        <td style="@CellStyle(cell)">@CleanExcelSerialDateText(cell.Value)</td>
+                                                    }
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </main>
+        </div>
+    }
 </div>
 
 <style>
     .dian-root {
         flex: 1; min-height: 0; display: flex; flex-direction: column;
-        overflow: hidden; background: #f8fafc;
+        overflow: hidden; background: #f6f7fb; color: #172033;
     }
     .dian-header {
-        display: flex; align-items: center; gap: 8px; padding: 10px 14px;
-        background: #fff; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+        display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+        background: #fff; border-bottom: 1px solid #dfe5ee; flex-shrink: 0;
     }
-    .dian-title { font-size: 15px; font-weight: 700; color: #1e293b; }
-
-    .dian-chips {
-        display: flex; flex-wrap: wrap; gap: 6px;
-        padding: 8px 14px; background: #fff; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+    .dian-title { font-size: 15px; font-weight: 750; }
+    .dian-subtitle { font-size: 11px; color: #667085; margin-top: 2px; }
+    .dian-spacer { flex: 1; }
+    .dian-search { width: 260px; }
+    .dian-statbar {
+        display: flex; gap: 6px; padding: 8px 14px; background: #fff;
+        border-bottom: 1px solid #dfe5ee; flex-shrink: 0;
     }
-    .dian-chip {
-        padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
-        background: #f1f5f9; color: #475569;
+    .dian-stat {
+        font-size: 11px; font-weight: 650; padding: 2px 9px; border-radius: 12px;
+        background: #eef2f7; color: #475467;
     }
-    .dian-chip-good { background: #dcfce7; color: #15803d; }
-    .dian-chip-bad  { background: #fee2e2; color: #b91c1c; }
-
+    .dian-stat-active { background: #dbeafe; color: #1d4ed8; }
+    .dian-workspace {
+        flex: 1; min-height: 0; display: grid;
+        grid-template-columns: minmax(210px, 260px) minmax(300px, 400px) minmax(0, 1fr);
+        overflow: hidden;
+    }
+    .dian-tags-pane, .dian-files-pane, .dian-excel-pane {
+        min-height: 0; overflow: hidden; background: #fff;
+        border-right: 1px solid #dfe5ee;
+    }
+    .dian-excel-pane { border-right: none; display: flex; flex-direction: column; }
+    .dian-pane-head {
+        height: 42px; display: flex; align-items: center; justify-content: space-between;
+        padding: 0 12px; border-bottom: 1px solid #e5eaf1; font-size: 12px;
+        color: #344054; background: #fbfcfe;
+    }
+    .dian-link-btn {
+        border: 0; background: transparent; color: #2563eb; font-size: 11px; font-weight: 700;
+        cursor: pointer;
+    }
+    .dian-link-btn:disabled { color: #98a2b3; cursor: default; }
+    .dian-tags-list, .dian-file-list { height: calc(100% - 42px); overflow: auto; padding: 8px; }
+    .dian-tag-btn {
+        width: 100%; min-height: 30px; display: flex; align-items: center; justify-content: space-between;
+        gap: 8px; padding: 5px 8px; margin-bottom: 5px; border: 1px solid #e5eaf1;
+        background: #fff; color: #344054; border-radius: 6px; text-align: left;
+        font-size: 11px; font-weight: 650; cursor: pointer;
+    }
+    .dian-tag-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dian-tag-btn em {
+        min-width: 26px; text-align: right; font-style: normal; color: #667085;
+        font-variant-numeric: tabular-nums;
+    }
+    .dian-tag-btn:hover, .dian-file-btn:hover { background: #f8fafc; border-color: #bfd4ff; }
+    .dian-tag-btn.active {
+        background: #eaf2ff; border-color: #3b82f6; color: #1d4ed8;
+    }
+    .dian-file-btn {
+        display: flex; flex-direction: column; gap: 3px; width: 100%; padding: 8px 9px;
+        margin-bottom: 7px; border: 1px solid #e5eaf1; background: #fff; border-radius: 6px;
+        text-align: left; cursor: pointer;
+    }
+    .dian-file-btn.active { border-color: #2563eb; background: #eff6ff; }
+    .dian-file-name {
+        font-size: 12px; font-weight: 750; color: #172033;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .dian-file-title {
+        font-size: 11px; color: #475467; line-height: 1.35;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .dian-file-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+    .dian-file-meta span {
+        font-size: 10px; color: #475467; background: #eef2f7; padding: 1px 6px; border-radius: 10px;
+    }
+    .dian-excel-head {
+        min-height: 58px; display: flex; align-items: center; justify-content: space-between;
+        gap: 12px; padding: 9px 12px; border-bottom: 1px solid #e5eaf1; background: #fff;
+    }
+    .dian-excel-file { font-size: 13px; font-weight: 750; color: #172033; }
+    .dian-excel-title { font-size: 11px; color: #667085; margin-top: 2px; }
+    .dian-view-toggle { display: flex; gap: 4px; }
+    .dian-view-btn {
+        border: 1px solid #d0d5dd; background: #fff; color: #475467; border-radius: 5px;
+        padding: 3px 10px; font-size: 11px; font-weight: 650; cursor: pointer;
+    }
+    .dian-view-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .dian-view-btn:disabled { opacity: .45; cursor: default; }
+    .dian-selected-tags {
+        display: flex; flex-wrap: wrap; gap: 5px; padding: 7px 12px;
+        border-bottom: 1px solid #e5eaf1; background: #fbfcfe;
+    }
+    .dian-mini-tag {
+        border: 0; border-radius: 10px; padding: 2px 7px; font-size: 10px;
+        font-weight: 650; background: #eef2ff; color: #3440a0; cursor: pointer;
+    }
+    .dian-table-preview { flex: 1; min-height: 0; overflow: auto; padding: 10px 12px; }
+    .dian-sheet-name {
+        position: sticky; top: 0; z-index: 2; display: inline-block;
+        margin: 0 0 6px 0; padding: 4px 9px; border-radius: 5px;
+        background: #172033; color: #fff; font-size: 11px; font-weight: 750;
+    }
+    .dian-sheet-scroll { overflow: auto; margin-bottom: 16px; }
+    .dian-preview-table {
+        border-collapse: collapse; width: max-content; min-width: 100%;
+        background: #fff; font-size: 11px; font-family: ui-monospace, Consolas, monospace;
+    }
+    .dian-preview-table td {
+        border: 1px solid #dfe5ee; padding: 2px 6px;
+        white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis;
+        color: #172033;
+    }
+    .dian-excel-text {
+        flex: 1; min-height: 0; overflow: auto; margin: 0; padding: 10px 12px;
+        background: #fbfcfe; color: #344054; font-size: 11px; line-height: 1.45;
+        white-space: pre-wrap; word-break: break-word;
+    }
     .dian-empty {
-        padding: 60px; text-align: center; color: #94a3b8; font-size: 14px; line-height: 1.7;
+        padding: 60px; text-align: center; color: #98a2b3; font-size: 14px; line-height: 1.7;
     }
-
-    .dian-table-wrap { flex: 1; overflow: auto; }
-    .dian-table      { border-collapse: collapse; width: 100%; font-size: 12px; }
-    .dian-table th, .dian-table td {
-        border-bottom: 1px solid #e2e8f0; padding: 5px 9px; text-align: left;
-    }
-    .dian-table thead th {
-        background: #f1f5f9; font-weight: 600; color: #475569; font-size: 11px;
-        position: sticky; top: 0; z-index: 1;
-    }
-    .dian-row:hover { background: #f8fafc; }
-    td.n { text-align: right; font-variant-numeric: tabular-nums; }
-    th.n { text-align: right; }
-
-    .dian-ds-header td {
-        background: #1e293b; color: #e2e8f0; padding: 6px 10px;
-        font-size: 12px; border-bottom: none;
-    }
-    .dian-ds-meta { font-size: 11px; color: #94a3b8; margin-left: 10px; font-weight: 400; }
-
-    .imp-good  { color: #15803d; font-weight: 700; }
-    .imp-bad   { color: #b91c1c; font-weight: 700; }
-    .imp-zero  { color: #64748b; }
-    .imp-na    { color: #cbd5e1; }
+    .dian-empty-fill { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
 </style>
 
 @code {
-    private List<string>         _productTypes        = [];
-    private List<string>         _datasets            = [];
-    private List<ImprovementRow> _rows                = [];
-    private string?              _selectedProductType = null;
-    private string?              _selectedDataset     = null;
-    private int                  _datasetCount        = 0;
-    private double?              _avgImprovement      = null;
+    private sealed record AnalysisDatasetItem(
+        string DatasetName,
+        string ProductType,
+        string ReportDate,
+        string Title,
+        string ReportType,
+        string PrimaryDefect,
+        string SourceFile,
+        int ResultCount,
+        List<string> Tags);
 
-    protected override void OnInitialized()
+    private sealed record TagSummary(string Tag, int Count);
+    private sealed record TsvCell(string Value, string? Bg, string? Fg, bool Bold);
+    private sealed record TsvSheet(string Name, List<List<TsvCell>> Rows);
+
+    private List<AnalysisDatasetItem> _items = [];
+    private List<TagSummary> _tagSummaries = [];
+    private string? _selectedTag;
+    private string? _selectedDataset;
+    private string _selectedExcelPaste = "";
+    private string _excelView = "table";
+    private string _search = "";
+
+    private AnalysisDatasetItem? SelectedItem
+        => _selectedDataset is null
+            ? null
+            : _items.FirstOrDefault(x => string.Equals(x.DatasetName, _selectedDataset, StringComparison.Ordinal));
+
+    private List<AnalysisDatasetItem> FilteredItems
     {
-        _productTypes = Repo.GetAllProductTypes();
-        _datasets     = Repo.GetRawReportDatasets();
-        LoadRows();
+        get
+        {
+            IEnumerable<AnalysisDatasetItem> query = _items;
+            if (!string.IsNullOrWhiteSpace(_selectedTag))
+            {
+                query = query.Where(x => x.Tags.Contains(_selectedTag, StringComparer.OrdinalIgnoreCase));
+            }
+            if (!string.IsNullOrWhiteSpace(_search))
+            {
+                string s = _search.Trim();
+                query = query.Where(x =>
+                    x.DatasetName.Contains(s, StringComparison.OrdinalIgnoreCase)
+                    || x.Title.Contains(s, StringComparison.OrdinalIgnoreCase)
+                    || x.Tags.Any(t => t.Contains(s, StringComparison.OrdinalIgnoreCase)));
+            }
+            return query
+                .OrderByDescending(x => !string.IsNullOrWhiteSpace(x.ReportDate) ? x.ReportDate : "")
+                .ThenBy(x => x.DatasetName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
     }
+
+    private List<TagSummary> VisibleTags
+    {
+        get
+        {
+            IEnumerable<TagSummary> query = _tagSummaries;
+            if (!string.IsNullOrWhiteSpace(_search))
+            {
+                string s = _search.Trim();
+                query = query.Where(x => x.Tag.Contains(s, StringComparison.OrdinalIgnoreCase)
+                                         || _items.Any(i =>
+                                             i.Tags.Contains(x.Tag, StringComparer.OrdinalIgnoreCase)
+                                             && (i.DatasetName.Contains(s, StringComparison.OrdinalIgnoreCase)
+                                                 || i.Title.Contains(s, StringComparison.OrdinalIgnoreCase))));
+            }
+            return query.Take(300).ToList();
+        }
+    }
+
+    protected override void OnInitialized() => Reload();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender) await JS.InvokeVoidAsync("diFullPage.enter");
     }
 
-    private void OnProductTypeChange(ChangeEventArgs e)
-    {
-        _selectedProductType = e.Value?.ToString() is { Length: > 0 } s ? s : null;
-        _selectedDataset     = null;
-        _datasets            = Repo.GetRawReportDatasets(_selectedProductType);
-        LoadRows();
-    }
-
-    private void OnDatasetChange(ChangeEventArgs e)
-    {
-        _selectedDataset = e.Value?.ToString() is { Length: > 0 } s ? s : null;
-        LoadRows();
-    }
-
     private void Reload()
     {
-        _productTypes = Repo.GetAllProductTypes();
-        _datasets     = Repo.GetRawReportDatasets(_selectedProductType);
-        LoadRows();
+        var list = new List<AnalysisDatasetItem>();
+        foreach (var report in Repo.GetAllRawReports())
+        {
+            DatasetSummaryRecord? summary = Repo.GetDatasetSummaryRecord(report.DatasetName);
+            AiDocBundle? doc = Repo.GetAiDocBundle(report.DatasetName);
+            if (summary is null && doc is null) continue;
+
+            var tags = BuildTags(report, summary, doc);
+            if (tags.Count == 0) tags.Add("untagged");
+
+            string title = FirstNonBlank(doc?.Title, summary?.Headline, summary?.Summary, report.DatasetName);
+            string reportType = FirstNonBlank(doc?.ReportType, summary?.ReportType);
+            string primary = FirstNonBlank(doc?.PrimaryDefect, doc?.RelatedDefects.FirstOrDefault(), doc?.Hints.FirstOrDefault()?.DefectName);
+            string sourceFile = FirstNonBlank(doc?.SourceFile, report.DatasetName);
+            string reportDate = FirstNonBlank(doc?.ReportDate, report.ReportDate);
+            int resultCount = doc?.Results.Count ?? report.MeasurementCount;
+
+            list.Add(new AnalysisDatasetItem(
+                report.DatasetName,
+                report.ProductType,
+                reportDate,
+                title,
+                reportType,
+                primary,
+                sourceFile,
+                resultCount,
+                tags));
+        }
+
+        _items = list;
+        _tagSummaries = _items
+            .SelectMany(x => x.Tags.Distinct(StringComparer.OrdinalIgnoreCase))
+            .GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .Select(g => new TagSummary(g.Key, g.Count()))
+            .OrderByDescending(x => x.Count)
+            .ThenBy(x => x.Tag, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (_selectedDataset is not null && _items.All(x => x.DatasetName != _selectedDataset))
+        {
+            _selectedDataset = null;
+            _selectedExcelPaste = "";
+        }
+        if (_selectedTag is not null && _tagSummaries.All(x => !string.Equals(x.Tag, _selectedTag, StringComparison.OrdinalIgnoreCase)))
+        {
+            _selectedTag = null;
+        }
     }
 
-    private void LoadRows()
+    private void OnSearchChanged(ChangeEventArgs e) => _search = e.Value?.ToString() ?? "";
+
+    private void SelectTag(string tag)
     {
-        _rows = Repo.GetImprovementComparisons(_selectedProductType, _selectedDataset);
-        _datasetCount = _rows.Select(r => r.DatasetName).Distinct().Count();
-        var valid = _rows.Where(r => r.ImprovementPct.HasValue).Select(r => r.ImprovementPct!.Value).ToList();
-        _avgImprovement = valid.Count > 0 ? valid.Average() : null;
+        _selectedTag = tag;
+        _selectedDataset = null;
+        _selectedExcelPaste = "";
     }
 
-    private static string ImprovementClass(double? pct) => pct switch
+    private void ClearTag()
     {
-        null   => "imp-na",
-        > 0    => "imp-good",
-        < 0    => "imp-bad",
-        _      => "imp-zero"
-    };
+        _selectedTag = null;
+        _selectedDataset = null;
+        _selectedExcelPaste = "";
+    }
 
-    private static string ImprovementText(double? pct) => pct.HasValue
-        ? (pct.Value >= 0 ? $"+{pct.Value:F1}%" : $"{pct.Value:F1}%")
-        : "—";
+    private void SelectDataset(string datasetName)
+    {
+        _selectedDataset = datasetName;
+        _selectedExcelPaste = Repo.GetExtractedText(datasetName, WebRepository.TextKindExcelPaste) ?? "";
+        _excelView = "table";
+    }
+
+    private bool IsSelectedTag(string tag)
+        => string.Equals(_selectedTag, tag, StringComparison.OrdinalIgnoreCase);
+
+    private bool IsSelectedDataset(string datasetName)
+        => string.Equals(_selectedDataset, datasetName, StringComparison.Ordinal);
+
+    private static List<string> BuildTags(RawReportInfo report, DatasetSummaryRecord? summary, AiDocBundle? doc)
+    {
+        var set = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (summary?.Tags is not null)
+        {
+            foreach (string tag in summary.Tags) AddTag(set, tag);
+        }
+
+        AddTag(set, report.ProductType);
+        AddTag(set, doc?.ReportType ?? summary?.ReportType);
+        AddTag(set, doc?.PrimaryDefect);
+        foreach (string value in doc?.RelatedDefects ?? []) AddTag(set, value);
+        foreach (string value in doc?.Parts ?? []) AddTag(set, value);
+        foreach (string value in doc?.Processes ?? []) AddTag(set, value);
+        foreach (var result in doc?.Results ?? [])
+        {
+            AddTag(set, result.MeasurementType);
+            AddTag(set, result.ConditionProcess);
+            AddTag(set, result.ChangedFactor);
+            AddTag(set, result.MetricName);
+        }
+        foreach (var hint in doc?.Hints ?? [])
+        {
+            AddTag(set, hint.DefectName);
+            AddTag(set, hint.RelatedProcess);
+            AddTag(set, hint.RelatedPart);
+        }
+        if (summary?.Context is not null)
+        {
+            AddTag(set, summary.Context.Process);
+            AddTag(set, summary.Context.Stage);
+        }
+        foreach (var evidence in summary?.Evidence ?? [])
+        {
+            AddTag(set, evidence.Metric);
+        }
+
+        return set.Take(80).ToList();
+    }
+
+    private static void AddTag(SortedSet<string> set, string? raw)
+    {
+        string tag = NormalizeTag(raw);
+        if (string.IsNullOrWhiteSpace(tag)) return;
+        set.Add(tag);
+    }
+
+    private static string NormalizeTag(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "";
+        string s = raw.Trim().ToLowerInvariant();
+        if (s.Length > 70) return "";
+
+        var sb = new System.Text.StringBuilder(s.Length);
+        bool lastDash = false;
+        foreach (char ch in s)
+        {
+            if (char.IsLetterOrDigit(ch))
+            {
+                sb.Append(ch);
+                lastDash = false;
+            }
+            else if (!lastDash)
+            {
+                sb.Append('-');
+                lastDash = true;
+            }
+        }
+        string tag = sb.ToString().Trim('-');
+        if (tag.Length < 2) return "";
+
+        string[] stop =
+        [
+            "test", "normal", "result", "report", "clean", "sheet", "input", "ok", "ng",
+            "date", "line", "total", "rate", "summary", "unknown", "none"
+        ];
+        if (stop.Contains(tag, StringComparer.OrdinalIgnoreCase)) return "";
+        if (System.Text.RegularExpressions.Regex.IsMatch(tag, @"^\d{4}-\d{2}-\d{2}$")) return "";
+        return tag;
+    }
+
+    private static string FirstNonBlank(params string?[] values)
+        => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim() ?? "";
+
+    private static string ShortText(string text, int max)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return "";
+        text = text.Trim();
+        return text.Length <= max ? text : text[..Math.Max(0, max - 1)] + "...";
+    }
+
+    private static List<TsvSheet> ParsePastedTsv(string tsv)
+    {
+        var sheets = new List<TsvSheet>();
+        if (string.IsNullOrWhiteSpace(tsv)) return sheets;
+
+        string currentName = "(sheet)";
+        var currentRows = new List<List<TsvCell>>();
+        bool seenSheetHeader = false;
+
+        foreach (string rawLine in tsv.Split('\n'))
+        {
+            string line = rawLine.TrimEnd('\r');
+            if (line.StartsWith("## ", StringComparison.Ordinal))
+            {
+                if (seenSheetHeader) sheets.Add(new TsvSheet(currentName, currentRows));
+                currentName = line[3..].Trim();
+                currentRows = [];
+                seenSheetHeader = true;
+                continue;
+            }
+            if (string.IsNullOrEmpty(line)) continue;
+
+            var cells = new List<TsvCell>();
+            foreach (string raw in line.Split('\t'))
+            {
+                cells.Add(ParseCell(raw));
+            }
+            currentRows.Add(cells);
+        }
+
+        if (seenSheetHeader) sheets.Add(new TsvSheet(currentName, currentRows));
+        else if (currentRows.Count > 0) sheets.Add(new TsvSheet("(sheet)", currentRows));
+        return sheets;
+    }
+
+    private static TsvCell ParseCell(string raw)
+    {
+        const char open = '\u3014';
+        const char close = '\u3015';
+        if (raw.Length == 0 || raw[0] != open) return new TsvCell(raw, null, null, false);
+        int end = raw.IndexOf(close);
+        if (end < 0) return new TsvCell(raw, null, null, false);
+
+        string tag = raw[1..end];
+        string value = raw[(end + 1)..];
+        string? bg = null;
+        string? fg = null;
+        bool bold = false;
+        foreach (string part in tag.Split(','))
+        {
+            string p = part.Trim();
+            if (p.StartsWith("bg=", StringComparison.Ordinal)) bg = p[3..];
+            else if (p.StartsWith("fg=", StringComparison.Ordinal)) fg = p[3..];
+            else if (p == "b") bold = true;
+        }
+        return new TsvCell(value, bg, fg, bold);
+    }
+
+    private static string CellStyle(TsvCell cell)
+    {
+        var sb = new System.Text.StringBuilder();
+        if (!string.IsNullOrWhiteSpace(cell.Bg)) sb.Append("background:").Append(cell.Bg).Append(';');
+        if (!string.IsNullOrWhiteSpace(cell.Fg)) sb.Append("color:").Append(cell.Fg).Append(';');
+        if (cell.Bold) sb.Append("font-weight:700;");
+        return sb.ToString();
+    }
+
+    private static string CleanExcelSerialDateText(string? value)
+    {
+        string text = value ?? "";
+        if (string.IsNullOrWhiteSpace(text)) return "";
+
+        text = System.Text.RegularExpressions.Regex.Replace(
+            text,
+            @"\b(?:Excel\s+serial(?:\s+date)?|serial\s+date)\s+([0-9]{5}(?:\.\d+)?)\s*(?:=|:|->)?\s*(\d{4}-\d{2}-\d{2})\b",
+            "$2",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        text = System.Text.RegularExpressions.Regex.Replace(
+            text,
+            @"\b([0-9]{5}(?:\.\d+)?)\s*\(=\s*(\d{4}-\d{2}-\d{2})\)",
+            "$2");
+
+        text = System.Text.RegularExpressions.Regex.Replace(
+            text,
+            @"\b(?:Excel\s+serial(?:\s+date)?|serial\s+date)\s+([0-9]{5}(?:\.\d+)?)\b",
+            m => TryExcelSerialDate(m.Groups[1].Value, out DateTime date)
+                ? date.ToString("yyyy-MM-dd")
+                : m.Value,
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        return text.Trim();
+    }
+
+    private static bool TryExcelSerialDate(string? value, out DateTime date)
+    {
+        date = default;
+        string text = (value ?? "").Trim();
+        if (!System.Text.RegularExpressions.Regex.IsMatch(text, @"^\d{5}(?:\.0+)?$")) return false;
+        if (!double.TryParse(text, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out double serial)) return false;
+        if (serial < 20000 || serial > 80000) return false;
+        try
+        {
+            date = DateTime.FromOADate(serial).Date;
+            return date.Year is >= 1954 and <= 2119;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     public async ValueTask DisposeAsync()
     {

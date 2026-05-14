@@ -1,0 +1,92 @@
+{
+  "name": "46. BRS-201506 Report checking dimension Frame and Ring Plate date 20.5.2024",
+  "result": {
+    "schema_version": "0.1",
+    "document": {
+      "source_file": "46. BRS-201506 Report checking dimension Frame and Ring Plate date 20.5.2024",
+      "source_sheet": "Report (4)",
+      "title": "BRS-201506 Checking dimension Frame and Ring Plate",
+      "model": "BRS-201506",
+      "report_date": "2024-05-20",
+      "department": "ME",
+      "marker": "Thao",
+      "report_type": "measurement_spec",
+      "primary_defect": {"canonical_name": "Frame/Ring Plate dimension", "aliases_in_document": ["dimension Frame", "dimension Ring Plate"]},
+      "related_defects": ["NG Function (root-cause investigation)"],
+      "parts": ["Frame", "Ring Plate"],
+      "processes": ["Frame press", "Ring Plate press"],
+      "purpose": "Investigate reason of NG Function by checking Frame and Ring Plate dimensions.",
+      "content": ["Measure Frame: Length 18.00-18.02 spec / Width 10.73-10.76 spec", "Measure Ring Plate: Length 13.97-14.03 / Width 9.81-9.87", "Sample 5pcs"],
+      "source_cells": {"title": ["Report (4)!D2"], "date": ["Report (4)!U3"], "purpose": ["Report (4)!B6"], "content": ["Report (4)!B8", "Report (4)!B9"]}
+    },
+    "test_conditions": [
+      {"condition_id": "c1", "condition_group": "Frame dimension audit", "process": "Frame press / measurement", "changed_factor": "n/a - dimensional audit", "source_file": "...", "sheet_name": "Report (4)", "source_cells": ["Report (4)!D14"]}
+    ],
+    "results": [
+      {"result_id": "f_len_avg", "condition_id": "c1", "measurement_type": "Frame Length", "date": "2024-05-20", "metric_name": "Length AVG", "metric_value": 18.026, "unit": "mm", "judgement": "OVER spec (18.00-18.02)", "source_file": "...", "sheet_name": "Report (4)", "source_cells": ["Report (4)!F21"]},
+      {"result_id": "f_len_max", "condition_id": "c1", "measurement_type": "Frame Length", "date": "2024-05-20", "metric_name": "Length MAX", "metric_value": 18.04, "unit": "mm", "judgement": "OVER spec (18.00-18.02)", "source_file": "...", "sheet_name": "Report (4)", "source_cells": ["Report (4)!F20"]},
+      {"result_id": "f_len_min", "condition_id": "c1", "measurement_type": "Frame Length", "date": "2024-05-20", "metric_name": "Length MIN", "metric_value": 18.02, "unit": "mm", "judgement": "AT upper limit", "source_file": "...", "sheet_name": "Report (4)", "source_cells": ["Report (4)!F19"]},
+      {"result_id": "f_wid_avg", "condition_id": "c1", "measurement_type": "Frame Width", "date": "2024-05-20", "metric_name": "Width AVG", "metric_value": 10.762, "unit": "mm", "judgement": "OVER spec (10.73-10.76)", "source_file": "...", "sheet_name": "Report (4)", "source_cells": ["Report (4)!H21"]},
+      {"result_id": "f_wid_max", "condition_id": "c1", "measurement_type": "Frame Width", "date": "2024-05-20", "metric_name": "Width MAX", "metric_value": 10.77, "unit": "mm", "judgement": "OVER spec (10.73-10.76)", "source_file": "...", "sheet_name": "Report (4)", "source_cells": ["Report (4)!H20"]},
+      {"result_id": "rp_len_avg", "condition_id": "c1", "measurement_type": "Ring Plate Length", "date": "2024-05-20", "metric_name": "Length AVG", "metric_value": 14.017, "unit": "mm", "judgement": "WITHIN spec (13.97-14.03)", "source_file": "...", "sheet_name": "Report (4)", "source_cells": ["Report (4)!L21"]},
+      {"result_id": "rp_wid_avg", "condition_id": "c1", "measurement_type": "Ring Plate Width", "date": "2024-05-20", "metric_name": "Width AVG", "metric_value": 9.845, "unit": "mm", "judgement": "WITHIN spec (9.81-9.87)", "source_file": "...", "sheet_name": "Report (4)", "source_cells": ["Report (4)!N21"]}
+    ],
+    "conclusions": [
+      {"conclusion_id": "k1", "topic": "Frame dimension exceeds spec", "statement_from_report": "Measurement of Frame Length 18.02-18.04, Width 10.75-10.77 vs spec Length 18.00-18.02 / Width 10.73-10.76.", "normalized_interpretation": "Frame Length AVG 18.026 mm exceeds upper spec 18.02 mm by 0.006 mm; MAX 18.04 mm is 0.02 mm above spec. Width AVG 10.762 mm just above 10.76 mm upper limit, MAX 10.77 mm. Frame is oversized vs spec - candidate cause of NG Function.", "source_file": "...", "sheet_name": "Report (4)", "source_cells": ["Report (4)!F14:I21"]},
+      {"conclusion_id": "k2", "topic": "Ring Plate within spec", "statement_from_report": "Ring Plate Length AVG 14.017, Width AVG 9.845.", "normalized_interpretation": "Ring Plate measurements are within stated spec (Length 13.97-14.03, Width 9.81-9.87). No dimensional defect for Ring Plate.", "source_file": "...", "sheet_name": "Report (4)", "source_cells": ["Report (4)!L14:O21"]}
+    ],
+    "troubleshooting_index": {
+      "defect_name": "NG Function suspected dimensional cause",
+      "when_user_asks": ["frame dimension over spec", "ring plate dimension"],
+      "suggested_checks": [
+        {"check_item": "Tighten Frame press die for Length and Width (target 18.00-18.02 / 10.73-10.76)", "reason": "5/5 Frame samples show Length 18.02-18.04 and Width 10.75-10.77, all on or above upper spec.", "evidence_strength": "strong", "related_process": "Frame press", "related_part": "Frame", "source_file": "...", "sheet_name": "Report (4)", "source_cells": ["Report (4)!F14:I21"]},
+        {"check_item": "Keep Ring Plate process as-is", "reason": "All Ring Plate measurements within spec.", "evidence_strength": "medium", "related_process": "Ring Plate press", "related_part": "Ring Plate", "source_file": "...", "sheet_name": "Report (4)", "source_cells": ["Report (4)!L14:O21"]}
+      ],
+      "limitations": ["Sample size 5pcs only."]
+    },
+    "ai_extraction_log": {
+      "confidence": 0.85,
+      "assumptions": ["Two measurements per sample (left/right or two points) preserved as paired."],
+      "warnings": ["No Normal baseline - judged purely against the printed spec band."],
+      "decision_rationale": "Frame Length and Width both ride at or above upper spec on all 5 samples. Ring Plate within spec. Frame oversize is the likely dimensional contributor to NG Function under investigation."
+    }
+  },
+  "translations": {
+    "ko": {
+      "document": {"title": "BRS-201506 Frame과 Ring Plate 치수 점검", "purpose": "NG Function 원인을 찾기 위해 Frame과 Ring Plate 치수 측정.", "content": ["Frame 측정 (Length 18.00-18.02, Width 10.73-10.76)", "Ring Plate 측정 (Length 13.97-14.03, Width 9.81-9.87)", "샘플 5pcs"]},
+      "conclusions": {
+        "k1": {"topic": "Frame 치수 스펙 초과", "statement_from_report": "Frame Length 18.02-18.04, Width 10.75-10.77 vs 스펙 18.00-18.02 / 10.73-10.76.", "normalized_interpretation": "Length AVG 18.026mm로 상한 18.02 +0.006mm 초과, MAX 18.04. Width AVG 10.762, MAX 10.77 - 상한 초과. Frame이 스펙보다 큼 → NG Function 후보 원인."},
+        "k2": {"topic": "Ring Plate 스펙 내", "statement_from_report": "Length AVG 14.017, Width AVG 9.845.", "normalized_interpretation": "Ring Plate는 스펙 내. 치수 결함 없음."}
+      },
+      "hints": {
+        "hint_0": {"check_item": "Frame 프레스 다이 (Length/Width) 조정 - 스펙 18.00-18.02 / 10.73-10.76", "reason": "5/5 샘플 모두 상한 이상."},
+        "hint_1": {"check_item": "Ring Plate 공정은 유지", "reason": "스펙 내."}
+      },
+      "log": {"assumptions": ["샘플당 측정 2회(좌/우)로 보존."], "warnings": ["Normal baseline 없음 - 인쇄된 스펙으로만 판정."], "decision_rationale": "5/5 샘플 Frame Length, Width 상한 이상. Ring Plate는 OK. Frame 오버사이즈가 NG Function 후보 원인."}
+    },
+    "en": {
+      "document": {"title": "BRS-201506 Checking Frame and Ring Plate dimensions", "purpose": "Investigate the cause of NG Function by measuring Frame and Ring Plate.", "content": ["Measure Frame (Length 18.00-18.02, Width 10.73-10.76)", "Measure Ring Plate (Length 13.97-14.03, Width 9.81-9.87)", "Sample 5pcs"]},
+      "conclusions": {
+        "k1": {"topic": "Frame dimension exceeds spec", "statement_from_report": "Frame Length 18.02-18.04, Width 10.75-10.77 vs spec 18.00-18.02 / 10.73-10.76.", "normalized_interpretation": "Length AVG 18.026 mm exceeds upper spec 18.02 by 0.006 mm; MAX 18.04 mm is 0.02 above. Width AVG 10.762, MAX 10.77 - above upper limit. Oversize Frame is candidate cause of NG Function."},
+        "k2": {"topic": "Ring Plate within spec", "statement_from_report": "Length AVG 14.017, Width AVG 9.845.", "normalized_interpretation": "Ring Plate within spec. No dimensional defect."}
+      },
+      "hints": {
+        "hint_0": {"check_item": "Tighten Frame press die for Length/Width back to 18.00-18.02 / 10.73-10.76", "reason": "5/5 samples ride on or above upper spec."},
+        "hint_1": {"check_item": "Keep Ring Plate process unchanged", "reason": "All within spec."}
+      },
+      "log": {"assumptions": ["Two measurements per sample (left/right) preserved as paired."], "warnings": ["No Normal baseline - judged only against printed spec."], "decision_rationale": "5/5 Frame samples at/above upper spec, Ring Plate OK. Oversize Frame is the likely dimensional contributor to NG Function under investigation."}
+    },
+    "vi": {
+      "document": {"title": "BRS-201506 Kiểm tra kích thước Frame và Ring Plate", "purpose": "Tìm nguyên nhân NG Function bằng cách đo Frame và Ring Plate.", "content": ["Đo Frame (Length 18.00-18.02, Width 10.73-10.76)", "Đo Ring Plate (Length 13.97-14.03, Width 9.81-9.87)", "Mẫu 5pcs"]},
+      "conclusions": {
+        "k1": {"topic": "Frame vượt spec", "statement_from_report": "Frame Length 18.02-18.04, Width 10.75-10.77 vs spec 18.00-18.02 / 10.73-10.76.", "normalized_interpretation": "Length AVG 18.026 mm vượt trên giới hạn 18.02 (+0.006), MAX 18.04. Width AVG 10.762, MAX 10.77 - vượt giới hạn trên. Frame quá khổ → ứng viên nguyên nhân NG Function."},
+        "k2": {"topic": "Ring Plate trong spec", "statement_from_report": "Length AVG 14.017, Width AVG 9.845.", "normalized_interpretation": "Ring Plate trong spec. Không có sai sót kích thước."}
+      },
+      "hints": {
+        "hint_0": {"check_item": "Điều chỉnh khuôn ép Frame để Length/Width về 18.00-18.02 / 10.73-10.76", "reason": "5/5 mẫu Frame ở hoặc trên giới hạn trên."},
+        "hint_1": {"check_item": "Giữ nguyên công đoạn Ring Plate", "reason": "Tất cả trong spec."}
+      },
+      "log": {"assumptions": ["Hai đo trên mỗi mẫu (trái/phải) lưu cặp."], "warnings": ["Không có Normal baseline - chỉ đối chiếu spec in."], "decision_rationale": "5/5 mẫu Frame tại/trên giới hạn trên, Ring Plate OK. Frame quá khổ là nguyên nhân kích thước khả năng cao cho NG Function."}
+    }
+  }
+}

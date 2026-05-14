@@ -1,0 +1,594 @@
+@page "/bmes/worker-status"
+@using BmesNgRateStandalone.Services
+@inject WorkerStatusService WorkerStatus
+@inject IJSRuntime JS
+
+<PageTitle>Worker Status</PageTitle>
+
+<style>
+    .ws-header-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .ws-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 16px 20px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .ws-card-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #475569;
+        letter-spacing: .3px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .ws-table-wrap { overflow-x: auto; }
+    .ws-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+    .ws-table th {
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 700;
+        font-size: 11px;
+        letter-spacing: .3px;
+        padding: 7px 10px;
+        border-bottom: 2px solid #e2e8f0;
+        white-space: nowrap;
+        text-align: left;
+    }
+    .ws-table td {
+        padding: 6px 10px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+        white-space: nowrap;
+    }
+    .ws-table tr:last-child td { border-bottom: none; }
+    .ws-table tr:hover td { background: #f8fafc; }
+    .ws-badge {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 10px;
+        letter-spacing: .2px;
+    }
+    .ws-in     { background: #dcfce7; color: #166534; }
+    .ws-out    { background: #dbeafe; color: #1e40af; }
+    .ws-absent { background: #fef2f2; color: #b91c1c; }
+    .ws-other  { background: #f1f5f9; color: #475569; }
+    .ws-late   { color: #dc2626; font-weight: 700; }
+    .ws-time   { font-family: monospace; font-size: 12px; }
+    .ws-check-in-time {
+        display: inline-block;
+        min-width: 38px;
+        padding: 1px 4px;
+        border-radius: 4px;
+        font-weight: 700;
+    }
+    .ws-sched-inline {
+        margin-left: 4px;
+        color: #94a3b8;
+        font-size: 11px;
+        font-weight: 400;
+    }
+    .ws-dept-row td {
+        background: #eef2ff !important;
+        color: #334155;
+        font-weight: 700;
+        border-top: 2px solid #c7d2fe;
+        border-bottom: 1px solid #c7d2fe;
+    }
+    .ws-dept-toggle {
+        width: 22px;
+        height: 22px;
+        margin-right: 7px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background: #fff;
+        color: #334155;
+        font-size: 12px;
+        line-height: 1;
+        cursor: pointer;
+    }
+    .ws-dept-meta {
+        margin-left: 10px;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .ws-progress {
+        font-size: 11px;
+        font-family: monospace;
+        color: #64748b;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 7px 12px;
+        margin-top: 10px;
+    }
+    .ws-error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        border-radius: 6px;
+        padding: 10px 14px;
+        font-size: 12px;
+        margin-top: 10px;
+    }
+    .ws-empty {
+        text-align: center;
+        padding: 40px 0;
+        color: #94a3b8;
+        font-size: 13px;
+    }
+    .btn-fetch {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 7px;
+        border: none;
+        background: #6366f1;
+        color: #fff;
+        cursor: pointer;
+        transition: background .15s;
+    }
+    .btn-fetch:hover:not(:disabled) { background: #4f46e5; }
+    .btn-fetch:disabled { opacity: .55; cursor: not-allowed; }
+    .btn-export {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 7px;
+        border: 1px solid #16a34a;
+        background: #fff;
+        color: #15803d;
+        cursor: pointer;
+        transition: background .15s, color .15s;
+    }
+    .btn-export:hover:not(:disabled) { background: #16a34a; color: #fff; }
+    .btn-export:disabled { opacity: .55; cursor: not-allowed; }
+    .ws-stat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 9px;
+        border-radius: 12px;
+        background: #f1f5f9;
+        color: #475569;
+    }
+    .ws-stat-num { font-size: 14px; font-weight: 700; }
+</style>
+
+<div class="ws-header-bar">
+    <span style="font-size:20px;">👷</span>
+    <span style="font-size:18px; font-weight:700; color:#1e293b;">Worker Status</span>
+</div>
+
+<!-- ── Query bar ─────────────────────────────────────────────────────────── -->
+<div class="ws-card" style="margin-bottom:16px;">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <label style="font-size:12px; font-weight:600; color:#475569;">From</label>
+        <input type="date"
+               class="form-control form-control-sm"
+               style="width:160px;"
+               value="@_startDate.ToString("yyyy-MM-dd")"
+               @onchange="OnStartDateChanged"
+               disabled="@_isBusy" />
+
+        <label style="font-size:12px; font-weight:600; color:#475569;">To</label>
+        <input type="date"
+               class="form-control form-control-sm"
+               style="width:160px;"
+               value="@_endDate.ToString("yyyy-MM-dd")"
+               @onchange="OnEndDateChanged"
+               disabled="@_isBusy" />
+
+        <button class="btn-fetch" @onclick="FetchAsync" disabled="@_isBusy">
+            @if (_isBusy)
+            {
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+                <span>Fetching…</span>
+            }
+            else
+            {
+                <span>🔍</span><span>Fetch</span>
+            }
+        </button>
+
+        @if (_result is not null && _result.IsSuccess && _result.Records.Count > 0)
+        {
+            <button class="btn-export"
+                    @onclick="ExportExcelAsync"
+                    disabled="@(_isBusy || _isExporting)"
+                    title="Download as Excel (.xlsx)">
+                @if (_isExporting)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                    <span>Exporting…</span>
+                }
+                else
+                {
+                    <span>📥</span><span>Export Excel</span>
+                }
+            </button>
+        }
+
+        @if (_result is not null && _result.IsSuccess)
+        {
+            <span style="font-size:11px; color:#94a3b8; margin-left:4px;">
+                fetched @_result.FetchedAt.ToString("HH:mm:ss")
+            </span>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(_progressMsg))
+    {
+        <div class="ws-progress">@_progressMsg</div>
+    }
+    @if (_result is not null && !string.IsNullOrEmpty(_result.ErrorMessage))
+    {
+        <div class="ws-error">⚠ @_result.ErrorMessage</div>
+    }
+</div>
+
+<!-- ── Summary pills ─────────────────────────────────────────────────────── -->
+@if (_result is not null && _result.IsSuccess && _result.Records.Count > 0)
+{
+    int cntTotal      = _result.TotalCount;
+    int cntPeople     = _result.Records.Select(r => r.EmpNo).Distinct().Count();
+    int cntDays       = _result.Records.Select(r => r.Date).Distinct().Count();
+    int cntCheckedIn  = _result.Records.Count(r => !string.IsNullOrEmpty(r.CheckIn));
+    int cntCheckedOut = _result.Records.Count(r => !string.IsNullOrEmpty(r.CheckOut));
+    int cntLate       = _result.Records.Count(r => IsLate(r));
+
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+        <div class="ws-stat-pill">
+            Rows <span class="ws-stat-num">@cntTotal</span>
+        </div>
+        <div class="ws-stat-pill" style="background:#ede9fe; color:#5b21b6;">
+            People <span class="ws-stat-num">@cntPeople</span>
+        </div>
+        <div class="ws-stat-pill" style="background:#f1f5f9; color:#334155;">
+            Days <span class="ws-stat-num">@cntDays</span>
+        </div>
+        <div class="ws-stat-pill" style="background:#dbeafe; color:#1e40af;">
+            Checked In <span class="ws-stat-num">@cntCheckedIn</span>
+        </div>
+        <div class="ws-stat-pill" style="background:#e0f2fe; color:#0369a1;">
+            Checked Out <span class="ws-stat-num">@cntCheckedOut</span>
+        </div>
+        @if (cntLate > 0)
+        {
+            <div class="ws-stat-pill" style="background:#fef2f2; color:#b91c1c;">
+                Late <span class="ws-stat-num">@cntLate</span>
+            </div>
+        }
+    </div>
+}
+
+<!-- ── Table ──────────────────────────────────────────────────────────────── -->
+<div class="ws-card">
+    <div class="ws-card-title">
+        <span>📋 Attendance</span>
+        @if (_result is not null && _result.IsSuccess)
+        {
+            <span style="font-size:11px; font-weight:400; color:#94a3b8;">
+                @_result.TotalCount records
+            </span>
+        }
+    </div>
+
+    @if (_result is null || !_result.IsSuccess || _result.Records.Count == 0)
+    {
+        <div class="ws-empty">
+            @if (_result is null)
+            {
+                <span>Pick a date and click Fetch.</span>
+            }
+            else if (!_result.IsSuccess)
+            {
+                <span>Fetch failed.</span>
+            }
+            else
+            {
+                <span>No records found.</span>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="ws-table-wrap">
+            <table class="ws-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Dept Code</th>
+                        <th>Dept No</th>
+                        <th>Emp No</th>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Day</th>
+                        <th>Status</th>
+                        <th>Day Type</th>
+                        <th>Check In</th>
+                        <th>Check Out</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int groupNum = 0; }
+                    @foreach (var deptGroup in _result.Records
+                        .GroupBy(r => new { r.DepartmentCode, r.DepartmentNo, r.DepartmentName })
+                        .OrderBy(g => g.Key.DepartmentCode)
+                        .ThenBy(g => g.Key.DepartmentNo))
+                    {
+                        string deptKey = DeptKey(deptGroup.Key.DepartmentCode, deptGroup.Key.DepartmentNo);
+                        bool deptCollapsed = IsDeptCollapsed(deptKey);
+                        int deptRows = deptGroup.Count();
+                        int deptPeople = deptGroup
+                            .Select(r => string.IsNullOrWhiteSpace(r.EmpNo) ? r.Name : r.EmpNo)
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .Count();
+
+                        <tr class="ws-dept-row">
+                            <td colspan="11">
+                                <button type="button"
+                                        class="ws-dept-toggle"
+                                        title="Toggle department"
+                                        @onclick="() => ToggleDept(deptKey)">
+                                    @(deptCollapsed ? "▸" : "▾")
+                                </button>
+                                <span>@deptGroup.Key.DepartmentCode</span>
+                                <span class="ws-dept-meta">@deptGroup.Key.DepartmentNo</span>
+                                @if (!string.IsNullOrWhiteSpace(deptGroup.Key.DepartmentName))
+                                {
+                                    <span class="ws-dept-meta">@deptGroup.Key.DepartmentName</span>
+                                }
+                                <span class="ws-dept-meta">@deptPeople people / @deptRows rows</span>
+                            </td>
+                        </tr>
+
+                        @if (!deptCollapsed)
+                        {
+                            foreach (var group in deptGroup
+                                .GroupBy(r => new { r.DepartmentCode, r.DepartmentNo, r.EmpNo, r.Name })
+                                .OrderBy(g => g.Key.Name)
+                                .ThenBy(g => g.Key.EmpNo))
+                            {
+                                groupNum++;
+                                var ordered = group.OrderBy(r => r.Date).ToList();
+                                int rowSpan = ordered.Count;
+                                bool isFirst = true;
+
+                                foreach (var rec in ordered)
+                                {
+                                    bool late = IsLate(rec);
+
+                                    string statusClass = rec.WorkStatus switch
+                                    {
+                                        var s when s.Contains("office", StringComparison.OrdinalIgnoreCase) => "ws-in",
+                                        var s when s.Contains("출근",   StringComparison.OrdinalIgnoreCase) => "ws-in",
+                                        var s when s.Contains("퇴근",   StringComparison.OrdinalIgnoreCase) => "ws-out",
+                                        var s when s.Contains("결근",   StringComparison.OrdinalIgnoreCase) => "ws-absent",
+                                        _ => "ws-other"
+                                    };
+
+                                    <tr style="@(isFirst && groupNum > 1 ? "border-top:2px solid #e2e8f0;" : "")">
+                                        @if (isFirst)
+                                        {
+                                            <td rowspan="@rowSpan" style="color:#94a3b8; vertical-align:top;">@groupNum</td>
+                                            <td rowspan="@rowSpan" style="font-family:monospace; font-size:11px; vertical-align:top;" title="@rec.DepartmentName">@rec.DepartmentCode</td>
+                                            <td rowspan="@rowSpan" style="font-family:monospace; font-size:11px; vertical-align:top;">@rec.DepartmentNo</td>
+                                            <td rowspan="@rowSpan" style="font-family:monospace; font-size:11px; vertical-align:top;">@rec.EmpNo</td>
+                                            <td rowspan="@rowSpan" style="font-weight:600; vertical-align:top;">@rec.Name</td>
+                                        }
+                                        <td style="font-family:monospace; font-size:11px;">@rec.Date.ToString("yyyy-MM-dd")</td>
+                                        <td style="font-size:11px; color:#64748b;">@rec.Date.ToString("ddd")</td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(rec.WorkStatus))
+                                            {
+                                                <span class="ws-badge @statusClass">@rec.WorkStatus</span>
+                                            }
+                                        </td>
+                                        <td style="font-size:11px; color:#64748b;">@rec.DayType</td>
+                                        <td class="ws-time">
+                                            @if (string.IsNullOrEmpty(rec.CheckIn))
+                                            {
+                                                <span style="color:#94a3b8;">—</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="ws-check-in-time" style="@CheckInStyle(rec)">@(late ? "*" : "")@rec.CheckIn</span>
+                                            }
+                                            @if (!string.IsNullOrEmpty(rec.SchedStart))
+                                            {
+                                                <span class="ws-sched-inline">(@rec.SchedStart)</span>
+                                            }
+                                        </td>
+                                        <td class="ws-time">
+                                            @if (string.IsNullOrEmpty(rec.CheckOut))
+                                            {
+                                                <span style="color:#94a3b8;">—</span>
+                                            }
+                                            else
+                                            {
+                                                @rec.CheckOut
+                                            }
+                                            @if (!string.IsNullOrEmpty(rec.SchedEnd))
+                                            {
+                                                <span class="ws-sched-inline">(@rec.SchedEnd)</span>
+                                            }
+                                        </td>
+                                    </tr>
+
+                                    isFirst = false;
+                                }
+                            }
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private DateTime                          _startDate  = DateTime.Today;
+    private DateTime                          _endDate    = DateTime.Today;
+    private bool                              _isBusy;
+    private bool                              _isExporting;
+    private string                            _progressMsg = string.Empty;
+    private WorkerStatusService.FetchResult?  _result;
+    private readonly HashSet<string>          _collapsedDeptKeys = new(StringComparer.OrdinalIgnoreCase);
+
+    private void OnStartDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var d))
+        {
+            _startDate = d;
+            if (_endDate < _startDate) _endDate = _startDate;
+        }
+    }
+
+    private void OnEndDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var d))
+        {
+            _endDate = d;
+            if (_endDate < _startDate) _startDate = _endDate;
+        }
+    }
+
+    private async Task FetchAsync()
+    {
+        _isBusy      = true;
+        _progressMsg = string.Empty;
+        _result      = null;
+        _collapsedDeptKeys.Clear();
+        StateHasChanged();
+
+        var progress = new Progress<string>(msg =>
+        {
+            _progressMsg = msg;
+            InvokeAsync(StateHasChanged);
+        });
+
+        _result = await WorkerStatus.FetchRangeAsync(_startDate, _endDate, progress);
+        _isBusy = false;
+        StateHasChanged();
+    }
+
+    /// <summary>Late if actual check-in (CheckIn) is after Schedule In (SchedStart).</summary>
+    private static bool IsLate(WorkerStatusService.WorkerRecord rec)
+    {
+        if (!TryParseWorkerTime(rec.CheckIn, out var checkIn) ||
+            !TryParseWorkerTime(rec.SchedStart, out var schedStart))
+            return false;
+
+        return checkIn > schedStart;
+    }
+
+    private static string CheckInStyle(WorkerStatusService.WorkerRecord rec)
+    {
+        const int windowStartMinutes = -10;
+        const int gradientSpanMinutes = 10;
+
+        if (!TryParseWorkerTime(rec.CheckIn, out var checkIn) ||
+            !TryParseWorkerTime(rec.SchedStart, out var schedStart))
+            return "font-weight:700;";
+
+        int diffMinutes = (int)Math.Floor((checkIn - schedStart).TotalMinutes);
+        if (diffMinutes < windowStartMinutes)
+            return "font-weight:700;";
+
+        int step = Math.Clamp(diffMinutes - windowStartMinutes, 0, gradientSpanMinutes);
+        double t = step / (double)gradientSpanMinutes;
+
+        string bg = MixRgb(220, 252, 231, 255, 237, 213, t);
+        string fg = MixRgb(22, 101, 52, 194, 65, 12, t);
+        return $"font-weight:700; background-color:{bg}; color:{fg};";
+    }
+
+    private static bool TryParseWorkerTime(string value, out TimeSpan time)
+    {
+        time = default;
+        if (string.IsNullOrWhiteSpace(value)) return false;
+
+        string s = value.Trim();
+        if (TimeSpan.TryParse(s, out time)) return true;
+        if (DateTime.TryParse(s, out var dt))
+        {
+            time = dt.TimeOfDay;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static string MixRgb(
+        int r1, int g1, int b1,
+        int r2, int g2, int b2,
+        double t)
+    {
+        static int Mix(int a, int b, double t) => (int)Math.Round(a + ((b - a) * t));
+        return $"rgb({Mix(r1, r2, t)}, {Mix(g1, g2, t)}, {Mix(b1, b2, t)})";
+    }
+
+    private static string DeptKey(string departmentCode, string departmentNo)
+        => $"{departmentCode}\u001f{departmentNo}";
+
+    private bool IsDeptCollapsed(string deptKey)
+        => _collapsedDeptKeys.Contains(deptKey);
+
+    private void ToggleDept(string deptKey)
+    {
+        if (!_collapsedDeptKeys.Add(deptKey))
+            _collapsedDeptKeys.Remove(deptKey);
+    }
+
+    private async Task ExportExcelAsync()
+    {
+        if (_result is null || _result.Records.Count == 0 || _isExporting) return;
+
+        _isExporting = true;
+        StateHasChanged();
+        try
+        {
+            var records = _result.Records;
+            var start   = _startDate;
+            var end     = _endDate;
+
+            var bytes = await Task.Run(() =>
+                WorkerStatusExcelExporter.Export(records, start, end));
+
+            string b64  = Convert.ToBase64String(bytes);
+            string name = start.Date == end.Date
+                ? $"WorkerStatus_{start:yyyyMMdd}.xlsx"
+                : $"WorkerStatus_{start:yyyyMMdd}_{end:yyyyMMdd}.xlsx";
+
+            await JS.InvokeVoidAsync("downloadBase64File", name, b64,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        }
+        finally
+        {
+            _isExporting = false;
+            StateHasChanged();
+        }
+    }
+}

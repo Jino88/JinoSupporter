@@ -263,9 +263,38 @@ public sealed class WebRepository
                 TestConditions    TEXT    NOT NULL DEFAULT '',
                 RootCause         TEXT    NOT NULL DEFAULT '',
                 Decision          TEXT    NOT NULL DEFAULT '',
-                RecommendedAction TEXT    NOT NULL DEFAULT ''
+                RecommendedAction TEXT    NOT NULL DEFAULT '',
+                Verdict           TEXT    NOT NULL DEFAULT '',
+                Headline          TEXT    NOT NULL DEFAULT '',
+                EvidenceJson      TEXT    NOT NULL DEFAULT '',
+                ActionsJson       TEXT    NOT NULL DEFAULT '',
+                ContextJson       TEXT    NOT NULL DEFAULT '',
+                ReportType        TEXT    NOT NULL DEFAULT '',
+                DoeGridJson       TEXT    NOT NULL DEFAULT '',
+                TrendJson         TEXT    NOT NULL DEFAULT ''
             );
             CREATE INDEX IF NOT EXISTS idx_dsum_name ON DatasetSummary(DatasetName);
+
+            -- One row per (dataset, language). The base DatasetSummary row
+            -- is treated as the original/AI-output language; additional
+            -- rows here hold translations (ko / vi) so the Detail page can
+            -- switch between them without re-calling the API.
+            CREATE TABLE IF NOT EXISTS DatasetSummaryTranslations (
+                DatasetName       TEXT NOT NULL,
+                Lang              TEXT NOT NULL,
+                Summary           TEXT NOT NULL DEFAULT '',
+                KeyFindings       TEXT NOT NULL DEFAULT '',
+                Purpose           TEXT NOT NULL DEFAULT '',
+                TestConditions    TEXT NOT NULL DEFAULT '',
+                RootCause         TEXT NOT NULL DEFAULT '',
+                Decision          TEXT NOT NULL DEFAULT '',
+                RecommendedAction TEXT NOT NULL DEFAULT '',
+                Headline          TEXT NOT NULL DEFAULT '',
+                ActionsJson       TEXT NOT NULL DEFAULT '',
+                ContextJson       TEXT NOT NULL DEFAULT '',
+                UpdatedAt         TEXT NOT NULL,
+                PRIMARY KEY (DatasetName, Lang)
+            );
 
             CREATE TABLE IF NOT EXISTS RawReportText (
                 DatasetName   TEXT NOT NULL,
@@ -284,6 +313,18 @@ public sealed class WebRepository
                 CreatedAt          TEXT    NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_askai_created ON AskAiHistory(CreatedAt DESC);
+
+            -- Maps an arbitrary filename token (e.g. "BRS-161014", "BRS-2015")
+            -- to a Mid-group Material name (e.g. "BRS-161016S08ZZ"). Used by
+            -- the Data Input page to resolve Product Type for files whose
+            -- token doesn't match any registered Material via fuzzy rules.
+            -- Populated by the user through the Review Tokens panel.
+            CREATE TABLE IF NOT EXISTS DataInputAliases (
+                Token     TEXT NOT NULL PRIMARY KEY,
+                Material  TEXT NOT NULL,
+                CreatedAt TEXT NOT NULL,
+                UpdatedAt TEXT NOT NULL
+            );
 
             CREATE TABLE IF NOT EXISTS MenuPermissions (
                 Role   TEXT NOT NULL,
@@ -338,6 +379,177 @@ public sealed class WebRepository
                 Grnam     TEXT NOT NULL DEFAULT '',
                 MfPhi     TEXT NOT NULL DEFAULT '',
                 FetchedAt TEXT NOT NULL
+            );
+
+            -- ── AI_EXCEL_PROC.md schema (Batch AI inference output) ─────────────
+            -- One row per normalized Excel report. RawJson preserves the full
+            -- agent output for re-ingestion / debugging. Source_dataset links
+            -- back to RawReports.DatasetName so the row can be located in the
+            -- existing Data Input UI.
+            CREATE TABLE IF NOT EXISTS AiDocuments (
+                DocumentId          TEXT PRIMARY KEY,
+                SourceDataset       TEXT NOT NULL DEFAULT '',
+                SourceFile          TEXT NOT NULL DEFAULT '',
+                Title               TEXT NOT NULL DEFAULT '',
+                Model               TEXT NOT NULL DEFAULT '',
+                ReportDate          TEXT NOT NULL DEFAULT '',
+                Department          TEXT NOT NULL DEFAULT '',
+                Marker              TEXT NOT NULL DEFAULT '',
+                Line                TEXT NOT NULL DEFAULT '',
+                ReportType          TEXT NOT NULL DEFAULT '',
+                PrimaryDefect       TEXT NOT NULL DEFAULT '',
+                PrimaryDefectJson   TEXT NOT NULL DEFAULT '',  -- {canonical_name, aliases_in_document}
+                RelatedDefectsJson  TEXT NOT NULL DEFAULT '',
+                PartsJson           TEXT NOT NULL DEFAULT '',
+                ProcessesJson       TEXT NOT NULL DEFAULT '',
+                Purpose             TEXT NOT NULL DEFAULT '',
+                ContentJson         TEXT NOT NULL DEFAULT '',
+                SourceCellsJson     TEXT NOT NULL DEFAULT '',
+                Confidence          REAL NOT NULL DEFAULT 0,
+                SchemaVersion       TEXT NOT NULL DEFAULT '',
+                RawJson             TEXT NOT NULL DEFAULT '',  -- full JSON dump from agent
+                CreatedAt           TEXT NOT NULL,
+                UpdatedAt           TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_aidoc_dataset ON AiDocuments(SourceDataset);
+
+            CREATE TABLE IF NOT EXISTS AiTestConditions (
+                ConditionId      TEXT PRIMARY KEY,
+                DocumentId       TEXT NOT NULL REFERENCES AiDocuments(DocumentId) ON DELETE CASCADE,
+                ConditionGroup   TEXT NOT NULL DEFAULT '',
+                Line             TEXT NOT NULL DEFAULT '',
+                Process          TEXT NOT NULL DEFAULT '',
+                ChangedFactor    TEXT NOT NULL DEFAULT '',
+                BeforeValue      TEXT,
+                AfterValue       TEXT,
+                Unit             TEXT,
+                Machine          TEXT,
+                Jig              TEXT,
+                MaterialLot      TEXT,
+                Supplier         TEXT,
+                DryTimeSec       REAL,
+                Temperature      TEXT,
+                Pressure         TEXT,
+                BondAmount       TEXT,
+                UvEnergy         TEXT,
+                SourceFile       TEXT NOT NULL DEFAULT '',
+                SheetName        TEXT NOT NULL DEFAULT '',
+                SourceCellsJson  TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS idx_aitc_doc ON AiTestConditions(DocumentId);
+
+            CREATE TABLE IF NOT EXISTS AiResults (
+                ResultId         TEXT PRIMARY KEY,
+                DocumentId       TEXT NOT NULL REFERENCES AiDocuments(DocumentId) ON DELETE CASCADE,
+                ConditionId      TEXT,
+                MeasurementType  TEXT NOT NULL DEFAULT '',
+                ConditionGroup   TEXT NOT NULL DEFAULT '',
+                ResultDate       TEXT NOT NULL DEFAULT '',
+                Line             TEXT NOT NULL DEFAULT '',
+                InputCount       REAL,
+                OkCount          REAL,
+                NgCount          REAL,
+                NgRateDecimal    REAL,
+                NgRatePercent    REAL,
+                MetricName       TEXT NOT NULL DEFAULT '',
+                MetricValue      REAL,
+                Unit             TEXT,
+                Judgement        TEXT,
+                SourceFile       TEXT NOT NULL DEFAULT '',
+                SheetName        TEXT NOT NULL DEFAULT '',
+                SourceCellsJson  TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS idx_airesult_doc ON AiResults(DocumentId);
+            CREATE INDEX IF NOT EXISTS idx_airesult_cond ON AiResults(ConditionId);
+
+            CREATE TABLE IF NOT EXISTS AiNgBreakdowns (
+                BreakdownId  TEXT PRIMARY KEY,
+                ResultId     TEXT NOT NULL REFERENCES AiResults(ResultId) ON DELETE CASCADE,
+                DefectName   TEXT NOT NULL DEFAULT '',
+                DefectCount  REAL,
+                DefectRate   REAL
+            );
+            CREATE INDEX IF NOT EXISTS idx_aing_result ON AiNgBreakdowns(ResultId);
+
+            CREATE TABLE IF NOT EXISTS AiConclusions (
+                ConclusionId             TEXT PRIMARY KEY,
+                DocumentId               TEXT NOT NULL REFERENCES AiDocuments(DocumentId) ON DELETE CASCADE,
+                Topic                    TEXT NOT NULL DEFAULT '',
+                StatementFromReport      TEXT NOT NULL DEFAULT '',
+                NormalizedInterpretation TEXT NOT NULL DEFAULT '',
+                SourceFile               TEXT NOT NULL DEFAULT '',
+                SheetName                TEXT NOT NULL DEFAULT '',
+                SourceCellsJson          TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS idx_aiconcl_doc ON AiConclusions(DocumentId);
+
+            CREATE TABLE IF NOT EXISTS AiTroubleshootingHints (
+                HintId           TEXT PRIMARY KEY,
+                DocumentId       TEXT NOT NULL REFERENCES AiDocuments(DocumentId) ON DELETE CASCADE,
+                DefectName       TEXT NOT NULL DEFAULT '',
+                CheckItem        TEXT NOT NULL DEFAULT '',
+                Reason           TEXT NOT NULL DEFAULT '',
+                EvidenceStrength TEXT NOT NULL DEFAULT '',
+                RelatedProcess   TEXT NOT NULL DEFAULT '',
+                RelatedPart      TEXT NOT NULL DEFAULT '',
+                SourceFile       TEXT NOT NULL DEFAULT '',
+                SheetName        TEXT NOT NULL DEFAULT '',
+                SourceCellsJson  TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS idx_aihint_doc ON AiTroubleshootingHints(DocumentId);
+
+            CREATE TABLE IF NOT EXISTS AiExtractionLogs (
+                LogId             TEXT PRIMARY KEY,
+                DocumentId        TEXT NOT NULL REFERENCES AiDocuments(DocumentId) ON DELETE CASCADE,
+                Confidence        REAL NOT NULL DEFAULT 0,
+                AssumptionsJson   TEXT NOT NULL DEFAULT '',
+                WarningsJson      TEXT NOT NULL DEFAULT '',
+                DecisionRationale TEXT NOT NULL DEFAULT '',
+                CreatedAt         TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_ailog_doc ON AiExtractionLogs(DocumentId);
+
+            -- ── ko/en/vi translations for narrative fields ──────────────────────
+            -- Agent writes one row per (record, lang) — Lang in ('ko','en','vi').
+            -- Numerics + measurements live in the base tables; only the
+            -- AI-narrative text needs translating.
+            CREATE TABLE IF NOT EXISTS AiDocumentTranslations (
+                DocumentId  TEXT NOT NULL REFERENCES AiDocuments(DocumentId) ON DELETE CASCADE,
+                Lang        TEXT NOT NULL,           -- 'ko' | 'en' | 'vi'
+                Title       TEXT NOT NULL DEFAULT '',
+                Purpose     TEXT NOT NULL DEFAULT '',
+                ContentJson TEXT NOT NULL DEFAULT '',-- translated content[] array
+                UpdatedAt   TEXT NOT NULL,
+                PRIMARY KEY (DocumentId, Lang)
+            );
+
+            CREATE TABLE IF NOT EXISTS AiConclusionTranslations (
+                ConclusionId             TEXT NOT NULL REFERENCES AiConclusions(ConclusionId) ON DELETE CASCADE,
+                Lang                     TEXT NOT NULL,
+                Topic                    TEXT NOT NULL DEFAULT '',
+                StatementFromReport      TEXT NOT NULL DEFAULT '',
+                NormalizedInterpretation TEXT NOT NULL DEFAULT '',
+                UpdatedAt                TEXT NOT NULL,
+                PRIMARY KEY (ConclusionId, Lang)
+            );
+
+            CREATE TABLE IF NOT EXISTS AiHintTranslations (
+                HintId    TEXT NOT NULL REFERENCES AiTroubleshootingHints(HintId) ON DELETE CASCADE,
+                Lang      TEXT NOT NULL,
+                CheckItem TEXT NOT NULL DEFAULT '',
+                Reason    TEXT NOT NULL DEFAULT '',
+                UpdatedAt TEXT NOT NULL,
+                PRIMARY KEY (HintId, Lang)
+            );
+
+            CREATE TABLE IF NOT EXISTS AiLogTranslations (
+                LogId             TEXT NOT NULL REFERENCES AiExtractionLogs(LogId) ON DELETE CASCADE,
+                Lang              TEXT NOT NULL,
+                AssumptionsJson   TEXT NOT NULL DEFAULT '',
+                WarningsJson      TEXT NOT NULL DEFAULT '',
+                DecisionRationale TEXT NOT NULL DEFAULT '',
+                UpdatedAt         TEXT NOT NULL,
+                PRIMARY KEY (LogId, Lang)
             );
             """;
         cmd.ExecuteNonQuery();
@@ -552,6 +764,41 @@ public sealed class WebRepository
             if (existingDsumCols.Contains(newCol)) continue;
             using SqliteCommand alter = conn.CreateCommand();
             alter.CommandText = $"ALTER TABLE DatasetSummary ADD COLUMN {newCol} TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+
+        // v2 (verdict-first) columns on DatasetSummary
+        foreach (string newCol in new[] { "Verdict", "Headline", "EvidenceJson", "ActionsJson", "ContextJson" })
+        {
+            if (existingDsumCols.Contains(newCol)) continue;
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = $"ALTER TABLE DatasetSummary ADD COLUMN {newCol} TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+
+        // v7 (reportType + DOE/trend payloads) columns
+        foreach (string newCol in new[] { "ReportType", "DoeGridJson", "TrendJson" })
+        {
+            if (existingDsumCols.Contains(newCol)) continue;
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = $"ALTER TABLE DatasetSummary ADD COLUMN {newCol} TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+
+        // v2 columns on DatasetSummaryTranslations (headline + actions + context only;
+        // numbers/labels in evidence stay verbatim and are not translated)
+        var existingTrCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using (SqliteCommand checkTr = conn.CreateCommand())
+        {
+            checkTr.CommandText = "PRAGMA table_info(DatasetSummaryTranslations);";
+            using SqliteDataReader r = checkTr.ExecuteReader();
+            while (r.Read()) existingTrCols.Add(r.GetString(1));
+        }
+        foreach (string newCol in new[] { "Headline", "ActionsJson", "ContextJson" })
+        {
+            if (existingTrCols.Contains(newCol)) continue;
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = $"ALTER TABLE DatasetSummaryTranslations ADD COLUMN {newCol} TEXT NOT NULL DEFAULT '';";
             alter.ExecuteNonQuery();
         }
 
@@ -1044,13 +1291,20 @@ public sealed class WebRepository
     {
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
+        // BatchedAt is a derived value. Prefer the newest of:
+        //   AiDocuments.UpdatedAt   (AI_EXCEL_PROC.md schema — new CLI flow)
+        //   DatasetSummary.CreatedAt (legacy v2 narrative card)
+        //   NormalizedMeasurements.MAX(CreatedAt) (oldest fallback)
+        // Without including AiDocuments here, rows processed by the new CLI
+        // appear "never batched" even though AiDocuments has fresh rows.
         cmd.CommandText = """
             SELECT r.Id, r.DatasetName, r.ProductType, r.ReportDate, r.CreatedAt,
                    (SELECT COUNT(*) FROM RawReportImages WHERE DatasetName=r.DatasetName) AS ImgCnt,
                    (SELECT COUNT(*) FROM NormalizedMeasurements WHERE DatasetName=r.DatasetName) AS MeasCnt,
                    r.BatchExcluded,
                    COALESCE(
-                     (SELECT CreatedAt FROM DatasetSummary WHERE DatasetName=r.DatasetName),
+                     (SELECT MAX(UpdatedAt) FROM AiDocuments      WHERE SourceDataset=r.DatasetName),
+                     (SELECT CreatedAt      FROM DatasetSummary   WHERE DatasetName  =r.DatasetName),
                      (SELECT MAX(CreatedAt) FROM NormalizedMeasurements WHERE DatasetName=r.DatasetName),
                      ''
                    ) AS BatchedAt
@@ -1075,6 +1329,20 @@ public sealed class WebRepository
         cmd.Parameters.AddWithValue("@e", excluded ? 1 : 0);
         cmd.Parameters.AddWithValue("@n", datasetName);
         cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>Re-stamp the ProductType column for an existing RawReport.
+    /// Used when the Data Input alias map changes and previously-saved rows
+    /// should pick up the new mapping. Returns 1 when a row updated, 0 when
+    /// the name didn't exist.</summary>
+    public int UpdateRawReportProductType(string datasetName, string productType)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "UPDATE RawReports SET ProductType=@p WHERE DatasetName=@n;";
+        cmd.Parameters.AddWithValue("@p", productType ?? "");
+        cmd.Parameters.AddWithValue("@n", datasetName);
+        return cmd.ExecuteNonQuery();
     }
 
     public List<(string MediaType, byte[] Data, string FileName)> GetRawReportImages(string name)
@@ -1209,20 +1477,46 @@ public sealed class WebRepository
         cmd.ExecuteNonQuery();
     }
 
+    /// <summary>Convenience overload that serialises the v7 structured fields
+    /// (tags/evidence/actions/context/reportType/doeGrid/trendPoints) from a
+    /// NormalizeResult, so callers don't have to repeat the JSON.Serialize boilerplate.</summary>
+    public void SaveDatasetSummaryRecord(string name, string productType, NormalizeResult r)
+    {
+        string tagsJson     = (r.Tags?.Count     ?? 0) > 0 ? System.Text.Json.JsonSerializer.Serialize(r.Tags)     : "";
+        string evidenceJson = (r.Evidence?.Count ?? 0) > 0 ? System.Text.Json.JsonSerializer.Serialize(r.Evidence) : "";
+        string actionsJson  = (r.Actions?.Count  ?? 0) > 0 ? System.Text.Json.JsonSerializer.Serialize(r.Actions)  : "";
+        string contextJson  = r.Context is not null     ? System.Text.Json.JsonSerializer.Serialize(r.Context)  : "";
+        string doeJson      = r.DoeGrid is not null     ? System.Text.Json.JsonSerializer.Serialize(r.DoeGrid)  : "";
+        string trendJson    = (r.TrendPoints?.Count ?? 0) > 0 ? System.Text.Json.JsonSerializer.Serialize(r.TrendPoints) : "";
+        SaveDatasetSummaryRecord(name, productType,
+            r.Summary, r.KeyFindings, tagsJson,
+            r.Purpose, r.TestConditions, r.RootCause, r.Decision, r.RecommendedAction,
+            r.Verdict, r.Headline, evidenceJson, actionsJson, contextJson,
+            r.ReportType, doeJson, trendJson);
+    }
+
     public void SaveDatasetSummaryRecord(string name, string productType, string summary, string keyFindings, string tagsJson = "",
         string purpose = "", string testConditions = "", string rootCause = "",
-        string decision = "", string recommendedAction = "")
+        string decision = "", string recommendedAction = "",
+        string verdict = "", string headline = "",
+        string evidenceJson = "", string actionsJson = "", string contextJson = "",
+        string reportType = "", string doeGridJson = "", string trendJson = "")
     {
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
         cmd.CommandText = """
             INSERT INTO DatasetSummary
                 (DatasetName, ProductType, Summary, KeyFindings, Tags, CreatedAt,
-                 Purpose, TestConditions, RootCause, Decision, RecommendedAction)
-            VALUES (@n, @p, @s, @k, @t, @at, @pu, @tc, @rc, @de, @ra)
+                 Purpose, TestConditions, RootCause, Decision, RecommendedAction,
+                 Verdict, Headline, EvidenceJson, ActionsJson, ContextJson,
+                 ReportType, DoeGridJson, TrendJson)
+            VALUES (@n, @p, @s, @k, @t, @at, @pu, @tc, @rc, @de, @ra,
+                    @vd, @hl, @ev, @ac, @cx, @rt, @dg, @tr)
             ON CONFLICT(DatasetName) DO UPDATE SET
                 ProductType=@p, Summary=@s, KeyFindings=@k, Tags=@t, CreatedAt=@at,
-                Purpose=@pu, TestConditions=@tc, RootCause=@rc, Decision=@de, RecommendedAction=@ra;
+                Purpose=@pu, TestConditions=@tc, RootCause=@rc, Decision=@de, RecommendedAction=@ra,
+                Verdict=@vd, Headline=@hl, EvidenceJson=@ev, ActionsJson=@ac, ContextJson=@cx,
+                ReportType=@rt, DoeGridJson=@dg, TrendJson=@tr;
             """;
         cmd.Parameters.AddWithValue("@n",  name);
         cmd.Parameters.AddWithValue("@p",  productType);
@@ -1235,6 +1529,14 @@ public sealed class WebRepository
         cmd.Parameters.AddWithValue("@rc", rootCause         ?? "");
         cmd.Parameters.AddWithValue("@de", decision          ?? "");
         cmd.Parameters.AddWithValue("@ra", recommendedAction ?? "");
+        cmd.Parameters.AddWithValue("@vd", verdict      ?? "");
+        cmd.Parameters.AddWithValue("@hl", headline     ?? "");
+        cmd.Parameters.AddWithValue("@ev", evidenceJson ?? "");
+        cmd.Parameters.AddWithValue("@ac", actionsJson  ?? "");
+        cmd.Parameters.AddWithValue("@cx", contextJson  ?? "");
+        cmd.Parameters.AddWithValue("@rt", reportType   ?? "");
+        cmd.Parameters.AddWithValue("@dg", doeGridJson  ?? "");
+        cmd.Parameters.AddWithValue("@tr", trendJson    ?? "");
         cmd.ExecuteNonQuery();
     }
 
@@ -1387,7 +1689,9 @@ public sealed class WebRepository
         using SqliteCommand cmd = conn.CreateCommand();
         cmd.CommandText = """
             SELECT Summary, KeyFindings, Tags,
-                   Purpose, TestConditions, RootCause, Decision, RecommendedAction
+                   Purpose, TestConditions, RootCause, Decision, RecommendedAction,
+                   Verdict, Headline, EvidenceJson, ActionsJson, ContextJson,
+                   ReportType, DoeGridJson, TrendJson
             FROM DatasetSummary WHERE DatasetName=@n;
             """;
         cmd.Parameters.AddWithValue("@n", name);
@@ -1402,19 +1706,60 @@ public sealed class WebRepository
         string rootCause         = r.IsDBNull(5) ? "" : r.GetString(5);
         string decision          = r.IsDBNull(6) ? "" : r.GetString(6);
         string recommendedAction = r.IsDBNull(7) ? "" : r.GetString(7);
+        string verdict           = r.IsDBNull(8)  ? "" : r.GetString(8);
+        string headline          = r.IsDBNull(9)  ? "" : r.GetString(9);
+        string evidenceJson      = r.IsDBNull(10) ? "" : r.GetString(10);
+        string actionsJson       = r.IsDBNull(11) ? "" : r.GetString(11);
+        string contextJson       = r.IsDBNull(12) ? "" : r.GetString(12);
+        string reportType        = r.IsDBNull(13) ? "" : r.GetString(13);
+        string doeGridJson       = r.IsDBNull(14) ? "" : r.GetString(14);
+        string trendJson         = r.IsDBNull(15) ? "" : r.GetString(15);
+
+        var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
         List<string> tags = [];
         if (!string.IsNullOrWhiteSpace(tagsJson))
         {
-            try
-            {
-                tags = System.Text.Json.JsonSerializer.Deserialize<List<string>>(
-                    tagsJson, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
-            }
+            try { tags = System.Text.Json.JsonSerializer.Deserialize<List<string>>(tagsJson, jsonOpts) ?? []; }
             catch { }
         }
 
-        return new DatasetSummaryRecord
+        List<EvidenceRow> evidence = [];
+        if (!string.IsNullOrWhiteSpace(evidenceJson))
+        {
+            try { evidence = System.Text.Json.JsonSerializer.Deserialize<List<EvidenceRow>>(evidenceJson, jsonOpts) ?? []; }
+            catch { }
+        }
+
+        List<ActionItem> actions = [];
+        if (!string.IsNullOrWhiteSpace(actionsJson))
+        {
+            try { actions = System.Text.Json.JsonSerializer.Deserialize<List<ActionItem>>(actionsJson, jsonOpts) ?? []; }
+            catch { }
+        }
+
+        AnalysisContext? context = null;
+        if (!string.IsNullOrWhiteSpace(contextJson))
+        {
+            try { context = System.Text.Json.JsonSerializer.Deserialize<AnalysisContext>(contextJson, jsonOpts); }
+            catch { }
+        }
+
+        DoeGrid? doeGrid = null;
+        if (!string.IsNullOrWhiteSpace(doeGridJson))
+        {
+            try { doeGrid = System.Text.Json.JsonSerializer.Deserialize<DoeGrid>(doeGridJson, jsonOpts); }
+            catch { }
+        }
+
+        List<TrendPoint>? trendPoints = null;
+        if (!string.IsNullOrWhiteSpace(trendJson))
+        {
+            try { trendPoints = System.Text.Json.JsonSerializer.Deserialize<List<TrendPoint>>(trendJson, jsonOpts); }
+            catch { }
+        }
+
+        var rec = new DatasetSummaryRecord
         {
             Summary           = summary,
             KeyFindings       = keyFindings,
@@ -1424,7 +1769,416 @@ public sealed class WebRepository
             RootCause         = rootCause,
             Decision          = decision,
             RecommendedAction = recommendedAction,
+            Verdict           = verdict,
+            Headline          = headline,
+            Evidence          = evidence,
+            Actions           = actions,
+            Context           = context,
+            ReportType        = reportType,
+            DoeGrid           = doeGrid,
+            TrendPoints       = trendPoints,
         };
+
+        // Attach all available translations (ko/vi/...) so the UI can switch
+        // languages without an extra round-trip.
+        foreach (var (lang, tr) in GetDatasetSummaryTranslations(name))
+            rec.Translations[lang] = tr;
+        return rec;
+    }
+
+    // ── AI_EXCEL_PROC.md schema read path ─────────────────────────────────────
+    // Used by DataInferenceDbPage to render the new-CLI bundle when a row was
+    // processed via AI_EXCEL_PROC.md (writes AiDocuments + children). Returns
+    // null when the dataset has no AiDocuments row — the page falls back to
+    // the old DatasetSummary card in that case.
+    public AiDocBundle? GetAiDocBundle(string sourceDataset)
+    {
+        if (string.IsNullOrEmpty(sourceDataset)) return null;
+        using SqliteConnection conn = OpenConnection();
+
+        // 1) Base document
+        AiDocBundle? bundle;
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = """
+                SELECT DocumentId, SourceDataset, SourceFile, Title, Purpose, PrimaryDefect,
+                       ReportType, ReportDate, Confidence,
+                       ContentJson, RelatedDefectsJson, PartsJson, ProcessesJson
+                FROM AiDocuments WHERE SourceDataset=@n
+                ORDER BY UpdatedAt DESC LIMIT 1;
+                """;
+            cmd.Parameters.AddWithValue("@n", sourceDataset);
+            using var rd = cmd.ExecuteReader();
+            if (!rd.Read()) return null;
+            bundle = new AiDocBundle
+            {
+                DocumentId    = rd.GetString(0),
+                SourceDataset = rd.GetString(1),
+                SourceFile    = rd.GetString(2),
+                Title         = rd.GetString(3),
+                Purpose       = rd.GetString(4),
+                PrimaryDefect = rd.GetString(5),
+                ReportType    = rd.GetString(6),
+                ReportDate    = rd.GetString(7),
+                Confidence    = rd.IsDBNull(8) ? 0 : rd.GetDouble(8),
+                Content        = ReadJsonStringList(rd.IsDBNull(9)  ? "" : rd.GetString(9)),
+                RelatedDefects = ReadJsonStringList(rd.IsDBNull(10) ? "" : rd.GetString(10)),
+                Parts          = ReadJsonStringList(rd.IsDBNull(11) ? "" : rd.GetString(11)),
+                Processes      = ReadJsonStringList(rd.IsDBNull(12) ? "" : rd.GetString(12)),
+            };
+        }
+        string docId = bundle.DocumentId;
+
+        // 1b) Counts and measurement rows for dashboard-style rendering
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = "SELECT COUNT(*) FROM AiTestConditions WHERE DocumentId=@d;";
+            cmd.Parameters.AddWithValue("@d", docId);
+            bundle.ConditionsCount = Convert.ToInt32(cmd.ExecuteScalar() ?? 0);
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = """
+                SELECT r.ResultId, COALESCE(r.ConditionId,''), r.MeasurementType, r.ConditionGroup,
+                       COALESCE(c.Process,''), COALESCE(c.ChangedFactor,''),
+                       COALESCE(c.BeforeValue,''), COALESCE(c.AfterValue,''),
+                       r.ResultDate, r.Line, r.InputCount, r.OkCount, r.NgCount, r.NgRateDecimal,
+                       r.NgRatePercent, r.MetricName, r.MetricValue, r.Unit, r.Judgement,
+                       r.SourceFile, r.SheetName, r.SourceCellsJson
+                FROM AiResults r
+                LEFT JOIN AiTestConditions c ON c.ConditionId = r.ConditionId
+                WHERE r.DocumentId=@d
+                ORDER BY r.ResultDate, r.ResultId;
+                """;
+            cmd.Parameters.AddWithValue("@d", docId);
+            using var rd = cmd.ExecuteReader();
+            while (rd.Read())
+            {
+                bundle.Results.Add(new AiResultRow
+                {
+                    ResultId        = rd.GetString(0),
+                    ConditionId     = rd.GetString(1),
+                    MeasurementType = rd.GetString(2),
+                    ConditionGroup  = rd.GetString(3),
+                    ConditionProcess = rd.GetString(4),
+                    ChangedFactor   = rd.GetString(5),
+                    BeforeValue     = rd.GetString(6),
+                    AfterValue      = rd.GetString(7),
+                    ResultDate      = rd.GetString(8),
+                    Line            = rd.GetString(9),
+                    InputCount      = ReadNullableDouble(rd, 10),
+                    OkCount         = ReadNullableDouble(rd, 11),
+                    NgCount         = ReadNullableDouble(rd, 12),
+                    NgRateDecimal   = ReadNullableDouble(rd, 13),
+                    NgRatePercent   = ReadNullableDouble(rd, 14),
+                    MetricName      = rd.GetString(15),
+                    MetricValue     = ReadNullableDouble(rd, 16),
+                    Unit            = rd.IsDBNull(17) ? "" : rd.GetString(17),
+                    Judgement       = rd.IsDBNull(18) ? "" : rd.GetString(18),
+                    SourceFile      = rd.GetString(19),
+                    SheetName       = rd.GetString(20),
+                    SourceCellsJson = rd.IsDBNull(21) ? "" : rd.GetString(21),
+                });
+            }
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = """
+                SELECT b.DefectName,
+                       COUNT(*) AS RowCount,
+                       SUM(COALESCE(b.DefectCount,0)) AS TotalCount,
+                       AVG(b.DefectRate) AS AvgRate
+                FROM AiNgBreakdowns b
+                JOIN AiResults r ON r.ResultId = b.ResultId
+                WHERE r.DocumentId=@d
+                GROUP BY b.DefectName
+                HAVING TotalCount > 0
+                ORDER BY TotalCount DESC, RowCount DESC
+                LIMIT 12;
+                """;
+            cmd.Parameters.AddWithValue("@d", docId);
+            using var rd = cmd.ExecuteReader();
+            while (rd.Read())
+            {
+                bundle.NgBreakdowns.Add(new AiNgBreakdownSummaryRow
+                {
+                    DefectName = rd.GetString(0),
+                    RowCount   = rd.IsDBNull(1) ? 0 : rd.GetInt32(1),
+                    TotalCount = rd.IsDBNull(2) ? 0 : rd.GetDouble(2),
+                    AvgRate    = ReadNullableDouble(rd, 3),
+                });
+            }
+        }
+
+        // 2) Conclusions
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = """
+                SELECT ConclusionId, Topic, StatementFromReport, NormalizedInterpretation,
+                       SourceFile, SheetName
+                FROM AiConclusions WHERE DocumentId=@d ORDER BY ConclusionId;
+                """;
+            cmd.Parameters.AddWithValue("@d", docId);
+            using var rd = cmd.ExecuteReader();
+            while (rd.Read())
+            {
+                bundle.Conclusions.Add(new AiConclusionRow
+                {
+                    ConclusionId             = rd.GetString(0),
+                    Topic                    = rd.GetString(1),
+                    StatementFromReport      = rd.GetString(2),
+                    NormalizedInterpretation = rd.GetString(3),
+                    SourceFile               = rd.GetString(4),
+                    SheetName                = rd.GetString(5),
+                });
+            }
+        }
+
+        // 3) Troubleshooting hints
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = """
+                SELECT HintId, DefectName, CheckItem, Reason, EvidenceStrength,
+                       RelatedProcess, RelatedPart, SourceFile, SheetName
+                FROM AiTroubleshootingHints WHERE DocumentId=@d ORDER BY HintId;
+                """;
+            cmd.Parameters.AddWithValue("@d", docId);
+            using var rd = cmd.ExecuteReader();
+            while (rd.Read())
+            {
+                bundle.Hints.Add(new AiHintRow
+                {
+                    HintId           = rd.GetString(0),
+                    DefectName       = rd.GetString(1),
+                    CheckItem        = rd.GetString(2),
+                    Reason           = rd.GetString(3),
+                    EvidenceStrength = rd.GetString(4),
+                    RelatedProcess   = rd.GetString(5),
+                    RelatedPart      = rd.GetString(6),
+                    SourceFile       = rd.GetString(7),
+                    SheetName        = rd.GetString(8),
+                });
+            }
+        }
+
+        // 4) DecisionRationale from the (single) AiExtractionLogs row
+        string logId = "";
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = """
+                SELECT LogId, AssumptionsJson, WarningsJson, DecisionRationale FROM AiExtractionLogs
+                WHERE DocumentId=@d ORDER BY CreatedAt DESC LIMIT 1;
+                """;
+            cmd.Parameters.AddWithValue("@d", docId);
+            using var rd = cmd.ExecuteReader();
+            if (rd.Read())
+            {
+                logId = rd.GetString(0);
+                bundle.Assumptions = ReadJsonStringList(rd.GetString(1));
+                bundle.Warnings = ReadJsonStringList(rd.GetString(2));
+                bundle.DecisionRationale = rd.GetString(3);
+            }
+        }
+
+        // 5) Translations (ko/en/vi) — narrative-only
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = "SELECT Lang, Title, Purpose, ContentJson FROM AiDocumentTranslations WHERE DocumentId=@d;";
+            cmd.Parameters.AddWithValue("@d", docId);
+            using var rd = cmd.ExecuteReader();
+            while (rd.Read())
+            {
+                bundle.DocTranslations[rd.GetString(0)] = new AiDocTranslationRow
+                {
+                    Title   = rd.GetString(1),
+                    Purpose = rd.GetString(2),
+                    Content = ReadJsonStringList(rd.IsDBNull(3) ? "" : rd.GetString(3)),
+                };
+            }
+        }
+
+        if (bundle.Conclusions.Count > 0)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                SELECT t.ConclusionId, t.Lang, t.Topic, t.StatementFromReport, t.NormalizedInterpretation
+                FROM AiConclusionTranslations t
+                JOIN AiConclusions c ON c.ConclusionId = t.ConclusionId
+                WHERE c.DocumentId = @d;
+                """;
+            cmd.Parameters.AddWithValue("@d", docId);
+            using var rd = cmd.ExecuteReader();
+            while (rd.Read())
+            {
+                string cid  = rd.GetString(0);
+                string lang = rd.GetString(1);
+                if (!bundle.ConclusionTranslations.TryGetValue(cid, out var byLang))
+                    bundle.ConclusionTranslations[cid] = byLang = new();
+                byLang[lang] = new AiConclusionTranslationRow
+                {
+                    Topic                    = rd.GetString(2),
+                    StatementFromReport      = rd.GetString(3),
+                    NormalizedInterpretation = rd.GetString(4),
+                };
+            }
+        }
+
+        if (bundle.Hints.Count > 0)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                SELECT t.HintId, t.Lang, t.CheckItem, t.Reason
+                FROM AiHintTranslations t
+                JOIN AiTroubleshootingHints h ON h.HintId = t.HintId
+                WHERE h.DocumentId = @d;
+                """;
+            cmd.Parameters.AddWithValue("@d", docId);
+            using var rd = cmd.ExecuteReader();
+            while (rd.Read())
+            {
+                string hid  = rd.GetString(0);
+                string lang = rd.GetString(1);
+                if (!bundle.HintTranslations.TryGetValue(hid, out var byLang))
+                    bundle.HintTranslations[hid] = byLang = new();
+                byLang[lang] = new AiHintTranslationRow
+                {
+                    CheckItem = rd.GetString(2),
+                    Reason    = rd.GetString(3),
+                };
+            }
+        }
+
+        if (!string.IsNullOrEmpty(logId))
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT Lang, AssumptionsJson, WarningsJson, DecisionRationale FROM AiLogTranslations WHERE LogId=@l;";
+            cmd.Parameters.AddWithValue("@l", logId);
+            using var rd = cmd.ExecuteReader();
+            while (rd.Read())
+            {
+                bundle.LogTranslations[rd.GetString(0)] = new AiLogTranslationRow
+                {
+                    Assumptions       = ReadJsonStringList(rd.GetString(1)),
+                    Warnings          = ReadJsonStringList(rd.GetString(2)),
+                    DecisionRationale = rd.GetString(3),
+                };
+            }
+        }
+
+        return bundle;
+    }
+
+    private static double? ReadNullableDouble(SqliteDataReader r, int ordinal)
+        => r.IsDBNull(ordinal) ? null : r.GetDouble(ordinal);
+
+    private static List<string> ReadJsonStringList(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return [];
+        try { return JsonSerializer.Deserialize<List<string>>(json, JsonOpts) ?? []; }
+        catch { return []; }
+    }
+
+    // ── Dataset summary translations (multi-language) ─────────────────────────
+
+    public void SaveDatasetSummaryTranslation(
+        string datasetName, string lang, DatasetSummaryTranslation tr)
+    {
+        string actionsJson = "";
+        try
+        {
+            if (tr.Actions is { Count: > 0 })
+                actionsJson = System.Text.Json.JsonSerializer.Serialize(tr.Actions);
+        }
+        catch { }
+
+        string contextJson = "";
+        try
+        {
+            if (tr.Context is not null)
+                contextJson = System.Text.Json.JsonSerializer.Serialize(tr.Context);
+        }
+        catch { }
+
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO DatasetSummaryTranslations
+                (DatasetName, Lang, Summary, KeyFindings, Purpose, TestConditions,
+                 RootCause, Decision, RecommendedAction,
+                 Headline, ActionsJson, ContextJson, UpdatedAt)
+            VALUES (@n, @l, @s, @k, @pu, @tc, @rc, @de, @ra,
+                    @hl, @ac, @cx, @at)
+            ON CONFLICT(DatasetName, Lang) DO UPDATE SET
+                Summary=@s, KeyFindings=@k, Purpose=@pu, TestConditions=@tc,
+                RootCause=@rc, Decision=@de, RecommendedAction=@ra,
+                Headline=@hl, ActionsJson=@ac, ContextJson=@cx, UpdatedAt=@at;
+            """;
+        cmd.Parameters.AddWithValue("@n",  datasetName);
+        cmd.Parameters.AddWithValue("@l",  lang);
+        cmd.Parameters.AddWithValue("@s",  tr.Summary           ?? "");
+        cmd.Parameters.AddWithValue("@k",  tr.KeyFindings       ?? "");
+        cmd.Parameters.AddWithValue("@pu", tr.Purpose           ?? "");
+        cmd.Parameters.AddWithValue("@tc", tr.TestConditions    ?? "");
+        cmd.Parameters.AddWithValue("@rc", tr.RootCause         ?? "");
+        cmd.Parameters.AddWithValue("@de", tr.Decision          ?? "");
+        cmd.Parameters.AddWithValue("@ra", tr.RecommendedAction ?? "");
+        cmd.Parameters.AddWithValue("@hl", tr.Headline          ?? "");
+        cmd.Parameters.AddWithValue("@ac", actionsJson);
+        cmd.Parameters.AddWithValue("@cx", contextJson);
+        cmd.Parameters.AddWithValue("@at", DateTime.UtcNow.ToString("O"));
+        cmd.ExecuteNonQuery();
+    }
+
+    public Dictionary<string, DatasetSummaryTranslation> GetDatasetSummaryTranslations(string datasetName)
+    {
+        var dict = new Dictionary<string, DatasetSummaryTranslation>(StringComparer.OrdinalIgnoreCase);
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT Lang, Summary, KeyFindings, Purpose, TestConditions,
+                   RootCause, Decision, RecommendedAction,
+                   Headline, ActionsJson, ContextJson
+            FROM DatasetSummaryTranslations WHERE DatasetName=@n;
+            """;
+        cmd.Parameters.AddWithValue("@n", datasetName);
+        var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            string headline    = r.IsDBNull(8)  ? "" : r.GetString(8);
+            string actionsJson = r.IsDBNull(9)  ? "" : r.GetString(9);
+            string contextJson = r.IsDBNull(10) ? "" : r.GetString(10);
+
+            List<ActionItem> actions = [];
+            if (!string.IsNullOrWhiteSpace(actionsJson))
+            {
+                try { actions = System.Text.Json.JsonSerializer.Deserialize<List<ActionItem>>(actionsJson, jsonOpts) ?? []; }
+                catch { }
+            }
+            AnalysisContext? context = null;
+            if (!string.IsNullOrWhiteSpace(contextJson))
+            {
+                try { context = System.Text.Json.JsonSerializer.Deserialize<AnalysisContext>(contextJson, jsonOpts); }
+                catch { }
+            }
+
+            dict[r.GetString(0)] = new DatasetSummaryTranslation
+            {
+                Summary           = r.IsDBNull(1) ? "" : r.GetString(1),
+                KeyFindings       = r.IsDBNull(2) ? "" : r.GetString(2),
+                Purpose           = r.IsDBNull(3) ? "" : r.GetString(3),
+                TestConditions    = r.IsDBNull(4) ? "" : r.GetString(4),
+                RootCause         = r.IsDBNull(5) ? "" : r.GetString(5),
+                Decision          = r.IsDBNull(6) ? "" : r.GetString(6),
+                RecommendedAction = r.IsDBNull(7) ? "" : r.GetString(7),
+                Headline          = headline,
+                Actions           = actions,
+                Context           = context,
+            };
+        }
+        return dict;
     }
 
     // ── AskAi history ─────────────────────────────────────────────────────────
@@ -2429,6 +3183,44 @@ public sealed class WebRepository
     }
 
     // ── Model Groups ─────────────────────────────────────────────────────────
+
+    // ── DataInputAliases: user-curated token → Material map ───────────────────
+
+    public Dictionary<string, string> GetDataInputAliases()
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Token, Material FROM DataInputAliases;";
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read()) map[r.GetString(0)] = r.GetString(1);
+        return map;
+    }
+
+    public void SaveDataInputAlias(string token, string material)
+    {
+        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(material)) return;
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO DataInputAliases (Token, Material, CreatedAt, UpdatedAt)
+            VALUES (@t, @m, @at, @at)
+            ON CONFLICT(Token) DO UPDATE SET Material=@m, UpdatedAt=@at;
+            """;
+        cmd.Parameters.AddWithValue("@t",  token.Trim());
+        cmd.Parameters.AddWithValue("@m",  material.Trim());
+        cmd.Parameters.AddWithValue("@at", DateTime.UtcNow.ToString("O"));
+        cmd.ExecuteNonQuery();
+    }
+
+    public void DeleteDataInputAlias(string token)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM DataInputAliases WHERE Token=@t;";
+        cmd.Parameters.AddWithValue("@t", token);
+        cmd.ExecuteNonQuery();
+    }
 
     public List<ModelGroupRecord> GetModelGroups()
     {

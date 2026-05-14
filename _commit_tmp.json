@@ -1,0 +1,106 @@
+{
+  "name": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025",
+  "result": {
+    "schema_version": "0.1",
+    "document": {
+      "document_id": "",
+      "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025",
+      "source_sheet": "201507",
+      "title": "REPORT TEST MAGNET SIDE A,B VENDER RUIJIN CLEAN WITH CHEMICALS E100B-006 MODEL MSU-L20S15-07",
+      "model": "MSU-L20S15-07",
+      "report_date": "2025-10-27",
+      "department": "ME",
+      "marker": "Thao",
+      "line": "E2-4B",
+      "report_type": "normal_comparison",
+      "primary_defect": {"canonical_name": "S-MG cleaning method qualification", "aliases_in_document": ["SM damage","SM separate","B-PT damage"]},
+      "related_defects": [],
+      "parts": ["S-MG A/B","B-PT","Yoke"],
+      "processes": ["S-MG vision","B-PT+S-MG separate-glue","Tension","Drop test"],
+      "purpose": "Verify whether Ruijin S-MG A/B cleaned with Chemicals E100B-006 can be used vs Normal alcohol cleaning, via vision/separate-glue/tension/drop test.",
+      "content": [
+        "Vision SM check: chemicals vs normal alcohol clean.",
+        "Decap separate glue B-PT+S-MG (spec 80~90%).",
+        "Tension Long SM and Short SM.",
+        "Drop test Semi Yoke + Manual + Auto."
+      ],
+      "source_cells": {"title": ["201507!C2"], "date": ["201507!S3"], "purpose": ["201507!B6"], "content": ["201507!B10:B13"]}
+    },
+    "test_conditions": [
+      {"condition_id": "c1", "condition_group": "Cleaning chemical change", "line": "E2-4B", "process": "S-MG cleaning", "changed_factor": "Cleaning chemical: E100B-006 vs normal alcohol", "before_value": "Normal alcohol clean", "after_value": "Chemicals E100B-006 clean", "unit": null, "machine": null, "jig": null, "material_lot": null, "supplier": "Ruijin", "dry_time_sec": null, "temperature": null, "pressure": null, "bond_amount": null, "uv_energy": null, "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["B6","B10:B13"]}
+    ],
+    "results": [
+      {"result_id": "v_test", "condition_id": "c1", "measurement_type": "Vision", "condition_group": "SM Vision E100B-006", "date": "2025-10-27", "line": "E2-4B", "input_count": 100, "ok_count": 100, "ng_count": 0, "ng_rate_decimal": 0, "ng_rate_percent": 0, "metric_name": "Vision NG rate", "metric_value": 0, "unit": "%", "judgement": "OK", "ng_breakdown": {"SM Damage": 0, "SM Separate": 0, "B-PT Damage": 0}, "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["C18:M18"]},
+      {"result_id": "v_norm", "condition_id": "c1", "measurement_type": "Vision", "condition_group": "SM Vision Normal alcohol", "date": "2025-10-27", "line": "E2-4B", "input_count": 200, "ok_count": 200, "ng_count": 0, "ng_rate_decimal": 0, "ng_rate_percent": 0, "metric_name": "Vision NG rate", "metric_value": 0, "unit": "%", "judgement": "OK", "ng_breakdown": {"SM Damage": 0, "SM Separate": 0, "B-PT Damage": 0}, "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["F19:M19"]},
+      {"result_id": "sg_test", "condition_id": "c1", "measurement_type": "Separate glue", "condition_group": "B-PT+S-MG Decap E100B-006", "date": "2025-10-27", "line": "E2-4B", "input_count": 8, "ok_count": 8, "ng_count": 0, "ng_rate_decimal": 0, "ng_rate_percent": 0, "metric_name": "Decap separate-glue OK rate (spec 80-90%)", "metric_value": null, "unit": "%", "judgement": "OK", "ng_breakdown": {}, "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["C31:K31"]},
+      {"result_id": "sg_norm", "condition_id": "c1", "measurement_type": "Separate glue", "condition_group": "B-PT+S-MG Decap Normal alcohol", "date": "2025-10-27", "line": "E2-4B", "input_count": 8, "ok_count": 8, "ng_count": 0, "ng_rate_decimal": 0, "ng_rate_percent": 0, "metric_name": "Decap separate-glue OK rate (spec 80-90%)", "metric_value": null, "unit": "%", "judgement": "OK", "ng_breakdown": {}, "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["C32:K32"]},
+      {"result_id": "tlong_test", "condition_id": "c1", "measurement_type": "Tension", "condition_group": "Long SM E100B-006", "date": "2025-10-28", "line": "E2-4B", "input_count": 8, "ok_count": null, "ng_count": null, "ng_rate_decimal": null, "ng_rate_percent": null, "metric_name": "Tension Long SM AVG", "metric_value": 42.77, "unit": "Kgf", "judgement": "OK", "ng_breakdown": {}, "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["G36:Q36"]},
+      {"result_id": "tlong_norm", "condition_id": "c1", "measurement_type": "Tension", "condition_group": "Long SM Normal", "date": "2025-10-28", "line": "E2-4B", "input_count": 8, "ok_count": null, "ng_count": null, "ng_rate_decimal": null, "ng_rate_percent": null, "metric_name": "Tension Long SM AVG", "metric_value": 45.93, "unit": "Kgf", "judgement": "OK", "ng_breakdown": {}, "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["G37:Q37"]},
+      {"result_id": "tshort_test", "condition_id": "c1", "measurement_type": "Tension", "condition_group": "Short SM E100B-006", "date": "2025-10-28", "line": "E2-4B", "input_count": 8, "ok_count": null, "ng_count": null, "ng_rate_decimal": null, "ng_rate_percent": null, "metric_name": "Tension Short SM AVG", "metric_value": 29.72, "unit": "Kgf", "judgement": "OK", "ng_breakdown": {}, "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["G38:Q38"]},
+      {"result_id": "tshort_norm", "condition_id": "c1", "measurement_type": "Tension", "condition_group": "Short SM Normal", "date": "2025-10-28", "line": "E2-4B", "input_count": 8, "ok_count": null, "ng_count": null, "ng_rate_decimal": null, "ng_rate_percent": null, "metric_name": "Tension Short SM AVG", "metric_value": 31.38, "unit": "Kgf", "judgement": "OK", "ng_breakdown": {}, "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["G39:Q39"]},
+      {"result_id": "d_semi_t", "condition_id": "c1", "measurement_type": "Drop test", "condition_group": "Semi Yoke Drop E100B-006", "date": "2025-10-28", "line": "E2-4B", "input_count": 8, "ok_count": 8, "ng_count": 0, "ng_rate_decimal": 0, "ng_rate_percent": 0, "metric_name": "Drop NG rate Semi Yoke", "metric_value": 0, "unit": "%", "judgement": "OK", "ng_breakdown": {}, "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["I42:K42"]},
+      {"result_id": "d_semi_n", "condition_id": "c1", "measurement_type": "Drop test", "condition_group": "Semi Yoke Drop Normal", "date": "2025-10-28", "line": "E2-4B", "input_count": 8, "ok_count": 8, "ng_count": 0, "ng_rate_decimal": 0, "ng_rate_percent": 0, "metric_name": "Drop NG rate Semi Yoke", "metric_value": 0, "unit": "%", "judgement": "OK", "ng_breakdown": {}, "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["I43:K43"]},
+      {"result_id": "d_man_t", "condition_id": "c1", "measurement_type": "Drop test", "condition_group": "Manual Drop E100B-006", "date": "2025-10-28", "line": "E2-4B", "input_count": 8, "ok_count": 8, "ng_count": 0, "ng_rate_decimal": 0, "ng_rate_percent": 0, "metric_name": "Drop NG rate Manual", "metric_value": 0, "unit": "%", "judgement": "OK", "ng_breakdown": {}, "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["I44:K44"]},
+      {"result_id": "d_man_n", "condition_id": "c1", "measurement_type": "Drop test", "condition_group": "Manual Drop Normal", "date": "2025-10-28", "line": "E2-4B", "input_count": 8, "ok_count": 8, "ng_count": 0, "ng_rate_decimal": 0, "ng_rate_percent": 0, "metric_name": "Drop NG rate Manual", "metric_value": 0, "unit": "%", "judgement": "OK", "ng_breakdown": {}, "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["I45:K45"]},
+      {"result_id": "d_auto_t", "condition_id": "c1", "measurement_type": "Drop test", "condition_group": "Auto Drop E100B-006", "date": "2025-10-28", "line": "E2-4B", "input_count": 8, "ok_count": 8, "ng_count": 0, "ng_rate_decimal": 0, "ng_rate_percent": 0, "metric_name": "Drop NG rate Auto", "metric_value": 0, "unit": "%", "judgement": "OK", "ng_breakdown": {}, "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["I46:K46"]},
+      {"result_id": "d_auto_n", "condition_id": "c1", "measurement_type": "Drop test", "condition_group": "Auto Drop Normal", "date": "2025-10-28", "line": "E2-4B", "input_count": 8, "ok_count": 8, "ng_count": 0, "ng_rate_decimal": 0, "ng_rate_percent": 0, "metric_name": "Drop NG rate Auto", "metric_value": 0, "unit": "%", "judgement": "OK", "ng_breakdown": {}, "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["I47:K47"]}
+    ],
+    "conclusions": [
+      {"conclusion_id": "k1", "topic": "Vision/Decap/Drop all OK", "statement_from_report": "Vision S-MG OK; decap bond OK; drop test all OK.", "normalized_interpretation": "All four test categories (vision, decap, tension, drop) pass for both groups. No relative-change issue.", "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["B51:B54"]},
+      {"conclusion_id": "k2", "topic": "Tension within range", "statement_from_report": "Tension AVG: Long SM 42.77 vs 45.93; Short SM 29.72 vs 31.38.", "normalized_interpretation": "Long SM Test 42.77 vs Normal 45.93 = -6.9% lower; Short SM Test 29.72 vs Normal 31.38 = -5.3% lower. Differences within Sample-by-Sample variability across n=8.", "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["Q36:Q39"]},
+      {"conclusion_id": "k3", "topic": "Approval", "statement_from_report": "CAN USE SIDE MG A/B Clean With CHEMICALS E100B-006.", "normalized_interpretation": "Test approved: cleaning S-MG with Chemicals E100B-006 from vendor Ruijin can be used.", "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["B55"]}
+    ],
+    "troubleshooting_index": {
+      "defect_name": "S-MG cleaning chemical qualification",
+      "when_user_asks": ["MSU-L20S15-07 Ruijin clean E100B-006 OK?", "S-MG cleaning chemical change"],
+      "suggested_checks": [
+        {"hint_id": "h1", "check_item": "Monitor production tension trend after switching to E100B-006 (slight ~6% lower AVG)", "reason": "Long SM 42.77 vs 45.93 (-6.9%); Short SM 29.72 vs 31.38 (-5.3%); n=8 each.", "evidence_strength": "low", "related_process": "S-MG cleaning + tension", "related_part": "S-MG", "source_file": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025", "sheet_name": "201507", "source_cells": ["Q36:Q39"]}
+      ],
+      "limitations": ["Drop/decap n=8 each; statistically weak.", "Function-level NG not tested; only mechanical."]
+    },
+    "ai_extraction_log": {
+      "confidence": 0.9,
+      "assumptions": ["No tension spec value visible in sheet; treated as headroom check only.", "Spec '80~90%' on row 21 refers to decap separate-glue area ratio."],
+      "warnings": ["Tension is slightly lower with new chemical; confirm long-run trend."],
+      "decision_rationale": "normal_comparison. All test rows pass; tension -5 to -7% lower (not significant). Writer approves use."
+    }
+  },
+  "translations": {
+    "ko": {
+      "document": {"title": "REPORT TEST MAGNET SIDE A,B VENDER RUIJIN CLEAN WITH CHEMICALS E100B-006 MODEL MSU-L20S15-07", "purpose": "Ruijin S-MG A/B를 Chemicals E100B-006로 clean한 결과를 Normal 알코올 clean과 vision/decap/tension/drop으로 비교 사용 가능 여부 검증.", "content": ["Vision SM 화학 vs 알코올.", "B-PT+S-MG decap separate-glue (spec 80~90%).", "Long SM, Short SM tension.", "Semi Yoke + Manual + Auto drop."]},
+      "conclusions": {
+        "k1": {"topic": "Vision/Decap/Drop 모두 OK", "statement_from_report": "Vision/Decap/Drop 모두 OK.", "normalized_interpretation": "4개 카테고리 모두 양 그룹 PASS, 상대 변화 없음."},
+        "k2": {"topic": "Tension 범위 내", "statement_from_report": "Long SM 42.77 vs 45.93; Short SM 29.72 vs 31.38.", "normalized_interpretation": "Long SM -6.9%, Short SM -5.3% 낮음. n=8 표본 변동 범위."},
+        "k3": {"topic": "결재", "statement_from_report": "CAN USE SIDE MG A/B Clean With CHEMICALS E100B-006.", "normalized_interpretation": "사용 승인."}
+      },
+      "hints": {
+        "h1": {"check_item": "E100B-006 전환 후 양산 tension 추이 모니터링 (~6% 낮음)", "reason": "Long SM 42.77 vs 45.93 (-6.9%), Short SM 29.72 vs 31.38 (-5.3%), n=8."}
+      },
+      "log": {"assumptions": ["시트에 tension spec 수치 없음; 여유 확인 위주.", "row 21 '80~90%' = decap separate-glue 면적비."], "warnings": ["새 화학으로 tension 약간 낮음."], "decision_rationale": "normal_comparison. 모두 PASS, tension -5~-7%(유의 X). 사용 승인."}
+    },
+    "en": {
+      "document": {"title": "REPORT TEST MAGNET SIDE A,B VENDER RUIJIN CLEAN WITH CHEMICALS E100B-006 MODEL MSU-L20S15-07", "purpose": "Verify Ruijin S-MG A/B cleaned with Chemicals E100B-006 can be used vs normal alcohol clean by vision/decap/tension/drop.", "content": ["Vision SM chemicals vs alcohol.", "B-PT+S-MG decap separate-glue (spec 80~90%).", "Long SM and Short SM tension.", "Semi Yoke + Manual + Auto drop."]},
+      "conclusions": {
+        "k1": {"topic": "Vision/Decap/Drop all OK", "statement_from_report": "Vision/Decap/Drop all OK.", "normalized_interpretation": "All four categories pass for both groups; no relative change concern."},
+        "k2": {"topic": "Tension in range", "statement_from_report": "Long SM 42.77 vs 45.93; Short SM 29.72 vs 31.38.", "normalized_interpretation": "Long SM -6.9%, Short SM -5.3% lower. Within n=8 variability."},
+        "k3": {"topic": "Approval", "statement_from_report": "CAN USE SIDE MG A/B Clean With CHEMICALS E100B-006.", "normalized_interpretation": "Approved."}
+      },
+      "hints": {
+        "h1": {"check_item": "Monitor production tension trend after switching to E100B-006 (~6% lower).", "reason": "Long SM -6.9%, Short SM -5.3%, n=8."}
+      },
+      "log": {"assumptions": ["No tension spec value in sheet; headroom only.", "'80~90%' refers to decap separate-glue area ratio."], "warnings": ["Tension slightly lower with new chemical."], "decision_rationale": "normal_comparison. All pass; tension -5 to -7% (insignificant). Use approved."}
+    },
+    "vi": {
+      "document": {"title": "BÁO CÁO TEST MAGNET SIDE A,B VENDER RUIJIN VỆ SINH BẰNG E100B-006 MODEL MSU-L20S15-07", "purpose": "Kiểm tra S-MG A/B Ruijin vệ sinh bằng Chemicals E100B-006 có thay được vệ sinh alcohol thường không qua vision/decap/tension/drop.", "content": ["Vision SM hóa chất vs alcohol.", "B-PT+S-MG decap separate-glue (spec 80~90%).", "Tension Long/Short SM.", "Drop Semi Yoke + Manual + Auto."]},
+      "conclusions": {
+        "k1": {"topic": "Vision/Decap/Drop đều OK", "statement_from_report": "Vision/Decap/Drop đều OK.", "normalized_interpretation": "Cả 4 hạng mục đều pass; không thay đổi đáng kể."},
+        "k2": {"topic": "Tension trong khoảng", "statement_from_report": "Long SM 42.77 vs 45.93; Short SM 29.72 vs 31.38.", "normalized_interpretation": "Long SM -6.9%, Short SM -5.3% thấp hơn. Trong dao động n=8."},
+        "k3": {"topic": "Phê duyệt", "statement_from_report": "CAN USE SIDE MG A/B Clean With CHEMICALS E100B-006.", "normalized_interpretation": "Đã duyệt sử dụng."}
+      },
+      "hints": {
+        "h1": {"check_item": "Theo dõi tension trên sản xuất sau khi chuyển E100B-006 (~6% thấp hơn).", "reason": "Long SM -6.9%, Short SM -5.3%, n=8."}
+      },
+      "log": {"assumptions": ["Không có spec tension trong sheet; chỉ kiểm tra dư.", "'80~90%' = tỷ diện tích decap separate-glue."], "warnings": ["Tension hơi thấp với hóa chất mới."], "decision_rationale": "normal_comparison. Đều pass; tension -5 đến -7% (không đáng kể). Duyệt sử dụng."}
+    }
+  }
+}

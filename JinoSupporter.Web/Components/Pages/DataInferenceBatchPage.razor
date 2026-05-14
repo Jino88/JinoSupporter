@@ -15,38 +15,69 @@
     <span class="dib-count">@_unprocessed.Count pending · @_processed.Count done (out of @_reports.Count total)</span>
     <div style="flex:1;"></div>
 
-    <div class="btn-group btn-group-sm" role="group" title="Select analysis mode">
-        <button type="button"
-                class="btn @(_mode == AnalysisMode.Vision ? "btn-primary" : "btn-outline-secondary")"
-                disabled="@_isBusy"
-                @onclick="() => _mode = AnalysisMode.Vision"
-                title="Send images directly to Claude vision (1 API call)">
-            🖼 Vision
-        </button>
-        <button type="button"
-                class="btn @(_mode == AnalysisMode.OcrText ? "btn-primary" : "btn-outline-secondary")"
-                disabled="@_isBusy"
-                @onclick="() => _mode = AnalysisMode.OcrText"
-                title="Image → OCR markdown → text analysis (2 API calls, cached: 1 call on re-analysis)">
-            📝 OCR→Text
-        </button>
-    </div>
+    @* Per v4 policy: only excel_paste TSV is sent to AI. Vision / OCR→Text
+       modes are gone. The mode enum stays in code so older logs that mention
+       "Text-only" still resolve, but the UI is fixed to the text-only path. *@
 
-    <button class="btn btn-outline-secondary btn-sm" @onclick="Refresh" disabled="@_isBusy">↻ Refresh</button>
-    <button class="btn btn-primary btn-sm" @onclick="RunBatchAsync"
-            disabled="@(_isBusy || !Claude.IsConfigured || _selected.Count == 0)">
-        @if (_isBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
-        ▶ Analyze Selected (@_selected.Count)
+    <button class="btn btn-outline-primary btn-sm" @onclick="ToggleProductTypeMapper" disabled="@_isBusy">
+        Mapping (@MissingProductTypeReports.Count)
     </button>
-    <button class="btn btn-success btn-sm" @onclick="LaunchCliBatch"
-            title="Open terminal with Claude CLI — processes all pending datasets using the Claude Code subscription (no Anthropic API credit).">
-        🖥 Run via CLI
+    <button class="btn btn-outline-secondary btn-sm" @onclick="Refresh" disabled="@_isBusy">↻ Refresh</button>
+    @* Current AI_EXCEL_PROC writes AiDocuments/AiResults via the CLI helper.
+       The old API path wrote legacy DatasetSummary/NormalizedMeasurements, so
+       it is blocked here to avoid mixing schemas. *@
+    <button class="btn btn-primary btn-sm" @onclick="StartApiAsync"
+            disabled="@(_isBusy || !Claude.IsConfigured || _selected.Count == 0)"
+            title="Disabled for current schema: use Analyze (CLI).">
+        @if (_isBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
+        ▶ Analyze (API legacy) (@_selected.Count)
+    </button>
+    <button class="btn btn-success btn-sm" @onclick="StartCliAsync"
+            disabled="@(_isBusy || _selected.Count == 0)"
+            title="Run via Claude Code CLI — uses your Claude subscription, no Anthropic API credit.">
+        🖥 Analyze (CLI) (@_selected.Count)
     </button>
 </div>
 
 @if (!string.IsNullOrEmpty(_status))
 {
     <div class="dib-status @(_statusError ? "dib-error" : "dib-ok")">@_status</div>
+}
+
+@* Confirmation banner — surfaces only when "Analyze Selected" finds at least
+   one dataset that already has results. User picks once for the whole batch. *@
+@if (_confirmTargets is not null)
+{
+    <div class="dib-confirm">
+        <div class="dib-confirm-title">
+            ⚠ @_confirmExisting.Count of @_confirmTargets.Count selected dataset(s) already analyzed
+        </div>
+        <div class="dib-confirm-body">
+            Some datasets in this batch already have measurements / summaries on file.
+            What should the run do for them?
+        </div>
+        <div class="dib-confirm-list">
+            @foreach (var n in _confirmExisting.Take(8))
+            {
+                <span class="dib-confirm-chip">@n</span>
+            }
+            @if (_confirmExisting.Count > 8)
+            {
+                <span class="dib-confirm-chip dib-confirm-more">+@(_confirmExisting.Count - 8) more</span>
+            }
+        </div>
+        <div class="dib-confirm-actions">
+            <button class="btn btn-primary btn-sm" @onclick="() => RunConfirmedAsync(BatchRunMode.Reanalyze)">
+                ▶ Re-analyze (full)
+            </button>
+            <button class="btn btn-success btn-sm" @onclick="() => RunConfirmedAsync(BatchRunMode.TranslateOnly)">
+                🌐 Translate only (ko + vi)
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="CancelConfirm">
+                ✕ Cancel
+            </button>
+        </div>
+    </div>
 }
 
 <!-- ── Filter tabs ─────────────────────────────────────────────────────────── -->
@@ -57,20 +88,25 @@
             @onclick="() => SetFilter(Filter.Done)">✅ Done (@_processed.Count)</button>
     <button class="dib-tab @(_filter == Filter.Issues ? "active" : "")"
             @onclick="() => SetFilter(Filter.Issues)">⚠ Issues (@_issueDatasets.Count)</button>
-    <button class="dib-tab @(_filter == Filter.NoOcr ? "active" : "")"
-            @onclick="() => SetFilter(Filter.NoOcr)"
-            title="Show only datasets without cached OCR text (images only). Run OCR→Text mode for batch OCR.">
-        📝 No OCR (@_noOcrDatasets.Count)
-    </button>
+    @* "No OCR" tab removed — v4 policy ignores OCR cache entirely. *@
     <button class="dib-tab @(_filter == Filter.All ? "active" : "")"
             @onclick="() => SetFilter(Filter.All)">All (@_reports.Count)</button>
     <div style="flex:1;"></div>
     <button class="btn btn-outline-secondary btn-sm" @onclick="ToggleAllVisible" disabled="@_isBusy">
-        @(AllVisibleSelected ? "☐ Unselect Visible" : "☑ Select Visible")
+        @(AllVisibleSelected ? $"☐ Unselect Visible ({Visible.Count})" : $"☑ Select Visible ({Visible.Count})")
     </button>
 </div>
 
 <!-- ── Table ───────────────────────────────────────────────────────────────── -->
+<datalist id="dib-product-type-options">
+    @foreach (var opt in _productTypeOptions)
+    {
+        <option value="@opt"></option>
+    }
+</datalist>
+
+<div class="dib-content @(_showProductTypeMapper ? "with-map" : "")">
+<div class="dib-main">
 @if (Visible.Count == 0)
 {
     <div class="dib-empty">
@@ -100,16 +136,27 @@ else
             <tbody>
                 @foreach (var r in Visible)
                 {
-                    bool isDone = r.MeasurementCount > 0;
+                    bool isDone = IsAiBatchDone(r);
                     string? state = _runState.GetValueOrDefault(r.DatasetName);
                     <tr>
                         <td>
                             <input type="checkbox" checked="@_selected.Contains(r.DatasetName)"
-                                   disabled="@(_isBusy || r.ImageCount == 0)"
+                                   disabled="@_isBusy"
                                    @onchange="e => ToggleSelect(r.DatasetName, (bool)e.Value!)" />
                         </td>
                         <td><strong>@r.DatasetName</strong></td>
-                        <td>@r.ProductType</td>
+                        <td>
+                            @if (string.IsNullOrWhiteSpace(r.ProductType))
+                            {
+                                <button class="dib-map-inline" @onclick="() => OpenMappingFor(r.DatasetName)" disabled="@_isBusy">
+                                    Map
+                                </button>
+                            }
+                            else
+                            {
+                                @r.ProductType
+                            }
+                        </td>
                         <td>@r.ReportDate</td>
                         <td class="n">@r.ImageCount</td>
                         <td class="n">@r.MeasurementCount</td>
@@ -126,10 +173,6 @@ else
                                         ⚠ @issueCount
                                     </a>
                                 }
-                            }
-                            else if (r.ImageCount == 0)
-                            {
-                                <span class="dib-badge dib-badge-skip">No image</span>
                             }
                             else
                             {
@@ -168,6 +211,107 @@ else
         </table>
     </div>
 }
+
+</div>
+
+@if (_showProductTypeMapper)
+{
+    var missing = MissingProductTypeReports;
+    var modelNames = ProductTypeMapRows;
+    var matchedAll = string.IsNullOrWhiteSpace(_ptMapToken)
+        ? new List<RawReportInfo>()
+        : _reports.Where(r => DatasetHasToken(r.DatasetName, _ptMapToken)).ToList();
+    var matchedBlank = matchedAll.Where(r => string.IsNullOrWhiteSpace(r.ProductType)).ToList();
+    var selectedModel = modelNames.FirstOrDefault(c => SameModelToken(c.Token, _ptMapToken));
+
+    <aside class="dib-map-panel">
+        <div class="dib-map-head">
+            <div>
+                <div class="dib-map-title">Product Type Mapping</div>
+                <div class="dib-map-count">@missing.Count blank / @_reports.Count total dataset(s)</div>
+            </div>
+            <button class="dib-map-close" @onclick="ToggleProductTypeMapper">x</button>
+        </div>
+
+        <label class="dib-map-label">Model Names From Title</label>
+            @if (modelNames.Count == 0)
+            {
+                <div class="dib-map-empty">No model-like title code found.</div>
+            }
+            else
+            {
+                <div class="dib-map-candidates">
+                    @foreach (var c in modelNames.Take(80))
+                    {
+                        <button class="dib-map-candidate @(SameModelToken(c.Token, _ptMapToken) ? "active" : "")"
+                                @onclick="() => SelectPtMapToken(c.Token)">
+                            <span>
+                                @c.Token
+                                @if (!string.IsNullOrWhiteSpace(c.MappedTo))
+                                {
+                                    <span class="dib-map-alias">→ @c.MappedTo</span>
+                                }
+                            </span>
+                            <span class="dib-map-candidate-count">@c.BlankCount/@c.Count</span>
+                        </button>
+                    }
+                </div>
+            }
+
+            @if (selectedModel is not null)
+            {
+                <div class="dib-map-recognition">
+                    <div class="dib-map-recognition-head">
+                        Recognized as <strong>@selectedModel.Token</strong>
+                        <span>@matchedBlank.Count blank / @matchedAll.Count matched</span>
+                    </div>
+                    @foreach (var row in matchedAll.Take(12))
+                    {
+                        <div class="dib-map-recognition-row" title="@row.DatasetName">
+                            <span>@row.DatasetName</span>
+                            <em>@(string.IsNullOrWhiteSpace(row.ProductType) ? "(blank)" : row.ProductType)</em>
+                        </div>
+                    }
+                    @if (matchedAll.Count > 12)
+                    {
+                        <div class="dib-map-recognition-more">+@(matchedAll.Count - 12) more</div>
+                    }
+                </div>
+            }
+
+            <label class="dib-map-label mt-2">Change To</label>
+            <input class="form-control form-control-sm"
+                   list="dib-product-type-options"
+                   placeholder="Type Product Type or pick existing"
+                   value="@_ptMapProductType"
+                   @oninput="e => _ptMapProductType = e.Value?.ToString() ?? string.Empty" />
+
+            @if (_productTypeOptions.Count > 0)
+            {
+                <div class="dib-map-options">
+                    @foreach (var opt in _productTypeOptions.Take(28))
+                    {
+                        <button type="button" class="dib-map-option" @onclick="() => SetProductTypeDraft(opt)">@opt</button>
+                    }
+                </div>
+            }
+
+            <div class="dib-map-actions">
+                <button class="btn btn-primary btn-sm"
+                        @onclick="ApplyProductTypeMapping"
+                        disabled="@(_isBusy || string.IsNullOrWhiteSpace(_ptMapToken) || string.IsNullOrWhiteSpace(_ptMapProductType))">
+                    Save auto map + update @matchedAll.Count
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="ClearProductTypeMappingDraft">Clear</button>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_ptMapMessage))
+            {
+                <div class="dib-map-message @(_ptMapMessageError ? "err" : "ok")">@_ptMapMessage</div>
+            }
+    </aside>
+}
+</div>
 
 @if (_errorDialog is not null)
 {
@@ -217,6 +361,8 @@ else
 
     .dib-empty { padding: 60px; text-align: center; color: #94a3b8; font-size: 14px; }
 
+    .dib-content { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+    .dib-main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
     .dib-table-wrap { flex: 1; overflow: auto; }
     .dib-table      { border-collapse: collapse; width: 100%; font-size: 13px; }
     .dib-table th, .dib-table td {
@@ -227,6 +373,83 @@ else
         position: sticky; top: 0; z-index: 1;
     }
     td.n { text-align: right; font-variant-numeric: tabular-nums; }
+
+    .dib-map-inline {
+        border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8;
+        border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 700;
+    }
+    .dib-map-inline:hover { background: #dbeafe; }
+    .dib-map-panel {
+        width: 360px; flex: 0 0 360px; min-height: 0; overflow: auto;
+        background: #fff; border-left: 1px solid #e2e8f0; padding: 12px;
+    }
+    .dib-map-head {
+        display: flex; align-items: flex-start; justify-content: space-between;
+        gap: 10px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;
+    }
+    .dib-map-title { font-size: 14px; font-weight: 800; color: #0f172a; }
+    .dib-map-count { margin-top: 2px; font-size: 11px; color: #64748b; }
+    .dib-map-close {
+        border: none; background: #f1f5f9; color: #64748b; border-radius: 6px;
+        width: 24px; height: 24px; line-height: 22px; font-weight: 800;
+    }
+    .dib-map-close:hover { background: #e2e8f0; color: #0f172a; }
+    .dib-map-label {
+        display: block; margin: 12px 0 6px; font-size: 11px; font-weight: 800;
+        color: #475569; text-transform: uppercase;
+    }
+    .dib-map-candidates { display: flex; flex-direction: column; gap: 5px; }
+    .dib-map-candidate {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; color: #334155;
+        border-radius: 6px; padding: 6px 8px; font-size: 12px; font-weight: 700;
+    }
+    .dib-map-candidate:hover { background: #f1f5f9; }
+    .dib-map-candidate.active { border-color: #2563eb; background: #dbeafe; color: #1e3a8a; }
+    .dib-map-alias { display: block; margin-top: 1px; font-size: 10px; color: #64748b; font-weight: 700; }
+    .dib-map-candidate-count {
+        min-width: 24px; text-align: center; border-radius: 10px; padding: 1px 6px;
+        background: rgba(15, 23, 42, .08); font-size: 11px;
+    }
+    .dib-map-samples {
+        margin-top: 8px; padding: 8px; background: #f8fafc; border: 1px solid #e2e8f0;
+        border-radius: 6px; color: #64748b; font-size: 11px;
+    }
+    .dib-map-samples div {
+        overflow: hidden; white-space: nowrap; text-overflow: ellipsis; line-height: 1.6;
+    }
+    .dib-map-recognition {
+        margin-top: 8px; padding: 8px; background: #f8fafc; border: 1px solid #e2e8f0;
+        border-radius: 6px; font-size: 11px;
+    }
+    .dib-map-recognition-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        color: #334155; margin-bottom: 6px;
+    }
+    .dib-map-recognition-head span { color: #64748b; font-weight: 700; }
+    .dib-map-recognition-row {
+        display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px;
+        align-items: center; line-height: 1.7;
+    }
+    .dib-map-recognition-row span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #475569; }
+    .dib-map-recognition-row em { font-style: normal; color: #64748b; font-weight: 700; }
+    .dib-map-recognition-more { margin-top: 4px; color: #64748b; font-weight: 700; }
+    .dib-map-options { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .dib-map-option {
+        border: 1px solid #e2e8f0; background: #fff; color: #334155;
+        border-radius: 6px; padding: 3px 7px; font-size: 11px; font-weight: 700;
+    }
+    .dib-map-option:hover { background: #f8fafc; border-color: #cbd5e1; }
+    .dib-map-actions { display: flex; gap: 6px; margin-top: 12px; }
+    .dib-map-message {
+        margin-top: 10px; border-radius: 6px; padding: 7px 8px; font-size: 12px; font-weight: 700;
+    }
+    .dib-map-message.ok { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .dib-map-message.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .dib-map-empty {
+        margin-top: 12px; padding: 24px 10px; text-align: center; color: #94a3b8;
+        background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px;
+    }
 
     .dib-badge {
         display: inline-flex; align-items: center; padding: 2px 9px;
@@ -279,6 +502,7 @@ else
 @code {
     private enum Filter { Pending, Done, Issues, NoOcr, All }
     private enum AnalysisMode { Vision, OcrText }
+    private sealed record ProductTypeMapRow(string Token, int Count, int BlankCount, string MappedTo, List<string> Samples);
 
     private AnalysisMode _mode = AnalysisMode.Vision;
 
@@ -290,13 +514,20 @@ else
     private HashSet<string>            _ocrCached      = new(StringComparer.Ordinal);
     private Dictionary<string, int>    _issueCount     = new(StringComparer.Ordinal);
     private HashSet<string>            _selected       = new(StringComparer.Ordinal);
-    private Dictionary<string, string> _runState       = [];
-    private Dictionary<string, string> _runError       = [];
+    private System.Collections.Concurrent.ConcurrentDictionary<string, string> _runState = new();
+    private System.Collections.Concurrent.ConcurrentDictionary<string, string> _runError = new();
     private (string Name, string Message)? _errorDialog;
     private Filter                     _filter         = Filter.Pending;
     private bool                       _isBusy;
     private string                     _status         = "";
     private bool                       _statusError;
+    private List<string>               _productTypeOptions = [];
+    private bool                       _showProductTypeMapper;
+    private string                     _ptMapToken = "";
+    private string                     _ptMapProductType = "";
+    private string                     _ptMapMessage = "";
+    private bool                       _ptMapMessageError;
+    private Dictionary<string, string> _dataInputAliases = new(StringComparer.OrdinalIgnoreCase);
 
     private List<RawReportInfo> Visible => _filter switch
     {
@@ -310,6 +541,13 @@ else
     private bool AllVisibleSelected =>
         Visible.Count > 0 && Visible.All(r => _selected.Contains(r.DatasetName));
 
+    private List<RawReportInfo> MissingProductTypeReports => _reports
+        .Where(r => string.IsNullOrWhiteSpace(r.ProductType))
+        .ToList();
+
+    private List<ProductTypeMapRow> ProductTypeMapRows =>
+        BuildProductTypeMapRows(_reports, _dataInputAliases);
+
     protected override void OnInitialized() => LoadReports();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -320,8 +558,10 @@ else
     private void LoadReports()
     {
         _reports     = Repo.GetAllRawReports().Where(r => !r.BatchExcluded).ToList();
-        _unprocessed = _reports.Where(r => r.MeasurementCount == 0).ToList();
-        _processed   = _reports.Where(r => r.MeasurementCount > 0).ToList();
+        _productTypeOptions = Repo.GetAllProductTypes();
+        _dataInputAliases = Repo.GetDataInputAliases();
+        _unprocessed = _reports.Where(r => !IsAiBatchDone(r)).ToList();
+        _processed   = _reports.Where(IsAiBatchDone).ToList();
 
         _ocrCached     = Repo.GetDatasetsWithExtractedText();
         _noOcrDatasets = _reports
@@ -345,6 +585,9 @@ else
         _selected.RemoveWhere(n => !_reports.Any(r => r.DatasetName == n));
     }
 
+    private static bool IsAiBatchDone(RawReportInfo r)
+        => r.MeasurementCount > 0 || !string.IsNullOrWhiteSpace(r.BatchedAt);
+
     private void SetFilter(Filter f) => _filter = f;
 
     private void ToggleSelect(string name, bool sel)
@@ -361,101 +604,313 @@ else
         }
         else
         {
-            foreach (var r in Visible)
-                if (r.ImageCount > 0) _selected.Add(r.DatasetName);
+            foreach (var r in Visible) _selected.Add(r.DatasetName);
         }
     }
 
-    private async Task RunBatchAsync()
+    private void ToggleProductTypeMapper()
+    {
+        _showProductTypeMapper = !_showProductTypeMapper;
+        if (_showProductTypeMapper && string.IsNullOrWhiteSpace(_ptMapToken))
+        {
+            ProductTypeMapRow? first = ProductTypeMapRows.FirstOrDefault();
+            if (first is not null) SelectPtMapToken(first.Token);
+        }
+    }
+
+    private void OpenMappingFor(string datasetName)
+    {
+        _showProductTypeMapper = true;
+        string? token = ExtractDatasetTokens(datasetName).FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(token)) SelectPtMapToken(token);
+    }
+
+    private void SelectPtMapToken(string token)
+    {
+        _ptMapToken = token;
+        _ptMapMessage = "";
+        _ptMapMessageError = false;
+        if (TryGetAliasForModelToken(token, _dataInputAliases, out string mapped))
+        {
+            _ptMapProductType = mapped;
+        }
+        else
+        {
+            _ptMapProductType = "";
+        }
+    }
+
+    private void ClearProductTypeMappingDraft()
+    {
+        _ptMapProductType = "";
+        _ptMapMessage = "";
+        _ptMapMessageError = false;
+    }
+
+    private void SetProductTypeDraft(string productType)
+    {
+        _ptMapProductType = productType;
+        _ptMapMessage = "";
+        _ptMapMessageError = false;
+    }
+
+    private void ApplyProductTypeMapping()
+    {
+        string token = _ptMapToken.Trim();
+        string productType = _ptMapProductType.Trim();
+        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(productType))
+        {
+            SetProductTypeMapMessage("Select a token and Product Type first.", true);
+            return;
+        }
+
+        List<RawReportInfo> targets = _reports
+            .Where(r => DatasetHasToken(r.DatasetName, token))
+            .ToList();
+
+        Repo.SaveDataInputAlias(token, productType);
+        int updated = 0;
+        foreach (RawReportInfo r in targets)
+            updated += Repo.UpdateRawReportProductType(r.DatasetName, productType);
+
+        LoadReports();
+        _selected.RemoveWhere(n => !_reports.Any(r => r.DatasetName == n));
+        SetProductTypeMapMessage($"Auto map saved: {token} -> {productType}. Updated {updated} matched dataset(s).", false);
+    }
+
+    private void SetProductTypeMapMessage(string message, bool error)
+    {
+        _ptMapMessage = message;
+        _ptMapMessageError = error;
+    }
+
+    private static bool DatasetHasToken(string datasetName, string token) =>
+        ExtractDatasetTokens(datasetName).Any(t => SameModelToken(t, token));
+
+    private static List<ProductTypeMapRow> BuildProductTypeMapRows(
+        IEnumerable<RawReportInfo> reports,
+        Dictionary<string, string> aliases)
+    {
+        return reports
+            .SelectMany(r => ExtractDatasetTokens(r.DatasetName).Select(t => (Token: t, Report: r)))
+            .GroupBy(x => AliasLookupKey(x.Token), StringComparer.OrdinalIgnoreCase)
+            .Select(g =>
+            {
+                List<string> samples = g.Select(x => x.Report.DatasetName)
+                    .Distinct(StringComparer.Ordinal)
+                    .Take(5)
+                    .ToList();
+                int count = g.Select(x => x.Report.DatasetName).Distinct(StringComparer.Ordinal).Count();
+                int blankCount = g
+                    .Where(x => string.IsNullOrWhiteSpace(x.Report.ProductType))
+                    .Select(x => x.Report.DatasetName)
+                    .Distinct(StringComparer.Ordinal)
+                    .Count();
+                string token = g.Select(x => x.Token)
+                    .OrderBy(t => t.Contains('-') ? 0 : 1)
+                    .ThenBy(t => t.Length)
+                    .First();
+                TryGetAliasForModelToken(token, aliases, out string mappedTo);
+                return new ProductTypeMapRow(token, count, blankCount, mappedTo, samples);
+            })
+            .OrderByDescending(c => c.BlankCount)
+            .ThenByDescending(c => c.Count)
+            .ThenBy(c => c.Token, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static readonly System.Text.RegularExpressions.Regex ModelTokenRx =
+        new(@"(?:^|[^A-Za-z0-9])([A-Za-z]{2,4}(?:\s*[-_]\s*)?[A-Za-z]?\d{3,}(?:S\d{2}[A-Za-z]{0,2})?)",
+            System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    private static List<string> ExtractDatasetTokens(string datasetName)
+    {
+        var tokens = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(datasetName)) return [];
+
+        foreach (System.Text.RegularExpressions.Match m in ModelTokenRx.Matches(datasetName))
+        {
+            AddToken(tokens, m.Groups[1].Value);
+        }
+
+        return tokens.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private static void AddToken(HashSet<string> tokens, string raw)
+    {
+        string token = CanonicalizeDatasetToken(raw);
+        if (token.Length >= 3) tokens.Add(token);
+    }
+
+    private static string CanonicalizeDatasetToken(string raw)
+    {
+        string value = (raw ?? "").Trim().Trim('-', '_').ToUpperInvariant();
+        value = System.Text.RegularExpressions.Regex.Replace(value, @"\s+", "");
+        value = value.Replace('_', '-');
+        value = System.Text.RegularExpressions.Regex.Replace(value, @"-+", "-");
+        return value;
+    }
+
+    private static bool SameModelToken(string left, string right) =>
+        string.Equals(AliasLookupKey(left), AliasLookupKey(right), StringComparison.OrdinalIgnoreCase);
+
+    private static string AliasLookupKey(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return "";
+        return new string(token
+            .Where(char.IsLetterOrDigit)
+            .Select(char.ToUpperInvariant)
+            .ToArray());
+    }
+
+    private static bool TryGetAliasForModelToken(
+        string token,
+        Dictionary<string, string> aliases,
+        out string material)
+    {
+        material = "";
+        if (aliases.TryGetValue(token, out string? exact) && !string.IsNullOrWhiteSpace(exact))
+        {
+            material = exact;
+            return true;
+        }
+
+        string key = AliasLookupKey(token);
+        foreach (var kv in aliases)
+        {
+            if (!string.IsNullOrWhiteSpace(kv.Value) && AliasLookupKey(kv.Key) == key)
+            {
+                material = kv.Value;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>What a batch run does to each selected dataset. <see cref="Reanalyze"/>
+    /// is the legacy / default behaviour: re-extract measurements + re-translate.
+    /// <see cref="TranslateOnly"/> skips Normalize and only refreshes the ko/vi
+    /// translations of an already-saved summary — useful when the user wants to
+    /// retry a botched translation without burning a Normalize call.</summary>
+    private enum BatchRunMode  { Reanalyze, TranslateOnly }
+    private enum BatchExecutor { Api, Cli }
+
+    private List<RawReportInfo>? _confirmTargets;
+    private List<string>         _confirmExisting = [];
+    private BatchExecutor        _pendingExecutor = BatchExecutor.Api;
+
+    private Task StartApiAsync()
+    {
+        SetStatus("Analyze (API) is legacy and is disabled for the current AiDocuments schema. Use Analyze (CLI).", true);
+        return Task.CompletedTask;
+    }
+    private Task StartCliAsync() => StartAsync(BatchExecutor.Cli);
+
+    private async Task StartAsync(BatchExecutor executor)
     {
         if (_selected.Count == 0) { SetStatus("No datasets selected.", true); return; }
-        _isBusy = true;
-        string modeLabel = _mode == AnalysisMode.OcrText ? "OCR→Text" : "Vision";
-        SetStatus($"Starting batch analysis [{modeLabel}] — {_selected.Count} dataset(s)", false);
-        _runState.Clear(); _runError.Clear();
+        _pendingExecutor = executor;
 
         var targets = _reports.Where(r => _selected.Contains(r.DatasetName)).ToList();
-        int ok = 0, err = 0;
+        // "Existing" = anything already saved that would be overwritten by a
+        // Reanalyze: measurements OR a summary record. Re-running on these is
+        // wasteful if the user only wants the translation refreshed — same
+        // confirmation flow regardless of executor.
+        var existing = targets.Where(r =>
+            IsAiBatchDone(r) ||
+            Repo.GetDatasetSummaryRecord(r.DatasetName) is not null
+        ).Select(r => r.DatasetName).ToList();
 
-        foreach (var r in targets)
+        if (existing.Count > 0)
         {
-            _runState[r.DatasetName] = "running";
-            StateHasChanged();
+            _confirmTargets  = targets;
+            _confirmExisting = existing;
+            return;
+        }
+        await DispatchAsync(targets, BatchRunMode.Reanalyze);
+    }
 
+    private void CancelConfirm()
+    {
+        _confirmTargets  = null;
+        _confirmExisting = [];
+        SetStatus("Cancelled.", false);
+    }
+
+    private async Task RunConfirmedAsync(BatchRunMode mode)
+    {
+        var targets = _confirmTargets ?? [];
+        _confirmTargets = null; _confirmExisting = [];
+        await DispatchAsync(targets, mode);
+    }
+
+    private Task DispatchAsync(List<RawReportInfo> targets, BatchRunMode mode)
+    {
+        if (_pendingExecutor == BatchExecutor.Cli)
+        {
+            LaunchCliWithMode(targets, mode);
+            return Task.CompletedTask;
+        }
+        return RunBatchCoreAsync(targets, mode);
+    }
+
+    private async Task RunBatchCoreAsync(List<RawReportInfo> targets, BatchRunMode mode)
+    {
+        if (targets.Count == 0) { SetStatus("No datasets selected.", true); return; }
+        _isBusy = true;
+        string modeLabel = mode == BatchRunMode.TranslateOnly ? "Translate-only" :
+                           (_mode == AnalysisMode.OcrText ? "OCR→Text" : "Text-only");
+        SetStatus($"Starting batch [{modeLabel}] — {targets.Count} dataset(s)", false);
+        _runState.Clear(); _runError.Clear();
+
+        int ok = 0, err = 0, done = 0;
+
+        // Bounded parallelism — Anthropic tier-1 paid limits are ~50 RPM, plenty
+        // of room for 3 concurrent datasets (each does 1 normalize + 2 translate
+        // = 3 in-flight requests per slot, peak ~9 RPS). 5+ would risk 429s on
+        // long bursts; 1 (sequential) was the previous bottleneck.
+        const int Parallelism = 3;
+        using var sem = new SemaphoreSlim(Parallelism, Parallelism);
+
+        var tasks = targets.Select(async r =>
+        {
+            await sem.WaitAsync();
             try
             {
-                var imgs = Repo.GetRawReportImages(r.DatasetName);
-                if (imgs.Count == 0)
+                _runState[r.DatasetName] = "running";
+                await InvokeAsync(StateHasChanged);
+
+                try
                 {
-                    _runState[r.DatasetName] = "err";
-                    _runError[r.DatasetName] = "No images";
-                    err++;
-                    continue;
-                }
-
-                var imageArgs = imgs.Select(i => (
-                    i.MediaType,
-                    Convert.ToBase64String(i.Data))).ToList();
-
-                // Excel paste (human-verified ground truth from the source workbook).
-                // Used as an authoritative-values tiebreaker by both OCR Extract and
-                // Vision Normalize. Not a substitute for OCR — stored under a different
-                // kind so it doesn't short-circuit the OCR cache check above.
-                string? excelPaste = Repo.GetExtractedText(r.DatasetName, WebRepository.TextKindExcelPaste);
-
-                NormalizeResult result;
-                if (_mode == AnalysisMode.OcrText)
-                {
-                    // Use cached OCR text if present; otherwise run vision OCR once and cache.
-                    string? cached = Repo.GetExtractedText(r.DatasetName);
-                    string text;
-                    if (!string.IsNullOrWhiteSpace(cached))
+                    bool handled = await ProcessDatasetAsync(r, mode);
+                    if (handled)
                     {
-                        text = cached!;
+                        _runState[r.DatasetName] = "ok";
+                        Interlocked.Increment(ref ok);
                     }
                     else
                     {
-                        text = await Claude.ExtractStructuredTextAsync(
-                            imageArgs, r.DatasetName, r.ProductType, r.ReportDate,
-                            rawExcelText: excelPaste);
-                        Repo.SaveExtractedText(r.DatasetName, text);
+                        // ProcessDatasetAsync set _runError + state already.
+                        Interlocked.Increment(ref err);
                     }
-                    result = await Claude.NormalizeFromTextAsync(
-                        text, r.DatasetName, r.ProductType, r.ReportDate);
                 }
-                else
+                catch (Exception ex)
                 {
-                    result = await Claude.NormalizeFromImagesAsync(
-                        imageArgs, r.DatasetName, r.ProductType, r.ReportDate,
-                        rawText: excelPaste);
+                    _runState[r.DatasetName] = "err";
+                    _runError[r.DatasetName] = $"{ex.GetType().Name}: {ex.Message}\n\n{ex.StackTrace}";
+                    Interlocked.Increment(ref err);
                 }
-
-                await Task.Run(() =>
-                {
-                    if (result.Measurements.Count > 0)
-                        Repo.SaveNormalizedMeasurements(r.DatasetName, result.Measurements);
-
-                    string tagsJson = (result.Tags?.Count ?? 0) > 0
-                        ? System.Text.Json.JsonSerializer.Serialize(result.Tags)
-                        : "";
-                    if (!string.IsNullOrEmpty(result.Summary) || !string.IsNullOrEmpty(tagsJson))
-                        Repo.SaveDatasetSummaryRecord(r.DatasetName, r.ProductType,
-                            result.Summary, result.KeyFindings, tagsJson,
-                            result.Purpose, result.TestConditions, result.RootCause,
-                            result.Decision, result.RecommendedAction);
-                });
-
-                _runState[r.DatasetName] = "ok";
-                ok++;
             }
-            catch (Exception ex)
+            finally
             {
-                _runState[r.DatasetName] = "err";
-                _runError[r.DatasetName] = $"{ex.GetType().Name}: {ex.Message}\n\n{ex.StackTrace}";
-                err++;
+                int d = Interlocked.Increment(ref done);
+                SetStatus($"[{modeLabel}] {d}/{targets.Count} done — {ok} ok / {err} err", err > 0);
+                await InvokeAsync(StateHasChanged);
+                sem.Release();
             }
-            StateHasChanged();
-        }
+        }).ToList();
+
+        await Task.WhenAll(tasks);
 
         _isBusy = false;
         LoadReports();
@@ -463,51 +918,301 @@ else
         SetStatus($"Done — {ok} success / {err} failed", err > 0);
     }
 
+    /// <summary>One dataset's worth of work. Returns <c>true</c> on success
+    /// (caller increments ok counter); <c>false</c> if a recoverable skip
+    /// happened (this method already wrote _runState/_runError). Re-throws on
+    /// unexpected exceptions so the caller can capture the stack.</summary>
+    private async Task<bool> ProcessDatasetAsync(RawReportInfo r, BatchRunMode mode)
+    {
+        // Translate-only: skip Normalize entirely, refresh ko/vi from saved summary.
+        if (mode == BatchRunMode.TranslateOnly)
+        {
+            var saved = Repo.GetDatasetSummaryRecord(r.DatasetName);
+            if (saved is null)
+            {
+                _runState[r.DatasetName] = "err";
+                _runError[r.DatasetName] = "Translate-only: no saved summary to translate.";
+                return false;
+            }
+            var srcResult = new NormalizeResult
+            {
+                Summary           = saved.Summary,
+                KeyFindings       = saved.KeyFindings,
+                Purpose           = saved.Purpose,
+                TestConditions    = saved.TestConditions,
+                RootCause         = saved.RootCause,
+                Decision          = saved.Decision,
+                RecommendedAction = saved.RecommendedAction,
+            };
+            DatasetSummaryTranslation? koTr2 = null, viTr2 = null;
+            try
+            {
+                var koTask = Claude.TranslateAnalysisAsync(srcResult, "Korean");
+                var viTask = Claude.TranslateAnalysisAsync(srcResult, "Vietnamese");
+                await Task.WhenAll(koTask, viTask);
+                koTr2 = koTask.Result; viTr2 = viTask.Result;
+            }
+            catch (Exception tex)
+            {
+                _runState[r.DatasetName] = "err";
+                _runError[r.DatasetName] = $"Translate failed: {tex.Message}";
+                return false;
+            }
+            await Task.Run(() =>
+            {
+                if (koTr2 is not null) Repo.SaveDatasetSummaryTranslation(r.DatasetName, "ko", koTr2);
+                if (viTr2 is not null) Repo.SaveDatasetSummaryTranslation(r.DatasetName, "vi", viTr2);
+            });
+            return true;
+        }
+
+        // Reanalyze: NormalizeFromText + ko/vi translate. Excel paste is the only input.
+        string? excelPaste = Repo.GetExtractedText(r.DatasetName, WebRepository.TextKindExcelPaste);
+        if (string.IsNullOrWhiteSpace(excelPaste))
+        {
+            _runState[r.DatasetName] = "err";
+            _runError[r.DatasetName] = "No Excel raw text — re-input via Data Input (DRM Excel)";
+            return false;
+        }
+        NormalizeResult result = await Claude.NormalizeFromTextAsync(
+            excelPaste, r.DatasetName, r.ProductType, r.ReportDate);
+
+        DatasetSummaryTranslation? koTr = null, viTr = null;
+        try
+        {
+            var koTask = Claude.TranslateAnalysisAsync(result, "Korean");
+            var viTask = Claude.TranslateAnalysisAsync(result, "Vietnamese");
+            await Task.WhenAll(koTask, viTask);
+            koTr = koTask.Result; viTr = viTask.Result;
+        }
+        catch { /* non-fatal */ }
+
+        await Task.Run(() =>
+        {
+            if (result.Measurements.Count > 0)
+                Repo.SaveNormalizedMeasurements(r.DatasetName, result.Measurements);
+            bool hasAnySummary =
+                !string.IsNullOrEmpty(result.Summary) || !string.IsNullOrEmpty(result.Headline) ||
+                (result.Tags?.Count ?? 0) > 0;
+            if (hasAnySummary)
+                Repo.SaveDatasetSummaryRecord(r.DatasetName, r.ProductType, result);
+            if (koTr is not null) Repo.SaveDatasetSummaryTranslation(r.DatasetName, "ko", koTr);
+            if (viTr is not null) Repo.SaveDatasetSummaryTranslation(r.DatasetName, "vi", viTr);
+        });
+        return true;
+    }
+
     private void SetStatus(string msg, bool err)
     {
         _status = msg; _statusError = err;
     }
 
-    private void LaunchCliBatch()
-    {
-        string workDir = FindRepoRoot();
-        string prompt  = "CLI_AI_BATCH.md 읽고 AI Batch 실행해";
+    /// <summary>How many parallel Claude Code sessions to fan out for CLI mode.
+    /// Each session is one terminal window with its own _batch_selected_N.txt
+    /// chunk. Uses Claude Code subscription only — no Anthropic API credit.
+    /// SQLite WAL mode tolerates concurrent commits since each session writes
+    /// to a different DatasetName.</summary>
+    private const int CliParallelSessions = 3;
 
-        // 1) Prefer Windows Terminal (wt.exe) — native UTF-8 + Korean font fallback.
-        // 2) Fallback to cmd.exe with chcp 65001 (Consolas/Lucida lacks full Hangul glyphs,
-        //    so tofu may still appear; user can switch cmd font to "맑은 고딕" or "D2Coding").
+    private void LaunchCliWithMode(List<RawReportInfo> targets, BatchRunMode mode)
+    {
+        if (targets.Count == 0)
+        {
+            SetStatus("Select at least one dataset first.", true);
+            return;
+        }
+        string workDir = FindRepoRoot();
+
+        // Split selected datasets into up to CliParallelSessions chunks. Each
+        // launch uses a **fresh unique prefix** so that concurrent / back-to-
+        // back launches don't trample each other's target files. The agent's
+        // prompt names its specific file, and the agent deletes only that
+        // file when done — no shared state.
+        int n = Math.Min(CliParallelSessions, targets.Count);
+        int chunkSize = (int)Math.Ceiling(targets.Count / (double)n);
+
+        // Stable prefix per launch — timestamp keeps lexicographic order, the
+        // GUID tail rules out collisions when two launches happen in the same
+        // second. NO stale cleanup: previously-running sessions own their own
+        // files and clean them up themselves per the runbook.
+        string runId = $"{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}".Substring(0, 23);
+
+        var chunkFiles = new List<string>();
+        var sortedTargets = targets
+            .Select(t => t.DatasetName)
+            .OrderBy(s => s, StringComparer.Ordinal)
+            .ToList();
+        for (int i = 0; i < n; i++)
+        {
+            var chunk = sortedTargets.Skip(i * chunkSize).Take(chunkSize).ToList();
+            if (chunk.Count == 0) break;
+            string path = Path.Combine(workDir, $"_batch_selected_{runId}_{i + 1}.txt");
+            try
+            {
+                File.WriteAllLines(path, chunk, System.Text.Encoding.UTF8);
+                chunkFiles.Add(path);
+            }
+            catch (Exception ex)
+            {
+                SetStatus($"Failed to write {path}: {ex.Message}", true);
+                return;
+            }
+        }
+
+        string modeHint = mode == BatchRunMode.TranslateOnly
+            ? "Translate-only"
+            : "Reanalyze";
+
+        // Inline the production DB path so the agent skips workhost-settings
+        // discovery (a big preprocessing time sink — settings.json points
+        // at a stale path per project memory). Runbook v5 trusts this hint.
+        const string DbPathHint = @"D:\000. MyWorks\002. DB\process-review.db";
+
+        int launched = 0;
+        for (int i = 0; i < chunkFiles.Count; i++)
+        {
+            string fileName = Path.GetFileName(chunkFiles[i]);
+            int chunkCount = File.ReadAllLines(chunkFiles[i]).Length;
+            string prompt =
+                $"AI_EXCEL_PROC.md 읽고 AI Batch 실행해. " +
+                $"DB={DbPathHint}. " +
+                $"Targets={fileName} ({chunkCount}개). " +
+                $"Mode={modeHint}. " +
+                $"Do not create or run any inventory-only normalizer. Do not commit placeholders such as 'batch inventory', 'Capture sheet inventory', or measurement_type='inventory'. If real extraction is not possible for a dataset, log it as failed and leave existing DB rows untouched. " +
+                $"IMPORTANT: {fileName} is a newline-delimited target list with exactly {chunkCount} dataset names. Read the full file first, then process EVERY non-empty line. " +
+                $"Do not stop after the first dataset. Continue line by line until all {chunkCount} targets are completed or explicitly logged as failed. " +
+                $"Before finishing, verify processed_count + failed_count == {chunkCount}. Delete {fileName} only after that verification passes. " +
+                $"Use _ai_batch_helper.get_excel_text(con, dataset) first. It renders every attached workbook and every worksheet in workbook order with sheet names, cell coordinates, merged ranges, styles, formulas, and dimensions preserved. " +
+                $"Process EVERY worksheet, not only the first visible sheet. If the rendered text is too large, split by '=== SHEET:' and analyze sheets sequentially, then commit one combined result. " +
+                $"If you need workbook paths, use _ai_batch_helper.get_excel_files(con, dataset). Treat those text-only workbook files as the source of truth; do not flatten them to TSV/openpyxl values as the authoritative input. Use get_excel_paste only as last-resort fallback. " +
+                $"Store AiResults/AiNgBreakdowns from all relevant sheets and set sheet_name on every extracted row so Dataset Results can prove sheet coverage. " +
+                $"If excel_paste contains metadata tags such as {{merged=A1:A4}} or 〔merged=A1:A4〕, strip the tag and use the following value as the cell value. " +
+                $"Merged-cell rule: if Date/Model/Type/Line/Process cells are merged or visually carried across rows, all covered rows inherit that value before storing AiResults and before pairing Test/Normal rows. " +
+                $"Do not create standalone AiResults from percentage-only subrows; attach them as breakdown/rate evidence to the preceding count row. " +
+                $"Set document.report_type to exactly one of normal_comparison, ng_without_baseline, before_after_dimension, measurement_spec, defect_root_cause, lot_supplier_mold_comparison, process_condition_change, reliability_spec, doe_matrix, image_dependent, mixed. " +
+                $"Extract enough fields for a per-workbook mini report: basic info, problem/phenomenon, purpose, changed/tested conditions, result data, Normal/Test or Before/After comparison, writer decision/note, AI judgement/warnings, and evidence location. Keep narrative short and table-ready. " +
+                $"If no same-event baseline exists, do not suppress tables and do not claim improvement/worsening; use ng_without_baseline ranking instead. " +
+                $"For dimension/reliability/DOE/image-dependent reports, store metric rows, judgement, condition labels, and source sheets so DatasetResult can render the matching dashboard. " +
+                $"스키마는 AiDocuments/AiTestConditions/AiResults/AiNgBreakdowns/AiConclusions/AiTroubleshootingHints/AiExtractionLogs 사용. " +
+                $"분석/결론은 절대 불량률 순위가 아니라 같은 시트/같은 시험 이벤트의 Normal/Baseline/Before/Old/OK 대조군 대비 상대 변화율((test/base-1)*100, 몇% 개선/악화) 기준으로 판단. " +
+                $"narrative 필드 (title/purpose/content, conclusions.statement_from_report/normalized_interpretation, troubleshooting.check_item/reason, ai_extraction_log.decision_rationale/assumptions/warnings) 는 " +
+                $"AiDocumentTranslations/AiConclusionTranslations/AiHintTranslations/AiLogTranslations 에 Lang ∈ {{ko,en,vi}} 3개 모두 저장. " +
+                $"미처리 쿼리 무시하고 targets 만 처리, 끝나면 {fileName} 삭제.";
+            string title = $"AI Batch {i + 1}/{chunkFiles.Count}";
+            if (TryLaunchClaudeTerminal(workDir, prompt, title)) launched++;
+        }
+
+        if (launched == 0)
+        {
+            SetStatus("Failed to launch any Claude CLI terminal — neither wt.exe nor cmd.exe started.", true);
+            return;
+        }
+        SetStatus(
+            $"Launched {launched} parallel CLI session(s) for {targets.Count} dataset(s). " +
+            $"Watch the terminal windows; Refresh when all are done.",
+            false);
+    }
+
+    /// <summary>Open one Claude Code session in its own terminal window with
+    /// the given prompt. The prompt is written to a UTF-8 file first so cmd/wt
+    /// quoting never gets a chance to split long Korean/English instructions
+    /// into bogus executable names.</summary>
+    private static bool TryLaunchClaudeTerminal(string workDir, string prompt, string title)
+    {
+        string launchId = Guid.NewGuid().ToString("N")[..12];
+        string promptPath = Path.Combine(workDir, $"_batch_prompt_{launchId}.txt");
+        string scriptPath = Path.Combine(workDir, $"_batch_launch_{launchId}.ps1");
+
+        try
+        {
+            File.WriteAllText(promptPath, prompt, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            File.WriteAllText(scriptPath, BuildClaudeLauncherScript(workDir, promptPath, scriptPath, title),
+                new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        }
+        catch
+        {
+            return false;
+        }
+
+        // For both spawn paths: switch UseShellExecute=false so Process.Start
+        // returns a real Process handle we can assign to the Job Object. With
+        // UseShellExecute=true Windows hands the call to ShellExecuteEx and
+        // returns a "wrapper" Process that has no Handle property — no way
+        // to add it to a job, so closing the web wouldn't kill these
+        // terminals. Tradeoff: we lose ShellExecute's PATH search for wt.exe
+        // (mitigated by trying cmd.exe fallback).
         try
         {
             var wt = new System.Diagnostics.ProcessStartInfo
             {
-                FileName         = "wt.exe",
-                Arguments        = $"-d \"{workDir}\" cmd /k chcp 65001>nul && title AI Batch (Claude CLI) && claude \"{prompt}\"",
-                UseShellExecute  = true,
-                CreateNoWindow   = false,
+                FileName        = "wt.exe",
+                UseShellExecute = false,
+                CreateNoWindow  = false,
             };
-            System.Diagnostics.Process.Start(wt);
-            SetStatus($"Claude CLI terminal launched at {workDir}. Watch the new window; Refresh when done.", false);
-            return;
+            wt.ArgumentList.Add("-d");
+            wt.ArgumentList.Add(workDir);
+            wt.ArgumentList.Add("powershell.exe");
+            wt.ArgumentList.Add("-NoExit");
+            wt.ArgumentList.Add("-NoProfile");
+            wt.ArgumentList.Add("-ExecutionPolicy");
+            wt.ArgumentList.Add("Bypass");
+            wt.ArgumentList.Add("-File");
+            wt.ArgumentList.Add(scriptPath);
+            var proc = System.Diagnostics.Process.Start(wt);
+            if (proc is not null) ChildProcessJob.Assign(proc);
+            return true;
         }
-        catch { /* wt.exe not installed — fall through */ }
+        catch { /* wt.exe missing — fall through */ }
 
         try
         {
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName         = "cmd.exe",
-                Arguments        = $"/k chcp 65001>nul && title AI Batch (Claude CLI) && claude \"{prompt}\"",
                 WorkingDirectory = workDir,
-                UseShellExecute  = true,
+                UseShellExecute  = false,
                 CreateNoWindow   = false,
             };
-            System.Diagnostics.Process.Start(psi);
-            SetStatus($"Claude CLI terminal launched (cmd fallback) at {workDir}. If Hangul is garbled, change cmd font to 맑은 고딕 or D2Coding.", false);
+            psi.ArgumentList.Add("/k");
+            psi.ArgumentList.Add("powershell.exe");
+            psi.ArgumentList.Add("-NoExit");
+            psi.ArgumentList.Add("-NoProfile");
+            psi.ArgumentList.Add("-ExecutionPolicy");
+            psi.ArgumentList.Add("Bypass");
+            psi.ArgumentList.Add("-File");
+            psi.ArgumentList.Add(scriptPath);
+            var proc = System.Diagnostics.Process.Start(psi);
+            if (proc is not null) ChildProcessJob.Assign(proc);
+            return true;
         }
-        catch (Exception ex)
+        catch { return false; }
+    }
+
+    private static string BuildClaudeLauncherScript(string workDir, string promptPath, string scriptPath, string title)
+    {
+        static string Q(string value) => "'" + (value ?? "").Replace("'", "''") + "'";
+
+        return string.Join(Environment.NewLine, new[]
         {
-            SetStatus($"Failed to launch Claude CLI: {ex.Message}", true);
-        }
+            "$ErrorActionPreference = 'Continue'",
+            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
+            "try { chcp 65001 | Out-Null } catch {}",
+            $"try {{ $Host.UI.RawUI.WindowTitle = {Q(title)} }} catch {{}}",
+            $"Set-Location -LiteralPath {Q(workDir)}",
+            "",
+            $"$promptPath = {Q(promptPath)}",
+            $"$scriptPath = {Q(scriptPath)}",
+            "$prompt = Get-Content -LiteralPath $promptPath -Raw -Encoding UTF8",
+            "",
+            "& claude $prompt",
+            "$exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }",
+            "if ($exitCode -ne 0) {",
+            "    Write-Host ('Claude exited with code ' + $exitCode + '.') -ForegroundColor Yellow",
+            "}",
+            "",
+            "Remove-Item -LiteralPath $promptPath -Force -ErrorAction SilentlyContinue",
+            "Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue",
+        });
     }
 
     private static string FindRepoRoot()
@@ -515,7 +1220,7 @@ else
         string dir = AppContext.BaseDirectory;
         for (int i = 0; i < 8; i++)
         {
-            if (File.Exists(Path.Combine(dir, "CLI_AI_BATCH.md"))) return dir;
+            if (File.Exists(Path.Combine(dir, "AI_EXCEL_PROC.md"))) return dir;
             string? parent = Path.GetDirectoryName(dir.TrimEnd('\\', '/'));
             if (string.IsNullOrEmpty(parent) || parent == dir) break;
             dir = parent;

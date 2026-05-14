@@ -1,0 +1,86 @@
+{
+  "name": "01. MSU-L20S15-07 Report test New Dry UV Machine 395nm ( Normal 365nm) date 2.05.2025 - Copy_1778470633",
+  "doc": {
+    "title": "MSU-L20S15-07 - New Dry UV 395nm machine vs Normal 365nm (BRS-161016 + MSU-L20S15-07)",
+    "model": "BRS-161016 / MSU-L20S15-07", "report_date": "2025-05-02", "department": "ME", "marker": "Le",
+    "line": "C2-3B", "report_type": "process_condition_change",
+    "primary_defect": "Tension / VP+CD separate UV impact", "aliases": ["VP+CD separate", "Tension"],
+    "related_defects": [], "parts": ["VP","CD"], "processes": ["Dry UV 395nm", "Dry UV 365nm"],
+    "purpose": "Verify whether 395nm Dry UV machine produces tension equal to or better than Normal 365nm machine on BRS-161016 and MSU-L20S15-07.",
+    "content": [
+      "161016: UV peak 395nm 11-33 (with film), 53-65 (no film) vs Normal 365nm peak 117-872. Tension 1.3103 (Test) vs 1.374 (Normal) spec 0.5 PASS both.",
+      "201507: Test 395nm peak 2-3 (with film) / 53-65 (no film) vs Normal 365nm peak 19-464. Tension 1st 2.875 (Test) vs 2.503 (Normal), 2nd 2.736 vs 2.572. Spec 1.2 PASS all."
+    ],
+    "source_sheet": "161016|201507",
+    "source_cells": {"title": ["161016!D2","201507!D2"], "date": ["U3=45779"], "purpose": ["B6"], "content": ["161016!G22:M36","161016!F43:R45","201507!G22:O44","201507!F51:R57"]}
+  },
+  "conditions": [
+    {"group": "Dry UV machine 395nm vs 365nm (161016)", "process": "Dry UV", "factor": "Wavelength swap",
+     "before": "365nm Normal", "after": "395nm Test", "sheet": "161016", "cells": ["G22:M36"]},
+    {"group": "Dry UV machine 395nm vs 365nm (201507)", "process": "Dry UV", "factor": "Wavelength swap",
+     "before": "365nm Normal", "after": "395nm Test (UC PRESS -> 395nm -> 395nm)", "sheet": "201507", "cells": ["G22:O44"]}
+  ],
+  "results": [
+    {"cond": 0, "mtype": "Tension", "group": "161016 Test 395nm", "date": "2025-05-02", "line": "C2-3B",
+     "input": 10, "metric": "Tension AVG", "mvalue": 1.3103, "unit": "kgf", "judge": "PASS",
+     "sheet": "161016", "cells": ["F43:R43"]},
+    {"cond": 0, "mtype": "Tension", "group": "161016 Normal 365nm", "date": "2025-05-02", "line": "C2-3B",
+     "input": 10, "metric": "Tension AVG", "mvalue": 1.374, "unit": "kgf", "judge": "Normal",
+     "sheet": "161016", "cells": ["F45:R45"]},
+    {"cond": 1, "mtype": "Tension", "group": "201507 Test 395nm 1st", "date": "2025-05-02", "line": "",
+     "input": 10, "metric": "Tension AVG", "mvalue": 2.8749, "unit": "kgf", "judge": "PASS",
+     "sheet": "201507", "cells": ["F51:R51"]},
+    {"cond": 1, "mtype": "Tension", "group": "201507 Normal 365nm 1st", "date": "2025-05-02", "line": "",
+     "input": 10, "metric": "Tension AVG", "mvalue": 2.503, "unit": "kgf", "judge": "Normal",
+     "sheet": "201507", "cells": ["F53:R53"]},
+    {"cond": 1, "mtype": "Tension", "group": "201507 Test 395nm 2nd", "date": "2025-05-07", "line": "",
+     "input": 10, "metric": "Tension AVG", "mvalue": 2.7358, "unit": "kgf", "judge": "PASS",
+     "sheet": "201507", "cells": ["F55:R55"]},
+    {"cond": 1, "mtype": "Tension", "group": "201507 Normal 365nm 2nd", "date": "2025-05-07", "line": "",
+     "input": 10, "metric": "Tension AVG", "mvalue": 2.5716, "unit": "kgf", "judge": "Normal",
+     "sheet": "201507", "cells": ["F57:R57"]}
+  ],
+  "conclusions": [
+    {"topic": "395nm vs 365nm Dry UV tension - same or better",
+     "st": "Tension more good.",
+     "ni": "161016: Test 1.3103 vs Normal 1.374 = 0.954x, -4.6%. 201507 1st: Test 2.8749 vs Normal 2.503 = 1.148x, +14.9%. 201507 2nd: Test 2.7358 vs Normal 2.5716 = 1.064x, +6.4%. On MSU-L20S15-07 the 395nm machine gives higher tension than 365nm; on 161016 it is marginally lower but well within PASS. All four pairs PASS spec (>=0.5 / 1.2 kgf).",
+     "sheet": "201507", "cells": ["F51:R57"]}
+  ],
+  "hints": [
+    {"item": "On MSU-L20S15-07 line UC PRESS -> 395nm x2 is acceptable, expect +6-15% tension vs 365nm Normal.",
+     "why": "Test 1st 2.87 vs Normal 2.50; Test 2nd 2.74 vs Normal 2.57, both PASS 1.2 kgf.",
+     "strength": "same_event_baseline", "process": "Dry UV", "part": "VP+CD",
+     "sheet": "201507", "cells": ["F51:R57"]},
+    {"item": "On 161016 UV film, monitor tension under 395nm; mean drops ~5% but stays >0.5 kgf.",
+     "why": "Test 1.31 vs Normal 1.37 (-4.6%).",
+     "strength": "same_event_baseline", "process": "Dry UV", "part": "VP+CD with 161016 film",
+     "sheet": "161016", "cells": ["F43:R45"]}
+  ],
+  "when_asks": ["Dry UV 395nm 365nm tension", "new UV machine MSU L20S15-07", "BRS-161016 UV film"],
+  "log": {"confidence": 0.8, "assumptions": ["45779 = 2025-05-02, 45784 = 2025-05-07"],
+          "warnings": ["UV peak/total on 395nm machine an order of magnitude below 365nm; cure depends on bond chemistry not just energy; tension result is the deciding metric here."],
+          "decision_rationale": "Test 395nm vs Normal 365nm same-day same-line tension comparison repeated twice -> process_condition_change with normal_comparison."},
+  "tr": {
+    "ko": {"title": "MSU-L20S15-07 신규 Dry UV 395nm 머신 (Normal 365nm) 비교",
+           "purpose": "395nm Dry UV 머신이 Normal 365nm 대비 tension 동등/우수한지 161016 및 201507 line에서 검증.",
+           "content": ["161016: Test 1.310 vs Normal 1.374 (spec 0.5 PASS).", "201507 1st: 2.875 vs 2.503; 2nd: 2.736 vs 2.572 (spec 1.2 PASS).", "UV peak 395nm 머신 < 365nm 머신, 그러나 tension은 같거나 더 높음."],
+           "conclusions": [{"topic": "395nm vs 365nm tension", "st": "tension more good.", "ni": "161016: 0.954x, -4.6%. 201507 1st: 1.148x, +14.9%. 201507 2nd: 1.064x, +6.4%. 모두 spec PASS."}],
+           "hints": [{"item": "MSU-L20S15-07 UC PRESS → 395nm × 2 채택, Normal 대비 +6~15% tension 기대.", "why": "1st 2.87 vs 2.50, 2nd 2.74 vs 2.57 PASS."},
+                      {"item": "161016 film에서 tension 약 5% 감소, 모니터링 권장.", "why": "1.31 vs 1.37 (-4.6%)."}],
+           "log": {"assumptions": ["45779 = 2025-05-02, 45784 = 2025-05-07"], "warnings": ["395nm 에너지 ~10% 수준; tension으로 판단."], "dr": "395nm vs 365nm 동일일/라인 반복 → process_condition_change."}},
+    "en": {"title": "MSU-L20S15-07 - New Dry UV 395nm vs Normal 365nm",
+           "purpose": "Verify new 395nm Dry UV machine matches or beats Normal 365nm tension on 161016 and MSU-L20S15-07.",
+           "content": ["161016: Test 1.310 vs Normal 1.374 (spec 0.5 PASS).", "201507 1st: 2.875 vs 2.503; 2nd: 2.736 vs 2.572 (spec 1.2 PASS).", "395nm machine UV peak/total much lower than 365nm but tension equal or higher."],
+           "conclusions": [{"topic": "395nm vs 365nm tension", "st": "Tension more good.", "ni": "161016: 0.954x, -4.6%. 201507 1st: 1.148x, +14.9%. 201507 2nd: 1.064x, +6.4%. All PASS spec."}],
+           "hints": [{"item": "Adopt UC PRESS -> 395nm x2 on MSU-L20S15-07; expect +6-15% tension vs Normal.", "why": "Test 1st 2.87 vs 2.50, 2nd 2.74 vs 2.57 PASS."},
+                      {"item": "On 161016 UV film, monitor tension; ~5% drop under 395nm but stays above 0.5 kgf.", "why": "1.31 vs 1.37 (-4.6%)."}],
+           "log": {"assumptions": ["45779 = 2025-05-02, 45784 = 2025-05-07"], "warnings": ["395nm energy ~10% of 365nm; tension is the deciding metric."], "dr": "Same-day Test vs Normal repeated -> process_condition_change."}},
+    "vi": {"title": "MSU-L20S15-07 - máy Dry UV 395nm vs Normal 365nm",
+           "purpose": "Kiểm máy 395nm có tension bằng hoặc tốt hơn 365nm trên 161016 và MSU-L20S15-07.",
+           "content": ["161016: Test 1.310 vs Normal 1.374 (spec 0.5 PASS).", "201507 1st: 2.875 vs 2.503; 2nd: 2.736 vs 2.572 (spec 1.2 PASS).", "Năng lượng 395nm thấp hơn 365nm nhưng tension bằng hoặc cao hơn."],
+           "conclusions": [{"topic": "tension 395nm vs 365nm", "st": "Tension tốt hơn.", "ni": "161016: 0.954x, -4.6%. 201507 1st: 1.148x, +14.9%. 201507 2nd: 1.064x, +6.4%. Đều đạt spec."}],
+           "hints": [{"item": "Áp dụng UC PRESS -> 395nm x2 trên MSU-L20S15-07; tension +6-15% so Normal.", "why": "1st 2.87 vs 2.50, 2nd 2.74 vs 2.57 PASS."},
+                      {"item": "Trên film 161016, theo dõi tension; giảm ~5% nhưng > 0.5 kgf.", "why": "1.31 vs 1.37 (-4.6%)."}],
+           "log": {"assumptions": ["45779 = 2025-05-02, 45784 = 2025-05-07"], "warnings": ["Năng lượng 395nm ~10% của 365nm; quyết định bằng tension."], "dr": "Test vs Normal lặp lại cùng ngày -> process_condition_change."}}
+  }
+}

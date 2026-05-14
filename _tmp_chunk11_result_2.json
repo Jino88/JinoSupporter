@@ -1,0 +1,56 @@
+{
+  "result": {
+    "productType": "BRS-201506",
+    "measurements": [
+      {"productType":"BRS-201506","testDate":"2025-10-25","line":"E2-4A","checkType":"process","variable":"Frame Array","variableDetail":"1st lot","variableGroup":"test","intervention":"new Frame material","inputQty":55,"okQty":55,"ngTotal":0,"ngRate":0.0,"defectCategory":"","defectType":"","defectCount":0},
+      {"productType":"BRS-201506","testDate":"2025-10-25","line":"E2-4A","checkType":"process","variable":"Frame Array","variableDetail":"2nd lot","variableGroup":"test","intervention":"new Frame material","inputQty":145,"okQty":145,"ngTotal":0,"ngRate":0.0,"defectCategory":"","defectType":"","defectCount":0},
+      {"productType":"BRS-201506","testDate":"2025-10-25","line":"E2-4A","checkType":"process","variable":"Frame Array","variableDetail":"normal","variableGroup":"normal","intervention":"","inputQty":200,"okQty":200,"ngTotal":0,"ngRate":0.0,"defectCategory":"","defectType":"","defectCount":0},
+      {"productType":"BRS-201506","testDate":"2025-10-25","line":"E2-4A","checkType":"visual_inspection","variable":"FR+SUS Vision","variableDetail":"1st lot","variableGroup":"test","intervention":"new Frame material","inputQty":55,"okQty":55,"ngTotal":0,"ngRate":0.0,"defectCategory":"","defectType":"","defectCount":0},
+      {"productType":"BRS-201506","testDate":"2025-10-25","line":"E2-4A","checkType":"visual_inspection","variable":"FR+SUS Vision","variableDetail":"2nd lot","variableGroup":"test","intervention":"new Frame material","inputQty":145,"okQty":145,"ngTotal":0,"ngRate":0.0,"defectCategory":"","defectType":"","defectCount":0},
+      {"productType":"BRS-201506","testDate":"2025-10-25","line":"E2-4A","checkType":"visual_inspection","variable":"FR+SUS Vision","variableDetail":"normal","variableGroup":"normal","intervention":"","inputQty":200,"okQty":200,"ngTotal":0,"ngRate":0.0,"defectCategory":"","defectType":"","defectCount":0},
+      {"productType":"BRS-201506","testDate":"2025-10-26","line":"","checkType":"function","variable":"Function","variableDetail":"1st lot","variableGroup":"test","intervention":"new Frame material","inputQty":54,"okQty":49,"ngTotal":5,"ngRate":9.3,"defectCategory":"function_hearing","defectType":"Noise","defectCount":5},
+      {"productType":"BRS-201506","testDate":"2025-10-26","line":"","checkType":"function","variable":"Function","variableDetail":"1st lot Normal","variableGroup":"normal","intervention":"","inputQty":55,"okQty":53,"ngTotal":2,"ngRate":3.6,"defectCategory":"function_hearing","defectType":"Noise","defectCount":2},
+      {"productType":"BRS-201506","testDate":"2025-10-28","line":"","checkType":"function","variable":"Function","variableDetail":"2nd lot","variableGroup":"test","intervention":"new Frame material","inputQty":129,"okQty":125,"ngTotal":4,"ngRate":3.1,"defectCategory":"function_hearing","defectType":"Noise","defectCount":4},
+      {"productType":"BRS-201506","testDate":"2025-10-28","line":"","checkType":"function","variable":"Function","variableDetail":"2nd lot Normal","variableGroup":"normal","intervention":"","inputQty":150,"okQty":145,"ngTotal":5,"ngRate":3.3,"defectCategory":"function_hearing","defectType":"Noise","defectCount":5}
+    ],
+    "tags": ["brs-201506","frame-material","mold-stuck","comparison-test-normal","function-hearing-noise","tension-test"],
+    "reportType": "comparison_study",
+    "verdict": "partial",
+    "headline": "New Frame material: 1st lot function NG 9.3% vs Normal 3.6%; 2nd lot 3.1% vs 3.3% — needs more data",
+    "evidence": [
+      {"metric":"Frame Array NG","baselineLabel":"Normal","baselineValue":"0.0% (0/200)","variantLabel":"Test","variantValue":"0.0% (0/200)","deltaText":"+0pp","deltaSign":"no_change","note":"","comparisons":null,"bestLabel":"","worstLabel":""},
+      {"metric":"FR+SUS Vision NG","baselineLabel":"Normal","baselineValue":"0.0% (0/200)","variantLabel":"Test","variantValue":"0.0% (0/200)","deltaText":"+0pp","deltaSign":"no_change","note":"","comparisons":null,"bestLabel":"","worstLabel":""},
+      {"metric":"Function NG (1st lot)","baselineLabel":"Normal","baselineValue":"3.6% (2/55)","variantLabel":"Test 1st","variantValue":"9.3% (5/54)","deltaText":"+5.7pp","deltaSign":"up","note":"small n=54, hearing-noise","comparisons":null,"bestLabel":"","worstLabel":""},
+      {"metric":"Function NG (2nd lot)","baselineLabel":"Normal","baselineValue":"3.3% (5/150)","variantLabel":"Test 2nd","variantValue":"3.1% (4/129)","deltaText":"-0.2pp","deltaSign":"down","note":"hearing-noise","comparisons":null,"bestLabel":"","worstLabel":""}
+    ],
+    "actions": [
+      {"priority":1,"kind":"investigate","text":"Investigate 1st-lot 9.3% noise spike vs 2nd-lot 3.1% — root cause"},
+      {"priority":2,"kind":"action","text":"Run additional Test lots before deciding on material change"},
+      {"priority":3,"kind":"risk","text":"Small n=54 in 1st lot limits confidence in difference"}
+    ],
+    "context": {"process":"Frame material change to improve mold-stuck issue","stage":"E2-4A Frame Array + Vision + Tension + main-line function","baselineReason":"same-event Normal lot tested in parallel"},
+    "doeGrid": null,
+    "trendPoints": null,
+    "summary":"","keyFindings":"","purpose":"","testConditions":"","rootCause":"","decision":"","recommendedAction":""
+  },
+  "ko": {
+    "summary":"","keyFindings":"","purpose":"","testConditions":"","rootCause":"","decision":"","recommendedAction":"",
+    "headline":"신규 Frame 자재: 1차 로트 기능 NG 9.3% vs Normal 3.6%; 2차 로트 3.1% vs 3.3% — 추가 데이터 필요",
+    "actions":[
+      {"priority":1,"kind":"investigate","text":"1차 로트 9.3% 노이즈 급증 vs 2차 로트 3.1% 근본 원인 조사"},
+      {"priority":2,"kind":"action","text":"자재 변경 결정 전 추가 Test 로트 진행"},
+      {"priority":3,"kind":"risk","text":"1차 로트 n=54 소량으로 차이 신뢰도 제한"}
+    ],
+    "context":{"process":"몰드 끼임 개선용 Frame 자재 변경","stage":"E2-4A Frame Array + 비전 + 장력 + 메인라인 기능","baselineReason":"동일 이벤트에서 Normal 로트 병행 시험"}
+  },
+  "vi": {
+    "summary":"","keyFindings":"","purpose":"","testConditions":"","rootCause":"","decision":"","recommendedAction":"",
+    "headline":"Vật liệu Frame mới: lot 1 chức năng NG 9.3% vs Normal 3.6%; lot 2 3.1% vs 3.3% — cần thêm dữ liệu",
+    "actions":[
+      {"priority":1,"kind":"investigate","text":"Điều tra nguyên nhân lot 1 noise tăng 9.3% so với lot 2 3.1%"},
+      {"priority":2,"kind":"action","text":"Chạy thêm lot Test trước khi quyết định đổi vật liệu"},
+      {"priority":3,"kind":"risk","text":"Lot 1 n=54 nhỏ làm giảm độ tin cậy chênh lệch"}
+    ],
+    "context":{"process":"Đổi vật liệu Frame cải thiện kẹt khuôn","stage":"E2-4A Frame Array + Vision + Tension + chức năng main-line","baselineReason":"lot Normal cùng đợt chạy song song"}
+  }
+}

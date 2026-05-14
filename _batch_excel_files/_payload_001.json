@@ -1,0 +1,198 @@
+{
+  "name": "45. TIU L5S3-01 R Report test add more 2tape in F-PCB press JIG to improve NG frame deform 2025.12.31",
+  "result": {
+    "schema_version": "0.1",
+    "document": {
+      "document_id": "",
+      "source_file": "45. TIU L5S3-01 R Report test add more 2tape in F-PCB press JIG to improve NG frame deform 2025.12.31",
+      "source_sheet": "Test",
+      "title": "TIU L5S3-01 [R] Report test add more 2 tape in F-PCB press JIG to improve NG Frame deform",
+      "model": "TIU L5S3-01",
+      "report_date": "2025-12-31",
+      "department": "ME",
+      "marker": "Nhung",
+      "line": "Line L; Line R",
+      "report_type": "normal_comparison",
+      "primary_defect": {"canonical_name": "NG Frame deform", "aliases_in_document": ["NG bako", "Frame deform"]},
+      "related_defects": ["NG FRF Low", "NG FRF High", "Fr+VP separate", "Ass'y VP+Coil offset"],
+      "parts": ["Frame", "F-PCB", "VP", "Coil"],
+      "processes": ["F-PCB Press JIG", "Sub 3 VP press JIG", "Vision Frame", "AWF / hearing main line"],
+      "purpose": "Lot Frame has NG deform after dry Fr+F-PCB causing Bako NG ~47%. Test adding 2 extra 0.14mm tapes on the F-PCB Press JIG to improve Frame deform and confirm hearing/function.",
+      "content": [
+        "Use F-PCB Press JIG with 2 extra 0.14mm tapes",
+        "Make semi sub 3, vision check Frame, then main-line function check",
+        "Compare every Test row against same-event Normal row"
+      ],
+      "source_cells": {
+        "title": ["Test!D2"],
+        "date": ["Test!V3"],
+        "purpose": ["Test!B6"],
+        "content": ["Test!B8", "Test!B9"]
+      }
+    },
+    "test_conditions": [
+      {
+        "condition_id": "c1",
+        "condition_group": "F-PCB press JIG tape thickness",
+        "line": "Line L",
+        "process": "F-PCB Press JIG",
+        "changed_factor": "Add 2 extra tapes (0.14mm each) to F-PCB Press JIG",
+        "before_value": "standard F-PCB press JIG (no extra tape)",
+        "after_value": "F-PCB press JIG + 2 tape 0.14mm",
+        "unit": "mm",
+        "source_file": "45. TIU L5S3-01 R Report test add more 2tape in F-PCB press JIG to improve NG frame deform 2025.12.31",
+        "sheet_name": "Test",
+        "source_cells": ["Test!F14"]
+      },
+      {
+        "condition_id": "c2",
+        "condition_group": "F-PCB press JIG tape thickness",
+        "line": "Line R",
+        "process": "F-PCB Press JIG",
+        "changed_factor": "Add 2 extra tapes (0.14mm each) to F-PCB Press JIG",
+        "before_value": "standard F-PCB press JIG",
+        "after_value": "F-PCB press JIG + 2 tape 0.14mm",
+        "unit": "mm",
+        "source_file": "45. TIU L5S3-01 R Report test add more 2tape in F-PCB press JIG to improve NG frame deform 2025.12.31",
+        "sheet_name": "Test",
+        "source_cells": ["Test!F18"]
+      },
+      {
+        "condition_id": "c3",
+        "condition_group": "Sub3 VP press JIG + F-PCB tape",
+        "line": "Line R",
+        "process": "Sub 3 VP press JIG + F-PCB Press JIG",
+        "changed_factor": "Sub3 VP press JIG (4PI MG) AND F-PCB press JIG + 2 tape 0.14mm",
+        "before_value": "standard JIG (no extra tape)",
+        "after_value": "4PI MG Sub3 VP JIG + F-PCB + 2 tape 0.14mm",
+        "unit": "mm",
+        "source_file": "45. TIU L5S3-01 R Report test add more 2tape in F-PCB press JIG to improve NG frame deform 2025.12.31",
+        "sheet_name": "Test",
+        "source_cells": ["Test!F20", "Test!F24"]
+      }
+    ],
+    "results": [
+      {"result_id": "r1L_test", "condition_id": "c1", "measurement_type": "Function", "condition_group": "F-PCB JIG +2tape", "date": "2025-12-31", "line": "Line L", "input_count": 80, "ok_count": 80, "ng_count": 10, "ng_rate_decimal": 0.125, "ng_rate_percent": 12.5, "metric_name": "Total NG rate", "ng_breakdown": {"FRF High": {"count": 5, "rate": 0.0625}, "FRF Low": {"count": 5, "rate": 0.0625}}, "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!C14:T15"]},
+      {"result_id": "r1L_normal", "measurement_type": "Function", "condition_group": "Normal", "date": "2025-12-31", "line": "Line L", "input_count": 80, "ok_count": 80, "ng_count": 24, "ng_rate_decimal": 0.30, "ng_rate_percent": 30.0, "metric_name": "Total NG rate", "ng_breakdown": {"FRF High": {"count": 20, "rate": 0.25}, "FRF Low": {"count": 4, "rate": 0.05}}, "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!C16:T17"]},
+      {"result_id": "r1R_test", "condition_id": "c2", "measurement_type": "Function", "condition_group": "F-PCB JIG +2tape", "date": "2025-12-31", "line": "Line R", "input_count": 82, "ok_count": 82, "ng_count": 15, "ng_rate_decimal": 0.1829, "ng_rate_percent": 18.29, "metric_name": "Total NG rate", "ng_breakdown": {"FRF High": {"count": 11, "rate": 0.1341}, "FRF Low": {"count": 4, "rate": 0.0488}}, "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!C18:T19"]},
+      {"result_id": "r1R_test_sub3", "condition_id": "c3", "measurement_type": "Function", "condition_group": "Sub3 VP JIG 4PI + F-PCB +2tape", "date": "2025-12-31", "line": "Line R", "input_count": 67, "ok_count": 67, "ng_count": 4, "ng_rate_decimal": 0.0597, "ng_rate_percent": 5.97, "metric_name": "Total NG rate", "ng_breakdown": {"FRF High": {"count": 1, "rate": 0.0149}, "FRF Low": {"count": 3, "rate": 0.0448}}, "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!C20:T21"]},
+      {"result_id": "r1R_normal_1231", "measurement_type": "Function", "condition_group": "Normal", "date": "2025-12-31", "line": "Line R", "input_count": 100, "ok_count": 100, "ng_count": 19, "ng_rate_decimal": 0.19, "ng_rate_percent": 19.0, "metric_name": "Total NG rate", "ng_breakdown": {"FRF High": {"count": 17, "rate": 0.17}, "FRF Low": {"count": 2, "rate": 0.02}}, "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!C22:T23"]},
+      {"result_id": "r2R_test", "condition_id": "c3", "measurement_type": "Function", "condition_group": "Sub3 VP JIG 4PI + F-PCB +2tape", "date": "2026-01-02", "line": "Line R", "input_count": 110, "ok_count": 110, "ng_count": 8, "ng_rate_decimal": 0.0727, "ng_rate_percent": 7.27, "metric_name": "Total NG rate", "ng_breakdown": {"FRF High": {"count": 8, "rate": 0.0727}, "FRF Low": {"count": 0, "rate": 0.0}}, "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!C24:T25"]},
+      {"result_id": "r2R_normal", "measurement_type": "Function", "condition_group": "Normal", "date": "2026-01-02", "line": "Line R", "input_count": 103, "ok_count": 103, "ng_count": 17, "ng_rate_decimal": 0.1650, "ng_rate_percent": 16.50, "metric_name": "Total NG rate", "ng_breakdown": {"FRF High": {"count": 16, "rate": 0.1553}, "FRF Low": {"count": 1, "rate": 0.0097}}, "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!C26:T27"]},
+      {"result_id": "decap_frflow", "measurement_type": "Decap analyse NG Bako", "date": "2025-12-31", "line": "Line R - D3-3A", "input_count": 9, "ng_count": 9, "metric_name": "Decap reason ratio FRF Low", "ng_breakdown": {"Fr+VP separate, offset": {"count": 4, "rate": 0.4444}, "Ass'y VP+Coil offset, separate": {"count": 5, "rate": 0.5556}}, "source_file": "...", "sheet_name": "Decap NG", "source_cells": ["Decap NG!C14:K15"]}
+    ],
+    "conclusions": [
+      {
+        "conclusion_id": "k1",
+        "topic": "F-PCB press JIG + 2 tape 0.14mm vs Normal",
+        "statement_from_report": "Compare Test F-PCB add more 2 tape with Normal of same date and line.",
+        "normalized_interpretation": "Line L Test NG 12.5% vs Normal 30.0% = 0.42x, 58.3% improved vs same-event normal. Line R Test NG 18.29% vs Normal 19.0% = 0.96x, 3.7% improved (within noise). Adding 2 tape to F-PCB press JIG clearly helps Line L Bako, marginal on Line R.",
+        "source_file": "...",
+        "sheet_name": "Test",
+        "source_cells": ["Test!C14:T17", "Test!C18:T23"]
+      },
+      {
+        "conclusion_id": "k2",
+        "topic": "Sub3 VP press JIG 4PI MG + F-PCB +2 tape vs Normal",
+        "statement_from_report": "Combined Sub3 VP press JIG (4PI MG) with F-PCB +2 tape, compared with same-block Normal.",
+        "normalized_interpretation": "2025-12-31 Test 5.97% vs Normal 19.0% = 0.314x, 68.6% improved. 2026-01-02 Test 7.27% vs Normal 16.5% = 0.441x, 55.9% improved. Combination delivers consistent NG reduction across two events.",
+        "source_file": "...",
+        "sheet_name": "Test",
+        "source_cells": ["Test!C20:T23", "Test!C24:T27"]
+      },
+      {
+        "conclusion_id": "k3",
+        "topic": "Decap reason for NG FRF Low (Bako)",
+        "statement_from_report": "9 samples NG FRF Low decap on Line R D3-3A.",
+        "normalized_interpretation": "55.6% of decap NG come from Ass'y VP+Coil offset/separate, 44.4% from Fr+VP separate/offset. Frame-deform path is consistent with VP joint stability, supporting tape thickness fix.",
+        "source_file": "...",
+        "sheet_name": "Decap NG",
+        "source_cells": ["Decap NG!C14:K15"]
+      }
+    ],
+    "troubleshooting_index": {
+      "defect_name": "NG Frame deform / NG Bako FRF Low",
+      "when_user_asks": ["NG frame deform", "NG Bako", "FRF Low high", "VP+Coil offset"],
+      "suggested_checks": [
+        {"check_item": "Confirm F-PCB Press JIG tape thickness (add 2 x 0.14mm)", "reason": "Line L Bako improved 58.3% vs normal after this change.", "evidence_strength": "strong", "related_process": "F-PCB Press JIG", "related_part": "F-PCB", "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!F14", "Test!C14:T17"]},
+        {"check_item": "Confirm Sub3 VP press JIG 4PI MG combined with F-PCB +2 tape", "reason": "Combination gives 55-68% improvement on Line R across two days.", "evidence_strength": "strong", "related_process": "Sub 3 VP press JIG", "related_part": "VP", "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!F20", "Test!F24"]},
+        {"check_item": "Check Fr+VP separation and VP+Coil offset on Line R", "reason": "44% and 56% of decap NG.", "evidence_strength": "medium", "related_process": "Ass'y VP+Coil", "related_part": "VP, Coil", "source_file": "...", "sheet_name": "Decap NG", "source_cells": ["Decap NG!G14:K15"]}
+      ],
+      "limitations": ["Sample size 67-110 per row, single day events, only F-PCB JIG and VP press JIG tested."]
+    },
+    "ai_extraction_log": {
+      "confidence": 0.85,
+      "assumptions": ["Carried Line and Date forward across merged cells from each block's first row."],
+      "warnings": ["NG Rate values in percent shown as decimal in source (e.g. 0.125 = 12.5%)."],
+      "decision_rationale": "Same-event Test vs Normal rows exist for Line L (1 pair), Line R (2 pairs incl. Sub3 VP JIG). Applied (test/baseline - 1)*100. Line L and Sub3 combo clearly improve; Line R simple +2tape is within noise. Decap on Line R links FRF Low to VP+Coil and Fr+VP offsets."
+    }
+  },
+  "translations": {
+    "ko": {
+      "document": {
+        "title": "TIU L5S3-01 [R] F-PCB 프레스 JIG에 테이프 2장 추가 시험 - 프레임 변형 개선 (2025-12-31)",
+        "purpose": "F-PCB 건조 후 프레임 변형으로 Bako NG가 ~47%까지 상승. F-PCB 프레스 JIG에 0.14mm 테이프 2장을 추가하여 프레임 변형 개선 및 기능 정상 여부 확인.",
+        "content": ["F-PCB 프레스 JIG에 0.14mm 테이프 2장 추가", "Semi Sub3 → 비전으로 프레임 확인 → 본 라인 기능 검사", "각 Test 행을 같은 이벤트의 Normal 행과 비교"]
+      },
+      "conclusions": {
+        "k1": {"topic": "F-PCB 프레스 JIG + 테이프 2장 vs Normal", "statement_from_report": "같은 날짜·라인의 Normal과 비교.", "normalized_interpretation": "Line L Test 12.5% vs Normal 30.0% = 0.42배, 같은 이벤트 Normal 대비 58.3% 개선. Line R Test 18.29% vs Normal 19.0% = 0.96배, 3.7% 개선(노이즈 수준). F-PCB JIG 테이프 추가는 Line L에 명확히 효과, Line R 단독은 유의차 작음."},
+        "k2": {"topic": "Sub3 VP 프레스 JIG 4PI MG + F-PCB 테이프 vs Normal", "statement_from_report": "Sub3 VP 프레스 JIG(4PI MG)과 F-PCB +테이프 2장을 같은 블록 Normal과 비교.", "normalized_interpretation": "2025-12-31 Test 5.97% vs Normal 19.0% = 0.314배, 68.6% 개선. 2026-01-02 Test 7.27% vs Normal 16.5% = 0.441배, 55.9% 개선. 조합 적용 시 2개 이벤트 모두 안정적으로 NG 감소."},
+        "k3": {"topic": "NG FRF Low(Bako) 디캡 원인", "statement_from_report": "Line R D3-3A 9개 NG FRF Low 디캡.", "normalized_interpretation": "디캡 NG의 55.6%가 Ass'y VP+Coil offset/separate, 44.4%가 Fr+VP separate/offset. 프레임 변형 경로가 VP 접합 안정성과 일치하여 테이프 두께 보완이 타당."}
+      },
+      "hints": {
+        "hint_0": {"check_item": "F-PCB 프레스 JIG 테이프 두께 확인 (0.14mm × 2장 추가)", "reason": "Line L Bako가 같은 이벤트 Normal 대비 58.3% 개선됨."},
+        "hint_1": {"check_item": "Sub3 VP 프레스 JIG 4PI MG와 F-PCB +테이프 2장 조합 확인", "reason": "Line R에서 2일간 55-68% 개선."},
+        "hint_2": {"check_item": "Line R Fr+VP separate, VP+Coil offset 점검", "reason": "디캡 NG의 44%, 56% 비중."}
+      },
+      "log": {
+        "assumptions": ["병합된 셀에서 Line과 Date 값을 각 블록 첫 행에서 아래로 승계함."],
+        "warnings": ["원본의 NG Rate는 십진수(예: 0.125 = 12.5%)."],
+        "decision_rationale": "Line L(1쌍), Line R(2쌍, Sub3 VP JIG 포함)에서 같은 이벤트 Test/Normal 쌍 확인. (test/baseline - 1)*100 적용. Line L과 Sub3 조합은 명확히 개선, Line R 단독 +테이프는 노이즈 수준. 디캡 결과는 FRF Low가 VP+Coil 및 Fr+VP 오프셋과 연관됨을 시사."
+      }
+    },
+    "en": {
+      "document": {
+        "title": "TIU L5S3-01 [R] Test add 2 more tapes to F-PCB Press JIG to improve NG Frame deform (2025-12-31)",
+        "purpose": "Lot Frame had NG deform after Fr+F-PCB drying, raising Bako NG to ~47%. Test added two 0.14mm tapes on the F-PCB Press JIG to improve Frame deform and verify hearing/function.",
+        "content": ["Add two 0.14mm tapes on F-PCB Press JIG", "Make semi Sub3, vision-check Frame, then main-line function check", "Compare every Test row against the same-event Normal row"]
+      },
+      "conclusions": {
+        "k1": {"topic": "F-PCB press JIG + 2 tape vs Normal", "statement_from_report": "Compare Test +2 tape with Normal on same date/line.", "normalized_interpretation": "Line L Test 12.5% vs Normal 30.0% = 0.42x, 58.3% improved vs same-event Normal. Line R Test 18.29% vs Normal 19.0% = 0.96x, 3.7% improved (within noise). Adding tape on F-PCB JIG clearly helps Line L; Line R standalone is marginal."},
+        "k2": {"topic": "Sub3 VP press JIG 4PI MG + F-PCB +2 tape vs Normal", "statement_from_report": "Combined Sub3 VP press JIG (4PI MG) and F-PCB +2 tape compared to same-block Normal.", "normalized_interpretation": "2025-12-31 Test 5.97% vs Normal 19.0% = 0.314x, 68.6% improved. 2026-01-02 Test 7.27% vs Normal 16.5% = 0.441x, 55.9% improved. Combination produces consistent NG reduction across both events."},
+        "k3": {"topic": "Decap reasons for NG FRF Low (Bako)", "statement_from_report": "9 samples NG FRF Low decap on Line R D3-3A.", "normalized_interpretation": "55.6% from Ass'y VP+Coil offset/separate, 44.4% from Fr+VP separate/offset. Frame-deform path aligns with VP joint stability, supporting tape thickness fix."}
+      },
+      "hints": {
+        "hint_0": {"check_item": "Confirm F-PCB press JIG tape thickness (+2 × 0.14mm)", "reason": "Line L Bako improved 58.3% vs same-event Normal after the change."},
+        "hint_1": {"check_item": "Combine Sub3 VP press JIG 4PI MG with F-PCB +2 tape", "reason": "55-68% improvement on Line R across two days."},
+        "hint_2": {"check_item": "Check Fr+VP separate / VP+Coil offset on Line R", "reason": "44% / 56% of decap NG."}
+      },
+      "log": {
+        "assumptions": ["Line and Date were carried down from each block's first row through merged cells."],
+        "warnings": ["NG rate column is stored as decimal (e.g. 0.125 = 12.5%)."],
+        "decision_rationale": "Same-event Test vs Normal pairs exist for Line L (1 pair) and Line R (2 pairs incl. Sub3 VP JIG). Applied (test/baseline - 1)*100. Line L and Sub3 combo show clear improvement; Line R standalone is within noise. Decap on Line R links FRF Low to VP+Coil and Fr+VP offsets."
+      }
+    },
+    "vi": {
+      "document": {
+        "title": "TIU L5S3-01 [R] Thêm 2 tape vào JIG ép F-PCB để cải thiện NG Frame deform (2025-12-31)",
+        "purpose": "Lot Frame bị NG deform sau khi sấy Fr+F-PCB, NG Bako tăng đến ~47%. Thử thêm 2 lớp tape 0.14mm vào JIG ép F-PCB để cải thiện biến dạng Frame và kiểm tra function.",
+        "content": ["Thêm 2 lớp tape 0.14mm vào JIG ép F-PCB", "Làm semi Sub3, vision check Frame, sau đó chạy function trên line chính", "So sánh từng dòng Test với dòng Normal cùng sự kiện"]
+      },
+      "conclusions": {
+        "k1": {"topic": "JIG ép F-PCB + 2 tape vs Normal", "statement_from_report": "So sánh Test thêm 2 tape với Normal cùng ngày, cùng line.", "normalized_interpretation": "Line L Test 12.5% vs Normal 30.0% = 0.42 lần, cải thiện 58.3% so với Normal cùng sự kiện. Line R Test 18.29% vs Normal 19.0% = 0.96 lần, cải thiện 3.7% (trong khoảng nhiễu). Thêm tape giúp rõ Line L, Line R đứng riêng thì ít chênh."},
+        "k2": {"topic": "JIG ép Sub3 VP 4PI MG + F-PCB +2 tape vs Normal", "statement_from_report": "Kết hợp JIG ép Sub3 VP (4PI MG) với F-PCB +2 tape, so với Normal cùng block.", "normalized_interpretation": "2025-12-31 Test 5.97% vs Normal 19.0% = 0.314 lần, cải thiện 68.6%. 2026-01-02 Test 7.27% vs Normal 16.5% = 0.441 lần, cải thiện 55.9%. Kết hợp giảm NG đồng đều ở cả 2 sự kiện."},
+        "k3": {"topic": "Lý do decap NG FRF Low (Bako)", "statement_from_report": "9 mẫu NG FRF Low decap trên Line R D3-3A.", "normalized_interpretation": "55.6% do Ass'y VP+Coil offset/separate, 44.4% do Fr+VP separate/offset. Đường gây biến dạng Frame trùng với điểm yếu VP, ủng hộ giải pháp tăng độ dày tape."}
+      },
+      "hints": {
+        "hint_0": {"check_item": "Xác nhận độ dày tape ở JIG ép F-PCB (+2 × 0.14mm)", "reason": "Bako Line L cải thiện 58.3% so với Normal cùng sự kiện sau khi thay đổi."},
+        "hint_1": {"check_item": "Kết hợp JIG ép Sub3 VP 4PI MG với F-PCB +2 tape", "reason": "Line R cải thiện 55-68% trong 2 ngày."},
+        "hint_2": {"check_item": "Kiểm tra Fr+VP separate, VP+Coil offset trên Line R", "reason": "Chiếm 44% và 56% NG decap."}
+      },
+      "log": {
+        "assumptions": ["Line và Date được carry-down từ dòng đầu mỗi block qua các ô merge."],
+        "warnings": ["Cột NG rate lưu ở dạng thập phân (vd 0.125 = 12.5%)."],
+        "decision_rationale": "Có cặp Test/Normal cùng sự kiện cho Line L (1 cặp) và Line R (2 cặp gồm Sub3 VP JIG). Áp dụng (test/baseline - 1)*100. Line L và kết hợp Sub3 cải thiện rõ; Line R chỉ thêm tape thì nằm trong nhiễu. Decap Line R cho thấy FRF Low liên quan tới offset VP+Coil và Fr+VP."
+      }
+    }
+  }
+}

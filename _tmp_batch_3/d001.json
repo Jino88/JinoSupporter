@@ -1,0 +1,50 @@
+{
+  "name": "18. L20S15-07 DT Report test new material CD improve NG separate VP-CD from supplier GES  date 30.5.2025",
+  "mode": "Reanalyze",
+  "result": {
+    "productType": "L20S15-07 DT",
+    "reportType": "comparison_study",
+    "verdict": "no_clear_effect",
+    "headline": "Test CD material gave 1.3% function NG vs Normal 1.6%; tension drops from 3.95 to 3.12 kgf (within spec).",
+    "measurements": [
+      {"productType":"L20S15-07 DT","testDate":"2025-05-30","line":"C2-2A","checkType":"function","variable":"CD material","variableDetail":"Test 1st (new GES CD)","variableGroup":"VP/CD","intervention":"new_material","inputQty":48,"okQty":47,"ngTotal":1,"ngRate":2.1,"defectCategory":"function","defectType":"hearing","defectCount":1},
+      {"productType":"L20S15-07 DT","testDate":"2025-05-30","line":"C2-2A","checkType":"function","variable":"CD material","variableDetail":"Normal (laser support)","variableGroup":"VP/CD","intervention":"baseline","inputQty":50,"okQty":50,"ngTotal":0,"ngRate":0.0,"defectCategory":"","defectType":"","defectCount":0},
+      {"productType":"L20S15-07 DT","testDate":"2025-05-31","line":"C2-2A","checkType":"function","variable":"CD material","variableDetail":"Test 2nd (new GES CD)","variableGroup":"VP/CD","intervention":"new_material","inputQty":331,"okQty":327,"ngTotal":4,"ngRate":1.2,"defectCategory":"function","defectType":"sigma+hearing","defectCount":4},
+      {"productType":"L20S15-07 DT","testDate":"2025-05-31","line":"C2-2A","checkType":"function","variable":"CD material","variableDetail":"Normal (laser support)","variableGroup":"VP/CD","intervention":"baseline","inputQty":448,"okQty":440,"ngTotal":8,"ngRate":1.8,"defectCategory":"function","defectType":"hearing","defectCount":8}
+    ],
+    "tags": ["L20S15-07","DT","new_material","CD","VP/CD_separate","supplier_GES","comparison"],
+    "evidence": [
+      {"metric":"Function NG rate (aggregated)","baselineLabel":"Normal","baselineValue":"1.6% (8/498)","variantLabel":"Test (new CD)","variantValue":"1.3% (5/379)","deltaText":"-0.3pp","deltaSign":"down","note":"2 of 5 Test NGs were VP/CD separate","comparisons":null,"bestLabel":"","worstLabel":""},
+      {"metric":"VP/CD separate NG rate","baselineLabel":"Normal","baselineValue":"0/498","variantLabel":"Test","variantValue":"0/379","deltaText":"0","deltaSign":"flat","note":"Both zero in destructive separate-check","comparisons":null,"bestLabel":"","worstLabel":""},
+      {"metric":"VP+CD tension (avg, kgf, spec ≥1.2)","baselineLabel":"Normal","baselineValue":"3.95","variantLabel":"Test","variantValue":"3.12","deltaText":"-0.83 kgf","deltaSign":"down","note":"Both pass spec","comparisons":null,"bestLabel":"","worstLabel":""},
+      {"metric":"Dyne pen check after plasma","baselineLabel":"Normal","baselineValue":"OK","variantLabel":"Test","variantValue":"OK","deltaText":"—","deltaSign":"flat","note":"5pcs PQC","comparisons":null,"bestLabel":"","worstLabel":""}
+    ],
+    "actions": [
+      {"priority":1,"kind":"investigate","text":"Decap the 5 function-NG SPK from Test lot to confirm whether VP/CD separate is reduced vs the typical Normal-lot decap pattern."},
+      {"priority":2,"kind":"action","text":"Run a larger Test-lot sample (≥1000 pcs) before deciding on full switch to GES CD."},
+      {"priority":3,"kind":"risk","text":"Test-lot tension is ~20% lower than Normal; monitor field reliability margin."}
+    ],
+    "context": {"process":"VP/CD bonding (after plasma)","stage":"Sub1 / Final SPK","baselineReason":"Normal lot uses laser-support CD — current production reference"},
+    "doeGrid": null,
+    "trendPoints": null,
+    "summary":"","keyFindings":"","purpose":"","testConditions":"","rootCause":"","decision":"","recommendedAction":""
+  },
+  "tr_ko": {
+    "headline": "신규 CD 자재(Test)는 기능 NG 1.3% vs 기존(Normal) 1.6%, 인장력은 3.95→3.12 kgf로 감소(스펙 내).",
+    "actions": [
+      {"priority":1,"kind":"investigate","text":"Test 로트의 기능 NG 5건을 디캡하여 VP/CD 분리 NG 비율이 기존 로트 대비 실제로 감소하는지 확인."},
+      {"priority":2,"kind":"action","text":"GES CD로 전환 결정 전 Test 로트로 ≥1,000pcs 추가 양산 검증 실시."},
+      {"priority":3,"kind":"risk","text":"Test 로트 인장력이 기존 대비 ~20% 낮음 → 필드 신뢰성 마진 모니터링 필요."}
+    ],
+    "context": {"process":"VP/CD 본딩(플라즈마 후)","stage":"Sub1 / Final SPK","baselineReason":"기존 로트는 레이저 지원 CD 사용 — 현 양산 기준"}
+  },
+  "tr_vi": {
+    "headline": "Vật liệu CD mới (Test) NG chức năng 1.3% so với Normal 1.6%; lực kéo giảm 3.95→3.12 kgf (vẫn đạt spec).",
+    "actions": [
+      {"priority":1,"kind":"investigate","text":"Decap 5 NG chức năng của lô Test để xác nhận tỷ lệ tách VP/CD có thực sự giảm so với lô Normal hay không."},
+      {"priority":2,"kind":"action","text":"Chạy thêm ≥1.000 pcs lô Test trước khi quyết định chuyển toàn bộ sang CD của GES."},
+      {"priority":3,"kind":"risk","text":"Lực kéo của lô Test thấp hơn ~20% so với Normal; cần theo dõi biên độ tin cậy ngoài hiện trường."}
+    ],
+    "context": {"process":"Bonding VP/CD (sau plasma)","stage":"Sub1 / SPK cuối","baselineReason":"Lô Normal dùng CD có hỗ trợ laser — chuẩn sản xuất hiện tại"}
+  }
+}

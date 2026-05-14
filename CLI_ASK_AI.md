@@ -1,4 +1,49 @@
-# CLI Ask AI — Runbook for future agents
+﻿# CLI Ask AI — Runbook for future agents
+
+## Current v2 policy (2026-05-13)
+
+Use the current `AI_EXCEL_PROC.md` schema first. Read `tmp/ask_request.json`,
+resolve the production DB path as `D:\000. MyWorks\002. DB\process-review.db`,
+and answer from:
+
+`AiDocuments`, `AiTestConditions`, `AiResults`, `AiNgBreakdowns`,
+`AiConclusions`, `AiTroubleshootingHints`, `AiExtractionLogs`, and their
+translation tables. Use legacy `DatasetSummary` / `NormalizedMeasurements` only
+as fallback context.
+
+For NG-rate questions, do not judge by absolute NG-rate ranking when a
+same-event control exists. Pair each Test/After/New/changed row against the
+Normal/Baseline/Control/Reference/Before/Old/OK row from the same source
+sheet/table and the same carried-forward Date/Model/Line/measurement type.
+Excel merged cells may display blanks in continuation rows; treat blank
+Date/Model/Type/Line cells below a visible value as carrying that value forward.
+If stored input came from Data Input, merged cells may already be expanded and
+prefixed with metadata such as `{merged=A1:A4}` or `〔merged=A1:A4〕`; strip that
+metadata and use the following value as the actual cell value. Percentage-only
+subrows are not standalone result rows; use them only as rate/breakdown evidence
+for the preceding real count row.
+
+Respect the current `AI_EXCEL_PROC.md` report types:
+`normal_comparison`, `ng_without_baseline`, `before_after_dimension`,
+`measurement_spec`, `defect_root_cause`, `lot_supplier_mold_comparison`,
+`process_condition_change`, `reliability_spec`, `doe_matrix`,
+`image_dependent`, `mixed`. Shape the answer to the type: comparison/process
+reports need process-by-process comparison, measurement reports need
+spec/min/max/avg or pass/fail, and cause-analysis reports need phenomenon,
+checked action, result, and remaining risk.
+
+Compute relative change as:
+
+```text
+(test_ng_rate / baseline_ng_rate - 1) * 100
+```
+
+Positive means worse; negative means improved. If no same-event baseline exists,
+answer as `ng_without_baseline`: rank actual NG rates, defect mix, source sheet,
+and sample size, but do not say improved/worsened.
+
+When saving the answer, insert exactly one `AskAiHistory` row with the requested
+language and product type filter.
 
 > 목적: `JinoSupporter.Web` 의 **Ask AI** 기능 (`DataInferenceAskPage.razor`) 과
 > 동일한 결과를 **서버 기동 없이, Anthropic API 호출 없이** CLI 로 만들어
@@ -12,13 +57,13 @@
 ## 0. TL;DR — 에이전트가 해야 할 일
 
 1. **요청 읽기**: `tmp/ask_request.json` 의 `question`, `language`, `productTypeFilter` 확보
-2. **DB 경로 확인**: `workhost-settings.json` 의 `DataInference.DatabasePath` (기본 경로 폴백 금지 — CLI_AI_BATCH.md §1.1 참조)
+2. **DB 경로 확인**: `workhost-settings.json` 의 `DataInference.DatabasePath` (기본 경로 폴백 금지 — AI_EXCEL_PROC.md §1.1 참조)
 3. **Context 수집**: `FilteredReports` 에 해당하는 dataset 마다 summary + measurements 요약 블록 합성 (§2)
 4. **Reasoning**: §3 프롬프트 규칙 그대로 적용 — overall + per-dataset 답변 산출
 5. **커밋 + 출력**: `AskAiHistory` 에 single-row INSERT (`last_insert_rowid()` 회수), 터미널에 포맷해서 출력
 6. **청소**: `tmp/ask_request.json` 과 `_tmp_*.py` 삭제
 
-**핵심 원칙 (CLI_AI_BATCH.md 와 동일)**: 에이전트가 직접 reasoning 수행 — Anthropic API 호출 없음. Python 은 DB IO 만 담당.
+**핵심 원칙 (AI_EXCEL_PROC.md 와 동일)**: 에이전트가 직접 reasoning 수행 — Anthropic API 호출 없음. Python 은 DB IO 만 담당.
 
 ---
 
@@ -37,7 +82,7 @@
 파일이 없거나 `question` 이 비어있으면 **즉시 중단**, 터미널에 "No question" 출력.
 
 ### 1.2 DB 경로
-`CLI_AI_BATCH.md §1.1` 과 동일. `workhost-settings.json` 의 `DataInference.DatabasePath` 를 우선. 현재 경로: `D:\000. MyWorks\000. 일일업무\04. DB\process-review.db`.
+`AI_EXCEL_PROC.md §1.1` 과 동일. `workhost-settings.json` 의 `DataInference.DatabasePath` 를 우선. 현재 경로: `D:\000. MyWorks\000. 일일업무\04. DB\process-review.db`.
 
 ---
 
@@ -270,3 +315,4 @@ import sys; sys.stdout.reconfigure(encoding="utf-8")
 *v1 (2026-04-23) — JinoSupporter.Web 의 Ask AI 기능을 CLI 구독 경로로 대체.
 ClaudeService.AskAiAsync (line 1322-1398) + BuildDatasetsContext (DataInferenceAskPage.razor:442-487) 의
 정확한 1:1 재현이 목적. 코드 변경 시 이 문서의 line 레퍼런스 재검토.*
+

@@ -5,7 +5,7 @@
       "name": "WPF App",
       "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "build",
+      "preLaunchTask": "kill-and-build",
       "program": "${workspaceFolder}/JinoSupporter.App/bin/Debug/net8.0-windows/JinoSupporter.App.exe",
       "cwd": "${workspaceFolder}/JinoSupporter.App",
       "console": "internalConsole",
@@ -32,6 +32,27 @@
           "throwAction": "ignore"
         }
       ]
+    },
+    {
+      "name": "BMES NG Rate Standalone (Release)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-standalone-release",
+      "program": "${workspaceFolder}/BmesNgRateStandalone/bin/Release/net8.0-windows/BmesNgRateStandalone.exe",
+      "cwd": "${workspaceFolder}/BmesNgRateStandalone",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "justMyCode": false,
+      "env": {
+        "DOTNET_ENVIRONMENT": "Production"
+      }
+    },
+    {
+      "name": "Build BMES NG Rate Installer",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}/BmesNgRateStandalone/tools/BuildStandaloneInstaller.ps1\"",
+      "cwd": "${workspaceFolder}"
     }
   ],
   "compounds": [

@@ -1,0 +1,394 @@
+@page "/admin/test-excel-converter"
+@rendermode InteractiveServer
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
+@implements IDisposable
+@using System.Text.Json
+@using JinoSupporter.Web.Services
+@inject AppPathsService    Paths
+@inject ExcelHelperRunner  Helper
+@inject IJSRuntime         JS
+
+<PageTitle>Test Excel Converter</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span style="font-size:20px;">📑</span>
+    <h5 class="mb-0 fw-semibold">Test Excel Converter</h5>
+    <span class="badge bg-secondary ms-2" style="font-size:10px;">Admin only</span>
+</div>
+
+<p class="small text-muted">
+    <a href="https://github.com/Jino88/ExcelExporter" target="_blank">ExcelExporter</a>
+    submodule을 별도 net8.0-windows 헬퍼 exe로 빌드해 web이 subprocess로 호출합니다.
+    Excel COM (DRM 우회 ⓪번 전략) 포함 — DRM-locked .xlsx도 처리 가능. 경로는 자동 저장됩니다.
+</p>
+
+@if (!Helper.HelperExists)
+{
+    <div class="alert alert-warning small">
+        <strong>Helper exe not found.</strong> 빌드되지 않은 상태입니다 — web 프로젝트를 다시 빌드해주세요.
+        <div class="font-monospace mt-1" style="font-size:11px;">@Helper.HelperExePath</div>
+    </div>
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header small fw-semibold">⚙ Settings</div>
+    <div class="card-body">
+        <div class="mb-3">
+            <label class="form-label small mb-1">Source folder (recursive scan)</label>
+            <div class="input-group input-group-sm">
+                <input class="form-control font-monospace"
+                       @bind="_sourceDir" @bind:after="SaveSettings"
+                       placeholder="e.g. D:\reports\input" />
+                <button class="btn btn-outline-secondary"
+                        @onclick="PickSourceAsync" disabled="@(_isBusy || !Helper.HelperExists)"
+                        title="Browse for source folder">📁 Browse</button>
+            </div>
+            <small class="text-muted">이 폴더와 하위 폴더 안의 모든 *.xlsx / *.xlsm 을 변환.</small>
+        </div>
+        <div class="mb-3">
+            <label class="form-label small mb-1">Destination folder</label>
+            <div class="input-group input-group-sm">
+                <input class="form-control font-monospace"
+                       @bind="_destDir" @bind:after="SaveSettings"
+                       placeholder="e.g. D:\reports\output" />
+                <button class="btn btn-outline-secondary"
+                        @onclick="PickDestAsync" disabled="@(_isBusy || !Helper.HelperExists)"
+                        title="Browse for destination folder">📁 Browse</button>
+            </div>
+            <small class="text-muted">결과: <code>&lt;Destination&gt;/drm_clean/&lt;원본이름&gt;_clean.xlsx</code></small>
+        </div>
+        <div class="form-check form-check-inline mb-2">
+            <input class="form-check-input" type="checkbox"
+                   id="cb-verbose" @bind="_verbose" disabled="@_isBusy" />
+            <label class="form-check-label small" for="cb-verbose">
+                Verbose log
+                <span class="text-muted">— per-chunk / per-shape / per-5K-cells progress (helps diagnose stalls)</span>
+            </label>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <button class="btn btn-primary btn-sm" @onclick="ConvertAsync"
+                    disabled="@(_isBusy || !Helper.HelperExists
+                              || string.IsNullOrWhiteSpace(_sourceDir)
+                              || string.IsNullOrWhiteSpace(_destDir))">
+                @if (_isBusy)
+                { <span class="spinner-border spinner-border-sm me-1"></span><span>Converting…</span> }
+                else
+                { <span>▶ Scan &amp; Convert</span> }
+            </button>
+            @if (_isBusy)
+            {
+                <button class="btn btn-danger btn-sm"
+                        @onclick="Cancel"
+                        disabled="@(_cts is null || _cts.IsCancellationRequested)">
+                    <span>■ Stop</span>
+                </button>
+            }
+            @if (_lastSummary is not null)
+            {
+                <span class="ms-2 small">
+                    <span class="badge bg-success me-1">OK @_lastSummary.Value.Ok</span>
+                    @if (_lastSummary.Value.Fail > 0)
+                    { <span class="badge bg-danger">Fail @_lastSummary.Value.Fail</span> }
+                </span>
+            }
+        </div>
+        @* Progress bar — driven by helper "scan" (sets total) and "progress"
+           (sets current + filename). Stays visible after a run finishes so
+           the user can see the final N/N completion until next start. *@
+        @if (_progTotal > 0)
+        {
+            int pct = (int)Math.Round(100.0 * _progCurrent / _progTotal);
+            <div class="mt-3">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span class="text-muted">@_progCurrent / @_progTotal files</span>
+                    <span class="text-muted text-truncate ms-2" style="max-width:60%;" title="@_progFile">@_progFile</span>
+                    <span class="fw-semibold">@pct %</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar @(_isBusy ? "progress-bar-striped progress-bar-animated" : "bg-success")"
+                         role="progressbar" style="width:@(pct)%;"></div>
+                </div>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="alert alert-danger mt-3 mb-0 py-2 small">@_error</div>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+        <span>📜 Log</span>
+        @if (_log.Count > 0)
+        {
+            <button class="btn btn-link btn-sm p-0 text-secondary ms-auto"
+                    @onclick="() => _log.Clear()">Clear</button>
+        }
+    </div>
+    <div class="card-body p-0">
+        @* id="tec-log" — needed by JS to scroll-to-bottom on each new entry.
+           Without this the user has to scroll manually as logs stream in. *@
+        <div id="tec-log" class="font-monospace p-2 overflow-auto"
+             style="height:380px; background:#0f172a; color:#94a3b8;
+                    font-size:11px; border-radius:0 0 .375rem .375rem;">
+            @if (_log.Count == 0)
+            {
+                <span style="opacity:.4;">No log entries yet.</span>
+            }
+            else
+            {
+                @foreach (var entry in _log)
+                {
+                    <div class="@LogClassFor(entry.Kind)">@entry.Text</div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .log-info  { color: #94a3b8; }
+    .log-ok    { color: #4ade80; }
+    .log-warn  { color: #fbbf24; }
+    .log-err   { color: #f87171; }
+    .log-step  { color: #93c5fd; }
+</style>
+
+@code {
+    private string _sourceDir = string.Empty;
+    private string _destDir   = string.Empty;
+    private string _error     = string.Empty;
+    private bool   _isBusy;
+    private bool   _verbose;
+    private CancellationTokenSource? _cts;
+
+    private sealed record LogEntry(string Kind, string Text);
+
+    private readonly List<LogEntry>  _log = new();
+    private (int Ok, int Fail)?      _lastSummary;
+
+    // Progress state — populated by helper "scan" + "progress" events.
+    private int _progTotal;
+    private int _progCurrent;
+    private string _progFile = "";
+
+    protected override void OnInitialized()
+    {
+        var cfg = Paths.Current;
+        _sourceDir = cfg.TestExcelConverterSourceDir ?? string.Empty;
+        _destDir   = cfg.TestExcelConverterDestDir   ?? string.Empty;
+    }
+
+    // Track the last log size we scrolled past so we don't pin the viewport
+    // when nothing new arrived (would steal user's manual scroll).
+    private int _lastLogScrollCount;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_log.Count != _lastLogScrollCount)
+        {
+            _lastLogScrollCount = _log.Count;
+            try
+            {
+                await JS.InvokeVoidAsync("eval",
+                    "(()=>{var e=document.getElementById('tec-log');if(e)e.scrollTop=e.scrollHeight;})()");
+            }
+            catch { /* JS unavailable (prerender etc.) — fine */ }
+        }
+    }
+
+    private void SaveSettings()
+    {
+        var cur = Paths.Current;
+        Paths.Save(new AppPathsConfig
+        {
+            MainDbPath                = cur.MainDbPath,
+            ScheduleDbPath            = cur.ScheduleDbPath,
+            NgRateDbSaveDirectory     = cur.NgRateDbSaveDirectory,
+            NgRateRoutingFilePath     = cur.NgRateRoutingFilePath,
+            NgRateReasonFilePath      = cur.NgRateReasonFilePath,
+            NgRateSettingsDbDirectory = cur.NgRateSettingsDbDirectory,
+            ModelBmesJsonFolder       = cur.ModelBmesJsonFolder,
+            TestExcelConverterSourceDir = (_sourceDir ?? string.Empty).Trim(),
+            TestExcelConverterDestDir   = (_destDir   ?? string.Empty).Trim(),
+        });
+    }
+
+    private async Task PickSourceAsync()
+    {
+        if (!Helper.HelperExists) return;
+        AddLog("[browse] Opening folder dialog (source)…", "step");
+        StateHasChanged();
+        string? picked = await Helper.PickFolderAsync(string.IsNullOrWhiteSpace(_sourceDir) ? null : _sourceDir);
+        if (picked is not null)
+        {
+            _sourceDir = picked;
+            SaveSettings();
+            AddLog($"[browse] Source = {picked}", "ok");
+        }
+        else
+        {
+            AddLog("[browse] Source pick cancelled.", "warn");
+        }
+    }
+
+    private async Task PickDestAsync()
+    {
+        if (!Helper.HelperExists) return;
+        AddLog("[browse] Opening folder dialog (destination)…", "step");
+        StateHasChanged();
+        string? picked = await Helper.PickFolderAsync(string.IsNullOrWhiteSpace(_destDir) ? null : _destDir);
+        if (picked is not null)
+        {
+            _destDir = picked;
+            SaveSettings();
+            AddLog($"[browse] Destination = {picked}", "ok");
+        }
+        else
+        {
+            AddLog("[browse] Destination pick cancelled.", "warn");
+        }
+    }
+
+    private async Task ConvertAsync()
+    {
+        if (_isBusy || !Helper.HelperExists) return;
+        if (string.IsNullOrWhiteSpace(_sourceDir) || string.IsNullOrWhiteSpace(_destDir))
+        {
+            _error = "Source / Destination 모두 지정해주세요.";
+            return;
+        }
+        if (!Directory.Exists(_sourceDir))
+        {
+            _error = $"Source folder not found: {_sourceDir}";
+            return;
+        }
+
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+
+        _isBusy = true;
+        _error  = string.Empty;
+        _lastSummary = null;
+        _progTotal = 0; _progCurrent = 0; _progFile = "";
+        AddLog($"[start] {_sourceDir} → {_destDir}", "step");
+        StateHasChanged();
+
+        try
+        {
+            await foreach (var evt in Helper.CleanAsync(_sourceDir, _destDir, verbose: _verbose, ct: _cts.Token))
+            {
+                HandleHelperEvent(evt);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            AddLog("[stopped] User cancelled — helper process killed.", "warn");
+        }
+        catch (Exception ex)
+        {
+            _error = $"Convert failed: {ex.Message}";
+            AddLog($"[fatal] {ex}", "err");
+        }
+        finally
+        {
+            _isBusy = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void Cancel()
+    {
+        if (_cts is null || _cts.IsCancellationRequested) return;
+        // Cancellation propagates into ExcelHelperRunner.StreamAsync which has
+        // a CT registration that calls proc.Kill(entireProcessTree:true) — the
+        // helper exe and any Excel.exe it spawned die immediately so the
+        // ReadLineAsync loop unwinds without waiting for the next stdout line.
+        AddLog("[stop] Cancellation requested…", "warn");
+        try { _cts.Cancel(); } catch { }
+    }
+
+    public void Dispose()
+    {
+        // Page navigated away mid-conversion → cancel so the helper doesn't
+        // outlive the circuit. The Job Object would catch it on web exit too,
+        // but per-circuit cancellation kills the process the moment the user
+        // leaves the page rather than holding it open until shutdown.
+        try { _cts?.Cancel(); } catch { }
+        _cts?.Dispose();
+    }
+
+    private void HandleHelperEvent(ExcelHelperRunner.HelperEvent evt)
+    {
+        var raw = evt.Raw;
+        switch (evt.Kind)
+        {
+            case "scan":
+                int count = raw.TryGetProperty("count", out var c) ? c.GetInt32() : 0;
+                _progTotal = count; _progCurrent = 0; _progFile = "";
+                AddLog($"[scan] {count} Excel file(s) under {raw.GetProperty("source").GetString()}", "info");
+                break;
+
+            case "progress":
+                int cur = raw.GetProperty("current").GetInt32();
+                int tot = raw.GetProperty("total").GetInt32();
+                string file = raw.GetProperty("file").GetString() ?? "";
+                _progCurrent = cur; _progTotal = tot; _progFile = file;
+                AddLog($"[{cur}/{tot}] {file}", "step");
+                break;
+
+            case "result":
+                bool ok = raw.GetProperty("success").GetBoolean();
+                if (ok)
+                {
+                    string strat = raw.TryGetProperty("strategy", out var s) ? s.GetString() ?? "?" : "?";
+                    string dest  = raw.TryGetProperty("dest",  out var d) ? d.GetString() ?? "" : "";
+                    AddLog($"  ✓ {strat} → {dest}", "ok");
+                }
+                else
+                {
+                    string src = raw.TryGetProperty("source", out var sp) ? Path.GetFileName(sp.GetString() ?? "") : "?";
+                    string err = raw.TryGetProperty("error",  out var ep) ? ep.GetString() ?? "" : "";
+                    AddLog($"  ✗ {src} — {err}", "err");
+                }
+                break;
+
+            case "log":
+                string msg = raw.TryGetProperty("message", out var m) ? m.GetString() ?? "" : "";
+                AddLog(msg, msg.StartsWith("⚠", StringComparison.Ordinal) ? "warn" : "info");
+                break;
+
+            case "done":
+                int dOk   = raw.TryGetProperty("ok",   out var ok2) ? ok2.GetInt32() : 0;
+                int dFail = raw.TryGetProperty("fail", out var fl)  ? fl.GetInt32()  : 0;
+                _lastSummary = (dOk, dFail);
+                AddLog($"[done] OK={dOk}, FAIL={dFail}", dFail > 0 ? "warn" : "ok");
+                break;
+
+            case "fatal":
+            case "error":
+            case "stderr":
+                string em = raw.TryGetProperty("message", out var em2) ? em2.GetString() ?? "" : evt.Kind;
+                _error = em;
+                AddLog($"[helper] {em}", "err");
+                break;
+        }
+    }
+
+    private void AddLog(string message, string kind = "info")
+    {
+        _log.Add(new LogEntry(kind, $"{DateTime.Now:HH:mm:ss}  {message}"));
+        const int Cap = 2000;
+        if (_log.Count > Cap) _log.RemoveRange(0, _log.Count - Cap);
+    }
+
+    private static string LogClassFor(string kind) => kind switch
+    {
+        "ok"   => "log-ok",
+        "warn" => "log-warn",
+        "err"  => "log-err",
+        "step" => "log-step",
+        _      => "log-info",
+    };
+}

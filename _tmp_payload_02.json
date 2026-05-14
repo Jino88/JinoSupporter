@@ -1,0 +1,98 @@
+{
+  "result": {
+    "productType": "BRS-161016 DT",
+    "tags": ["brs-161016-dt","sigma-thd-spl","frame-bending","mold-frame","ng-investigation","multi-mold"],
+    "reportType": "multi_arm",
+    "verdict": "partial",
+    "headline": "Mold Frame G4 worst sigma NG 1.1% (vs K1/G3/G5/G6 0.1–0.5%); Frame-bending raises sigma NG 0.3%→1.5%",
+    "evidence": [
+      { "metric":"Sigma (THD+SPL) NG rate by Mold Frame","baselineLabel":"","baselineValue":"","variantLabel":"","variantValue":"","deltaText":"+1.0pp range","deltaSign":"up","note":"K1 ref → G4 worst","comparisons":[
+          { "label":"K1","value":"0.5% (35/6854)","n":6854,"isBaseline":true,"isBest":false,"isWorst":false },
+          { "label":"G3","value":"0.1% (3/2238)","n":2238,"isBaseline":false,"isBest":true,"isWorst":false },
+          { "label":"G4","value":"1.1% (52/4586)","n":4586,"isBaseline":false,"isBest":false,"isWorst":true },
+          { "label":"G5","value":"0.3% (13/4000)","n":4000,"isBaseline":false,"isBest":false,"isWorst":false },
+          { "label":"G6","value":"0.3% (11/3950)","n":3950,"isBaseline":false,"isBest":false,"isWorst":false }
+        ], "bestLabel":"G3","worstLabel":"G4" },
+      { "metric":"Frame-bending function NG (sigma)","baselineLabel":"Frame OK","baselineValue":"0.3% (7/2071)","variantLabel":"Frame bending","variantValue":"1.5% (2/136)","deltaText":"+1.2pp","deltaSign":"up","note":"small n=136","comparisons":null,"bestLabel":"","worstLabel":"" },
+      { "metric":"Frame-bending hearing NG","baselineLabel":"Frame OK","baselineValue":"1.1% (23/2064)","variantLabel":"Frame bending","variantValue":"1.5% (2/134)","deltaText":"+0.4pp","deltaSign":"up","note":"","comparisons":null,"bestLabel":"","worstLabel":"" }
+    ],
+    "actions": [
+      { "priority":1, "kind":"investigate", "text":"Root-cause Mold Frame G4 sigma defect (highest THD+SPL rate at 1.1%)" },
+      { "priority":2, "kind":"action", "text":"Tighten frame-bending screen at sub-line — bending lots show 5x sigma rate" },
+      { "priority":3, "kind":"investigate", "text":"Quantify frame bending rate per mold (G4 = 8% bending vs K1 = 5%)" }
+    ],
+    "context": {
+      "process": "Mold Frame separation → function test (sigma THD+SPL, hearing)",
+      "stage": "C2-3B main-line function across mold frames K1/G3/G4/G5/G6",
+      "baselineReason": "K1 = main/reference mold; multi-arm across 5 mold frames"
+    },
+    "doeGrid": null,
+    "trendPoints": null,
+    "measurements": [
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"K1","variableDetail":"sigma","variableGroup":"","intervention":"","inputQty":3678,"okQty":3664,"ngTotal":14,"ngRate":0.4,"defectCategory":"function_thd","defectType":"THD","defectCount":3 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"K1","variableDetail":"sigma","variableGroup":"","intervention":"","inputQty":3678,"okQty":3664,"ngTotal":14,"ngRate":0.4,"defectCategory":"function_spl","defectType":"THD+SPL","defectCount":11 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"K1","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":3664,"okQty":3607,"ngTotal":57,"ngRate":1.6,"defectCategory":"function_hearing","defectType":"Noise","defectCount":45 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"K1","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":3664,"okQty":3607,"ngTotal":57,"ngRate":1.6,"defectCategory":"function_hearing","defectType":"Touch","defectCount":12 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"G3","variableDetail":"sigma","variableGroup":"","intervention":"","inputQty":2238,"okQty":2235,"ngTotal":3,"ngRate":0.1,"defectCategory":"function_spl","defectType":"THD+SPL","defectCount":3 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"G3","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":2235,"okQty":2196,"ngTotal":39,"ngRate":1.7,"defectCategory":"function_hearing","defectType":"Noise","defectCount":35 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"G3","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":2235,"okQty":2196,"ngTotal":39,"ngRate":1.7,"defectCategory":"function_hearing","defectType":"Touch","defectCount":4 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"G4","variableDetail":"sigma","variableGroup":"","intervention":"","inputQty":560,"okQty":554,"ngTotal":6,"ngRate":1.1,"defectCategory":"function_spl","defectType":"THD+SPL","defectCount":6 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"G4","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":554,"okQty":545,"ngTotal":9,"ngRate":1.6,"defectCategory":"function_hearing","defectType":"Noise","defectCount":8 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"G4","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":554,"okQty":545,"ngTotal":9,"ngRate":1.6,"defectCategory":"function_hearing","defectType":"Touch","defectCount":1 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"G5","variableDetail":"sigma","variableGroup":"","intervention":"","inputQty":2234,"okQty":2227,"ngTotal":7,"ngRate":0.3,"defectCategory":"function_thd","defectType":"THD","defectCount":1 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"G5","variableDetail":"sigma","variableGroup":"","intervention":"","inputQty":2234,"okQty":2227,"ngTotal":7,"ngRate":0.3,"defectCategory":"function_spl","defectType":"THD+SPL","defectCount":6 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"G5","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":2227,"okQty":2188,"ngTotal":39,"ngRate":1.8,"defectCategory":"function_hearing","defectType":"Noise","defectCount":37 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"G5","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":2227,"okQty":2188,"ngTotal":39,"ngRate":1.8,"defectCategory":"function_hearing","defectType":"Touch","defectCount":2 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"G6","variableDetail":"sigma","variableGroup":"","intervention":"","inputQty":3357,"okQty":3347,"ngTotal":10,"ngRate":0.3,"defectCategory":"function_thd","defectType":"THD","defectCount":2 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"G6","variableDetail":"sigma","variableGroup":"","intervention":"","inputQty":3357,"okQty":3347,"ngTotal":10,"ngRate":0.3,"defectCategory":"function_spl","defectType":"THD+SPL","defectCount":8 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"G6","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":3347,"okQty":3291,"ngTotal":56,"ngRate":1.7,"defectCategory":"function_hearing","defectType":"Noise","defectCount":55 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-26","line":"C2-3B","checkType":"function","variable":"G6","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":3347,"okQty":3291,"ngTotal":56,"ngRate":1.7,"defectCategory":"function_hearing","defectType":"Touch","defectCount":1 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"function","variable":"K1","variableDetail":"sigma","variableGroup":"","intervention":"","inputQty":3176,"okQty":3155,"ngTotal":21,"ngRate":0.7,"defectCategory":"function_spl","defectType":"THD+SPL","defectCount":21 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"function","variable":"K1","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":3155,"okQty":3130,"ngTotal":25,"ngRate":0.8,"defectCategory":"function_hearing","defectType":"Noise","defectCount":24 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"function","variable":"K1","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":3155,"okQty":3130,"ngTotal":25,"ngRate":0.8,"defectCategory":"function_hearing","defectType":"Touch","defectCount":1 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"function","variable":"G4","variableDetail":"sigma","variableGroup":"","intervention":"","inputQty":4026,"okQty":3980,"ngTotal":46,"ngRate":1.1,"defectCategory":"function_spl","defectType":"THD+SPL","defectCount":46 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"function","variable":"G4","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":3980,"okQty":3933,"ngTotal":47,"ngRate":1.2,"defectCategory":"function_hearing","defectType":"Noise","defectCount":42 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"function","variable":"G4","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":3980,"okQty":3933,"ngTotal":47,"ngRate":1.2,"defectCategory":"function_hearing","defectType":"Touch","defectCount":5 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"function","variable":"G5","variableDetail":"sigma","variableGroup":"","intervention":"","inputQty":1766,"okQty":1760,"ngTotal":6,"ngRate":0.3,"defectCategory":"function_spl","defectType":"THD+SPL","defectCount":6 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"function","variable":"G5","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":1760,"okQty":1735,"ngTotal":25,"ngRate":1.4,"defectCategory":"function_hearing","defectType":"Noise","defectCount":23 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"function","variable":"G5","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":1760,"okQty":1735,"ngTotal":25,"ngRate":1.4,"defectCategory":"function_hearing","defectType":"Touch","defectCount":2 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"function","variable":"G6","variableDetail":"sigma","variableGroup":"","intervention":"","inputQty":593,"okQty":592,"ngTotal":1,"ngRate":0.2,"defectCategory":"function_spl","defectType":"THD+SPL","defectCount":1 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"function","variable":"G6","variableDetail":"hearing","variableGroup":"","intervention":"","inputQty":592,"okQty":584,"ngTotal":8,"ngRate":1.4,"defectCategory":"function_hearing","defectType":"Noise","defectCount":8 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"process","variable":"K1","variableDetail":"frame bending check","variableGroup":"","intervention":"","inputQty":800,"okQty":759,"ngTotal":41,"ngRate":5.0,"defectCategory":"assembly_defect","defectType":"Frame bending","defectCount":41 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"process","variable":"G3","variableDetail":"frame bending check","variableGroup":"","intervention":"","inputQty":1000,"okQty":977,"ngTotal":23,"ngRate":2.0,"defectCategory":"assembly_defect","defectType":"Frame bending","defectCount":23 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"process","variable":"G4","variableDetail":"frame bending check","variableGroup":"","intervention":"","inputQty":800,"okQty":737,"ngTotal":63,"ngRate":8.0,"defectCategory":"assembly_defect","defectType":"Frame bending","defectCount":63 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"process","variable":"G5","variableDetail":"frame bending check","variableGroup":"","intervention":"","inputQty":200,"okQty":196,"ngTotal":4,"ngRate":2.0,"defectCategory":"assembly_defect","defectType":"Frame bending","defectCount":4 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"process","variable":"G6","variableDetail":"frame bending check","variableGroup":"","intervention":"","inputQty":200,"okQty":196,"ngTotal":4,"ngRate":2.0,"defectCategory":"assembly_defect","defectType":"Frame bending","defectCount":4 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"function","variable":"Frame OK","variableDetail":"sigma","variableGroup":"normal","intervention":"frame-bending sort","inputQty":2071,"okQty":2064,"ngTotal":7,"ngRate":0.3,"defectCategory":"function_spl","defectType":"THD+SPL","defectCount":7 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"function","variable":"Frame OK","variableDetail":"hearing","variableGroup":"normal","intervention":"frame-bending sort","inputQty":2064,"okQty":2041,"ngTotal":23,"ngRate":1.1,"defectCategory":"function_hearing","defectType":"Noise","defectCount":23 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"function","variable":"Frame bending","variableDetail":"sigma","variableGroup":"test","intervention":"frame-bending sort","inputQty":136,"okQty":134,"ngTotal":2,"ngRate":1.5,"defectCategory":"function_spl","defectType":"THD+SPL","defectCount":2 },
+      { "productType":"BRS-161016 DT","testDate":"2025-06-27","line":"C2-3B","checkType":"function","variable":"Frame bending","variableDetail":"hearing","variableGroup":"test","intervention":"frame-bending sort","inputQty":134,"okQty":132,"ngTotal":2,"ngRate":1.5,"defectCategory":"function_hearing","defectType":"Noise","defectCount":2 }
+    ]
+  },
+  "tr_ko": {
+    "headline": "Mold Frame G4 sigma NG 최악 1.1% (K1/G3/G5/G6 0.1–0.5%); Frame-bending 시 sigma NG 0.3%→1.5%",
+    "actions": [
+      { "priority":1, "kind":"investigate", "text":"Mold Frame G4 sigma 불량 근본원인 조사 (THD+SPL 1.1%로 최고)" },
+      { "priority":2, "kind":"action", "text":"서브 라인에서 frame-bending 선별 강화 — bending 로트가 sigma 5배" },
+      { "priority":3, "kind":"investigate", "text":"몰드별 frame bending율 정량화 (G4 = 8% vs K1 = 5%)" }
+    ],
+    "context": {
+      "process": "Mold Frame 분리 → 기능 시험 (sigma THD+SPL, hearing)",
+      "stage": "C2-3B 본 라인 기능 검사, mold frame K1/G3/G4/G5/G6 비교",
+      "baselineReason": "K1 = 기준 몰드; 5개 mold frame multi-arm"
+    }
+  },
+  "tr_vi": {
+    "headline": "Mold Frame G4 sigma NG cao nhất 1.1% (K1/G3/G5/G6 0.1–0.5%); Frame-bending nâng sigma 0.3%→1.5%",
+    "actions": [
+      { "priority":1, "kind":"investigate", "text":"Truy nguyên nguyên nhân sigma Mold Frame G4 (THD+SPL cao nhất 1.1%)" },
+      { "priority":2, "kind":"action", "text":"Siết screen frame-bending tại sub-line — lot bending sigma gấp 5 lần" },
+      { "priority":3, "kind":"investigate", "text":"Định lượng tỉ lệ bending theo mold (G4 = 8% vs K1 = 5%)" }
+    ],
+    "context": {
+      "process": "Tách Mold Frame → kiểm tra function (sigma THD+SPL, hearing)",
+      "stage": "Function main-line C2-3B trên mold frame K1/G3/G4/G5/G6",
+      "baselineReason": "K1 là mold chuẩn; multi-arm 5 mold frame"
+    }
+  }
+}

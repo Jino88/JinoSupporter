@@ -58,33 +58,271 @@ public sealed class NormalizedMeasurement
     [JsonPropertyName("defectCount")]    public int    DefectCount    { get; set; }
 }
 
+public sealed class EvidenceComparison
+{
+    [JsonPropertyName("label")]      public string Label      { get; set; } = "";
+    [JsonPropertyName("value")]      public string Value      { get; set; } = "";
+    [JsonPropertyName("n")]          public int    N          { get; set; }
+    [JsonPropertyName("isBaseline")] public bool   IsBaseline { get; set; }
+    [JsonPropertyName("isBest")]     public bool   IsBest     { get; set; }
+    [JsonPropertyName("isWorst")]    public bool   IsWorst    { get; set; }
+}
+
+public sealed class EvidenceRow
+{
+    [JsonPropertyName("metric")]         public string Metric         { get; set; } = "";
+    // 2-arm 경로 (기존)
+    [JsonPropertyName("baselineLabel")]  public string BaselineLabel  { get; set; } = "";
+    [JsonPropertyName("baselineValue")]  public string BaselineValue  { get; set; } = "";
+    [JsonPropertyName("variantLabel")]   public string VariantLabel   { get; set; } = "";
+    [JsonPropertyName("variantValue")]   public string VariantValue   { get; set; } = "";
+    [JsonPropertyName("deltaText")]      public string DeltaText      { get; set; } = "";
+    [JsonPropertyName("deltaSign")]      public string DeltaSign      { get; set; } = "";  // up | down | no_change
+    [JsonPropertyName("note")]           public string Note           { get; set; } = "";
+    // 3+ arm 경로 (v7) — 비어있으면 위 2-arm 경로 사용
+    [JsonPropertyName("comparisons")]    public List<EvidenceComparison>? Comparisons { get; set; }
+    [JsonPropertyName("bestLabel")]      public string BestLabel      { get; set; } = "";
+    [JsonPropertyName("worstLabel")]     public string WorstLabel     { get; set; } = "";
+}
+
+/// <summary>DOE 격자 실험 — Factor1 × Factor2 grid.</summary>
+public sealed class DoeCell
+{
+    [JsonPropertyName("f1")]     public string F1     { get; set; } = "";   // factor1 level (e.g. "T=380")
+    [JsonPropertyName("f2")]     public string F2     { get; set; } = "";   // factor2 level (e.g. "Tension=4")
+    [JsonPropertyName("status")] public string Status { get; set; } = "";   // ok | ng | borderline | empty
+    [JsonPropertyName("value")]  public string Value  { get; set; } = "";   // 측정값 또는 비고
+}
+
+public sealed class DoeGrid
+{
+    [JsonPropertyName("factor1Name")] public string       Factor1Name { get; set; } = "";   // e.g. "Temperature"
+    [JsonPropertyName("factor2Name")] public string       Factor2Name { get; set; } = "";   // e.g. "Tension"
+    [JsonPropertyName("factor1Levels")] public List<string> Factor1Levels { get; set; } = [];
+    [JsonPropertyName("factor2Levels")] public List<string> Factor2Levels { get; set; } = [];
+    [JsonPropertyName("cells")]       public List<DoeCell> Cells       { get; set; } = [];
+}
+
+/// <summary>시계열/주차별 trend.</summary>
+public sealed class TrendPoint
+{
+    [JsonPropertyName("label")] public string Label { get; set; } = "";   // "Week 17", "Mar 2025"
+    [JsonPropertyName("value")] public string Value { get; set; } = "";   // "8.3%"
+    [JsonPropertyName("note")]  public string Note  { get; set; } = "";
+}
+
+public sealed class ActionItem
+{
+    [JsonPropertyName("priority")] public int    Priority { get; set; }
+    [JsonPropertyName("kind")]     public string Kind     { get; set; } = "action";  // action | investigate | risk
+    [JsonPropertyName("text")]     public string Text     { get; set; } = "";
+}
+
+public sealed class AnalysisContext
+{
+    [JsonPropertyName("process")]        public string Process        { get; set; } = "";
+    [JsonPropertyName("stage")]          public string Stage          { get; set; } = "";
+    [JsonPropertyName("baselineReason")] public string BaselineReason { get; set; } = "";
+}
+
 public sealed class NormalizeResult
 {
     [JsonPropertyName("measurements")]        public List<NormalizedMeasurement> Measurements { get; set; } = [];
-    [JsonPropertyName("summary")]             public string       Summary             { get; set; } = "";
-    [JsonPropertyName("keyFindings")]         public string       KeyFindings         { get; set; } = "";
     [JsonPropertyName("tags")]                public List<string> Tags                { get; set; } = [];
 
-    // Structured context fields for AI Ask — extract from report's common sections
-    [JsonPropertyName("purpose")]             public string       Purpose             { get; set; } = "";
-    [JsonPropertyName("testConditions")]      public string       TestConditions      { get; set; } = "";
-    [JsonPropertyName("rootCause")]           public string       RootCause           { get; set; } = "";
-    [JsonPropertyName("decision")]            public string       Decision            { get; set; } = "";
-    [JsonPropertyName("recommendedAction")]   public string       RecommendedAction   { get; set; } = "";
+    // ── v7 reportType — 카드 분기 ──
+    // comparison_study | multi_arm | doe_factorial | reliability_validation
+    // | trend_analysis | quality_log | intervention_test
+    [JsonPropertyName("reportType")]          public string             ReportType { get; set; } = "";
+
+    // ── v2 structured fields (verdict-first) ──
+    [JsonPropertyName("verdict")]             public string             Verdict   { get; set; } = "";  // enum (v7: passed/failed 추가)
+    [JsonPropertyName("headline")]            public string             Headline  { get; set; } = "";  // 1-line conclusion
+    [JsonPropertyName("evidence")]            public List<EvidenceRow>  Evidence  { get; set; } = [];  // ≤4 rows
+    [JsonPropertyName("actions")]             public List<ActionItem>   Actions   { get; set; } = [];  // ≤3 items
+    [JsonPropertyName("context")]             public AnalysisContext?   Context   { get; set; }
+
+    // ── v7 reportType-specific payloads (optional, set when reportType matches) ──
+    [JsonPropertyName("doeGrid")]             public DoeGrid?           DoeGrid     { get; set; }
+    [JsonPropertyName("trendPoints")]         public List<TrendPoint>?  TrendPoints { get; set; }
+
+    // ── Legacy narrative fields (kept for backward-compat reading; empty in v2 output) ──
+    [JsonPropertyName("summary")]             public string Summary             { get; set; } = "";
+    [JsonPropertyName("keyFindings")]         public string KeyFindings         { get; set; } = "";
+    [JsonPropertyName("purpose")]             public string Purpose             { get; set; } = "";
+    [JsonPropertyName("testConditions")]      public string TestConditions      { get; set; } = "";
+    [JsonPropertyName("rootCause")]           public string RootCause           { get; set; } = "";
+    [JsonPropertyName("decision")]            public string Decision            { get; set; } = "";
+    [JsonPropertyName("recommendedAction")]   public string RecommendedAction   { get; set; } = "";
+}
+
+// ── AI_EXCEL_PROC.md schema read DTOs (Batch CLI v6 output) ───────────────────
+// Used by DataInferenceDbPage when the row was processed by the new CLI flow
+// (writes AiDocuments / AiConclusions / AiTroubleshootingHints + ko/en/vi
+// translations). Old DatasetSummary card is rendered for legacy rows.
+public sealed class AiDocBundle
+{
+    public string DocumentId        { get; set; } = "";
+    public string SourceDataset     { get; set; } = "";
+    public string SourceFile        { get; set; } = "";
+    public string Title             { get; set; } = "";
+    public string Purpose           { get; set; } = "";
+    public string PrimaryDefect     { get; set; } = "";
+    public string ReportType        { get; set; } = "";
+    public string ReportDate        { get; set; } = "";
+    public double Confidence        { get; set; }
+    public string DecisionRationale { get; set; } = "";   // from AiExtractionLogs
+
+    public int ConditionsCount { get; set; }
+
+    public List<string> Content        { get; set; } = [];
+    public List<string> RelatedDefects { get; set; } = [];
+    public List<string> Parts          { get; set; } = [];
+    public List<string> Processes      { get; set; } = [];
+    public List<string> Assumptions    { get; set; } = [];
+    public List<string> Warnings       { get; set; } = [];
+
+    public List<AiResultRow>             Results      { get; set; } = [];
+    public List<AiNgBreakdownSummaryRow> NgBreakdowns { get; set; } = [];
+    public List<AiConclusionRow> Conclusions { get; set; } = new();
+    public List<AiHintRow>       Hints       { get; set; } = new();
+
+    // Lang ('ko'|'en'|'vi') → translated narrative payload
+    public Dictionary<string, AiDocTranslationRow>                          DocTranslations        { get; set; } = new();
+    public Dictionary<string, Dictionary<string, AiConclusionTranslationRow>> ConclusionTranslations { get; set; } = new();
+    public Dictionary<string, Dictionary<string, AiHintTranslationRow>>       HintTranslations       { get; set; } = new();
+    public Dictionary<string, AiLogTranslationRow>                          LogTranslations        { get; set; } = new();
+}
+
+public sealed class AiConclusionRow
+{
+    public string ConclusionId             { get; set; } = "";
+    public string Topic                    { get; set; } = "";
+    public string StatementFromReport      { get; set; } = "";
+    public string NormalizedInterpretation { get; set; } = "";
+    public string SourceFile               { get; set; } = "";
+    public string SheetName                { get; set; } = "";
+}
+
+public sealed class AiHintRow
+{
+    public string HintId           { get; set; } = "";
+    public string DefectName       { get; set; } = "";
+    public string CheckItem        { get; set; } = "";
+    public string Reason           { get; set; } = "";
+    public string EvidenceStrength { get; set; } = "";
+    public string RelatedProcess   { get; set; } = "";
+    public string RelatedPart      { get; set; } = "";
+    public string SourceFile       { get; set; } = "";
+    public string SheetName        { get; set; } = "";
+}
+
+public sealed class AiDocTranslationRow
+{
+    public string Title   { get; set; } = "";
+    public string Purpose { get; set; } = "";
+    public List<string> Content { get; set; } = [];
+}
+public sealed class AiConclusionTranslationRow
+{
+    public string Topic                    { get; set; } = "";
+    public string StatementFromReport      { get; set; } = "";
+    public string NormalizedInterpretation { get; set; } = "";
+}
+public sealed class AiHintTranslationRow
+{
+    public string CheckItem { get; set; } = "";
+    public string Reason    { get; set; } = "";
+}
+public sealed class AiLogTranslationRow
+{
+    public string DecisionRationale { get; set; } = "";
+    public List<string> Assumptions  { get; set; } = [];
+    public List<string> Warnings     { get; set; } = [];
+}
+
+public sealed class AiResultRow
+{
+    public string  ResultId        { get; set; } = "";
+    public string  ConditionId     { get; set; } = "";
+    public string  MeasurementType { get; set; } = "";
+    public string  ConditionGroup  { get; set; } = "";
+    public string  ConditionProcess { get; set; } = "";
+    public string  ChangedFactor   { get; set; } = "";
+    public string  BeforeValue     { get; set; } = "";
+    public string  AfterValue      { get; set; } = "";
+    public string  ResultDate      { get; set; } = "";
+    public string  Line            { get; set; } = "";
+    public double? InputCount      { get; set; }
+    public double? OkCount         { get; set; }
+    public double? NgCount         { get; set; }
+    public double? NgRateDecimal   { get; set; }
+    public double? NgRatePercent   { get; set; }
+    public string  MetricName      { get; set; } = "";
+    public double? MetricValue     { get; set; }
+    public string  Unit            { get; set; } = "";
+    public string  Judgement       { get; set; } = "";
+    public string  SourceFile      { get; set; } = "";
+    public string  SheetName       { get; set; } = "";
+    public string  SourceCellsJson { get; set; } = "";
+}
+
+public sealed class AiNgBreakdownSummaryRow
+{
+    public string  DefectName { get; set; } = "";
+    public int     RowCount   { get; set; }
+    public double  TotalCount { get; set; }
+    public double? AvgRate    { get; set; }
 }
 
 public sealed class DatasetSummaryRecord
 {
-    public string       Summary           { get; set; } = "";
-    public string       KeyFindings       { get; set; } = "";
-    public List<string> Tags              { get; set; } = [];
+    public List<string> Tags { get; set; } = [];
 
-    // Extended structured fields
-    public string       Purpose           { get; set; } = "";
-    public string       TestConditions    { get; set; } = "";
-    public string       RootCause         { get; set; } = "";
-    public string       Decision          { get; set; } = "";
-    public string       RecommendedAction { get; set; } = "";
+    // v7 reportType
+    public string                  ReportType { get; set; } = "";
+
+    // v2 structured fields
+    public string                  Verdict   { get; set; } = "";
+    public string                  Headline  { get; set; } = "";
+    public List<EvidenceRow>       Evidence  { get; set; } = [];
+    public List<ActionItem>        Actions   { get; set; } = [];
+    public AnalysisContext?        Context   { get; set; }
+
+    // v7 reportType-specific payloads
+    public DoeGrid?                DoeGrid     { get; set; }
+    public List<TrendPoint>?       TrendPoints { get; set; }
+
+    // Legacy narrative fields (still populated on pre-v2 rows)
+    public string Summary           { get; set; } = "";
+    public string KeyFindings       { get; set; } = "";
+    public string Purpose           { get; set; } = "";
+    public string TestConditions    { get; set; } = "";
+    public string RootCause         { get; set; } = "";
+    public string Decision          { get; set; } = "";
+    public string RecommendedAction { get; set; } = "";
+
+    // Translations: keyed by 2-letter lang code ("ko", "vi", …). The original
+    // AI output is stored in the base columns above (treated as "en"); ko/vi
+    // are filled by a follow-up translate call after Normalize. UI picks one.
+    public Dictionary<string, DatasetSummaryTranslation> Translations { get; set; } = new();
+}
+
+public sealed class DatasetSummaryTranslation
+{
+    // v2 — translate-eligible fields only (numbers/labels stay verbatim)
+    public string                  Headline { get; set; } = "";
+    public List<ActionItem>        Actions  { get; set; } = [];
+    public AnalysisContext?        Context  { get; set; }
+
+    // Legacy
+    public string Summary           { get; set; } = "";
+    public string KeyFindings       { get; set; } = "";
+    public string Purpose           { get; set; } = "";
+    public string TestConditions    { get; set; } = "";
+    public string RootCause         { get; set; } = "";
+    public string Decision          { get; set; } = "";
+    public string RecommendedAction { get; set; } = "";
 }
 
 public sealed record RawFileInfo(

@@ -173,6 +173,36 @@ public sealed class NgRateSettingsService
         cmd.ExecuteNonQuery();
     }
 
+    public void ReplaceRoutingRows(IReadOnlyList<RoutingRow> rows)
+    {
+        using var conn = Open();
+        using var tx   = conn.BeginTransaction();
+        using (var del = conn.CreateCommand())
+        {
+            del.Transaction = tx;
+            del.CommandText = "DELETE FROM RoutingTable;";
+            del.ExecuteNonQuery();
+        }
+
+        foreach (var r in rows)
+        {
+            using var ins = conn.CreateCommand();
+            ins.Transaction = tx;
+            ins.CommandText = """
+                INSERT INTO RoutingTable (Id, ModelName, ProcessCode, ProcessName, ProcessType)
+                VALUES (@id, @m, @pc, @pn, @pt);
+                """;
+            ins.Parameters.AddWithValue("@id", r.Id);
+            ins.Parameters.AddWithValue("@m",  r.ModelName ?? string.Empty);
+            ins.Parameters.AddWithValue("@pc", r.ProcessCode ?? string.Empty);
+            ins.Parameters.AddWithValue("@pn", r.ProcessName ?? string.Empty);
+            ins.Parameters.AddWithValue("@pt", r.ProcessType ?? string.Empty);
+            ins.ExecuteNonQuery();
+        }
+
+        tx.Commit();
+    }
+
     public int ImportRoutingFromFile(string filePath)
     {
         if (!File.Exists(filePath)) return 0;
@@ -244,6 +274,35 @@ public sealed class NgRateSettingsService
         cmd.CommandText = "DELETE FROM ReasonTable WHERE Id=@id;";
         cmd.Parameters.AddWithValue("@id", id);
         cmd.ExecuteNonQuery();
+    }
+
+    public void ReplaceReasonRows(IReadOnlyList<ReasonRow> rows)
+    {
+        using var conn = Open();
+        using var tx   = conn.BeginTransaction();
+        using (var del = conn.CreateCommand())
+        {
+            del.Transaction = tx;
+            del.CommandText = "DELETE FROM ReasonTable;";
+            del.ExecuteNonQuery();
+        }
+
+        foreach (var r in rows)
+        {
+            using var ins = conn.CreateCommand();
+            ins.Transaction = tx;
+            ins.CommandText = """
+                INSERT INTO ReasonTable (Id, ProcessName, NgName, Reason)
+                VALUES (@id, @pn, @ng, @rs);
+                """;
+            ins.Parameters.AddWithValue("@id", r.Id);
+            ins.Parameters.AddWithValue("@pn", r.ProcessName ?? string.Empty);
+            ins.Parameters.AddWithValue("@ng", r.NgName ?? string.Empty);
+            ins.Parameters.AddWithValue("@rs", r.Reason ?? string.Empty);
+            ins.ExecuteNonQuery();
+        }
+
+        tx.Commit();
     }
 
     /// <summary>

@@ -1,0 +1,814 @@
+@page "/bmes/f-cost"
+@using BmesNgRateStandalone.Services
+@inject FCostService          FCost
+@inject FCostReportService    FCostReportSvc
+@inject NgRateSettingsService NgRateSettings
+@inject WebRepository         Repo
+
+<PageTitle>BMES — F-Cost</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span style="font-size:20px;">💰</span>
+    <h5 class="mb-0 fw-semibold">F-Cost</h5>
+</div>
+
+<div class="row g-3">
+
+    <!-- ══ Get Data ══════════════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header small fw-semibold">Get Data</div>
+            <div class="card-body d-flex flex-column gap-3">
+                <div>
+                    <div class="form-label small fw-semibold mb-1">Search Date (SDATE)</div>
+                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                        <input type="date" class="form-control form-control-sm"
+                               style="width:auto; min-width:160px;"
+                               @bind="_queryDate" @bind:format="yyyy-MM-dd" />
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="SetToday">Today</button>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small text-muted">BMES:</span>
+                    @if (NgRateSettings.IsCredentialsConfigured)
+                    {
+                        <span class="badge bg-success">Credentials OK</span>
+                        <span class="small text-muted font-monospace">@NgRateSettings.LoginId</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">Not configured</span>
+                        <a href="/admin/settings" class="small text-primary">→ Admin Settings</a>
+                    }
+                </div>
+
+                <button class="btn btn-primary"
+                        @onclick="GetDataAsync"
+                        disabled="@(_isBusy || !NgRateSettings.IsCredentialsConfigured)">
+                    @if (_isBusy)
+                    { <span class="spinner-border spinner-border-sm me-1"></span><span>Fetching…</span> }
+                    else { <span>Get Data</span> }
+                </button>
+
+                @if (!string.IsNullOrEmpty(_savedDbPath))
+                {
+                    <div class="alert alert-success py-2 small mb-0">
+                        <div class="fw-semibold mb-1">
+                            <span class="badge bg-success me-1">Done</span> Saved DB
+                        </div>
+                        <div class="font-monospace text-break" style="font-size:11px;">@_savedDbPath</div>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="alert alert-danger py-2 small mb-0">
+                        <span class="badge bg-danger me-1">Error</span> @_errorMessage
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Generate Report ═══════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header small fw-semibold">Report</div>
+            <div class="card-body d-flex flex-column gap-2">
+                <div class="small text-muted">
+                    Loads the most recently fetched <code>fcost_*.db</code> and renders Input /
+                    F-Cost / Rate per Material plus the GN factory totals.
+                </div>
+
+                <!-- Row visibility toggles -->
+                <div class="d-flex align-items-center gap-3 mt-1 small">
+                    <span class="text-muted fw-semibold" style="font-size:11px;">Show rows:</span>
+                    <label class="form-check-inline d-flex align-items-center gap-1 m-0" style="font-size:11px;">
+                        <input type="checkbox" class="form-check-input m-0" @bind="_showInput" />
+                        <span>INPUT</span>
+                    </label>
+                    <label class="form-check-inline d-flex align-items-center gap-1 m-0" style="font-size:11px;">
+                        <input type="checkbox" class="form-check-input m-0" @bind="_showCost" />
+                        <span>F-COST</span>
+                    </label>
+                    <label class="form-check-inline d-flex align-items-center gap-1 m-0" style="font-size:11px;">
+                        <input type="checkbox" class="form-check-input m-0" @bind="_showRate" />
+                        <span>RATE %</span>
+                    </label>
+                </div>
+
+                <button class="btn btn-success mt-1"
+                        @onclick="GetReportAsync"
+                        disabled="@(_isReportBusy || !HasUsableDb)">
+                    @if (_isReportBusy)
+                    { <span class="spinner-border spinner-border-sm me-1"></span><span>Loading…</span> }
+                    else { <span>▶ Generate Report</span> }
+                </button>
+                @if (!HasUsableDb)
+                {
+                    <div class="small text-muted">Run <strong>Get Data</strong> first.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ SubGroup roll-up (sums of Input + F-Cost across matching Materials) ══ -->
+@if (_report is not null && (_report.SubGroups.Count > 0 || _report.Total is not null))
+{
+    var subHeaders = _report.ColumnHeaders;
+    <div class="card shadow-sm mt-3">
+        <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+            <span>📋 SubGroup Summary — Σ Input · Σ F-Cost · Rate% (recomputed from sums)</span>
+            <span class="text-muted" style="font-size:11px;">
+                @_report.SubGroups.Count subgroup(s) · @_report.UnmappedMaterials.Count unmapped
+                · sorted by previous-week Rate%
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <div style="overflow-x:auto;">
+                <table class="fcost-table">
+                    <thead>
+                        <tr>
+                            <th class="label-th" style="width:240px;">SubGroup</th>
+                            <th class="label-th" style="width:100px;">Type</th>
+                            @for (int hi = 0; hi < subHeaders.Count; hi++)
+                            {
+                                <th class="@ColBoundaryClass(hi)">@subHeaders[hi]</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int sgRows = VisibleRowCount;
+                            bool sgLabelOnInput = _showInput;
+                            bool sgLabelOnCost  = !_showInput && _showCost;
+                            bool sgLabelOnRate  = !_showInput && !_showCost && _showRate;
+                        }
+                        @* Total row — recomputed from the SubGroup sums (same
+                           helper feeds the bottom per-Material table's Total row
+                           below, so top + bottom always agree). _report.Total
+                           from BMES often misses INAMT and would render all
+                           "-"; the sum-of-subgroups never has that gap. *@
+                        @if (sgRows > 0)
+                        {
+                            string totalLbl = "Total";
+                            int N = subHeaders.Count;
+                            var (totalInput, totalCost) = ComputeSubGroupTotals(N);
+
+                            @if (_showInput)
+                            {
+                                <tr class="fcost-row-total">
+                                    @if (sgLabelOnInput)
+                                    {
+                                        <td class="label-td" rowspan="@sgRows"><strong>@totalLbl</strong></td>
+                                    }
+                                    <td class="label-td"><span class="ztype-badge">INPUT</span></td>
+                                    @for (int i = 0; i < N; i++)
+                                    {
+                                        double v = totalInput[i];
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i)">@FormatNum(v)</td>
+                                    }
+                                </tr>
+                            }
+                            @if (_showCost)
+                            {
+                                <tr class="fcost-row-total">
+                                    @if (sgLabelOnCost)
+                                    {
+                                        <td class="label-td" rowspan="@sgRows"><strong>@totalLbl</strong></td>
+                                    }
+                                    <td class="label-td"><span class="ztype-badge">F-COST</span></td>
+                                    @for (int i = 0; i < N; i++)
+                                    {
+                                        double v = totalCost[i];
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i)">@FormatNum(v)</td>
+                                    }
+                                </tr>
+                            }
+                            @if (_showRate)
+                            {
+                                <tr class="fcost-row-total">
+                                    @if (sgLabelOnRate)
+                                    {
+                                        <td class="label-td" rowspan="@sgRows"><strong>@totalLbl</strong></td>
+                                    }
+                                    <td class="label-td"><span class="ztype-badge">RATE %</span></td>
+                                    @for (int i = 0; i < N; i++)
+                                    {
+                                        // Weighted rate: Σcost / Σinput * 100. 0 if input=0.
+                                        double v = totalInput[i] > 0
+                                            ? totalCost[i] / totalInput[i] * 100.0
+                                            : 0;
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i)">@FormatRate(v)</td>
+                                    }
+                                </tr>
+                            }
+                        }
+                        @* Mid → Sub1 → Sub2 expand/collapse hierarchy. Mid rows are always
+                           visible; Sub rows render only when their ancestor is expanded.
+                           InputByCol/CostByCol on parent rows are sums of leaf descendants. *@
+                        @{
+                            var hierarchyRows = BuildFCostHierarchy();
+                            var fcostById     = hierarchyRows.ToDictionary(r => r.RowId);
+                            var fcostHasKids  = hierarchyRows
+                                .Where(r => r.ParentId is not null)
+                                .Select(r => r.ParentId!)
+                                .ToHashSet(StringComparer.Ordinal);
+                        }
+                        @foreach (var row in hierarchyRows.Where(r => IsFCostRowVisible(r, fcostById)))
+                        {
+                            if (sgRows == 0) { continue; }
+                            int    padPx     = 8 + row.Depth * 16;
+                            bool   canExp    = fcostHasKids.Contains(row.RowId);
+                            bool   expanded  = _expandedFCostRows.Contains(row.RowId);
+                            string capturedId = row.RowId;
+                            string rowCls    = row.Depth switch
+                            {
+                                0 => "fcost-row-mid",
+                                1 => "fcost-row-sub1",
+                                _ => "fcost-row-sub2"
+                            };
+                            @if (_showInput)
+                            {
+                                <tr class="@rowCls">
+                                    @if (sgLabelOnInput)
+                                    {
+                                        <td class="label-td" rowspan="@sgRows"
+                                            style="padding-left: @(padPx)px; cursor: @(canExp ? "pointer" : "default");"
+                                            @onclick="@(() => { if (canExp) ToggleFCostRow(capturedId); })">
+                                            @if (canExp)
+                                            { <span class="fcost-tog">@(expanded ? "▼" : "▶")</span> }
+                                            else
+                                            { <span class="fcost-tog fcost-tog-blank"></span> }
+                                            <strong>@row.Display</strong>
+                                        </td>
+                                    }
+                                    <td class="label-td"><span class="ztype-badge">INPUT</span></td>
+                                    @for (int i = 0; i < subHeaders.Count; i++)
+                                    {
+                                        double v = row.InputByCol[i];
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i, oneBased: false)">@FormatNum(v)</td>
+                                    }
+                                </tr>
+                            }
+                            @if (_showCost)
+                            {
+                                <tr class="@rowCls">
+                                    @if (sgLabelOnCost)
+                                    {
+                                        <td class="label-td" rowspan="@sgRows"
+                                            style="padding-left: @(padPx)px; cursor: @(canExp ? "pointer" : "default");"
+                                            @onclick="@(() => { if (canExp) ToggleFCostRow(capturedId); })">
+                                            @if (canExp)
+                                            { <span class="fcost-tog">@(expanded ? "▼" : "▶")</span> }
+                                            else
+                                            { <span class="fcost-tog fcost-tog-blank"></span> }
+                                            <strong>@row.Display</strong>
+                                        </td>
+                                    }
+                                    <td class="label-td"><span class="ztype-badge">F-COST</span></td>
+                                    @for (int i = 0; i < subHeaders.Count; i++)
+                                    {
+                                        double v = row.CostByCol[i];
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i, oneBased: false)">@FormatNum(v)</td>
+                                    }
+                                </tr>
+                            }
+                            @if (_showRate)
+                            {
+                                <tr class="@rowCls">
+                                    @if (sgLabelOnRate)
+                                    {
+                                        <td class="label-td" rowspan="@sgRows"
+                                            style="padding-left: @(padPx)px; cursor: @(canExp ? "pointer" : "default");"
+                                            @onclick="@(() => { if (canExp) ToggleFCostRow(capturedId); })">
+                                            @if (canExp)
+                                            { <span class="fcost-tog">@(expanded ? "▼" : "▶")</span> }
+                                            else
+                                            { <span class="fcost-tog fcost-tog-blank"></span> }
+                                            <strong>@row.Display</strong>
+                                        </td>
+                                    }
+                                    <td class="label-td"><span class="ztype-badge">RATE %</span></td>
+                                    @{ var rate = row.RateByCol; }
+                                    @for (int i = 0; i < subHeaders.Count; i++)
+                                    {
+                                        double v = rate[i];
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i, oneBased: false)">@FormatRate(v)</td>
+                                    }
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (_report.UnmappedMaterials.Count > 0)
+            {
+                <div class="alert alert-warning small m-3 mb-0">
+                    <strong>Unmapped (@_report.UnmappedMaterials.Count):</strong>
+                    Materials whose <code>MatnrTx_ModNoTx</code> (or fallback <code>MatnrTx_VeridTx</code>)
+                    didn't match any LineShift in the saved ModelGroups —
+                    @string.Join(", ", _report.UnmappedMaterials.Take(10).Select(m => m.DisplayName))
+                    @(_report.UnmappedMaterials.Count > 10 ? $" … (+{_report.UnmappedMaterials.Count - 10})" : "")
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- ══ Total + per-Material table ═══════════════════════════════════════════ -->
+@if (_report is not null)
+{
+    var headers = _report.ColumnHeaders;
+
+    <div class="card shadow-sm mt-3">
+        <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+            <span>📊 F-Cost — query date @_report.QueryDate</span>
+            <span class="text-muted" style="font-size:11px;">
+                @_report.Materials.Count materials · @_report.TotalRows rows
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <div style="overflow-x:auto;">
+                <table class="fcost-table">
+                    <thead>
+                        <tr>
+                            <th class="label-th" style="width:280px;">제품명</th>
+                            <th class="label-th" style="width:100px;">Type</th>
+                            @for (int hi = 0; hi < headers.Count; hi++)
+                            {
+                                <th class="@ColBoundaryClass(hi)">@headers[hi]</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int matRows = VisibleRowCount;
+                            bool matLabelOnInput = _showInput;
+                            bool matLabelOnCost  = !_showInput && _showCost;
+                            bool matLabelOnRate  = !_showInput && !_showCost && _showRate;
+                        }
+                        @* Bottom Total — same sum-of-subgroups helper as the
+                           top SubGroup Summary uses, so the two Total rows
+                           always show identical numbers. *@
+                        @if (matRows > 0 && _report.SubGroups.Count > 0)
+                        {
+                            int Nb = headers.Count;
+                            var (botInput, botCost) = ComputeSubGroupTotals(Nb);
+                            string botLbl = _report.Total?.DisplayName is { Length: > 0 } d2 ? d2 : "Total";
+
+                            @if (_showInput)
+                            {
+                                <tr class="fcost-row-total">
+                                    @if (matLabelOnInput)
+                                    {
+                                        <td class="label-td" rowspan="@matRows"><strong>@botLbl</strong></td>
+                                    }
+                                    <td class="label-td"><span class="ztype-badge">INPUT</span></td>
+                                    @for (int i = 0; i < Nb; i++)
+                                    {
+                                        double v = botInput[i];
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i)">@FormatNum(v)</td>
+                                    }
+                                </tr>
+                            }
+                            @if (_showCost)
+                            {
+                                <tr class="fcost-row-total">
+                                    @if (matLabelOnCost)
+                                    {
+                                        <td class="label-td" rowspan="@matRows"><strong>@botLbl</strong></td>
+                                    }
+                                    <td class="label-td"><span class="ztype-badge">F-COST</span></td>
+                                    @for (int i = 0; i < Nb; i++)
+                                    {
+                                        double v = botCost[i];
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i)">@FormatNum(v)</td>
+                                    }
+                                </tr>
+                            }
+                            @if (_showRate)
+                            {
+                                <tr class="fcost-row-total">
+                                    @if (matLabelOnRate)
+                                    {
+                                        <td class="label-td" rowspan="@matRows"><strong>@botLbl</strong></td>
+                                    }
+                                    <td class="label-td"><span class="ztype-badge">RATE %</span></td>
+                                    @for (int i = 0; i < Nb; i++)
+                                    {
+                                        double v = botInput[i] > 0 ? botCost[i] / botInput[i] * 100.0 : 0;
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i)">@FormatRate(v)</td>
+                                    }
+                                </tr>
+                            }
+                        }
+                        @foreach (var block in _report.Materials)
+                        {
+                            if (matRows == 0) { continue; }
+                            @if (_showInput)
+                            {
+                                <tr class="fcost-row-input">
+                                    @if (matLabelOnInput)
+                                    {
+                                        <td class="label-td" rowspan="@matRows">
+                                            <strong>@block.DisplayName</strong>
+                                            @if (!string.IsNullOrEmpty(block.ProductGroup))
+                                            {
+                                                <div class="text-muted" style="font-size:10px;">@block.ProductGroup</div>
+                                            }
+                                        </td>
+                                    }
+                                    <td class="label-td"><span class="ztype-badge">INPUT</span></td>
+                                    @for (int i = 1; i <= headers.Count; i++)
+                                    {
+                                        double v = block.Input?.GetCol(i) ?? 0;
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i, oneBased: true)">@FormatNum(v)</td>
+                                    }
+                                </tr>
+                            }
+                            @if (_showCost)
+                            {
+                                <tr class="fcost-row-cost">
+                                    @if (matLabelOnCost)
+                                    {
+                                        <td class="label-td" rowspan="@matRows">
+                                            <strong>@block.DisplayName</strong>
+                                            @if (!string.IsNullOrEmpty(block.ProductGroup))
+                                            {
+                                                <div class="text-muted" style="font-size:10px;">@block.ProductGroup</div>
+                                            }
+                                        </td>
+                                    }
+                                    <td class="label-td"><span class="ztype-badge">F-COST</span></td>
+                                    @for (int i = 1; i <= headers.Count; i++)
+                                    {
+                                        double v = block.Cost?.GetCol(i) ?? 0;
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i, oneBased: true)">@FormatNum(v)</td>
+                                    }
+                                </tr>
+                            }
+                            @if (_showRate)
+                            {
+                                <tr class="fcost-row-rate">
+                                    @if (matLabelOnRate)
+                                    {
+                                        <td class="label-td" rowspan="@matRows">
+                                            <strong>@block.DisplayName</strong>
+                                            @if (!string.IsNullOrEmpty(block.ProductGroup))
+                                            {
+                                                <div class="text-muted" style="font-size:10px;">@block.ProductGroup</div>
+                                            }
+                                        </td>
+                                    }
+                                    <td class="label-td"><span class="ztype-badge">RATE %</span></td>
+                                    @for (int i = 1; i <= headers.Count; i++)
+                                    {
+                                        double v = block.Rate?.GetCol(i) ?? 0;
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i, oneBased: true)">@FormatRate(v)</td>
+                                    }
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+@if (!string.IsNullOrEmpty(_reportError))
+{
+    <div class="alert alert-danger mt-3 py-2 small">@_reportError</div>
+}
+
+<style>
+    .fcost-table { font-size: 12px; white-space: nowrap; border-collapse: collapse; width: 100%; }
+    .fcost-table th {
+        background: #f1f5f9; font-weight: 700; font-size: 10px; color: #64748b;
+        text-transform: uppercase; letter-spacing: .4px;
+        padding: 5px 10px; text-align: right; border-bottom: 1px solid #e2e8f0;
+        position: sticky; top: 0; z-index: 1;
+    }
+    .fcost-table th.label-th { text-align: left; }
+    .fcost-table td {
+        padding: 4px 10px; border-bottom: 1px solid #f1f5f9;
+        text-align: right; font-family: monospace;
+    }
+    .fcost-table td.label-td { text-align: left; font-family: inherit; }
+
+    .fcost-row-total td  { background: #fef3c7; color: #78350f; font-weight: 700;
+                            border-top: 2px solid #fbbf24; }
+    .fcost-row-input td  { background: #eff6ff; }
+    .fcost-row-cost  td  { background: #fff; }
+    .fcost-row-rate  td  { background: #f0fdf4; color: #166534; font-weight: 600; }
+
+    .ztype-badge {
+        display: inline-block; font-size: 10px; font-weight: 700;
+        padding: 1px 7px; border: 1px solid #cbd5e1; border-radius: 3px;
+        background: #f8fafc; color: #475569;
+    }
+    .zero { color: #cbd5e1; }
+
+    /* SubGroup Summary — Mid → Sub1 → Sub2 expand/collapse hierarchy */
+    .fcost-row-mid  td { background: #fef3c7; color: #78350f; font-weight: 700;
+                        border-top: 2px solid #fbbf24; }
+    .fcost-row-sub1 td { background: #eff6ff; color: #1e293b; font-weight: 600; }
+    .fcost-row-sub2 td { background: #fff;    color: #475569; font-weight: 500; font-size: 11.5px; }
+    .fcost-tog        { display: inline-block; width: 14px; color: #6366f1;
+                        font-size: 10px; margin-right: 4px; }
+    .fcost-tog-blank  { width: 14px; }
+
+    /* Day / Week / Month period dividers — left border on the first column of each
+       period block. Heavier than the regular row border so the eye picks out where
+       the day → week → month transition happens. */
+    .fcost-table th.col-day-start,
+    .fcost-table td.col-day-start    { border-left: 2px solid #93c5fd; }
+    .fcost-table th.col-week-start,
+    .fcost-table td.col-week-start   { border-left: 2px solid #86efac; }
+    .fcost-table th.col-month-start,
+    .fcost-table td.col-month-start  { border-left: 2px solid #fcd34d; }
+</style>
+
+@code {
+    /// <summary>Sum InputByCol / CostByCol across every saved SubGroup. Both
+    /// the SubGroup Summary's Total row and the per-Material table's Total row
+    /// call this so the two Totals are always identical (same data, same code
+    /// path). Unmapped materials are excluded by design — they appear in the
+    /// "Unmapped (N)" callout below the SubGroup Summary instead.</summary>
+    private (double[] Input, double[] Cost) ComputeSubGroupTotals(int columnCount)
+    {
+        var input = new double[columnCount];
+        var cost  = new double[columnCount];
+        if (_report is null) return (input, cost);
+        foreach (var sg in _report.SubGroups)
+        {
+            int n = Math.Min(columnCount, sg.InputByCol.Length);
+            for (int i = 0; i < n; i++)
+            {
+                input[i] += sg.InputByCol[i];
+                cost[i]  += sg.CostByCol[i];
+            }
+        }
+        return (input, cost);
+    }
+
+    private static string FormatNum(double v)
+        => v == 0 ? "-" : ((long)Math.Round(v)).ToString("N0");
+
+    private static string FormatRate(double v)
+        => v == 0 ? "-" : v.ToString("0.00") + "%";
+
+    private DateTime _queryDate    = DateTime.Today;
+    private bool     _isBusy;
+    private string?  _savedDbPath;
+    private string   _errorMessage = string.Empty;
+
+    private bool         _isReportBusy;
+    private string       _reportError = string.Empty;
+    private FCostReport? _report;
+
+    // Row visibility toggles — control which Z-type rows render in both tables.
+    private bool _showInput = true;
+    private bool _showCost  = true;
+    private bool _showRate  = true;
+
+    private int VisibleRowCount =>
+        (_showInput ? 1 : 0) + (_showCost ? 1 : 0) + (_showRate ? 1 : 0);
+
+    // SubGroup Summary hierarchy: rows in the table are tied together by parentId
+    // so the user can collapse / expand Mid → Sub1 → Sub2 trees. By default only
+    // the top (Mid) rows are visible; clicking opens deeper levels.
+    private HashSet<string> _expandedFCostRows = new(StringComparer.Ordinal);
+
+    private void ToggleFCostRow(string rowId)
+    {
+        if (!_expandedFCostRows.Remove(rowId)) _expandedFCostRows.Add(rowId);
+    }
+
+    /// <summary>One row in the SubGroup-Summary tree. <see cref="InputByCol"/> /
+    /// <see cref="CostByCol"/> are the SUM of every leaf descendant under this node;
+    /// <see cref="RateByCol"/> is recomputed from the sums to preserve weighting.</summary>
+    private sealed record FCostHierarchyRow(
+        string   RowId,
+        string?  ParentId,
+        string   Display,
+        int      Depth,
+        int      MatchedMaterialCount,
+        double[] InputByCol,
+        double[] CostByCol)
+    {
+        public double[] RateByCol
+        {
+            get
+            {
+                var arr = new double[InputByCol.Length];
+                for (int i = 0; i < arr.Length; i++)
+                    arr[i] = InputByCol[i] > 0 ? CostByCol[i] / InputByCol[i] * 100.0 : 0;
+                return arr;
+            }
+        }
+    }
+
+    /// <summary>Build the Mid → Sub1 → Sub2 hierarchy from <c>_report.SubGroups</c>.
+    /// The flat leaf rows are bucketed by (GroupName, MidGroupName) for the Mid level
+    /// and by the first path segment of <c>SubGroupKey</c> for Sub1. Leaves whose
+    /// path is two segments or deeper emit Sub2 rows; one-segment leaves stop at Sub1
+    /// (the leaf <em>is</em> the Sub1, no redundant duplicate).</summary>
+    private List<FCostHierarchyRow> BuildFCostHierarchy()
+    {
+        var rows = new List<FCostHierarchyRow>();
+        if (_report is null || _report.SubGroups.Count == 0) return rows;
+
+        int colCount = _report.ColumnHeaders.Count;
+
+        var byMid = _report.SubGroups
+            .GroupBy(sg => new { sg.GroupName, sg.MidGroupName })
+            .OrderBy(g => g.Key.GroupName,    StringComparer.Ordinal)
+            .ThenBy (g => g.Key.MidGroupName, StringComparer.Ordinal);
+
+        foreach (var midGroup in byMid)
+        {
+            string midRowId = $"M::{midGroup.Key.GroupName}::{midGroup.Key.MidGroupName}";
+            var midInput   = new double[colCount];
+            var midCost    = new double[colCount];
+            int midMatCnt  = 0;
+            foreach (var sg in midGroup)
+            {
+                for (int i = 0; i < colCount; i++)
+                {
+                    midInput[i] += sg.InputByCol[i];
+                    midCost[i]  += sg.CostByCol[i];
+                }
+                midMatCnt += sg.MatchedMaterialCount;
+            }
+            rows.Add(new FCostHierarchyRow(
+                RowId: midRowId, ParentId: null,
+                Display: midGroup.Key.MidGroupName, Depth: 0,
+                MatchedMaterialCount: midMatCnt,
+                InputByCol: midInput, CostByCol: midCost));
+
+            // Group leaves under this Mid by first path segment to derive Sub1.
+            var bySub1 = midGroup
+                .Select(sg => new { Sg = sg, Segments = ParseSubPathSegments(sg.SubGroupKey) })
+                .GroupBy(x => x.Segments.Length > 0 ? x.Segments[0] : x.Sg.Display, StringComparer.Ordinal);
+
+            foreach (var sub1Group in bySub1)
+            {
+                string sub1Display = sub1Group.Key;
+                string sub1RowId   = $"S1::{midRowId}::{sub1Display}";
+
+                var s1Input  = new double[colCount];
+                var s1Cost   = new double[colCount];
+                int s1MatCnt = 0;
+                foreach (var x in sub1Group)
+                {
+                    for (int i = 0; i < colCount; i++)
+                    {
+                        s1Input[i] += x.Sg.InputByCol[i];
+                        s1Cost[i]  += x.Sg.CostByCol[i];
+                    }
+                    s1MatCnt += x.Sg.MatchedMaterialCount;
+                }
+                rows.Add(new FCostHierarchyRow(
+                    RowId: sub1RowId, ParentId: midRowId,
+                    Display: sub1Display, Depth: 1,
+                    MatchedMaterialCount: s1MatCnt,
+                    InputByCol: s1Input, CostByCol: s1Cost));
+
+                // Sub2+ leaves only when the path has more than one segment — otherwise
+                // the Sub1 row IS the leaf and a Sub2 row would just duplicate it.
+                foreach (var x in sub1Group)
+                {
+                    if (x.Segments.Length <= 1) continue;
+                    string leafDisplay = x.Segments[^1];
+                    string leafRowId   = $"S2::{x.Sg.SubGroupKey}";
+                    rows.Add(new FCostHierarchyRow(
+                        RowId: leafRowId, ParentId: sub1RowId,
+                        Display: leafDisplay, Depth: 2,
+                        MatchedMaterialCount: x.Sg.MatchedMaterialCount,
+                        InputByCol: x.Sg.InputByCol, CostByCol: x.Sg.CostByCol));
+                }
+            }
+        }
+        return rows;
+    }
+
+    /// <summary>Extract the path portion of a SubGroupKey ("Group::Material::path")
+    /// and split it on the " / " separator FCostReportService uses internally.</summary>
+    private static string[] ParseSubPathSegments(string subGroupKey)
+    {
+        int firstSep = subGroupKey.IndexOf("::", StringComparison.Ordinal);
+        if (firstSep < 0) return Array.Empty<string>();
+        int secondSep = subGroupKey.IndexOf("::", firstSep + 2, StringComparison.Ordinal);
+        if (secondSep < 0) return Array.Empty<string>();
+        string path = subGroupKey[(secondSep + 2)..];
+        if (string.IsNullOrEmpty(path)) return Array.Empty<string>();
+        return path.Split(" / ", StringSplitOptions.None);
+    }
+
+    private bool IsFCostRowVisible(
+        FCostHierarchyRow row,
+        IReadOnlyDictionary<string, FCostHierarchyRow> byId)
+    {
+        string? pid = row.ParentId;
+        while (pid is not null)
+        {
+            if (!_expandedFCostRows.Contains(pid)) return false;
+            pid = byId.TryGetValue(pid, out var p) ? p.ParentId : null;
+        }
+        return true;
+    }
+
+    /// <summary>CSS class for cells at the start of a Day / Week / Month period
+    /// block so the table draws a heavier divider where the period kind changes.
+    /// <paramref name="oneBased"/>=true when the caller iterates with 1..N indexing
+    /// (matches FCostRow.GetCol). Returns empty for the very first column (no
+    /// preceding kind to compare against) or when the period kind matches the
+    /// previous column.</summary>
+    private string ColBoundaryClass(int idx, bool oneBased = false)
+    {
+        if (_report is null) return string.Empty;
+        var cols = _report.Columns;
+        int zeroIdx = oneBased ? idx - 1 : idx;
+        if (zeroIdx <= 0 || zeroIdx >= cols.Count) return string.Empty;
+        var cur  = cols[zeroIdx].Kind;
+        var prev = cols[zeroIdx - 1].Kind;
+        if (cur == prev) return string.Empty;
+        return cur switch
+        {
+            FCostPeriodKind.Day   => "col-day-start",
+            FCostPeriodKind.Week  => "col-week-start",
+            FCostPeriodKind.Month => "col-month-start",
+            _                     => string.Empty,
+        };
+    }
+
+    private bool HasUsableDb =>
+        (!string.IsNullOrEmpty(_savedDbPath) && File.Exists(_savedDbPath)) ||
+        FCostReportSvc.FindMostRecentDb() is { Length: > 0 };
+
+    private void SetToday() => _queryDate = DateTime.Today;
+
+    private async Task GetDataAsync()
+    {
+        _errorMessage = string.Empty;
+        _savedDbPath  = null;
+        _isBusy       = true;
+        StateHasChanged();
+
+        var progress = new Progress<string>(_ => { });
+        try
+        {
+            string? dbPath = await FCost.FetchAndSaveAsync(_queryDate, progress);
+            if (string.IsNullOrEmpty(dbPath))
+                _errorMessage = "Fetch failed — check credentials / logs.";
+            else
+                _savedDbPath = dbPath;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GetReportAsync()
+    {
+        if (_isReportBusy) return;
+        _isReportBusy = true;
+        _reportError  = string.Empty;
+        _report       = null;
+        StateHasChanged();
+
+        try
+        {
+            string? dbPath = _savedDbPath ?? FCostReportSvc.FindMostRecentDb();
+            if (string.IsNullOrEmpty(dbPath) || !File.Exists(dbPath))
+            {
+                _reportError = "No fcost_*.db found. Run Get Data first.";
+                return;
+            }
+
+            // Always roll up over every defined ModelGroup — picker UI was removed
+            // in favour of in-table Mid → Sub1 → Sub2 expand/collapse.
+            var groups = Repo.GetModelGroups();
+            _report = await FCostReportSvc.GenerateReportAsync(
+                dbPath,
+                groupsForSubGroupRollup: groups);
+        }
+        catch (Exception ex)
+        {
+            _reportError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isReportBusy = false;
+            StateHasChanged();
+        }
+    }
+}

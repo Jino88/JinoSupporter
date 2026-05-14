@@ -33,17 +33,343 @@ else
         @if (_summary is not null)
         {
             <section class="didet-card">
-                <div class="didet-card-title">📊 Summary</div>
-                @if (!string.IsNullOrEmpty(_summary.Summary))
-                {
-                    <p class="didet-card-body">@_summary.Summary</p>
+                <div class="didet-card-head">
+                    <div class="didet-card-title">📊 AI Analysis</div>
+                    @* Language picker. "en" = original AI output; "ko"/"vi" come
+                       from the post-analyze translate step. Disabled if a lang
+                       wasn't translated (e.g. older datasets). *@
+                    <div class="didet-lang-row">
+                        @foreach (var (code, label) in _availableLangs)
+                        {
+                            <button class="didet-lang @(code == _lang ? "active" : "")"
+                                    @onclick="() => _lang = code">@label</button>
+                        }
+                    </div>
+                </div>
+                @{
+                    bool hasV2 = !string.IsNullOrWhiteSpace(_summary.Verdict)
+                               || !string.IsNullOrWhiteSpace(_summary.Headline)
+                               || _summary.Evidence.Count > 0
+                               || _summary.Actions.Count  > 0;
+
+                    // Pre-resolve language-aware values once so the if-bodies
+                    // below contain only markup (Razor can't open `@{ }` as the
+                    // first non-markup token inside an `@if { … }` body).
+                    string  vHeadline = hasV2 ? LangHeadline() : "";
+                    var     vActions  = hasV2 ? LangActions()  : new List<ActionItem>();
+                    AnalysisContext? vCtx = hasV2 ? LangContext() : null;
+                    (string v2Verdict, string v2VerdictClass) =
+                        hasV2 ? VerdictLabel(_summary.Verdict) : ("", "");
+
+                    string lgSummary           = !hasV2 ? LangText(s => s.Summary,           _summary.Summary)           : "";
+                    string lgPurpose           = !hasV2 ? LangText(s => s.Purpose,           _summary.Purpose)           : "";
+                    string lgTestConditions    = !hasV2 ? LangText(s => s.TestConditions,    _summary.TestConditions)    : "";
+                    string lgKeyFindings       = !hasV2 ? LangText(s => s.KeyFindings,       _summary.KeyFindings)       : "";
+                    string lgDecision          = !hasV2 ? LangText(s => s.Decision,          _summary.Decision)          : "";
+                    string lgRootCause         = !hasV2 ? LangText(s => s.RootCause,         _summary.RootCause)         : "";
+                    string lgRecommendedAction = !hasV2 ? LangText(s => s.RecommendedAction, _summary.RecommendedAction) : "";
+                    (string lgVerdict, string lgVerdictClass) =
+                        !hasV2 ? ParseVerdict(lgDecision) : ("", "");
+
+                    var topNumbers = !hasV2 ? TakeBullets(lgKeyFindings, 3).ToList() : new List<string>();
+                    var topActions = !hasV2 ? TakeBullets(lgRecommendedAction, 2).ToList() : new List<string>();
+
+                    // v2 dashboard pre-resolve
+                    EvidenceRow? hero = hasV2 && _summary.Evidence.Count > 0 ? _summary.Evidence[0] : null;
+                    bool anyNote     = hasV2 && _summary.Evidence.Take(4).Any(e => !string.IsNullOrEmpty(e.Note));
+
+                    // v7 reportType branching
+                    string reportType = (_summary.ReportType ?? "").Trim().ToLowerInvariant();
+                    bool isMultiArm   = reportType == "multi_arm";
+                    bool isDoe        = reportType == "doe_factorial";
+                    bool isReliab     = reportType == "reliability_validation";
+                    bool isTrend      = reportType == "trend_analysis";
+                    bool isQualityLog = reportType == "quality_log";
+                    (string rtLabel, string rtClass) = ReportTypeBadge(_summary.ReportType);
                 }
-                @if (!string.IsNullOrEmpty(_summary.KeyFindings))
+                @if (hasV2)
                 {
-                    <div class="didet-findings">@_summary.KeyFindings</div>
+                    @* Side-panel dashboard layout: left aside = at-a-glance KPIs,
+                       right main = evidence grid + actions + context. *@
+                    <div class="didet-dash">
+                        <aside class="didet-dash-side">
+                            @* quality_log hides the verdict chip — there's no judgement to make. *@
+                            @if (!isQualityLog && !string.IsNullOrEmpty(v2Verdict))
+                            {
+                                <span class="didet-verdict didet-verdict-lg @v2VerdictClass">@v2Verdict</span>
+                            }
+                            @if (!string.IsNullOrEmpty(rtLabel))
+                            {
+                                <span class="didet-rt-badge @rtClass" title="Report type">@rtLabel</span>
+                            }
+                            @if (hero is not null && !isQualityLog)
+                            {
+                                <div class="didet-kpi-hero">
+                                    <div class="didet-kpi-value @DeltaClass(hero.DeltaSign)">@hero.DeltaText</div>
+                                    <div class="didet-kpi-label">@hero.Metric</div>
+                                </div>
+                            }
+                            <div class="didet-kpi-meta">
+                                <div><span class="didet-kpi-meta-n">@_summary.Evidence.Count</span> metrics</div>
+                                <div><span class="didet-kpi-meta-n">@_summary.Actions.Count</span> actions</div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(vHeadline))
+                            {
+                                <div class="didet-dash-headline">@vHeadline</div>
+                            }
+                            @if (_summary.Tags.Count > 0)
+                            {
+                                <div class="didet-tags didet-tags-side">
+                                    @foreach (var t in _summary.Tags)
+                                    {
+                                        <span class="didet-tag">🏷 @t</span>
+                                    }
+                                </div>
+                            }
+                        </aside>
+                        <main class="didet-dash-main">
+                            @if (_summary.Evidence.Count > 0)
+                            {
+                                <div class="didet-dash-section-title">📊 Evidence</div>
+                                <div class="didet-evidence-wrap">
+                                    <table class="didet-evidence">
+                                        <thead>
+                                            <tr>
+                                                <th>Metric</th>
+                                                <th>Baseline</th>
+                                                <th>Variant</th>
+                                                <th class="n">Δ</th>
+                                                @if (anyNote) { <th>Note</th> }
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var ev in _summary.Evidence.Take(4))
+                                            {
+                                                @if (ev.Comparisons is { Count: > 0 })
+                                                {
+                                                    @* multi-arm row: one metric + N comparisons stacked in a single cell *@
+                                                    <tr>
+                                                        <td class="didet-ev-metric">
+                                                            @ev.Metric
+                                                            @if (!string.IsNullOrEmpty(ev.DeltaText))
+                                                            {
+                                                                <div class="didet-ev-range">@ev.DeltaText</div>
+                                                            }
+                                                        </td>
+                                                        <td colspan="@(anyNote ? 4 : 3)">
+                                                            <div class="didet-ev-comparisons">
+                                                                @foreach (var c in ev.Comparisons)
+                                                                {
+                                                                    <div class="didet-ev-comp @(c.IsBest ? "didet-comp-best" : "") @(c.IsWorst ? "didet-comp-worst" : "") @(c.IsBaseline ? "didet-comp-baseline" : "")">
+                                                                        <span class="didet-ev-comp-label">@c.Label</span>
+                                                                        <span class="didet-ev-comp-val">@c.Value</span>
+                                                                        @if (c.N > 0) { <span class="didet-ev-comp-n">n=@c.N</span> }
+                                                                        @if (c.IsBaseline) { <span class="didet-ev-comp-flag baseline">base</span> }
+                                                                        @if (c.IsBest)     { <span class="didet-ev-comp-flag best">best</span> }
+                                                                        @if (c.IsWorst)    { <span class="didet-ev-comp-flag worst">worst</span> }
+                                                                    </div>
+                                                                }
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                                else
+                                                {
+                                                    <tr>
+                                                        <td class="didet-ev-metric">@ev.Metric</td>
+                                                        <td>
+                                                            @if (!string.IsNullOrEmpty(ev.BaselineLabel))
+                                                            {
+                                                                <div class="didet-ev-label">@ev.BaselineLabel</div>
+                                                            }
+                                                            <div class="didet-ev-val">@ev.BaselineValue</div>
+                                                        </td>
+                                                        <td>
+                                                            @if (!string.IsNullOrEmpty(ev.VariantLabel))
+                                                            {
+                                                                <div class="didet-ev-label">@ev.VariantLabel</div>
+                                                            }
+                                                            <div class="didet-ev-val">@ev.VariantValue</div>
+                                                        </td>
+                                                        <td class="n didet-ev-delta @DeltaClass(ev.DeltaSign)">@ev.DeltaText</td>
+                                                        @if (anyNote)
+                                                        {
+                                                            <td class="didet-ev-note-cell">@ev.Note</td>
+                                                        }
+                                                    </tr>
+                                                }
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+
+                            @if (isDoe && _summary.DoeGrid is not null && _summary.DoeGrid.Factor1Levels.Count > 0 && _summary.DoeGrid.Factor2Levels.Count > 0)
+                            {
+                                @* DOE 2-D mini grid. Cells are coloured by status. *@
+                                <div class="didet-dash-section-title">🔬 DOE Grid — @_summary.DoeGrid.Factor1Name × @_summary.DoeGrid.Factor2Name</div>
+                                <div class="didet-doe-wrap">
+                                    <table class="didet-doe">
+                                        <thead>
+                                            <tr>
+                                                <th></th>
+                                                @foreach (var f2 in _summary.DoeGrid.Factor2Levels)
+                                                {
+                                                    <th>@(_summary.DoeGrid.Factor2Name)=@f2</th>
+                                                }
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var f1 in _summary.DoeGrid.Factor1Levels)
+                                            {
+                                                <tr>
+                                                    <th>@(_summary.DoeGrid.Factor1Name)=@f1</th>
+                                                    @foreach (var f2 in _summary.DoeGrid.Factor2Levels)
+                                                    {
+                                                        var cell = _summary.DoeGrid.Cells.FirstOrDefault(c => c.F1 == f1 && c.F2 == f2);
+                                                        var status = (cell?.Status ?? "empty").ToLowerInvariant();
+                                                        <td class="didet-doe-cell didet-doe-@status" title="@cell?.Value">
+                                                            @(cell?.Value ?? "—")
+                                                        </td>
+                                                    }
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+
+                            @if (isTrend && _summary.TrendPoints is { Count: > 0 })
+                            {
+                                <div class="didet-dash-section-title">📈 Trend</div>
+                                <ol class="didet-trend">
+                                    @foreach (var p in _summary.TrendPoints.Take(12))
+                                    {
+                                        <li>
+                                            <span class="didet-trend-label">@p.Label</span>
+                                            <span class="didet-trend-value">@p.Value</span>
+                                            @if (!string.IsNullOrEmpty(p.Note))
+                                            {
+                                                <span class="didet-trend-note">@p.Note</span>
+                                            }
+                                        </li>
+                                    }
+                                </ol>
+                            }
+
+                            @if (vActions.Count > 0)
+                            {
+                                <div class="didet-dash-section-title">✅ Actions</div>
+                                <ol class="didet-actions">
+                                    @foreach (var a in vActions.OrderBy(x => x.Priority).Take(3))
+                                    {
+                                        <li class="didet-action-@(a.Kind?.ToLowerInvariant() ?? "action")">
+                                            <span class="didet-action-kind">@KindGlyph(a.Kind)</span>
+                                            <span class="didet-action-text">@a.Text</span>
+                                        </li>
+                                    }
+                                </ol>
+                            }
+
+                            @if (vCtx is not null &&
+                                 (!string.IsNullOrEmpty(vCtx.Process) ||
+                                  !string.IsNullOrEmpty(vCtx.Stage)   ||
+                                  !string.IsNullOrEmpty(vCtx.BaselineReason)))
+                            {
+                                <button class="didet-show-details" @onclick="() => _showContext = !_showContext">
+                                    @(_showContext ? "▴ Hide context" : "▾ Context")
+                                </button>
+                                @if (_showContext)
+                                {
+                                    <dl class="didet-context">
+                                        @if (!string.IsNullOrEmpty(vCtx.Process))
+                                        {
+                                            <dt>Process</dt><dd>@vCtx.Process</dd>
+                                        }
+                                        @if (!string.IsNullOrEmpty(vCtx.Stage))
+                                        {
+                                            <dt>Stage</dt><dd>@vCtx.Stage</dd>
+                                        }
+                                        @if (!string.IsNullOrEmpty(vCtx.BaselineReason))
+                                        {
+                                            <dt>Baseline</dt><dd>@vCtx.BaselineReason</dd>
+                                        }
+                                    </dl>
+                                }
+                            }
+                        </main>
+                    </div>
                 }
-                @if (_summary.Tags.Count > 0)
+                else
                 {
+                    <div class="didet-verdict-row">
+                        @if (!string.IsNullOrEmpty(lgVerdict))
+                        {
+                            <span class="didet-verdict @lgVerdictClass">@lgVerdict</span>
+                        }
+                        @if (!string.IsNullOrEmpty(lgSummary))
+                        {
+                            <span class="didet-card-conclusion">@lgSummary</span>
+                        }
+                    </div>
+                    @if (topNumbers.Count > 0)
+                    {
+                        <ul class="didet-card-list">
+                            @foreach (var b in topNumbers) { <li>@b</li> }
+                        </ul>
+                    }
+                    @if (topActions.Count > 0)
+                    {
+                        <ul class="didet-card-list didet-card-actions">
+                            @foreach (var b in topActions) { <li>@b</li> }
+                        </ul>
+                    }
+                    <button class="didet-show-details" @onclick="() => _showFullSummary = !_showFullSummary">
+                        @(_showFullSummary ? "▴ Hide details" : "▾ Show details (legacy view)")
+                    </button>
+                    @if (_showFullSummary)
+                    {
+                        @if (!string.IsNullOrEmpty(lgPurpose))
+                        {
+                            <div class="didet-field"><div class="didet-field-label">① Test Goal</div>
+                                <pre class="didet-bullet-block">@lgPurpose</pre></div>
+                        }
+                        @if (!string.IsNullOrEmpty(lgTestConditions))
+                        {
+                            <div class="didet-field didet-field-setup">
+                                <div class="didet-field-label">② Comparison Setup (baseline vs variant)</div>
+                                <pre class="didet-bullet-block">@lgTestConditions</pre>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(lgKeyFindings))
+                        {
+                            <div class="didet-field"><div class="didet-field-label">③ Key Numbers (full)</div>
+                                <pre class="didet-bullet-block">@lgKeyFindings</pre></div>
+                        }
+                        @if (!string.IsNullOrEmpty(lgDecision))
+                        {
+                            <div class="didet-field didet-field-effect">
+                                <div class="didet-field-label">④ Effect</div>
+                                <pre class="didet-bullet-block">@lgDecision</pre>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(lgRootCause))
+                        {
+                            <div class="didet-field"><div class="didet-field-label">⑤ Motivation / Cause</div>
+                                <pre class="didet-bullet-block">@lgRootCause</pre></div>
+                        }
+                        @if (!string.IsNullOrEmpty(lgRecommendedAction))
+                        {
+                            <div class="didet-field"><div class="didet-field-label">⑥ Actions / Risks (full)</div>
+                                <pre class="didet-bullet-block">@lgRecommendedAction</pre></div>
+                        }
+                    }
+                }
+
+                @if (!hasV2 && _summary.Tags.Count > 0)
+                {
+                    @* v2 dashboard renders tags in the side aside; this fallback
+                       is only for legacy 7-field cards. *@
                     <div class="didet-tags">
                         @foreach (var t in _summary.Tags)
                         {
@@ -54,10 +380,87 @@ else
             </section>
         }
 
+        @* ── Correlation: Line × CheckType heatmap of NG% averages.
+             Computed locally from _measurements; no backend round-trip.
+             Skip 1×N or N×1 matrices (a "heatmap" of a single column is just
+             a list and adds visual noise). Collapsed by default. ── *@
+        @if (_corrCells.Count > 0 && _corrLines.Count >= 2 && _corrCheckTypes.Count >= 2)
+        {
+            <section class="didet-card didet-collapsible">
+                <button class="didet-section-toggle" @onclick="() => _showHeatmap = !_showHeatmap">
+                    <span>🌡 @_corrRowLabel × @_corrColLabel — avg NG%</span>
+                    <span class="didet-section-arrow">@(_showHeatmap ? "▴" : "▾")</span>
+                </button>
+                @if (_showHeatmap)
+                {
+                <div class="didet-table-wrap">
+                    <table class="didet-heatmap">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                @foreach (var c in _corrCheckTypes)
+                                {
+                                    <th>@c</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var line in _corrLines)
+                            {
+                                <tr>
+                                    <th>@line</th>
+                                    @foreach (var c in _corrCheckTypes)
+                                    {
+                                        var key = (line, c);
+                                        if (_corrCells.TryGetValue(key, out var v))
+                                        {
+                                            <td title="@v.RowCount measurement row(s)" style="background:@HeatColor(v.AvgNg);">
+                                                <div class="didet-heat-pct">@v.AvgNg.ToString("F1")%</div>
+                                                <div class="didet-heat-ratio">(@v.NgSum.ToString("N0")/@v.InputSum.ToString("N0"))</div>
+                                                @if (v.Defects.Count > 1)
+                                                {
+                                                    <div class="didet-heat-defects">
+                                                        @foreach (var d in v.Defects.Take(5))
+                                                        {
+                                                            <div>@d.Type: @d.Count.ToString("N0")</div>
+                                                        }
+                                                        @if (v.Defects.Count > 5)
+                                                        {
+                                                            <div>+@(v.Defects.Count - 5) more</div>
+                                                        }
+                                                    </div>
+                                                }
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <td class="didet-heat-empty">—</td>
+                                        }
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="didet-heat-legend">
+                    <span style="background:@HeatColor(0.0);">0%</span>
+                    <span style="background:@HeatColor(2.5);">2.5%</span>
+                    <span style="background:@HeatColor(5.0);">5%</span>
+                    <span style="background:@HeatColor(10.0);">10%+</span>
+                </div>
+                }
+            </section>
+        }
+
         @if (_measurements.Count > 0)
         {
-            <section class="didet-card">
-                <div class="didet-card-title">📐 Extracted Measurements — @_measurements.Count row(s)</div>
+            <section class="didet-card didet-collapsible">
+                <button class="didet-section-toggle" @onclick="() => _showMeasurements = !_showMeasurements">
+                    <span>📐 Extracted Measurements — @_measurements.Count row(s)</span>
+                    <span class="didet-section-arrow">@(_showMeasurements ? "▴" : "▾")</span>
+                </button>
+                @if (_showMeasurements)
+                {
                 <div class="didet-table-wrap">
                     <table class="didet-table">
                         <thead>
@@ -95,22 +498,29 @@ else
                         </tbody>
                     </table>
                 </div>
+                }
             </section>
         }
 
         @if (_images.Count > 0)
         {
-            <section class="didet-card">
-                <div class="didet-card-title">🖼 Analysis Images (@_images.Count)</div>
+            <section class="didet-card didet-collapsible">
+                <button class="didet-section-toggle" @onclick="() => _showImages = !_showImages">
+                    <span>🖼 Analysis Images (@_images.Count)</span>
+                    <span class="didet-section-arrow">@(_showImages ? "▴" : "▾")</span>
+                </button>
+                @if (_showImages)
+                {
                 <div class="didet-imgs-grid">
                     @foreach (var (img, idx) in _images.Select((x, i) => (x, i)))
                     {
                         <div class="didet-img-thumb" @onclick="() => OpenViewer(img.DataUrl)">
-                            <img src="@img.DataUrl" alt="@img.FileName" />
+                            <img src="@img.DataUrl" alt="@img.FileName" loading="lazy" />
                             <div class="didet-img-num">@(idx + 1)</div>
                         </div>
                     }
                 </div>
+                }
             </section>
         }
 
@@ -169,6 +579,308 @@ else
         padding: 14px 18px;
     }
     .didet-card-title { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+
+    /* Collapsible sub-section header — replaces the title in cards whose body
+       is heavy enough that it should be opt-in (heatmap / raw rows / images). */
+    .didet-collapsible { padding: 0; }
+    .didet-collapsible > .didet-section-toggle { width: 100%; }
+    .didet-collapsible > .didet-section-toggle ~ * { padding-left: 18px; padding-right: 18px; }
+    .didet-collapsible > .didet-section-toggle ~ *:last-child { padding-bottom: 14px; }
+    .didet-section-toggle {
+        display: flex; align-items: center; justify-content: space-between;
+        width: 100%; padding: 12px 18px; background: transparent; border: none;
+        font-size: 13px; font-weight: 700; color: #1e293b; text-align: left;
+        cursor: pointer; border-radius: 10px;
+    }
+    .didet-section-toggle:hover  { background: #f8fafc; }
+    .didet-section-arrow         { color: #64748b; font-weight: 600; font-size: 11px; }
+    .didet-card-head  { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    .didet-card-head .didet-card-title { margin-bottom: 0; }
+
+    /* Language picker pills */
+    .didet-lang-row   { display: inline-flex; gap: 4px; }
+    .didet-lang       {
+        border: 1px solid #cbd5e1; background: #fff; color: #475569;
+        padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+        cursor: pointer; transition: all .12s;
+    }
+    .didet-lang:hover { background: #f1f5f9; border-color: #94a3b8; }
+    .didet-lang.active { background: #4338ca; border-color: #4338ca; color: #fff; }
+
+    /* Verdict + headline row — the at-a-glance summary at the top of the AI card */
+    .didet-verdict-row {
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+    .didet-verdict {
+        font-size: 11px; font-weight: 800; letter-spacing: .05em;
+        padding: 3px 12px; border-radius: 12px; white-space: nowrap;
+        text-transform: uppercase;
+    }
+    .didet-v-good     { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .didet-v-bad      { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .didet-v-partial  { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .didet-v-neutral  { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    .didet-card-conclusion {
+        font-size: 14px; font-weight: 600; color: #0f172a; line-height: 1.4;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       v2 Dashboard layout — side panel (left = at-a-glance KPIs,
+       right = evidence grid + actions + context).
+       ───────────────────────────────────────────────────────────── */
+    .didet-dash {
+        display: grid; grid-template-columns: 240px 1fr; gap: 16px;
+        align-items: start;
+    }
+    @@media (max-width: 900px) {
+        .didet-dash { grid-template-columns: 1fr; }
+    }
+    .didet-dash-side {
+        padding: 14px 16px; background: linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%);
+        border: 1px solid #e2e8f0; border-radius: 10px;
+        display: flex; flex-direction: column; gap: 12px;
+        position: sticky; top: 12px;
+    }
+    .didet-verdict-lg {
+        font-size: 13px; padding: 5px 14px; align-self: flex-start;
+    }
+    .didet-kpi-hero {
+        display: flex; flex-direction: column; gap: 2px;
+        padding: 10px 0 4px;
+        border-top: 1px dashed #cbd5e1;
+    }
+    .didet-kpi-value {
+        font-size: 28px; font-weight: 800; line-height: 1.1;
+        font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+    }
+    .didet-kpi-value.didet-ev-down { color: #065f46; background: transparent !important; }
+    .didet-kpi-value.didet-ev-up   { color: #991b1b; background: transparent !important; }
+    .didet-kpi-value.didet-ev-flat { color: #64748b; background: transparent !important; }
+    .didet-kpi-label {
+        font-size: 11px; color: #475569; font-weight: 600;
+        text-transform: uppercase; letter-spacing: .03em;
+    }
+    .didet-kpi-meta {
+        display: flex; gap: 14px; font-size: 11px; color: #64748b;
+        padding-top: 8px; border-top: 1px dashed #cbd5e1;
+    }
+    .didet-kpi-meta-n {
+        font-size: 13px; font-weight: 700; color: #1e293b;
+        font-variant-numeric: tabular-nums;
+    }
+    .didet-dash-headline {
+        font-size: 12px; color: #0f172a; line-height: 1.5; font-weight: 500;
+        padding-top: 8px; border-top: 1px dashed #cbd5e1;
+    }
+    .didet-tags-side { margin: 0; padding-top: 8px; border-top: 1px dashed #cbd5e1; }
+    .didet-tags-side .didet-tag { font-size: 10px; padding: 1px 7px; }
+
+    .didet-dash-main {
+        display: flex; flex-direction: column; gap: 10px; min-width: 0;
+    }
+    .didet-dash-section-title {
+        font-size: 11px; font-weight: 700; color: #64748b;
+        text-transform: uppercase; letter-spacing: .04em;
+        margin-bottom: 2px;
+    }
+
+    /* v2 — Evidence table: Excel-grid styling.
+       Full cell borders, dense header, label-above / value-below stacking,
+       delta cell tinted by direction, optional Note column. */
+    .didet-evidence-wrap { margin: 8px 0 12px; overflow-x: auto; }
+    .didet-evidence {
+        border-collapse: collapse;
+        font-size: 12px; width: 100%;
+        font-variant-numeric: tabular-nums;
+        background: #fff;
+    }
+    .didet-evidence th, .didet-evidence td {
+        border: 1px solid #cbd5e1;
+        padding: 6px 10px;
+        text-align: left;
+        vertical-align: top;
+    }
+    .didet-evidence thead th {
+        background: #e2e8f0;
+        color: #1e293b;
+        font-size: 10px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .04em;
+        border-color: #94a3b8;
+        position: sticky; top: 0;
+    }
+    .didet-evidence tbody tr:nth-child(even) td { background: #f8fafc; }
+    .didet-evidence td.n     { text-align: right; }
+    .didet-ev-metric         { font-weight: 600; color: #0f172a; min-width: 140px; }
+    .didet-ev-label          { display: block; font-size: 10px; color: #64748b; margin-bottom: 2px; }
+    .didet-ev-val            { display: block; color: #0f172a; font-weight: 500; }
+    .didet-ev-note-cell      { font-size: 11px; color: #475569; font-style: italic; }
+    .didet-ev-delta          { font-weight: 700; white-space: nowrap; min-width: 64px; }
+    .didet-ev-down           { color: #065f46; background: #ecfdf5 !important; }
+    .didet-ev-up             { color: #991b1b; background: #fef2f2 !important; }
+    .didet-ev-flat           { color: #64748b; }
+    .didet-ev-range          { font-size: 10px; color: #64748b; font-weight: 500; margin-top: 2px; }
+
+    /* v7 multi-arm: comparisons stacked in a single colspan cell */
+    .didet-ev-comparisons    { display: flex; flex-direction: column; gap: 4px; }
+    .didet-ev-comp           {
+        display: flex; align-items: baseline; gap: 8px;
+        padding: 3px 6px; border-radius: 4px;
+        background: #fff; border: 1px solid #e2e8f0;
+    }
+    .didet-ev-comp.didet-comp-best     { background: #ecfdf5; border-color: #6ee7b7; }
+    .didet-ev-comp.didet-comp-worst    { background: #fef2f2; border-color: #fca5a5; }
+    .didet-ev-comp.didet-comp-baseline { border-left: 3px solid #4338ca; }
+    .didet-ev-comp-label     { font-weight: 600; color: #0f172a; min-width: 100px; }
+    .didet-ev-comp-val       { color: #0f172a; }
+    .didet-ev-comp-n         { font-size: 10px; color: #94a3b8; }
+    .didet-ev-comp-flag {
+        font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 8px;
+        text-transform: uppercase; letter-spacing: .03em; margin-left: auto;
+    }
+    .didet-ev-comp-flag.baseline { background: #e0e7ff; color: #4338ca; }
+    .didet-ev-comp-flag.best     { background: #d1fae5; color: #065f46; }
+    .didet-ev-comp-flag.worst    { background: #fee2e2; color: #991b1b; }
+
+    /* v7 DOE 2-D grid */
+    .didet-doe-wrap { overflow-x: auto; margin: 4px 0 8px; }
+    .didet-doe { border-collapse: collapse; font-size: 11px; font-variant-numeric: tabular-nums; }
+    .didet-doe th, .didet-doe td {
+        border: 1px solid #cbd5e1; padding: 4px 8px; min-width: 64px;
+        text-align: center; white-space: nowrap;
+    }
+    .didet-doe th             { background: #e2e8f0; font-weight: 700; color: #1e293b; font-size: 10px; }
+    .didet-doe-cell           { color: #0f172a; }
+    .didet-doe-ok             { background: #d1fae5; color: #065f46; font-weight: 600; }
+    .didet-doe-ng             { background: #fee2e2; color: #991b1b; font-weight: 600; }
+    .didet-doe-borderline     { background: #fef3c7; color: #92400e; font-weight: 600; }
+    .didet-doe-empty          { background: #f8fafc; color: #cbd5e1; }
+
+    /* v7 Trend list */
+    .didet-trend {
+        list-style: none; margin: 4px 0 8px 0; padding: 0;
+        font-size: 12px; color: #1e293b;
+    }
+    .didet-trend li {
+        display: flex; gap: 12px; padding: 5px 0; align-items: baseline;
+        border-bottom: 1px dashed #e2e8f0;
+    }
+    .didet-trend-label { font-weight: 600; min-width: 80px; color: #475569; }
+    .didet-trend-value { font-weight: 700; color: #0f172a; min-width: 60px; }
+    .didet-trend-note  { font-size: 11px; color: #64748b; font-style: italic; }
+
+    /* v7 reportType badge in the side aside */
+    .didet-rt-badge {
+        align-self: flex-start;
+        font-size: 9px; font-weight: 700; padding: 1px 8px; border-radius: 10px;
+        text-transform: uppercase; letter-spacing: .04em;
+        background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;
+    }
+    .didet-rt-multi   { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
+    .didet-rt-doe     { background: #fae8ff; color: #86198f; border-color: #f0abfc; }
+    .didet-rt-reli    { background: #ecfdf5; color: #065f46; border-color: #6ee7b7; }
+    .didet-rt-trend   { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .didet-rt-log     { background: #f3f4f6; color: #4b5563; border-color: #d1d5db; }
+
+    /* v2 — Actions list (priority-ordered) */
+    .didet-actions {
+        list-style: none; margin: 4px 0 8px 0; padding: 0;
+        font-size: 13px; color: #1e293b; line-height: 1.55;
+    }
+    .didet-actions li {
+        display: flex; gap: 8px; padding: 4px 0; align-items: baseline;
+    }
+    .didet-actions li + li { border-top: 1px dashed #e2e8f0; }
+    .didet-action-kind     { flex-shrink: 0; width: 18px; font-weight: 700; color: #2563eb; }
+    .didet-action-text     { flex: 1; }
+    .didet-action-investigate .didet-action-kind { color: #7c3aed; }
+    .didet-action-risk        .didet-action-kind { color: #dc2626; }
+    .didet-action-risk        .didet-action-text { color: #991b1b; }
+
+    /* v2 — Context (process / stage / baselineReason) — collapsed by default */
+    .didet-context {
+        margin: 4px 0 0 0; padding: 8px 12px;
+        background: #f8fafc; border-left: 3px solid #cbd5e1; border-radius: 4px;
+        font-size: 12px; line-height: 1.55;
+        display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;
+    }
+    .didet-context dt {
+        font-size: 10px; font-weight: 700; color: #64748b;
+        text-transform: uppercase; letter-spacing: .04em;
+        padding-top: 2px;
+    }
+    .didet-context dd { margin: 0; color: #0f172a; }
+    .didet-card-list {
+        list-style: none; margin: 0 0 8px 0; padding: 0;
+        font-size: 12px; color: #334155; line-height: 1.5;
+    }
+    .didet-card-list li { position: relative; padding-left: 16px; margin-top: 3px; }
+    .didet-card-list li::before {
+        content: "•"; position: absolute; left: 4px; color: #94a3b8;
+    }
+    .didet-card-actions { color: #1d4ed8; }
+    .didet-card-actions li::before { content: "→"; color: #2563eb; }
+    .didet-show-details {
+        background: transparent; border: none; color: #6366f1;
+        font-size: 11px; font-weight: 600; cursor: pointer; padding: 4px 0;
+        margin-top: 4px;
+    }
+    .didet-show-details:hover { color: #1e293b; text-decoration: underline; }
+
+    /* Per-field block inside the AI Analysis card */
+    .didet-field        { margin-top: 10px; }
+    .didet-field:first-of-type { margin-top: 0; }
+    .didet-field-label  {
+        font-size: 11px; font-weight: 700; color: #64748b;
+        text-transform: uppercase; letter-spacing: .04em; margin-bottom: 3px;
+    }
+    /* Bullet-style preformatted block for the structured fields */
+    .didet-bullet-block {
+        margin: 0; padding: 6px 10px;
+        font-family: inherit; font-size: 12px; color: #0f172a;
+        line-height: 1.55; white-space: pre-wrap; word-wrap: break-word;
+        background: #f8fafc; border-left: 3px solid #cbd5e1; border-radius: 4px;
+    }
+    /* Conclusion gets a punchier callout — the headline of the report */
+    .didet-field-conclusion .didet-field-label { color: #1e3a8a; }
+    .didet-conclusion-body {
+        font-size: 14px !important; font-weight: 600; color: #0f172a !important;
+        background: #eef2ff; padding: 8px 12px; border-radius: 6px;
+        border-left: 4px solid #4338ca;
+    }
+    /* Comparison setup — orange tint to flag baseline/variant */
+    .didet-field-setup .didet-bullet-block {
+        background: #fff7ed; border-left-color: #fb923c;
+    }
+    /* Effect direction — green/red would need parsing; leave a neutral accent */
+    .didet-field-effect .didet-bullet-block {
+        background: #ecfdf5; border-left-color: #10b981;
+        font-weight: 600;
+    }
+
+    /* Heatmap */
+    .didet-heatmap        { border-collapse: collapse; font-size: 12px; }
+    .didet-heatmap th, .didet-heatmap td {
+        border: 1px solid #e2e8f0; padding: 4px 8px; min-width: 60px;
+        text-align: center; white-space: nowrap;
+    }
+    .didet-heatmap th     { background: #f1f5f9; font-weight: 600; color: #475569; }
+    .didet-heatmap td     { color: #1e293b; font-weight: 600; font-variant-numeric: tabular-nums; padding: 4px 6px; }
+    .didet-heat-pct       { font-size: 12px; line-height: 1.1; }
+    .didet-heat-ratio     { font-size: 10px; font-weight: 500; opacity: .8; line-height: 1.2; }
+    .didet-heat-defects   {
+        font-size: 9px; font-weight: 500; opacity: .9;
+        line-height: 1.3; margin-top: 3px;
+        padding-top: 3px; border-top: 1px dashed rgba(0,0,0,.18);
+        text-align: left;
+    }
+    .didet-heat-empty     { background: #f8fafc; color: #cbd5e1 !important; font-weight: 400; }
+    .didet-heat-legend    {
+        display: flex; gap: 6px; margin-top: 8px; font-size: 10px; color: #fff;
+    }
+    .didet-heat-legend span {
+        padding: 2px 8px; border-radius: 4px; font-weight: 700;
+    }
     .didet-card-body  { font-size: 13px; color: #0f172a; margin: 0; line-height: 1.6; }
     .didet-findings   {
         font-size: 12px; color: #475569; white-space: pre-wrap; margin-top: 6px;
@@ -234,6 +946,137 @@ else
     private List<RawFileInfo>           _files        = [];
     private string?                     _viewerUrl    = null;
 
+    // Lang picker. Default "en" = the original analysis output.
+    private string                      _lang         = "en";
+
+    // Compact card by default; full 7-field detail behind toggle.
+    private bool _showFullSummary;
+    // v2: context block (process/stage/baselineReason) is hidden by default
+    private bool _showContext;
+
+    // Below-the-fold sections collapsed by default to keep the page short
+    // for pass-style reports (where heatmap / raw rows / hundreds of images
+    // add no decision-relevant info).
+    private bool _showHeatmap;
+    private bool _showMeasurements;
+    private bool _showImages;
+
+    private static IEnumerable<string> TakeBullets(string field, int n)
+    {
+        if (string.IsNullOrWhiteSpace(field)) yield break;
+        int count = 0;
+        foreach (var raw in field.Split('\n'))
+        {
+            string s = raw.Trim();
+            if (s.Length == 0) continue;
+            yield return s;
+            if (++count >= n) yield break;
+        }
+    }
+
+    private static (string Label, string CssClass) ParseVerdict(string decision)
+    {
+        if (string.IsNullOrWhiteSpace(decision)) return ("", "");
+        string first = decision.Split('\n', 2)[0].Trim();
+        string head = new string(first.TakeWhile(c => char.IsLetter(c) || c == '_').ToArray())
+            .ToLowerInvariant();
+        return VerdictLabel(head);
+    }
+
+    /// <summary>Map the v7 verdict enum to a UI label + CSS class.</summary>
+    private static (string Label, string CssClass) VerdictLabel(string verdict)
+    {
+        string head = (verdict ?? "").Trim().ToLowerInvariant();
+        return head switch
+        {
+            "improved"        => ("IMPROVED",        "didet-v-good"),
+            "worsened"        => ("WORSENED",        "didet-v-bad"),
+            "partial"         => ("PARTIAL",         "didet-v-partial"),
+            "no_clear_effect" => ("NO CLEAR EFFECT", "didet-v-neutral"),
+            "inconclusive"    => ("INCONCLUSIVE",    "didet-v-neutral"),
+            "unclear"         => ("UNCLEAR",         "didet-v-neutral"),
+            "passed"          => ("PASSED",          "didet-v-good"),
+            "failed"          => ("FAILED",          "didet-v-bad"),
+            ""                => ("", ""),
+            _                 => (head.ToUpperInvariant(), "didet-v-neutral"),
+        };
+    }
+
+    /// <summary>UI badge for reportType — small chip beside verdict.</summary>
+    private static (string Label, string CssClass) ReportTypeBadge(string rt)
+    {
+        string head = (rt ?? "").Trim().ToLowerInvariant();
+        return head switch
+        {
+            "comparison_study"       => ("Compare",      "didet-rt-default"),
+            "multi_arm"              => ("Multi-arm",    "didet-rt-multi"),
+            "doe_factorial"          => ("DOE",          "didet-rt-doe"),
+            "reliability_validation" => ("Reliability",  "didet-rt-reli"),
+            "trend_analysis"         => ("Trend",        "didet-rt-trend"),
+            "quality_log"            => ("Log",          "didet-rt-log"),
+            "intervention_test"      => ("Intervention", "didet-rt-default"),
+            ""                       => ("", ""),
+            _                        => (head, "didet-rt-default"),
+        };
+    }
+
+    private static string DeltaClass(string sign) => (sign ?? "").ToLowerInvariant() switch
+    {
+        "down"      => "didet-ev-down",
+        "up"        => "didet-ev-up",
+        "no_change" => "didet-ev-flat",
+        _           => "",
+    };
+
+    private static string KindGlyph(string kind) => (kind ?? "").ToLowerInvariant() switch
+    {
+        "investigate" => "🔍",
+        "risk"        => "⚠",
+        _             => "→",
+    };
+
+    /// <summary>Picks the v2 headline for the active language (falls back to en).</summary>
+    private string LangHeadline()
+    {
+        if (_summary is null) return "";
+        if (_lang != "en" && _summary.Translations.TryGetValue(_lang, out var tr)
+            && !string.IsNullOrWhiteSpace(tr.Headline))
+            return tr.Headline;
+        return _summary.Headline ?? "";
+    }
+
+    /// <summary>Picks the v2 actions for the active language (falls back to en).</summary>
+    private List<ActionItem> LangActions()
+    {
+        if (_summary is null) return [];
+        if (_lang != "en" && _summary.Translations.TryGetValue(_lang, out var tr)
+            && tr.Actions is { Count: > 0 })
+            return tr.Actions;
+        return _summary.Actions ?? [];
+    }
+
+    /// <summary>Picks the v2 context for the active language (falls back to en).</summary>
+    private AnalysisContext? LangContext()
+    {
+        if (_summary is null) return null;
+        if (_lang != "en" && _summary.Translations.TryGetValue(_lang, out var tr) && tr.Context is not null)
+            return tr.Context;
+        return _summary.Context;
+    }
+    private List<(string Code, string Label)> _availableLangs = [];
+
+    // Correlation pivot data: (row, col) → aggregate NG counts.
+    // Per cell: NgSum and InputSum are the totals across all measurement rows
+    // that fell into this bucket; AvgNg is NgSum/InputSum*100 (a weighted
+    // ratio that lines up with the (NG/Input) numbers shown next to the %).
+    // Defects: per-DefectType count, sorted desc — surfaces in cells with >1
+    // defect type so the user can see the breakdown at a glance.
+    private List<string> _corrLines      = [];
+    private List<string> _corrCheckTypes = [];
+    private Dictionary<(string Row, string Col),
+                       (double AvgNg, long NgSum, long InputSum, int RowCount,
+                        List<(string Type, long Count)> Defects)> _corrCells = new();
+
     protected override void OnParametersSet() => Load();
 
     private void Load()
@@ -254,6 +1097,130 @@ else
             return new ImgThumb(img.MediaType, dataUrl, fname);
         }).ToList();
         _files = Repo.GetRawReportFileInfos(Name);
+
+        // Lang picker: always offer "en" (the base record). ko/vi only when
+        // the translations table actually has them for this dataset.
+        _availableLangs = [("en", "EN")];
+        if (_summary is not null)
+        {
+            if (_summary.Translations.ContainsKey("ko")) _availableLangs.Add(("ko", "한국어"));
+            if (_summary.Translations.ContainsKey("vi")) _availableLangs.Add(("vi", "Tiếng Việt"));
+        }
+        if (!_availableLangs.Any(l => l.Code == _lang)) _lang = "en";
+
+        BuildCorrelationPivot();
+    }
+
+    /// <summary>Pivot _measurements into a 2-D heatmap of avg NG%. The two
+    /// dimensions are auto-picked: prefer the (categorical) fields with the
+    /// most variation. We try (Variable × Group) first because most of our
+    /// reports compare baseline groups (normal/before/test/after) within a
+    /// model variant — that matches the design.md "baseline vs variant"
+    /// intent. Falls back to (Line × CheckType) if Variable/Group are too
+    /// uniform. Empty values bucket under "(none)" but if EVERY row in a
+    /// dimension is "(none)" we drop that dimension and try the next pair.</summary>
+    private void BuildCorrelationPivot()
+    {
+        _corrLines.Clear(); _corrCheckTypes.Clear(); _corrCells.Clear();
+        if (_measurements.Count == 0) return;
+
+        // Candidate axis pairs in priority order. Each tuple: row-getter, col-getter, label-pair.
+        var candidates = new (Func<NormalizedMeasurement, string> Row,
+                              Func<NormalizedMeasurement, string> Col,
+                              string RowLabel, string ColLabel)[]
+        {
+            (m => m.Variable,      m => m.VariableGroup, "Variable",  "Group"),
+            (m => m.Line,          m => m.CheckType,     "Line",      "CheckType"),
+            (m => m.VariableGroup, m => m.CheckType,     "Group",     "CheckType"),
+        };
+
+        foreach (var (getRow, getCol, rowLbl, colLbl) in candidates)
+        {
+            var byCell = new Dictionary<(string, string), (long NgSum, long InputSum, int N)>();
+            var byDefect = new Dictionary<(string, string), Dictionary<string, long>>();
+            var rowSet = new HashSet<string>(); var colSet = new HashSet<string>();
+
+            foreach (var m in _measurements)
+            {
+                if (m.InputQty <= 0) continue;
+                string r = string.IsNullOrWhiteSpace(getRow(m)) ? "(none)" : getRow(m).Trim();
+                string c = string.IsNullOrWhiteSpace(getCol(m)) ? "(none)" : getCol(m).Trim();
+                rowSet.Add(r); colSet.Add(c);
+                byCell.TryGetValue((r, c), out var acc);
+                byCell[(r, c)] = (acc.NgSum + m.NgTotal, acc.InputSum + m.InputQty, acc.N + 1);
+
+                // Track per-defect-type counts within this cell. Skip empty
+                // defect rows (header / aggregate-only entries).
+                if (!string.IsNullOrWhiteSpace(m.DefectType) && m.DefectCount > 0)
+                {
+                    if (!byDefect.TryGetValue((r, c), out var d))
+                        byDefect[(r, c)] = d = new(StringComparer.OrdinalIgnoreCase);
+                    string dt = m.DefectType.Trim();
+                    d.TryGetValue(dt, out long prev);
+                    d[dt] = prev + m.DefectCount;
+                }
+            }
+
+            // Need at least 2 non-empty values along EACH axis for the heatmap
+            // to be informative — a 1×N or N×1 matrix is just a bar chart in
+            // disguise. Try the next candidate pair.
+            int rowsWithValue = rowSet.Count(s => s != "(none)");
+            int colsWithValue = colSet.Count(s => s != "(none)");
+            if (rowsWithValue < 2 && colsWithValue < 2) continue;
+
+            _corrLines      = rowSet.OrderBy(s => s).ToList();
+            _corrCheckTypes = colSet.OrderBy(s => s).ToList();
+            foreach (var (key, val) in byCell)
+            {
+                double pct = val.InputSum > 0 ? (100.0 * val.NgSum / val.InputSum) : 0;
+                var defects = byDefect.TryGetValue(key, out var d)
+                    ? d.Select(kv => (kv.Key, kv.Value)).OrderByDescending(x => x.Value).ToList()
+                    : new List<(string, long)>();
+                _corrCells[key] = (pct, val.NgSum, val.InputSum, val.N, defects);
+            }
+            _corrRowLabel = rowLbl;
+            _corrColLabel = colLbl;
+            return;
+        }
+
+        // No candidate had enough variation — leave _corrCells empty so the UI
+        // hides the heatmap.
+    }
+
+    private string _corrRowLabel = "Variable";
+    private string _corrColLabel = "Group";
+
+    /// <summary>Resolve a single field for the active language: fall back to
+    /// the original (en) value when the translation is missing/empty.</summary>
+    private string LangText(Func<DatasetSummaryTranslation, string> pick, string original)
+    {
+        if (_lang == "en" || _summary is null) return original;
+        if (_summary.Translations.TryGetValue(_lang, out var tr))
+        {
+            string v = pick(tr);
+            if (!string.IsNullOrWhiteSpace(v)) return v;
+        }
+        return original;
+    }
+
+    /// <summary>Map an NG% value to a CSS color along a green→yellow→red ramp.
+    /// 0% = green, 5% = yellow, ≥10% = red. Anything below 10% gets clamped
+    /// onto the gradient.</summary>
+    private static string HeatColor(double ngPercent)
+    {
+        double t = Math.Clamp(ngPercent / 10.0, 0.0, 1.0);
+        // green (#16a34a) → yellow (#facc15) → red (#dc2626)
+        (int r, int g, int b) = t < 0.5
+            ? Lerp((22,163,74),  (250,204,21),  t * 2.0)
+            : Lerp((250,204,21), (220,38,38),   (t - 0.5) * 2.0);
+        return $"rgb({r},{g},{b})";
+
+        static (int r, int g, int b) Lerp((int r,int g,int b) a, (int r,int g,int b) b2, double t)
+            => (
+                (int)Math.Round(a.r + (b2.r - a.r) * t),
+                (int)Math.Round(a.g + (b2.g - a.g) * t),
+                (int)Math.Round(a.b + (b2.b - a.b) * t)
+            );
     }
 
     private void OpenViewer(string dataUrl) => _viewerUrl = dataUrl;

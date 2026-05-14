@@ -389,25 +389,31 @@ public partial class MainWindow : Window
         FrameworkElement content = module.CreateContent();
         DetachFromParent(content);
 
+        // DiskTree's 3-pane explorer + duplicate finder needs more breathing room than the
+        // generic shell default so all three columns + the size/group/last-write columns fit.
+        bool isDiskTree = string.Equals(target, "DiskTree", StringComparison.Ordinal);
+        double initialWidth   = isDiskTree ? 1760 : 1180;
+        double initialHeight  = isDiskTree ? 1000 : 820;
+        double minimumWidth   = isDiskTree ? 1280 : 480;
+        double minimumHeight  = isDiskTree ? 760  : 320;
+
         var win = new Window
         {
             Title                 = module.Title,
-            Background            = new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E)),
-            Width                 = 1180,
-            Height                = 820,
-            MinWidth              = 480,
-            MinHeight             = 320,
+            Content               = content,
+            Width                 = initialWidth,
+            Height                = initialHeight,
+            MinWidth              = minimumWidth,
+            MinHeight             = minimumHeight,
             WindowStartupLocation = WindowStartupLocation.CenterScreen,
             ShowInTaskbar         = true,
-            WindowStyle           = WindowStyle.None,
-            ResizeMode            = ResizeMode.CanResize,
-            AllowsTransparency    = false,
             // Owner intentionally NOT set → the toolbar window stays independently focusable
             // and the module window does not get pinned/minimized with it.
+            // WindowStyle / Background / chrome are provided by WorkbenchTheme's
+            // implicit ShellWindowStyle (light theme).
         };
 
-        win.Tag     = content;   // remember inner view so we can detach it on close
-        win.Content = WrapWithDarkChrome(content, module.Title, win);
+        win.Tag = content;   // remember inner view so we can detach it on close
         win.Closed += (_, _) =>
         {
             // Detach so the cached view can be re-parented when the user re-opens it.
@@ -417,116 +423,6 @@ public partial class MainWindow : Window
         };
         win.Show();
         _moduleWindows[target] = win;
-    }
-
-    private static FrameworkElement WrapWithDarkChrome(FrameworkElement content, string title, Window owner)
-    {
-        var root = new Grid();
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-
-        var titleBar = new Grid
-        {
-            Background = new SolidColorBrush(Color.FromRgb(0x2D, 0x2D, 0x30)),
-            Height     = 32,
-            Cursor     = Cursors.Arrow,
-        };
-        // Drag the window from the title bar (no WindowChrome, so handle it ourselves).
-        titleBar.MouseLeftButtonDown += (_, e) =>
-        {
-            if (e.ChangedButton != MouseButton.Left) return;
-            // Don't drag when the click is on a button (chrome buttons handle it themselves).
-            DependencyObject? hit = e.OriginalSource as DependencyObject;
-            while (hit is not null)
-            {
-                if (hit is Button) return;
-                hit = VisualTreeHelper.GetParent(hit);
-            }
-            // Double-click → toggle maximize.
-            if (e.ClickCount == 2)
-            {
-                owner.WindowState = owner.WindowState == WindowState.Maximized
-                    ? WindowState.Normal
-                    : WindowState.Maximized;
-                return;
-            }
-            owner.DragMove();
-        };
-        titleBar.ColumnDefinitions.Add(new ColumnDefinition());
-        titleBar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        titleBar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        titleBar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        var titleText = new TextBlock
-        {
-            Text                = title,
-            Foreground          = new SolidColorBrush(Color.FromRgb(0xD4, 0xD4, 0xD4)),
-            FontSize            = 12,
-            FontWeight          = FontWeights.SemiBold,
-            VerticalAlignment   = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Left,
-            Margin              = new Thickness(12, 0, 0, 0),
-            IsHitTestVisible    = false,   // let WindowChrome's caption drag through
-        };
-        Grid.SetColumn(titleText, 0);
-        titleBar.Children.Add(titleText);
-
-        Button minBtn = MakeChromeButton("–", "Minimize",
-            () => owner.WindowState = WindowState.Minimized);
-        Grid.SetColumn(minBtn, 1);
-        titleBar.Children.Add(minBtn);
-
-        Button maxBtn = MakeChromeButton("□", "Maximize / Restore",
-            () => owner.WindowState = owner.WindowState == WindowState.Maximized
-                ? WindowState.Normal
-                : WindowState.Maximized);
-        Grid.SetColumn(maxBtn, 2);
-        titleBar.Children.Add(maxBtn);
-
-        Button closeBtn = MakeChromeButton("✕", "Close",
-            owner.Close, isClose: true);
-        Grid.SetColumn(closeBtn, 3);
-        titleBar.Children.Add(closeBtn);
-
-        Grid.SetRow(titleBar, 0);
-        root.Children.Add(titleBar);
-
-        Grid.SetRow(content, 1);
-        root.Children.Add(content);
-
-        return root;
-    }
-
-    private static Button MakeChromeButton(string glyph, string tip, Action action, bool isClose = false)
-    {
-        var idleFg  = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0));
-        var hoverBg = isClose
-            ? new SolidColorBrush(Color.FromRgb(0xE8, 0x11, 0x23))   // Windows-style red hover
-            : new SolidColorBrush(Color.FromRgb(0x3E, 0x3E, 0x42));
-        var hoverFg = isClose ? Brushes.White : (Brush)idleFg;
-
-        var btn = new Button
-        {
-            Content             = glyph,
-            Width               = 46,
-            Height              = 32,
-            FontSize            = 14,
-            Background          = Brushes.Transparent,
-            BorderBrush         = Brushes.Transparent,
-            BorderThickness     = new Thickness(0),
-            Foreground          = idleFg,
-            Cursor              = Cursors.Arrow,
-            ToolTip             = tip,
-            FocusVisualStyle    = null,
-        };
-
-        // Bypass the toolbar's MenuNavButtonStyle (rounded blue) — these are window chrome buttons.
-        btn.Click += (_, _) => action();
-
-        btn.MouseEnter += (_, _) => { btn.Background = hoverBg; btn.Foreground = hoverFg; };
-        btn.MouseLeave += (_, _) => { btn.Background = Brushes.Transparent; btn.Foreground = idleFg; };
-
-        return btn;
     }
 
     private static void DetachFromParent(FrameworkElement element)
@@ -627,6 +523,14 @@ public partial class MainWindow : Window
             psi.EnvironmentVariables["ASPNETCORE_ENVIRONMENT"] = "Development";
             _webServerProcess = Process.Start(psi);
 
+            // Assign the web process to a Win32 Job Object with
+            // KILL_ON_JOB_CLOSE so that closing the WPF window (or it
+            // crashing) takes the web — and everything web spawned — down
+            // with it. Web has its own job for its grandchildren (Excel
+            // helper, CLI terminals) so the whole tree unwinds.
+            if (_webServerProcess is not null)
+                Infrastructure.ChildProcessJob.Assign(_webServerProcess);
+
             // Brief wait for the server to bind 5050 before we ask the browser to hit it.
             int waited = 0;
             while (waited < 4000 && !IsWebServerRunning())
@@ -668,8 +572,8 @@ public partial class MainWindow : Window
             bool selected = string.Equals(target, _activeTarget, StringComparison.Ordinal) ||
                             (string.Equals(target, GraphMakerGroupKey, StringComparison.Ordinal) && IsGraphMakerTarget(_activeTarget)) ||
                             (string.Equals(target, DataInferenceGroupKey, StringComparison.Ordinal) && IsDataInferenceTarget(_activeTarget));
-            button.Background = selected ? new SolidColorBrush(Color.FromRgb(0x37, 0x4A, 0x5C)) : Brushes.Transparent;
-            button.BorderBrush = selected ? new SolidColorBrush(Color.FromRgb(0x4F, 0x6B, 0x8A)) : Brushes.Transparent;
+            button.Background = selected ? new SolidColorBrush(Color.FromRgb(255, 229, 204)) : Brushes.Transparent;
+            button.BorderBrush = selected ? new SolidColorBrush(Color.FromRgb(255, 191, 138)) : Brushes.Transparent;
         }
     }
 
@@ -688,7 +592,7 @@ public partial class MainWindow : Window
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
             Background = Brushes.Transparent,
-            Foreground = new SolidColorBrush(Color.FromRgb(0xD4, 0xD4, 0xD4)),
+            Foreground = new SolidColorBrush(Color.FromRgb(31, 41, 55)),
             BorderBrush = Brushes.Transparent,
             BorderThickness = new Thickness(1),
             ToolTip = module.Title,
@@ -722,7 +626,7 @@ public partial class MainWindow : Window
             HorizontalContentAlignment = HorizontalAlignment.Left,
             VerticalContentAlignment = VerticalAlignment.Center,
             Background = Brushes.Transparent,
-            Foreground = new SolidColorBrush(Color.FromRgb(0xD4, 0xD4, 0xD4)),
+            Foreground = new SolidColorBrush(Color.FromRgb(31, 41, 55)),
             BorderBrush = Brushes.Transparent,
             BorderThickness = new Thickness(1),
             ToolTip = "GraphMaker modules",
@@ -757,7 +661,7 @@ public partial class MainWindow : Window
             HorizontalContentAlignment = HorizontalAlignment.Left,
             VerticalContentAlignment = VerticalAlignment.Center,
             Background = Brushes.Transparent,
-            Foreground = new SolidColorBrush(Color.FromRgb(0xD4, 0xD4, 0xD4)),
+            Foreground = new SolidColorBrush(Color.FromRgb(31, 41, 55)),
             BorderBrush = Brushes.Transparent,
             BorderThickness = new Thickness(1),
             ToolTip = "Data Inference modules",
@@ -800,7 +704,7 @@ public partial class MainWindow : Window
             Text = "\u25B8",
             Margin = new Thickness(10, 0, 2, 0),
             VerticalAlignment = VerticalAlignment.Center,
-            Foreground = new SolidColorBrush(Color.FromRgb(0x9D, 0xA3, 0xAE)),
+            Foreground = new SolidColorBrush(Color.FromRgb(107, 124, 147)),
             FontSize = 14,
             FontWeight = FontWeights.SemiBold
         };
@@ -827,7 +731,7 @@ public partial class MainWindow : Window
             Text = "\u25B8",
             Margin = new Thickness(10, 0, 2, 0),
             VerticalAlignment = VerticalAlignment.Center,
-            Foreground = new SolidColorBrush(Color.FromRgb(0x9D, 0xA3, 0xAE)),
+            Foreground = new SolidColorBrush(Color.FromRgb(107, 124, 147)),
             FontSize = 14,
             FontWeight = FontWeights.SemiBold
         };
@@ -849,8 +753,8 @@ public partial class MainWindow : Window
             Width = 22,
             Height = 22,
             CornerRadius = new CornerRadius(6),
-            Background = new SolidColorBrush(Color.FromRgb(0x2D, 0x2D, 0x30)),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(0x3F, 0x3F, 0x46)),
+            Background = new SolidColorBrush(Color.FromRgb(229, 239, 252)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(201, 218, 241)),
             BorderThickness = new Thickness(1),
             VerticalAlignment = VerticalAlignment.Center,
             Child = BuildMenuIcon(icon)
@@ -861,7 +765,7 @@ public partial class MainWindow : Window
             Text = title,
             Margin = new Thickness(isChild ? 7 : 8, 0, 0, 0),
             TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.FromRgb(0xD4, 0xD4, 0xD4)),
+            Foreground = new SolidColorBrush(Color.FromRgb(31, 41, 55)),
             FontSize = isChild ? 12 : 13,
             FontWeight = isChild ? FontWeights.Medium : FontWeights.SemiBold,
             VerticalAlignment = VerticalAlignment.Center
@@ -901,7 +805,7 @@ public partial class MainWindow : Window
             Child = new System.Windows.Shapes.Path
             {
                 Data = geometry,
-                Fill = new SolidColorBrush(Color.FromRgb(0xCB, 0xD5, 0xE1)),
+                Fill = new SolidColorBrush(Color.FromRgb(45, 85, 127)),
                 Stretch = Stretch.Uniform,
                 Width = 13,
                 Height = 13,

@@ -1,0 +1,80 @@
+{
+  "name": "001.MSU - 20S15-07 REPORT CHECK NG  COIL SP AFTER DRY UV LED  _1778470492",
+  "result": {
+    "schema_version": "0.1",
+    "document": {
+      "document_id": "",
+      "source_file": "001.MSU - 20S15-07 REPORT CHECK NG  COIL SP AFTER DRY UV LED  _1778470492",
+      "source_sheet": "1|Sheet1",
+      "title": "REPORT CHECK NG ASS'Y COIL SP AFTER DRY UV LED (Bonding not dry)",
+      "model": "MSU-20S15-07",
+      "report_date": "2025-01-14",
+      "department": "ME",
+      "marker": "Huong",
+      "line": "E2-4B",
+      "report_type": "process_condition_change",
+      "primary_defect": {"canonical_name": "Bond Not Dry (Coil SP)", "aliases_in_document": ["Bond not dry", "NG not dry"]},
+      "related_defects": ["Bonding SP offset"],
+      "parts": ["Coil SP", "MC UC holder"],
+      "processes": ["Coil SP assembly", "UV LED dry"],
+      "purpose": "Investigate Bond Not Dry on Coil SP after assembly + UV LED dry; test bond amount, UV LED spec, AWF jig open area, and finally new MC UC holder.",
+      "content": [
+        "1.1 Vary bond amount and UV LED peak/total - results still NG (45656-45657).",
+        "1.2 AWF jig open area for UV light - still NG (45660).",
+        "1.3 New MC UC holder gap 0.02 + 1:1 - bond dry OK (45660-45661); 5.38% NG due to bonding SP offset, then re-set bonding -> OK.",
+        "Sheet1 tension test SP A/SP B vs Normal: SP-Frame and SP-Coil tension across lot."
+      ],
+      "source_cells": {"title": ["1!E2"], "date": ["1!Q3=45657"], "purpose": ["1!B6"], "content": ["1!B8","1!C19","1!C30","1!C45","1!D66","1!D73","1!B83:F84","Sheet1!B12:R22"]}
+    },
+    "test_conditions": [
+      {"condition_id": "cond_bond_amt", "condition_group": "Bond amount + UV LED spec", "line": "E2-4B", "process": "Coil SP bond + UV dry", "changed_factor": "Bond amount Mg, UV LED peak/total", "before_value": "0.1/0.11 Mg, LED1 peak 336-369, LED2 peak 421-567", "after_value": "0.16 Mg, LED1 peak 604-696, LED2 peak 383-565", "unit": "Mg", "machine": "MC bonding/UV LED 1,2", "jig": null, "material_lot": null, "supplier": null, "dry_time_sec": null, "temperature": null, "pressure": null, "bond_amount": "0.08~0.16", "uv_energy": "peak 336~696", "source_file": "001.MSU - 20S15-07 REPORT CHECK NG  COIL SP AFTER DRY UV LED  _1778470492", "sheet_name": "1", "source_cells": ["F22:K27"]},
+      {"condition_id": "cond_awf", "condition_group": "AWF jig open area", "line": "E2-4B", "process": "UV LED dry", "changed_factor": "AWF jig cutting (open area for UV light)", "before_value": null, "after_value": "cutting", "unit": null, "machine": null, "jig": "AWF jig (cutting)", "material_lot": null, "supplier": null, "dry_time_sec": null, "temperature": null, "pressure": null, "bond_amount": "0.14/0.16", "uv_energy": null, "source_file": "001.MSU - 20S15-07 REPORT CHECK NG  COIL SP AFTER DRY UV LED  _1778470492", "sheet_name": "1", "source_cells": ["C30:O42"]},
+      {"condition_id": "cond_holder", "condition_group": "MC UC new holder", "line": "E2-4B", "process": "Press / UC bonding", "changed_factor": "Holder gap 0.02 + 1:1", "before_value": "1:1 + gap 0.05mm", "after_value": "gap 0.02 + 1:1 (overlap 0.02)", "unit": "mm", "machine": "MC UC", "jig": "New holder", "material_lot": null, "supplier": null, "dry_time_sec": null, "temperature": null, "pressure": null, "bond_amount": "0.12~0.16", "uv_energy": null, "source_file": "001.MSU - 20S15-07 REPORT CHECK NG  COIL SP AFTER DRY UV LED  _1778470492", "sheet_name": "1", "source_cells": ["C45:O57"]}
+    ],
+    "results": [
+      {"result_id": "res_ba_normal", "condition_id": "cond_bond_amt", "measurement_type": "Bond_dry", "condition_group": "Follow W/M spec (baseline)", "date": "2025-01-13", "line": "E2-4B", "input_count": 10, "ok_count": 0, "ng_count": 10, "ng_rate_decimal": 1.0, "ng_rate_percent": 100.0, "metric_name": "Bond not dry rate", "metric_value": 1.0, "unit": "%", "judgement": "NG", "ng_breakdown": {"Bond not dry": {"count": 10}}, "source_file": "001.MSU - 20S15-07 REPORT CHECK NG  COIL SP AFTER DRY UV LED  _1778470492", "sheet_name": "1", "source_cells": ["D24:O24"]},
+      {"result_id": "res_ba_test", "condition_id": "cond_bond_amt", "measurement_type": "Bond_dry", "condition_group": "Increase bond + UV LED spec up", "date": "2025-01-14", "line": "E2-4B", "input_count": 8, "ok_count": 0, "ng_count": 8, "ng_rate_decimal": 1.0, "ng_rate_percent": 100.0, "metric_name": "Bond not dry rate", "metric_value": 1.0, "unit": "%", "judgement": "NG", "ng_breakdown": {"Bond not dry": {"count": 8}}, "source_file": "001.MSU - 20S15-07 REPORT CHECK NG  COIL SP AFTER DRY UV LED  _1778470492", "sheet_name": "1", "source_cells": ["D26:O27"]},
+      {"result_id": "res_awf", "condition_id": "cond_awf", "measurement_type": "Bond_dry", "condition_group": "AWF jig cutting open area for UV", "date": "2025-01-17", "line": "E2-4B", "input_count": 8, "ok_count": 0, "ng_count": 8, "ng_rate_decimal": 1.0, "ng_rate_percent": 100.0, "metric_name": "Bond not dry rate", "metric_value": 1.0, "unit": "%", "judgement": "NG", "ng_breakdown": {"Bond not dry": {"count": 8}}, "source_file": "001.MSU - 20S15-07 REPORT CHECK NG  COIL SP AFTER DRY UV LED  _1778470492", "sheet_name": "1", "source_cells": ["D42:O42"]},
+      {"result_id": "res_holder_1", "condition_id": "cond_holder", "measurement_type": "Bond_dry", "condition_group": "New MC UC holder (first run)", "date": "2025-01-17", "line": "E2-4B", "input_count": 16, "ok_count": 16, "ng_count": 0, "ng_rate_decimal": 0.0, "ng_rate_percent": 0.0, "metric_name": "Bond not dry rate", "metric_value": 0.0, "unit": "%", "judgement": "OK", "ng_breakdown": {}, "source_file": "001.MSU - 20S15-07 REPORT CHECK NG  COIL SP AFTER DRY UV LED  _1778470492", "sheet_name": "1", "source_cells": ["D55:O55"]},
+      {"result_id": "res_holder_offset", "condition_id": "cond_holder", "measurement_type": "Bond_dry", "condition_group": "New holder - bonding SP offset (130pcs)", "date": "2025-01-18", "line": "E2-4B", "input_count": 130, "ok_count": 123, "ng_count": 7, "ng_rate_decimal": 0.0538, "ng_rate_percent": 5.38, "metric_name": "Bond not dry rate", "metric_value": 0.0538, "unit": "%", "judgement": "NG", "ng_breakdown": {"Bond not dry (offset)": {"count": 7}}, "source_file": "001.MSU - 20S15-07 REPORT CHECK NG  COIL SP AFTER DRY UV LED  _1778470492", "sheet_name": "1", "source_cells": ["D56:O56"]},
+      {"result_id": "res_holder_fix", "condition_id": "cond_holder", "measurement_type": "Bond_dry", "condition_group": "New holder + re-set bonding (offset fix)", "date": "2025-01-18", "line": "E2-4B", "input_count": 16, "ok_count": 16, "ng_count": 0, "ng_rate_decimal": 0.0, "ng_rate_percent": 0.0, "metric_name": "Bond not dry rate", "metric_value": 0.0, "unit": "%", "judgement": "OK", "ng_breakdown": {}, "source_file": "001.MSU - 20S15-07 REPORT CHECK NG  COIL SP AFTER DRY UV LED  _1778470492", "sheet_name": "1", "source_cells": ["D57:O57"]}
+    ],
+    "conclusions": [
+      {"conclusion_id": "concl_root", "topic": "Root cause - MC UC holder press", "statement_from_report": "Press of holder MC UC have problem -> Press not good -> Bond NG not dry. Bonding SP offset -> Ass'y coil SP not good (little bond) -> bond not dry.", "normalized_interpretation": "Bond-amount and UV-LED spec changes alone could not fix Not-Dry (100% NG sustained at 0.08-0.16 Mg and increased UV). AWF jig open area also kept 100% NG. Replacing MC UC holder to gap 0.02 + 1:1 dropped Not-Dry NG to 0% (16/16). A subsequent 130-pcs run showed 5.38% NG explained by bonding SP offset (positions 1/2 vs 3/4 in 14-piece check), and re-setting bonding returned NG to 0%. So Not-Dry root cause is press/holder pressure variation, not bond amount or UV energy.", "source_file": "001.MSU - 20S15-07 REPORT CHECK NG  COIL SP AFTER DRY UV LED  _1778470492", "sheet_name": "1", "source_cells": ["B83:F84","D55:O57"]}
+    ],
+    "troubleshooting_index": {
+      "defect_name": "Bond Not Dry (Coil SP)",
+      "when_user_asks": ["coil SP bond not dry", "UV LED dry NG", "MC UC holder press issue"],
+      "suggested_checks": [
+        {"check_item": "If Coil SP bond not dry, first verify MC UC holder press uniformity (gap 0.02 + 1:1 overlap) and bonding SP centering - do not raise bond amount or UV LED energy.", "reason": "Bond amount 0.08->0.16 Mg and UV LED peak 336->696 kept NG=100%; new holder with proper press gave NG=0%. Subsequent bonding-SP offset explained residual 5.38% NG; re-set bonding restored 0%.", "evidence_strength": "before_after_same_event", "related_process": "Press / Coil SP bonding", "related_part": "MC UC holder", "source_file": "001.MSU - 20S15-07 REPORT CHECK NG  COIL SP AFTER DRY UV LED  _1778470492", "sheet_name": "1", "source_cells": ["D24:O27","D55:O57"]}
+      ],
+      "limitations": ["Tension data in Sheet1 only for lot 45604-45605 SP A/B vs Normal; not the main evidence."]
+    },
+    "ai_extraction_log": {
+      "confidence": 0.7,
+      "assumptions": ["Date serial 45657=2025-01-14"],
+      "warnings": ["NG rate column in sheet 1 stored as fraction (1 = 100%) per cell N24-N27"],
+      "decision_rationale": "process_condition_change: workbook progressively tests bond amount, UV LED energy, AWF jig open area, MC UC holder; the holder change is the one that switches Not-Dry NG from 100% to 0% on the same line/lot, so the conclusion is clearly press/holder-driven."
+    }
+  },
+  "translations": {
+    "ko": {
+      "document": {"title": "Coil SP UV LED 건조 후 Bond Not Dry NG 검토", "purpose": "Coil SP 본딩+UV LED 건조 후 Bond Not Dry 원인 분석. 본드량, UV LED, AWF jig 개구, MC UC 신규 홀더까지 단계적 시험.", "content": ["1.1 본드량 0.08~0.16Mg + UV LED spec up → 100% NG.", "1.2 AWF jig 개구 컷팅 → 100% NG.", "1.3 신규 MC UC 홀더(gap 0.02 + 1:1) → 0% NG. 후속 130개 lot 5.38% NG는 bonding SP offset → 본딩 재세팅 시 0%."]},
+      "conclusions": {"concl_root": {"topic": "근본원인 - MC UC 홀더 press", "statement_from_report": "MC UC 홀더 press 문제 → press 부족 → Bond not dry. Bonding SP offset → coil SP 본드 적음 → not dry.", "normalized_interpretation": "본드량·UV LED 변화로는 100%→100% NG 미개선, AWF 개구도 100% NG. 신규 MC UC 홀더로 0% NG. 130개 lot 5.38%는 bonding SP offset(위치 1/2 vs 3/4), 본딩 재세팅 시 0%. 근본원인은 press/홀더이고 본드량·UV는 아님."}},
+      "hints": {"hint_0": {"check_item": "Bond Not Dry 발생 시 본드량·UV LED 올리지 말고 MC UC 홀더 press 균일성(gap 0.02 + 1:1)과 bonding SP 위치 우선 점검.", "reason": "본드 0.08→0.16Mg + UV peak 336→696 → 100% NG 유지. 신규 홀더 시 0%. SP offset 5.38%는 재세팅 시 0%."}},
+      "log": {"assumptions": ["일자 시리얼 45657 = 2025-01-14"], "warnings": ["NG rate 열은 분수 표기(1=100%)."], "decision_rationale": "본드량→UV→AWF→홀더 순차 시험에서 홀더 변경이 단독으로 100%→0% 전환을 만든 process_condition_change."}
+    },
+    "en": {
+      "document": {"title": "Bond Not Dry NG on Coil SP after UV LED dry - investigation", "purpose": "Investigate Bond Not Dry root cause on Coil SP after UV LED dry by testing bond amount, UV LED energy, AWF jig open area, and MC UC new holder in sequence.", "content": ["1.1 Bond amount 0.08-0.16Mg + UV LED spec-up: NG remains 100%.", "1.2 AWF jig open area: NG remains 100%.", "1.3 New MC UC holder (gap 0.02 + 1:1): NG = 0%. Follow-up 130-pcs run 5.38% NG explained by bonding SP offset; re-set bonding -> 0%."]},
+      "conclusions": {"concl_root": {"topic": "Root cause - MC UC holder press", "statement_from_report": "MC UC holder press is the problem -> press not good -> bond not dry. Bonding SP offset -> coil SP gets little bond -> not dry.", "normalized_interpretation": "Bond amount and UV LED changes kept NG 100%, AWF open area kept NG 100%, but new MC UC holder dropped NG to 0%. Subsequent 130-pcs run had 5.38% NG due to bonding SP offset (positions 1/2 vs 3/4); re-set bonding restored 0%. Root cause is press/holder pressure variation, not bond amount or UV energy."}},
+      "hints": {"hint_0": {"check_item": "When Bond Not Dry occurs, do not raise bond amount or UV LED energy first - check MC UC holder press uniformity (gap 0.02 + 1:1) and bonding SP centering.", "reason": "Bond 0.08->0.16Mg + UV peak 336->696 left NG at 100%; new holder dropped NG to 0%; 5.38% offset case fixed by bonding re-set."}},
+      "log": {"assumptions": ["Date serial 45657 = 2025-01-14"], "warnings": ["NG rate column stored as fraction (1 = 100%)."], "decision_rationale": "process_condition_change: sequential test of bond/UV/AWF/holder where only the holder swap flips Not-Dry NG from 100% to 0% on the same line/lot."}
+    },
+    "vi": {
+      "document": {"title": "Báo cáo NG Bond Not Dry Coil SP sau UV LED sấy", "purpose": "Phân tích nguyên nhân Bond Not Dry Coil SP sau UV LED sấy bằng cách thử lượng keo, UV LED, mở AWF jig, holder MC UC mới.", "content": ["1.1 Keo 0.08-0.16Mg + UV LED spec-up: NG vẫn 100%.", "1.2 AWF jig cutting: NG 100%.", "1.3 Holder MC UC mới (gap 0.02 + 1:1): NG = 0%. Lot 130pcs sau đó 5.38% NG do bonding SP offset; reset bonding -> 0%."]},
+      "conclusions": {"concl_root": {"topic": "Nguyên nhân gốc - press holder MC UC", "statement_from_report": "Press của holder MC UC không tốt -> bond not dry. Bonding SP offset -> ít keo -> không khô.", "normalized_interpretation": "Thay đổi keo và UV LED giữ NG 100%, mở AWF cũng 100%, holder MC UC mới đưa NG xuống 0%. 130pcs sau 5.38% là do SP offset; reset bonding -> 0%. Nguyên nhân là press/holder, không phải keo/UV."}},
+      "hints": {"hint_0": {"check_item": "Khi Bond Not Dry, không tăng keo/UV trước; kiểm tra press holder MC UC (gap 0.02 + 1:1) và vị trí bonding SP.", "reason": "Keo 0.08->0.16Mg + UV peak 336->696: NG vẫn 100%; holder mới: 0%; offset 5.38% khắc phục bằng reset bonding."}},
+      "log": {"assumptions": ["Số serial 45657 = 2025-01-14"], "warnings": ["NG rate là phân số (1 = 100%)."], "decision_rationale": "process_condition_change: thử keo/UV/AWF/holder tuần tự, chỉ holder mới thay đổi NG 100%->0%."}
+    }
+  }
+}

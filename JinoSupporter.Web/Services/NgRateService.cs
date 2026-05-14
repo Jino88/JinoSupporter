@@ -17,6 +17,17 @@ public sealed class NgRateService(NgRateSettingsService settings)
     private readonly NgRateSettingsService _settings = settings;
     private const string BaseUrl = "http://bmes.bujeon.com";
 
+    /// <summary>Mirrors a progress message to both the UI and the Debug/launching-console output.
+    /// Use this for every status line so you can diagnose stalls live in the dotnet console
+    /// and the VS "Debug" output simultaneously.</summary>
+    private static void Log(IProgress<string>? progress, string msg)
+    {
+        string tagged = $"[NgRate {DateTime.Now:HH:mm:ss.fff}] {msg}";
+        System.Diagnostics.Debug.WriteLine(tagged);
+        Console.WriteLine(tagged);
+        progress?.Report(msg);
+    }
+
     // BMES API column name → internal column name (merged from DataMaker CONSTANT._columnMap + ListSTRManager)
     private static readonly Dictionary<string, string> ApiColumnMap =
         new(StringComparer.OrdinalIgnoreCase)
@@ -65,6 +76,17 @@ public sealed class NgRateService(NgRateSettingsService settings)
         DateTime endDate,
         IProgress<string>? progress = null)
     {
+        // Immediate ack so the UI shows the operation has actually started
+        // (helps diagnose slow path-config / DB-init / cache-scan delays).
+        var swStart = System.Diagnostics.Stopwatch.StartNew();
+        progress?.Report("[start] Initializing…");
+
+        // Resolve & cache the daily-cache root once (avoids one ngrate_settings.db
+        // round-trip per date being classified).
+        progress?.Report("[start] Resolving NgRate save directory…");
+        string saveDir = _settings.DbSaveDirectory;
+        progress?.Report($"[start] Save dir = {saveDir}  ({swStart.ElapsedMilliseconds} ms elapsed)");
+
         // ── 1. Classify dates ────────────────────────────────────────────────
         // · Today / yesterday   → always fetch from server (data may still change)
         // · Otherwise           → use per-day DB cache if present, else fetch
@@ -77,13 +99,16 @@ public sealed class NgRateService(NgRateSettingsService settings)
         var toFetch = new List<DateTime>(); // needs BMES server fetch
         var toCache = new List<DateTime>(); // load from per-day DB cache
 
+        string dailyDir = Path.Combine(saveDir, "daily");
         foreach (var date in allDates)
         {
-            if (date >= recentCutoff || !File.Exists(GetPerDayDbPath(date)))
+            string p = Path.Combine(dailyDir, $"{date:yyyyMMdd}.db");
+            if (date >= recentCutoff || !File.Exists(p))
                 toFetch.Add(date);
             else
                 toCache.Add(date);
         }
+        progress?.Report($"[start] Date scan done in {swStart.ElapsedMilliseconds} ms.");
 
         progress?.Report(
             $"Date range: {startDate:MM/dd} – {endDate:MM/dd}  " +
@@ -153,9 +178,11 @@ public sealed class NgRateService(NgRateSettingsService settings)
                 if (rows3220 != null) serverRows.AddRange(rows3220);
             }
 
-            progress?.Report($"Collected {serverRows.Count:N0} rows. Removing duplicates…");
-            serverRows = RemoveDuplicates(serverRows);
-            progress?.Report($"{serverRows.Count:N0} rows after deduplication.");
+            Log(progress, $"Collected {serverRows.Count:N0} rows. Removing duplicates…");
+            // Heavy CPU work — push to threadpool so the Blazor renderer keeps
+            // processing queued progress callbacks (no UI freeze).
+            serverRows = await Task.Run(() => RemoveDuplicates(serverRows));
+            Log(progress, $"{serverRows.Count:N0} rows after deduplication.");
 
             // Dates other than today/yesterday → cache to per-day DB (even 0-row → empty file, so next call skips server)
             foreach (var date in toFetch.Where(d => d < recentCutoff))
@@ -164,7 +191,7 @@ public sealed class NgRateService(NgRateSettingsService settings)
                 var    dayRows = serverRows
                     .Where(r => GetCol(r, "PRODUCT_DATE") == dateStr)
                     .ToList();
-                SavePerDayDb(date, dayRows, progress);
+                await Task.Run(() => SavePerDayDb(date, dayRows, progress));
             }
 
             freshRows = serverRows;
@@ -172,14 +199,15 @@ public sealed class NgRateService(NgRateSettingsService settings)
 
         // ── 3. Load per-day cache ───────────────────────────────────────────
         if (toCache.Count > 0)
-            progress?.Report($"─── Cache load  {toCache.Min():MM/dd} – {toCache.Max():MM/dd} ({toCache.Count} day(s))");
+            Log(progress, $"─── Cache load  {toCache.Min():MM/dd} – {toCache.Max():MM/dd} ({toCache.Count} day(s))");
 
         var cachedRows = new List<Dictionary<string, string>>();
         foreach (var date in toCache)
         {
-            var rows = LoadFromPerDayDb(GetPerDayDbPath(date));
+            string dPath = GetPerDayDbPath(date);
+            var rows = await Task.Run(() => LoadFromPerDayDb(dPath));
             cachedRows.AddRange(rows);
-            progress?.Report($"  Cache hit {date:MM/dd}: {rows.Count:N0} rows");
+            Log(progress, $"  Cache hit {date:MM/dd}: {rows.Count:N0} rows");
         }
 
         // ── 4. Merge ─────────────────────────────────────────────────────────
@@ -194,24 +222,28 @@ public sealed class NgRateService(NgRateSettingsService settings)
         }
 
         // ── 5. Clean up old temp DBs → create new temp DB ───────────────────
-        CleanupTempDbs(progress);
+        await Task.Run(() => CleanupTempDbs(progress));
 
         string tempPath = GetTempDbPath();
         try { Directory.CreateDirectory(Path.GetDirectoryName(tempPath)!); }
         catch (Exception ex)
         {
-            progress?.Report($"[ERROR] Cannot create output folder: {ex.Message}");
+            Log(progress, $"[ERROR] Cannot create output folder: {ex.Message}");
             return null;
         }
 
-        progress?.Report($"Saving to temp DB: {Path.GetFileName(tempPath)}");
-        SaveToSqlite(tempPath, allRows);
+        var swSave = System.Diagnostics.Stopwatch.StartNew();
+        Log(progress, $"Saving to temp DB: {Path.GetFileName(tempPath)} ({allRows.Count:N0} rows)");
+        await Task.Run(() => SaveToSqlite(tempPath, allRows));
+        Log(progress, $"[FetchAndSave] SaveToSqlite done ({swSave.ElapsedMilliseconds} ms)");
 
         // ── 6. Post-processing ───────────────────────────────────────────────
-        progress?.Report("Running post-processing (Routing / Reason / LineShift)…");
+        var swProc = System.Diagnostics.Stopwatch.StartNew();
+        Log(progress, "Running post-processing (Routing / Reason / LineShift)…");
         await Task.Run(() => ProcessData(tempPath, progress));
+        Log(progress, $"[FetchAndSave] ProcessData done ({swProc.ElapsedMilliseconds} ms)");
 
-        progress?.Report($"Done. DB: {Path.GetFileName(tempPath)}");
+        Log(progress, $"Done. DB: {Path.GetFileName(tempPath)}  (total {swStart.ElapsedMilliseconds} ms since start)");
         return tempPath;
     }
 
@@ -586,57 +618,82 @@ public sealed class NgRateService(NgRateSettingsService settings)
     /// </summary>
     private void ProcessData(string dbPath, IProgress<string>? progress)
     {
+        var swTotal = System.Diagnostics.Stopwatch.StartNew();
+        Log(progress, $"[ProcessData] Open SQLite: {Path.GetFileName(dbPath)}");
         using var conn = new SqliteConnection($"Data Source={dbPath}");
         conn.Open();
+        Log(progress, $"[ProcessData] DB opened ({swTotal.ElapsedMilliseconds} ms)");
 
-        // Routing — prefer settings DB, fall back to file
+        // ── Routing ──────────────────────────────────────────────────────────
+        var swSection = System.Diagnostics.Stopwatch.StartNew();
         var routingDbRows = _settings.GetRoutingRows();
+        Log(progress, $"[ProcessData] Routing source = settings DB rows={routingDbRows.Count} ({swSection.ElapsedMilliseconds} ms)");
         if (routingDbRows.Count > 0)
         {
-            progress?.Report($"Loading Routing table from settings DB ({routingDbRows.Count} rows)…");
+            swSection.Restart();
+            Log(progress, $"Loading Routing table from settings DB ({routingDbRows.Count} rows)…");
             LoadRoutingFromSettings(conn, routingDbRows);
+            Log(progress, $"[ProcessData]   LoadRoutingFromSettings done ({swSection.ElapsedMilliseconds} ms)");
+            swSection.Restart();
             NormalizeTableColumns(conn, "RoutingTable", new[] { "ProcessName", "ProcessType" });
-            progress?.Report("Routing table done.");
+            Log(progress, $"[ProcessData]   NormalizeTableColumns(RoutingTable) done ({swSection.ElapsedMilliseconds} ms)");
+            Log(progress, "Routing table done.");
         }
         else if (File.Exists(_settings.RoutingFilePath))
         {
-            progress?.Report("Loading Routing table from file…");
+            swSection.Restart();
+            Log(progress, "Loading Routing table from file…");
             LoadTsvToTable(conn, _settings.RoutingFilePath, "RoutingTable",
                 new[] { "모델명", "ProcessCode", "ProcessName", "ProcessType" });
+            Log(progress, $"[ProcessData]   LoadTsvToTable(Routing) done ({swSection.ElapsedMilliseconds} ms)");
+            swSection.Restart();
             NormalizeTableColumns(conn, "RoutingTable", new[] { "ProcessName", "ProcessType" });
-            progress?.Report("Routing table done.");
+            Log(progress, $"[ProcessData]   NormalizeTableColumns(RoutingTable) done ({swSection.ElapsedMilliseconds} ms)");
+            Log(progress, "Routing table done.");
         }
         else
         {
-            progress?.Report("[WARN] No Routing data (settings DB empty, file not found).");
+            Log(progress, "[WARN] No Routing data (settings DB empty, file not found).");
         }
 
-        // Reason — prefer settings DB, fall back to file
+        // ── Reason ───────────────────────────────────────────────────────────
+        swSection.Restart();
         var reasonDbRows = _settings.GetReasonRows();
+        Log(progress, $"[ProcessData] Reason source = settings DB rows={reasonDbRows.Count} ({swSection.ElapsedMilliseconds} ms)");
         if (reasonDbRows.Count > 0)
         {
-            progress?.Report($"Loading Reason table from settings DB ({reasonDbRows.Count} rows)…");
+            swSection.Restart();
+            Log(progress, $"Loading Reason table from settings DB ({reasonDbRows.Count} rows)…");
             LoadReasonFromSettings(conn, reasonDbRows);
+            Log(progress, $"[ProcessData]   LoadReasonFromSettings done ({swSection.ElapsedMilliseconds} ms)");
+            swSection.Restart();
             NormalizeTableColumns(conn, "Reason", new[] { "processName", "NgName" });
-            progress?.Report("Reason table done.");
+            Log(progress, $"[ProcessData]   NormalizeTableColumns(Reason) done ({swSection.ElapsedMilliseconds} ms)");
+            Log(progress, "Reason table done.");
         }
         else if (File.Exists(_settings.ReasonFilePath))
         {
-            progress?.Report("Loading Reason table from file…");
+            swSection.Restart();
+            Log(progress, "Loading Reason table from file…");
             LoadTsvToTable(conn, _settings.ReasonFilePath, "Reason",
                 new[] { "processName", "NgName", "Reason" });
+            Log(progress, $"[ProcessData]   LoadTsvToTable(Reason) done ({swSection.ElapsedMilliseconds} ms)");
+            swSection.Restart();
             NormalizeTableColumns(conn, "Reason", new[] { "processName", "NgName" });
-            progress?.Report("Reason table done.");
+            Log(progress, $"[ProcessData]   NormalizeTableColumns(Reason) done ({swSection.ElapsedMilliseconds} ms)");
+            Log(progress, "Reason table done.");
         }
         else
         {
-            progress?.Report("[WARN] No Reason data (settings DB empty, file not found).");
+            Log(progress, "[WARN] No Reason data (settings DB empty, file not found).");
         }
 
-        // SetLineShiftColumnValue: LineShift = MATERIALNAME || '_' || PRODUCTION_LINE
-        progress?.Report("Setting LineShift column…");
+        // ── LineShift column population ──────────────────────────────────────
+        swSection.Restart();
+        Log(progress, "Setting LineShift column…");
         SetLineShift(conn);
-        progress?.Report("Processing complete.");
+        Log(progress, $"[ProcessData] SetLineShift done ({swSection.ElapsedMilliseconds} ms)");
+        Log(progress, $"[ProcessData] Processing complete (total {swTotal.ElapsedMilliseconds} ms)");
     }
 
     /// <summary>

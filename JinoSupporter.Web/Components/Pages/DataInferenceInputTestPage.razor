@@ -1,0 +1,2446 @@
+@page "/data-inference-test"
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+@using ClosedXML.Excel
+@using System.IO.Compression
+@using System.Text
+@using JinoSupporter.Web.Services
+@inject WebRepository      Repo
+@inject ClaudeService      Claude
+@inject ExcelHelperRunner  Helper
+@inject IJSRuntime         JS
+
+@* ──────────────────────────────────────────────────────────────────────────────
+   Mirror of /data-inference (DI — Input Data) but the *primary* input is a
+   DRM-locked .xlsx. The helper exe unlocks it (Excel COM ⓪ → ClosedXML ① →
+   ZIP repack ②), then we read the cleaned book via ClosedXML and dump every
+   non-empty cell as TSV into the existing "Raw Excel text" textarea — from
+   there the rest of the page (Analyze/Save) reuses the parent flow as-is.
+   ────────────────────────────────────────────────────────────────────────── *@
+
+<PageTitle>Data Inference — Input Data (Test)</PageTitle>
+
+<div class="di-root dit-split-layout">
+
+@* ── Left: Queue panel (multi-file drag-and-drop, sequential auto-convert) ── *@
+<aside class="dit-queue-pane">
+    <div class="dit-queue-head">
+        <span>📋 Queue</span>
+        @if (_queue.Count > 0)
+        {
+            <span class="dit-queue-count">@_queueDone / @_queue.Count</span>
+        }
+        <button class="dit-review-btn" @onclick="OpenAliasReview"
+                title="Map filename tokens to Mid-group Materials">✎ Review tokens</button>
+    </div>
+    @if (_queue.Count > 0)
+    {
+        int totalPct = _queue.Count == 0 ? 0 : (int)(100.0 * _queueDone / _queue.Count);
+        <div class="dit-queue-progress">
+            <div class="progress" style="height:6px;">
+                <div class="progress-bar @(_queueRunning ? "progress-bar-striped progress-bar-animated" : "bg-success")"
+                     role="progressbar" style="width:@(totalPct)%;"></div>
+            </div>
+        </div>
+    }
+    <div class="dit-queue-drop">
+        <InputFile OnChange="OnQueueFilesSelected" multiple accept=".xlsx,.xlsm"
+                   style="font-size:11px; color:#64748b; display:block;" />
+        <small class="text-muted d-block mt-1" style="font-size:10px;">
+            Drop already-unlocked .xlsx / .xlsm — each becomes its own dataset.
+        </small>
+        <label class="d-block mt-1" style="font-size:10px; cursor:pointer;">
+            <input type="checkbox" @bind="_queueForceReplace" style="vertical-align:middle;" />
+            Force replace existing datasets
+        </label>
+        @if (_queue.Any(q => q.Status is "done" or "error" or "duplicate"))
+        {
+            <button class="btn btn-link btn-sm p-0 mt-1" style="font-size:10px;"
+                    @onclick="ClearFinishedFromQueue">Clear finished</button>
+        }
+    </div>
+    @if (_skippedDups.Count > 0)
+    {
+        <div class="dit-dup-panel">
+            <div class="dit-dup-head" @onclick="() => _skippedDupsExpanded = !_skippedDupsExpanded">
+                <span>🚫 @_skippedDups.Count duplicate(s) skipped</span>
+                <button class="btn btn-link btn-sm p-0 ms-auto" style="font-size:10px;"
+                        @onclick="ClearSkippedDups"
+                        @onclick:stopPropagation="true">Clear</button>
+                <span class="ms-1">@(_skippedDupsExpanded ? "▴" : "▾")</span>
+            </div>
+            @if (_skippedDupsExpanded)
+            {
+                <ul class="dit-dup-list">
+                    @foreach (var s in _skippedDups.AsEnumerable().Reverse().Take(100))
+                    {
+                        <li title="@($"already in DB as '{s.Dataset}'{(string.IsNullOrEmpty(s.ExistingDate) ? "" : $" (date={s.ExistingDate})")}")">
+                            @s.FileName
+                        </li>
+                    }
+                    @if (_skippedDups.Count > 100)
+                    {
+                        <li class="text-muted">+@(_skippedDups.Count - 100) more …</li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+    <ul class="dit-queue-list">
+        @foreach (var q in _queue)
+        {
+            <li class="dit-queue-item dit-q-@q.Status"
+                @onclick="() => SelectQueueItemAsync(q)"
+                title="@q.Detail">
+                <span class="dit-q-icon">@QueueIcon(q.Status)</span>
+                <div class="dit-q-body">
+                    <div class="dit-q-name">
+                        @q.FileName
+                        @if (!string.IsNullOrEmpty(q.ProductType))
+                        {
+                            <span class="dit-q-pt" title="Matched Mid-group">@q.ProductType</span>
+                        }
+                    </div>
+                    <div class="dit-q-detail">
+                        @switch (q.Status)
+                        {
+                            case "queued":     <text>queued</text>; break;
+                            case "staging":    <text>uploading…</text>; break;
+                            case "extracting": <text>staging workbook…</text>; break;
+                            case "saving":     <text>saving…</text>; break;
+                            case "done":       <text>workbook saved · AI Batch will read XLSX</text>; break;
+                            case "error":      <text>error: @q.Detail</text>; break;
+                            case "duplicate":
+                                <text>@q.Detail</text>
+                                <button class="dit-q-force"
+                                        @onclick="() => ForceProcessDuplicate(q)"
+                                        @onclick:stopPropagation="true"
+                                        title="Overwrite the existing DB row">force</button>
+                                ; break;
+                            default:           <text>@q.Status</text>; break;
+                        }
+                    </div>
+                </div>
+            </li>
+        }
+        @if (_queue.Count == 0)
+        {
+            <li class="dit-queue-empty">No files yet.</li>
+        }
+    </ul>
+</aside>
+
+@* ── Alias review modal ─────────────────────────────────────────────────── *@
+@if (_aliasReviewOpen)
+{
+    <div class="dit-alias-overlay" @onclick="CloseAliasReview">
+        <div class="dit-alias-modal" @onclick:stopPropagation="true">
+            <div class="dit-alias-head">
+                <span>✎ Token → Mid-group Material mapping</span>
+                <button class="btn-close-x" @onclick="CloseAliasReview">✕</button>
+            </div>
+            <div class="dit-alias-body">
+                <p class="text-muted small mb-2">
+                    파일명에서 뽑은 토큰 별로 Mid-group Material 을 직접 매핑합니다.
+                    빈 칸으로 두면 자동 매칭에 맡깁니다. 저장하면 이후 drop 되는 모든
+                    같은 토큰 파일에 적용됩니다.
+                </p>
+                <datalist id="dit-alias-materials">
+                    @foreach (var mat in GetMidGroupMaterials())
+                    {
+                        <option value="@mat"></option>
+                    }
+                </datalist>
+                @if (_aliasReviewRows.Count == 0)
+                {
+                    <div class="text-muted small">No tokens detected yet — drop some files in the queue first.</div>
+                }
+                else
+                {
+                    <table class="dit-alias-table">
+                        <thead>
+                            <tr>
+                                <th style="width:30%;">Token</th>
+                                <th style="width:30%;">Material (직접 입력 또는 선택)</th>
+                                <th>Sample filenames</th>
+                                <th style="width:50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in _aliasReviewRows)
+                            {
+                                <tr class="@(string.IsNullOrEmpty(row.AutoMatch) ? "dit-alias-unmatched" : "")">
+                                    <td><code>@row.Token</code></td>
+                                    <td>
+                                        <input class="form-control form-control-sm"
+                                               list="dit-alias-materials"
+                                               placeholder="@(string.IsNullOrEmpty(row.AutoMatch) ? "(unmatched)" : $"auto: {row.AutoMatch}")"
+                                               value="@row.Draft"
+                                               @oninput="@(e => row.Draft = e.Value?.ToString() ?? "")" />
+                                    </td>
+                                    <td class="dit-alias-samples">
+                                        @foreach (var s in row.Samples.Take(3))
+                                        {
+                                            <div>@s</div>
+                                        }
+                                        @if (row.Samples.Count > 3)
+                                        {
+                                            <div class="text-muted">+@(row.Samples.Count - 3) more</div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-link p-0 text-danger"
+                                                @onclick="() => ClearAlias(row)"
+                                                title="Remove alias for this token">✕</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+            <div class="dit-alias-foot">
+                <button class="btn btn-secondary btn-sm" @onclick="CloseAliasReview">Cancel</button>
+                <button class="btn btn-primary btn-sm" @onclick="SaveAliasReview">Save &amp; re-match</button>
+            </div>
+        </div>
+    </div>
+}
+
+@* ── Right: existing single-file workspace ───────────────────────────────── *@
+<div class="dit-main-pane">
+
+@if (!Claude.IsConfigured)
+{
+    <div class="alert alert-warning mb-0 py-2 small" style="flex-shrink:0; margin:8px 14px 0;">
+        <strong>Claude API key not configured.</strong> Go to Admin → Settings to add your key.
+    </div>
+}
+
+@if (!_queuePreviewActive)
+{
+<!-- ── Top bar ──────────────────────────────────────────────────────────────── -->
+<div class="di-topbar">
+    <div class="di-topbar-left">
+        <label class="di-label">Dataset</label>
+        <input @bind="_datasetName" class="form-control form-control-sm di-input-name"
+               placeholder="Dataset name…" />
+        <label class="di-label">Product Type</label>
+        <input @bind="_productType" class="form-control form-control-sm" style="width:160px;"
+               list="productTypeOptions" placeholder="e.g. BRS-161016" autocomplete="off" />
+        <datalist id="productTypeOptions">
+            @foreach (var pt in _productTypeOptions)
+            {
+                <option value="@pt"></option>
+            }
+        </datalist>
+        <label class="di-label">Date</label>
+        <input type="date" value="@_testDate"
+               @onchange="@(e => _testDate = e.Value?.ToString() ?? _testDate)"
+               class="form-control form-control-sm" style="width:145px;" />
+    </div>
+    <div class="di-topbar-right">
+        <select class="form-select form-select-sm" style="width:220px;" @onchange="OnLoadExisting">
+            <option value="">Load existing…</option>
+            @foreach (var r in _allReports)
+            {
+                <option value="@r.DatasetName">@r.DatasetName</option>
+            }
+        </select>
+        @* Per design.md §1: Data Input ONLY captures + saves Raw Data.
+           AI analysis lives in the Data Analysis page. *@
+        <button class="btn btn-success btn-sm" @onclick="SaveAsync"
+                disabled="@(_isBusy || string.IsNullOrWhiteSpace(_datasetName))">
+            @if (_isBusy && _busyStep == "save") { <span class="spinner-border spinner-border-sm me-1"></span> }
+            Save
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" @onclick="Clear" disabled="@_isBusy">Clear</button>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(_status))
+{
+    <div class="di-status-bar @(_statusError ? "di-error" : "di-ok")">@_status</div>
+}
+}
+
+@if (_queuePreviewActive)
+{
+    <div class="dit-excel-only">
+        <div class="dit-excel-only-head">
+            <div>
+                <div class="dit-excel-title">@_queuePreviewFileName</div>
+                <div class="dit-excel-meta">@_queuePreviewDataset · @_queuePreviewSheets.Count sheet(s)</div>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="CloseQueuePreview">Back</button>
+        </div>
+        @if (_queuePreviewLoading)
+        {
+            <div class="dit-excel-loading">
+                <span class="spinner-border spinner-border-sm me-1"></span>Loading workbook preview...
+            </div>
+        }
+        else if (_queuePreviewSheets.Count == 0)
+        {
+            <div class="dit-excel-empty">No workbook cells to preview.</div>
+        }
+        else
+        {
+            <div class="dit-excel-book">
+                @foreach (var sheet in _queuePreviewSheets)
+                {
+                    <section class="dit-excel-sheet">
+                        <div class="dit-sheet-tab">@sheet.Name</div>
+                        <div class="dit-table-wrap dit-excel-wrap">
+                            <table class="dit-preview-table dit-excel-grid">
+                                <thead>
+                                    <tr>
+                                        <th class="dit-excel-corner"></th>
+                                        @for (int c = 0; c < sheet.MaxColumns; c++)
+                                        {
+                                            <th class="dit-excel-col">@ExcelColumnName(sheet.FirstColumn + c - 1)</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int r = 0; r < sheet.Rows.Count; r++)
+                                    {
+                                        var row = sheet.Rows[r];
+                                        <tr>
+                                            <th class="dit-excel-row">@(sheet.FirstRow + r)</th>
+                                            @for (int c = 0; c < sheet.MaxColumns; c++)
+                                            {
+                                                var cell = c < row.Count ? row[c] : null;
+                                                if (cell is null) continue;
+                                                <td colspan="@cell.ColumnSpan"
+                                                    rowspan="@cell.RowSpan"
+                                                    style="@CellStyle(cell)">@CleanExcelSerialDateText(cell.Value)</td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                }
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="dit-excel-empty">
+        Queue에서 엑셀 파일을 선택하면 여기에 엑셀 형태로 표시됩니다.
+    </div>
+}
+
+</div>  @* /dit-main-pane *@
+</div>  @* /dit-split-layout di-root *@
+
+<style>
+    .di-root {
+        flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
+        background: #f8fafc;
+    }
+
+    /* Two-pane layout: left = Queue, right = current workspace */
+    .dit-split-layout {
+        flex-direction: row !important;
+    }
+    .dit-queue-pane {
+        flex: 0 0 280px;
+        display: flex; flex-direction: column;
+        background: #fff; border-right: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+    .dit-main-pane {
+        flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    /* Queue UI */
+    .dit-queue-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 8px 12px; font-size: 12px; font-weight: 700; color: #1e293b;
+        background: #f1f5f9; border-bottom: 1px solid #e2e8f0;
+        flex-shrink: 0;
+    }
+    .dit-queue-count {
+        font-size: 10px; font-weight: 600; color: #4338ca;
+        background: #e0e7ff; padding: 1px 8px; border-radius: 10px;
+    }
+    .dit-queue-progress { padding: 4px 10px 0; flex-shrink: 0; }
+    .dit-queue-drop {
+        padding: 8px 10px; border-bottom: 1px dashed #e2e8f0;
+        flex-shrink: 0; background: #fafbfc;
+    }
+    .dit-dup-panel {
+        background: #fff7ed; border-bottom: 1px dashed #fed7aa;
+        font-size: 11px; flex-shrink: 0;
+    }
+    .dit-dup-head {
+        display: flex; align-items: center; gap: 4px;
+        padding: 5px 10px; cursor: pointer; color: #9a3412; font-weight: 600;
+    }
+    .dit-dup-head:hover { background: #ffedd5; }
+    .dit-dup-list {
+        list-style: none; margin: 0; padding: 2px 10px 6px 24px;
+        max-height: 160px; overflow-y: auto;
+        font-size: 10px; color: #7c2d12;
+    }
+    .dit-dup-list li { padding: 1px 0; }
+    .dit-queue-list {
+        list-style: none; margin: 0; padding: 4px 0;
+        flex: 1; min-height: 0; overflow-y: auto;
+    }
+    .dit-queue-empty {
+        padding: 16px; text-align: center;
+        color: #94a3b8; font-size: 11px;
+    }
+    .dit-queue-item {
+        display: flex; gap: 8px; align-items: flex-start;
+        padding: 6px 10px; border-bottom: 1px solid #f1f5f9;
+        cursor: pointer; transition: background .12s;
+    }
+    .dit-queue-item:hover { background: #f8fafc; }
+    .dit-q-icon { font-size: 14px; line-height: 1.3; flex-shrink: 0; width: 16px; }
+    .dit-q-body { flex: 1; min-width: 0; }
+    .dit-q-name {
+        font-size: 11px; font-weight: 600; color: #1e293b;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .dit-q-detail { font-size: 10px; color: #64748b; margin-top: 1px; }
+    .dit-q-queued     { }
+    .dit-q-staging,
+    .dit-q-extracting,
+    .dit-q-saving     { background: #eff6ff; }
+    .dit-q-staging .dit-q-detail,
+    .dit-q-extracting .dit-q-detail,
+    .dit-q-saving .dit-q-detail { color: #1d4ed8; font-weight: 600; }
+    .dit-q-done       { background: #f0fdf4; }
+    .dit-q-done .dit-q-detail { color: #15803d; }
+    .dit-q-error      { background: #fef2f2; }
+    .dit-q-error .dit-q-detail { color: #b91c1c; font-weight: 600; }
+    .dit-q-duplicate  { background: #fffbeb; }
+    .dit-q-duplicate .dit-q-detail { color: #92400e; font-weight: 600; }
+    .dit-q-force {
+        margin-left: 6px;
+        border: 1px solid #fbbf24; background: #fffbeb; color: #92400e;
+        padding: 0 6px; border-radius: 8px; font-size: 9px; font-weight: 700;
+        cursor: pointer; line-height: 1.4;
+    }
+    .dit-q-force:hover { background: #fef3c7; }
+    .dit-q-pt {
+        display: inline-block; margin-left: 6px;
+        background: #e0e7ff; color: #4338ca;
+        padding: 0 6px; border-radius: 8px; font-size: 9px; font-weight: 700;
+        vertical-align: middle;
+    }
+    .dit-review-btn {
+        margin-left: auto;
+        background: transparent; border: 1px solid #cbd5e1; color: #475569;
+        font-size: 10px; font-weight: 600; padding: 1px 8px; border-radius: 10px;
+        cursor: pointer;
+    }
+    .dit-review-btn:hover { background: #e0e7ff; border-color: #4338ca; color: #4338ca; }
+
+    /* Alias review modal */
+    .dit-alias-overlay {
+        position: fixed; inset: 0; background: rgba(15,23,42,.55);
+        z-index: 1500; display: flex; align-items: center; justify-content: center;
+    }
+    .dit-alias-modal {
+        background: #fff; border-radius: 10px; width: 850px; max-width: 95vw;
+        max-height: 85vh; display: flex; flex-direction: column;
+        box-shadow: 0 12px 36px rgba(0,0,0,.3);
+    }
+    .dit-alias-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 10px 14px; border-bottom: 1px solid #e2e8f0;
+        font-size: 13px; font-weight: 700; color: #1e293b;
+    }
+    .btn-close-x {
+        border: none; background: transparent; font-size: 16px; color: #64748b;
+        cursor: pointer; padding: 0 4px;
+    }
+    .dit-alias-body { padding: 12px 14px; overflow-y: auto; flex: 1; }
+    .dit-alias-foot {
+        padding: 10px 14px; border-top: 1px solid #e2e8f0;
+        display: flex; gap: 8px; justify-content: flex-end;
+    }
+    .dit-alias-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .dit-alias-table th, .dit-alias-table td {
+        border-bottom: 1px solid #e2e8f0; padding: 6px 8px; text-align: left;
+        vertical-align: top;
+    }
+    .dit-alias-table th { background: #f1f5f9; font-weight: 700; color: #475569; }
+    .dit-alias-table tr.dit-alias-unmatched { background: #fffbeb; }
+    .dit-alias-table tr.dit-alias-unmatched td:first-child code { color: #b45309; font-weight: 700; }
+    .dit-alias-samples { font-size: 10px; color: #64748b; }
+    .dit-alias-samples > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px; }
+    .di-topbar {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        padding: 8px 14px; background: #fff; flex-shrink: 0;
+        border-bottom: 1px solid #e2e8f0; flex-wrap: wrap;
+    }
+    .di-topbar-left  { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .di-topbar-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .di-label        { font-size: 12px; font-weight: 600; color: #64748b; white-space: nowrap; }
+    .di-input-name   { width: 200px; }
+    .di-status-bar   { padding: 4px 14px; font-size: 12px; flex-shrink: 0; }
+    .di-ok           { color: #16a34a; background: #f0fdf4; border-bottom: 1px solid #bbf7d0; }
+    .di-error        { color: #dc2626; background: #fef2f2; border-bottom: 1px solid #fecaca; }
+
+    /* Collapsible section bar — used above the trio + above raw text */
+    .dit-bar {
+        display: flex; align-items: center; gap: 8px;
+        padding: 4px 14px; background: #f1f5f9;
+        border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;
+        font-size: 11px; color: #475569; cursor: pointer; user-select: none;
+        flex-shrink: 0;
+    }
+    .dit-bar:hover { background: #e0e7ff; color: #1e293b; }
+    .dit-bar-caret { font-size: 10px; width: 10px; }
+    .dit-bar-title { font-weight: 700; }
+    .dit-bar-meta  { color: #94a3b8; margin-left: 4px; font-size: 10px; }
+
+    /* 3-column input row (DRM | Images | Backup) */
+    .dit-trio {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+        padding: 10px 14px 6px;
+        flex-shrink: 0;
+    }
+    @@media (max-width: 1100px) { .dit-trio { grid-template-columns: 1fr; } }
+
+    .dit-col {
+        display: flex; flex-direction: column;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 8px 10px;
+        min-height: 180px;
+    }
+    .dit-col-drm    { background: #fff7ed; border-color: #fed7aa; }
+    .dit-col-images { /* default white */ }
+    .dit-col-backup { /* default white */ }
+
+    .dit-col-head {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 12px; font-weight: 600; color: #475569;
+        margin-bottom: 6px;
+    }
+    .dit-col-drm .dit-col-head { color: #9a3412; }
+    .dit-col-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+
+    /* Full-width raw text section below trio */
+    .dit-rawtext {
+        display: flex; flex-direction: column;
+        padding: 4px 14px 8px;
+        flex-shrink: 0;
+    }
+    .dit-rawtext .di-text-area { min-height: 180px; }
+
+    /* View toggle (Table / Text) */
+    .dit-view-toggle { display: inline-flex; gap: 2px; }
+    .dit-view-btn    {
+        border: 1px solid #cbd5e1; background: #fff; color: #475569;
+        padding: 1px 9px; border-radius: 11px; font-size: 10px; font-weight: 600;
+        cursor: pointer; transition: all .12s; line-height: 1.5;
+    }
+    .dit-view-btn:hover  { background: #f1f5f9; }
+    .dit-view-btn.active { background: #4338ca; border-color: #4338ca; color: #fff; }
+
+    /* Table preview */
+    .dit-table-preview {
+        max-height: 420px; overflow: auto;
+        background: #fff; border: 1px solid #cbd5e1; border-radius: 6px;
+        padding: 8px; min-height: 180px;
+    }
+    .dit-sheet-name {
+        font-size: 12px; font-weight: 700; color: #1e293b;
+        background: #f1f5f9; padding: 4px 8px; border-radius: 4px;
+        margin: 8px 0 4px;
+    }
+    .dit-sheet-name:first-child { margin-top: 0; }
+    .dit-table-wrap  { overflow-x: auto; margin-bottom: 4px; }
+    .dit-preview-table {
+        border-collapse: collapse; font-size: 11px; width: max-content;
+        font-family: ui-monospace, Consolas, monospace;
+    }
+    .dit-preview-table td {
+        border: 1px solid #e2e8f0; padding: 2px 6px;
+        white-space: nowrap; max-width: 240px; overflow: hidden;
+        text-overflow: ellipsis; color: #0f172a;
+    }
+    .dit-excel-only {
+        flex: 1; min-height: 0; display: flex; flex-direction: column;
+        background: #fff;
+    }
+    .dit-excel-only-head {
+        flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+        padding: 8px 12px; border-bottom: 1px solid #dbe3ef; background: #f8fafc;
+    }
+    .dit-excel-title { font-size: 13px; font-weight: 700; color: #0f172a; }
+    .dit-excel-meta { font-size: 11px; color: #64748b; margin-top: 1px; }
+    .dit-excel-loading, .dit-excel-empty {
+        padding: 16px; font-size: 12px; color: #64748b;
+    }
+    .dit-excel-book {
+        flex: 1; min-height: 0; overflow: auto; background: #fff;
+    }
+    .dit-excel-sheet { min-width: max-content; }
+    .dit-sheet-tab {
+        position: sticky; top: 0; z-index: 5;
+        display: inline-flex; align-items: center;
+        height: 28px; padding: 0 12px; margin: 8px 0 0 8px;
+        border: 1px solid #cbd5e1; border-bottom: 0;
+        background: #ecfdf5; color: #166534;
+        font-size: 12px; font-weight: 700;
+    }
+    .dit-excel-wrap { overflow: visible; margin: 0 8px 12px; }
+    .dit-excel-grid th, .dit-excel-grid td {
+        border: 1px solid #d8dee9; height: 22px; padding: 2px 6px;
+    }
+    .dit-excel-grid thead th {
+        position: sticky; top: 36px; z-index: 4;
+        background: #edf2f7; color: #334155; text-align: center;
+        font-weight: 700;
+    }
+    .dit-excel-grid .dit-excel-row {
+        position: sticky; left: 0; z-index: 3;
+        background: #edf2f7; color: #475569; text-align: right;
+        font-weight: 600; min-width: 42px;
+    }
+    .dit-excel-grid .dit-excel-corner {
+        position: sticky; left: 0; top: 36px; z-index: 6;
+        background: #e2e8f0; min-width: 42px;
+    }
+
+    /* DRM chip — used inside dit-col-drm */
+    .di-drm-chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #fff; border: 1px solid #fed7aa; border-radius: 14px;
+        padding: 2px 10px; font-size: 11px; color: #7c2d12; margin-top: 4px;
+        max-width: 100%;
+    }
+    .di-drm-chip .di-file-name { max-width: 200px; }
+    .di-drm-log {
+        margin-top: 6px; font-size: 11px; color: #475569;
+    }
+    .di-drm-log summary { cursor: pointer; color: #64748b; }
+    .di-drm-log-body {
+        max-height: 120px; overflow: auto;
+        font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+        background: #1e293b; color: #cbd5e1;
+        padding: 6px 8px; border-radius: 4px; margin-top: 4px;
+    }
+
+    /* Raw text textarea (used in the full-width bottom section) */
+    .di-text-head {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 12px; font-weight: 600; color: #475569;
+        padding: 6px 2px;
+    }
+    .di-text-area {
+        flex: 1 1 auto; min-height: 160px;
+        border: 1px solid #cbd5e1; border-radius: 6px;
+        padding: 8px 10px; font-family: ui-monospace, Consolas, monospace;
+        font-size: 11px; color: #334155; background: #fff;
+        resize: vertical; outline: none; white-space: pre; overflow: auto;
+    }
+    .di-text-area:focus {
+        border-color: #93c5fd; box-shadow: 0 0 0 2px rgba(147,197,253,.25);
+    }
+    .di-drop-zone {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        border: 2px dashed #cbd5e1; border-radius: 10px; padding: 28px 20px;
+        cursor: pointer; transition: all .15s; color: #94a3b8;
+    }
+    .di-drop-zone:hover { border-color: #94a3b8; background: #f8fafc; }
+    .di-drop-icon  { font-size: 32px; margin-bottom: 8px; }
+    .di-drop-title { font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+    .di-drop-sub   { font-size: 12px; }
+    .di-thumb-grid {
+        display: flex; flex-wrap: wrap; gap: 8px; padding: 6px;
+        border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer;
+        min-height: 90px; background: #f8fafc;
+    }
+    .di-thumb {
+        position: relative; width: 80px; height: 80px; border-radius: 6px;
+        overflow: hidden; border: 1px solid #e2e8f0; flex-shrink: 0;
+        background: #fff;
+    }
+    .di-thumb img    { width: 100%; height: 100%; object-fit: cover; }
+    .di-thumb-del    {
+        position: absolute; top: 2px; right: 2px; width: 18px; height: 18px;
+        border-radius: 50%; border: none; background: rgba(220,38,38,.85);
+        color: #fff; font-size: 9px; line-height: 18px; text-align: center;
+        cursor: pointer; padding: 0; display: none;
+    }
+    .di-thumb:hover .di-thumb-del { display: block; }
+    .di-thumb-num    {
+        position: absolute; bottom: 2px; left: 4px; font-size: 9px;
+        color: rgba(255,255,255,.9); text-shadow: 0 1px 3px rgba(0,0,0,.6); font-weight: 700;
+    }
+    .di-thumb-add    {
+        width: 80px; height: 80px; border-radius: 6px; border: 2px dashed #cbd5e1;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        cursor: pointer; color: #94a3b8; flex-shrink: 0; transition: all .12s;
+    }
+    .di-thumb-add:hover { border-color: #94a3b8; background: #fff; }
+    .di-upload-row   {
+        display: flex; align-items: center; gap: 10px; margin-top: 6px;
+    }
+    .di-img-count    { font-size: 11px; color: #94a3b8; }
+
+    /* Backup file chips (used inside dit-col-backup) */
+    .di-files-list   { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+    .di-file-chip    {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 14px;
+        padding: 3px 6px 3px 10px; font-size: 11px; color: #334155;
+    }
+    .di-file-icon    { font-size: 12px; }
+    .di-file-name    { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .di-file-size    { color: #94a3b8; font-size: 10px; }
+    .di-file-del     {
+        width: 18px; height: 18px; border-radius: 50%; border: none;
+        background: transparent; color: #94a3b8; font-size: 10px; cursor: pointer; padding: 0;
+    }
+    .di-file-del:hover { background: #dc2626; color: #fff; }
+
+    .bf-drop-zone {
+        display: flex; align-items: center; gap: 8px; justify-content: center;
+        padding: 10px 14px; margin-bottom: 6px;
+        border: 2px dashed #cbd5e1; border-radius: 8px;
+        font-size: 12px; color: #64748b; background: #f8fafc;
+        cursor: pointer; transition: all .12s;
+    }
+    .bf-drop-zone:hover      { border-color: #94a3b8; color: #334155; }
+    .bf-drop-zone.bf-drop-active {
+        border-color: #3b82f6; background: #dbeafe; color: #1d4ed8;
+    }
+    .bf-drop-icon { font-size: 14px; }
+
+    /* Results */
+    .di-results {
+        flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px;
+    }
+    .di-summary-box {
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+        padding: 12px 14px; margin-bottom: 12px;
+    }
+    .di-summary-title { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+    .di-key-findings  { font-size: 12px; color: #475569; white-space: pre-wrap; margin-top: 6px; }
+    .di-tags-row      { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .di-tag           {
+        display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px;
+        font-size: 11px; font-weight: 600; line-height: 1.4;
+    }
+    .di-tag-keyword   { background: #e0e7ff; color: #4338ca; }
+    .di-tag-del       {
+        margin-left: 4px; border: none; background: transparent; padding: 0;
+        color: inherit; opacity: .5; cursor: pointer; font-size: 10px; line-height: 1;
+        font-weight: 700;
+    }
+    .di-tag-del:hover { opacity: 1; color: #dc2626; }
+    .di-results-header {
+        font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;
+    }
+    .di-table-wrap { overflow-x: auto; }
+    .di-table {
+        border-collapse: collapse; font-size: 12px; width: max-content; min-width: 100%;
+    }
+    .di-table th, .di-table td {
+        border: 1px solid #e2e8f0; padding: 4px 8px; white-space: nowrap;
+        text-align: left;
+    }
+    .di-table th { background: #f1f5f9; font-weight: 600; color: #475569; }
+    .di-table td.n { text-align: right; font-variant-numeric: tabular-nums; }
+    .di-table tbody tr:hover { background: #f8fafc; }
+    .di-row-del-cell { text-align: center; padding: 2px !important; }
+    .di-row-del {
+        width: 22px; height: 22px; border-radius: 50%; border: 1px solid #fecaca;
+        background: #fff; color: #dc2626; font-size: 11px; font-weight: 700;
+        line-height: 1; cursor: pointer; padding: 0; transition: all .12s;
+    }
+    .di-row-del:hover { background: #dc2626; color: #fff; border-color: #dc2626; }
+</style>
+
+@code {
+    private sealed record ImageEntry(string FileName, string MediaType, string Base64, string DataUrl);
+    private sealed record FileEntry(string FileName, string MediaType, byte[] Data, long? ExistingId);
+
+    private string            _datasetName  = "";
+    private string            _productType  = "";
+    private string            _testDate     = DateTime.Today.ToString("yyyy-MM-dd");
+    private List<ImageEntry>  _images       = [];
+    private List<FileEntry>   _files        = [];
+    private List<NormalizedMeasurement> _measurements = [];
+    private string            _summary           = "";
+    private string            _pastedText        = "";
+    private string            _keyFindings       = "";
+    private List<string>      _tags              = [];
+    private string            _purpose           = "";
+    private string            _testConditions    = "";
+    private string            _rootCause         = "";
+    private string            _decision          = "";
+    private string            _recommendedAction = "";
+    private List<RawReportInfo> _allReports = [];
+    private List<string>        _productTypeOptions = [];
+
+    // ko/vi translations of the latest analysis. Filled by Analyze, persisted
+    // by Save. The original-language fields live in _summary/_keyFindings/etc.
+    private readonly Dictionary<string, DatasetSummaryTranslation> _pendingTranslations =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    // "table" (rendered grid w/ colors) | "text" (raw editable TSV).
+    // The AI always sees the TSV — this is a viewing mode only.
+    private string _rawView = "table";
+
+    // ── Queue (multi-file drag-and-drop, sequential auto-convert) ────────────
+    // Each dropped file becomes its own dataset: store the original workbook in
+    // RawReportFiles. AI Batch reads the XLSX directly so merged-cell metadata is
+    // preserved; Data Input does not pre-extract tables.
+    private sealed class QueueItem
+    {
+        public Guid   Id           { get; } = Guid.NewGuid();
+        public string FileName     { get; init; } = "";
+        public long   FileSize     { get; init; }
+        public string StagedPath   { get; set; } = "";
+        public string Status       { get; set; } = "queued";
+        public string Detail       { get; set; } = "";
+        public int    Sheets       { get; set; }
+        public int    Rows         { get; set; }
+        public int    ImagesFound  { get; set; }
+        public string SavedDatasetName { get; set; } = "";
+        public string ProductType  { get; set; } = "";   // matched Mid-group Material, or ""
+    }
+    private readonly List<QueueItem> _queue = new();
+    private bool _queueRunning;
+    private int  _queueDone;
+    private bool _queueForceReplace;  // false = skip duplicates, true = overwrite
+
+    // Duplicate short-circuit. With "Force replace" OFF, any dropped file
+    // whose dataset name already exists in DB is REJECTED — not queued,
+    // not staged. We record it here so the user sees what was skipped.
+    private sealed class SkippedDup
+    {
+        public string FileName     { get; init; } = "";
+        public string Dataset      { get; init; } = "";
+        public string ExistingDate { get; init; } = "";
+    }
+    private readonly List<SkippedDup> _skippedDups = new();
+    private bool _skippedDupsExpanded;
+
+    // Alias review modal state
+    private sealed class AliasReviewRow
+    {
+        public string Token     { get; init; } = "";
+        public string AutoMatch { get; init; } = "";   // fuzzy-rule result (informational)
+        public string Draft     { get; set; } = "";    // user-entered Material
+        public List<string> Samples { get; init; } = new();
+    }
+    private bool _aliasReviewOpen;
+    private List<AliasReviewRow> _aliasReviewRows = new();
+
+    // Collapse toggles. After the analysis finishes the user mostly cares
+    // about the result; collapsing the inputs + raw data lets the Summary
+    // (which is `flex:1`) take the rest of the viewport.
+    private bool _trioCollapsed;
+    private bool _rawCollapsed;
+
+    private sealed record TsvCell(string Value, string? Bg, string? Fg, bool Bold);
+    private static readonly TsvCell EmptyCell = new("", null, null, false);
+
+    private sealed class ExcelPreviewSheet
+    {
+        public string Name { get; init; } = "";
+        public int FirstRow { get; init; } = 1;
+        public int FirstColumn { get; init; } = 1;
+        public int MaxColumns { get; init; }
+        public List<List<ExcelPreviewCell?>> Rows { get; init; } = [];
+    }
+
+    private sealed class ExcelPreviewCell
+    {
+        public string Value { get; init; } = "";
+        public string? Bg { get; init; }
+        public string? Fg { get; init; }
+        public bool Bold { get; init; }
+        public int RowSpan { get; init; } = 1;
+        public int ColumnSpan { get; init; } = 1;
+    }
+
+    private bool _queuePreviewActive;
+    private bool _queuePreviewLoading;
+    private string _queuePreviewDataset = "";
+    private string _queuePreviewFileName = "";
+    private List<ExcelPreviewSheet> _queuePreviewSheets = [];
+
+    /// <summary>Parse the TSV-with-inline-tags blob produced by ExtractTsv into
+    /// per-sheet rows × cells. Sheets are delimited by lines starting with
+    /// "## ". Each cell may carry a 〔bg=#…,fg=#…,b〕 prefix that we strip and
+    /// apply as styles in the preview.</summary>
+    private static List<(string Name, List<List<TsvCell>> Rows)> ParsePastedTsv(string tsv)
+    {
+        var sheets = new List<(string, List<List<TsvCell>>)>();
+        if (string.IsNullOrWhiteSpace(tsv)) return sheets;
+
+        string currentName = "(sheet)";
+        var currentRows = new List<List<TsvCell>>();
+        bool seenAny = false;
+
+        foreach (var rawLine in tsv.Split('\n'))
+        {
+            string line = rawLine.TrimEnd('\r');
+            if (line.StartsWith("## ", StringComparison.Ordinal))
+            {
+                if (seenAny) sheets.Add((currentName, currentRows));
+                currentName = line[3..].Trim();
+                currentRows = new List<List<TsvCell>>();
+                seenAny = true;
+                continue;
+            }
+            if (string.IsNullOrEmpty(line)) continue;
+
+            var cells = new List<TsvCell>();
+            foreach (var raw in line.Split('\t'))
+                cells.Add(ParseCell(raw));
+            currentRows.Add(cells);
+        }
+        if (seenAny) sheets.Add((currentName, currentRows));
+        else if (currentRows.Count > 0) sheets.Add(("(sheet)", currentRows));
+        return sheets;
+    }
+
+    private static TsvCell ParseCell(string raw)
+    {
+        if (raw.Length == 0 || raw[0] != '〔')
+            return new TsvCell(raw, null, null, false);
+
+        int end = raw.IndexOf('〕');
+        if (end < 0) return new TsvCell(raw, null, null, false);
+
+        string tag = raw[1..end];
+        string val = raw[(end + 1)..];
+        string? bg = null, fg = null;
+        bool bold = false;
+        foreach (var part in tag.Split(','))
+        {
+            string p = part.Trim();
+            if (p.StartsWith("bg=", StringComparison.Ordinal)) bg = p[3..];
+            else if (p.StartsWith("fg=", StringComparison.Ordinal)) fg = p[3..];
+            else if (p == "b") bold = true;
+        }
+        return new TsvCell(val, bg, fg, bold);
+    }
+
+    private static string CellStyle(TsvCell c)
+    {
+        var s = new System.Text.StringBuilder();
+        if (!string.IsNullOrEmpty(c.Bg)) s.Append("background:").Append(c.Bg).Append(';');
+        if (!string.IsNullOrEmpty(c.Fg)) s.Append("color:").Append(c.Fg).Append(';');
+        if (c.Bold) s.Append("font-weight:700;");
+        return s.ToString();
+    }
+
+    private static string CellStyle(ExcelPreviewCell c)
+    {
+        var s = new System.Text.StringBuilder();
+        if (!string.IsNullOrEmpty(c.Bg)) s.Append("background:").Append(c.Bg).Append(';');
+        if (!string.IsNullOrEmpty(c.Fg)) s.Append("color:").Append(c.Fg).Append(';');
+        if (c.Bold) s.Append("font-weight:700;");
+        return s.ToString();
+    }
+
+    private static string CleanExcelSerialDateText(string? value)
+    {
+        string text = value ?? "";
+        if (string.IsNullOrWhiteSpace(text)) return "";
+        text = System.Text.RegularExpressions.Regex.Replace(
+            text,
+            @"\b(?:Excel\s+serial(?:\s+date)?|serial\s+date)\s+([0-9]{5}(?:\.\d+)?)\s*(?:=|:|->)?\s*(\d{4}-\d{2}-\d{2})\b",
+            "$2",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        text = System.Text.RegularExpressions.Regex.Replace(
+            text,
+            @"\b([0-9]{5}(?:\.\d+)?)\s*\(=\s*(\d{4}-\d{2}-\d{2})\)",
+            "$2");
+        return text.Trim();
+    }
+
+    private static string ExcelColumnName(int zeroBasedIndex)
+    {
+        int n = zeroBasedIndex + 1;
+        var chars = new Stack<char>();
+        while (n > 0)
+        {
+            n--;
+            chars.Push((char)('A' + (n % 26)));
+            n /= 26;
+        }
+        return new string(chars.ToArray());
+    }
+
+    // DRM-specific state
+    private string         _drmFileName     = "";
+    private long           _drmFileSize;
+    private string         _drmProgress     = "";
+    private int            _drmExtractedRows;
+    private int            _drmSheets;
+    private List<string>   _drmLog          = [];
+    // True once a DRM file's TSV has filled _pastedText. Routes Analyze to the
+    // text-only Claude path: the unlocked .xlsx already has every cell as text,
+    // so spending vision tokens on the embedded images (rendered from the same
+    // cells) would just inflate cost and risk the AI double-counting rows.
+    private bool           _drmLoaded;
+
+    private bool   _isBusy;
+    private string _busyStep    = "";
+    private string _status      = "";
+    private bool   _statusError;
+
+    private DotNetObjectReference<DataInferenceInputTestPage>? _ref;
+
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        _allReports = Repo.GetAllRawReports();
+        RefreshProductTypeOptions();
+    }
+
+    private void RefreshProductTypeOptions()
+    {
+        _productTypeOptions = _allReports
+            .Select(r => r.ProductType)
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("diFullPage.enter");
+            _ref = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("pasteImageHandler.init", _ref);
+            await JS.InvokeVoidAsync("pasteImageHandler.openCapture");
+            await JS.InvokeVoidAsync("backupFileHandler.init", _ref, "bf-drop-zone-test");
+        }
+    }
+
+    private async Task EnablePaste()
+    {
+        await JS.InvokeVoidAsync("pasteImageHandler.openCapture");
+    }
+
+    [JSInvokable]
+    public void OnImagePasted(string mediaType, string dataUrl)
+    {
+        int comma  = dataUrl.IndexOf(',');
+        string b64 = comma >= 0 ? dataUrl[(comma + 1)..] : dataUrl;
+
+        (string finalB64, string finalMt) = ImageCompressor.CompressIfLarge(b64, mediaType);
+        string finalDataUrl = $"data:{finalMt};base64,{finalB64}";
+        string ext = finalMt.Split('/').LastOrDefault() ?? "png";
+
+        _images.Add(new ImageEntry($"paste-{DateTime.Now:HHmmss}.{ext}", finalMt, finalB64, finalDataUrl));
+        _ = JS.InvokeVoidAsync("pasteImageHandler.openCapture");
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnFilesSelected(InputFileChangeEventArgs e)
+    {
+        foreach (IBrowserFile file in e.GetMultipleFiles(20))
+        {
+            if (!file.ContentType.StartsWith("image/")) continue;
+            using var ms = new MemoryStream();
+            await using var stream = file.OpenReadStream(20 * 1024 * 1024);
+            await stream.CopyToAsync(ms);
+            string b64 = Convert.ToBase64String(ms.ToArray());
+
+            (string finalB64, string finalMt) = ImageCompressor.CompressIfLarge(b64, file.ContentType);
+            string dataUrl = $"data:{finalMt};base64,{finalB64}";
+            _images.Add(new ImageEntry(file.Name, finalMt, finalB64, dataUrl));
+        }
+    }
+
+    private void RemoveImage(ImageEntry img) => _images.Remove(img);
+
+    private async Task OnBackupFilesSelected(InputFileChangeEventArgs e)
+    {
+        foreach (IBrowserFile file in e.GetMultipleFiles(20))
+        {
+            using var ms = new MemoryStream();
+            await using var stream = file.OpenReadStream(100 * 1024 * 1024);
+            await stream.CopyToAsync(ms);
+            string mt = string.IsNullOrEmpty(file.ContentType) ? "application/octet-stream" : file.ContentType;
+            _files.Add(new FileEntry(file.Name, mt, ms.ToArray(), null));
+        }
+    }
+
+    private void RemoveFile(FileEntry f) => _files.Remove(f);
+
+    private async Task EnableFilePaste()
+    {
+        await JS.InvokeVoidAsync("backupFileHandler.enableCapture");
+    }
+
+    [JSInvokable]
+    public void OnBackupFileDropped(string fileName, string mediaType, string dataUrl)
+    {
+        int comma = dataUrl.IndexOf(',');
+        if (comma < 0) return;
+        string b64 = dataUrl[(comma + 1)..];
+        byte[] bytes;
+        try { bytes = Convert.FromBase64String(b64); }
+        catch { return; }
+        string mt = string.IsNullOrEmpty(mediaType) ? "application/octet-stream" : mediaType;
+        _files.Add(new FileEntry(fileName, mt, bytes, null));
+        InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Convert an uploaded Excel filename into a usable dataset name:
+    /// drop the .xlsx/.xlsm extension, then strip one trailing "_clean" suffix
+    /// that the DRM unlock helper appends. "foo_clean_clean.xlsx" → "foo_clean"
+    /// (only one suffix is stripped, by design). Returns empty if the file
+    /// name was just "_clean.xlsx".</summary>
+    private static string DeriveDatasetName(string fileName)
+    {
+        string name = Path.GetFileNameWithoutExtension(fileName ?? "");
+        if (name.EndsWith("_clean", StringComparison.OrdinalIgnoreCase))
+            name = name.Substring(0, name.Length - "_clean".Length);
+        return name.Trim();
+    }
+
+    /// <summary>Look up a Mid-group Material name that fuzzy-matches the
+    /// dataset name (3-tier rule, see inline). Normalizes by uppercasing and
+    /// stripping non-alphanumerics on both sides. Returns the best-scoring
+    /// Material, or "" when nothing scores. Picks the longest match when
+    /// several candidates fit, so a more specific Material wins over a
+    /// generic shorter one.
+    ///
+    /// Real-world cases this catches (verified against current DB names):
+    ///   "BRS-161016 Report ..."        → "BRS-161016S08ZZ"   (core hit)
+    ///   "MSU-L20S15-07 Hearing ..."    → "MSU-L20S15-07"     (full hit)
+    /// Cases intentionally NOT matched (avoid false positives):
+    ///   "MSU - 20S15-07 ..."           → "" (user dropped the L prefix)
+    ///   "...11.18.2024" + TIU-C11-18   → "" (date stamp, not a model ID)
+    /// </summary>
+    private static string FindMatchingMidGroup(string fileName, IEnumerable<string> materials)
+    {
+        string nFile = Normalize(fileName);
+        if (nFile.Length == 0) return "";
+
+        string best = "";
+        int    bestScore = 0;
+        foreach (var mat in materials)
+        {
+            if (string.IsNullOrWhiteSpace(mat)) continue;
+            string nMat = Normalize(mat);
+            if (nMat.Length < 3) continue;
+
+            int score = 0;
+            // Tier 1 — full normalized material appears in normalized filename.
+            // Score = 2× length so a complete hit always beats a partial one.
+            if (nFile.Contains(nMat, StringComparison.Ordinal))
+            {
+                score = nMat.Length * 2;
+            }
+            else
+            {
+                // Tier 2 — "core" of the material (alpha prefix + first digit
+                // run) appears in filename. Catches the common case where the
+                // Mid-group is registered as a long SKU like "BRS-161016S08ZZ"
+                // but filenames use the short form "BRS-161016".
+                string core = ExtractCore(nMat);
+                if (core.Length >= 4 && nFile.Contains(core, StringComparison.Ordinal))
+                {
+                    score = core.Length;
+                }
+                else
+                {
+                    // Tier 3 — digit-only fallback. Useful when the filename
+                    // dropped the alpha prefix ("Report_201506_v2.xlsx" still
+                    // resolves to BRS-201506). To stop dates ("11.18.2024" →
+                    // "1118") from impersonating model IDs of *other* families
+                    // (TIU-C11-18), we additionally require the material's
+                    // alpha prefix to also be present in the filename.
+                    string matDigits = new string(nMat.Where(char.IsDigit).ToArray());
+                    string matAlpha  = new string(nMat.Where(char.IsLetter).ToArray());
+                    if (matDigits.Length >= 4
+                        && nFile.Contains(matDigits, StringComparison.Ordinal)
+                        && (matAlpha.Length == 0 || nFile.Contains(matAlpha, StringComparison.Ordinal)))
+                    {
+                        score = matDigits.Length;
+                    }
+                }
+            }
+
+            if (score > bestScore) { bestScore = score; best = mat; }
+        }
+        return best;
+
+        static string Normalize(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            var sb = new System.Text.StringBuilder(s.Length);
+            foreach (var c in s)
+                if (char.IsLetterOrDigit(c)) sb.Append(char.ToUpperInvariant(c));
+            return sb.ToString();
+        }
+
+        // Pulls out "BRS161016" from "BRS161016S08ZZ" — the leading
+        // alpha-then-digit block. Empty string if pattern doesn't start
+        // with letters.
+        static string ExtractCore(string normalized)
+        {
+            int i = 0;
+            while (i < normalized.Length && char.IsLetter(normalized[i])) i++;
+            int alphaEnd = i;
+            while (i < normalized.Length && char.IsDigit(normalized[i])) i++;
+            if (alphaEnd == 0 || i == alphaEnd) return "";
+            return normalized.Substring(0, i);
+        }
+    }
+
+    /// <summary>Cached list of all Mid-group Material names from ModelGroups.
+    /// Loaded lazily on first queue / drop, refreshed only if explicitly
+    /// invalidated.</summary>
+    private List<string>? _midGroupMaterials;
+    private List<string> GetMidGroupMaterials()
+    {
+        if (_midGroupMaterials is not null) return _midGroupMaterials;
+        _midGroupMaterials = Repo.GetModelGroups()
+            .SelectMany(g => g.MidGroups)
+            .Select(m => m.Material)
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        return _midGroupMaterials;
+    }
+
+    private Dictionary<string, string>? _aliasMap;
+    private Dictionary<string, string> GetAliasMap()
+        => _aliasMap ??= Repo.GetDataInputAliases();
+    private void InvalidateMatchingCaches()
+    {
+        _midGroupMaterials = null;
+        _aliasMap = null;
+    }
+
+    /// <summary>Pull the dominant "model token" out of a filename — usually
+    /// a 2-4 letter prefix followed by digits, optionally suffixed with an
+    /// SKU code. Returns "" if no recognizable pattern found. Used by both
+    /// the Review Tokens panel and the alias-aware matcher.</summary>
+    private static readonly System.Text.RegularExpressions.Regex TokenRx =
+        new(@"(?:^|[^A-Za-z0-9])([A-Za-z]{2,4}(?:\s*[-_]\s*)?[A-Za-z]?\d{3,}(?:S\d{2}[A-Za-z]{0,2})?)",
+            System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    private static string ExtractToken(string fileName)
+    {
+        if (string.IsNullOrEmpty(fileName)) return "";
+        var m = TokenRx.Match(fileName);
+        if (!m.Success) return "";
+        string t = System.Text.RegularExpressions.Regex.Replace(m.Groups[1].Value, @"\s+", "");
+        return t.Replace('_', '-').ToUpperInvariant();
+    }
+
+    /// <summary>Same as FindMatchingMidGroup but consults the user-curated
+    /// alias table first. If the filename's token is mapped explicitly, that
+    /// wins regardless of what the fuzzy rules would say.</summary>
+    private string FindProductTypeFor(string fileName)
+    {
+        string token = ExtractToken(fileName);
+        if (!string.IsNullOrEmpty(token)
+            && TryGetAliasForToken(token, GetAliasMap(), out string aliased))
+        {
+            return aliased;
+        }
+        return FindMatchingMidGroup(fileName, GetMidGroupMaterials());
+    }
+
+    private static bool TryGetAliasForToken(
+        string token,
+        Dictionary<string, string> aliases,
+        out string aliased)
+    {
+        aliased = "";
+        if (aliases.TryGetValue(token, out string? exact) && !string.IsNullOrWhiteSpace(exact))
+        {
+            aliased = exact;
+            return true;
+        }
+
+        string key = AliasLookupKey(token);
+        foreach (var kv in aliases)
+        {
+            if (!string.IsNullOrWhiteSpace(kv.Value) && AliasLookupKey(kv.Key) == key)
+            {
+                aliased = kv.Value;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static string AliasLookupKey(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return "";
+        return new string(token
+            .Where(char.IsLetterOrDigit)
+            .Select(char.ToUpperInvariant)
+            .ToArray());
+    }
+
+    /// <summary>Try to extract a date from an arbitrary filename. Supports:
+    ///   - "YYYY.MM.DD" / "YYYY MM DD" / "YYYY_MM_DD" / "YYYY-MM-DD"
+    ///   - "DD.MM.YYYY" / "DD MM YYYY" / etc. (Korean factory convention —
+    ///     prefers DD-first over MM-first when both fit ≤12)
+    ///   - "YYYYMMDD" compact (8 digits)
+    /// Returns "yyyy-MM-dd" or null when no plausible date found.</summary>
+    private static string? DeriveDateFromFileName(string fileName)
+    {
+        string name = Path.GetFileNameWithoutExtension(fileName ?? "");
+        if (string.IsNullOrEmpty(name)) return null;
+
+        // 1) YYYY-MM-DD style — year first (4 digits)
+        var rx1 = new System.Text.RegularExpressions.Regex(
+            @"(?<!\d)(\d{4})[.\s_\-/](\d{1,2})[.\s_\-/](\d{1,2})(?!\d)");
+        foreach (System.Text.RegularExpressions.Match m in rx1.Matches(name))
+        {
+            if (TryMakeDate(int.Parse(m.Groups[1].Value),
+                            int.Parse(m.Groups[2].Value),
+                            int.Parse(m.Groups[3].Value), out var iso))
+                return iso;
+        }
+
+        // 2) DD-MM-YYYY (year last). Disambiguate D/M when both ≤ 12:
+        //    Korean reports overwhelmingly write day first.
+        var rx2 = new System.Text.RegularExpressions.Regex(
+            @"(?<!\d)(\d{1,2})[.\s_\-/](\d{1,2})[.\s_\-/](\d{4})(?!\d)");
+        foreach (System.Text.RegularExpressions.Match m in rx2.Matches(name))
+        {
+            int a = int.Parse(m.Groups[1].Value);
+            int b = int.Parse(m.Groups[2].Value);
+            int y = int.Parse(m.Groups[3].Value);
+            int d, mo;
+            if (a > 12 && b <= 12)      { d = a; mo = b; }    // unambiguous DD-MM
+            else if (b > 12 && a <= 12) { mo = a; d = b; }    // unambiguous MM-DD
+            else                        { d = a; mo = b; }    // default DD-MM
+            if (TryMakeDate(y, mo, d, out var iso)) return iso;
+        }
+
+        // 3) YYYYMMDD compact — 8 consecutive digits not preceded/followed by digit
+        var rx3 = new System.Text.RegularExpressions.Regex(
+            @"(?<!\d)(\d{4})(\d{2})(\d{2})(?!\d)");
+        foreach (System.Text.RegularExpressions.Match m in rx3.Matches(name))
+        {
+            if (TryMakeDate(int.Parse(m.Groups[1].Value),
+                            int.Parse(m.Groups[2].Value),
+                            int.Parse(m.Groups[3].Value), out var iso))
+                return iso;
+        }
+
+        return null;
+
+        static bool TryMakeDate(int y, int m, int d, out string iso)
+        {
+            iso = "";
+            if (y < 2000 || y > 2099) return false;   // sanity — only this century
+            if (m < 1 || m > 12)     return false;
+            if (d < 1 || d > 31)     return false;
+            try { iso = new DateTime(y, m, d).ToString("yyyy-MM-dd"); return true; }
+            catch { return false; }
+        }
+    }
+
+    private static string FormatSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / 1024.0 / 1024.0:F1} MB";
+    }
+
+    private static List<ExcelPreviewSheet> BuildWorkbookPreview(string xlsxPath)
+    {
+        const int MaxPreviewRows = 2000;
+        const int MaxPreviewColumns = 200;
+
+        var sheets = new List<ExcelPreviewSheet>();
+        using var wb = new XLWorkbook(xlsxPath);
+
+        foreach (var ws in wb.Worksheets)
+        {
+            var used = ws.RangeUsed();
+            if (used is null) continue;
+
+            int firstRow = used.FirstRow().RowNumber();
+            int lastRow = used.LastRow().RowNumber();
+            int firstCol = used.FirstColumn().ColumnNumber();
+            int lastCol = used.LastColumn().ColumnNumber();
+            int rowEnd = Math.Min(lastRow, firstRow + MaxPreviewRows - 1);
+            int colEnd = Math.Min(lastCol, firstCol + MaxPreviewColumns - 1);
+
+            var covered = new HashSet<(int Row, int Column)>();
+            var spans = new Dictionary<(int Row, int Column), (int RowSpan, int ColumnSpan)>();
+
+            foreach (var range in ws.MergedRanges)
+            {
+                var address = range.RangeAddress;
+                int anchorRow = address.FirstAddress.RowNumber;
+                int anchorCol = address.FirstAddress.ColumnNumber;
+                int endRow = address.LastAddress.RowNumber;
+                int endCol = address.LastAddress.ColumnNumber;
+
+                if (anchorRow < firstRow || anchorRow > rowEnd || anchorCol < firstCol || anchorCol > colEnd)
+                    continue;
+                if (endRow < firstRow || endCol < firstCol || anchorRow > rowEnd || anchorCol > colEnd)
+                    continue;
+
+                int visibleEndRow = Math.Min(endRow, rowEnd);
+                int visibleEndCol = Math.Min(endCol, colEnd);
+                int rowSpan = Math.Max(1, visibleEndRow - anchorRow + 1);
+                int colSpan = Math.Max(1, visibleEndCol - anchorCol + 1);
+                spans[(anchorRow, anchorCol)] = (rowSpan, colSpan);
+
+                for (int r = anchorRow; r <= visibleEndRow; r++)
+                {
+                    for (int c = anchorCol; c <= visibleEndCol; c++)
+                    {
+                        if (r == anchorRow && c == anchorCol) continue;
+                        covered.Add((r, c));
+                    }
+                }
+            }
+
+            var rows = new List<List<ExcelPreviewCell?>>();
+            for (int r = firstRow; r <= rowEnd; r++)
+            {
+                var previewRow = new List<ExcelPreviewCell?>(colEnd - firstCol + 1);
+                for (int c = firstCol; c <= colEnd; c++)
+                {
+                    if (covered.Contains((r, c)))
+                    {
+                        previewRow.Add(null);
+                        continue;
+                    }
+
+                    var cell = ws.Cell(r, c);
+                    string value = cell.IsEmpty() ? "" : cell.GetFormattedString();
+                    value = value.Replace('\t', ' ').Replace('\r', ' ').Replace('\n', ' ');
+                    if (value.Length > MaxCellChars)
+                        value = value[..MaxCellChars] + "…";
+
+                    spans.TryGetValue((r, c), out var span);
+                    if (span.RowSpan <= 0) span = (1, 1);
+
+                    previewRow.Add(new ExcelPreviewCell
+                    {
+                        Value = value,
+                        Bg = PreviewBg(cell),
+                        Fg = PreviewFg(cell),
+                        Bold = IsBold(cell),
+                        RowSpan = span.RowSpan,
+                        ColumnSpan = span.ColumnSpan,
+                    });
+                }
+                rows.Add(previewRow);
+            }
+
+            sheets.Add(new ExcelPreviewSheet
+            {
+                Name = ws.Name,
+                FirstRow = firstRow,
+                FirstColumn = firstCol,
+                MaxColumns = colEnd - firstCol + 1,
+                Rows = rows,
+            });
+        }
+
+        return sheets;
+    }
+
+    private static string? PreviewBg(IXLCell cell)
+    {
+        try
+        {
+            var fill = cell.Style.Fill;
+            if (fill.PatternType == XLFillPatternValues.None) return null;
+            string? bg = ColorHex(fill.BackgroundColor);
+            return bg is null || bg == "FFFFFF" ? null : $"#{bg}";
+        }
+        catch { return null; }
+    }
+
+    private static string? PreviewFg(IXLCell cell)
+    {
+        try
+        {
+            string? fg = ColorHex(cell.Style.Font.FontColor);
+            return fg is null || fg == "000000" ? null : $"#{fg}";
+        }
+        catch { return null; }
+    }
+
+    private static bool IsBold(IXLCell cell)
+    {
+        try { return cell.Style.Font.Bold; }
+        catch { return false; }
+    }
+
+    // ── DRM Excel: upload → helper unlock → ClosedXML read → TSV → _pastedText ──
+
+    // ── Queue handlers ──────────────────────────────────────────────────────
+
+    private async Task OnQueueFilesSelected(InputFileChangeEventArgs e)
+    {
+        // No helper dependency — queue accepts already-unlocked .xlsx files.
+
+        // Snapshot existing datasets ONCE so the duplicate check stays cheap
+        // when the user drops many files at once. Dataset names are matched
+        // by the same derivation rule as the single-file flow (strip .xlsx
+        // and a trailing _clean) so dropping "foo_clean.xlsx" detects an
+        // existing "foo".
+        var existing = Repo.GetAllRawReports()
+            .ToDictionary(r => r.DatasetName, r => r.ReportDate,
+                          StringComparer.OrdinalIgnoreCase);
+
+        // Stage each upload to a temp file immediately (IBrowserFile streams
+        // can't be replayed). We hold the temp path on the QueueItem and the
+        // processor reads from there.
+        string stageDir = Path.Combine(Path.GetTempPath(),
+            "jinosupp-input-queue", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(stageDir);
+
+        // Cap is generous because users drop whole folders (200–500 files at a
+        // time). Blazor throws InvalidOperationException — not a silent trim —
+        // if the actual count exceeds this, so we wrap with a visible error.
+        IReadOnlyList<IBrowserFile> files;
+        try
+        {
+            files = e.GetMultipleFiles(maximumFileCount: 2000);
+        }
+        catch (Exception ex)
+        {
+            _queue.Add(new QueueItem
+            {
+                FileName = $"(drop rejected — {e.FileCount} files)",
+                Status = "error",
+                Detail = ex.Message,
+            });
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        int dupCountBefore = _skippedDups.Count;
+        foreach (var file in files)
+        {
+            string lower = file.Name.ToLowerInvariant();
+            if (!lower.EndsWith(".xlsx") && !lower.EndsWith(".xlsm")) continue;
+
+            // Derive the eventual dataset name BEFORE staging so duplicates
+            // get caught early — saves us reading the file off disk for
+            // something we're going to skip.
+            string dsName = DeriveDatasetName(file.Name);
+            bool isDup = existing.ContainsKey(dsName);
+
+            // Duplicate short-circuit: NOT queued, NOT staged. Record into
+            // the "skipped" panel so the user sees which files were
+            // rejected, then move on. Force-replace ON bypasses this.
+            if (isDup && !_queueForceReplace)
+            {
+                string rdate = existing.TryGetValue(dsName, out var rd) ? (rd ?? "") : "";
+                _skippedDups.Add(new SkippedDup
+                {
+                    FileName  = file.Name,
+                    Dataset   = dsName,
+                    ExistingDate = rdate,
+                });
+                continue;
+            }
+
+            string staged = Path.Combine(stageDir, $"{Guid.NewGuid():N}_{file.Name}");
+            try
+            {
+                await using var src = file.OpenReadStream(200 * 1024 * 1024);
+                await using var dst = File.Create(staged);
+                await src.CopyToAsync(dst);
+            }
+            catch (Exception ex)
+            {
+                _queue.Add(new QueueItem
+                {
+                    FileName = file.Name, FileSize = file.Size,
+                    Status = "error", Detail = $"upload: {ex.Message}"
+                });
+                continue;
+            }
+
+            // Look up matching Mid-group Material from ModelGroups to use
+            // as the Product Type. Same fuzzy rule for queue + single-file
+            // flow so behavior is consistent.
+            string productType = FindProductTypeFor(file.Name);
+
+            var item = new QueueItem
+            {
+                FileName = file.Name,
+                FileSize = file.Size,
+                StagedPath = staged,
+                SavedDatasetName = dsName,
+                ProductType = productType,
+            };
+
+            _queue.Add(item);
+        }
+
+        int addedDups = _skippedDups.Count - dupCountBefore;
+        if (addedDups > 0)
+        {
+            var thisDrop = _skippedDups.Skip(dupCountBefore).ToList();
+            string sample = string.Join(", ", thisDrop.Take(3).Select(s => s.FileName));
+            SetStatus($"Skipped {addedDups} duplicate file(s) — already in DB: {sample}{(addedDups > 3 ? $" (+{addedDups - 3} more)" : "")}", false);
+        }
+
+        await InvokeAsync(StateHasChanged);
+        _ = ProcessQueueAsync();
+    }
+
+    /// <summary>Per-item force button: switch a duplicate item back to
+    /// "queued" so the processor picks it up and overwrites the DB row.</summary>
+    private void ForceProcessDuplicate(QueueItem q)
+    {
+        if (q.Status != "duplicate") return;
+        q.Status = "queued";
+        q.Detail = "";
+        _ = ProcessQueueAsync();
+    }
+
+    /// <summary>Open the Review Tokens modal: aggregate distinct filename
+    /// tokens from the current queue + any datasets already in the DB,
+    /// pair each with its auto-match (or empty), and pre-fill the user's
+    /// existing alias overrides.</summary>
+    private void OpenAliasReview()
+    {
+        var aliases = GetAliasMap();
+        var mats    = GetMidGroupMaterials();
+
+        // Sources: queue items + saved RawReports. We dedupe by token and
+        // keep up to a handful of sample filenames per token for context.
+        var byToken = new Dictionary<string, AliasReviewRow>(StringComparer.OrdinalIgnoreCase);
+        void Push(string fileName)
+        {
+            string tok = ExtractToken(fileName);
+            if (string.IsNullOrEmpty(tok)) return;
+            if (!byToken.TryGetValue(tok, out var row))
+            {
+                aliases.TryGetValue(tok, out var existingAlias);
+                row = new AliasReviewRow
+                {
+                    Token     = tok,
+                    AutoMatch = FindMatchingMidGroup(fileName, mats),
+                    Draft     = existingAlias ?? "",
+                };
+                byToken[tok] = row;
+            }
+            if (row.Samples.Count < 5 && !row.Samples.Contains(fileName))
+                row.Samples.Add(fileName);
+        }
+        foreach (var q in _queue) Push(q.FileName);
+        foreach (var r in Repo.GetAllRawReports()) Push(r.DatasetName);
+
+        // Sort: unmatched (no auto-match AND no draft) first, then by token
+        _aliasReviewRows = byToken.Values
+            .OrderBy(r => !string.IsNullOrEmpty(r.AutoMatch) || !string.IsNullOrEmpty(r.Draft))
+            .ThenBy(r => r.Token, StringComparer.Ordinal)
+            .ToList();
+        _aliasReviewOpen = true;
+    }
+
+    private void CloseAliasReview()
+    {
+        _aliasReviewOpen = false;
+        _aliasReviewRows.Clear();
+    }
+
+    private void ClearAlias(AliasReviewRow row)
+    {
+        Repo.DeleteDataInputAlias(row.Token);
+        row.Draft = "";
+        InvalidateMatchingCaches();
+        // Note: row only updates the in-memory draft display. The DB
+        // re-stamp happens on the Save & re-match action so multiple
+        // edits batch into one pass.
+    }
+
+    private void SaveAliasReview()
+    {
+        foreach (var row in _aliasReviewRows)
+        {
+            string draft = (row.Draft ?? "").Trim();
+            if (string.IsNullOrEmpty(draft))
+            {
+                // Treat empty as "remove explicit mapping" so the row falls
+                // back to auto-match (or "" if none).
+                Repo.DeleteDataInputAlias(row.Token);
+            }
+            else
+            {
+                Repo.SaveDataInputAlias(row.Token, draft);
+            }
+        }
+        InvalidateMatchingCaches();
+
+        // 1) Re-apply matching to every queue item (UI chips refresh).
+        foreach (var q in _queue)
+        {
+            string newPt = FindProductTypeFor(q.FileName);
+            if (newPt != q.ProductType) q.ProductType = newPt;
+        }
+
+        // 2) Re-stamp the ProductType column on every already-saved
+        //    RawReport. Without this, datasets persisted before the alias
+        //    edit keep their old ProductType (often "") forever — that's
+        //    the "doesn't change" the user was seeing.
+        int dbUpdated = 0;
+        foreach (var r in Repo.GetAllRawReports())
+        {
+            string newPt = FindProductTypeFor(r.DatasetName);
+            if ((r.ProductType ?? "") == (newPt ?? "")) continue;
+            if (Repo.UpdateRawReportProductType(r.DatasetName, newPt) > 0) dbUpdated++;
+        }
+
+        SetStatus($"Aliases saved — {dbUpdated} dataset(s) re-stamped in DB.", false);
+        CloseAliasReview();
+    }
+
+    private async Task ProcessQueueAsync()
+    {
+        if (_queueRunning) return;
+        _queueRunning = true;
+        try
+        {
+            while (true)
+            {
+                QueueItem? next;
+                lock (_queue) { next = _queue.FirstOrDefault(q => q.Status == "queued"); }
+                if (next is null) break;
+
+                try { await ProcessQueueItemAsync(next); }
+                catch (Exception ex)
+                {
+                    next.Status = "error";
+                    next.Detail = ex.Message;
+                }
+                _queueDone = _queue.Count(q => q.Status is "done" or "error");
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        finally
+        {
+            _queueRunning = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ProcessQueueItemAsync(QueueItem item)
+    {
+        // Files come in already-DRM-unlocked (user runs the unlock step
+        // separately via Test Excel Converter). The queue is just the
+        // extract + save half of the pipeline.
+        if (!File.Exists(item.StagedPath))
+        {
+            item.Status = "error";
+            item.Detail = "staged file missing";
+            return;
+        }
+
+        try
+        {
+            item.Status = "saving"; await InvokeAsync(StateHasChanged);
+
+            // Derive dataset name + date from file name (same rules as the
+            // single-file flow). Auto-Save: each queued file is persisted
+            // immediately so the user doesn't have to click anything.
+            string dsName = DeriveDatasetName(item.FileName);
+            string testDate = DeriveDateFromFileName(item.FileName)
+                              ?? DateTime.Today.ToString("yyyy-MM-dd");
+            if (string.IsNullOrWhiteSpace(dsName)) dsName = Path.GetFileNameWithoutExtension(item.FileName);
+
+            // Store the workbook itself. Do not extract TSV or screenshots here:
+            // AI Batch reads RawReportFiles directly so merged ranges remain
+            // available to the model/tooling.
+            var workbookFiles = new List<(string MediaType, byte[] Data, string FileName)>();
+            try
+            {
+                byte[] bytes = await File.ReadAllBytesAsync(item.StagedPath);
+                string mediaType = Path.GetExtension(item.FileName).Equals(".xlsm", StringComparison.OrdinalIgnoreCase)
+                    ? "application/vnd.ms-excel.sheet.macroEnabled.12"
+                    : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                workbookFiles.Add((
+                    mediaType,
+                    bytes,
+                    item.FileName));
+            }
+            catch (Exception ex)
+            {
+                item.Status = "error";
+                item.Detail = $"read workbook: {ex.Message}";
+                return;
+            }
+
+            await Task.Run(() =>
+            {
+                Repo.SaveRawReport(dsName, item.ProductType, testDate, []);
+                foreach (var fi in Repo.GetRawReportFileInfos(dsName))
+                    Repo.DeleteRawReportFile(fi.Id);
+                Repo.DeleteExtractedText(dsName, null);
+                Repo.AppendRawReportFiles(dsName, workbookFiles);
+            });
+
+            item.SavedDatasetName = dsName;
+            item.Status = "done";
+            item.Detail = "";
+        }
+        finally
+        {
+            try { if (File.Exists(item.StagedPath)) File.Delete(item.StagedPath); } catch { }
+        }
+    }
+
+    /// <summary>Clicking a queue item opens a workbook-only preview. It does not
+    /// persist TSV; AI Batch still reads the saved XLSX from RawReportFiles.</summary>
+    private async Task SelectQueueItemAsync(QueueItem q)
+    {
+        if (q.Status != "done" || string.IsNullOrWhiteSpace(q.SavedDatasetName)) return;
+        var info = Repo.GetAllRawReports().FirstOrDefault(r => r.DatasetName == q.SavedDatasetName);
+        if (info is null) return;
+
+        _queuePreviewActive = true;
+        _queuePreviewLoading = true;
+        _queuePreviewDataset = info.DatasetName;
+        _queuePreviewFileName = q.FileName;
+        _queuePreviewSheets = [];
+        await InvokeAsync(StateHasChanged);
+
+        string? tempPath = null;
+        try
+        {
+            var fileInfo = Repo.GetRawReportFileInfos(info.DatasetName)
+                .LastOrDefault(f =>
+                    f.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) ||
+                    f.FileName.EndsWith(".xlsm", StringComparison.OrdinalIgnoreCase));
+            if (fileInfo is null)
+            {
+                _queuePreviewSheets = [];
+                return;
+            }
+
+            var stored = Repo.GetRawReportFile(fileInfo.Id);
+            if (stored is null)
+            {
+                _queuePreviewSheets = [];
+                return;
+            }
+
+            string ext = Path.GetExtension(stored.Value.FileName);
+            if (string.IsNullOrWhiteSpace(ext)) ext = ".xlsx";
+            tempPath = Path.Combine(Path.GetTempPath(), $"jinosupp-preview-{Guid.NewGuid():N}{ext}");
+            await File.WriteAllBytesAsync(tempPath, stored.Value.Data);
+
+            _queuePreviewSheets = await Task.Run(() => BuildWorkbookPreview(tempPath));
+            _queuePreviewFileName = stored.Value.FileName;
+        }
+        catch (Exception ex)
+        {
+            _queuePreviewSheets = [];
+            _queuePreviewFileName = $"{q.FileName} ({ex.Message})";
+        }
+        finally
+        {
+            if (tempPath is not null)
+            {
+                try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch { }
+            }
+            _queuePreviewLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void CloseQueuePreview()
+    {
+        _queuePreviewActive = false;
+        _queuePreviewLoading = false;
+        _queuePreviewDataset = "";
+        _queuePreviewFileName = "";
+        _queuePreviewSheets = [];
+    }
+
+    private void ClearFinishedFromQueue()
+    {
+        _queue.RemoveAll(q => q.Status is "done" or "error" or "duplicate");
+        _queueDone = 0;
+    }
+
+    private void ClearSkippedDups()
+    {
+        _skippedDups.Clear();
+        _skippedDupsExpanded = false;
+    }
+
+    private static string QueueIcon(string status) => status switch
+    {
+        "queued"     => "•",
+        "staging"    => "↑",
+        "extracting" => "⚙",
+        "saving"     => "💾",
+        "done"       => "✓",
+        "error"      => "✗",
+        "duplicate"  => "⚠",
+        _            => "·",
+    };
+
+    // ── End queue ───────────────────────────────────────────────────────────
+
+    private async Task OnDrmExcelSelected(InputFileChangeEventArgs e)
+    {
+        if (_isBusy) return;
+        var file = e.File;
+        if (file is null) return;
+        string lower = file.Name.ToLowerInvariant();
+        if (!lower.EndsWith(".xlsx") && !lower.EndsWith(".xlsm"))
+        {
+            SetStatus("DRM input must be .xlsx or .xlsm", true);
+            return;
+        }
+        if (!Helper.HelperExists)
+        {
+            SetStatus("Helper exe not found — rebuild the web project.", true);
+            return;
+        }
+
+        _isBusy = true; _busyStep = "drm";
+        _drmFileName = file.Name;
+        _drmFileSize = file.Size;
+        _drmProgress = "Uploading…";
+        _drmExtractedRows = 0;
+        _drmSheets = 0;
+        _drmLog.Clear();
+        _status = "";
+
+        // Auto-fill dataset name from the file: strip .xlsx/.xlsm, then drop
+        // one trailing "_clean" suffix that the DRM unlock tool adds. User
+        // can still edit it manually before Save.
+        _datasetName = DeriveDatasetName(file.Name);
+
+        // Auto-fill Product Type from a matching Mid-group Material in
+        // ModelGroups. Same fuzzy rule as the queue flow. Leaves existing
+        // value alone when no match found so the user's manual entry wins.
+        string matchedPt = FindProductTypeFor(file.Name);
+        if (!string.IsNullOrEmpty(matchedPt)) _productType = matchedPt;
+
+        // Auto-fill Date if the file name contains a parseable date pattern
+        // (YYYY.MM.DD, YYYY MM DD, DD.MM.YYYY, YYYYMMDD, …). Leave existing
+        // value alone if no date detected.
+        string? parsedDate = DeriveDateFromFileName(file.Name);
+        if (parsedDate is not null) _testDate = parsedDate;
+
+        StateHasChanged();
+
+        // Stage 1: copy upload to a temp file for the helper.
+        string stageDir = Path.Combine(Path.GetTempPath(),
+            "jinosupp-input-test-stage", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(stageDir);
+        string stagedFile = Path.Combine(stageDir, file.Name);
+
+        string? cleanedPath = null;
+        string? cleanTempDir = null;
+        try
+        {
+            await using (var src = file.OpenReadStream(200 * 1024 * 1024))
+            await using (var dst = File.Create(stagedFile))
+                await src.CopyToAsync(dst);
+
+            _drmProgress = "Unlocking via helper…";
+            StateHasChanged();
+            (cleanedPath, cleanTempDir, _drmLog) = await Helper.CleanSingleAsync(stagedFile);
+
+            if (cleanedPath is null || !File.Exists(cleanedPath))
+            {
+                SetStatus("DRM unlock failed — see helper log.", true);
+                return;
+            }
+
+            // Adopt the unlocked file as a Backup File so it's archived alongside the dataset.
+            try
+            {
+                byte[] cleanedBytes = await File.ReadAllBytesAsync(cleanedPath);
+                _files.Add(new FileEntry(
+                    Path.GetFileName(cleanedPath),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    cleanedBytes,
+                    null));
+            }
+            catch { /* archiving is best-effort */ }
+
+            _drmProgress = "Reading cells…";
+            StateHasChanged();
+            var (tsv, sheets, rows) = await Task.Run(() => ExtractTsv(cleanedPath));
+            _pastedText = tsv;
+            _drmSheets = sheets;
+            _drmExtractedRows = rows;
+
+            _drmProgress = "Extracting embedded images…";
+            StateHasChanged();
+            // Helper renders each Excel shape to PNG and embeds it under
+            // xl/media/* via ClosedXML. Pull those out so they end up in the
+            // dataset's RawReport images, same as if the user had pasted them.
+            var pulled = await Task.Run(() => ExtractImages(cleanedPath));
+            int imagesAdded = 0;
+            foreach (var (name, mt, bytes) in pulled)
+            {
+                string b64 = Convert.ToBase64String(bytes);
+                (string finalB64, string finalMt) = ImageCompressor.CompressIfLarge(b64, mt);
+                string dataUrl = $"data:{finalMt};base64,{finalB64}";
+                _images.Add(new ImageEntry(name, finalMt, finalB64, dataUrl));
+                imagesAdded++;
+            }
+
+            _drmLoaded = true;
+            SetStatus(
+                $"DRM unlocked — {sheets} sheet(s), {rows:N0} row(s), {imagesAdded} embedded image(s). " +
+                "Analyze will send Excel text only (images saved to DB but skipped for AI to stay under payload limit).",
+                false);
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"DRM step failed: {ex.Message}", true);
+        }
+        finally
+        {
+            // Cleanup: helper temp dir + staging dir. Both contain only this run's files.
+            try { if (!string.IsNullOrEmpty(cleanTempDir) && Directory.Exists(cleanTempDir)) Directory.Delete(cleanTempDir, recursive: true); } catch { }
+            try { if (Directory.Exists(stageDir)) Directory.Delete(stageDir, recursive: true); } catch { }
+            _isBusy = false; _busyStep = ""; _drmProgress = "";
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    /// <summary>Reads the unlocked .xlsx and returns a TSV dump (sheet header +
+    /// rows × cols, only non-empty rows). Each sheet starts with a "## name"
+    /// marker. Cells with non-default formatting (fill color / bold / red font)
+    /// get inline annotations: <c>〔bg=#FFCCCC,b〕value</c>. The AI uses these
+    /// hints to spot NG/OK status, callouts, etc. — formatting in
+    /// manufacturing reports usually carries semantic meaning.</summary>
+    // 한 셀당 너무 긴 텍스트(붙여넣기 잔재 등)는 잘라낸다 — Claude 가 수치
+    // 외 의미를 잃지 않으면서 토큰 절약.
+    private const int MaxCellChars = 200;
+    // 셀이 지나치게 sparse 한 행(예: 200열 중 1개 셀만 채워진 헤더 패딩)은 제거.
+    // value-bearing cell 비율이 이 미만이면 스킵. UsedRange 가 클수록 효과.
+    private const double MinRowFillRatio = 0.05;
+    // 한 시트가 이 정도도 안 차면 통째로 스킵 (e.g. 그림만 들어 있던 시트).
+    private const int MinSheetCells = 3;
+
+    private static (string Tsv, int Sheets, int Rows) ExtractTsv(string xlsxPath)
+    {
+        var sb = new StringBuilder();
+        int sheetCount = 0;
+        int totalRows  = 0;
+
+        using var wb = new XLWorkbook(xlsxPath);
+        foreach (var ws in wb.Worksheets)
+        {
+            var used = ws.RangeUsed();
+            if (used is null) continue;
+
+            int firstCol = used.FirstColumn().ColumnNumber();
+            int lastCol  = used.LastColumn().ColumnNumber();
+            int firstRow = used.FirstRow().RowNumber();
+            int lastRow  = used.LastRow().RowNumber();
+
+            // Cap at 10K rows × 200 cols — same reasoning as the helper's clamp:
+            // sheets with row-wide formatting can balloon UsedRange to 1M+ rows.
+            int rowEnd = Math.Min(lastRow, firstRow + 10000 - 1);
+            int colEnd = Math.Min(lastCol, firstCol + 200 - 1);
+            var mergedLookup = BuildMergedCellLookup(ws, firstRow, rowEnd, firstCol, colEnd);
+
+            // Build the sheet body first; only append the "## name" header if
+            // the sheet has any usable rows after trimming.
+            var sheetSb = new StringBuilder();
+            int sheetRows = 0;
+            int sheetValueCells = 0;
+            int colSpan = colEnd - firstCol + 1;
+
+            for (int r = firstRow; r <= rowEnd; r++)
+            {
+                int actualValueCells = 0;
+                int emittedValueCells = 0;
+                int maxCellLen = 0;
+                var line = new StringBuilder();
+
+                for (int c = firstCol; c <= colEnd; c++)
+                {
+                    var cell = ws.Cell(r, c);
+                    var emitCell = cell;
+                    MergedCellAnchor? merged = null;
+                    if (mergedLookup.TryGetValue((r, c), out var foundMerged))
+                    {
+                        merged = foundMerged;
+                        emitCell = ws.Cell(foundMerged.AnchorRow, foundMerged.AnchorColumn);
+                    }
+
+                    string original = cell.IsEmpty() ? "" : cell.GetFormattedString();
+                    string v = emitCell.IsEmpty() ? "" : emitCell.GetFormattedString();
+                    v = v.Replace('\t', ' ').Replace('\n', ' ').Replace('\r', ' ');
+
+                    if (v.Length > MaxCellChars)
+                    {
+                        v = v.Substring(0, MaxCellChars) + "…";
+                    }
+
+                    string tag = string.IsNullOrEmpty(v) ? "" : FormatTag(emitCell);
+                    if (merged is not null && (merged.AnchorRow != r || merged.AnchorColumn != c))
+                    {
+                        tag = AppendTag(tag, $"merged={merged.RangeAddress}");
+                    }
+                    string emit = string.IsNullOrEmpty(tag)
+                        ? v
+                        : $"〔{tag}〕{v}";
+
+                    if (c > firstCol) line.Append('\t');
+                    line.Append(emit);
+                    if (!string.IsNullOrEmpty(original))
+                    {
+                        actualValueCells++;
+                    }
+                    if (!string.IsNullOrEmpty(v))
+                    {
+                        emittedValueCells++;
+                        if (v.Length > maxCellLen) maxCellLen = v.Length;
+                    }
+                }
+
+                if (actualValueCells == 0 || emittedValueCells == 0) continue;
+                int rowFillCells = Math.Max(actualValueCells, emittedValueCells);
+                // Row-fill threshold drops near-empty header padding rows.
+                // BUT keep rows with a long-text cell (≥10 chars) — those are
+                // titles / dates / notes like "Sample Coil separate date 20/10"
+                // that look sparse by ratio but carry real meaning.
+                bool hasLongText = maxCellLen >= 10;
+                if (!hasLongText
+                    && colSpan > 4
+                    && (double)rowFillCells / colSpan < MinRowFillRatio)
+                    continue;
+
+                sheetSb.AppendLine(line.ToString());
+                sheetRows++;
+                sheetValueCells += rowFillCells;
+            }
+
+            // Drop sheets with no real content (decorative tabs, image-only
+            // sheets). Also keep sheets where any single cell holds long text
+            // — a one-line title sheet still has information worth carrying.
+            bool sheetHasLongText = sheetSb.Length > 0
+                && sheetSb.ToString().Split('\n').Any(ln => ln.Replace("\t", "").Trim().Length >= 10);
+            if (sheetValueCells < MinSheetCells && !sheetHasLongText) continue;
+
+            if (sheetCount > 0) sb.AppendLine();
+            sb.Append("## ").AppendLine(ws.Name);
+            sb.Append(sheetSb);
+            sheetCount++;
+            totalRows += sheetRows;
+        }
+
+        return (sb.ToString(), sheetCount, totalRows);
+    }
+
+    private sealed record MergedCellAnchor(int AnchorRow, int AnchorColumn, string RangeAddress);
+
+    private static Dictionary<(int Row, int Column), MergedCellAnchor> BuildMergedCellLookup(
+        IXLWorksheet ws,
+        int firstRow,
+        int rowEnd,
+        int firstCol,
+        int colEnd)
+    {
+        var lookup = new Dictionary<(int Row, int Column), MergedCellAnchor>();
+        foreach (var range in ws.MergedRanges)
+        {
+            var address = range.RangeAddress;
+            int startRow = Math.Max(address.FirstAddress.RowNumber, firstRow);
+            int endRow = Math.Min(address.LastAddress.RowNumber, rowEnd);
+            int startCol = Math.Max(address.FirstAddress.ColumnNumber, firstCol);
+            int endCol = Math.Min(address.LastAddress.ColumnNumber, colEnd);
+            if (startRow > endRow || startCol > endCol) continue;
+
+            var anchor = new MergedCellAnchor(
+                address.FirstAddress.RowNumber,
+                address.FirstAddress.ColumnNumber,
+                address.ToString() ?? "");
+
+            for (int r = startRow; r <= endRow; r++)
+            {
+                for (int c = startCol; c <= endCol; c++)
+                {
+                    lookup[(r, c)] = anchor;
+                }
+            }
+        }
+
+        return lookup;
+    }
+
+    private static string AppendTag(string current, string tag)
+    {
+        if (string.IsNullOrWhiteSpace(tag)) return current;
+        return string.IsNullOrWhiteSpace(current) ? tag : $"{current},{tag}";
+    }
+
+    /// <summary>Build the comma-separated annotation for a cell: bg color hex,
+    /// fg color hex (only when non-black), and <c>b</c> for bold. Returns ""
+    /// when the cell uses default formatting so the TSV stays clean for the
+    /// 99% of cells that have no semantic styling.</summary>
+    private static string FormatTag(IXLCell cell)
+    {
+        var parts = new List<string>(3);
+        try
+        {
+            var fill = cell.Style.Fill;
+            if (fill.PatternType != XLFillPatternValues.None)
+            {
+                string? bg = ColorHex(fill.BackgroundColor);
+                // Skip pure white / "no color" — those are the default and would
+                // just clutter the output.
+                if (bg is not null && bg != "FFFFFF") parts.Add($"bg=#{bg}");
+            }
+        }
+        catch { }
+        try
+        {
+            string? fg = ColorHex(cell.Style.Font.FontColor);
+            if (fg is not null && fg != "000000") parts.Add($"fg=#{fg}");
+        }
+        catch { }
+        try
+        {
+            if (cell.Style.Font.Bold) parts.Add("b");
+        }
+        catch { }
+        return parts.Count == 0 ? "" : string.Join(",", parts);
+    }
+
+    private static string? ColorHex(XLColor color)
+    {
+        if (color is null || !color.HasValue) return null;
+        try
+        {
+            var c = color.Color;
+            return $"{c.R:X2}{c.G:X2}{c.B:X2}";
+        }
+        catch { return null; }
+    }
+
+    /// <summary>Extract every embedded image from a .xlsx by reading the OOXML
+    /// zip directly. Images live under <c>xl/media/*</c> by spec — the helper's
+    /// ⓪ strategy puts each rendered shape PNG there via ClosedXML's
+    /// <c>AddPicture</c>. We bypass ClosedXML's picture API because it doesn't
+    /// always round-trip the embedded bytes cleanly.</summary>
+    private static List<(string Name, string MediaType, byte[] Bytes)> ExtractImages(string xlsxPath)
+    {
+        var result = new List<(string, string, byte[])>();
+        using var zip = ZipFile.OpenRead(xlsxPath);
+        foreach (var entry in zip.Entries)
+        {
+            if (!entry.FullName.StartsWith("xl/media/", StringComparison.OrdinalIgnoreCase)) continue;
+            string ext = Path.GetExtension(entry.Name).ToLowerInvariant();
+            string? mt = ext switch
+            {
+                ".png"  => "image/png",
+                ".jpg"  => "image/jpeg",
+                ".jpeg" => "image/jpeg",
+                ".gif"  => "image/gif",
+                ".bmp"  => "image/bmp",
+                ".webp" => "image/webp",
+                _       => null,
+            };
+            if (mt is null) continue;
+            using var s  = entry.Open();
+            using var ms = new MemoryStream();
+            s.CopyTo(ms);
+            result.Add((entry.Name, mt, ms.ToArray()));
+        }
+        return result;
+    }
+
+    private void RemoveMeasurement(NormalizedMeasurement m) => _measurements.Remove(m);
+
+    private void RemoveTag(string t) => _tags.Remove(t);
+
+    private async Task AnalyzeAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_pastedText))
+        {
+            SetStatus("Drop a DRM Excel or paste Excel cells first — images are not analyzed.", true);
+            return;
+        }
+        _isBusy = true; _busyStep = "analyze"; _status = "";
+        StateHasChanged();
+        try
+        {
+            string dsName = string.IsNullOrWhiteSpace(_datasetName) ? "dataset" : _datasetName.Trim();
+
+            // Per user policy (2026-05-08): images are NEVER sent to AI on
+            // this page — only Excel raw text. Images are still archived to
+            // RawReport DB for reference but stay out of the analyze payload.
+            // If there's no text, nothing to analyze.
+            if (string.IsNullOrWhiteSpace(_pastedText))
+            {
+                SetStatus("No Excel text to analyze. Drop a DRM Excel first.", true);
+                return;
+            }
+            NormalizeResult result = await Claude.NormalizeFromTextAsync(
+                _pastedText, dsName, _productType.Trim(), _testDate);
+
+            _measurements      = result.Measurements;
+            _summary           = result.Summary;
+            _keyFindings       = result.KeyFindings;
+            _tags              = result.Tags ?? [];
+            _purpose           = result.Purpose;
+            _testConditions    = result.TestConditions;
+            _rootCause         = result.RootCause;
+            _decision          = result.Decision;
+            _recommendedAction = result.RecommendedAction;
+
+            // Translate the 7 narrative fields into ko + vi in parallel. The
+            // English/original copy stays in `result`; ko/vi go to the
+            // translations dictionary that's persisted on Save. Failures don't
+            // sink the analyze (we just have the original-only result).
+            _pendingTranslations.Clear();
+            try
+            {
+                var koTask = Claude.TranslateAnalysisAsync(result, "Korean");
+                var viTask = Claude.TranslateAnalysisAsync(result, "Vietnamese");
+                await Task.WhenAll(koTask, viTask);
+                _pendingTranslations["ko"] = koTask.Result;
+                _pendingTranslations["vi"] = viTask.Result;
+                SetStatus($"Analysis complete — {_measurements.Count} row(s); translated to ko + vi.", false);
+            }
+            catch (Exception tex)
+            {
+                SetStatus($"Analysis complete ({_measurements.Count} rows) — translation failed: {tex.Message}", false);
+            }
+        }
+        catch (Exception ex) { SetStatus($"Analyze error: {ex.Message}", true); }
+        finally { _isBusy = false; _busyStep = ""; }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_datasetName)) { SetStatus("Dataset name required.", true); return; }
+        _isBusy = true; _busyStep = "save"; _status = "";
+        StateHasChanged();
+        try
+        {
+            string name = _datasetName.Trim();
+            var imgs = _images.Select(i => (i.MediaType, Convert.FromBase64String(i.Base64), i.FileName)).ToList();
+            string tagsJson = _tags.Count > 0
+                ? System.Text.Json.JsonSerializer.Serialize(_tags)
+                : "";
+            var newFiles = _files
+                .Where(f => !f.ExistingId.HasValue)
+                .Select(f => (f.MediaType, f.Data, f.FileName))
+                .ToList();
+            var keptIds = _files.Where(f => f.ExistingId.HasValue).Select(f => f.ExistingId!.Value).ToHashSet();
+            await Task.Run(() =>
+            {
+                Repo.SaveRawReport(name, _productType, _testDate, imgs);
+
+                foreach (var fi in Repo.GetRawReportFileInfos(name))
+                    if (!keptIds.Contains(fi.Id)) Repo.DeleteRawReportFile(fi.Id);
+                if (newFiles.Count > 0) Repo.AppendRawReportFiles(name, newFiles);
+
+                // Data Input owns raw capture only. Current analysis is written
+                // by AI Batch into AiDocuments/AiResults so legacy summary rows
+                // are not mixed with the current schema.
+                if (!string.IsNullOrWhiteSpace(_pastedText))
+                    Repo.SaveExtractedText(name, _pastedText, WebRepository.TextKindExcelPaste);
+            });
+            SetStatus($"Saved — '{name}'", false);
+            _allReports = Repo.GetAllRawReports();
+            RefreshProductTypeOptions();
+        }
+        catch (Exception ex) { SetStatus($"Save error: {ex.Message}", true); }
+        finally { _isBusy = false; _busyStep = ""; }
+    }
+
+    private async Task OnLoadExisting(ChangeEventArgs e)
+    {
+        string name = e.Value?.ToString() ?? "";
+        if (string.IsNullOrEmpty(name)) return;
+        var info = _allReports.FirstOrDefault(r => r.DatasetName == name);
+        if (info is null) return;
+
+        _datasetName  = info.DatasetName;
+        _productType  = info.ProductType;
+        _testDate     = info.ReportDate;
+        _measurements = Repo.GetNormalizedMeasurements(name);
+        var summ = Repo.GetDatasetSummaryRecord(name);
+        _pastedText        = Repo.GetExtractedText(name, WebRepository.TextKindExcelPaste) ?? "";
+        _summary           = summ?.Summary           ?? "";
+        _keyFindings       = summ?.KeyFindings       ?? "";
+        _tags              = summ?.Tags              ?? [];
+        _purpose           = summ?.Purpose           ?? "";
+        _testConditions    = summ?.TestConditions    ?? "";
+        _rootCause         = summ?.RootCause         ?? "";
+        _decision          = summ?.Decision          ?? "";
+        _recommendedAction = summ?.RecommendedAction ?? "";
+
+        // Replay any saved translations so re-saving doesn't drop them.
+        _pendingTranslations.Clear();
+        if (summ is not null)
+            foreach (var (lang, tr) in summ.Translations)
+                _pendingTranslations[lang] = tr;
+
+        var storedImgs = Repo.GetRawReportImages(name);
+        _images = storedImgs.Select((img, i) =>
+        {
+            string b64    = Convert.ToBase64String(img.Data);
+            string dataUrl = $"data:{img.MediaType};base64,{b64}";
+            string fname   = img.FileName.Length > 0 ? img.FileName : $"img-{i + 1}";
+            return new ImageEntry(fname, img.MediaType, b64, dataUrl);
+        }).ToList();
+
+        _files = Repo.GetRawReportFileInfos(name)
+            .Select(fi => new FileEntry(fi.FileName, fi.MediaType, [], fi.Id))
+            .ToList();
+
+        SetStatus($"Loaded '{name}' — {_measurements.Count} measurement(s)", false);
+    }
+
+    private void Clear()
+    {
+        _datasetName = ""; _productType = ""; _testDate = DateTime.Today.ToString("yyyy-MM-dd");
+        _images = []; _files = []; _measurements = []; _summary = ""; _keyFindings = ""; _pastedText = "";
+        _purpose = ""; _testConditions = ""; _rootCause = ""; _decision = ""; _recommendedAction = "";
+        _tags = []; _status = "";
+        _drmFileName = ""; _drmFileSize = 0; _drmProgress = ""; _drmExtractedRows = 0; _drmSheets = 0; _drmLog.Clear();
+        _drmLoaded = false;
+        CloseQueuePreview();
+        _pendingTranslations.Clear();
+    }
+
+    private void SetStatus(string msg, bool err) { _status = msg; _statusError = err; }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { await JS.InvokeVoidAsync("diFullPage.leave"); } catch { }
+        try { await JS.InvokeVoidAsync("pasteImageHandler.cancelPasteCapture"); } catch { }
+        try { await JS.InvokeVoidAsync("backupFileHandler.dispose"); } catch { }
+        _ref?.Dispose();
+    }
+}

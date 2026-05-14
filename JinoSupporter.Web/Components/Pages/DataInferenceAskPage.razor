@@ -380,7 +380,7 @@
 
         try
         {
-            string context = await Task.Run(BuildDatasetsContext);
+            string context = await Task.Run(BuildDatasetsContextV2);
             if (string.IsNullOrWhiteSpace(context))
             {
                 SetStatus("No AI analysis reports match the selected filter.", true);
@@ -442,48 +442,26 @@
             return;
         }
 
-        // Launch Windows Terminal (falls back to cmd).
-        bool launched = false;
-        string prompt = "CLI_ASK_AI.md 읽고 실행해";
-        try
+        string prompt =
+            "Read CLI_ASK_AI.md and execute it. " +
+            "Use the current AI_EXCEL_PROC schema first: AiDocuments, AiResults, AiNgBreakdowns, AiConclusions, AiTroubleshootingHints, AiExtractionLogs. " +
+            "Use workbook-derived merged-cell handling when available; otherwise treat stored excel_paste metadata tags like {merged=A1:A4} or 〔merged=A1:A4〕 as evidence that the following value came from the merged range. " +
+            "Treat blank Date/Model/Type cells below a visible value as merged-cell continuations; carry the visible value forward before pairing rows. " +
+            "Do not treat percentage-only subrows as standalone result rows. " +
+            "When answering, compare NG rates against same-event Normal/Baseline/Before/Old/OK using (test/base-1)*100. " +
+            "If no baseline exists, do not claim improvement/worsening; use ng_without_baseline ranking. " +
+            "Use dimension/reliability/DOE/image-dependent report types when appropriate. " +
+            "Persist the final answer to AskAiHistory.";
+        if (!TryLaunchClaudeAskTerminal(workDir, prompt, "Ask AI (Claude CLI)"))
         {
-            var wt = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName         = "wt.exe",
-                Arguments        = $"-d \"{workDir}\" cmd /k chcp 65001>nul && title Ask AI (Claude CLI) && claude \"{prompt}\"",
-                UseShellExecute  = true,
-                CreateNoWindow   = false,
-            };
-            System.Diagnostics.Process.Start(wt);
-            launched = true;
-        }
-        catch { }
-        if (!launched)
-        {
-            try
-            {
-                var psi = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName         = "cmd.exe",
-                    Arguments        = $"/k chcp 65001>nul && title Ask AI (Claude CLI) && claude \"{prompt}\"",
-                    WorkingDirectory = workDir,
-                    UseShellExecute  = true,
-                    CreateNoWindow   = false,
-                };
-                System.Diagnostics.Process.Start(psi);
-                launched = true;
-            }
-            catch (Exception ex)
-            {
-                SetStatus($"Failed to launch Claude CLI: {ex.Message}", true);
-                return;
-            }
+            SetStatus("Failed to launch Claude CLI.", true);
+            return;
         }
 
         _isBusy        = true;
         _isWaitingCli  = true;
         _answer        = null;
-        SetStatus("Claude CLI launched — waiting for answer to land in AskAiHistory…", false);
+        SetStatus("Claude CLI launched; waiting for answer to land in AskAiHistory.", false);
         StateHasChanged();
 
         _cliCts?.Cancel(); _cliCts?.Dispose();
@@ -556,6 +534,90 @@
         return AppContext.BaseDirectory;
     }
 
+    private static bool TryLaunchClaudeAskTerminal(string workDir, string prompt, string title)
+    {
+        string launchId = Guid.NewGuid().ToString("N")[..12];
+        string promptPath = Path.Combine(workDir, $"_ask_prompt_{launchId}.txt");
+        string scriptPath = Path.Combine(workDir, $"_ask_launch_{launchId}.ps1");
+
+        try
+        {
+            File.WriteAllText(promptPath, prompt, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            File.WriteAllText(scriptPath, BuildClaudeAskLauncherScript(workDir, promptPath, scriptPath, title),
+                new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        }
+        catch
+        {
+            return false;
+        }
+
+        try
+        {
+            var wt = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName        = "wt.exe",
+                UseShellExecute = false,
+                CreateNoWindow  = false,
+            };
+            wt.ArgumentList.Add("-d");
+            wt.ArgumentList.Add(workDir);
+            wt.ArgumentList.Add("powershell.exe");
+            wt.ArgumentList.Add("-NoExit");
+            wt.ArgumentList.Add("-NoProfile");
+            wt.ArgumentList.Add("-ExecutionPolicy");
+            wt.ArgumentList.Add("Bypass");
+            wt.ArgumentList.Add("-File");
+            wt.ArgumentList.Add(scriptPath);
+            return System.Diagnostics.Process.Start(wt) is not null;
+        }
+        catch { }
+
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName         = "cmd.exe",
+                WorkingDirectory = workDir,
+                UseShellExecute  = false,
+                CreateNoWindow   = false,
+            };
+            psi.ArgumentList.Add("/k");
+            psi.ArgumentList.Add("powershell.exe");
+            psi.ArgumentList.Add("-NoExit");
+            psi.ArgumentList.Add("-NoProfile");
+            psi.ArgumentList.Add("-ExecutionPolicy");
+            psi.ArgumentList.Add("Bypass");
+            psi.ArgumentList.Add("-File");
+            psi.ArgumentList.Add(scriptPath);
+            return System.Diagnostics.Process.Start(psi) is not null;
+        }
+        catch { return false; }
+    }
+
+    private static string BuildClaudeAskLauncherScript(string workDir, string promptPath, string scriptPath, string title)
+    {
+        static string Q(string value) => "'" + (value ?? "").Replace("'", "''") + "'";
+        return string.Join(Environment.NewLine, new[]
+        {
+            "$ErrorActionPreference = 'Continue'",
+            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
+            "try { chcp 65001 | Out-Null } catch {}",
+            $"try {{ $Host.UI.RawUI.WindowTitle = {Q(title)} }} catch {{}}",
+            $"Set-Location -LiteralPath {Q(workDir)}",
+            "",
+            $"$promptPath = {Q(promptPath)}",
+            $"$scriptPath = {Q(scriptPath)}",
+            "$prompt = Get-Content -LiteralPath $promptPath -Raw -Encoding UTF8",
+            "& claude $prompt",
+            "$exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }",
+            "if ($exitCode -ne 0) {",
+            "    Write-Host ('Claude exited with code ' + $exitCode + '.') -ForegroundColor Yellow",
+            "}",
+            "Remove-Item -LiteralPath $promptPath -Force -ErrorAction SilentlyContinue",
+            "Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue",
+        });
+    }
+
     private void LoadHistory(long id)
     {
         AskAiHistoryRecord? h = Repo.GetAskAiHistoryById(id);
@@ -603,6 +665,513 @@
         _showClearConfirm = false;
     }
 
+    private string BuildDatasetsContextV2()
+    {
+        var sb = new System.Text.StringBuilder();
+        int idx = 1;
+        foreach (RawReportInfo r in FilteredReports)
+        {
+            AiDocBundle? ai = Repo.GetAiDocBundle(r.DatasetName);
+            DatasetSummaryRecord? summ = Repo.GetDatasetSummaryRecord(r.DatasetName);
+            List<NormalizedMeasurement> meas = Repo.GetNormalizedMeasurements(r.DatasetName);
+
+            string summary     = summ?.Summary     ?? "";
+            string keyFindings = summ?.KeyFindings ?? "";
+            List<string> tags  = summ?.Tags        ?? [];
+            bool hasAiContext  = HasAiAskContext(ai);
+
+            if (!hasAiContext
+                && string.IsNullOrWhiteSpace(summary)
+                && string.IsNullOrWhiteSpace(keyFindings)
+                && tags.Count == 0
+                && meas.Count == 0)
+            {
+                continue;
+            }
+
+            string defectsStat  = BuildDefectStats(meas);
+            string normalVsTest = BuildNormalVsTestStats(meas);
+
+            sb.Append("----- [").Append(idx++).Append("] Dataset: ").AppendLine(r.DatasetName);
+            if (!string.IsNullOrWhiteSpace(r.ProductType)) sb.Append("    ProductType: ").AppendLine(r.ProductType);
+            if (!string.IsNullOrWhiteSpace(r.ReportDate))  sb.Append("    Date: ").AppendLine(AskAiDisplayExcelDate(r.ReportDate));
+
+            if (ai is not null && hasAiContext)
+            {
+                sb.AppendLine("    Schema: AI_EXCEL_PROC");
+                if (!string.IsNullOrWhiteSpace(ai.ReportType)) sb.Append("    ReportType: ").AppendLine(ai.ReportType);
+                if (!string.IsNullOrWhiteSpace(ai.Title)) sb.Append("    Title: ").AppendLine(ai.Title);
+                if (!string.IsNullOrWhiteSpace(ai.Purpose)) sb.Append("    Purpose: ").AppendLine(ai.Purpose);
+                if (!string.IsNullOrWhiteSpace(ai.PrimaryDefect)) sb.Append("    PrimaryDefect: ").AppendLine(ai.PrimaryDefect);
+                if (ai.Content.Count > 0) sb.Append("    Content: ").AppendLine(string.Join(" | ", ai.Content.Take(5)));
+                if (ai.RelatedDefects.Count > 0) sb.Append("    RelatedDefects: ").AppendLine(string.Join(", ", ai.RelatedDefects));
+
+                string aiResults = BuildAiAskResultsOverview(ai);
+                if (!string.IsNullOrWhiteSpace(aiResults)) sb.Append("    AiResults: ").AppendLine(aiResults);
+                string aiBreakdown = BuildAiAskBreakdown(ai);
+                if (!string.IsNullOrWhiteSpace(aiBreakdown)) sb.Append("    AiNgBreakdowns: ").AppendLine(aiBreakdown);
+                string aiConclusions = BuildAiAskConclusions(ai);
+                if (!string.IsNullOrWhiteSpace(aiConclusions)) sb.Append("    AiConclusions: ").AppendLine(aiConclusions);
+                string aiHints = BuildAiAskHints(ai);
+                if (!string.IsNullOrWhiteSpace(aiHints)) sb.Append("    TroubleshootingHints: ").AppendLine(aiHints);
+                if (!string.IsNullOrWhiteSpace(ai.DecisionRationale)) sb.Append("    DecisionRationale: ").AppendLine(AiAskBlank(ai.DecisionRationale));
+                if (ai.Assumptions.Count > 0) sb.Append("    Assumptions: ").AppendLine(string.Join(" | ", ai.Assumptions.Take(4).Select(AiAskBlank)));
+                if (ai.Warnings.Count > 0) sb.Append("    Warnings: ").AppendLine(string.Join(" | ", ai.Warnings.Take(4).Select(AiAskBlank)));
+            }
+
+            if (tags.Count > 0) sb.Append("    LegacyTags: ").AppendLine(string.Join(", ", tags));
+            if (!string.IsNullOrWhiteSpace(summ?.Purpose))           sb.Append("    LegacyPurpose: ").AppendLine(summ.Purpose);
+            if (!string.IsNullOrWhiteSpace(summ?.TestConditions))    sb.Append("    LegacyTestConditions: ").AppendLine(summ.TestConditions);
+            if (!string.IsNullOrWhiteSpace(summ?.RootCause))         sb.Append("    LegacyRootCause: ").AppendLine(summ.RootCause);
+            if (!string.IsNullOrWhiteSpace(summ?.Decision))          sb.Append("    LegacyDecision: ").AppendLine(summ.Decision);
+            if (!string.IsNullOrWhiteSpace(summ?.RecommendedAction)) sb.Append("    LegacyRecommendedAction: ").AppendLine(summ.RecommendedAction);
+            if (!string.IsNullOrWhiteSpace(summary))                 sb.Append("    LegacySummary: ").AppendLine(summary);
+            if (!string.IsNullOrWhiteSpace(keyFindings))             sb.Append("    LegacyKeyFindings: ").AppendLine(keyFindings);
+            if (!string.IsNullOrWhiteSpace(defectsStat))             sb.Append("    LegacyTopDefects: ").AppendLine(defectsStat);
+            if (!string.IsNullOrWhiteSpace(normalVsTest))            sb.Append("    LegacySameEventNormalVsTest: ").AppendLine(normalVsTest);
+            sb.AppendLine();
+        }
+        return sb.ToString();
+    }
+
+    private static bool HasAiAskContext(AiDocBundle? doc)
+        => doc is not null
+           && (!string.IsNullOrWhiteSpace(doc.Title)
+               || !string.IsNullOrWhiteSpace(doc.Purpose)
+               || !string.IsNullOrWhiteSpace(doc.PrimaryDefect)
+               || doc.Content.Count > 0
+               || doc.Results.Count > 0
+               || doc.NgBreakdowns.Count > 0
+               || doc.Conclusions.Count > 0
+               || doc.Hints.Count > 0);
+
+    private static string BuildAiAskResultsOverview(AiDocBundle doc)
+    {
+        var lines = new List<string>();
+        var rateRows = doc.Results
+            .Where(IsAskAiNgRateResult)
+            .Where(r => AskAiNgRatePercent(r).HasValue)
+            .ToList();
+        var baselines = rateRows.Where(IsAskAiBaselineResult).ToList();
+        var comparisons = new List<(AiResultRow Baseline, AiResultRow Variant, double? Relative)>();
+
+        foreach (AiResultRow variant in rateRows.Where(r => !IsAskAiBaselineResult(r)))
+        {
+            AiResultRow? baseline = FindAskAiBaseline(variant, baselines);
+            if (baseline is null) continue;
+            comparisons.Add((baseline, variant, AskAiRelativeChangePct(baseline, variant)));
+        }
+
+        if (comparisons.Count > 0)
+        {
+            foreach (var c in comparisons
+                         .OrderByDescending(x => Math.Abs(x.Relative ?? 0))
+                         .Take(8))
+            {
+                double? baseRate = AskAiNgRatePercent(c.Baseline);
+                double? testRate = AskAiNgRatePercent(c.Variant);
+                string relText = c.Relative.HasValue
+                    ? $"{Math.Abs(c.Relative.Value):F1}% {(c.Relative.Value > 0 ? "worse" : c.Relative.Value < 0 ? "improved" : "same")}"
+                    : "relative unavailable";
+                string ratio = baseRate.HasValue && testRate.HasValue && Math.Abs(baseRate.Value) > 0.000001
+                    ? $"{(testRate.Value / baseRate.Value):F2}x"
+                    : "-";
+                lines.Add(
+                    $"NormalRelative: {AiAskResultLabel(c.Variant)} {AskAiPct(testRate)} vs {AiAskResultLabel(c.Baseline)} {AskAiPct(baseRate)} = {ratio}, {relText}; event={AskAiEventLabel(c.Variant, c.Baseline)}; source={AiAskSourceLabel(c.Variant)}");
+            }
+        }
+        else if (rateRows.Count > 0)
+        {
+            string ranking = string.Join("; ", rateRows
+                .OrderByDescending(r => AskAiNgRatePercent(r) ?? 0)
+                .Take(8)
+                .Select(r => $"{AiAskResultLabel(r)} {AskAiPct(AskAiNgRatePercent(r))} input={AskAiCount(r.InputCount)} ng={AskAiCount(r.NgCount)} source={AiAskSourceLabel(r)}"));
+            lines.Add("NoBaselineNgRates: " + ranking + " (rank only; do not call improved/worsened)");
+        }
+
+        lines.AddRange(doc.Results
+            .Where(r => !IsAskAiNgRateResult(r))
+            .Where(r => r.MetricValue.HasValue || !string.IsNullOrWhiteSpace(r.Judgement))
+            .Take(10)
+            .Select(r => $"{AiAskResultLabel(r)} {AiAskMetricValue(r)} judgement={AiAskBlank(r.Judgement)} source={AiAskSourceLabel(r)}"));
+
+        return string.Join(" | ", lines);
+    }
+
+    private static string BuildAiAskBreakdown(AiDocBundle doc)
+        => doc.NgBreakdowns.Count == 0
+            ? ""
+            : string.Join(", ", doc.NgBreakdowns.Take(10)
+                .Select(b => $"{b.DefectName} count={AskAiCount(b.TotalCount)} avgRate={AskAiPct(b.AvgRate)}"));
+
+    private static string BuildAiAskConclusions(AiDocBundle doc)
+        => doc.Conclusions.Count == 0
+            ? ""
+            : string.Join(" | ", doc.Conclusions.Take(6)
+                .Select(c => $"{AiAskBlank(c.Topic)}: {AiAskBlank(c.NormalizedInterpretation)}"));
+
+    private static string BuildAiAskHints(AiDocBundle doc)
+        => doc.Hints.Count == 0
+            ? ""
+            : string.Join(" | ", doc.Hints.Take(6)
+                .Select(h => $"{AiAskBlank(h.DefectName)}: check={AiAskBlank(h.CheckItem)}, reason={AiAskBlank(h.Reason)}"));
+
+    private static AiResultRow? FindAskAiBaseline(AiResultRow variant, List<AiResultRow> baselines)
+        => baselines
+            .Select(b => new { Row = b, Score = AskAiBaselineScore(variant, b) })
+            .Where(x => x.Score >= 60)
+            .OrderByDescending(x => x.Score)
+            .ThenByDescending(x => x.Row.InputCount ?? 0)
+            .FirstOrDefault()
+            ?.Row;
+
+    private static int AskAiBaselineScore(AiResultRow variant, AiResultRow baseline)
+    {
+        if (AskAiEventConflict(variant, baseline)) return -1;
+
+        int score = 0;
+        if (AskAiSameText(variant.SheetName, baseline.SheetName)) score += 45;
+        if (!string.IsNullOrWhiteSpace(variant.ResultDate) && AskAiSameEventDate(variant.ResultDate, baseline.ResultDate)) score += 40;
+        if (AskAiSameText(variant.Line, baseline.Line)) score += 12;
+        if (AskAiSameText(variant.MeasurementType, baseline.MeasurementType)) score += 24;
+        if (AskAiSameText(variant.SourceFile, baseline.SourceFile)) score += 8;
+        if (!string.IsNullOrWhiteSpace(variant.BeforeValue)
+            && AskAiTextContainsLabel(AiAskResultLabel(baseline), variant.BeforeValue)) score += 80;
+        if (ContainsAskAny(AiAskSearchText(baseline), "normal", "baseline", "control", "reference", "대조")) score += 24;
+        if (ContainsAskAny(AiAskSearchText(baseline), "before", "old", "standard", "기존")) score += 14;
+        if (ContainsAskOkBaselineToken(AiAskResultLabel(baseline))) score += 10;
+        score += AskAiSharedTokenScore(AiAskResultLabel(variant), AiAskResultLabel(baseline));
+        score += AskAiSharedTokenScore(variant.ChangedFactor, AiAskResultLabel(baseline));
+        score += AskAiSharedTokenScore(variant.ConditionProcess, baseline.ConditionProcess);
+        return score;
+    }
+
+    private static bool AskAiEventConflict(AiResultRow variant, AiResultRow baseline)
+    {
+        if (!AskAiSameOrBlank(variant.SourceFile, baseline.SourceFile)) return true;
+        if (!AskAiSameOrBlank(variant.SheetName, baseline.SheetName)) return true;
+        if (!AskAiSameDateOrBlank(variant.ResultDate, baseline.ResultDate)) return true;
+        if (!AskAiSameOrBlank(variant.Line, baseline.Line)) return true;
+        return false;
+    }
+
+    private static string AskAiEventLabel(AiResultRow variant, AiResultRow baseline)
+    {
+        var parts = new List<string>();
+        if (AskAiSameText(variant.SheetName, baseline.SheetName) && !string.IsNullOrWhiteSpace(variant.SheetName)) parts.Add($"sheet={variant.SheetName}");
+        if (AskAiSameEventDate(variant.ResultDate, baseline.ResultDate) && !string.IsNullOrWhiteSpace(variant.ResultDate)) parts.Add($"date={AskAiDisplayExcelDate(variant.ResultDate)}");
+        if (AskAiSameText(variant.Line, baseline.Line) && !string.IsNullOrWhiteSpace(variant.Line)) parts.Add($"line={variant.Line}");
+        if (AskAiSameText(variant.MeasurementType, baseline.MeasurementType) && !string.IsNullOrWhiteSpace(variant.MeasurementType)) parts.Add($"type={variant.MeasurementType}");
+        return parts.Count == 0 ? "same sheet/table inferred" : string.Join(",", parts);
+    }
+
+    private static double? AskAiNgRatePercent(AiResultRow r)
+    {
+        if (r.NgRatePercent.HasValue) return r.NgRatePercent.Value;
+        if (r.NgRateDecimal.HasValue) return r.NgRateDecimal.Value * 100.0;
+        return null;
+    }
+
+    private static double? AskAiRelativeChangePct(AiResultRow baseline, AiResultRow variant)
+    {
+        double? baseRate = AskAiNgRatePercent(baseline);
+        double? testRate = AskAiNgRatePercent(variant);
+        if (!baseRate.HasValue || !testRate.HasValue || Math.Abs(baseRate.Value) < 0.000001) return null;
+        return (testRate.Value / baseRate.Value - 1.0) * 100.0;
+    }
+
+    private static bool IsAskAiBaselineResult(AiResultRow r)
+    {
+        string text = NormalizeAskText(string.Join(' ', r.ConditionGroup, r.AfterValue));
+        return ContainsAskAny(text, "normal", "baseline", "control", "reference", "before", "old", "standard", "기존", "대조")
+               || ContainsAskOkBaselineToken(AiAskResultLabel(r));
+    }
+
+    private static bool IsAskAiNgRateResult(AiResultRow r)
+        => string.Equals(r.MetricName, "Total NG Rate", StringComparison.OrdinalIgnoreCase)
+           || r.NgRatePercent.HasValue
+           || r.NgRateDecimal.HasValue;
+
+    private static string AiAskResultLabel(AiResultRow r)
+        => !string.IsNullOrWhiteSpace(r.ConditionGroup) ? r.ConditionGroup
+         : !string.IsNullOrWhiteSpace(r.AfterValue) ? r.AfterValue
+         : !string.IsNullOrWhiteSpace(r.ChangedFactor) ? r.ChangedFactor
+         : !string.IsNullOrWhiteSpace(r.MeasurementType) ? r.MeasurementType
+         : !string.IsNullOrWhiteSpace(r.MetricName) ? r.MetricName
+         : r.ResultId;
+
+    private static string AiAskSearchText(AiResultRow r)
+        => NormalizeAskText(string.Join(' ', r.ConditionGroup, r.ConditionProcess, r.ChangedFactor,
+            r.BeforeValue, r.AfterValue, r.MeasurementType, r.MetricName));
+
+    private static string AiAskSourceLabel(AiResultRow r)
+        => string.IsNullOrWhiteSpace(r.SheetName) ? r.SourceFile : r.SheetName;
+
+    private static string AiAskMetricValue(AiResultRow r)
+    {
+        if (!r.MetricValue.HasValue) return AiAskResultMainValue(r);
+        string unit = string.IsNullOrWhiteSpace(r.Unit) ? "" : " " + r.Unit;
+        return AiAskNumber(r.MetricValue.Value) + unit;
+    }
+
+    private static string AiAskResultMainValue(AiResultRow r)
+    {
+        double? rate = AskAiNgRatePercent(r);
+        if (rate.HasValue) return AskAiPct(rate);
+        if (r.MetricValue.HasValue) return AiAskMetricValue(r);
+        if (!string.IsNullOrWhiteSpace(r.Judgement)) return r.Judgement;
+        if (r.NgCount.HasValue) return AskAiCount(r.NgCount);
+        return "-";
+    }
+
+    private static string AskAiPct(double? value)
+        => value.HasValue ? value.Value.ToString("F1") + "%" : "-";
+
+    private static string AskAiCount(double? value)
+    {
+        if (!value.HasValue) return "-";
+        double v = value.Value;
+        return Math.Abs(v - Math.Round(v)) < 0.0001
+            ? Math.Round(v).ToString("N0")
+            : v.ToString("N1");
+    }
+
+    private static string AiAskNumber(double value)
+    {
+        double abs = Math.Abs(value);
+        if (abs >= 1000) return value.ToString("N0");
+        if (abs >= 100) return value.ToString("F1");
+        if (abs >= 10) return value.ToString("F2");
+        return value.ToString("F3").TrimEnd('0').TrimEnd('.');
+    }
+
+    private static string AiAskBlank(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "-" : AskAiCleanExcelSerialDateText(value).Trim();
+
+    private static bool AskAiSameOrBlank(string? a, string? b)
+        => string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b) || AskAiSameText(a, b);
+
+    private static bool AskAiSameDateOrBlank(string? a, string? b)
+        => string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b) || AskAiSameEventDate(a, b);
+
+    private static bool AskAiSameEventDate(string? a, string? b)
+    {
+        if (AskAiSameText(a, b)) return true;
+        if (!AskAiTryEventDate(a, out int? ay, out int am, out int ad)) return false;
+        if (!AskAiTryEventDate(b, out int? by, out int bm, out int bd)) return false;
+        if (am != bm || ad != bd) return false;
+        return !ay.HasValue || !by.HasValue || ay.Value == by.Value;
+    }
+
+    private static bool AskAiTryEventDate(string? value, out int? year, out int month, out int day)
+    {
+        year = null;
+        month = 0;
+        day = 0;
+        string raw = (value ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(raw)) return false;
+
+        if (AskAiTryExcelSerialDate(raw, out DateTime serialDate))
+        {
+            year = serialDate.Year;
+            month = serialDate.Month;
+            day = serialDate.Day;
+            return true;
+        }
+
+        string[] parts = raw.Split(['/', '-', '.', ' '], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length >= 2)
+        {
+            if (int.TryParse(parts[0], out int first) && AskAiTryMonthToken(parts[1], out int namedMonth))
+            {
+                day = first;
+                month = namedMonth;
+                if (parts.Length >= 3 && int.TryParse(parts[2], out int y) && y >= 1000) year = y;
+                return day is >= 1 and <= 31;
+            }
+            if (AskAiTryMonthToken(parts[0], out namedMonth) && int.TryParse(parts[1], out int second))
+            {
+                day = second;
+                month = namedMonth;
+                if (parts.Length >= 3 && int.TryParse(parts[2], out int y) && y >= 1000) year = y;
+                return day is >= 1 and <= 31;
+            }
+        }
+
+        string[] candidates = [raw, raw.Replace('-', '/'), raw.Replace('.', '/')];
+        foreach (string candidate in candidates)
+        {
+            if (DateTime.TryParse(candidate, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AllowWhiteSpaces, out DateTime dt))
+            {
+                year = AskAiHasExplicitYear(raw) ? dt.Year : null;
+                month = dt.Month;
+                day = dt.Day;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static bool AskAiTryMonthToken(string token, out int month)
+    {
+        string t = token.Trim().ToLowerInvariant();
+        month = t[..Math.Min(3, t.Length)] switch
+        {
+            "jan" => 1,
+            "feb" => 2,
+            "mar" => 3,
+            "apr" => 4,
+            "may" => 5,
+            "jun" => 6,
+            "jul" => 7,
+            "aug" => 8,
+            "sep" => 9,
+            "oct" => 10,
+            "nov" => 11,
+            "dec" => 12,
+            _ => 0,
+        };
+        return month > 0;
+    }
+
+    private static bool AskAiHasExplicitYear(string value)
+    {
+        int run = 0;
+        foreach (char ch in value)
+        {
+            run = char.IsDigit(ch) ? run + 1 : 0;
+            if (run >= 4) return true;
+        }
+        return false;
+    }
+
+    private static string AskAiDisplayExcelDate(string? value)
+    {
+        string text = AskAiCleanExcelSerialDateText(value);
+        return AskAiTryExcelSerialDate(text, out DateTime date) ? date.ToString("yyyy-MM-dd") : text;
+    }
+
+    private static string AskAiCleanExcelSerialDateText(string? value)
+    {
+        string text = value ?? "";
+        if (string.IsNullOrWhiteSpace(text)) return "";
+
+        text = System.Text.RegularExpressions.Regex.Replace(
+            text,
+            @"\b(?:Excel\s+serial(?:\s+date)?|serial\s+date)\s+([0-9]{5}(?:\.\d+)?)\s*(?:=|:|->)?\s*(\d{4}-\d{2}-\d{2})\b",
+            "$2",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        text = System.Text.RegularExpressions.Regex.Replace(
+            text,
+            @"\b([0-9]{5}(?:\.\d+)?)\s*\(=\s*(\d{4}-\d{2}-\d{2})\)",
+            "$2");
+
+        text = System.Text.RegularExpressions.Regex.Replace(
+            text,
+            @"\b(?:Excel\s+serial(?:\s+date)?|serial\s+date)\s+([0-9]{5}(?:\.\d+)?)\b",
+            m => AskAiTryExcelSerialDate(m.Groups[1].Value, out DateTime date)
+                ? date.ToString("yyyy-MM-dd")
+                : m.Value,
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        return text.Trim();
+    }
+
+    private static bool AskAiTryExcelSerialDate(string? value, out DateTime date)
+    {
+        date = default;
+        string text = (value ?? "").Trim();
+        if (!System.Text.RegularExpressions.Regex.IsMatch(text, @"^\d{5}(?:\.0+)?$")) return false;
+        if (!double.TryParse(text, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out double serial)) return false;
+        if (serial < 20000 || serial > 80000) return false;
+        try
+        {
+            date = DateTime.FromOADate(serial).Date;
+            return date.Year is >= 1954 and <= 2119;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool AskAiSameText(string? a, string? b)
+        => string.Equals((a ?? "").Trim(), (b ?? "").Trim(), StringComparison.OrdinalIgnoreCase);
+
+    private static bool ContainsAskAny(string text, params string[] needles)
+    {
+        string haystack = NormalizeAskText(text);
+        string padded = " " + haystack + " ";
+        var tokens = AskAiTokens(text);
+        foreach (string needle in needles)
+        {
+            string normalized = NormalizeAskText(needle);
+            if (string.IsNullOrWhiteSpace(normalized)) continue;
+            if (normalized.Contains(' '))
+            {
+                if (haystack.Contains(normalized, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+            else if (padded.Contains(" " + normalized + " ", StringComparison.OrdinalIgnoreCase)
+                     || tokens.Contains(normalized))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static bool ContainsAskOkBaselineToken(string label)
+    {
+        string normalized = " " + NormalizeAskText(label) + " ";
+        return normalized.Contains(" ok ", StringComparison.OrdinalIgnoreCase)
+               && !normalized.Contains(" ng ", StringComparison.OrdinalIgnoreCase)
+               && !normalized.Contains(" test ", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool AskAiTextContainsLabel(string candidateLabel, string targetLabel)
+    {
+        string candidate = NormalizeAskText(candidateLabel);
+        string target = NormalizeAskText(targetLabel);
+        if (string.IsNullOrWhiteSpace(candidate) || string.IsNullOrWhiteSpace(target)) return false;
+        if (candidate.Contains(target, StringComparison.OrdinalIgnoreCase)) return true;
+        var candidateTokens = AskAiTokens(candidate);
+        var targetTokens = AskAiTokens(target);
+        return targetTokens.Count > 0 && targetTokens.All(candidateTokens.Contains);
+    }
+
+    private static int AskAiSharedTokenScore(string? left, string? right)
+    {
+        var a = AskAiTokens(NormalizeAskText(left ?? ""));
+        var b = AskAiTokens(NormalizeAskText(right ?? ""));
+        if (a.Count == 0 || b.Count == 0) return 0;
+        return Math.Min(24, a.Count(b.Contains) * 4);
+    }
+
+    private static HashSet<string> AskAiTokens(string text)
+    {
+        string[] stop = ["total", "rate", "function", "test", "normal", "baseline", "ng", "ok", "the", "and", "vs"];
+        return NormalizeAskText(text)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(x => x.Length >= 2)
+            .Where(x => !stop.Contains(x, StringComparer.OrdinalIgnoreCase))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeAskText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return "";
+        Span<char> buffer = stackalloc char[text.Length];
+        int j = 0;
+        foreach (char ch in text)
+        {
+            buffer[j++] = char.IsLetterOrDigit(ch) ? char.ToLowerInvariant(ch) : ' ';
+        }
+        return new string(buffer[..j]).Trim();
+    }
+
     private string BuildDatasetsContext()
     {
         var sb = new System.Text.StringBuilder();
@@ -634,15 +1203,15 @@
 
             sb.Append("───── [").Append(idx++).Append("] Dataset: ").AppendLine(r.DatasetName);
             if (!string.IsNullOrWhiteSpace(r.ProductType)) sb.Append("    ProductType: ").AppendLine(r.ProductType);
-            if (!string.IsNullOrWhiteSpace(r.ReportDate))  sb.Append("    Date: ").AppendLine(r.ReportDate);
+            if (!string.IsNullOrWhiteSpace(r.ReportDate))  sb.Append("    Date: ").AppendLine(AskAiDisplayExcelDate(r.ReportDate));
             if (tags.Count > 0) sb.Append("    Tags: ").AppendLine(string.Join(", ", tags));
-            if (!string.IsNullOrWhiteSpace(purpose))           sb.Append("    Purpose: ").AppendLine(purpose);
-            if (!string.IsNullOrWhiteSpace(testConditions))    sb.Append("    TestConditions: ").AppendLine(testConditions);
-            if (!string.IsNullOrWhiteSpace(rootCause))         sb.Append("    RootCause: ").AppendLine(rootCause);
-            if (!string.IsNullOrWhiteSpace(decision))          sb.Append("    Decision: ").AppendLine(decision);
-            if (!string.IsNullOrWhiteSpace(recommendedAction)) sb.Append("    RecommendedAction: ").AppendLine(recommendedAction);
-            if (!string.IsNullOrWhiteSpace(summary))     sb.Append("    Summary: ").AppendLine(summary);
-            if (!string.IsNullOrWhiteSpace(keyFindings)) sb.Append("    KeyFindings: ").AppendLine(keyFindings);
+            if (!string.IsNullOrWhiteSpace(purpose))           sb.Append("    Purpose: ").AppendLine(AiAskBlank(purpose));
+            if (!string.IsNullOrWhiteSpace(testConditions))    sb.Append("    TestConditions: ").AppendLine(AiAskBlank(testConditions));
+            if (!string.IsNullOrWhiteSpace(rootCause))         sb.Append("    RootCause: ").AppendLine(AiAskBlank(rootCause));
+            if (!string.IsNullOrWhiteSpace(decision))          sb.Append("    Decision: ").AppendLine(AiAskBlank(decision));
+            if (!string.IsNullOrWhiteSpace(recommendedAction)) sb.Append("    RecommendedAction: ").AppendLine(AiAskBlank(recommendedAction));
+            if (!string.IsNullOrWhiteSpace(summary))     sb.Append("    Summary: ").AppendLine(AiAskBlank(summary));
+            if (!string.IsNullOrWhiteSpace(keyFindings)) sb.Append("    KeyFindings: ").AppendLine(AiAskBlank(keyFindings));
             if (!string.IsNullOrWhiteSpace(defectsStat)) sb.Append("    TopDefects: ").AppendLine(defectsStat);
             if (!string.IsNullOrWhiteSpace(normalVsTest)) sb.Append("    NormalVsTest: ").AppendLine(normalVsTest);
             sb.AppendLine();
@@ -675,6 +1244,32 @@
     {
         if (meas.Count == 0) return "";
 
+        var aggregateRows = meas
+            .Where(m => string.IsNullOrWhiteSpace(m.DefectType))
+            .ToList();
+        var normalRows = aggregateRows
+            .Where(m => string.Equals(m.VariableGroup, "normal", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        var testRows = aggregateRows
+            .Where(m => string.Equals(m.VariableGroup, "test", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        var paired = new List<string>();
+        foreach (var testRow in testRows)
+        {
+            var baseline = normalRows
+                .Where(n => SameLegacyEvent(n, testRow))
+                .OrderByDescending(n => n.InputQty)
+                .FirstOrDefault();
+            if (baseline is null || baseline.NgRate <= 0) continue;
+            double rel = (testRow.NgRate / baseline.NgRate - 1.0) * 100.0;
+            string direction = Math.Abs(rel) < 0.5 ? "same" : rel > 0 ? "worse" : "improved";
+            string eventLabel = string.Join("/",
+                new[] { testRow.TestDate, testRow.Line, testRow.CheckType }.Where(x => !string.IsNullOrWhiteSpace(x)));
+            paired.Add($"{testRow.Variable} {testRow.NgRate:F1}% vs {baseline.Variable} {baseline.NgRate:F1}% = {(testRow.NgRate / baseline.NgRate):F2}x, {Math.Abs(rel):F1}% {direction}; event={eventLabel}");
+        }
+        if (paired.Count > 0)
+            return string.Join(" | ", paired.Take(8));
+
         // Weighted average NG rate per variableGroup (input-weighted)
         double AvgNg(string grp)
         {
@@ -696,8 +1291,9 @@
         if (!double.IsNaN(test))   parts.Add($"test={test:F1}%");
         if (!double.IsNaN(normal) && !double.IsNaN(test) && normal > 0)
         {
-            double improvement = (normal - test) / normal * 100.0;
-            parts.Add($"improvement={improvement:F0}%");
+            double rel = (test / normal - 1.0) * 100.0;
+            string direction = Math.Abs(rel) < 0.5 ? "same" : rel > 0 ? "worse" : "improved";
+            parts.Add($"relativeChange={Math.Abs(rel):F1}% {direction}, ratio={(test / normal):F2}x");
         }
 
         // Best / Worst test conditions by NG rate
@@ -722,6 +1318,18 @@
         }
 
         return parts.Count == 0 ? "" : string.Join(", ", parts);
+    }
+
+    private static bool SameLegacyEvent(NormalizedMeasurement a, NormalizedMeasurement b)
+    {
+        static bool SameOrBlank(string? x, string? y)
+            => string.IsNullOrWhiteSpace(x) || string.IsNullOrWhiteSpace(y)
+               || string.Equals(x.Trim(), y.Trim(), StringComparison.OrdinalIgnoreCase);
+
+        return AskAiSameDateOrBlank(a.TestDate, b.TestDate)
+               && SameOrBlank(a.Line, b.Line)
+               && SameOrBlank(a.CheckType, b.CheckType)
+               && SameOrBlank(a.ProductType, b.ProductType);
     }
 
     private void Clear()

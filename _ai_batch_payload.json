@@ -1,0 +1,85 @@
+{
+  "name": "01.1. BRS-161016 Report analyse NG sample of reliability test_1778470885",
+  "result": {
+    "schema_version": "0.1",
+    "document": {
+      "source_file": "01.1. BRS-161016 Report analyse NG sample of reliability test.xlsx",
+      "source_sheet": "Analyse NG sample",
+      "title": "REPORT ANALYZE NG FUNCTION MODEL BRS-161014",
+      "model": "BRS-161014",
+      "report_date": "2025-01-13",
+      "department": "ME",
+      "marker": "THUY",
+      "line": "",
+      "report_type": "defect_root_cause",
+      "primary_defect": {"canonical_name": "NG Hearing Noise", "aliases_in_document": ["NG Noise after drop test", "NG Noise"]},
+      "related_defects": ["CMG offset", "Coil+SP Gap", "Particle"],
+      "parts": ["VP", "CMG", "Coil", "SP"],
+      "processes": ["Reliability drop test (manual)", "Decap analysis"],
+      "purpose": "Analyze NG Noise samples found after manual drop test of VP bending level 1 & 2 lots.",
+      "content": ["VP bending level 1: 3pcs NG", "VP bending level 2: 3pcs NG", "Decap and identify cause of each NG"],
+      "source_cells": {"title": ["Analyse NG sample!D2"], "date": ["Analyse NG sample!P3"], "purpose": ["Analyse NG sample!B6"], "content": ["Analyse NG sample!B8", "Analyse NG sample!B9"]}
+    },
+    "test_conditions": [
+      {"condition_id": "c1", "condition_group": "Drop test reliability", "line": "", "process": "Reliability drop test (manual)", "changed_factor": "VP bending level (1 & 2)", "before_value": null, "after_value": null, "unit": null, "machine": null, "jig": null, "material_lot": "VP bending lvl1+lvl2", "supplier": null, "dry_time_sec": null, "temperature": null, "pressure": null, "bond_amount": null, "uv_energy": null, "source_file": "BRS-161016 NG analysis.xlsx", "sheet_name": "Analyse NG sample", "source_cells": ["Analyse NG sample!B6", "Analyse NG sample!B8", "Analyse NG sample!B9"]}
+    ],
+    "results": [
+      {"result_id": "r1", "condition_id": "c1", "measurement_type": "NG Decap Analysis", "condition_group": "Total NG Noise samples", "date": "2025-01-13", "line": "", "input_count": 6, "ok_count": null, "ng_count": 6, "ng_rate_decimal": null, "ng_rate_percent": null, "metric_name": "NG samples decapped", "metric_value": 6, "unit": "pcs", "judgement": null, "ng_breakdown": {"CMG offset": {"count": 1, "rate": 0.1667}, "Coil+SP Gap": {"count": 1, "rate": 0.1667}, "Particle": {"count": 1, "rate": 0.1667}, "Don't know reason": {"count": 3, "rate": 0.5}}, "source_file": "BRS-161016 NG analysis.xlsx", "sheet_name": "Analyse NG sample", "source_cells": ["Analyse NG sample!E63:I68"]}
+    ],
+    "conclusions": [
+      {"conclusion_id": "k1", "topic": "Decap NG Noise root cause distribution", "statement_from_report": "(DECISION section header at B56 but body text not captured in rendered cells)", "normalized_interpretation": "Of 6 decapped NG Noise samples (drop test manual): 1 CMG offset (16.7%), 1 Coil+SP Gap (16.7%), 1 Particle (16.7%), 3 Don't know reason (50%). Half of NGs unidentified — indicates further analysis or improved decap protocol needed.", "source_file": "BRS-161016 NG analysis.xlsx", "sheet_name": "Analyse NG sample", "source_cells": ["Analyse NG sample!F65:I68"]}
+    ],
+    "troubleshooting_index": {
+      "defect_name": "NG Hearing Noise",
+      "when_user_asks": ["BRS-161014 NG Noise after drop test", "VP bending NG Noise root cause", "Coil SP gap NG Noise"],
+      "suggested_checks": [
+        {"hint_id": "h1", "check_item": "Inspect CMG offset in VP forming for bending lot", "reason": "1 of 6 decapped NG Noise samples = CMG offset", "evidence_strength": "low", "related_process": "VP Forming", "related_part": "CMG", "source_file": "BRS-161016 NG analysis.xlsx", "sheet_name": "Analyse NG sample", "source_cells": ["Analyse NG sample!C15"]},
+        {"hint_id": "h2", "check_item": "Check Coil + SP gap during assembly", "reason": "1 of 6 decapped NG Noise samples = Coil+SP gap", "evidence_strength": "low", "related_process": "Coil/SP assembly", "related_part": "Coil, SP", "source_file": "BRS-161016 NG analysis.xlsx", "sheet_name": "Analyse NG sample", "source_cells": ["Analyse NG sample!C25"]},
+        {"hint_id": "h3", "check_item": "Particle control at drop-test exposed parts", "reason": "1 of 6 decapped NG Noise samples = Particle", "evidence_strength": "low", "related_process": "Final assembly cleanliness", "related_part": "VP, Coil", "source_file": "BRS-161016 NG analysis.xlsx", "sheet_name": "Analyse NG sample", "source_cells": ["Analyse NG sample!C35"]},
+        {"hint_id": "h4", "check_item": "Improve decap protocol to reduce 'Don't know reason'", "reason": "50% of decapped samples could not be assigned a cause; analysis pipeline gap", "evidence_strength": "medium", "related_process": "NG decap analysis", "related_part": "QA lab", "source_file": "BRS-161016 NG analysis.xlsx", "sheet_name": "Analyse NG sample", "source_cells": ["Analyse NG sample!C45"]}
+      ],
+      "limitations": ["Only 6 decapped samples", "DECISION text not captured in rendered cells", "No baseline NG Noise distribution provided"]
+    },
+    "ai_extraction_log": {
+      "confidence": 0.6,
+      "assumptions": ["NG decap counts treated as defect breakdown of total 6 NG Noise samples"],
+      "warnings": ["DECISION body not in rendered text", "No comparison vs previous lots"],
+      "decision_rationale": "No same-event Normal/Baseline row; this is decap defect cause analysis only — classified defect_root_cause. Highlight 50% unidentified decap to drive analysis improvement."
+    }
+  },
+  "translations": {
+    "ko": {
+      "document": {"title": "BRS-161014 NG Function 분석 보고서 (NG Noise 신뢰성)", "purpose": "VP bending level 1, 2 로트가 수동 드롭 테스트 후 NG Noise 발생, 샘플 분석.", "content": ["VP bending level 1: NG 3pcs", "VP bending level 2: NG 3pcs", "Decap 후 원인 식별"]},
+      "conclusions": {"k1": {"topic": "Decap NG Noise 원인 분포", "statement_from_report": "(DECISION 본문 미캡처)", "normalized_interpretation": "Decap한 6 NG Noise 샘플 중 CMG offset 1 (16.7%), Coil+SP Gap 1 (16.7%), Particle 1 (16.7%), 원인 미상 3 (50%). 절반이 미식별이라 추가 분석/Decap 프로세스 개선 필요."}},
+      "hints": {
+        "h1": {"check_item": "VP Forming 시 CMG offset 검사", "reason": "Decap 6개 중 1개가 CMG offset"},
+        "h2": {"check_item": "Coil + SP Gap 조립 점검", "reason": "Decap 6개 중 1개가 Coil+SP Gap"},
+        "h3": {"check_item": "낙하 노출부 Particle 관리", "reason": "Decap 6개 중 1개가 Particle"},
+        "h4": {"check_item": "원인 미상 50% 줄이기 위한 Decap 프로토콜 개선", "reason": "샘플의 절반이 원인 미상; 분석 파이프라인 갭"}
+      },
+      "log": {"assumptions": ["NG Decap count는 총 NG Noise 6개의 분해"], "warnings": ["DECISION 본문 누락", "이전 로트 비교 없음"], "decision_rationale": "동일 이벤트 baseline 없음, defect_root_cause 분류. 50% 원인 미상이 핵심 개선 포인트."}
+    },
+    "en": {
+      "document": {"title": "BRS-161014 NG Function Analysis Report (Reliability NG Noise)", "purpose": "Analyze NG Noise found after manual drop test on VP bending level 1 & 2 lots.", "content": ["VP bending level 1 NG 3pcs", "VP bending level 2 NG 3pcs", "Decap and identify cause"]},
+      "conclusions": {"k1": {"topic": "Decap NG Noise cause split", "statement_from_report": "(DECISION body not captured)", "normalized_interpretation": "Of 6 decapped NG Noise samples: CMG offset 1 (16.7%), Coil+SP Gap 1 (16.7%), Particle 1 (16.7%), Don't know 3 (50%). Half unidentified — needs further analysis or better decap protocol."}},
+      "hints": {
+        "h1": {"check_item": "Inspect CMG offset at VP forming", "reason": "1 of 6 decapped NGs = CMG offset"},
+        "h2": {"check_item": "Check Coil + SP Gap at assembly", "reason": "1 of 6 decapped NGs = Coil+SP Gap"},
+        "h3": {"check_item": "Particle control on drop-exposed surfaces", "reason": "1 of 6 decapped NGs = Particle"},
+        "h4": {"check_item": "Improve decap protocol to reduce 50% unidentified", "reason": "Half of samples could not be assigned a cause"}
+      },
+      "log": {"assumptions": ["NG decap counts are breakdown of 6 NG Noise samples"], "warnings": ["DECISION body missing", "No prior lot comparison"], "decision_rationale": "No same-event baseline; defect_root_cause type. 50% unknown cause is the key improvement target."}
+    },
+    "vi": {
+      "document": {"title": "Báo cáo phân tích NG Function BRS-161014 (NG Noise độ tin cậy)", "purpose": "Phân tích sample NG Noise sau drop test manual lô VP bending level 1 & 2.", "content": ["VP bending level 1 NG 3pcs", "VP bending level 2 NG 3pcs", "Decap và xác định nguyên nhân"]},
+      "conclusions": {"k1": {"topic": "Phân bố nguyên nhân NG Noise", "statement_from_report": "(không có nội dung DECISION)", "normalized_interpretation": "Trong 6 mẫu decap NG Noise: CMG offset 1 (16.7%), Coil+SP Gap 1 (16.7%), Particle 1 (16.7%), Không rõ 3 (50%). Một nửa không xác định — cần phân tích thêm/cải tiến decap."}},
+      "hints": {
+        "h1": {"check_item": "Kiểm tra CMG offset tại VP forming", "reason": "1/6 decap = CMG offset"},
+        "h2": {"check_item": "Kiểm tra Coil + SP Gap khi lắp ráp", "reason": "1/6 decap = Coil+SP Gap"},
+        "h3": {"check_item": "Kiểm soát hạt bụi tại bề mặt drop-test", "reason": "1/6 decap = Particle"},
+        "h4": {"check_item": "Cải tiến quy trình decap để giảm 50% không rõ nguyên nhân", "reason": "Nửa số mẫu không xác định được nguyên nhân"}
+      },
+      "log": {"assumptions": ["Số decap NG là phân tách của 6 NG Noise"], "warnings": ["Thiếu nội dung DECISION", "Không có so sánh lô trước"], "decision_rationale": "Không có baseline cùng sự kiện; defect_root_cause. 50% không xác định nguyên nhân là điểm cải tiến chính."}
+    }
+  }
+}

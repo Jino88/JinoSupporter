@@ -1,0 +1,78 @@
+{
+  "name": "46. TIU C11-20  Report check VP deform. 2026.1.27",
+  "result": {
+    "schema_version": "0.1",
+    "document": {
+      "source_file": "46. TIU C11-20  Report check VP deform. 2026.1.27",
+      "source_sheet": "Test",
+      "title": "TIU C11-20 Check NG VP deform after visual",
+      "model": "TIU C11-20L",
+      "report_date": "2026-01-27",
+      "department": "ME",
+      "marker": "Giang",
+      "report_type": "defect_root_cause",
+      "primary_defect": {"canonical_name": "NG VP deform", "aliases_in_document": ["VP deform after visual"]},
+      "related_defects": [],
+      "parts": ["VP"],
+      "processes": ["Visual inspection", "Post-visual handling"],
+      "purpose": "Investigate whether VP deform NG happens after the visual inspection step.",
+      "content": ["Check 500pcs before visual", "Input visual", "Re-check after visual"],
+      "source_cells": {"title": ["Test!D2"], "date": ["Test!N3"], "purpose": ["Test!B6"], "content": ["Test!B8"]}
+    },
+    "test_conditions": [
+      {"condition_id": "c1", "condition_group": "Visual step audit", "line": "Day shift", "process": "Visual inspection", "changed_factor": "n/a - same lot rechecked before/after visual", "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!G13"]}
+    ],
+    "results": [
+      {"result_id": "before", "condition_id": "c1", "measurement_type": "VP deform check", "date": "2026-01-27", "line": "Day shift / TIU C11-20L", "input_count": 630, "ok_count": 630, "ng_count": 0, "ng_rate_decimal": 0, "ng_rate_percent": 0, "metric_name": "VP deform NG (Before visual)", "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!C13:L13"]},
+      {"result_id": "visual", "condition_id": "c1", "measurement_type": "VP deform check", "date": "2026-01-27", "line": "Day shift / TIU C11-20L", "input_count": 630, "ng_count": 0, "ng_rate_decimal": 0, "ng_rate_percent": 0, "metric_name": "VP deform NG (Visual step)", "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!C14:L14"]},
+      {"result_id": "after", "condition_id": "c1", "measurement_type": "VP deform check", "date": "2026-01-27", "line": "Day shift / TIU C11-20L", "input_count": 630, "ng_count": 2, "ng_rate_decimal": 0.00317, "ng_rate_percent": 0.317, "metric_name": "VP deform NG (After visual)", "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!C15:L15"]}
+    ],
+    "conclusions": [
+      {"conclusion_id": "k1", "topic": "VP deform localized to post-visual step", "statement_from_report": "After visual VP deform still happen NG.", "normalized_interpretation": "Before visual 0/630 NG. Visual 0/630 NG. After visual 2/630 NG (0.317%). Same lot re-inspected before and after visual shows the VP deform appears only after the visual step - the visual handling itself is a candidate contributor.", "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!C13:L15", "Test!B25"]}
+    ],
+    "troubleshooting_index": {
+      "defect_name": "VP deform after visual",
+      "when_user_asks": ["VP deform after visual", "TIU C11-20 VP deform"],
+      "suggested_checks": [
+        {"check_item": "Audit visual operator handling and pick-up tools", "reason": "Same lot transitions from 0 NG before visual to 2 NG after visual on the same day.", "evidence_strength": "medium", "related_process": "Visual inspection", "related_part": "VP", "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!C13:L15"]},
+        {"check_item": "Check tray/box pressure on VP between visual and next step", "reason": "After-visual NG appears with no upstream NG.", "evidence_strength": "medium", "related_process": "Post-visual handling", "related_part": "VP", "source_file": "...", "sheet_name": "Test", "source_cells": ["Test!B25"]}
+      ],
+      "limitations": ["Single shift, only 2 NG pcs - small absolute count."]
+    },
+    "ai_extraction_log": {
+      "confidence": 0.75,
+      "assumptions": ["Same 630 pcs lot rechecked at three stages."],
+      "warnings": ["Sample of 2 NG is small - need more days to confirm visual-step causation."],
+      "decision_rationale": "Same-event Before / During / After comparison shows VP deform emerges only after the visual step. No NG-rate baseline against Normal lot in this sheet; defect_root_cause classification used."
+    }
+  },
+  "translations": {
+    "ko": {
+      "document": {"title": "TIU C11-20 비전 후 VP deform 발생 점검", "purpose": "VP deform NG가 비전 검사 이후 발생하는지 확인.", "content": ["비전 전 500pcs(실제 630pcs) 검사", "비전 입력", "비전 후 재검사"]},
+      "conclusions": {"k1": {"topic": "VP deform이 비전 이후 발생", "statement_from_report": "비전 이후 VP deform NG 발생.", "normalized_interpretation": "비전 전 0/630, 비전 0/630, 비전 후 2/630 (0.317%). 같은 lot이 비전 전후로 NG가 발생함 → 비전 핸들링이 후보 원인."}},
+      "hints": {
+        "hint_0": {"check_item": "비전 작업자 핸들링·집게/툴 점검", "reason": "같은 lot이 비전 전 0 NG → 비전 후 2 NG."},
+        "hint_1": {"check_item": "비전~다음 공정 간 트레이/박스 압력 점검", "reason": "비전 이후에만 NG 발생."}
+      },
+      "log": {"assumptions": ["630pcs 같은 lot을 3단계에서 재검사."], "warnings": ["NG 2pcs로 절대 수 적음 - 일자 확대 필요."], "decision_rationale": "같은 이벤트 Before/During/After 비교로 비전 이후 deform 발생. defect_root_cause 분류."}
+    },
+    "en": {
+      "document": {"title": "TIU C11-20 Check NG VP deform after visual", "purpose": "Verify whether VP deform NG appears after the visual inspection step.", "content": ["Check before visual (630 pcs)", "Input visual", "Re-check after visual"]},
+      "conclusions": {"k1": {"topic": "VP deform localized to post-visual", "statement_from_report": "After visual VP deform still happens NG.", "normalized_interpretation": "Before 0/630, Visual 0/630, After 2/630 (0.317%). Same lot transitions to NG only after visual - the visual handling is the candidate contributor."}},
+      "hints": {
+        "hint_0": {"check_item": "Audit visual operator handling and tools", "reason": "Same lot moves from 0 to 2 NG after the visual step."},
+        "hint_1": {"check_item": "Check tray/box pressure on VP between visual and next step", "reason": "After-visual NG appears with no upstream NG."}
+      },
+      "log": {"assumptions": ["Same 630pcs lot rechecked at three stages."], "warnings": ["2 NG pcs is small - need more days to confirm."], "decision_rationale": "Same-event Before/During/After shows deform emerges after visual; defect_root_cause classification used."}
+    },
+    "vi": {
+      "document": {"title": "TIU C11-20 Kiểm tra NG VP deform sau visual", "purpose": "Xác minh VP deform có xảy ra sau bước visual hay không.", "content": ["Kiểm tra trước visual (630pcs)", "Đưa vào visual", "Kiểm tra lại sau visual"]},
+      "conclusions": {"k1": {"topic": "VP deform xuất hiện sau visual", "statement_from_report": "Sau visual vẫn xảy ra NG VP deform.", "normalized_interpretation": "Trước 0/630, Visual 0/630, Sau 2/630 (0.317%). Cùng một lot chỉ phát sinh NG sau visual - visual handling là ứng viên nguyên nhân."}},
+      "hints": {
+        "hint_0": {"check_item": "Kiểm tra cách thao tác và dụng cụ của QC visual", "reason": "Cùng lot từ 0 NG sang 2 NG sau visual."},
+        "hint_1": {"check_item": "Kiểm tra áp lực khay/hộp giữa visual và bước kế tiếp", "reason": "NG chỉ xuất hiện sau visual."}
+      },
+      "log": {"assumptions": ["630pcs cùng lot kiểm tra 3 giai đoạn."], "warnings": ["2 NG pcs là nhỏ - cần thêm ngày để xác nhận."], "decision_rationale": "So sánh Before/During/After cùng sự kiện cho thấy deform sau visual; phân loại defect_root_cause."}
+    }
+  }
+}

@@ -164,6 +164,21 @@
         font-weight: 600; font-size: 13px; flex-shrink: 0;
     }
     .grp-modal-body { overflow: auto; padding: 10px; flex: 1; }
+
+    /* Hierarchy summary — Group → Mid → Sub1 → Sub2 collapsible rows */
+    .pivot-table tr.hier-group-row    { cursor: pointer; }
+    .pivot-table tr.hier-group-row td { background: #fef3c7; color: #78350f; font-weight: 700;
+                                        border-top: 2px solid #fbbf24; }
+    .pivot-table tr.hier-group-row:hover td { background: #fde68a; }
+    .pivot-table tr.hier-mid-row    { cursor: pointer; }
+    .pivot-table tr.hier-mid-row td { background: #eff6ff; color: #1e40af; font-weight: 600; }
+    .pivot-table tr.hier-mid-row:hover td { background: #dbeafe; }
+    .pivot-table tr.hier-sub1-row td { background: #f5f3ff; color: #1e293b; font-weight: 600; }
+    .pivot-table tr.hier-sub2-row td { background: #fff;    color: #64748b; font-size: 11px;  }
+    .pivot-table tr.hier-ls-row   td { background: #fafafa; color: #94a3b8; font-size: 10.5px;
+                                       font-style: italic; border-top: 1px dashed #f1f5f9; }
+    .pivot-table tr.hier-sub-expandable { cursor: pointer; }
+    .pivot-table tr.hier-sub-expandable:hover td { filter: brightness(0.97); }
 </style>
 
 <div class="d-flex align-items-center gap-2 mb-3">
@@ -181,6 +196,10 @@
         <a href="/ng-rate-by-group" class="btn btn-outline-secondary"
            title="Switch to By Group view">
             🧩 By Group
+        </a>
+        <a href="/ng-rate-for-weekly-report" class="btn btn-outline-secondary"
+           title="Switch to For Weekly Report — same as By Group, with all Date columns hidden.">
+            📅 For Weekly Report
         </a>
     </div>
 </div>
@@ -293,7 +312,7 @@
                 @if (_dbGroups.Count == 0)
                 {
                     <div class="text-muted small p-3 flex-grow-1">
-                        <span>No groups found. Define groups on the <a href="/bmes/make-model-group">Make ModelGroup Data</a> page.</span>
+                        <span>No groups found. Define groups on the <a href="/bmes/make-model-group">Model Group</a> page.</span>
                     </div>
                 }
                 else
@@ -336,14 +355,16 @@
                                     <span class="file-date">@lsCount LS</span>
                                 </label>
 
-                                @* First-level children — mid-groups (Material) that differ from the root name.
-                                   Named top-level sub-groups surface here too so the user can report on a
-                                   named slice without opening the whole tree. *@
-                                @foreach (var entry in FirstLevelChildren(g))
+                                @* Child rows — mid-groups (depth=1) + leaf sub-groups (depth>=2).
+                                   Each row is independently checkable so the user can scope a report
+                                   to a whole Mid, a single L/R leaf, or any combination of leaves. *@
+                                @foreach (var entry in EnumerateChildEntries(g))
                                 {
                                     var cap = entry;
                                     bool subChecked = _selectedSubEntries.Contains(cap.Key);
-                                    <label class="json-file-item sub-row" title="@cap.Label">
+                                    int  padPx     = 8 + cap.Depth * 14;
+                                    <label class="json-file-item sub-row" title="@cap.Label"
+                                           style="padding-left: @(padPx)px;">
                                         <input type="checkbox"
                                                class="form-check-input"
                                                checked="@subChecked"
@@ -501,6 +522,122 @@
             </button>
         </div>
         <div style="border-top:2px solid #e2e8f0; margin-bottom:12px;"></div>
+
+        <!-- ── Hierarchy Summary — Group → Mid → Sub1 → Sub2 → LineShift ─────── -->
+        @if (_hier is not null && _hier.HasData)
+        {
+            var hierDateCols  = VisibleDateCols.ToList();
+            var hierWeekCols  = VisibleWeekCols.ToList();
+            var hierMonthCols = VisibleMonthCols.ToList();
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header small fw-semibold">
+                    📊 Group → Mid → Sub1 → Sub2 — TOTAL PPM (collapsible)
+                </div>
+                <div class="card-body p-0">
+                    <div class="pivot-wrap">
+                        <table class="pivot-table">
+                            <thead>
+                                <tr>
+                                    <th class="label-th" style="min-width:280px;" rowspan="2">Group / Mid / Sub</th>
+                                    @if (hierDateCols.Count > 0)
+                                    {
+                                        <th class="blk-date" colspan="@hierDateCols.Count">Date</th>
+                                        <th class="sep-th" rowspan="2"></th>
+                                    }
+                                    @if (hierWeekCols.Count > 0)
+                                    {
+                                        <th class="blk-week" colspan="@hierWeekCols.Count">Week</th>
+                                        <th class="sep-th" rowspan="2"></th>
+                                    }
+                                    @if (hierMonthCols.Count > 0)
+                                    {
+                                        <th class="blk-month" colspan="@hierMonthCols.Count">Month</th>
+                                    }
+                                </tr>
+                                <tr>
+                                    @foreach (var col in hierDateCols)  { <th>@col.Header</th> }
+                                    @foreach (var col in hierWeekCols)  { <th>@col.Header</th> }
+                                    @foreach (var col in hierMonthCols) { <th>@col.Header</th> }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var g in _hier.Groups)
+                                {
+                                    string gName = g.Name;
+                                    bool gExp    = _hierExpandedGroups.Contains(gName);
+                                    <tr class="hier-group-row" @onclick="() => HierToggleGroup(gName)">
+                                        <td class="label-td">
+                                            <span class="tog-icon">@(gExp ? "▼" : "▶")</span>
+                                            <strong>@gName</strong>
+                                            <span class="text-muted ms-1" style="font-size:10px;">@g.MidGroups.Count mids</span>
+                                        </td>
+                                        @foreach (var col in hierDateCols)
+                                        {
+                                            double v = _hierLookup.GroupAvgOfMids(g, col.Key);
+                                            <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                        }
+                                        @if (hierDateCols.Count > 0) { <td class="sep-td"></td> }
+                                        @foreach (var col in hierWeekCols)
+                                        {
+                                            double v = _hierLookup.GroupAvgOfMids(g, col.Key);
+                                            <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                        }
+                                        @if (hierWeekCols.Count > 0) { <td class="sep-td"></td> }
+                                        @foreach (var col in hierMonthCols)
+                                        {
+                                            double v = _hierLookup.GroupAvgOfMids(g, col.Key);
+                                            <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                        }
+                                    </tr>
+                                    @if (gExp)
+                                    {
+                                        @foreach (var mid in g.MidGroups)
+                                        {
+                                            if (mid.LineShifts.Count == 0 || string.IsNullOrEmpty(mid.Material)) continue;
+                                            string midKey = $"{gName}::{mid.Material}";
+                                            bool midExp   = _hierExpandedMids.Contains(midKey);
+                                            <tr class="hier-mid-row" @onclick="() => HierToggleMid(midKey)">
+                                                <td class="label-td" style="padding-left:32px; font-size:11.5px;">
+                                                    <span class="tog-icon">@(midExp ? "▼" : "▶")</span>
+                                                    <span>@mid.Material</span>
+                                                </td>
+                                                @foreach (var col in hierDateCols)
+                                                {
+                                                    double v = _hierLookup.MidAvgOfSubs(gName, mid, col.Key);
+                                                    <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                }
+                                                @if (hierDateCols.Count > 0) { <td class="sep-td"></td> }
+                                                @foreach (var col in hierWeekCols)
+                                                {
+                                                    double v = _hierLookup.MidAvgOfSubs(gName, mid, col.Key);
+                                                    <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                }
+                                                @if (hierWeekCols.Count > 0) { <td class="sep-td"></td> }
+                                                @foreach (var col in hierMonthCols)
+                                                {
+                                                    double v = _hierLookup.MidAvgOfSubs(gName, mid, col.Key);
+                                                    <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                }
+                                            </tr>
+                                            @if (midExp)
+                                            {
+                                                <HierSubRows GroupName="@gName" Mid="@mid" Lookup="@_hierLookup"
+                                                             DateCols="@hierDateCols" WeekCols="@hierWeekCols" MonthCols="@hierMonthCols"
+                                                             Expanded="@_hierExpandedSub1s"
+                                                             Sub1RowClass="hier-sub1-row"
+                                                             Sub2RowClass="hier-sub2-row"
+                                                             LineShiftRowClass="hier-ls-row"
+                                                             ExpandableRowClass="hier-sub-expandable" />
+                                            }
+                                        }
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
 
         <!-- Report header -->
         <div class="d-flex align-items-center gap-2 mb-3 border-bottom pb-2">
@@ -1067,13 +1204,24 @@
     private HashSet<string>        _selectedSubEntries = new(StringComparer.Ordinal);
     private string                 _activePg         = "ETC";
 
-    /// <summary>Key for a first-level child row: "groupId|mid|material".</summary>
-    private sealed record ChildEntry(string Key, string Label, int LsCount);
+    /// <summary>Key forms:
+    ///   "{gid}|mid|{material}"         — entire mid-group
+    ///   "{gid}|sub|{material}|{path}"  — a single sub-group (path uses the SubPathSep
+    ///                                    char ``, same as DB storage)</summary>
+    private sealed record ChildEntry(string Key, string Label, int LsCount, int Depth);
 
-    /// <summary>First-level children of <paramref name="g"/> shown as indented rows in the picker —
-    /// each mid-group (Material) with LineShifts. A single mid-group whose Material equals the
-    /// root group name is suppressed to avoid a redundant duplicate row.</summary>
-    private static IEnumerable<ChildEntry> FirstLevelChildren(ModelGroupRecord g)
+    /// <summary>Child-row enumeration for the picker:
+    ///   - Each Mid (depth=1) — checkbox includes the entire Mid subtree.
+    ///   - Every named descendant Sub (depth=2,3,...) — checkbox includes that node's
+    ///     full subtree (its own LineShifts + every nested descendant). Container subs
+    ///     (no direct LineShifts, only nested children) ARE surfaced so the user can
+    ///     scope a report to e.g. just `_D3` without picking each L/R leaf separately.
+    /// Empty-named placeholder subs (auto-created when LineShifts are saved with no
+    /// SubGroup path) don't take a visual depth slot — their children render directly
+    /// under the parent depth.
+    /// A single Mid whose Material equals the Group name is suppressed to avoid an
+    /// obviously-redundant row.</summary>
+    private static IEnumerable<ChildEntry> EnumerateChildEntries(ModelGroupRecord g)
     {
         bool skipMidWhenSingle = g.MidGroups.Count == 1
             && string.Equals(g.MidGroups[0].Material, g.Name, StringComparison.Ordinal);
@@ -1082,14 +1230,54 @@
         {
             int midLs = mid.LineShifts.Count;
             if (midLs == 0) continue;
-            if (skipMidWhenSingle) continue;
             if (string.IsNullOrEmpty(mid.Material)) continue;
 
-            yield return new ChildEntry(
-                Key:     $"{g.Id}|mid|{mid.Material}",
-                Label:   mid.Material,
-                LsCount: midLs);
+            if (!skipMidWhenSingle)
+            {
+                yield return new ChildEntry(
+                    Key:     $"{g.Id}|mid|{mid.Material}",
+                    Label:   mid.Material,
+                    LsCount: midLs,
+                    Depth:   1);
+            }
+
+            int subDepth = skipMidWhenSingle ? 1 : 2;
+            foreach (var sub in mid.SubGroups)
+                foreach (var entry in WalkSubEntries(g.Id, mid, sub, parentPath: string.Empty, depth: subDepth))
+                    yield return entry;
         }
+    }
+
+    private static IEnumerable<ChildEntry> WalkSubEntries(
+        long gid, MidGroupRecord mid, SubGroupRecord sub, string parentPath, int depth)
+    {
+        string nodeName = sub.Name ?? string.Empty;
+        string path = string.IsNullOrEmpty(nodeName)
+            ? parentPath
+            : (string.IsNullOrEmpty(parentPath) ? nodeName : parentPath + "\u001F" + nodeName);
+
+        // Yield every named node — leaves AND containers. LsCount reflects the FULL
+        // subtree under this node, so a container row shows the total it would scope
+        // when checked.
+        if (!string.IsNullOrEmpty(nodeName))
+        {
+            int subtreeLs = sub.AllLineShifts.Count();
+            if (subtreeLs > 0)
+            {
+                yield return new ChildEntry(
+                    Key:     $"{gid}|sub|{mid.Material}|{path}",
+                    Label:   nodeName,
+                    LsCount: subtreeLs,
+                    Depth:   depth);
+            }
+        }
+
+        // Empty-named subs (default buckets) collapse — their children render at the
+        // parent's depth so we don't waste an indent level on a no-op container.
+        int childDepth = string.IsNullOrEmpty(nodeName) ? depth : depth + 1;
+        foreach (var child in sub.SubGroups)
+            foreach (var e in WalkSubEntries(gid, mid, child, path, childDepth))
+                yield return e;
     }
 
     /// <summary>Only ProductGroups that actually have groups (preserves AllProductGroups order)</summary>
@@ -1103,6 +1291,34 @@
     private int    _activeReportTab = 0;
     private NgRateReportService.NgRateReport? _report =>
         _activeReportTab < _reports.Count ? _reports[_activeReportTab].Report : null;
+
+    // ── Group → Mid → Sub1 → Sub2 → LineShift hierarchy (shared across tabs) ────
+    // Bundled by HierReportBuilder; rendered through the <HierSubRows> component.
+    // PT-first Summary above is independent so the user keeps both views.
+    private HierReports?    _hier;
+    private HierPpmLookup   _hierLookup = new();
+    private HashSet<string> _hierExpandedGroups = new(StringComparer.Ordinal);
+    private HashSet<string> _hierExpandedMids   = new(StringComparer.Ordinal);
+    private HashSet<string> _hierExpandedSub1s  = new(StringComparer.Ordinal);
+
+    private void HierToggleGroup(string g) { if (!_hierExpandedGroups.Remove(g)) _hierExpandedGroups.Add(g); }
+    private void HierToggleMid(string k)   { if (!_hierExpandedMids.Remove(k))   _hierExpandedMids.Add(k); }
+
+    /// <summary>Resolve the union of selected scopes (whole-group selections +
+    /// parent groups of sub-entry selections). Falls back to all groups so the
+    /// hierarchy card always has something to show alongside the per-tab views.</summary>
+    private List<ModelGroupRecord> ResolveHierGroups()
+    {
+        var groupSet = new HashSet<long>(_selectedGroupIds);
+        foreach (string key in _selectedSubEntries)
+        {
+            var parts = key.Split('|');
+            if (parts.Length >= 1 && long.TryParse(parts[0], out long gid)) groupSet.Add(gid);
+        }
+        if (groupSet.Count == 0)
+            foreach (var g in _dbGroups) groupSet.Add(g.Id);
+        return _dbGroups.Where(g => groupSet.Contains(g.Id)).ToList();
+    }
 
     // ── Chart state ───────────────────────────────────────────────────────────────
     private bool _pendingChartRender = false;
@@ -1622,7 +1838,7 @@
     {
         _dbGroups = Repo.GetModelGroups();
         _selectedGroupIds.RemoveWhere(id => !_dbGroups.Any(g => g.Id == id));
-        var live = _dbGroups.SelectMany(FirstLevelChildren).Select(c => c.Key).ToHashSet(StringComparer.Ordinal);
+        var live = _dbGroups.SelectMany(EnumerateChildEntries).Select(c => c.Key).ToHashSet(StringComparer.Ordinal);
         _selectedSubEntries.RemoveWhere(k => !live.Contains(k));
         if (!_dbGroups.Any(g => g.ProductGroup == _activePg))
             _activePg = GroupProductGroups.FirstOrDefault() ?? "ETC";
@@ -1735,19 +1951,22 @@
 
     private static void CollectSubGroupMulti(SubGroupRecord node, string prefix, Action<string, string> attach)
     {
-        string label = string.IsNullOrEmpty(prefix)
-            ? (node.Name ?? string.Empty)
-            : prefix + " / " + (node.Name ?? string.Empty);
+        // Label uses the leaf node's own name only — e.g. `TIU-C11-20_D3_L` instead
+        // of `TIU-C11-20_D3 / TIU-C11-20_D3_L`. The full path is preserved in `prefix`
+        // for recursion bookkeeping but is no longer concatenated into the visible label.
+        string nodeName = node.Name ?? string.Empty;
 
-        if (!string.IsNullOrEmpty(node.Name))
+        if (!string.IsNullOrEmpty(nodeName))
         {
             foreach (var ls in node.AllLineShifts)
-                if (!string.IsNullOrEmpty(ls)) attach(ls, label);
+                if (!string.IsNullOrEmpty(ls)) attach(ls, nodeName);
         }
 
         foreach (var child in node.SubGroups)
         {
-            string childPrefix = string.IsNullOrEmpty(node.Name) ? prefix : label;
+            string childPrefix = string.IsNullOrEmpty(nodeName)
+                ? prefix
+                : (string.IsNullOrEmpty(prefix) ? nodeName : prefix + " / " + nodeName);
             CollectSubGroupMulti(child, childPrefix, attach);
         }
     }
@@ -1760,30 +1979,85 @@
             CollectLineShiftLeaves(child, attach);
     }
 
-    /// <summary>Resolves a <see cref="ChildEntry.Key"/> into a scoped multi-mapping:
-    /// the mid-group becomes the synthetic "root" of its own drill-down tree.</summary>
+    /// <summary>Resolves a <see cref="ChildEntry.Key"/> into a scoped multi-mapping.
+    /// "mid" keys become the synthetic root of the entire mid-group's drill-down tree.
+    /// "sub" keys narrow further: only the named sub-node's direct LineShifts are
+    /// included (nested children of that sub get their own rows in the picker, so
+    /// their LineShifts must NOT bleed into the parent leaf's report).</summary>
     private (string label,
              Dictionary<string, IReadOnlyList<string>> multi,
              List<string> groupList)? BuildChildEntryReport(string key)
     {
         var parts = key.Split('|');
-        if (parts.Length != 3 || parts[1] != "mid") return null;
+        if (parts.Length < 3) return null;
         if (!long.TryParse(parts[0], out long gid)) return null;
         var g = _dbGroups.FirstOrDefault(x => x.Id == gid);
         if (g is null) return null;
 
-        string material = parts[2];
-        var mid = g.MidGroups.FirstOrDefault(m => m.Material == material);
-        if (mid is null) return null;
-        var virt = new ModelGroupRecord
+        if (parts[1] == "mid" && parts.Length == 3)
         {
-            Id           = g.Id,
-            Name         = material,
-            ProductGroup = g.ProductGroup,
-            MidGroups    = new List<MidGroupRecord> { mid },
-        };
-        var (multi, groupList) = BuildTreeMultiMapping(virt);
-        return (material, multi, groupList);
+            string material = parts[2];
+            var mid = g.MidGroups.FirstOrDefault(m => m.Material == material);
+            if (mid is null) return null;
+            var virt = new ModelGroupRecord
+            {
+                Id           = g.Id,
+                Name         = material,
+                ProductGroup = g.ProductGroup,
+                MidGroups    = new List<MidGroupRecord> { mid },
+            };
+            var (multi, groupList) = BuildTreeMultiMapping(virt);
+            return (material, multi, groupList);
+        }
+
+        if (parts[1] == "sub" && parts.Length == 4)
+        {
+            string material = parts[2];
+            string path     = parts[3];
+            var mid = g.MidGroups.FirstOrDefault(m => m.Material == material);
+            if (mid is null) return null;
+
+            var node = ResolveSubByPath(mid.SubGroups, path);
+            if (node is null) return null;
+
+            // Keep the full subtree — when a container sub like `_D3` is checked, its
+            // report scope is every LineShift below it. Leaves have no nested children
+            // anyway, so this also reports just the leaf's own LineShifts as expected.
+            // Nested entries having their own checkboxes is fine: each surfaces a
+            // separate report section, not a shared running total.
+            var soloMid = new MidGroupRecord
+            {
+                Material  = mid.Material,
+                SubGroups = new List<SubGroupRecord> { node },
+            };
+            string nodeName = node.Name ?? string.Empty;
+            var virt = new ModelGroupRecord
+            {
+                Id           = g.Id,
+                Name         = nodeName,
+                ProductGroup = g.ProductGroup,
+                MidGroups    = new List<MidGroupRecord> { soloMid },
+            };
+            var (multi, groupList) = BuildTreeMultiMapping(virt);
+            return (nodeName, multi, groupList);
+        }
+
+        return null;
+    }
+
+    private static SubGroupRecord? ResolveSubByPath(List<SubGroupRecord> roots, string path)
+    {
+        if (string.IsNullOrEmpty(path)) return null;
+        var segs = path.Split('\u001F');
+        SubGroupRecord? cur = null;
+        var list = roots;
+        foreach (var seg in segs)
+        {
+            cur = list.FirstOrDefault(s => string.Equals(s.Name, seg, StringComparison.Ordinal));
+            if (cur is null) return null;
+            list = cur.SubGroups;
+        }
+        return cur;
     }
 
     // ── Get Data ──────────────────────────────────────────────────────────────────
@@ -1861,6 +2135,11 @@
         _dateExpanded  = false;
         _weekExpanded  = false;
         _monthExpanded = false;
+        _hier        = null;
+        _hierLookup  = new();
+        _hierExpandedGroups.Clear();
+        _hierExpandedMids.Clear();
+        _hierExpandedSub1s.Clear();
         await InvokeAsync(StateHasChanged);
 
         IProgress<string> progress = new Progress<string>(msg =>
@@ -1938,6 +2217,12 @@
             _selectedChips.Clear();
             RebuildCombinedRaw();
             RebuildRowPpmCache();
+
+            // ── Hierarchy reports for the Group → Mid → Sub1 → Sub2 summary card ──
+            // Generated once over the union of all selected scopes (whole groups +
+            // sub-entry parents). Drives the collapsible hierarchy card below.
+            _hier       = await HierReportBuilder.BuildAsync(NgRateReport, dbPath, ResolveHierGroups(), progress);
+            _hierLookup = HierPpmLookup.From(_hier);
         }
         catch (Exception ex)
         {

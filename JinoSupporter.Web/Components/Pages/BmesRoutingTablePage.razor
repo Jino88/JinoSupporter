@@ -1,0 +1,325 @@
+@page "/bmes/routing-table"
+@rendermode InteractiveServer
+@using JinoSupporter.Web.Services
+@inject NgRateSettingsService    NgRateSettings
+@inject BmesRoutingScrapeService BmesRoutingScrape
+@inject BmesSettingsSyncService  BmesSettingsSync
+
+<PageTitle>BMES Routing Table</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span style="font-size:20px;">RT</span>
+    <h5 class="mb-0 fw-semibold">Routing Table</h5>
+</div>
+
+@if (!string.IsNullOrEmpty(_statusMsg))
+{
+    <div class="alert @(_statusError ? "alert-danger" : "alert-success") py-2 small mb-3 d-flex align-items-center">
+        <span class="flex-fill">@_statusMsg</span>
+        <button class="btn-close btn-sm" @onclick="() => _statusMsg = string.Empty"></button>
+    </div>
+}
+
+@{
+    var filtered = GetFilteredRouting();
+}
+
+<div class="card shadow-sm">
+    <div class="card-header d-flex align-items-center gap-2">
+        <span class="fw-semibold small">Routing Table</span>
+        <span class="badge bg-secondary ms-1" style="font-size:10px;">@_routingRows.Count rows</span>
+        @if (_anyRoutingSearch)
+        {
+            <span class="text-muted ms-1" style="font-size:10px;">@filtered.Count shown</span>
+        }
+        <div class="ms-auto d-flex gap-2 align-items-center">
+            @if (_routingScrapeBusy)
+            {
+                <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+            }
+            @if (!string.IsNullOrEmpty(_routingScrapeMsg))
+            {
+                <span class="small @(_routingScrapeError ? "text-danger" : "text-success") fw-semibold">
+                    @_routingScrapeMsg
+                </span>
+            }
+            <button class="btn btn-outline-primary btn-sm" @onclick="RefreshRoutingFromBmes"
+                    disabled="@_routingScrapeBusy"
+                    title="Scrape MES020240/SearchList for WERKS 3200/3210/3220 into bmes_routing_raw.db">
+                Refresh from BMES
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="ImportRoutingFromFile"
+                    disabled="@_routingScrapeBusy"
+                    title="Import from Routing.txt">
+                Import from file
+            </button>
+        </div>
+    </div>
+    <div style="overflow-x:auto; max-height:calc(100vh - 190px); overflow-y:auto;">
+        <table class="bmes-table">
+            <thead>
+                <tr>
+                    <th style="min-width:160px;">Model Name</th>
+                    <th style="min-width:130px;">ProcessCode</th>
+                    <th style="min-width:200px;">ProcessName</th>
+                    <th style="min-width:110px;">ProcessType</th>
+                    <th style="width:60px;"></th>
+                </tr>
+                <tr class="bmes-search-row">
+                    <td><input class="bmes-search-input" placeholder="Search" @bind="_rqModelName" @bind:event="oninput" @bind:after="OnRoutingSearchChanged" /></td>
+                    <td><input class="bmes-search-input" placeholder="Search" @bind="_rqProcessCode" @bind:event="oninput" @bind:after="OnRoutingSearchChanged" /></td>
+                    <td><input class="bmes-search-input" placeholder="Search" @bind="_rqProcessName" @bind:event="oninput" @bind:after="OnRoutingSearchChanged" /></td>
+                    <td><input class="bmes-search-input" placeholder="Search" @bind="_rqProcessType" @bind:event="oninput" @bind:after="OnRoutingSearchChanged" /></td>
+                    <td></td>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!_anyRoutingSearch)
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4 small">
+                            Type in a search field above to find rows.
+                        </td>
+                    </tr>
+                }
+                else if (filtered.Count == 0)
+                {
+                    <tr>
+                        <td colspan="5" class="py-3 px-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="text-muted small">No matching rows.</span>
+                                <button class="btn btn-primary btn-sm" @onclick="AddRoutingFromSearch">
+                                    + Add Row with these values
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var r in filtered)
+                    {
+                        @if (_editRoutingId == r.Id)
+                        {
+                            <tr class="bmes-edit-row">
+                                <td><input class="bmes-input" @bind="_editRouting.ModelName" /></td>
+                                <td><input class="bmes-input" @bind="_editRouting.ProcessCode" /></td>
+                                <td><input class="bmes-input" @bind="_editRouting.ProcessName" /></td>
+                                <td><input class="bmes-input" @bind="_editRouting.ProcessType" /></td>
+                                <td class="bmes-actions">
+                                    <button class="btn btn-success btn-sm py-0 px-2" @onclick="SaveRoutingEdit">Save</button>
+                                    <button class="btn btn-secondary btn-sm py-0 px-2" @onclick="CancelRoutingEdit">Cancel</button>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            <tr class="bmes-row" @ondblclick="() => StartRoutingEdit(r)">
+                                <td>@r.ModelName</td>
+                                <td>@r.ProcessCode</td>
+                                <td>@r.ProcessName</td>
+                                <td>@r.ProcessType</td>
+                                <td class="bmes-actions">
+                                    <button class="btn btn-outline-primary btn-sm py-0 px-1" @onclick="() => StartRoutingEdit(r)" title="Edit">Edit</button>
+                                    <button class="btn btn-outline-danger btn-sm py-0 px-1" @onclick="() => DeleteRoutingRow(r.Id)" title="Delete">Del</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .bmes-table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+    .bmes-table thead th {
+        background: #f1f5f9; font-weight: 700; font-size: 10px; color: #64748b;
+        text-transform: uppercase; letter-spacing: .4px; padding: 6px 10px;
+        border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 2;
+    }
+    .bmes-search-row { position: sticky; top: 29px; z-index: 1; background: #fff; }
+    .bmes-search-row td { padding: 4px 6px; border-bottom: 2px solid #e2e8f0; background: #fff; }
+    .bmes-search-input {
+        width: 100%; font-size: 11px; padding: 3px 6px; border: 1px solid #e2e8f0;
+        border-radius: 3px; background: #f8fafc; outline: none; color: #334155;
+    }
+    .bmes-search-input:focus { border-color: #93c5fd; background: #fff; box-shadow: 0 0 0 2px rgba(147,197,253,.25); }
+    .bmes-table td { padding: 4px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .bmes-row:hover td { background: #f8fafc; }
+    .bmes-edit-row td { background: #eff6ff; }
+    .bmes-actions { text-align: center; white-space: nowrap; }
+    .bmes-actions .btn { font-size: 10px; }
+    .bmes-input {
+        width: 100%; font-size: 12px; padding: 2px 6px; border: 1px solid #93c5fd;
+        border-radius: 3px; background: #fff; outline: none;
+    }
+    .bmes-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.15); }
+</style>
+
+@code {
+    private List<RoutingRow> _routingRows = [];
+    private long _editRoutingId = -1;
+    private RoutingRow _editRouting = new();
+
+    private string _rqModelName = string.Empty;
+    private string _rqProcessCode = string.Empty;
+    private string _rqProcessName = string.Empty;
+    private string _rqProcessType = string.Empty;
+    private bool _anyRoutingSearch;
+
+    private bool _routingScrapeBusy;
+    private string _routingScrapeMsg = string.Empty;
+    private bool _routingScrapeError;
+
+    private string _statusMsg = string.Empty;
+    private bool _statusError;
+
+    protected override void OnInitialized()
+    {
+        _routingRows = NgRateSettings.GetRoutingRows();
+    }
+
+    private List<RoutingRow> GetFilteredRouting()
+    {
+        if (!_anyRoutingSearch) return [];
+        return _routingRows.Where(r =>
+            (string.IsNullOrEmpty(_rqModelName) || r.ModelName.Contains(_rqModelName, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(_rqProcessCode) || r.ProcessCode.Contains(_rqProcessCode, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(_rqProcessName) || r.ProcessName.Contains(_rqProcessName, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(_rqProcessType) || r.ProcessType.Contains(_rqProcessType, StringComparison.OrdinalIgnoreCase))
+        ).ToList();
+    }
+
+    private Task OnRoutingSearchChanged()
+    {
+        _anyRoutingSearch = !string.IsNullOrEmpty(_rqModelName) ||
+                            !string.IsNullOrEmpty(_rqProcessCode) ||
+                            !string.IsNullOrEmpty(_rqProcessName) ||
+                            !string.IsNullOrEmpty(_rqProcessType);
+        return Task.CompletedTask;
+    }
+
+    private async Task AddRoutingFromSearch()
+    {
+        var newRow = new RoutingRow
+        {
+            ModelName = _rqModelName.Trim(),
+            ProcessCode = _rqProcessCode.Trim(),
+            ProcessName = _rqProcessName.Trim(),
+            ProcessType = _rqProcessType.Trim(),
+        };
+        long newId = NgRateSettings.AddRoutingRow(newRow);
+        _routingRows = NgRateSettings.GetRoutingRows();
+        _rqModelName = _rqProcessCode = _rqProcessName = _rqProcessType = string.Empty;
+        _anyRoutingSearch = false;
+        _editRoutingId = newId;
+        _editRouting = new RoutingRow
+        {
+            Id = newId,
+            ModelName = newRow.ModelName,
+            ProcessCode = newRow.ProcessCode,
+            ProcessName = newRow.ProcessName,
+            ProcessType = newRow.ProcessType,
+        };
+        await SyncRoutingToServer("Routing row added.");
+    }
+
+    private void StartRoutingEdit(RoutingRow r)
+    {
+        _editRoutingId = r.Id;
+        _editRouting = new RoutingRow
+        {
+            Id = r.Id,
+            ModelName = r.ModelName,
+            ProcessCode = r.ProcessCode,
+            ProcessName = r.ProcessName,
+            ProcessType = r.ProcessType,
+        };
+    }
+
+    private async Task SaveRoutingEdit()
+    {
+        NgRateSettings.UpdateRoutingRow(_editRouting);
+        _routingRows = NgRateSettings.GetRoutingRows();
+        _editRoutingId = -1;
+        await SyncRoutingToServer("Routing row saved.");
+    }
+
+    private void CancelRoutingEdit() => _editRoutingId = -1;
+
+    private async Task DeleteRoutingRow(long id)
+    {
+        NgRateSettings.DeleteRoutingRow(id);
+        _routingRows = NgRateSettings.GetRoutingRows();
+        if (_editRoutingId == id) _editRoutingId = -1;
+        await SyncRoutingToServer("Routing row deleted.");
+    }
+
+    private async Task ImportRoutingFromFile()
+    {
+        int count = NgRateSettings.ImportRoutingFromFile(NgRateSettings.RoutingFilePath);
+        _routingRows = NgRateSettings.GetRoutingRows();
+        _editRoutingId = -1;
+        if (count > 0)
+            await SyncRoutingToServer($"Imported {count} routing rows from file.");
+        else
+            SetStatus("File not found or empty.", true);
+    }
+
+    private async Task RefreshRoutingFromBmes()
+    {
+        if (_routingScrapeBusy) return;
+        _routingScrapeBusy = true;
+        _routingScrapeMsg = string.Empty;
+        _routingScrapeError = false;
+        StateHasChanged();
+
+        try
+        {
+            var progress = new Progress<string>(msg =>
+            {
+                _routingScrapeMsg = msg;
+                InvokeAsync(StateHasChanged);
+            });
+
+            int saved = await BmesRoutingScrape.FetchAllAsync(progress);
+            if (saved < 0)
+            {
+                _routingScrapeError = true;
+            }
+            else
+            {
+                _routingRows = NgRateSettings.GetRoutingRows();
+                _editRoutingId = -1;
+                await SyncRoutingToServer($"Routing refreshed from BMES. {saved} row(s) saved.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _routingScrapeError = true;
+            _routingScrapeMsg = ex.Message;
+        }
+        finally
+        {
+            _routingScrapeBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SetStatus(string msg, bool isError)
+    {
+        _statusMsg = msg;
+        _statusError = isError;
+    }
+
+    private async Task SyncRoutingToServer(string localMessage)
+    {
+        var result = await BmesSettingsSync.SyncRoutingRowsAsync(_routingRows);
+        if (result.Succeeded)
+            SetStatus($"{localMessage} Server synced ({result.Rows} rows).", false);
+        else
+            SetStatus($"{localMessage} Local DB saved, but server sync failed: {result.Message}", true);
+    }
+}

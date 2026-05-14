@@ -1,0 +1,107 @@
+{
+  "name": "46. BRS-161016  Report test VP mold #9 dry temperature 150 for 1 hour, 2hour to  improve VP bending date 27.06.2024",
+  "result": {
+    "schema_version": "0.1",
+    "document": {
+      "source_file": "46. BRS-161016  Report test VP mold #9 dry temperature 150 for 1 hour, 2hour to  improve VP bending date 27.06.2024",
+      "source_sheet": "13.5",
+      "title": "BRS-161016 Test VP mold #9 dry 150°C 1Hr / 2Hr to improve VP bending",
+      "model": "BRS-161016",
+      "report_date": "2024-06-27",
+      "department": "ME",
+      "marker": "Thuy",
+      "line": "E2-3B",
+      "report_type": "normal_comparison",
+      "primary_defect": {"canonical_name": "NG VP bending / NG Hearing", "aliases_in_document": ["VP bending", "Hearing Noise/Touch"]},
+      "related_defects": ["Laser cutting NG", "Particle"],
+      "parts": ["VP mold #9"],
+      "processes": ["VP mold dry 150°C", "VP laser cutting", "Function (Hearing/Sigma)"],
+      "purpose": "Test VP mold #9 dry 150°C 1Hr and 2Hr to improve VP bending.",
+      "content": ["Check NG rate of laser cutting VP", "Check VP bending after laser", "Vision VP+CD on semi", "Function check on final"],
+      "source_cells": {"title": ["13.5!D2"], "date": ["13.5!Q3"], "purpose": ["13.5!B6"], "content": ["13.5!B14:B17"]}
+    },
+    "test_conditions": [
+      {"condition_id": "c1Hr", "condition_group": "VP dry 1Hr 150°C", "line": "E2-3B", "process": "VP dry mold #9", "changed_factor": "Dry 1 hour at 150°C", "material_lot": "24/6 lot", "temperature": "150", "dry_time_sec": 3600, "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!E23"]},
+      {"condition_id": "c2Hr", "condition_group": "VP dry 2Hr 150°C", "line": "E2-3B", "process": "VP dry mold #9", "changed_factor": "Dry 2 hour at 150°C", "material_lot": "24/6 lot", "temperature": "150", "dry_time_sec": 7200, "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!E24"]}
+    ],
+    "results": [
+      {"result_id": "v_1hr", "condition_id": "c1Hr", "measurement_type": "Laser cutting NG (VP)", "date": "2024-06-27", "line": "E2-3B", "input_count": 294, "ok_count": 274, "ng_count": 20, "ng_rate_decimal": 0.0680, "ng_rate_percent": 6.80, "ng_breakdown": {"Cutting NG": {"count": 17}, "Burr": {"count": 3}}, "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C23:M23"]},
+      {"result_id": "v_2hr", "condition_id": "c2Hr", "measurement_type": "Laser cutting NG (VP)", "date": "2024-06-27", "line": "E2-3B", "input_count": 294, "ng_count": 16, "ng_rate_decimal": 0.0544, "ng_rate_percent": 5.44, "ng_breakdown": {"Cutting NG": {"count": 10}, "Burr": {"count": 6}}, "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C24:M24"]},
+      {"result_id": "v_normal", "measurement_type": "Laser cutting NG (VP)", "condition_group": "Normal (lot 23/6)", "date": "2024-06-27", "line": "E2-3B", "input_count": 600, "ng_count": 21, "ng_rate_decimal": 0.035, "ng_rate_percent": 3.5, "ng_breakdown": {"Cutting NG": {"count": 19}, "Burr": {"count": 2}, "Particle": {"count": 1}}, "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C25:M25"]},
+      {"result_id": "b_1hr", "condition_id": "c1Hr", "measurement_type": "VP bending", "date": "2024-06-27", "input_count": 274, "ng_count": 1, "ng_rate_decimal": 0.00365, "ng_rate_percent": 0.365, "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C37:J37"]},
+      {"result_id": "b_2hr", "condition_id": "c2Hr", "measurement_type": "VP bending", "date": "2024-06-27", "input_count": 278, "ng_count": 1, "ng_rate_decimal": 0.0036, "ng_rate_percent": 0.36, "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C38:J38"]},
+      {"result_id": "b_normal", "measurement_type": "VP bending", "condition_group": "Normal", "date": "2024-06-27", "input_count": 579, "ng_count": 5, "ng_rate_decimal": 0.00864, "ng_rate_percent": 0.864, "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C39:J39"]},
+      {"result_id": "vc_1hr", "condition_id": "c1Hr", "measurement_type": "Vision VP/CD", "date": "2024-06-27", "input_count": 273, "ng_count": 0, "ng_rate_decimal": 0, "ng_rate_percent": 0, "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C52:M52"]},
+      {"result_id": "vc_2hr", "condition_id": "c2Hr", "measurement_type": "Vision VP/CD", "date": "2024-06-27", "input_count": 277, "ng_count": 2, "ng_rate_decimal": 0.00722, "ng_rate_percent": 0.722, "ng_breakdown": {"Glue not enough": {"count": 1}, "Dome damage": {"count": 1}}, "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C53:M53"]},
+      {"result_id": "vc_normal", "measurement_type": "Vision VP/CD", "condition_group": "Normal", "date": "2024-06-27", "input_count": 574, "ng_count": 0, "ng_rate_decimal": 0, "ng_rate_percent": 0, "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C54:M54"]},
+      {"result_id": "f_1hr", "condition_id": "c1Hr", "measurement_type": "Function", "date": "2024-06-28", "input_count": 273, "ng_count": 19, "ng_rate_decimal": 0.0696, "ng_rate_percent": 6.96, "ng_breakdown": {"Noise": {"count": 14}, "Touch": {"count": 5}}, "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C58:O58"]},
+      {"result_id": "f_2hr", "condition_id": "c2Hr", "measurement_type": "Function", "date": "2024-06-28", "input_count": 273, "ng_count": 22, "ng_rate_decimal": 0.0806, "ng_rate_percent": 8.06, "ng_breakdown": {"Noise": {"count": 9}, "Touch": {"count": 13}}, "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C60:O60"]},
+      {"result_id": "f_normal", "measurement_type": "Function", "condition_group": "Normal (lot improve mold)", "date": "2024-06-28", "input_count": 556, "ng_count": 11, "ng_rate_decimal": 0.0198, "ng_rate_percent": 1.978, "ng_breakdown": {"Noise": {"count": 9}, "Touch": {"count": 2}}, "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C62:O63"]}
+    ],
+    "conclusions": [
+      {"conclusion_id": "k1", "topic": "Laser cutting NG: 1Hr/2Hr vs Normal", "statement_from_report": "VP test happen NG cutting is high; NG rate bending is reduce.", "normalized_interpretation": "1Hr 6.80% vs Normal 3.5% = 1.943x, 94.3% worse. 2Hr 5.44% vs Normal 3.5% = 1.554x, 55.4% worse. Both dry conditions worsen laser cutting NG.", "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C23:M25"]},
+      {"conclusion_id": "k2", "topic": "VP bending: 1Hr/2Hr vs Normal", "statement_from_report": "NG rate bending is reduce.", "normalized_interpretation": "1Hr 0.365% vs Normal 0.864% = 0.422x, 57.8% improved. 2Hr 0.36% vs Normal 0.864% = 0.417x, 58.3% improved. Bending halved in both conditions.", "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C37:J39"]},
+      {"conclusion_id": "k3", "topic": "Function: 1Hr/2Hr vs Normal", "statement_from_report": "NG rate of function of VP test is higher than normal VP mold #9.", "normalized_interpretation": "1Hr 6.96% vs Normal 1.978% = 3.518x, 251.8% worse. 2Hr 8.06% vs Normal 1.978% = 4.075x, 307.5% worse. Function NG very large penalty under both dry conditions.", "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C58:O63"]},
+      {"conclusion_id": "k4", "topic": "Final decision", "statement_from_report": "=> So Can not use VP mold #9 test dry 150°C in 1hour, 2hour.", "normalized_interpretation": "Bending improved, but function and laser cutting NG much worse. Decision rejects 150°C 1Hr/2Hr dry.", "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!B70"]}
+    ],
+    "troubleshooting_index": {
+      "defect_name": "VP bending / Function NG (mold #9 dry condition)",
+      "when_user_asks": ["VP bending mold #9", "150 °C dry VP", "VP function NG"],
+      "suggested_checks": [
+        {"check_item": "Reject 150°C 1Hr/2Hr dry for VP mold #9", "reason": "Function NG +252% / +307% vs Normal; laser cutting NG +55-94% vs Normal.", "evidence_strength": "strong", "related_process": "VP dry mold #9", "related_part": "VP", "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C58:O63", "13.5!C23:M25"]},
+        {"check_item": "Investigate Touch and Noise hearing NG drivers in 2Hr 150°C", "reason": "Touch jumps to 4.76% (vs 0.36% Normal); Noise stays 3.6%.", "evidence_strength": "medium", "related_process": "VP dry / Function", "related_part": "VP", "source_file": "...", "sheet_name": "13.5", "source_cells": ["13.5!C60:O61"]}
+      ],
+      "limitations": ["Single trial event; sample 273-294 pcs per condition."]
+    },
+    "ai_extraction_log": {
+      "confidence": 0.88,
+      "assumptions": ["Date carried-forward to Test rows from Normal (lot date 23/6) block."],
+      "warnings": ["Function date is 2024-06-28, vision/bending date 2024-06-27 - paired by same trial event."],
+      "decision_rationale": "Same-event Normal rows present. Bending improved (-58%) but function much worse (+250-300%). Author decision Can not use is consistent."
+    }
+  },
+  "translations": {
+    "ko": {
+      "document": {"title": "BRS-161016 VP mold #9 150°C 1Hr/2Hr 건조로 VP bending 개선 시험", "purpose": "VP mold #9 공급사에서 bending 개선 목적으로 150°C 1시간/2시간 건조 시험.", "content": ["Laser cutting NG 측정", "Laser 후 VP bending 측정", "Semi 단계 vision VP+CD", "Final 단계 function 검사"]},
+      "conclusions": {
+        "k1": {"topic": "Laser cutting NG: 1Hr/2Hr vs Normal", "statement_from_report": "Test NG cutting 높음, bending 감소.", "normalized_interpretation": "1Hr 6.80% vs Normal 3.5% = 1.943배, 94.3% 악화. 2Hr 5.44% vs 3.5% = 1.554배, 55.4% 악화."},
+        "k2": {"topic": "VP bending: 1Hr/2Hr vs Normal", "statement_from_report": "NG rate bending 감소.", "normalized_interpretation": "1Hr 0.365% vs 0.864% = 57.8% 개선. 2Hr 0.36% vs 0.864% = 58.3% 개선. Bending은 절반 수준."},
+        "k3": {"topic": "Function: 1Hr/2Hr vs Normal", "statement_from_report": "Function NG가 Normal보다 높음.", "normalized_interpretation": "1Hr 6.96% vs 1.978% = 3.518배, 251.8% 악화. 2Hr 8.06% vs 1.978% = 4.075배, 307.5% 악화."},
+        "k4": {"topic": "최종 판정", "statement_from_report": "=> 150°C 1Hr, 2Hr 건조 사용 불가.", "normalized_interpretation": "Bending은 개선되었으나 function/laser NG는 훨씬 악화. 채택 거부."}
+      },
+      "hints": {
+        "hint_0": {"check_item": "VP mold #9 150°C 1Hr/2Hr 건조 거부", "reason": "Function NG +252%/+307%, Laser NG +55-94% vs Normal."},
+        "hint_1": {"check_item": "2Hr 150°C 의 Touch NG 원인 조사", "reason": "Touch 4.76%로 Normal 0.36% 대비 급증."}
+      },
+      "log": {"assumptions": ["Date는 Normal(lot 23/6) 블록에서 Test 행으로 carry-forward."], "warnings": ["Function 일자(06-28)와 vision/bending 일자(06-27) 다름 - 같은 시험 이벤트로 페어링."], "decision_rationale": "같은 이벤트 Normal 존재. Bending -58% 개선이나 function +250-300% 악화. Can not use 판정 일치."}
+    },
+    "en": {
+      "document": {"title": "BRS-161016 Test VP mold #9 dry 150°C 1Hr / 2Hr to improve VP bending", "purpose": "Test VP mold #9 (supplier improvement) at 150°C 1Hr / 2Hr to improve bending.", "content": ["Measure laser-cutting NG", "Measure VP bending after laser", "Vision VP+CD on semi", "Function check on final"]},
+      "conclusions": {
+        "k1": {"topic": "Laser cutting NG: 1Hr/2Hr vs Normal", "statement_from_report": "Test cutting NG high, bending reduced.", "normalized_interpretation": "1Hr 6.80% vs Normal 3.5% = 1.943x, 94.3% worse. 2Hr 5.44% vs 3.5% = 1.554x, 55.4% worse."},
+        "k2": {"topic": "VP bending: 1Hr/2Hr vs Normal", "statement_from_report": "Bending NG rate reduced.", "normalized_interpretation": "1Hr 0.365% vs 0.864% = 57.8% improved. 2Hr 0.36% vs 0.864% = 58.3% improved. Bending roughly halved."},
+        "k3": {"topic": "Function: 1Hr/2Hr vs Normal", "statement_from_report": "Function NG higher than Normal VP mold #9.", "normalized_interpretation": "1Hr 6.96% vs 1.978% = 3.518x, 251.8% worse. 2Hr 8.06% vs 1.978% = 4.075x, 307.5% worse."},
+        "k4": {"topic": "Final decision", "statement_from_report": "=> Can not use VP mold #9 dry 150°C 1Hr / 2Hr.", "normalized_interpretation": "Bending improved, but function and laser NG much worse. Reject adoption."}
+      },
+      "hints": {
+        "hint_0": {"check_item": "Reject 150°C 1Hr/2Hr dry for VP mold #9", "reason": "Function NG +252%/+307%, laser NG +55-94% vs Normal."},
+        "hint_1": {"check_item": "Investigate Touch NG drivers under 2Hr 150°C", "reason": "Touch jumps to 4.76% vs Normal 0.36%."}
+      },
+      "log": {"assumptions": ["Date carried forward to Test rows from Normal (lot 23/6) block."], "warnings": ["Function date 06-28 differs from vision/bending 06-27 - paired by same trial event."], "decision_rationale": "Same-event Normal exists. Bending improved -58%, function worse +250-300%. Can not use decision consistent."}
+    },
+    "vi": {
+      "document": {"title": "BRS-161016 Thử VP mold #9 sấy 150°C 1Hr / 2Hr cải thiện VP bending", "purpose": "Thử VP mold #9 (nhà cung cấp cải tiến) sấy 150°C 1Hr / 2Hr để cải thiện bending.", "content": ["Đo NG laser cutting", "Đo VP bending sau laser", "Vision VP+CD trên semi", "Kiểm tra function trên final"]},
+      "conclusions": {
+        "k1": {"topic": "Laser NG: 1Hr/2Hr vs Normal", "statement_from_report": "Test NG cutting cao, bending giảm.", "normalized_interpretation": "1Hr 6.80% vs Normal 3.5% = 1.943 lần, kém 94.3%. 2Hr 5.44% vs 3.5% = 1.554 lần, kém 55.4%."},
+        "k2": {"topic": "VP bending: 1Hr/2Hr vs Normal", "statement_from_report": "NG rate bending giảm.", "normalized_interpretation": "1Hr 0.365% vs 0.864%, cải thiện 57.8%. 2Hr 0.36% vs 0.864%, cải thiện 58.3%. Bending giảm ~một nửa."},
+        "k3": {"topic": "Function: 1Hr/2Hr vs Normal", "statement_from_report": "Function NG cao hơn Normal mold #9.", "normalized_interpretation": "1Hr 6.96% vs 1.978% = 3.518 lần, kém 251.8%. 2Hr 8.06% vs 1.978% = 4.075 lần, kém 307.5%."},
+        "k4": {"topic": "Quyết định cuối", "statement_from_report": "=> Không dùng mold #9 sấy 150°C 1Hr / 2Hr.", "normalized_interpretation": "Bending cải thiện nhưng function và laser NG đều xấu hơn. Từ chối áp dụng."}
+      },
+      "hints": {
+        "hint_0": {"check_item": "Loại sấy 150°C 1Hr/2Hr cho VP mold #9", "reason": "Function NG +252%/+307%, laser NG +55-94% so với Normal."},
+        "hint_1": {"check_item": "Điều tra nguyên nhân Touch tăng ở 2Hr 150°C", "reason": "Touch lên 4.76% so với Normal 0.36%."}
+      },
+      "log": {"assumptions": ["Date carry-forward đến Test từ block Normal (lot 23/6)."], "warnings": ["Function ngày 06-28, vision/bending 06-27 - cùng sự kiện thử."], "decision_rationale": "Có Normal cùng sự kiện. Bending cải thiện -58%, function xấu +250-300%. Quyết định Can not use phù hợp."}
+    }
+  }
+}

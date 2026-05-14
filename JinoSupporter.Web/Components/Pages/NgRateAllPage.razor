@@ -143,6 +143,22 @@
         font-weight: 600; font-size: 13px; flex-shrink: 0;
     }
     .grp-modal-body { overflow: auto; padding: 10px; flex: 1; }
+
+    /* Hierarchy summary — Group → Mid → Sub1 → Sub2 collapsible rows */
+    .pivot-table tr.hier-group-row    { cursor: pointer; }
+    .pivot-table tr.hier-group-row td { background: #fef3c7; color: #78350f; font-weight: 700;
+                                        border-top: 2px solid #fbbf24; }
+    .pivot-table tr.hier-group-row:hover td { background: #fde68a; }
+    .pivot-table tr.hier-mid-row    { cursor: pointer; }
+    .pivot-table tr.hier-mid-row td { background: #eff6ff; color: #1e40af; font-weight: 600; }
+    .pivot-table tr.hier-mid-row:hover td { background: #dbeafe; }
+    .pivot-table tr.hier-sub1-row td { background: #f5f3ff; color: #1e293b; font-weight: 600; }
+    .pivot-table tr.hier-sub2-row td { background: #fff;    color: #64748b; font-size: 11px;  }
+    .pivot-table tr.hier-ls-row   td { background: #fafafa; color: #94a3b8; font-size: 10.5px;
+                                       font-style: italic; border-top: 1px dashed #f1f5f9; }
+    .pivot-table tr.hier-sub-expandable { cursor: pointer; }
+    .pivot-table tr.hier-sub-expandable:hover td { filter: brightness(0.97); }
+    .tog-icon { color: #6366f1; font-size: 10px; margin-right: 4px; }
 </style>
 
 <div class="d-flex align-items-center gap-2 mb-3">
@@ -160,6 +176,10 @@
         <a href="/ng-rate-by-group" class="btn btn-outline-secondary"
            title="Switch to By Group view">
             🧩 By Group
+        </a>
+        <a href="/ng-rate-for-weekly-report" class="btn btn-outline-secondary"
+           title="Switch to For Weekly Report — same as By Group, with all Date columns hidden.">
+            📅 For Weekly Report
         </a>
     </div>
 </div>
@@ -272,7 +292,7 @@
                 @if (_dbGroups.Count == 0)
                 {
                     <div class="text-muted small p-3 flex-grow-1">
-                        <span>No groups found. Define groups on the <a href="/bmes/make-model-group">Make ModelGroup Data</a> page.</span>
+                        <span>No groups found. Define groups on the <a href="/bmes/make-model-group">Model Group</a> page.</span>
                     </div>
                 }
                 else
@@ -496,6 +516,122 @@
             </div>
         </div>
         <div style="border-top:2px solid #e2e8f0; margin-bottom:12px;"></div>
+
+        <!-- ── Hierarchy Summary — Group → Mid → Sub1 → Sub2 → LineShift ─────── -->
+        @if (_hier is not null && _hier.HasData && _reports.Count > 0)
+        {
+            var hierDateCols  = GetVisibleDateCols(_reports[0].Report).ToList();
+            var hierWeekCols  = GetVisibleWeekCols(_reports[0].Report).ToList();
+            var hierMonthCols = GetVisibleMonthCols(_reports[0].Report).ToList();
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header small fw-semibold">
+                    📊 Group → Mid → Sub1 → Sub2 — TOTAL PPM (collapsible)
+                </div>
+                <div class="card-body p-0">
+                    <div class="pivot-wrap">
+                        <table class="pivot-table">
+                            <thead>
+                                <tr>
+                                    <th class="label-th" style="min-width:280px;" rowspan="2">Group / Mid / Sub</th>
+                                    @if (hierDateCols.Count > 0)
+                                    {
+                                        <th class="blk-date" colspan="@hierDateCols.Count">Date</th>
+                                        <th class="sep-th" rowspan="2"></th>
+                                    }
+                                    @if (hierWeekCols.Count > 0)
+                                    {
+                                        <th class="blk-week" colspan="@hierWeekCols.Count">Week</th>
+                                        <th class="sep-th" rowspan="2"></th>
+                                    }
+                                    @if (hierMonthCols.Count > 0)
+                                    {
+                                        <th class="blk-month" colspan="@hierMonthCols.Count">Month</th>
+                                    }
+                                </tr>
+                                <tr>
+                                    @foreach (var col in hierDateCols)  { <th>@col.Header</th> }
+                                    @foreach (var col in hierWeekCols)  { <th>@col.Header</th> }
+                                    @foreach (var col in hierMonthCols) { <th>@col.Header</th> }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var g in _hier.Groups)
+                                {
+                                    string gName = g.Name;
+                                    bool gExp    = _hierExpandedGroups.Contains(gName);
+                                    <tr class="hier-group-row" @onclick="() => HierToggleGroup(gName)">
+                                        <td class="label-td">
+                                            <span class="tog-icon">@(gExp ? "▼" : "▶")</span>
+                                            <strong>@gName</strong>
+                                            <span class="text-muted ms-1" style="font-size:10px;">@g.MidGroups.Count mids</span>
+                                        </td>
+                                        @foreach (var col in hierDateCols)
+                                        {
+                                            double v = _hierLookup.GroupAvgOfMids(g, col.Key);
+                                            <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                        }
+                                        @if (hierDateCols.Count > 0) { <td class="sep-td"></td> }
+                                        @foreach (var col in hierWeekCols)
+                                        {
+                                            double v = _hierLookup.GroupAvgOfMids(g, col.Key);
+                                            <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                        }
+                                        @if (hierWeekCols.Count > 0) { <td class="sep-td"></td> }
+                                        @foreach (var col in hierMonthCols)
+                                        {
+                                            double v = _hierLookup.GroupAvgOfMids(g, col.Key);
+                                            <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                        }
+                                    </tr>
+                                    @if (gExp)
+                                    {
+                                        @foreach (var mid in g.MidGroups)
+                                        {
+                                            if (mid.LineShifts.Count == 0 || string.IsNullOrEmpty(mid.Material)) continue;
+                                            string midKey = $"{gName}::{mid.Material}";
+                                            bool midExp   = _hierExpandedMids.Contains(midKey);
+                                            <tr class="hier-mid-row" @onclick="() => HierToggleMid(midKey)">
+                                                <td class="label-td" style="padding-left:32px; font-size:11.5px;">
+                                                    <span class="tog-icon">@(midExp ? "▼" : "▶")</span>
+                                                    <span>@mid.Material</span>
+                                                </td>
+                                                @foreach (var col in hierDateCols)
+                                                {
+                                                    double v = _hierLookup.MidAvgOfSubs(gName, mid, col.Key);
+                                                    <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                }
+                                                @if (hierDateCols.Count > 0) { <td class="sep-td"></td> }
+                                                @foreach (var col in hierWeekCols)
+                                                {
+                                                    double v = _hierLookup.MidAvgOfSubs(gName, mid, col.Key);
+                                                    <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                }
+                                                @if (hierWeekCols.Count > 0) { <td class="sep-td"></td> }
+                                                @foreach (var col in hierMonthCols)
+                                                {
+                                                    double v = _hierLookup.MidAvgOfSubs(gName, mid, col.Key);
+                                                    <td class="@(v <= 0 ? "ppm-zero" : "ppm-val")">@(v <= 0 ? "-" : v.ToString("N0"))</td>
+                                                }
+                                            </tr>
+                                            @if (midExp)
+                                            {
+                                                <HierSubRows GroupName="@gName" Mid="@mid" Lookup="@_hierLookup"
+                                                             DateCols="@hierDateCols" WeekCols="@hierWeekCols" MonthCols="@hierMonthCols"
+                                                             Expanded="@_hierExpandedSub1s"
+                                                             Sub1RowClass="hier-sub1-row"
+                                                             Sub2RowClass="hier-sub2-row"
+                                                             LineShiftRowClass="hier-ls-row"
+                                                             ExpandableRowClass="hier-sub-expandable" />
+                                            }
+                                        }
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
 
         <!-- ── Per-model sections (vertically stacked) ──────────────────────── -->
         @for (int _mi = 0; _mi < _reports.Count; _mi++)
@@ -1040,6 +1176,30 @@
     private string _reportError  = string.Empty;
     private List<(string Label, NgRateReportService.NgRateReport Report)> _reports = new();
 
+    // ── Group → Mid → Sub1 → Sub2 → LineShift hierarchy (shared across sections) ──
+    // Bundled by HierReportBuilder; rendered through the <HierSubRows> component.
+    private HierReports?    _hier;
+    private HierPpmLookup   _hierLookup = new();
+    private HashSet<string> _hierExpandedGroups = new(StringComparer.Ordinal);
+    private HashSet<string> _hierExpandedMids   = new(StringComparer.Ordinal);
+    private HashSet<string> _hierExpandedSub1s  = new(StringComparer.Ordinal);
+
+    private void HierToggleGroup(string g) { if (!_hierExpandedGroups.Remove(g)) _hierExpandedGroups.Add(g); }
+    private void HierToggleMid(string k)   { if (!_hierExpandedMids.Remove(k))   _hierExpandedMids.Add(k); }
+
+    private List<ModelGroupRecord> ResolveHierGroups()
+    {
+        var groupSet = new HashSet<long>(_selectedGroupIds);
+        foreach (string key in _selectedSubEntries)
+        {
+            var parts = key.Split('|');
+            if (parts.Length >= 1 && long.TryParse(parts[0], out long gid)) groupSet.Add(gid);
+        }
+        if (groupSet.Count == 0)
+            foreach (var g in _dbGroups) groupSet.Add(g.Id);
+        return _dbGroups.Where(g => groupSet.Contains(g.Id)).ToList();
+    }
+
     // Section tabs (defect report type)
     private static readonly (string Key, string Label)[] SectionTabs = new[]
     {
@@ -1397,6 +1557,11 @@
         _dateExpanded  = false;
         _weekExpanded  = false;
         _monthExpanded = false;
+        _hier        = null;
+        _hierLookup  = new();
+        _hierExpandedGroups.Clear();
+        _hierExpandedMids.Clear();
+        _hierExpandedSub1s.Clear();
         await InvokeAsync(StateHasChanged);
 
         IProgress<string> progress = new Progress<string>(msg =>
@@ -1463,6 +1628,10 @@
             }
 
             _pendingChartRender = true;
+
+            // ── Hierarchy reports for the Group → Mid → Sub1 → Sub2 summary card ──
+            _hier       = await HierReportBuilder.BuildAsync(NgRateReport, dbPath, ResolveHierGroups(), progress);
+            _hierLookup = HierPpmLookup.From(_hier);
         }
         catch (Exception ex)
         {

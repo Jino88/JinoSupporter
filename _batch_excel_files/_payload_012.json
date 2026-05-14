@@ -1,0 +1,79 @@
+{
+  "name": "47. BRS-161016 Report test cutting by punch machine and laser machine",
+  "result": {
+    "schema_version": "0.1",
+    "document": {
+      "source_file": "47. BRS-161016 Report test cutting by punch machine and laser machine",
+      "source_sheet": "Sheet1",
+      "title": "BRS-161016 Test VP cutting: punch machine vs laser machine, molds #4 and #7",
+      "model": "BRS-161016",
+      "report_date": "",
+      "department": "ME",
+      "report_type": "lot_supplier_mold_comparison",
+      "primary_defect": {"canonical_name": "NG VP bending", "aliases_in_document": ["VP bending"]},
+      "related_defects": [],
+      "parts": ["VP"],
+      "processes": ["Punch cutting", "Laser cutting", "VP mold #4 / #7"],
+      "purpose": "Compare punch machine vs laser machine cutting on VP molds #4 and #7 for bending NG.",
+      "content": ["100 pcs each per (machine, mold)", "Track NG bending rate"],
+      "source_cells": {"title": [], "date": [], "purpose": [], "content": []}
+    },
+    "test_conditions": [
+      {"condition_id": "cPunch", "condition_group": "Punch machine", "process": "VP cutting", "changed_factor": "Cutting method = Punch", "machine": "Punch mc", "source_file": "...", "sheet_name": "Sheet1", "source_cells": ["Sheet1!B6"]},
+      {"condition_id": "cLaser", "condition_group": "Laser machine", "process": "VP cutting", "changed_factor": "Cutting method = Laser", "machine": "Laser mc", "source_file": "...", "sheet_name": "Sheet1", "source_cells": ["Sheet1!B8"]}
+    ],
+    "results": [
+      {"result_id": "p_m4", "condition_id": "cPunch", "measurement_type": "VP cutting NG", "input_count": 101, "ok_count": 59, "ng_count": 42, "ng_rate_decimal": 0.4158, "ng_rate_percent": 41.58, "metric_name": "NG bending (Punch, mold #4)", "source_file": "...", "sheet_name": "Sheet1", "source_cells": ["Sheet1!B6:G6"]},
+      {"result_id": "p_m7", "condition_id": "cPunch", "measurement_type": "VP cutting NG", "input_count": 100, "ok_count": 90, "ng_count": 10, "ng_rate_decimal": 0.10, "ng_rate_percent": 10.0, "metric_name": "NG bending (Punch, mold #7)", "source_file": "...", "sheet_name": "Sheet1", "source_cells": ["Sheet1!C7:G7"]},
+      {"result_id": "l_m4", "condition_id": "cLaser", "measurement_type": "VP cutting NG", "input_count": 97, "ok_count": 33, "ng_count": 64, "ng_rate_decimal": 0.6598, "ng_rate_percent": 65.98, "metric_name": "NG bending (Laser, mold #4)", "source_file": "...", "sheet_name": "Sheet1", "source_cells": ["Sheet1!B8:G8"]},
+      {"result_id": "l_m7", "condition_id": "cLaser", "measurement_type": "VP cutting NG", "input_count": 97, "ok_count": 67, "ng_count": 30, "ng_rate_decimal": 0.3093, "ng_rate_percent": 30.93, "metric_name": "NG bending (Laser, mold #7)", "source_file": "...", "sheet_name": "Sheet1", "source_cells": ["Sheet1!C9:G9"]}
+    ],
+    "conclusions": [
+      {"conclusion_id": "k1", "topic": "Punch vs Laser cutting by mold", "statement_from_report": "Punch mc #4 41.58%, #7 10%. Laser mc #4 65.98%, #7 30.93%.", "normalized_interpretation": "Mold #4: Punch 41.58% vs Laser 65.98% = 0.630x, 37.0% improved by punch. Mold #7: Punch 10% vs Laser 30.93% = 0.323x, 67.7% improved by punch. Punch consistently produces less VP bending than laser; mold #7 is much better than #4 in both machines.", "source_file": "...", "sheet_name": "Sheet1", "source_cells": ["Sheet1!B6:G9"]}
+    ],
+    "troubleshooting_index": {
+      "defect_name": "VP bending after cutting",
+      "when_user_asks": ["punch vs laser cutting", "VP bending mold #4 / #7"],
+      "suggested_checks": [
+        {"check_item": "Prefer punch over laser for VP cutting (mold #4, #7)", "reason": "Punch reduces bending NG 37-68% vs laser on both molds.", "evidence_strength": "strong", "related_process": "VP cutting", "related_part": "VP", "source_file": "...", "sheet_name": "Sheet1", "source_cells": ["Sheet1!B6:G9"]},
+        {"check_item": "Use mold #7 over mold #4 where possible", "reason": "Mold #7 NG far lower than mold #4 in both punch and laser.", "evidence_strength": "strong", "related_process": "VP mold", "related_part": "VP", "source_file": "...", "sheet_name": "Sheet1", "source_cells": ["Sheet1!C6:G9"]}
+      ],
+      "limitations": ["No Normal baseline; only 100 pcs per combination."]
+    },
+    "ai_extraction_log": {
+      "confidence": 0.75,
+      "assumptions": ["No header date / dept / marker in this sheet; report metadata left blank."],
+      "warnings": ["Sample 97-101 pcs per cell; absolute NG rates are very high (10-66%)."],
+      "decision_rationale": "No Normal row in workbook. Used lot_supplier_mold_comparison classification - factor-level matrix on machine x mold. Punch is better than laser, mold #7 is better than #4 in both cases."
+    }
+  },
+  "translations": {
+    "ko": {
+      "document": {"title": "BRS-161016 VP 절단: Punch vs Laser, Mold #4/#7", "purpose": "VP 절단 시 Punch mc과 Laser mc, Mold #4와 #7 비교(VP bending NG).", "content": ["조합당 100pcs", "NG bending 비율 추적"]},
+      "conclusions": {"k1": {"topic": "Punch vs Laser, Mold #4/#7", "statement_from_report": "Punch #4 41.58%, #7 10%. Laser #4 65.98%, #7 30.93%.", "normalized_interpretation": "Mold #4: Punch vs Laser 37.0% 개선. Mold #7: Punch vs Laser 67.7% 개선. Punch이 일관되게 우수, Mold #7이 두 머신 모두에서 더 좋음."}},
+      "hints": {
+        "hint_0": {"check_item": "VP 절단은 Punch 우선(Mold #4, #7)", "reason": "두 Mold에서 Laser 대비 37-68% 개선."},
+        "hint_1": {"check_item": "가능하면 Mold #7 사용", "reason": "두 머신 모두에서 NG 훨씬 낮음."}
+      },
+      "log": {"assumptions": ["헤더 메타 정보 없음 - 비워둠."], "warnings": ["샘플 97-101 pcs, 절대 NG 10-66%로 높음."], "decision_rationale": "Normal 없음. lot_supplier_mold_comparison 매트릭스로 분류. Punch>Laser, #7>#4."}
+    },
+    "en": {
+      "document": {"title": "BRS-161016 VP cutting: Punch vs Laser, molds #4 / #7", "purpose": "Compare punch vs laser machines on VP molds #4 / #7 for bending NG.", "content": ["100 pcs per combination", "Track NG bending rate"]},
+      "conclusions": {"k1": {"topic": "Punch vs Laser by mold", "statement_from_report": "Punch #4 41.58%, #7 10%. Laser #4 65.98%, #7 30.93%.", "normalized_interpretation": "Mold #4: Punch is 37.0% better than Laser. Mold #7: Punch is 67.7% better. Punch consistently lower NG; mold #7 better than #4 in both machines."}},
+      "hints": {
+        "hint_0": {"check_item": "Prefer Punch over Laser for VP cutting (molds #4, #7)", "reason": "Punch reduces bending 37-68% vs Laser on both molds."},
+        "hint_1": {"check_item": "Use mold #7 where possible", "reason": "Mold #7 NG much lower than #4 in both machines."}
+      },
+      "log": {"assumptions": ["No header metadata; left report fields blank."], "warnings": ["Sample 97-101 pcs, absolute NG 10-66%."], "decision_rationale": "No Normal row. lot_supplier_mold_comparison matrix - Punch beats Laser; #7 beats #4."}
+    },
+    "vi": {
+      "document": {"title": "BRS-161016 Cắt VP: Punch vs Laser, mold #4 / #7", "purpose": "So sánh máy Punch và Laser cho mold #4 / #7 về NG bending.", "content": ["100 pcs cho mỗi tổ hợp", "Theo dõi tỷ lệ NG bending"]},
+      "conclusions": {"k1": {"topic": "Punch vs Laser theo mold", "statement_from_report": "Punch #4 41.58%, #7 10%. Laser #4 65.98%, #7 30.93%.", "normalized_interpretation": "Mold #4: Punch tốt hơn Laser 37.0%. Mold #7: Punch tốt hơn 67.7%. Punch luôn ít NG hơn; mold #7 tốt hơn #4 ở cả 2 máy."}},
+      "hints": {
+        "hint_0": {"check_item": "Ưu tiên Punch hơn Laser khi cắt VP (mold #4, #7)", "reason": "Giảm bending 37-68% so với Laser ở cả 2 mold."},
+        "hint_1": {"check_item": "Dùng mold #7 khi có thể", "reason": "NG ở cả 2 máy đều thấp hơn nhiều so với #4."}
+      },
+      "log": {"assumptions": ["Không có metadata header - để trống các trường report."], "warnings": ["Sample 97-101 pcs, NG tuyệt đối 10-66%."], "decision_rationale": "Không có Normal. Ma trận lot_supplier_mold_comparison - Punch > Laser; #7 > #4."}
+    }
+  }
+}

@@ -192,9 +192,11 @@ public sealed class ClaudeService
             "- Within each header row, forward-fill empty cells left->right: an empty cell inherits the nearest non-empty label to its left.\n" +
             "- If there are multiple header rows, concatenate labels at the SAME column index (space-separated).\n" +
             "- Example: row 0 col 7 = \"NG AUDIOBUS\" (forward-filled), row 1 col 7 = \"SPL\" -> final label = \"NG AUDIOBUS SPL\".\n\n" +
-            "STEP 3: Fill down merged cells in data rows.\n" +
-            "- Excel merged cells paste as a value only in the first row; subsequent rows have the same column empty.\n" +
-            "- For each data column, if a cell is empty, copy the most recent non-empty value from an earlier row.\n\n" +
+            "STEP 3: Handle merged cells and Data Input metadata.\n" +
+            "- The TSV may already contain values expanded from real Excel merged ranges.\n" +
+            "- Values may be prefixed with metadata like \"{bg=#FFFF00,merged=A1:A3}\" or \"〔bg=#FFFF00,merged=A1:A3〕\"; strip the metadata and use the following text as the cell value.\n" +
+            "- For remaining empty cells, carry down only context columns such as Date, Model, Type, Line, No, section, or table group.\n" +
+            "- Do NOT carry down numeric, OK, NG, total, rate, sample, or measurement columns.\n\n" +
             "STEP 4: Exclude rows where all cells are empty, or the row is a percentage sub-row, or a grand total/summary row.\n\n" +
             "STEP 5: Return ONLY a valid JSON array (no markdown fences, no explanation):\n" +
             "[\n  {\n    \"tableName\": \"descriptive name\",\n" +
@@ -655,19 +657,173 @@ public sealed class ClaudeService
                 - "THD" column or "NG THD"                        → function_thd
                   (only literal THD — do NOT map RB / rear-buzz to function_thd)
 
-            ══ STRUCTURED CONTEXT FIELDS ══
+            ══ REPORT-TYPE FIRST (v7) — CLASSIFY BEFORE WRITING ══
 
-            Extract 5 focused fields (empty string "" if not stated):
-            - purpose           — goal of the test (from "I. Purpose" section)
-            - testConditions    — what was varied
-            - rootCause         — identified cause if concluded
-            - decision          — final verdict (from "IV. Decision" section)
-            - recommendedAction — concrete next step
+            ⚠️ Pick **reportType** FIRST — it changes which fields you fill.
+            Pick exactly one:
+
+            (a) `comparison_study`   — Normal vs Test (or Before vs After,
+                old_lot vs new_lot). ONE main variant against ONE baseline.
+                Default for "test new X" reports.
+            (b) `multi_arm`          — 3+ variants compared (e.g. mold #4
+                vs #6 vs #7 vs #8 / vendor A vs B vs C). When ≥3 distinct
+                labels are compared on the same metric.
+            (c) `doe_factorial`      — A 2-D factor grid (Temperature ×
+                Tension, RPM × Voltage). Cells = (factor1 level, factor2
+                level, OK/NG/value).
+            (d) `reliability_validation` — Spec vs measured across multiple
+                stress tests (high-temp, drop, salt-spray …). Verdict is
+                `passed` / `failed`, not `improved` / `worsened`.
+            (e) `trend_analysis`     — Time series. Weekly / monthly NG
+                rate or worst-process trending over multiple periods.
+            (f) `quality_log`        — Pure inspection record. No variant
+                comparison, no spec gate. Just "we measured X on date Y".
+                Verdict chip will be hidden in the UI.
+            (g) `intervention_test`  — Single intervention measured but no
+                obvious baseline pair (e.g. "tried bond X, NG rate = Y%").
+                Falls back to 2-arm if a spec or prior value exists.
+
+            ══ FIELD-BY-FIELD RULES (depend on reportType) ══
+
+            Read this report as the matching study type. Output a STRUCTURED
+            verdict + evidence rows + actions, plus type-specific payloads
+            (`doeGrid` / `trendPoints` / multi-arm `comparisons[]`).
+
+            Goal: ONE compact card the operator can read in five seconds.
+            Verdict + headline at top; evidence numbers below; actions.
+            ⚠️ Do NOT re-state the same facts in multiple fields. Each fact
+               appears exactly once.
+
+            🚫 NEVER prose. ✅ Numbers FIRST. Each text bullet ≤ 16 words.
+               NO filler verbs ("결과", "확인", "수행", "통해", "되어").
+
+            BASELINE SELECTION RULE (used for evidence rows):
+            (1) If "Normal" exists in the same event, use Normal as baseline.
+            (2) Else if "Before" / "Old" / "Standard" / "기존" exists, use that.
+            (3) Else if A/B / Pos1/Pos2 → pairwise; set context.baselineReason
+                to note low confidence.
+            (4) DOE (Temperature × Tension × RPM combos) → no single baseline;
+                emit one evidence row per axis or per best/worst cell, and
+                explain in context.baselineReason.
+
+            Field-by-field semantics:
+
+            - verdict     — ENUM. Exactly one of (v7 — 7 values):
+                            improved | worsened | partial | no_clear_effect |
+                            inconclusive | passed | failed
+              * improved          : variant beats baseline by a clear margin.
+              * worsened          : variant is worse than baseline.
+              * partial           : some metrics improved, others didn't.
+              * no_clear_effect   : numbers indistinguishable (within ±0.5pp
+                                    or sample N too small to call).
+              * inconclusive      : data missing / DOE incomplete / aborted.
+              * passed            : reliability_validation only — every test
+                                    item within spec.
+              * failed            : reliability_validation only — at least
+                                    one item out of spec.
+              For reportType=quality_log set verdict="" (empty) — no judgement.
+
+            - headline    — Exactly one short sentence. Magnitude + direction.
+                ✅ "VP press jig change → NG 8.3% → 2.7% (-5.6pp, improved)"
+                ✅ "Plasma frame clean — function NG unchanged (3.0% both arms)"
+                ❌ "전반적으로 양호한 결과를 보였습니다."
+
+            - evidence    — Array of UP TO 4 rows. The KEY numeric comparisons.
+                            Each row = one metric. Two paths:
+
+              2-ARM path (default — reportType ∈ comparison_study /
+              reliability_validation / intervention_test):
+                * metric         — short label, e.g. "NG rate", "Hearing-Noise",
+                                   "Gauss", "Tension".
+                * baselineLabel  — "Normal", "Before", "Old lot", or specific
+                                   condition. For reliability set "Spec".
+                * baselineValue  — verbatim value w/ unit. "3.0% (3/100)",
+                                   "477 G", "0.55 kgf", "> 1.530 kgf" (spec).
+                * variantLabel   — "Test", "After", or specific variant.
+                                   For reliability: "Measured".
+                * variantValue   — same format as baselineValue.
+                * deltaText      — display delta: "-5.6pp", "+0pp", "—".
+                                   Use "—" when units aren't comparable or
+                                   reportType=quality_log.
+                * deltaSign      — ENUM: "up" | "down" | "no_change".
+                                   ("down" = variant lower than baseline,
+                                    regardless of whether lower is good.)
+                * note           — optional, ≤8 words. e.g. "n=4 only — low conf".
+                                   Leave empty if nothing to add.
+                * comparisons    — leave empty / null in 2-arm path.
+
+              MULTI-ARM path (reportType=multi_arm — 3+ variants on the same metric):
+                * metric         — same as above.
+                * comparisons    — array of ≥3, ≤8 entries. Order: baseline first
+                                   if one exists, then variants by their natural
+                                   order in the source (lot date, mold #, vendor).
+                  · label      — "VP #4", "vendor A", "Reduce: 0.05".
+                  · value      — verbatim value w/ unit. "10.4% (121/1160)".
+                  · n          — sample size (integer).
+                  · isBaseline — true on the baseline arm (Normal / spec / reference).
+                  · isBest     — true on the best-performing arm.
+                  · isWorst    — true on the worst-performing arm.
+                * bestLabel / worstLabel — duplicate of best/worst.label for quick
+                  UI access.
+                * baselineLabel / baselineValue / variantLabel / variantValue / deltaText
+                  — leave empty in multi-arm path. The UI ignores them.
+                  ⚠ Exception: deltaText may hold "best vs worst" range string
+                  like "+44.6pp range" for at-a-glance.
+
+            - actions     — Array of UP TO 3 items, ordered by priority (1 = top).
+                            Pure decisions/next-steps. NO restating numbers
+                            (those are in evidence).
+                * priority    — 1, 2, 3.
+                * kind        — "action" (do this) | "investigate" (find out)
+                                | "risk" (warn about).
+                * text        — concrete imperative, ≤16 words.
+                  ✅ "Apply X 81.65→81.60 to production line 6"
+                  ✅ "Investigate root cause of yoke over-glue at sub-line"
+                  ❌ "More testing needed."
+
+            - doeGrid     — REQUIRED when reportType=doe_factorial, else null.
+                * factor1Name   — "Temperature", "RPM", "Voltage" …
+                * factor2Name   — second factor.
+                * factor1Levels — ordered list of factor1 levels as STRINGS
+                                  (e.g. ["380","390","400","410","420"]).
+                * factor2Levels — same for factor2 (e.g. ["4","5","6","7","8"]).
+                * cells         — one entry per (f1, f2) intersection.
+                  · f1     — must match a factor1Levels entry verbatim.
+                  · f2     — must match a factor2Levels entry verbatim.
+                  · status — ENUM: "ok" | "ng" | "borderline" | "empty".
+                  · value  — measured value or label (e.g. "7.611mm", "OK", "NG_melt").
+                ⚠ Even when DOE is reportType, ALSO populate `evidence` with
+                  AT MOST 2 summary rows (best cell, worst cell) so the
+                  side-panel KPI still shows.
+
+            - trendPoints — REQUIRED when reportType=trend_analysis, else null/empty.
+                Array of points ordered chronologically.
+                * label  — "Week 17", "2025-03", "Mar 2025", whatever the source uses.
+                * value  — measured NG rate or metric for that period
+                          (e.g. "8.3%", "120 ppm").
+                * note   — optional 1-clause context ("freeze + holder change").
+                Max 12 points; if more, summarise (skip intermediate).
+
+            - context     — Optional object with 3 short string fields:
+                * process        — name of the changed process/stage.
+                  ✅ "Vision Bond glue inspection (BP/SM, MG/PT, Yoke)"
+                * stage          — where the test ran.
+                  ✅ "Sub Yoke 161016-D2 visual + E2-3A main-line function"
+                * baselineReason — 1-line why this baseline was chosen.
+                  ✅ "same-event Normal row present"
+                  ✅ "no Normal; paired Type-1 vs Type-2 oversized samples"
 
             ══ TAGS ══
             Produce 4–10 English purpose-first tags (lowercase, hyphenated).
             Include product code, review type, main purpose, key comparison
             variable, intervention if present.
+
+            ══ LEGACY NARRATIVE FIELDS ══
+            ⚠️ The schema below still includes summary/keyFindings/purpose/
+               testConditions/rootCause/decision/recommendedAction for
+               backward compatibility. **Leave them as empty strings "".**
+               All decision-relevant content goes into verdict/headline/
+               evidence/actions/context above.
 
             ══ SELF-CHECK ══
 
@@ -702,9 +858,65 @@ public sealed class ClaudeService
                   "defectCount": 0
                 }
               ],
-              "summary": "1–2 sentence description",
-              "keyFindings": "Key findings (use \\n between bullet points)",
               "tags": ["keyword1", "keyword2", "..."],
+
+              "reportType": "comparison_study | multi_arm | doe_factorial | reliability_validation | trend_analysis | quality_log | intervention_test",
+              "verdict":    "improved | worsened | partial | no_clear_effect | inconclusive | passed | failed | \"\"",
+              "headline":   "One short sentence with magnitude + direction.",
+              "evidence": [
+                {
+                  "metric": "NG rate",
+                  "baselineLabel": "Normal", "baselineValue": "3.0% (3/100)",
+                  "variantLabel": "Type-2 Yoke", "variantValue": "3.0% (3/100)",
+                  "deltaText": "+0pp", "deltaSign": "no_change", "note": "",
+                  "comparisons": null,
+                  "bestLabel": "", "worstLabel": ""
+                }
+                /* multi-arm row example:
+                {
+                  "metric": "VP bending rate",
+                  "baselineLabel": "", "baselineValue": "",
+                  "variantLabel": "", "variantValue": "",
+                  "deltaText": "+58pp range", "deltaSign": "up", "note": "",
+                  "comparisons": [
+                    { "label":"VP #6", "value":"4.4% (53/1200)", "n":1200, "isBaseline":true,  "isBest":false, "isWorst":false },
+                    { "label":"VP #7 improve", "value":"59.7% (689/1154)", "n":1154, "isBaseline":false, "isBest":false, "isWorst":true  },
+                    { "label":"VP #9 improve", "value":"0.4% (5/1176)",   "n":1176, "isBaseline":false, "isBest":true,  "isWorst":false }
+                  ],
+                  "bestLabel":"VP #9 improve", "worstLabel":"VP #7 improve"
+                } */
+              ],
+              "actions": [
+                { "priority": 1, "kind": "action",      "text": "..." },
+                { "priority": 2, "kind": "investigate", "text": "..." }
+              ],
+              "context": {
+                "process": "",
+                "stage": "",
+                "baselineReason": ""
+              },
+              "doeGrid": null,
+              /* doe example (only when reportType=doe_factorial):
+              "doeGrid": {
+                "factor1Name": "Temperature",
+                "factor2Name": "Tension",
+                "factor1Levels": ["380","390","400","410","420"],
+                "factor2Levels": ["4","5","6","7","8"],
+                "cells": [
+                  { "f1":"390", "f2":"5", "status":"ok", "value":"7.611mm" },
+                  { "f1":"380", "f2":"4", "status":"ng", "value":"NG_melt" }
+                ]
+              }, */
+              "trendPoints": null,
+              /* trend example (only when reportType=trend_analysis):
+              "trendPoints": [
+                { "label":"Week 17", "value":"8.3%",  "note":"hearing-noise dominant" },
+                { "label":"Week 18", "value":"4.1%",  "note":"VP press change" },
+                { "label":"Week 19", "value":"2.7%",  "note":"" }
+              ], */
+
+              "summary": "",
+              "keyFindings": "",
               "purpose": "",
               "testConditions": "",
               "rootCause": "",
@@ -1146,7 +1358,11 @@ public sealed class ClaudeService
                 UV drying to 15s total", "Switch to new grill design".
 
             Rules:
-              - Each field: 1 short sentence max, English preferred.
+              - Each field: short scannable BULLETS ('\n'-separated), NOT prose.
+                Numbers/values first; no narrative connectors. ≤12 words/bullet.
+              - Use "key: from → to" or "key=value" form aggressively.
+                Example testConditions: "X position: 81.65 → 81.60\nLot: 17/3, 2/4"
+                Example rootCause: "VP lot 17/3 → 27.9% NG (vs 8.3% baseline)"
               - Never fabricate. If a field is not in the report, emit "".
               - Do not repeat what's already in summary/keyFindings — these fields
                 are FOCUSED facets, not a rewording.
@@ -1209,8 +1425,8 @@ public sealed class ClaudeService
                   "defectCount": 0
                 }
               ],
-              "summary": "1–2 sentence description",
-              "keyFindings": "Key findings (use \\n between bullet points)",
+              "summary": "≤2 short bullets ('\\n'-separated). Numbers first. No prose.",
+              "keyFindings": "5–8 short bullets ('\\n'-separated). 'metric: value' form, deltas with → / pp. ≤12 words each.",
               "tags": ["keyword1", "keyword2", "..."],
               "purpose": "",
               "testConditions": "",
@@ -1351,6 +1567,11 @@ public sealed class ClaudeService
             3. Produce ONE entry in "perDataset" for EVERY dataset that genuinely contributes to the answer. Copy "datasetName" VERBATIM from the "Dataset:" header in the context (full string, including numeric prefixes and spaces).
             4. In each per-dataset "answer": explain in {{lang}} what this SPECIFIC dataset shows and how it addresses the user's question. Cite concrete values from that dataset only (NG rate, defect type, product type, date, specific findings). 2–5 sentences is ideal.
             5. Do NOT include datasets that are irrelevant to the question.
+            5a. For NG-rate comparisons, judge improvement/worsening ONLY against the same-event Normal/Baseline/Control/Reference/Before/Old/OK row. Same-event means the same source sheet/table and same carried-forward Date/Model/Line/measurement type when those fields exist.
+            5b. Merged Excel cells may appear blank in continuation rows. Treat blank Date/Model/Type cells below a visible value as carrying the visible value forward before pairing rows.
+            5c. Use multiplicative relative change: (test_ng_rate / baseline_ng_rate - 1) * 100. Positive is worse; negative is improved. Do not use percentage-point subtraction as the verdict.
+            5d. If no same-event baseline exists, do not say improved/worsened. Use ng_without_baseline style ranking, defect mix, source sheet, and sample size.
+            5e. Respect report types: normal_comparison, ng_without_baseline, before_after_dimension, measurement_spec, defect_root_cause, lot_supplier_mold_comparison, process_condition_change, reliability_spec, doe_matrix, image_dependent, mixed. Answer in the matching shape: comparison table for comparison/process-change reports, spec/min/max/avg for measurement reports, cause/action/result for defect-cause reports.
             6. In "overall": give a 2–3 sentence {{lang}} synthesis across the per-dataset findings — top recommendations in priority order. If there is only one relevant dataset, you may leave "overall" empty.
             7. ALL human-readable text in the output ("overall" and every "answer") MUST be written in {{lang}}. Keep dataset names, product codes, defect type labels, and numeric values as-is.
             8. Return ONLY valid JSON — no markdown fences, no extra commentary.
@@ -1397,20 +1618,258 @@ public sealed class ClaudeService
         }
     }
 
+    // ── Translate analysis result (multi-field, one round-trip) ───────────────
+
+    /// <summary>Translate the 7 narrative fields of a NormalizeResult into the
+    /// target language in a single API call. Returns the original record's
+    /// values for any field the model couldn't translate — never null fields.
+    /// Tags / measurements are intentionally NOT translated (tags are domain
+    /// keywords that should stay searchable; measurements are
+    /// numeric/categorical structured data).</summary>
+    public async Task<DatasetSummaryTranslation> TranslateAnalysisAsync(
+        NormalizeResult source, string targetLanguage, CancellationToken ct = default)
+    {
+        if (!IsConfigured)
+            throw new InvalidOperationException("Claude API key is not configured.");
+
+        // v2 input: headline + actions[].text + context.{process,stage,baselineReason}
+        // are the only translate-eligible new fields. The verdict enum, evidence
+        // rows (all numeric / unit / part-code values), and tags stay verbatim
+        // and are NOT sent to the translator.
+        var actionTexts = (source.Actions ?? new List<ActionItem>())
+            .Select(a => a?.Text ?? "")
+            .ToList();
+
+        var inputJson = JsonSerializer.Serialize(new
+        {
+            // legacy 7 fields — still translated for old-schema rows
+            summary           = source.Summary           ?? "",
+            keyFindings       = source.KeyFindings       ?? "",
+            purpose           = source.Purpose           ?? "",
+            testConditions    = source.TestConditions    ?? "",
+            rootCause         = source.RootCause         ?? "",
+            decision          = source.Decision          ?? "",
+            recommendedAction = source.RecommendedAction ?? "",
+
+            // v2 — new fields
+            headline       = source.Headline ?? "",
+            actionTexts    = actionTexts,
+            contextProcess = source.Context?.Process        ?? "",
+            contextStage   = source.Context?.Stage          ?? "",
+            contextBaseline= source.Context?.BaselineReason ?? "",
+        });
+
+        string scriptRules = BuildOutputScriptRules(targetLanguage);
+
+        string prompt = $$"""
+            Translate every value in this JSON to {{targetLanguage}}. Keep keys
+            unchanged. Preserve numbers, units, and product/part identifiers
+            verbatim. If a field is empty, return it as an empty string.
+
+            "actionTexts" is an array of strings — translate each element and
+            return an array of the same length and order.
+
+            {{scriptRules}}
+
+            Output ONLY the translated JSON object — no markdown fence, no
+            commentary, no extra keys.
+
+            Input:
+            {{inputJson}}
+            """;
+
+        var content = new JsonArray
+        {
+            new JsonObject { ["type"] = "text", ["text"] = prompt },
+        };
+
+        string raw = (await CallWithContentAsync(content, maxTokens: 4096, ct: ct)).Trim();
+        // Strip ``` ... ``` fence and clip to outermost { ... }.
+        if (raw.StartsWith("```"))
+        {
+            int nl = raw.IndexOf('\n');
+            if (nl >= 0) raw = raw[(nl + 1)..];
+            if (raw.TrimEnd().EndsWith("```")) raw = raw[..raw.LastIndexOf("```")];
+        }
+        int open  = raw.IndexOf('{');
+        int close = raw.LastIndexOf('}');
+        string clean = (open >= 0 && close > open) ? raw[open..(close + 1)] : raw;
+
+        // Best-effort parse. On any failure, fall back to the original (English)
+        // values so the dataset still saves cleanly with a degraded translation.
+        try
+        {
+            using var doc = JsonDocument.Parse(clean);
+            var root = doc.RootElement;
+            string Get(string k) => root.TryGetProperty(k, out var v) && v.ValueKind == JsonValueKind.String
+                ? v.GetString() ?? "" : "";
+
+            // Re-assemble translated Actions array from actionTexts[]. Pair
+            // each translated text with the original priority / kind from
+            // source.Actions (those are not translated).
+            var translatedActions = new List<ActionItem>();
+            if (root.TryGetProperty("actionTexts", out var arr) && arr.ValueKind == JsonValueKind.Array)
+            {
+                var origActions = source.Actions ?? new List<ActionItem>();
+                int i = 0;
+                foreach (var el in arr.EnumerateArray())
+                {
+                    string text = el.ValueKind == JsonValueKind.String ? (el.GetString() ?? "") : "";
+                    var orig = i < origActions.Count ? origActions[i] : null;
+                    translatedActions.Add(new ActionItem
+                    {
+                        Priority = orig?.Priority ?? (i + 1),
+                        Kind     = orig?.Kind     ?? "action",
+                        Text     = text,
+                    });
+                    i++;
+                }
+            }
+
+            AnalysisContext? translatedContext = null;
+            string cp = Get("contextProcess");
+            string cs = Get("contextStage");
+            string cb = Get("contextBaseline");
+            if (!string.IsNullOrEmpty(cp) || !string.IsNullOrEmpty(cs) || !string.IsNullOrEmpty(cb))
+                translatedContext = new AnalysisContext { Process = cp, Stage = cs, BaselineReason = cb };
+
+            return new DatasetSummaryTranslation
+            {
+                Summary           = Get("summary"),
+                KeyFindings       = Get("keyFindings"),
+                Purpose           = Get("purpose"),
+                TestConditions    = Get("testConditions"),
+                RootCause         = Get("rootCause"),
+                Decision          = Get("decision"),
+                RecommendedAction = Get("recommendedAction"),
+                Headline          = Get("headline"),
+                Actions           = translatedActions,
+                Context           = translatedContext,
+            };
+        }
+        catch
+        {
+            // Fall back to the original (English) values so the dataset still
+            // saves cleanly with a degraded translation.
+            return new DatasetSummaryTranslation
+            {
+                Summary           = source.Summary           ?? "",
+                KeyFindings       = source.KeyFindings       ?? "",
+                Purpose           = source.Purpose           ?? "",
+                TestConditions    = source.TestConditions    ?? "",
+                RootCause         = source.RootCause         ?? "",
+                Decision          = source.Decision          ?? "",
+                RecommendedAction = source.RecommendedAction ?? "",
+                Headline          = source.Headline          ?? "",
+                Actions           = source.Actions ?? new List<ActionItem>(),
+                Context           = source.Context,
+            };
+        }
+    }
+
     // ── Translate ─────────────────────────────────────────────────────────────
 
     public async Task<string> TranslateAsync(string text,
                                              string targetLanguage,
+                                             List<(string MediaType, string Base64)>? images = null,
                                              CancellationToken ct = default)
     {
-        string prompt = $$"""
-            Translate the following text to {{targetLanguage}}.
-            Return only the translation — no explanation, no original text, no commentary.
+        bool hasText  = !string.IsNullOrWhiteSpace(text);
+        bool hasImage = images is { Count: > 0 };
 
-            {{text}}
+        // Claude vision sometimes misreads ambiguous characters in screenshots and
+        // emits them verbatim — e.g. dropping a Chinese hanzi into a Vietnamese line
+        // ("Thêm hướng dẫn kh槽 V…"). Lock the output script with explicit rules so
+        // every emitted character has to belong to the target language's writing
+        // system. Translate semantically, never copy through unreadable glyphs.
+        string scriptRules = BuildOutputScriptRules(targetLanguage);
+
+        string instruction = (hasText, hasImage) switch
+        {
+            (true, false) =>
+                $$"""
+                Translate the following text to {{targetLanguage}}.
+
+                {{scriptRules}}
+                Return only the translation — no explanation, no original text, no commentary.
+
+                {{text}}
+                """,
+
+            (false, true) =>
+                $$"""
+                Translate every visible text in the attached image(s) to {{targetLanguage}}.
+                Preserve table structure, line breaks, and reading order.
+
+                {{scriptRules}}
+                Return only the translation — no explanation, no original text, no commentary.
+                """,
+
+            (true, true) =>
+                $$"""
+                Translate to {{targetLanguage}}. The user has provided BOTH source text and
+                reference image(s); use the images as context for ambiguous terms but treat
+                the text below as the primary content to translate.
+
+                {{scriptRules}}
+                Return only the translation — no explanation, no original text, no commentary.
+
+                {{text}}
+                """,
+
+            _ => string.Empty,
+        };
+
+        if (string.IsNullOrEmpty(instruction))
+            throw new ArgumentException("Provide text, image(s), or both to translate.");
+
+        if (!hasImage)
+            return await CallAsync(instruction, 4096, ct);
+
+        var blocks = new JsonArray();
+        foreach ((string mediaType, string base64) in images!)
+        {
+            blocks.Add(new JsonObject
+            {
+                ["type"]   = "image",
+                ["source"] = new JsonObject
+                {
+                    ["type"]       = "base64",
+                    ["media_type"] = DetectMediaType(base64, mediaType),
+                    ["data"]       = base64,
+                }
+            });
+        }
+        blocks.Add(new JsonObject { ["type"] = "text", ["text"] = instruction });
+        return await CallWithContentAsync(blocks, 4096, ct);
+    }
+
+    /// <summary>Per-target-language writing-system constraint inserted into the
+    /// translate prompt. The goal is to stop Claude from copying through OCR
+    /// misreads — e.g. dropping a Chinese hanzi into a Vietnamese line because
+    /// the source character was ambiguous in the screenshot.</summary>
+    private static string BuildOutputScriptRules(string targetLanguage)
+    {
+        string scriptLine = targetLanguage switch
+        {
+            "Korean"                => "Korean uses Hangul (한글) plus standard Latin punctuation/numerals. Do NOT include Chinese hanzi, Japanese kana, or any other non-Hangul script.",
+            "English"               => "English uses the unaccented Latin alphabet (A-Z, a-z) plus standard punctuation/numerals. Do NOT include Chinese, Korean, Japanese, or any non-Latin characters.",
+            "Japanese"              => "Japanese uses Hiragana, Katakana, and Kanji (CJK characters that are part of the standard Japanese writing system). Do NOT include Hangul or non-Japanese scripts.",
+            "Chinese (Simplified)"  => "Chinese (Simplified) uses Simplified Han characters plus standard punctuation/numerals. Do NOT include Traditional-only characters, Hangul, kana, or other non-Chinese scripts.",
+            "Chinese (Traditional)" => "Chinese (Traditional) uses Traditional Han characters plus standard punctuation/numerals. Do NOT include Simplified-only characters, Hangul, kana, or other non-Chinese scripts.",
+            "Vietnamese"            => "Vietnamese uses the Latin alphabet with diacritics (à á ả ã ạ ă â ê ô ơ ư đ etc.) plus standard punctuation/numerals. Do NOT include Chinese hanzi, Korean Hangul, Japanese kana, or any non-Latin character — every glyph must be a valid Vietnamese letter, digit, or punctuation mark.",
+            "Spanish"               => "Spanish uses the Latin alphabet with diacritics (á é í ó ú ñ ü) plus ¿ ¡ and standard punctuation/numerals. Do NOT include any non-Latin character.",
+            "French"                => "French uses the Latin alphabet with diacritics (à â ç é è ê ë î ï ô ù û ü ÿ œ æ) plus standard punctuation/numerals. Do NOT include any non-Latin character.",
+            "German"                => "German uses the Latin alphabet plus ä ö ü ß and standard punctuation/numerals. Do NOT include any non-Latin character.",
+            _                       => $"Output must use only the standard writing system for {targetLanguage}. Do NOT mix in characters from other scripts (Chinese hanzi, Korean Hangul, Japanese kana, etc.).",
+        };
+
+        return $$"""
+            Output script rules:
+            - {{scriptLine}}
+            - If a character in the source is unreadable or ambiguous, do not copy it verbatim. Translate the surrounding context semantically and use your best linguistic judgment instead.
+            - Proper nouns / brand names / product codes that are already in the Latin alphabet may stay as-is when the target uses Latin script; otherwise transliterate them into the target script.
             """;
-
-        return await CallAsync(prompt, 4096, ct);
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────

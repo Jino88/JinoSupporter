@@ -1,0 +1,80 @@
+{
+  "result": {
+    "reportType": "multi_arm",
+    "verdict": "partial",
+    "headline": "14 of 15 candidate press-JIG materials survived 230C dry test; Ure Thare melted and is rejected.",
+    "evidence": [
+      {
+        "metric": "Melt failure at 230C dry",
+        "baselineLabel": "", "baselineValue": "",
+        "variantLabel": "", "variantValue": "",
+        "deltaText": "1/15 NG", "deltaSign": "flat", "note": "Ure Thare 16.31mm melted",
+        "comparisons": [
+          {"label": "Bake line", "value": "OK 52/72/88", "n": 1, "isBaseline": false, "isBest": false, "isWorst": false},
+          {"label": "AL 6061", "value": "OK 55/75/89", "n": 1, "isBaseline": false, "isBest": false, "isWorst": false},
+          {"label": "MC Nylon Black", "value": "OK 49/68/83", "n": 1, "isBaseline": false, "isBest": false, "isWorst": false},
+          {"label": "Ure Thare", "value": "NG Melt", "n": 1, "isBaseline": false, "isBest": false, "isWorst": true},
+          {"label": "Alcetan black", "value": "OK 51/69/85", "n": 1, "isBaseline": false, "isBest": false, "isWorst": false},
+          {"label": "PC Green", "value": "OK 56/78/94", "n": 1, "isBaseline": false, "isBest": false, "isWorst": false},
+          {"label": "Peek", "value": "OK 54/76/92", "n": 1, "isBaseline": false, "isBest": false, "isWorst": false},
+          {"label": "Teflon", "value": "OK 50/70/87", "n": 1, "isBaseline": false, "isBest": false, "isWorst": false},
+          {"label": "ABS", "value": "OK 51/72/88", "n": 1, "isBaseline": false, "isBest": false, "isWorst": false},
+          {"label": "White acetal", "value": "OK 48/68/87", "n": 1, "isBaseline": false, "isBest": false, "isWorst": false},
+          {"label": "My Mylon Blue", "value": "OK 51/70/88", "n": 1, "isBaseline": false, "isBest": false, "isWorst": false},
+          {"label": "PC Clean", "value": "OK 51/75/91", "n": 1, "isBaseline": false, "isBest": false, "isWorst": false},
+          {"label": "PUC", "value": "OK 54/74/90", "n": 1, "isBaseline": false, "isBest": false, "isWorst": false},
+          {"label": "PC Black", "value": "OK 53/77/93", "n": 1, "isBaseline": false, "isBest": false, "isWorst": false},
+          {"label": "PC Smog", "value": "OK 53/76/92", "n": 1, "isBaseline": false, "isBest": false, "isWorst": false}
+        ],
+        "bestLabel": "", "worstLabel": "Ure Thare"
+      },
+      {
+        "metric": "Surface temp range across 14 surviving materials",
+        "baselineLabel": "", "baselineValue": "",
+        "variantLabel": "", "variantValue": "",
+        "deltaText": "48-56 / 65-78 / 82-94 C at 1/3/5 min", "deltaSign": "flat", "note": "MIN-MAX",
+        "comparisons": null,
+        "bestLabel": "", "worstLabel": ""
+      }
+    ],
+    "actions": [
+      {"priority": 1, "kind": "action", "text": "Exclude Ure Thare from press-JIG material candidates."},
+      {"priority": 2, "kind": "action", "text": "Select press-JIG material from the 14 candidates that survived 230C dry test."}
+    ],
+    "context": {
+      "process": "Press JIG material selection",
+      "stage": "New dry machine validation at 230C",
+      "baselineReason": "Screen candidate materials for thermal survivability before deploying new dry machine"
+    },
+    "measurements": [],
+    "tags": ["dry-machine", "material-screening", "press-JIG", "230C"],
+    "productType": "",
+    "summary": "", "keyFindings": "", "purpose": "", "testConditions": "", "rootCause": "", "decision": "", "recommendedAction": ""
+  },
+  "tr_ko": {
+    "headline": "230C 건조 테스트에서 후보 프레스 JIG 소재 15종 중 14종 통과; Ure Thare는 용융되어 탈락.",
+    "actions": [
+      {"priority": 1, "kind": "action", "text": "Ure Thare를 프레스 JIG 소재 후보에서 제외."},
+      {"priority": 2, "kind": "action", "text": "230C 건조 테스트를 통과한 14종 후보 중에서 프레스 JIG 소재 선정."}
+    ],
+    "context": {
+      "process": "프레스 JIG 소재 선정",
+      "stage": "신규 건조 설비 230C 검증",
+      "baselineReason": "신규 건조 설비 도입 전 후보 소재의 내열성 스크리닝"
+    },
+    "summary": "", "keyFindings": "", "purpose": "", "testConditions": "", "rootCause": "", "decision": "", "recommendedAction": ""
+  },
+  "tr_vi": {
+    "headline": "14/15 vật liệu JIG ép vượt qua thử nghiệm sấy 230C; Ure Thare bị chảy và loại.",
+    "actions": [
+      {"priority": 1, "kind": "action", "text": "Loại Ure Thare khỏi danh sách vật liệu JIG ép."},
+      {"priority": 2, "kind": "action", "text": "Chọn vật liệu JIG ép từ 14 ứng viên đã vượt qua thử nghiệm sấy 230C."}
+    ],
+    "context": {
+      "process": "Chọn vật liệu JIG ép",
+      "stage": "Xác nhận máy sấy mới ở 230C",
+      "baselineReason": "Sàng lọc khả năng chịu nhiệt của vật liệu ứng viên trước khi triển khai máy sấy mới"
+    },
+    "summary": "", "keyFindings": "", "purpose": "", "testConditions": "", "rootCause": "", "decision": "", "recommendedAction": ""
+  }
+}

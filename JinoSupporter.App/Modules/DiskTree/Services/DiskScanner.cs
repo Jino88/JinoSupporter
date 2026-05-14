@@ -178,6 +178,14 @@ public sealed class DiskScanner
 
     private static bool ShouldSkipDirectory(string directoryPath)
     {
+        // Skip Recycle Bin trees ($Recycle.Bin, RECYCLER) — per-user trash that pollutes the tree
+        // and the duplicate scan with deleted-but-not-purged copies.
+        string? leaf = Path.GetFileName(directoryPath);
+        if (!string.IsNullOrEmpty(leaf) && leaf.IndexOf("Recycle", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return true;
+        }
+
         try
         {
             FileAttributes attributes = File.GetAttributes(directoryPath);

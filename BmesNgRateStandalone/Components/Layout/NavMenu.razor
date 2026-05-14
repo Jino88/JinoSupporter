@@ -1,0 +1,92 @@
+@implements IDisposable
+@inject NavigationManager Nav
+
+<div class="brand-bar">
+    <div class="brand-mark">BMES</div>
+    <div class="brand-text">
+        <div class="brand-title">NG Rate</div>
+        <div class="brand-sub">Standalone</div>
+    </div>
+</div>
+
+<nav class="navmenu">
+    <div class="nav-item">
+        <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <span class="nav-text">Home</span>
+        </NavLink>
+    </div>
+
+    <div class="nav-section">BMES</div>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="bmes/setting">
+            <span class="nav-text">Setting</span>
+        </NavLink>
+    </div>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="bmes/make-model-group">
+            <span class="nav-text">Model Group</span>
+        </NavLink>
+    </div>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="bmes/routing-table">
+            <span class="nav-text">Routing Table</span>
+        </NavLink>
+    </div>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="bmes/reason-table">
+            <span class="nav-text">Reason Table</span>
+        </NavLink>
+    </div>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="bmes/f-cost">
+            <span class="nav-text">F-Cost</span>
+        </NavLink>
+    </div>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="bmes/worker-status">
+            <span class="nav-text">Worker Status</span>
+        </NavLink>
+    </div>
+
+    <div class="nav-section">NG Rate</div>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="ng-rate">
+            <span class="nav-text">By Model</span>
+        </NavLink>
+    </div>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="ng-rate-by-group">
+            <span class="nav-text">By Group</span>
+        </NavLink>
+    </div>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="ng-rate-all">
+            <span class="nav-text">All</span>
+        </NavLink>
+    </div>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="ng-rate-for-weekly-report">
+            <span class="nav-text">Weekly Report</span>
+        </NavLink>
+    </div>
+
+    <div class="nav-section">Admin</div>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="admin/paths">
+            <span class="nav-text">App Paths</span>
+        </NavLink>
+    </div>
+</nav>
+
+<div class="nav-footer">
+    <div class="version">v1.0 linked</div>
+</div>
+
+@code {
+    protected override void OnInitialized() => Nav.LocationChanged += OnLocationChanged;
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+        => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+}

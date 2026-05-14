@@ -510,13 +510,11 @@ else
                 if (result.Measurements.Count > 0)
                     Repo.SaveNormalizedMeasurements(datasetName, result.Measurements);
 
-                string tagsJson = (result.Tags?.Count ?? 0) > 0
-                    ? System.Text.Json.JsonSerializer.Serialize(result.Tags) : "";
-                if (!string.IsNullOrEmpty(result.Summary) || !string.IsNullOrEmpty(tagsJson))
-                    Repo.SaveDatasetSummaryRecord(datasetName, productType,
-                        result.Summary, result.KeyFindings, tagsJson,
-                        result.Purpose, result.TestConditions, result.RootCause,
-                        result.Decision, result.RecommendedAction);
+                bool hasAnySummary =
+                    !string.IsNullOrEmpty(result.Summary) || !string.IsNullOrEmpty(result.Headline) ||
+                    (result.Tags?.Count ?? 0) > 0;
+                if (hasAnySummary)
+                    Repo.SaveDatasetSummaryRecord(datasetName, productType, result);
             });
 
             _reanalyzeStatus = $"✓ {datasetName} — Re-analysis complete ({result.Measurements.Count} rows)";

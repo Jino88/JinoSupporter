@@ -1,5 +1,6 @@
 @page "/translate"
 @rendermode InteractiveServer
+@implements IAsyncDisposable
 @inject ClaudeService  Claude
 @inject IJSRuntime     JS
 
@@ -20,11 +21,38 @@
     <!-- ── Input ─────────────────────────────────────────────────────────── -->
     <div class="col-xl-5 col-lg-6">
         <div class="card shadow-sm h-100">
-            <div class="card-header fw-semibold small">Source Text</div>
+            <div class="card-header fw-semibold small d-flex align-items-center gap-2">
+                <span>Source</span>
+                <span class="text-muted ms-auto" style="font-size:11px;">
+                    💡 Ctrl+V to paste image(s)
+                </span>
+            </div>
             <div class="card-body d-flex flex-column gap-2">
-                <textarea @bind="_inputText" class="form-control flex-fill"
-                          rows="14" placeholder="Enter text to translate…"
+                <textarea @bind="_inputText" class="form-control"
+                          rows="10" placeholder="Enter text to translate, paste an image, or both…"
                           style="resize: vertical;" />
+
+                @if (_images.Count > 0)
+                {
+                    <div class="img-strip">
+                        @for (int i = 0; i < _images.Count; i++)
+                        {
+                            var idx = i;
+                            var img = _images[i];
+                            <div class="img-thumb" title="@FormatImageTitle(img)">
+                                <img src="data:@img.MediaType;base64,@img.Base64" alt="pasted" />
+                                <button type="button" class="img-remove"
+                                        title="Remove"
+                                        @onclick="() => RemoveImage(idx)">×</button>
+                            </div>
+                        }
+                        <button type="button" class="img-clear"
+                                @onclick="ClearImages"
+                                title="Remove all pasted images">
+                            ✕ Clear all (@_images.Count)
+                        </button>
+                    </div>
+                }
 
                 <div class="d-flex gap-2 align-items-center">
                     <label class="form-label small fw-semibold mb-0 text-nowrap">Target:</label>
@@ -40,7 +68,7 @@
                         <option value="Vietnamese">Vietnamese</option>
                     </select>
                     <button class="btn btn-primary text-nowrap" @onclick="TranslateAsync"
-                            disabled="@(_isLoading || !Claude.IsConfigured)">
+                            disabled="@(_isLoading || !Claude.IsConfigured || !HasInput)">
                         @if (_isLoading)
                         {
                             <span class="spinner-border spinner-border-sm me-1" />
@@ -96,29 +124,113 @@
 
 </div>
 
+<style>
+    .img-strip {
+        display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+        padding: 6px; border: 1px dashed #cbd5e1; border-radius: 6px;
+        background: #f8fafc;
+    }
+    .img-thumb {
+        position: relative; width: 64px; height: 64px;
+        border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden;
+        background: #fff; flex-shrink: 0;
+    }
+    .img-thumb img {
+        width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .img-remove {
+        position: absolute; top: 1px; right: 1px;
+        width: 18px; height: 18px; padding: 0; line-height: 16px;
+        font-size: 14px; font-weight: 700; color: #fff;
+        background: rgba(0,0,0,.55); border: none; border-radius: 50%;
+        cursor: pointer;
+    }
+    .img-remove:hover { background: #ef4444; }
+    .img-clear {
+        font-size: 11px; padding: 2px 8px; margin-left: auto;
+        border: 1px solid #e2e8f0; border-radius: 12px; background: #fff;
+        color: #64748b; cursor: pointer;
+    }
+    .img-clear:hover { border-color: #ef4444; color: #ef4444; }
+</style>
+
 @code {
+    private sealed record PastedImage(string MediaType, string Base64);
+
     private string _inputText      = string.Empty;
     private string _targetLanguage = "Korean";
     private string _outputText     = string.Empty;
     private bool   _isLoading;
     private string _error          = string.Empty;
+    private readonly List<PastedImage> _images = new();
+
+    private DotNetObjectReference<TranslatePage>? _dotnetRef;
+    private bool _jsInitialized;
+
+    private bool HasInput => !string.IsNullOrWhiteSpace(_inputText) || _images.Count > 0;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_jsInitialized)
+        {
+            _dotnetRef = DotNetObjectReference.Create(this);
+            // Reuse the proven pasteImageHandler from app.js. It auto-deactivates after
+            // each successful image paste, so OnImagePasted re-arms it via openCapture.
+            await JS.InvokeVoidAsync("pasteImageHandler.init", _dotnetRef);
+            await JS.InvokeVoidAsync("pasteImageHandler.openCapture");
+            _jsInitialized = true;
+        }
+    }
+
+    /// <summary>JS calls this when the user pastes an image. <paramref name="dataUrl"/>
+    /// is a `data:image/png;base64,...` string — strip the prefix into raw base64.</summary>
+    [JSInvokable]
+    public void OnImagePasted(string mediaType, string dataUrl)
+    {
+        int comma  = dataUrl.IndexOf(',');
+        string base64 = comma >= 0 ? dataUrl[(comma + 1)..] : dataUrl;
+        if (string.IsNullOrEmpty(base64)) return;
+
+        _images.Add(new PastedImage(mediaType, base64));
+
+        // pasteImageHandler deactivates after one image — re-arm so the next Ctrl+V
+        // also captures.
+        _ = JS.InvokeVoidAsync("pasteImageHandler.openCapture");
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void RemoveImage(int idx)
+    {
+        if (idx >= 0 && idx < _images.Count) _images.RemoveAt(idx);
+    }
+
+    private void ClearImages() => _images.Clear();
+
+    private static string FormatImageTitle(PastedImage img)
+        => $"{img.MediaType} · ~{ApproxKb(img.Base64)} KB";
+
+    private static int ApproxKb(string base64)
+        => Math.Max(1, (int)Math.Round(base64.Length * 0.75 / 1024.0));
 
     private async Task TranslateAsync()
     {
-        if (string.IsNullOrWhiteSpace(_inputText))
+        if (!HasInput)
         {
-            _error = "Please enter text to translate.";
+            _error = "Enter text or paste an image first.";
             return;
         }
 
-        _isLoading   = true;
-        _error       = string.Empty;
-        _outputText  = string.Empty;
+        _isLoading  = true;
+        _error      = string.Empty;
+        _outputText = string.Empty;
         StateHasChanged();
 
         try
         {
-            _outputText = await Claude.TranslateAsync(_inputText, _targetLanguage);
+            var imgList = _images.Count > 0
+                ? _images.Select(i => (i.MediaType, i.Base64)).ToList()
+                : null;
+            _outputText = await Claude.TranslateAsync(_inputText, _targetLanguage, imgList);
         }
         catch (Exception ex)
         {
@@ -140,5 +252,15 @@
         {
             // Clipboard API not available — silently ignore
         }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsInitialized)
+        {
+            try { await JS.InvokeVoidAsync("pasteImageHandler.cancelPasteCapture"); } catch { }
+        }
+        _dotnetRef?.Dispose();
+        _dotnetRef = null;
     }
 }

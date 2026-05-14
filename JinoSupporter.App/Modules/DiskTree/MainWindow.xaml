@@ -23,7 +23,9 @@
         <SolidColorBrush x:Key="SecondaryTextBrushColor" Color="#6B7280" />
         <SolidColorBrush x:Key="AccentBrushColor" Color="#4F6BED" />
 
-        <Style TargetType="{x:Type Border}">
+        <!-- Keyed (NOT implicit) to avoid leaking BorderThickness/CornerRadius into DataGrid internals,
+             which would clip rows + headers and make the grid appear blank. -->
+        <Style x:Key="CardBorderStyle" TargetType="{x:Type Border}">
             <Setter Property="BorderBrush" Value="{StaticResource BorderBrushColor}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Background" Value="{StaticResource SurfaceBrushColor}" />
@@ -50,17 +52,27 @@
             <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrushColor}" />
         </Style>
 
+        <!-- x:Shared="False" so each DataGridRow gets its own ContextMenu instance.
+             Defined here at window-resource scope (NOT inside a Style's Setter.Value) so the
+             MenuItem Click handlers resolve cleanly to the code-behind partial class. -->
+        <ContextMenu x:Key="DuplicateRowContextMenu" x:Shared="False">
+            <MenuItem Header="Open in Explorer"        Click="OpenInExplorerMenuItem_Click" />
+            <MenuItem Header="Copy Path"               Click="CopyPathMenuItem_Click" />
+            <Separator />
+            <MenuItem Header="Delete (to Recycle Bin)" Click="DeleteSelectedMenuItem_Click" />
+        </ContextMenu>
+
         <HierarchicalDataTemplate x:Key="DiskNodeTreeTemplate"
                                   DataType="{x:Type models:DiskNode}"
                                   ItemsSource="{Binding Children}">
+            <!-- Two-column layout: Name takes the *-cell (absorbs the per-level indent),
+                 right-block is Auto-sized and docks to the row's right edge so Type/Size/Share/
+                 Progress columns line up across ALL tree depths regardless of indent. -->
             <Grid Margin="0,2"
                   ToolTip="{Binding FullPath}">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="320" />
-                    <ColumnDefinition Width="95" />
-                    <ColumnDefinition Width="120" />
-                    <ColumnDefinition Width="90" />
-                    <ColumnDefinition Width="170" />
+                    <ColumnDefinition Width="*" MinWidth="60" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0"
@@ -68,30 +80,39 @@
                            TextTrimming="CharacterEllipsis"
                            VerticalAlignment="Center" />
 
-                <TextBlock Grid.Column="1"
-                           Text="{Binding KindText}"
-                           Foreground="{StaticResource SecondaryTextBrushColor}"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Right" />
+                <Grid Grid.Column="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="50" />
+                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="60" />
+                        <ColumnDefinition Width="120" />
+                    </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="2"
-                           Text="{Binding SizeText}"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding KindText}"
+                               Foreground="{StaticResource SecondaryTextBrushColor}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Right" />
 
-                <TextBlock Grid.Column="3"
-                           Text="{Binding PercentText}"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Right"
-                           Foreground="{StaticResource SecondaryTextBrushColor}" />
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding SizeText}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Right" />
 
-                <app:AppProgressBar Grid.Column="4"
-                             Margin="10,0,0,0"
-                             Height="12"
-                             VerticalAlignment="Center"
-                             Minimum="0"
-                             Maximum="100"
-                             Value="{Binding PercentOfRoot}" />
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding PercentText}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Right"
+                               Foreground="{StaticResource SecondaryTextBrushColor}" />
+
+                    <app:AppProgressBar Grid.Column="3"
+                                 Margin="10,0,0,0"
+                                 Height="12"
+                                 VerticalAlignment="Center"
+                                 Minimum="0"
+                                 Maximum="100"
+                                 Value="{Binding PercentOfRoot}" />
+                </Grid>
             </Grid>
         </HierarchicalDataTemplate>
     </Window.Resources>
@@ -100,72 +121,66 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
+        <!-- ════ Row 0: Root + Temp folder pickers (stacked rows in one card) ════ -->
         <Border Grid.Row="0"
+                Style="{StaticResource CardBorderStyle}"
                 Padding="12">
             <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="6" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="120" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="100" />
                     <ColumnDefinition Width="120" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0"
+
+                <!-- Root folder row -->
+                <TextBlock Grid.Row="0" Grid.Column="0"
                            Text="Root Folder"
                            VerticalAlignment="Center"
                            Foreground="{StaticResource SecondaryTextBrushColor}" />
-                <app:AppTextBox Grid.Column="1"
+                <app:AppTextBox Grid.Row="0" Grid.Column="1"
                          Margin="0,0,10,0"
                          x:Name="RootFolderPathTextBox"
                          IsReadOnly="True" />
-                <app:AppButton Grid.Column="2"
+                <app:AppButton Grid.Row="0" Grid.Column="2"
                         x:Name="BrowseRootFolderButton"
                         Margin="0,0,10,0"
                         Content="Browse..."
                         Click="BrowseRootFolderButton_Click" />
-                <app:AppButton Grid.Column="3"
+                <app:AppButton Grid.Row="0" Grid.Column="3"
                         x:Name="ScanAndIndexButton"
                         Content="Scan + Update"
                         Style="{StaticResource PrimaryButtonStyle}"
                         Click="ScanAndIndexButton_Click" />
-            </Grid>
-        </Border>
 
-        <Border Grid.Row="1"
-                Margin="0,10,0,0"
-                Padding="12">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="120" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="100" />
-                    <ColumnDefinition Width="160" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0"
-                           Text="Compare File"
+                <!-- Temp folder row — destination for "Collect To Temp" moves -->
+                <TextBlock Grid.Row="2" Grid.Column="0"
+                           Text="Temp Folder"
                            VerticalAlignment="Center"
                            Foreground="{StaticResource SecondaryTextBrushColor}" />
-                <app:AppTextBox Grid.Column="1"
+                <app:AppTextBox Grid.Row="2" Grid.Column="1"
                          Margin="0,0,10,0"
-                         x:Name="CompareFilePathTextBox"
+                         x:Name="TempFolderPathTextBox"
                          IsReadOnly="True" />
-                <app:AppButton Grid.Column="2"
-                        x:Name="BrowseCompareFileButton"
+                <app:AppButton Grid.Row="2" Grid.Column="2"
+                        x:Name="BrowseTempFolderButton"
                         Margin="0,0,10,0"
                         Content="Browse..."
-                        Click="BrowseCompareFileButton_Click" />
-                <app:AppButton Grid.Column="3"
-                        x:Name="FindIdenticalFilesButton"
-                        Content="Find Identical"
-                        Style="{StaticResource PrimaryButtonStyle}"
-                        Click="FindIdenticalFilesButton_Click" />
+                        Click="BrowseTempFolderButton_Click" />
             </Grid>
         </Border>
 
-        <Border Grid.Row="2"
+        <!-- ════ Row 1: Status + progress ════ -->
+        <Border Grid.Row="1"
+                Style="{StaticResource CardBorderStyle}"
                 Margin="0,10,0,0"
                 Padding="12"
                 Background="{StaticResource MutedSurfaceBrushColor}">
@@ -189,91 +204,205 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Row="3"
+        <!-- ════ Row 2: 3-column workspace — All Files | Files With Duplicates | Duplicates Of Selected ════ -->
+        <Grid Grid.Row="2"
               Margin="0,10,0,0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" MinWidth="380" />
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="*" MinWidth="380" />
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="*" MinWidth="380" />
             </Grid.ColumnDefinitions>
 
+            <!-- ── Column 0: Folder explorer over the indexed root ── -->
             <Border Grid.Column="0"
+                    Style="{StaticResource CardBorderStyle}"
                     Padding="12">
-                <DockPanel>
-                    <StackPanel DockPanel.Dock="Top">
-                        <TextBlock Text="Disk Tree (percentage of selected root)"
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0">
+                        <TextBlock Text="All Files"
                                    FontSize="15"
                                    FontWeight="Bold" />
-                        <TextBlock x:Name="TreeSummaryTextBlock"
-                                   Margin="0,4,0,10"
+                        <TextBlock x:Name="AllFilesSummaryTextBlock"
+                                   Margin="0,4,0,4"
                                    Foreground="{StaticResource SecondaryTextBrushColor}"
-                                   Text="No scan result." />
-                        <Grid Margin="0,0,0,4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="320" />
-                                <ColumnDefinition Width="95" />
-                                <ColumnDefinition Width="120" />
-                                <ColumnDefinition Width="90" />
-                                <ColumnDefinition Width="170" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="Name" FontWeight="SemiBold" />
-                            <TextBlock Grid.Column="1" Text="Type" FontWeight="SemiBold" HorizontalAlignment="Right" />
-                            <TextBlock Grid.Column="2" Text="Size" FontWeight="SemiBold" HorizontalAlignment="Right" />
-                            <TextBlock Grid.Column="3" Text="Share" FontWeight="SemiBold" HorizontalAlignment="Right" />
-                            <TextBlock Grid.Column="4" Text="Progress" FontWeight="SemiBold" HorizontalAlignment="Left" Margin="10,0,0,0" />
-                        </Grid>
+                                   TextWrapping="Wrap"
+                                   Text="Run Scan + Update to populate." />
+                        <TextBlock x:Name="DatabasePathTextBlock"
+                                   Margin="0,0,0,8"
+                                   FontSize="10"
+                                   Foreground="{StaticResource SecondaryTextBrushColor}"
+                                   TextWrapping="Wrap" />
                     </StackPanel>
 
-                    <TreeView x:Name="DiskTreeView"
+                    <!-- Header mirrors DiskNodeTreeTemplate's [Star | Auto-block] structure so the
+                         right-side labels (Type/Size/Share/Progress) line up with the right-edge-
+                         anchored data columns at every tree depth. A small right pad reserves space
+                         for the TreeView's vertical scrollbar so headers stay flush with rows. -->
+                    <Grid Grid.Row="1" Margin="0,0,18,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="60" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Name" FontWeight="SemiBold" />
+
+                        <Grid Grid.Column="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="50" />
+                                <ColumnDefinition Width="80" />
+                                <ColumnDefinition Width="60" />
+                                <ColumnDefinition Width="120" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Type"     FontWeight="SemiBold" HorizontalAlignment="Right" />
+                            <TextBlock Grid.Column="1" Text="Size"     FontWeight="SemiBold" HorizontalAlignment="Right" />
+                            <TextBlock Grid.Column="2" Text="Share"    FontWeight="SemiBold" HorizontalAlignment="Right" />
+                            <TextBlock Grid.Column="3" Text="Progress" FontWeight="SemiBold" HorizontalAlignment="Left" Margin="10,0,0,0" />
+                        </Grid>
+                    </Grid>
+
+                    <TreeView Grid.Row="2"
+                              x:Name="DiskTreeView"
                               ItemTemplate="{StaticResource DiskNodeTreeTemplate}"
                               SelectedItemChanged="DiskTreeView_SelectedItemChanged"
                               Background="Transparent"
-                              BorderThickness="0" />
-                </DockPanel>
+                              BorderThickness="0"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              VirtualizingPanel.ScrollUnit="Pixel"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <!-- Stretch each TreeViewItem so the star-sized Name column actually shrinks
+                             to the viewport instead of overflowing and triggering horizontal scroll. -->
+                        <TreeView.ItemContainerStyle>
+                            <Style TargetType="{x:Type TreeViewItem}">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="VerticalContentAlignment"   Value="Center" />
+                            </Style>
+                        </TreeView.ItemContainerStyle>
+                    </TreeView>
+                </Grid>
             </Border>
 
+            <!-- ── Column 2: Files that have at least one duplicate elsewhere ── -->
             <Border Grid.Column="2"
+                    Style="{StaticResource CardBorderStyle}"
                     Padding="12">
-                <DockPanel>
-                    <StackPanel DockPanel.Dock="Top">
-                        <TextBlock Text="Identical File Results"
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0">
+                        <TextBlock Text="Files With Duplicates"
                                    FontSize="15"
                                    FontWeight="Bold" />
                         <TextBlock x:Name="DuplicateSummaryTextBlock"
-                                   Margin="0,4,0,10"
-                                   Foreground="{StaticResource SecondaryTextBrushColor}"
-                                   Text="No file comparison yet." />
-                        <TextBlock x:Name="SelectedFileInfoTextBlock"
-                                   Margin="0,0,0,8"
+                                   Margin="0,4,0,8"
                                    Foreground="{StaticResource SecondaryTextBrushColor}"
                                    TextWrapping="Wrap"
-                                   Text="Select a file in the left tree to check identical hashes." />
-                        <TextBlock x:Name="DatabasePathTextBlock"
-                                   Margin="0,0,0,8"
-                                   Foreground="{StaticResource SecondaryTextBrushColor}" />
+                                   Text="Files that have at least one identical copy (same size + Head/Tail SHA-256). Click a row to see its duplicates on the right." />
+                    </StackPanel>
+
+                    <DataGrid Grid.Row="1"
+                              x:Name="DuplicateFilesDataGrid"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              RowHeaderWidth="0"
+                              EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              ScrollViewer.CanContentScroll="True"
+                              SelectionChanged="DuplicateFilesDataGrid_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Path"  Binding="{Binding PathDisplay}" Width="*"  />
+                            <DataGridTextColumn Header="Size"  Binding="{Binding SizeText}"    Width="100" />
+                            <DataGridTextColumn Header="Group" Binding="{Binding GroupLabel}"  Width="120" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <!-- ── Column 4: Duplicates of selected middle item ── -->
+            <Border Grid.Column="4"
+                    Style="{StaticResource CardBorderStyle}"
+                    Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0">
+                        <TextBlock Text="Duplicates Of Selected"
+                                   FontSize="15"
+                                   FontWeight="Bold" />
+                        <TextBlock Margin="0,4,0,8"
+                                   Foreground="{StaticResource SecondaryTextBrushColor}"
+                                   TextWrapping="Wrap"
+                                   Text="All files identical to the one selected in the middle list." />
                         <app:AppButton x:Name="CollectMatchesButton"
                                 Width="170"
                                 HorizontalAlignment="Left"
+                                Margin="0,0,0,8"
                                 Content="Collect To Temp"
                                 Click="CollectMatchesButton_Click"
                                 IsEnabled="False" />
                     </StackPanel>
 
-                    <app:AppDataGrid x:Name="DuplicateDataGrid"
+                    <DataGrid Grid.Row="1"
+                              x:Name="DuplicateDataGrid"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
                               CanUserDeleteRows="False"
                               IsReadOnly="True"
                               HeadersVisibility="Column"
-                              RowHeaderWidth="0">
-                        <app:AppDataGrid.Columns>
-                            <DataGridTextColumn Header="Path" Binding="{Binding FilePath}" Width="*" />
-                            <DataGridTextColumn Header="Size" Binding="{Binding SizeText}" Width="110" />
-                            <DataGridTextColumn Header="Last Write" Binding="{Binding LastWriteText}" Width="170" />
-                        </app:AppDataGrid.Columns>
-                    </app:AppDataGrid>
-                </DockPanel>
+                              RowHeaderWidth="0"
+                              EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              ScrollViewer.CanContentScroll="True">
+                        <DataGrid.Resources>
+                            <!-- Right-click row → open the file (or folder) location in Explorer.
+                                 PreviewMouseRightButtonDown also selects the row, so SelectedItem
+                                 in the click handler always reflects what the user actually clicked.
+                                 ContextMenu lives at window-resource scope (see top of this file)
+                                 because Click handlers inside a Setter.Value template don't compile. -->
+                            <Style TargetType="{x:Type DataGridRow}">
+                                <EventSetter Event="PreviewMouseRightButtonDown"
+                                             Handler="DuplicateDataGridRow_PreviewMouseRightButtonDown" />
+                                <Setter Property="ContextMenu"
+                                        Value="{StaticResource DuplicateRowContextMenu}" />
+                            </Style>
+                        </DataGrid.Resources>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Path"       Binding="{Binding PathDisplay}"   Width="*"   />
+                            <DataGridTextColumn Header="Size"       Binding="{Binding SizeText}"      Width="100" />
+                            <DataGridTextColumn Header="Last Write" Binding="{Binding LastWriteText}" Width="160" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
             </Border>
         </Grid>
+
+        <!-- ════ Hidden controls — kept for code-behind / WebModule action compatibility ════ -->
+        <app:AppTextBox  x:Name="CompareFilePathTextBox"     Visibility="Collapsed" IsTabStop="False" />
+        <app:AppButton   x:Name="BrowseCompareFileButton"    Visibility="Collapsed" IsTabStop="False" Click="BrowseCompareFileButton_Click" />
+        <app:AppButton   x:Name="FindIdenticalFilesButton"   Visibility="Collapsed" IsTabStop="False" Click="FindIdenticalFilesButton_Click" />
+        <TextBlock       x:Name="SelectedFileInfoTextBlock"  Visibility="Collapsed" />
+        <TextBlock       x:Name="TreeSummaryTextBlock"       Visibility="Collapsed" />
     </Grid>
 </Window>

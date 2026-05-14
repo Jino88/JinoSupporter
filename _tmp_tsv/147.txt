@@ -1,0 +1,299 @@
+## 12.08-MODUL TEST
+〔bg=#BFBFBF,b〕TITLE	〔b〕REPORT TEST NEW DRY MACHINE AT MODUL LINE_926																				〔bg=#BFBFBF,b〕Dept	〔b〕ME
+																					〔bg=#BFBFBF,b〕Date	〔b〕08/Dec
+																					〔bg=#BFBFBF,b〕Marker	〔b〕Tu/Doanh
+〔bg=#BFBFBF,b〕I. Purpose.																						
+ TEST new Version (Dry machine) can use or not																						
+〔bg=#BFBFBF,b〕II. Content.																						
+ Test and find condition good for new machine => Compare with normal dry																						
+ Test process Dry SPK+UPPER																						
+〔bg=#BFBFBF,b〕III.Result 																						
+〔b〕 Result test dry																						
+	〔bg=#B8CCE4,b〕No	〔bg=#B8CCE4,b〕Date	〔bg=#B8CCE4,b〕Type		〔bg=#B8CCE4,b〕Input	〔bg=#B8CCE4,b〕OK	〔bg=#B8CCE4,b〕NG not dry	〔bg=#B8CCE4,b〕NG rate	〔bg=#B8CCE4,b〕Note													
+			〔bg=#B8CCE4,b〕Temperature  (Setting)	〔bg=#B8CCE4,b〕Time																		
+	1	12/8/2023	140	1min	4	0	4	100.0%	NG													
+	2		170		4	0	4	100.0%	NG													
+	3		200		4	0	4	100.0%	NG													
+	4		230		4	0	4	100.0%	NG													
+	5		260		4	0	4	100.0%	NG													
+	6		290		4	0	4	100.0%	NG													
+	7		320		4	0	4	100.0%	NG													
+	8		350		4	0	4	100.0%	NG													
+	9		140	3min	4	0	4	100.0%	NG													
+	10		170		4	0	4	100.0%	NG													
+	11		200		4	0	4	100.0%	NG													
+	12		230		4	0	4	100.0%	NG													
+	13		260		4	0	4	100.0%	NG													
+	14		290		4	0	4	100.0%	NG													
+	15		320		4	0	4	100.0%	NG													
+	16		350		4	0	4	100.0%	NG													
+	17		320	〔bg=#FABF8F〕5min	4	0	4	100.0%	NG													
+	18		〔bg=#FABF8F〕350		〔bg=#FABF8F〕4	〔bg=#FABF8F〕4	〔bg=#FABF8F〕0	〔bg=#FABF8F〕0.0%	〔bg=#FABF8F〕OK => Move tension test													
+	19		〔bg=#FFFF00〕Normal 80°C	〔bg=#FFFF00〕10min	〔bg=#FFFF00〕20	〔bg=#FFFF00〕20	〔bg=#FFFF00〕0	〔bg=#FFFF00〕0.0%														
+〔b〕Result tension test																						
+	〔bg=#B8CCE4,b〕No	〔bg=#B8CCE4,b〕Date	〔bg=#B8CCE4,b〕Type									Note										
+			〔bg=#B8CCE4,b〕Temperature  (Setting)	〔bg=#B8CCE4,b〕Time	〔bg=#B8CCE4〕#1	〔bg=#B8CCE4〕#2	〔bg=#B8CCE4〕#3	〔bg=#B8CCE4〕#4	〔bg=#FDE9D9〕MIN	〔bg=#FDE9D9〕MAX	〔bg=#FDE9D9〕AVG											
+	1	12/8/2023	〔bg=#FABF8F〕350	〔bg=#FABF8F〕5min	3.00	3.22	3.24	3.00	〔bg=#FDE9D9〕3.00	〔bg=#FDE9D9〕3.24	〔bg=#FDE9D9〕3.12	NG										
+	2		〔bg=#FFFF00〕Normal 	〔bg=#FFFF00〕10min	3.10	2.85	2.80	2.92	〔bg=#FDE9D9〕2.66	〔bg=#FDE9D9〕3.10	〔bg=#FDE9D9〕2.92	NG										
+〔b〕Result check Gauss after dry 350°C 																						
+	〔bg=#C5D9F1〕No	〔bg=#C5D9F1〕Date	〔bg=#C5D9F1〕Temperature  (Setting)	〔bg=#C5D9F1〕Time	〔bg=#C5D9F1〕Sample	〔bg=#C5D9F1〕GAUSS (S)		〔bg=#FFFF00〕GAP	〔bg=#FDE9D9〕MIN GAP	〔bg=#FDE9D9〕MAX GAP	〔bg=#FDE9D9〕AVG GAP											
+						〔bg=#C5D9F1〕Before dry	〔bg=#C5D9F1〕After dry															
+	1	12/21/2023	350°C	5min	1	1452	1349	〔bg=#FFFF00〕103	〔bg=#FDE9D9〕62	〔bg=#FDE9D9〕103	〔bg=#FDE9D9〕91.5											
+	2				2	1376	1277	〔bg=#FFFF00〕99														
+	3				3	1441	1339	〔bg=#FFFF00〕102														
+	4				4	1322	1260	〔bg=#FFFF00〕62														
+〔fg=#FF0000〕 => After use new dry machine happen Gauss SPK more low																						
+〔bg=#BFBFBF,b〕4. Decision																						
+
+## Dry CM+CP (2015)
+〔bg=#BFBFBF,b〕TITLE	〔b〕REPORT TEST NEW DRY MACHINE USE FOR PROCESS ASSY CM+CP_MODEL 201506																		〔bg=#BFBFBF,b〕Dept	〔b〕ME
+																			〔bg=#BFBFBF,b〕Date	〔b〕11/Dec
+																			〔bg=#BFBFBF,b〕Marker	〔b〕Tu
+〔bg=#BFBFBF,b〕I. Purpose.																				
+ TEST new Version (Dry machine) can use or not for MTR trouble																				
+〔bg=#BFBFBF,b〕II. Content.																				
+ Test and find condition good for new machine => Compare with normal dry																				
+ Test process Dry SMG+BPT (20min)																				
+〔bg=#BFBFBF,b〕III.Result 																				
+ - Use material CMG of vendor Baotou (Normal happen NG not dry glue)																				
+	〔bg=#B8CCE4,b〕No	〔bg=#B8CCE4,b〕Date	〔bg=#B8CCE4,b〕Type		〔bg=#B8CCE4,b〕Input	〔bg=#B8CCE4,b〕OK	〔bg=#B8CCE4,b〕NG not dry	〔bg=#B8CCE4,b〕NG rate	〔bg=#B8CCE4,b〕NG separate											
+			〔bg=#B8CCE4,b〕Temperature  (Setting)	〔bg=#B8CCE4,b〕Time																
+	1	12-Dec	200	1min	4	0	4	100.0%	NG not dry											
+	2			3min	4	0	4	100.0%	NG not dry											
+	3			5min	4	0	4	100.0%	NG not dry											
+	4		300	1min	4	0	4	100.0%	NG not dry											
+	5			3min	4	1	3	75.0%	NG not dry											
+	6			〔bg=#92D050〕5min	〔bg=#92D050〕4	〔bg=#92D050〕4	〔bg=#92D050〕0	〔bg=#92D050〕0.0%	〔bg=#92D050〕OK											
+	7		400	1min	4	0	4	100.0%	NG not dry											
+	8			〔bg=#92D050〕3min	〔bg=#92D050〕4	〔bg=#92D050〕4	〔bg=#92D050〕0	〔bg=#92D050〕0.0%	〔bg=#92D050〕OK											
+	9			〔bg=#92D050〕5min	〔bg=#92D050〕4	〔bg=#92D050〕4	〔bg=#92D050〕0	〔bg=#92D050〕0.0%	〔bg=#92D050〕OK											
+	10		500	1min	4	0	4	100.0%	NG not dry											
+	11			〔bg=#92D050〕3min	〔bg=#92D050〕4	〔bg=#92D050〕4	〔bg=#92D050〕0	〔bg=#92D050〕0.0%	〔bg=#92D050〕OK											
+	12			〔bg=#92D050〕5min	〔bg=#92D050〕4	〔bg=#92D050〕4	〔bg=#92D050〕0	〔bg=#92D050〕0.0%	〔bg=#92D050〕OK											
+	13		〔bg=#F2DCDB,b〕Normal	〔bg=#F2DCDB,b〕10min	〔bg=#F2DCDB,b〕8	〔bg=#F2DCDB,b〕0	〔bg=#F2DCDB,b〕8	〔bg=#F2DCDB,b〕100.0%	〔bg=#F2DCDB〕NG not dry											
+	 Picture decap sample																			
+	〔bg=#B8CCE4,b〕No	〔bg=#B8CCE4,b〕Date	〔bg=#B8CCE4,b〕Type		〔bg=#B8CCE4,b〕Input	〔bg=#B8CCE4,b〕OK	〔bg=#B8CCE4,b〕NG not dry	〔bg=#B8CCE4,b〕NG rate	〔bg=#B8CCE4,b〕NG separate											
+			〔bg=#B8CCE4,b〕Temperature  (Setting)	〔bg=#B8CCE4,b〕Time																
+	1	14-Dec	400°C	3min	4	4	0	0.0%	OK											
+	2		500°C		4	4	0	0.0%	OK											
+	3		Normal	 >6min	4	4	0	0.0%	OK											
+ ++. Tension TEST																				
+	〔bg=#B8CCE4,b〕No	〔bg=#B8CCE4,b〕Date	〔bg=#B8CCE4,b〕Type		〔bg=#B8CCE4,b〕YOKE (Spec: >=100Kgf)							Note								
+			〔bg=#B8CCE4,b〕Temperature  (Setting)	〔bg=#B8CCE4,b〕Time	〔bg=#B8CCE4〕#1	〔bg=#B8CCE4〕#2	〔bg=#B8CCE4〕#3	〔bg=#B8CCE4〕#4	〔bg=#FDE9D9〕MIN	〔bg=#FDE9D9〕MAX	〔bg=#FDE9D9〕AVG									
+	1	18-Dec	400°C	3min	159.90	151.00	134.60	170.80	〔bg=#FDE9D9〕134.60	〔bg=#FDE9D9〕170.80	〔bg=#FDE9D9〕154.07	OK								
+	2		500°C		〔bg=#FFFF00〕47.20	〔bg=#FFFF00〕45.70	〔bg=#FFFF00〕52.30	〔bg=#FFFF00〕26.10	〔bg=#FDE9D9〕26.10	〔bg=#FDE9D9〕52.30	〔bg=#FDE9D9〕42.83	〔bg=#FFFF00〕NG								
+	3		Normal	 >6min	118.40	129.90	127.20	138.00	〔bg=#FDE9D9〕118.40	〔bg=#FDE9D9〕138.00	〔bg=#FDE9D9〕128.38	OK								
+〔fg=#FF0000,b〕 *) Problem:  After use new machine, temperature very high => so make low Gauss																				
+	〔bg=#C5D9F1〕No	〔bg=#C5D9F1〕Date	〔bg=#C5D9F1,b〕Temperature  (Setting)	〔bg=#C5D9F1〕Sample	〔bg=#C5D9F1〕After dry  	〔bg=#FDE9D9〕MIN	〔bg=#D8E4BC〕MAX	〔bg=#CCC0DA〕AVG												
+	5	18-Dec	400°C	1	221	〔bg=#FDE9D9〕79	〔bg=#D8E4BC〕221	〔bg=#CCC0DA〕151.5												
+	6			2	219															
+	7			3	79															
+	8			4	87															
+	5		500°C	1	152	〔bg=#FDE9D9〕16	〔bg=#D8E4BC〕152	〔bg=#CCC0DA〕60.75												
+	6			2	28															
+	7			3	16															
+	8			4	47															
+	9		Normal	1	356	〔bg=#FDE9D9〕354	〔bg=#D8E4BC〕381	〔bg=#CCC0DA〕362.4												
+	10			2	354															
+	11			3	359															
+	12			4	381															
+	13			5	362															
+ => Can not use new dry machine for process MG already have Gauss																				
+〔bg=#BFBFBF,b〕4. Decision																				
+〔fg=#0000CC〕 Can not use machine for process dry MG+PT/Yoke when have Gauss																				
+
+## Dry VP+FR-14
+〔bg=#BFBFBF,b〕TITLE	〔b〕REPORT TEST NEW DRY MACHINE AT PROCESS VP/FRAME																				〔bg=#BFBFBF,b〕Dept	〔b〕ME
+																					〔bg=#BFBFBF,b〕Date	〔b〕01/Dec
+																					〔bg=#BFBFBF,b〕Marker	〔b〕Tu
+〔bg=#BFBFBF,b〕I. Purpose.																						
+ TEST new Version (Dry machine) can use or not																						
+〔bg=#BFBFBF,b〕II. Content.																						
+ Test and find condition good for new machine => Compare with normal dry																						
+ Test process Dry VP+Frame. Dry 1 min. (Now spec > 5min)																						
+〔bg=#BFBFBF,b〕III.Result 																						
+〔b〕Result tension test																						
+	〔bg=#B8CCE4,b〕No	〔bg=#B8CCE4,b〕Date	〔bg=#B8CCE4,b〕Process		〔bg=#B8CCE4,b〕Type																	
+					〔bg=#B8CCE4,b〕Temperature  (Setting)	〔bg=#B8CCE4,b〕Time	〔bg=#B8CCE4〕#1	〔bg=#B8CCE4〕#2	〔bg=#B8CCE4〕#3	〔bg=#B8CCE4〕#4	〔bg=#FDE9D9〕MIN	〔bg=#FDE9D9〕MAX	〔bg=#FDE9D9〕AVG									
+	1	12/1/2023	Dry VP+FR		140	1min	1.290	1.310	1.237	1.214	〔bg=#FDE9D9〕1.21	〔bg=#FDE9D9〕1.31	〔bg=#FDE9D9〕1.26									
+	2		Dry VP+FR		170		1.443	1.217	1.238	1.816	〔bg=#FDE9D9〕1.22	〔bg=#FDE9D9〕1.82	〔bg=#FDE9D9〕1.43									
+	3		Dry VP+FR		200		1.415	0.893	1.258	1.507	〔bg=#FDE9D9〕0.89	〔bg=#FDE9D9〕1.51	〔bg=#FDE9D9〕1.27									
+	4		Dry VP+FR		230		1.208	1.356	1.321	1.436	〔bg=#FDE9D9〕1.21	〔bg=#FDE9D9〕1.44	〔bg=#FDE9D9〕1.33									
+	5		Dry VP+FR		260		1.743	1.559	1.523	1.392	〔bg=#FDE9D9〕1.39	〔bg=#FDE9D9〕1.74	〔bg=#FDE9D9〕1.55									
+	6		〔bg=#FFFF00〕Normal				1.474	1.017	1.212	1.198	〔bg=#FDE9D9〕1.20	〔bg=#FDE9D9〕1.47	〔bg=#FDE9D9〕1.23									
+〔b〕  - Result check function																						
+	〔bg=#95B3D7,b〕Date	〔bg=#95B3D7,b〕Type	〔bg=#95B3D7,b〕Input 	〔bg=#95B3D7,b〕OK 	〔bg=#95B3D7,b〕Sigma 				〔bg=#95B3D7,b〕Hearing 		〔bg=#95B3D7,b〕HOHD	〔bg=#95B3D7,b〕Total NG	〔bg=#95B3D7,b〕Total NG rate									
+					〔bg=#95B3D7,b〕SPL 	〔bg=#95B3D7,b〕THD 	〔bg=#95B3D7,b〕SPL+THD 	〔bg=#95B3D7,b〕SPL+THD+F0	〔bg=#95B3D7,b〕Noise 	〔bg=#95B3D7,b〕Touch 												
+	12/2/2023  (Old method)	〔bg=#D9D9D9〕Temperature 140⁰C	〔bg=#D9D9D9〕20	〔bg=#D9D9D9〕19	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕1	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕1	〔bg=#D9D9D9,fg=#FF0000,b〕5.0%									
+					〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕5.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%											
+		〔bg=#D9D9D9〕Temperature 170⁰C	〔bg=#D9D9D9〕20	〔bg=#D9D9D9〕19	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕1	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕1	〔bg=#D9D9D9,fg=#FF0000,b〕5.0%									
+					〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕5.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%											
+		〔bg=#D9D9D9〕Temperature 200⁰C	〔bg=#D9D9D9〕20	〔bg=#D9D9D9〕18	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕1	〔bg=#D9D9D9〕1	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕2	〔bg=#D9D9D9,fg=#FF0000,b〕10.0%									
+					〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕5.0%	〔bg=#D9D9D9,fg=#FF0000〕5.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%											
+		Normal 	20	20	0	0	0	0	0	0	0	0	〔fg=#FF0000,b〕0.0%									
+					〔fg=#FF0000〕0.0%	〔fg=#FF0000〕0.0%	〔fg=#FF0000〕0.0%	〔fg=#FF0000〕0.0%	〔fg=#FF0000〕0.0%	〔fg=#FF0000〕0.0%	〔fg=#FF0000〕0.0%											
+	12/4/2023  (Old method)	〔bg=#D9D9D9〕Temperature 140⁰C	〔bg=#D9D9D9〕110	〔bg=#D9D9D9〕102	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕8	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕8	〔bg=#D9D9D9,fg=#FF0000,b〕7.3%									
+					〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕7.3%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%											
+		〔bg=#D9D9D9〕Temperature 170⁰C	〔bg=#D9D9D9〕110	〔bg=#D9D9D9〕106	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕4	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕4	〔bg=#D9D9D9,fg=#FF0000,b〕3.6%									
+					〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕3.6%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%											
+		Normal 	200	191	0	0	0	0	9	0	0	9	〔fg=#FF0000,b〕4.5%									
+					〔fg=#FF0000〕0.0%	〔fg=#FF0000〕0.0%	〔fg=#FF0000〕0.0%	〔fg=#FF0000〕0.0%	〔fg=#FF0000〕4.5%	〔fg=#FF0000〕0.0%	〔fg=#FF0000〕0.0%											
+	12/5/2023  (Change new method)	〔bg=#D9D9D9〕Temperature 140⁰C	〔bg=#D9D9D9〕110	〔bg=#D9D9D9〕107	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕3	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕3	〔bg=#D9D9D9,fg=#FF0000,b〕2.7%									
+					〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕2.7%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%											
+		〔bg=#D9D9D9〕Temperature 170⁰C	〔bg=#D9D9D9〕114	〔bg=#D9D9D9〕112	〔bg=#D9D9D9〕1	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕1	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕0	〔bg=#D9D9D9〕2	〔bg=#D9D9D9,fg=#FF0000,b〕1.8%									
+					〔bg=#D9D9D9,fg=#FF0000〕0.9%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.9%	〔bg=#D9D9D9,fg=#FF0000〕0.0%	〔bg=#D9D9D9,fg=#FF0000〕0.0%											
+		Normal 	795	771	0	0	1	0	23	0	0	24	〔fg=#FF0000,b〕3.0%									
+					〔fg=#FF0000〕0.0%	〔fg=#FF0000〕0.0%	〔fg=#FF0000〕0.1%	〔fg=#FF0000〕0.0%	〔fg=#FF0000〕2.9%	〔fg=#FF0000〕0.0%	〔fg=#FF0000〕0.0%											
+ - Problem: When test happen NG VP separate => Need to test again check reason NG separate by new dry machine or not?																						
+〔b〕 => After check when use new dry machine happen make NG separate Vp/Frame																						
+	〔bg=#95B3D7〕No	〔bg=#95B3D7〕Date	〔bg=#95B3D7〕Type	〔bg=#95B3D7〕Input	〔bg=#95B3D7〕OK	〔bg=#95B3D7〕NG separate	〔bg=#95B3D7〕NG rate															
+	1	〔bg=#FFFF00〕12/4/2023  ( Old method)	〔bg=#FFFF00〕New dry mc	〔bg=#FFFF00〕8	〔bg=#FFFF00〕6	〔bg=#FFFF00〕2	〔bg=#FFFF00〕0.25															
+	2		Normal	1000	1000	0	0															
+	3	〔bg=#FCD5B4〕12/5/2023  (New method)	〔bg=#FCD5B4〕New dry mc	〔bg=#FCD5B4〕224	〔bg=#FCD5B4〕224	〔bg=#FCD5B4〕0	〔bg=#FCD5B4〕0															
+	4		Normal	1000	1000	0	0															
+ Picture change method dry																						
+〔bg=#BFBFBF,b〕4. Decision																						
+- When use new dry machine. Type 170																						
+
+## 25.11 (160114)
+〔bg=#BFBFBF,b〕TITLE	〔b〕REPORT TEST NEW DRY MACHINE																				〔bg=#BFBFBF,b〕Dept	〔b〕ME
+																					〔bg=#BFBFBF,b〕Date	〔b〕23/Nov
+																					〔bg=#BFBFBF,b〕Marker	〔b〕Tu
+〔bg=#BFBFBF,b〕I. Purpose.																						
+ TEST new Version (Dry machine) can use or not																						
+〔bg=#BFBFBF,b〕II. Content.																						
+ Test and find condition good for new machine => Compare with normal dry																						
+ Test process Dry SMG+BPT (20min)																						
+〔bg=#BFBFBF,b〕III.Result 																						
+ Result test dry																						
+	〔bg=#B8CCE4,b〕No	〔bg=#B8CCE4,b〕Date	〔bg=#B8CCE4,b〕Process		〔bg=#B8CCE4,b〕Type		〔bg=#B8CCE4,b〕Input	〔bg=#B8CCE4,b〕OK	〔bg=#B8CCE4,b〕NG separate	〔bg=#B8CCE4,b〕NG rate	〔bg=#B8CCE4,b〕NG separate											
+					〔bg=#B8CCE4,b〕Temperature  (Setting)	〔bg=#B8CCE4,b〕Time																
+	1	11/25/2023	Heating press => New dry mc  (Process same normal)		370	1min	32	25	7	21.9%												
+	2				390		32	30	2	6.2%												
+	3		Normal				32	32	0	0.0%	OK											
+	〔bg=#FFFF00〕4	〔bg=#FFFF00〕11/28/2023	〔bg=#FFFF00〕Heating press => New dry mc		〔bg=#FFFF00〕390	〔bg=#FFFF00〕1min	280	273	7	2.5%												
+	〔bg=#FFFF00〕5		〔bg=#FFFF00〕Normal				300	298	2	0.7%												
+Result tension test																						
+	〔bg=#B8CCE4,b〕No	〔bg=#B8CCE4,b〕Date	〔bg=#B8CCE4,b〕Process		〔bg=#B8CCE4,b〕Type									〔bg=#B8CCE4,b〕Long SMG (Spec ≥ 5Kgf)								
+					〔bg=#B8CCE4,b〕Temperature  (Setting)	〔bg=#B8CCE4,b〕Time	〔bg=#B8CCE4〕#1	〔bg=#B8CCE4〕#2	〔bg=#B8CCE4〕#3	〔bg=#B8CCE4〕#4	〔bg=#FDE9D9〕MIN	〔bg=#FDE9D9〕MAX	〔bg=#FDE9D9〕AVG	〔bg=#B8CCE4〕#1	〔bg=#B8CCE4〕#2	〔bg=#B8CCE4〕#3	〔bg=#B8CCE4〕#4	〔bg=#FDE9D9〕MIN	〔bg=#FDE9D9〕MAX	〔bg=#FDE9D9〕AVG		
+	1	11/25/2023	Heating press => New dry mc  (Process same normal)		370	1min	8.37	8.38	8.22	8.26	〔bg=#FDE9D9〕8.22	〔bg=#FDE9D9〕8.38	〔bg=#FDE9D9〕8.31	11.02	9.38	9.03	8.83	〔bg=#FDE9D9〕8.83	〔bg=#FDE9D9〕11.02	〔bg=#FDE9D9〕9.56		
+	2				390		7.70	9.71	6.73	6.00	〔bg=#FDE9D9〕6.00	〔bg=#FDE9D9〕9.71	〔bg=#FDE9D9〕7.54	14.83	11.10	7.71	13.72	〔bg=#FDE9D9〕7.71	〔bg=#FDE9D9〕14.83	〔bg=#FDE9D9〕11.84		
+	3		Normal				8.57	11.29	8.13	8.40	〔bg=#FDE9D9〕8.13	〔bg=#FDE9D9〕11.29	〔bg=#FDE9D9〕9.10	11.81	19.65	8.95	12.42	〔bg=#FDE9D9〕8.95	〔bg=#FDE9D9〕19.65	〔bg=#FDE9D9〕13.21		
+	〔bg=#FFFF00〕4	〔bg=#FFFF00〕11/28/2023	〔bg=#FFFF00〕Heating press => New dry mc		〔bg=#FFFF00〕390	〔bg=#FFFF00〕1min	3.65	3.82	4.09	6.86	〔bg=#FDE9D9〕3.65	〔bg=#FDE9D9〕6.86	〔bg=#FDE9D9〕4.61	13.10	11.26	11.03	6.22	〔bg=#FDE9D9〕6.22	〔bg=#FDE9D9〕13.10	〔bg=#FDE9D9〕10.40		
+	〔bg=#FFFF00〕5		〔bg=#FFFF00〕Normal				6.85	10.07	8.88	10.12	〔bg=#FDE9D9〕6.85	〔bg=#FDE9D9〕10.12	〔bg=#FDE9D9〕8.98	16.19	9.65	13.58	13.29	〔bg=#FDE9D9〕9.65	〔bg=#FDE9D9〕16.19	〔bg=#FDE9D9〕13.18		
+〔bg=#BFBFBF,b〕4. Decision																						
+
+## 24.11(161014)
+〔bg=#BFBFBF,b〕TITLE	〔b〕REPORT TEST NEW DRY MACHINE																				〔bg=#BFBFBF,b〕Dept	〔b〕ME
+																					〔bg=#BFBFBF,b〕Date	〔b〕23/Nov
+																					〔bg=#BFBFBF,b〕Marker	〔b〕Tu
+〔bg=#BFBFBF,b〕I. Purpose.																						
+ TEST new Version (Dry machine) can use or not																						
+〔bg=#BFBFBF,b〕II. Content.																						
+ Test and find condition good for new machine => Compare with normal dry																						
+ Test process Dry SMG+BPT (20min)																						
+〔bg=#BFBFBF,b〕III.Result 																						
+ Result test dry																						
+	〔bg=#B8CCE4,b〕No	〔bg=#B8CCE4,b〕Date	〔bg=#B8CCE4,b〕Process		〔bg=#B8CCE4,b〕Type		〔bg=#B8CCE4,b〕Input	〔bg=#B8CCE4,b〕OK	〔bg=#B8CCE4,b〕NG separate	〔bg=#B8CCE4,b〕NG rate												
+					〔bg=#B8CCE4,b〕Temperature  (Setting)	〔bg=#B8CCE4,b〕Time																
+	1	11/24/2023	Heating press => New dry mc  (Process same normal)		440	1min	16	15	1	6.2%												
+	2				460		16	16	0	0.0%												
+	3		Normal				16	16	0	0.0%												
+Result tension test																						
+	〔bg=#B8CCE4,b〕No	〔bg=#B8CCE4,b〕Date	〔bg=#B8CCE4,b〕Process		〔bg=#B8CCE4,b〕Type									〔bg=#B8CCE4,b〕Long SMG (Spec ≥ 5Kgf)								
+					〔bg=#B8CCE4,b〕Temperature  (Setting)	〔bg=#B8CCE4,b〕Time	〔bg=#B8CCE4〕#1	〔bg=#B8CCE4〕#2	〔bg=#B8CCE4〕#3	〔bg=#B8CCE4〕#4	〔bg=#FDE9D9〕MIN	〔bg=#FDE9D9〕MAX	〔bg=#FDE9D9〕AVG	〔bg=#B8CCE4〕#1	〔bg=#B8CCE4〕#2	〔bg=#B8CCE4〕#3	〔bg=#B8CCE4〕#4	〔bg=#FDE9D9〕MIN	〔bg=#FDE9D9〕MAX	〔bg=#FDE9D9〕AVG		
+	1	11/23/2023	Heating press => New dry mc  (Process same normal)		440	1min	3.03	3.68	1.51	5.51	〔bg=#FFFF00〕1.51	〔bg=#FDE9D9〕5.51	〔bg=#FDE9D9〕3.43	6.17	7.66	8.65	5.81	〔bg=#FDE9D9〕5.81	〔bg=#FDE9D9〕8.65	〔bg=#FDE9D9〕7.07		
+	2				460		3.34	2.68	4.41	4.36	〔bg=#FFFF00〕2.68	〔bg=#FDE9D9〕4.41	〔bg=#FDE9D9〕3.70	9.06	9.68	8.59	7.98	〔bg=#FDE9D9〕7.98	〔bg=#FDE9D9〕9.68	〔bg=#FDE9D9〕8.83		
+	3		Normal				6.90	3.84	5.21	5.58	〔bg=#FDE9D9〕3.84	〔bg=#FDE9D9〕6.90	〔bg=#FDE9D9〕5.38	8.45	7.95	8.84	12.06	〔bg=#FDE9D9〕7.95	〔bg=#FDE9D9〕12.06	〔bg=#FDE9D9〕9.32		
+〔bg=#BFBFBF,b〕4. Decision																						
+
+## 8.11(161014)
+〔bg=#BFBFBF,b〕TITLE	〔b〕REPORT TEST NEW DRY MACHINE																				〔bg=#BFBFBF,b〕Dept	〔b〕ME
+																					〔bg=#BFBFBF,b〕Date	〔b〕08/Nov
+																					〔bg=#BFBFBF,b〕Marker	〔b〕Thuy
+〔bg=#BFBFBF,b〕I. Purpose.																						
+ TEST new Version (Dry machine) can use or not																						
+〔bg=#BFBFBF,b〕II. Content.																						
+ Test and find condition good for new machine => Compare with normal dry																						
+ Test process Dry SMG+BPT (20min)																						
+〔bg=#BFBFBF,b〕III.Result 																						
+ Result test dry																						
+	〔bg=#B8CCE4,b〕No	〔bg=#B8CCE4,b〕Date	〔bg=#B8CCE4,b〕Process		〔bg=#B8CCE4,b〕Type		〔bg=#B8CCE4,b〕Input	〔bg=#B8CCE4,b〕OK	〔bg=#B8CCE4,b〕NG separate	〔bg=#B8CCE4,b〕NG rate	〔bg=#B8CCE4〕Temp actual											
+					〔bg=#B8CCE4,b〕Temperature  (Setting)	〔bg=#B8CCE4,b〕Time																
+	1	11/8/2023	New dry mc => Hearing press		390	1min	8	8	0	0.0%	193.5											
+	2					2min	8	8	0	0.0%												
+	3				440	1min	16	15	1	6.2%	228 											
+	4					2min	16	10	6	37.5%												
+	5		Heating press => New dry mc  (Normal)		390	1min	8	8	0	0.0%	193.5											
+	6					2min	8	8	0	0.0%												
+	7				440	1min	8	8	0	0.0%	228 											
+	8					2min	16	15	1	6.2%												
+Result tension test																						
+	〔bg=#B8CCE4,b〕No	〔bg=#B8CCE4,b〕Date	〔bg=#B8CCE4,b〕Process		〔bg=#B8CCE4,b〕Type									〔bg=#B8CCE4,b〕Long SMG (Spec ≥ 5Kgf)								
+					〔bg=#B8CCE4,b〕Temperature  (Setting)	〔bg=#B8CCE4,b〕Time	〔bg=#B8CCE4〕#1	〔bg=#B8CCE4〕#2	〔bg=#B8CCE4〕#3	〔bg=#B8CCE4〕#4	〔bg=#FDE9D9〕MIN	〔bg=#FDE9D9〕MAX	〔bg=#FDE9D9〕AVG	〔bg=#B8CCE4〕#1	〔bg=#B8CCE4〕#2	〔bg=#B8CCE4〕#3	〔bg=#B8CCE4〕#4	〔bg=#FDE9D9〕MIN	〔bg=#FDE9D9〕MAX	〔bg=#FDE9D9〕AVG		
+	1	11/8/2023	New dry mc => Hearing press		390	1min	10.64	8.66	〔bg=#FFFF00〕5.14	7.00	〔bg=#FDE9D9〕5.14	〔bg=#FDE9D9〕10.64	〔bg=#FDE9D9〕7.86	10.72	10.42	10.51	6.30	〔bg=#FDE9D9〕6.30	〔bg=#FDE9D9〕10.72	〔bg=#FDE9D9〕9.49		
+	2					2min	6.29	5.94	4.14	8.77	〔bg=#FDE9D9〕4.14	〔bg=#FDE9D9〕8.77	〔bg=#FDE9D9〕6.29	8.92	8.29	10.07	11.28	〔bg=#FDE9D9〕8.29	〔bg=#FDE9D9〕11.28	〔bg=#FDE9D9〕9.64		
+	3				440	1min	11.79	12.02	6.83	5.74	〔bg=#FDE9D9〕5.74	〔bg=#FDE9D9〕12.02	〔bg=#FDE9D9〕9.10	14.10	12.28	10.96	10.96	〔bg=#FDE9D9〕10.96	〔bg=#FDE9D9〕14.10	〔bg=#FDE9D9〕12.07		
+	4					2min	5.21	5.02	5.70	6.26	〔bg=#FDE9D9〕5.02	〔bg=#FDE9D9〕6.26	〔bg=#FDE9D9〕5.55	10.40	11.27	10.15	9.89	〔bg=#FDE9D9〕9.89	〔bg=#FDE9D9〕11.27	〔bg=#FDE9D9〕10.43		
+	5		Heating press => New dry mc  (Process same normal)		370 & 390	〔bg=#FFFF00〕1min	〔bg=#FFFF00〕6.90	〔bg=#FFFF00〕5.10	〔bg=#FFFF00〕6.44	〔bg=#FFFF00〕6.44	〔bg=#FFFF00〕5.10	〔bg=#FFFF00〕6.90	〔bg=#FFFF00〕6.22	〔bg=#FFFF00〕13.82	〔bg=#FFFF00〕15.01	〔bg=#FFFF00〕14.76	〔bg=#FFFF00〕13.10	〔bg=#FDE9D9〕13.10	〔bg=#FDE9D9〕15.01	〔bg=#FDE9D9〕14.17		
+	6					2min	4.89	4.72	6.74	4.03	〔bg=#FDE9D9〕4.03	〔bg=#FDE9D9〕6.74	〔bg=#FDE9D9〕5.10	12.92	11.40	13.03	8.63	〔bg=#FDE9D9〕8.63	〔bg=#FDE9D9〕13.03	〔bg=#FDE9D9〕11.49		
+	7				440	1min	6.93	7.79	10.69	5.41	〔bg=#FDE9D9〕5.41	〔bg=#FDE9D9〕10.69	〔bg=#FDE9D9〕7.70	12.94	13.45	12.15	9.85	〔bg=#FDE9D9〕9.85	〔bg=#FDE9D9〕13.45	〔bg=#FDE9D9〕12.10		
+	8					2min	5.97	〔bg=#FFFF00〕2.67	7.37	4.15	〔bg=#FDE9D9〕2.67	〔bg=#FDE9D9〕7.37	〔bg=#FDE9D9〕5.04	9.79	9.46	11.33	9.83	〔bg=#FDE9D9〕9.46	〔bg=#FDE9D9〕11.33	〔bg=#FDE9D9〕10.10		
+	9		Normal				4.98	5.49	5.83	7.85	〔bg=#FDE9D9〕4.98	〔bg=#FDE9D9〕7.85	〔bg=#FDE9D9〕6.04	8.90	9.82	7.62	8.32	〔bg=#FDE9D9〕7.62	〔bg=#FDE9D9〕9.82	〔bg=#FDE9D9〕8.66		
+	10						7.81	5.44	6.42	5.27	〔bg=#FDE9D9〕5.27	〔bg=#FDE9D9〕7.81	〔bg=#FDE9D9〕6.24	9.97	12.52	8.97	11.70	〔bg=#FDE9D9〕8.97	〔bg=#FDE9D9〕12.52	〔bg=#FDE9D9〕10.79		
+〔bg=#BFBFBF,b〕4. Decision																						
+
+## 03.11(161014)
+〔bg=#BFBFBF,b〕TITLE	〔b〕REPORT TEST NEW DRY MACHINE																		〔bg=#BFBFBF,b〕Dept	〔b〕ME
+																			〔bg=#BFBFBF,b〕Date	〔b〕03/Nov
+																			〔bg=#BFBFBF,b〕Marker	〔b〕Thuy
+〔bg=#BFBFBF,b〕I. Purpose.																				
+ TEST new Version (Dry machine) can use or not																				
+〔bg=#BFBFBF,b〕II. Content.																				
+ Test and find condition good for new machine => Compare with normal dry																				
+ Test process Dry SMG+BPT (20min)																				
+〔bg=#BFBFBF,b〕III.Result 																				
+ Result test dry																				
+	〔bg=#B8CCE4〕No	〔bg=#B8CCE4〕Date	〔bg=#B8CCE4〕Type		〔bg=#B8CCE4〕Input	〔bg=#B8CCE4〕OK	〔bg=#B8CCE4〕NG separate	〔bg=#B8CCE4〕NG rate												
+			〔bg=#B8CCE4〕Temperature  (Setting)	〔bg=#B8CCE4〕Time																
+	1	11/3/2023	340	〔bg=#FFFF00〕1min	〔bg=#FFFF00〕8	〔bg=#FFFF00〕7	〔bg=#FFFF00〕1	〔bg=#FFFF00〕12.5%												
+	2			2min	8	8	0	0.0%												
+	3			4min	8	8	0	0.0%												
+	4			6min	8	8	0	0.0%												
+	5			8min	8	8	0	0.0%												
+	1	11/6/2023	390	2min	8	8	0	0.0%												
+	2		440		8	8	0	0.0%												
+	3		〔bg=#FFFF00〕490		〔bg=#FFFF00〕16	〔bg=#FFFF00〕13	〔bg=#FFFF00〕3	〔bg=#FFFF00〕18.8%												
+	4		540		8	8	0	0.0%												
+ Result test tension TEST SM																				
+	〔bg=#B8CCE4〕No	〔bg=#B8CCE4〕Date	〔bg=#B8CCE4〕Type									〔bg=#B8CCE4,b〕Long SMG (Spec ≥ 5Kgf)								
+			〔bg=#B8CCE4〕Temperature  (Setting)	〔bg=#B8CCE4〕Time	〔bg=#B8CCE4〕#1	〔bg=#B8CCE4〕#2	〔bg=#B8CCE4〕#3	〔bg=#B8CCE4〕#4	〔bg=#FDE9D9〕MIN	〔bg=#FDE9D9〕MAX	〔bg=#FDE9D9〕AVG	〔bg=#B8CCE4〕#1	〔bg=#B8CCE4〕#2	〔bg=#B8CCE4〕#3	〔bg=#B8CCE4〕#4	〔bg=#FDE9D9〕MIN	〔bg=#FDE9D9〕MAX	〔bg=#FDE9D9〕AVG		
+	1	11/3/2023	340	2min	〔bg=#D9D9D9〕6.41	〔bg=#D9D9D9〕4.87	〔bg=#D9D9D9〕3.58	〔bg=#D9D9D9〕4.73	〔bg=#FDE9D9〕3.58	〔bg=#FDE9D9〕6.41	〔bg=#FDE9D9〕  4.8975 	〔bg=#DDD9C4〕6.48	〔bg=#DDD9C4〕6.6	〔bg=#DDD9C4〕5.47	〔bg=#DDD9C4〕6.33	〔bg=#FDE9D9〕5.47	〔bg=#FDE9D9〕6.6	〔bg=#FDE9D9〕  6.2200 		
+	2			4min	〔bg=#D9D9D9〕5.51	〔bg=#D9D9D9〕6.42	〔bg=#D9D9D9〕6.58	〔bg=#D9D9D9〕3.3	〔bg=#FDE9D9〕3.3	〔bg=#FDE9D9〕6.58	〔bg=#FDE9D9〕  5.4525 	〔bg=#DDD9C4〕6.7	〔bg=#DDD9C4〕5.33	〔bg=#DDD9C4〕5.82	〔bg=#DDD9C4〕7.5	〔bg=#FDE9D9〕5.33	〔bg=#FDE9D9〕7.5	〔bg=#FDE9D9〕  6.3375 		
+	3			6min	〔bg=#D9D9D9〕3.75	〔bg=#D9D9D9〕7.02	〔bg=#D9D9D9〕5.24	〔bg=#D9D9D9〕3.83	〔bg=#FDE9D9〕3.75	〔bg=#FDE9D9〕7.02	〔bg=#FDE9D9〕  4.9600 	〔bg=#DDD9C4〕5.35	〔bg=#DDD9C4〕9.24	〔bg=#DDD9C4〕8.08	〔bg=#DDD9C4〕8.92	〔bg=#FDE9D9〕5.35	〔bg=#FDE9D9〕9.24	〔bg=#FDE9D9〕  7.8975 		
+	4			8min	〔bg=#D9D9D9〕5.11	〔bg=#D9D9D9〕4.09	〔bg=#D9D9D9〕3.17	〔bg=#D9D9D9〕4.61	〔bg=#FDE9D9〕3.17	〔bg=#FDE9D9〕5.11	〔bg=#FDE9D9〕  4.2450 	〔bg=#DDD9C4〕7.5	〔bg=#DDD9C4〕8.13	〔bg=#DDD9C4〕10.15	〔bg=#DDD9C4〕7.09	〔bg=#FDE9D9〕7.09	〔bg=#FDE9D9〕10.15	〔bg=#FDE9D9〕  8.2175 		
+	5		 Normal		〔bg=#D9D9D9〕6.52	〔bg=#D9D9D9〕6.74	〔bg=#D9D9D9〕4.21	〔bg=#D9D9D9〕5.15	〔bg=#FDE9D9〕4.21	〔bg=#FDE9D9〕6.74	〔bg=#FDE9D9〕  5.6550 	〔bg=#DDD9C4〕7.61	〔bg=#DDD9C4〕12.32	〔bg=#DDD9C4〕11.54	〔bg=#DDD9C4〕12.95	〔bg=#FDE9D9〕7.61	〔bg=#FDE9D9〕12.95	〔bg=#FDE9D9〕  11.1050 		
+	1	11/06/23	390°C	2min	〔bg=#D9D9D9〕3.17	〔bg=#D9D9D9〕5.72	〔bg=#D9D9D9〕5.75	〔bg=#D9D9D9〕5.98	〔bg=#FDE9D9〕3.17	〔bg=#FDE9D9〕5.98	〔bg=#FDE9D9〕  5.1550 	〔bg=#DDD9C4〕8.63	〔bg=#DDD9C4〕8.02	〔bg=#DDD9C4〕5.64	〔bg=#DDD9C4〕9.08	〔bg=#FDE9D9〕5.64	〔bg=#FDE9D9〕9.08	〔bg=#FDE9D9〕  7.8425 		
+	2		440°C		〔bg=#D9D9D9〕4.63	〔bg=#D9D9D9〕5.56	〔bg=#D9D9D9〕4.71	〔bg=#D9D9D9〕3.34	〔bg=#FDE9D9〕3.34	〔bg=#FDE9D9〕5.56	〔bg=#FDE9D9〕  4.5600 	〔bg=#DDD9C4〕7.17	〔bg=#DDD9C4〕12.42	〔bg=#DDD9C4〕14.11	〔bg=#DDD9C4〕7.82	〔bg=#FDE9D9〕7.17	〔bg=#FDE9D9〕14.11	〔bg=#FDE9D9〕  10.3800 		
+	3		〔bg=#FFFF00〕490°C		〔bg=#FFFF00〕3.9	〔bg=#FFFF00〕3.68	〔bg=#FFFF00〕2.86	〔bg=#FFFF00〕2.64	〔bg=#FFFF00〕2.64	〔bg=#FFFF00〕3.9	〔bg=#FFFF00〕  3.2700 	〔bg=#FFFF00〕8.05	〔bg=#FFFF00〕7.28	〔bg=#FFFF00〕8.56	〔bg=#FFFF00〕5.46	〔bg=#FFFF00〕5.46	〔bg=#FFFF00〕8.56	〔bg=#FFFF00〕  7.3375 		
+	4		540°C		〔bg=#D9D9D9〕4.48	〔bg=#D9D9D9〕3.33	〔bg=#D9D9D9〕4.24	〔bg=#D9D9D9〕4.92	〔bg=#FDE9D9〕3.33	〔bg=#FDE9D9〕4.92	〔bg=#FDE9D9〕  4.2425 	〔bg=#DDD9C4〕13.4	〔bg=#DDD9C4〕8.79	〔bg=#DDD9C4〕12.69	〔bg=#DDD9C4〕9.39	〔bg=#FDE9D9〕8.79	〔bg=#FDE9D9〕13.4	〔bg=#FDE9D9〕  11.0675 		
+	5		 Normal		〔bg=#D9D9D9〕5.38	〔bg=#D9D9D9〕4.89	〔bg=#D9D9D9〕5.21	〔bg=#D9D9D9〕4.31	〔bg=#FDE9D9〕4.31	〔bg=#FDE9D9〕5.38	〔bg=#FDE9D9〕  4.9475 	〔bg=#DDD9C4〕9.55	〔bg=#DDD9C4〕9.64	〔bg=#DDD9C4〕7.78	〔bg=#DDD9C4〕6.28	〔bg=#FDE9D9〕6.28	〔bg=#FDE9D9〕9.64	〔bg=#FDE9D9〕  8.3125 		
+ Result test tension TEST CM																				
+	〔bg=#B8CCE4〕No	〔bg=#B8CCE4〕Date	〔bg=#B8CCE4〕Type																	
+			〔bg=#B8CCE4〕Temperature  (Setting)	〔bg=#B8CCE4〕Time	〔bg=#B8CCE4〕#1	〔bg=#B8CCE4〕#2	〔bg=#B8CCE4〕#3	〔bg=#B8CCE4〕#4	〔bg=#FDE9D9〕MIN	〔bg=#FDE9D9〕MAX	〔bg=#FDE9D9〕AVG									
+	1	11/7/2023	390°C	2min	〔bg=#D9D9D9〕103.7	〔bg=#D9D9D9〕62.7	〔bg=#D9D9D9〕89.9	〔bg=#D9D9D9〕89.6	〔bg=#FDE9D9〕62.7	〔bg=#FDE9D9〕103.7	〔bg=#FDE9D9〕  86.4750 									
+	2		440°C		〔bg=#D9D9D9〕150.1	〔bg=#D9D9D9〕133.9	〔bg=#D9D9D9〕87.9	〔bg=#D9D9D9〕106.9	〔bg=#FDE9D9〕87.9	〔bg=#FDE9D9〕150.1	〔bg=#FDE9D9〕  119.7000 									
+	3		490°C		〔bg=#D9D9D9〕129.2	〔bg=#D9D9D9〕115.8	〔bg=#D9D9D9〕109	〔bg=#D9D9D9〕88.4	〔bg=#FDE9D9〕88.4	〔bg=#FDE9D9〕129.2	〔bg=#FDE9D9〕  110.6000 									
+	4		540°C		〔bg=#D9D9D9〕109.8	〔bg=#FFFF00〕38.7	〔bg=#D9D9D9〕117.4	〔bg=#D9D9D9〕101.8	〔bg=#FDE9D9〕38.7	〔bg=#FDE9D9〕117.4	〔bg=#FDE9D9〕  91.9250 									
+	5		 Normal		〔bg=#D9D9D9〕77.7	〔bg=#D9D9D9〕128.2	〔bg=#D9D9D9〕79.8	〔bg=#D9D9D9〕105.6	〔bg=#FDE9D9〕77.7	〔bg=#FDE9D9〕128.2	〔bg=#FDE9D9〕  97.8250 									
+〔bg=#BFBFBF,b〕4. Decision																				
+
+## Total
+〔bg=#99CCFF,b〕IR 건조기 내작화 유효성 검증 TEST 				작성일 : 2023.11.07  작성자 : 김경식PRO										
+〔bg=#D9D9D9〕no	〔bg=#D9D9D9〕MODEL 	〔bg=#D9D9D9〕공정명	〔bg=#D9D9D9〕검토 차수	〔bg=#D9D9D9〕건조 SPEC 검토 				〔bg=#D9D9D9〕인장력 TEST 						〔bg=#BFBFBF〕결과 
+				〔bg=#D9D9D9〕현재 (열풍건조)		〔bg=#D9D9D9〕내작화개발(IR건조)		〔bg=#D9D9D9〕원자재 		〔bg=#D9D9D9〕현재 (열풍건조)		〔bg=#D9D9D9〕내작화개발(원적외선)		
+				〔bg=#D9D9D9〕건조시간	〔bg=#D9D9D9〕셋팅온도	〔bg=#D9D9D9〕건조시간	〔bg=#D9D9D9〕셋팅온도	〔bg=#D9D9D9〕품명	〔bg=#D9D9D9〕SPEC	〔bg=#D9D9D9〕MIN	〔bg=#D9D9D9〕MAX	〔bg=#D9D9D9〕MIN 	〔bg=#D9D9D9〕MAX	
+1	BRS-161014	B-PT+SM 접착	1차 검토	20분	100도 	2분	340도	L-SM	 ≥ 3Kgf	7.61	12.95	〔fg=#FF0000〕5.47	〔fg=#FF0000〕6.6	인장력 부족
+								S-SM	≥ 5Kgf	4.21	6.74	〔fg=#FF0000〕3.58	6.41	
+			〔bg=#DCE6F1〕2차 검토 	〔bg=#DCE6F1〕20분	〔bg=#DCE6F1〕100도 	〔bg=#DCE6F1〕1분	〔bg=#DCE6F1〕390도	〔bg=#DCE6F1〕L-SM	〔bg=#DCE6F1〕 ≥ 3Kgf	〔bg=#DCE6F1〕7.61	〔bg=#DCE6F1〕12.95	〔bg=#DCE6F1〕7.71	〔bg=#DCE6F1〕14.83	〔bg=#DCE6F1〕유효성 확보
+								〔bg=#DCE6F1〕S-SM	〔bg=#DCE6F1〕≥ 5Kgf	〔bg=#DCE6F1〕4.21	〔bg=#DCE6F1〕6.74	〔bg=#DCE6F1〕6.00	〔bg=#DCE6F1〕9.71	

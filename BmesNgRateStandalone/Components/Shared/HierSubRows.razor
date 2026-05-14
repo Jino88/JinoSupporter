@@ -1,0 +1,100 @@
+@using BmesNgRateStandalone.Services
+@*
+    Renders the Sub1 / Sub2 / … / LineShift rows for one Mid as <tr> elements.
+    Caller embeds this inside its existing table (the parent <tr> for the Mid is
+    NOT rendered here — only its descendants).
+
+    The component owns the expand/collapse state via <c>Expanded</c>; the HashSet
+    is shared with the page so a single click toggles the row. CSS classes are
+    parameterised so each page (NgRate / NgRateAll / NgRateByGroup / Weekly) can
+    plug in its own row styling without forking this component.
+*@
+
+@if (Mid is null || GroupName is null) { return; }
+@{
+    var subRows  = HierReportBuilder.BuildSubRows(GroupName, Mid, Lookup);
+    var byId     = subRows.ToDictionary(r => r.RowId);
+    int colCount = DateCols.Count + WeekCols.Count + MonthCols.Count;
+}
+@foreach (var row in subRows.Where(r => HierReportBuilder.IsRowVisible(r, byId, Expanded)))
+{
+    var capRow      = row;
+    int padPx       = BasePadPx + (capRow.Depth - 1) * IndentPx;
+    string rowCls   = capRow.IsLineShift ? LineShiftRowClass
+                    : capRow.Depth == 1   ? Sub1RowClass
+                    : Sub2RowClass;
+    bool   expanded = Expanded.Contains(capRow.RowId);
+    string rowId    = capRow.RowId;
+    <tr class="@rowCls @(capRow.HasChildren ? ExpandableRowClass : "")"
+        @onclick="@(() => { if (capRow.HasChildren) Toggle(rowId); })">
+        <td class="label-td font-monospace" style="font-size:11px; padding-left: @(padPx)px;">
+            @if (capRow.HasChildren)
+            { <span class="@TogIconClass">@(expanded ? "▼" : "▶")</span> }
+            else
+            { <span class="@TogIconClass" style="visibility:hidden;">▶</span> }
+            <span class="ms-1">@capRow.Display</span>
+        </td>
+        @foreach (var col in DateCols)
+        {
+            double v = capRow.PpmFor(col.Key);
+            <td class="@(v <= 0 ? ZeroCellClass : ValueCellClass)">@FormatPpm(v)</td>
+        }
+        @if (DateCols.Count > 0) { <td class="sep-td"></td> }
+        @foreach (var col in WeekCols)
+        {
+            double v = capRow.PpmFor(col.Key);
+            <td class="@(v <= 0 ? ZeroCellClass : ValueCellClass)">@FormatPpm(v)</td>
+        }
+        @if (WeekCols.Count > 0) { <td class="sep-td"></td> }
+        @foreach (var col in MonthCols)
+        {
+            double v = capRow.PpmFor(col.Key);
+            <td class="@(v <= 0 ? ZeroCellClass : ValueCellClass)">@FormatPpm(v)</td>
+        }
+    </tr>
+}
+
+@code {
+    [Parameter, EditorRequired] public string?         GroupName { get; set; }
+    [Parameter, EditorRequired] public MidGroupRecord? Mid       { get; set; }
+    [Parameter, EditorRequired] public HierPpmLookup   Lookup    { get; set; } = new();
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<NgRateReportService.PeriodColumn> DateCols { get; set; }
+        = Array.Empty<NgRateReportService.PeriodColumn>();
+    [Parameter, EditorRequired]
+    public IReadOnlyList<NgRateReportService.PeriodColumn> WeekCols { get; set; }
+        = Array.Empty<NgRateReportService.PeriodColumn>();
+    [Parameter, EditorRequired]
+    public IReadOnlyList<NgRateReportService.PeriodColumn> MonthCols { get; set; }
+        = Array.Empty<NgRateReportService.PeriodColumn>();
+
+    /// <summary>RowIds the user has expanded. Owned by the page, mutated via
+    /// <see cref="Toggle"/> which invokes <see cref="OnToggle"/> so the page can
+    /// re-render after state changes.</summary>
+    [Parameter, EditorRequired] public HashSet<string> Expanded { get; set; } = new();
+    [Parameter] public EventCallback<string>           OnToggle { get; set; }
+
+    // CSS hooks — each page passes its own class names so styling matches the
+    // surrounding table without forcing one global skin.
+    [Parameter] public string Sub1RowClass       { get; set; } = "hier-sub1-row";
+    [Parameter] public string Sub2RowClass       { get; set; } = "hier-sub2-row";
+    [Parameter] public string LineShiftRowClass  { get; set; } = "hier-ls-row";
+    [Parameter] public string ExpandableRowClass { get; set; } = "hier-sub-expandable";
+    [Parameter] public string TogIconClass       { get; set; } = "tog-icon";
+    [Parameter] public string ZeroCellClass      { get; set; } = "ppm-zero";
+    [Parameter] public string ValueCellClass     { get; set; } = "ppm-val";
+
+    [Parameter] public int BasePadPx { get; set; } = 48;   // first sub-level indent
+    [Parameter] public int IndentPx  { get; set; } = 16;   // per extra depth level
+
+    /// <summary>Page-supplied formatter — defaults to "N0" with "-" for zero.</summary>
+    [Parameter] public Func<double, string> FormatPpm { get; set; } =
+        v => v <= 0 ? "-" : ((long)Math.Round(v)).ToString("N0");
+
+    private async Task Toggle(string rowId)
+    {
+        if (!Expanded.Remove(rowId)) Expanded.Add(rowId);
+        if (OnToggle.HasDelegate) await OnToggle.InvokeAsync(rowId);
+    }
+}

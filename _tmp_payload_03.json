@@ -1,0 +1,57 @@
+{
+  "result": {
+    "productType": "BRS-161016 DT",
+    "tags": ["brs-161016-dt","jig-cd-load-tray","vp-cd-separate","jig-repair","tension-test","function-test"],
+    "reportType": "comparison_study",
+    "verdict": "worsened",
+    "headline": "Repaired CD Load Tray JIG: VP/CD separate 0% (matches Normal) but function NG 2.0% vs Normal 1.0%",
+    "evidence": [
+      { "metric":"VP/CD separate","baselineLabel":"Normal","baselineValue":"0.0% (0/200)","variantLabel":"Test JIG","variantValue":"0.0% (0/152)","deltaText":"0pp","deltaSign":"no_change","note":"jig repair goal met","comparisons":null,"bestLabel":"","worstLabel":"" },
+      { "metric":"Function NG rate","baselineLabel":"Normal","baselineValue":"1.0% (2/200)","variantLabel":"Test JIG","variantValue":"2.0% (3/152)","deltaText":"+1.0pp","deltaSign":"up","note":"hearing-noise/touch only","comparisons":null,"bestLabel":"","worstLabel":"" },
+      { "metric":"VP+CD tension AVG","baselineLabel":"Normal","baselineValue":"#DIV/0! (not measured)","variantLabel":"Test JIG","variantValue":"1.68 kgf (spec 0.5)","deltaText":"—","deltaSign":"no_change","note":"normal tension blank","comparisons":null,"bestLabel":"","worstLabel":"" }
+    ],
+    "actions": [
+      { "priority":1, "kind":"action", "text":"Approve repaired CD Load Tray JIG — VP/CD separate eliminated" },
+      { "priority":2, "kind":"investigate", "text":"Re-run with larger n to confirm function NG +1pp isn't a small-sample artifact" }
+    ],
+    "context": {
+      "process": "JIG CD Load Tray (post-repair) → VP+CD assembly",
+      "stage": "E2-3A main-line vision + tension + function",
+      "baselineReason": "same-event Normal row at 200 input"
+    },
+    "doeGrid": null,
+    "trendPoints": null,
+    "measurements": [
+      { "productType":"BRS-161016 DT","testDate":"2025-04-25","line":"E2-3A","checkType":"process","variable":"Test JIG","variableDetail":"VP+CD vision","variableGroup":"test","intervention":"JIG CD Load Tray repair","inputQty":152,"okQty":152,"ngTotal":0,"ngRate":0.0,"defectCategory":"assembly_defect","defectType":"VP+CD separate","defectCount":0 },
+      { "productType":"BRS-161016 DT","testDate":"2025-04-25","line":"E2-3A","checkType":"process","variable":"Normal","variableDetail":"VP+CD vision","variableGroup":"normal","intervention":"","inputQty":200,"okQty":200,"ngTotal":0,"ngRate":0.0,"defectCategory":"assembly_defect","defectType":"VP+CD separate","defectCount":0 },
+      { "productType":"BRS-161016 DT","testDate":"2025-04-24","line":"E2-3A","checkType":"function","variable":"Test JIG","variableDetail":"","variableGroup":"test","intervention":"JIG CD Load Tray repair","inputQty":152,"okQty":149,"ngTotal":3,"ngRate":2.0,"defectCategory":"","defectType":"","defectCount":0 },
+      { "productType":"BRS-161016 DT","testDate":"2025-04-24","line":"E2-3A","checkType":"function","variable":"Test JIG","variableDetail":"","variableGroup":"test","intervention":"JIG CD Load Tray repair","inputQty":152,"okQty":149,"ngTotal":3,"ngRate":1.3,"defectCategory":"function_hearing","defectType":"Noise","defectCount":2 },
+      { "productType":"BRS-161016 DT","testDate":"2025-04-24","line":"E2-3A","checkType":"function","variable":"Test JIG","variableDetail":"","variableGroup":"test","intervention":"JIG CD Load Tray repair","inputQty":152,"okQty":149,"ngTotal":3,"ngRate":0.7,"defectCategory":"function_hearing","defectType":"Touch","defectCount":1 },
+      { "productType":"BRS-161016 DT","testDate":"2025-04-24","line":"E2-3A","checkType":"function","variable":"Normal","variableDetail":"","variableGroup":"normal","intervention":"","inputQty":200,"okQty":198,"ngTotal":2,"ngRate":1.0,"defectCategory":"function_hearing","defectType":"Noise","defectCount":2 }
+    ]
+  },
+  "tr_ko": {
+    "headline": "수리한 CD Load Tray JIG: VP/CD separate 0% (Normal과 동일) 그러나 기능 NG 2.0% vs Normal 1.0%",
+    "actions": [
+      { "priority":1, "kind":"action", "text":"수리한 CD Load Tray JIG 승인 — VP/CD separate 제거" },
+      { "priority":2, "kind":"investigate", "text":"더 큰 n으로 재시험하여 기능 NG +1pp가 표본 편차가 아닌지 확인" }
+    ],
+    "context": {
+      "process": "JIG CD Load Tray (수리 후) → VP+CD 조립",
+      "stage": "E2-3A 본 라인 비전 + 인장 + 기능",
+      "baselineReason": "동일 이벤트 Normal 행 (input 200)"
+    }
+  },
+  "tr_vi": {
+    "headline": "JIG CD Load Tray sau sửa: VP/CD separate 0% (bằng Normal) nhưng function NG 2.0% vs Normal 1.0%",
+    "actions": [
+      { "priority":1, "kind":"action", "text":"Duyệt JIG CD Load Tray sau sửa — đã hết VP/CD separate" },
+      { "priority":2, "kind":"investigate", "text":"Chạy lại với n lớn hơn để xác nhận NG +1pp không phải biến động cỡ mẫu nhỏ" }
+    ],
+    "context": {
+      "process": "JIG CD Load Tray (sau sửa) → lắp VP+CD",
+      "stage": "Vision + tension + function main-line E2-3A",
+      "baselineReason": "Normal cùng sự kiện ở input 200"
+    }
+  }
+}

@@ -1,0 +1,33 @@
+## 25.04
+〔bg=#BFBFBF,b〕TITLE		〔b〕 BRS-161016 - REPORT CHECK NG SEPARATE VP/CD SUB 1 TF-LINE													〔bg=#BFBFBF,b〕Dept	〔b〕ME
+															〔bg=#BFBFBF,b〕Date	〔b〕25/Apr
+															〔bg=#BFBFBF,b〕Marker	〔b〕Nhung
+〔bg=#BFBFBF,b〕I. Purpose.																
+ -  Sub 1 TF-Line happen PQC sampling happen NG separate VP+CD 4/100pcs ~ 4% => Check find readon NG																
+〔bg=#BFBFBF,b〕II. Content.																
+ - Clean Head press VP+CD																
+ - Check Press VP+CD by ink																
+〔bg=#BFBFBF,b〕III. Result 																
+	〔b〕1. RESULT CHECKING VISION VP+CD															
+	〔bg=#9BC2E6,b〕Type	〔bg=#9BC2E6,b〕Input	〔bg=#9BC2E6,b〕OK	〔bg=#9BC2E6,b〕NG separate VP+CD	〔bg=#9BC2E6,fg=#FF0000,b〕NG rate											
+	Before Repair	100	96	4	〔fg=#FF0000〕4.0%											
+	〔bg=#F8CBAD〕After repair	〔bg=#F8CBAD〕222	〔bg=#F8CBAD〕221	〔bg=#F8CBAD〕1	〔bg=#F8CBAD,fg=#FF0000〕0.5%											
+	〔fg=#0000FF,b〕 => After repair machine press VP+CD => NG separate VP+CD reduce from 4% -> 0.5%															
+	〔b〕2. RESULT CHECKING FUNCTION COMPARE BEFORE AND AFTER REPAIR MACHINE															
+	〔bg=#9BC2E6,b〕Date	〔bg=#9BC2E6,b〕Line	〔bg=#9BC2E6,b〕Type		〔bg=#9BC2E6,b〕Input 	〔bg=#9BC2E6,b〕OK  	〔bg=#9BC2E6,b〕Air leak	〔bg=#9BC2E6,b〕NG Sigma 				〔bg=#9BC2E6,b〕NG Hearing 		〔bg=#9BC2E6,b〕Total NG	〔bg=#9BC2E6,fg=#FF0000,b〕Total NG rate	
+								〔bg=#9BC2E6,b〕SPL 	〔bg=#9BC2E6,b〕THD 	〔bg=#9BC2E6,b〕SPL+THD 	〔bg=#9BC2E6,b〕SPL+THD+F0	〔bg=#9BC2E6,b〕Noise 	〔bg=#9BC2E6,b〕Touch 			
+	4/25/2025	E2-3A	Before Repair		140	140	0							0	〔fg=#FF0000,b〕0.0%	
+			〔bg=#F8CBAD〕After repair		〔bg=#F8CBAD〕218	〔bg=#F8CBAD〕218	〔bg=#F8CBAD〕0							〔bg=#F8CBAD〕0	〔bg=#F8CBAD,fg=#FF0000,b〕0.0%	
+〔bg=#BFBFBF,b〕IV. Decision																
+
+## Test
+〔b〕RESULT CHECKING  TENSION TEST VP+CD											
+〔bg=#9BC2E6,b〕Date	〔bg=#9BC2E6,b〕Line	〔bg=#9BC2E6,b〕Type		〔bg=#9BC2E6,b〕Sample 1	〔bg=#9BC2E6,b〕Sample 2	〔bg=#9BC2E6,b〕Sample 3	〔bg=#9BC2E6,b〕Sample 4	〔bg=#9BC2E6,b〕Sample 5	〔bg=#F8CBAD,b〕Max	〔bg=#F8CBAD,b〕Min	〔bg=#F8CBAD,b〕Avg
+3/29/2025	E2-3A			1.651	1.416	1.641	1.854	1.812	〔bg=#F8CBAD〕1.854	〔bg=#F8CBAD〕1.416	〔bg=#F8CBAD〕1.675
+		Normal		1.309	1.277	1.395	1.394	1.773	〔bg=#F8CBAD〕1.773	〔bg=#F8CBAD〕1.277	〔bg=#F8CBAD〕1.430
+〔b〕RESULT TEST CHANGE WAITING TIME PRESS UC AFTER BONDING+ASS'Y VP/CD											
+〔bg=#9BC2E6〕Date 	〔bg=#9BC2E6〕No	〔bg=#9BC2E6〕Type				〔bg=#9BC2E6〕Input	〔bg=#9BC2E6〕OK	〔bg=#9BC2E6〕NG vision 	〔bg=#9BC2E6〕Total NG	〔bg=#9BC2E6,fg=#FF0000〕NG rate	
+								〔bg=#9BC2E6〕VP+CD separate			
+3/31/2025	1	Bonding+Ass'y=> 5s=> press UC => Led UV				4	4	0	0	〔fg=#FF0000〕0.0%	
+	2	Bonding+Ass'y=> 10s=> press UC => Led UV				4	4	0	0	〔fg=#FF0000〕0.0%	
+	3	Bonding+Ass'y=> 15s=> press UC => Led UV				4	2	2	2	〔fg=#FF0000〕50.0%	

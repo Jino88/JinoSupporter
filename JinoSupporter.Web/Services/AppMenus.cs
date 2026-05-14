@@ -15,8 +15,12 @@ public static class AppMenus
     public const string BmesWorkerStatus = "bmes-worker-status";
     public const string BmesMakeModelGroup = "bmes-make-model-group";
     public const string BmesSetting      = "bmes-setting";
+    public const string BmesRoutingTable = "bmes-routing-table";
+    public const string BmesReasonTable  = "bmes-reason-table";
+    public const string BmesFCost        = "bmes-f-cost";
     public const string Schedule         = "schedule";
     public const string DiInput          = "di-input";
+    public const string DiInputTest      = "di-input-test";
     public const string DiDb             = "di-db";
     public const string DiBatch          = "di-batch";
     public const string DiAnalysis       = "di-analysis";
@@ -28,15 +32,20 @@ public static class AppMenus
     public const string AdminSettings    = "admin-settings";
     public const string AdminAiUsages    = "admin-ai-usages";
     public const string AdminPaths       = "admin-paths";
+    public const string TestExcelConverter = "test-excel-converter";
 
     public static readonly MenuItemDef[] All =
     [
         new(NgRate,           "Report NG RATE",       "BMES"),
         new(BmesWorkerStatus, "Worker Status",        "BMES"),
-        new(BmesMakeModelGroup, "Make ModelGroup Data", "BMES"),
+        new(BmesMakeModelGroup, "Model Group",          "BMES"),
         new(BmesSetting,        "BMES Setting",         "BMES"),
+        new(BmesRoutingTable,   "Routing Table",        "BMES"),
+        new(BmesReasonTable,    "Reason Table",         "BMES"),
+        new(BmesFCost,          "F-Cost",               "BMES"),
         new(Schedule,         "Schedule",         "Tools"),
         new(DiInput,          "DI — Input Data",  "Data Inference"),
+        new(DiInputTest,      "DI — Input Data (Test)", "Data Inference"),
         new(DiDb,             "DI — DB Data",     "Data Inference"),
         new(DiBatch,          "DI — AI Batch",    "Data Inference"),
         new(DiAnalysis,       "DI — Analysis",    "Data Inference"),
@@ -48,6 +57,7 @@ public static class AppMenus
         new(AdminSettings,    "Settings",         "Admin"),
         new(AdminAiUsages,    "AI Usages",        "Admin"),
         new(AdminPaths,       "App Paths",        "Admin"),
+        new(TestExcelConverter, "Test Excel Converter", "Admin"),
     ];
 
     /// <summary>
@@ -59,27 +69,27 @@ public static class AppMenus
         [AppRoles.Admin] = All.Select(m => m.Id).ToArray(),
         [AppRoles.Manager] =
         [
-            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, Schedule,
+            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, BmesRoutingTable, BmesReasonTable, BmesFCost, Schedule,
             DiInput, DiDb, DiBatch, DiAnalysis, DiValidation, DiAsk, Report, Translate
         ],
         [AppRoles.ManagerAi] =
         [
-            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, Schedule,
+            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, BmesRoutingTable, BmesReasonTable, BmesFCost, Schedule,
             DiInput, DiDb, DiBatch, DiAnalysis, DiValidation, DiAsk, Report, Translate
         ],
         [AppRoles.Leader] =
         [
-            NgRate, BmesWorkerStatus, BmesMakeModelGroup, Schedule,
+            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesRoutingTable, BmesReasonTable, BmesFCost, Schedule,
             DiInput, DiDb, DiBatch, DiAnalysis, DiValidation, DiAsk, Report, Translate
         ],
         [AppRoles.Editor] =
         [
-            NgRate, BmesWorkerStatus, BmesMakeModelGroup, Schedule,
+            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesRoutingTable, BmesReasonTable, BmesFCost, Schedule,
             DiInput, DiDb, DiBatch, DiAnalysis, DiValidation, DiAsk, Report, Translate
         ],
         [AppRoles.Viewer] =
         [
-            NgRate, BmesWorkerStatus, Schedule, DiDb, DiAnalysis, DiValidation, DiAsk, Report, Translate
+            NgRate, BmesWorkerStatus, BmesFCost, Schedule, DiDb, DiAnalysis, DiValidation, DiAsk, Report, Translate
         ],
     };
 }

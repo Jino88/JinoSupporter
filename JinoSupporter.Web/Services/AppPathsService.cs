@@ -16,6 +16,12 @@ public sealed class AppPathsConfig
     public string NgRateReasonFilePath      { get; set; } = string.Empty;
     public string NgRateSettingsDbDirectory { get; set; } = string.Empty;
     public string ModelBmesJsonFolder       { get; set; } = string.Empty;
+
+    // Test Excel Converter — admin-only DRM-clean tool. Source folder is scanned
+    // recursively for *.xlsx / *.xlsm and the cleaned output goes under
+    // <DestDir>/drm_clean/<name>_clean.xlsx.
+    public string TestExcelConverterSourceDir { get; set; } = string.Empty;
+    public string TestExcelConverterDestDir   { get; set; } = string.Empty;
 }
 
 public sealed class AppPathsService
@@ -70,6 +76,11 @@ public sealed class AppPathsService
             NgRateReasonFilePath      = Path.Combine(ngBase, "reason.txt"),
             NgRateSettingsDbDirectory = ngBmes,
             ModelBmesJsonFolder       = ngBmes,
+
+            // Default source/dest = same folder; the cleaned files go to a
+            // `drm_clean` sub-folder so they don't shadow the originals.
+            TestExcelConverterSourceDir = string.Empty,
+            TestExcelConverterDestDir   = string.Empty,
         };
     }
 
@@ -111,6 +122,8 @@ public sealed class AppPathsService
         NgRateReasonFilePath      = Pick(user.NgRateReasonFilePath,      defaults.NgRateReasonFilePath),
         NgRateSettingsDbDirectory = Pick(user.NgRateSettingsDbDirectory, defaults.NgRateSettingsDbDirectory),
         ModelBmesJsonFolder       = Pick(user.ModelBmesJsonFolder,       defaults.ModelBmesJsonFolder),
+        TestExcelConverterSourceDir = Pick(user.TestExcelConverterSourceDir, defaults.TestExcelConverterSourceDir),
+        TestExcelConverterDestDir   = Pick(user.TestExcelConverterDestDir,   defaults.TestExcelConverterDestDir),
     };
 
     private static string Pick(string? user, string fallback) =>

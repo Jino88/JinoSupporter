@@ -154,6 +154,70 @@ public sealed class DiskIndexStore : IDisposable
         return results;
     }
 
+    /// <summary>Returns every indexed file whose FilePath starts with <paramref name="scopeDirectoryPath"/>.
+    /// Used by "show duplicates within selected folder" to scope the search by tree selection.</summary>
+    public IReadOnlyList<IndexedFileRecord> ListFilesUnder(string scopeDirectoryPath)
+    {
+        string normalized = Path.GetFullPath(scopeDirectoryPath).TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
+        // Escape SQL LIKE wildcards in the scope itself.
+        string likePattern = normalized.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_") + "%";
+
+        using var command = _connection.CreateCommand();
+        command.CommandText =
+            """
+            SELECT
+                FilePath,
+                FileName,
+                DirectoryPath,
+                FileSize,
+                HeadTailHash,
+                LastWriteUtc,
+                ScannedUtc
+            FROM FileIndex
+            WHERE FilePath LIKE @prefix ESCAPE '\'
+            ORDER BY FileSize DESC, HeadTailHash, FilePath;
+            """;
+        command.Parameters.AddWithValue("@prefix", likePattern);
+
+        var results = new List<IndexedFileRecord>();
+        using SqliteDataReader reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            results.Add(new IndexedFileRecord(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.GetInt64(3),
+                reader.GetString(4),
+                DateTime.Parse(reader.GetString(5), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind),
+                DateTime.Parse(reader.GetString(6), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind)));
+        }
+        return results;
+    }
+
+    /// <summary>Removes the given file paths from the index. Used after Collect-To-Temp moves files
+    /// out of their original locations so they stop showing up in the duplicate panes.</summary>
+    public int DeleteFiles(IEnumerable<string> filePaths)
+    {
+        using var transaction = _connection.BeginTransaction();
+        using var command = _connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = "DELETE FROM FileIndex WHERE FilePath = @filePath;";
+        SqliteParameter pathParam = command.Parameters.Add("@filePath", SqliteType.Text);
+        command.Prepare();
+
+        int deletedCount = 0;
+        foreach (string filePath in filePaths)
+        {
+            if (string.IsNullOrEmpty(filePath)) continue;
+            pathParam.Value = filePath;
+            deletedCount += command.ExecuteNonQuery();
+        }
+
+        transaction.Commit();
+        return deletedCount;
+    }
+
     public int GetIndexedFileCount()
     {
         using var command = _connection.CreateCommand();

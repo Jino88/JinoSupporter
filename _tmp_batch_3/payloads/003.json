@@ -1,0 +1,35 @@
+{
+  "name": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222",
+  "mode": "Reanalyze",
+  "result": {
+    "productType": "TIM-338-R WF",
+    "reportType": "quality_log",
+    "verdict": "",
+    "headline": "Center-dome NG sample raw measurement data (WF / THD / R&B / FFT / MIC / LOOP masks).",
+    "measurements": [],
+    "tags": ["TIM-338-R","WF","center_dome","raw_measurement","frequency_response"],
+    "evidence": [
+      {"metric":"Measurement scope","baselineLabel":"","baselineValue":"","variantLabel":"","variantValue":"","deltaText":"—","deltaSign":"flat","note":"WF/THD/R&B/FFT/MIC/LOOP frequency-response curves with mask data for center-dome NG sample","comparisons":null,"bestLabel":"","worstLabel":""}
+    ],
+    "actions": [
+      {"priority":1,"kind":"investigate","text":"Review the FFT and R&B mask excursions against spec to identify the center-dome failure mode."}
+    ],
+    "context": {"process":"Acoustic measurement","stage":"NG sample analysis","baselineReason":"Raw measurement log; no comparison arm"},
+    "doeGrid": null, "trendPoints": null,
+    "summary":"","keyFindings":"","purpose":"","testConditions":"","rootCause":"","decision":"","recommendedAction":""
+  },
+  "tr_ko": {
+    "headline": "센터돔 불량 샘플 측정 원본 데이터 (WF / THD / R&B / FFT / MIC / LOOP 마스크).",
+    "actions": [
+      {"priority":1,"kind":"investigate","text":"FFT 및 R&B 마스크 이탈을 스펙과 비교하여 센터돔 불량 모드 식별."}
+    ],
+    "context": {"process":"음향 측정","stage":"불량 샘플 분석","baselineReason":"비교군 없는 원본 측정 로그"}
+  },
+  "tr_vi": {
+    "headline": "Dữ liệu đo gốc mẫu NG center-dome (WF / THD / R&B / FFT / MIC / LOOP mask).",
+    "actions": [
+      {"priority":1,"kind":"investigate","text":"Đối chiếu độ lệch mask FFT và R&B với spec để xác định kiểu lỗi của center-dome."}
+    ],
+    "context": {"process":"Đo âm","stage":"Phân tích mẫu NG","baselineReason":"Log đo gốc, không có nhánh so sánh"}
+  }
+}

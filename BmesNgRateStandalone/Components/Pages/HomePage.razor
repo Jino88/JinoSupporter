@@ -1,0 +1,136 @@
+@page "/"
+@inject AppPathsService Paths
+@inject NgRateSettingsService NgRateSettings
+@inject WebRepository Repo
+
+<div class="home-hero">
+    <h1>BMES NG Rate</h1>
+    <p class="lead">Standalone desktop host linked to JinoSupporter BMES and NG Rate source.</p>
+</div>
+
+<div class="home-grid">
+    <div class="home-card @(NgRateSettings.IsCredentialsConfigured ? "ok" : "warn")">
+        <div class="home-card-head">
+            <span class="home-card-icon">ID</span>
+            <div class="home-card-title">BMES Credentials</div>
+        </div>
+        <div class="home-card-body">
+            @if (NgRateSettings.IsCredentialsConfigured)
+            {
+                <div class="badge-ok">Configured</div>
+                <div class="muted small mt-1">ID: <code>@NgRateSettings.LoginId</code></div>
+            }
+            else
+            {
+                <div class="badge-warn">Not configured</div>
+                <div class="muted small mt-1">Enter BMES ID and password before fetching data.</div>
+            }
+        </div>
+        <a class="home-card-link" href="/bmes/setting">BMES Setting</a>
+    </div>
+
+    <div class="home-card">
+        <div class="home-card-head">
+            <span class="home-card-icon">DB</span>
+            <div class="home-card-title">Stored Data</div>
+        </div>
+        <div class="home-card-body">
+            <div class="kpi-row">
+                <div class="kpi">
+                    <div class="kpi-num">@Repo.GetBmesMaterialCount().ToString("N0")</div>
+                    <div class="kpi-lbl">Materials</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-num">@Repo.GetModelGroups().Count.ToString("N0")</div>
+                    <div class="kpi-lbl">Model Groups</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-num">@_dailyDbCount.ToString("N0")</div>
+                    <div class="kpi-lbl">Daily DBs</div>
+                </div>
+            </div>
+        </div>
+        <a class="home-card-link" href="/bmes/make-model-group">Model Group</a>
+    </div>
+
+    <div class="home-card">
+        <div class="home-card-head">
+            <span class="home-card-icon">NG</span>
+            <div class="home-card-title">NG Rate Reports</div>
+        </div>
+        <div class="home-card-body">
+            <div class="link-list">
+                <a href="/ng-rate">By Model</a>
+                <a href="/ng-rate-by-group">By Group</a>
+                <a href="/ng-rate-all">All</a>
+                <a href="/ng-rate-for-weekly-report">Weekly Report</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="home-card">
+        <div class="home-card-head">
+            <span class="home-card-icon">PATH</span>
+            <div class="home-card-title">Paths / Data Locations</div>
+        </div>
+        <div class="home-card-body small">
+            <table class="path-table">
+                <tr><th>NG Rate DB</th><td><code>@NgRateSettings.DbSaveDirectory</code></td></tr>
+                <tr><th>Settings DB</th><td><code>@NgRateSettings.SettingsDbPath</code></td></tr>
+                <tr><th>Routing file</th><td><code>@NgRateSettings.RoutingFilePath</code></td></tr>
+                <tr><th>Reason file</th><td><code>@NgRateSettings.ReasonFilePath</code></td></tr>
+                <tr><th>Model BMES folder</th><td><code>@Paths.Current.ModelBmesJsonFolder</code></td></tr>
+            </table>
+        </div>
+        <a class="home-card-link" href="/admin/paths">Edit paths</a>
+    </div>
+</div>
+
+<style>
+.home-hero { padding: 18px 0 24px; border-bottom: 1px solid #e5e7eb; margin-bottom: 24px; }
+.home-hero h1 { margin: 0; font-size: 1.8rem; font-weight: 700; color: #0f172a; }
+.home-hero .lead { margin: 6px 0 0; color: #64748b; }
+.home-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.home-card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:16px 18px; display:flex; flex-direction:column; box-shadow:0 1px 2px rgba(0,0,0,0.04); }
+.home-card.warn { border-left:4px solid #f59e0b; }
+.home-card.ok { border-left:4px solid #10b981; }
+.home-card-head { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.home-card-icon { font-size:12px; font-weight:800; color:#475569; }
+.home-card-title { font-weight:600; color:#0f172a; }
+.home-card-body { flex:1; color:#334155; }
+.home-card-link { display:inline-block; margin-top:12px; color:#2563eb; text-decoration:none; font-size:0.85rem; font-weight:500; }
+.home-card-link:hover { text-decoration:underline; }
+.badge-ok { display:inline-block; padding:3px 10px; border-radius:12px; background:#d1fae5; color:#065f46; font-size:0.78rem; font-weight:600; }
+.badge-warn { display:inline-block; padding:3px 10px; border-radius:12px; background:#fef3c7; color:#92400e; font-size:0.78rem; font-weight:600; }
+.kpi-row { display:flex; gap:18px; }
+.kpi { flex:1; }
+.kpi-num { font-size:1.6rem; font-weight:700; color:#1d4ed8; line-height:1; }
+.kpi-lbl { font-size:0.75rem; color:#64748b; text-transform:uppercase; letter-spacing:.04em; margin-top:4px; }
+.link-list { display:flex; flex-direction:column; gap:6px; }
+.link-list a { color:#2563eb; text-decoration:none; padding:4px 0; font-weight:500; }
+.link-list a:hover { text-decoration:underline; }
+.muted { color:#64748b; }
+.small { font-size:0.85rem; }
+.mt-1 { margin-top:4px; }
+.path-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
+.path-table th { text-align:left; padding:3px 8px 3px 0; color:#64748b; font-weight:500; white-space:nowrap; vertical-align:top; }
+.path-table td { padding:3px 0; word-break:break-all; }
+.path-table code { font-size:0.75rem; color:#0f172a; background:#f1f5f9; padding:1px 5px; border-radius:3px; }
+</style>
+
+@code {
+    private int _dailyDbCount;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            var daily = Path.Combine(NgRateSettings.DbSaveDirectory, "daily");
+            _dailyDbCount = Directory.Exists(daily) ? Directory.GetFiles(daily, "*.db").Length : 0;
+        }
+        catch
+        {
+            _dailyDbCount = 0;
+        }
+    }
+}

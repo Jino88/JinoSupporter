@@ -24,14 +24,21 @@
         bool showBmes =
             can(AppMenus.NgRate) || can(AppMenus.BmesWorkerStatus) ||
             can(AppMenus.BmesMakeModelGroup) ||
-            can(AppMenus.BmesSetting);
+            can(AppMenus.BmesSetting) ||
+            can(AppMenus.BmesRoutingTable) ||
+            can(AppMenus.BmesReasonTable) ||
+            can(AppMenus.BmesFCost);
 
+        // 5-menu shape for the AI side: 4 stages of the workflow + Ask AI for
+        // querying the saved corpus. Legacy entries (original Input, Validation,
+        // Report) still resolve via direct URL; permission keys stay so the
+        // MenuPermissions rows in DB don't break.
         bool showDi =
-            can(AppMenus.DiInput) || can(AppMenus.DiDb) || can(AppMenus.DiBatch) ||
-            can(AppMenus.DiAnalysis) || can(AppMenus.DiValidation) ||
-            can(AppMenus.DiAsk) || can(AppMenus.Report);
+            can(AppMenus.DiInputTest) || can(AppMenus.DiBatch) ||
+            can(AppMenus.DiDb)        || can(AppMenus.DiAnalysis) ||
+            can(AppMenus.DiAsk);
 
-        bool showAdmin = can(AppMenus.AdminUsers) || can(AppMenus.AdminSettings) || can(AppMenus.AdminAiUsages) || can(AppMenus.AdminPaths);
+        bool showAdmin = can(AppMenus.AdminUsers) || can(AppMenus.AdminSettings) || can(AppMenus.AdminAiUsages) || can(AppMenus.AdminPaths) || can(AppMenus.TestExcelConverter);
         bool showTools = can(AppMenus.Schedule) || can(AppMenus.Translate) || showDi;
     }
 
@@ -69,7 +76,7 @@
                 {
                     <div class="nav-item">
                         <NavLink class="nav-link nav-sublink" href="bmes/make-model-group">
-                            <span class="nav-icon" style="font-size:11px;">🗂️</span> Make ModelGroup Data
+                            <span class="nav-icon" style="font-size:11px;">🗂️</span> Model Group
                         </NavLink>
                     </div>
                 }
@@ -78,6 +85,30 @@
                     <div class="nav-item">
                         <NavLink class="nav-link nav-sublink" href="bmes/setting">
                             <span class="nav-icon" style="font-size:11px;">⚙️</span> Setting
+                        </NavLink>
+                    </div>
+                }
+                @if (can(AppMenus.BmesRoutingTable) || can(AppMenus.BmesSetting))
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="bmes/routing-table">
+                            <span class="nav-icon" style="font-size:11px;">RT</span> Routing Table
+                        </NavLink>
+                    </div>
+                }
+                @if (can(AppMenus.BmesReasonTable) || can(AppMenus.BmesSetting))
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="bmes/reason-table">
+                            <span class="nav-icon" style="font-size:11px;">RS</span> Reason Table
+                        </NavLink>
+                    </div>
+                }
+                @if (can(AppMenus.BmesFCost))
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="bmes/f-cost">
+                            <span class="nav-icon" style="font-size:11px;">💰</span> F-Cost
                         </NavLink>
                     </div>
                 }
@@ -110,20 +141,14 @@
             </div>
             @if (_diOpen)
             {
+                @* 4-menu lineup. Order = the natural workflow:
+                   Input → Analyze → per-dataset Results → cross-dataset roll-up. *@
                 <div class="nav-submenu">
-                    @if (can(AppMenus.DiInput))
+                    @if (can(AppMenus.DiInputTest))
                     {
                         <div class="nav-item">
-                            <NavLink class="nav-link nav-sublink" href="data-inference" Match="NavLinkMatch.All">
-                                <span class="nav-icon" style="font-size:11px;">📥</span> Input Data
-                            </NavLink>
-                        </div>
-                    }
-                    @if (can(AppMenus.DiDb))
-                    {
-                        <div class="nav-item">
-                            <NavLink class="nav-link nav-sublink" href="data-inference/db">
-                                <span class="nav-icon" style="font-size:11px;">🗄</span> DB Data
+                            <NavLink class="nav-link nav-sublink" href="data-inference-test">
+                                <span class="nav-icon" style="font-size:11px;">📥</span> Data Input
                             </NavLink>
                         </div>
                     }
@@ -131,7 +156,15 @@
                     {
                         <div class="nav-item">
                             <NavLink class="nav-link nav-sublink" href="data-inference/batch">
-                                <span class="nav-icon" style="font-size:11px;">🤖</span> AI Batch
+                                <span class="nav-icon" style="font-size:11px;">🤖</span> Data Analysis
+                            </NavLink>
+                        </div>
+                    }
+                    @if (can(AppMenus.DiDb))
+                    {
+                        <div class="nav-item">
+                            <NavLink class="nav-link nav-sublink" href="data-inference/db">
+                                <span class="nav-icon" style="font-size:11px;">🗄</span> Dataset Results
                             </NavLink>
                         </div>
                     }
@@ -139,15 +172,7 @@
                     {
                         <div class="nav-item">
                             <NavLink class="nav-link nav-sublink" href="data-inference/analysis">
-                                <span class="nav-icon" style="font-size:11px;">📈</span> Analysis
-                            </NavLink>
-                        </div>
-                    }
-                    @if (can(AppMenus.DiValidation))
-                    {
-                        <div class="nav-item">
-                            <NavLink class="nav-link nav-sublink" href="data-inference/validation">
-                                <span class="nav-icon" style="font-size:11px;">🧪</span> Validation
+                                <span class="nav-icon" style="font-size:11px;">📊</span> Aggregated Results
                             </NavLink>
                         </div>
                     }
@@ -156,14 +181,6 @@
                         <div class="nav-item">
                             <NavLink class="nav-link nav-sublink" href="data-inference/ask">
                                 <span class="nav-icon" style="font-size:11px;">💬</span> Ask AI
-                            </NavLink>
-                        </div>
-                    }
-                    @if (can(AppMenus.Report))
-                    {
-                        <div class="nav-item">
-                            <NavLink class="nav-link nav-sublink" href="report">
-                                <span class="nav-icon" style="font-size:11px;">📊</span> Report
                             </NavLink>
                         </div>
                     }
@@ -213,6 +230,14 @@
             <div class="nav-item">
                 <NavLink class="nav-link" href="admin/paths">
                     <span class="nav-icon">📁</span> App Paths
+                </NavLink>
+            </div>
+        }
+        @if (can(AppMenus.TestExcelConverter))
+        {
+            <div class="nav-item">
+                <NavLink class="nav-link" href="admin/test-excel-converter">
+                    <span class="nav-icon">📑</span> Test Excel Converter
                 </NavLink>
             </div>
         }

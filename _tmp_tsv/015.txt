@@ -1,0 +1,56 @@
+## 26.03
+TITLE		BRS-161016 REPORT CHECK NG OVER BOND AND MAKE SAMPLE TEST MAIN LINE													Dept	ME
+															Date	2025-03-26 0:00:00
+															Marker	Nhung
+I. Purpose.																
+ - Customer SEV happen NG hearing => Check reason is partical glue => Check NG rate NG over bond in process vision BP/SM, visio Yoke => Make sample NG over bond bigger limit and move main line test																
+II. Content.																
+- Check NG rate Over bond																
+- Make sample NG over bond																
+- Move main line check function																
+III. Result 																
+	RESULT CHECK NG OVER GLUE SUB YOKE 161016-D2															
+	STT	Process		Input	NG	NG Rate										
+	1	Vision Bond BP/SM		150	0	0										
+	2	Vision Bond MG/PT		150	0	0										
+	3	Vision Bond Yoke		150	25	0.166666666666667										
+	MAKE SAMPLE 2 TYPE OVER GLUE AND TEST MAIN LINE CHECK FUNCTION															
+	STT	Type			Q'ty	Picture										
+	1	Type 1: NG Over bond BP/SM			100											
+	2	Type 2: NG Over bond Yoke			100											
+	RESULT CHECKING FUNCTION															
+	Date	Line	Type		Input 	OK  	Air leak	NG Sigma 				NG Hearing 		Total NG	Total NG rate	
+								SPL 	THD 	SPL+THD 	SPL+THD+F0	Noise 	Touch 			
+	2025-03-28 0:00:00	E2-3A	Type 1: NG Over bond BP/SM		100	99	0	0	1	0	0	0	0	1	0.01	
+			Type 2: NG Over bond Yoke		100	97	0	0	0	2	0	1	0	3	0.03	
+			Normal 		100	97	0	0	0	0	0	3	0	3	0.03	
+IV. Decision																
+
+## Analyse NG Over bond Yoke 28.3
+TITLE		REPORT ANALYZE NG FUNCTION MODEL BRS-161014													Dept	ME 			
+															Date	2025-03-28 0:00:00			
+															Maker	CUC			
+1. Problem																			
+-NG function BRS-161014 																			
+2. Result NG 																			
+- Type total function NG  : 4pcs																			
+3. Result analysis NG Function																			
+- Data analysis 																			No
+            NG Hearing Noise 																			
+	TYPE				Total	Q'ty	Portion	Decap reason											
+	Glue Clots				3	3	1												
+4. DECISION																			
+			RESULT ANALYSE NG HEARING OF BRS 161014																
+			No	Reason NG	Q'ty analyse	Q'ty NG	NG rate	Portion											
+			1	Glue Clots	3	3	1	1											
+				.															
+
+## Analyse NG Over Glue BP+SM 28.3
+TITLE		REPORT ANALYZE NG FUNCTION MODEL BRS-161014																					Dept	ME 			
+																							Date	2025-03-28 0:00:00			
+																							Maker	CUC			
+- Data analysis 																											No
+	TYPE				Total	Q'ty	Portion	Decap reason																			
+	Glue Clots				1	1	1																				
+			No	Reason NG	Q'ty analyse	Q'ty NG	NG rate	Portion																			
+			1	Glue Clots	1	1	1	1																			

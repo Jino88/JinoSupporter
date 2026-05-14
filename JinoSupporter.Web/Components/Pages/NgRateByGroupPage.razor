@@ -28,6 +28,10 @@
                 title="Current view: By Group">
             🧩 By Group
         </button>
+        <a href="/ng-rate-for-weekly-report" class="btn btn-outline-secondary"
+           title="Switch to For Weekly Report — same as By Group, with all Date columns hidden.">
+            📅 For Weekly Report
+        </a>
     </div>
 </div>
 
@@ -107,7 +111,7 @@
                 @if (_groups.Count == 0)
                 {
                     <div class="text-muted small">
-                        No saved groups. Please create a group first at <a href="/bmes/make-model-group" target="_blank">Make ModelGroup Data</a>.
+                        No saved groups. Please create a group first at <a href="/bmes/make-model-group" target="_blank">Model Group</a>.
                     </div>
                 }
                 else
@@ -445,53 +449,34 @@
                                         </td>
                                         @foreach (var col in VisibleDateCols)
                                         {
-                                            double v = MidGroupPpm(gName, mid.Material, col.Key);
+                                            double v = MidPpmAvgOfSubs(gName, mid, col.Key);
                                             <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
                                         }
                                         @if (VisibleDateCols.Count > 0) { <td class="sep-td"></td> }
                                         @foreach (var col in VisibleWeekCols)
                                         {
-                                            double v = MidGroupPpm(gName, mid.Material, col.Key);
+                                            double v = MidPpmAvgOfSubs(gName, mid, col.Key);
                                             <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
                                         }
                                         @if (VisibleWeekCols.Count > 0) { <td class="sep-td"></td> }
                                         @foreach (var col in VisibleMonthCols)
                                         {
-                                            double v = MidGroupPpm(gName, mid.Material, col.Key);
+                                            double v = MidPpmAvgOfSubs(gName, mid, col.Key);
                                             <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
                                         }
                                     </tr>
 
                                     @if (midExp)
                                     {
-                                        @foreach (var ls in mid.LineShifts)
-                                        {
-                                            var mRows = _reportByModel?.GroupSummary.GetValueOrDefault(ls);
-                                            var mTot  = mRows?.FirstOrDefault(r => r.IsTotal);
-                                            <tr class="grp-ls-row">
-                                                <td class="label-td ps-5 font-monospace" style="font-size:11px;">
-                                                    <span class="ls-badge">Sub</span>
-                                                    <span class="ms-1">@ls</span>
-                                                </td>
-                                                @foreach (var col in VisibleDateCols)
-                                                {
-                                                    double v = mTot?.Ppm.GetValueOrDefault(col.Key) ?? 0;
-                                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
-                                                }
-                                                @if (VisibleDateCols.Count > 0) { <td class="sep-td"></td> }
-                                                @foreach (var col in VisibleWeekCols)
-                                                {
-                                                    double v = mTot?.Ppm.GetValueOrDefault(col.Key) ?? 0;
-                                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
-                                                }
-                                                @if (VisibleWeekCols.Count > 0) { <td class="sep-td"></td> }
-                                                @foreach (var col in VisibleMonthCols)
-                                                {
-                                                    double v = mTot?.Ppm.GetValueOrDefault(col.Key) ?? 0;
-                                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
-                                                }
-                                            </tr>
-                                        }
+                                        <HierSubRows GroupName="@gName" Mid="@mid" Lookup="@_hierLookup"
+                                                     DateCols="@VisibleDateCols" WeekCols="@VisibleWeekCols" MonthCols="@VisibleMonthCols"
+                                                     Expanded="@_expandedSub1s"
+                                                     Sub1RowClass="grp-sub-row grp-sub1-row"
+                                                     Sub2RowClass="grp-sub-row grp-sub2-row"
+                                                     LineShiftRowClass="grp-ls-row"
+                                                     ExpandableRowClass="grp-sub-expandable"
+                                                     BasePadPx="24"
+                                                     FormatPpm="@FormatPpm" />
                                     }
                                 }
                             }
@@ -693,6 +678,14 @@
     .grp-ls-row td {
         background: #fff; color: #64748b; font-size: 11px;
     }
+    /* Sub1 / Sub2 / LineShift hierarchical sub rows under each Mid */
+    .grp-sub1-row td { background: #f5f3ff; color: #1e293b; font-weight: 600; }
+    .grp-sub2-row td { background: #fff;    color: #64748b; font-size: 11px;  }
+    .grp-ls-row   td { background: #fafafa; color: #94a3b8; font-size: 10.5px;
+                       font-style: italic; border-top: 1px dashed #f1f5f9;
+                       font-family: monospace; }
+    .grp-sub-expandable { cursor: pointer; }
+    .grp-sub-expandable:hover td { filter: brightness(0.97); }
     .top10-table {
         table-layout: fixed;
     }
@@ -724,9 +717,13 @@
     private NgRateReportService.NgRateReport?       _report;
     private NgRateReportService.NgRateReport?       _reportByMid;
     private NgRateReportService.NgRateReport?       _reportByModel;
+    private NgRateReportService.NgRateReport?       _reportBySubGroup;   // top-level Sub (Sub1) — full subtree aggregate
+    private NgRateReportService.NgRateReport?       _reportBySubLeaf;    // every named Sub leaf with its own bucket
     private NgRateReportService.LineShiftNgReport?  _lsNgReport;
     private NgRateReportService.LineShiftNgReport?  _midNgReport;
+    private HierPpmLookup                           _hierLookup = new();
     private HashSet<string>                         _expandedMids = new(StringComparer.Ordinal);
+    private HashSet<string>                         _expandedSub1s = new(StringComparer.Ordinal);
     private bool           _isReportBusy;
     private string         _reportError = string.Empty;
     private HashSet<string> _expandedGroups      = new(StringComparer.Ordinal);
@@ -887,11 +884,17 @@
         return row.Ppm.GetValueOrDefault(colKey);
     }
 
-    /// <summary>대그룹 PPM — 멤버 중그룹들의 processType별 PPM 평균 (값>0만).</summary>
+    /// <summary>대그룹 PPM — 멤버 중그룹들의 PPM 평균 (값>0만).
+    /// Total(processType=null)일 때는 Mid를 Sub1-평균 값으로 가져와서 combo-sum 누적
+    /// 부풀림을 막고, ProcessType 별 분해는 기존대로 _reportByMid 의 PT 행을 평균.</summary>
     private double MeanOfMembers(string groupName, string colKey, string? processType)
     {
         var grp = _groups.FirstOrDefault(g => g.Name == groupName);
         if (grp is null || grp.MidGroups.Count == 0 || _reportByMid is null) return 0;
+
+        // Total 한 번에 averaging. Sub1 평균까지 일관되게 적용.
+        if (processType is null)
+            return _hierLookup.GroupAvgOfMids(grp, colKey);
 
         double sum = 0;
         int    cnt = 0;
@@ -975,13 +978,16 @@
     private async Task GetReportAsync()
     {
         if (_isReportBusy || _selectedGroupNames.Count == 0) return;
-        _isReportBusy  = true;
-        _reportError   = string.Empty;
-        _report        = null;
-        _reportByMid   = null;
-        _reportByModel = null;
-        _lsNgReport    = null;
-        _midNgReport   = null;
+        _isReportBusy     = true;
+        _reportError      = string.Empty;
+        _report           = null;
+        _reportByMid      = null;
+        _reportByModel    = null;
+        _reportBySubGroup = null;
+        _reportBySubLeaf  = null;
+        _hierLookup       = new();
+        _lsNgReport       = null;
+        _midNgReport      = null;
         StateHasChanged();
 
         try
@@ -993,11 +999,15 @@
                 return;
             }
 
-            var mapping      = new Dictionary<string, string>(StringComparer.Ordinal); // LS → 대그룹
-            var midMapping   = new Dictionary<string, string>(StringComparer.Ordinal); // LS → 중그룹 (Material)
-            var modelMapping = new Dictionary<string, string>(StringComparer.Ordinal); // LS → LS (per-LS pseudo-group)
+            var mapping        = new Dictionary<string, string>(StringComparer.Ordinal); // LS → 대그룹
+            var midMapping     = new Dictionary<string, string>(StringComparer.Ordinal); // LS → 중그룹 (Material)
+            var subMapping     = new Dictionary<string, string>(StringComparer.Ordinal); // LS → top-level Sub key (Sub1) — subtree aggregate
+            var subLeafMapping = new Dictionary<string, string>(StringComparer.Ordinal); // LS → leaf path key (Sub2+) — per-node bucket
+            var modelMapping   = new Dictionary<string, string>(StringComparer.Ordinal); // LS → LS (per-LS pseudo-group)
             var groupList    = new List<string>();
             var midList      = new List<string>();
+            var subList      = new List<string>();
+            var subLeafList  = new List<string>();
             var modelList    = new List<string>();
             foreach (var g in _groups.Where(g => _selectedGroupNames.Contains(g.Name)))
             {
@@ -1006,6 +1016,23 @@
                 {
                     string matKey = $"{g.Name}::{mid.Material}"; // namespace by 대그룹 to avoid clashes
                     if (!midList.Contains(matKey)) midList.Add(matKey);
+
+                    // Sub1 mapping: each top-level sub aggregates its full subtree;
+                    // Sub-leaf mapping: each named node with direct LS gets its own bucket.
+                    foreach (var sub in mid.SubGroups)
+                    {
+                        string subKey = ModelGroupPickerHelpers.SubGroupKeyOf(g.Name, mid.Material, sub);
+                        if (!subList.Contains(subKey)) subList.Add(subKey);
+                        foreach (var ls in sub.AllLineShifts)
+                        {
+                            if (string.IsNullOrEmpty(ls)) continue;
+                            subMapping[ls] = subKey;
+                        }
+                        ModelGroupPickerHelpers.BuildSubLeafMapping(
+                            g.Name, mid.Material, sub, parentPath: string.Empty,
+                            subLeafMapping, subLeafList);
+                    }
+
                     foreach (var ls in mid.LineShifts)
                     {
                         if (string.IsNullOrEmpty(ls)) continue;
@@ -1024,11 +1051,27 @@
             }
 
             var progress = new Progress<string>(_ => { });
-            _report        = await NgRateReportSvc.GenerateReportAsync(dbPath, mapping,      groupList, progress);
-            _reportByMid   = await NgRateReportSvc.GenerateReportAsync(dbPath, midMapping,   midList,   progress);
-            _reportByModel = await NgRateReportSvc.GenerateReportAsync(dbPath, modelMapping, modelList, progress);
+            _report           = await NgRateReportSvc.GenerateReportAsync(dbPath, mapping,      groupList, progress);
+            _reportByMid      = await NgRateReportSvc.GenerateReportAsync(dbPath, midMapping,   midList,   progress);
+            _reportByModel    = await NgRateReportSvc.GenerateReportAsync(dbPath, modelMapping, modelList, progress);
+            _reportBySubGroup = subList.Count > 0
+                ? await NgRateReportSvc.GenerateReportAsync(dbPath, subMapping, subList, progress)
+                : null;
+            _reportBySubLeaf = subLeafList.Count > 0
+                ? await NgRateReportSvc.GenerateReportAsync(dbPath, subLeafMapping, subLeafList, progress)
+                : null;
             _lsNgReport    = await NgRateReportSvc.ComputeLineShiftNgDetailsAsync(dbPath, modelList, progress);
             _midNgReport   = await NgRateReportSvc.ComputeGroupedNgDetailsAsync(dbPath, midMapping, progress);
+
+            // Wire up HierPpmLookup so the shared <HierSubRows> component reads PPMs
+            // through the same channels other NgRate pages use.
+            _hierLookup = new HierPpmLookup
+            {
+                ByGroup = _report,    ByMid  = _reportByMid,
+                BySub1  = _reportBySubGroup, BySub2 = _reportBySubLeaf,
+                ByLs    = _reportByModel,
+            };
+
             _pendingChartRender = true;
         }
         catch (Exception ex)
@@ -1109,6 +1152,16 @@
     {
         if (!_expandedMids.Remove(midKey)) _expandedMids.Add(midKey);
     }
+
+    private void ToggleExpandSub1(string sub1Key)
+    {
+        if (!_expandedSub1s.Remove(sub1Key)) _expandedSub1s.Add(sub1Key);
+    }
+
+    /// <summary>Mid PPM = simple average of its Sub1 PPMs — delegates to the shared
+    /// <see cref="HierPpmLookup"/> so all NgRate views use the same math.</summary>
+    private double MidPpmAvgOfSubs(string groupName, MidGroupRecord mid, string colKey)
+        => _hierLookup.MidAvgOfSubs(groupName, mid, colKey);
 
     private static string FormatPpm(double v)
         => v == 0 ? "-" : ((long)Math.Round(v)).ToString("N0");

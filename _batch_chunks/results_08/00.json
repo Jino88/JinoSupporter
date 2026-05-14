@@ -1,0 +1,48 @@
+{
+  "name": "14. BRS-161016  Report Test material PT 161016 Happen NG Hardness date16.10.2025",
+  "result": {
+    "productType": "BRS-161016",
+    "measurements": [
+      {"productType":"BRS-161016","testDate":"2025-10-15","line":"C2-5A","checkType":"process","variable":"Decap check bond","variableDetail":"PT Test","variableGroup":"test","intervention":"PT 161014-C low-hardness material","inputQty":10,"okQty":10,"ngTotal":0,"ngRate":0.0,"defectCategory":"assembly_defect","defectType":"","defectCount":0},
+      {"productType":"BRS-161016","testDate":"2025-10-15","line":"C2-5A","checkType":"process","variable":"Decap check bond","variableDetail":"Normal","variableGroup":"normal","intervention":"","inputQty":10,"okQty":10,"ngTotal":0,"ngRate":0.0,"defectCategory":"assembly_defect","defectType":"","defectCount":0},
+      {"productType":"BRS-161016","testDate":"2025-10-16","line":"E2-3A","checkType":"function","variable":"Function check","variableDetail":"PT Test","variableGroup":"test","intervention":"PT 161014-C low-hardness material","inputQty":975,"okQty":956,"ngTotal":19,"ngRate":1.9,"defectCategory":"function_hearing","defectType":"Touch","defectCount":19},
+      {"productType":"BRS-161016","testDate":"2025-10-16","line":"E2-3A","checkType":"function","variable":"Function check","variableDetail":"Normal","variableGroup":"normal","intervention":"","inputQty":559,"okQty":536,"ngTotal":23,"ngRate":4.1,"defectCategory":"function_hearing","defectType":"","defectCount":0},
+      {"productType":"BRS-161016","testDate":"2025-10-16","line":"E2-3A","checkType":"function","variable":"Function check","variableDetail":"Normal","variableGroup":"normal","intervention":"","inputQty":559,"okQty":536,"ngTotal":23,"ngRate":4.1,"defectCategory":"function_thd","defectType":"THD","defectCount":1},
+      {"productType":"BRS-161016","testDate":"2025-10-16","line":"E2-3A","checkType":"function","variable":"Function check","variableDetail":"Normal","variableGroup":"normal","intervention":"","inputQty":559,"okQty":536,"ngTotal":23,"ngRate":4.1,"defectCategory":"function_spl","defectType":"SPL+THD","defectCount":1},
+      {"productType":"BRS-161016","testDate":"2025-10-16","line":"E2-3A","checkType":"function","variable":"Function check","variableDetail":"Normal","variableGroup":"normal","intervention":"","inputQty":559,"okQty":536,"ngTotal":23,"ngRate":4.1,"defectCategory":"function_spl","defectType":"SPL+THD+F0","defectCount":3},
+      {"productType":"BRS-161016","testDate":"2025-10-16","line":"E2-3A","checkType":"function","variable":"Function check","variableDetail":"Normal","variableGroup":"normal","intervention":"","inputQty":559,"okQty":536,"ngTotal":23,"ngRate":4.1,"defectCategory":"function_hearing","defectType":"Noise","defectCount":7},
+      {"productType":"BRS-161016","testDate":"2025-10-16","line":"E2-3A","checkType":"function","variable":"Function check","variableDetail":"Normal","variableGroup":"normal","intervention":"","inputQty":559,"okQty":536,"ngTotal":23,"ngRate":4.1,"defectCategory":"function_hearing","defectType":"Touch","defectCount":11},
+      {"productType":"BRS-161016","testDate":"2025-10-16","line":"E2-3A","checkType":"function","variable":"Drop Test Manual","variableDetail":"PT Test","variableGroup":"test","intervention":"PT 161014-C low-hardness material","inputQty":8,"okQty":8,"ngTotal":0,"ngRate":0.0,"defectCategory":"assembly_defect","defectType":"","defectCount":0},
+      {"productType":"BRS-161016","testDate":"2025-10-16","line":"E2-3A","checkType":"function","variable":"Drop Test Manual","variableDetail":"Normal","variableGroup":"normal","intervention":"","inputQty":15,"okQty":15,"ngTotal":0,"ngRate":0.0,"defectCategory":"assembly_defect","defectType":"","defectCount":0},
+      {"productType":"BRS-161016","testDate":"2025-10-16","line":"E2-3A","checkType":"function","variable":"Drop Test Auto","variableDetail":"PT Test","variableGroup":"test","intervention":"PT 161014-C low-hardness material","inputQty":8,"okQty":8,"ngTotal":0,"ngRate":0.0,"defectCategory":"assembly_defect","defectType":"","defectCount":0},
+      {"productType":"BRS-161016","testDate":"2025-10-16","line":"E2-3A","checkType":"function","variable":"Drop Test Auto","variableDetail":"Normal","variableGroup":"normal","intervention":"","inputQty":15,"okQty":15,"ngTotal":0,"ngRate":0.0,"defectCategory":"assembly_defect","defectType":"","defectCount":0}
+    ],
+    "tags":["brs-161016","material-test","pt-plate","hardness-ng","supplier-hanoi-yousteel","function-check","drop-test"],
+    "reportType":"comparison_study",
+    "verdict":"improved",
+    "headline":"PT 161014-C low-hardness material function NG 1.9% vs Normal 4.1% (-2.2pp, improved)",
+    "evidence":[
+      {"metric":"Decap bond NG","baselineLabel":"Normal","baselineValue":"0.0% (0/10)","variantLabel":"PT Test","variantValue":"0.0% (0/10)","deltaText":"+0pp","deltaSign":"no_change","note":"","comparisons":null,"bestLabel":"","worstLabel":""},
+      {"metric":"Function NG rate","baselineLabel":"Normal","baselineValue":"4.1% (23/559)","variantLabel":"PT Test","variantValue":"1.9% (19/975)","deltaText":"-2.2pp","deltaSign":"down","note":"","comparisons":null,"bestLabel":"","worstLabel":""},
+      {"metric":"Drop test (manual+auto)","baselineLabel":"Normal","baselineValue":"0.0% (0/30)","variantLabel":"PT Test","variantValue":"0.0% (0/16)","deltaText":"+0pp","deltaSign":"no_change","note":"","comparisons":null,"bestLabel":"","worstLabel":""}
+    ],
+    "actions":[
+      {"priority":1,"kind":"action","text":"Approve PT 161014-C low-hardness lot from HANOI YOU STEEL for use."}
+    ],
+    "context":{"process":"PT plate material qualification (hardness NG lot)","stage":"Sub line decap + E2-3A function + drop test","baselineReason":"same-event Normal row present"},
+    "doeGrid":null,"trendPoints":null,
+    "summary":"","keyFindings":"","purpose":"","testConditions":"","rootCause":"","decision":"","recommendedAction":""
+  },
+  "tr_ko": {
+    "headline":"PT 161014-C 저경도 자재 기능 NG 1.9% vs Normal 4.1% (-2.2pp, 개선)",
+    "actions":[{"priority":1,"kind":"action","text":"HANOI YOU STEEL 의 PT 161014-C 저경도 로트 사용 승인."}],
+    "context":{"process":"PT 플레이트 자재 적격성 평가 (경도 NG 로트)","stage":"Sub 라인 decap + E2-3A 기능 + 낙하시험","baselineReason":"동일 이벤트에 Normal 행 존재"},
+    "summary":"","keyFindings":"","purpose":"","testConditions":"","rootCause":"","decision":"","recommendedAction":""
+  },
+  "tr_vi": {
+    "headline":"Vật liệu PT 161014-C độ cứng thấp NG chức năng 1.9% vs Normal 4.1% (-2.2pp, cải thiện)",
+    "actions":[{"priority":1,"kind":"action","text":"Phê duyệt sử dụng lô PT 161014-C độ cứng thấp từ HANOI YOU STEEL."}],
+    "context":{"process":"Đánh giá vật liệu tấm PT (lô NG độ cứng)","stage":"Decap chuyền phụ + chức năng E2-3A + drop test","baselineReason":"có hàng Normal trong cùng sự kiện"},
+    "summary":"","keyFindings":"","purpose":"","testConditions":"","rootCause":"","decision":"","recommendedAction":""
+  }
+}

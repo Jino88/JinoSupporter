@@ -1,0 +1,32 @@
+14. BRS-161014 DT Report test change MC open test  from manual to MC auto  date 29.1.2024
+=====
+## 29.01
+〔bg=#BFBFBF,b〕TITLE		〔b〕BRS-161014DT - REPORT TEST CHANGE MC OPEN TEST FROM MANUAL TO MC AUTO 													〔bg=#BFBFBF,b〕Dept	〔b〕ME
+															〔bg=#BFBFBF,b〕Date	〔b〕29/Jan
+															〔bg=#BFBFBF,b〕Marker	〔b〕Le
+〔bg=#BFBFBF,b〕I. Purpose.																
+ - Test compare value DCR of  process open test and Impedance sigma 																
+〔bg=#BFBFBF,b〕II. Content.																
+ - Make coil reduce turn :47 turn  																
+ - Make coil increase turn : 64 turn 																
+ - Actual : 54 turn 																
+〔bg=#BFBFBF,b〕III. Result 																
+	〔b〕1. RESULT CHECKING PROCESS 															
+	〔bg=#9BC2E6〕No	〔bg=#9BC2E6〕Date 	〔bg=#9BC2E6〕Type 	〔bg=#9BC2E6〕Prrocess	〔bg=#9BC2E6〕Spec   	〔bg=#9BC2E6〕Value 	〔bg=#9BC2E6〕Note 									
+	1	1/29/2024	47 turn 	〔bg=#F8CBAD〕Open test 	〔bg=#F8CBAD〕5.4-6.6Ω	〔bg=#F8CBAD〕5.0Ω		NG   								
+	2			〔bg=#F8CBAD〕Sigma 	〔bg=#F8CBAD〕6.69-9.3Ω	〔bg=#F8CBAD〕6.04Ω	〔bg=#F8CBAD〕At 1Khz	NG   								
+	3			Open test 	5.4-6.6Ω	5.3Ω		NG   								
+	3			Sigma 	6.69-9.3Ω	6.12Ω	At 2Khz	NG   								
+	4		64 turn 	〔bg=#F8CBAD〕Open test 	〔bg=#F8CBAD〕5.4-6.6Ω	〔bg=#F8CBAD〕6.8Ω		NG   								
+	5			〔bg=#F8CBAD〕Sigma 	〔bg=#F8CBAD〕6.69-9.3Ω	〔bg=#F8CBAD〕7.81Ω	〔bg=#F8CBAD〕At 1Khz	〔bg=#70AD47〕OK								
+	6			Open test 	5.4-6.6Ω	7.2Ω		NG   								
+	7			Sigma 	6.69-9.3Ω	7.85Ω	At 2Khz	〔bg=#70AD47〕OK								
+	 - Actual of open test check at 1Khz : 5.4-6.6Ω                     															
+	 Sigma impedance  check at 2Khz :  6.69-9.3Ω 															
+	 + NG DCR low => Sigma check detect NG impendance 															
+	 + NG DCR high  => Sigma check not detect NG impendance 															
+	Type 	Picture 														
+		〔bg=#9BC2E6〕47 Turn - 1HZ 						〔bg=#9BC2E6〕64 Turn - 1HZ 								
+	1															
+	2	〔bg=#9BC2E6〕47 Turn - 2HZ 						〔bg=#9BC2E6〕64 Turn - 2HZ 								
+〔bg=#BFBFBF,b〕4. Decision																
