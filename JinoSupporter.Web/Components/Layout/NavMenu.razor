@@ -36,10 +36,11 @@
         bool showDi =
             can(AppMenus.DiInputTest) || can(AppMenus.DiBatch) ||
             can(AppMenus.DiDb)        || can(AppMenus.DiAnalysis) ||
-            can(AppMenus.DiAsk);
+            can(AppMenus.DiModelAnalysis) || can(AppMenus.DiAsk);
 
+        bool showSchedule = can(AppMenus.Schedule);
         bool showAdmin = can(AppMenus.AdminUsers) || can(AppMenus.AdminSettings) || can(AppMenus.AdminAiUsages) || can(AppMenus.AdminPaths) || can(AppMenus.TestExcelConverter);
-        bool showTools = can(AppMenus.Schedule) || can(AppMenus.Translate) || showDi;
+        bool showTools = showSchedule || can(AppMenus.GraphMaker) || can(AppMenus.Translate) || showDi;
     }
 
     @if (showBmes)
@@ -120,13 +121,29 @@
     {
         <div class="nav-section" style="margin-top:12px;">Tools</div>
 
-        @if (can(AppMenus.Schedule))
+        @if (showSchedule)
         {
             <div class="nav-item">
-                <NavLink class="nav-link" href="schedule">
+                <button class="nav-link nav-group-toggle @(IsScheduleActive ? "active" : "")"
+                        @onclick="ToggleSchedule"
+                        @onclick:stopPropagation="true">
                     <span class="nav-icon">📅</span> Schedule
-                </NavLink>
+                    <span class="nav-caret @(_scheduleOpen ? "open" : "")">›</span>
+                </button>
             </div>
+            @if (_scheduleOpen)
+            {
+                <div class="nav-submenu">
+                    @if (can(AppMenus.Schedule))
+                    {
+                        <div class="nav-item">
+                            <NavLink class="nav-link nav-sublink" href="schedule">
+                                <span class="nav-icon" style="font-size:11px;">GN</span> GN LAB Schedule
+                            </NavLink>
+                        </div>
+                    }
+                </div>
+            }
         }
 
         @if (showDi)
@@ -176,6 +193,14 @@
                             </NavLink>
                         </div>
                     }
+                    @if (can(AppMenus.DiModelAnalysis))
+                    {
+                        <div class="nav-item">
+                            <NavLink class="nav-link nav-sublink" href="data-inference/model-analysis">
+                                <span class="nav-icon" style="font-size:11px;">MA</span> Each Model Analysis
+                            </NavLink>
+                        </div>
+                    }
                     @if (can(AppMenus.DiAsk))
                     {
                         <div class="nav-item">
@@ -186,6 +211,15 @@
                     }
                 </div>
             }
+        }
+
+        @if (can(AppMenus.GraphMaker))
+        {
+            <div class="nav-item">
+                <NavLink class="nav-link" href="tools/graph-maker">
+                    <span class="nav-icon">GM</span> Graph Maker
+                </NavLink>
+            </div>
         }
 
         @if (can(AppMenus.Translate))
@@ -274,18 +308,21 @@
 
 @code {
     private bool _bmesOpen;
+    private bool _scheduleOpen;
     private bool _diOpen;
 
     protected override void OnInitialized()
     {
-        _bmesOpen = IsBmesActive;
-        _diOpen   = IsDataInferenceActive;
+        _bmesOpen     = IsBmesActive;
+        _scheduleOpen = IsScheduleActive;
+        _diOpen       = IsDataInferenceActive;
         Nav.LocationChanged += OnLocationChanged;
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
-        if (IsBmesActive       && !_bmesOpen) _bmesOpen = true;
+        if (IsBmesActive       && !_bmesOpen)     _bmesOpen     = true;
+        if (IsScheduleActive   && !_scheduleOpen) _scheduleOpen = true;
         if (IsDataInferenceActive && !_diOpen)   _diOpen   = true;
         InvokeAsync(StateHasChanged);
     }
@@ -300,7 +337,11 @@
         Nav.Uri.Contains("/data-inference", StringComparison.OrdinalIgnoreCase) ||
         Nav.Uri.Contains("/report",         StringComparison.OrdinalIgnoreCase);
 
+    private bool IsScheduleActive =>
+        Nav.Uri.Contains("/schedule", StringComparison.OrdinalIgnoreCase);
+
     private void ToggleBmes()          => _bmesOpen = !_bmesOpen;
+    private void ToggleSchedule()      => _scheduleOpen = !_scheduleOpen;
     private void ToggleDataInference() => _diOpen   = !_diOpen;
 
     private async Task OnNavScrollableClick()

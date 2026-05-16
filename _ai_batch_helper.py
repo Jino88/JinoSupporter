@@ -20,10 +20,29 @@ import sqlite3, json, uuid, hashlib, sys, os, io, re, zipfile, xml.etree.Element
 if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-DB_PATH = r'D:\000. MyWorks\002. DB\process-review.db'
-TARGETS_FILE = r'D:\000. MyWorks\005. Program\Repository\JinoSupporter\_batch_selected_20260514_103523_5e33693_1.txt'
-PROGRESS_FILE = r'D:\000. MyWorks\005. Program\Repository\JinoSupporter\_ai_batch_progress.jsonl'
-FAILED_FILE = r'D:\000. MyWorks\005. Program\Repository\JinoSupporter\_ai_batch_failed.txt'
+DEFAULT_DB_PATH = r'D:\000. MyWorks\002. DB\process-review.db'
+DEFAULT_TARGETS_FILE = r'D:\000. MyWorks\005. Program\Repository\JinoSupporter\_batch_selected.txt'
+DEFAULT_PROGRESS_FILE = r'D:\000. MyWorks\005. Program\Repository\JinoSupporter\_ai_batch_progress.jsonl'
+DEFAULT_FAILED_FILE = r'D:\000. MyWorks\005. Program\Repository\JinoSupporter\_ai_batch_failed.txt'
+
+DB_PATH = os.environ.get('AI_BATCH_DB_PATH') or DEFAULT_DB_PATH
+TARGETS_FILE = os.environ.get('AI_BATCH_TARGETS_FILE') or DEFAULT_TARGETS_FILE
+PROGRESS_FILE = os.environ.get('AI_BATCH_PROGRESS_FILE') or DEFAULT_PROGRESS_FILE
+FAILED_FILE = os.environ.get('AI_BATCH_FAILED_FILE') or DEFAULT_FAILED_FILE
+
+
+def configure(db_path: str | None = None, targets_file: str | None = None,
+              progress_file: str | None = None, failed_file: str | None = None) -> None:
+    """Override runtime paths for one batch session."""
+    global DB_PATH, TARGETS_FILE, PROGRESS_FILE, FAILED_FILE
+    if db_path:
+        DB_PATH = db_path
+    if targets_file:
+        TARGETS_FILE = targets_file
+    if progress_file:
+        PROGRESS_FILE = progress_file
+    if failed_file:
+        FAILED_FILE = failed_file
 
 
 def now_iso() -> str:
@@ -36,8 +55,179 @@ def open_db() -> sqlite3.Connection:
     return con
 
 
-def load_targets() -> list[str]:
-    with open(TARGETS_FILE, 'r', encoding='utf-8-sig') as f:
+def ensure_schema(con: sqlite3.Connection) -> None:
+    cols = {row[1].lower() for row in con.execute('PRAGMA table_info(AiDocuments)').fetchall()}
+    if 'generatedreportmarkdown' not in cols:
+        con.execute("ALTER TABLE AiDocuments ADD COLUMN GeneratedReportMarkdown TEXT NOT NULL DEFAULT ''")
+    tr_cols = {row[1].lower() for row in con.execute('PRAGMA table_info(AiDocumentTranslations)').fetchall()}
+    if 'generatedreportmarkdown' not in tr_cols:
+        con.execute("ALTER TABLE AiDocumentTranslations ADD COLUMN GeneratedReportMarkdown TEXT NOT NULL DEFAULT ''")
+
+
+def _generated_report_markdown(result: dict) -> str:
+    """Return the AI-authored report markdown from the accepted payload shape."""
+    doc = result.get('document') or {}
+    generated_report = (
+        result.get('generated_report_markdown')
+        or result.get('report_markdown')
+        or result.get('generated_report')
+        or doc.get('generated_report_markdown')
+        or ''
+    )
+    if isinstance(generated_report, dict):
+        generated_report = (
+            generated_report.get('markdown')
+            or generated_report.get('ko')
+            or generated_report.get('content')
+            or ''
+        )
+    return str(generated_report or '').strip()
+
+
+def _translated_report_markdown(tr: dict, lang: str, fallback: str = '') -> str:
+    """Return one translated AI-authored report markdown from a translation dict."""
+    if not tr:
+        return fallback.strip() if lang == 'ko' else ''
+    doc = tr.get('document') or {}
+    generated_report = (
+        tr.get('generated_report_markdown')
+        or tr.get('report_markdown')
+        or tr.get('generated_report')
+        or doc.get('generated_report_markdown')
+        or doc.get('report_markdown')
+        or doc.get('generated_report')
+        or ''
+    )
+    if isinstance(generated_report, dict):
+        generated_report = (
+            generated_report.get('markdown')
+            or generated_report.get(lang)
+            or generated_report.get('content')
+            or ''
+        )
+    text = str(generated_report or '').strip()
+    return text or (fallback.strip() if lang == 'ko' else '')
+
+
+_REPORT_VISUAL_BLOCK_RE = re.compile(
+    r"```[ \t]*(report-heatmap|report-bars|report-heatmap-matrix)\b[^\r\n]*\r?\n(.*?)```",
+    re.IGNORECASE | re.DOTALL,
+)
+_REPORT_HEADING_RE = re.compile(r"(?m)^\s*#{2,3}\s+\S+")
+_REPORT_TABLE_LINE_RE = re.compile(r"(?m)^\s*\|.+\|\s*$")
+_SOURCE_CELL_RE = re.compile(
+    r"(?:'[^'\r\n]+'|[A-Za-z0-9_. ()\-]+)![A-Z]{1,3}\d+(?::[A-Z]{1,3}\d+)?",
+    re.IGNORECASE,
+)
+_BROKEN_TEXT_MARKERS = (
+    '\ufffd',
+    '?쒗',
+    '?먮',
+    '?덈',
+    '?쇱',
+    '寃',
+    '紐',
+    '怨',
+    '沼',
+    '梳',
+    '휂',
+)
+_PLACEHOLDER_REPORT_MARKERS = (
+    'batch inventory',
+    'inventory-only',
+    'parameter-only',
+    'ng (auto-extracted)',
+    'see workbook title/purpose',
+    'workbook stored but extraction surfaced narrative only',
+)
+
+
+def _has_result_rows(result: dict) -> bool:
+    rows = result.get('results') or []
+    return any(isinstance(row, dict) for row in rows)
+
+
+def _is_valid_visual_rows(value) -> bool:
+    return isinstance(value, list) and any(
+        isinstance(item, dict)
+        and any(str(item.get(key) or '').strip() for key in ('label', 'value', 'detail'))
+        for item in value
+    )
+
+
+def _is_valid_heat_matrix(value) -> bool:
+    return (
+        isinstance(value, dict)
+        and isinstance(value.get('columns'), list)
+        and len(value.get('columns') or []) > 0
+        and isinstance(value.get('rows'), list)
+        and len(value.get('rows') or []) > 0
+    )
+
+
+def _has_valid_report_visual(markdown: str) -> bool:
+    """Return true only when the AI report includes a renderable visual block."""
+    if not markdown:
+        return False
+
+    for kind, body in _REPORT_VISUAL_BLOCK_RE.findall(str(markdown)):
+        try:
+            parsed = json.loads(body.strip())
+        except Exception:
+            continue
+
+        normalized = kind.strip().lower()
+        if normalized == 'report-heatmap' and (_is_valid_visual_rows(parsed) or _is_valid_heat_matrix(parsed)):
+            return True
+        if normalized == 'report-bars' and _is_valid_visual_rows(parsed):
+            return True
+        if normalized == 'report-heatmap-matrix' and _is_valid_heat_matrix(parsed):
+            return True
+
+    return False
+
+
+def _report_quality_issues(markdown: str, has_results: bool) -> list[str]:
+    """Detect reports that are too thin to be shown as AI-authored analysis."""
+    text = str(markdown or '').strip()
+    issues: list[str] = []
+    min_chars = 1400 if has_results else 700
+    min_headings = 6 if has_results else 4
+
+    if len(text) < min_chars:
+        issues.append(f'too short ({len(text)} chars; minimum {min_chars})')
+
+    headings = _REPORT_HEADING_RE.findall(text)
+    if len(headings) < min_headings:
+        issues.append(f'too few report sections ({len(headings)}; minimum {min_headings})')
+
+    if has_results:
+        table_lines = _REPORT_TABLE_LINE_RE.findall(text)
+        if len(table_lines) < 3:
+            issues.append('missing compact markdown evidence/result table')
+        if not _has_valid_report_visual(text):
+            issues.append('missing valid AI-authored visual block')
+
+    if not _SOURCE_CELL_RE.search(text):
+        issues.append('missing auditable worksheet/cell evidence')
+
+    lower = text.lower()
+    for marker in _PLACEHOLDER_REPORT_MARKERS:
+        if marker in lower:
+            issues.append(f'placeholder report marker: {marker}')
+            break
+
+    for marker in _BROKEN_TEXT_MARKERS:
+        if marker in text:
+            issues.append('broken encoding/mojibake detected')
+            break
+
+    return issues
+
+
+def load_targets(path: str | None = None) -> list[str]:
+    target_path = path or os.environ.get('AI_BATCH_TARGETS_FILE') or TARGETS_FILE
+    with open(target_path, 'r', encoding='utf-8-sig') as f:
         return [l.rstrip('\r\n') for l in f if l.strip()]
 
 
@@ -322,12 +512,101 @@ def _is_inventory_only_result(result: dict) -> bool:
     return 'batch inventory only' in joined_trouble
 
 
+def _auto_placeholder_reason(result: dict) -> str | None:
+    """Reject heuristic fallback payloads before they overwrite real rows."""
+    doc = result.get('document') or {}
+    primary = doc.get('primary_defect')
+    if isinstance(primary, dict):
+        primary_text = str(primary.get('canonical_name') or '')
+    else:
+        primary_text = str(primary or '')
+    if 'auto-extracted' in primary_text.lower():
+        return 'rejected auto-extracted placeholder primary defect'
+
+    text = json.dumps(result, ensure_ascii=False).lower()
+    markers = (
+        '_batch_auto.py',
+        'ng (auto-extracted)',
+        'auto_extracted',
+        'see workbook title/purpose',
+        'workbook stored but extraction surfaced narrative only',
+        'extraction surfaced narrative only',
+    )
+    for marker in markers:
+        if marker in text:
+            return f'rejected fallback placeholder marker: {marker}'
+
+    return None
+
+
 def commit_dataset(name: str, result: dict, tr_ko: dict, tr_en: dict, tr_vi: dict) -> bool:
     """Insert normalized result + 3-lang translations for one dataset.
 
     Wipes any prior rows for this SourceDataset (idempotent), then INSERTs.
     Returns True on success, False on failure.
     """
+    generated_report = _generated_report_markdown(result)
+    if not generated_report:
+        reason = 'rejected parameter-only result: generated_report_markdown is required'
+        try:
+            log_failed(name, reason)
+        except Exception:
+            pass
+        print(f'[REJECTED] {name}: {reason}', file=sys.stderr)
+        return False
+
+    translated_reports = {
+        'ko': _translated_report_markdown(tr_ko, 'ko', ''),
+        'en': _translated_report_markdown(tr_en, 'en', ''),
+        'vi': _translated_report_markdown(tr_vi, 'vi', ''),
+    }
+    missing_report_langs = [lang for lang, text in translated_reports.items() if not text]
+    if missing_report_langs:
+        reason = 'rejected incomplete report translations: missing generated_report_markdown for ' + ','.join(missing_report_langs)
+        try:
+            log_failed(name, reason)
+        except Exception:
+            pass
+        print(f'[REJECTED] {name}: {reason}', file=sys.stderr)
+        return False
+
+    has_results = _has_result_rows(result)
+    quality_targets = [('result', generated_report)] + list(translated_reports.items())
+    quality_failures = []
+    for label, report_text in quality_targets:
+        issues = _report_quality_issues(report_text, has_results)
+        if issues:
+            quality_failures.append(f'{label}: ' + '; '.join(issues[:4]))
+    if quality_failures:
+        reason = 'rejected low-quality generated report: ' + ' | '.join(quality_failures)
+        try:
+            log_failed(name, reason)
+        except Exception:
+            pass
+        print(f'[REJECTED] {name}: {reason}', file=sys.stderr)
+        return False
+
+    if has_results:
+        missing_visual_reports = []
+        if not _has_valid_report_visual(generated_report):
+            missing_visual_reports.append('result')
+        missing_visual_reports.extend(
+            lang for lang, text in translated_reports.items()
+            if not _has_valid_report_visual(text)
+        )
+        if missing_visual_reports:
+            reason = (
+                'rejected report without AI-authored visual block: missing valid '
+                'report-heatmap/report-bars/report-heatmap-matrix for '
+                + ','.join(missing_visual_reports)
+            )
+            try:
+                log_failed(name, reason)
+            except Exception:
+                pass
+            print(f'[REJECTED] {name}: {reason}', file=sys.stderr)
+            return False
+
     if _is_inventory_only_result(result):
         reason = 'rejected inventory-only batch result; run real AI extraction instead'
         try:
@@ -336,9 +615,18 @@ def commit_dataset(name: str, result: dict, tr_ko: dict, tr_en: dict, tr_vi: dic
             pass
         print(f'[REJECTED] {name}: {reason}', file=sys.stderr)
         return False
+    placeholder_reason = _auto_placeholder_reason(result)
+    if placeholder_reason:
+        try:
+            log_failed(name, placeholder_reason)
+        except Exception:
+            pass
+        print(f'[REJECTED] {name}: {placeholder_reason}', file=sys.stderr)
+        return False
 
     con = open_db()
     try:
+        ensure_schema(con)
         cur = con.cursor()
         cur.execute('BEGIN')
 
@@ -383,8 +671,8 @@ def commit_dataset(name: str, result: dict, tr_ko: dict, tr_en: dict, tr_vi: dic
               (DocumentId, SourceDataset, SourceFile, Title, Model, ReportDate,
                Department, Marker, Line, ReportType, PrimaryDefect, PrimaryDefectJson,
                RelatedDefectsJson, PartsJson, ProcessesJson, Purpose, ContentJson,
-               SourceCellsJson, Confidence, SchemaVersion, RawJson, CreatedAt, UpdatedAt)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+               GeneratedReportMarkdown, SourceCellsJson, Confidence, SchemaVersion, RawJson, CreatedAt, UpdatedAt)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, (
             doc_id, name, doc.get('source_file', name), doc.get('title', '') or '',
             doc.get('model', '') or '', doc.get('report_date', '') or '',
@@ -396,6 +684,7 @@ def commit_dataset(name: str, result: dict, tr_ko: dict, tr_en: dict, tr_vi: dic
             json.dumps(doc.get('processes') or [], ensure_ascii=False),
             doc.get('purpose', '') or '',
             json.dumps(doc.get('content') or [], ensure_ascii=False),
+            generated_report,
             json.dumps(doc.get('source_cells') or {}, ensure_ascii=False),
             float(result.get('ai_extraction_log', {}).get('confidence') or 0.0),
             result.get('schema_version', '0.1'),
@@ -535,13 +824,15 @@ def commit_dataset(name: str, result: dict, tr_ko: dict, tr_en: dict, tr_vi: dic
             if not tr:
                 continue
             tdoc = (tr.get('document') or {})
+            translated_report = translated_reports.get(lang) or _translated_report_markdown(tr, lang, generated_report)
             cur.execute("""
                 INSERT OR REPLACE INTO AiDocumentTranslations
-                  (DocumentId, Lang, Title, Purpose, ContentJson, UpdatedAt)
-                VALUES (?,?,?,?,?,?)
+                  (DocumentId, Lang, Title, Purpose, ContentJson, GeneratedReportMarkdown, UpdatedAt)
+                VALUES (?,?,?,?,?,?,?)
             """, (doc_id, lang, tdoc.get('title', '') or '',
                   tdoc.get('purpose', '') or '',
-                  json.dumps(tdoc.get('content') or [], ensure_ascii=False), now))
+                  json.dumps(tdoc.get('content') or [], ensure_ascii=False),
+                  translated_report, now))
 
             tconcl = tr.get('conclusions') or {}
             for cid_raw, tc in tconcl.items():

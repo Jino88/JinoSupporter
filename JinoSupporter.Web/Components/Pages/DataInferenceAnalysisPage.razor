@@ -129,7 +129,7 @@
                     }
                     else if (_excelView == "text")
                     {
-                        <pre class="dian-excel-text">@_selectedExcelPaste</pre>
+                        <pre class="dian-excel-text">@DisplayExcelSourceText(_selectedExcelPaste)</pre>
                     }
                     else
                     {
@@ -145,7 +145,7 @@
                                                 <tr>
                                                     @foreach (var cell in row)
                                                     {
-                                                        <td style="@CellStyle(cell)">@CleanExcelSerialDateText(cell.Value)</td>
+                                                        <td style="@CellStyle(cell)">@CleanExcelDisplayText(cell.Value)</td>
                                                     }
                                                 </tr>
                                             }
@@ -539,33 +539,61 @@
         var sheets = new List<TsvSheet>();
         if (string.IsNullOrWhiteSpace(tsv)) return sheets;
 
-        string currentName = "(sheet)";
+        string currentName = "Sheet 1";
         var currentRows = new List<List<TsvCell>>();
         bool seenSheetHeader = false;
+
+        void FlushSheet()
+        {
+            if (seenSheetHeader || currentRows.Count > 0)
+            {
+                sheets.Add(new TsvSheet(currentName, currentRows));
+            }
+        }
 
         foreach (string rawLine in tsv.Split('\n'))
         {
             string line = rawLine.TrimEnd('\r');
-            if (line.StartsWith("## ", StringComparison.Ordinal))
+            if (line.StartsWith("### WORKBOOK:", StringComparison.OrdinalIgnoreCase))
             {
-                if (seenSheetHeader) sheets.Add(new TsvSheet(currentName, currentRows));
-                currentName = line[3..].Trim();
+                continue;
+            }
+            if (line.StartsWith("## ", StringComparison.Ordinal)
+                || line.StartsWith("=== SHEET:", StringComparison.OrdinalIgnoreCase))
+            {
+                if (seenSheetHeader) FlushSheet();
+                currentName = $"Sheet {sheets.Count + 1}";
                 currentRows = [];
                 seenSheetHeader = true;
+                continue;
+            }
+            if (line.StartsWith("DIMENSION:", StringComparison.OrdinalIgnoreCase)
+                || line.StartsWith("MERGED:", StringComparison.OrdinalIgnoreCase))
+            {
                 continue;
             }
             if (string.IsNullOrEmpty(line)) continue;
 
             var cells = new List<TsvCell>();
-            foreach (string raw in line.Split('\t'))
+            string rowText = line;
+            var renderedRow = System.Text.RegularExpressions.Regex.Match(
+                line,
+                @"^\s*\[r\d+\]\s*(.*)$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            string[] rawCells = renderedRow.Success
+                ? System.Text.RegularExpressions.Regex.Split(renderedRow.Groups[1].Value, @"\s+\|\s+")
+                : rowText.Split('\t');
+
+            foreach (string raw in rawCells)
             {
-                cells.Add(ParseCell(raw));
+                var cell = ParseCell(raw);
+                if (!string.IsNullOrWhiteSpace(cell.Value)) cells.Add(cell);
             }
-            currentRows.Add(cells);
+            if (cells.Count > 0) currentRows.Add(cells);
         }
 
-        if (seenSheetHeader) sheets.Add(new TsvSheet(currentName, currentRows));
-        else if (currentRows.Count > 0) sheets.Add(new TsvSheet("(sheet)", currentRows));
+        if (seenSheetHeader) FlushSheet();
+        else if (currentRows.Count > 0) sheets.Add(new TsvSheet("Sheet 1", currentRows));
         return sheets;
     }
 
@@ -573,9 +601,9 @@
     {
         const char open = '\u3014';
         const char close = '\u3015';
-        if (raw.Length == 0 || raw[0] != open) return new TsvCell(raw, null, null, false);
+        if (raw.Length == 0 || raw[0] != open) return new TsvCell(CleanExcelDisplayText(raw), null, null, false);
         int end = raw.IndexOf(close);
-        if (end < 0) return new TsvCell(raw, null, null, false);
+        if (end < 0) return new TsvCell(CleanExcelDisplayText(raw), null, null, false);
 
         string tag = raw[1..end];
         string value = raw[(end + 1)..];
@@ -589,7 +617,25 @@
             else if (p.StartsWith("fg=", StringComparison.Ordinal)) fg = p[3..];
             else if (p == "b") bold = true;
         }
-        return new TsvCell(value, bg, fg, bold);
+        return new TsvCell(CleanExcelDisplayText(value), bg, fg, bold);
+    }
+
+    private static string DisplayExcelSourceText(string rawText)
+    {
+        var sheets = ParsePastedTsv(rawText);
+        if (sheets.Count == 0) return "";
+
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < sheets.Count; i++)
+        {
+            if (i > 0) sb.AppendLine();
+            sb.AppendLine(sheets[i].Name);
+            foreach (var row in sheets[i].Rows)
+            {
+                sb.AppendLine(string.Join("\t", row.Select(cell => CleanExcelDisplayText(cell.Value))));
+            }
+        }
+        return sb.ToString().TrimEnd();
     }
 
     private static string CellStyle(TsvCell cell)
@@ -625,6 +671,35 @@
                 : m.Value,
             System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
+        return text.Trim();
+    }
+
+    private static string CleanExcelDisplayText(string? value)
+    {
+        string text = CleanExcelSerialDateText(value);
+        if (string.IsNullOrWhiteSpace(text)) return "";
+
+        var options = System.Text.RegularExpressions.RegexOptions.IgnoreCase;
+        text = System.Text.RegularExpressions.Regex.Replace(
+            text,
+            @"^\s*\{(?:merged|cell|cells|ref|range|source|sheet)[^}]*\}\s*",
+            "",
+            options);
+        text = System.Text.RegularExpressions.Regex.Replace(
+            text,
+            @"^\s*\u3014(?:merged|cell|cells|ref|range|source|sheet)[^\u3015]*\u3015\s*",
+            "",
+            options);
+        text = System.Text.RegularExpressions.Regex.Replace(
+            text,
+            @"^\s*(?:'[^'\r\n]+'|[^!\t\r\n|]{1,80})![A-Z]{1,3}\d+(?::[A-Z]{1,3}\d+)?\s*[:=]\s*",
+            "",
+            options);
+        text = System.Text.RegularExpressions.Regex.Replace(
+            text,
+            @"^\s*[A-Z]{1,3}\d+(?::[A-Z]{1,3}\d+)?\s*[:=]\s*",
+            "",
+            options);
         return text.Trim();
     }
 

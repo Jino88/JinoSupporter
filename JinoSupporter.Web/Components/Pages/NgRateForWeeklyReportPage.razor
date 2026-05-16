@@ -162,8 +162,8 @@
 
     <div class="card shadow-sm mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-            <span>📋 Weekly Report Summary — Sub Group × baseline / target / recent W &amp; M</span>
-            <span class="text-muted" style="font-size:11px;">@wrRows.Count sub-group(s)</span>
+            <span>📋 Weekly Report Summary — Model / Line-Group × baseline / target / recent W &amp; M</span>
+            <span class="text-muted" style="font-size:11px;">@wrRows.Count row(s)</span>
         </div>
         <div class="card-body p-0">
             @if (wrRows.Count == 0)
@@ -227,7 +227,8 @@
                                         {
                                             <span class="wr-tog wr-tog-blank"></span>
                                         }
-                                        <span>@row.Display</span>
+                                        <span class="hier-level-badge">@WeeklyLevelLabel(row, hasChildren)</span>
+                                        <span class="ms-1">@row.Display</span>
                                     </td>
                                     <td class="@(row.Baseline.HasValue ? "ppm-val" : "ppm-zero")">
                                         @(row.Baseline.HasValue ? FormatPpm(row.Baseline.Value) : "—")
@@ -429,10 +430,10 @@
 <!-- ══ Summary 2 (per group × per model) ═════════════════════════════════════ -->
 <div class="card shadow-sm mt-3">
     <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-        <span>📊 Summary — Main Group → Mid Group × Date / Week / Month (PPM)</span>
+        <span>📊 Summary — Group → Model Name × Week / Month (PPM)</span>
         @if (_reportByMid is not null)
         {
-            <span class="text-muted" style="font-size:11px;">Mid Group PPM = same combo-merged as per-model</span>
+            <span class="text-muted" style="font-size:11px;">Model Name PPM = same combo-merged as per-model</span>
         }
     </div>
     <div class="card-body p-0">
@@ -513,7 +514,7 @@
                                 <td class="label-td">
                                     <span class="tog-icon">@(exp ? "▼" : "▶")</span>
                                     <strong>@gName</strong>
-                                    <span class="text-muted ms-1" style="font-size:10px;">@midList.Count mid groups</span>
+                                    <span class="text-muted ms-1" style="font-size:10px;">@midList.Count models</span>
                                 </td>
                                 @foreach (var col in VisibleDateCols)
                                 {
@@ -553,7 +554,7 @@
                                     <tr class="grp-sub-row grp-mid-row" @onclick="() => ToggleExpandMid(midKey)">
                                         <td class="label-td ps-4" style="font-size:11px;">
                                             <span class="tog-icon">@(midExp ? "▼" : "▶")</span>
-                                            <span class="mid-badge">Mid</span>
+                                            <span class="mid-badge">Model Name</span>
                                             <span class="ms-1">@mid.Material</span>
                                             <span class="text-muted ms-1" style="font-size:10px;">@mid.LineShifts.Count</span>
                                         </td>
@@ -594,7 +595,7 @@
                                             var mTot  = mRows?.FirstOrDefault(r => r.IsTotal);
                                             <tr class="grp-ls-row">
                                                 <td class="label-td ps-5 font-monospace" style="font-size:11px;">
-                                                    <span class="ls-badge">Sub</span>
+                                                    <span class="ls-badge">Shift-Group</span>
                                                     <span class="ms-1">@ls</span>
                                                 </td>
                                                 @foreach (var col in VisibleDateCols)
@@ -646,7 +647,7 @@
     var (_refKey, _refBucket) = SortRefKey();
     <div class="card shadow-sm mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-            <span>🥇 Top 10 per group — Mid Group × Process × NG</span>
+            <span>🥇 Top 10 per group — Model Name × Process × NG</span>
             <span class="text-muted" style="font-size:11px;">
                 @if (!string.IsNullOrEmpty(_refKey))
                 { <text>Sorted: previous-week PPM, descending (ref = @_refBucket @ShiftedRefLabel(_refKey, _refBucket))</text> }
@@ -697,7 +698,7 @@
                             <thead>
                                 <tr>
                                     <th class="label-th" rowspan="2">#</th>
-                                    <th class="label-th" rowspan="2">Mid Group</th>
+                                    <th class="label-th" rowspan="2">Model Name</th>
                                     <th class="label-th" rowspan="2">Process</th>
                                     <th class="label-th" rowspan="2">NG Name</th>
                                     @if (Top10DateCols.Count > 0)
@@ -965,6 +966,14 @@
     /// <summary>RowIds of Mid / Sub rows the user has clicked open. Children of
     /// non-expanded rows are filtered out at render time.</summary>
     private HashSet<string> _expandedRowsWr = new(StringComparer.Ordinal);
+
+    private static string WeeklyLevelLabel(WeeklyReportRow row, IReadOnlySet<string> rowsWithChildren)
+    {
+        if (row.IsLineShift) return "Shift-Group";
+        if (row.Depth == 0) return "Model Name";
+        if (row.Depth == 1 && rowsWithChildren.Contains(row.RowId)) return "Building-Group";
+        return "Line-Group";
+    }
 
     private List<WeeklyReportRow> WeeklyReportRows
     {

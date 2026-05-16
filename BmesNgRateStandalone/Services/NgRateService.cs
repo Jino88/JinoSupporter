@@ -12,9 +12,10 @@ namespace BmesNgRateStandalone.Services;
 /// Web port of the DataMaker WPF app's clFetchBMES + clFetchBMESNGDATA + clDataProcessor logic.
 /// Paths / credentials are read from NgRateSettingsService.
 /// </summary>
-public sealed class NgRateService(NgRateSettingsService settings)
+public sealed class NgRateService(NgRateSettingsService settings, BmesSettingsSyncService settingsSync)
 {
     private readonly NgRateSettingsService _settings = settings;
+    private readonly BmesSettingsSyncService _settingsSync = settingsSync;
     private const string BaseUrl = "http://bmes.bujeon.com";
 
     /// <summary>Mirrors a progress message to both the UI and the Debug/launching-console output.
@@ -85,6 +86,12 @@ public sealed class NgRateService(NgRateSettingsService settings)
         // round-trip per date being classified).
         progress?.Report("[start] Resolving NgRate save directory…");
         string saveDir = _settings.DbSaveDirectory;
+        progress?.Report("[start] Loading Routing/Reason tables from server DB...");
+        var settingsSyncResult = await _settingsSync.PullAllRowsFromServerAsync();
+        if (settingsSyncResult.Succeeded)
+            progress?.Report($"[start] Server tables saved locally ({settingsSyncResult.Rows} row(s)).");
+        else
+            progress?.Report($"[WARN] Server table load failed. Using local settings DB. {settingsSyncResult.Message}");
         progress?.Report($"[start] Save dir = {saveDir}  ({swStart.ElapsedMilliseconds} ms elapsed)");
 
         // ── 1. Classify dates ────────────────────────────────────────────────

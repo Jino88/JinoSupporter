@@ -144,7 +144,7 @@
     }
     .grp-modal-body { overflow: auto; padding: 10px; flex: 1; }
 
-    /* Hierarchy summary — Group → Mid → Sub1 → Sub2 collapsible rows */
+    /* Hierarchy summary — Group → Model Name → Building/Line → Shift-Group collapsible rows */
     .pivot-table tr.hier-group-row    { cursor: pointer; }
     .pivot-table tr.hier-group-row td { background: #fef3c7; color: #78350f; font-weight: 700;
                                         border-top: 2px solid #fbbf24; }
@@ -525,14 +525,14 @@
             var hierMonthCols = GetVisibleMonthCols(_reports[0].Report).ToList();
             <div class="card mb-3 shadow-sm">
                 <div class="card-header small fw-semibold">
-                    📊 Group → Mid → Sub1 → Sub2 — TOTAL PPM (collapsible)
+                    📊 Group → Model Name → Building/Line → Shift-Group — TOTAL PPM (collapsible)
                 </div>
                 <div class="card-body p-0">
                     <div class="pivot-wrap">
                         <table class="pivot-table">
                             <thead>
                                 <tr>
-                                    <th class="label-th" style="min-width:280px;" rowspan="2">Group / Mid / Sub</th>
+                                    <th class="label-th" style="min-width:280px;" rowspan="2">Group / Model Name / Building-Group / Line-Group / Shift-Group</th>
                                     @if (hierDateCols.Count > 0)
                                     {
                                         <th class="blk-date" colspan="@hierDateCols.Count">Date</th>
@@ -563,7 +563,7 @@
                                         <td class="label-td">
                                             <span class="tog-icon">@(gExp ? "▼" : "▶")</span>
                                             <strong>@gName</strong>
-                                            <span class="text-muted ms-1" style="font-size:10px;">@g.MidGroups.Count mids</span>
+                                            <span class="text-muted ms-1" style="font-size:10px;">@g.MidGroups.Count models</span>
                                         </td>
                                         @foreach (var col in hierDateCols)
                                         {
@@ -593,7 +593,8 @@
                                             <tr class="hier-mid-row" @onclick="() => HierToggleMid(midKey)">
                                                 <td class="label-td" style="padding-left:32px; font-size:11.5px;">
                                                     <span class="tog-icon">@(midExp ? "▼" : "▶")</span>
-                                                    <span>@mid.Material</span>
+                                                    <span class="hier-level-badge ms-1">Model Name</span>
+                                                    <span class="ms-1">@mid.Material</span>
                                                 </td>
                                                 @foreach (var col in hierDateCols)
                                                 {

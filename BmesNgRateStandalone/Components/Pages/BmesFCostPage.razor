@@ -113,15 +113,15 @@
     </div>
 </div>
 
-<!-- ══ SubGroup roll-up (sums of Input + F-Cost across matching Materials) ══ -->
+<!-- ══ Model / Line-Group roll-up (sums of Input + F-Cost across matching Materials) ══ -->
 @if (_report is not null && (_report.SubGroups.Count > 0 || _report.Total is not null))
 {
     var subHeaders = _report.ColumnHeaders;
     <div class="card shadow-sm mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-            <span>📋 SubGroup Summary — Σ Input · Σ F-Cost · Rate% (recomputed from sums)</span>
+            <span>📋 Model / Line-Group Summary — Σ Input · Σ F-Cost · Rate% (recomputed from sums)</span>
             <span class="text-muted" style="font-size:11px;">
-                @_report.SubGroups.Count subgroup(s) · @_report.UnmappedMaterials.Count unmapped
+                @_report.SubGroups.Count line-group bucket(s) · @_report.UnmappedMaterials.Count unmapped
                 · sorted by previous-week Rate%
             </span>
         </div>
@@ -130,7 +130,7 @@
                 <table class="fcost-table">
                     <thead>
                         <tr>
-                            <th class="label-th" style="width:240px;">SubGroup</th>
+                            <th class="label-th" style="width:260px;">Model / Building / Line</th>
                             <th class="label-th" style="width:100px;">Type</th>
                             @for (int hi = 0; hi < subHeaders.Count; hi++)
                             {
@@ -241,7 +241,8 @@
                                             { <span class="fcost-tog">@(expanded ? "▼" : "▶")</span> }
                                             else
                                             { <span class="fcost-tog fcost-tog-blank"></span> }
-                                            <strong>@row.Display</strong>
+                                            <span class="hier-level-badge">@FCostLevelLabel(row, fcostHasKids)</span>
+                                            <strong class="ms-1">@row.Display</strong>
                                         </td>
                                     }
                                     <td class="label-td"><span class="ztype-badge">INPUT</span></td>
@@ -264,7 +265,8 @@
                                             { <span class="fcost-tog">@(expanded ? "▼" : "▶")</span> }
                                             else
                                             { <span class="fcost-tog fcost-tog-blank"></span> }
-                                            <strong>@row.Display</strong>
+                                            <span class="hier-level-badge">@FCostLevelLabel(row, fcostHasKids)</span>
+                                            <strong class="ms-1">@row.Display</strong>
                                         </td>
                                     }
                                     <td class="label-td"><span class="ztype-badge">F-COST</span></td>
@@ -287,7 +289,8 @@
                                             { <span class="fcost-tog">@(expanded ? "▼" : "▶")</span> }
                                             else
                                             { <span class="fcost-tog fcost-tog-blank"></span> }
-                                            <strong>@row.Display</strong>
+                                            <span class="hier-level-badge">@FCostLevelLabel(row, fcostHasKids)</span>
+                                            <strong class="ms-1">@row.Display</strong>
                                         </td>
                                     }
                                     <td class="label-td"><span class="ztype-badge">RATE %</span></td>
@@ -705,6 +708,13 @@
         string path = subGroupKey[(secondSep + 2)..];
         if (string.IsNullOrEmpty(path)) return Array.Empty<string>();
         return path.Split(" / ", StringSplitOptions.None);
+    }
+
+    private static string FCostLevelLabel(FCostHierarchyRow row, IReadOnlySet<string> rowsWithChildren)
+    {
+        if (row.Depth == 0) return "Model Name";
+        if (row.Depth == 1 && rowsWithChildren.Contains(row.RowId)) return "Building-Group";
+        return "Line-Group";
     }
 
     private bool IsFCostRowVisible(

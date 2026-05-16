@@ -171,6 +171,7 @@ public sealed class AiDocBundle
     public string ReportType        { get; set; } = "";
     public string ReportDate        { get; set; } = "";
     public double Confidence        { get; set; }
+    public string GeneratedReportMarkdown { get; set; } = "";
     public string DecisionRationale { get; set; } = "";   // from AiExtractionLogs
 
     public int ConditionsCount { get; set; }
@@ -221,6 +222,7 @@ public sealed class AiDocTranslationRow
 {
     public string Title   { get; set; } = "";
     public string Purpose { get; set; } = "";
+    public string GeneratedReportMarkdown { get; set; } = "";
     public List<string> Content { get; set; } = [];
 }
 public sealed class AiConclusionTranslationRow
@@ -240,6 +242,43 @@ public sealed class AiLogTranslationRow
     public List<string> Assumptions  { get; set; } = [];
     public List<string> Warnings     { get; set; } = [];
 }
+
+public sealed record ModelAnalysisGroupRecord(
+    string ProductType,
+    int ReportCount,
+    int AiReportCount,
+    string LatestReportDate,
+    string LatestAiUpdatedAt,
+    string LatestAnalysisAt);
+
+public sealed record ModelAnalysisReportRecord(
+    string DatasetName,
+    string ProductType,
+    string ReportDate,
+    string DocumentId,
+    string Title,
+    string ReportType,
+    string PrimaryDefect,
+    string GeneratedReportMarkdown,
+    string AiUpdatedAt,
+    int ResultCount,
+    int ConclusionCount)
+{
+    public bool HasAiReport => !string.IsNullOrWhiteSpace(DocumentId)
+                               && !string.IsNullOrWhiteSpace(GeneratedReportMarkdown);
+}
+
+public sealed record AiModelAnalysisRecord(
+    long Id,
+    string ProductType,
+    string AnalysisMode,
+    string Language,
+    int ReportCount,
+    string IncludedDatasetsJson,
+    string AnalysisMarkdown,
+    string AnalysisTableMarkdown,
+    string SourceContextHash,
+    string CreatedAt);
 
 public sealed class AiResultRow
 {

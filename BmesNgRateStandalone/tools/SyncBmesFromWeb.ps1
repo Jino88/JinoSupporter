@@ -12,8 +12,12 @@ $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 
 function Convert-Text([string] $text) {
     $text = $text -replace 'namespace JinoSupporter\.Web\.Services;', 'namespace BmesNgRateStandalone.Services;'
+    $text = $text -replace 'namespace JinoSupporter\.Web\.Services\.GraphMaker;', 'namespace BmesNgRateStandalone.Services.GraphMaker;'
     $text = $text -replace 'using JinoSupporter\.Web\.Services;', 'using BmesNgRateStandalone.Services;'
+    $text = $text -replace 'using JinoSupporter\.Web\.Services\.GraphMaker;', 'using BmesNgRateStandalone.Services.GraphMaker;'
     $text = $text -replace '@using\s+JinoSupporter\.Web\.Services', '@using BmesNgRateStandalone.Services'
+    $text = $text -replace '@using\s+JinoSupporter\.Web\.Services\.GraphMaker', '@using BmesNgRateStandalone.Services.GraphMaker'
+    $text = $text -replace '@attribute\s+\[Authorize\]\r?\n', ''
     $text = $text -replace '@rendermode\s+InteractiveServer\r?\n', ''
     $text = $text -replace 'JinoSupporter\.Web process restarts', 'the standalone app restarts'
     return $text
@@ -56,11 +60,13 @@ $serviceFiles = @(
     'Services\WebRepository.cs',
     'Services\WorkerStatusExcelExporter.cs',
     'Services\WorkerStatusService.cs',
-    'Services\WpfSettingsReader.cs'
+    'Services\WpfSettingsReader.cs',
+    'Services\GraphMaker\GraphMakerCore.cs'
 )
 
 $componentFiles = @(
     'Components\Shared\HierSubRows.razor',
+    'Components\Pages\GraphMakerPage.razor',
     'Components\Pages\AdminPathsPage.razor',
     'Components\Pages\BmesFCostPage.razor',
     'Components\Pages\BmesMakeModelGroupPage.razor',
@@ -82,3 +88,5 @@ foreach ($file in $serviceFiles) {
 foreach ($file in $componentFiles) {
     Copy-Converted $file $file
 }
+
+Copy-Converted 'wwwroot\js\app.js' 'wwwroot\js\app.js'

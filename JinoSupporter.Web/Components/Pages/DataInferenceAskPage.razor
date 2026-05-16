@@ -703,6 +703,7 @@
                 if (!string.IsNullOrWhiteSpace(ai.Title)) sb.Append("    Title: ").AppendLine(ai.Title);
                 if (!string.IsNullOrWhiteSpace(ai.Purpose)) sb.Append("    Purpose: ").AppendLine(ai.Purpose);
                 if (!string.IsNullOrWhiteSpace(ai.PrimaryDefect)) sb.Append("    PrimaryDefect: ").AppendLine(ai.PrimaryDefect);
+                if (!string.IsNullOrWhiteSpace(ai.GeneratedReportMarkdown)) sb.Append("    GeneratedReport: ").AppendLine(ai.GeneratedReportMarkdown);
                 if (ai.Content.Count > 0) sb.Append("    Content: ").AppendLine(string.Join(" | ", ai.Content.Take(5)));
                 if (ai.RelatedDefects.Count > 0) sb.Append("    RelatedDefects: ").AppendLine(string.Join(", ", ai.RelatedDefects));
 
@@ -739,6 +740,7 @@
            && (!string.IsNullOrWhiteSpace(doc.Title)
                || !string.IsNullOrWhiteSpace(doc.Purpose)
                || !string.IsNullOrWhiteSpace(doc.PrimaryDefect)
+               || !string.IsNullOrWhiteSpace(doc.GeneratedReportMarkdown)
                || doc.Content.Count > 0
                || doc.Results.Count > 0
                || doc.NgBreakdowns.Count > 0

@@ -3,6 +3,7 @@ using System.IO.Compression;
 using System.Net.Http;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Windows;
 
@@ -18,6 +19,8 @@ public sealed class StandaloneUpdateService
 
     public async Task CheckAndPromptAsync(Window owner, bool notifyWhenCurrent = false)
     {
+        bool updateRequested = false;
+
         try
         {
             UpdateManifest? manifest = await FetchManifestAsync();
@@ -62,16 +65,19 @@ public sealed class StandaloneUpdateService
 
             if (result != MessageBoxResult.Yes) return;
 
+            updateRequested = true;
             string packagePath = await DownloadAndValidateAsync(manifest);
             StartUpdaterAndExit(packagePath);
         }
         catch (Exception ex)
         {
-            if (!notifyWhenCurrent) return;
+            if (!notifyWhenCurrent && !updateRequested) return;
 
             MessageBox.Show(
                 owner,
-                "Update check failed. The current version will continue to run.\n\n" + ex.Message,
+                updateRequested
+                    ? "Update could not be started. The current version will continue to run.\n\n" + ex.Message
+                    : "Update check failed. The current version will continue to run.\n\n" + ex.Message,
                 "Standalone Update",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
@@ -124,35 +130,123 @@ public sealed class StandaloneUpdateService
         string exePath = Environment.ProcessPath
             ?? Path.Combine(appDir, "BmesNgRateStandalone.exe");
         string stagingDir = Path.Combine(Path.GetTempPath(), "BmesNgRateStandalone", "staging-" + Guid.NewGuid().ToString("N"));
-        string updaterPath = Path.Combine(Path.GetTempPath(), "BmesNgRateStandalone", "ApplyStandaloneUpdate.ps1");
+        string updateRoot = Path.Combine(Path.GetTempPath(), "BmesNgRateStandalone");
+        string updaterPath = Path.Combine(updateRoot, "ApplyStandaloneUpdate.ps1");
+        string logPath = Path.Combine(updateRoot, "update-apply.log");
 
         Directory.CreateDirectory(Path.GetDirectoryName(updaterPath)!);
         File.WriteAllText(updaterPath, BuildUpdaterScript());
 
+        bool needsElevation = !CanWriteToDirectory(appDir);
         var psi = new ProcessStartInfo
         {
             FileName = "powershell.exe",
             UseShellExecute = true,
             WindowStyle = ProcessWindowStyle.Hidden,
+            WorkingDirectory = appDir,
+            Arguments = BuildUpdaterArguments(
+                updaterPath,
+                Environment.ProcessId,
+                packagePath,
+                appDir,
+                exePath,
+                stagingDir,
+                logPath),
         };
-        psi.ArgumentList.Add("-NoProfile");
-        psi.ArgumentList.Add("-ExecutionPolicy");
-        psi.ArgumentList.Add("Bypass");
-        psi.ArgumentList.Add("-File");
-        psi.ArgumentList.Add(updaterPath);
-        psi.ArgumentList.Add("-ProcessId");
-        psi.ArgumentList.Add(Environment.ProcessId.ToString());
-        psi.ArgumentList.Add("-PackagePath");
-        psi.ArgumentList.Add(packagePath);
-        psi.ArgumentList.Add("-TargetDir");
-        psi.ArgumentList.Add(appDir);
-        psi.ArgumentList.Add("-ExePath");
-        psi.ArgumentList.Add(exePath);
-        psi.ArgumentList.Add("-StagingDir");
-        psi.ArgumentList.Add(stagingDir);
 
-        Process.Start(psi);
+        if (needsElevation)
+        {
+            psi.Verb = "runas";
+        }
+
+        if (Process.Start(psi) is null)
+            throw new InvalidOperationException("Windows did not start the update process.");
+
         Application.Current.Shutdown();
+    }
+
+    private static string BuildUpdaterArguments(
+        string updaterPath,
+        int processId,
+        string packagePath,
+        string targetDir,
+        string exePath,
+        string stagingDir,
+        string logPath)
+    {
+        string[] args =
+        [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            updaterPath,
+            "-ProcessId",
+            processId.ToString(),
+            "-PackagePath",
+            packagePath,
+            "-TargetDir",
+            targetDir,
+            "-ExePath",
+            exePath,
+            "-StagingDir",
+            stagingDir,
+            "-LogPath",
+            logPath,
+        ];
+
+        return string.Join(" ", args.Select(QuoteProcessArgument));
+    }
+
+    private static string QuoteProcessArgument(string value)
+    {
+        if (value.Length == 0) return "\"\"";
+        if (!value.Any(c => char.IsWhiteSpace(c) || c == '"')) return value;
+
+        var quoted = new StringBuilder();
+        quoted.Append('"');
+        int backslashCount = 0;
+
+        foreach (char c in value)
+        {
+            if (c == '\\')
+            {
+                backslashCount++;
+                continue;
+            }
+
+            if (c == '"')
+            {
+                quoted.Append('\\', backslashCount * 2 + 1);
+                quoted.Append('"');
+                backslashCount = 0;
+                continue;
+            }
+
+            quoted.Append('\\', backslashCount);
+            quoted.Append(c);
+            backslashCount = 0;
+        }
+
+        quoted.Append('\\', backslashCount * 2);
+        quoted.Append('"');
+        return quoted.ToString();
+    }
+
+    private static bool CanWriteToDirectory(string directory)
+    {
+        try
+        {
+            Directory.CreateDirectory(directory);
+            string probePath = Path.Combine(directory, ".update-write-test-" + Guid.NewGuid().ToString("N") + ".tmp");
+            File.WriteAllText(probePath, "");
+            File.Delete(probePath);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static string BuildUpdaterScript() =>
@@ -162,17 +256,121 @@ public sealed class StandaloneUpdateService
             [Parameter(Mandatory=$true)][string]$PackagePath,
             [Parameter(Mandatory=$true)][string]$TargetDir,
             [Parameter(Mandatory=$true)][string]$ExePath,
-            [Parameter(Mandatory=$true)][string]$StagingDir
+            [Parameter(Mandatory=$true)][string]$StagingDir,
+            [Parameter(Mandatory=$true)][string]$LogPath
         )
         $ErrorActionPreference = 'Stop'
-        Wait-Process -Id $ProcessId -ErrorAction SilentlyContinue
-        if (Test-Path -LiteralPath $StagingDir) {
-            Remove-Item -LiteralPath $StagingDir -Recurse -Force
+
+        function Write-UpdateLog([string]$Message) {
+            $logDir = Split-Path -Parent $LogPath
+            if (-not [string]::IsNullOrWhiteSpace($logDir)) {
+                New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+            }
+            $line = '{0} {1}' -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss.fff'), $Message
+            Add-Content -LiteralPath $LogPath -Value $line -Encoding UTF8
         }
-        New-Item -ItemType Directory -Path $StagingDir | Out-Null
-        Expand-Archive -LiteralPath $PackagePath -DestinationPath $StagingDir -Force
-        Copy-Item -Path (Join-Path $StagingDir '*') -Destination $TargetDir -Recurse -Force
-        Start-Process -FilePath $ExePath -WorkingDirectory $TargetDir
+
+        function Show-UpdateFailure([string]$Message) {
+            try {
+                Add-Type -AssemblyName PresentationFramework
+                [System.Windows.MessageBox]::Show(
+                    "Update failed. The current version was reopened if possible.`n`n$Message`n`nLog: $LogPath",
+                    "Standalone Update",
+                    [System.Windows.MessageBoxButton]::OK,
+                    [System.Windows.MessageBoxImage]::Warning
+                ) | Out-Null
+            }
+            catch {
+            }
+        }
+
+        function Get-PackageRoot([string]$Root, [string]$ExeName) {
+            if (Test-Path -LiteralPath (Join-Path $Root $ExeName)) {
+                return $Root
+            }
+
+            $children = @(Get-ChildItem -LiteralPath $Root -Force)
+            if ($children.Count -eq 1 -and $children[0].PSIsContainer) {
+                $singleRoot = $children[0].FullName
+                if (Test-Path -LiteralPath (Join-Path $singleRoot $ExeName)) {
+                    return $singleRoot
+                }
+            }
+
+            $foundExe = Get-ChildItem -LiteralPath $Root -Filter $ExeName -Recurse -File -Force | Select-Object -First 1
+            if ($foundExe) {
+                return $foundExe.DirectoryName
+            }
+
+            throw "The update package does not contain $ExeName."
+        }
+
+        try {
+            Write-UpdateLog "Starting standalone update."
+            Write-UpdateLog "PackagePath=$PackagePath"
+            Write-UpdateLog "TargetDir=$TargetDir"
+            Write-UpdateLog "ExePath=$ExePath"
+            Write-UpdateLog "StagingDir=$StagingDir"
+
+            Wait-Process -Id $ProcessId -ErrorAction SilentlyContinue
+
+            if (-not (Test-Path -LiteralPath $PackagePath)) {
+                throw "Downloaded package was not found: $PackagePath"
+            }
+
+            if (Test-Path -LiteralPath $StagingDir) {
+                Remove-Item -LiteralPath $StagingDir -Recurse -Force
+            }
+            New-Item -ItemType Directory -Path $StagingDir -Force | Out-Null
+            New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
+
+            Expand-Archive -LiteralPath $PackagePath -DestinationPath $StagingDir -Force
+            $sourceRoot = Get-PackageRoot -Root $StagingDir -ExeName (Split-Path -Leaf $ExePath)
+            Write-UpdateLog "SourceRoot=$sourceRoot"
+
+            $sourceItems = @(Get-ChildItem -LiteralPath $sourceRoot -Force)
+            if ($sourceItems.Count -eq 0) {
+                throw "The update package is empty."
+            }
+
+            foreach ($item in $sourceItems) {
+                Copy-Item -LiteralPath $item.FullName -Destination $TargetDir -Recurse -Force
+            }
+
+            Write-UpdateLog "Files copied. Restarting application."
+            Start-Process -FilePath $ExePath -WorkingDirectory $TargetDir
+            Write-UpdateLog "Update finished."
+            exit 0
+        }
+        catch {
+            $message = $_.Exception.Message
+            try {
+                Write-UpdateLog "Update failed: $message"
+                Write-UpdateLog $_.ScriptStackTrace
+            }
+            catch {
+            }
+
+            try {
+                if (Test-Path -LiteralPath $ExePath) {
+                    Start-Process -FilePath $ExePath -WorkingDirectory $TargetDir
+                }
+            }
+            catch {
+            }
+
+            Show-UpdateFailure $message
+            exit 1
+        }
+        finally {
+            try {
+                if (Test-Path -LiteralPath $StagingDir) {
+                    Remove-Item -LiteralPath $StagingDir -Recurse -Force
+                }
+            }
+            catch {
+            }
+        }
         """;
 
     private static bool IsNewer(string? manifestVersion)

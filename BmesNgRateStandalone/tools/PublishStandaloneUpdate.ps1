@@ -9,6 +9,7 @@ $ErrorActionPreference = 'Stop'
 $standaloneRoot = Split-Path -Parent $PSScriptRoot
 $repoRoot = Split-Path -Parent $standaloneRoot
 $webUpdateDir = Join-Path $repoRoot 'JinoSupporter.Web\standalone-updates'
+$webDebugUpdateDir = Join-Path $repoRoot 'JinoSupporter.Web\bin\Debug\net8.0\standalone-updates'
 $projectPath = Join-Path $standaloneRoot 'BmesNgRateStandalone.csproj'
 $publishDir = Join-Path $standaloneRoot 'bin\Release\net8.0-windows\win-x64\publish'
 
@@ -31,7 +32,7 @@ while ($versionParts.Count -lt 4) {
 }
 $assemblyVersion = ($versionParts[0..3] -join '.')
 
-dotnet publish $projectPath -c Release -r win-x64 --self-contained false -o $publishDir `
+dotnet publish $projectPath -c Release -r win-x64 --self-contained true -o $publishDir `
     "-p:Version=$Version" `
     "-p:AssemblyVersion=$assemblyVersion" `
     "-p:FileVersion=$assemblyVersion"
@@ -57,7 +58,13 @@ $manifest = [ordered]@{
 $manifestPath = Join-Path $webUpdateDir 'update.json'
 $manifest | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
 
+New-Item -ItemType Directory -Path $webDebugUpdateDir -Force | Out-Null
+Copy-Item -LiteralPath $zipPath -Destination (Join-Path $webDebugUpdateDir $zipName) -Force
+Copy-Item -LiteralPath $manifestPath -Destination (Join-Path $webDebugUpdateDir 'update.json') -Force
+
 Write-Host "Published standalone update manifest:"
 Write-Host $manifestPath
 Write-Host "Package:"
 Write-Host $zipPath
+Write-Host "Runtime update directory:"
+Write-Host $webDebugUpdateDir

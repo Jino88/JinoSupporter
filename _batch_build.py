@@ -71,6 +71,7 @@ def build(d: dict) -> dict:
 
     result_obj = {
         'schema_version': '0.1',
+        'generated_report_markdown': d.get('generated_report_markdown') or d.get('report_markdown') or '',
         'document': document,
         'test_conditions': conds,
         'results': [{

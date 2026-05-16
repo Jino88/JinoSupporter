@@ -2,6 +2,7 @@
 @using BmesNgRateStandalone.Services
 @inject WebRepository         Repo
 @inject NgRateSettingsService NgRateSettings
+@inject BmesSettingsSyncService BmesSettingsSync
 
 <PageTitle>Model Group</PageTitle>
 
@@ -10,15 +11,21 @@
     <h5 class="mb-0 fw-semibold">Model Group</h5>
     <span class="badge bg-secondary" style="font-size:11px;">@_rows.Count distinct</span>
     <button class="btn btn-outline-secondary btn-sm ms-auto" @onclick="Reload">↻ Refresh</button>
+    <button class="btn btn-outline-primary btn-sm"
+            @onclick="PullModelGroupsFromServerAsync"
+            disabled="@_loadingFromServer">
+        @if (_loadingFromServer) { <span class="spinner-border spinner-border-sm me-1"></span> }
+        Load from server
+    </button>
     <button class="btn btn-primary btn-sm"
             @onclick="SaveAsync"
-            disabled="@_saving">
+            disabled="@(_saving || _loadingFromServer)">
         @if (_saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
         💾 Save
     </button>
     <button class="btn btn-outline-danger btn-sm"
             @onclick="ClearGroups"
-            disabled="@(_groups.Count <= 1 && _groups.All(g => g.MidGroups.Count == 0))">🗑 Clear groups</button>
+            disabled="@(_loadingFromServer || (_groups.Count <= 1 && _groups.All(g => g.MidGroups.Count == 0)))">🗑 Clear groups</button>
 </div>
 
 @if (!string.IsNullOrEmpty(_saveStatus))
@@ -57,9 +64,9 @@
                                    @onclick:stopPropagation="true"
                                    placeholder="Group name" />
                             <button class="btn btn-sm btn-outline-primary py-0 px-2 ms-auto"
-                                    title="Add mid-group"
+                                    title="Add model name"
                                     @onclick="() => AddMidGroup(idx)"
-                                    @onclick:stopPropagation="true">+ Mid-group</button>
+                                    @onclick:stopPropagation="true">+ Model Name</button>
                             <button class="btn btn-sm btn-outline-danger py-0 px-2"
                                     title="Remove group"
                                     @onclick="() => RemoveGroup(idx)"
@@ -75,7 +82,7 @@
                         </div>
                         @if (g.MidGroups.Count == 0)
                         {
-                            <div class="text-muted small ps-2 py-1">(empty — click a LineShift in the right panel or click "+ Mid-group")</div>
+                            <div class="text-muted small ps-2 py-1">(empty — click a Shift-Group in the right panel or click "+ Model Name")</div>
                         }
                         else
                         {
@@ -93,19 +100,19 @@
                                             @if (midAct)
                                             {
                                                 <span class="grp-active-dot"
-                                                      title="LineShifts go into the active sub-group">●</span>
+                                                      title="Shift-Groups go into the active group">●</span>
                                             }
-                                            <span class="mid-badge">Mid-group</span>
+                                            <span class="mid-badge">Model Name</span>
                                             <input class="mid-name-input"
                                                    value="@mid.Material"
                                                    @onchange="e => OnRenameMid(gidx, midx, e.Value?.ToString() ?? string.Empty)"
                                                    @onclick:stopPropagation="true"
-                                                   placeholder="Material" />
+                                                   placeholder="Model Name" />
                                             <span class="text-muted ms-1" style="font-size:10px;">@mid.TotalLineShifts</span>
                                             <button class="btn btn-sm btn-outline-primary py-0 px-2 ms-auto"
-                                                    title="Add sub-group"
+                                                    title="Add line-group"
                                                     @onclick="() => AddSubGroupAtMidTop(gidx, midx)"
-                                                    @onclick:stopPropagation="true">+ Sub</button>
+                                                    @onclick:stopPropagation="true">+ Line-Group</button>
                                             <button class="btn btn-sm btn-outline-danger py-0 px-2"
                                                     title="Remove mid-group"
                                                     @onclick="() => RemoveMidGroupAt(gidx, midx)"
@@ -194,11 +201,11 @@
         </div>
     </div>
 
-    <!-- ══ Right: LineShifts for selected Maktx ═════════════════════════════ -->
+    <!-- ══ Right: Shift-Groups for selected Maktx ═══════════════════════════ -->
     <div class="col-md-4">
         <div class="card shadow-sm">
             <div class="card-header fw-semibold small d-flex align-items-center gap-2">
-                <span>🧭 LineShifts</span>
+                <span>🧭 Shift-Groups</span>
                 @if (!string.IsNullOrEmpty(_selectedMaktx))
                 {
                     <span class="text-muted" style="font-size:11px;">— @_selectedMaktx</span>
@@ -221,7 +228,7 @@
                 else if (_lineShifts.Count == 0)
                 {
                     <div class="text-center text-muted py-4 small">
-                        No LineShift in DB for this MATERIALNAME.
+                        No Shift-Group in DB for this MATERIALNAME.
                     </div>
                 }
                 else
@@ -231,7 +238,7 @@
                         <thead>
                             <tr>
                                 <th style="width:38px;">#</th>
-                                <th>LineShift</th>
+                                <th>Shift-Group</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -376,6 +383,11 @@
         padding: 1px 5px; border-radius: 3px;
         background: #a855f7; color: #fff;
     }
+    .shift-badge {
+        display: inline-block; font-size: 9px; font-weight: 700;
+        padding: 1px 5px; border-radius: 3px;
+        background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;
+    }
     .sub-name-input {
         flex: 1 1 auto; min-width: 0;
         border: 1px solid transparent; background: transparent;
@@ -447,6 +459,7 @@
             ? n : mtype;
     }
     private bool         _saving;
+    private bool         _loadingFromServer;
     private string       _saveStatus = string.Empty;
     private bool         _saveError;
 
@@ -470,10 +483,11 @@
         }
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         Reload();
-        LoadGroupsFromDb();
+        if (!LoadGroupsFromDb())
+            await PullModelGroupsFromServerAsync();
     }
 
     private void Reload()
@@ -482,25 +496,27 @@
         _mtypeMap = Repo.GetMtypeCategoryMap();
     }
 
-    private void LoadGroupsFromDb()
+    private bool LoadGroupsFromDb()
     {
         var saved = Repo.GetModelGroups();
-        if (saved.Count > 0)
+        if (saved.Count == 0) return false;
+
+        _groups = saved.Select(s => new GroupVm
         {
-            _groups = saved.Select(s => new GroupVm
+            GroupName    = s.Name,
+            ProductGroup = ProductGroups.Contains(s.ProductGroup) ? s.ProductGroup : "ETC",
+            MidGroups    = s.MidGroups.Select(m => new MidGroupVm
             {
-                GroupName    = s.Name,
-                ProductGroup = ProductGroups.Contains(s.ProductGroup) ? s.ProductGroup : "ETC",
-                MidGroups    = s.MidGroups.Select(m => new MidGroupVm
-                {
-                    Material  = m.Material,
-                    SubGroups = m.SubGroups.Count > 0
-                        ? m.SubGroups.Select(SubRecordToVm).ToList()
-                        : new List<SubGroupVm> { new SubGroupVm() },
-                }).ToList(),
-            }).ToList();
-            _activeGroupIdx = 0;
-        }
+                Material  = m.Material,
+                SubGroups = m.SubGroups.Count > 0
+                    ? m.SubGroups.Select(SubRecordToVm).ToList()
+                    : new List<SubGroupVm> { new SubGroupVm() },
+            }).ToList(),
+        }).ToList();
+        _activeGroupIdx = 0;
+        _activeMidIdx = -1;
+        _activeSub = null;
+        return true;
     }
 
     private static SubGroupVm SubRecordToVm(SubGroupRecord s) => new SubGroupVm
@@ -527,6 +543,46 @@
     {
         if (idx < 0 || idx >= _groups.Count) return;
         _groups[idx].ProductGroup = ProductGroups.Contains(pg) ? pg : "ETC";
+    }
+
+    private async Task PullModelGroupsFromServerAsync()
+    {
+        if (_loadingFromServer) return;
+        _loadingFromServer = true;
+        _saveStatus = string.Empty;
+        _saveError = false;
+        StateHasChanged();
+
+        try
+        {
+            var result = await BmesSettingsSync.PullModelGroupsFromServerAsync();
+            if (result.Succeeded)
+            {
+                bool loaded = LoadGroupsFromDb();
+                if (!loaded)
+                {
+                    _groups = new() { new GroupVm { GroupName = "Group 1" } };
+                    _activeGroupIdx = 0;
+                    _activeMidIdx = -1;
+                    _activeSub = null;
+                }
+
+                _saveStatus = result.Rows > 0
+                    ? $"Loaded {result.Rows} model group(s) from server DB. Local DB saved."
+                    : "Server DB has no model groups. Using local empty group.";
+                _saveError = false;
+            }
+            else
+            {
+                _saveStatus = $"Server model group load failed. Using local DB: {result.Message}";
+                _saveError = true;
+            }
+        }
+        finally
+        {
+            _loadingFromServer = false;
+            StateHasChanged();
+        }
     }
 
     private async Task SaveAsync()
@@ -640,7 +696,7 @@
             ? ResolveActiveMid()?.SubGroups
             : parent.SubGroups;
         if (list is null) return;
-        var newSub = new SubGroupVm { Name = $"Sub {list.Count + 1}" };
+                    var newSub = new SubGroupVm { Name = $"Line {list.Count + 1}" };
         list.Add(newSub);
         _activeSub = newSub;
     }
@@ -651,7 +707,7 @@
         var grp = _groups[groupIdx];
         if (midIdx < 0 || midIdx >= grp.MidGroups.Count) return;
         var mid = grp.MidGroups[midIdx];
-        var newSub = new SubGroupVm { Name = $"Sub {mid.SubGroups.Count + 1}" };
+        var newSub = new SubGroupVm { Name = $"Line {mid.SubGroups.Count + 1}" };
         mid.SubGroups.Add(newSub);
         _activeGroupIdx = groupIdx;
         _activeMidIdx   = midIdx;

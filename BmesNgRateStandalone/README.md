@@ -32,7 +32,8 @@ The installer is built with Inno Setup. Install Inno Setup 6, then run:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\BmesNgRateStandalone\tools\BuildStandaloneInstaller.ps1
 ```
 
-The script publishes the app to `bin/Release/net8.0-windows/win-x64/publish` and creates:
+The script publishes the app as a self-contained win-x64 build to
+`bin/Release/net8.0-windows/win-x64/publish` and creates:
 
 ```txt
 BmesNgRateStandalone/dist/BmesNgRateStandalone_Setup.exe

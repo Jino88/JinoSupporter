@@ -5,7 +5,7 @@
 #define MyAppName        "BMES NG Rate"
 #define MyAppExeName     "BmesNgRateStandalone.exe"
 #ifndef MyAppVersion
-#define MyAppVersion     "1.0.0"
+#define MyAppVersion     "1.0.9"
 #endif
 #define MyAppPublisher   "Personal"
 #define PublishDir       "bin\Release\net8.0-windows\win-x64\publish"
@@ -45,7 +45,7 @@ Source: "{#PublishDir}\*"; Excludes: "wwwroot\*,data\*"; DestDir: "{app}"; Flags
 Source: "{#PublishDir}\wwwroot\*"; DestDir: "{app}\wwwroot"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; bundled DBs — credentials already cleared, RoutingTable / ReasonTable / ModelGroups preserved
 ; "onlyifdoesntexist" so user-edited DBs are kept across reinstalls/upgrades
-Source: "{#PublishDir}\data\*"; DestDir: "{app}\data"; Flags: recursesubdirs createallsubdirs onlyifdoesntexist
+Source: "{#PublishDir}\data\*"; DestDir: "{app}\data"; Flags: recursesubdirs createallsubdirs onlyifdoesntexist skipifsourcedoesntexist
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

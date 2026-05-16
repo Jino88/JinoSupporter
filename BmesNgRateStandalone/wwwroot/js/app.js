@@ -1,4 +1,4 @@
-// ── NG Rate Summary Chart ─────────────────────────────────────────────────────
+// ?? NG Rate Summary Chart ?????????????????????????????????????????????????????
 window.ngRateChart = {
     _instances: {},
 
@@ -70,10 +70,9 @@ window.ngRateChart = {
     }
 };
 
-// ── Auto-reload on Blazor reconnect ──────────────────────────────────────────
-// Blazor Server는 서버 재시작 시 "Attempting to reconnect" 모달을 띄우고 기본 8회 재시도 후 실패하면 멈춥니다.
-// 우리는 재연결 모달이 뜨는 즉시 주기적으로 서버를 핑하고, 응답이 오면 페이지를 하드 리로드해서
-// 사용자가 직접 새로고침하지 않아도 새 빌드가 자동 반영되게 합니다.
+// ?? Auto-reload on Blazor reconnect ??????????????????????????????????????????
+// Blazor Server???쒕쾭 ?ъ떆????"Attempting to reconnect" 紐⑤떖???꾩슦怨?湲곕낯 8???ъ떆?????ㅽ뙣?섎㈃ 硫덉땅?덈떎.
+// ?곕━???ъ뿰寃?紐⑤떖???⑤뒗 利됱떆 二쇨린?곸쑝濡??쒕쾭瑜??묓븯怨? ?묐떟???ㅻ㈃ ?섏씠吏瑜??섎뱶 由щ줈?쒗빐??// ?ъ슜?먭? 吏곸젒 ?덈줈怨좎묠?섏? ?딆븘????鍮뚮뱶媛 ?먮룞 諛섏쁺?섍쾶 ?⑸땲??
 document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('components-reconnect-modal');
     if (!modal) return;
@@ -108,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }).observe(modal, { attributes: true, attributeFilter: ['class', 'style'] });
 });
 
-// ── NG Rate By-Group Line Chart ───────────────────────────────────────────────
+// ?? NG Rate By-Group Line Chart ???????????????????????????????????????????????
 window.ngRateGroupChart = {
     _instances: {},
     _palette: [
@@ -189,7 +188,425 @@ window.ngRateGroupChart = {
     }
 };
 
-// ── File Download ─────────────────────────────────────────────────────────────
+window.graphMaker = {
+    _instances: {},
+    _palette: [
+        '#2563eb', '#16a34a', '#dc2626', '#9333ea', '#ea580c',
+        '#0891b2', '#be123c', '#4f46e5', '#65a30d', '#0f766e'
+    ],
+
+    render: function (canvasId, payload) {
+        this.destroy(canvasId);
+        const canvas = document.getElementById(canvasId);
+        if (!canvas || !payload) return;
+        const existing = window.Chart ? Chart.getChart(canvas) : null;
+        if (existing) existing.destroy();
+        payload = this.normalizePayload(payload);
+
+        if (payload.kind === 'HeatMap') {
+            this.renderHeatMap(canvas, payload);
+            return;
+        }
+
+        const kind = payload.kind || 'Line';
+        const isScatter = kind === 'Scatter' || kind === 'ProcessTrend' || kind === 'NormalDistribution';
+        const datasets = [];
+
+        (payload.series || []).forEach((s, i) => {
+            const color = this._palette[i % this._palette.length];
+            if (s.points) {
+                datasets.push({
+                    type: 'scatter',
+                    label: s.name,
+                    data: s.points,
+                    borderColor: s.color || color,
+                    backgroundColor: (s.color || color) + '33',
+                    pointRadius: s.pointRadius ?? (s.isLimit || kind === 'NormalDistribution' ? 0 : 3),
+                    showLine: !!s.showLine || kind === 'NormalDistribution',
+                    borderWidth: s.isLimit ? 1.5 : 2,
+                    borderDash: s.dashed ? [6, 4] : undefined,
+                    _graphMakerLimit: !!s.isLimit,
+                    _graphMakerLabelValue: s.labelValue,
+                    tension: 0.2,
+                });
+            } else {
+                const lineColor = s.color || color;
+                datasets.push({
+                    type: 'line',
+                    label: s.name,
+                    data: s.data,
+                    borderColor: lineColor,
+                    backgroundColor: lineColor + '22',
+                    pointRadius: s.pointRadius ?? (kind === 'Line' ? 2 : 3),
+                    showLine: kind !== 'NoXMultiY',
+                    borderWidth: 2,
+                    borderDash: s.dashed ? [6, 4] : undefined,
+                    tension: payload.lineMode === 'Smoothing' ? 0.35 : 0,
+                });
+            }
+        });
+
+        (payload.limits || []).filter(l => l.value != null).forEach(l => {
+            datasets.push({
+                type: 'line',
+                label: l.name,
+                data: (payload.labels || []).map(() => l.value),
+                borderColor: l.color,
+                borderWidth: 1.5,
+                borderDash: [6, 4],
+                pointRadius: 0,
+                tension: 0,
+            });
+        });
+
+        this._instances[canvasId] = new Chart(canvas, {
+            type: isScatter ? 'scatter' : 'line',
+            data: {
+                labels: payload.labels || [],
+                datasets: datasets,
+            },
+            plugins: [this.limitLabelPlugin, this.categoryLabelPlugin],
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        bottom: payload.useCategoryXAxis ? 96 : 0
+                    }
+                },
+                parsing: isScatter ? false : true,
+                interaction: { mode: 'nearest', intersect: false },
+                plugins: {
+                    graphMakerStats: payload.statGroups && payload.statGroups.length ? [] : (payload.stats || []),
+                    graphMakerCategoryLabels: {
+                        enabled: payload.useCategoryXAxis,
+                        labels: payload.labels || [],
+                        position: payload.scatterLabelPosition
+                    },
+                    title: { display: true, text: payload.title || 'Graph Maker' },
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 12, padding: 10, font: { size: 11 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => {
+                                if (ctx.raw && typeof ctx.raw === 'object') {
+                                    return ` ${ctx.dataset.label}: (${this.format(ctx.raw.x)}, ${this.format(ctx.raw.y)})`;
+                                }
+                                return ` ${ctx.dataset.label}: ${this.format(ctx.parsed.y)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: isScatter ? 'linear' : 'category',
+                        min: payload.useCategoryXAxis ? (payload.scatterLabelPosition === 'BetweenTicks' ? 0 : -0.5) : undefined,
+                        max: payload.useCategoryXAxis ? (payload.scatterLabelPosition === 'BetweenTicks' ? (payload.labels || []).length : (payload.labels || []).length - 0.5) : undefined,
+                        ticks: {
+                            stepSize: payload.useCategoryXAxis ? 1 : undefined,
+                            autoSkip: !payload.useCategoryXAxis,
+                            maxRotation: 35,
+                            font: { size: 10 },
+                            callback: function (value) {
+                                if (!payload.useCategoryXAxis) return value;
+                                return '';
+                            }
+                        },
+                        grid: { color: '#e2e8f0' }
+                    },
+                    y: {
+                        ticks: { font: { size: 10 } },
+                        grid: { color: '#e2e8f0' }
+                    }
+                }
+            }
+        });
+    },
+
+    normalizePayload: function (payload) {
+        return {
+            kind: payload.kind ?? payload.Kind,
+            title: payload.title ?? payload.Title,
+            labels: payload.labels ?? payload.Labels ?? [],
+            useCategoryXAxis: payload.useCategoryXAxis ?? payload.UseCategoryXAxis,
+            scatterLabelPosition: payload.scatterLabelPosition ?? payload.ScatterLabelPosition,
+            lineMode: payload.lineMode ?? payload.LineMode,
+            series: (payload.series ?? payload.Series ?? []).map(s => ({
+                name: s.name ?? s.Name,
+                data: s.data ?? s.Data,
+                points: (s.points ?? s.Points)?.map(p => ({
+                    x: p.x ?? p.X,
+                    y: p.y ?? p.Y
+                })),
+                isLimit: s.isLimit ?? s.IsLimit,
+                color: s.color ?? s.Color,
+                showLine: s.showLine ?? s.ShowLine,
+                dashed: s.dashed ?? s.Dashed,
+                labelValue: s.labelValue ?? s.LabelValue,
+                pointRadius: s.pointRadius ?? s.PointRadius
+            })),
+            limits: (payload.limits ?? payload.Limits ?? []).map(l => ({
+                name: l.name ?? l.Name,
+                value: l.value ?? l.Value,
+                color: l.color ?? l.Color
+            })),
+            xLabels: payload.xLabels ?? payload.XLabels ?? [],
+            yLabels: payload.yLabels ?? payload.YLabels ?? [],
+            matrix: payload.matrix ?? payload.Matrix ?? [],
+            matrixLabels: payload.matrixLabels ?? payload.MatrixLabels ?? [],
+            statGroups: (payload.statGroups ?? payload.StatGroups ?? []).map(g => ({
+                x: g.x ?? g.X,
+                label: g.label ?? g.Label,
+                stats: (g.stats ?? g.Stats ?? []).map(s => ({
+                    name: s.name ?? s.Name,
+                    value: s.value ?? s.Value
+                }))
+            })),
+            stats: payload.stats ?? payload.Stats ?? []
+        };
+    },
+
+    limitLabelPlugin: {
+        id: 'graphMakerLimitLabels',
+        afterDatasetsDraw: function (chart) {
+            const ctx = chart.ctx;
+            const yScale = chart.scales.y;
+            const area = chart.chartArea;
+            if (!yScale || !area) return;
+
+            ctx.save();
+            ctx.font = '11px sans-serif';
+            ctx.fillStyle = '#111827';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+
+            chart.data.datasets.forEach(ds => {
+                if (!ds._graphMakerLimit || ds._graphMakerLabelValue == null) return;
+                const y = yScale.getPixelForValue(ds._graphMakerLabelValue);
+                if (!Number.isFinite(y)) return;
+                const label = `${ds.label} ${window.graphMaker.format(ds._graphMakerLabelValue)}`;
+                ctx.fillText(label, area.right - 6, y - 8);
+            });
+
+            const stats = chart.options.plugins.graphMakerStats || [];
+            if (stats.length) {
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                ctx.fillStyle = 'rgba(255,255,255,.88)';
+                const statLines = stats.map(s => {
+                    const name = s.name ?? s.Name;
+                    const value = s.value ?? s.Value;
+                    return `${name}: ${window.graphMaker.format(value)}`;
+                });
+                const boxW = Math.max(128, Math.min(360, Math.ceil(Math.max(...statLines.map(line => ctx.measureText(line).width))) + 24));
+                const boxH = 8 + stats.length * 18;
+                ctx.fillRect(area.left + 8, area.top + 8, boxW, boxH);
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.strokeRect(area.left + 8, area.top + 8, boxW, boxH);
+                ctx.fillStyle = '#111827';
+                statLines.forEach((line, i) => ctx.fillText(line, area.left + 16, area.top + 14 + i * 18));
+            }
+
+            ctx.restore();
+        }
+    },
+
+    categoryLabelPlugin: {
+        id: 'graphMakerCategoryLabels',
+        afterDraw: function (chart) {
+            const opts = chart.options.plugins.graphMakerCategoryLabels;
+            if (!opts || !opts.enabled) return;
+
+            const xScale = chart.scales.x;
+            const area = chart.chartArea;
+            if (!xScale || !area) return;
+
+            const ctx = chart.ctx;
+            ctx.save();
+            ctx.font = '10px sans-serif';
+            ctx.fillStyle = '#334155';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+
+            const offset = opts.position === 'BetweenTicks' ? 0.5 : 0;
+            opts.labels.forEach((label, i) => {
+                const x = xScale.getPixelForValue(i + offset);
+                if (!Number.isFinite(x)) return;
+                ctx.save();
+                ctx.translate(x, area.bottom + 44);
+                ctx.rotate(-Math.PI / 4);
+                ctx.fillText(window.graphMaker.truncateLabel(String(label)), 0, 0);
+                ctx.restore();
+            });
+
+            ctx.restore();
+        }
+    },
+
+    renderHeatMap: function (canvas, payload) {
+        const ctx = canvas.getContext('2d');
+        const container = canvas.parentElement;
+        const width = Math.max(320, container ? container.clientWidth - 18 : 800);
+        const height = Math.max(320, container ? container.clientHeight - 18 : 500);
+        canvas.width = width * window.devicePixelRatio;
+        canvas.height = height * window.devicePixelRatio;
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+
+        const xLabels = payload.xLabels || [];
+        const yLabels = payload.yLabels || [];
+        const matrix = payload.matrix || [];
+        const matrixLabels = payload.matrixLabels || [];
+        const left = 110, top = 44, right = 24, bottom = 80;
+        const plotW = Math.max(1, width - left - right);
+        const plotH = Math.max(1, height - top - bottom);
+        const cellW = plotW / Math.max(1, xLabels.length);
+        const cellH = plotH / Math.max(1, yLabels.length);
+        const values = matrix.flat().filter(v => typeof v === 'number');
+        const min = values.length ? Math.min(...values) : 0;
+        const max = values.length ? Math.max(...values) : 1;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = '#1f2937';
+        ctx.font = '600 14px sans-serif';
+        ctx.fillText(payload.title || 'Heatmap', left, 24);
+
+        const stats = matrixLabels.length ? [] : (payload.stats || []);
+        if (stats.length) {
+            ctx.font = '11px sans-serif';
+            const statLines = stats.map(s => `${s.name ?? s.Name}: ${this.format(s.value ?? s.Value)}`);
+            const boxW = Math.max(128, Math.min(360, Math.ceil(Math.max(...statLines.map(line => ctx.measureText(line).width))) + 24));
+            const boxH = 8 + statLines.length * 18;
+            const boxX = Math.max(left + 160, width - right - boxW);
+            ctx.fillStyle = 'rgba(255,255,255,.9)';
+            ctx.fillRect(boxX, 10, boxW, boxH);
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.strokeRect(boxX, 10, boxW, boxH);
+            ctx.fillStyle = '#111827';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            statLines.forEach((line, i) => ctx.fillText(line, boxX + 8, 16 + i * 18));
+        }
+
+        for (let y = 0; y < yLabels.length; y++) {
+            for (let x = 0; x < xLabels.length; x++) {
+                const value = matrix[y] ? matrix[y][x] : null;
+                ctx.fillStyle = value == null ? '#f8fafc' : this.heatColor((value - min) / Math.max(0.000001, max - min));
+                ctx.fillRect(left + x * cellW, top + y * cellH, Math.ceil(cellW), Math.ceil(cellH));
+                ctx.strokeStyle = '#ffffff';
+                ctx.strokeRect(left + x * cellW, top + y * cellH, cellW, cellH);
+                const labelText = matrixLabels[y] ? matrixLabels[y][x] : null;
+                if (labelText && cellW > 52 && cellH > 48) {
+                    ctx.fillStyle = '#111827';
+                    ctx.font = '10px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    const lines = String(labelText).split('\n');
+                    const startY = top + y * cellH + cellH / 2 - (lines.length - 1) * 6;
+                    lines.forEach((line, lineIndex) => {
+                        ctx.fillText(line, left + x * cellW + cellW / 2, startY + lineIndex * 12);
+                    });
+                } else if (value != null && cellW > 38 && cellH > 18) {
+                    ctx.fillStyle = '#111827';
+                    ctx.font = '10px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(this.format(value), left + x * cellW + cellW / 2, top + y * cellH + cellH / 2);
+                }
+            }
+        }
+
+        ctx.fillStyle = '#475569';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        yLabels.forEach((label, i) => ctx.fillText(String(label).slice(0, 18), left - 8, top + i * cellH + cellH / 2));
+
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        xLabels.forEach((label, i) => {
+            ctx.save();
+            ctx.translate(left + i * cellW + cellW / 2, top + plotH + 8);
+            ctx.rotate(-Math.PI / 4);
+            ctx.fillText(String(label).slice(0, 18), 0, 0);
+            ctx.restore();
+        });
+
+        this._instances[canvas.id] = { destroy: () => ctx.clearRect(0, 0, width, height) };
+    },
+
+    heatColor: function (t) {
+        t = Math.max(0, Math.min(1, t || 0));
+        const r = Math.round(37 + t * 218);
+        const g = Math.round(99 + (1 - Math.abs(t - 0.5) * 2) * 120);
+        const b = Math.round(235 - t * 180);
+        return `rgb(${r},${g},${b})`;
+    },
+
+    format: function (value) {
+        if (value == null || Number.isNaN(value)) return '-';
+        if (Math.abs(value) >= 1000) return Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 });
+        return Number(value).toLocaleString(undefined, { maximumFractionDigits: 4 });
+    },
+
+    truncateLabel: function (label) {
+        label = String(label || '');
+        return label.length > 24 ? label.slice(0, 21) + '...' : label;
+    },
+
+    destroy: function (canvasId) {
+        if (this._instances[canvasId]) {
+            this._instances[canvasId].destroy();
+            delete this._instances[canvasId];
+        }
+        const canvas = document.getElementById(canvasId);
+        const existing = canvas && window.Chart ? Chart.getChart(canvas) : null;
+        if (existing) existing.destroy();
+    }
+};
+
+// ?? File Download ?????????????????????????????????????????????????????????????
+window.graphMakerPaste = {
+    _dotnet: null,
+    _bound: false,
+
+    init: function (dotnetRef) {
+        this._dotnet = dotnetRef;
+        if (this._bound) return;
+        this._bound = true;
+        document.addEventListener('paste', this._handlePaste);
+    },
+
+    destroy: function () {
+        if (this._bound) {
+            document.removeEventListener('paste', this._handlePaste);
+        }
+        this._bound = false;
+        this._dotnet = null;
+    },
+
+    _handlePaste: function (e) {
+        const sheet = document.getElementById('graphMakerSheet');
+        if (!sheet || !window.graphMakerPaste._dotnet) return;
+
+        const active = document.activeElement;
+        const target = e.target;
+        const isSheetPaste = sheet.contains(target) || active === sheet || sheet.contains(active);
+        if (!isSheetPaste) return;
+
+        const text = e.clipboardData ? e.clipboardData.getData('text/plain') : '';
+        if (!text || !text.trim()) return;
+
+        e.preventDefault();
+        window.graphMakerPaste._dotnet.invokeMethodAsync('PasteExcelData', text);
+    }
+};
+
 window.downloadBase64File = function (filename, base64, contentType) {
     const link = document.createElement('a');
     link.href     = `data:${contentType};base64,${base64}`;
@@ -199,7 +616,6 @@ window.downloadBase64File = function (filename, base64, contentType) {
     document.body.removeChild(link);
 };
 
-// ── Data Inference Drag-and-Drop ─────────────────────────────────────────────
 window.diDragDrop = {
     _dotnet: null,
     _kind:   null,
@@ -264,7 +680,7 @@ window.diDragDrop = {
     }
 };
 
-// ── Data Inference Block Resize ──────────────────────────────────────────────
+// ?? Data Inference Block Resize ??????????????????????????????????????????????
 window.diResize = {
     _dotnet: null,
 
@@ -341,7 +757,7 @@ window.diResize = {
     }
 };
 
-// ── TipTap Editor ─────────────────────────────────────────────────────────────
+// ?? TipTap Editor ?????????????????????????????????????????????????????????????
 window.tiptapEditor = {
     _editor: null,
     _mods:   null,
@@ -476,7 +892,7 @@ window.tiptapEditor = {
                 TextAlign.configure({ types: ['heading', 'paragraph'] }),
             ],
             content: [
-                /* ── Title header table ─────────────────────────── */
+                /* ?? Title header table ??????????????????????????? */
                 /* width:1% + white-space:nowrap = shrink-to-content */
                 '<table><tbody>',
                 '<tr>',
@@ -488,7 +904,7 @@ window.tiptapEditor = {
                 '<tr><th style="width:1%;white-space:nowrap;">Date</th><td></td></tr>',
                 '<tr><th style="width:1%;white-space:nowrap;">Marker</th><td></td></tr>',
                 '</tbody></table>',
-                /* ── Sections I – IV ───────────────────────────── */
+                /* ?? Sections I ??IV ????????????????????????????? */
                 '<h2>I. Purpose.</h2><p>- </p>' + '<p></p>'.repeat(5),
                 '<h2>II. Content.</h2>' + '<p></p>'.repeat(10),
                 '<h2>III. Result</h2>' + '<p></p>'.repeat(5),
@@ -658,7 +1074,7 @@ window.tiptapEditor = {
     }
 };
 
-// ── Full-page layout helper ───────────────────────────────────────────────────
+// ?? Full-page layout helper ???????????????????????????????????????????????????
 window.diFullPage = {
     enter: function () {
         var a = document.querySelector('article.content');
@@ -673,13 +1089,13 @@ window.diFullPage = {
     }
 };
 
-// ── Paste Image Handler ───────────────────────────────────────────────────────
+// ?? Paste Image Handler ???????????????????????????????????????????????????????
 window.pasteImageHandler = {
     _dotnetRef: null,
     _captureActive: false,
     _docPasteListener: null,
 
-    // Called once on firstRender — just stores the dotnet ref and wires the document listener
+    // Called once on firstRender ??just stores the dotnet ref and wires the document listener
     init: function (dotnetRef) {
         this._dotnetRef = dotnetRef;
 
@@ -721,13 +1137,13 @@ window.pasteImageHandler = {
                 reader.readAsDataURL(file);
                 return;
             }
-            // No image — text pastes into focused element normally (capture stays open)
+            // No image ??text pastes into focused element normally (capture stays open)
         };
 
         document.addEventListener('paste', this._docPasteListener);
     },
 
-    // Enable capture mode (called from Blazor @onclick — no focus trick needed for document-level paste)
+    // Enable capture mode (called from Blazor @onclick ??no focus trick needed for document-level paste)
     openCapture: function () { this._captureActive = true; },
 
     // Disable capture mode (Cancel button / ESC)
@@ -744,7 +1160,7 @@ window.pasteImageHandler = {
     }
 };
 
-// ── Backup File Drop/Paste Handler (any file type, not just images) ──────────
+// ?? Backup File Drop/Paste Handler (any file type, not just images) ??????????
 window.backupFileHandler = {
     _dotnetRef: null,
     _dropZone: null,
@@ -827,3 +1243,6 @@ window.backupFileHandler = {
         this._dotnetRef = null;
     }
 };
+
+
+

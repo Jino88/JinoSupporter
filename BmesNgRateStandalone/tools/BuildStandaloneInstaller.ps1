@@ -29,7 +29,7 @@ while ($versionParts.Count -lt 4) {
 }
 $assemblyVersion = ($versionParts[0..3] -join '.')
 
-dotnet publish $projectPath -c Release -r win-x64 --self-contained false -o $publishDir `
+dotnet publish $projectPath -c Release -r win-x64 --self-contained true -o $publishDir `
     "-p:Version=$Version" `
     "-p:AssemblyVersion=$assemblyVersion" `
     "-p:FileVersion=$assemblyVersion"
@@ -43,6 +43,8 @@ if ([string]::IsNullOrWhiteSpace($IsccPath)) {
 
 if ([string]::IsNullOrWhiteSpace($IsccPath)) {
     $candidatePaths = @(
+        "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe",
+        "$env:LOCALAPPDATA\Programs\Inno Setup 5\ISCC.exe",
         "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
         "${env:ProgramFiles}\Inno Setup 6\ISCC.exe",
         "${env:ProgramFiles(x86)}\Inno Setup 5\ISCC.exe",
@@ -62,13 +64,20 @@ if ([string]::IsNullOrWhiteSpace($IsccPath) -or -not (Test-Path -LiteralPath $Is
 
 Push-Location $standaloneRoot
 try {
+    $setupPath = Join-Path $standaloneRoot 'dist\BmesNgRateStandalone_Setup.exe'
+    if (Test-Path -LiteralPath $setupPath) {
+        Remove-Item -LiteralPath $setupPath -Force
+    }
+
     & $IsccPath "/DMyAppVersion=$Version" $installerPath
+    if ($LASTEXITCODE -ne 0) {
+        throw "Inno Setup compiler failed with exit code $LASTEXITCODE."
+    }
 }
 finally {
     Pop-Location
 }
 
-$setupPath = Join-Path $standaloneRoot 'dist\BmesNgRateStandalone_Setup.exe'
 if (-not (Test-Path -LiteralPath $setupPath)) {
     throw "Installer build finished but setup file was not found: $setupPath"
 }

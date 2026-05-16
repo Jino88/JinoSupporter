@@ -13,20 +13,20 @@
         <div class="sub-grp-head">
             @if (IsActive(Node))
             {
-                <span class="grp-active-dot" title="LineShifts go into this sub-group">●</span>
+                <span class="grp-active-dot" title="Shift-Groups go into this group">●</span>
             }
-            <span class="sub-badge">Sub</span>
+            <span class="sub-badge">@GroupLabel</span>
             <input class="sub-name-input"
                    value="@Node.Name"
                    @onchange="e => OnRename.InvokeAsync((Node, e.Value?.ToString() ?? string.Empty))"
                    @onclick:stopPropagation="true"
-                   placeholder="Sub-group name" />
+                   placeholder="@($"{GroupLabel} name")" />
             <span class="text-muted ms-1" style="font-size:10px;">@Node.TotalLineShifts</span>
             <button class="btn btn-sm btn-outline-primary py-0 px-1 ms-auto"
                     style="font-size:9px; line-height:1.2;"
-                    title="Add nested sub-group"
+                    title="@($"Add {ChildGroupLabel}")"
                     @onclick="() => OnAddNested.InvokeAsync(Node)"
-                    @onclick:stopPropagation="true">+ Sub</button>
+                    @onclick:stopPropagation="true">+ @ChildGroupLabel</button>
             <button class="btn btn-sm btn-outline-danger py-0 px-1"
                     style="font-size:9px; line-height:1.2;"
                     title="Remove sub-group"
@@ -45,6 +45,7 @@
             {
                 var lsCap = ls;
                 <li>
+                    <span class="shift-badge">Shift-Group</span>
                     <span>@lsCap</span>
                     <button class="ls-remove"
                             title="Remove"
@@ -84,4 +85,7 @@
     [Parameter] public EventCallback<BmesMakeModelGroupPage.SubGroupVm> OnRemove     { get; set; }
     [Parameter] public EventCallback<(BmesMakeModelGroupPage.SubGroupVm, string)>      OnRename          { get; set; }
     [Parameter] public EventCallback<(BmesMakeModelGroupPage.SubGroupVm, string)>      OnRemoveLineShift { get; set; }
+
+    private string GroupLabel => Depth == 0 && Node.SubGroups.Count > 0 ? "Building-Group" : "Line-Group";
+    private string ChildGroupLabel => "Line-Group";
 }

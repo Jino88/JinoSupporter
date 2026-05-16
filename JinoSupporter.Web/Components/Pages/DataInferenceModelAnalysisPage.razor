@@ -1,0 +1,1527 @@
+@page "/data-inference/model-analysis"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject WebRepository Repo
+
+<PageTitle>Data Inference - Each Model Analysis</PageTitle>
+
+<div class="dima-root">
+    <div class="dima-header">
+        <div>
+            <div class="dima-title">Each Model Analysis</div>
+            <div class="dima-subtitle">Group AI-authored report markdown by Product Type and generate a model-level analysis.</div>
+        </div>
+        <div class="dima-spacer"></div>
+        <input class="form-control form-control-sm dima-search"
+               placeholder="Search Product Type"
+               value="@_search"
+               @oninput="OnSearchChanged" />
+        <button class="btn btn-outline-secondary btn-sm" @onclick="Reload" disabled="@_isBusy">Refresh</button>
+    </div>
+
+    <div class="dima-body">
+        <aside class="dima-groups">
+            <div class="dima-pane-head">
+                <strong>Product Types</strong>
+                <span>@VisibleGroups.Count</span>
+            </div>
+            <div class="dima-group-list">
+                @if (VisibleGroups.Count == 0)
+                {
+                    <div class="dima-empty-small">No Product Type groups.</div>
+                }
+                else
+                {
+                    @foreach (var g in VisibleGroups)
+                    {
+                        <button class="dima-group-btn @(IsSelected(g.ProductType) ? "active" : "")"
+                                @onclick="() => SelectGroup(g.ProductType)">
+                            <span class="dima-group-name">@g.ProductType</span>
+                            <span class="dima-group-meta">@g.AiReportCount / @g.ReportCount analyzed</span>
+                            @if (!string.IsNullOrWhiteSpace(g.LatestAnalysisAt))
+                            {
+                                <span class="dima-group-date">Last: @FormatDate(g.LatestAnalysisAt)</span>
+                            }
+                        </button>
+                    }
+                }
+            </div>
+        </aside>
+
+        <main class="dima-main">
+            @if (SelectedGroup is null)
+            {
+                <div class="dima-empty">
+                    Select a Product Type to review its reports.
+                </div>
+            }
+            else
+            {
+                <div class="dima-toolbar">
+                    <div>
+                        <div class="dima-selected">@SelectedGroup.ProductType</div>
+                        <div class="dima-selected-sub">
+                            @AiReports.Count AI report(s), @_reports.Count total report(s), @NewReports.Count new or changed since latest analysis
+                        </div>
+                    </div>
+                    <div class="dima-toolbar-actions">
+                        <label class="dima-label">View</label>
+                        <select class="form-select form-select-sm dima-lang"
+                                value="@_language"
+                                @onchange="OnLanguageChanged"
+                                disabled="@_isBusy">
+                            @foreach (string language in ModelAnalysisLanguages)
+                            {
+                                <option value="@language">@LanguageLabel(language)</option>
+                            }
+                        </select>
+                        <label class="dima-label">Engine</label>
+                        <select class="form-select form-select-sm dima-engine" @bind="_executor" disabled="@_isBusy">
+                            <option value="@ModelAnalysisExecutor.ClaudeCli">Claude CLI</option>
+                            <option value="@ModelAnalysisExecutor.CodexCli">Codex CLI</option>
+                        </select>
+                        <button class="btn btn-outline-primary btn-sm"
+                                @onclick="() => AnalyzeAsync(incremental: true)"
+                                disabled="@(!_canAnalyze || _latest is null || NewReports.Count == 0)">
+                            Update New Reports
+                        </button>
+                        <button class="btn btn-primary btn-sm"
+                                @onclick="() => AnalyzeAsync(incremental: false)"
+                                disabled="@(!_canAnalyze || AiReports.Count == 0)">
+                            Full Rebuild
+                        </button>
+                        @if (_isWaitingCli)
+                        {
+                            <button class="btn btn-outline-danger btn-sm" @onclick="CancelCliWait">
+                                Cancel Wait
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_status))
+                {
+                    <div class="dima-status @(_statusError ? "error" : "ok")">@_status</div>
+                }
+
+                <div class="dima-stats">
+                    <div><strong>@SelectedGroup.ReportCount</strong><span>Total reports</span></div>
+                    <div><strong>@SelectedGroup.AiReportCount</strong><span>AI reports</span></div>
+                    <div><strong>@FormatDate(SelectedGroup.LatestAiUpdatedAt)</strong><span>Latest AI report</span></div>
+                    <div><strong>@(_latest is null ? "-" : FormatDate(_latest.CreatedAt))</strong><span>Latest model analysis</span></div>
+                    <div><strong>@($"{CurrentContextChars:N0}")</strong><span>Full source chars</span></div>
+                </div>
+
+                <div class="dima-workspace">
+                    <section class="dima-reports">
+                        <div class="dima-pane-head">
+                            <strong>Reports in Product Type</strong>
+                            <span>@_reports.Count</span>
+                        </div>
+                        <div class="dima-report-list">
+                            @foreach (var r in _reports)
+                            {
+                                bool isNew = IsNewOrChanged(r);
+                                <div class="dima-report @(r.HasAiReport ? "" : "missing") @(isNew ? "new" : "")">
+                                    <div class="dima-report-head">
+                                        <div class="dima-report-name">@r.DatasetName</div>
+                                        <button class="btn btn-outline-secondary btn-sm dima-view-btn"
+                                                @onclick="() => ViewReport(r)"
+                                                disabled="@(!r.HasAiReport)">
+                                            View
+                                        </button>
+                                    </div>
+                                    <div class="dima-report-title">@ShortText(DisplayTitle(r), 150)</div>
+                                    <div class="dima-report-meta">
+                                        @if (!string.IsNullOrWhiteSpace(r.ReportDate))
+                                        {
+                                            <span>@r.ReportDate</span>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(r.ReportType))
+                                        {
+                                            <span>@r.ReportType</span>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(r.PrimaryDefect))
+                                        {
+                                            <span>@r.PrimaryDefect</span>
+                                        }
+                                        @if (r.HasAiReport)
+                                        {
+                                            <span>@($"{r.GeneratedReportMarkdown.Length:N0}") chars</span>
+                                            <span>@r.ResultCount result(s)</span>
+                                        }
+                                        else
+                                        {
+                                            <span>No AI report</span>
+                                        }
+                                        @if (isNew)
+                                        {
+                                            <span class="dima-pill-new">New</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </section>
+
+                    <section class="dima-analysis">
+                        <div class="dima-pane-head">
+                            <strong>Model Analysis</strong>
+                            <div class="dima-history-select">
+                                @if (_history.Count > 1)
+                                {
+                                    <select class="form-select form-select-sm"
+                                            value="@(_activeAnalysisId?.ToString() ?? "")"
+                                            @onchange="OnHistoryChanged">
+                                        @foreach (var h in _history)
+                                        {
+                                            <option value="@h.Id">@FormatDate(h.CreatedAt) - @LanguageLabel(h.Language) - @h.AnalysisMode - @h.ReportCount</option>
+                                        }
+                                    </select>
+                                }
+                            </div>
+                        </div>
+
+                        @if (_isBusy)
+                        {
+                            <div class="dima-empty dima-fill">
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                Analyzing Product Type reports...
+                            </div>
+                        }
+                        else if (string.IsNullOrWhiteSpace(_activeMarkdown))
+                        {
+                            <div class="dima-empty dima-fill">
+                                No saved model analysis for this Product Type.
+                            </div>
+                        }
+                        else
+                        {
+                            <article class="dima-md">
+                                @if (!string.IsNullOrWhiteSpace(_activeTableMarkdown))
+                                {
+                                    <div class="dima-table-only">
+                                        @RenderMarkdown(_activeTableMarkdown)
+                                    </div>
+                                }
+                                @RenderMarkdown(_activeMarkdown)
+                            </article>
+                        }
+                    </section>
+                </div>
+            }
+        </main>
+    </div>
+
+    @if (_viewReport is not null)
+    {
+        <div class="dima-modal-backdrop" @onclick="CloseReport">
+            <div class="dima-modal" @onclick:stopPropagation="true">
+                <div class="dima-modal-head">
+                    <div>
+                        <div class="dima-modal-title">@_viewReport.DatasetName</div>
+                        <div class="dima-modal-sub">@DisplayTitle(_viewReport)</div>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="CloseReport">Close</button>
+                </div>
+                <div class="dima-modal-meta">
+                    @if (!string.IsNullOrWhiteSpace(_viewReport.ReportDate)) { <span>@_viewReport.ReportDate</span> }
+                    @if (!string.IsNullOrWhiteSpace(_viewReport.ReportType)) { <span>@_viewReport.ReportType</span> }
+                    @if (!string.IsNullOrWhiteSpace(_viewReport.PrimaryDefect)) { <span>@_viewReport.PrimaryDefect</span> }
+                    <span>@($"{_viewReport.GeneratedReportMarkdown.Length:N0}") chars</span>
+                </div>
+                <article class="dima-md dima-modal-body">
+                    @RenderMarkdown(_viewReport.GeneratedReportMarkdown)
+                </article>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private enum ModelAnalysisExecutor
+    {
+        ClaudeCli,
+        CodexCli
+    }
+
+    private static readonly string[] ModelAnalysisLanguages = ["Korean", "English", "Vietnamese"];
+
+    private List<ModelAnalysisGroupRecord> _groups = [];
+    private List<ModelAnalysisReportRecord> _reports = [];
+    private List<AiModelAnalysisRecord> _history = [];
+    private AiModelAnalysisRecord? _latest;
+    private ModelAnalysisReportRecord? _viewReport;
+    private ModelAnalysisExecutor _executor = ModelAnalysisExecutor.ClaudeCli;
+    private long? _activeAnalysisId;
+    private string _selectedProductType = "";
+    private string _search = "";
+    private string _language = "Korean";
+    private string _status = "";
+    private string _activeMarkdown = "";
+    private string _activeTableMarkdown = "";
+    private bool _statusError;
+    private bool _isBusy;
+    private bool _isWaitingCli;
+    private CancellationTokenSource? _cliWaitCts;
+
+    private bool _canAnalyze => !_isBusy;
+    private string ExecutorLabel => _executor == ModelAnalysisExecutor.CodexCli ? "Codex CLI" : "Claude CLI";
+
+    private List<ModelAnalysisGroupRecord> VisibleGroups => _groups
+        .Where(g => string.IsNullOrWhiteSpace(_search)
+                    || g.ProductType.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+    private ModelAnalysisGroupRecord? SelectedGroup =>
+        _groups.FirstOrDefault(g => string.Equals(g.ProductType, _selectedProductType, StringComparison.OrdinalIgnoreCase));
+
+    private List<ModelAnalysisReportRecord> AiReports => _reports
+        .Where(r => r.HasAiReport)
+        .ToList();
+
+    private int CurrentContextChars => AiReports.Sum(r => r.GeneratedReportMarkdown.Length);
+
+    private HashSet<string> LatestIncludedDatasets => ParseIncludedDatasets(_latest?.IncludedDatasetsJson);
+
+    private List<ModelAnalysisReportRecord> NewReports => _latest is null
+        ? AiReports
+        : AiReports.Where(IsNewOrChanged).ToList();
+
+    protected override void OnInitialized()
+    {
+        Reload();
+    }
+
+    private void Reload()
+    {
+        _groups = Repo.GetModelAnalysisGroups();
+        if (string.IsNullOrWhiteSpace(_selectedProductType)
+            || !_groups.Any(g => string.Equals(g.ProductType, _selectedProductType, StringComparison.OrdinalIgnoreCase)))
+        {
+            _selectedProductType = _groups.FirstOrDefault()?.ProductType ?? "";
+        }
+        LoadSelectedGroup();
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        _search = e.Value?.ToString() ?? "";
+    }
+
+    private void SelectGroup(string productType)
+    {
+        if (_isBusy) return;
+        _selectedProductType = productType;
+        LoadSelectedGroup();
+    }
+
+    private void LoadSelectedGroup()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedProductType))
+        {
+            _reports = [];
+            _history = [];
+            _latest = null;
+            _activeAnalysisId = null;
+            _activeMarkdown = "";
+            _activeTableMarkdown = "";
+            return;
+        }
+
+        _reports = Repo.GetModelAnalysisReports(_selectedProductType);
+        _history = Repo.GetModelAnalysisHistory(_selectedProductType);
+        _latest = _history.FirstOrDefault();
+        SetActiveAnalysis(PreferredAnalysis());
+        _status = "";
+        _statusError = false;
+    }
+
+    private AiModelAnalysisRecord? PreferredAnalysis()
+        => _history.FirstOrDefault(h => string.Equals(h.Language, _language, StringComparison.OrdinalIgnoreCase))
+           ?? _history.FirstOrDefault();
+
+    private void SetActiveAnalysis(AiModelAnalysisRecord? analysis)
+    {
+        _activeAnalysisId = analysis?.Id;
+        _activeMarkdown = analysis?.AnalysisMarkdown ?? "";
+        _activeTableMarkdown = analysis?.AnalysisTableMarkdown ?? "";
+    }
+
+    private async Task AnalyzeAsync(bool incremental)
+    {
+        if (SelectedGroup is null)
+        {
+            SetStatus("Select a Product Type first.", true);
+            return;
+        }
+
+        List<ModelAnalysisReportRecord> sourceReports =
+            incremental && _latest is not null ? NewReports : AiReports;
+
+        if (sourceReports.Count == 0)
+        {
+            SetStatus(incremental
+                ? "No new or changed AI reports to update."
+                : "No AI report markdown exists for this Product Type.",
+                true);
+            return;
+        }
+
+        try
+        {
+            bool incrementalRun = incremental && _latest is not null;
+            string context = BuildModelContext(incremental, sourceReports);
+            HashSet<string> included = incremental && _latest is not null
+                ? LatestIncludedDatasets
+                : [];
+            foreach (var r in sourceReports) included.Add(r.DatasetName);
+            if (!incremental || _latest is null)
+            {
+                included = AiReports.Select(r => r.DatasetName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            }
+
+            string includedJson = System.Text.Json.JsonSerializer.Serialize(included.Order(StringComparer.OrdinalIgnoreCase).ToList());
+            string hash = Sha256Hex(context);
+            string workDir = FindRepoRoot();
+            string tmpDir = Path.Combine(workDir, "tmp");
+            Directory.CreateDirectory(tmpDir);
+            string runId = Guid.NewGuid().ToString("N")[..12];
+            DateTime startedUtc = DateTime.UtcNow;
+
+            List<string> includedDatasets = included.Order(StringComparer.OrdinalIgnoreCase).ToList();
+            bool launched = _executor == ModelAnalysisExecutor.CodexCli
+                ? LaunchCodexByLanguage(workDir, tmpDir, runId, startedUtc, SelectedGroup.ProductType,
+                    incrementalRun, included.Count, includedDatasets, hash, context)
+                : LaunchClaudeForAllLanguages(workDir, tmpDir, runId, startedUtc, SelectedGroup.ProductType,
+                    incrementalRun, included.Count, includedDatasets, hash, context);
+
+            if (!launched)
+            {
+                SetStatus($"Failed to launch {ExecutorLabel}.", true);
+                return;
+            }
+
+            _isBusy = true;
+            _isWaitingCli = true;
+            string launchedText = _executor == ModelAnalysisExecutor.CodexCli
+                ? "Codex CLI launched in 3 parallel language terminals"
+                : $"{ExecutorLabel} launched";
+            SetStatus(
+                incrementalRun
+                    ? $"{launchedText}. Waiting for Korean, English, and Vietnam model analysis updates from {sourceReports.Count} new or changed report(s)."
+                    : $"{launchedText}. Waiting for Korean, English, and Vietnam full model analyses from {sourceReports.Count} AI report(s).",
+                false);
+
+            await WaitForCliResultAsync(SelectedGroup.ProductType, hash, startedUtc);
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Analysis failed: {ex.Message}", true);
+        }
+        finally
+        {
+            _isBusy = false;
+            _isWaitingCli = false;
+        }
+    }
+
+    private bool LaunchClaudeForAllLanguages(string workDir, string tmpDir, string runId, DateTime startedUtc,
+        string productType, bool incrementalRun, int reportCount, IReadOnlyList<string> includedDatasets,
+        string sourceContextHash, string context)
+    {
+        string requestPath = Path.Combine(tmpDir, $"model_analysis_request_{runId}.json");
+        WriteModelAnalysisRequest(requestPath, productType, incrementalRun, ModelAnalysisLanguages,
+            reportCount, includedDatasets, sourceContextHash, startedUtc, context);
+        string prompt = BuildModelAnalysisCliPrompt(requestPath, Repo.GetDbPath());
+        return TryLaunchClaudeTerminal(workDir, prompt, $"Each Model Analysis ({productType})", requestPath);
+    }
+
+    private bool LaunchCodexByLanguage(string workDir, string tmpDir, string runId, DateTime startedUtc,
+        string productType, bool incrementalRun, int reportCount, IReadOnlyList<string> includedDatasets,
+        string sourceContextHash, string context)
+    {
+        var launched = new List<string>();
+        foreach (string language in ModelAnalysisLanguages)
+        {
+            string requestPath = Path.Combine(tmpDir, $"model_analysis_request_{runId}_{LanguageSlug(language)}.json");
+            WriteModelAnalysisRequest(requestPath, productType, incrementalRun, new[] { language },
+                reportCount, includedDatasets, sourceContextHash, startedUtc, context);
+            string prompt = BuildModelAnalysisCliPrompt(requestPath, Repo.GetDbPath());
+            if (!TryLaunchCodexTerminal(workDir, prompt, $"Each Model Analysis ({productType}) - {LanguageLabel(language)}", requestPath))
+            {
+                SetStatus($"Failed to launch Codex CLI for {LanguageLabel(language)}. Already launched: {string.Join(", ", launched.Select(LanguageLabel))}.", true);
+                return false;
+            }
+            launched.Add(language);
+        }
+        return true;
+    }
+
+    private static void WriteModelAnalysisRequest(string requestPath, string productType, bool incrementalRun,
+        IReadOnlyList<string> languages, int reportCount, IReadOnlyList<string> includedDatasets,
+        string sourceContextHash, DateTime startedUtc, string context)
+    {
+        string[] requestedLanguages = languages.ToArray();
+        var request = new
+        {
+            productType,
+            analysisMode = incrementalRun ? "incremental" : "full",
+            language = requestedLanguages.Length == 1 ? requestedLanguages[0] : "All",
+            languages = requestedLanguages,
+            reportCount,
+            includedDatasets,
+            sourceContextHash,
+            createdAt = startedUtc.ToString("o"),
+            context
+        };
+
+        File.WriteAllText(
+            requestPath,
+            System.Text.Json.JsonSerializer.Serialize(
+                request,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+            new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+    }
+
+    private string BuildModelContext(bool incremental, IReadOnlyList<ModelAnalysisReportRecord> sourceReports)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"ProductType: {_selectedProductType}");
+        sb.AppendLine($"AnalysisMode: {(incremental && _latest is not null ? "incremental_update" : "full_rebuild")}");
+        sb.AppendLine($"TotalReportsInProductType: {_reports.Count}");
+        sb.AppendLine($"AiReportsInProductType: {AiReports.Count}");
+        sb.AppendLine($"SourceReportsInThisPrompt: {sourceReports.Count}");
+        sb.AppendLine();
+
+        if (incremental && _latest is not null)
+        {
+            List<AiModelAnalysisRecord> baselines = ModelAnalysisLanguages
+                .Select(language => _history.FirstOrDefault(h => string.Equals(h.Language, language, StringComparison.OrdinalIgnoreCase)))
+                .Where(h => h is not null)
+                .Cast<AiModelAnalysisRecord>()
+                .GroupBy(h => h.Id)
+                .Select(g => g.First())
+                .ToList();
+            if (baselines.Count == 0 && !string.IsNullOrWhiteSpace(_latest.AnalysisMarkdown))
+            {
+                baselines.Add(_latest);
+            }
+
+            sb.AppendLine("===== PREVIOUS MODEL ANALYSES BY LANGUAGE =====");
+            foreach (var baseline in baselines)
+            {
+                sb.AppendLine($"----- Previous Language: {baseline.Language}");
+                if (!string.IsNullOrWhiteSpace(baseline.AnalysisTableMarkdown))
+                {
+                    sb.AppendLine("PREVIOUS_MAIN_COMPARISON_TABLE:");
+                    sb.AppendLine(baseline.AnalysisTableMarkdown.Trim());
+                    sb.AppendLine();
+                }
+                sb.AppendLine("PREVIOUS_FULL_ANALYSIS:");
+                sb.AppendLine(baseline.AnalysisMarkdown.Trim());
+                sb.AppendLine();
+            }
+            sb.AppendLine("===== NEW OR CHANGED AI REPORTS =====");
+        }
+        else
+        {
+            sb.AppendLine("===== AI REPORTS =====");
+        }
+
+        int idx = 1;
+        foreach (var r in sourceReports)
+        {
+            sb.AppendLine($"----- [{idx++}] Dataset: {r.DatasetName}");
+            sb.AppendLine($"ProductType: {r.ProductType}");
+            if (!string.IsNullOrWhiteSpace(r.ReportDate)) sb.AppendLine($"ReportDate: {r.ReportDate}");
+            if (!string.IsNullOrWhiteSpace(r.Title)) sb.AppendLine($"Title: {r.Title}");
+            if (!string.IsNullOrWhiteSpace(r.ReportType)) sb.AppendLine($"ReportType: {r.ReportType}");
+            if (!string.IsNullOrWhiteSpace(r.PrimaryDefect)) sb.AppendLine($"PrimaryDefect: {r.PrimaryDefect}");
+            sb.AppendLine($"ResultRows: {r.ResultCount}");
+            sb.AppendLine($"ConclusionRows: {r.ConclusionCount}");
+            sb.AppendLine("AI_REPORT_MARKDOWN:");
+            sb.AppendLine(r.GeneratedReportMarkdown.Trim());
+            sb.AppendLine();
+        }
+        return sb.ToString();
+    }
+
+    private static string BuildModelAnalysisCliPrompt(string requestPath, string dbPath)
+    {
+        return string.Join(Environment.NewLine, new[]
+        {
+            "Run the Each Model Analysis workflow for JinoSupporter.",
+            $"RequestJson={requestPath}",
+            $"Database={dbPath}",
+            "",
+            "Open the request JSON. It contains productType, analysisMode, language, languages, reportCount, includedDatasets, sourceContextHash, createdAt, and context.",
+            "The context contains AI-authored per-report markdown. Use those AI_REPORT_MARKDOWN sections as the primary evidence. Do not rely on parameters alone.",
+            "Generate one complete model-level analysis for each language listed in request.languages. If request.languages has one item, generate and insert only that language.",
+            "The user's required report is not a generic risk summary. It must explain what reviews/tests were performed for this Product Type/model, group similar reviews together, show each review's result, then give the AI's overall model-level judgement.",
+            "Group similar reviews by purpose, defect/phenomenon, process, part/material, jig/mold/machine, changed condition, supplier/lot, or measurement type. Choose the grouping that best matches the evidence in the reports.",
+            "For each group, list the included report names and summarize each report's result separately before writing the group-level interpretation.",
+            "If analysisMode is incremental, use the previous model analysis for the same target language when present in the context, evaluate only the new/changed reports as new evidence, but save one complete replacement model-level analysis.",
+            "If analysisMode is full, analyze all AI report markdown in the context together.",
+            "",
+            "For each language, write concise Markdown only. No JSON in AnalysisMarkdown. No code fence.",
+            "The report must be table-centered. Avoid long prose; use short paragraphs only where judgement or caveats need explanation.",
+            "Required Markdown sections, translated naturally for the target language:",
+            "## Model review history summary",
+            "Briefly state how many reports were reviewed, the main review themes, and the overall model-level direction.",
+            "## Similar review grouped results",
+            "Create the main comparison table. Required semantic columns: Review Group | Included Reports | Review Purpose/Condition | Result By Report | AI Group Judgment.",
+            "Translate the table headers for the target language if appropriate, but preserve those five meanings.",
+            "## Individual review result details",
+            "Use a compact table where possible. For each included report, show concrete result, judgement, and important caveats.",
+            "## Repeated patterns and differences",
+            "Explain what patterns repeat across groups and where results conflict or differ.",
+            "## AI overall judgment",
+            "Give the AI's overall judgement for this model/Product Type based only on the included reports.",
+            "## Follow-up review / improvement suggestions",
+            "Prioritize practical follow-up checks or improvements implied by the grouped evidence.",
+            "## Included reports",
+            "List all included report names.",
+            "",
+            "Rules:",
+            "1. Do not invent facts that are not present in the request context.",
+            "2. Separate stable repeated patterns from one-off or weak-sample findings.",
+            "3. When reports conflict, describe the conflict and cite the affected report names.",
+            "4. Do not collapse everything into one summary. The grouped review history is the core deliverable.",
+            "5. Mention the included report names in the Included Reports section.",
+            "6. Preserve product codes, defect names, line names, numeric values, and units verbatim.",
+            "7. AnalysisTableMarkdown must contain only the exact main comparison table from the Similar review grouped results section, including the Markdown header row and separator row.",
+            "",
+            "After writing the Markdown, insert exactly one row per requested language into SQLite table AiModelAnalyses in the supplied Database path.",
+            "Before inserting, ensure the table exists and includes AnalysisTableMarkdown. Create the table if needed with these columns:",
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT, ProductType TEXT, AnalysisMode TEXT, Language TEXT, ReportCount INTEGER, IncludedDatasetsJson TEXT, AnalysisMarkdown TEXT, AnalysisTableMarkdown TEXT, SourceContextHash TEXT, CreatedAt TEXT.",
+            "If the table already exists but PRAGMA table_info(AiModelAnalyses) does not include AnalysisTableMarkdown, run ALTER TABLE AiModelAnalyses ADD COLUMN AnalysisTableMarkdown TEXT NOT NULL DEFAULT ''.",
+            "For every inserted row use ProductType=request.productType, AnalysisMode=request.analysisMode, Language=the exact requested language value, ReportCount=request.reportCount, IncludedDatasetsJson=json.dumps(request.includedDatasets, ensure_ascii=False), AnalysisMarkdown=the full Markdown for that language, AnalysisTableMarkdown=the exact main comparison table Markdown for that language, SourceContextHash=request.sourceContextHash, CreatedAt=current UTC ISO-8601.",
+            "Do not edit repository source files. Only read the request JSON and write the SQLite row.",
+            "Print a short completion line with productType and the inserted row ids for the requested languages."
+        });
+    }
+
+    private bool IsSelected(string productType)
+        => string.Equals(_selectedProductType, productType, StringComparison.OrdinalIgnoreCase);
+
+    private bool IsNewOrChanged(ModelAnalysisReportRecord r)
+    {
+        if (_latest is null || !r.HasAiReport) return r.HasAiReport;
+        if (!LatestIncludedDatasets.Contains(r.DatasetName)) return true;
+        if (DateTime.TryParse(r.AiUpdatedAt, null, System.Globalization.DateTimeStyles.RoundtripKind, out var aiUpdated)
+            && DateTime.TryParse(_latest.CreatedAt, null, System.Globalization.DateTimeStyles.RoundtripKind, out var latestCreated))
+        {
+            return aiUpdated > latestCreated;
+        }
+        return false;
+    }
+
+    private void OnHistoryChanged(ChangeEventArgs e)
+    {
+        if (!long.TryParse(e.Value?.ToString(), out long id)) return;
+        var hit = _history.FirstOrDefault(h => h.Id == id);
+        if (hit is null) return;
+        if (ModelAnalysisLanguages.Contains(hit.Language, StringComparer.OrdinalIgnoreCase)) _language = hit.Language;
+        SetActiveAnalysis(hit);
+    }
+
+    private void OnLanguageChanged(ChangeEventArgs e)
+    {
+        string next = e.Value?.ToString() ?? "Korean";
+        if (!ModelAnalysisLanguages.Contains(next, StringComparer.OrdinalIgnoreCase)) next = "Korean";
+        _language = next;
+        SetActiveAnalysis(PreferredAnalysis());
+    }
+
+    private async Task WaitForCliResultAsync(string productType, string sourceContextHash, DateTime startedUtc)
+    {
+        _cliWaitCts?.Cancel();
+        _cliWaitCts?.Dispose();
+        _cliWaitCts = new CancellationTokenSource(TimeSpan.FromMinutes(20));
+        CancellationToken token = _cliWaitCts.Token;
+
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2), token);
+
+                _history = Repo.GetModelAnalysisHistory(productType);
+                List<AiModelAnalysisRecord> hits = _history.Where(h =>
+                    string.Equals(h.SourceContextHash, sourceContextHash, StringComparison.OrdinalIgnoreCase)
+                    && DateTime.TryParse(h.CreatedAt, null, System.Globalization.DateTimeStyles.RoundtripKind, out var created)
+                    && created.ToUniversalTime() >= startedUtc.AddSeconds(-2))
+                    .ToList();
+
+                List<string> completedLanguages = ModelAnalysisLanguages
+                    .Where(language => hits.Any(h => string.Equals(h.Language, language, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+
+                if (completedLanguages.Count == ModelAnalysisLanguages.Length)
+                {
+                    AiModelAnalysisRecord hit = hits.FirstOrDefault(h => string.Equals(h.Language, _language, StringComparison.OrdinalIgnoreCase))
+                                                ?? hits.First();
+                    _groups = Repo.GetModelAnalysisGroups();
+                    LoadSelectedGroup();
+                    SetActiveAnalysis(_history.FirstOrDefault(h => h.Id == hit.Id) ?? hit);
+                    SetStatus($"{ExecutorLabel} results received for Korean, English, and Vietnam. Included reports: {hit.ReportCount}.", false);
+                    return;
+                }
+
+                string languageStatus = completedLanguages.Count == 0
+                    ? "none saved yet"
+                    : string.Join(", ", completedLanguages.Select(LanguageLabel));
+                SetStatus($"{ExecutorLabel} running. Waiting for all language results... saved: {languageStatus}. {DateTime.Now:HH:mm:ss}", false);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            if (string.IsNullOrWhiteSpace(_activeMarkdown))
+                SetStatus("Wait cancelled or timed out. Refresh later to load the CLI result if it finishes.", true);
+        }
+    }
+
+    private void CancelCliWait()
+    {
+        try { _cliWaitCts?.Cancel(); } catch { }
+        _isWaitingCli = false;
+        _isBusy = false;
+        SetStatus("Stopped waiting. The CLI terminal may still be running.", true);
+    }
+
+    private void ViewReport(ModelAnalysisReportRecord report)
+    {
+        if (!report.HasAiReport) return;
+        _viewReport = report;
+    }
+
+    private void CloseReport() => _viewReport = null;
+
+    private void SetStatus(string message, bool error)
+    {
+        _status = message;
+        _statusError = error;
+    }
+
+    private static bool TryLaunchClaudeTerminal(string workDir, string prompt, string title, string requestPath)
+        => TryLaunchTerminal(workDir, prompt, title, requestPath, useCodex: false);
+
+    private static bool TryLaunchCodexTerminal(string workDir, string prompt, string title, string requestPath)
+        => TryLaunchTerminal(workDir, prompt, title, requestPath, useCodex: true);
+
+    private static bool TryLaunchTerminal(string workDir, string prompt, string title, string requestPath, bool useCodex)
+    {
+        string launchId = Guid.NewGuid().ToString("N")[..12];
+        string promptPath = Path.Combine(workDir, useCodex
+            ? $"_model_analysis_prompt_codex_{launchId}.txt"
+            : $"_model_analysis_prompt_claude_{launchId}.txt");
+        string scriptPath = Path.Combine(workDir, useCodex
+            ? $"_model_analysis_launch_codex_{launchId}.ps1"
+            : $"_model_analysis_launch_claude_{launchId}.ps1");
+
+        try
+        {
+            File.WriteAllText(promptPath, prompt, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            File.WriteAllText(
+                scriptPath,
+                useCodex
+                    ? BuildCodexLauncherScript(workDir, promptPath, scriptPath, title, requestPath)
+                    : BuildClaudeLauncherScript(workDir, promptPath, scriptPath, title, requestPath),
+                new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        }
+        catch
+        {
+            return false;
+        }
+
+        try
+        {
+            var wt = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "wt.exe",
+                UseShellExecute = false,
+                CreateNoWindow = false,
+            };
+            wt.ArgumentList.Add("-d");
+            wt.ArgumentList.Add(workDir);
+            wt.ArgumentList.Add("powershell.exe");
+            wt.ArgumentList.Add("-NoExit");
+            wt.ArgumentList.Add("-NoProfile");
+            wt.ArgumentList.Add("-ExecutionPolicy");
+            wt.ArgumentList.Add("Bypass");
+            wt.ArgumentList.Add("-File");
+            wt.ArgumentList.Add(scriptPath);
+            var proc = System.Diagnostics.Process.Start(wt);
+            if (proc is not null) ChildProcessJob.Assign(proc);
+            return true;
+        }
+        catch { }
+
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                WorkingDirectory = workDir,
+                UseShellExecute = false,
+                CreateNoWindow = false,
+            };
+            psi.ArgumentList.Add("/k");
+            psi.ArgumentList.Add("powershell.exe");
+            psi.ArgumentList.Add("-NoExit");
+            psi.ArgumentList.Add("-NoProfile");
+            psi.ArgumentList.Add("-ExecutionPolicy");
+            psi.ArgumentList.Add("Bypass");
+            psi.ArgumentList.Add("-File");
+            psi.ArgumentList.Add(scriptPath);
+            var proc = System.Diagnostics.Process.Start(psi);
+            if (proc is not null) ChildProcessJob.Assign(proc);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static string BuildClaudeLauncherScript(string workDir, string promptPath, string scriptPath, string title, string requestPath)
+    {
+        static string Q(string value) => "'" + (value ?? "").Replace("'", "''") + "'";
+        return string.Join(Environment.NewLine, new[]
+        {
+            "$ErrorActionPreference = 'Continue'",
+            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
+            "try { chcp 65001 | Out-Null } catch {}",
+            $"try {{ $Host.UI.RawUI.WindowTitle = {Q(title)} }} catch {{}}",
+            $"Set-Location -LiteralPath {Q(workDir)}",
+            $"$promptPath = {Q(promptPath)}",
+            $"$scriptPath = {Q(scriptPath)}",
+            $"$requestPath = {Q(requestPath)}",
+            "$prompt = Get-Content -LiteralPath $promptPath -Raw -Encoding UTF8",
+            "& claude --permission-mode bypassPermissions -p $prompt",
+            "$exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }",
+            "if ($exitCode -ne 0) { Write-Host ('Claude exited with code ' + $exitCode + '.') -ForegroundColor Yellow }",
+            "if ($exitCode -eq 0) { Remove-Item -LiteralPath $requestPath -Force -ErrorAction SilentlyContinue }",
+            "Remove-Item -LiteralPath $promptPath -Force -ErrorAction SilentlyContinue",
+            "Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue",
+        });
+    }
+
+    private static string BuildCodexLauncherScript(string workDir, string promptPath, string scriptPath, string title, string requestPath)
+    {
+        static string Q(string value) => "'" + (value ?? "").Replace("'", "''") + "'";
+        return string.Join(Environment.NewLine, new[]
+        {
+            "$ErrorActionPreference = 'Continue'",
+            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
+            "try { chcp 65001 | Out-Null } catch {}",
+            $"try {{ $Host.UI.RawUI.WindowTitle = {Q(title)} }} catch {{}}",
+            $"Set-Location -LiteralPath {Q(workDir)}",
+            $"$promptPath = {Q(promptPath)}",
+            $"$scriptPath = {Q(scriptPath)}",
+            $"$requestPath = {Q(requestPath)}",
+            "$prompt = Get-Content -LiteralPath $promptPath -Raw -Encoding UTF8",
+            $"$prompt | & codex exec -c 'model_reasoning_effort=\"xhigh\"' --cd {Q(workDir)} --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check -",
+            "$exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }",
+            "if ($exitCode -ne 0) { Write-Host ('Codex exited with code ' + $exitCode + '.') -ForegroundColor Yellow }",
+            "if ($exitCode -eq 0) { Remove-Item -LiteralPath $requestPath -Force -ErrorAction SilentlyContinue }",
+            "Remove-Item -LiteralPath $promptPath -Force -ErrorAction SilentlyContinue",
+            "Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue",
+        });
+    }
+
+    private static string FindRepoRoot()
+    {
+        string dir = AppContext.BaseDirectory;
+        for (int i = 0; i < 8; i++)
+        {
+            if (File.Exists(Path.Combine(dir, "JinoSupporter.sln"))) return dir;
+            if (File.Exists(Path.Combine(dir, "AI_EXCEL_PROC.md"))) return dir;
+            string? parent = Path.GetDirectoryName(dir.TrimEnd('\\', '/'));
+            if (string.IsNullOrEmpty(parent) || parent == dir) break;
+            dir = parent;
+        }
+        return AppContext.BaseDirectory;
+    }
+
+    private static string DisplayTitle(ModelAnalysisReportRecord r)
+        => !string.IsNullOrWhiteSpace(r.Title) ? r.Title : r.PrimaryDefect;
+
+    private static string LanguageLabel(string language)
+        => string.Equals(language, "Vietnamese", StringComparison.OrdinalIgnoreCase) ? "Vietnam" : language;
+
+    private static string LanguageSlug(string language)
+        => LanguageLabel(language).ToLowerInvariant().Replace(" ", "-");
+
+    private static string ShortText(string text, int max)
+    {
+        text = (text ?? "").Trim();
+        return text.Length <= max ? text : text[..Math.Max(0, max - 1)] + "...";
+    }
+
+    private static string FormatDate(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "-";
+        if (DateTime.TryParse(value, null, System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
+            return dt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+        return value;
+    }
+
+    private static HashSet<string> ParseIncludedDatasets(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return new(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<List<string>>(json)
+                ?.ToHashSet(StringComparer.OrdinalIgnoreCase)
+                ?? new(StringComparer.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return new(StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    private static string CleanModelMarkdown(string raw)
+    {
+        string text = (raw ?? "").Trim();
+        if (!text.StartsWith("```", StringComparison.Ordinal)) return text;
+
+        int firstLine = text.IndexOf('\n');
+        if (firstLine >= 0) text = text[(firstLine + 1)..];
+        int lastFence = text.LastIndexOf("```", StringComparison.Ordinal);
+        if (lastFence >= 0) text = text[..lastFence];
+        return text.Trim();
+    }
+
+    private static string Sha256Hex(string text)
+    {
+        byte[] bytes = System.Text.Encoding.UTF8.GetBytes(text ?? "");
+        return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant();
+    }
+
+    private static Microsoft.AspNetCore.Components.MarkupString RenderMarkdown(string? markdown)
+    {
+        string text = (markdown ?? "").Replace("\r\n", "\n").Replace('\r', '\n');
+        var lines = text.Split('\n');
+        var sb = new System.Text.StringBuilder();
+        bool inList = false;
+
+        static string Enc(string value) => System.Net.WebUtility.HtmlEncode(value ?? "");
+        static string Inline(string value)
+        {
+            string html = Enc(value);
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"\*\*(.+?)\*\*", "<strong>$1</strong>");
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"`([^`]+)`", "<code>$1</code>");
+            return html;
+        }
+
+        void CloseList()
+        {
+            if (!inList) return;
+            sb.AppendLine("</ul>");
+            inList = false;
+        }
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string line = lines[i];
+            string trim = line.Trim();
+
+            if (string.IsNullOrWhiteSpace(trim))
+            {
+                CloseList();
+                continue;
+            }
+
+            if (trim.StartsWith('|') && trim.EndsWith('|')
+                && i + 1 < lines.Length
+                && lines[i + 1].Trim().StartsWith('|')
+                && lines[i + 1].Contains("---", StringComparison.Ordinal))
+            {
+                CloseList();
+                var headers = SplitMarkdownTableRow(trim);
+                sb.AppendLine("<table><thead><tr>");
+                foreach (string h in headers) sb.Append("<th>").Append(Inline(h)).AppendLine("</th>");
+                sb.AppendLine("</tr></thead><tbody>");
+                i += 2;
+                for (; i < lines.Length; i++)
+                {
+                    string row = lines[i].Trim();
+                    if (!row.StartsWith('|') || !row.EndsWith('|')) { i--; break; }
+                    sb.AppendLine("<tr>");
+                    foreach (string cell in SplitMarkdownTableRow(row)) sb.Append("<td>").Append(Inline(cell)).AppendLine("</td>");
+                    sb.AppendLine("</tr>");
+                }
+                sb.AppendLine("</tbody></table>");
+                continue;
+            }
+
+            if (trim.StartsWith("### ", StringComparison.Ordinal))
+            {
+                CloseList();
+                sb.Append("<h3>").Append(Inline(trim[4..].Trim())).AppendLine("</h3>");
+                continue;
+            }
+            if (trim.StartsWith("## ", StringComparison.Ordinal))
+            {
+                CloseList();
+                sb.Append("<h2>").Append(Inline(trim[3..].Trim())).AppendLine("</h2>");
+                continue;
+            }
+            if (trim.StartsWith("- ", StringComparison.Ordinal))
+            {
+                if (!inList)
+                {
+                    sb.AppendLine("<ul>");
+                    inList = true;
+                }
+                sb.Append("<li>").Append(Inline(trim[2..].Trim())).AppendLine("</li>");
+                continue;
+            }
+
+            CloseList();
+            sb.Append("<p>").Append(Inline(trim)).AppendLine("</p>");
+        }
+        CloseList();
+        return new Microsoft.AspNetCore.Components.MarkupString(sb.ToString());
+    }
+
+    private static List<string> SplitMarkdownTableRow(string row)
+        => row.Trim().Trim('|').Split('|').Select(x => x.Trim()).ToList();
+
+    public void Dispose()
+    {
+        try { _cliWaitCts?.Cancel(); } catch { }
+        _cliWaitCts?.Dispose();
+    }
+}
+
+<style>
+    .dima-root {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+        background: #f5f7fb;
+        color: #172033;
+    }
+
+    .dima-alert {
+        margin: 8px 14px 0;
+        padding: 7px 10px;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+
+    .dima-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: #fff;
+        border-bottom: 1px solid #dfe5ee;
+        flex-shrink: 0;
+    }
+
+    .dima-title {
+        font-size: 15px;
+        font-weight: 750;
+    }
+
+    .dima-subtitle {
+        font-size: 11px;
+        color: #667085;
+        margin-top: 2px;
+    }
+
+    .dima-spacer {
+        flex: 1;
+    }
+
+    .dima-search {
+        width: 240px;
+    }
+
+    .dima-body {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(230px, 290px) minmax(0, 1fr);
+        overflow: hidden;
+    }
+
+    .dima-groups,
+    .dima-main,
+    .dima-reports,
+    .dima-analysis {
+        min-height: 0;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .dima-groups {
+        border-right: 1px solid #dfe5ee;
+    }
+
+    .dima-main {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dima-pane-head {
+        height: 42px;
+        padding: 0 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        border-bottom: 1px solid #e5eaf1;
+        background: #fbfcfe;
+        font-size: 12px;
+        color: #344054;
+        flex-shrink: 0;
+    }
+
+    .dima-group-list,
+    .dima-report-list {
+        height: calc(100% - 42px);
+        overflow: auto;
+        padding: 8px;
+    }
+
+    .dima-group-btn {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 3px;
+        text-align: left;
+        padding: 8px 9px;
+        margin-bottom: 7px;
+        background: #fff;
+        border: 1px solid #e5eaf1;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .dima-group-btn:hover {
+        background: #f8fafc;
+        border-color: #bfd4ff;
+    }
+
+    .dima-group-btn.active {
+        border-color: #2563eb;
+        background: #eff6ff;
+    }
+
+    .dima-group-name {
+        font-size: 12px;
+        font-weight: 750;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .dima-group-meta,
+    .dima-group-date,
+    .dima-selected-sub,
+    .dima-report-title,
+    .dima-report-meta {
+        font-size: 11px;
+        color: #667085;
+    }
+
+    .dima-toolbar {
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-bottom: 1px solid #dfe5ee;
+        flex-shrink: 0;
+    }
+
+    .dima-selected {
+        font-size: 15px;
+        font-weight: 750;
+    }
+
+    .dima-toolbar-actions {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+    .dima-label {
+        font-size: 11px;
+        font-weight: 650;
+        color: #475467;
+    }
+
+    .dima-lang {
+        width: 130px;
+    }
+
+    .dima-engine {
+        width: 130px;
+    }
+
+    .dima-status {
+        margin: 8px 14px 0;
+        padding: 6px 9px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 650;
+        flex-shrink: 0;
+    }
+
+    .dima-status.ok {
+        background: #ecfdf3;
+        color: #027a48;
+        border: 1px solid #abefc6;
+    }
+
+    .dima-status.error {
+        background: #fef3f2;
+        color: #b42318;
+        border: 1px solid #fecdca;
+    }
+
+    .dima-stats {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+        padding: 9px 14px;
+        border-bottom: 1px solid #dfe5ee;
+        background: #fff;
+        flex-shrink: 0;
+    }
+
+    .dima-stats div {
+        min-width: 0;
+        padding: 7px 9px;
+        border: 1px solid #e5eaf1;
+        border-radius: 6px;
+        background: #fbfcfe;
+    }
+
+    .dima-stats strong {
+        display: block;
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .dima-stats span {
+        display: block;
+        margin-top: 2px;
+        font-size: 10px;
+        color: #667085;
+    }
+
+    .dima-workspace {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+        overflow: hidden;
+    }
+
+    .dima-reports {
+        border-right: 1px solid #dfe5ee;
+    }
+
+    .dima-report {
+        padding: 8px 9px;
+        margin-bottom: 7px;
+        border: 1px solid #e5eaf1;
+        border-radius: 6px;
+        background: #fff;
+    }
+
+    .dima-report-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .dima-view-btn {
+        padding: 2px 8px;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    .dima-report.new {
+        border-color: #93c5fd;
+        background: #f0f7ff;
+    }
+
+    .dima-report.missing {
+        background: #f8fafc;
+        opacity: .72;
+    }
+
+    .dima-report-name {
+        font-size: 12px;
+        font-weight: 750;
+        color: #172033;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .dima-report-title {
+        margin-top: 2px;
+        line-height: 1.35;
+    }
+
+    .dima-report-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 5px;
+    }
+
+    .dima-report-meta span {
+        background: #eef2f7;
+        border-radius: 10px;
+        padding: 1px 6px;
+        font-size: 10px;
+    }
+
+    .dima-report-meta .dima-pill-new {
+        background: #dbeafe;
+        color: #1d4ed8;
+        font-weight: 700;
+    }
+
+    .dima-analysis {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dima-history-select {
+        min-width: 220px;
+        max-width: 360px;
+    }
+
+    .dima-md {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        padding: 16px 18px 28px;
+        font-size: 13px;
+        line-height: 1.55;
+        color: #172033;
+    }
+
+    .dima-md h2 {
+        font-size: 17px;
+        margin: 20px 0 8px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #e5eaf1;
+    }
+
+    .dima-md h2:first-child {
+        margin-top: 0;
+    }
+
+    .dima-md h3 {
+        font-size: 14px;
+        margin: 16px 0 7px;
+    }
+
+    .dima-md p {
+        margin: 0 0 9px;
+    }
+
+    .dima-md ul {
+        margin: 0 0 10px 20px;
+        padding: 0;
+    }
+
+    .dima-md li {
+        margin-bottom: 4px;
+    }
+
+    .dima-md code {
+        background: #eef2f7;
+        padding: 1px 4px;
+        border-radius: 4px;
+    }
+
+    .dima-md table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0 14px;
+        font-size: 12px;
+    }
+
+    .dima-md th,
+    .dima-md td {
+        border: 1px solid #dfe5ee;
+        padding: 5px 7px;
+        vertical-align: top;
+    }
+
+    .dima-md th {
+        background: #f8fafc;
+        font-weight: 750;
+    }
+
+    .dima-table-only {
+        margin: 0 0 16px;
+        padding: 10px 12px 4px;
+        border: 1px solid #dfe5ee;
+        border-radius: 6px;
+        background: #fbfcfe;
+    }
+
+    .dima-table-only table {
+        margin-top: 0;
+    }
+
+    .dima-empty,
+    .dima-empty-small {
+        color: #667085;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .dima-empty {
+        flex: 1;
+        min-height: 240px;
+    }
+
+    .dima-empty-small {
+        padding: 14px 8px;
+    }
+
+    .dima-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1060;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 22px;
+        background: rgba(15, 23, 42, .52);
+    }
+
+    .dima-modal {
+        width: min(1180px, 96vw);
+        height: min(840px, 92vh);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 24px 70px rgba(15, 23, 42, .35);
+    }
+
+    .dima-modal-head {
+        min-height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 14px;
+        border-bottom: 1px solid #dfe5ee;
+        background: #fff;
+        flex-shrink: 0;
+    }
+
+    .dima-modal-title {
+        font-size: 14px;
+        font-weight: 750;
+        color: #172033;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: min(860px, 70vw);
+    }
+
+    .dima-modal-sub {
+        margin-top: 2px;
+        font-size: 11px;
+        color: #667085;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: min(860px, 70vw);
+    }
+
+    .dima-modal-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        padding: 7px 14px;
+        border-bottom: 1px solid #e5eaf1;
+        background: #fbfcfe;
+        flex-shrink: 0;
+    }
+
+    .dima-modal-meta span {
+        font-size: 10px;
+        color: #475467;
+        background: #eef2f7;
+        border-radius: 10px;
+        padding: 1px 6px;
+    }
+
+    .dima-modal-body {
+        padding: 16px 18px 28px;
+    }
+
+    .dima-fill {
+        min-height: 0;
+        height: 100%;
+    }
+
+    @@media (max-width: 980px) {
+        .dima-body {
+            grid-template-columns: 1fr;
+            overflow: auto;
+        }
+
+        .dima-groups {
+            max-height: 240px;
+            border-right: none;
+            border-bottom: 1px solid #dfe5ee;
+        }
+
+        .dima-workspace {
+            grid-template-columns: 1fr;
+            overflow: visible;
+        }
+
+        .dima-reports {
+            max-height: 320px;
+            border-right: none;
+            border-bottom: 1px solid #dfe5ee;
+        }
+
+        .dima-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .dima-toolbar {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .dima-toolbar-actions {
+            width: 100%;
+            margin-left: 0;
+            flex-wrap: wrap;
+        }
+    }
+</style>

@@ -197,10 +197,34 @@ app.MapPost("/standalone/sync/routing-table", (NgRateSettingsService settings, L
     return Results.Ok(new { rows = rows.Count });
 });
 
+app.MapGet("/standalone/sync/routing-table", (NgRateSettingsService settings) =>
+{
+    var rows = settings.GetRoutingRows();
+    return Results.Ok(rows);
+});
+
 app.MapPost("/standalone/sync/reason-table", (NgRateSettingsService settings, List<ReasonRow> rows) =>
 {
     settings.ReplaceReasonRows(rows);
     return Results.Ok(new { rows = rows.Count });
+});
+
+app.MapGet("/standalone/sync/reason-table", (NgRateSettingsService settings) =>
+{
+    var rows = settings.GetReasonRows();
+    return Results.Ok(rows);
+});
+
+app.MapPost("/standalone/sync/model-groups", (WebRepository repo, List<ModelGroupRecord> groups) =>
+{
+    repo.SaveModelGroups(groups);
+    return Results.Ok(new { rows = groups.Count });
+});
+
+app.MapGet("/standalone/sync/model-groups", (WebRepository repo) =>
+{
+    var groups = repo.GetModelGroups();
+    return Results.Ok(groups);
 });
 
 app.MapRazorComponents<App>()

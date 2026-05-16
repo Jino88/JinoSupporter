@@ -62,6 +62,12 @@
         </div>
     </div>
     <div style="overflow-x:auto; max-height:calc(100vh - 190px); overflow-y:auto;">
+        <datalist id="reason-options">
+            @foreach (var reason in ReasonOptions)
+            {
+                <option value="@reason"></option>
+            }
+        </datalist>
         <table class="bmes-table">
             <thead>
                 <tr>
@@ -149,10 +155,21 @@
                                     <td class="text-muted">@_rsqModel</td>
                                     <td>@pn</td>
                                     <td>@ng</td>
-                                    <td>
+                                    <td class="bmes-reason-cell" @onclick="() => StartQuickReasonEdit(existing)">
                                         @if (missing)
                                         {
                                             <span class="text-danger small fst-italic">(not in Reason Table)</span>
+                                        }
+                                        else if (_quickReasonId == existing!.Id)
+                                        {
+                                            <input class="bmes-input bmes-reason-select"
+                                                   list="reason-options"
+                                                   @bind="_quickReasonValue"
+                                                   @bind:event="oninput"
+                                                   @onkeydown="OnQuickReasonKeyDown"
+                                                   @onblur="() => SaveQuickReasonEdit(existing.Id)"
+                                                   @onclick:stopPropagation="true"
+                                                   autofocus />
                                         }
                                         else
                                         {
@@ -223,7 +240,23 @@
                                 <td class="text-muted">-</td>
                                 <td>@r.ProcessName</td>
                                 <td>@r.NgName</td>
-                                <td>@r.Reason</td>
+                                <td class="bmes-reason-cell" @onclick="() => StartQuickReasonEdit(r)">
+                                    @if (_quickReasonId == r.Id)
+                                    {
+                                        <input class="bmes-input bmes-reason-select"
+                                               list="reason-options"
+                                               @bind="_quickReasonValue"
+                                               @bind:event="oninput"
+                                               @onkeydown="OnQuickReasonKeyDown"
+                                               @onblur="() => SaveQuickReasonEdit(r.Id)"
+                                               @onclick:stopPropagation="true"
+                                               autofocus />
+                                    }
+                                    else
+                                    {
+                                        @r.Reason
+                                    }
+                                </td>
                                 <td class="bmes-actions">
                                     <button class="btn btn-outline-primary btn-sm py-0 px-1" @onclick="() => StartReasonEdit(r)" title="Edit">Edit</button>
                                     <button class="btn btn-outline-danger btn-sm py-0 px-1" @onclick="() => DeleteReasonRow(r.Id)" title="Delete">Del</button>
@@ -265,12 +298,18 @@
         border-radius: 3px; background: #fff; outline: none;
     }
     .bmes-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.15); }
+    .bmes-reason-cell { cursor: text; min-width: 220px; }
+    .bmes-reason-cell:hover { background: #eff6ff !important; }
+    .bmes-reason-select { min-width: 220px; }
 </style>
 
 @code {
     private List<ReasonRow> _reasonRows = [];
     private long _editReasonId = -1;
     private ReasonRow _editReason = new();
+    private long _quickReasonId = -1;
+    private string _quickReasonValue = string.Empty;
+    private bool _quickReasonSaving;
 
     private string _rsqModel = string.Empty;
     private string _rsqProcessName = string.Empty;
@@ -289,10 +328,17 @@
     private string _statusMsg = string.Empty;
     private bool _statusError;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        _reasonRows = NgRateSettings.GetReasonRows();
+        await PullReasonFromServer();
     }
+
+    private IReadOnlyList<string> ReasonOptions => _reasonRows
+        .Select(r => r.Reason?.Trim() ?? string.Empty)
+        .Where(r => !string.IsNullOrWhiteSpace(r))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(r => r, StringComparer.OrdinalIgnoreCase)
+        .ToList();
 
     private List<ReasonRow> GetFilteredReason()
     {
@@ -411,6 +457,7 @@
 
     private void StartReasonEdit(ReasonRow r)
     {
+        _quickReasonId = -1;
         _editReasonId = r.Id;
         _editReason = new ReasonRow
         {
@@ -426,10 +473,59 @@
         NgRateSettings.UpdateReasonRow(_editReason);
         _reasonRows = NgRateSettings.GetReasonRows();
         _editReasonId = -1;
+        _quickReasonId = -1;
         await SyncReasonToServer("Reason row saved.");
     }
 
     private void CancelReasonEdit() => _editReasonId = -1;
+
+    private void StartQuickReasonEdit(ReasonRow? r)
+    {
+        if (r is null) return;
+        _editReasonId = -1;
+        _quickReasonId = r.Id;
+        _quickReasonValue = r.Reason ?? string.Empty;
+    }
+
+    private async Task OnQuickReasonKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await SaveQuickReasonEdit(_quickReasonId);
+        else if (e.Key == "Escape")
+            _quickReasonId = -1;
+    }
+
+    private async Task SaveQuickReasonEdit(long id)
+    {
+        if (_quickReasonSaving || id <= 0 || _quickReasonId != id) return;
+        var row = _reasonRows.FirstOrDefault(r => r.Id == id);
+        if (row is null)
+        {
+            _quickReasonId = -1;
+            return;
+        }
+
+        string next = (_quickReasonValue ?? string.Empty).Trim();
+        if (string.Equals(row.Reason ?? string.Empty, next, StringComparison.Ordinal))
+        {
+            _quickReasonId = -1;
+            return;
+        }
+
+        _quickReasonSaving = true;
+        try
+        {
+            row.Reason = next;
+            NgRateSettings.UpdateReasonRow(row);
+            _reasonRows = NgRateSettings.GetReasonRows();
+            _quickReasonId = -1;
+            await SyncReasonToServer("Reason row saved.");
+        }
+        finally
+        {
+            _quickReasonSaving = false;
+        }
+    }
 
     private async Task DeleteReasonRow(long id)
     {
@@ -490,6 +586,18 @@
     {
         _statusMsg = msg;
         _statusError = isError;
+    }
+
+    private async Task PullReasonFromServer()
+    {
+        var result = await BmesSettingsSync.PullReasonRowsFromServerAsync();
+        _reasonRows = NgRateSettings.GetReasonRows();
+        _editReasonId = -1;
+
+        if (result.Succeeded)
+            SetStatus($"Loaded {result.Rows} reason row(s) from server DB.", false);
+        else
+            SetStatus($"Server load failed. Showing local DB: {result.Message}", true);
     }
 
     private async Task SyncReasonToServer(string localMessage)

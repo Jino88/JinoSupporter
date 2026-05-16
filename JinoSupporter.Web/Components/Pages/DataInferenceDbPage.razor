@@ -12,9 +12,15 @@
 <div class="didb-header">
     <span class="didb-title">Saved Datasets</span>
     <span class="didb-count">
-        @FilteredReports.Count dataset(s)@(string.IsNullOrEmpty(_productTypeFilter) ? "" : $" / {_reports.Count} total")
+        @FilteredReports.Count dataset(s)@DatasetFilterSuffix
     </span>
     <div style="flex:1;"></div>
+    <label class="didb-filter-label">AI Batch</label>
+    <select class="form-select form-select-sm didb-filter-select" @bind="_aiBatchFilter">
+        <option value="all">All</option>
+        <option value="batched">AI Batched</option>
+        <option value="pending">Not Batched</option>
+    </select>
     <label class="didb-filter-label">Product Type</label>
     <select class="form-select form-select-sm didb-filter-select" @bind="_productTypeFilter">
         <option value="">All</option>
@@ -39,7 +45,7 @@
 else if (FilteredReports.Count == 0)
 {
     <div class="didb-empty">
-        No datasets match Product Type <strong>"@_productTypeFilter"</strong>.
+        No datasets match the selected filters.
     </div>
 }
 else
@@ -115,11 +121,11 @@ else
                             }
                         </td>
                         <td @onclick:stopPropagation="true" style="white-space:nowrap;">
-                            <button class="btn btn-sm py-0 px-1 me-1 @(r.BatchExcluded ? "btn-warning" : "btn-outline-secondary")"
+                            <button class="btn btn-sm py-0 px-2 me-1 @(expanded ? "btn-primary" : "btn-outline-primary")"
                                     style="font-size:12px;"
-                                    title="@(r.BatchExcluded ? "Excluded from AI batch — click to include" : "Included in AI batch — click to exclude")"
-                                    @onclick="() => ToggleBatchExcluded(r.DatasetName, r.BatchExcluded)">
-                                @(r.BatchExcluded ? "🚫" : "🤖")
+                                    title="@(expanded ? "Close dataset detail" : "View dataset detail")"
+                                    @onclick="() => ToggleExpand(r.DatasetName)">
+                                @(expanded ? "Close" : "View")
                             </button>
                             @* OCR button removed — v4 policy ignores OCR cache;
                                only excel_paste TSV is sent to AI. *@
@@ -139,6 +145,9 @@ else
                             string aiLang = _aiCardLang;
                             string docTitle       = AiDocTitle(doc, aiLang);
                             string docPurpose     = AiDocPurpose(doc, aiLang);
+                            string aiGeneratedReport = AiGeneratedReportMarkdown(doc, aiLang);
+                            bool aiHasGeneratedReport = !string.IsNullOrWhiteSpace(aiGeneratedReport);
+                            bool aiShowParameterReport = !aiHasGeneratedReport || _aiCardShowAll;
                             string logRationale   = AiLogRationale(doc, aiLang);
                             var aiContent         = AiDocContent(doc, aiLang)
                                 .Take(_aiCardShowAll ? int.MaxValue : 10)
@@ -296,38 +305,56 @@ else
                                             }
                                         </div>
 
-                                        <section class="didb-ai-panel didb-ai-full didb-ai-brief-panel">
-                                            <h3>Report Summary</h3>
-                                            <div class="didb-ai-brief-grid">
-                                                @foreach (var item in aiBriefSummary)
-                                                {
-                                                    var summaryItems = AiDisplayListItems(item.Value);
-                                                    <div class="didb-ai-brief-item">
-                                                        <span>@item.Label</span>
-                                                        @if (summaryItems.Count > 1)
-                                                        {
-                                                            <ul class="didb-ai-brief-list" title="@item.Value">
-                                                                @foreach (var summaryItem in summaryItems)
-                                                                {
-                                                                    <li>@AiBrief(summaryItem, 140)</li>
-                                                                }
-                                                            </ul>
-                                                        }
-                                                        else
-                                                        {
-                                                            <strong title="@item.Value">@AiBrief(item.Value, 220)</strong>
-                                                        }
-                                                    </div>
-                                                }
-                                            </div>
-                                        </section>
+                                        @if (aiHasGeneratedReport)
+                                        {
+                                            <section class="didb-ai-panel didb-ai-full didb-ai-generated-panel">
+                                                <div class="didb-ai-report-head">
+                                                    <h3>AI Generated Report</h3>
+                                                    <span>AI-authored report</span>
+                                                </div>
+                                                <div class="didb-ai-generated-report">
+                                                    @AiMarkdown(aiGeneratedReport)
+                                                </div>
+                                            </section>
+                                        }
 
-                                        <section class="didb-ai-panel didb-ai-full didb-ai-report-panel">
-                                            <div class="didb-ai-report-head">
-                                                <h3>Excel Summary Report</h3>
-                                                <span>@aiReportLabel</span>
-                                            </div>
-                                            <div class="didb-ai-report-grid">
+                                        @if (aiShowParameterReport)
+                                        {
+                                            <section class="didb-ai-panel didb-ai-full didb-ai-brief-panel">
+                                                <h3>Stored Parameter Summary</h3>
+                                                <div class="didb-ai-brief-grid">
+                                                    @foreach (var item in aiBriefSummary)
+                                                    {
+                                                        var summaryItems = AiDisplayListItems(item.Value);
+                                                        <div class="didb-ai-brief-item">
+                                                            <span>@item.Label</span>
+                                                            @if (summaryItems.Count > 1)
+                                                            {
+                                                                <ul class="didb-ai-brief-list" title="@item.Value">
+                                                                    @foreach (var summaryItem in summaryItems)
+                                                                    {
+                                                                        <li>@AiBrief(summaryItem, 140)</li>
+                                                                    }
+                                                                </ul>
+                                                            }
+                                                            else
+                                                            {
+                                                                <strong title="@item.Value">@AiBrief(item.Value, 220)</strong>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </section>
+                                        }
+
+                                        @if (aiShowParameterReport)
+                                        {
+                                            <section class="didb-ai-panel didb-ai-full didb-ai-report-panel">
+                                                <div class="didb-ai-report-head">
+                                                    <h3>Stored Parameter Report</h3>
+                                                    <span>@aiReportLabel</span>
+                                                </div>
+                                                <div class="didb-ai-report-grid">
                                                 @foreach (var block in aiDetailedBlocks)
                                                 {
                                                     <article class="didb-ai-report-block @block.Kind">
@@ -412,11 +439,14 @@ else
                                                         }
                                                     </article>
                                                 }
-                                            </div>
-                                        </section>
+                                                </div>
+                                            </section>
+                                        }
 
-                                        <div class="didb-ai-grid">
-                                            <section class="didb-ai-panel didb-ai-panel-wide">
+                                        @if (aiShowParameterReport)
+                                        {
+                                            <div class="didb-ai-grid">
+                                                <section class="didb-ai-panel didb-ai-panel-wide">
                                                 <h3>@AiPrimaryPanelTitle(aiReportKind)</h3>
                                                 @if (aiComparisons.Count == 0)
                                                 {
@@ -871,8 +901,8 @@ else
                                             </section>
                                         </div>
 
-                                        <div class="didb-ai-grid">
-                                            <section class="didb-ai-panel didb-ai-panel-wide">
+                                            <div class="didb-ai-grid">
+                                                <section class="didb-ai-panel didb-ai-panel-wide">
                                                 <h3>AI Conclusions</h3>
                                                 <div class="didb-ai-findings">
                                                     @foreach (var c in aiConclusions)
@@ -907,7 +937,8 @@ else
                                                     </tbody>
                                                 </table>
                                             </section>
-                                        </div>
+                                            </div>
+                                        }
 
                                         @if (_aiCardShowAll)
                                         {
@@ -977,7 +1008,11 @@ else
                                         }
 
                                         <button class="didb-show-details didb-ai-more" @onclick="() => _aiCardShowAll = !_aiCardShowAll" @onclick:stopPropagation="true">
-                                            @(_aiCardShowAll ? "▴ Hide dashboard detail" : $"▾ Show full dashboard ({doc.Results.Count} results, {doc.Results.Select(x => x.SheetName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()} sheets)")
+                                            @(_aiCardShowAll
+                                                ? (aiHasGeneratedReport ? "Hide stored DB parameters" : "Hide dashboard detail")
+                                                : (aiHasGeneratedReport
+                                                    ? $"Show stored DB parameters ({doc.Results.Count} results, {doc.Results.Select(x => x.SheetName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()} sheets)"
+                                                    : $"Show full dashboard ({doc.Results.Count} results, {doc.Results.Select(x => x.SheetName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()} sheets)"))
                                         </button>
                                     </div>
                                 </td>
@@ -2149,6 +2184,113 @@ else
         border: 1px solid #d9e0e7; background: #fff; border-radius: 999px;
         padding: 3px 8px; white-space: nowrap;
     }
+    .didb-ai-generated-panel {
+        background: #fff;
+        border-left: 4px solid #1f7a7a;
+    }
+    .didb-ai-generated-report {
+        color: #17202a;
+        font-size: 12px;
+        line-height: 1.58;
+        overflow-wrap: anywhere;
+    }
+    .didb-ai-generated-report h3,
+    .didb-ai-generated-report h4,
+    .didb-ai-generated-report h5 {
+        margin: 12px 0 6px;
+        color: #0f172a;
+        font-weight: 900;
+    }
+    .didb-ai-generated-report h3:first-child,
+    .didb-ai-generated-report h4:first-child,
+    .didb-ai-generated-report h5:first-child {
+        margin-top: 0;
+    }
+    .didb-ai-generated-report p {
+        margin: 5px 0;
+    }
+    .didb-ai-generated-report ul {
+        margin: 5px 0 8px 18px;
+        padding: 0;
+    }
+    .didb-ai-generated-report li {
+        margin: 3px 0;
+    }
+    .didb-ai-generated-report table {
+        width: auto;
+        max-width: 100%;
+        border-collapse: collapse;
+        table-layout: auto;
+        margin: 8px 0 12px;
+        font-size: 11px;
+    }
+    .didb-ai-generated-report th,
+    .didb-ai-generated-report td {
+        border: 1px solid #d4dee8;
+        padding: 4px 10px;
+        vertical-align: middle;
+        white-space: nowrap;
+        text-align: center;
+    }
+    .didb-ai-generated-report td:first-child,
+    .didb-ai-generated-report th:first-child {
+        text-align: left;
+    }
+    .didb-ai-generated-report th {
+        background: #eef3f8;
+        color: #28405c;
+        font-weight: 900;
+    }
+    .didb-ai-generated-report code {
+        background: #eef3f8;
+        border-radius: 4px;
+        padding: 1px 4px;
+    }
+    .didb-ai-visual-panel {
+        background: #fbfcfd;
+        border-left: 4px solid #5b6b7e;
+    }
+    .didb-ai-visual-grid {
+        display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(260px, .8fr);
+        gap: 10px; margin-bottom: 10px;
+    }
+    @@media (max-width: 980px) {
+        .didb-ai-visual-grid { grid-template-columns: 1fr; }
+    }
+    .didb-ai-visual-card {
+        min-width: 0; border: 1px solid #d9e0e7; background: #fff;
+        border-radius: 8px; padding: 10px;
+    }
+    .didb-ai-visual-card h4 {
+        margin: 0 0 8px; color: #17202a; font-size: 12px; font-weight: 900;
+    }
+    .didb-ai-visual-heatmap {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-bottom: 0;
+    }
+    .didb-ai-visual-bar-row {
+        grid-template-columns: minmax(92px, 36%) minmax(90px, 1fr) !important;
+        gap: 8px;
+    }
+    .didb-ai-visual-table th:first-child,
+    .didb-ai-visual-table td:first-child { width: 24%; }
+    .didb-ai-visual-table th:nth-child(2),
+    .didb-ai-visual-table td:nth-child(2) { width: 30%; }
+    .didb-ai-visual-table th:nth-child(3),
+    .didb-ai-visual-table td:nth-child(3) { width: 120px; }
+    .didb-ai-visual-table th:nth-child(4),
+    .didb-ai-visual-table td:nth-child(4) { width: auto; }
+    .didb-ai-md-visual {
+        margin: 10px 0 12px;
+    }
+    .didb-ai-md-bars {
+        border: 1px solid #d9e0e7; border-radius: 8px; background: #fff;
+        padding: 8px 10px;
+    }
+    .didb-ai-generated-report pre {
+        margin: 8px 0 12px; padding: 9px 10px; overflow-x: auto;
+        background: #f3f6f9; border: 1px solid #d9e0e7; border-radius: 6px;
+    }
     .didb-ai-report-grid {
         display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
     }
@@ -2406,6 +2548,50 @@ else
     .didb-ai-heat-flat {
         background: #fff8eb; border-color: #edcf94; color: #8a570f;
     }
+    .didb-ai-heat-matrix {
+        margin: 10px 0 12px;
+        border-collapse: separate;
+        border-spacing: 4px;
+        font-size: 11px;
+    }
+    .didb-ai-heat-matrix th {
+        background: #eef3f8; color: #28405c;
+        font-size: 10px; font-weight: 900;
+        padding: 6px 10px;
+        border: 1px solid #d4dee8;
+        text-align: center;
+        white-space: nowrap;
+    }
+    .didb-ai-heat-matrix th.didb-ai-heat-rowhead {
+        background: #f4f8fb; color: #17324a;
+    }
+    .didb-ai-heat-matrix td.didb-ai-heat-cell {
+        min-width: 86px;
+        padding: 8px 10px;
+        border: 1px solid #d4dee8;
+        border-radius: 6px;
+        text-align: center;
+        vertical-align: middle;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+    .didb-ai-heat-cell strong {
+        display: block;
+        font-size: 14px;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+    }
+    .didb-ai-heat-cell em {
+        display: block;
+        margin-top: 3px;
+        font-size: 10px;
+        font-style: normal;
+        color: #526171;
+        font-variant-numeric: tabular-nums;
+    }
+    .didb-ai-heat-cell.didb-ai-heat-worse em { color: #9b2419; }
+    .didb-ai-heat-cell.didb-ai-heat-improved em { color: #21673c; }
+    .didb-ai-heat-cell.didb-ai-heat-flat em { color: #8a570f; }
     .didb-ai-comp-table {
         width: 100%; border-collapse: collapse; table-layout: fixed;
         font-size: 11px;
@@ -2827,6 +3013,7 @@ else
 
     private List<RawReportInfo>          _reports              = [];
     private string                       _productTypeFilter    = "";
+    private string                       _aiBatchFilter        = "all";
     private string?                      _expanded             = null;
 
     private List<string> _productTypeOptions => _reports
@@ -2836,9 +3023,26 @@ else
         .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
         .ToList();
 
-    private List<RawReportInfo> FilteredReports => string.IsNullOrEmpty(_productTypeFilter)
-        ? _reports
-        : _reports.Where(r => string.Equals(r.ProductType, _productTypeFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+    private string DatasetFilterSuffix
+    {
+        get
+        {
+            bool hasProduct = !string.IsNullOrEmpty(_productTypeFilter);
+            bool hasBatch = _aiBatchFilter != "all";
+            return hasProduct || hasBatch ? $" / {_reports.Count} total" : "";
+        }
+    }
+
+    private List<RawReportInfo> FilteredReports => _reports
+        .Where(r => string.IsNullOrEmpty(_productTypeFilter)
+            || string.Equals(r.ProductType, _productTypeFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(r => _aiBatchFilter switch
+        {
+            "batched" => !string.IsNullOrWhiteSpace(r.BatchedAt),
+            "pending" => string.IsNullOrWhiteSpace(r.BatchedAt),
+            _ => true,
+        })
+        .ToList();
 
     private List<NormalizedMeasurement>  _expandedMeasurements = [];
     private DatasetSummaryRecord?        _expandedSummary      = null;
@@ -3144,6 +3348,35 @@ else
     {
         public string Process { get; init; } = "";
         public List<AiReportTableRow> Rows { get; init; } = [];
+    }
+
+    private sealed class AiMarkdownVisualItem
+    {
+        public string Label  { get; set; } = "";
+        public string Value  { get; set; } = "";
+        public double? Amount { get; set; }
+        public string Detail { get; set; } = "";
+        public string Status { get; set; } = "";
+    }
+
+    private sealed class AiMarkdownHeatCell
+    {
+        public string Value  { get; set; } = "";
+        public string Count  { get; set; } = "";
+        public string Detail { get; set; } = "";
+        public string Status { get; set; } = "";
+    }
+
+    private sealed class AiMarkdownHeatRow
+    {
+        public string Label { get; set; } = "";
+        public List<AiMarkdownHeatCell> Cells { get; set; } = new();
+    }
+
+    private sealed class AiMarkdownHeatMatrix
+    {
+        public List<string> Columns { get; set; } = new();
+        public List<AiMarkdownHeatRow> Rows { get; set; } = new();
     }
 
     private static string DetectAiReportKind(AiDocBundle doc, List<AiControlComparison> comparisons, int imageCount)
@@ -4780,6 +5013,390 @@ else
     private static List<string> AiDocContent(AiDocBundle doc, string lang)
         => doc.DocTranslations.TryGetValue(lang, out var tr) && tr.Content.Count > 0
             ? tr.Content : doc.Content;
+
+    private static readonly System.Text.RegularExpressions.Regex AiReportVisualBlockRegex = new(
+        @"```[ \t]*(report-heatmap|report-bars|report-heatmap-matrix)\b[^\r\n]*\r?\n.*?```",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase
+        | System.Text.RegularExpressions.RegexOptions.Singleline
+        | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    private static string AiGeneratedReportMarkdown(AiDocBundle doc, string lang)
+    {
+        string report = doc.DocTranslations.TryGetValue(lang, out var tr)
+            && !string.IsNullOrWhiteSpace(tr.GeneratedReportMarkdown)
+                ? tr.GeneratedReportMarkdown
+                : doc.GeneratedReportMarkdown;
+
+        if (!AiMarkdownHasVisualBlock(report) && AiMarkdownHasVisualBlock(doc.GeneratedReportMarkdown))
+        {
+            report = AppendMissingAiVisualBlocks(report, doc.GeneratedReportMarkdown);
+        }
+
+        return HideAiEvidenceLocationSections(CleanExcelSerialDateText(report));
+    }
+
+    private static string HideAiEvidenceLocationSections(string markdown)
+    {
+        if (string.IsNullOrWhiteSpace(markdown)) return "";
+
+        var output = new List<string>();
+        bool skipping = false;
+        int skipLevel = 0;
+
+        foreach (string line in markdown.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n'))
+        {
+            string trim = line.Trim();
+            int heading = trim.TakeWhile(ch => ch == '#').Count();
+            bool isHeading = heading is >= 1 and <= 6
+                             && trim.Length > heading
+                             && trim[heading] == ' ';
+
+            if (isHeading)
+            {
+                string title = trim[(heading + 1)..].Trim();
+                if (IsAiEvidenceLocationHeading(title))
+                {
+                    skipping = true;
+                    skipLevel = heading;
+                    continue;
+                }
+                if (skipping && heading <= skipLevel)
+                {
+                    skipping = false;
+                }
+            }
+
+            if (!skipping) output.Add(line);
+        }
+
+        return string.Join("\n", output).Trim();
+    }
+
+    private static bool IsAiEvidenceLocationHeading(string title)
+    {
+        string text = (title ?? "").Trim();
+        string lower = text.ToLowerInvariant();
+        return (lower.Contains("evidence") && lower.Contains("location"))
+               || (lower.Contains("source") && (lower.Contains("cell") || lower.Contains("worksheet")))
+               || (text.Contains("증빙") && text.Contains("위치"))
+               || (text.Contains("근거") && text.Contains("위치"))
+               || (lower.Contains("vị trí") && (lower.Contains("bằng chứng") || lower.Contains("chứng cứ")));
+    }
+
+    private static bool AiMarkdownHasVisualBlock(string? markdown)
+        => !string.IsNullOrWhiteSpace(markdown) && AiReportVisualBlockRegex.IsMatch(markdown);
+
+    private static string AppendMissingAiVisualBlocks(string markdown, string sourceMarkdown)
+    {
+        var matches = AiReportVisualBlockRegex.Matches(sourceMarkdown);
+        if (matches.Count == 0) return markdown;
+
+        var sb = new System.Text.StringBuilder((markdown ?? "").TrimEnd());
+        foreach (System.Text.RegularExpressions.Match match in matches)
+        {
+            string block = match.Value.Trim();
+            if (block.Length == 0) continue;
+            sb.AppendLine();
+            sb.AppendLine();
+            sb.Append(block);
+        }
+
+        return sb.ToString();
+    }
+
+    private static string AiMarkdownVisualHtml(string kind, string json)
+    {
+        static string Enc(string? value)
+            => System.Net.WebUtility.HtmlEncode(CleanExcelSerialDateText(value ?? ""));
+
+        static string HeatClass(string? status)
+        {
+            string s = (status ?? "").Trim().ToLowerInvariant();
+            if (s is "bad" or "worse" or "fail" or "failed" or "ng" or "high") return "didb-ai-heat-worse";
+            if (s is "good" or "improved" or "pass" or "passed" or "ok" or "low") return "didb-ai-heat-improved";
+            return "didb-ai-heat-flat";
+        }
+
+        static string BarClass(string? status)
+        {
+            string s = (status ?? "").Trim().ToLowerInvariant();
+            if (s is "bad" or "worse" or "fail" or "failed" or "ng" or "high") return "didb-ai-bar-danger";
+            if (s is "good" or "improved" or "pass" or "passed" or "ok" or "low") return "didb-ai-bar-good";
+            return "didb-ai-bar-warn";
+        }
+
+        static double NumberValue(AiMarkdownVisualItem item)
+        {
+            if (item.Amount.HasValue) return Math.Abs(item.Amount.Value);
+            var m = System.Text.RegularExpressions.Regex.Match(item.Value ?? "", @"-?\d+(?:\.\d+)?");
+            return m.Success && double.TryParse(m.Value, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out double v)
+                ? Math.Abs(v)
+                : 1.0;
+        }
+
+        string normalizedKind = (kind ?? "").Trim().ToLowerInvariant();
+        if (normalizedKind is not ("report-heatmap" or "report-bars" or "report-heatmap-matrix"))
+            return "";
+
+        if (normalizedKind == "report-heatmap-matrix"
+            || (normalizedKind == "report-heatmap" && LooksLikeMatrixJson(json)))
+        {
+            string matrix = RenderHeatMatrix(json);
+            if (!string.IsNullOrEmpty(matrix)) return matrix;
+        }
+
+        try
+        {
+            var items = System.Text.Json.JsonSerializer.Deserialize<List<AiMarkdownVisualItem>>(
+                json,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+            items = items
+                .Where(x => !string.IsNullOrWhiteSpace(x.Label) || !string.IsNullOrWhiteSpace(x.Value))
+                .Take(12)
+                .ToList();
+            if (items.Count == 0) return "";
+
+            var sb = new System.Text.StringBuilder();
+            if (normalizedKind == "report-heatmap")
+            {
+                sb.Append("<div class=\"didb-ai-md-visual\"><div class=\"didb-ai-heatmap didb-ai-visual-heatmap\">");
+                foreach (var item in items)
+                {
+                    sb.Append("<div class=\"didb-ai-heat ").Append(HeatClass(item.Status)).Append("\" title=\"")
+                      .Append(Enc(item.Detail)).Append("\"><strong>")
+                      .Append(Enc(item.Value)).Append("</strong><span>")
+                      .Append(Enc(item.Label)).Append("</span><em>")
+                      .Append(Enc(item.Detail)).Append("</em></div>");
+                }
+                sb.Append("</div></div>");
+                return sb.ToString();
+            }
+
+            double max = Math.Max(1.0, items.Select(NumberValue).DefaultIfEmpty(0).Max());
+            sb.Append("<div class=\"didb-ai-md-visual didb-ai-md-bars\">");
+            foreach (var item in items)
+            {
+                double width = Math.Clamp(NumberValue(item) / max * 100.0, 3.0, 100.0);
+                sb.Append("<div class=\"didb-ai-bar-row didb-ai-bar-compact didb-ai-visual-bar-row\"><div class=\"didb-ai-bar-label\"><strong>")
+                  .Append(Enc(item.Label)).Append("</strong><span>")
+                  .Append(Enc(item.Value)).Append("</span></div><div class=\"didb-ai-bar-track\"><div class=\"didb-ai-bar ")
+                  .Append(BarClass(item.Status)).Append("\" style=\"width:")
+                  .Append(width.ToString("F1", System.Globalization.CultureInfo.InvariantCulture))
+                  .Append("%\"></div></div></div>");
+            }
+            sb.Append("</div>");
+            return sb.ToString();
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private static bool LooksLikeMatrixJson(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return false;
+        string head = json.TrimStart();
+        if (head.Length == 0 || head[0] != '{') return false;
+        return head.Contains("\"rows\"", StringComparison.OrdinalIgnoreCase)
+            && head.Contains("\"columns\"", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string RenderHeatMatrix(string json)
+    {
+        static string Enc(string? value)
+            => System.Net.WebUtility.HtmlEncode(CleanExcelSerialDateText(value ?? ""));
+
+        static string HeatClass(string? status)
+        {
+            string s = (status ?? "").Trim().ToLowerInvariant();
+            if (s is "bad" or "worse" or "fail" or "failed" or "ng" or "high") return "didb-ai-heat-worse";
+            if (s is "good" or "improved" or "pass" or "passed" or "ok" or "low") return "didb-ai-heat-improved";
+            return "didb-ai-heat-flat";
+        }
+
+        try
+        {
+            var matrix = System.Text.Json.JsonSerializer.Deserialize<AiMarkdownHeatMatrix>(
+                json,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (matrix is null || matrix.Rows.Count == 0 || matrix.Columns.Count == 0)
+                return "";
+
+            int colCount = matrix.Columns.Count;
+            var sb = new System.Text.StringBuilder();
+            sb.Append("<div class=\"didb-ai-md-visual\"><table class=\"didb-ai-heat-matrix\"><thead><tr><th class=\"didb-ai-heat-rowhead\"></th>");
+            foreach (string col in matrix.Columns)
+                sb.Append("<th>").Append(Enc(col)).Append("</th>");
+            sb.Append("</tr></thead><tbody>");
+            foreach (var row in matrix.Rows)
+            {
+                sb.Append("<tr><th class=\"didb-ai-heat-rowhead\">").Append(Enc(row.Label)).Append("</th>");
+                for (int c = 0; c < colCount; c++)
+                {
+                    var cell = c < row.Cells.Count ? row.Cells[c] : null;
+                    string cls = HeatClass(cell?.Status);
+                    string title = Enc(cell?.Detail ?? "");
+                    sb.Append("<td class=\"didb-ai-heat-cell ").Append(cls)
+                      .Append("\" title=\"").Append(title).Append("\">");
+                    sb.Append("<strong>").Append(Enc(cell?.Value ?? "")).Append("</strong>");
+                    if (!string.IsNullOrWhiteSpace(cell?.Count))
+                        sb.Append("<em>").Append(Enc(cell!.Count)).Append("</em>");
+                    sb.Append("</td>");
+                }
+                sb.Append("</tr>");
+            }
+            sb.Append("</tbody></table></div>");
+            return sb.ToString();
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private static Microsoft.AspNetCore.Components.MarkupString AiMarkdown(string? markdown)
+    {
+        static string Enc(string? value)
+            => System.Net.WebUtility.HtmlEncode(CleanExcelSerialDateText(value ?? ""));
+
+        static string Inline(string? value)
+        {
+            string text = Enc(value);
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"\*\*(.+?)\*\*", "<strong>$1</strong>");
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"`(.+?)`", "<code>$1</code>");
+            return text;
+        }
+
+        static bool IsTableLine(string line) => line.Trim().StartsWith("|", StringComparison.Ordinal)
+                                             && line.Trim().EndsWith("|", StringComparison.Ordinal);
+        static bool IsSeparator(string line)
+        {
+            string t = line.Trim().Trim('|').Replace(" ", "");
+            return t.Length > 0 && t.All(ch => ch == '-' || ch == ':' || ch == '|');
+        }
+        static List<string> Cells(string line)
+            => line.Trim().Trim('|').Split('|').Select(x => x.Trim()).ToList();
+        static bool IsLocationColumn(string header)
+        {
+            string text = (header ?? "").Trim();
+            string lower = text.ToLowerInvariant();
+            return lower is "cell" or "cells" or "source cell" or "source cells"
+                   || lower.Contains("evidence location")
+                   || lower.Contains("worksheet/cell")
+                   || lower.Contains("sheet/cell")
+                   || (lower.Contains("source") && lower.Contains("cell"))
+                   || text.Contains("셀")
+                   || text.Contains("위치")
+                   || text == "Ô";
+        }
+
+        var lines = (markdown ?? "").Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        var sb = new System.Text.StringBuilder();
+        bool inList = false;
+
+        void CloseList()
+        {
+            if (!inList) return;
+            sb.Append("</ul>");
+            inList = false;
+        }
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string line = lines[i].TrimEnd();
+            string trim = line.Trim();
+            if (string.IsNullOrWhiteSpace(trim))
+            {
+                CloseList();
+                continue;
+            }
+
+            if (trim.StartsWith("```", StringComparison.Ordinal))
+            {
+                CloseList();
+                string kind = trim.Length > 3 ? trim[3..].Trim() : "";
+                var block = new System.Text.StringBuilder();
+                i++;
+                while (i < lines.Length && !lines[i].Trim().StartsWith("```", StringComparison.Ordinal))
+                {
+                    block.AppendLine(lines[i]);
+                    i++;
+                }
+
+                string visual = AiMarkdownVisualHtml(kind, block.ToString());
+                if (!string.IsNullOrWhiteSpace(visual))
+                {
+                    sb.Append(visual);
+                }
+                else
+                {
+                    sb.Append("<pre><code>").Append(Enc(block.ToString())).Append("</code></pre>");
+                }
+                continue;
+            }
+
+            if (IsTableLine(trim) && i + 1 < lines.Length && IsSeparator(lines[i + 1]))
+            {
+                CloseList();
+                var headers = Cells(trim);
+                var visibleIndexes = headers
+                    .Select((header, index) => new { header, index })
+                    .Where(x => !IsLocationColumn(x.header))
+                    .Select(x => x.index)
+                    .ToList();
+                if (visibleIndexes.Count == 0) visibleIndexes = Enumerable.Range(0, headers.Count).ToList();
+                i += 2;
+                sb.Append("<table><thead><tr>");
+                foreach (int idx in visibleIndexes) sb.Append("<th>").Append(Inline(headers[idx])).Append("</th>");
+                sb.Append("</tr></thead><tbody>");
+                while (i < lines.Length && IsTableLine(lines[i]))
+                {
+                    var rowCells = Cells(lines[i]);
+                    sb.Append("<tr>");
+                    foreach (int idx in visibleIndexes)
+                    {
+                        string c = idx < rowCells.Count ? rowCells[idx] : "";
+                        sb.Append("<td>").Append(Inline(c)).Append("</td>");
+                    }
+                    sb.Append("</tr>");
+                    i++;
+                }
+                i--;
+                sb.Append("</tbody></table>");
+                continue;
+            }
+
+            int heading = trim.TakeWhile(ch => ch == '#').Count();
+            if (heading is >= 1 and <= 4 && trim.Length > heading && trim[heading] == ' ')
+            {
+                CloseList();
+                int level = Math.Min(heading + 2, 5);
+                sb.Append("<h").Append(level).Append(">")
+                  .Append(Inline(trim[(heading + 1)..]))
+                  .Append("</h").Append(level).Append(">");
+                continue;
+            }
+
+            if (trim.StartsWith("- ", StringComparison.Ordinal) || trim.StartsWith("* ", StringComparison.Ordinal))
+            {
+                if (!inList)
+                {
+                    sb.Append("<ul>");
+                    inList = true;
+                }
+                sb.Append("<li>").Append(Inline(trim[2..])).Append("</li>");
+                continue;
+            }
+
+            CloseList();
+            sb.Append("<p>").Append(Inline(trim)).Append("</p>");
+        }
+
+        CloseList();
+        return new Microsoft.AspNetCore.Components.MarkupString(sb.ToString());
+    }
 
     private static string AiLogRationale(AiDocBundle doc, string lang)
         => doc.LogTranslations.TryGetValue(lang, out var tr) && !string.IsNullOrWhiteSpace(tr.DecisionRationale)

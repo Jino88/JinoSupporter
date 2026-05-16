@@ -176,9 +176,9 @@
     private string _statusMsg = string.Empty;
     private bool _statusError;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        _routingRows = NgRateSettings.GetRoutingRows();
+        await PullRoutingFromServer();
     }
 
     private List<RoutingRow> GetFilteredRouting()
@@ -312,6 +312,18 @@
     {
         _statusMsg = msg;
         _statusError = isError;
+    }
+
+    private async Task PullRoutingFromServer()
+    {
+        var result = await BmesSettingsSync.PullRoutingRowsFromServerAsync();
+        _routingRows = NgRateSettings.GetRoutingRows();
+        _editRoutingId = -1;
+
+        if (result.Succeeded)
+            SetStatus($"Loaded {result.Rows} routing row(s) from server DB.", false);
+        else
+            SetStatus($"Server load failed. Showing local DB: {result.Message}", true);
     }
 
     private async Task SyncRoutingToServer(string localMessage)

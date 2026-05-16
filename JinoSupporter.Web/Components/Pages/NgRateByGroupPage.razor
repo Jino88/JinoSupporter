@@ -335,10 +335,10 @@
 <!-- ══ Summary 2 (per group × per model) ═════════════════════════════════════ -->
 <div class="card shadow-sm mt-3">
     <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-        <span>📊 Summary — Main Group → Mid Group × Date / Week / Month (PPM)</span>
+        <span>📊 Summary — Group → Model Name × Date / Week / Month (PPM)</span>
         @if (_reportByMid is not null)
         {
-            <span class="text-muted" style="font-size:11px;">Mid Group PPM = same combo-merged as per-model</span>
+            <span class="text-muted" style="font-size:11px;">Model Name PPM = same combo-merged as per-model</span>
         }
     </div>
     <div class="card-body p-0">
@@ -413,7 +413,7 @@
                                 <td class="label-td">
                                     <span class="tog-icon">@(exp ? "▼" : "▶")</span>
                                     <strong>@gName</strong>
-                                    <span class="text-muted ms-1" style="font-size:10px;">@midList.Count mid groups</span>
+                                    <span class="text-muted ms-1" style="font-size:10px;">@midList.Count models</span>
                                 </td>
                                 @foreach (var col in VisibleDateCols)
                                 {
@@ -443,7 +443,7 @@
                                     <tr class="grp-sub-row grp-mid-row" @onclick="() => ToggleExpandMid(midKey)">
                                         <td class="label-td ps-4" style="font-size:11px;">
                                             <span class="tog-icon">@(midExp ? "▼" : "▶")</span>
-                                            <span class="mid-badge">Mid</span>
+                                            <span class="mid-badge">Model Name</span>
                                             <span class="ms-1">@mid.Material</span>
                                             <span class="text-muted ms-1" style="font-size:10px;">@mid.LineShifts.Count</span>
                                         </td>
@@ -507,7 +507,7 @@
     var (_refKey, _refBucket) = SortRefKey();
     <div class="card shadow-sm mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-            <span>🥇 Top 10 per group — Mid Group × Process × NG</span>
+            <span>🥇 Top 10 per group — Model Name × Process × NG</span>
             <span class="text-muted" style="font-size:11px;">
                 @if (!string.IsNullOrEmpty(_refKey))
                 { <text>Sorted: previous-week PPM, descending (ref = @_refBucket @ShiftedRefLabel(_refKey, _refBucket))</text> }
@@ -558,7 +558,7 @@
                             <thead>
                                 <tr>
                                     <th class="label-th" rowspan="2">#</th>
-                                    <th class="label-th" rowspan="2">Mid Group</th>
+                                    <th class="label-th" rowspan="2">Model Name</th>
                                     <th class="label-th" rowspan="2">Process</th>
                                     <th class="label-th" rowspan="2">NG Name</th>
                                     @if (Top10DateCols.Count > 0)

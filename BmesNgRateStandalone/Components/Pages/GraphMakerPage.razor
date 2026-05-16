@@ -1,0 +1,1622 @@
+@page "/tools/graph-maker"
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@using BmesNgRateStandalone.Services.GraphMaker
+@using System.Text
+@using System.Text.Json
+
+<PageTitle>Graph Maker</PageTitle>
+
+<div class="gm-page">
+    <header class="gm-header">
+        <div>
+            <h1>Graph Maker</h1>
+            <p>One workspace for line, scatter, average, CPK, distribution, heatmap, and process trend views.</p>
+        </div>
+    </header>
+
+    <section class="gm-actionbar">
+        <div class="gm-field">
+            <label>Graph type</label>
+            <select class="form-select form-select-sm" @bind="_graphType">
+                <option value="@GraphMakerGraphType.Line">Graph</option>
+                <option value="@GraphMakerGraphType.Scatter">Scatter</option>
+                <option value="@GraphMakerGraphType.NormalDistribution">Normal distribution</option>
+                <option value="@GraphMakerGraphType.ProcessTrend">Process trend</option>
+                <option value="@GraphMakerGraphType.HeatMap">Heatmap</option>
+            </select>
+        </div>
+        <div class="gm-field gm-render-field">
+            <label>&nbsp;</label>
+            <button class="btn btn-primary btn-sm" @onclick="RenderGraphAsync" disabled="@(!_table.HasData)">Render</button>
+        </div>
+        <div class="gm-field gm-render-field">
+            <label>&nbsp;</label>
+            <button type="button" class="btn btn-outline-primary btn-sm" @onclick="LoadExampleAsync">Example</button>
+        </div>
+    </section>
+
+    <section class="gm-toolbar">
+        <div class="gm-field">
+            <label>Delimiter</label>
+            <select class="form-select form-select-sm" @bind="_delimiter">
+                <option value="auto">Auto</option>
+                <option value=",">Comma</option>
+                <option value="	">Tab</option>
+                <option value=";">Semicolon</option>
+                <option value="|">Pipe</option>
+            </select>
+        </div>
+        <div class="gm-field">
+            <label>Header row</label>
+            <input class="form-control form-control-sm" type="number" min="1" @bind="_headerRowNumber" />
+        </div>
+        <div class="gm-field gm-render-field">
+            <label>&nbsp;</label>
+            <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ClearTableAsync" disabled="@(!_table.HasData)">Table Clear</button>
+        </div>
+    </section>
+
+    <main class="gm-main">
+        <aside class="gm-panel">
+            <h2>@OptionPanelTitle</h2>
+
+            @if (IsHeatMap)
+            {
+                <div class="gm-field">
+                    <label>X condition</label>
+                    <select class="form-select form-select-sm" @bind="_heatXColumn">
+                        <option value="">Select</option>
+                        @foreach (var header in _table.Headers)
+                        {
+                            <option value="@header">@header</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="gm-field">
+                    <label>Y condition</label>
+                    <select class="form-select form-select-sm" @bind="_heatYColumn">
+                        <option value="">Select</option>
+                        @foreach (var header in _table.Headers)
+                        {
+                            <option value="@header">@header</option>
+                        }
+                    </select>
+                </div>
+
+                <h2>Display</h2>
+                <div class="gm-stat-grid">
+                    <span class="gm-stat-chip">Max</span>
+                    <span class="gm-stat-chip">Min</span>
+                    <span class="gm-stat-chip">Avg</span>
+                    <span class="gm-stat-chip">Std</span>
+                </div>
+
+                <label class="gm-check">
+                    <input type="checkbox" @bind="_heatUseNgRate" />
+                    <span>NG RATE</span>
+                </label>
+
+                @if (!_heatUseNgRate)
+                {
+                    <div class="gm-field">
+                        <label>Cell value</label>
+                        <select class="form-select form-select-sm" @bind="_heatValueColumn">
+                            <option value="">Select</option>
+                            @foreach (var header in _table.Headers)
+                            {
+                                <option value="@header">@header</option>
+                            }
+                        </select>
+                    </div>
+                }
+                else
+                {
+                    <h2>NG Rate Options</h2>
+                    <div class="gm-field">
+                        <label>NG column</label>
+                        <select class="form-select form-select-sm" @bind="_heatNgColumn">
+                            <option value="">Select</option>
+                            @foreach (var header in _table.Headers)
+                            {
+                                <option value="@header">@header</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="gm-field">
+                        <label>INPUT column</label>
+                        <select class="form-select form-select-sm" @bind="_heatInputColumn">
+                            <option value="">Select</option>
+                            @foreach (var header in _table.Headers)
+                            {
+                                <option value="@header">@header</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="gm-field">
+                        <label>Rate unit</label>
+                        <select class="form-select form-select-sm" @bind="_heatRateUnit">
+                            <option value="@GraphMakerRateUnit.Ppm">PPM</option>
+                            <option value="@GraphMakerRateUnit.Percent">%</option>
+                        </select>
+                    </div>
+                }
+            }
+            else if (IsProcessTrend)
+            {
+                <div class="gm-field">
+                    <label>X process</label>
+                    <select class="form-select form-select-sm" @bind="_xColumn">
+                        <option value="">Select</option>
+                        @foreach (var header in _table.Headers)
+                        {
+                            <option value="@header">@header</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="gm-field">
+                    <label>Y process columns</label>
+                    <select class="form-select form-select-sm" multiple size="10" @onchange="OnYColumnsChanged">
+                        @foreach (var header in _table.Headers)
+                        {
+                            <option value="@header" selected="@_selectedYColumns.Contains(header)">@header</option>
+                        }
+                    </select>
+                </div>
+
+                <h2>Limit Rows</h2>
+                <div class="gm-limit-row-grid">
+                    <div class="gm-field">
+                        <label>USL row</label>
+                        <input class="form-control form-control-sm" type="number" min="1" @bind="_processUpperRowText" />
+                    </div>
+                    <div class="gm-field">
+                        <label>SPEC row</label>
+                        <input class="form-control form-control-sm" type="number" min="1" @bind="_processSpecRowText" />
+                    </div>
+                    <div class="gm-field">
+                        <label>LSL row</label>
+                        <input class="form-control form-control-sm" type="number" min="1" @bind="_processLowerRowText" />
+                    </div>
+                </div>
+
+                <h2>Display</h2>
+                <label class="gm-check">
+                    <input type="checkbox" @bind="_showProcessContour" />
+                    <span>Contour boundary</span>
+                </label>
+                <label class="gm-check">
+                    <input type="checkbox" @bind="_showProcessTrendLine" />
+                    <span>Trend line</span>
+                </label>
+                <div class="gm-stat-grid">
+                    <label class="gm-check">
+                        <input type="checkbox" @bind="_showProcessMax" />
+                        <span>Max</span>
+                    </label>
+                    <label class="gm-check">
+                        <input type="checkbox" @bind="_showProcessMin" />
+                        <span>Min</span>
+                    </label>
+                    <label class="gm-check">
+                        <input type="checkbox" @bind="_showProcessAvg" />
+                        <span>Avg</span>
+                    </label>
+                    <label class="gm-check">
+                        <input type="checkbox" @bind="_showProcessStd" />
+                        <span>Std</span>
+                    </label>
+                    <label class="gm-check">
+                        <input type="checkbox" @bind="_showProcessCpu" />
+                        <span>CPU</span>
+                    </label>
+                    <label class="gm-check">
+                        <input type="checkbox" @bind="_showProcessCpl" />
+                        <span>CPL</span>
+                    </label>
+                    <label class="gm-check">
+                        <input type="checkbox" @bind="_showProcessCpk" />
+                        <span>CPK</span>
+                    </label>
+                </div>
+            }
+            else
+            {
+                @if (IsScatter)
+                {
+                    <label class="gm-check">
+                        <input type="checkbox" checked="@_scatterHeaderNotUse" @onchange="OnScatterHeaderNotUseChanged" />
+                        <span>Header Not use</span>
+                    </label>
+
+                    <div class="gm-field">
+                        <label>X columns</label>
+                        <select @key="_xSelectionVersion" class="form-select form-select-sm" multiple size="6" @onchange="OnXColumnsChanged">
+                            @foreach (var header in _table.Headers)
+                            {
+                                <option value="@header" selected="@_selectedXColumns.Contains(header)">@header</option>
+                            }
+                        </select>
+                        <div class="gm-field-hint">Leave empty to use selected Y columns as the X axis.</div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm gm-clear-button" @onclick="ClearXColumns">Clear X</button>
+                    </div>
+                }
+                else if (!IsDistribution)
+                {
+                    <div class="gm-field">
+                        <label>X axis</label>
+                        <select class="form-select form-select-sm" @bind="_xColumn">
+                            <option value="">Row index</option>
+                            @foreach (var header in _table.Headers)
+                            {
+                                <option value="@header">@header</option>
+                            }
+                        </select>
+                    </div>
+                }
+
+                <div class="gm-field">
+                    <label>@YColumnLabel</label>
+                    <select class="form-select form-select-sm" multiple size="8" @onchange="OnYColumnsChanged">
+                        @foreach (var header in _table.Headers)
+                        {
+                            <option value="@header" selected="@_selectedYColumns.Contains(header)">@header</option>
+                        }
+                    </select>
+                </div>
+
+                @if (NeedsLimits)
+                {
+                    <h2>Limits</h2>
+                    <div class="gm-limit-grid">
+                        <input class="form-control form-control-sm" placeholder="USL" @bind="_upperText" />
+                        <input class="form-control form-control-sm" placeholder="Spec" @bind="_specText" />
+                        <input class="form-control form-control-sm" placeholder="LSL" @bind="_lowerText" />
+                    </div>
+                }
+
+                @if (IsGraph)
+                {
+                    <h2>Graph Display</h2>
+                    <div class="gm-field">
+                        <label>Line mode</label>
+                        <select class="form-select form-select-sm" @bind="_lineMode">
+                            <option value="@GraphMakerLineMode.Line">Line</option>
+                            <option value="@GraphMakerLineMode.Smoothing">Smoothing</option>
+                        </select>
+                    </div>
+
+                    <h2>Limit Columns</h2>
+                    <div class="gm-field">
+                        <label>REF column</label>
+                        <select class="form-select form-select-sm" @bind="_graphSpecColumn">
+                            <option value="">None</option>
+                            @foreach (var header in _table.Headers)
+                            {
+                                <option value="@header">@header</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="gm-field">
+                        <label>UP column</label>
+                        <select class="form-select form-select-sm" @bind="_graphUpperColumn">
+                            <option value="">None</option>
+                            @foreach (var header in _table.Headers)
+                            {
+                                <option value="@header">@header</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="gm-field">
+                        <label>LOW column</label>
+                        <select class="form-select form-select-sm" @bind="_graphLowerColumn">
+                            <option value="">None</option>
+                            @foreach (var header in _table.Headers)
+                            {
+                                <option value="@header">@header</option>
+                            }
+                        </select>
+                    </div>
+
+                    <h2>Y Groups</h2>
+                    <div class="gm-group-editor">
+                        @foreach (var column in _selectedYColumns)
+                        {
+                            <div class="gm-group-row">
+                                <span title="@column">@column</span>
+                                <input class="form-control form-control-sm"
+                                       value="@GetGraphGroup(column)"
+                                       @onchange="e => SetGraphGroup(column, e.Value?.ToString())" />
+                            </div>
+                        }
+                    </div>
+                }
+
+                @if (IsScatter)
+                {
+                    <h2>Scatter Display</h2>
+                    <div class="gm-field">
+                        <label>Point layout</label>
+                        <select class="form-select form-select-sm" @bind="_scatterPointLayout">
+                            <option value="@GraphMakerScatterPointLayout.Aligned">Aligned on one X line</option>
+                            <option value="@GraphMakerScatterPointLayout.Spread">Spread around X line</option>
+                        </select>
+                    </div>
+                    <div class="gm-field">
+                        <label>X label position</label>
+                        <select class="form-select form-select-sm" @bind="_scatterLabelPosition">
+                            <option value="@GraphMakerScatterLabelPosition.OnTick">On axis tick</option>
+                            <option value="@GraphMakerScatterLabelPosition.BetweenTicks">Between grid lines</option>
+                        </select>
+                    </div>
+                    <div class="gm-stat-grid">
+                        <label class="gm-check">
+                            <input type="checkbox" @bind="_showScatterMax" />
+                            <span>Max</span>
+                        </label>
+                        <label class="gm-check">
+                            <input type="checkbox" @bind="_showScatterMin" />
+                            <span>Min</span>
+                        </label>
+                        <label class="gm-check">
+                            <input type="checkbox" @bind="_showScatterAvg" />
+                            <span>Avg</span>
+                        </label>
+                        <label class="gm-check">
+                            <input type="checkbox" @bind="_showScatterStd" />
+                            <span>Std</span>
+                        </label>
+                        <label class="gm-check">
+                            <input type="checkbox" @bind="_showScatterCpu" />
+                            <span>CPU</span>
+                        </label>
+                        <label class="gm-check">
+                            <input type="checkbox" @bind="_showScatterCpl" />
+                            <span>CPL</span>
+                        </label>
+                        <label class="gm-check">
+                            <input type="checkbox" @bind="_showScatterCpk" />
+                            <span>CPK</span>
+                        </label>
+                    </div>
+                }
+            }
+        </aside>
+
+        <section class="gm-workspace">
+            <div class="gm-status">
+                @if (_table.HasData)
+                {
+                    <span>@_sourceName</span>
+                    <span>@_table.Rows.Count.ToString("N0") rows</span>
+                    <span>@_table.Headers.Count.ToString("N0") columns</span>
+                }
+                <span>@_status</span>
+            </div>
+            <div id="graphMakerSheet" class="gm-sheet" tabindex="0">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="gm-sheet-corner"></th>
+                            @for (int i = 0; i < DisplayColumnCount; i++)
+                            {
+                                string header = GetDisplayHeader(i);
+                                <th class="@GetColumnClass(header)">
+                                    <div class="gm-col-letter">@ColumnName(i)</div>
+                                    @if (_table.HasData)
+                                    {
+                                        <div class="gm-col-name">@header</div>
+                                    }
+                                </th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int r = 0; r < DisplayRowCount; r++)
+                        {
+                            <tr class="@GetRowClass(DisplaySheetRowNumber(r))">
+                                <th class="gm-row-number">@(DisplaySheetRowNumber(r))</th>
+                                @for (int c = 0; c < DisplayColumnCount; c++)
+                                {
+                                    <td class="@GetCellClass(c)">@GetDisplayCell(r, c)</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (_renderedCharts.Count > 0)
+            {
+                <div class="gm-chart-stack">
+                    @foreach (var chart in _renderedCharts)
+                    {
+                        <div class="gm-chart-host">
+                            <div class="gm-chart-canvas-frame">
+                                <canvas id="@chart.CanvasId"></canvas>
+                            </div>
+                            @if (chart.Payload.StatGroups.Count > 0)
+                            {
+                                <div class="gm-chart-stat-panel">
+                                    @foreach (var group in chart.Payload.StatGroups)
+                                    {
+                                        <div class="gm-chart-stat-card">
+                                            <div class="gm-chart-stat-title">@group.Label</div>
+                                            @foreach (var stat in group.Stats)
+                                            {
+                                                <div class="gm-chart-stat-row">
+                                                    <span>@stat.Name</span>
+                                                    <strong>@FormatStatValue(stat.Value)</strong>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+    </main>
+</div>
+
+@code {
+    private const string CanvasId = "graphMakerCanvas";
+    private const int EmptyGridRows = 30;
+    private const int EmptyGridColumns = 12;
+    private readonly HashSet<string> _selectedXColumns = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _selectedYColumns = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _graphColumnGroups = new(StringComparer.Ordinal);
+    private GraphMakerTable _table = new();
+    private DotNetObjectReference<GraphMakerPage>? _dotNetRef;
+    private readonly List<RenderedChart> _renderedCharts = [];
+    private bool _pendingChartRender;
+    private string _lastPastedText = "";
+
+    private string _sourceName = "Excel paste";
+    private string _delimiter = "auto";
+    private int _headerRowNumber = 1;
+    private string _xColumn = "";
+    private string _heatXColumn = "";
+    private string _heatYColumn = "";
+    private string _heatValueColumn = "";
+    private string _heatNgColumn = "";
+    private string _heatInputColumn = "";
+    private string _graphSpecColumn = "";
+    private string _graphUpperColumn = "";
+    private string _graphLowerColumn = "";
+    private string _upperText = "";
+    private string _specText = "";
+    private string _lowerText = "";
+    private string _processSpecRowText = "";
+    private string _processUpperRowText = "";
+    private string _processLowerRowText = "";
+    private bool _showProcessContour;
+    private bool _showProcessTrendLine;
+    private bool _showProcessMax;
+    private bool _showProcessMin;
+    private bool _showProcessAvg;
+    private bool _showProcessStd;
+    private bool _showProcessCpu;
+    private bool _showProcessCpl;
+    private bool _showProcessCpk;
+    private bool _showScatterMax;
+    private bool _showScatterMin;
+    private bool _showScatterAvg;
+    private bool _showScatterStd;
+    private bool _showScatterCpu;
+    private bool _showScatterCpl;
+    private bool _showScatterCpk;
+    private GraphMakerScatterPointLayout _scatterPointLayout = GraphMakerScatterPointLayout.Aligned;
+    private GraphMakerScatterLabelPosition _scatterLabelPosition = GraphMakerScatterLabelPosition.OnTick;
+    private GraphMakerLineMode _lineMode = GraphMakerLineMode.Line;
+    private GraphMakerRateUnit _heatRateUnit = GraphMakerRateUnit.Ppm;
+    private bool _heatUseNgRate;
+    private bool _scatterHeaderNotUse;
+    private int _xSelectionVersion;
+    private int _scatterExampleIndex;
+    private string _status = "Ready";
+    private GraphMakerGraphType _graphType = GraphMakerGraphType.Line;
+
+    private static readonly ExampleData[] Examples =
+    [
+        new(GraphMakerGraphType.Line, @"D:\000. MyWorks\005. Program\GRAPH_spl.txt", false),
+        new(GraphMakerGraphType.Scatter, @"D:\000. MyWorks\005. Program\SCATTER_NOHEADER_BRKINNER TENSION.txt", true),
+        new(GraphMakerGraphType.ProcessTrend, @"D:\000. MyWorks\005. Program\PROCESSTREND_gausstrend5.txt", false),
+        new(GraphMakerGraphType.Scatter, @"D:\000. MyWorks\005. Program\SCATTER_hookdimensiondata.txt", false),
+        new(GraphMakerGraphType.HeatMap, @"C:\Users\jhbyun\Desktop\새 폴더 (5)\Merged_VP_Test_Data_records.json", false)
+    ];
+
+    private int DisplayColumnCount => _table.HasData ? _table.Headers.Count : EmptyGridColumns;
+    private int DisplayRowCount => _table.HasData ? Math.Max(_table.Rows.Count, EmptyGridRows) : EmptyGridRows;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("graphMakerPaste.init", _dotNetRef);
+        }
+
+        if (_pendingChartRender)
+        {
+            _pendingChartRender = false;
+            foreach (var chart in _renderedCharts)
+            {
+                await JS.InvokeVoidAsync("graphMaker.render", chart.CanvasId, chart.Payload);
+            }
+        }
+    }
+
+    [JSInvokable]
+    public void PasteExcelData(string text)
+    {
+        _lastPastedText = text;
+        ReparsePastedData();
+        StateHasChanged();
+    }
+
+    private void ReparsePastedData()
+    {
+        _table = GraphMakerParser.Parse(_lastPastedText, new GraphMakerParseOptions(_delimiter, _headerRowNumber, IsScatter && _scatterHeaderNotUse));
+        ApplyLoadedDefaults();
+        _renderedCharts.Clear();
+        _status = _table.HasData ? "Ready to render" : _status;
+    }
+
+    private void ApplyLoadedDefaults()
+    {
+        _selectedYColumns.Clear();
+        _selectedXColumns.Clear();
+        if (!_table.HasData)
+        {
+            _status = "No rows found.";
+            return;
+        }
+
+        _xColumn = _table.Headers.FirstOrDefault() ?? "";
+        foreach (var header in _table.Headers.Skip(1).Take(3))
+        {
+            _selectedYColumns.Add(header);
+        }
+        EnsureGraphColumnGroups();
+
+        _heatXColumn = _table.Headers.ElementAtOrDefault(0) ?? "";
+        _heatYColumn = _table.Headers.ElementAtOrDefault(1) ?? "";
+        _heatValueColumn = _table.Headers.Skip(2).FirstOrDefault(h => _table.GetNumericValues(h).Count > 0) ?? "";
+        _heatNgColumn = _table.Headers.FirstOrDefault(h => h.Contains("ng", StringComparison.OrdinalIgnoreCase)) ?? _heatValueColumn;
+        _heatInputColumn = _table.Headers.FirstOrDefault(h => h.Contains("input", StringComparison.OrdinalIgnoreCase)) ?? _heatValueColumn;
+        _graphSpecColumn = _table.Headers.FirstOrDefault(h => string.Equals(h, "REF", StringComparison.OrdinalIgnoreCase)) ?? "";
+        _graphUpperColumn = _table.Headers.FirstOrDefault(h => string.Equals(h, "UP", StringComparison.OrdinalIgnoreCase)) ?? "";
+        _graphLowerColumn = _table.Headers.FirstOrDefault(h => string.Equals(h, "LOW", StringComparison.OrdinalIgnoreCase)) ?? "";
+        _status = "Loaded";
+    }
+
+    private async Task RenderGraphAsync()
+    {
+        if (!_table.HasData)
+        {
+            return;
+        }
+
+        var request = BuildRequest(_selectedYColumns.ToList());
+        if (_graphType == GraphMakerGraphType.ProcessTrend && _selectedYColumns.Count > 1)
+        {
+            _renderedCharts.Clear();
+            int i = 0;
+            foreach (var yColumn in _selectedYColumns.Where(c => c != _xColumn))
+            {
+                var chartRequest = BuildRequest([yColumn]);
+                var chartPayload = GraphMakerPayloadBuilder.Build(_table, chartRequest);
+                _renderedCharts.Add(new RenderedChart($"{CanvasId}_{i}", chartPayload));
+                i++;
+            }
+
+            if (_renderedCharts.Count == 0)
+            {
+                var payload = GraphMakerPayloadBuilder.Build(_table, request);
+                _renderedCharts.Add(new RenderedChart(CanvasId, payload));
+            }
+        }
+        else
+        {
+            var payload = GraphMakerPayloadBuilder.Build(_table, request);
+            _renderedCharts.Clear();
+            _renderedCharts.Add(new RenderedChart(CanvasId, payload));
+        }
+
+        _graphType = Enum.TryParse<GraphMakerGraphType>(_renderedCharts[0].Payload.Kind, out var renderedType) ? renderedType : _graphType;
+        _status = $"{_renderedCharts.Count} graph(s) rendered";
+        _pendingChartRender = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadExampleAsync()
+    {
+        var candidates = Examples.Where(example => example.GraphType == _graphType).ToList();
+        if (candidates.Count == 0)
+        {
+            _status = "No example for this graph type";
+            return;
+        }
+
+        var example = _graphType == GraphMakerGraphType.Scatter
+            ? candidates[_scatterExampleIndex++ % candidates.Count]
+            : candidates[0];
+
+        string? examplePath = ResolveExamplePath(example.Path);
+        if (string.IsNullOrWhiteSpace(examplePath))
+        {
+            _status = $"Example file not found: {System.IO.Path.GetFileName(example.Path)}";
+            return;
+        }
+
+        _delimiter = "auto";
+        _headerRowNumber = 1;
+        _lastPastedText = await ReadExampleTextAsync(examplePath);
+        _scatterHeaderNotUse = _graphType == GraphMakerGraphType.Scatter && example.HeaderNotUse;
+        _table = GraphMakerParser.Parse(_lastPastedText, new GraphMakerParseOptions(_delimiter, _headerRowNumber, _scatterHeaderNotUse));
+        ApplyLoadedDefaults();
+        ApplyExampleDefaults(example);
+        _sourceName = System.IO.Path.GetFileName(examplePath);
+        _status = "Example loaded";
+        await RenderGraphAsync();
+    }
+
+    private void ApplyExampleDefaults(ExampleData example)
+    {
+        _selectedXColumns.Clear();
+        _selectedYColumns.Clear();
+        _xSelectionVersion++;
+
+        if (!_table.HasData)
+        {
+            return;
+        }
+
+        if (example.Path.Contains("SCATTER_NOHEADER", StringComparison.OrdinalIgnoreCase))
+        {
+            _xColumn = _table.Headers.ElementAtOrDefault(0) ?? "";
+            if (!string.IsNullOrWhiteSpace(_xColumn))
+            {
+                _selectedXColumns.Add(_xColumn);
+            }
+
+            foreach (var header in _table.Headers.Skip(1))
+            {
+                _selectedYColumns.Add(header);
+            }
+
+            _scatterPointLayout = GraphMakerScatterPointLayout.Spread;
+            _scatterLabelPosition = GraphMakerScatterLabelPosition.BetweenTicks;
+            _showScatterMax = true;
+            _showScatterMin = true;
+            _showScatterAvg = true;
+            _showScatterStd = true;
+        }
+        else if (example.Path.Contains("SCATTER_hookdimensiondata", StringComparison.OrdinalIgnoreCase))
+        {
+            foreach (var header in _table.Headers.Take(4))
+            {
+                _selectedXColumns.Add(header);
+            }
+
+            _xColumn = _selectedXColumns.FirstOrDefault() ?? "";
+            foreach (var header in _table.Headers.Skip(4).Take(4))
+            {
+                _selectedYColumns.Add(header);
+            }
+
+            _scatterPointLayout = GraphMakerScatterPointLayout.Aligned;
+            _scatterLabelPosition = GraphMakerScatterLabelPosition.BetweenTicks;
+            _showScatterMax = true;
+            _showScatterMin = true;
+            _showScatterAvg = true;
+            _showScatterStd = true;
+        }
+        else if (example.GraphType == GraphMakerGraphType.ProcessTrend)
+        {
+            _xColumn = _table.Headers.ElementAtOrDefault(0) ?? "";
+            foreach (var header in _table.Headers.Skip(2).Where(h => h.Contains("_Side", StringComparison.OrdinalIgnoreCase)).Take(3))
+            {
+                _selectedYColumns.Add(header);
+            }
+
+            _processUpperRowText = "2";
+            _processLowerRowText = "3";
+            _processSpecRowText = "";
+            _showProcessMax = true;
+            _showProcessMin = true;
+            _showProcessAvg = true;
+            _showProcessStd = true;
+            _showProcessContour = true;
+            _showProcessTrendLine = true;
+        }
+        else if (example.GraphType == GraphMakerGraphType.Line)
+        {
+            _xColumn = _table.Headers.ElementAtOrDefault(0) ?? "";
+            foreach (var header in _table.Headers.Skip(1).Where(IsGraphValueColumn))
+            {
+                _selectedYColumns.Add(header);
+            }
+
+            _graphSpecColumn = _table.Headers.FirstOrDefault(h => string.Equals(h, "REF", StringComparison.OrdinalIgnoreCase)) ?? "";
+            _graphUpperColumn = _table.Headers.FirstOrDefault(h => string.Equals(h, "UP", StringComparison.OrdinalIgnoreCase)) ?? "";
+            _graphLowerColumn = _table.Headers.FirstOrDefault(h => string.Equals(h, "LOW", StringComparison.OrdinalIgnoreCase)) ?? "";
+            _lineMode = GraphMakerLineMode.Line;
+        }
+        else if (example.GraphType == GraphMakerGraphType.HeatMap)
+        {
+            _xColumn = "";
+            _heatXColumn = _table.Headers.FirstOrDefault(h => string.Equals(h, "IR_Code", StringComparison.OrdinalIgnoreCase)) ?? _table.Headers.ElementAtOrDefault(0) ?? "";
+            _heatYColumn = _table.Headers.FirstOrDefault(h => string.Equals(h, "VP_Mold", StringComparison.OrdinalIgnoreCase)) ?? _table.Headers.ElementAtOrDefault(1) ?? "";
+            _heatNgColumn = _table.Headers.FirstOrDefault(h => string.Equals(h, "Hearing_Noise", StringComparison.OrdinalIgnoreCase))
+                ?? _table.Headers.FirstOrDefault(h => string.Equals(h, "Hearing_NG", StringComparison.OrdinalIgnoreCase))
+                ?? "";
+            _heatInputColumn = _table.Headers.FirstOrDefault(h => string.Equals(h, "Hearing_Input", StringComparison.OrdinalIgnoreCase)) ?? "";
+            _heatValueColumn = "";
+            _heatUseNgRate = true;
+            _heatRateUnit = GraphMakerRateUnit.Percent;
+        }
+    }
+
+    private static bool IsGraphValueColumn(string header)
+    {
+        return !string.Equals(header, "REF", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(header, "UP", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(header, "LOW", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(header, "MASK", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static async Task<string> ReadExampleTextAsync(string path)
+    {
+        string text = await System.IO.File.ReadAllTextAsync(path);
+        return path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)
+            ? ConvertRecordsJsonToTsv(text)
+            : text;
+    }
+
+    private static string? ResolveExamplePath(string path)
+    {
+        if (System.IO.File.Exists(path))
+        {
+            return path;
+        }
+
+        string fileName = System.IO.Path.GetFileName(path);
+        string[] fallbackRoots =
+        [
+            System.IO.Path.Combine(AppContext.BaseDirectory, "GraphMakerExamples"),
+            System.IO.Path.Combine(AppContext.BaseDirectory, "wwwroot", "GraphMakerExamples"),
+            System.IO.Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "GraphMakerExamples")
+        ];
+
+        foreach (var root in fallbackRoots)
+        {
+            string candidate = System.IO.Path.GetFullPath(System.IO.Path.Combine(root, fileName));
+            if (System.IO.File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private static string ConvertRecordsJsonToTsv(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        if (!document.RootElement.TryGetProperty("records", out var records) || records.ValueKind != JsonValueKind.Array)
+        {
+            return string.Empty;
+        }
+
+        var headers = new List<string>();
+        var rows = new List<Dictionary<string, string>>();
+        foreach (var record in records.EnumerateArray())
+        {
+            if (record.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            var row = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var property in record.EnumerateObject())
+            {
+                if (!headers.Contains(property.Name, StringComparer.Ordinal))
+                {
+                    headers.Add(property.Name);
+                }
+
+                row[property.Name] = property.Value.ValueKind == JsonValueKind.String
+                    ? property.Value.GetString() ?? string.Empty
+                    : property.Value.ToString();
+            }
+
+            rows.Add(row);
+        }
+
+        rows = LimitHeatMapExampleRows(rows);
+
+        static string CleanCell(string value) => value.Replace('\t', ' ').Replace("\r", " ").Replace("\n", " ");
+        var builder = new StringBuilder();
+        builder.AppendLine(string.Join('\t', headers.Select(CleanCell)));
+        foreach (var row in rows)
+        {
+            builder.AppendLine(string.Join('\t', headers.Select(header => row.TryGetValue(header, out string? value) ? CleanCell(value) : string.Empty)));
+        }
+
+        return builder.ToString();
+    }
+
+    private static List<Dictionary<string, string>> LimitHeatMapExampleRows(List<Dictionary<string, string>> rows)
+    {
+        if (rows.Count == 0 || !rows.Any(row => row.ContainsKey("IR_Code") && row.ContainsKey("VP_Mold")))
+        {
+            return rows;
+        }
+
+        static string Cell(Dictionary<string, string> row, string column) =>
+            row.TryGetValue(column, out string? value) ? value.Trim() : string.Empty;
+
+        var xValues = rows.Select(row => Cell(row, "IR_Code"))
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(5)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var yValues = rows.Select(row => Cell(row, "VP_Mold"))
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(5)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var filtered = rows
+            .Where(row => xValues.Contains(Cell(row, "IR_Code")) && yValues.Contains(Cell(row, "VP_Mold")))
+            .ToList();
+
+        return filtered.Count > 0 ? filtered : rows;
+    }
+
+    private GraphMakerRequest BuildRequest(List<string> yColumns)
+    {
+        return new GraphMakerRequest
+        {
+            InputMode = EffectiveInputMode,
+            GraphType = _graphType,
+            XColumn = (IsHeatMap || (_graphType == GraphMakerGraphType.Scatter && _selectedXColumns.Count == 0) || IsDistribution) ? string.Empty : _xColumn,
+            XColumns = _selectedXColumns.ToList(),
+            YColumns = yColumns,
+            HeatMapXColumn = _heatXColumn,
+            HeatMapYColumn = _heatYColumn,
+            HeatMapValueColumn = _heatValueColumn,
+            HeatMapUseNgRate = _heatUseNgRate,
+            HeatMapNgColumn = _heatNgColumn,
+            HeatMapInputColumn = _heatInputColumn,
+            HeatMapRateUnit = _heatRateUnit,
+            GraphSpecColumn = _graphSpecColumn,
+            GraphUpperColumn = _graphUpperColumn,
+            GraphLowerColumn = _graphLowerColumn,
+            GraphColumnGroups = _graphColumnGroups
+                .Where(pair => yColumns.Contains(pair.Key, StringComparer.Ordinal))
+                .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal),
+            UpperLimit = GraphMakerPayloadBuilder.ParseNullable(_upperText),
+            SpecLimit = GraphMakerPayloadBuilder.ParseNullable(_specText),
+            LowerLimit = GraphMakerPayloadBuilder.ParseNullable(_lowerText),
+            ProcessSpecRowNumber = ParseRowNumber(_processSpecRowText),
+            ProcessUpperRowNumber = ParseRowNumber(_processUpperRowText),
+            ProcessLowerRowNumber = ParseRowNumber(_processLowerRowText),
+            ShowProcessContour = _showProcessContour,
+            ShowProcessTrendLine = _showProcessTrendLine,
+            ShowProcessMax = _showProcessMax,
+            ShowProcessMin = _showProcessMin,
+            ShowProcessAvg = _showProcessAvg,
+            ShowProcessStd = _showProcessStd,
+            ShowProcessCpu = _showProcessCpu,
+            ShowProcessCpl = _showProcessCpl,
+            ShowProcessCpk = _showProcessCpk,
+            ScatterPointLayout = _scatterPointLayout,
+            ScatterLabelPosition = _scatterLabelPosition,
+            LineMode = _lineMode,
+            ScatterHeaderNotUse = IsScatter && _scatterHeaderNotUse,
+            ShowScatterMax = _showScatterMax,
+            ShowScatterMin = _showScatterMin,
+            ShowScatterAvg = _showScatterAvg,
+            ShowScatterStd = _showScatterStd,
+            ShowScatterCpu = _showScatterCpu,
+            ShowScatterCpl = _showScatterCpl,
+            ShowScatterCpk = _showScatterCpk
+        };
+    }
+
+    private GraphMakerInputMode EffectiveInputMode => _graphType switch
+    {
+        GraphMakerGraphType.HeatMap => GraphMakerInputMode.HeatMap,
+        GraphMakerGraphType.ProcessTrend => GraphMakerInputMode.ProcessTrend,
+        _ => GraphMakerInputMode.HeaderTable
+    };
+
+    private async Task ClearTableAsync()
+    {
+        foreach (var chart in _renderedCharts)
+        {
+            await JS.InvokeVoidAsync("graphMaker.destroy", chart.CanvasId);
+        }
+
+        _table = new GraphMakerTable();
+        _lastPastedText = "";
+        _selectedXColumns.Clear();
+        _selectedYColumns.Clear();
+        _graphColumnGroups.Clear();
+        _renderedCharts.Clear();
+        _xColumn = "";
+        _heatXColumn = "";
+        _heatYColumn = "";
+        _heatValueColumn = "";
+        _heatNgColumn = "";
+        _heatInputColumn = "";
+        _graphSpecColumn = "";
+        _graphUpperColumn = "";
+        _graphLowerColumn = "";
+        _scatterHeaderNotUse = false;
+        _status = "Ready";
+    }
+
+    private bool IsHeatMap => _graphType == GraphMakerGraphType.HeatMap;
+    private bool IsProcessTrend => _graphType == GraphMakerGraphType.ProcessTrend;
+    private bool IsScatter => _graphType == GraphMakerGraphType.Scatter;
+    private bool IsGraph => _graphType == GraphMakerGraphType.Line;
+    private bool IsDistribution => _graphType == GraphMakerGraphType.NormalDistribution;
+    private bool NeedsLimits => _graphType is GraphMakerGraphType.Scatter or GraphMakerGraphType.Cpk;
+
+    private string OptionPanelTitle => _graphType switch
+    {
+        GraphMakerGraphType.HeatMap => "Heatmap Options",
+        GraphMakerGraphType.ProcessTrend => "Process Trend Options",
+        GraphMakerGraphType.NormalDistribution => "Distribution Options",
+        GraphMakerGraphType.Cpk => "CPK Options",
+        _ => "Columns"
+    };
+
+    private string YColumnLabel => _graphType switch
+    {
+        GraphMakerGraphType.NormalDistribution => "Distribution columns",
+        GraphMakerGraphType.Cpk => "CPK columns",
+        _ => "Y columns"
+    };
+
+    private void OnYColumnsChanged(ChangeEventArgs e)
+    {
+        _selectedYColumns.Clear();
+        if (e.Value is string single && !string.IsNullOrWhiteSpace(single))
+        {
+            _selectedYColumns.Add(single);
+        }
+        else if (e.Value is string[] many)
+        {
+            foreach (var item in many)
+            {
+                _selectedYColumns.Add(item);
+            }
+        }
+
+        EnsureGraphColumnGroups();
+    }
+
+    private void OnXColumnsChanged(ChangeEventArgs e)
+    {
+        _selectedXColumns.Clear();
+        _xSelectionVersion++;
+        if (e.Value is string single && !string.IsNullOrWhiteSpace(single))
+        {
+            _selectedXColumns.Add(single);
+        }
+        else if (e.Value is string[] many)
+        {
+            foreach (var item in many)
+            {
+                _selectedXColumns.Add(item);
+            }
+        }
+
+        _xColumn = _selectedXColumns.FirstOrDefault() ?? string.Empty;
+    }
+
+    private void ClearXColumns()
+    {
+        _selectedXColumns.Clear();
+        _xColumn = string.Empty;
+        _xSelectionVersion++;
+    }
+
+    private void EnsureGraphColumnGroups()
+    {
+        foreach (var column in _selectedYColumns)
+        {
+            if (!_graphColumnGroups.ContainsKey(column))
+            {
+                _graphColumnGroups[column] = DefaultGraphGroup(column);
+            }
+        }
+    }
+
+    private string GetGraphGroup(string column)
+    {
+        if (!_graphColumnGroups.TryGetValue(column, out string? group) || string.IsNullOrWhiteSpace(group))
+        {
+            group = DefaultGraphGroup(column);
+            _graphColumnGroups[column] = group;
+        }
+
+        return group;
+    }
+
+    private void SetGraphGroup(string column, string? group)
+    {
+        _graphColumnGroups[column] = string.IsNullOrWhiteSpace(group) ? DefaultGraphGroup(column) : group.Trim();
+    }
+
+    private static string DefaultGraphGroup(string column)
+    {
+        string trimmed = column.Trim();
+        int marker = trimmed.LastIndexOf('#');
+        return marker > 0 && trimmed[(marker + 1)..].All(char.IsDigit)
+            ? trimmed[..marker].TrimEnd()
+            : trimmed;
+    }
+
+    private void OnScatterHeaderNotUseChanged(ChangeEventArgs e)
+    {
+        _scatterHeaderNotUse = e.Value is bool value && value;
+        _xSelectionVersion++;
+        if (!string.IsNullOrWhiteSpace(_lastPastedText))
+        {
+            ReparsePastedData();
+        }
+    }
+
+    private string GetColumnClass(string column)
+    {
+        var classes = new List<string>();
+        if (!IsHeatMap && !IsDistribution && (string.Equals(column, _xColumn, StringComparison.Ordinal) || (IsScatter && _selectedXColumns.Contains(column))))
+        {
+            classes.Add("gm-col-x");
+        }
+
+        if (_selectedYColumns.Contains(column))
+        {
+            classes.Add("gm-col-y");
+        }
+
+        if (IsHeatMap && string.Equals(column, _heatXColumn, StringComparison.Ordinal))
+        {
+            classes.Add("gm-col-heat-x");
+        }
+
+        if (IsHeatMap && string.Equals(column, _heatYColumn, StringComparison.Ordinal))
+        {
+            classes.Add("gm-col-heat-y");
+        }
+
+        if (IsHeatMap && string.Equals(column, _heatValueColumn, StringComparison.Ordinal))
+        {
+            classes.Add("gm-col-heat-v");
+        }
+
+        if (IsHeatMap && _heatUseNgRate && string.Equals(column, _heatNgColumn, StringComparison.Ordinal))
+        {
+            classes.Add("gm-col-heat-ng");
+        }
+
+        if (IsHeatMap && _heatUseNgRate && string.Equals(column, _heatInputColumn, StringComparison.Ordinal))
+        {
+            classes.Add("gm-col-heat-input");
+        }
+
+        return string.Join(' ', classes);
+    }
+
+    private string GetCellClass(int columnIndex)
+    {
+        if (columnIndex < 0 || columnIndex >= _table.Headers.Count)
+        {
+            return string.Empty;
+        }
+
+        return GetColumnClass(_table.Headers[columnIndex]);
+    }
+
+    private string GetRowClass(int sheetRowNumber)
+    {
+        var classes = new List<string>();
+        if (ParseRowNumber(_processUpperRowText) == sheetRowNumber)
+        {
+            classes.Add("gm-row-usl");
+        }
+
+        if (ParseRowNumber(_processSpecRowText) == sheetRowNumber)
+        {
+            classes.Add("gm-row-spec");
+        }
+
+        if (ParseRowNumber(_processLowerRowText) == sheetRowNumber)
+        {
+            classes.Add("gm-row-lsl");
+        }
+
+        return string.Join(' ', classes);
+    }
+
+    private string GetDisplayHeader(int columnIndex)
+    {
+        return _table.HasData && columnIndex < _table.Headers.Count ? _table.Headers[columnIndex] : string.Empty;
+    }
+
+    private string GetDisplayCell(int rowIndex, int columnIndex)
+    {
+        if (!_table.HasData)
+        {
+            return string.Empty;
+        }
+
+        return rowIndex >= 0 && rowIndex < _table.Rows.Count
+            ? _table.GetCell(_table.Rows[rowIndex], columnIndex)
+            : string.Empty;
+    }
+
+    private static int DisplaySheetRowNumber(int displayRowIndex) => displayRowIndex + 1;
+
+    private static string ColumnName(int zeroBasedIndex)
+    {
+        int dividend = zeroBasedIndex + 1;
+        var name = string.Empty;
+        while (dividend > 0)
+        {
+            int modulo = (dividend - 1) % 26;
+            name = Convert.ToChar('A' + modulo) + name;
+            dividend = (dividend - modulo) / 26;
+        }
+
+        return name;
+    }
+
+    private static int? ParseRowNumber(string text)
+    {
+        return int.TryParse(text, out int rowNumber) && rowNumber > 0 ? rowNumber : null;
+    }
+
+    private static string FormatStatValue(double value) =>
+        Math.Abs(value) >= 1000 ? value.ToString("N1") : value.ToString("0.####");
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("graphMaker.destroy", CanvasId);
+            foreach (var chart in _renderedCharts)
+            {
+                await JS.InvokeVoidAsync("graphMaker.destroy", chart.CanvasId);
+            }
+            await JS.InvokeVoidAsync("graphMakerPaste.destroy");
+        }
+        catch
+        {
+        }
+
+        _dotNetRef?.Dispose();
+    }
+
+    private sealed record RenderedChart(string CanvasId, GraphMakerChartPayload Payload);
+    private sealed record ExampleData(GraphMakerGraphType GraphType, string Path, bool HeaderNotUse);
+
+}
+
+<style>
+    .gm-page {
+        min-height: calc(100vh - 32px);
+        background: #f8fafc;
+        color: #1f2937;
+        padding: 18px;
+    }
+
+    .gm-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 14px;
+    }
+
+    .gm-header h1 {
+        font-size: 24px;
+        margin: 0;
+    }
+
+    .gm-header p {
+        margin: 3px 0 0;
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    .gm-toolbar {
+        display: grid;
+        grid-template-columns: minmax(120px, 160px) minmax(100px, 130px);
+        gap: 10px;
+        align-items: end;
+        margin-bottom: 12px;
+    }
+
+    .gm-actionbar {
+        display: grid;
+        grid-template-columns: minmax(180px, 260px) 120px;
+        gap: 10px;
+        align-items: end;
+        margin: -2px 0 12px;
+    }
+
+    .gm-main {
+        display: grid;
+        grid-template-columns: 300px minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .gm-panel,
+    .gm-workspace {
+        background: #fff;
+        border: 1px solid #dbe3ef;
+        border-radius: 8px;
+        padding: 12px;
+    }
+
+    .gm-panel h2 {
+        font-size: 13px;
+        margin: 0 0 8px;
+        color: #334155;
+    }
+
+    .gm-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 10px;
+    }
+
+    .gm-render-field {
+        min-width: 120px;
+    }
+
+    .gm-field label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .gm-field-hint {
+        font-size: 11px;
+        color: #64748b;
+        line-height: 1.25;
+    }
+
+    .gm-clear-button {
+        align-self: flex-start;
+        margin-top: 2px;
+        padding: 2px 8px;
+        font-size: 12px;
+    }
+
+    .gm-limit-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+
+    .gm-limit-row-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+
+    .gm-check {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 28px;
+        font-size: 12px;
+        color: #334155;
+        margin-bottom: 4px;
+    }
+
+    .gm-check input {
+        width: 14px;
+        height: 14px;
+    }
+
+    .gm-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 8px;
+    }
+
+    .gm-stat-chip {
+        border: 1px solid #dbe3ef;
+        border-radius: 6px;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 12px;
+        padding: 5px 8px;
+        margin-bottom: 6px;
+    }
+
+    .gm-group-editor {
+        display: grid;
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+
+    .gm-group-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(90px, .8fr);
+        gap: 6px;
+        align-items: center;
+    }
+
+    .gm-group-row span {
+        font-size: 12px;
+        color: #334155;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .gm-status {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .gm-status span {
+        background: #e2e8f0;
+        border-radius: 5px;
+        padding: 3px 7px;
+        font-size: 12px;
+        color: #334155;
+    }
+
+    .gm-chart-host {
+        position: relative;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 8px;
+        margin-top: 12px;
+        background: #fff;
+    }
+
+    .gm-chart-canvas-frame {
+        height: 520px;
+        min-height: 420px;
+    }
+
+    .gm-chart-canvas-frame canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .gm-chart-stat-panel {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .gm-chart-stat-card {
+        border: 1px solid #dbe3ef;
+        border-radius: 6px;
+        background: #f8fafc;
+        padding: 8px;
+        min-width: 0;
+    }
+
+    .gm-chart-stat-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 6px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .gm-chart-stat-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 11px;
+        line-height: 1.55;
+        color: #334155;
+    }
+
+    .gm-chart-stat-row span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .gm-chart-stat-row strong {
+        color: #111827;
+        font-weight: 700;
+        flex: 0 0 auto;
+    }
+
+    .gm-chart-stack {
+        display: grid;
+        gap: 12px;
+    }
+
+    .gm-empty {
+        display: grid;
+        place-items: center;
+        height: 520px;
+        color: #64748b;
+        border: 1px dashed #cbd5e1;
+        border-radius: 6px;
+    }
+
+    .gm-sheet {
+        margin-top: 12px;
+        overflow: auto;
+        max-height: 360px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: #fff;
+        outline: none;
+    }
+
+    .gm-sheet:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+    }
+
+    .gm-sheet table {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .gm-sheet th,
+    .gm-sheet td {
+        border-right: 1px solid #dbe3ef;
+        border-bottom: 1px solid #dbe3ef;
+        padding: 4px 7px;
+        white-space: nowrap;
+        min-width: 86px;
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .gm-sheet thead th {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: #eef2f7;
+        color: #334155;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .gm-sheet-corner {
+        left: 0;
+        z-index: 5 !important;
+        min-width: 48px !important;
+        width: 48px;
+    }
+
+    .gm-row-number {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        min-width: 48px !important;
+        width: 48px;
+        background: #f1f5f9;
+        color: #64748b;
+        text-align: right;
+        font-weight: 500;
+    }
+
+    .gm-col-letter {
+        font-size: 11px;
+        color: #64748b;
+        line-height: 1.1;
+    }
+
+    .gm-col-name {
+        font-size: 12px;
+        line-height: 1.2;
+    }
+
+    .gm-sheet .gm-col-x {
+        background: #dbeafe;
+        box-shadow: inset 0 0 0 2px #2563eb;
+    }
+
+    .gm-sheet .gm-col-y {
+        background: #dcfce7;
+        box-shadow: inset 0 0 0 2px #16a34a;
+    }
+
+    .gm-sheet .gm-col-heat-x {
+        background: #fef3c7;
+        box-shadow: inset 0 0 0 2px #d97706;
+    }
+
+    .gm-sheet .gm-col-heat-y {
+        background: #fce7f3;
+        box-shadow: inset 0 0 0 2px #db2777;
+    }
+
+    .gm-sheet .gm-col-heat-v {
+        background: #ede9fe;
+        box-shadow: inset 0 0 0 2px #7c3aed;
+    }
+
+    .gm-sheet .gm-col-heat-ng {
+        background: #fee2e2;
+        box-shadow: inset 0 0 0 2px #dc2626;
+    }
+
+    .gm-sheet .gm-col-heat-input {
+        background: #cffafe;
+        box-shadow: inset 0 0 0 2px #0891b2;
+    }
+
+    .gm-sheet tr.gm-row-usl > th,
+    .gm-sheet tr.gm-row-usl > td,
+    .gm-sheet tr.gm-row-spec > th,
+    .gm-sheet tr.gm-row-spec > td,
+    .gm-sheet tr.gm-row-lsl > th,
+    .gm-sheet tr.gm-row-lsl > td {
+        background-image: repeating-linear-gradient(
+            135deg,
+            rgba(17, 24, 39, .12) 0,
+            rgba(17, 24, 39, .12) 4px,
+            transparent 4px,
+            transparent 8px
+        );
+        box-shadow: inset 0 1px 0 #111827, inset 0 -1px 0 #111827;
+    }
+
+    .gm-sheet tr.gm-row-usl > .gm-row-number::after {
+        content: " USL";
+        color: #111827;
+        font-weight: 700;
+    }
+
+    .gm-sheet tr.gm-row-spec > .gm-row-number::after {
+        content: " SPEC";
+        color: #111827;
+        font-weight: 700;
+    }
+
+    .gm-sheet tr.gm-row-lsl > .gm-row-number::after {
+        content: " LSL";
+        color: #111827;
+        font-weight: 700;
+    }
+
+    @@media (max-width: 1000px) {
+        .gm-actionbar,
+        .gm-toolbar,
+        .gm-main {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

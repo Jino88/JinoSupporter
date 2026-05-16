@@ -35,7 +35,17 @@
     <button class="btn btn-success btn-sm" @onclick="StartCliAsync"
             disabled="@(_isBusy || _selected.Count == 0)"
             title="Run via Claude Code CLI — uses your Claude subscription, no Anthropic API credit.">
-        🖥 Analyze (CLI) (@_selected.Count)
+        🖥 Analyze (Claude CLI) (@_selected.Count)
+    </button>
+    <button class="btn btn-dark btn-sm" @onclick="StartCodexCliAsync"
+            disabled="@(_isBusy || _selected.Count == 0)"
+            title="Run via Codex CLI using the same AI_EXCEL_PROC.md workflow.">
+        Analyze (Codex CLI) (@_selected.Count)
+    </button>
+    <button class="btn btn-warning btn-sm" @onclick="StartSplitCliAsync"
+            disabled="@(_isBusy || _selected.Count == 0)"
+            title="Split selected datasets into separate Claude and Codex target lists.">
+        Claude + Codex (@_selected.Count)
     </button>
 </div>
 
@@ -92,6 +102,13 @@
     <button class="dib-tab @(_filter == Filter.All ? "active" : "")"
             @onclick="() => SetFilter(Filter.All)">All (@_reports.Count)</button>
     <div style="flex:1;"></div>
+    <label class="dib-filter-check" title="Hide datasets that already have AI Batch results.">
+        <input type="checkbox"
+               checked="@_showNotDoneOnly"
+               disabled="@_isBusy"
+               @onchange="ToggleNotDoneOnly" />
+        <span>Not done only (@_unprocessed.Count)</span>
+    </label>
     <button class="btn btn-outline-secondary btn-sm" @onclick="ToggleAllVisible" disabled="@_isBusy">
         @(AllVisibleSelected ? $"☐ Unselect Visible ({Visible.Count})" : $"☑ Select Visible ({Visible.Count})")
     </button>
@@ -203,6 +220,12 @@ else
                                 <button class="dib-badge dib-badge-err dib-badge-btn"
                                         title="@_runError.GetValueOrDefault(r.DatasetName)"
                                         @onclick="() => ShowError(r.DatasetName)">✗ Error</button>
+                            }
+                            else if (state == "stopped")
+                            {
+                                <button class="dib-badge dib-badge-stop dib-badge-btn"
+                                        title="@_runError.GetValueOrDefault(r.DatasetName)"
+                                        @onclick="() => ShowError(r.DatasetName)">Stopped</button>
                             }
                         </td>
                     </tr>
@@ -461,11 +484,21 @@ else
     .dib-badge-run     { background: #dbeafe; color: #1d4ed8; }
     .dib-badge-ok      { background: #dcfce7; color: #166534; }
     .dib-badge-err     { background: #fee2e2; color: #b91c1c; }
+    .dib-badge-stop    { background: #f3f4f6; color: #374151; }
     .dib-badge-warn    { background: #fef3c7; color: #b45309; cursor: pointer; }
     .dib-badge-warn:hover { background: #fde68a; }
     .dib-badge-btn     { border: none; cursor: pointer; text-decoration: underline dotted; }
     .dib-badge-btn:hover { background: #fecaca; }
     .dib-batched-at    { font-size: 11px; color: #64748b; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .dib-filter-check {
+        display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px;
+        border: 1px solid #cbd5e1; border-radius: 4px; background: #fff;
+        font-size: 12px; font-weight: 650; color: #334155; white-space: nowrap;
+    }
+    .dib-filter-check input { margin: 0; }
+    .dib-filter-check:has(input:checked) {
+        border-color: #2563eb; color: #1d4ed8; background: #eff6ff;
+    }
 
     .dib-overlay {
         position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 9000;
@@ -517,26 +550,41 @@ else
     private System.Collections.Concurrent.ConcurrentDictionary<string, string> _runState = new();
     private System.Collections.Concurrent.ConcurrentDictionary<string, string> _runError = new();
     private (string Name, string Message)? _errorDialog;
+    private System.Threading.CancellationTokenSource? _cliProgressCts;
     private Filter                     _filter         = Filter.Pending;
     private bool                       _isBusy;
     private string                     _status         = "";
     private bool                       _statusError;
     private List<string>               _productTypeOptions = [];
     private bool                       _showProductTypeMapper;
+    private bool                       _showNotDoneOnly;
     private string                     _ptMapToken = "";
     private string                     _ptMapProductType = "";
     private string                     _ptMapMessage = "";
     private bool                       _ptMapMessageError;
     private Dictionary<string, string> _dataInputAliases = new(StringComparer.OrdinalIgnoreCase);
 
-    private List<RawReportInfo> Visible => _filter switch
+    private List<RawReportInfo> Visible
     {
-        Filter.Pending => _unprocessed,
-        Filter.Done    => _processed,
-        Filter.Issues  => _issueDatasets,
-        Filter.NoOcr   => _noOcrDatasets,
-        _              => _reports,
-    };
+        get
+        {
+            IEnumerable<RawReportInfo> query = _filter switch
+            {
+                Filter.Pending => _unprocessed,
+                Filter.Done    => _processed,
+                Filter.Issues  => _issueDatasets,
+                Filter.NoOcr   => _noOcrDatasets,
+                _              => _reports,
+            };
+
+            if (_showNotDoneOnly)
+            {
+                query = query.Where(r => !IsAiBatchDone(r));
+            }
+
+            return query.ToList();
+        }
+    }
 
     private bool AllVisibleSelected =>
         Visible.Count > 0 && Visible.All(r => _selected.Contains(r.DatasetName));
@@ -577,18 +625,38 @@ else
             if (issues.Count > 0) _issueCount[r.DatasetName] = issues.Count;
         }
         _issueDatasets = _processed.Where(r => _issueCount.ContainsKey(r.DatasetName)).ToList();
+        ApplyBatchProgressFromFile();
     }
 
     private void Refresh()
     {
         LoadReports();
         _selected.RemoveWhere(n => !_reports.Any(r => r.DatasetName == n));
+        if (_showNotDoneOnly)
+        {
+            _selected.RemoveWhere(n => _reports.Any(r => r.DatasetName == n && IsAiBatchDone(r)));
+        }
     }
 
     private static bool IsAiBatchDone(RawReportInfo r)
         => r.MeasurementCount > 0 || !string.IsNullOrWhiteSpace(r.BatchedAt);
 
     private void SetFilter(Filter f) => _filter = f;
+
+    private void ToggleNotDoneOnly(ChangeEventArgs e)
+    {
+        _showNotDoneOnly = e.Value is bool b && b;
+        if (_showNotDoneOnly)
+        {
+            _selected.RemoveWhere(name =>
+                _reports.Any(r => string.Equals(r.DatasetName, name, StringComparison.Ordinal)
+                                  && IsAiBatchDone(r)));
+            foreach (var r in Visible)
+            {
+                _selected.Add(r.DatasetName);
+            }
+        }
+    }
 
     private void ToggleSelect(string name, bool sel)
     {
@@ -793,7 +861,7 @@ else
     /// translations of an already-saved summary — useful when the user wants to
     /// retry a botched translation without burning a Normalize call.</summary>
     private enum BatchRunMode  { Reanalyze, TranslateOnly }
-    private enum BatchExecutor { Api, Cli }
+    private enum BatchExecutor { Api, ClaudeCli, CodexCli, SplitCli }
 
     private List<RawReportInfo>? _confirmTargets;
     private List<string>         _confirmExisting = [];
@@ -804,7 +872,9 @@ else
         SetStatus("Analyze (API) is legacy and is disabled for the current AiDocuments schema. Use Analyze (CLI).", true);
         return Task.CompletedTask;
     }
-    private Task StartCliAsync() => StartAsync(BatchExecutor.Cli);
+    private Task StartCliAsync() => StartAsync(BatchExecutor.ClaudeCli);
+    private Task StartCodexCliAsync() => StartAsync(BatchExecutor.CodexCli);
+    private Task StartSplitCliAsync() => StartAsync(BatchExecutor.SplitCli);
 
     private async Task StartAsync(BatchExecutor executor)
     {
@@ -812,6 +882,10 @@ else
         _pendingExecutor = executor;
 
         var targets = _reports.Where(r => _selected.Contains(r.DatasetName)).ToList();
+        if (_showNotDoneOnly)
+        {
+            targets = targets.Where(r => !IsAiBatchDone(r)).ToList();
+        }
         // "Existing" = anything already saved that would be overwritten by a
         // Reanalyze: measurements OR a summary record. Re-running on these is
         // wasteful if the user only wants the translation refreshed — same
@@ -846,9 +920,15 @@ else
 
     private Task DispatchAsync(List<RawReportInfo> targets, BatchRunMode mode)
     {
-        if (_pendingExecutor == BatchExecutor.Cli)
+        if (_pendingExecutor == BatchExecutor.ClaudeCli ||
+            _pendingExecutor == BatchExecutor.CodexCli)
         {
-            LaunchCliWithMode(targets, mode);
+            LaunchCliWithMode(targets, mode, _pendingExecutor);
+            return Task.CompletedTask;
+        }
+        if (_pendingExecutor == BatchExecutor.SplitCli)
+        {
+            LaunchSplitCliWithMode(targets, mode);
             return Task.CompletedTask;
         }
         return RunBatchCoreAsync(targets, mode);
@@ -1012,9 +1092,10 @@ else
     /// chunk. Uses Claude Code subscription only — no Anthropic API credit.
     /// SQLite WAL mode tolerates concurrent commits since each session writes
     /// to a different DatasetName.</summary>
-    private const int CliParallelSessions = 3;
+    private const int ClaudeCliParallelSessions = 1;
+    private const int CodexCliParallelSessions = 3;
 
-    private void LaunchCliWithMode(List<RawReportInfo> targets, BatchRunMode mode)
+    private void LaunchCliWithMode(List<RawReportInfo> targets, BatchRunMode mode, BatchExecutor executor)
     {
         if (targets.Count == 0)
         {
@@ -1022,13 +1103,16 @@ else
             return;
         }
         string workDir = FindRepoRoot();
+        bool useCodex = executor == BatchExecutor.CodexCli;
+        string providerName = useCodex ? "Codex" : "Claude";
 
-        // Split selected datasets into up to CliParallelSessions chunks. Each
+        // Split selected datasets into provider-specific chunks. Each
         // launch uses a **fresh unique prefix** so that concurrent / back-to-
         // back launches don't trample each other's target files. The agent's
         // prompt names its specific file, and the agent deletes only that
         // file when done — no shared state.
-        int n = Math.Min(CliParallelSessions, targets.Count);
+        int parallelSessions = useCodex ? CodexCliParallelSessions : ClaudeCliParallelSessions;
+        int n = Math.Min(parallelSessions, targets.Count);
         int chunkSize = (int)Math.Ceiling(targets.Count / (double)n);
 
         // Stable prefix per launch — timestamp keeps lexicographic order, the
@@ -1042,6 +1126,12 @@ else
             .Select(t => t.DatasetName)
             .OrderBy(s => s, StringComparer.Ordinal)
             .ToList();
+        foreach (string name in sortedTargets)
+        {
+            _runState[name] = "running";
+            _runError.TryRemove(name, out _);
+        }
+
         for (int i = 0; i < n; i++)
         {
             var chunk = sortedTargets.Skip(i * chunkSize).Take(chunkSize).ToList();
@@ -1098,26 +1188,316 @@ else
                 $"narrative 필드 (title/purpose/content, conclusions.statement_from_report/normalized_interpretation, troubleshooting.check_item/reason, ai_extraction_log.decision_rationale/assumptions/warnings) 는 " +
                 $"AiDocumentTranslations/AiConclusionTranslations/AiHintTranslations/AiLogTranslations 에 Lang ∈ {{ko,en,vi}} 3개 모두 저장. " +
                 $"미처리 쿼리 무시하고 targets 만 처리, 끝나면 {fileName} 삭제.";
-            string title = $"AI Batch {i + 1}/{chunkFiles.Count}";
-            if (TryLaunchClaudeTerminal(workDir, prompt, title)) launched++;
+            prompt = BuildAiBatchCliPrompt("__AI_BATCH_TARGET_FILE__", 1, modeHint, DbPathHint);
+            string title = chunkFiles.Count == 1
+                ? $"AI Batch ({providerName})"
+                : $"AI Batch ({providerName}) {i + 1}/{chunkFiles.Count}";
+            bool launchedThis = useCodex
+                ? TryLaunchCodexTerminal(workDir, prompt, title, chunkFiles[i], DbPathHint)
+                : TryLaunchClaudeTerminal(workDir, prompt, title, chunkFiles[i], DbPathHint);
+            if (launchedThis) launched++;
         }
 
         if (launched == 0)
         {
-            SetStatus("Failed to launch any Claude CLI terminal — neither wt.exe nor cmd.exe started.", true);
+            SetStatus($"Failed to launch any {providerName} CLI terminal — neither wt.exe nor cmd.exe started.", true);
             return;
         }
         SetStatus(
-            $"Launched {launched} parallel CLI session(s) for {targets.Count} dataset(s). " +
-            $"Watch the terminal windows; Refresh when all are done.",
+            $"Launched {launched} {providerName} CLI session(s) for {targets.Count} dataset(s). " +
+            $"Each terminal window will process its target list sequentially; this page will heartbeat while it runs.",
             false);
+        StartCliProgressPolling(sortedTargets, providerName);
+    }
+
+    private void LaunchSplitCliWithMode(List<RawReportInfo> targets, BatchRunMode mode)
+    {
+        if (targets.Count == 0)
+        {
+            SetStatus("Select at least one dataset first.", true);
+            return;
+        }
+
+        string workDir = FindRepoRoot();
+        string runId = $"{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}".Substring(0, 23);
+        string modeHint = mode == BatchRunMode.TranslateOnly ? "Translate-only" : "Reanalyze";
+        const string DbPathHint = @"D:\000. MyWorks\002. DB\process-review.db";
+
+        var sortedTargets = targets
+            .Select(t => t.DatasetName)
+            .OrderBy(s => s, StringComparer.Ordinal)
+            .ToList();
+
+        int claudeCount = (int)Math.Ceiling(sortedTargets.Count / 2.0);
+        var claudeTargets = sortedTargets.Take(claudeCount).ToList();
+        var codexTargets = sortedTargets.Skip(claudeCount).ToList();
+        var launchErrors = new List<string>();
+
+        int LaunchProvider(BatchExecutor executor, List<string> names)
+        {
+            if (names.Count == 0) return 0;
+
+            bool useCodex = executor == BatchExecutor.CodexCli;
+            string providerName = useCodex ? "Codex" : "Claude";
+            string suffix = providerName.ToLowerInvariant();
+            int parallelSessions = useCodex ? CodexCliParallelSessions : ClaudeCliParallelSessions;
+            int sessionCount = Math.Min(parallelSessions, names.Count);
+            int chunkSize = (int)Math.Ceiling(names.Count / (double)sessionCount);
+            int launchedCount = 0;
+
+            for (int i = 0; i < sessionCount; i++)
+            {
+                var chunk = names.Skip(i * chunkSize).Take(chunkSize).ToList();
+                if (chunk.Count == 0) break;
+
+                string chunkSuffix = sessionCount == 1 ? suffix : $"{suffix}_{i + 1}";
+                string path = Path.Combine(workDir, $"_batch_selected_{runId}_{chunkSuffix}.txt");
+
+                try
+                {
+                    File.WriteAllLines(path, chunk, System.Text.Encoding.UTF8);
+                }
+                catch (Exception ex)
+                {
+                    launchErrors.Add($"{providerName} {i + 1}/{sessionCount}: failed to write targets ({ex.Message})");
+                    foreach (string name in chunk)
+                    {
+                        _runState[name] = "err";
+                        _runError[name] = $"{providerName} target file write failed: {ex.Message}";
+                    }
+                    continue;
+                }
+
+                string prompt = BuildAiBatchCliPrompt("__AI_BATCH_TARGET_FILE__", 1, modeHint, DbPathHint);
+                string title = sessionCount == 1
+                    ? $"AI Batch ({providerName}) split"
+                    : $"AI Batch ({providerName}) split {i + 1}/{sessionCount}";
+                bool launched = useCodex
+                    ? TryLaunchCodexTerminal(workDir, prompt, title, path, DbPathHint)
+                    : TryLaunchClaudeTerminal(workDir, prompt, title, path, DbPathHint);
+
+                if (!launched)
+                {
+                    launchErrors.Add($"{providerName} {i + 1}/{sessionCount}: terminal launch failed");
+                    foreach (string name in chunk)
+                    {
+                        _runState[name] = "err";
+                        _runError[name] = $"{providerName} CLI terminal launch failed.";
+                    }
+                    continue;
+                }
+
+                launchedCount++;
+                foreach (string name in chunk)
+                {
+                    _runState[name] = "running";
+                    _runError.TryRemove(name, out _);
+                }
+            }
+
+            return launchedCount;
+        }
+
+        int claudeLaunched = LaunchProvider(BatchExecutor.ClaudeCli, claudeTargets);
+        int codexLaunched = LaunchProvider(BatchExecutor.CodexCli, codexTargets);
+        int launched = claudeLaunched + codexLaunched;
+
+        if (launched == 0)
+        {
+            SetStatus("Failed to launch Claude + Codex CLI terminals. " + string.Join(" / ", launchErrors), true);
+            return;
+        }
+
+        string status = $"Launched split CLI: Claude {claudeTargets.Count} dataset(s) in {claudeLaunched} session(s), Codex {codexTargets.Count} dataset(s) in {codexLaunched} session(s).";
+        if (launchErrors.Count > 0) status += " Launch warning: " + string.Join(" / ", launchErrors);
+        SetStatus(status, false);
+        StartCliProgressPolling(sortedTargets, "Claude + Codex");
+    }
+
+    private void StartCliProgressPolling(IReadOnlyCollection<string> targetNames, string providerName)
+    {
+        _cliProgressCts?.Cancel();
+        _cliProgressCts?.Dispose();
+        _cliProgressCts = new System.Threading.CancellationTokenSource();
+
+        var targets = targetNames.Where(n => !string.IsNullOrWhiteSpace(n)).Distinct(StringComparer.Ordinal).ToList();
+        if (targets.Count == 0) return;
+
+        DateTime startedUtc = DateTime.UtcNow;
+        var token = _cliProgressCts.Token;
+
+        _ = Task.Run(async () =>
+        {
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(5), token);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+
+                try
+                {
+                    await InvokeAsync(() =>
+                    {
+                        LoadReports();
+                        int finished = targets.Count(IsCliTargetFinished);
+                        TimeSpan elapsed = DateTime.UtcNow - startedUtc;
+                        SetStatus(
+                            $"{providerName} CLI running — {finished}/{targets.Count} finished, elapsed {FormatElapsed(elapsed)}, heartbeat {DateTime.Now:HH:mm:ss}.",
+                            false);
+                        StateHasChanged();
+
+                        if (finished >= targets.Count)
+                        {
+                            SetStatus($"{providerName} CLI finished — {finished}/{targets.Count} done. Refresh if the list has not moved yet.", false);
+                            _cliProgressCts?.Cancel();
+                        }
+                    });
+                }
+                catch
+                {
+                    // Keep polling best-effort; the terminal process owns the real work.
+                }
+            }
+        }, CancellationToken.None);
+    }
+
+    private bool IsCliTargetFinished(string datasetName)
+    {
+        if (_processed.Any(r => string.Equals(r.DatasetName, datasetName, StringComparison.Ordinal))) return true;
+        string? state = _runState.GetValueOrDefault(datasetName);
+        return state == "ok" || state == "err" || state == "stopped";
+    }
+
+    private void ApplyBatchProgressFromFile()
+    {
+        string path;
+        try { path = Path.Combine(FindRepoRoot(), "_ai_batch_progress.jsonl"); }
+        catch { return; }
+        if (!File.Exists(path)) return;
+
+        var latest = new Dictionary<string, (string Status, string Detail, DateTime? At)>(StringComparer.Ordinal);
+        try
+        {
+            foreach (string line in File.ReadLines(path))
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(line);
+                    var root = doc.RootElement;
+                    if (!root.TryGetProperty("name", out var nameEl) ||
+                        !root.TryGetProperty("status", out var statusEl)) continue;
+
+                    string name = nameEl.GetString() ?? "";
+                    string status = statusEl.GetString() ?? "";
+                    if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(status)) continue;
+
+                    string detail = "";
+                    if (root.TryGetProperty("reason", out var reasonEl)) detail = reasonEl.GetString() ?? "";
+                    else if (root.TryGetProperty("error", out var errorEl)) detail = errorEl.GetString() ?? "";
+                    else if (root.TryGetProperty("phase", out var phaseEl)) detail = phaseEl.GetString() ?? "";
+
+                    DateTime? at = null;
+                    if (root.TryGetProperty("at", out var atEl) &&
+                        DateTime.TryParse(atEl.GetString(), null, System.Globalization.DateTimeStyles.AssumeUniversal, out DateTime parsed))
+                    {
+                        at = parsed.ToUniversalTime();
+                    }
+
+                    if (!latest.TryGetValue(name, out var old) ||
+                        (at ?? DateTime.MinValue) >= (old.At ?? DateTime.MinValue))
+                    {
+                        latest[name] = (status, detail, at);
+                    }
+                }
+                catch { }
+            }
+        }
+        catch { return; }
+
+        DateTime cutoff = DateTime.UtcNow.AddHours(-6);
+        foreach (var kv in latest)
+        {
+            string normalized = kv.Value.Status.Trim().ToLowerInvariant();
+            if (normalized == "ok")
+            {
+                _runState[kv.Key] = "ok";
+                _runError.TryRemove(kv.Key, out _);
+            }
+            else if (normalized is "failed" or "error" or "err")
+            {
+                _runState[kv.Key] = "err";
+                _runError[kv.Key] = string.IsNullOrWhiteSpace(kv.Value.Detail) ? normalized : kv.Value.Detail;
+            }
+            else if (normalized is "stopped" or "stop" or "aborted" or "abort")
+            {
+                _runState[kv.Key] = "stopped";
+                _runError[kv.Key] = string.IsNullOrWhiteSpace(kv.Value.Detail) ? normalized : kv.Value.Detail;
+            }
+            else if (normalized is "started" or "running")
+            {
+                if (kv.Value.At is null || kv.Value.At.Value >= cutoff)
+                    _runState[kv.Key] = "running";
+            }
+        }
+    }
+
+    private static string FormatElapsed(TimeSpan elapsed)
+    {
+        if (elapsed.TotalHours >= 1)
+            return $"{(int)elapsed.TotalHours:D2}:{elapsed.Minutes:D2}:{elapsed.Seconds:D2}";
+        return $"{elapsed.Minutes:D2}:{elapsed.Seconds:D2}";
+    }
+
+    private static string BuildAiBatchCliPrompt(string fileName, int targetCount, string modeHint, string dbPath)
+    {
+        return string.Join(" ", new[]
+        {
+            "Read AI_EXCEL_PROC.md and run the AI Batch CLI workflow.",
+            $"DB={dbPath}.",
+            $"Targets={fileName} ({targetCount} datasets).",
+            $"Mode={modeHint}.",
+            "The launcher already set AI_BATCH_DB_PATH and AI_BATCH_TARGETS_FILE.",
+            $"Use _ai_batch_helper.load_targets() and verify it returns exactly {targetCount} non-empty names.",
+            "Process the target list sequentially in this one CLI session. Do not open extra terminals.",
+            "For each dataset, open the DB, call _ai_batch_helper.get_excel_text(con, dataset), and analyze every workbook and every worksheet in workbook order.",
+            "Do not analyze only the first visible sheet. If the rendered text is too large, split by '=== SHEET:' and analyze sheet by sheet, then commit one combined result.",
+            "Use _ai_batch_helper.get_excel_files(con, dataset) only when workbook file context is required. Use get_excel_paste only as a last-resort fallback.",
+            "Do not run or import _batch_auto.py, _batch_build.py, _tmp_ai_excel/auto_normalize.py, or any heuristic fallback/auto-normalizer.",
+            "Do not commit placeholders such as primary_defect='NG (auto-extracted)', changed_factor='see workbook title/purpose', 'Workbook stored but extraction surfaced narrative only', 'batch inventory', or measurement_type='inventory'.",
+            "If real extraction is not possible for a dataset, call _ai_batch_helper.log_failed(dataset, reason) and leave existing DB rows untouched.",
+            "Store AiResults and AiNgBreakdowns from all relevant sheets and set sheet_name/source_cells on every extracted row so Dataset Results can prove sheet coverage.",
+            "Merged-cell rule: if Date/Model/Type/Line/Process cells are merged or visually carried across rows, all covered rows inherit that value before pairing Test/Normal rows.",
+            "Do not create standalone AiResults from percentage-only subrows; attach them as breakdown/rate evidence to the preceding count row.",
+            "Set document.report_type to exactly one allowed AI_EXCEL_PROC report_type.",
+            "Purpose priority: first, create an AI-authored analysis report that lets the user easily understand the workbook review result with tables, heatmaps, comparison matrices, and clear judgement; second, store structured DB parameters so future AI ASK can quickly find related evidence.",
+            "Create result.generated_report_markdown as the primary user-facing Korean Markdown report. This report is the product. It must be written by AI from workbook contents, not assembled by the UI from parameters.",
+            "Follow AI_EXCEL_PROC.md Target Report Style and Required Report Shape. Preserve the original technical-report flow such as Purpose, Content, and Result when present, then add AI judgement and action.",
+            "The report should look like a manufacturing review sheet: defect phenomenon, review items, result table, lot/mold/line comparison, heatmap/comparison matrix, judgement, action, and evidence cells.",
+            "Do not write a short summary or parameter dump. When result rows exist, each report needs at least six Markdown sections, a compact result/evidence table, source worksheet/cell references, and enough prose to stand alone as an engineering report.",
+            "When result rows exist, result.generated_report_markdown and every translated report must include at least one AI-authored visual block using fenced code blocks named report-heatmap, report-bars, or report-heatmap-matrix. Prefer report-heatmap-matrix for paired comparisons and report-heatmap for rankings. status must be bad, warn, or good.",
+            "Also create tr_ko.document.generated_report_markdown, tr_en.document.generated_report_markdown, and tr_vi.document.generated_report_markdown. These are required for the Korean, English, and Vietnamese UI language buttons. Keep equivalent visual blocks in all three translations; translate label/detail text but preserve numeric values, amount, and status.",
+            "Do not stop after extracting parameters. commit_dataset rejects parameter-only payloads when generated_report_markdown is empty.",
+            "commit_dataset also rejects missing translations, reports that are too short, reports without enough sections, result-row reports without Markdown tables/visual blocks, reports without worksheet/cell evidence, and broken encoding/mojibake output.",
+            "Use test_conditions/results/conclusions/troubleshooting as DB/search parameters only; the user-facing report is generated_report_markdown and its translated generated_report_markdown values.",
+            "Extract enough fields for a per-workbook mini report: basic info, problem/phenomenon, purpose, changed/tested conditions, result data, Normal/Test or Before/After comparison, writer decision/note, AI judgement/warnings, and evidence location.",
+            "If no same-event baseline exists, use ng_without_baseline ranking and do not claim improvement/worsening.",
+            "Do not put large result/tr_ko/tr_en/tr_vi payloads inside python -, PowerShell here-strings, Set-Content command text, or any shell command; Windows command length error 206 will fail the run.",
+            "Commit by writing a JSON payload file under _batch_tmp with shape {name,result,translations:{ko,en,vi}}, then run python _ai_batch_helper.py commit-json <that-file>. Create the JSON file with file-writing/editing capability, not by embedding the full JSON in a shell command.",
+            $"Before finishing, verify success_count + failed_count == {targetCount}. Delete {fileName} only after that verification passes."
+        });
     }
 
     /// <summary>Open one Claude Code session in its own terminal window with
     /// the given prompt. The prompt is written to a UTF-8 file first so cmd/wt
     /// quoting never gets a chance to split long Korean/English instructions
     /// into bogus executable names.</summary>
-    private static bool TryLaunchClaudeTerminal(string workDir, string prompt, string title)
+    private static bool TryLaunchClaudeTerminal(string workDir, string prompt, string title, string targetsPath, string dbPath)
     {
         string launchId = Guid.NewGuid().ToString("N")[..12];
         string promptPath = Path.Combine(workDir, $"_batch_prompt_{launchId}.txt");
@@ -1126,7 +1506,7 @@ else
         try
         {
             File.WriteAllText(promptPath, prompt, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-            File.WriteAllText(scriptPath, BuildClaudeLauncherScript(workDir, promptPath, scriptPath, title),
+            File.WriteAllText(scriptPath, BuildClaudeLauncherScript(workDir, promptPath, scriptPath, title, targetsPath, dbPath),
                 new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }
         catch
@@ -1188,9 +1568,75 @@ else
         catch { return false; }
     }
 
-    private static string BuildClaudeLauncherScript(string workDir, string promptPath, string scriptPath, string title)
+    private static bool TryLaunchCodexTerminal(string workDir, string prompt, string title, string targetsPath, string dbPath)
+    {
+        string launchId = Guid.NewGuid().ToString("N")[..12];
+        string promptPath = Path.Combine(workDir, $"_batch_prompt_codex_{launchId}.txt");
+        string scriptPath = Path.Combine(workDir, $"_batch_launch_codex_{launchId}.ps1");
+
+        try
+        {
+            File.WriteAllText(promptPath, prompt, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            File.WriteAllText(scriptPath, BuildCodexLauncherScript(workDir, promptPath, scriptPath, title, targetsPath, dbPath),
+                new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        }
+        catch
+        {
+            return false;
+        }
+
+        try
+        {
+            var wt = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName        = "wt.exe",
+                UseShellExecute = false,
+                CreateNoWindow  = false,
+            };
+            wt.ArgumentList.Add("-d");
+            wt.ArgumentList.Add(workDir);
+            wt.ArgumentList.Add("powershell.exe");
+            wt.ArgumentList.Add("-NoExit");
+            wt.ArgumentList.Add("-NoProfile");
+            wt.ArgumentList.Add("-ExecutionPolicy");
+            wt.ArgumentList.Add("Bypass");
+            wt.ArgumentList.Add("-File");
+            wt.ArgumentList.Add(scriptPath);
+            var proc = System.Diagnostics.Process.Start(wt);
+            if (proc is not null) ChildProcessJob.Assign(proc);
+            return true;
+        }
+        catch { /* wt.exe missing - fall through */ }
+
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName         = "cmd.exe",
+                WorkingDirectory = workDir,
+                UseShellExecute  = false,
+                CreateNoWindow   = false,
+            };
+            psi.ArgumentList.Add("/k");
+            psi.ArgumentList.Add("powershell.exe");
+            psi.ArgumentList.Add("-NoExit");
+            psi.ArgumentList.Add("-NoProfile");
+            psi.ArgumentList.Add("-ExecutionPolicy");
+            psi.ArgumentList.Add("Bypass");
+            psi.ArgumentList.Add("-File");
+            psi.ArgumentList.Add(scriptPath);
+            var proc = System.Diagnostics.Process.Start(psi);
+            if (proc is not null) ChildProcessJob.Assign(proc);
+            return true;
+        }
+        catch { return false; }
+    }
+
+    private static string BuildClaudeLauncherScript(string workDir, string promptPath, string scriptPath, string title, string targetsPath, string dbPath)
     {
         static string Q(string value) => "'" + (value ?? "").Replace("'", "''") + "'";
+        string progressPath = Path.Combine(workDir, "_ai_batch_progress.jsonl");
+        string failedPath = Path.Combine(workDir, "_ai_batch_failed.txt");
 
         return string.Join(Environment.NewLine, new[]
         {
@@ -1199,17 +1645,155 @@ else
             "try { chcp 65001 | Out-Null } catch {}",
             $"try {{ $Host.UI.RawUI.WindowTitle = {Q(title)} }} catch {{}}",
             $"Set-Location -LiteralPath {Q(workDir)}",
+            $"$env:AI_BATCH_DB_PATH = {Q(dbPath)}",
+            $"$env:AI_BATCH_PROGRESS_FILE = {Q(progressPath)}",
+            $"$env:AI_BATCH_FAILED_FILE = {Q(failedPath)}",
             "",
             $"$promptPath = {Q(promptPath)}",
             $"$scriptPath = {Q(scriptPath)}",
-            "$prompt = Get-Content -LiteralPath $promptPath -Raw -Encoding UTF8",
-            "",
-            "& claude $prompt",
-            "$exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }",
-            "if ($exitCode -ne 0) {",
-            "    Write-Host ('Claude exited with code ' + $exitCode + '.') -ForegroundColor Yellow",
+            $"$masterTargetsPath = {Q(targetsPath)}",
+            "$promptTemplate = Get-Content -LiteralPath $promptPath -Raw -Encoding UTF8",
+            "$targets = @(Get-Content -LiteralPath $masterTargetsPath -Encoding UTF8 | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })",
+            "$runnerName = 'Claude'",
+            "$promptFileName = [System.IO.Path]::GetFileName($promptPath)",
+            "$maxAttempts = 5",
+            "$retryDelays = @(30, 60, 120, 240, 360)",
+            "function Write-BatchProgress {",
+            "    param([string]$Target, [string]$Status, [string]$Phase)",
+            "    $now = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss')",
+            "    $rec = [ordered]@{ name = [string]$Target; status = $Status; phase = $Phase; runner = $runnerName; prompt = $promptFileName; at = $now }",
+            "    try { ($rec | ConvertTo-Json -Compress) | Add-Content -LiteralPath $env:AI_BATCH_PROGRESS_FILE -Encoding UTF8 } catch {}",
+            "}",
+            "function Test-ClaudeTransientError {",
+            "    param([string]$Text)",
+            "    return ($Text -match '(?i)\\b529\\b|overloaded|temporar|rate.?limit|timeout|timed.?out|service unavailable|connection reset|ECONNRESET|ETIMEDOUT|EAI_AGAIN')",
+            "}",
+            "function Test-ClaudeUsageLimit {",
+            "    param([string]$Text)",
+            "    return ($Text -match '(?i)monthly usage limit|org.?s monthly usage limit|usage limit|credit balance|quota exceeded|billing limit')",
+            "}",
+            "Write-Host ('Unattended per-file Claude batch started for ' + $targets.Count + ' target(s).') -ForegroundColor Cyan",
+            "$total = $targets.Count",
+            "$index = 0",
+            "$abortBatch = $false",
+            "foreach ($dataset in $targets) {",
+            "    $index++",
+            "    $safe = ([BitConverter]::ToString([System.Security.Cryptography.SHA1]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($dataset))).Replace('-', '').Substring(0, 12).ToLowerInvariant())",
+            "    $oneTarget = Join-Path (Get-Location) ('_batch_one_' + $safe + '.txt')",
+            "    Set-Content -LiteralPath $oneTarget -Value $dataset -Encoding UTF8",
+            "    $env:AI_BATCH_TARGETS_FILE = $oneTarget",
+            "    $prompt = $promptTemplate.Replace('__AI_BATCH_TARGET_FILE__', (Split-Path -Leaf $oneTarget))",
+            "    Write-BatchProgress $dataset 'started' ('dataset ' + $index + '/' + $total)",
+            "    Write-Host ('[' + $index + '/' + $total + '] Claude analyzing: ' + $dataset) -ForegroundColor Cyan",
+            "    $attempt = 0",
+            "    $exitCode = 1",
+            "    $lastOutput = ''",
+            "    while ($attempt -lt $maxAttempts) {",
+            "        $attempt++",
+            "        if ($attempt -gt 1) {",
+            "            Write-Host ('[' + $index + '/' + $total + '] Claude retry ' + $attempt + '/' + $maxAttempts + ': ' + $dataset) -ForegroundColor Yellow",
+            "        }",
+            "        $claudeOutput = @()",
+            "        & claude --permission-mode bypassPermissions -p $prompt 2>&1 | Tee-Object -Variable claudeOutput",
+            "        $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }",
+            "        $lastOutput = ($claudeOutput | Out-String)",
+            "        if ($exitCode -eq 0) { break }",
+            "        if (Test-ClaudeUsageLimit $lastOutput) {",
+            "            $reason = 'Claude monthly usage limit reached; stopping batch without marking remaining targets failed'",
+            "            Write-BatchProgress $dataset 'stopped' $reason",
+            "            Write-Host $reason -ForegroundColor Red",
+            "            $remaining = @()",
+            "            if ($index -le $targets.Count) { $remaining = @($targets[($index - 1)..($targets.Count - 1)]) }",
+            "            try { Set-Content -LiteralPath $masterTargetsPath -Value $remaining -Encoding UTF8 } catch {}",
+            "            foreach ($remainingDataset in $remaining) { Write-BatchProgress $remainingDataset 'stopped' $reason }",
+            "            $abortBatch = $true",
+            "            break",
+            "        }",
+            "        if (-not (Test-ClaudeTransientError $lastOutput) -or $attempt -ge $maxAttempts) { break }",
+            "        $delay = $retryDelays[[Math]::Min($attempt - 1, $retryDelays.Count - 1)]",
+            "        $reason = 'Claude transient overload/network error; retry in ' + $delay + 's (attempt ' + $attempt + '/' + $maxAttempts + ')'",
+            "        Write-BatchProgress $dataset 'running' $reason",
+            "        Write-Host $reason -ForegroundColor Yellow",
+            "        Start-Sleep -Seconds $delay",
+            "    }",
+            "    if ($abortBatch) {",
+            "        Remove-Item -LiteralPath $oneTarget -Force -ErrorAction SilentlyContinue",
+            "        break",
+            "    }",
+            "    if ($exitCode -ne 0) {",
+            "        $reason = 'Claude exited with code ' + $exitCode",
+            "        if (Test-ClaudeTransientError $lastOutput) { $reason = $reason + ' after transient retries' }",
+            "        Write-BatchProgress $dataset 'failed' $reason",
+            "        Add-Content -LiteralPath $env:AI_BATCH_FAILED_FILE -Value ($dataset + \"`t\" + $reason) -Encoding UTF8",
+            "        Write-Host $reason -ForegroundColor Yellow",
+            "    }",
+            "    Remove-Item -LiteralPath $oneTarget -Force -ErrorAction SilentlyContinue",
             "}",
             "",
+            "if (-not $abortBatch) {",
+            "    Remove-Item -LiteralPath $masterTargetsPath -Force -ErrorAction SilentlyContinue",
+            "} else {",
+            "    Write-Host ('Batch stopped. Remaining targets were kept at: ' + $masterTargetsPath) -ForegroundColor Yellow",
+            "}",
+            "Remove-Item -LiteralPath $promptPath -Force -ErrorAction SilentlyContinue",
+            "Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue",
+        });
+    }
+
+    private static string BuildCodexLauncherScript(string workDir, string promptPath, string scriptPath, string title, string targetsPath, string dbPath)
+    {
+        static string Q(string value) => "'" + (value ?? "").Replace("'", "''") + "'";
+        string progressPath = Path.Combine(workDir, "_ai_batch_progress.jsonl");
+        string failedPath = Path.Combine(workDir, "_ai_batch_failed.txt");
+
+        return string.Join(Environment.NewLine, new[]
+        {
+            "$ErrorActionPreference = 'Continue'",
+            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
+            "try { chcp 65001 | Out-Null } catch {}",
+            $"try {{ $Host.UI.RawUI.WindowTitle = {Q(title)} }} catch {{}}",
+            $"Set-Location -LiteralPath {Q(workDir)}",
+            $"$env:AI_BATCH_DB_PATH = {Q(dbPath)}",
+            $"$env:AI_BATCH_PROGRESS_FILE = {Q(progressPath)}",
+            $"$env:AI_BATCH_FAILED_FILE = {Q(failedPath)}",
+            "",
+            $"$promptPath = {Q(promptPath)}",
+            $"$scriptPath = {Q(scriptPath)}",
+            $"$masterTargetsPath = {Q(targetsPath)}",
+            "$promptTemplate = Get-Content -LiteralPath $promptPath -Raw -Encoding UTF8",
+            "$targets = @(Get-Content -LiteralPath $masterTargetsPath -Encoding UTF8 | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })",
+            "$runnerName = 'Codex'",
+            "$promptFileName = [System.IO.Path]::GetFileName($promptPath)",
+            "function Write-BatchProgress {",
+            "    param([string]$Target, [string]$Status, [string]$Phase)",
+            "    $now = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss')",
+            "    $rec = [ordered]@{ name = [string]$Target; status = $Status; phase = $Phase; runner = $runnerName; prompt = $promptFileName; at = $now }",
+            "    try { ($rec | ConvertTo-Json -Compress) | Add-Content -LiteralPath $env:AI_BATCH_PROGRESS_FILE -Encoding UTF8 } catch {}",
+            "}",
+            "Write-Host ('Unattended per-file Codex batch started for ' + $targets.Count + ' target(s).') -ForegroundColor Cyan",
+            "$total = $targets.Count",
+            "$index = 0",
+            "foreach ($dataset in $targets) {",
+            "    $index++",
+            "    $safe = ([BitConverter]::ToString([System.Security.Cryptography.SHA1]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($dataset))).Replace('-', '').Substring(0, 12).ToLowerInvariant())",
+            "    $oneTarget = Join-Path (Get-Location) ('_batch_one_' + $safe + '.txt')",
+            "    Set-Content -LiteralPath $oneTarget -Value $dataset -Encoding UTF8",
+            "    $env:AI_BATCH_TARGETS_FILE = $oneTarget",
+            "    $prompt = $promptTemplate.Replace('__AI_BATCH_TARGET_FILE__', (Split-Path -Leaf $oneTarget))",
+            "    Write-BatchProgress $dataset 'started' ('dataset ' + $index + '/' + $total)",
+            "    Write-Host ('[' + $index + '/' + $total + '] Codex analyzing: ' + $dataset) -ForegroundColor Cyan",
+            $"    $prompt | & codex exec -c 'model_reasoning_effort=\"xhigh\"' --cd {Q(workDir)} --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check -",
+            "    $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }",
+            "    if ($exitCode -ne 0) {",
+            "        $reason = 'Codex exited with code ' + $exitCode",
+            "        Write-BatchProgress $dataset 'failed' $reason",
+            "        Add-Content -LiteralPath $env:AI_BATCH_FAILED_FILE -Value ($dataset + \"`t\" + $reason) -Encoding UTF8",
+            "        Write-Host $reason -ForegroundColor Yellow",
+            "    }",
+            "    Remove-Item -LiteralPath $oneTarget -Force -ErrorAction SilentlyContinue",
+            "}",
+            "",
+            "Remove-Item -LiteralPath $masterTargetsPath -Force -ErrorAction SilentlyContinue",
             "Remove-Item -LiteralPath $promptPath -Force -ErrorAction SilentlyContinue",
             "Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue",
         });
@@ -1248,6 +1832,8 @@ else
 
     public async ValueTask DisposeAsync()
     {
+        try { _cliProgressCts?.Cancel(); } catch { }
+        _cliProgressCts?.Dispose();
         try { await JS.InvokeVoidAsync("diFullPage.leave"); } catch { }
     }
 

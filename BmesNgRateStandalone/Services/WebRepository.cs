@@ -31,7 +31,7 @@ public sealed record ScheduleItem(
     public string TimeDisplay => IsAllDay
         ? "All day"
         : EndTime.HasValue
-            ? $"{StartTime!.Value:HH\\:mm}–{EndTime.Value:HH\\:mm}"
+            ? $"{StartTime!.Value:HH\\:mm}-{EndTime.Value:HH\\:mm}"
             : StartTime!.Value.ToString("HH:mm");
 }
 
@@ -44,7 +44,7 @@ public sealed class WebRepository
 
     public WebRepository(IConfiguration config)
     {
-        // Priority 1: appsettings.json → Database:Path (explicit override)
+        // Priority 1: appsettings.json ??Database:Path (explicit override)
         // Priority 2: WPF app settings file (DataInference.DatabasePath)
         // Priority 3: default path (%LOCALAPPDATA%\JinoWorkHost\process-review.db)
         string? configured = config["Database:Path"];
@@ -56,7 +56,7 @@ public sealed class WebRepository
                   "JinoWorkHost", "process-review.db");
 
         // Schedule DB: shared with WPF app (schedule.db)
-        // Priority 1: appsettings.json → Schedule:Path
+        // Priority 1: appsettings.json ??Schedule:Path
         // Priority 2: WPF app settings file (Schedule.DatabasePath)
         // Priority 3: default %LOCALAPPDATA%\JinoWorkHost\schedule.db
         string? schedulePath = config["Schedule:Path"];
@@ -73,7 +73,7 @@ public sealed class WebRepository
 
     public string GetDbPath() => _dbPath;
 
-    // ── Connection ────────────────────────────────────────────────────────────
+    // ?? Connection ????????????????????????????????????????????????????????????
 
     private SqliteConnection OpenConnection()
     {
@@ -314,6 +314,20 @@ public sealed class WebRepository
             );
             CREATE INDEX IF NOT EXISTS idx_askai_created ON AskAiHistory(CreatedAt DESC);
 
+            CREATE TABLE IF NOT EXISTS AiModelAnalyses (
+                Id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+                ProductType          TEXT    NOT NULL DEFAULT '',
+                AnalysisMode         TEXT    NOT NULL DEFAULT '',
+                Language             TEXT    NOT NULL DEFAULT '',
+                ReportCount          INTEGER NOT NULL DEFAULT 0,
+                IncludedDatasetsJson TEXT    NOT NULL DEFAULT '[]',
+                AnalysisMarkdown     TEXT    NOT NULL DEFAULT '',
+                AnalysisTableMarkdown TEXT   NOT NULL DEFAULT '',
+                SourceContextHash    TEXT    NOT NULL DEFAULT '',
+                CreatedAt            TEXT    NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_aimodel_product_created ON AiModelAnalyses(ProductType, CreatedAt DESC);
+
             -- Maps an arbitrary filename token (e.g. "BRS-161014", "BRS-2015")
             -- to a Mid-group Material name (e.g. "BRS-161016S08ZZ"). Used by
             -- the Data Input page to resolve Product Type for files whose
@@ -381,7 +395,7 @@ public sealed class WebRepository
                 FetchedAt TEXT NOT NULL
             );
 
-            -- ── AI_EXCEL_PROC.md schema (Batch AI inference output) ─────────────
+            -- ?? AI_EXCEL_PROC.md schema (Batch AI inference output) ?????????????
             -- One row per normalized Excel report. RawJson preserves the full
             -- agent output for re-ingestion / debugging. Source_dataset links
             -- back to RawReports.DatasetName so the row can be located in the
@@ -404,6 +418,7 @@ public sealed class WebRepository
                 ProcessesJson       TEXT NOT NULL DEFAULT '',
                 Purpose             TEXT NOT NULL DEFAULT '',
                 ContentJson         TEXT NOT NULL DEFAULT '',
+                GeneratedReportMarkdown TEXT NOT NULL DEFAULT '',
                 SourceCellsJson     TEXT NOT NULL DEFAULT '',
                 Confidence          REAL NOT NULL DEFAULT 0,
                 SchemaVersion       TEXT NOT NULL DEFAULT '',
@@ -509,8 +524,8 @@ public sealed class WebRepository
             );
             CREATE INDEX IF NOT EXISTS idx_ailog_doc ON AiExtractionLogs(DocumentId);
 
-            -- ── ko/en/vi translations for narrative fields ──────────────────────
-            -- Agent writes one row per (record, lang) — Lang in ('ko','en','vi').
+            -- ?? ko/en/vi translations for narrative fields ??????????????????????
+            -- Agent writes one row per (record, lang) ??Lang in ('ko','en','vi').
             -- Numerics + measurements live in the base tables; only the
             -- AI-narrative text needs translating.
             CREATE TABLE IF NOT EXISTS AiDocumentTranslations (
@@ -519,6 +534,7 @@ public sealed class WebRepository
                 Title       TEXT NOT NULL DEFAULT '',
                 Purpose     TEXT NOT NULL DEFAULT '',
                 ContentJson TEXT NOT NULL DEFAULT '',-- translated content[] array
+                GeneratedReportMarkdown TEXT NOT NULL DEFAULT '',
                 UpdatedAt   TEXT NOT NULL,
                 PRIMARY KEY (DocumentId, Lang)
             );
@@ -558,7 +574,7 @@ public sealed class WebRepository
     }
 
     /// <summary>
-    /// Idempotent seed of the Mtype → Category-name mapping. Uses INSERT OR IGNORE so
+    /// Idempotent seed of the Mtype ??Category-name mapping. Uses INSERT OR IGNORE so
     /// that any user renames done later are preserved on subsequent starts.
     /// </summary>
     private static void SeedMtypeCategories(SqliteConnection conn)
@@ -602,7 +618,7 @@ public sealed class WebRepository
 
     private static void MigrateSchema(SqliteConnection conn)
     {
-        // ModelGroupItems.Material (for 중그룹 Material)
+        // ModelGroupItems.Material (for 以묎렇猷?Material)
         bool hasMaterial = false;
         using (SqliteCommand ck = conn.CreateCommand())
         {
@@ -636,7 +652,7 @@ public sealed class WebRepository
             alter.ExecuteNonQuery();
         }
 
-        // ModelGroups.ProductGroup (SPK/UNIT/MODULE/TWS/ETC — replaces per-JSON-file attribute)
+        // ModelGroups.ProductGroup (SPK/UNIT/MODULE/TWS/ETC ??replaces per-JSON-file attribute)
         bool hasProductGroup = false;
         using (SqliteCommand ck = conn.CreateCommand())
         {
@@ -650,6 +666,48 @@ public sealed class WebRepository
         {
             using SqliteCommand alter = conn.CreateCommand();
             alter.CommandText = "ALTER TABLE ModelGroups ADD COLUMN ProductGroup TEXT NOT NULL DEFAULT 'ETC';";
+            alter.ExecuteNonQuery();
+        }
+
+        var aiDocCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using (SqliteCommand ck = conn.CreateCommand())
+        {
+            ck.CommandText = "PRAGMA table_info(AiDocuments);";
+            using SqliteDataReader r = ck.ExecuteReader();
+            while (r.Read()) aiDocCols.Add(r.GetString(1));
+        }
+        if (!aiDocCols.Contains("GeneratedReportMarkdown"))
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE AiDocuments ADD COLUMN GeneratedReportMarkdown TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+
+        var aiDocTrCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using (SqliteCommand ck = conn.CreateCommand())
+        {
+            ck.CommandText = "PRAGMA table_info(AiDocumentTranslations);";
+            using SqliteDataReader r = ck.ExecuteReader();
+            while (r.Read()) aiDocTrCols.Add(r.GetString(1));
+        }
+        if (!aiDocTrCols.Contains("GeneratedReportMarkdown"))
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE AiDocumentTranslations ADD COLUMN GeneratedReportMarkdown TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+
+        var aiModelCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using (SqliteCommand ck = conn.CreateCommand())
+        {
+            ck.CommandText = "PRAGMA table_info(AiModelAnalyses);";
+            using SqliteDataReader r = ck.ExecuteReader();
+            while (r.Read()) aiModelCols.Add(r.GetString(1));
+        }
+        if (!aiModelCols.Contains("AnalysisTableMarkdown"))
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE AiModelAnalyses ADD COLUMN AnalysisTableMarkdown TEXT NOT NULL DEFAULT '';";
             alter.ExecuteNonQuery();
         }
 
@@ -885,11 +943,11 @@ public sealed class WebRepository
         }
     }
 
-    // ── Raw report text ───────────────────────────────────────────────────────
+    // ?? Raw report text ???????????????????????????????????????????????????????
     // Two kinds live side-by-side per dataset:
-    //   "ocr"         — structured markdown transcript produced by Vision OCR.
+    //   "ocr"         ??structured markdown transcript produced by Vision OCR.
     //                   Batch normalize-from-text flow consumes this.
-    //   "excel_paste" — raw tab-separated text pasted from Excel at Input time.
+    //   "excel_paste" ??raw tab-separated text pasted from Excel at Input time.
     //                   Passed as auxiliary rawText to NormalizeFromImagesAsync;
     //                   NOT a substitute for OCR markdown.
 
@@ -959,7 +1017,7 @@ public sealed class WebRepository
         cmd.ExecuteNonQuery();
     }
 
-    // ── App Settings ──────────────────────────────────────────────────────────
+    // ?? App Settings ??????????????????????????????????????????????????????????
 
     public string? GetSetting(string key)
     {
@@ -984,7 +1042,7 @@ public sealed class WebRepository
         cmd.ExecuteNonQuery();
     }
 
-    // ── Datasets ──────────────────────────────────────────────────────────────
+    // ?? Datasets ??????????????????????????????????????????????????????????????
 
     public List<string> GetAllDatasets()
     {
@@ -1043,7 +1101,7 @@ public sealed class WebRepository
         return [.. matchSet.Order(StringComparer.OrdinalIgnoreCase)];
     }
 
-    // ── Tables ────────────────────────────────────────────────────────────────
+    // ?? Tables ????????????????????????????????????????????????????????????????
 
     public List<DataTableInfo> GetTablesForDataset(string datasetName)
     {
@@ -1134,7 +1192,7 @@ public sealed class WebRepository
         return tableId;
     }
 
-    // ── Tags & Memo ───────────────────────────────────────────────────────────
+    // ?? Tags & Memo ???????????????????????????????????????????????????????????
 
     public void SaveTags(string datasetName, List<string> tags)
     {
@@ -1240,7 +1298,7 @@ public sealed class WebRepository
         return r.IsDBNull(0) ? string.Empty : r.GetString(0);
     }
 
-    // ── RawReports ────────────────────────────────────────────────────────────
+    // ?? RawReports ????????????????????????????????????????????????????????????
 
     public void SaveRawReport(string name, string productType, string date,
                                List<(string MediaType, byte[] Data, string FileName)> images)
@@ -1292,7 +1350,7 @@ public sealed class WebRepository
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
         // BatchedAt is a derived value. Prefer the newest of:
-        //   AiDocuments.UpdatedAt   (AI_EXCEL_PROC.md schema — new CLI flow)
+        //   AiDocuments.UpdatedAt   (AI_EXCEL_PROC.md schema ??new CLI flow)
         //   DatasetSummary.CreatedAt (legacy v2 narrative card)
         //   NormalizedMeasurements.MAX(CreatedAt) (oldest fallback)
         // Without including AiDocuments here, rows processed by the new CLI
@@ -1303,7 +1361,13 @@ public sealed class WebRepository
                    (SELECT COUNT(*) FROM NormalizedMeasurements WHERE DatasetName=r.DatasetName) AS MeasCnt,
                    r.BatchExcluded,
                    COALESCE(
-                     (SELECT MAX(UpdatedAt) FROM AiDocuments      WHERE SourceDataset=r.DatasetName),
+                     (SELECT MAX(d.UpdatedAt)
+                        FROM AiDocuments d
+                       WHERE d.SourceDataset=r.DatasetName
+                         AND LOWER(COALESCE(d.PrimaryDefect,'')) NOT LIKE '%auto-extracted%'
+                         AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%_batch_auto.py%'
+                         AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%see workbook title/purpose%'
+                         AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%workbook stored but extraction surfaced narrative only%'),
                      (SELECT CreatedAt      FROM DatasetSummary   WHERE DatasetName  =r.DatasetName),
                      (SELECT MAX(CreatedAt) FROM NormalizedMeasurements WHERE DatasetName=r.DatasetName),
                      ''
@@ -1540,7 +1604,7 @@ public sealed class WebRepository
         cmd.ExecuteNonQuery();
     }
 
-    // ── Raw attached files (any type — Excel, PDF, etc.) ─────────────────────
+    // ?? Raw attached files (any type ??Excel, PDF, etc.) ?????????????????????
 
     public void AppendRawReportFiles(string name, List<(string MediaType, byte[] Data, string FileName)> files)
     {
@@ -1786,10 +1850,10 @@ public sealed class WebRepository
         return rec;
     }
 
-    // ── AI_EXCEL_PROC.md schema read path ─────────────────────────────────────
+    // ?? AI_EXCEL_PROC.md schema read path ?????????????????????????????????????
     // Used by DataInferenceDbPage to render the new-CLI bundle when a row was
     // processed via AI_EXCEL_PROC.md (writes AiDocuments + children). Returns
-    // null when the dataset has no AiDocuments row — the page falls back to
+    // null when the dataset has no AiDocuments row ??the page falls back to
     // the old DatasetSummary card in that case.
     public AiDocBundle? GetAiDocBundle(string sourceDataset)
     {
@@ -1803,8 +1867,13 @@ public sealed class WebRepository
             cmd.CommandText = """
                 SELECT DocumentId, SourceDataset, SourceFile, Title, Purpose, PrimaryDefect,
                        ReportType, ReportDate, Confidence,
-                       ContentJson, RelatedDefectsJson, PartsJson, ProcessesJson
-                FROM AiDocuments WHERE SourceDataset=@n
+                       ContentJson, GeneratedReportMarkdown, RelatedDefectsJson, PartsJson, ProcessesJson
+                FROM AiDocuments
+                WHERE SourceDataset=@n
+                  AND LOWER(COALESCE(PrimaryDefect,'')) NOT LIKE '%auto-extracted%'
+                  AND LOWER(COALESCE(RawJson,'')) NOT LIKE '%_batch_auto.py%'
+                  AND LOWER(COALESCE(RawJson,'')) NOT LIKE '%see workbook title/purpose%'
+                  AND LOWER(COALESCE(RawJson,'')) NOT LIKE '%workbook stored but extraction surfaced narrative only%'
                 ORDER BY UpdatedAt DESC LIMIT 1;
                 """;
             cmd.Parameters.AddWithValue("@n", sourceDataset);
@@ -1822,9 +1891,10 @@ public sealed class WebRepository
                 ReportDate    = rd.GetString(7),
                 Confidence    = rd.IsDBNull(8) ? 0 : rd.GetDouble(8),
                 Content        = ReadJsonStringList(rd.IsDBNull(9)  ? "" : rd.GetString(9)),
-                RelatedDefects = ReadJsonStringList(rd.IsDBNull(10) ? "" : rd.GetString(10)),
-                Parts          = ReadJsonStringList(rd.IsDBNull(11) ? "" : rd.GetString(11)),
-                Processes      = ReadJsonStringList(rd.IsDBNull(12) ? "" : rd.GetString(12)),
+                GeneratedReportMarkdown = rd.IsDBNull(10) ? "" : rd.GetString(10),
+                RelatedDefects = ReadJsonStringList(rd.IsDBNull(11) ? "" : rd.GetString(11)),
+                Parts          = ReadJsonStringList(rd.IsDBNull(12) ? "" : rd.GetString(12)),
+                Processes      = ReadJsonStringList(rd.IsDBNull(13) ? "" : rd.GetString(13)),
             };
         }
         string docId = bundle.DocumentId;
@@ -1982,10 +2052,10 @@ public sealed class WebRepository
             }
         }
 
-        // 5) Translations (ko/en/vi) — narrative-only
+        // 5) Translations (ko/en/vi) ??narrative-only
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = "SELECT Lang, Title, Purpose, ContentJson FROM AiDocumentTranslations WHERE DocumentId=@d;";
+            cmd.CommandText = "SELECT Lang, Title, Purpose, ContentJson, GeneratedReportMarkdown FROM AiDocumentTranslations WHERE DocumentId=@d;";
             cmd.Parameters.AddWithValue("@d", docId);
             using var rd = cmd.ExecuteReader();
             while (rd.Read())
@@ -1995,6 +2065,7 @@ public sealed class WebRepository
                     Title   = rd.GetString(1),
                     Purpose = rd.GetString(2),
                     Content = ReadJsonStringList(rd.IsDBNull(3) ? "" : rd.GetString(3)),
+                    GeneratedReportMarkdown = rd.IsDBNull(4) ? "" : rd.GetString(4),
                 };
             }
         }
@@ -2080,7 +2151,7 @@ public sealed class WebRepository
         catch { return []; }
     }
 
-    // ── Dataset summary translations (multi-language) ─────────────────────────
+    // ?? Dataset summary translations (multi-language) ?????????????????????????
 
     public void SaveDatasetSummaryTranslation(
         string datasetName, string lang, DatasetSummaryTranslation tr)
@@ -2181,7 +2252,7 @@ public sealed class WebRepository
         return dict;
     }
 
-    // ── AskAi history ─────────────────────────────────────────────────────────
+    // ?? AskAi history ?????????????????????????????????????????????????????????
 
     public long SaveAskAiHistory(string question, string productTypeFilter, string overall, string perDatasetJson)
     {
@@ -2254,6 +2325,174 @@ public sealed class WebRepository
         cmd.CommandText = "DELETE FROM AskAiHistory;";
         cmd.ExecuteNonQuery();
     }
+
+    // Model-level AI analysis built from per-report AI markdown.
+
+    public List<ModelAnalysisGroupRecord> GetModelAnalysisGroups()
+    {
+        var list = new List<ModelAnalysisGroupRecord>();
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT r.ProductType,
+                   COUNT(*) AS ReportCount,
+                   SUM(CASE WHEN d.DocumentId IS NOT NULL
+                             AND LENGTH(TRIM(COALESCE(d.GeneratedReportMarkdown,''))) > 0
+                            THEN 1 ELSE 0 END) AS AiReportCount,
+                   COALESCE(MAX(r.ReportDate), '') AS LatestReportDate,
+                   COALESCE(MAX(d.UpdatedAt), '') AS LatestAiUpdatedAt,
+                   COALESCE((SELECT MAX(a.CreatedAt)
+                               FROM AiModelAnalyses a
+                              WHERE a.ProductType = r.ProductType), '') AS LatestAnalysisAt
+            FROM RawReports r
+            LEFT JOIN AiDocuments d
+              ON d.SourceDataset = r.DatasetName
+             AND LOWER(COALESCE(d.PrimaryDefect,'')) NOT LIKE '%auto-extracted%'
+             AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%_batch_auto.py%'
+             AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%see workbook title/purpose%'
+             AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%workbook stored but extraction surfaced narrative only%'
+            WHERE r.BatchExcluded = 0
+              AND LENGTH(TRIM(COALESCE(r.ProductType,''))) > 0
+            GROUP BY r.ProductType
+            ORDER BY r.ProductType COLLATE NOCASE;
+            """;
+
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            list.Add(new ModelAnalysisGroupRecord(
+                r.GetString(0),
+                Convert.ToInt32(r.GetValue(1)),
+                Convert.ToInt32(r.GetValue(2)),
+                r.IsDBNull(3) ? "" : r.GetString(3),
+                r.IsDBNull(4) ? "" : r.GetString(4),
+                r.IsDBNull(5) ? "" : r.GetString(5)));
+        }
+        return list;
+    }
+
+    public List<ModelAnalysisReportRecord> GetModelAnalysisReports(string productType)
+    {
+        var list = new List<ModelAnalysisReportRecord>();
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT r.DatasetName, r.ProductType, r.ReportDate,
+                   COALESCE(d.DocumentId, '') AS DocumentId,
+                   COALESCE(d.Title, '') AS Title,
+                   COALESCE(d.ReportType, '') AS ReportType,
+                   COALESCE(d.PrimaryDefect, '') AS PrimaryDefect,
+                   COALESCE(d.GeneratedReportMarkdown, '') AS GeneratedReportMarkdown,
+                   COALESCE(d.UpdatedAt, '') AS AiUpdatedAt,
+                   COALESCE((SELECT COUNT(*) FROM AiResults ar WHERE ar.DocumentId=d.DocumentId), 0) AS ResultCount,
+                   COALESCE((SELECT COUNT(*) FROM AiConclusions ac WHERE ac.DocumentId=d.DocumentId), 0) AS ConclusionCount
+            FROM RawReports r
+            LEFT JOIN AiDocuments d
+              ON d.SourceDataset = r.DatasetName
+             AND LOWER(COALESCE(d.PrimaryDefect,'')) NOT LIKE '%auto-extracted%'
+             AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%_batch_auto.py%'
+             AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%see workbook title/purpose%'
+             AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%workbook stored but extraction surfaced narrative only%'
+            WHERE r.BatchExcluded = 0
+              AND r.ProductType = @p
+            ORDER BY r.ReportDate DESC, r.DatasetName COLLATE NOCASE;
+            """;
+        cmd.Parameters.AddWithValue("@p", productType ?? "");
+
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            list.Add(new ModelAnalysisReportRecord(
+                r.GetString(0),
+                r.GetString(1),
+                r.GetString(2),
+                r.GetString(3),
+                r.GetString(4),
+                r.GetString(5),
+                r.GetString(6),
+                r.GetString(7),
+                r.GetString(8),
+                Convert.ToInt32(r.GetValue(9)),
+                Convert.ToInt32(r.GetValue(10))));
+        }
+        return list;
+    }
+
+    public long SaveModelAnalysis(string productType, string analysisMode, string language,
+                                  int reportCount, string includedDatasetsJson,
+                                  string analysisMarkdown, string analysisTableMarkdown,
+                                  string sourceContextHash)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO AiModelAnalyses
+                (ProductType, AnalysisMode, Language, ReportCount,
+                 IncludedDatasetsJson, AnalysisMarkdown, AnalysisTableMarkdown, SourceContextHash, CreatedAt)
+            VALUES (@p, @m, @l, @c, @d, @a, @ta, @h, @t);
+            SELECT last_insert_rowid();
+            """;
+        cmd.Parameters.AddWithValue("@p", productType ?? "");
+        cmd.Parameters.AddWithValue("@m", analysisMode ?? "");
+        cmd.Parameters.AddWithValue("@l", language ?? "");
+        cmd.Parameters.AddWithValue("@c", reportCount);
+        cmd.Parameters.AddWithValue("@d", includedDatasetsJson ?? "[]");
+        cmd.Parameters.AddWithValue("@a", analysisMarkdown ?? "");
+        cmd.Parameters.AddWithValue("@ta", analysisTableMarkdown ?? "");
+        cmd.Parameters.AddWithValue("@h", sourceContextHash ?? "");
+        cmd.Parameters.AddWithValue("@t", DateTime.UtcNow.ToString("o"));
+        return (long)(cmd.ExecuteScalar() ?? 0L);
+    }
+
+    public AiModelAnalysisRecord? GetLatestModelAnalysis(string productType)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT Id, ProductType, AnalysisMode, Language, ReportCount,
+                   IncludedDatasetsJson, AnalysisMarkdown, AnalysisTableMarkdown, SourceContextHash, CreatedAt
+            FROM AiModelAnalyses
+            WHERE ProductType=@p
+            ORDER BY CreatedAt DESC, Id DESC
+            LIMIT 1;
+            """;
+        cmd.Parameters.AddWithValue("@p", productType ?? "");
+        using SqliteDataReader r = cmd.ExecuteReader();
+        return r.Read() ? ReadAiModelAnalysis(r) : null;
+    }
+
+    public List<AiModelAnalysisRecord> GetModelAnalysisHistory(string productType, int limit = 30)
+    {
+        var list = new List<AiModelAnalysisRecord>();
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT Id, ProductType, AnalysisMode, Language, ReportCount,
+                   IncludedDatasetsJson, AnalysisMarkdown, AnalysisTableMarkdown, SourceContextHash, CreatedAt
+            FROM AiModelAnalyses
+            WHERE ProductType=@p
+            ORDER BY CreatedAt DESC, Id DESC
+            LIMIT @lim;
+            """;
+        cmd.Parameters.AddWithValue("@p", productType ?? "");
+        cmd.Parameters.AddWithValue("@lim", limit);
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read()) list.Add(ReadAiModelAnalysis(r));
+        return list;
+    }
+
+    private static AiModelAnalysisRecord ReadAiModelAnalysis(SqliteDataReader r)
+        => new(
+            r.GetInt64(0),
+            r.GetString(1),
+            r.GetString(2),
+            r.GetString(3),
+            Convert.ToInt32(r.GetValue(4)),
+            r.GetString(5),
+            r.GetString(6),
+            r.GetString(7),
+            r.GetString(8),
+            r.GetString(9));
 
     public void DeleteRawReport(string name)
     {
@@ -2442,7 +2681,7 @@ public sealed class WebRepository
         return updates.Count;
     }
 
-    // ── Reports ───────────────────────────────────────────────────────────────
+    // ?? Reports ???????????????????????????????????????????????????????????????
 
     public List<(long Id, string Title, string DatasetNames, string CreatedAt)> GetReports()
     {
@@ -2491,7 +2730,7 @@ public sealed class WebRepository
         cmd.ExecuteNonQuery();
     }
 
-    // ── Dataset management ────────────────────────────────────────────────────
+    // ?? Dataset management ????????????????????????????????????????????????????
 
     public List<(string Name, int TableCount)> GetDatasetSummary()
     {
@@ -2666,7 +2905,7 @@ public sealed class WebRepository
         return Convert.ToInt32(cmd.ExecuteScalar() ?? 0);
     }
 
-    // ── Users ─────────────────────────────────────────────────────────────────
+    // ?? Users ?????????????????????????????????????????????????????????????????
 
     public UserRecord? GetUser(string username)
     {
@@ -2759,7 +2998,7 @@ public sealed class WebRepository
         cmd.ExecuteNonQuery();
     }
 
-    // ── Menu permissions ──────────────────────────────────────────────────────
+    // ?? Menu permissions ??????????????????????????????????????????????????????
 
     public HashSet<string> GetMenuPermissionsForRole(string role)
     {
@@ -2844,6 +3083,20 @@ public sealed class WebRepository
                 ins.ExecuteNonQuery();
             }
         }
+
+        using SqliteCommand grantModelAnalysis = conn.CreateCommand();
+        grantModelAnalysis.Transaction = tx;
+        grantModelAnalysis.CommandText = """
+            INSERT OR IGNORE INTO MenuPermissions (Role, MenuId)
+            SELECT DISTINCT Role, @newMenu
+            FROM MenuPermissions
+            WHERE MenuId IN (@analysisMenu, @askMenu);
+            """;
+        grantModelAnalysis.Parameters.AddWithValue("@newMenu", AppMenus.DiModelAnalysis);
+        grantModelAnalysis.Parameters.AddWithValue("@analysisMenu", AppMenus.DiAnalysis);
+        grantModelAnalysis.Parameters.AddWithValue("@askMenu", AppMenus.DiAsk);
+        grantModelAnalysis.ExecuteNonQuery();
+
         tx.Commit();
     }
 
@@ -2931,7 +3184,7 @@ public sealed class WebRepository
         return result;
     }
 
-    // ── Schedule ──────────────────────────────────────────────────────────────
+    // ?? Schedule ??????????????????????????????????????????????????????????????
 
     private static ScheduleItem ReadScheduleItem(SqliteDataReader r)
     {
@@ -3051,7 +3304,7 @@ public sealed class WebRepository
         cmd.ExecuteNonQuery();
     }
 
-    // ── BMES Materials ───────────────────────────────────────────────────────
+    // ?? BMES Materials ???????????????????????????????????????????????????????
 
     public void UpsertBmesMaterial(BmesMaterial m)
         => UpsertBmesMaterials(new[] { m });
@@ -3164,7 +3417,7 @@ public sealed class WebRepository
         return o is null ? 0 : Convert.ToInt32(o);
     }
 
-    // ── Mtype → Category name map ────────────────────────────────────────────
+    // ?? Mtype ??Category name map ????????????????????????????????????????????
 
     public Dictionary<string, string> GetMtypeCategoryMap()
     {
@@ -3182,9 +3435,9 @@ public sealed class WebRepository
         return map;
     }
 
-    // ── Model Groups ─────────────────────────────────────────────────────────
+    // ?? Model Groups ?????????????????????????????????????????????????????????
 
-    // ── DataInputAliases: user-curated token → Material map ───────────────────
+    // ?? DataInputAliases: user-curated token ??Material map ???????????????????
 
     public Dictionary<string, string> GetDataInputAliases()
     {
@@ -3259,7 +3512,7 @@ public sealed class WebRepository
                 string material = r.IsDBNull(1) ? "" : r.GetString(1);
                 string subPath  = r.IsDBNull(2) ? "" : r.GetString(2);
 
-                // Legacy rows without material → derive from LineShift (split at last '_').
+                // Legacy rows without material ??derive from LineShift (split at last '_').
                 if (string.IsNullOrEmpty(material) && !string.IsNullOrEmpty(ls))
                 {
                     int idx = ls.LastIndexOf('_');
@@ -3282,13 +3535,13 @@ public sealed class WebRepository
         return groups;
     }
 
-    /// <summary>Sub-group path separator (unit separator control char — impossible in user input).</summary>
+    /// <summary>Sub-group path separator (unit separator control char ??impossible in user input).</summary>
     private const char SubPathSep = '';
 
     /// <summary>Navigate the sub-group tree by name-path, creating nodes as needed. Returns the leaf.</summary>
     private static SubGroupRecord ResolveOrCreateSubPath(List<SubGroupRecord> rootList, string path)
     {
-        // Empty path → the "default" (unnamed) sub-group at the top of this material's tree.
+        // Empty path ??the "default" (unnamed) sub-group at the top of this material's tree.
         var segments = string.IsNullOrEmpty(path)
             ? new[] { "" }
             : path.Split(SubPathSep);
@@ -3397,7 +3650,7 @@ public sealed class WebRepository
         return "ETC";
     }
 
-    // ── One-shot JSON → ModelGroups import ──────────────────────────────────────
+    // ?? One-shot JSON ??ModelGroups import ??????????????????????????????????????
 
     /// <summary>
     /// One-time migration that merges the legacy ModelBmes/*.json definitions into the
@@ -3662,3 +3915,4 @@ public sealed class WebRepository
         };
     }
 }
+
