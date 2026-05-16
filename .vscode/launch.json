@@ -2,20 +2,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "WPF App",
-      "type": "coreclr",
-      "request": "launch",
-      "preLaunchTask": "kill-and-build",
-      "program": "${workspaceFolder}/JinoSupporter.App/bin/Debug/net8.0-windows/JinoSupporter.App.exe",
-      "cwd": "${workspaceFolder}/JinoSupporter.App",
-      "console": "internalConsole",
-      "stopAtEntry": false
-    },
-    {
       "name": "Web Server",
       "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "kill-and-build",
+      "preLaunchTask": "kill-and-build-web",
       "program": "${workspaceFolder}/JinoSupporter.Web/bin/Debug/net8.0/JinoSupporter.Web.dll",
       "args": [],
       "cwd": "${workspaceFolder}/JinoSupporter.Web",
@@ -24,42 +14,21 @@
       "justMyCode": false,
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "http://*:5050"
+        "ASPNETCORE_URLS": "http://localhost:5050"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+        "uriFormat": "http://localhost:5050"
       },
       "exceptionOptions": [
         {
-          "exceptionNames": ["Microsoft.AspNetCore.Components.NavigationException"],
+          "exceptionNames": [
+            "Microsoft.AspNetCore.Components.NavigationException"
+          ],
           "throwAction": "ignore"
         }
       ]
-    },
-    {
-      "name": "BMES NG Rate Standalone (Release)",
-      "type": "coreclr",
-      "request": "launch",
-      "preLaunchTask": "build-standalone-release",
-      "program": "${workspaceFolder}/BmesNgRateStandalone/bin/Release/net8.0-windows/BmesNgRateStandalone.exe",
-      "cwd": "${workspaceFolder}/BmesNgRateStandalone",
-      "console": "internalConsole",
-      "stopAtEntry": false,
-      "justMyCode": false,
-      "env": {
-        "DOTNET_ENVIRONMENT": "Production"
-      }
-    },
-    {
-      "name": "Build BMES NG Rate Installer",
-      "type": "node-terminal",
-      "request": "launch",
-      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}/BmesNgRateStandalone/tools/BuildStandaloneInstaller.ps1\"",
-      "cwd": "${workspaceFolder}"
-    }
-  ],
-  "compounds": [
-    {
-      "name": "Launch All",
-      "configurations": ["WPF App", "Web Server"],
-      "stopAll": true
     }
   ]
 }
