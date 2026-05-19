@@ -1,30 +1,42 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 namespace JinoSupporter.Web.Services;
 
-/// <summary>Out-of-process driver for the <c>JinoSupporter.ExcelHelper</c> exe.
-/// Web stays at <c>net8.0</c> (the WPF launcher hardcodes that path); the helper
-/// is a separate <c>net8.0-windows</c> console binary so it can use WindowsForms
-/// folder dialogs and the Excel COM automation needed for DRM-locked workbooks.
-///
-/// All comms happen over stdout JSON-Lines. The web layer streams those events
-/// to the page log; failures (helper missing, non-zero exit) surface as a single
-/// fault event so callers don't have to special-case the transport.</summary>
+/// <summary>Out-of-process driver for Excel conversion and optional folder picking.
+/// Conversion is always delegated to the ExcelDuplicator Python CLI. The legacy
+/// <c>JinoSupporter.ExcelHelper</c> exe is kept only for server-side folder dialogs.</summary>
 public sealed class ExcelHelperRunner
 {
-    /// <summary>Path of the helper exe, resolved next to the web exe at startup.</summary>
+    private static readonly string[] ExcelExtensions = [".xlsx", ".xlsm", ".xlsb", ".xls"];
+
+    /// <summary>Path of the optional folder-picker helper exe.</summary>
     public string HelperExePath { get; }
 
-    public ExcelHelperRunner()
+    public string ExcelDuplicatorRoot { get; }
+    public string PythonExePath { get; }
+    public string PythonScriptPath { get; }
+
+    public ExcelHelperRunner(IHostEnvironment env)
     {
-        // The helper output is copied next to the web exe via the web csproj's
-        // post-build target. AppContext.BaseDirectory is the runtime folder of
-        // the running web exe — same folder for both Debug and Release.
         HelperExePath = Path.Combine(AppContext.BaseDirectory, "JinoSupporter.ExcelHelper.exe");
+
+        ExcelDuplicatorRoot = ResolveExcelDuplicatorRoot(env.ContentRootPath);
+        PythonExePath = Environment.GetEnvironmentVariable("EXCEL_DRM_PYTHON")
+            ?? Path.Combine(ExcelDuplicatorRoot, ".venv", "Scripts", "python.exe");
+        PythonScriptPath = Environment.GetEnvironmentVariable("EXCEL_DRM_CLI")
+            ?? Path.Combine(ExcelDuplicatorRoot, "excel_drm_cli.py");
     }
 
     public bool HelperExists => File.Exists(HelperExePath);
+    public bool FolderPickerExists => HelperExists;
+    public bool ConverterExists => File.Exists(PythonExePath) && File.Exists(PythonScriptPath);
+
+    public string ConverterStatus =>
+        ConverterExists
+            ? $"{PythonExePath} -> {PythonScriptPath}"
+            : $"Python converter not found. python={PythonExePath}, script={PythonScriptPath}";
 
     /// <summary>Open a folder dialog (server-side) and return the selected path.
     /// Returns null on cancel or when the helper is missing/non-zero.</summary>
@@ -54,28 +66,135 @@ public sealed class ExcelHelperRunner
     /// this wrapper having to model every payload variant.</summary>
     public sealed record HelperEvent(string Kind, JsonElement Raw);
 
-    /// <summary>Run <c>clean --source &lt;src&gt; --dest &lt;dst&gt;</c> and yield
-    /// each emitted JSON line. <paramref name="source"/> can be a file or a folder —
-    /// the helper auto-detects. Unknown kinds are passed through so the caller can
-    /// decide what to render. Pass <paramref name="verbose"/> to surface step-level
-    /// progress (per-chunk, per-shape, per-N-cells) — useful when diagnosing
-    /// long stalls between summary lines.</summary>
-    public IAsyncEnumerable<HelperEvent> CleanAsync(
+    /// <summary>Scan <paramref name="source"/> and convert each Excel file via
+    /// ExcelDuplicator's Python CLI. Outputs are written to
+    /// <c>{dest}/drm_clean/{name}_clean.xlsx</c>.</summary>
+    public async IAsyncEnumerable<HelperEvent> CleanAsync(
         string source, string dest,
         bool verbose = false, bool keepFormats = false,
-        CancellationToken ct = default)
+        [EnumeratorCancellation] CancellationToken ct = default)
     {
-        if (!HelperExists)
-            return SingleFault($"Helper not found: {HelperExePath}");
+        if (!ConverterExists)
+        {
+            yield return NewEvent("fatal", new { message = ConverterStatus });
+            yield break;
+        }
 
-        var argList = new List<string> { "clean", "--source", source, "--dest", dest };
-        if (verbose)     argList.Add("--verbose");
-        if (keepFormats) argList.Add("--keep-formats");
-        return MapToEvents(StreamAsync(argList, ct));
+        List<string> files = [];
+        HelperEvent? setupFault = null;
+        try
+        {
+            files = ResolveExcelFiles(source);
+        }
+        catch (Exception ex)
+        {
+            setupFault = NewEvent("fatal", new { message = ex.Message });
+        }
+
+        if (setupFault is not null)
+        {
+            yield return setupFault;
+            yield break;
+        }
+
+        yield return NewEvent("scan", new
+        {
+            source,
+            count = files.Count,
+            converter = PythonScriptPath,
+        });
+
+        string cleanDir = "";
+        try
+        {
+            cleanDir = Path.Combine(dest, "drm_clean");
+            Directory.CreateDirectory(cleanDir);
+        }
+        catch (Exception ex)
+        {
+            setupFault = NewEvent("fatal", new { message = $"Output folder create failed: {ex.Message}" });
+        }
+
+        if (setupFault is not null)
+        {
+            yield return setupFault;
+            yield break;
+        }
+
+        var cleaner = new ExcelDrm.ExcelDrmCleaner(PythonExePath, PythonScriptPath)
+        {
+            DefaultMode = ExcelDrm.ConvertMode.Clipboard,
+        };
+
+        int ok = 0;
+        int fail = 0;
+
+        for (int i = 0; i < files.Count; i++)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            string input = files[i];
+            string output = BuildOutputPath(cleanDir, input);
+
+            yield return NewEvent("progress", new
+            {
+                current = i + 1,
+                total = files.Count,
+                file = Path.GetFileName(input),
+                source = input,
+                dest = output,
+            });
+
+            ExcelDrm.ConvertResult result;
+            try
+            {
+                // keepFormats is retained for callers, but conversion must use
+                // ExcelDuplicator's Python program. Clipboard is the Python CLI's
+                // default full-fidelity mode.
+                result = await cleaner.ConvertAsync(input, output, ExcelDrm.ConvertMode.Clipboard, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                result = new ExcelDrm.ConvertResult
+                {
+                    Success = false,
+                    Input = input,
+                    Output = output,
+                    Error = ex.Message,
+                    ExitCode = -1,
+                };
+            }
+
+            foreach (string line in SplitLogLines(result.StdErr))
+            {
+                if (verbose || !result.Success)
+                    yield return NewEvent("log", new { message = line });
+            }
+
+            if (result.Success) ok++;
+            else fail++;
+
+            yield return NewEvent("result", new
+            {
+                success = result.Success,
+                source = result.Input,
+                dest = result.Output ?? output,
+                error = result.Error,
+                elapsed = result.ElapsedSeconds,
+                exitCode = result.ExitCode,
+                strategy = "python:excel_drm_cli.py:clipboard",
+            });
+        }
+
+        yield return NewEvent("done", new { ok, fail });
     }
 
     /// <summary>Convenience: clean a single uploaded file. Writes to a temp
-    /// folder, runs the helper, and returns the path of the cleaned output
+    /// folder, runs the Python converter, and returns the path of the cleaned output
     /// (<c>{tempDir}/drm_clean/{name}_clean.xlsx</c>) — or <c>null</c> if the
     /// strategy chain failed. The caller is responsible for deleting the temp
     /// folder when done.</summary>
@@ -118,23 +237,74 @@ public sealed class ExcelHelperRunner
         return (cleanedPath, tempDir, log);
     }
 
-    private static async IAsyncEnumerable<HelperEvent> MapToEvents(
-        IAsyncEnumerable<JsonElement> source)
+    private static HelperEvent NewEvent(string kind, object payload)
     {
-        await foreach (var json in source)
-        {
-            string kind = json.TryGetProperty("kind", out var k) && k.ValueKind == JsonValueKind.String
-                ? (k.GetString() ?? "")
-                : "";
-            yield return new HelperEvent(kind, json.Clone());
-        }
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(payload));
+        return new HelperEvent(kind, doc.RootElement.Clone());
     }
 
-    private static async IAsyncEnumerable<HelperEvent> SingleFault(string message)
+    private static string ResolveExcelDuplicatorRoot(string contentRootPath)
     {
-        var doc = JsonDocument.Parse(JsonSerializer.Serialize(new { kind = "fatal", message }));
-        yield return new HelperEvent("fatal", doc.RootElement.Clone());
-        await Task.CompletedTask;
+        string? configured = Environment.GetEnvironmentVariable("EXCEL_DUPLICATOR_ROOT");
+        if (!string.IsNullOrWhiteSpace(configured) && Directory.Exists(configured))
+            return configured;
+
+        string sibling = Path.GetFullPath(Path.Combine(contentRootPath, "..", "..", "ExcelDuplicator"));
+        if (Directory.Exists(sibling))
+            return sibling;
+
+        return @"D:\000. MyWorks\005. Program\Repository\ExcelDuplicator";
+    }
+
+    private static List<string> ResolveExcelFiles(string source)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+            throw new ArgumentException("Source path is empty.");
+
+        if (File.Exists(source))
+            return IsExcelFile(source) ? [Path.GetFullPath(source)] : [];
+
+        if (!Directory.Exists(source))
+            throw new DirectoryNotFoundException($"Source not found: {source}");
+
+        return Directory.EnumerateFiles(source, "*.*", SearchOption.AllDirectories)
+            .Where(IsExcelFile)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .Select(Path.GetFullPath)
+            .ToList();
+    }
+
+    private static bool IsExcelFile(string path)
+    {
+        string name = Path.GetFileName(path);
+        if (name.StartsWith("~$", StringComparison.Ordinal)) return false;
+
+        string ext = Path.GetExtension(path);
+        return ExcelExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string BuildOutputPath(string cleanDir, string input)
+    {
+        string stem = Path.GetFileNameWithoutExtension(input);
+        if (string.IsNullOrWhiteSpace(stem))
+            stem = "workbook";
+
+        return Path.Combine(cleanDir, $"{stem}_clean.xlsx");
+    }
+
+    private static IEnumerable<string> SplitLogLines(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            yield break;
+
+        using var reader = new StringReader(text);
+        string? line;
+        while ((line = reader.ReadLine()) is not null)
+        {
+            line = line.TrimEnd();
+            if (line.Length > 0)
+                yield return line;
+        }
     }
 
     /// <summary>Spawn the helper, parse stdout line-by-line as JSON, yield each.

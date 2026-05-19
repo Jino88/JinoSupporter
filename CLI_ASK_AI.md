@@ -8,8 +8,10 @@ and answer from:
 
 `AiDocuments`, `AiTestConditions`, `AiResults`, `AiNgBreakdowns`,
 `AiConclusions`, `AiTroubleshootingHints`, `AiExtractionLogs`, and their
-translation tables. Use legacy `DatasetSummary` / `NormalizedMeasurements` only
-as fallback context.
+translation tables. Treat `AiDocuments.RawJson` as the raw AI-analysis payload
+for each review result and use it as evidence when the normalized child tables
+omit detail. Use legacy `DatasetSummary` / `NormalizedMeasurements` only as
+fallback context.
 
 For NG-rate questions, do not judge by absolute NG-rate ranking when a
 same-event control exists. Pair each Test/After/New/changed row against the
@@ -43,7 +45,8 @@ answer as `ng_without_baseline`: rank actual NG rates, defect mix, source sheet,
 and sample size, but do not say improved/worsened.
 
 When saving the answer, insert exactly one `AskAiHistory` row with the requested
-language and product type filter.
+language, product type filter, and `TranslationsJson` containing Korean,
+English, and Vietnamese renderings of the same final result.
 
 > 목적: `JinoSupporter.Web` 의 **Ask AI** 기능 (`DataInferenceAskPage.razor`) 과
 > 동일한 결과를 **서버 기동 없이, Anthropic API 호출 없이** CLI 로 만들어
@@ -60,7 +63,7 @@ language and product type filter.
 2. **DB 경로 확인**: `workhost-settings.json` 의 `DataInference.DatabasePath` (기본 경로 폴백 금지 — AI_EXCEL_PROC.md §1.1 참조)
 3. **Context 수집**: `FilteredReports` 에 해당하는 dataset 마다 summary + measurements 요약 블록 합성 (§2)
 4. **Reasoning**: §3 프롬프트 규칙 그대로 적용 — overall + per-dataset 답변 산출
-5. **커밋 + 출력**: `AskAiHistory` 에 single-row INSERT (`last_insert_rowid()` 회수), 터미널에 포맷해서 출력
+5. **번역 + 커밋 + 출력**: 최종 결과를 Korean/English/Vietnamese 로 번역 후 `AskAiHistory` 에 single-row INSERT (`last_insert_rowid()` 회수), 터미널에 포맷해서 출력
 6. **청소**: `tmp/ask_request.json` 과 `_tmp_*.py` 삭제
 
 **핵심 원칙 (AI_EXCEL_PROC.md 와 동일)**: 에이전트가 직접 reasoning 수행 — Anthropic API 호출 없음. Python 은 DB IO 만 담당.
@@ -167,25 +170,37 @@ information found in the registered dataset reports below.
    {lang} notice that no relevant data was found, and return an empty "perDataset"
    array. Do not invent an answer.
 3. Produce ONE entry in "perDataset" for EVERY dataset that genuinely contributes
-   to the answer. Copy "datasetName" VERBATIM from the "Dataset:" header.
-4. In each per-dataset "answer": explain in {lang} what this SPECIFIC dataset shows
-   and how it addresses the user's question. Cite concrete values (NG rate, defect
-   type, product type, date, specific findings). 2-5 sentences is ideal.
+   to the answer. In "datasetName", copy only the actual name after "Dataset:";
+   do not include "Dataset:", bracket numbers, bullets, or prefixes.
+4. In each per-dataset "answer": avoid long prose. Use a compact Markdown table
+   or short bullet list that shows only concrete evidence from that dataset:
+   what was reviewed, source/result count, key value, and judgement.
 5. Do NOT include datasets that are irrelevant to the question.
-6. In "overall": give a 2-3 sentence {lang} synthesis across the per-dataset findings
-   — top recommendations in priority order. If there is only one relevant dataset,
-   you may leave "overall" empty.
+6. In "overall": do NOT write paragraph-style synthesis. Return a Markdown table
+   with one row per candidate check/action item that can reduce or explain the
+   user's target problem. The first content column must be the thing to review
+   or change, such as JIG condition, press condition, voltage, lot/mold/line,
+   material, process parameter, inspection method, or retest condition. Do NOT
+   put the defect/problem name itself (for example "Hearing NG") as the reviewed
+   item. Required columns: No, Check item / factor, Review count,
+   Previous result, Overall judgement, Next action. "Review count" is the number
+   of contributing datasets/results/events found in the registered reports.
+   Keep each cell short.
 7. ALL human-readable text MUST be written in {lang}. Keep dataset names, product
    codes, defect type labels, and numeric values as-is.
 8. Produce valid JSON structure internally for the AskAiHistory row.
+9. Also create `translations` with keys `ko`, `en`, `vi`. Each value must have
+   the same `overall` + `perDataset` schema. Translate human-readable text only;
+   keep dataset names, product/model codes, numbers, units, and source labels
+   unchanged.
 ```
 
 → 출력 schema:
 ```json
 {
-  "overall": "2-3 sentence {lang} overall recommendation.",
+  "overall": "Markdown table only. Columns: No | Check item / factor | Review count | Previous result | Overall judgement | Next action.",
   "perDataset": [
-    { "datasetName": "<verbatim>", "answer": "{lang} answer with concrete numbers." }
+    { "datasetName": "<actual Dataset name only>", "answer": "{lang} answer with concrete numbers." }
   ]
 }
 ```
@@ -209,17 +224,26 @@ per_dataset = [                          # 에이전트가 reasoning 후 하드�
     {"datasetName": "...", "answer": "..."},
     ...
 ]
+translations = {                         # 같은 schema, datasetName 은 그대로 유지
+    "ko": {"overall": "...", "perDataset": [...]},
+    "en": {"overall": "...", "perDataset": [...]},
+    "vi": {"overall": "...", "perDataset": [...]},
+}
 
 now = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 per_json = json.dumps(per_dataset, ensure_ascii=False)
+translations_json = json.dumps(translations, ensure_ascii=False)
 
 conn = sqlite3.connect(DB)
 conn.execute("PRAGMA busy_timeout = 30000")
 cur = conn.cursor()
+cols = {row[1] for row in cur.execute("PRAGMA table_info(AskAiHistory)")}
+if "TranslationsJson" not in cols:
+    cur.execute("ALTER TABLE AskAiHistory ADD COLUMN TranslationsJson TEXT NOT NULL DEFAULT '{}'")
 cur.execute("""
-    INSERT INTO AskAiHistory (Question, ProductTypeFilter, Overall, PerDatasetJson, CreatedAt)
-    VALUES (?, ?, ?, ?, ?)
-""", (question, pt_filter, overall, per_json, now))
+    INSERT INTO AskAiHistory (Question, ProductTypeFilter, Overall, PerDatasetJson, TranslationsJson, CreatedAt)
+    VALUES (?, ?, ?, ?, ?, ?)
+""", (question, pt_filter, overall, per_json, translations_json, now))
 new_id = cur.lastrowid
 conn.commit()
 conn.close()
@@ -291,6 +315,7 @@ import sys; sys.stdout.reconfigure(encoding="utf-8")
 - [ ] `datasetName` 은 context 에 찍힌 문자열 **verbatim** 으로 (앞뒤 공백 유지)
 - [ ] Answer 은 **전부 `language` 값 언어로만** 작성 (dataset 이름/숫자는 원형)
 - [ ] perDataset 은 **유관한 것만** — irrelevant dataset 포함 금지
+- [ ] `TranslationsJson` 은 `ko`/`en`/`vi` 세 키를 모두 포함
 - [ ] Python UTF-8 reconfigure 빠뜨리면 cmd 에서 `UnicodeEncodeError`
 - [ ] `AskAiHistory.CreatedAt` 은 UTC ISO-8601 문자열 (앱 포맷과 호환)
 - [ ] Context 가 너무 크면 (dataset 수십 개) 에이전트 토큰 부담 → 현재 앱도 동일 문제. 필요 시 `productTypeFilter` 활용을 사용자에게 권유.
@@ -306,9 +331,10 @@ import sys; sys.stdout.reconfigure(encoding="utf-8")
 2. §1.2 DB 경로 획득
 3. §2 context 빌드 (`BuildDatasetsContext` 로직 SQL + Python 으로 재현)
 4. §3 프롬프트 규칙 적용 → overall + perDataset 산출 (에이전트 직접 reasoning)
-5. §4 `_tmp_ask_commit.py` 생성 → 실행 → `AskAiHistory` INSERT
-6. §5 포맷으로 터미널 출력
-7. §7 청소
+5. 최종 결과를 Korean/English/Vietnamese 로 번역 → `translations` 생성
+6. §4 `_tmp_ask_commit.py` 생성 → 실행 → `AskAiHistory` INSERT
+7. §5 포맷으로 터미널 출력
+8. §7 청소
 
 ---
 

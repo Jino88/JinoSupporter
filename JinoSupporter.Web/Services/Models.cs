@@ -377,6 +377,7 @@ public sealed record AskAiHistoryRecord(
     string ProductTypeFilter,
     string Overall,
     string PerDatasetJson,
+    string TranslationsJson,
     string CreatedAt);
 
 public sealed record RawReportInfo(

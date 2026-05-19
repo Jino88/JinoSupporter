@@ -8,6 +8,7 @@
 @inject NgRateReportService   NgRateReportSvc
 @inject WebRepository         Repo
 @inject IJSRuntime            JS
+@inject AppActivityLogger     Activity
 @implements IAsyncDisposable
 
 <PageTitle>NG Rate — By Group</PageTitle>
@@ -185,6 +186,11 @@
                     </button>
                 }
             </div>
+            <button class="btn btn-outline-success btn-sm"
+                    @onclick="ExportExcelAsync"
+                    disabled="@_isExporting">
+                @(_isExporting ? "Exporting..." : "Export Excel")
+            </button>
         }
     </div>
     <div class="card-body p-0">
@@ -725,6 +731,7 @@
     private HashSet<string>                         _expandedMids = new(StringComparer.Ordinal);
     private HashSet<string>                         _expandedSub1s = new(StringComparer.Ordinal);
     private bool           _isReportBusy;
+    private bool           _isExporting;
     private string         _reportError = string.Empty;
     private HashSet<string> _expandedGroups      = new(StringComparer.Ordinal);
     private HashSet<string> _expandedGroupsModel = new(StringComparer.Ordinal);
@@ -952,6 +959,7 @@
         _errorMessage = string.Empty;
         _savedDbPath  = null;
         _isBusy       = true;
+        Activity.Log("NG Rate By Group", $"Get Data {_startDate:yyyy-MM-dd} ~ {_endDate:yyyy-MM-dd}");
         StateHasChanged();
 
         var progress = new Progress<string>(_ => { });
@@ -988,6 +996,7 @@
         _hierLookup       = new();
         _lsNgReport       = null;
         _midNgReport      = null;
+        Activity.Log("NG Rate By Group", $"Generate Report selectedGroups={_selectedGroupNames.Count:N0}");
         StateHasChanged();
 
         try
@@ -1083,6 +1092,48 @@
             _isReportBusy = false;
             StateHasChanged();
         }
+    }
+
+    private async Task ExportExcelAsync()
+    {
+        var reports = BuildExcelReports();
+        if (reports.Count == 0 || _isExporting) return;
+
+        _isExporting = true;
+        Activity.Log("NG Rate By Group", $"Export Excel reports={reports.Count:N0}");
+        try
+        {
+            var details = BuildExcelDetailReports();
+            byte[] bytes = await Task.Run(() => NgRateExcelExporter.Export(reports, details));
+            string b64 = Convert.ToBase64String(bytes);
+            string name = $"NgRate_ByGroup_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            await JS.InvokeVoidAsync("downloadBase64File", name, b64,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        }
+        finally
+        {
+            _isExporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private List<(string Label, NgRateReportService.NgRateReport Report)> BuildExcelReports()
+    {
+        var reports = new List<(string Label, NgRateReportService.NgRateReport Report)>();
+        if (_report is not null)           reports.Add(("By Group - Group", _report));
+        if (_reportByMid is not null)      reports.Add(("By Group - Model", _reportByMid));
+        if (_reportByModel is not null)    reports.Add(("By Group - Shift", _reportByModel));
+        if (_reportBySubGroup is not null) reports.Add(("By Group - B-GR", _reportBySubGroup));
+        if (_reportBySubLeaf is not null)  reports.Add(("By Group - S-GR", _reportBySubLeaf));
+        return reports;
+    }
+
+    private List<(string Label, NgRateReportService.LineShiftNgReport Report)> BuildExcelDetailReports()
+    {
+        var reports = new List<(string Label, NgRateReportService.LineShiftNgReport Report)>();
+        if (_midNgReport is not null) reports.Add(("By Group Detail - Model", _midNgReport));
+        if (_lsNgReport is not null)  reports.Add(("By Group Detail - Shift", _lsNgReport));
+        return reports;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

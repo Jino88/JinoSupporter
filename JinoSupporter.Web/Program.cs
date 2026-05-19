@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Diagnostics;
 using Syncfusion.Blazor;
 using JinoSupporter.Web.Components;
 using JinoSupporter.Web.Services;
@@ -37,6 +38,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddHttpContextAccessor();
 
 // Claude HTTP client
 builder.Services.AddHttpClient<ClaudeService>(client =>
@@ -53,9 +55,11 @@ builder.Services.AddSyncfusionBlazor();
 builder.Services.AddSingleton<WebRepository>();
 builder.Services.AddSingleton<MenuPermissionService>();
 builder.Services.AddSingleton<ClaudeUsageScraper>();
+builder.Services.AddSingleton<AiProviderSettingsService>();
 
 // NG Rate settings: singleton (reads/writes ngrate_settings.db)
 builder.Services.AddSingleton<NgRateSettingsService>();
+builder.Services.AddSingleton<AppActivityLogger>();
 // NG Rate: scoped (per-connection HTTP client, progress state)
 builder.Services.AddScoped<NgRateService>();
 // NG Rate report: scoped (reads DB files per request)
@@ -102,6 +106,34 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
+app.Use(async (ctx, next) =>
+{
+    string path = ctx.Request.Path.Value ?? "";
+    bool skipLog =
+        path.StartsWith("/_framework", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWith("/_blazor", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWith("/css", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWith("/js", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWith("/lib", StringComparison.OrdinalIgnoreCase) ||
+        path.EndsWith(".ico", StringComparison.OrdinalIgnoreCase) ||
+        path.EndsWith(".css", StringComparison.OrdinalIgnoreCase) ||
+        path.EndsWith(".js", StringComparison.OrdinalIgnoreCase) ||
+        path.EndsWith(".map", StringComparison.OrdinalIgnoreCase) ||
+        path.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
+        path.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
+        path.EndsWith(".svg", StringComparison.OrdinalIgnoreCase);
+
+    var sw = Stopwatch.StartNew();
+    await next();
+    sw.Stop();
+
+    if (!skipLog)
+    {
+        string query = ctx.Request.QueryString.HasValue ? ctx.Request.QueryString.Value ?? "" : "";
+        ctx.RequestServices.GetRequiredService<AppActivityLogger>()
+            .Log("Web", $"{ctx.Request.Method} {path}{query} -> {ctx.Response.StatusCode} ({sw.ElapsedMilliseconds:N0} ms)");
+    }
+});
 app.UseAntiforgery();
 
 // ── Auth endpoints ────────────────────────────────────────────────────────────

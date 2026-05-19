@@ -26,6 +26,8 @@ and then fill the DB/search fields from that understanding.
 Write reports in the style of a good manufacturing review sheet:
 
 - Keep the original technical-report flow: `Purpose`, `Content`, `Result`.
+- Start with a practical action board table so the reader immediately sees
+  what to check/change, what evidence supports it, and the next action.
 - Start with a clear judgement, but still preserve the original report's
   investigation story.
 - Use section bands and concise headings: purpose, current phenomenon, analysis
@@ -69,42 +71,50 @@ analysis report that a process engineer can read without opening the DB fields.
 Write every user-facing report with these sections, in this order. Use the
 target language for headings and prose.
 
-1. Decision summary
+1. Practical action board
+   - Start with a compact Markdown table.
+   - Required semantic columns: Priority, Check/change item, Evidence/result,
+     Judgement, Next action.
+   - The check/change item must be the factor to inspect or adjust, not the
+     defect name itself.
+   - Keep each row short enough to scan.
+
+2. Decision summary
    - Give the final judgement first.
    - State pass/fail/use/hold/improve/retest when the workbook supports it.
    - Include the most important numeric reason.
 
-2. Review target
+3. Review target
    - Report/workbook name, model, date or period, line, process, lot, supplier,
      mold/jig/material when available.
    - Mention all worksheets used when the workbook has multiple sheets.
 
-3. Purpose and test design
+4. Purpose and test design
    - Explain what was being tested and what changed.
    - Preserve the workbook's own `Purpose` and `Content` intent when present.
    - Identify baseline/control/normal rows when they exist.
    - If no baseline exists, explicitly say the report is a ranking or absolute
      result review, not an improvement claim.
 
-4. Current phenomenon and review items
+5. Current phenomenon and review items
    - Summarize the defect phenomenon, symptoms, suspect process/part, and
      review items.
    - For image-heavy reports, summarize what the surrounding labels/captions say
      and mark image-dependent uncertainty when needed.
 
-5. Key result table
+6. Key result table
    - Include at least one compact Markdown table when result rows exist.
    - Keep cell text short. Do not pad table cells with spaces.
    - Show raw counts and rates together when both exist.
    - Include Normal/Test, Before/After, lot/mold/supplier/line labels exactly
      enough to understand the comparison.
 
-6. Visual block
+7. Visual block
    - When result rows exist, include at least one AI-authored visual block.
    - Place the visual block directly after the key result table.
    - The visual block must be based on workbook evidence, not DB parameters.
 
-7. Interpretation
+8. Interpretation
    - Explain what the numbers mean.
    - Use multiplicative relative change for NG-rate comparison:
      `(test_ng_rate / baseline_ng_rate - 1) * 100`.
@@ -113,16 +123,16 @@ target language for headings and prose.
    - Never compare rows from different events as if they were one Normal/Test
      pair.
 
-8. Recommended action
+9. Recommended action
    - Give concrete next actions such as use, hold, improve mold, align line
      parameter, retest, first-article check, inspect specific process/part.
    - Tie each action to evidence strength.
 
-9. Evidence location
+10. Evidence location
    - List source worksheet names and cell ranges used for the judgement.
    - Include enough cell references to audit the report.
 
-10. Limitations
+11. Limitations
    - Mention missing baseline, image-dependent evidence, partial sheet coverage,
      or weak sample size when relevant.
 

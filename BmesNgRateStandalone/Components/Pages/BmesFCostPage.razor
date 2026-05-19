@@ -43,6 +43,11 @@
                     }
                 </div>
 
+                <div class="small text-muted">
+                    Save folder:
+                    <span class="font-monospace text-break">@NgRateSettings.FCostDbSaveDirectory</span>
+                </div>
+
                 <button class="btn btn-primary"
                         @onclick="GetDataAsync"
                         disabled="@(_isBusy || !NgRateSettings.IsCredentialsConfigured)">
@@ -76,8 +81,21 @@
             <div class="card-header small fw-semibold">Report</div>
             <div class="card-body d-flex flex-column gap-2">
                 <div class="small text-muted">
-                    Loads the most recently fetched <code>fcost_*.db</code> and renders Input /
-                    F-Cost / Rate per Material plus the GN factory totals.
+                    Builds the report from <code>fcost_raw.db</code>. Dates up to 3 days before
+                    the selected end date use cached RAW data; the last 3 dates are refreshed.
+                </div>
+
+                <div class="row g-2 align-items-end">
+                    <div class="col-sm-auto">
+                        <label class="form-label small text-muted mb-1">Start</label>
+                        <input type="date" class="form-control form-control-sm"
+                               @bind="_reportStartDate" @bind:format="yyyy-MM-dd" />
+                    </div>
+                    <div class="col-sm-auto">
+                        <label class="form-label small text-muted mb-1">End</label>
+                        <input type="date" class="form-control form-control-sm"
+                               @bind="_reportEndDate" @bind:format="yyyy-MM-dd" />
+                    </div>
                 </div>
 
                 <!-- Row visibility toggles -->
@@ -99,14 +117,18 @@
 
                 <button class="btn btn-success mt-1"
                         @onclick="GetReportAsync"
-                        disabled="@(_isReportBusy || !HasUsableDb)">
+                        disabled="@(_isReportBusy || !NgRateSettings.IsCredentialsConfigured)">
                     @if (_isReportBusy)
                     { <span class="spinner-border spinner-border-sm me-1"></span><span>Loading…</span> }
                     else { <span>▶ Generate Report</span> }
                 </button>
-                @if (!HasUsableDb)
+                @if (!NgRateSettings.IsCredentialsConfigured)
                 {
-                    <div class="small text-muted">Run <strong>Get Data</strong> first.</div>
+                    <div class="small text-muted">BMES credentials are required for recent-date refresh.</div>
+                }
+                @if (!string.IsNullOrEmpty(_reportStatusMessage))
+                {
+                    <div class="small text-muted">@_reportStatusMessage</div>
                 }
             </div>
         </div>
@@ -114,9 +136,124 @@
 </div>
 
 <!-- ══ Model / Line-Group roll-up (sums of Input + F-Cost across matching Materials) ══ -->
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header small fw-semibold">F-COST RAW Backfill</div>
+            <div class="card-body d-flex flex-column gap-3">
+                <div class="small text-muted">
+                    Pulls one BMES F-COST day at a time into <code>fcost_raw.db</code>.
+                    Successful dates are skipped on the next run unless Force is checked.
+                </div>
+
+                <div class="row g-2 align-items-end">
+                    <div class="col-sm-auto">
+                        <label class="form-label small text-muted mb-1">Start</label>
+                        <input type="date" class="form-control form-control-sm"
+                               @bind="_rawStartDate" @bind:format="yyyy-MM-dd" />
+                    </div>
+                    <div class="col-sm-auto">
+                        <label class="form-label small text-muted mb-1">End</label>
+                        <input type="date" class="form-control form-control-sm"
+                               @bind="_rawEndDate" @bind:format="yyyy-MM-dd" />
+                    </div>
+                    <div class="col-sm-auto">
+                        <label class="form-check small mb-2">
+                            <input class="form-check-input" type="checkbox" @bind="_rawForce" />
+                            <span class="form-check-label">Force re-fetch</span>
+                        </label>
+                    </div>
+                    <div class="col-sm-auto">
+                        <button class="btn btn-outline-primary btn-sm"
+                                @onclick="BackfillRawAsync"
+                                disabled="@(_isRawBackfillBusy || !NgRateSettings.IsCredentialsConfigured)">
+                            @if (_isRawBackfillBusy)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span><span>Running</span>
+                            }
+                            else
+                            {
+                                <span>Backfill RAW</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+
+                <div class="small">
+                    <div><span class="text-muted">RAW DB:</span> <span class="font-monospace text-break">@FCost.GetRawDbPath()</span></div>
+                    @if (_rawStatus is not null && _rawStatus.Exists)
+                    {
+                        <div class="text-muted">
+                            Pulls @_rawStatus.SuccessCount:N0 OK / @_rawStatus.FailedCount:N0 failed,
+                            rows @_rawStatus.TotalRows:N0,
+                            range @_rawStatus.FirstDate - @_rawStatus.LastDate
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted">No RAW DB yet.</div>
+                    }
+                </div>
+
+                @if (_rawBackfillResult is not null)
+                {
+                    <div class="alert alert-success py-2 small mb-0">
+                        Done: fetched @_rawBackfillResult.FetchedDays:N0,
+                        skipped @_rawBackfillResult.SkippedDays:N0,
+                        failed @_rawBackfillResult.FailedDays:N0,
+                        rows @_rawBackfillResult.TotalRows:N0
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(_rawBackfillError))
+                {
+                    <div class="alert alert-danger py-2 small mb-0">@_rawBackfillError</div>
+                }
+                @if (_rawBackfillProgress.Count > 0)
+                {
+                    <div class="small font-monospace bg-light border rounded p-2"
+                         style="max-height:160px; overflow:auto; white-space:pre-wrap;">
+                        @foreach (var line in _rawBackfillProgress.TakeLast(12))
+                        {
+                            <div>@line</div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (_report is not null && HasPeriodColumnToggles)
+{
+    <div class="d-flex align-items-center gap-2 flex-wrap mt-3 small">
+        <span class="text-muted fw-semibold">Columns:</span>
+        @if (PeriodColumnCount(FCostPeriodKind.Day) > DayColumnCollapseLimit)
+        {
+            <button class="btn btn-outline-secondary btn-sm py-0" @onclick="ToggleDayColumns">
+                Day @VisiblePeriodColumnCount(FCostPeriodKind.Day)/@PeriodColumnCount(FCostPeriodKind.Day)
+                @(_showAllDayColumns ? "Fold" : "Expand")
+            </button>
+        }
+        @if (PeriodColumnCount(FCostPeriodKind.Week) > WeekColumnCollapseLimit)
+        {
+            <button class="btn btn-outline-secondary btn-sm py-0" @onclick="ToggleWeekColumns">
+                Week @VisiblePeriodColumnCount(FCostPeriodKind.Week)/@PeriodColumnCount(FCostPeriodKind.Week)
+                @(_showAllWeekColumns ? "Fold" : "Expand")
+            </button>
+        }
+        @if (PeriodColumnCount(FCostPeriodKind.Month) > MonthColumnCollapseLimit)
+        {
+            <button class="btn btn-outline-secondary btn-sm py-0" @onclick="ToggleMonthColumns">
+                Month @VisiblePeriodColumnCount(FCostPeriodKind.Month)/@PeriodColumnCount(FCostPeriodKind.Month)
+                @(_showAllMonthColumns ? "Fold" : "Expand")
+            </button>
+        }
+    </div>
+}
+
 @if (_report is not null && (_report.SubGroups.Count > 0 || _report.Total is not null))
 {
-    var subHeaders = _report.ColumnHeaders;
+    var subColumnIndexes = VisibleFCostColumnIndexes();
     <div class="card shadow-sm mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
             <span>📋 Model / Line-Group Summary — Σ Input · Σ F-Cost · Rate% (recomputed from sums)</span>
@@ -132,9 +269,9 @@
                         <tr>
                             <th class="label-th" style="width:260px;">Model / Building / Line</th>
                             <th class="label-th" style="width:100px;">Type</th>
-                            @for (int hi = 0; hi < subHeaders.Count; hi++)
+                            @foreach (int ci in subColumnIndexes)
                             {
-                                <th class="@ColBoundaryClass(hi)">@subHeaders[hi]</th>
+                                <th class="@ColBoundaryClass(ci)">@_report.ColumnHeaders[ci]</th>
                             }
                         </tr>
                     </thead>
@@ -153,8 +290,8 @@
                         @if (sgRows > 0)
                         {
                             string totalLbl = "Total";
-                            int N = subHeaders.Count;
-                            var (totalInput, totalCost) = ComputeSubGroupTotals(N);
+                            int N = subColumnIndexes.Count;
+                            var (totalInput, totalCost) = ComputeSubGroupTotals(subColumnIndexes);
 
                             @if (_showInput)
                             {
@@ -167,7 +304,7 @@
                                     @for (int i = 0; i < N; i++)
                                     {
                                         double v = totalInput[i];
-                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i)">@FormatNum(v)</td>
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(subColumnIndexes[i])">@FormatNum(v)</td>
                                     }
                                 </tr>
                             }
@@ -182,7 +319,7 @@
                                     @for (int i = 0; i < N; i++)
                                     {
                                         double v = totalCost[i];
-                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i)">@FormatNum(v)</td>
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(subColumnIndexes[i])">@FormatNum(v)</td>
                                     }
                                 </tr>
                             }
@@ -200,7 +337,7 @@
                                         double v = totalInput[i] > 0
                                             ? totalCost[i] / totalInput[i] * 100.0
                                             : 0;
-                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i)">@FormatRate(v)</td>
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(subColumnIndexes[i])">@FormatRate(v)</td>
                                     }
                                 </tr>
                             }
@@ -246,10 +383,10 @@
                                         </td>
                                     }
                                     <td class="label-td"><span class="ztype-badge">INPUT</span></td>
-                                    @for (int i = 0; i < subHeaders.Count; i++)
+                                    @foreach (int ci in subColumnIndexes)
                                     {
-                                        double v = row.InputByCol[i];
-                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i, oneBased: false)">@FormatNum(v)</td>
+                                        double v = row.InputByCol[ci];
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(ci, oneBased: false)">@FormatNum(v)</td>
                                     }
                                 </tr>
                             }
@@ -270,10 +407,10 @@
                                         </td>
                                     }
                                     <td class="label-td"><span class="ztype-badge">F-COST</span></td>
-                                    @for (int i = 0; i < subHeaders.Count; i++)
+                                    @foreach (int ci in subColumnIndexes)
                                     {
-                                        double v = row.CostByCol[i];
-                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i, oneBased: false)">@FormatNum(v)</td>
+                                        double v = row.CostByCol[ci];
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(ci, oneBased: false)">@FormatNum(v)</td>
                                     }
                                 </tr>
                             }
@@ -295,10 +432,10 @@
                                     }
                                     <td class="label-td"><span class="ztype-badge">RATE %</span></td>
                                     @{ var rate = row.RateByCol; }
-                                    @for (int i = 0; i < subHeaders.Count; i++)
+                                    @foreach (int ci in subColumnIndexes)
                                     {
-                                        double v = rate[i];
-                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i, oneBased: false)">@FormatRate(v)</td>
+                                        double v = rate[ci];
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(ci, oneBased: false)">@FormatRate(v)</td>
                                     }
                                 </tr>
                             }
@@ -323,7 +460,7 @@
 <!-- ══ Total + per-Material table ═══════════════════════════════════════════ -->
 @if (_report is not null)
 {
-    var headers = _report.ColumnHeaders;
+    var materialColumnIndexes = VisibleFCostColumnIndexes();
 
     <div class="card shadow-sm mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
@@ -339,9 +476,9 @@
                         <tr>
                             <th class="label-th" style="width:280px;">제품명</th>
                             <th class="label-th" style="width:100px;">Type</th>
-                            @for (int hi = 0; hi < headers.Count; hi++)
+                            @foreach (int ci in materialColumnIndexes)
                             {
-                                <th class="@ColBoundaryClass(hi)">@headers[hi]</th>
+                                <th class="@ColBoundaryClass(ci)">@_report.ColumnHeaders[ci]</th>
                             }
                         </tr>
                     </thead>
@@ -357,8 +494,8 @@
                            always show identical numbers. *@
                         @if (matRows > 0 && _report.SubGroups.Count > 0)
                         {
-                            int Nb = headers.Count;
-                            var (botInput, botCost) = ComputeSubGroupTotals(Nb);
+                            int Nb = materialColumnIndexes.Count;
+                            var (botInput, botCost) = ComputeSubGroupTotals(materialColumnIndexes);
                             string botLbl = _report.Total?.DisplayName is { Length: > 0 } d2 ? d2 : "Total";
 
                             @if (_showInput)
@@ -372,7 +509,7 @@
                                     @for (int i = 0; i < Nb; i++)
                                     {
                                         double v = botInput[i];
-                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i)">@FormatNum(v)</td>
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(materialColumnIndexes[i])">@FormatNum(v)</td>
                                     }
                                 </tr>
                             }
@@ -387,7 +524,7 @@
                                     @for (int i = 0; i < Nb; i++)
                                     {
                                         double v = botCost[i];
-                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i)">@FormatNum(v)</td>
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(materialColumnIndexes[i])">@FormatNum(v)</td>
                                     }
                                 </tr>
                             }
@@ -402,7 +539,7 @@
                                     @for (int i = 0; i < Nb; i++)
                                     {
                                         double v = botInput[i] > 0 ? botCost[i] / botInput[i] * 100.0 : 0;
-                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i)">@FormatRate(v)</td>
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(materialColumnIndexes[i])">@FormatRate(v)</td>
                                     }
                                 </tr>
                             }
@@ -424,10 +561,10 @@
                                         </td>
                                     }
                                     <td class="label-td"><span class="ztype-badge">INPUT</span></td>
-                                    @for (int i = 1; i <= headers.Count; i++)
+                                    @foreach (int ci in materialColumnIndexes)
                                     {
-                                        double v = block.Input?.GetCol(i) ?? 0;
-                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i, oneBased: true)">@FormatNum(v)</td>
+                                        double v = block.Input?.GetCol(ci + 1) ?? 0;
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(ci)">@FormatNum(v)</td>
                                     }
                                 </tr>
                             }
@@ -445,10 +582,10 @@
                                         </td>
                                     }
                                     <td class="label-td"><span class="ztype-badge">F-COST</span></td>
-                                    @for (int i = 1; i <= headers.Count; i++)
+                                    @foreach (int ci in materialColumnIndexes)
                                     {
-                                        double v = block.Cost?.GetCol(i) ?? 0;
-                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i, oneBased: true)">@FormatNum(v)</td>
+                                        double v = block.Cost?.GetCol(ci + 1) ?? 0;
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(ci)">@FormatNum(v)</td>
                                     }
                                 </tr>
                             }
@@ -466,10 +603,12 @@
                                         </td>
                                     }
                                     <td class="label-td"><span class="ztype-badge">RATE %</span></td>
-                                    @for (int i = 1; i <= headers.Count; i++)
+                                    @foreach (int ci in materialColumnIndexes)
                                     {
-                                        double v = block.Rate?.GetCol(i) ?? 0;
-                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(i, oneBased: true)">@FormatRate(v)</td>
+                                        double input = block.Input?.GetCol(ci + 1) ?? 0;
+                                        double cost = block.Cost?.GetCol(ci + 1) ?? 0;
+                                        double v = input > 0 ? cost / input * 100.0 : 0;
+                                        <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(ci)">@FormatRate(v)</td>
                                     }
                                 </tr>
                             }
@@ -539,18 +678,32 @@
     /// call this so the two Totals are always identical (same data, same code
     /// path). Unmapped materials are excluded by design — they appear in the
     /// "Unmapped (N)" callout below the SubGroup Summary instead.</summary>
-    private (double[] Input, double[] Cost) ComputeSubGroupTotals(int columnCount)
+    private (double[] Input, double[] Cost) ComputeSubGroupTotals(IReadOnlyList<int> columnIndexes)
     {
+        int columnCount = columnIndexes.Count;
         var input = new double[columnCount];
         var cost  = new double[columnCount];
         if (_report is null) return (input, cost);
+
+        if (_report.Total is not null)
+        {
+            for (int i = 0; i < columnCount; i++)
+            {
+                int sourceIdx = columnIndexes[i] + 1;
+                input[i] = _report.Total.Input?.GetCol(sourceIdx) ?? 0;
+                cost[i]  = _report.Total.Cost ?.GetCol(sourceIdx) ?? 0;
+            }
+            return (input, cost);
+        }
+
         foreach (var sg in _report.SubGroups)
         {
-            int n = Math.Min(columnCount, sg.InputByCol.Length);
-            for (int i = 0; i < n; i++)
+            for (int i = 0; i < columnCount; i++)
             {
-                input[i] += sg.InputByCol[i];
-                cost[i]  += sg.CostByCol[i];
+                int sourceIdx = columnIndexes[i];
+                if (sourceIdx >= sg.InputByCol.Length) continue;
+                input[i] += sg.InputByCol[sourceIdx];
+                cost[i]  += sg.CostByCol[sourceIdx];
             }
         }
         return (input, cost);
@@ -567,14 +720,34 @@
     private string?  _savedDbPath;
     private string   _errorMessage = string.Empty;
 
+    private DateTime _rawStartDate = new(2025, 1, 1);
+    private DateTime _rawEndDate   = DateTime.Today;
+    private bool     _rawForce;
+    private bool     _isRawBackfillBusy;
+    private string   _rawBackfillError = string.Empty;
+    private List<string> _rawBackfillProgress = new();
+    private FCostRawBackfillResult? _rawBackfillResult;
+    private FCostRawStatus? _rawStatus;
+
     private bool         _isReportBusy;
     private string       _reportError = string.Empty;
+    private string       _reportStatusMessage = string.Empty;
+    private DateTime     _reportStartDate = DateTime.Today.AddDays(-13);
+    private DateTime     _reportEndDate   = DateTime.Today;
     private FCostReport? _report;
 
     // Row visibility toggles — control which Z-type rows render in both tables.
     private bool _showInput = true;
     private bool _showCost  = true;
     private bool _showRate  = true;
+
+    private const int DayColumnCollapseLimit = 8;
+    private const int WeekColumnCollapseLimit = 5;
+    private const int MonthColumnCollapseLimit = 4;
+
+    private bool _showAllDayColumns;
+    private bool _showAllWeekColumns;
+    private bool _showAllMonthColumns;
 
     private int VisibleRowCount =>
         (_showInput ? 1 : 0) + (_showCost ? 1 : 0) + (_showRate ? 1 : 0);
@@ -583,6 +756,82 @@
     // so the user can collapse / expand Mid → Sub1 → Sub2 trees. By default only
     // the top (Mid) rows are visible; clicking opens deeper levels.
     private HashSet<string> _expandedFCostRows = new(StringComparer.Ordinal);
+
+    protected override void OnInitialized()
+    {
+        _rawStatus = FCost.GetRawStatus();
+    }
+
+    private bool HasPeriodColumnToggles =>
+        PeriodColumnCount(FCostPeriodKind.Day) > DayColumnCollapseLimit ||
+        PeriodColumnCount(FCostPeriodKind.Week) > WeekColumnCollapseLimit ||
+        PeriodColumnCount(FCostPeriodKind.Month) > MonthColumnCollapseLimit;
+
+    private void ToggleDayColumns() => _showAllDayColumns = !_showAllDayColumns;
+    private void ToggleWeekColumns() => _showAllWeekColumns = !_showAllWeekColumns;
+    private void ToggleMonthColumns() => _showAllMonthColumns = !_showAllMonthColumns;
+
+    private int PeriodColumnCount(FCostPeriodKind kind)
+        => _report?.Columns.Count(c => c.Kind == kind) ?? 0;
+
+    private int VisiblePeriodColumnCount(FCostPeriodKind kind)
+    {
+        int total = PeriodColumnCount(kind);
+        int limit = PeriodCollapseLimit(kind);
+        return IsPeriodExpanded(kind) || total <= limit ? total : limit;
+    }
+
+    private List<int> VisibleFCostColumnIndexes()
+    {
+        if (_report is null) return new List<int>();
+        if (_report.Columns.Count == 0)
+            return Enumerable.Range(0, _report.ColumnHeaders.Count).ToList();
+
+        int dayTotal = PeriodColumnCount(FCostPeriodKind.Day);
+        int weekTotal = PeriodColumnCount(FCostPeriodKind.Week);
+        int monthTotal = PeriodColumnCount(FCostPeriodKind.Month);
+        int daySeen = 0;
+        int weekSeen = 0;
+        int monthSeen = 0;
+        var indexes = new List<int>(_report.Columns.Count);
+
+        for (int i = 0; i < _report.Columns.Count; i++)
+        {
+            var kind = _report.Columns[i].Kind;
+            bool show = kind switch
+            {
+                FCostPeriodKind.Day => ShouldShowPeriodColumn(kind, ++daySeen, dayTotal),
+                FCostPeriodKind.Week => ShouldShowPeriodColumn(kind, ++weekSeen, weekTotal),
+                FCostPeriodKind.Month => ShouldShowPeriodColumn(kind, ++monthSeen, monthTotal),
+                _ => true,
+            };
+            if (show) indexes.Add(i);
+        }
+
+        return indexes;
+    }
+
+    private static int PeriodCollapseLimit(FCostPeriodKind kind) => kind switch
+    {
+        FCostPeriodKind.Day => DayColumnCollapseLimit,
+        FCostPeriodKind.Week => WeekColumnCollapseLimit,
+        FCostPeriodKind.Month => MonthColumnCollapseLimit,
+        _ => int.MaxValue,
+    };
+
+    private bool IsPeriodExpanded(FCostPeriodKind kind) => kind switch
+    {
+        FCostPeriodKind.Day => _showAllDayColumns,
+        FCostPeriodKind.Week => _showAllWeekColumns,
+        FCostPeriodKind.Month => _showAllMonthColumns,
+        _ => true,
+    };
+
+    private bool ShouldShowPeriodColumn(FCostPeriodKind kind, int seen, int total)
+    {
+        int limit = PeriodCollapseLimit(kind);
+        return total <= limit || IsPeriodExpanded(kind) || seen <= limit;
+    }
 
     private void ToggleFCostRow(string rowId)
     {
@@ -760,6 +1009,44 @@
 
     private void SetToday() => _queryDate = DateTime.Today;
 
+    private async Task BackfillRawAsync()
+    {
+        if (_isRawBackfillBusy) return;
+
+        _isRawBackfillBusy = true;
+        _rawBackfillError = string.Empty;
+        _rawBackfillResult = null;
+        _rawBackfillProgress.Clear();
+        StateHasChanged();
+
+        var progress = new Progress<string>(msg =>
+        {
+            _rawBackfillProgress.Add(msg);
+            if (_rawBackfillProgress.Count > 80)
+                _rawBackfillProgress.RemoveRange(0, _rawBackfillProgress.Count - 80);
+            _ = InvokeAsync(StateHasChanged);
+        });
+
+        try
+        {
+            _rawBackfillResult = await FCost.BackfillRawAsync(
+                _rawStartDate,
+                _rawEndDate,
+                force: _rawForce,
+                progress: progress);
+            _rawStatus = FCost.GetRawStatus();
+        }
+        catch (Exception ex)
+        {
+            _rawBackfillError = ex.Message;
+        }
+        finally
+        {
+            _isRawBackfillBusy = false;
+            StateHasChanged();
+        }
+    }
+
     private async Task GetDataAsync()
     {
         _errorMessage = string.Empty;
@@ -788,6 +1075,69 @@
     }
 
     private async Task GetReportAsync()
+    {
+        if (_isReportBusy) return;
+        _isReportBusy = true;
+        _reportError = string.Empty;
+        _reportStatusMessage = string.Empty;
+        _report = null;
+        StateHasChanged();
+
+        try
+        {
+            DateTime start = _reportStartDate.Date;
+            DateTime end = _reportEndDate.Date;
+            DateTime today = DateTime.Today;
+            if (end > today) end = today;
+            if (start > end)
+            {
+                _reportError = "Report start date must be before or equal to end date.";
+                return;
+            }
+
+            DateTime forceFrom = end.AddDays(-2);
+            _reportStatusMessage =
+                $"Preparing RAW cache. Cached through {forceFrom.AddDays(-1):yyyy-MM-dd}; refreshing {forceFrom:yyyy-MM-dd} - {end:yyyy-MM-dd}.";
+
+            var progress = new Progress<string>(msg =>
+            {
+                _reportStatusMessage = msg;
+                _ = InvokeAsync(StateHasChanged);
+            });
+
+            await FCost.BackfillRawAsync(
+                start,
+                end,
+                force: false,
+                forceFromDate: forceFrom,
+                progress: progress);
+            _rawStatus = FCost.GetRawStatus();
+
+            var groups = Repo.GetModelGroups();
+            _reportStatusMessage = "Building report from RAW DB...";
+            _report = await FCostReportSvc.GenerateRawRangeReportAsync(
+                FCost.GetRawDbPath(),
+                start,
+                end,
+                groupsForSubGroupRollup: groups,
+                progress: progress);
+            _showAllDayColumns = false;
+            _showAllWeekColumns = false;
+            _showAllMonthColumns = false;
+            _reportStatusMessage = $"Report ready: {start:yyyy-MM-dd} - {end:yyyy-MM-dd}.";
+        }
+        catch (Exception ex)
+        {
+            _reportError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isReportBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GetReportLegacyAsync()
     {
         if (_isReportBusy) return;
         _isReportBusy = true;

@@ -35,6 +35,7 @@ public static class AppMenus
     public const string AdminAiUsages      = "admin-ai-usages";
     public const string AdminPaths         = "admin-paths";
     public const string TestExcelConverter = "test-excel-converter";
+    public const string AdminDbQuery       = "admin-db-query";
 
     public static readonly MenuItemDef[] All =
     [
@@ -62,6 +63,7 @@ public static class AppMenus
         new(AdminAiUsages,      "AI Usages",                "Admin"),
         new(AdminPaths,         "App Paths",                "Admin"),
         new(TestExcelConverter, "Test Excel Converter",     "Admin"),
+        new(AdminDbQuery,       "DB Query",                 "Admin"),
     ];
 
     /// <summary>

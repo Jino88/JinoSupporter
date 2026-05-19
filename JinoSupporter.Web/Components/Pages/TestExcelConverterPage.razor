@@ -17,16 +17,15 @@
 </div>
 
 <p class="small text-muted">
-    <a href="https://github.com/Jino88/ExcelExporter" target="_blank">ExcelExporter</a>
-    submodule을 별도 net8.0-windows 헬퍼 exe로 빌드해 web이 subprocess로 호출합니다.
-    Excel COM (DRM 우회 ⓪번 전략) 포함 — DRM-locked .xlsx도 처리 가능. 경로는 자동 저장됩니다.
+    <code>ExcelDuplicator</code>의 Python CLI를 web이 subprocess로 호출합니다.
+    변환은 <code>excel_drm_cli.py</code>만 사용하며, 경로는 자동 저장됩니다.
 </p>
 
-@if (!Helper.HelperExists)
+@if (!Helper.ConverterExists)
 {
     <div class="alert alert-warning small">
-        <strong>Helper exe not found.</strong> 빌드되지 않은 상태입니다 — web 프로젝트를 다시 빌드해주세요.
-        <div class="font-monospace mt-1" style="font-size:11px;">@Helper.HelperExePath</div>
+        <strong>Python converter not found.</strong> ExcelDuplicator 경로와 venv를 확인해주세요.
+        <div class="font-monospace mt-1" style="font-size:11px;">@Helper.ConverterStatus</div>
     </div>
 }
 
@@ -40,10 +39,10 @@
                        @bind="_sourceDir" @bind:after="SaveSettings"
                        placeholder="e.g. D:\reports\input" />
                 <button class="btn btn-outline-secondary"
-                        @onclick="PickSourceAsync" disabled="@(_isBusy || !Helper.HelperExists)"
+                        @onclick="PickSourceAsync" disabled="@(_isBusy || !Helper.FolderPickerExists)"
                         title="Browse for source folder">📁 Browse</button>
             </div>
-            <small class="text-muted">이 폴더와 하위 폴더 안의 모든 *.xlsx / *.xlsm 을 변환.</small>
+            <small class="text-muted">이 폴더와 하위 폴더 안의 모든 *.xlsx / *.xlsm / *.xlsb / *.xls 을 변환.</small>
         </div>
         <div class="mb-3">
             <label class="form-label small mb-1">Destination folder</label>
@@ -52,7 +51,7 @@
                        @bind="_destDir" @bind:after="SaveSettings"
                        placeholder="e.g. D:\reports\output" />
                 <button class="btn btn-outline-secondary"
-                        @onclick="PickDestAsync" disabled="@(_isBusy || !Helper.HelperExists)"
+                        @onclick="PickDestAsync" disabled="@(_isBusy || !Helper.FolderPickerExists)"
                         title="Browse for destination folder">📁 Browse</button>
             </div>
             <small class="text-muted">결과: <code>&lt;Destination&gt;/drm_clean/&lt;원본이름&gt;_clean.xlsx</code></small>
@@ -67,7 +66,7 @@
         </div>
         <div class="d-flex gap-2 align-items-center">
             <button class="btn btn-primary btn-sm" @onclick="ConvertAsync"
-                    disabled="@(_isBusy || !Helper.HelperExists
+                    disabled="@(_isBusy || !Helper.ConverterExists
                               || string.IsNullOrWhiteSpace(_sourceDir)
                               || string.IsNullOrWhiteSpace(_destDir))">
                 @if (_isBusy)
@@ -92,7 +91,7 @@
                 </span>
             }
         </div>
-        @* Progress bar — driven by helper "scan" (sets total) and "progress"
+        @* Progress bar — driven by converter "scan" (sets total) and "progress"
            (sets current + filename). Stays visible after a run finishes so
            the user can see the final N/N completion until next start. *@
         @if (_progTotal > 0)
@@ -216,7 +215,11 @@
 
     private async Task PickSourceAsync()
     {
-        if (!Helper.HelperExists) return;
+        if (!Helper.FolderPickerExists)
+        {
+            AddLog("[browse] Folder picker helper not found. Type the path manually.", "warn");
+            return;
+        }
         AddLog("[browse] Opening folder dialog (source)…", "step");
         StateHasChanged();
         string? picked = await Helper.PickFolderAsync(string.IsNullOrWhiteSpace(_sourceDir) ? null : _sourceDir);
@@ -234,7 +237,11 @@
 
     private async Task PickDestAsync()
     {
-        if (!Helper.HelperExists) return;
+        if (!Helper.FolderPickerExists)
+        {
+            AddLog("[browse] Folder picker helper not found. Type the path manually.", "warn");
+            return;
+        }
         AddLog("[browse] Opening folder dialog (destination)…", "step");
         StateHasChanged();
         string? picked = await Helper.PickFolderAsync(string.IsNullOrWhiteSpace(_destDir) ? null : _destDir);
@@ -252,7 +259,7 @@
 
     private async Task ConvertAsync()
     {
-        if (_isBusy || !Helper.HelperExists) return;
+        if (_isBusy || !Helper.ConverterExists) return;
         if (string.IsNullOrWhiteSpace(_sourceDir) || string.IsNullOrWhiteSpace(_destDir))
         {
             _error = "Source / Destination 모두 지정해주세요.";
@@ -284,7 +291,7 @@
         }
         catch (OperationCanceledException)
         {
-            AddLog("[stopped] User cancelled — helper process killed.", "warn");
+            AddLog("[stopped] User cancelled — Python process killed.", "warn");
         }
         catch (Exception ex)
         {
@@ -301,10 +308,8 @@
     private void Cancel()
     {
         if (_cts is null || _cts.IsCancellationRequested) return;
-        // Cancellation propagates into ExcelHelperRunner.StreamAsync which has
-        // a CT registration that calls proc.Kill(entireProcessTree:true) — the
-        // helper exe and any Excel.exe it spawned die immediately so the
-        // ReadLineAsync loop unwinds without waiting for the next stdout line.
+        // Cancellation propagates into the Python converter wrapper, which
+        // kills the subprocess tree so any Excel.exe it spawned exits too.
         AddLog("[stop] Cancellation requested…", "warn");
         try { _cts.Cancel(); } catch { }
     }
@@ -371,7 +376,7 @@
             case "stderr":
                 string em = raw.TryGetProperty("message", out var em2) ? em2.GetString() ?? "" : evt.Kind;
                 _error = em;
-                AddLog($"[helper] {em}", "err");
+                AddLog($"[converter] {em}", "err");
                 break;
         }
     }

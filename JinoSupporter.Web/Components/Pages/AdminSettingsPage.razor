@@ -3,6 +3,7 @@
 @using JinoSupporter.Web.Services
 @inject WebRepository         Repo
 @inject NgRateSettingsService NgRateSettings
+@inject AiProviderSettingsService AiProviders
 
 <PageTitle>App Settings</PageTitle>
 
@@ -43,6 +44,41 @@
 </div>
 
 <!-- ══ NG Rate Settings ════════════════════════════════════════════════════════ -->
+<div class="card mb-4" style="max-width:560px;">
+    <div class="card-header">AI Provider Switches</div>
+    <div class="card-body">
+        <div class="small text-muted mb-2">
+            Controls are stored in <span class="font-monospace">@AiProviders.SettingsPath</span>.
+        </div>
+        <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" id="aiClaudeApi"
+                   @bind="_aiProviders.ClaudeApiEnabled" />
+            <label class="form-check-label" for="aiClaudeApi">Claude API</label>
+        </div>
+        <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" id="aiClaudeCli"
+                   @bind="_aiProviders.ClaudeCliEnabled" />
+            <label class="form-check-label" for="aiClaudeCli">Claude CLI</label>
+        </div>
+        <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" id="aiCodexCli"
+                   @bind="_aiProviders.CodexCliEnabled" />
+            <label class="form-check-label" for="aiCodexCli">Codex CLI</label>
+        </div>
+        <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" id="aiCodexApi"
+                   @bind="_aiProviders.CodexApiEnabled" />
+            <label class="form-check-label" for="aiCodexApi">Codex API</label>
+            <div class="form-text">Reserved for future API integration; no current page calls Codex API yet.</div>
+        </div>
+        <button class="btn btn-primary" @onclick="SaveAiProvidersAsync" disabled="@_aiProviderSaving">
+            @(_aiProviderSaving ? "Saving..." : "Save")
+        </button>
+        @if (_aiProviderSaved)  { <span class="ms-3 text-success fw-semibold">Saved.</span> }
+        @if (!string.IsNullOrEmpty(_aiProviderError)) { <div class="alert alert-danger mt-2">@_aiProviderError</div> }
+    </div>
+</div>
+
 <div class="card mb-4" style="max-width:560px;">
     <div class="card-header d-flex align-items-center gap-2">
         <span>📉 NG Rate Settings</span>
@@ -89,6 +125,17 @@
                    @bind="_ng.DbSaveDirectory"
                    placeholder="@NgRateSettings.DefaultDbSaveDirectory" />
             <div class="form-text">Collected .db files will be saved here.</div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label small text-muted mb-1">F-COST DB Save Directory</label>
+            <input type="text" class="form-control form-control-sm font-monospace"
+                   @bind="_ng.FCostDbSaveDirectory"
+                   placeholder="@NgRateSettings.DefaultFCostDbSaveDirectory" />
+            <div class="form-text">
+                F-COST single-day DBs and <code>fcost_raw.db</code> will be saved here.
+                Leave it the same as NG Rate when you do not need a separate folder.
+            </div>
         </div>
 
         <div class="mb-3">
@@ -169,6 +216,11 @@
     private bool   _claudeSaved  = false;
     private string _claudeError  = string.Empty;
 
+    private AiProviderSettingsSnapshot _aiProviders = new();
+    private bool   _aiProviderSaving = false;
+    private bool   _aiProviderSaved  = false;
+    private string _aiProviderError  = string.Empty;
+
     // ── NG Rate ───────────────────────────────────────────────────────────────
     private NgRateSettingsSnapshot _ng        = new();
     private bool   _showNgPw  = false;
@@ -184,6 +236,7 @@
     protected override void OnInitialized()
     {
         _apiKey = Repo.GetSetting("Claude:ApiKey") ?? string.Empty;
+        _aiProviders = AiProviders.GetSnapshot();
         _ng     = NgRateSettings.GetSnapshot();
     }
 
@@ -204,6 +257,21 @@
     }
 
     // ── NG Rate save ──────────────────────────────────────────────────────────
+    private async Task SaveAiProvidersAsync()
+    {
+        _aiProviderSaving = true;
+        _aiProviderSaved  = false;
+        _aiProviderError  = string.Empty;
+        try
+        {
+            AiProviders.Save(_aiProviders);
+            _aiProviderSaved = true;
+        }
+        catch (Exception ex) { _aiProviderError = ex.Message; }
+        finally { _aiProviderSaving = false; }
+        await Task.CompletedTask;
+    }
+
     private async Task SaveNgRateAsync()
     {
         _ngSaving = true;

@@ -2326,6 +2326,62 @@ public sealed class WebRepository
         cmd.ExecuteNonQuery();
     }
 
+    public List<ModelAnalysisReportRecord> GetAskAiReviewRecords(string productTypeFilter = "", int limit = 300)
+    {
+        var list = new List<ModelAnalysisReportRecord>();
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT r.DatasetName, r.ProductType, r.ReportDate,
+                   COALESCE(d.DocumentId, '') AS DocumentId,
+                   COALESCE(d.Title, '') AS Title,
+                   COALESCE(d.ReportType, '') AS ReportType,
+                   COALESCE(d.PrimaryDefect, '') AS PrimaryDefect,
+                   COALESCE(d.GeneratedReportMarkdown, '') AS GeneratedReportMarkdown,
+                   COALESCE(d.UpdatedAt, '') AS AiUpdatedAt,
+                   COALESCE((SELECT COUNT(*) FROM AiResults ar WHERE ar.DocumentId=d.DocumentId), 0) AS ResultCount,
+                   COALESCE((SELECT COUNT(*) FROM AiConclusions ac WHERE ac.DocumentId=d.DocumentId), 0) AS ConclusionCount
+            FROM RawReports r
+            JOIN AiDocuments d
+              ON d.DocumentId = (
+                    SELECT d2.DocumentId
+                    FROM AiDocuments d2
+                    WHERE d2.SourceDataset = r.DatasetName
+                      AND LOWER(COALESCE(d2.PrimaryDefect,'')) NOT LIKE '%auto-extracted%'
+                      AND LOWER(COALESCE(d2.RawJson,'')) NOT LIKE '%_batch_auto.py%'
+                      AND LOWER(COALESCE(d2.RawJson,'')) NOT LIKE '%see workbook title/purpose%'
+                      AND LOWER(COALESCE(d2.RawJson,'')) NOT LIKE '%workbook stored but extraction surfaced narrative only%'
+                      AND LENGTH(TRIM(COALESCE(d2.GeneratedReportMarkdown,''))) > 0
+                    ORDER BY d2.UpdatedAt DESC
+                    LIMIT 1
+              )
+            WHERE r.BatchExcluded = 0
+              AND (@p = '' OR r.ProductType = @p)
+            ORDER BY d.UpdatedAt DESC, r.ReportDate DESC, r.DatasetName COLLATE NOCASE
+            LIMIT @l;
+            """;
+        cmd.Parameters.AddWithValue("@p", productTypeFilter ?? "");
+        cmd.Parameters.AddWithValue("@l", Math.Max(1, limit));
+
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            list.Add(new ModelAnalysisReportRecord(
+                r.GetString(0),
+                r.GetString(1),
+                r.GetString(2),
+                r.GetString(3),
+                r.GetString(4),
+                r.GetString(5),
+                r.GetString(6),
+                r.GetString(7),
+                r.GetString(8),
+                Convert.ToInt32(r.GetValue(9)),
+                Convert.ToInt32(r.GetValue(10))));
+        }
+        return list;
+    }
+
     // Model-level AI analysis built from per-report AI markdown.
 
     public List<ModelAnalysisGroupRecord> GetModelAnalysisGroups()

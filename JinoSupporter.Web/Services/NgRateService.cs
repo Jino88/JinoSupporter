@@ -12,20 +12,22 @@ namespace JinoSupporter.Web.Services;
 /// Web port of the DataMaker WPF app's clFetchBMES + clFetchBMESNGDATA + clDataProcessor logic.
 /// Paths / credentials are read from NgRateSettingsService.
 /// </summary>
-public sealed class NgRateService(NgRateSettingsService settings, BmesSettingsSyncService settingsSync)
+public sealed class NgRateService(
+    NgRateSettingsService settings,
+    BmesSettingsSyncService settingsSync,
+    AppActivityLogger activity)
 {
     private readonly NgRateSettingsService _settings = settings;
     private readonly BmesSettingsSyncService _settingsSync = settingsSync;
+    private readonly AppActivityLogger _activity = activity;
     private const string BaseUrl = "http://bmes.bujeon.com";
 
     /// <summary>Mirrors a progress message to both the UI and the Debug/launching-console output.
     /// Use this for every status line so you can diagnose stalls live in the dotnet console
     /// and the VS "Debug" output simultaneously.</summary>
-    private static void Log(IProgress<string>? progress, string msg)
+    private void Log(IProgress<string>? progress, string msg)
     {
-        string tagged = $"[NgRate {DateTime.Now:HH:mm:ss.fff}] {msg}";
-        System.Diagnostics.Debug.WriteLine(tagged);
-        Console.WriteLine(tagged);
+        _activity.Log("NgRate", msg);
         progress?.Report(msg);
     }
 

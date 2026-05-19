@@ -14,10 +14,12 @@ public sealed class ClaudeService
 
     private readonly HttpClient _http;
     private readonly string     _apiKey;
+    private readonly AiProviderSettingsService _providerSettings;
 
-    public ClaudeService(HttpClient http, IConfiguration config, WebRepository repo)
+    public ClaudeService(HttpClient http, IConfiguration config, WebRepository repo, AiProviderSettingsService providerSettings)
     {
         _http = http;
+        _providerSettings = providerSettings;
         // Priority: DB → WpfSettingsReader (workhost-settings.json) → appsettings.json
         string? fromDb  = repo.GetSetting("Claude:ApiKey");
         string? fromWpf = WpfSettingsReader.TryGetClaudeApiKey();
@@ -25,7 +27,7 @@ public sealed class ClaudeService
         _apiKey = fromDb ?? fromWpf ?? fromCfg ?? string.Empty;
     }
 
-    public bool IsConfigured => !string.IsNullOrWhiteSpace(_apiKey);
+    public bool IsConfigured => _providerSettings.ClaudeApiEnabled && !string.IsNullOrWhiteSpace(_apiKey);
 
     // ── Core calls ────────────────────────────────────────────────────────────
 
@@ -1564,24 +1566,24 @@ public sealed class ClaudeService
             ══ STRICT RULES ══
             1. Do NOT use external/general knowledge. Only use facts present in the reports below.
             2. If no registered report contains relevant information, set "overall" to a short {{lang}} notice that no relevant data was found, and return an empty "perDataset" array. Do not invent an answer.
-            3. Produce ONE entry in "perDataset" for EVERY dataset that genuinely contributes to the answer. Copy "datasetName" VERBATIM from the "Dataset:" header in the context (full string, including numeric prefixes and spaces).
-            4. In each per-dataset "answer": explain in {{lang}} what this SPECIFIC dataset shows and how it addresses the user's question. Cite concrete values from that dataset only (NG rate, defect type, product type, date, specific findings). 2–5 sentences is ideal.
+            3. Produce ONE entry in "perDataset" for EVERY dataset that genuinely contributes to the answer. In "datasetName", copy only the actual name after "Dataset:"; do not include "Dataset:", bracket numbers, bullets, or prefixes.
+            4. In each per-dataset "answer": avoid long prose. Use a compact Markdown table or short bullet list that shows only concrete evidence from that dataset: what was reviewed, source/result count, key value, and judgement.
             5. Do NOT include datasets that are irrelevant to the question.
             5a. For NG-rate comparisons, judge improvement/worsening ONLY against the same-event Normal/Baseline/Control/Reference/Before/Old/OK row. Same-event means the same source sheet/table and same carried-forward Date/Model/Line/measurement type when those fields exist.
             5b. Merged Excel cells may appear blank in continuation rows. Treat blank Date/Model/Type cells below a visible value as carrying the visible value forward before pairing rows.
             5c. Use multiplicative relative change: (test_ng_rate / baseline_ng_rate - 1) * 100. Positive is worse; negative is improved. Do not use percentage-point subtraction as the verdict.
             5d. If no same-event baseline exists, do not say improved/worsened. Use ng_without_baseline style ranking, defect mix, source sheet, and sample size.
             5e. Respect report types: normal_comparison, ng_without_baseline, before_after_dimension, measurement_spec, defect_root_cause, lot_supplier_mold_comparison, process_condition_change, reliability_spec, doe_matrix, image_dependent, mixed. Answer in the matching shape: comparison table for comparison/process-change reports, spec/min/max/avg for measurement reports, cause/action/result for defect-cause reports.
-            6. In "overall": give a 2–3 sentence {{lang}} synthesis across the per-dataset findings — top recommendations in priority order. If there is only one relevant dataset, you may leave "overall" empty.
+            6. In "overall": do NOT write paragraph-style synthesis. Return a Markdown table with one row per candidate check/action item that can reduce or explain the user's target problem. The first content column must be the thing to review or change, such as JIG condition, press condition, voltage, lot/mold/line, material, process parameter, inspection method, or retest condition. Do NOT put the defect/problem name itself (for example "Hearing NG") as the reviewed item. Required columns: No, Check item / factor, Review count, Previous result, Overall judgement, Next action. "Review count" is the number of contributing datasets/results/events found in the registered reports. Keep each cell short.
             7. ALL human-readable text in the output ("overall" and every "answer") MUST be written in {{lang}}. Keep dataset names, product codes, defect type labels, and numeric values as-is.
             8. Return ONLY valid JSON — no markdown fences, no extra commentary.
 
             ══ OUTPUT JSON SCHEMA ══
             {
-              "overall": "2–3 sentence {{lang}} overall recommendation across all datasets (may be empty).",
+              "overall": "Markdown table only. Columns: No | Check item / factor | Review count | Previous result | Overall judgement | Next action.",
               "perDataset": [
                 {
-                  "datasetName": "<verbatim Dataset name>",
+                  "datasetName": "<actual Dataset name only>",
                   "answer": "{{lang}} dataset-specific answer with concrete numbers from this dataset."
                 }
               ]
@@ -1616,6 +1618,52 @@ public sealed class ClaudeService
         {
             return new AskAiResult { Overall = raw };
         }
+    }
+
+    public async Task<AskAiResult> TranslateAskAiResultAsync(
+        AskAiResult source,
+        string targetLanguage,
+        CancellationToken ct = default)
+    {
+        if (!IsConfigured)
+            throw new InvalidOperationException("Claude API key is not configured.");
+
+        string inputJson = JsonSerializer.Serialize(source, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+
+        string prompt = $$"""
+            Translate this Ask AI JSON to {{targetLanguage}}.
+
+            Rules:
+            - Return ONLY valid JSON with the exact same schema: overall, perDataset[].datasetName, perDataset[].answer.
+            - Translate all human-readable text in "overall" and "answer".
+            - Keep datasetName values exactly unchanged.
+            - Keep product codes, model names, defect labels, dates, numbers, units, percentages, and source names unchanged.
+            - Preserve Markdown table syntax, row count, column count, and bullet/list structure.
+            - For "overall", keep it as a Markdown table suitable for a Review Checklist.
+
+            JSON:
+            {{inputJson}}
+            """;
+
+        string raw = await CallAsync(prompt, 8192, ct);
+        raw = raw.Trim();
+        if (raw.StartsWith("```"))
+        {
+            int nl = raw.IndexOf('\n');
+            if (nl >= 0) raw = raw[(nl + 1)..];
+            if (raw.TrimEnd().EndsWith("```")) raw = raw[..raw.LastIndexOf("```")];
+        }
+
+        int open = raw.IndexOf('{');
+        int close = raw.LastIndexOf('}');
+        if (open >= 0 && close > open) raw = raw[open..(close + 1)];
+
+        return JsonSerializer.Deserialize<AskAiResult>(raw.Trim(),
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+            ?? new AskAiResult { Overall = source.Overall, PerDataset = source.PerDataset };
     }
 
     // ── Translate analysis result (multi-field, one round-trip) ───────────────

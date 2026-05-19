@@ -6,6 +6,7 @@
 @inject NgRateReportService   NgRateReport
 @inject WebRepository         Repo
 @inject IJSRuntime            JS
+@inject AppActivityLogger     Activity
 @implements IAsyncDisposable
 
 <PageTitle>NG Rate</PageTitle>
@@ -2081,6 +2082,7 @@
         _errorMessage = null;
         _savedDbPath  = null;
         _logs.Clear();
+        Activity.Log("NG Rate By Model", $"Get Data {_startDate:yyyy-MM-dd} ~ {_endDate:yyyy-MM-dd}");
 
         var progress = new Progress<string>(msg =>
         {
@@ -2141,6 +2143,7 @@
         _hierExpandedGroups.Clear();
         _hierExpandedMids.Clear();
         _hierExpandedSub1s.Clear();
+        Activity.Log("NG Rate By Model", $"Generate Report selectedGroups={_selectedGroupIds.Count:N0}, selectedEntries={_selectedSubEntries.Count:N0}");
         await InvokeAsync(StateHasChanged);
 
         IProgress<string> progress = new Progress<string>(msg =>
@@ -2241,6 +2244,7 @@
     {
         if (_reports.Count == 0 || _isExporting) return;
         _isExporting = true;
+        Activity.Log("NG Rate By Model", $"Export Excel reports={_reports.Count:N0}");
         try
         {
             var bytes   = await Task.Run(() => NgRateExcelExporter.Export(_reports));

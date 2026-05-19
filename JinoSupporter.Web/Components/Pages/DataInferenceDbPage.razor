@@ -3,6 +3,7 @@
 @implements IAsyncDisposable
 @inject WebRepository Repo
 @inject IJSRuntime JS
+@inject AppActivityLogger Activity
 
 <PageTitle>Data Inference — DB Data</PageTitle>
 
@@ -16,13 +17,13 @@
     </span>
     <div style="flex:1;"></div>
     <label class="didb-filter-label">AI Batch</label>
-    <select class="form-select form-select-sm didb-filter-select" @bind="_aiBatchFilter">
+    <select class="form-select form-select-sm didb-filter-select" @bind="AiBatchFilter">
         <option value="all">All</option>
         <option value="batched">AI Batched</option>
         <option value="pending">Not Batched</option>
     </select>
     <label class="didb-filter-label">Product Type</label>
-    <select class="form-select form-select-sm didb-filter-select" @bind="_productTypeFilter">
+    <select class="form-select form-select-sm didb-filter-select" @bind="ProductTypeFilter">
         <option value="">All</option>
         @foreach (var pt in _productTypeOptions)
         {
@@ -72,7 +73,7 @@ else
                 </tr>
             </thead>
             <tbody>
-                @foreach (var r in FilteredReports)
+                @foreach (var r in VisibleReports)
                 {
                     bool expanded = _expanded == r.DatasetName;
                     <tr class="didb-row @(expanded ? "didb-row-open" : "")"
@@ -159,7 +160,7 @@ else
                                 .Where(x => (x.Variant.InputCount ?? 0) >= 50 || (x.Baseline.InputCount ?? 0) >= 50)
                                 .ToList();
                             string aiReportKind   = DetectAiReportKind(doc, aiComparisons, _expandedImages.Count);
-                            string aiReportLabel  = AiReportKindLabel(aiReportKind);
+                            string aiReportLabel  = AiReportKindLabel(aiReportKind, aiLang);
                             var aiHeatmap         = aiComparisons.Take(_aiCardShowAll ? aiComparisons.Count : 9).ToList();
                             var aiComparisonRows  = aiComparisons.Take(_aiCardShowAll ? aiComparisons.Count : 8).ToList();
                             var aiProcessSections = BuildAiProcessReviewSections(doc, aiAllComparisons)
@@ -216,6 +217,9 @@ else
                                 .Take(_aiCardShowAll ? doc.Hints.Count : 5)
                                 .ToList();
                             var aiReportFocusItems = AiDisplayListItems(aiReportFocus);
+                            var aiActionRows = BuildAiDisplayActionRows(doc, aiLang, aiReportKind)
+                                .Take(_aiCardShowAll ? 12 : 6)
+                                .ToList();
 
                             <tr class="didb-detail-row">
                                 <td colspan="9" style="padding:0;">
@@ -239,30 +243,30 @@ else
                                                     <div class="didb-ai-purpose" title="@docPurpose">@AiBrief(docPurpose, _aiCardShowAll ? 500 : 180)</div>
                                                 }
                                                 <div class="didb-ai-meta">
-                                                    <span>Dataset @doc.SourceDataset</span>
-                                                    <span>Report @DisplayExcelDate(doc.ReportDate)</span>
+                                                    <span>@AiUi(aiLang, "dataset") @doc.SourceDataset</span>
+                                                    <span>@AiUi(aiLang, "report") @DisplayExcelDate(doc.ReportDate)</span>
                                                     <span>@aiReportLabel</span>
-                                                    <span>conf @doc.Confidence.ToString("0.00")</span>
+                                                    <span>@AiUi(aiLang, "confidence") @doc.Confidence.ToString("0.00")</span>
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div class="didb-ai-kpis">
                                             <div class="didb-ai-kpi">
-                                                <span>Results</span>
+                                                <span>@AiUi(aiLang, "results")</span>
                                                 <strong>@doc.Results.Count.ToString("N0")</strong>
-                                                <em>@doc.ConditionsCount.ToString("N0") conditions / @doc.Conclusions.Count.ToString("N0") conclusions</em>
+                                                <em>@doc.ConditionsCount.ToString("N0") @AiUi(aiLang, "conditions") / @doc.Conclusions.Count.ToString("N0") @AiUi(aiLang, "conclusions")</em>
                                             </div>
                                             <div class="didb-ai-kpi didb-ai-kpi-warn">
                                                 @if (aiShowPrimaryDefect)
                                                 {
-                                                    <span>Primary Defect</span>
+                                                    <span>@AiUi(aiLang, "primaryDefect")</span>
                                                     <strong>@(string.IsNullOrEmpty(doc.PrimaryDefect) ? "-" : doc.PrimaryDefect)</strong>
-                                                    <em>@doc.Hints.Count.ToString("N0") suggested checks</em>
+                                                    <em>@doc.Hints.Count.ToString("N0") @AiUi(aiLang, "suggestedChecks")</em>
                                                 }
                                                 else
                                                 {
-                                                    <span>Report Focus</span>
+                                                        <span>@AiUi(aiLang, "reportFocus")</span>
                                                     @if (aiReportFocusItems.Count > 1)
                                                     {
                                                         <ul class="didb-ai-kpi-list" title="@aiReportFocus">
@@ -282,7 +286,7 @@ else
                                             @if (!AiUsesProcessReview(aiReportKind) && aiTopAbsoluteRate is not null)
                                             {
                                                 <div class="didb-ai-kpi didb-ai-kpi-bad">
-                                                    <span>Worst NG Rate</span>
+                                                    <span>@AiUi(aiLang, "worstNgRate")</span>
                                                     <strong>@AiPct(aiTopAbsoluteRate.RatePercent)</strong>
                                                     <em>@aiTopAbsoluteRate.Label</em>
                                                 </div>
@@ -290,7 +294,7 @@ else
                                             else if (!AiUsesProcessReview(aiReportKind) && aiTopMetric is not null)
                                             {
                                                 <div class="didb-ai-kpi @AiJudgementPanelClass(aiTopMetric)">
-                                                    <span>Key Metric</span>
+                                                    <span>@AiUi(aiLang, "keyMetric")</span>
                                                     <strong>@AiResultMainValue(aiTopMetric)</strong>
                                                     <em>@AiMetricLabel(aiTopMetric)</em>
                                                 </div>
@@ -298,19 +302,52 @@ else
                                             @if (!AiUsesProcessReview(aiReportKind) && aiTopDefect is not null)
                                             {
                                                 <div class="didb-ai-kpi didb-ai-kpi-bad">
-                                                    <span>Top Breakdown</span>
+                                                    <span>@AiUi(aiLang, "topBreakdown")</span>
                                                     <strong>@aiTopDefect.DefectName</strong>
                                                     <em>@AiCount(aiTopDefect.TotalCount) count</em>
                                                 </div>
                                             }
                                         </div>
 
-                                        @if (aiHasGeneratedReport)
+                                        @if (aiActionRows.Count > 0)
+                                        {
+                                            <section class="didb-ai-panel didb-ai-full didb-ai-action-panel">
+                                                <div class="didb-ai-report-head">
+                                                    <h3>@AiUi(aiLang, "actionBoard")</h3>
+                                                    <span>@AiUi(aiLang, "savedAiOnly")</span>
+                                                </div>
+                                                <table class="didb-ai-action-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>@AiUi(aiLang, "priority")</th>
+                                                            <th>@AiUi(aiLang, "checkItem")</th>
+                                                            <th>@AiUi(aiLang, "evidence")</th>
+                                                            <th>@AiUi(aiLang, "judgement")</th>
+                                                            <th>@AiUi(aiLang, "nextAction")</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var row in aiActionRows)
+                                                        {
+                                                            <tr class="@row.HeatClass">
+                                                                <td class="n">@row.Priority</td>
+                                                                <td><strong>@row.CheckItem</strong></td>
+                                                                <td>@row.EvidenceResult</td>
+                                                                <td>@row.Judgement</td>
+                                                                <td>@row.NextAction</td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </section>
+                                        }
+
+                                        @if (aiHasGeneratedReport && (_aiCardShowAll || aiActionRows.Count == 0))
                                         {
                                             <section class="didb-ai-panel didb-ai-full didb-ai-generated-panel">
                                                 <div class="didb-ai-report-head">
-                                                    <h3>AI Generated Report</h3>
-                                                    <span>AI-authored report</span>
+                                                    <h3>@AiUi(aiLang, "aiGeneratedReport")</h3>
+                                                    <span>@(_aiCardShowAll ? AiUi(aiLang, "originalSavedReport") : AiUi(aiLang, "fallbackView"))</span>
                                                 </div>
                                                 <div class="didb-ai-generated-report">
                                                     @AiMarkdown(aiGeneratedReport)
@@ -467,10 +504,10 @@ else
                                                             <table class="didb-ai-comp-table didb-ai-metric-table">
                                                                 <thead>
                                                                     <tr>
-                                                                        <th>Metric</th>
-                                                                        <th class="n">Before/Base</th>
-                                                                        <th class="n">After/Test</th>
-                                                                        <th class="n">Delta</th>
+                                                                        <th>@AiUi(aiLang, "metric")</th>
+                                                                        <th class="n">@AiUi(aiLang, "beforeBase")</th>
+                                                                        <th class="n">@AiUi(aiLang, "afterTest")</th>
+                                                                        <th class="n">@AiUi(aiLang, "delta")</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -494,10 +531,10 @@ else
                                                             <table class="didb-ai-comp-table didb-ai-metric-table">
                                                                 <thead>
                                                                     <tr>
-                                                                        <th>Metric</th>
-                                                                        <th>Condition</th>
-                                                                        <th class="n">Value</th>
-                                                                        <th>Judgement</th>
+                                                                        <th>@AiUi(aiLang, "metric")</th>
+                                                                        <th>@AiUi(aiLang, "condition")</th>
+                                                                        <th class="n">@AiUi(aiLang, "value")</th>
+                                                                        <th>@AiUi(aiLang, "judgement")</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -507,7 +544,7 @@ else
                                                                             <td><strong>@AiMetricLabel(row)</strong></td>
                                                                             <td>@AiResultLabel(row)</td>
                                                                             <td class="n">@AiResultMainValue(row)</td>
-                                                                            <td><span class="didb-ai-status @AiJudgementClass(row)">@AiJudgementLabel(row)</span></td>
+                                                                            <td><span class="didb-ai-status @AiJudgementClass(row)">@AiJudgementLabel(row, aiLang)</span></td>
                                                                         </tr>
                                                                     }
                                                                 </tbody>
@@ -525,10 +562,10 @@ else
                                                             <table class="didb-ai-comp-table didb-ai-metric-table">
                                                                 <thead>
                                                                     <tr>
-                                                                        <th>Test Item</th>
-                                                                        <th>Condition</th>
-                                                                        <th class="n">Value</th>
-                                                                        <th>Judgement</th>
+                                                                        <th>@AiUi(aiLang, "testItem")</th>
+                                                                        <th>@AiUi(aiLang, "condition")</th>
+                                                                        <th class="n">@AiUi(aiLang, "value")</th>
+                                                                        <th>@AiUi(aiLang, "judgement")</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -538,7 +575,7 @@ else
                                                                             <td><strong>@AiMetricLabel(row)</strong></td>
                                                                             <td>@AiResultLabel(row)</td>
                                                                             <td class="n">@AiResultMainValue(row)</td>
-                                                                            <td><span class="didb-ai-status @AiJudgementClass(row)">@AiJudgementLabel(row)</span></td>
+                                                                            <td><span class="didb-ai-status @AiJudgementClass(row)">@AiJudgementLabel(row, aiLang)</span></td>
                                                                         </tr>
                                                                     }
                                                                 </tbody>
@@ -566,11 +603,11 @@ else
                                                             <table class="didb-ai-comp-table didb-ai-metric-table">
                                                                 <thead>
                                                                     <tr>
-                                                                        <th>Condition</th>
-                                                                        <th>Factor</th>
-                                                                        <th>Metric</th>
-                                                                        <th class="n">Value</th>
-                                                                        <th>Judgement</th>
+                                                                        <th>@AiUi(aiLang, "condition")</th>
+                                                                        <th>@AiUi(aiLang, "factor")</th>
+                                                                        <th>@AiUi(aiLang, "metric")</th>
+                                                                        <th class="n">@AiUi(aiLang, "value")</th>
+                                                                        <th>@AiUi(aiLang, "judgement")</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -581,7 +618,7 @@ else
                                                                             <td>@AiFactorLabel(row)</td>
                                                                             <td>@AiMetricLabel(row)</td>
                                                                             <td class="n">@AiResultMainValue(row)</td>
-                                                                            <td><span class="didb-ai-status @AiJudgementClass(row)">@AiJudgementLabel(row)</span></td>
+                                                                            <td><span class="didb-ai-status @AiJudgementClass(row)">@AiJudgementLabel(row, aiLang)</span></td>
                                                                         </tr>
                                                                     }
                                                                 </tbody>
@@ -834,7 +871,7 @@ else
                                                 }
                                                 else if (aiReportKind == "before_after_dimension" && (aiDimensionComps.Count > 0 || aiDimensionRows.Count > 0))
                                                 {
-                                                    <h3>Measurement Focus</h3>
+                                                    <h3>@AiUi(aiLang, "measurementFocus")</h3>
                                                     @foreach (var cmp in aiDimensionComps.Take(_aiCardShowAll ? 8 : 5))
                                                     {
                                                         <div class="didb-ai-mini-row">
@@ -846,24 +883,24 @@ else
                                                     {
                                                         <div class="didb-ai-mini-row">
                                                             <strong>@AiBrief(AiMetricLabel(row), 52)</strong>
-                                                            <span>@AiResultMainValue(row) / @AiJudgementLabel(row)</span>
+                                                            <span>@AiResultMainValue(row) / @AiJudgementLabel(row, aiLang)</span>
                                                         </div>
                                                     }
                                                 }
                                                 else if (aiReportKind == "reliability_spec" && aiReliabilityRows.Count > 0)
                                                 {
-                                                    <h3>Spec Summary</h3>
+                                                    <h3>@AiUi(aiLang, "specSummary")</h3>
                                                     @foreach (var row in aiReliabilityRows.Take(_aiCardShowAll ? 8 : 6))
                                                     {
                                                         <div class="didb-ai-mini-row">
                                                             <strong>@AiBrief(AiMetricLabel(row), 52)</strong>
-                                                            <span>@AiResultMainValue(row) / @AiJudgementLabel(row)</span>
+                                                            <span>@AiResultMainValue(row) / @AiJudgementLabel(row, aiLang)</span>
                                                         </div>
                                                     }
                                                 }
                                                 else if (aiReportKind == "doe_matrix" && aiDoeRows.Count > 0)
                                                 {
-                                                    <h3>DOE Focus</h3>
+                                                    <h3>@AiUi(aiLang, "doeFocus")</h3>
                                                     @foreach (var row in aiDoeRows.Take(_aiCardShowAll ? 8 : 6))
                                                     {
                                                         <div class="didb-ai-mini-row">
@@ -874,7 +911,7 @@ else
                                                 }
                                                 else
                                                 {
-                                                    <h3>Breakdown Mix</h3>
+                                                    <h3>@AiUi(aiLang, "breakdownMix")</h3>
                                                     @if (doc.NgBreakdowns.Count == 0)
                                                     {
                                                         <div class="didb-ai-empty">No NG breakdown rows.</div>
@@ -1009,9 +1046,9 @@ else
 
                                         <button class="didb-show-details didb-ai-more" @onclick="() => _aiCardShowAll = !_aiCardShowAll" @onclick:stopPropagation="true">
                                             @(_aiCardShowAll
-                                                ? (aiHasGeneratedReport ? "Hide stored DB parameters" : "Hide dashboard detail")
+                                                ? (aiHasGeneratedReport ? "Hide original report and DB parameters" : "Hide dashboard detail")
                                                 : (aiHasGeneratedReport
-                                                    ? $"Show stored DB parameters ({doc.Results.Count} results, {doc.Results.Select(x => x.SheetName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()} sheets)"
+                                                    ? $"Show original AI report + DB parameters ({doc.Results.Count} results, {doc.Results.Select(x => x.SheetName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()} sheets)"
                                                     : $"Show full dashboard ({doc.Results.Count} results, {doc.Results.Select(x => x.SheetName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()} sheets)"))
                                         </button>
                                     </div>
@@ -1697,6 +1734,14 @@ else
                         }
                     }
                 }
+                @if (HasMoreReports)
+                {
+                    <tr class="didb-load-row" @onclick="LoadMoreDatasets">
+                        <td colspan="9">
+                            Loading on scroll... click to load more @VisibleReports.Count.ToString("N0") / @FilteredReports.Count.ToString("N0")
+                        </td>
+                    </tr>
+                }
             </tbody>
         </table>
     </div>
@@ -1782,6 +1827,10 @@ else
     .didb-row        { cursor: pointer; transition: background .1s; }
     .didb-row:hover  { background: #f1f5f9; }
     .didb-row-open   { background: #f0f9ff; }
+    .didb-load-row td {
+        text-align: center; color: #64748b; background: #f8fafc;
+        font-size: 12px; padding: 12px;
+    }
     .didb-caret      { color: #94a3b8; font-size: 11px; width: 28px; text-align: center; }
     .didb-date       { font-size: 11px; color: #94a3b8; }
     td.n             { text-align: right; font-variant-numeric: tabular-nums; }
@@ -2188,6 +2237,40 @@ else
         background: #fff;
         border-left: 4px solid #1f7a7a;
     }
+    .didb-ai-action-panel {
+        background: #fff;
+        border-left: 4px solid #2563eb;
+    }
+    .didb-ai-action-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-size: 12px;
+    }
+    .didb-ai-action-table th,
+    .didb-ai-action-table td {
+        border: 1px solid #d9e0e7;
+        padding: 7px 8px;
+        vertical-align: top;
+        overflow-wrap: anywhere;
+    }
+    .didb-ai-action-table th {
+        background: #eef2f7;
+        color: #17202a;
+        font-weight: 800;
+    }
+    .didb-ai-action-table th:first-child,
+    .didb-ai-action-table td:first-child {
+        width: 58px;
+        text-align: center;
+    }
+    .didb-ai-action-table th:nth-child(2),
+    .didb-ai-action-table td:nth-child(2) {
+        width: 22%;
+    }
+    .didb-ai-action-table tr.didb-ai-heat-worse td { background: #fff7f7; }
+    .didb-ai-action-table tr.didb-ai-heat-improved td { background: #f4fbf6; }
+    .didb-ai-action-table tr.didb-ai-heat-flat td { background: #fffaf0; }
     .didb-ai-generated-report {
         color: #17202a;
         font-size: 12px;
@@ -3011,10 +3094,35 @@ else
 @code {
     private sealed record ImgThumb(string MediaType, string DataUrl, string FileName);
 
+    private const int DatasetRenderBatchSize = 80;
     private List<RawReportInfo>          _reports              = [];
     private string                       _productTypeFilter    = "";
     private string                       _aiBatchFilter        = "all";
     private string?                      _expanded             = null;
+    private int                          _visibleReportCount   = DatasetRenderBatchSize;
+    private DotNetObjectReference<DataInferenceDbPage>? _lazyLoadRef;
+
+    private string ProductTypeFilter
+    {
+        get => _productTypeFilter;
+        set
+        {
+            if (_productTypeFilter == value) return;
+            _productTypeFilter = value;
+            ResetVisibleReports();
+        }
+    }
+
+    private string AiBatchFilter
+    {
+        get => _aiBatchFilter;
+        set
+        {
+            if (_aiBatchFilter == value) return;
+            _aiBatchFilter = value;
+            ResetVisibleReports();
+        }
+    }
 
     private List<string> _productTypeOptions => _reports
         .Select(r => r.ProductType)
@@ -3043,6 +3151,16 @@ else
             _ => true,
         })
         .ToList();
+
+    private List<RawReportInfo> VisibleReports
+        => FilteredReports.Take(_visibleReportCount).ToList();
+
+    private bool HasMoreReports => _visibleReportCount < FilteredReports.Count;
+
+    private void ResetVisibleReports()
+    {
+        _visibleReportCount = DatasetRenderBatchSize;
+    }
 
     private List<NormalizedMeasurement>  _expandedMeasurements = [];
     private DatasetSummaryRecord?        _expandedSummary      = null;
@@ -3329,6 +3447,14 @@ else
         public int SortRank          { get; init; }
     }
 
+    private sealed record AiDisplayActionRow(
+        int Priority,
+        string CheckItem,
+        string EvidenceResult,
+        string Judgement,
+        string NextAction,
+        string HeatClass);
+
     private sealed class AiReportBlock
     {
         public string Title { get; init; } = "";
@@ -3417,20 +3543,226 @@ else
         return "general_summary";
     }
 
-    private static string AiReportKindLabel(string kind) => kind switch
+    private static string AiReportKindLabel(string kind, string lang = "en")
     {
-        "normal_comparison"      => "Normal Comparison",
-        "ng_without_baseline"    => "NG Rate, No Baseline",
-        "before_after_dimension" => "Before/After Dimension",
-        "measurement_spec"       => "Measurement / Spec",
-        "defect_root_cause"      => "Defect Cause Analysis",
-        "lot_supplier_mold_comparison" => "Lot / Supplier / Mold",
-        "process_condition_change" => "Process Condition Change",
-        "reliability_spec"       => "Reliability / Spec",
-        "doe_matrix"             => "DOE Matrix",
-        "image_dependent"        => "Image Dependent",
-        _                        => "General Summary",
-    };
+        string l = AiLangKey(lang);
+        return (l, kind) switch
+        {
+            ("ko", "normal_comparison")      => "정상 비교",
+            ("ko", "ng_without_baseline")    => "NG율 / 기준 없음",
+            ("ko", "before_after_dimension") => "전후 치수 비교",
+            ("ko", "measurement_spec")       => "측정 / 사양",
+            ("ko", "defect_root_cause")      => "불량 원인 분석",
+            ("ko", "lot_supplier_mold_comparison") => "Lot / 공급사 / 금형",
+            ("ko", "process_condition_change") => "공정 조건 변경",
+            ("ko", "reliability_spec")       => "신뢰성 / 사양",
+            ("ko", "doe_matrix")             => "DOE 매트릭스",
+            ("ko", "image_dependent")        => "이미지 의존 분석",
+            ("ko", _)                        => "일반 요약",
+
+            ("vi", "normal_comparison")      => "So sánh Normal",
+            ("vi", "ng_without_baseline")    => "Tỷ lệ NG / không có baseline",
+            ("vi", "before_after_dimension") => "Kích thước trước/sau",
+            ("vi", "measurement_spec")       => "Đo lường / tiêu chuẩn",
+            ("vi", "defect_root_cause")      => "Phân tích nguyên nhân lỗi",
+            ("vi", "lot_supplier_mold_comparison") => "Lot / nhà cung cấp / khuôn",
+            ("vi", "process_condition_change") => "Thay đổi điều kiện công đoạn",
+            ("vi", "reliability_spec")       => "Độ tin cậy / tiêu chuẩn",
+            ("vi", "doe_matrix")             => "Ma trận DOE",
+            ("vi", "image_dependent")        => "Phân tích dựa trên hình ảnh",
+            ("vi", _)                        => "Tóm tắt chung",
+
+            (_, "normal_comparison")      => "Normal Comparison",
+            (_, "ng_without_baseline")    => "NG Rate, No Baseline",
+            (_, "before_after_dimension") => "Before/After Dimension",
+            (_, "measurement_spec")       => "Measurement / Spec",
+            (_, "defect_root_cause")      => "Defect Cause Analysis",
+            (_, "lot_supplier_mold_comparison") => "Lot / Supplier / Mold",
+            (_, "process_condition_change") => "Process Condition Change",
+            (_, "reliability_spec")       => "Reliability / Spec",
+            (_, "doe_matrix")             => "DOE Matrix",
+            (_, "image_dependent")        => "Image Dependent",
+            _                             => "General Summary",
+        };
+    }
+
+    private static string AiLangKey(string lang)
+    {
+        string l = (lang ?? "").Trim().ToLowerInvariant();
+        if (l.StartsWith("ko")) return "ko";
+        if (l.StartsWith("vi")) return "vi";
+        return "en";
+    }
+
+    private static string AiUi(string lang, string key)
+    {
+        string l = AiLangKey(lang);
+        return (l, key) switch
+        {
+            ("ko", "dataset") => "데이터셋",
+            ("ko", "report") => "리포트",
+            ("ko", "confidence") => "신뢰도",
+            ("ko", "results") => "결과",
+            ("ko", "conditions") => "조건",
+            ("ko", "conclusions") => "결론",
+            ("ko", "primaryDefect") => "주요 불량",
+            ("ko", "suggestedChecks") => "추천 점검",
+            ("ko", "reportFocus") => "리포트 초점",
+            ("ko", "worstNgRate") => "최악 NG율",
+            ("ko", "keyMetric") => "핵심 지표",
+            ("ko", "topBreakdown") => "주요 항목",
+            ("ko", "actionBoard") => "실행 점검 보드",
+            ("ko", "savedAiOnly") => "저장된 AI 데이터 기준 표시",
+            ("ko", "priority") => "우선순위",
+            ("ko", "checkItem") => "점검/변경 항목",
+            ("ko", "evidence") => "근거/결과",
+            ("ko", "judgement") => "판단",
+            ("ko", "nextAction") => "다음 조치",
+            ("ko", "metric") => "지표",
+            ("ko", "condition") => "조건",
+            ("ko", "value") => "값",
+            ("ko", "testItem") => "시험 항목",
+            ("ko", "factor") => "인자",
+            ("ko", "beforeBase") => "이전/기준",
+            ("ko", "afterTest") => "이후/시험",
+            ("ko", "delta") => "변화",
+            ("ko", "measurementFocus") => "측정값 초점",
+            ("ko", "specSummary") => "Spec 요약",
+            ("ko", "doeFocus") => "DOE 초점",
+            ("ko", "breakdownMix") => "불량 구성",
+            ("ko", "aiGeneratedReport") => "AI 생성 리포트",
+            ("ko", "originalSavedReport") => "저장된 원본 리포트",
+            ("ko", "fallbackView") => "대체 보기",
+            ("ko", "source") => "출처",
+            ("ko", "worseBaseline") => "동일 이벤트 기준 대비 악화",
+            ("ko", "holdRetest") => "이 조건은 보류하고 Normal/OK 기준으로 재시험하세요.",
+            ("ko", "suggestedCheck") => "추천 점검",
+            ("ko", "verifyBeforeChange") => "생산 조건 변경 전 이 항목을 먼저 확인하세요.",
+            ("ko", "blockRecheck") => "출하 전 이 조건을 차단하거나 재확인하세요.",
+            ("ko", "repeatLot") => "반복 샘플 또는 더 넓은 lot 확인으로 margin을 확인하세요.",
+            ("ko", "rankingOnly") => "순위 참고용; paired baseline 없음",
+            ("ko", "addBaseline") => "동일 이벤트 Normal/OK 기준을 추가한 뒤 최악 lot/금형/라인을 분리하세요.",
+            ("ko", "candidateImprovement") => "개선 후보",
+            ("ko", "confirmRepeat") => "표준화 전 반복 lot으로 확인하세요.",
+            ("ko", "conclusion") => "결론",
+            ("ko", "decisionContext") => "판단 참고로 사용하고, 근거가 약한 항목은 별도 확인하세요.",
+            ("ko", "fail") => "FAIL",
+            ("ko", "pass") => "PASS",
+            ("ko", "check") => "확인 필요",
+            ("ko", "high") => "높음",
+            ("ko", "medium") => "중간",
+            ("ko", "low") => "낮음",
+
+            ("vi", "dataset") => "Bộ dữ liệu",
+            ("vi", "report") => "Báo cáo",
+            ("vi", "confidence") => "độ tin cậy",
+            ("vi", "results") => "Kết quả",
+            ("vi", "conditions") => "điều kiện",
+            ("vi", "conclusions") => "kết luận",
+            ("vi", "primaryDefect") => "Lỗi chính",
+            ("vi", "suggestedChecks") => "mục cần kiểm tra",
+            ("vi", "reportFocus") => "Trọng tâm báo cáo",
+            ("vi", "worstNgRate") => "Tỷ lệ NG cao nhất",
+            ("vi", "keyMetric") => "Chỉ số chính",
+            ("vi", "topBreakdown") => "Hạng mục chính",
+            ("vi", "actionBoard") => "Bảng hành động thực tế",
+            ("vi", "savedAiOnly") => "hiển thị từ dữ liệu AI đã lưu",
+            ("vi", "priority") => "Ưu tiên",
+            ("vi", "checkItem") => "Mục kiểm tra/thay đổi",
+            ("vi", "evidence") => "Bằng chứng/kết quả",
+            ("vi", "judgement") => "Đánh giá",
+            ("vi", "nextAction") => "Hành động tiếp theo",
+            ("vi", "metric") => "Chỉ số",
+            ("vi", "condition") => "Điều kiện",
+            ("vi", "value") => "Giá trị",
+            ("vi", "testItem") => "Hạng mục thử nghiệm",
+            ("vi", "factor") => "Yếu tố",
+            ("vi", "beforeBase") => "Trước/Baseline",
+            ("vi", "afterTest") => "Sau/Test",
+            ("vi", "delta") => "Thay đổi",
+            ("vi", "measurementFocus") => "Trọng tâm đo lường",
+            ("vi", "specSummary") => "Tóm tắt Spec",
+            ("vi", "doeFocus") => "Trọng tâm DOE",
+            ("vi", "breakdownMix") => "Cơ cấu lỗi",
+            ("vi", "aiGeneratedReport") => "Báo cáo AI tạo",
+            ("vi", "originalSavedReport") => "báo cáo đã lưu gốc",
+            ("vi", "fallbackView") => "chế độ xem dự phòng",
+            ("vi", "source") => "nguồn",
+            ("vi", "worseBaseline") => "Xấu hơn baseline cùng sự kiện",
+            ("vi", "holdRetest") => "Giữ điều kiện này và kiểm tra lại với baseline Normal/OK.",
+            ("vi", "suggestedCheck") => "Mục kiểm tra đề xuất",
+            ("vi", "verifyBeforeChange") => "Xác minh mục này trước khi thay đổi điều kiện sản xuất.",
+            ("vi", "blockRecheck") => "Chặn hoặc kiểm tra lại điều kiện này trước khi xuất hàng.",
+            ("vi", "repeatLot") => "Xác nhận margin bằng mẫu lặp lại hoặc kiểm tra lot rộng hơn.",
+            ("vi", "rankingOnly") => "Chỉ là xếp hạng; không có paired baseline",
+            ("vi", "addBaseline") => "Thêm baseline Normal/OK cùng sự kiện, rồi tách lot/khuôn/line xấu nhất.",
+            ("vi", "candidateImprovement") => "Ứng viên cải thiện",
+            ("vi", "confirmRepeat") => "Xác nhận bằng lot lặp lại trước khi tiêu chuẩn hóa.",
+            ("vi", "conclusion") => "Kết luận",
+            ("vi", "decisionContext") => "Dùng làm bối cảnh quyết định; xác minh riêng các bằng chứng yếu.",
+            ("vi", "fail") => "FAIL",
+            ("vi", "pass") => "PASS",
+            ("vi", "check") => "Cần kiểm tra",
+            ("vi", "high") => "cao",
+            ("vi", "medium") => "trung bình",
+            ("vi", "low") => "thấp",
+
+            (_, "dataset") => "Dataset",
+            (_, "report") => "Report",
+            (_, "confidence") => "conf",
+            (_, "results") => "Results",
+            (_, "conditions") => "conditions",
+            (_, "conclusions") => "conclusions",
+            (_, "primaryDefect") => "Primary Defect",
+            (_, "suggestedChecks") => "suggested checks",
+            (_, "reportFocus") => "Report Focus",
+            (_, "worstNgRate") => "Worst NG Rate",
+            (_, "keyMetric") => "Key Metric",
+            (_, "topBreakdown") => "Top Breakdown",
+            (_, "actionBoard") => "Practical Action Board",
+            (_, "savedAiOnly") => "display-only from saved AI data",
+            (_, "priority") => "Priority",
+            (_, "checkItem") => "Check/change item",
+            (_, "evidence") => "Evidence/result",
+            (_, "judgement") => "Judgement",
+            (_, "nextAction") => "Next action",
+            (_, "metric") => "Metric",
+            (_, "condition") => "Condition",
+            (_, "value") => "Value",
+            (_, "testItem") => "Test Item",
+            (_, "factor") => "Factor",
+            (_, "beforeBase") => "Before/Base",
+            (_, "afterTest") => "After/Test",
+            (_, "delta") => "Delta",
+            (_, "measurementFocus") => "Measurement Focus",
+            (_, "specSummary") => "Spec Summary",
+            (_, "doeFocus") => "DOE Focus",
+            (_, "breakdownMix") => "Breakdown Mix",
+            (_, "aiGeneratedReport") => "AI Generated Report",
+            (_, "originalSavedReport") => "original saved report",
+            (_, "fallbackView") => "fallback view",
+            (_, "source") => "source",
+            (_, "worseBaseline") => "Worse than same-event baseline",
+            (_, "holdRetest") => "Hold this condition and retest against Normal/OK baseline.",
+            (_, "suggestedCheck") => "Suggested check",
+            (_, "verifyBeforeChange") => "Verify this item before changing production condition.",
+            (_, "blockRecheck") => "Block or re-check this condition before release.",
+            (_, "repeatLot") => "Confirm margin with repeat sample or wider lot check.",
+            (_, "rankingOnly") => "Ranking only; no paired baseline",
+            (_, "addBaseline") => "Add same-event Normal/OK baseline, then isolate worst lot/mold/line.",
+            (_, "candidateImprovement") => "Candidate improvement",
+            (_, "confirmRepeat") => "Confirm with repeat lot before standardizing.",
+            (_, "conclusion") => "Conclusion",
+            (_, "decisionContext") => "Use this as decision context; verify weak evidence separately.",
+            (_, "fail") => "FAIL",
+            (_, "pass") => "PASS",
+            (_, "check") => "CHECK",
+            (_, "high") => "high",
+            (_, "medium") => "medium",
+            (_, "low") => "low",
+            _ => key,
+        };
+    }
 
     private static string AiPrimaryPanelTitle(string kind) => kind switch
     {
@@ -3950,6 +4282,103 @@ else
             .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? "";
         if (!string.IsNullOrWhiteSpace(conclusion)) return AiBrief(conclusion, 140);
         return AiReportKindLabel(reportKind);
+    }
+
+    private static List<AiDisplayActionRow> BuildAiDisplayActionRows(AiDocBundle doc, string lang, string reportKind)
+    {
+        var candidates = new List<(int Rank, string CheckItem, string EvidenceResult, string Judgement, string NextAction, string HeatClass)>();
+
+        static string NonBlank(params string?[] values)
+            => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim() ?? "";
+
+        string SourceText(string sheet, string file)
+        {
+            string source = NonBlank(sheet, file);
+            return string.IsNullOrWhiteSpace(source) ? "" : $" / {AiUi(lang, "source")}: {source}";
+        }
+
+        var comparisons = BuildAiControlComparisons(doc);
+        foreach (var cmp in comparisons.Where(AiIsWorse).OrderByDescending(AiComparisonMagnitude).Take(4))
+        {
+            string factor = NonBlank(cmp.Variant.ChangedFactor, cmp.Variant.ConditionProcess, AiComparisonProcessLabel(cmp));
+            string checkItem = $"{factor} / {AiComparisonPairLabel(cmp)}";
+            string evidence = $"{AiPct(AiNgRatePercent(cmp.Baseline))} -> {AiPct(AiNgRatePercent(cmp.Variant))}, {AiRelativeChangeText(cmp)}{SourceText(cmp.Variant.SheetName, cmp.Variant.SourceFile)}";
+            candidates.Add((10, checkItem, evidence, AiUi(lang, "worseBaseline"), AiUi(lang, "holdRetest"), "didb-ai-heat-worse"));
+        }
+
+        foreach (var hint in doc.Hints
+                     .Where(h => !string.IsNullOrWhiteSpace(AiHintCheck(doc, h, lang)))
+                     .OrderBy(AiEvidenceStrengthRank)
+                     .Take(5))
+        {
+            string check = AiHintCheck(doc, hint, lang);
+            string reason = AiHintReason(doc, hint, lang);
+            string context = NonBlank(hint.RelatedProcess, hint.RelatedPart, hint.DefectName);
+            string evidence = AiBrief(NonBlank(reason, context, hint.EvidenceStrength), 180) + SourceText(hint.SheetName, hint.SourceFile);
+            string judgement = AiLocalizeKnownText(NonBlank(hint.EvidenceStrength, AiUi(lang, "suggestedCheck")), lang);
+            candidates.Add((15, check, evidence, judgement, AiUi(lang, "verifyBeforeChange"), "didb-ai-heat-flat"));
+        }
+
+        foreach (var row in doc.Results
+                     .Where(r => AiIsFailLike(r) || AiIsWarnLike(r))
+                     .OrderByDescending(AiIsFailLike)
+                     .ThenByDescending(r => AiNgRatePercent(r) ?? 0)
+                     .Take(4))
+        {
+            string check = NonBlank(AiFactorLabel(row), AiMetricLabel(row), AiResultLabel(row));
+            string value = AiResultMainValue(row);
+            string evidence = $"{AiMetricLabel(row)} = {value}{SourceText(row.SheetName, row.SourceFile)}";
+            string judgement = AiJudgementLabel(row, lang);
+            string next = AiIsFailLike(row)
+                ? AiUi(lang, "blockRecheck")
+                : AiUi(lang, "repeatLot");
+            candidates.Add((20, check, evidence, judgement, next, AiJudgementHeatClass(row)));
+        }
+
+        foreach (var abs in BuildAiAbsoluteNgRows(doc).Take(4))
+        {
+            string evidence = $"{AiAbsoluteProcessLabel(abs)} {AiPct(abs.RatePercent)}";
+            if (abs.InputCount.HasValue || abs.NgCount.HasValue)
+                evidence += $" / input {AiCount(abs.InputCount)}, NG {AiCount(abs.NgCount)}";
+            evidence += SourceText(abs.Row.SheetName, abs.Row.SourceFile);
+            candidates.Add((30, abs.Label, evidence, AiUi(lang, "rankingOnly"), AiUi(lang, "addBaseline"), AiAbsoluteHeatClass(abs)));
+        }
+
+        foreach (var cmp in comparisons.Where(AiIsImproved).OrderByDescending(AiComparisonMagnitude).Take(3))
+        {
+            string factor = NonBlank(cmp.Variant.ChangedFactor, cmp.Variant.ConditionProcess, AiComparisonProcessLabel(cmp));
+            string evidence = $"{AiPct(AiNgRatePercent(cmp.Baseline))} -> {AiPct(AiNgRatePercent(cmp.Variant))}, {AiRelativeChangeText(cmp)}{SourceText(cmp.Variant.SheetName, cmp.Variant.SourceFile)}";
+            candidates.Add((60, factor, evidence, AiUi(lang, "candidateImprovement"), AiUi(lang, "confirmRepeat"), "didb-ai-heat-improved"));
+        }
+
+        foreach (var conclusion in doc.Conclusions
+                     .Where(c => !string.IsNullOrWhiteSpace(AiConclusionInterp(doc, c, lang)))
+                     .Take(3))
+        {
+            string topic = NonBlank(AiConclusionTopic(doc, conclusion, lang), AiUi(lang, "conclusion"));
+            string evidence = AiBrief(AiConclusionInterp(doc, conclusion, lang), 180) + SourceText(conclusion.SheetName, conclusion.SourceFile);
+            string judgement = AiBrief(NonBlank(AiConclusionStatement(doc, conclusion, lang), AiReportKindLabel(reportKind, lang)), 90);
+            candidates.Add((80, topic, evidence, judgement, AiUi(lang, "decisionContext"), "didb-ai-heat-flat"));
+        }
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var rows = new List<AiDisplayActionRow>();
+        foreach (var item in candidates
+                     .Where(x => !string.IsNullOrWhiteSpace(x.CheckItem))
+                     .OrderBy(x => x.Rank)
+                     .ThenBy(x => x.CheckItem, StringComparer.OrdinalIgnoreCase))
+        {
+            string key = NormalizeAiText(item.CheckItem + " " + item.EvidenceResult);
+            if (!seen.Add(key)) continue;
+            rows.Add(new AiDisplayActionRow(
+                rows.Count + 1,
+                AiBrief(CleanExcelSerialDateText(item.CheckItem), 120),
+                AiBrief(CleanExcelSerialDateText(item.EvidenceResult), 190),
+                AiBrief(AiLocalizeKnownText(CleanExcelSerialDateText(item.Judgement), lang), 110),
+                AiBrief(AiLocalizeKnownText(CleanExcelSerialDateText(item.NextAction), lang), 140),
+                item.HeatClass));
+        }
+        return rows;
     }
 
     private static AiProcessReviewRow BuildAiNgReviewRow(AiControlComparison cmp)
@@ -4576,6 +5005,30 @@ else
             "didb-ai-status-pass" => "PASS",
             "didb-ai-status-warn" => "CHECK",
             _                     => "-",
+        };
+    }
+
+    private static string AiJudgementLabel(AiResultRow r, string lang)
+        => AiLocalizeKnownText(AiJudgementLabel(r), lang);
+
+    private static string AiLocalizeKnownText(string text, string lang)
+    {
+        string value = (text ?? "").Trim();
+        if (value.Length == 0) return value;
+
+        return NormalizeAiText(value) switch
+        {
+            "high" => AiUi(lang, "high"),
+            "medium" => AiUi(lang, "medium"),
+            "low" => AiUi(lang, "low"),
+            "fail" or "failed" => AiUi(lang, "fail"),
+            "pass" or "passed" => AiUi(lang, "pass"),
+            "check" or "warning" or "warn" => AiUi(lang, "check"),
+            "suggested check" => AiUi(lang, "suggestedCheck"),
+            "ranking only no paired baseline" => AiUi(lang, "rankingOnly"),
+            "worse than same event baseline" => AiUi(lang, "worseBaseline"),
+            "candidate improvement" => AiUi(lang, "candidateImprovement"),
+            _ => value,
         };
     }
 
@@ -5444,10 +5897,39 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender) await JS.InvokeVoidAsync("diFullPage.enter");
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("diFullPage.enter");
+            _lazyLoadRef = DotNetObjectReference.Create(this);
+            try
+            {
+                await JS.InvokeVoidAsync("didbLazy.init", _lazyLoadRef);
+            }
+            catch (JSException ex)
+            {
+                Activity.Log("Data Inference DB", $"Lazy-load script unavailable: {ex.Message}");
+            }
+        }
     }
 
-    private void Refresh() => ReloadReports();
+    private void Refresh()
+    {
+        Activity.Log("Data Inference DB", "Refresh saved datasets");
+        ReloadReports();
+    }
+
+    [JSInvokable]
+    public Task LoadMoreDatasets()
+        => InvokeAsync(() =>
+        {
+            int count = FilteredReports.Count;
+            int next = Math.Min(count, _visibleReportCount + DatasetRenderBatchSize);
+            if (next == _visibleReportCount) return;
+
+            _visibleReportCount = next;
+            Activity.Log("Data Inference DB", $"Lazy load datasets {_visibleReportCount:N0}/{count:N0}");
+            StateHasChanged();
+        });
 
     // Inline Product Type editor. Click "✎ Set…" (or an existing value) to
     // edit a single dataset's Product Type — datalist offers existing values
@@ -5482,6 +5964,7 @@ else
         {
             string pt = (_editingPtDraft ?? "").Trim();
             Repo.UpdateRawReportProductType(datasetName, pt);
+            Activity.Log("Data Inference DB", $"Update Product Type dataset='{datasetName}' productType='{pt}'");
             ReloadReports();
         }
         finally
@@ -5512,6 +5995,8 @@ else
     {
         _reports    = Repo.GetAllRawReports();
         _ocrCached  = Repo.GetDatasetsWithExtractedText();
+        if (_visibleReportCount < DatasetRenderBatchSize)
+            _visibleReportCount = DatasetRenderBatchSize;
 
         // If a row is currently expanded, re-pull its detail bundles too.
         // Without this, hitting Refresh after a CLI run leaves the open card
@@ -5626,6 +6111,7 @@ else
         else
         {
             _expanded             = name;
+            Activity.Log("Data Inference DB", $"View dataset '{name}'");
             _expandedMeasurements = Repo.GetNormalizedMeasurements(name);
             _expandedSummary      = Repo.GetDatasetSummaryRecord(name);
             _expandedAiDoc        = Repo.GetAiDocBundle(name);
@@ -5758,6 +6244,7 @@ else
             _expanded = null; _expandedMeasurements = []; _expandedSummary = null; _expandedAiDoc = null; _expandedImages = []; _expandedFiles = []; _expandedOcrText = ""; _expandedExcelPaste = "";
         }
         Repo.DeleteRawReport(_deleteTarget);
+        Activity.Log("Data Inference DB", $"Delete dataset '{_deleteTarget}'");
         _deleteTarget = null;
         ReloadReports();
     }
@@ -5782,6 +6269,7 @@ else
     private void ExecuteDeleteAll()
     {
         Repo.DeleteAllDataInference();
+        Activity.Log("Data Inference DB", "Delete all datasets");
         _expanded = null; _expandedMeasurements = []; _expandedSummary = null; _expandedAiDoc = null; _expandedImages = []; _expandedFiles = []; _expandedOcrText = ""; _expandedExcelPaste = "";
         _showDeleteAll = false;
         ReloadReports();
@@ -5803,6 +6291,8 @@ else
 
     public async ValueTask DisposeAsync()
     {
+        try { await JS.InvokeVoidAsync("didbLazy.dispose"); } catch { }
         try { await JS.InvokeVoidAsync("diFullPage.leave"); } catch { }
+        _lazyLoadRef?.Dispose();
     }
 }

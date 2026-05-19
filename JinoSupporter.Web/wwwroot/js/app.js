@@ -1089,6 +1089,42 @@ window.diFullPage = {
     }
 };
 
+window.didbLazy = {
+    _dotnet: null,
+    _el: null,
+    _onScroll: null,
+    _pending: false,
+
+    init: function (dotnetRef) {
+        this.dispose();
+        this._dotnet = dotnetRef;
+        this._el = document.querySelector('.didb-table-wrap');
+        if (!this._el) return;
+
+        this._onScroll = () => {
+            if (!this._dotnet || !this._el || this._pending) return;
+            const remaining = this._el.scrollHeight - this._el.scrollTop - this._el.clientHeight;
+            if (remaining > 700) return;
+
+            this._pending = true;
+            Promise.resolve(this._dotnet.invokeMethodAsync('LoadMoreDatasets'))
+                .finally(() => window.setTimeout(() => { this._pending = false; }, 80));
+        };
+
+        this._el.addEventListener('scroll', this._onScroll, { passive: true });
+        window.setTimeout(this._onScroll, 0);
+    },
+
+    dispose: function () {
+        if (this._el && this._onScroll)
+            this._el.removeEventListener('scroll', this._onScroll);
+        this._dotnet = null;
+        this._el = null;
+        this._onScroll = null;
+        this._pending = false;
+    }
+};
+
 // ?? Paste Image Handler ???????????????????????????????????????????????????????
 window.pasteImageHandler = {
     _dotnetRef: null,

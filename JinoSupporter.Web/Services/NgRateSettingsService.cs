@@ -14,6 +14,7 @@ public sealed class NgRateSettingsService
 
     // ── Defaults (sourced from AppPathsService → webapp-paths.json) ─────────────
     public string DefaultDbSaveDirectory     => _appPaths.Current.NgRateDbSaveDirectory;
+    public string DefaultFCostDbSaveDirectory => DbSaveDirectory;
     public string DefaultRoutingFilePath     => _appPaths.Current.NgRateRoutingFilePath;
     public string DefaultReasonFilePath      => _appPaths.Current.NgRateReasonFilePath;
 
@@ -23,6 +24,7 @@ public sealed class NgRateSettingsService
 
     // ── Setting keys ─────────────────────────────────────────────────────────────
     public const string KeyDbSaveDirectory  = "NgRate:DbSaveDirectory";
+    public const string KeyFCostDbSaveDirectory = "FCost:DbSaveDirectory";
     public const string KeyRoutingFilePath  = "NgRate:RoutingFilePath";
     public const string KeyReasonFilePath   = "NgRate:ReasonFilePath";
     public const string KeyLoginId          = "NgRate:LoginId";
@@ -42,6 +44,9 @@ public sealed class NgRateSettingsService
 
     public string DbSaveDirectory =>
         GetSetting(KeyDbSaveDirectory) ?? DefaultDbSaveDirectory;
+
+    public string FCostDbSaveDirectory =>
+        GetSetting(KeyFCostDbSaveDirectory) ?? DefaultFCostDbSaveDirectory;
 
     public string RoutingFilePath =>
         GetSetting(KeyRoutingFilePath) ?? DefaultRoutingFilePath;
@@ -95,24 +100,26 @@ public sealed class NgRateSettingsService
     /// <summary>Return the full saved settings (for UI binding)</summary>
     public NgRateSettingsSnapshot GetSnapshot() => new()
     {
-        DbSaveDirectory = DbSaveDirectory,
-        RoutingFilePath = RoutingFilePath,
-        ReasonFilePath  = ReasonFilePath,
-        LoginId         = LoginId,
-        Password        = Password,
-        RwtLoginId      = RwtLoginId,
-        RwtPassword     = RwtPassword,
+        DbSaveDirectory      = DbSaveDirectory,
+        FCostDbSaveDirectory = FCostDbSaveDirectory,
+        RoutingFilePath      = RoutingFilePath,
+        ReasonFilePath       = ReasonFilePath,
+        LoginId              = LoginId,
+        Password             = Password,
+        RwtLoginId           = RwtLoginId,
+        RwtPassword          = RwtPassword,
     };
 
     public void ApplySnapshot(NgRateSettingsSnapshot snap)
     {
-        SetSetting(KeyDbSaveDirectory, snap.DbSaveDirectory.Trim());
-        SetSetting(KeyRoutingFilePath, snap.RoutingFilePath.Trim());
-        SetSetting(KeyReasonFilePath,  snap.ReasonFilePath.Trim());
-        SetSetting(KeyLoginId,         snap.LoginId.Trim());
-        SetSetting(KeyPassword,        snap.Password);
-        SetSetting(KeyRwtLoginId,      snap.RwtLoginId.Trim());
-        SetSetting(KeyRwtPassword,     snap.RwtPassword);
+        SetSetting(KeyDbSaveDirectory,       snap.DbSaveDirectory.Trim());
+        SetSetting(KeyFCostDbSaveDirectory,  snap.FCostDbSaveDirectory.Trim());
+        SetSetting(KeyRoutingFilePath,       snap.RoutingFilePath.Trim());
+        SetSetting(KeyReasonFilePath,        snap.ReasonFilePath.Trim());
+        SetSetting(KeyLoginId,               snap.LoginId.Trim());
+        SetSetting(KeyPassword,              snap.Password);
+        SetSetting(KeyRwtLoginId,            snap.RwtLoginId.Trim());
+        SetSetting(KeyRwtPassword,           snap.RwtPassword);
     }
 
     // ── Private ──────────────────────────────────────────────────────────────────
@@ -883,11 +890,12 @@ public sealed class ReasonRow
 /// <see cref="NgRateSettingsService.GetSnapshot"/> (sourced from AppPathsService).</summary>
 public sealed class NgRateSettingsSnapshot
 {
-    public string DbSaveDirectory { get; set; } = string.Empty;
-    public string RoutingFilePath { get; set; } = string.Empty;
-    public string ReasonFilePath  { get; set; } = string.Empty;
-    public string LoginId         { get; set; } = string.Empty;
-    public string Password        { get; set; } = string.Empty;
-    public string RwtLoginId      { get; set; } = string.Empty;
-    public string RwtPassword     { get; set; } = string.Empty;
+    public string DbSaveDirectory      { get; set; } = string.Empty;
+    public string FCostDbSaveDirectory { get; set; } = string.Empty;
+    public string RoutingFilePath      { get; set; } = string.Empty;
+    public string ReasonFilePath       { get; set; } = string.Empty;
+    public string LoginId              { get; set; } = string.Empty;
+    public string Password             { get; set; } = string.Empty;
+    public string RwtLoginId           { get; set; } = string.Empty;
+    public string RwtPassword          { get; set; } = string.Empty;
 }

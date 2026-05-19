@@ -10,15 +10,16 @@
       "args": [],
       "cwd": "${workspaceFolder}/JinoSupporter.Web",
       "stopAtEntry": false,
-      "console": "integratedTerminal",
+      "console": "externalTerminal",
       "justMyCode": false,
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "http://localhost:5050"
+        "ASPNETCORE_URLS": "http://0.0.0.0:5050"
       },
       "serverReadyAction": {
         "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+        "pattern": "\\bNow listening on:\\s+https?://(?:\\[[^\\]]+\\]|[^:]+):(\\d+)",
+        "uriFormat": "http://10.6.4.54:%s"
       },
       "exceptionOptions": [
         {

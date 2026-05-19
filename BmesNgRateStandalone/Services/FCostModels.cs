@@ -17,6 +17,7 @@ public sealed class FCostRow
     public long   Id        { get; set; }
     public string FetchedAt { get; set; } = string.Empty;
     public string QueryDate { get; set; } = string.Empty;
+    public string RawJson   { get; set; } = string.Empty;
 
     // Display-side metadata (suffix _TX in the BMES JSON).
     public string FaccoTx { get; set; } = string.Empty;
@@ -61,13 +62,23 @@ public sealed class FCostRow
     public double Col0013 { get; set; }
     public double Col0014 { get; set; }
 
-    public double GetCol(int index) => index switch
+    public double[]? Values { get; set; }
+
+    public int ValueCount => Values?.Length ?? 14;
+
+    public double GetCol(int index)
     {
-        1 => Col0001, 2 => Col0002, 3 => Col0003, 4 => Col0004, 5 => Col0005,
-        6 => Col0006, 7 => Col0007, 8 => Col0008, 9 => Col0009, 10 => Col0010,
-        11 => Col0011, 12 => Col0012, 13 => Col0013, 14 => Col0014,
-        _ => 0,
-    };
+        if (Values is { Length: > 0 })
+            return index >= 1 && index <= Values.Length ? Values[index - 1] : 0;
+
+        return index switch
+        {
+            1 => Col0001, 2 => Col0002, 3 => Col0003, 4 => Col0004, 5 => Col0005,
+            6 => Col0006, 7 => Col0007, 8 => Col0008, 9 => Col0009, 10 => Col0010,
+            11 => Col0011, 12 => Col0012, 13 => Col0013, 14 => Col0014,
+            _ => 0,
+        };
+    }
 
     /// <summary>User-requested key for SubGroup mapping: <c>MatnrTx + "_" + ModNoTx</c>.
     /// Empty when either side is blank (e.g., GN total rows).</summary>
@@ -119,6 +130,31 @@ public enum FCostPeriodKind
     Month,
 }
 
+public sealed class FCostRawBackfillResult
+{
+    public string   DbPath        { get; set; } = string.Empty;
+    public DateTime StartDate     { get; set; }
+    public DateTime EndDate       { get; set; }
+    public int      AttemptedDays { get; set; }
+    public int      FetchedDays   { get; set; }
+    public int      SkippedDays   { get; set; }
+    public int      FailedDays    { get; set; }
+    public int      TotalRows     { get; set; }
+    public List<string> Failures  { get; set; } = new();
+}
+
+public sealed class FCostRawStatus
+{
+    public string DbPath       { get; set; } = string.Empty;
+    public bool   Exists       { get; set; }
+    public int    PullCount    { get; set; }
+    public int    SuccessCount { get; set; }
+    public int    FailedCount  { get; set; }
+    public int    TotalRows    { get; set; }
+    public string FirstDate    { get; set; } = string.Empty;
+    public string LastDate     { get; set; } = string.Empty;
+}
+
 /// <summary>One Material's three F-Cost rows (Input/F-Cost/Rate) collapsed into a single
 /// view-model so the page can render a single table row per Material — Input across the
 /// 14 period columns on one line, F-Cost on the next, Rate on the third (similar to how
@@ -135,7 +171,8 @@ public sealed class FCostMaterialBlock
     public string Verid        { get; init; } = string.Empty;
 
     /// <summary>Total of the 14-column INAMT line — used for sorting biggest-volume items first.</summary>
-    public double InputTotal => Input?.GetCol(8) ?? 0;   // Col 8 is typically "current week" — good proxy
+    public double InputTotal =>
+        Input?.Values is { Length: > 0 } vals ? vals.Sum() : Input?.GetCol(8) ?? 0;
 
     public FCostRow? Input { get; set; }   // ZType = INAMT
     public FCostRow? Cost  { get; set; }   // ZType = FCOST

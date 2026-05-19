@@ -3,6 +3,7 @@
 @implements IAsyncDisposable
 @inject WebRepository Repo
 @inject ClaudeService  Claude
+@inject AiProviderSettingsService AiProviders
 @inject IJSRuntime     JS
 
 <PageTitle>Data Inference — Ask AI</PageTitle>
@@ -12,7 +13,13 @@
 @if (!Claude.IsConfigured)
 {
     <div class="alert alert-warning mb-0 py-2 small" style="flex-shrink:0; margin:8px 14px 0;">
-        <strong>Claude API key not configured.</strong> Go to Admin → Settings to add your key.
+        <strong>Claude API key not configured.</strong> API Ask is disabled; Codex CLI Ask is still available.
+    </div>
+}
+@if (!AiProviders.CodexCliEnabled)
+{
+    <div class="alert alert-warning mb-0 py-2 small" style="flex-shrink:0; margin:8px 14px 0;">
+        <strong>Codex CLI is disabled.</strong> Turn it on in Admin Settings before using Ask via Codex CLI.
     </div>
 }
 
@@ -22,7 +29,9 @@
     <span class="diask-count">@_reports.Count registered dataset(s)</span>
     <div style="flex:1;"></div>
     <label class="diask-filter-label">Product Type</label>
-    <select class="form-select form-select-sm diask-filter-select" @bind="_productTypeFilter">
+    <select class="form-select form-select-sm diask-filter-select"
+            value="@_productTypeFilter"
+            @onchange="OnProductTypeFilterChanged">
         <option value="">All</option>
         @foreach (var pt in _productTypeOptions)
         {
@@ -67,9 +76,9 @@
             Ask AI
         </button>
         <button class="btn btn-success btn-sm" @onclick="LaunchCliAskAsync"
-                disabled="@(_isBusy || string.IsNullOrWhiteSpace(_question) || FilteredReports.Count == 0)"
-                title="Launch Claude CLI in a new terminal — uses Claude Code subscription. The answer will auto-appear here when CLI finishes.">
-            🖥 Ask via CLI
+                disabled="@(_isBusy || string.IsNullOrWhiteSpace(_question) || !AiProviders.CodexCliEnabled || FilteredReports.Count == 0)"
+                title="Launch Codex CLI in a new terminal. The answer will auto-appear here when CLI finishes.">
+            Ask via Codex CLI
         </button>
         @if (_isWaitingCli)
         {
@@ -90,6 +99,32 @@
             Analyzing relevant content from registered reports…
         </div>
     }
+    else if (_selectedReview is not null)
+    {
+        <div class="diask-review-view">
+            <div class="diask-review-head">
+                <div>
+                    <div class="diask-review-title">@DisplayReviewTitle(_selectedReview)</div>
+                    <div class="diask-review-sub">@_selectedReview.DatasetName</div>
+                </div>
+                <a class="btn btn-outline-secondary btn-sm"
+                   href="@DetailUrl(_selectedReview.DatasetName)" target="_blank" rel="noopener">
+                    Detail
+                </a>
+            </div>
+            <div class="diask-review-meta">
+                @if (!string.IsNullOrWhiteSpace(_selectedReview.ProductType)) { <span>@_selectedReview.ProductType</span> }
+                @if (!string.IsNullOrWhiteSpace(_selectedReview.ReportDate)) { <span>@_selectedReview.ReportDate</span> }
+                @if (!string.IsNullOrWhiteSpace(_selectedReview.ReportType)) { <span>@_selectedReview.ReportType</span> }
+                @if (!string.IsNullOrWhiteSpace(_selectedReview.PrimaryDefect)) { <span>@_selectedReview.PrimaryDefect</span> }
+                <span>@($"{_selectedReview.ResultCount:N0}") result(s)</span>
+                <span>@FormatDate(_selectedReview.AiUpdatedAt)</span>
+            </div>
+            <article class="diask-md">
+                @RenderMarkdown(_selectedReview.GeneratedReportMarkdown)
+            </article>
+        </div>
+    }
     else if (_answer is null)
     {
         <div class="diask-placeholder">
@@ -98,25 +133,83 @@
     }
     else
     {
-        @if (!string.IsNullOrWhiteSpace(_answer.Overall))
+        var displayAnswer = DisplayAnswer;
+        <div class="diask-answer-toolbar">
+            <div class="btn-group btn-group-sm">
+                <button class="btn @AnswerLangButtonClassKo" @onclick="SetAnswerViewKo">한국어</button>
+                <button class="btn @AnswerLangButtonClassEn" @onclick="SetAnswerViewEn">English</button>
+                <button class="btn @AnswerLangButtonClassVi" @onclick="SetAnswerViewVi">Tiếng Việt</button>
+            </div>
+            @if (_isTranslatingAnswer)
+            {
+                <span class="diask-translating"><span class="spinner-border spinner-border-sm me-1"></span>Translating...</span>
+            }
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(displayAnswer.Overall))
         {
+            var actionRows = ParseOverallActionRows(displayAnswer.Overall);
             <div class="diask-answer-card diask-overall">
-                <div class="diask-answer-title">🤖 Overall Answer</div>
-                <div class="diask-answer-body">@_answer.Overall</div>
+                <div class="diask-answer-title">@AskUi("Review Checklist")</div>
+                @if (actionRows.Count > 0)
+                {
+                    <div class="diask-action-note">
+                        @AskUi("What to check first, based on saved AI review records and previous dataset answers.")
+                    </div>
+                    <table class="diask-action-table">
+                        <thead>
+                            <tr>
+                                <th>@AskUi("No")</th>
+                                <th>@AskUi("Check item / factor")</th>
+                                <th>@AskUi("Review count")</th>
+                                <th>@AskUi("Previous result")</th>
+                                <th>@AskUi("Overall judgement")</th>
+                                <th>@AskUi("Next action")</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in actionRows)
+                            {
+                                <tr>
+                                    <td>@row.No</td>
+                                    <td class="diask-action-main">@row.CheckItem</td>
+                                    <td>@row.ReviewCount</td>
+                                    <td>@row.PreviousResult</td>
+                                    <td>@row.OverallJudgement</td>
+                                    <td>@row.NextAction</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="diask-answer-body diask-markdown">@RenderMarkdown(displayAnswer.Overall)</div>
+                }
             </div>
         }
 
-        @if (_answer.PerDataset.Count > 0)
+        @if (displayAnswer.PerDataset.Count > 0)
         {
-            <div class="diask-perds-title">📄 Per-dataset Answers (@_answer.PerDataset.Count)</div>
-            @foreach (var pd in _answer.PerDataset)
+            <div class="diask-perds-headline">
+                <span>@AskUi("Evidence datasets") (@displayAnswer.PerDataset.Count)</span>
+                <button class="btn btn-outline-secondary btn-sm py-0 px-2"
+                        @onclick="() => _showDatasetEvidence = !_showDatasetEvidence">
+                    @(_showDatasetEvidence ? AskUi("Hide") : AskUi("Show"))
+                </button>
+            </div>
+            @if (_showDatasetEvidence)
             {
-                var info = _reports.FirstOrDefault(r => r.DatasetName == pd.DatasetName);
+            @foreach (var pd in displayAnswer.PerDataset)
+            {
+                string datasetName = ResolveDatasetName(pd.DatasetName);
+                var info = _reports.FirstOrDefault(r =>
+                    string.Equals(r.DatasetName, datasetName, StringComparison.OrdinalIgnoreCase));
                 <div class="diask-ds-card">
                     <div class="diask-ds-head">
                         <a class="diask-ds-link"
-                           href="@DetailUrl(pd.DatasetName)" target="_blank" rel="noopener">
-                            🔗 @pd.DatasetName
+                           href="@DetailUrl(datasetName)" target="_blank" rel="noopener">
+                            @datasetName
                         </a>
                         @if (info is not null)
                         {
@@ -131,11 +224,12 @@
                             <span class="diask-ds-meta diask-ds-missing">(deleted or name mismatch)</span>
                         }
                     </div>
-                    <div class="diask-ds-body">@pd.Answer</div>
+                    <div class="diask-ds-body diask-markdown">@RenderMarkdown(pd.Answer)</div>
                 </div>
             }
+            }
         }
-        else if (string.IsNullOrWhiteSpace(_answer.Overall))
+        else if (string.IsNullOrWhiteSpace(displayAnswer.Overall))
         {
             <div class="diask-empty-note">Could not generate an answer — no matching reports found.</div>
         }
@@ -178,6 +272,44 @@
                                 title="Delete"
                                 @onclick="() => DeleteHistory(h.Id)"
                                 @onclick:stopPropagation="true">✕</button>
+                    </div>
+                }
+            </div>
+        }
+        <div class="diask-review-section-head">
+            <span>AI Review Records (@_reviewRecords.Count)</span>
+            <button class="btn btn-outline-secondary btn-sm py-0 px-2"
+                    @onclick="ReloadReviewRecords"
+                    disabled="@_isBusy">Refresh</button>
+        </div>
+        @if (_reviewRecords.Count == 0)
+        {
+            <div class="diask-history-empty">No saved AI review records.</div>
+        }
+        else
+        {
+            <div class="diask-review-list">
+                @foreach (var r in _reviewRecords)
+                {
+                    bool isActive = _selectedReview?.DocumentId == r.DocumentId;
+                    <div class="diask-history-item @(isActive ? "active" : "")"
+                         @onclick="() => LoadReviewRecord(r)">
+                        <div class="diask-history-q">@Truncate(DisplayReviewTitle(r), 92)</div>
+                        <div class="diask-history-meta">
+                            @if (!string.IsNullOrWhiteSpace(r.ProductType))
+                            {
+                                <span>@r.ProductType</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(r.ReportDate))
+                            {
+                                <span> · @r.ReportDate</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(r.PrimaryDefect))
+                            {
+                                <span> · @r.PrimaryDefect</span>
+                            }
+                        </div>
+                        <div class="diask-history-meta">@Truncate(r.DatasetName, 96)</div>
                     </div>
                 }
             </div>
@@ -250,15 +382,42 @@
         background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
         padding: 14px 16px; margin-bottom: 12px;
     }
+    .diask-answer-toolbar {
+        display: flex; align-items: center; gap: 8px; justify-content: flex-end;
+        margin: 0 0 8px;
+    }
+    .diask-translating { font-size: 12px; color: #64748b; display: inline-flex; align-items: center; }
     .diask-overall { border-left: 4px solid #3b82f6; background: #f8fafc; }
     .diask-answer-title {
         font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 8px;
     }
     .diask-answer-body {
-        font-size: 13px; color: #0f172a; line-height: 1.65; white-space: pre-wrap;
+        font-size: 13px; color: #0f172a; line-height: 1.65;
     }
+    .diask-action-note {
+        color: #64748b; font-size: 12px; margin-bottom: 8px;
+    }
+    .diask-action-table {
+        width: 100%; border-collapse: collapse; table-layout: fixed;
+        background: #fff; font-size: 12px;
+    }
+    .diask-action-table th, .diask-action-table td {
+        border: 1px solid #cbd5e1; padding: 7px 8px; vertical-align: top;
+        overflow-wrap: anywhere;
+    }
+    .diask-action-table th {
+        background: #e2e8f0; color: #1e293b; font-weight: 700;
+    }
+    .diask-action-table th:nth-child(1), .diask-action-table td:nth-child(1) { width: 44px; text-align: center; }
+    .diask-action-table th:nth-child(2), .diask-action-table td:nth-child(2) { width: 20%; }
+    .diask-action-table th:nth-child(3), .diask-action-table td:nth-child(3) { width: 12%; }
+    .diask-action-main { font-weight: 700; color: #0f172a; }
     .diask-perds-title {
         font-size: 12px; font-weight: 700; color: #475569; margin: 6px 2px 8px; letter-spacing: .3px;
+    }
+    .diask-perds-headline {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        margin: 6px 2px 8px; color: #475569; font-size: 12px; font-weight: 700;
     }
     .diask-ds-card {
         background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
@@ -274,10 +433,59 @@
     .diask-ds-link:hover { text-decoration: underline; color: #1e3a8a; }
     .diask-ds-meta    { font-size: 11px; color: #64748b; }
     .diask-ds-missing { color: #b45309; font-style: italic; }
-    .diask-ds-body    { padding: 10px 14px; font-size: 13px; color: #0f172a; line-height: 1.6; white-space: pre-wrap; }
+    .diask-ds-body    { padding: 10px 14px; font-size: 13px; color: #0f172a; line-height: 1.6; }
+    .diask-markdown p { margin: 0 0 8px; }
+    .diask-markdown ul { margin: 0 0 10px 18px; padding: 0; }
+    .diask-markdown table {
+        width: 100%; border-collapse: collapse; margin: 8px 0 12px;
+        font-size: 12px; background: #fff;
+    }
+    .diask-markdown th, .diask-markdown td {
+        border: 1px solid #cbd5e1; padding: 6px 8px; vertical-align: top;
+    }
+    .diask-markdown th { background: #e2e8f0; color: #1e293b; font-weight: 700; }
+    .diask-markdown code {
+        background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 4px;
+        padding: 1px 4px; font-size: 12px;
+    }
     .diask-empty-note {
         background: #fef9c3; border: 1px solid #fde68a; color: #78350f;
         padding: 10px 14px; border-radius: 8px; font-size: 12px;
+    }
+    .diask-review-view {
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+        overflow: hidden;
+    }
+    .diask-review-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 12px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+    }
+    .diask-review-title { font-size: 15px; font-weight: 700; color: #0f172a; }
+    .diask-review-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .diask-review-meta {
+        display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 14px;
+        border-bottom: 1px solid #e2e8f0; background: #fff;
+    }
+    .diask-review-meta span {
+        font-size: 11px; color: #475569; background: #f1f5f9;
+        border: 1px solid #e2e8f0; border-radius: 999px; padding: 2px 7px;
+    }
+    .diask-md { padding: 14px 16px; font-size: 13px; color: #0f172a; line-height: 1.6; }
+    .diask-md h2 { font-size: 16px; margin: 14px 0 8px; font-weight: 800; color: #0f172a; }
+    .diask-md h3 { font-size: 14px; margin: 12px 0 6px; font-weight: 700; color: #1e293b; }
+    .diask-md p { margin: 0 0 8px; }
+    .diask-md ul { margin: 0 0 10px 18px; padding: 0; }
+    .diask-md table {
+        width: 100%; border-collapse: collapse; margin: 10px 0 14px;
+        font-size: 12px; table-layout: auto;
+    }
+    .diask-md th, .diask-md td {
+        border: 1px solid #e2e8f0; padding: 6px 8px; vertical-align: top;
+    }
+    .diask-md th { background: #f8fafc; font-weight: 700; color: #334155; }
+    .diask-md code {
+        background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 4px;
+        padding: 1px 4px; font-size: 12px;
     }
 
     /* History panel */
@@ -306,6 +514,12 @@
         color: #94a3b8; font-size: 10px; cursor: pointer; padding: 0;
     }
     .diask-history-del:hover { background: #dc2626; color: #fff; }
+    .diask-review-section-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 9px 12px; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc; font-size: 12px; font-weight: 700; color: #334155;
+    }
+    .diask-review-list { max-height: 45%; overflow-y: auto; padding: 6px; border-bottom: 1px solid #e2e8f0; }
 
     .diask-overlay {
         position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 9000;
@@ -324,13 +538,19 @@
     private string                     _question          = "";
     private string                     _answerLanguage    = "English";
     private ClaudeService.AskAiResult? _answer            = null;
+    private Dictionary<string, ClaudeService.AskAiResult> _answerTranslations = new(StringComparer.OrdinalIgnoreCase);
+    private string                     _answerViewLang    = "en";
+    private bool                       _isTranslatingAnswer;
     private bool                       _isBusy;
     private string                     _status            = "";
     private bool                       _statusError;
 
     private bool                       _showHistory       = false;
+    private bool                       _showDatasetEvidence = false;
     private List<AskAiHistoryRecord>   _history           = [];
+    private List<ModelAnalysisReportRecord> _reviewRecords = [];
     private long?                      _activeHistoryId   = null;
+    private ModelAnalysisReportRecord? _selectedReview    = null;
     private bool                       _showClearConfirm  = false;
 
     // CLI flow
@@ -348,10 +568,134 @@
         ? _reports
         : _reports.Where(r => string.Equals(r.ProductType, _productTypeFilter, StringComparison.OrdinalIgnoreCase)).ToList();
 
+    private ClaudeService.AskAiResult DisplayAnswer
+        => _answerTranslations.TryGetValue(_answerViewLang, out var translated)
+            ? translated
+            : (_answer ?? new ClaudeService.AskAiResult());
+
+    private string AnswerLangButtonClass(string lang)
+        => string.Equals(_answerViewLang, lang, StringComparison.OrdinalIgnoreCase)
+            ? "btn-primary"
+            : "btn-outline-primary";
+
+    private string AnswerLangButtonClassKo => AnswerLangButtonClass("ko");
+    private string AnswerLangButtonClassEn => AnswerLangButtonClass("en");
+    private string AnswerLangButtonClassVi => AnswerLangButtonClass("vi");
+
+    private void SetAnswerViewLang(string lang)
+    {
+        _answerViewLang = lang;
+    }
+
+    private void SetAnswerViewKo() => SetAnswerViewLang("ko");
+    private void SetAnswerViewEn() => SetAnswerViewLang("en");
+    private void SetAnswerViewVi() => SetAnswerViewLang("vi");
+
+    private string AskUi(string key)
+    {
+        string lang = _answerViewLang;
+        return (lang, key) switch
+        {
+            ("ko", "Review Checklist") => "검토 체크리스트",
+            ("ko", "What to check first, based on saved AI review records and previous dataset answers.") => "저장된 AI 리뷰와 이전 답변 기준으로 먼저 확인할 항목입니다.",
+            ("ko", "No") => "No",
+            ("ko", "Check item / factor") => "확인/변경 항목",
+            ("ko", "Review count") => "검토 수",
+            ("ko", "Previous result") => "이전 결과",
+            ("ko", "Overall judgement") => "종합 판단",
+            ("ko", "Next action") => "다음 조치",
+            ("ko", "Evidence datasets") => "근거 데이터셋",
+            ("ko", "Hide") => "숨김",
+            ("ko", "Show") => "보기",
+
+            ("vi", "Review Checklist") => "Danh sách kiểm tra",
+            ("vi", "What to check first, based on saved AI review records and previous dataset answers.") => "Các mục cần kiểm tra trước dựa trên bản ghi AI và câu trả lời đã lưu.",
+            ("vi", "No") => "No",
+            ("vi", "Check item / factor") => "Mục/yếu tố kiểm tra",
+            ("vi", "Review count") => "Số lần xem xét",
+            ("vi", "Previous result") => "Kết quả trước",
+            ("vi", "Overall judgement") => "Đánh giá tổng thể",
+            ("vi", "Next action") => "Hành động tiếp theo",
+            ("vi", "Evidence datasets") => "Dataset bằng chứng",
+            ("vi", "Hide") => "Ẩn",
+            ("vi", "Show") => "Hiện",
+            _ => key,
+        };
+    }
+
+    private static string LangCodeFromAnswerLanguage(string language)
+        => (language ?? "").Trim().ToLowerInvariant() switch
+        {
+            "korean" => "ko",
+            "vietnamese" => "vi",
+            _ => "en",
+        };
+
+    private static string TargetLanguageFromCode(string code)
+        => code switch
+        {
+            "ko" => "Korean",
+            "vi" => "Vietnamese",
+            _ => "English",
+        };
+
+    private static string SerializeAskTranslations(
+        Dictionary<string, ClaudeService.AskAiResult> translations)
+        => System.Text.Json.JsonSerializer.Serialize(translations);
+
+    private static Dictionary<string, ClaudeService.AskAiResult> ParseAskTranslations(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return new(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, ClaudeService.AskAiResult>>(
+                       json,
+                       new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                   ?? new(StringComparer.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return new(StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    private async Task<Dictionary<string, ClaudeService.AskAiResult>> BuildAskTranslationsAsync(
+        ClaudeService.AskAiResult source,
+        string sourceLanguage)
+    {
+        var result = new Dictionary<string, ClaudeService.AskAiResult>(StringComparer.OrdinalIgnoreCase);
+        string sourceCode = LangCodeFromAnswerLanguage(sourceLanguage);
+        result[sourceCode] = source;
+
+        var tasks = new List<Task<(string Code, ClaudeService.AskAiResult Result)>>();
+        foreach (string code in new[] { "ko", "en", "vi" })
+        {
+            if (result.ContainsKey(code)) continue;
+            string target = TargetLanguageFromCode(code);
+            tasks.Add(Task.Run(async () =>
+            {
+                var translated = await Claude.TranslateAskAiResultAsync(source, target);
+                return (code, translated);
+            }));
+        }
+
+        foreach (var task in tasks)
+        {
+            var translated = await task;
+            result[translated.Code] = translated.Result;
+        }
+
+        foreach (string code in new[] { "ko", "en", "vi" })
+            if (!result.ContainsKey(code)) result[code] = source;
+
+        return result;
+    }
+
     protected override void OnInitialized()
     {
         _reports = Repo.GetAllRawReports();
         _history = Repo.GetAskAiHistory();
+        ReloadReviewRecords();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -362,7 +706,23 @@
     private static string DetailUrl(string datasetName)
         => $"/data-inference/detail?name={Uri.EscapeDataString(datasetName)}";
 
-    private void ToggleHistory() => _showHistory = !_showHistory;
+    private void ToggleHistory()
+    {
+        _showHistory = !_showHistory;
+        if (_showHistory) ReloadReviewRecords();
+    }
+
+    private void OnProductTypeFilterChanged(ChangeEventArgs e)
+    {
+        _productTypeFilter = e.Value?.ToString() ?? "";
+        _selectedReview = null;
+        ReloadReviewRecords();
+    }
+
+    private void ReloadReviewRecords()
+    {
+        _reviewRecords = Repo.GetAskAiReviewRecords(_productTypeFilter);
+    }
 
     private async Task AskAsync()
     {
@@ -375,6 +735,10 @@
         _isBusy = true;
         _status = "";
         _answer = null;
+        _answerTranslations.Clear();
+        _answerViewLang = LangCodeFromAnswerLanguage(_answerLanguage);
+        _showDatasetEvidence = false;
+        _selectedReview = null;
         _activeHistoryId = null;
         StateHasChanged();
 
@@ -388,15 +752,37 @@
             }
 
             _answer = await Claude.AskAiAsync(_question.Trim(), context, _answerLanguage);
+            _answerTranslations[_answerViewLang] = _answer;
+            _isTranslatingAnswer = true;
+            SetStatus("Answer generated. Translating to Korean / English / Vietnamese...", false);
+            StateHasChanged();
+
+            string? translationWarning = null;
+            try
+            {
+                _answerTranslations = await BuildAskTranslationsAsync(_answer, _answerLanguage);
+            }
+            catch (Exception tex)
+            {
+                translationWarning = tex.Message;
+                _answerTranslations[_answerViewLang] = _answer;
+            }
+            finally
+            {
+                _isTranslatingAnswer = false;
+            }
 
             // Persist to DB
             string perDsJson = System.Text.Json.JsonSerializer.Serialize(_answer.PerDataset);
+            string translationsJson = SerializeAskTranslations(_answerTranslations);
             long id = Repo.SaveAskAiHistory(
-                _question.Trim(), _productTypeFilter, _answer.Overall, perDsJson);
+                _question.Trim(), _productTypeFilter, _answer.Overall, perDsJson, translationsJson);
             _activeHistoryId = id;
             _history = Repo.GetAskAiHistory();
 
-            SetStatus($"Answer generated — {_answer.PerDataset.Count} per-dataset answer(s)", false);
+            SetStatus(translationWarning is null
+                ? $"Answer generated and translations saved - {_answer.PerDataset.Count} per-dataset answer(s)"
+                : $"Answer generated, but translation failed: {translationWarning}", translationWarning is not null);
         }
         catch (Exception ex)
         {
@@ -413,6 +799,11 @@
         if (string.IsNullOrWhiteSpace(_question))
         {
             SetStatus("Please enter a question.", true);
+            return;
+        }
+        if (!AiProviders.CodexCliEnabled)
+        {
+            SetStatus(AiProviders.ProviderDisabledMessage("Codex CLI"), true);
             return;
         }
 
@@ -445,23 +836,30 @@
         string prompt =
             "Read CLI_ASK_AI.md and execute it. " +
             "Use the current AI_EXCEL_PROC schema first: AiDocuments, AiResults, AiNgBreakdowns, AiConclusions, AiTroubleshootingHints, AiExtractionLogs. " +
+            "When useful, inspect AiDocuments.RawJson as the raw AI analysis payload for each review result, then synthesize across matching datasets to answer the user's question. " +
             "Use workbook-derived merged-cell handling when available; otherwise treat stored excel_paste metadata tags like {merged=A1:A4} or 〔merged=A1:A4〕 as evidence that the following value came from the merged range. " +
             "Treat blank Date/Model/Type cells below a visible value as merged-cell continuations; carry the visible value forward before pairing rows. " +
             "Do not treat percentage-only subrows as standalone result rows. " +
             "When answering, compare NG rates against same-event Normal/Baseline/Before/Old/OK using (test/base-1)*100. " +
             "If no baseline exists, do not claim improvement/worsening; use ng_without_baseline ranking. " +
             "Use dimension/reliability/DOE/image-dependent report types when appropriate. " +
+            "Make Overall a Markdown table only. Each row must be a candidate check/action item that can reduce or explain the user's target problem. The first content column must be the thing to review or change, such as JIG condition, press condition, voltage, lot/mold/line, material, process parameter, inspection method, or retest condition. Do not put the defect/problem name itself as the reviewed item. Columns: No | Check item / factor | Review count | Previous result | Overall judgement | Next action. Do not write a prose summary. " +
+            "Also translate the final Ask AI result into Korean, English, and Vietnamese. Save TranslationsJson in AskAiHistory as a JSON object with keys ko, en, vi; each value must use the same schema as the main answer: overall and perDataset. Keep datasetName values unchanged. If the AskAiHistory table is missing TranslationsJson, add it with ALTER TABLE AskAiHistory ADD COLUMN TranslationsJson TEXT NOT NULL DEFAULT '{}'. " +
             "Persist the final answer to AskAiHistory.";
-        if (!TryLaunchClaudeAskTerminal(workDir, prompt, "Ask AI (Claude CLI)"))
+        if (!TryLaunchCodexAskTerminal(workDir, prompt, "Ask AI (Codex CLI)"))
         {
-            SetStatus("Failed to launch Claude CLI.", true);
+            SetStatus("Failed to launch Codex CLI.", true);
             return;
         }
 
         _isBusy        = true;
         _isWaitingCli  = true;
         _answer        = null;
-        SetStatus("Claude CLI launched; waiting for answer to land in AskAiHistory.", false);
+        _answerTranslations.Clear();
+        _answerViewLang = LangCodeFromAnswerLanguage(_answerLanguage);
+        _showDatasetEvidence = false;
+        _selectedReview = null;
+        SetStatus("Codex CLI launched; waiting for answer to land in AskAiHistory.", false);
         StateHasChanged();
 
         _cliCts?.Cancel(); _cliCts?.Dispose();
@@ -534,16 +932,16 @@
         return AppContext.BaseDirectory;
     }
 
-    private static bool TryLaunchClaudeAskTerminal(string workDir, string prompt, string title)
+    private static bool TryLaunchCodexAskTerminal(string workDir, string prompt, string title)
     {
         string launchId = Guid.NewGuid().ToString("N")[..12];
-        string promptPath = Path.Combine(workDir, $"_ask_prompt_{launchId}.txt");
-        string scriptPath = Path.Combine(workDir, $"_ask_launch_{launchId}.ps1");
+        string promptPath = Path.Combine(workDir, $"_ask_prompt_codex_{launchId}.txt");
+        string scriptPath = Path.Combine(workDir, $"_ask_launch_codex_{launchId}.ps1");
 
         try
         {
             File.WriteAllText(promptPath, prompt, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-            File.WriteAllText(scriptPath, BuildClaudeAskLauncherScript(workDir, promptPath, scriptPath, title),
+            File.WriteAllText(scriptPath, BuildCodexAskLauncherScript(workDir, promptPath, scriptPath, title),
                 new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }
         catch
@@ -568,7 +966,9 @@
             wt.ArgumentList.Add("Bypass");
             wt.ArgumentList.Add("-File");
             wt.ArgumentList.Add(scriptPath);
-            return System.Diagnostics.Process.Start(wt) is not null;
+            var proc = System.Diagnostics.Process.Start(wt);
+            if (proc is not null) ChildProcessJob.Assign(proc);
+            return proc is not null;
         }
         catch { }
 
@@ -589,12 +989,14 @@
             psi.ArgumentList.Add("Bypass");
             psi.ArgumentList.Add("-File");
             psi.ArgumentList.Add(scriptPath);
-            return System.Diagnostics.Process.Start(psi) is not null;
+            var proc = System.Diagnostics.Process.Start(psi);
+            if (proc is not null) ChildProcessJob.Assign(proc);
+            return proc is not null;
         }
         catch { return false; }
     }
 
-    private static string BuildClaudeAskLauncherScript(string workDir, string promptPath, string scriptPath, string title)
+    private static string BuildCodexAskLauncherScript(string workDir, string promptPath, string scriptPath, string title)
     {
         static string Q(string value) => "'" + (value ?? "").Replace("'", "''") + "'";
         return string.Join(Environment.NewLine, new[]
@@ -608,10 +1010,10 @@
             $"$promptPath = {Q(promptPath)}",
             $"$scriptPath = {Q(scriptPath)}",
             "$prompt = Get-Content -LiteralPath $promptPath -Raw -Encoding UTF8",
-            "& claude $prompt",
+            $"$prompt | & codex exec -c 'model_reasoning_effort=\"xhigh\"' --cd {Q(workDir)} --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check -",
             "$exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }",
             "if ($exitCode -ne 0) {",
-            "    Write-Host ('Claude exited with code ' + $exitCode + '.') -ForegroundColor Yellow",
+            "    Write-Host ('Codex exited with code ' + $exitCode + '.') -ForegroundColor Yellow",
             "}",
             "Remove-Item -LiteralPath $promptPath -Force -ErrorAction SilentlyContinue",
             "Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue",
@@ -625,6 +1027,7 @@
         _question          = h.Question;
         _productTypeFilter = h.ProductTypeFilter;
         _activeHistoryId   = h.Id;
+        _selectedReview    = null;
 
         List<ClaudeService.AskAiPerDataset> per = [];
         try
@@ -640,7 +1043,36 @@
             Overall    = h.Overall,
             PerDataset = per
         };
-        SetStatus($"History loaded — {FormatDate(h.CreatedAt)}", false);
+        _answerTranslations = ParseAskTranslations(h.TranslationsJson);
+        if (_answerTranslations.Count == 0)
+        {
+            _answerTranslations["en"] = _answer;
+        }
+        else if (!_answerTranslations.Values.Any(v =>
+            string.Equals(v.Overall, _answer.Overall, StringComparison.Ordinal)
+            && v.PerDataset.Count == _answer.PerDataset.Count))
+        {
+            _answerTranslations.TryAdd("en", _answer);
+        }
+
+        string preferredLang = LangCodeFromAnswerLanguage(_answerLanguage);
+        _answerViewLang = _answerTranslations.ContainsKey(preferredLang)
+            ? preferredLang
+            : (_answerTranslations.ContainsKey("ko") ? "ko"
+                : (_answerTranslations.ContainsKey("en") ? "en" : "vi"));
+        _showDatasetEvidence = false;
+        SetStatus($"History loaded - {FormatDate(h.CreatedAt)}", false);
+    }
+
+    private void LoadReviewRecord(ModelAnalysisReportRecord record)
+    {
+        if (!record.HasAiReport) return;
+        _selectedReview = record;
+        _answer = null;
+        _answerTranslations.Clear();
+        _showDatasetEvidence = false;
+        _activeHistoryId = null;
+        SetStatus($"AI review loaded - {record.DatasetName}", false);
     }
 
     private void DeleteHistory(long id)
@@ -651,6 +1083,8 @@
         {
             _activeHistoryId = null;
             _answer = null;
+            _answerTranslations.Clear();
+            _showDatasetEvidence = false;
         }
     }
 
@@ -662,6 +1096,8 @@
         _history = [];
         _activeHistoryId = null;
         _answer = null;
+        _answerTranslations.Clear();
+        _showDatasetEvidence = false;
         _showClearConfirm = false;
     }
 
@@ -1338,11 +1774,44 @@
     {
         _question = "";
         _answer   = null;
+        _answerTranslations.Clear();
+        _showDatasetEvidence = false;
+        _selectedReview = null;
         _status   = "";
         _activeHistoryId = null;
     }
 
     private void SetStatus(string msg, bool err) { _status = msg; _statusError = err; }
+
+    private string ResolveDatasetName(string raw)
+    {
+        string text = (raw ?? "").Trim();
+        int marker = text.IndexOf("Dataset:", StringComparison.OrdinalIgnoreCase);
+        if (marker >= 0) text = text[(marker + "Dataset:".Length)..].Trim();
+
+        if (text.StartsWith("[", StringComparison.Ordinal))
+        {
+            int close = text.IndexOf(']');
+            if (close >= 0 && close + 1 < text.Length) text = text[(close + 1)..].Trim();
+        }
+
+        string? exact = _reports
+            .Select(r => r.DatasetName)
+            .FirstOrDefault(n => string.Equals(n, text, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrWhiteSpace(exact)) return exact;
+
+        string? suffix = _reports
+            .Select(r => r.DatasetName)
+            .FirstOrDefault(n => text.EndsWith(n, StringComparison.OrdinalIgnoreCase));
+        return string.IsNullOrWhiteSpace(suffix) ? text : suffix;
+    }
+
+    private static string DisplayReviewTitle(ModelAnalysisReportRecord r)
+    {
+        if (!string.IsNullOrWhiteSpace(r.Title)) return r.Title;
+        if (!string.IsNullOrWhiteSpace(r.PrimaryDefect)) return r.PrimaryDefect;
+        return r.DatasetName;
+    }
 
     private static string Truncate(string s, int len)
         => (s?.Length ?? 0) <= len ? (s ?? "") : s![..len] + "…";
@@ -1353,6 +1822,142 @@
             return dt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
         return iso;
     }
+
+    private sealed record AskActionRow(
+        string No,
+        string CheckItem,
+        string ReviewCount,
+        string PreviousResult,
+        string OverallJudgement,
+        string NextAction);
+
+    private static List<AskActionRow> ParseOverallActionRows(string? markdown)
+    {
+        string[] lines = (markdown ?? "").Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        for (int i = 0; i < lines.Length - 1; i++)
+        {
+            string headerLine = lines[i].Trim();
+            string separator = lines[i + 1].Trim();
+            if (!headerLine.StartsWith('|') || !headerLine.EndsWith('|')) continue;
+            if (!separator.StartsWith('|') || !separator.Contains("---", StringComparison.Ordinal)) continue;
+
+            var parsed = new List<AskActionRow>();
+            for (int j = i + 2; j < lines.Length; j++)
+            {
+                string row = lines[j].Trim();
+                if (!row.StartsWith('|') || !row.EndsWith('|')) break;
+                if (IsMarkdownTableSeparator(row)) continue;
+
+                List<string> cells = SplitMarkdownTableRow(row);
+                while (cells.Count < 6) cells.Add("");
+                if (string.IsNullOrWhiteSpace(cells[1]) && string.IsNullOrWhiteSpace(cells[3])) continue;
+
+                parsed.Add(new AskActionRow(
+                    cells[0],
+                    cells[1],
+                    cells[2],
+                    cells[3],
+                    cells[4],
+                    cells[5]));
+            }
+
+            if (parsed.Count > 0) return parsed;
+        }
+
+        return [];
+    }
+
+    private static bool IsMarkdownTableSeparator(string row)
+        => SplitMarkdownTableRow(row).All(cell =>
+            cell.Length > 0 && cell.All(ch => ch == '-' || ch == ':' || char.IsWhiteSpace(ch)));
+
+    private static Microsoft.AspNetCore.Components.MarkupString RenderMarkdown(string? markdown)
+    {
+        string text = (markdown ?? "").Replace("\r\n", "\n").Replace('\r', '\n');
+        var lines = text.Split('\n');
+        var sb = new System.Text.StringBuilder();
+        bool inList = false;
+
+        static string Enc(string value) => System.Net.WebUtility.HtmlEncode(value ?? "");
+        static string Inline(string value)
+        {
+            string html = Enc(value);
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"\*\*(.+?)\*\*", "<strong>$1</strong>");
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"`([^`]+)`", "<code>$1</code>");
+            return html;
+        }
+
+        void CloseList()
+        {
+            if (!inList) return;
+            sb.AppendLine("</ul>");
+            inList = false;
+        }
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string trim = lines[i].Trim();
+            if (string.IsNullOrWhiteSpace(trim))
+            {
+                CloseList();
+                continue;
+            }
+
+            if (trim.StartsWith('|') && trim.EndsWith('|')
+                && i + 1 < lines.Length
+                && lines[i + 1].Trim().StartsWith('|')
+                && lines[i + 1].Contains("---", StringComparison.Ordinal))
+            {
+                CloseList();
+                var headers = SplitMarkdownTableRow(trim);
+                sb.AppendLine("<table><thead><tr>");
+                foreach (string h in headers) sb.Append("<th>").Append(Inline(h)).AppendLine("</th>");
+                sb.AppendLine("</tr></thead><tbody>");
+                i += 2;
+                for (; i < lines.Length; i++)
+                {
+                    string row = lines[i].Trim();
+                    if (!row.StartsWith('|') || !row.EndsWith('|')) { i--; break; }
+                    sb.AppendLine("<tr>");
+                    foreach (string cell in SplitMarkdownTableRow(row)) sb.Append("<td>").Append(Inline(cell)).AppendLine("</td>");
+                    sb.AppendLine("</tr>");
+                }
+                sb.AppendLine("</tbody></table>");
+                continue;
+            }
+
+            if (trim.StartsWith("### ", StringComparison.Ordinal))
+            {
+                CloseList();
+                sb.Append("<h3>").Append(Inline(trim[4..].Trim())).AppendLine("</h3>");
+                continue;
+            }
+            if (trim.StartsWith("## ", StringComparison.Ordinal))
+            {
+                CloseList();
+                sb.Append("<h2>").Append(Inline(trim[3..].Trim())).AppendLine("</h2>");
+                continue;
+            }
+            if (trim.StartsWith("- ", StringComparison.Ordinal))
+            {
+                if (!inList)
+                {
+                    sb.AppendLine("<ul>");
+                    inList = true;
+                }
+                sb.Append("<li>").Append(Inline(trim[2..].Trim())).AppendLine("</li>");
+                continue;
+            }
+
+            CloseList();
+            sb.Append("<p>").Append(Inline(trim)).AppendLine("</p>");
+        }
+        CloseList();
+        return new Microsoft.AspNetCore.Components.MarkupString(sb.ToString());
+    }
+
+    private static List<string> SplitMarkdownTableRow(string row)
+        => row.Trim().Trim('|').Split('|').Select(x => x.Trim()).ToList();
 
     public async ValueTask DisposeAsync()
     {

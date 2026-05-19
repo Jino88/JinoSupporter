@@ -22,6 +22,15 @@ public sealed class AppPathsConfig
     // <DestDir>/drm_clean/<name>_clean.xlsx.
     public string TestExcelConverterSourceDir { get; set; } = string.Empty;
     public string TestExcelConverterDestDir   { get; set; } = string.Empty;
+
+    public string AdminDbQueryServer { get; set; } = string.Empty;
+    public int AdminDbQueryPort { get; set; } = 1433;
+    public string AdminDbQueryDatabase { get; set; } = string.Empty;
+    public string AdminDbQueryUserId { get; set; } = string.Empty;
+    public string AdminDbQueryPassword { get; set; } = string.Empty;
+    public int AdminDbQueryTimeoutSeconds { get; set; } = 15;
+    public bool AdminDbQueryEncrypt { get; set; } = true;
+    public bool AdminDbQueryTrustServerCertificate { get; set; } = true;
 }
 
 public sealed class AppPathsService
@@ -81,6 +90,15 @@ public sealed class AppPathsService
             // `drm_clean` sub-folder so they don't shadow the originals.
             TestExcelConverterSourceDir = string.Empty,
             TestExcelConverterDestDir   = string.Empty,
+
+            AdminDbQueryServer = string.Empty,
+            AdminDbQueryPort = 1433,
+            AdminDbQueryDatabase = "master",
+            AdminDbQueryUserId = string.Empty,
+            AdminDbQueryPassword = string.Empty,
+            AdminDbQueryTimeoutSeconds = 15,
+            AdminDbQueryEncrypt = true,
+            AdminDbQueryTrustServerCertificate = true,
         };
     }
 
@@ -113,18 +131,37 @@ public sealed class AppPathsService
 
     /// <summary>Returns a copy where each blank field in <paramref name="user"/> is replaced
     /// with the corresponding value from <paramref name="defaults"/>.</summary>
-    private static AppPathsConfig Merge(AppPathsConfig defaults, AppPathsConfig user) => new()
+    private static AppPathsConfig Merge(AppPathsConfig defaults, AppPathsConfig user)
     {
-        MainDbPath                = Pick(user.MainDbPath,                defaults.MainDbPath),
-        ScheduleDbPath            = Pick(user.ScheduleDbPath,            defaults.ScheduleDbPath),
-        NgRateDbSaveDirectory     = Pick(user.NgRateDbSaveDirectory,     defaults.NgRateDbSaveDirectory),
-        NgRateRoutingFilePath     = Pick(user.NgRateRoutingFilePath,     defaults.NgRateRoutingFilePath),
-        NgRateReasonFilePath      = Pick(user.NgRateReasonFilePath,      defaults.NgRateReasonFilePath),
-        NgRateSettingsDbDirectory = Pick(user.NgRateSettingsDbDirectory, defaults.NgRateSettingsDbDirectory),
-        ModelBmesJsonFolder       = Pick(user.ModelBmesJsonFolder,       defaults.ModelBmesJsonFolder),
-        TestExcelConverterSourceDir = Pick(user.TestExcelConverterSourceDir, defaults.TestExcelConverterSourceDir),
-        TestExcelConverterDestDir   = Pick(user.TestExcelConverterDestDir,   defaults.TestExcelConverterDestDir),
-    };
+        bool hasSavedAdminDbQuery = !string.IsNullOrWhiteSpace(user.AdminDbQueryServer)
+            || !string.IsNullOrWhiteSpace(user.AdminDbQueryUserId)
+            || !string.IsNullOrWhiteSpace(user.AdminDbQueryPassword);
+
+        return new AppPathsConfig
+        {
+            MainDbPath                = Pick(user.MainDbPath,                defaults.MainDbPath),
+            ScheduleDbPath            = Pick(user.ScheduleDbPath,            defaults.ScheduleDbPath),
+            NgRateDbSaveDirectory     = Pick(user.NgRateDbSaveDirectory,     defaults.NgRateDbSaveDirectory),
+            NgRateRoutingFilePath     = Pick(user.NgRateRoutingFilePath,     defaults.NgRateRoutingFilePath),
+            NgRateReasonFilePath      = Pick(user.NgRateReasonFilePath,      defaults.NgRateReasonFilePath),
+            NgRateSettingsDbDirectory = Pick(user.NgRateSettingsDbDirectory, defaults.NgRateSettingsDbDirectory),
+            ModelBmesJsonFolder       = Pick(user.ModelBmesJsonFolder,       defaults.ModelBmesJsonFolder),
+            TestExcelConverterSourceDir = Pick(user.TestExcelConverterSourceDir, defaults.TestExcelConverterSourceDir),
+            TestExcelConverterDestDir   = Pick(user.TestExcelConverterDestDir,   defaults.TestExcelConverterDestDir),
+            AdminDbQueryServer = Pick(user.AdminDbQueryServer, defaults.AdminDbQueryServer),
+            AdminDbQueryPort = user.AdminDbQueryPort > 0 ? user.AdminDbQueryPort : defaults.AdminDbQueryPort,
+            AdminDbQueryDatabase = Pick(user.AdminDbQueryDatabase, defaults.AdminDbQueryDatabase),
+            AdminDbQueryUserId = Pick(user.AdminDbQueryUserId, defaults.AdminDbQueryUserId),
+            AdminDbQueryPassword = user.AdminDbQueryPassword ?? defaults.AdminDbQueryPassword,
+            AdminDbQueryTimeoutSeconds = user.AdminDbQueryTimeoutSeconds > 0
+                ? user.AdminDbQueryTimeoutSeconds
+                : defaults.AdminDbQueryTimeoutSeconds,
+            AdminDbQueryEncrypt = hasSavedAdminDbQuery ? user.AdminDbQueryEncrypt : defaults.AdminDbQueryEncrypt,
+            AdminDbQueryTrustServerCertificate = hasSavedAdminDbQuery
+                ? user.AdminDbQueryTrustServerCertificate
+                : defaults.AdminDbQueryTrustServerCertificate,
+        };
+    }
 
     private static string Pick(string? user, string fallback) =>
         string.IsNullOrWhiteSpace(user) ? fallback : user.Trim();

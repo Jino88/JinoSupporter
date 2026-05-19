@@ -1,0 +1,527 @@
+@page "/admin/db-query"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin")]
+@using System.Data
+@using Microsoft.Data.SqlClient
+@using Microsoft.Data.Sqlite
+@using System.Text.RegularExpressions
+@implements IDisposable
+@inject AppPathsService AppPaths
+
+<PageTitle>DB Query</PageTitle>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h5 class="fw-bold mb-0">DB Query</h5>
+    <span class="badge bg-secondary" style="font-size:10px;">Admin only</span>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header fw-semibold small">Connection</div>
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-lg-4 col-md-6">
+                <label class="form-label small fw-semibold mb-1">Server</label>
+                <input class="form-control form-control-sm" @bind="_server" placeholder="10.0.0.10 or db.company.local" />
+            </div>
+            <div class="col-lg-2 col-md-3">
+                <label class="form-label small fw-semibold mb-1">Port</label>
+                <input class="form-control form-control-sm" type="number" min="1" max="65535" @bind="_port" />
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label class="form-label small fw-semibold mb-1">Database</label>
+                <input class="form-control form-control-sm" @bind="_database" placeholder="master" />
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label class="form-label small fw-semibold mb-1">User ID</label>
+                <input class="form-control form-control-sm" @bind="_userId" autocomplete="off" />
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <label class="form-label small fw-semibold mb-1">Password</label>
+                <div class="input-group input-group-sm">
+                    <input class="form-control form-control-sm" type="@(_showPassword ? "text" : "password")" @bind="_password" autocomplete="off" />
+                    <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="() => _showPassword = !_showPassword">
+                        @(_showPassword ? "Hide" : "Show")
+                    </button>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label class="form-label small fw-semibold mb-1">Timeout</label>
+                <input class="form-control form-control-sm" type="number" min="1" max="120" @bind="_timeoutSeconds" />
+            </div>
+            <div class="col-lg-5 col-md-12 d-flex align-items-end gap-3">
+                <div class="form-check mb-1">
+                    <input class="form-check-input" id="dbqEncrypt" type="checkbox" @bind="_encrypt" />
+                    <label class="form-check-label small" for="dbqEncrypt">Encrypt</label>
+                </div>
+                <div class="form-check mb-1">
+                    <input class="form-check-input" id="dbqTrust" type="checkbox" @bind="_trustServerCertificate" />
+                    <label class="form-check-label small" for="dbqTrust">Trust server certificate</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 mt-3">
+            <button class="btn btn-outline-primary btn-sm" @onclick="TestConnectionAsync" disabled="@_busy">
+                @if (_busy && _busyAction == "test") { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Test Connection
+            </button>
+            @if (!string.IsNullOrEmpty(_connectionMessage))
+            {
+                <span class="small fw-semibold @(_connectionOk ? "text-success" : "text-danger")">@_connectionMessage</span>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header fw-semibold small">Query</div>
+    <div class="card-body">
+        <textarea class="form-control font-monospace" style="min-height:150px;" @bind="_query"></textarea>
+        <div class="d-flex align-items-center gap-2 flex-wrap mt-3">
+            <button class="btn btn-primary btn-sm" @onclick="RunQueryAsync" disabled="@_busy">
+                @if (_busy && _busyAction == "query") { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Run Query
+            </button>
+            <div class="form-check ms-1">
+                <input class="form-check-input" id="dbqLocalSave" type="checkbox" @bind="_saveToLocalDb" />
+                <label class="form-check-label small fw-semibold" for="dbqLocalSave">Local DB Save</label>
+            </div>
+            @if (_saveToLocalDb)
+            {
+                <input class="form-control form-control-sm font-monospace" style="width:260px;"
+                       @bind="_localTableName" placeholder="Local table name" />
+            }
+            <span class="small text-muted">Result preview is limited to @_maxRows rows.</span>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(_error))
+{
+    <div class="alert alert-danger py-2 small">@_error</div>
+}
+
+@if (!string.IsNullOrEmpty(_resultMessage))
+{
+    <div class="alert alert-success py-2 small">@_resultMessage</div>
+}
+
+@if (_columns.Count > 0)
+{
+    <div class="table-responsive border rounded bg-white" style="max-height:520px;">
+        <table class="table table-sm table-striped table-hover mb-0 align-middle">
+            <thead class="table-light" style="position:sticky; top:0; z-index:1;">
+                <tr>
+                    @foreach (var col in _columns)
+                    {
+                        <th class="small text-nowrap">@col</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in _rows)
+                {
+                    <tr>
+                        @foreach (var cell in row)
+                        {
+                            <td class="small text-nowrap">@cell</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private const int _maxRows = 500;
+
+    private string _server = string.Empty;
+    private int _port = 1433;
+    private string _database = "master";
+    private string _userId = string.Empty;
+    private string _password = string.Empty;
+    private int _timeoutSeconds = 15;
+    private bool _encrypt = true;
+    private bool _trustServerCertificate = true;
+    private bool _showPassword;
+    private bool _saveToLocalDb;
+    private string _localTableName = "ImportedQueryResult";
+
+    private string _query = "SELECT TOP (100) name, database_id, create_date FROM sys.databases ORDER BY name;";
+    private bool _busy;
+    private string _busyAction = string.Empty;
+    private bool _connectionOk;
+    private string _connectionMessage = string.Empty;
+    private string _resultMessage = string.Empty;
+    private string _error = string.Empty;
+    private List<string> _columns = [];
+    private List<List<string>> _rows = [];
+
+    protected override void OnInitialized()
+    {
+        LoadSavedConnection();
+    }
+
+    private async Task TestConnectionAsync()
+    {
+        ClearMessages();
+        _busy = true;
+        _busyAction = "test";
+        try
+        {
+            await using var conn = new SqlConnection(BuildConnectionString());
+            await conn.OpenAsync();
+            SaveConnectionSettings();
+            _connectionOk = true;
+            _connectionMessage = "Connected. Connection saved.";
+        }
+        catch (Exception ex)
+        {
+            _connectionOk = false;
+            _connectionMessage = "Connection failed.";
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+            _busyAction = string.Empty;
+        }
+    }
+
+    private async Task RunQueryAsync()
+    {
+        ClearMessages();
+        _columns = [];
+        _rows = [];
+
+        if (string.IsNullOrWhiteSpace(_query))
+        {
+            _error = "Query is required.";
+            return;
+        }
+        if (!IsReadOnlyQuery(_query))
+        {
+            _error = "Only read-only SELECT/WITH queries are allowed. Server write commands are blocked.";
+            return;
+        }
+
+        _busy = true;
+        _busyAction = "query";
+        try
+        {
+            await using var conn = new SqlConnection(BuildConnectionString());
+            await conn.OpenAsync();
+            SaveConnectionSettings();
+
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = _query;
+            cmd.CommandTimeout = Math.Clamp(_timeoutSeconds, 1, 120);
+
+            await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess);
+            _columns = BuildUniqueColumnNames(reader);
+
+            LocalTableWriter? localWriter = null;
+            if (_saveToLocalDb)
+            {
+                if (_columns.Count == 0)
+                    throw new InvalidOperationException("Local DB Save requires a query result set.");
+                string tableName = SanitizeIdentifier(_localTableName);
+                localWriter = CreateLocalTableWriter(AppPaths.Current.MainDbPath, tableName, _columns);
+                _localTableName = tableName;
+            }
+
+            long totalRows = 0;
+            try
+            {
+                while (await reader.ReadAsync())
+                {
+                    var row = new List<string>(reader.FieldCount);
+                    for (int i = 0; i < reader.FieldCount; i++)
+                        row.Add(await FormatCellAsync(reader, i));
+
+                    if (_rows.Count < _maxRows)
+                        _rows.Add(row);
+
+                    if (localWriter is not null)
+                        localWriter.Insert(row);
+
+                    totalRows++;
+                }
+
+                if (localWriter is not null)
+                    await localWriter.CommitAsync();
+            }
+            finally
+            {
+                if (localWriter is not null)
+                    await localWriter.DisposeAsync();
+            }
+
+            _connectionOk = true;
+            _connectionMessage = "Connected. Connection saved.";
+            _resultMessage = _columns.Count == 0
+                ? $"Query completed. Rows affected: {reader.RecordsAffected:N0}."
+                : _saveToLocalDb
+                    ? $"Loaded preview {_rows.Count:N0} row(s). Saved {totalRows:N0} row(s) to local table [{_localTableName}] in {AppPaths.Current.MainDbPath}."
+                    : $"Loaded {_rows.Count:N0} of {totalRows:N0} row(s).";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+            _busyAction = string.Empty;
+        }
+    }
+
+    private string BuildConnectionString()
+    {
+        if (string.IsNullOrWhiteSpace(_server))
+            throw new InvalidOperationException("Server is required.");
+        if (string.IsNullOrWhiteSpace(_userId))
+            throw new InvalidOperationException("User ID is required.");
+
+        var builder = new SqlConnectionStringBuilder
+        {
+            DataSource = $"{_server.Trim()},{Math.Clamp(_port, 1, 65535)}",
+            InitialCatalog = string.IsNullOrWhiteSpace(_database) ? "master" : _database.Trim(),
+            UserID = _userId.Trim(),
+            Password = _password,
+            ConnectTimeout = Math.Clamp(_timeoutSeconds, 1, 120),
+            Encrypt = _encrypt,
+            TrustServerCertificate = _trustServerCertificate,
+            MultipleActiveResultSets = false,
+            ApplicationName = "JinoSupporter.Web DB Query"
+        };
+
+        return builder.ConnectionString;
+    }
+
+    private void LoadSavedConnection()
+    {
+        var c = AppPaths.Current;
+        _server = c.AdminDbQueryServer;
+        _port = c.AdminDbQueryPort > 0 ? c.AdminDbQueryPort : 1433;
+        _database = string.IsNullOrWhiteSpace(c.AdminDbQueryDatabase) ? "master" : c.AdminDbQueryDatabase;
+        _userId = c.AdminDbQueryUserId;
+        _password = c.AdminDbQueryPassword;
+        _timeoutSeconds = c.AdminDbQueryTimeoutSeconds > 0 ? c.AdminDbQueryTimeoutSeconds : 15;
+        _encrypt = c.AdminDbQueryEncrypt;
+        _trustServerCertificate = c.AdminDbQueryTrustServerCertificate;
+    }
+
+    private void SaveConnectionSettings()
+    {
+        var c = AppPaths.Current;
+        AppPaths.Save(new AppPathsConfig
+        {
+            MainDbPath = c.MainDbPath,
+            ScheduleDbPath = c.ScheduleDbPath,
+            NgRateDbSaveDirectory = c.NgRateDbSaveDirectory,
+            NgRateRoutingFilePath = c.NgRateRoutingFilePath,
+            NgRateReasonFilePath = c.NgRateReasonFilePath,
+            NgRateSettingsDbDirectory = c.NgRateSettingsDbDirectory,
+            ModelBmesJsonFolder = c.ModelBmesJsonFolder,
+            TestExcelConverterSourceDir = c.TestExcelConverterSourceDir,
+            TestExcelConverterDestDir = c.TestExcelConverterDestDir,
+            AdminDbQueryServer = _server.Trim(),
+            AdminDbQueryPort = Math.Clamp(_port, 1, 65535),
+            AdminDbQueryDatabase = string.IsNullOrWhiteSpace(_database) ? "master" : _database.Trim(),
+            AdminDbQueryUserId = _userId.Trim(),
+            AdminDbQueryPassword = _password,
+            AdminDbQueryTimeoutSeconds = Math.Clamp(_timeoutSeconds, 1, 120),
+            AdminDbQueryEncrypt = _encrypt,
+            AdminDbQueryTrustServerCertificate = _trustServerCertificate,
+        });
+    }
+
+    private static List<string> BuildUniqueColumnNames(SqlDataReader reader)
+    {
+        var columns = new List<string>(reader.FieldCount);
+        var seen = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < reader.FieldCount; i++)
+        {
+            string baseName = string.IsNullOrWhiteSpace(reader.GetName(i))
+                ? $"Column{i + 1}"
+                : reader.GetName(i).Trim();
+            string name = baseName;
+            if (seen.TryGetValue(baseName, out int count))
+            {
+                count++;
+                seen[baseName] = count;
+                name = $"{baseName}_{count}";
+            }
+            else
+            {
+                seen[baseName] = 1;
+            }
+            columns.Add(name);
+        }
+        return columns;
+    }
+
+    private static async Task<string> FormatCellAsync(SqlDataReader reader, int ordinal)
+    {
+        if (await reader.IsDBNullAsync(ordinal))
+            return string.Empty;
+
+        object value = reader.GetValue(ordinal);
+        return value switch
+        {
+            DateTime dt => dt.ToString("yyyy-MM-dd HH:mm:ss"),
+            DateTimeOffset dto => dto.ToString("yyyy-MM-dd HH:mm:ss zzz"),
+            byte[] bytes => $"0x{Convert.ToHexString(bytes)}",
+            _ => Convert.ToString(value, System.Globalization.CultureInfo.CurrentCulture) ?? string.Empty
+        };
+    }
+
+    private static bool IsReadOnlyQuery(string sql)
+    {
+        string normalized = Regex.Replace(sql.Trim(), @"\s+", " ");
+        if (normalized.Length == 0) return false;
+        if (!Regex.IsMatch(normalized, @"^(select|with)\b", RegexOptions.IgnoreCase))
+            return false;
+
+        return !Regex.IsMatch(
+            normalized,
+            @"\b(insert|update|delete|merge|exec|execute|alter|drop|truncate|create|grant|revoke|backup|restore|into)\b",
+            RegexOptions.IgnoreCase);
+    }
+
+    private static string SanitizeIdentifier(string raw)
+    {
+        string s = Regex.Replace((raw ?? string.Empty).Trim(), @"[^\p{L}\p{Nd}_]+", "_");
+        s = Regex.Replace(s, "_{2,}", "_").Trim('_');
+        if (string.IsNullOrWhiteSpace(s)) s = "ImportedQueryResult";
+        if (char.IsDigit(s[0])) s = "_" + s;
+        return s.Length > 80 ? s[..80] : s;
+    }
+
+    private static string QuoteSqliteIdentifier(string name) =>
+        "\"" + name.Replace("\"", "\"\"") + "\"";
+
+    private static LocalTableWriter CreateLocalTableWriter(
+        string dbPath,
+        string tableName,
+        IReadOnlyList<string> columns)
+    {
+        if (string.IsNullOrWhiteSpace(dbPath))
+            throw new InvalidOperationException("Local DB path is not configured.");
+
+        string? dir = Path.GetDirectoryName(dbPath);
+        if (!string.IsNullOrWhiteSpace(dir))
+            Directory.CreateDirectory(dir);
+
+        var conn = new SqliteConnection($"Data Source={dbPath}");
+        conn.Open();
+        var tx = conn.BeginTransaction();
+        try
+        {
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = $"DROP TABLE IF EXISTS {QuoteSqliteIdentifier(tableName)};";
+                cmd.ExecuteNonQuery();
+            }
+
+            var safeColumns = BuildUniqueSqliteColumnNames(columns);
+            string colsSql = string.Join(", ", safeColumns.Select(c => $"{QuoteSqliteIdentifier(c)} TEXT"));
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = $"CREATE TABLE {QuoteSqliteIdentifier(tableName)} ({colsSql});";
+                cmd.ExecuteNonQuery();
+            }
+
+            var insert = conn.CreateCommand();
+            insert.Transaction = tx;
+            string names = string.Join(", ", safeColumns.Select(QuoteSqliteIdentifier));
+            string values = string.Join(", ", columns.Select((_, i) => $"@p{i}"));
+            insert.CommandText = $"INSERT INTO {QuoteSqliteIdentifier(tableName)} ({names}) VALUES ({values});";
+            for (int i = 0; i < columns.Count; i++)
+                insert.Parameters.Add(new SqliteParameter($"@p{i}", DbType.String));
+
+            return new LocalTableWriter(conn, tx, insert);
+        }
+        catch
+        {
+            tx.Dispose();
+            conn.Dispose();
+            throw;
+        }
+    }
+
+    private static List<string> BuildUniqueSqliteColumnNames(IReadOnlyList<string> columns)
+    {
+        var result = new List<string>(columns.Count);
+        var seen = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var col in columns)
+        {
+            string baseName = SanitizeIdentifier(col);
+            string name = baseName;
+            if (seen.TryGetValue(baseName, out int count))
+            {
+                count++;
+                seen[baseName] = count;
+                name = $"{baseName}_{count}";
+            }
+            else
+            {
+                seen[baseName] = 1;
+            }
+            result.Add(name);
+        }
+        return result;
+    }
+
+    private sealed class LocalTableWriter : IAsyncDisposable
+    {
+        private readonly SqliteConnection _conn;
+        private readonly SqliteTransaction _tx;
+        private readonly SqliteCommand _insert;
+        private bool _completed;
+
+        public LocalTableWriter(SqliteConnection conn, SqliteTransaction tx, SqliteCommand insert)
+        {
+            _conn = conn;
+            _tx = tx;
+            _insert = insert;
+        }
+
+        public void Insert(IReadOnlyList<string> values)
+        {
+            for (int i = 0; i < values.Count; i++)
+                _insert.Parameters[i].Value = values[i];
+            _insert.ExecuteNonQuery();
+        }
+
+        public async Task CommitAsync()
+        {
+            await _tx.CommitAsync();
+            _completed = true;
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (!_completed)
+                await _tx.RollbackAsync();
+            await _insert.DisposeAsync();
+            await _tx.DisposeAsync();
+            await _conn.DisposeAsync();
+        }
+    }
+
+    private void ClearMessages()
+    {
+        _connectionMessage = string.Empty;
+        _resultMessage = string.Empty;
+        _error = string.Empty;
+    }
+
+    public void Dispose()
+    {
+    }
+}

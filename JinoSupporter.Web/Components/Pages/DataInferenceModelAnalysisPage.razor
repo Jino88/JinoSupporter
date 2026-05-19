@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @implements IDisposable
 @inject WebRepository Repo
+@inject AiProviderSettingsService AiProviders
 
 <PageTitle>Data Inference - Each Model Analysis</PageTitle>
 
@@ -77,8 +78,8 @@
                         </select>
                         <label class="dima-label">Engine</label>
                         <select class="form-select form-select-sm dima-engine" @bind="_executor" disabled="@_isBusy">
-                            <option value="@ModelAnalysisExecutor.ClaudeCli">Claude CLI</option>
-                            <option value="@ModelAnalysisExecutor.CodexCli">Codex CLI</option>
+                            <option value="@ModelAnalysisExecutor.ClaudeCli" disabled="@(!AiProviders.ClaudeCliEnabled)">Claude CLI</option>
+                            <option value="@ModelAnalysisExecutor.CodexCli" disabled="@(!AiProviders.CodexCliEnabled)">Codex CLI</option>
                         </select>
                         <button class="btn btn-outline-primary btn-sm"
                                 @onclick="() => AnalyzeAsync(incremental: true)"
@@ -265,7 +266,10 @@
     private bool _isWaitingCli;
     private CancellationTokenSource? _cliWaitCts;
 
-    private bool _canAnalyze => !_isBusy;
+    private bool _canAnalyze => !_isBusy && SelectedExecutorEnabled;
+    private bool SelectedExecutorEnabled => _executor == ModelAnalysisExecutor.CodexCli
+        ? AiProviders.CodexCliEnabled
+        : AiProviders.ClaudeCliEnabled;
     private string ExecutorLabel => _executor == ModelAnalysisExecutor.CodexCli ? "Codex CLI" : "Claude CLI";
 
     private List<ModelAnalysisGroupRecord> VisibleGroups => _groups
@@ -290,6 +294,8 @@
 
     protected override void OnInitialized()
     {
+        if (!AiProviders.ClaudeCliEnabled && AiProviders.CodexCliEnabled)
+            _executor = ModelAnalysisExecutor.CodexCli;
         Reload();
     }
 
@@ -353,6 +359,11 @@
         if (SelectedGroup is null)
         {
             SetStatus("Select a Product Type first.", true);
+            return;
+        }
+        if (!SelectedExecutorEnabled)
+        {
+            SetStatus(AiProviders.ProviderDisabledMessage(ExecutorLabel), true);
             return;
         }
 
@@ -430,6 +441,7 @@
         string productType, bool incrementalRun, int reportCount, IReadOnlyList<string> includedDatasets,
         string sourceContextHash, string context)
     {
+        if (!AiProviders.ClaudeCliEnabled) return false;
         string requestPath = Path.Combine(tmpDir, $"model_analysis_request_{runId}.json");
         WriteModelAnalysisRequest(requestPath, productType, incrementalRun, ModelAnalysisLanguages,
             reportCount, includedDatasets, sourceContextHash, startedUtc, context);
@@ -441,6 +453,7 @@
         string productType, bool incrementalRun, int reportCount, IReadOnlyList<string> includedDatasets,
         string sourceContextHash, string context)
     {
+        if (!AiProviders.CodexCliEnabled) return false;
         var launched = new List<string>();
         foreach (string language in ModelAnalysisLanguages)
         {
@@ -558,7 +571,8 @@
             "Open the request JSON. It contains productType, analysisMode, language, languages, reportCount, includedDatasets, sourceContextHash, createdAt, and context.",
             "The context contains AI-authored per-report markdown. Use those AI_REPORT_MARKDOWN sections as the primary evidence. Do not rely on parameters alone.",
             "Generate one complete model-level analysis for each language listed in request.languages. If request.languages has one item, generate and insert only that language.",
-            "The user's required report is not a generic risk summary. It must explain what reviews/tests were performed for this Product Type/model, group similar reviews together, show each review's result, then give the AI's overall model-level judgement.",
+            "The user's required report is not a generic risk summary. It must start with a practical action board: what to check/change next, how often similar evidence was reviewed, what the combined result says, and what exact next action should be taken.",
+            "After the action board, explain what reviews/tests were performed for this Product Type/model, group similar reviews together, show each review's result, then give the AI's overall model-level judgement.",
             "Group similar reviews by purpose, defect/phenomenon, process, part/material, jig/mold/machine, changed condition, supplier/lot, or measurement type. Choose the grouping that best matches the evidence in the reports.",
             "For each group, list the included report names and summarize each report's result separately before writing the group-level interpretation.",
             "If analysisMode is incremental, use the previous model analysis for the same target language when present in the context, evaluate only the new/changed reports as new evidence, but save one complete replacement model-level analysis.",
@@ -567,11 +581,14 @@
             "For each language, write concise Markdown only. No JSON in AnalysisMarkdown. No code fence.",
             "The report must be table-centered. Avoid long prose; use short paragraphs only where judgement or caveats need explanation.",
             "Required Markdown sections, translated naturally for the target language:",
-            "## Model review history summary",
+            "## Practical action board",
+            "Create the main table. Required semantic columns: Priority | Check/change item | Reviewed evidence count | Combined result | Why it matters | Next action.",
+            "The Check/change item column must be the factor to inspect or adjust, not the defect name itself.",
+            "Translate the table headers for the target language if appropriate, but preserve those six meanings.",
+            "## Review history by theme",
             "Briefly state how many reports were reviewed, the main review themes, and the overall model-level direction.",
             "## Similar review grouped results",
-            "Create the main comparison table. Required semantic columns: Review Group | Included Reports | Review Purpose/Condition | Result By Report | AI Group Judgment.",
-            "Translate the table headers for the target language if appropriate, but preserve those five meanings.",
+            "Create a grouped evidence table. Required semantic columns: Review Group | Included Reports | Review Purpose/Condition | Result By Report | AI Group Judgment.",
             "## Individual review result details",
             "Use a compact table where possible. For each included report, show concrete result, judgement, and important caveats.",
             "## Repeated patterns and differences",
@@ -590,7 +607,7 @@
             "4. Do not collapse everything into one summary. The grouped review history is the core deliverable.",
             "5. Mention the included report names in the Included Reports section.",
             "6. Preserve product codes, defect names, line names, numeric values, and units verbatim.",
-            "7. AnalysisTableMarkdown must contain only the exact main comparison table from the Similar review grouped results section, including the Markdown header row and separator row.",
+            "7. AnalysisTableMarkdown must contain only the exact main table from the Practical action board section, including the Markdown header row and separator row.",
             "",
             "After writing the Markdown, insert exactly one row per requested language into SQLite table AiModelAnalyses in the supplied Database path.",
             "Before inserting, ensure the table exists and includes AnalysisTableMarkdown. Create the table if needed with these columns:",

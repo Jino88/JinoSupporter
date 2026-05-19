@@ -3,6 +3,7 @@
 @implements IAsyncDisposable
 @inject WebRepository Repo
 @inject ClaudeService  Claude
+@inject AiProviderSettingsService AiProviders
 @inject IJSRuntime     JS
 
 <PageTitle>Data Inference — AI Batch</PageTitle>
@@ -33,17 +34,17 @@
         ▶ Analyze (API legacy) (@_selected.Count)
     </button>
     <button class="btn btn-success btn-sm" @onclick="StartCliAsync"
-            disabled="@(_isBusy || _selected.Count == 0)"
+            disabled="@(_isBusy || !AiProviders.ClaudeCliEnabled || _selected.Count == 0)"
             title="Run via Claude Code CLI — uses your Claude subscription, no Anthropic API credit.">
         🖥 Analyze (Claude CLI) (@_selected.Count)
     </button>
     <button class="btn btn-dark btn-sm" @onclick="StartCodexCliAsync"
-            disabled="@(_isBusy || _selected.Count == 0)"
+            disabled="@(_isBusy || !AiProviders.CodexCliEnabled || _selected.Count == 0)"
             title="Run via Codex CLI using the same AI_EXCEL_PROC.md workflow.">
         Analyze (Codex CLI) (@_selected.Count)
     </button>
     <button class="btn btn-warning btn-sm" @onclick="StartSplitCliAsync"
-            disabled="@(_isBusy || _selected.Count == 0)"
+            disabled="@(_isBusy || !AiProviders.ClaudeCliEnabled || !AiProviders.CodexCliEnabled || _selected.Count == 0)"
             title="Split selected datasets into separate Claude and Codex target lists.">
         Claude + Codex (@_selected.Count)
     </button>
@@ -879,6 +880,21 @@ else
     private async Task StartAsync(BatchExecutor executor)
     {
         if (_selected.Count == 0) { SetStatus("No datasets selected.", true); return; }
+        if (executor == BatchExecutor.ClaudeCli && !AiProviders.ClaudeCliEnabled)
+        {
+            SetStatus(AiProviders.ProviderDisabledMessage("Claude CLI"), true);
+            return;
+        }
+        if (executor == BatchExecutor.CodexCli && !AiProviders.CodexCliEnabled)
+        {
+            SetStatus(AiProviders.ProviderDisabledMessage("Codex CLI"), true);
+            return;
+        }
+        if (executor == BatchExecutor.SplitCli && (!AiProviders.ClaudeCliEnabled || !AiProviders.CodexCliEnabled))
+        {
+            SetStatus("Claude + Codex split requires both Claude CLI and Codex CLI to be enabled in ai-provider-settings.json.", true);
+            return;
+        }
         _pendingExecutor = executor;
 
         var targets = _reports.Where(r => _selected.Contains(r.DatasetName)).ToList();
@@ -1105,6 +1121,16 @@ else
         string workDir = FindRepoRoot();
         bool useCodex = executor == BatchExecutor.CodexCli;
         string providerName = useCodex ? "Codex" : "Claude";
+        if (!useCodex && !AiProviders.ClaudeCliEnabled)
+        {
+            SetStatus(AiProviders.ProviderDisabledMessage("Claude CLI"), true);
+            return;
+        }
+        if (useCodex && !AiProviders.CodexCliEnabled)
+        {
+            SetStatus(AiProviders.ProviderDisabledMessage("Codex CLI"), true);
+            return;
+        }
 
         // Split selected datasets into provider-specific chunks. Each
         // launch uses a **fresh unique prefix** so that concurrent / back-to-
@@ -1215,6 +1241,11 @@ else
         if (targets.Count == 0)
         {
             SetStatus("Select at least one dataset first.", true);
+            return;
+        }
+        if (!AiProviders.ClaudeCliEnabled || !AiProviders.CodexCliEnabled)
+        {
+            SetStatus("Claude + Codex split requires both Claude CLI and Codex CLI to be enabled in ai-provider-settings.json.", true);
             return;
         }
 
@@ -1475,11 +1506,11 @@ else
             "Merged-cell rule: if Date/Model/Type/Line/Process cells are merged or visually carried across rows, all covered rows inherit that value before pairing Test/Normal rows.",
             "Do not create standalone AiResults from percentage-only subrows; attach them as breakdown/rate evidence to the preceding count row.",
             "Set document.report_type to exactly one allowed AI_EXCEL_PROC report_type.",
-            "Purpose priority: first, create an AI-authored analysis report that lets the user easily understand the workbook review result with tables, heatmaps, comparison matrices, and clear judgement; second, store structured DB parameters so future AI ASK can quickly find related evidence.",
+            "Purpose priority: first, create an AI-authored analysis report that lets the user quickly decide what to check/change next using an action-board table; second, store structured DB parameters so future AI ASK can quickly find related evidence.",
             "Create result.generated_report_markdown as the primary user-facing Korean Markdown report. This report is the product. It must be written by AI from workbook contents, not assembled by the UI from parameters.",
-            "Follow AI_EXCEL_PROC.md Target Report Style and Required Report Shape. Preserve the original technical-report flow such as Purpose, Content, and Result when present, then add AI judgement and action.",
-            "The report should look like a manufacturing review sheet: defect phenomenon, review items, result table, lot/mold/line comparison, heatmap/comparison matrix, judgement, action, and evidence cells.",
-            "Do not write a short summary or parameter dump. When result rows exist, each report needs at least six Markdown sections, a compact result/evidence table, source worksheet/cell references, and enough prose to stand alone as an engineering report.",
+            "Follow AI_EXCEL_PROC.md Target Report Style and Required Report Shape. The first section must be a practical action board table: Priority | Check/change item | Evidence/result | Judgement | Next action.",
+            "The report should look like a manufacturing review sheet: action board first, then defect phenomenon, review items, result table, lot/mold/line comparison, heatmap/comparison matrix, judgement, action, and evidence cells.",
+            "Do not write a parameter dump or long narrative. When result rows exist, each report needs compact Markdown sections, a compact result/evidence table, source worksheet/cell references, and only enough prose to support the action board.",
             "When result rows exist, result.generated_report_markdown and every translated report must include at least one AI-authored visual block using fenced code blocks named report-heatmap, report-bars, or report-heatmap-matrix. Prefer report-heatmap-matrix for paired comparisons and report-heatmap for rankings. status must be bad, warn, or good.",
             "Also create tr_ko.document.generated_report_markdown, tr_en.document.generated_report_markdown, and tr_vi.document.generated_report_markdown. These are required for the Korean, English, and Vietnamese UI language buttons. Keep equivalent visual blocks in all three translations; translate label/detail text but preserve numeric values, amount, and status.",
             "Do not stop after extracting parameters. commit_dataset rejects parameter-only payloads when generated_report_markdown is empty.",

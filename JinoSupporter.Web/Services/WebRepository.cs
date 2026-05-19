@@ -310,6 +310,7 @@ public sealed class WebRepository
                 ProductTypeFilter  TEXT    NOT NULL DEFAULT '',
                 Overall            TEXT    NOT NULL DEFAULT '',
                 PerDatasetJson     TEXT    NOT NULL DEFAULT '[]',
+                TranslationsJson   TEXT    NOT NULL DEFAULT '{}',
                 CreatedAt          TEXT    NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_askai_created ON AskAiHistory(CreatedAt DESC);
@@ -708,6 +709,20 @@ public sealed class WebRepository
         {
             using SqliteCommand alter = conn.CreateCommand();
             alter.CommandText = "ALTER TABLE AiModelAnalyses ADD COLUMN AnalysisTableMarkdown TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+
+        var askAiCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using (SqliteCommand ck = conn.CreateCommand())
+        {
+            ck.CommandText = "PRAGMA table_info(AskAiHistory);";
+            using SqliteDataReader r = ck.ExecuteReader();
+            while (r.Read()) askAiCols.Add(r.GetString(1));
+        }
+        if (!askAiCols.Contains("TranslationsJson"))
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE AskAiHistory ADD COLUMN TranslationsJson TEXT NOT NULL DEFAULT '{}';";
             alter.ExecuteNonQuery();
         }
 
@@ -2254,21 +2269,37 @@ public sealed class WebRepository
 
     // ?? AskAi history ?????????????????????????????????????????????????????????
 
-    public long SaveAskAiHistory(string question, string productTypeFilter, string overall, string perDatasetJson)
+    public long SaveAskAiHistory(
+        string question,
+        string productTypeFilter,
+        string overall,
+        string perDatasetJson,
+        string translationsJson = "{}")
     {
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
         cmd.CommandText = """
-            INSERT INTO AskAiHistory (Question, ProductTypeFilter, Overall, PerDatasetJson, CreatedAt)
-            VALUES (@q, @pt, @o, @p, @c);
+            INSERT INTO AskAiHistory (Question, ProductTypeFilter, Overall, PerDatasetJson, TranslationsJson, CreatedAt)
+            VALUES (@q, @pt, @o, @p, @tr, @c);
             SELECT last_insert_rowid();
             """;
         cmd.Parameters.AddWithValue("@q",  question ?? "");
         cmd.Parameters.AddWithValue("@pt", productTypeFilter ?? "");
         cmd.Parameters.AddWithValue("@o",  overall ?? "");
         cmd.Parameters.AddWithValue("@p",  perDatasetJson ?? "[]");
+        cmd.Parameters.AddWithValue("@tr", translationsJson ?? "{}");
         cmd.Parameters.AddWithValue("@c",  DateTime.UtcNow.ToString("o"));
         return (long)(cmd.ExecuteScalar() ?? 0L);
+    }
+
+    public void UpdateAskAiHistoryTranslations(long id, string translationsJson)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "UPDATE AskAiHistory SET TranslationsJson=@tr WHERE Id=@i;";
+        cmd.Parameters.AddWithValue("@tr", translationsJson ?? "{}");
+        cmd.Parameters.AddWithValue("@i", id);
+        cmd.ExecuteNonQuery();
     }
 
     public List<AskAiHistoryRecord> GetAskAiHistory(int limit = 100)
@@ -2277,7 +2308,7 @@ public sealed class WebRepository
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
         cmd.CommandText = """
-            SELECT Id, Question, ProductTypeFilter, Overall, PerDatasetJson, CreatedAt
+            SELECT Id, Question, ProductTypeFilter, Overall, PerDatasetJson, TranslationsJson, CreatedAt
             FROM AskAiHistory
             ORDER BY Id DESC
             LIMIT @lim;
@@ -2288,7 +2319,7 @@ public sealed class WebRepository
         {
             list.Add(new AskAiHistoryRecord(
                 r.GetInt64(0), r.GetString(1), r.GetString(2),
-                r.GetString(3), r.GetString(4), r.GetString(5)));
+                r.GetString(3), r.GetString(4), r.GetString(5), r.GetString(6)));
         }
         return list;
     }
@@ -2298,7 +2329,7 @@ public sealed class WebRepository
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
         cmd.CommandText = """
-            SELECT Id, Question, ProductTypeFilter, Overall, PerDatasetJson, CreatedAt
+            SELECT Id, Question, ProductTypeFilter, Overall, PerDatasetJson, TranslationsJson, CreatedAt
             FROM AskAiHistory WHERE Id=@i;
             """;
         cmd.Parameters.AddWithValue("@i", id);
@@ -2306,7 +2337,7 @@ public sealed class WebRepository
         if (!r.Read()) return null;
         return new AskAiHistoryRecord(
             r.GetInt64(0), r.GetString(1), r.GetString(2),
-            r.GetString(3), r.GetString(4), r.GetString(5));
+            r.GetString(3), r.GetString(4), r.GetString(5), r.GetString(6));
     }
 
     public void DeleteAskAiHistory(long id)
@@ -2324,6 +2355,62 @@ public sealed class WebRepository
         using SqliteCommand cmd = conn.CreateCommand();
         cmd.CommandText = "DELETE FROM AskAiHistory;";
         cmd.ExecuteNonQuery();
+    }
+
+    public List<ModelAnalysisReportRecord> GetAskAiReviewRecords(string productTypeFilter = "", int limit = 300)
+    {
+        var list = new List<ModelAnalysisReportRecord>();
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT r.DatasetName, r.ProductType, r.ReportDate,
+                   COALESCE(d.DocumentId, '') AS DocumentId,
+                   COALESCE(d.Title, '') AS Title,
+                   COALESCE(d.ReportType, '') AS ReportType,
+                   COALESCE(d.PrimaryDefect, '') AS PrimaryDefect,
+                   COALESCE(d.GeneratedReportMarkdown, '') AS GeneratedReportMarkdown,
+                   COALESCE(d.UpdatedAt, '') AS AiUpdatedAt,
+                   COALESCE((SELECT COUNT(*) FROM AiResults ar WHERE ar.DocumentId=d.DocumentId), 0) AS ResultCount,
+                   COALESCE((SELECT COUNT(*) FROM AiConclusions ac WHERE ac.DocumentId=d.DocumentId), 0) AS ConclusionCount
+            FROM RawReports r
+            JOIN AiDocuments d
+              ON d.DocumentId = (
+                    SELECT d2.DocumentId
+                    FROM AiDocuments d2
+                    WHERE d2.SourceDataset = r.DatasetName
+                      AND LOWER(COALESCE(d2.PrimaryDefect,'')) NOT LIKE '%auto-extracted%'
+                      AND LOWER(COALESCE(d2.RawJson,'')) NOT LIKE '%_batch_auto.py%'
+                      AND LOWER(COALESCE(d2.RawJson,'')) NOT LIKE '%see workbook title/purpose%'
+                      AND LOWER(COALESCE(d2.RawJson,'')) NOT LIKE '%workbook stored but extraction surfaced narrative only%'
+                      AND LENGTH(TRIM(COALESCE(d2.GeneratedReportMarkdown,''))) > 0
+                    ORDER BY d2.UpdatedAt DESC
+                    LIMIT 1
+              )
+            WHERE r.BatchExcluded = 0
+              AND (@p = '' OR r.ProductType = @p)
+            ORDER BY d.UpdatedAt DESC, r.ReportDate DESC, r.DatasetName COLLATE NOCASE
+            LIMIT @l;
+            """;
+        cmd.Parameters.AddWithValue("@p", productTypeFilter ?? "");
+        cmd.Parameters.AddWithValue("@l", Math.Max(1, limit));
+
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            list.Add(new ModelAnalysisReportRecord(
+                r.GetString(0),
+                r.GetString(1),
+                r.GetString(2),
+                r.GetString(3),
+                r.GetString(4),
+                r.GetString(5),
+                r.GetString(6),
+                r.GetString(7),
+                r.GetString(8),
+                Convert.ToInt32(r.GetValue(9)),
+                Convert.ToInt32(r.GetValue(10))));
+        }
+        return list;
     }
 
     // Model-level AI analysis built from per-report AI markdown.

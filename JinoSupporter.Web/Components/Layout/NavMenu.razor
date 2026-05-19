@@ -39,7 +39,7 @@
             can(AppMenus.DiModelAnalysis) || can(AppMenus.DiAsk);
 
         bool showSchedule = can(AppMenus.Schedule);
-        bool showAdmin = can(AppMenus.AdminUsers) || can(AppMenus.AdminSettings) || can(AppMenus.AdminAiUsages) || can(AppMenus.AdminPaths) || can(AppMenus.TestExcelConverter);
+        bool showAdmin = can(AppMenus.AdminUsers) || can(AppMenus.AdminSettings) || can(AppMenus.AdminAiUsages) || can(AppMenus.AdminPaths) || can(AppMenus.TestExcelConverter) || can(AppMenus.AdminDbQuery);
         bool showTools = showSchedule || can(AppMenus.GraphMaker) || can(AppMenus.Translate) || showDi;
     }
 
@@ -272,6 +272,14 @@
             <div class="nav-item">
                 <NavLink class="nav-link" href="admin/test-excel-converter">
                     <span class="nav-icon">📑</span> Test Excel Converter
+                </NavLink>
+            </div>
+        }
+        @if (can(AppMenus.AdminDbQuery))
+        {
+            <div class="nav-item">
+                <NavLink class="nav-link" href="admin/db-query">
+                    <span class="nav-icon">DB</span> DB Query
                 </NavLink>
             </div>
         }
