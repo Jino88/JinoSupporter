@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 157,
+  "sourceFile": "07. TIU L5S3-01 - Report test material C-MG difference color - date 2026.04.010_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\157.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 157,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is comparable but needs correction because changed-factor wording and several outcome groupings are ambiguous or contaminated.",
+    "issues": [
+      "Primary factor should be C-MG color-difference material/lot condition, not generic process condition.",
+      "Type 1-3 versus Level 1-3 mapping is not proven in cited rows.",
+      "Tension measurement outcome incorrectly includes function rows with zero stats.",
+      "Function/check rows are split into an invalid measurement-only outcome.",
+      "Several outcomes lack nearby header/context citations needed to interpret columns."
+    ],
+    "requiredUserQuestions": [
+      "Do Level 1, Level 2, and Level 3 correspond to the three C-MG color-difference test types?",
+      "Is Normal the intended baseline for all result sections?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to Normal C-MG versus color-difference C-MG test levels/types from vendor Baotou.",
+      "Keep Baotou as supplier/subgroup context unless source proves it is the changed factor.",
+      "Remove function rows from the tension measurement outcome.",
+      "Merge function defect rows under the check-function outcome and delete the invalid measurement-2 outcome.",
+      "Cite section headers plus each compared data row for every outcome."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until corrected."
+  },
+  "usage": {
+    "input_tokens": 6411,
+    "output_tokens": 802,
+    "total_tokens": 7213
+  }
+}

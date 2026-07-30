@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 81,
+  "sourceFile": "03. TIU L5S3 Result check gauss value after setting machine - date 2025.11.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\81.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 81,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft is not usable as final evidence because no comparable changed factor or result measurements were extracted.",
+    "issues": [
+      "No review case was generated.",
+      "No comparison pair, metric, or measurement stats are present.",
+      "Evidence rows are mostly headers or partial table fragments.",
+      "Baseline/test condition is unclear.",
+      "Actual gauss and visual results are not cited."
+    ],
+    "requiredUserQuestions": [
+      "Is this file intended as a one-condition inspection or a before/after machine-setting comparison?"
+    ],
+    "correctionPlan": [
+      "Re-extract the full result table from the Test sheet.",
+      "Capture date, line, standard, type, position, gauss values, and visual result fields.",
+      "Identify any baseline and test machine-setting conditions if present.",
+      "Group evidence by retained row-level keys such as date, line, type, and position.",
+      "Exclude the file if no comparable changed-condition evidence exists after re-extraction."
+    ],
+    "evidencePolicy": "Current row citations are insufficient for Ask AI evidence because they do not cite result values or changed conditions."
+  },
+  "usage": {
+    "input_tokens": 1935,
+    "output_tokens": 729,
+    "total_tokens": 2664
+  }
+}

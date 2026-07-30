@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 900,
+  "sourceFile": "78. BRS-201506 Kết quả kiểm tra 50PCS NG spl tại máy sigma và NTI_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\900.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:31Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 900,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies a likely Sigma vs NTI SPL comparison but lacks explicit, row-cited changed-factor and valid outcome grouping.",
+    "issues": [
+      "Changed factor is filename-based, not an explicit Sigma vs NTI condition.",
+      "Baseline/test conditions are left unknown.",
+      "Outcome metric is generic and not tied to SPL rows or summary results.",
+      "Evidence cites mostly header rows, not data or summary rows.",
+      "Review title and purpose are unusable."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended comparison Sigma machine vs NTI machine for the same 50 NG samples?"
+    ],
+    "correctionPlan": [
+      "Use sheet or summary context to define changed factor as Sigma vs NTI measurement machine if supported.",
+      "Set baseline and changed conditions explicitly from workbook context.",
+      "Cite representative data rows and any SUM rows, not only header rows.",
+      "Rename outcome metric to SPL measurement comparison and preserve frequency/sample grouping.",
+      "Replace raw header title with a concise review title and purpose."
+    ],
+    "evidencePolicy": "Current citations prove row existence only; final evidence needs row-level citations for machine conditions and SPL results."
+  },
+  "usage": {
+    "input_tokens": 5163,
+    "output_tokens": 654,
+    "total_tokens": 5817
+  }
+}

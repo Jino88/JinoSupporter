@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 883,
+  "sourceFile": "75. BRS-161014 Report TEST VP curing temperature 120 25.11.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\883.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 883,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The Normal vs VP curing temperature 120°C grouping is plausible, but key changed-factor and test-result citations need cleanup before final use.",
+    "issues": [
+      "Changed-factor evidence omits the direct 120°C condition row.",
+      "Decision and narrative rows are not cited despite supporting final judgement.",
+      "Review title is extracted from a metadata row, not the report subject.",
+      "Key test rows are referenced but not visible in provided context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename title to reflect VP curing temperature 120°C validation.",
+      "Add row 8 as primary changed-condition evidence.",
+      "Add narrative and decision rows 17, 26, and 28 where conclusions are used.",
+      "Verify row 15 and row 22 values against the sheet before finalizing.",
+      "Keep both outcome domains under the same changed factor."
+    ],
+    "evidencePolicy": "Citations are directionally sufficient for comparisons but incomplete for changed condition and conclusion support."
+  },
+  "usage": {
+    "input_tokens": 3014,
+    "output_tokens": 743,
+    "total_tokens": 3757
+  }
+}

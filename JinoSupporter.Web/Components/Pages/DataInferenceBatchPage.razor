@@ -40,7 +40,7 @@
     </button>
     <button class="btn btn-dark btn-sm" @onclick="StartCodexCliAsync"
             disabled="@(_isBusy || !AiProviders.CodexCliEnabled || _selected.Count == 0)"
-            title="Run via Codex CLI using the same AI_EXCEL_PROC.md workflow.">
+            title="Run via Codex CLI using the same AI prompt workflow.">
         Analyze (Codex CLI) (@_selected.Count)
     </button>
     <button class="btn btn-warning btn-sm" @onclick="StartSplitCliAsync"
@@ -1189,32 +1189,7 @@ else
         {
             string fileName = Path.GetFileName(chunkFiles[i]);
             int chunkCount = File.ReadAllLines(chunkFiles[i]).Length;
-            string prompt =
-                $"AI_EXCEL_PROC.md 읽고 AI Batch 실행해. " +
-                $"DB={DbPathHint}. " +
-                $"Targets={fileName} ({chunkCount}개). " +
-                $"Mode={modeHint}. " +
-                $"Do not create or run any inventory-only normalizer. Do not commit placeholders such as 'batch inventory', 'Capture sheet inventory', or measurement_type='inventory'. If real extraction is not possible for a dataset, log it as failed and leave existing DB rows untouched. " +
-                $"IMPORTANT: {fileName} is a newline-delimited target list with exactly {chunkCount} dataset names. Read the full file first, then process EVERY non-empty line. " +
-                $"Do not stop after the first dataset. Continue line by line until all {chunkCount} targets are completed or explicitly logged as failed. " +
-                $"Before finishing, verify processed_count + failed_count == {chunkCount}. Delete {fileName} only after that verification passes. " +
-                $"Use _ai_batch_helper.get_excel_text(con, dataset) first. It renders every attached workbook and every worksheet in workbook order with sheet names, cell coordinates, merged ranges, styles, formulas, and dimensions preserved. " +
-                $"Process EVERY worksheet, not only the first visible sheet. If the rendered text is too large, split by '=== SHEET:' and analyze sheets sequentially, then commit one combined result. " +
-                $"If you need workbook paths, use _ai_batch_helper.get_excel_files(con, dataset). Treat those text-only workbook files as the source of truth; do not flatten them to TSV/openpyxl values as the authoritative input. Use get_excel_paste only as last-resort fallback. " +
-                $"Store AiResults/AiNgBreakdowns from all relevant sheets and set sheet_name on every extracted row so Dataset Results can prove sheet coverage. " +
-                $"If excel_paste contains metadata tags such as {{merged=A1:A4}} or 〔merged=A1:A4〕, strip the tag and use the following value as the cell value. " +
-                $"Merged-cell rule: if Date/Model/Type/Line/Process cells are merged or visually carried across rows, all covered rows inherit that value before storing AiResults and before pairing Test/Normal rows. " +
-                $"Do not create standalone AiResults from percentage-only subrows; attach them as breakdown/rate evidence to the preceding count row. " +
-                $"Set document.report_type to exactly one of normal_comparison, ng_without_baseline, before_after_dimension, measurement_spec, defect_root_cause, lot_supplier_mold_comparison, process_condition_change, reliability_spec, doe_matrix, image_dependent, mixed. " +
-                $"Extract enough fields for a per-workbook mini report: basic info, problem/phenomenon, purpose, changed/tested conditions, result data, Normal/Test or Before/After comparison, writer decision/note, AI judgement/warnings, and evidence location. Keep narrative short and table-ready. " +
-                $"If no same-event baseline exists, do not suppress tables and do not claim improvement/worsening; use ng_without_baseline ranking instead. " +
-                $"For dimension/reliability/DOE/image-dependent reports, store metric rows, judgement, condition labels, and source sheets so DatasetResult can render the matching dashboard. " +
-                $"스키마는 AiDocuments/AiTestConditions/AiResults/AiNgBreakdowns/AiConclusions/AiTroubleshootingHints/AiExtractionLogs 사용. " +
-                $"분석/결론은 절대 불량률 순위가 아니라 같은 시트/같은 시험 이벤트의 Normal/Baseline/Before/Old/OK 대조군 대비 상대 변화율((test/base-1)*100, 몇% 개선/악화) 기준으로 판단. " +
-                $"narrative 필드 (title/purpose/content, conclusions.statement_from_report/normalized_interpretation, troubleshooting.check_item/reason, ai_extraction_log.decision_rationale/assumptions/warnings) 는 " +
-                $"AiDocumentTranslations/AiConclusionTranslations/AiHintTranslations/AiLogTranslations 에 Lang ∈ {{ko,en,vi}} 3개 모두 저장. " +
-                $"미처리 쿼리 무시하고 targets 만 처리, 끝나면 {fileName} 삭제.";
-            prompt = BuildAiBatchCliPrompt("__AI_BATCH_TARGET_FILE__", 1, modeHint, DbPathHint);
+            string prompt = BuildAiBatchCliPrompt("__AI_BATCH_TARGET_FILE__", 1, modeHint, DbPathHint);
             string title = chunkFiles.Count == 1
                 ? $"AI Batch ({providerName})"
                 : $"AI Batch ({providerName}) {i + 1}/{chunkFiles.Count}";
@@ -1486,43 +1461,12 @@ else
     }
 
     private static string BuildAiBatchCliPrompt(string fileName, int targetCount, string modeHint, string dbPath)
-    {
-        return string.Join(" ", new[]
-        {
-            "Read AI_EXCEL_PROC.md and run the AI Batch CLI workflow.",
-            $"DB={dbPath}.",
-            $"Targets={fileName} ({targetCount} datasets).",
-            $"Mode={modeHint}.",
-            "The launcher already set AI_BATCH_DB_PATH and AI_BATCH_TARGETS_FILE.",
-            $"Use _ai_batch_helper.load_targets() and verify it returns exactly {targetCount} non-empty names.",
-            "Process the target list sequentially in this one CLI session. Do not open extra terminals.",
-            "For each dataset, open the DB, call _ai_batch_helper.get_excel_text(con, dataset), and analyze every workbook and every worksheet in workbook order.",
-            "Do not analyze only the first visible sheet. If the rendered text is too large, split by '=== SHEET:' and analyze sheet by sheet, then commit one combined result.",
-            "Use _ai_batch_helper.get_excel_files(con, dataset) only when workbook file context is required. Use get_excel_paste only as a last-resort fallback.",
-            "Do not run or import _batch_auto.py, _batch_build.py, _tmp_ai_excel/auto_normalize.py, or any heuristic fallback/auto-normalizer.",
-            "Do not commit placeholders such as primary_defect='NG (auto-extracted)', changed_factor='see workbook title/purpose', 'Workbook stored but extraction surfaced narrative only', 'batch inventory', or measurement_type='inventory'.",
-            "If real extraction is not possible for a dataset, call _ai_batch_helper.log_failed(dataset, reason) and leave existing DB rows untouched.",
-            "Store AiResults and AiNgBreakdowns from all relevant sheets and set sheet_name/source_cells on every extracted row so Dataset Results can prove sheet coverage.",
-            "Merged-cell rule: if Date/Model/Type/Line/Process cells are merged or visually carried across rows, all covered rows inherit that value before pairing Test/Normal rows.",
-            "Do not create standalone AiResults from percentage-only subrows; attach them as breakdown/rate evidence to the preceding count row.",
-            "Set document.report_type to exactly one allowed AI_EXCEL_PROC report_type.",
-            "Purpose priority: first, create an AI-authored analysis report that lets the user quickly decide what to check/change next using an action-board table; second, store structured DB parameters so future AI ASK can quickly find related evidence.",
-            "Create result.generated_report_markdown as the primary user-facing Korean Markdown report. This report is the product. It must be written by AI from workbook contents, not assembled by the UI from parameters.",
-            "Follow AI_EXCEL_PROC.md Target Report Style and Required Report Shape. The first section must be a practical action board table: Priority | Check/change item | Evidence/result | Judgement | Next action.",
-            "The report should look like a manufacturing review sheet: action board first, then defect phenomenon, review items, result table, lot/mold/line comparison, heatmap/comparison matrix, judgement, action, and evidence cells.",
-            "Do not write a parameter dump or long narrative. When result rows exist, each report needs compact Markdown sections, a compact result/evidence table, source worksheet/cell references, and only enough prose to support the action board.",
-            "When result rows exist, result.generated_report_markdown and every translated report must include at least one AI-authored visual block using fenced code blocks named report-heatmap, report-bars, or report-heatmap-matrix. Prefer report-heatmap-matrix for paired comparisons and report-heatmap for rankings. status must be bad, warn, or good.",
-            "Also create tr_ko.document.generated_report_markdown, tr_en.document.generated_report_markdown, and tr_vi.document.generated_report_markdown. These are required for the Korean, English, and Vietnamese UI language buttons. Keep equivalent visual blocks in all three translations; translate label/detail text but preserve numeric values, amount, and status.",
-            "Do not stop after extracting parameters. commit_dataset rejects parameter-only payloads when generated_report_markdown is empty.",
-            "commit_dataset also rejects missing translations, reports that are too short, reports without enough sections, result-row reports without Markdown tables/visual blocks, reports without worksheet/cell evidence, and broken encoding/mojibake output.",
-            "Use test_conditions/results/conclusions/troubleshooting as DB/search parameters only; the user-facing report is generated_report_markdown and its translated generated_report_markdown values.",
-            "Extract enough fields for a per-workbook mini report: basic info, problem/phenomenon, purpose, changed/tested conditions, result data, Normal/Test or Before/After comparison, writer decision/note, AI judgement/warnings, and evidence location.",
-            "If no same-event baseline exists, use ng_without_baseline ranking and do not claim improvement/worsening.",
-            "Do not put large result/tr_ko/tr_en/tr_vi payloads inside python -, PowerShell here-strings, Set-Content command text, or any shell command; Windows command length error 206 will fail the run.",
-            "Commit by writing a JSON payload file under _batch_tmp with shape {name,result,translations:{ko,en,vi}}, then run python _ai_batch_helper.py commit-json <that-file>. Create the JSON file with file-writing/editing capability, not by embedding the full JSON in a shell command.",
-            $"Before finishing, verify success_count + failed_count == {targetCount}. Delete {fileName} only after that verification passes."
-        });
-    }
+        => AiPromptRegistry.Render(
+            "data-inference/ai-batch-cli.md",
+            ("fileName", fileName),
+            ("targetCount", targetCount.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+            ("modeHint", modeHint),
+            ("dbPath", dbPath));
 
     /// <summary>Open one Claude Code session in its own terminal window with
     /// the given prompt. The prompt is written to a UTF-8 file first so cmd/wt
@@ -1672,7 +1616,10 @@ else
         return string.Join(Environment.NewLine, new[]
         {
             "$ErrorActionPreference = 'Continue'",
-            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
+            "$utf8NoBom = New-Object System.Text.UTF8Encoding -ArgumentList $false",
+            "[Console]::InputEncoding = $utf8NoBom",
+            "[Console]::OutputEncoding = $utf8NoBom",
+            "$OutputEncoding = $utf8NoBom",
             "try { chcp 65001 | Out-Null } catch {}",
             $"try {{ $Host.UI.RawUI.WindowTitle = {Q(title)} }} catch {{}}",
             $"Set-Location -LiteralPath {Q(workDir)}",
@@ -1780,7 +1727,10 @@ else
         return string.Join(Environment.NewLine, new[]
         {
             "$ErrorActionPreference = 'Continue'",
-            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
+            "$utf8NoBom = New-Object System.Text.UTF8Encoding -ArgumentList $false",
+            "[Console]::InputEncoding = $utf8NoBom",
+            "[Console]::OutputEncoding = $utf8NoBom",
+            "$OutputEncoding = $utf8NoBom",
             "try { chcp 65001 | Out-Null } catch {}",
             $"try {{ $Host.UI.RawUI.WindowTitle = {Q(title)} }} catch {{}}",
             $"Set-Location -LiteralPath {Q(workDir)}",
@@ -1801,7 +1751,7 @@ else
             "    $rec = [ordered]@{ name = [string]$Target; status = $Status; phase = $Phase; runner = $runnerName; prompt = $promptFileName; at = $now }",
             "    try { ($rec | ConvertTo-Json -Compress) | Add-Content -LiteralPath $env:AI_BATCH_PROGRESS_FILE -Encoding UTF8 } catch {}",
             "}",
-            "Write-Host ('Unattended per-file Codex batch started for ' + $targets.Count + ' target(s).') -ForegroundColor Cyan",
+            "Write-Host ('Unattended per-file Codex batch started for ' + $targets.Count + ' target(s). effort=high') -ForegroundColor Cyan",
             "$total = $targets.Count",
             "$index = 0",
             "foreach ($dataset in $targets) {",
@@ -1813,7 +1763,7 @@ else
             "    $prompt = $promptTemplate.Replace('__AI_BATCH_TARGET_FILE__', (Split-Path -Leaf $oneTarget))",
             "    Write-BatchProgress $dataset 'started' ('dataset ' + $index + '/' + $total)",
             "    Write-Host ('[' + $index + '/' + $total + '] Codex analyzing: ' + $dataset) -ForegroundColor Cyan",
-            $"    $prompt | & codex exec -c 'model_reasoning_effort=\"xhigh\"' --cd {Q(workDir)} --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check -",
+            $"    $prompt | & codex exec -c 'model_reasoning_effort=\"high\"' --cd {Q(workDir)} --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check -",
             "    $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }",
             "    if ($exitCode -ne 0) {",
             "        $reason = 'Codex exited with code ' + $exitCode",
@@ -1831,17 +1781,7 @@ else
     }
 
     private static string FindRepoRoot()
-    {
-        string dir = AppContext.BaseDirectory;
-        for (int i = 0; i < 8; i++)
-        {
-            if (File.Exists(Path.Combine(dir, "AI_EXCEL_PROC.md"))) return dir;
-            string? parent = Path.GetDirectoryName(dir.TrimEnd('\\', '/'));
-            if (string.IsNullOrEmpty(parent) || parent == dir) break;
-            dir = parent;
-        }
-        return AppContext.BaseDirectory;
-    }
+        => AiPromptRegistry.FindRepositoryRoot();
 
     private void ShowError(string name)
     {

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 347,
+  "sourceFile": "18. L20S15-07 DT Report test new material CD improve NG separate VP-CD from supplier GES  date 30.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\347.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 347,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid row citations but misgroups the test rounds and omits key outcome evidence and conclusions.",
+    "issues": [
+      "Changed factor is too narrow; report concerns new CD material from GES, not only Normal vs Test 1st.",
+      "Test 2nd and its Normal comparison rows are omitted from the main changed-factor evidence.",
+      "Tension outcome mixes Test 1st, Test 2nd, and Normal without date/round grouping.",
+      "Function, VP/CD separate, dyne, and conclusion rows are not fully represented.",
+      "Spec 1.2 kgf and pass status are not captured for tension."
+    ],
+    "requiredUserQuestions": [
+      "Should Test 1st and Test 2nd be treated as separate rounds under one GES material validation?"
+    ],
+    "correctionPlan": [
+      "Revise changed factor to new CD material from GES versus Normal/Laser support, with round/date as subgroup keys.",
+      "Add Report!26, Report!28, Report!36-39, and relevant decision evidence if present.",
+      "Create separate subresults for Test 1st vs Normal and Test 2nd vs Normal.",
+      "Separate outcome domains for dyne, tension, VP/CD separation, and function NG under the same validation context.",
+      "Capture tension spec 1.2 kgf, pass status, and avoid using invalid Normal row as measurement evidence."
+    ],
+    "evidencePolicy": "Citations exist but are incomplete and not sufficient for final Ask AI evidence."
+  },
+  "usage": {
+    "input_tokens": 4071,
+    "output_tokens": 845,
+    "total_tokens": 4916
+  }
+}

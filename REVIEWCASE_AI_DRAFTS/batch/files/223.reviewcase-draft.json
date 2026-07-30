@@ -1,0 +1,286 @@
+{
+  "sourceFileId": 223,
+  "sourceFile": "11. BRS-161014 Report check Function for TEST of KR Member  2023.08.31_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\11. BRS-161014 Report check Function for TEST of KR Member  2023.08.31_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Sheet1",
+    "sheetRowCount": 18,
+    "sheetCellCount": 159,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 9
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet1!2",
+      "sheetName": "Sheet1",
+      "rowNumber": 2,
+      "rowText": "| RESULT CHECK FUNCTION FOR TEST OF KR MEMBER"
+    },
+    {
+      "rowId": "Sheet1!3",
+      "sheetName": "Sheet1",
+      "rowNumber": 3,
+      "rowText": "| No | Date | Type | Input | OK | NG | | | | | | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Sheet1!4",
+      "sheetName": "Sheet1",
+      "rowNumber": 4,
+      "rowText": "| | | | | | Aging | Frequency | | | | Hearing"
+    },
+    {
+      "rowId": "Sheet1!5",
+      "sheetName": "Sheet1",
+      "rowNumber": 5,
+      "rowText": "| | | | | | | SPL | THD | SPL+THD | SPL+THD+F0 | Touch | Noise"
+    },
+    {
+      "rowId": "Sheet1!6",
+      "sheetName": "Sheet1",
+      "rowNumber": 6,
+      "rowText": "| 1 | 2023-08-31 00:00:00 | 1 | 27 | 5 | 0 | 1 | 6 | 1 | 0 | 5 | 9 | 22 | 0.81481481"
+    },
+    {
+      "rowId": "Sheet1!7",
+      "sheetName": "Sheet1",
+      "rowNumber": 7,
+      "rowText": "| | | | | | 0 | 0.03703704 | 0.22222222 | 0.03703704 | 0 | 0.18518519 | 0.33333333"
+    },
+    {
+      "rowId": "Sheet1!8",
+      "sheetName": "Sheet1",
+      "rowNumber": 8,
+      "rowText": "| 2 | | 3 | 26 | 9 | 0 | 0 | 2 | 0 | 0 | 5 | 10 | 17 | 0.65384615"
+    },
+    {
+      "rowId": "Sheet1!9",
+      "sheetName": "Sheet1",
+      "rowNumber": 9,
+      "rowText": "| | | | | | 0 | 0 | 0.07692308 | 0 | 0 | 0.19230769 | 0.38461538"
+    },
+    {
+      "rowId": "Sheet1!10",
+      "sheetName": "Sheet1",
+      "rowNumber": 10,
+      "rowText": "| 3 | | 4 | 33 | 20 | 0 | 0 | 1 | 1 | 1 | 5 | 5 | 13 | 0.39393939"
+    },
+    {
+      "rowId": "Sheet1!11",
+      "sheetName": "Sheet1",
+      "rowNumber": 11,
+      "rowText": "| | | | | | 0 | 0 | 0.03030303 | 0.03030303 | 0.03030303 | 0.15151515 | 0.15151515"
+    },
+    {
+      "rowId": "Sheet1!12",
+      "sheetName": "Sheet1",
+      "rowNumber": 12,
+      "rowText": "| 4 | | 5 | 30 | 14 | 1 | 0 | 2 | 0 | 0 | 5 | 8 | 16 | 0.53333333"
+    },
+    {
+      "rowId": "Sheet1!13",
+      "sheetName": "Sheet1",
+      "rowNumber": 13,
+      "rowText": "| | | | | | 0.03333333 | 0 | 0.06666667 | 0 | 0 | 0.16666667 | 0.26666667"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-223-rc-1",
+      "reviewTitle": "| RESULT CHECK FUNCTION FOR TEST OF KR MEMBER",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "11. BRS-161014 Report check Function for TEST of KR Member 2023.08.31",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Sheet1!2",
+            "Sheet1!4",
+            "Sheet1!5"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No | Date | Type | Input | OK | NG | Total NG | NG rate",
+          "comparisonRows": [
+            "Sheet1!4"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 50337,
+              "condition": "RESULT CHECK FUNCTION FOR TEST OF KR MEMBER / Aging",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.07380952357142857,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!4"
+              ]
+            },
+            {
+              "statId": 50338,
+              "condition": "RESULT CHECK FUNCTION FOR TEST OF KR MEMBER / Frequency",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.07407407428571429,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!4"
+              ]
+            },
+            {
+              "statId": 50339,
+              "condition": "RESULT CHECK FUNCTION FOR TEST OF KR MEMBER / Hearing",
+              "spec": "",
+              "min": 0.07142857,
+              "max": 5.0,
+              "avg": 2.366549042857143,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!4"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Aging | Frequency | Hearing",
+          "comparisonRows": [
+            "Sheet1!5"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 50340,
+              "condition": "Frequency / SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.07407407428571429,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!5"
+              ]
+            },
+            {
+              "statId": 50341,
+              "condition": "Frequency / THD",
+              "spec": "",
+              "min": 0.03030303,
+              "max": 6.0,
+              "avg": 1.4058449492857144,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!5"
+              ]
+            },
+            {
+              "statId": 50342,
+              "condition": "Frequency / SPL+THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.22164673999999998,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!5"
+              ]
+            },
+            {
+              "statId": 50343,
+              "condition": "Frequency / SPL+THD+F0",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.1475726657142857,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!5"
+              ]
+            },
+            {
+              "statId": 50344,
+              "condition": "Hearing / Touch",
+              "spec": "",
+              "min": 0.07142857,
+              "max": 5.0,
+              "avg": 2.366549042857143,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!5"
+              ]
+            },
+            {
+              "statId": 50345,
+              "condition": "Hearing / Noise",
+              "spec": "",
+              "min": 0.15151515,
+              "max": 11.0,
+              "avg": 4.437763575714286,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!5"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Sheet1!2",
+        "Sheet1!4",
+        "Sheet1!5"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet1!2",
+      "Sheet1!4",
+      "Sheet1!5"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

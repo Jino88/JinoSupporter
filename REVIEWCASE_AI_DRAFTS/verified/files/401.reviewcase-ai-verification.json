@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 401,
+  "sourceFile": "21. BRS-161016 Report test Yoke  class 1~ 3_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\401.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 401,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misgroups the yoke class comparison and includes invalid measurement outcomes.",
+    "issues": [
+      "Changed factor improperly treats Total as a test condition.",
+      "Baseline Normal vs Class jig grouping is ambiguous across date/line rows.",
+      "Class 1 is incorrectly reduced to a subgroup key instead of a compared class.",
+      "Measurement outcomes are header-derived or #DIV/0 artifacts, not valid results.",
+      "Change domain material is unsupported by the cited evidence."
+    ],
+    "requiredUserQuestions": [
+      "Is Normal the intended baseline against Class jig/yoke classes?",
+      "Should comparison be by yoke class 1, 2, 3 OK, and 3 NG within the same line/date context?"
+    ],
+    "correctionPlan": [
+      "Define primary factor as yoke class/jig classification comparison only.",
+      "Keep date, line, type, and class as grouping keys for each result row.",
+      "Remove Total from changed conditions and use it only as an aggregate result.",
+      "Delete header-only measurement stats and #DIV/0 outcome rows.",
+      "Rebuild outcomes from actual function NG rates and class distribution rows."
+    ],
+    "evidencePolicy": "Row citations exist, but cited evidence is not sufficient until grouping and artifact outcomes are corrected."
+  },
+  "usage": {
+    "input_tokens": 5001,
+    "output_tokens": 691,
+    "total_tokens": 5692
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 117,
+  "sourceFile": "048.MSU - L20S15-07 REPORT CHECKING PROBLEM SUB 1 NG VP+CD OFFSET DATE 21.8.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\117.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 117,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites real rows but misreads the before/after result and gives the wrong judgement.",
+    "issues": [
+      "Outcome judgement says worse though total NG rate drops after improvement.",
+      "NG count/rate were calculated from an apparent subcategory, not the total NG/rate columns.",
+      "Changed factor omits the cited machine repair and unload X position change.",
+      "Function result header/category rows are incomplete, making metric selection ambiguous.",
+      "Sub VP/Sub1 result section is mentioned but not evaluated or excluded."
+    ],
+    "requiredUserQuestions": [
+      "Should the outcome use total NG rate or only VP/CD offset defect counts?",
+      "Should the unload position change be the primary changed factor?"
+    ],
+    "correctionPlan": [
+      "Rebuild the changed factor from purpose/content and the unload X 81.65 to 81.60 note.",
+      "Recalculate before/after using the intended NG count and rate columns.",
+      "Change judgement to improved if using total NG rate.",
+      "Add or cite missing function header rows that define each numeric column.",
+      "Decide whether Sub VP/Sub1 results belong in this same case or are unavailable."
+    ],
+    "evidencePolicy": "Row citations exist, but metric/header evidence is insufficient for final use."
+  },
+  "usage": {
+    "input_tokens": 2498,
+    "output_tokens": 789,
+    "total_tokens": 3287
+  }
+}

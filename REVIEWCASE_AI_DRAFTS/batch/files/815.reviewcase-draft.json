@@ -1,0 +1,329 @@
+{
+  "sourceFileId": 815,
+  "sourceFile": "64. TIU L5S3-01 R.L Result check dimension Frame -  date 2026.01.28_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\64. TIU L5S3-01 R.L Result check dimension Frame -  date 2026.01.28_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "28.01",
+    "sheetRowCount": 20,
+    "sheetCellCount": 64,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 10
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "28.01!2",
+      "sheetName": "28.01",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R/L] RESULT CHECK DIMENSION FRAME NG NOT PICKUP | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "28.01!3",
+      "sheetName": "28.01",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | Date | 2026-01-28 00:00:00"
+    },
+    {
+      "rowId": "28.01!4",
+      "sheetName": "28.01",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "28.01!5",
+      "sheetName": "28.01",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "28.01!6",
+      "sheetName": "28.01",
+      "rowNumber": 6,
+      "rowText": "| - Sub 3 happen NG Frame not pick up => Check dimension Frame OK or not"
+    },
+    {
+      "rowId": "28.01!7",
+      "sheetName": "28.01",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "28.01!8",
+      "sheetName": "28.01",
+      "rowNumber": 8,
+      "rowText": "| - Check dimension Frame L/R"
+    },
+    {
+      "rowId": "28.01!9",
+      "sheetName": "28.01",
+      "rowNumber": 9,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "28.01!10",
+      "sheetName": "28.01",
+      "rowNumber": 10,
+      "rowText": "| 1. Result check dimension"
+    },
+    {
+      "rowId": "28.01!11",
+      "sheetName": "28.01",
+      "rowNumber": 11,
+      "rowText": "| | No | Date | Frame R | | Frame L"
+    },
+    {
+      "rowId": "28.01!12",
+      "sheetName": "28.01",
+      "rowNumber": 12,
+      "rowText": "| | | | A: 3.87~3.90 | B: 6.00~6.03 | A: 3.87~3.90 | B: 6.00~6.03"
+    },
+    {
+      "rowId": "28.01!13",
+      "sheetName": "28.01",
+      "rowNumber": 13,
+      "rowText": "| | 1 | 2026-01-28 00:00:00 | 3.93 | 6.02 | 3.91 | 6.02"
+    },
+    {
+      "rowId": "28.01!22",
+      "sheetName": "28.01",
+      "rowNumber": 22,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-815-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R/L] RESULT CHECK DIMENSION FRAME NG NOT PICKUP | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Sub 3 happen NG Frame not pick up => Check dimension Frame OK or not / | II. Content. / | - Check dimension Frame L/R / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "dimension/spec"
+          ],
+          "changedFactor": "64. TIU L5S3-01 R.L Result check dimension Frame - date 2026.01.28",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "28.01!11",
+            "28.01!12",
+            "28.01!2",
+            "28.01!20",
+            "28.01!5",
+            "28.01!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "28.01!20"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 62998,
+              "condition": "A: 3.87~3.90",
+              "spec": "",
+              "min": 3.92,
+              "max": 3.93,
+              "avg": 3.926,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "28.01!20"
+              ]
+            },
+            {
+              "statId": 62999,
+              "condition": "B: 6.00~6.03",
+              "spec": "",
+              "min": 6.0,
+              "max": 6.02,
+              "avg": 6.014,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "28.01!20"
+              ]
+            },
+            {
+              "statId": 63000,
+              "condition": "A: 3.87~3.90",
+              "spec": "",
+              "min": 3.91,
+              "max": 3.93,
+              "avg": 3.922,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "28.01!20"
+              ]
+            },
+            {
+              "statId": 63001,
+              "condition": "B: 6.00~6.03",
+              "spec": "",
+              "min": 6.01,
+              "max": 6.03,
+              "avg": 6.02,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "28.01!20"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "1. Result check dimension",
+          "comparisonRows": [
+            "28.01!11"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 63002,
+              "condition": "1. Result check dimension / Frame R",
+              "spec": "",
+              "min": 3.87,
+              "max": 3.93,
+              "avg": 3.9166666666666665,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "28.01!11"
+              ]
+            },
+            {
+              "statId": 63003,
+              "condition": "1. Result check dimension / Frame L",
+              "spec": "",
+              "min": 3.87,
+              "max": 3.93,
+              "avg": 3.9133333333333336,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "28.01!11"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No | Date | Frame R | Frame L",
+          "comparisonRows": [
+            "28.01!12"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 63004,
+              "condition": "Frame R / A: 3.87~3.90",
+              "spec": "",
+              "min": 3.92,
+              "max": 3.93,
+              "avg": 3.9259999999999997,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "28.01!12"
+              ]
+            },
+            {
+              "statId": 63005,
+              "condition": "Frame R / B: 6.00~6.03",
+              "spec": "",
+              "min": 6.0,
+              "max": 6.02,
+              "avg": 6.014,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "28.01!12"
+              ]
+            },
+            {
+              "statId": 63006,
+              "condition": "Frame L / A: 3.87~3.90",
+              "spec": "",
+              "min": 3.91,
+              "max": 3.93,
+              "avg": 3.9219999999999997,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "28.01!12"
+              ]
+            },
+            {
+              "statId": 63007,
+              "condition": "Frame L / B: 6.00~6.03",
+              "spec": "",
+              "min": 6.01,
+              "max": 6.03,
+              "avg": 6.02,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "28.01!12"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "28.01!11",
+        "28.01!12",
+        "28.01!2",
+        "28.01!20",
+        "28.01!5",
+        "28.01!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "28.01!11",
+      "28.01!12",
+      "28.01!2",
+      "28.01!20",
+      "28.01!5",
+      "28.01!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

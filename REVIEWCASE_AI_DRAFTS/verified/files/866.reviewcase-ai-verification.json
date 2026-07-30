@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 866,
+  "sourceFile": "71. BRS-201506 CHECK GAUSS MG OF VENDER BAOTOU and RIUJIN RESULT (ME+PQC)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\866.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:31Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 866,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but its changed-factor and outcome grouping is not reliable for final evidence.",
+    "issues": [
+      "Changed factor merges supplier, dry process, size sheets, and Gauss Low vs Normal into one condition.",
+      "Baseline and test conditions are inconsistent across Baotou and Ruijin rows.",
+      "Several outcomes use header text as metrics instead of gauss or NG-rate metrics.",
+      "Measurement stats cite header rows and appear contaminated by line/sample indices.",
+      "Test C-MG Low gauss likely belongs to a separate comparison context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split comparisons by sheet/test context and preserve supplier, process, date, line, and sample keys.",
+      "Define separate Baotou vs Ruijin and before/after dry process comparisons where rows support them.",
+      "Use NG Gauss Low, NG rate, and gauss values as outcomes with correct units.",
+      "Remove header-only or index-contaminated measurement outcomes.",
+      "Cite both header/context rows and exact data rows for each subresult."
+    ],
+    "evidencePolicy": "Row existence is sufficient, but citation relevance and row-level grouping are insufficient."
+  },
+  "usage": {
+    "input_tokens": 16071,
+    "output_tokens": 774,
+    "total_tokens": 16845
+  }
+}

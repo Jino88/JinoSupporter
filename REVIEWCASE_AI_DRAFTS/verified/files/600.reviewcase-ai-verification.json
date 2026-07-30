@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 600,
+  "sourceFile": "39. BRS-161014 DT Report test separate lot all mold VP  date 2024.05.23_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\600.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 600,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable function data but misstates the changed factor and includes invalid measurement outcomes.",
+    "issues": [
+      "Baseline/test comparison is not explicit in source rows.",
+      "Changed condition wrongly mixes dates, totals, and mold IDs.",
+      "Header/title rows were converted into bogus measurement statistics.",
+      "Date and Mold VP grouping is not preserved cleanly.",
+      "Decision/acceptance basis is not captured."
+    ],
+    "requiredUserQuestions": [
+      "Should this be treated as validation of separate all Mold VP rather than a baseline comparison?",
+      "What criterion defines OK or NG rate acceptability?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor as separate all Mold VP validation with no explicit baseline.",
+      "Group results by date and Mold VP, keeping totals separate from mold rows.",
+      "Keep only functional NG rate outcomes from the result table.",
+      "Remove header/title-derived measurement outcomes.",
+      "Add decision or acceptance evidence rows if available."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient because several cited rows are headers or misused context."
+  },
+  "usage": {
+    "input_tokens": 3869,
+    "output_tokens": 680,
+    "total_tokens": 4549
+  }
+}

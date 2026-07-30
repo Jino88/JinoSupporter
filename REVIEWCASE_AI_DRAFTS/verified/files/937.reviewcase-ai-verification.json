@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 937,
+  "sourceFile": "82.1 BRS-161016 (DT)  Report TEST reduce time oven dry process dry B-PT+SMG and Dry Frame+Sus improve capa  3.12.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\937.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 937,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies checkpoint labels as changed factors instead of oven-dry time reductions for Frame+SP and SMG.",
+    "issues": [
+      "Primary changed factor is wrong; it should be time reduction, not magnetic/vision checkpoints.",
+      "Frame+SP and SMG have different test times and should be separated or clearly subgrouped.",
+      "SMG defect comparisons mix unrelated rows and contain incorrect NG values.",
+      "Measurement outcomes are parser artifacts from headers, times, lines, and temperatures.",
+      "Decision/tension results are not properly captured or judged."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factors as Frame+SP 20 to 15 minutes and SMG 20 to 18 minutes.",
+      "Treat line, date, temperature, content stage, and row number as subgroup keys.",
+      "Recalculate defect rates from same-run before/after/vision rows without cross-run pairing.",
+      "Remove header-derived measurement artifacts and keep only real tension or defect metrics.",
+      "Add citations to content rows, relevant result rows, and decision rows if usable."
+    ],
+    "evidencePolicy": "Row citations exist but are misgrouped and do not support the current conclusions."
+  },
+  "usage": {
+    "input_tokens": 8974,
+    "output_tokens": 785,
+    "total_tokens": 9759
+  }
+}

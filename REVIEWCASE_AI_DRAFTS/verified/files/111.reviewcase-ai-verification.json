@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 111,
+  "sourceFile": "040.MSU-20S15-07 Result test  aging can use or not check lot separate VP + CD_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\111.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 111,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because the changed-factor and outcome grouping do not match the report context.",
+    "issues": [
+      "Baseline/test condition is invented; no explicit normal baseline is shown.",
+      "Primary comparisons are misgrouped; Test 1 VP+CD OK/NG and Test 2 CD lot dates are mixed.",
+      "Function result values are misread, with hearing/defect counts treated as NG=0.",
+      "Separate NG results are omitted from the outcome set.",
+      "Evidence is incomplete and includes a cited row not provided in context."
+    ],
+    "requiredUserQuestions": [
+      "Should Test 1 and Test 2 be one validation case or separate review cases?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factors from report content: MC aging usability for VP+CD separation, with Test 1 and CD lot-date subgroups preserved.",
+      "Remove invented baseline wording unless a cited row proves it.",
+      "Parse result headers and counts correctly, including hearing and rate fields.",
+      "Add separate NG outcome rows and all CD lot-date result rows.",
+      "Cite purpose, test setup, headers, and each result row used."
+    ],
+    "evidencePolicy": "Current citations are insufficient for final evidence; row-level setup and result citations must be corrected."
+  },
+  "usage": {
+    "input_tokens": 3051,
+    "output_tokens": 795,
+    "total_tokens": 3846
+  }
+}

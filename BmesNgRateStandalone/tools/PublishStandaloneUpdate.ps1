@@ -47,6 +47,30 @@ if (Test-Path -LiteralPath $zipPath) {
 Compress-Archive -Path (Join-Path $publishDir '*') -DestinationPath $zipPath -Force
 $sha256 = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
 
+# Installer for a fresh PC (the zip above is what the in-app updater pulls). Delegated to
+# BuildStandaloneInstaller.ps1, which owns the ISCC lookup; -SkipPublish reuses the publish
+# output produced above instead of building it a second time.
+$setupName = $null
+$setupSha256 = $null
+try {
+    & (Join-Path $PSScriptRoot 'BuildStandaloneInstaller.ps1') -Version $Version -SkipPublish
+
+    $setupName = "BmesNgRateStandalone_Setup-$Version.exe"
+    $setupSource = Join-Path $standaloneRoot (Join-Path 'dist' $setupName)
+    if (-not (Test-Path -LiteralPath $setupSource)) {
+        throw "Installer build finished but $setupSource was not found."
+    }
+
+    Copy-Item -LiteralPath $setupSource -Destination (Join-Path $webUpdateDir $setupName) -Force
+    $setupSha256 = (Get-FileHash -LiteralPath $setupSource -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+catch {
+    # Zip-only publishing still works (that is what the in-app updater uses); the PC Download
+    # page just falls back to offering the portable zip.
+    $setupName = $null
+    Write-Warning "Installer was not built — publishing the zip only. $($_.Exception.Message)"
+}
+
 $manifest = [ordered]@{
     version = $Version
     url = "$BaseUrl/standalone/download/$zipName"
@@ -55,16 +79,29 @@ $manifest = [ordered]@{
     publishedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 }
 
+if ($setupName) {
+    # Extra fields; the standalone updater ignores unknown properties and keeps using `url`.
+    $manifest.setupUrl = "$BaseUrl/standalone/download/$setupName"
+    $manifest.setupSha256 = $setupSha256
+}
+
 $manifestPath = Join-Path $webUpdateDir 'update.json'
 $manifest | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
 
 New-Item -ItemType Directory -Path $webDebugUpdateDir -Force | Out-Null
 Copy-Item -LiteralPath $zipPath -Destination (Join-Path $webDebugUpdateDir $zipName) -Force
 Copy-Item -LiteralPath $manifestPath -Destination (Join-Path $webDebugUpdateDir 'update.json') -Force
+if ($setupName) {
+    Copy-Item -LiteralPath (Join-Path $webUpdateDir $setupName) -Destination (Join-Path $webDebugUpdateDir $setupName) -Force
+}
 
 Write-Host "Published standalone update manifest:"
 Write-Host $manifestPath
 Write-Host "Package:"
 Write-Host $zipPath
+if ($setupName) {
+    Write-Host "Installer:"
+    Write-Host (Join-Path $webUpdateDir $setupName)
+}
 Write-Host "Runtime update directory:"
 Write-Host $webDebugUpdateDir

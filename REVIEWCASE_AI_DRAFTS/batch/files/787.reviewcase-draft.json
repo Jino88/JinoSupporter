@@ -1,0 +1,198 @@
+{
+  "sourceFileId": 787,
+  "sourceFile": "60.BRS-161014 Report test Suspension D cleaning pad solder date 03.11.2023_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\60.BRS-161014 Report test Suspension D cleaning pad solder date 03.11.2023_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "03.11",
+    "sheetRowCount": 16,
+    "sheetCellCount": 34,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "03.11!2",
+      "sheetName": "03.11",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST SUSPENSION D CLEANING PAD SOLDER | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "03.11!3",
+      "sheetName": "03.11",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | Date | 2023-11-03 00:00:00"
+    },
+    {
+      "rowId": "03.11!4",
+      "sheetName": "03.11",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | Marker"
+    },
+    {
+      "rowId": "03.11!5",
+      "sheetName": "03.11",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "03.11!6",
+      "sheetName": "03.11",
+      "rowNumber": 6,
+      "rowText": "| - To improve NG rate of AI spot welding"
+    },
+    {
+      "rowId": "03.11!7",
+      "sheetName": "03.11",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "03.11!8",
+      "sheetName": "03.11",
+      "rowNumber": 8,
+      "rowText": "| - To use Suspension D cleaning pad solder => make sample and checking NG rate of AI spot welding, compare with normal line"
+    },
+    {
+      "rowId": "03.11!9",
+      "sheetName": "03.11",
+      "rowNumber": 9,
+      "rowText": "| - Q'ty test: 960pcs"
+    },
+    {
+      "rowId": "03.11!10",
+      "sheetName": "03.11",
+      "rowNumber": 10,
+      "rowText": "| III.Result"
+    },
+    {
+      "rowId": "03.11!11",
+      "sheetName": "03.11",
+      "rowNumber": 11,
+      "rowText": "| | RESULT CHECKING AI SPOT WELDING PROCESS"
+    },
+    {
+      "rowId": "03.11!12",
+      "sheetName": "03.11",
+      "rowNumber": 12,
+      "rowText": "| | Date | Type | | Input | OK | AI check NG | NG rate"
+    },
+    {
+      "rowId": "03.11!13",
+      "sheetName": "03.11",
+      "rowNumber": 13,
+      "rowText": "| | 2023-11-03 00:00:00 | Test cleaning suspension D | | 932 | 847 | 85 | 0.09120172"
+    },
+    {
+      "rowId": "03.11!14",
+      "sheetName": "03.11",
+      "rowNumber": 14,
+      "rowText": "| | | Normal | | 7636 | 5579 | 2057 | 0.26938188"
+    },
+    {
+      "rowId": "03.11!26",
+      "sheetName": "03.11",
+      "rowNumber": 26,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-787-rc-1",
+      "reviewTitle": "REPORT TEST SUSPENSION D CLEANING PAD SOLDER | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To improve NG rate of AI spot welding / | II. Content. / | - To use Suspension D cleaning pad solder => make sample and checking NG rate of AI spot welding, compare with normal line / | - Q'ty test: 960pcs",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Test cleaning suspension D",
+          "baselineCondition": "Normal",
+          "changedCondition": "Test cleaning suspension D",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "03.11!13",
+            "03.11!14",
+            "03.11!2",
+            "03.11!5",
+            "03.11!7",
+            "03.11!8",
+            "03.11!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "RESULT CHECKING AI SPOT WELDING PROCESS",
+          "comparisonRows": [
+            "03.11!13",
+            "03.11!14"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 4703,
+              "controlCondition": "Normal",
+              "testCondition": "Test cleaning suspension D",
+              "control": {
+                "input": 7636.0,
+                "ng": 2057.0,
+                "ratePercent": 26.938188
+              },
+              "test": {
+                "input": 932.0,
+                "ng": 85.0,
+                "ratePercent": 9.120172
+              },
+              "deltaRatePercentPoint": -17.818016000000004,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "03.11!13",
+                "03.11!14"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "03.11!13",
+        "03.11!14",
+        "03.11!2",
+        "03.11!5",
+        "03.11!7",
+        "03.11!8",
+        "03.11!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "03.11!13",
+      "03.11!14",
+      "03.11!2",
+      "03.11!5",
+      "03.11!7",
+      "03.11!8",
+      "03.11!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

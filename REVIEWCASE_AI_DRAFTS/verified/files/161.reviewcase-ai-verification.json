@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 161,
+  "sourceFile": "08. BRS-161014 Report test verify again VP mold 4, 7,9 date 19.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\161.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:28Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 161,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the main VP mold verification but needs cleanup before use as final evidence.",
+    "issues": [
+      "Measurement outcome is a header-derived false extraction.",
+      "Changed condition duplicates plain and test mold labels.",
+      "Baselines differ by outcome section and need section context.",
+      "Tension-test content is mentioned but not represented.",
+      "Section/date/type grouping keys are under-specified."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove the measurement outcome based only on row 39.",
+      "Normalize changed factor to VP mold #4/#7/#9 versus normal VP molds.",
+      "Record section-specific baselines: vision uses mold #6 and function uses mold #2.",
+      "Add valid tension-test outcome rows if present, otherwise note not extracted.",
+      "Add subgroup keys for outcome section, date, line/type, and mold number."
+    ],
+    "evidencePolicy": "Citations exist, but header-only and missing section evidence make them insufficient for final use."
+  },
+  "usage": {
+    "input_tokens": 4462,
+    "output_tokens": 740,
+    "total_tokens": 5202
+  }
+}

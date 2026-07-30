@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 68,
+  "sourceFile": "027.MSU-20S15-07 Result check NG SPL ( At ~ 12.5) 30.6.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\68.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:12Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 68,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because the changed-factor grouping and evidence citations do not match the report context.",
+    "issues": [
+      "Review title incorrectly uses FO row instead of report purpose.",
+      "Primary comparison is arbitrary and omits Normal baselines and dated trials.",
+      "Function!42 is cited but not available in supplied context.",
+      "NTI/SPL/THD stats cite headers only, not measurement data rows.",
+      "Multiple outcome domains are mixed without a clear changed-factor structure."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Retitle around NG SPL check at 10K-14K for MSU-20S1507.",
+      "Rebuild changed factors from Function rows by date, line, and type check.",
+      "Include Normal rows as baselines where paired with changed bonding conditions.",
+      "Separate or link dry oven, decap, NTI, and bonding outcomes under clear context.",
+      "Cite header plus each actual result or measurement data row used."
+    ],
+    "evidencePolicy": "Current citations are insufficient; final evidence needs row-level condition and result citations, not header-only rows."
+  },
+  "usage": {
+    "input_tokens": 7856,
+    "output_tokens": 706,
+    "total_tokens": 8562
+  }
+}

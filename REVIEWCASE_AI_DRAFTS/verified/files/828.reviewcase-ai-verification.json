@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 828,
+  "sourceFile": "66. TIU L5S3-01 R Report  test find reason NG bako high 2026.01.30_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\828.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:24Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 828,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparison data but changed-factor grouping and measurement outcomes are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor bundles several interventions while the judged comparison only uses Normal vs bond-min-spec.",
+      "Rows for other test conditions are cited but not represented as separate outcomes.",
+      "Header row Test!15 is incorrectly used as measurement evidence with derived stats.",
+      "Outcome domain and metric are generic and do not name NG BAKO or total NG rate clearly.",
+      "Causal judgement improved may overstate evidence if multiple repair actions were tested separately."
+    ],
+    "requiredUserQuestions": [
+      "Should test rows 18, 20, 22, and 24 be separate conditions or one combined repair bundle?",
+      "Which condition is intended as the final repaired state for the decision?"
+    ],
+    "correctionPlan": [
+      "Split outcomes by each result row condition or define one combined repair condition with matching rows.",
+      "Limit the improved judgement to comparisons directly supported by result rows.",
+      "Remove the header-derived measurement outcome unless real measurement rows are cited.",
+      "Rename metrics to NG BAKO count, Total NG, and Total NG rate as applicable.",
+      "Add decision row support only after aligning it to the correct repaired condition."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until cited result rows are mapped to exact conditions."
+  },
+  "usage": {
+    "input_tokens": 3530,
+    "output_tokens": 677,
+    "total_tokens": 4207
+  }
+}

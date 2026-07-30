@@ -1,0 +1,289 @@
+{
+  "sourceFileId": 213,
+  "sourceFile": "10. TIU L5S3-01 - Report test material C-MG difference color - date 2026.05.05_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\10. TIU L5S3-01 - Report test material C-MG difference color - date 2026.05.05_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "Sheet1; Test",
+    "sheetRowCount": 27,
+    "sheetCellCount": 153,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 3
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 REPORT TEST MATERIAL C-MG NG DIFFERENCE COLOR OF VENDOR BAOTOU | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Date | 2026-05-05 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Test lot C-MG happen NG difference color can use or not"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Q'ty test: | + Lv2 Maglong : 10pcs"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| | + Lv3 Maglong : 10pcs"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| | + Lv1 Maglong : 10pcs"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| - Make sample and check:"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | + Align and AI check NG rate"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | + Tension MG+Yoke: 8pcs"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| - Compare with normal"
+    },
+    {
+      "rowId": "Test!15",
+      "sheetName": "Test",
+      "rowNumber": 15,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!28",
+      "sheetName": "Test",
+      "rowNumber": 28,
+      "rowText": "| 2. Result tension C-MG+Yoke"
+    },
+    {
+      "rowId": "Test!29",
+      "sheetName": "Test",
+      "rowNumber": 29,
+      "rowText": "| | No | Date | Item | Spec | Result | Min | Max | AVG | No sample"
+    },
+    {
+      "rowId": "Test!42",
+      "sheetName": "Test",
+      "rowNumber": 42,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-213-rc-1",
+      "reviewTitle": "| TIU L5S3-01 REPORT TEST MATERIAL C-MG NG DIFFERENCE COLOR OF VENDOR BAOTOU | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Test lot C-MG happen NG difference color can use or not / | II. Content. / | - Q'ty test: | + Lv2 Maglong : 10pcs / | | + Lv3 Maglong : 10pcs",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "supplier",
+            "material",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Lv2 Maglong, Lv1 Ruijin",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Lv2 Maglong, Lv1 Ruijin",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!14",
+            "Test!19",
+            "Test!2",
+            "Test!21",
+            "Test!31",
+            "Test!32",
+            "Test!33",
+            "Test!5",
+            "Test!6",
+            "Test!7",
+            "Test!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "No | Date | Item | Bonding MG | AI check Bond MG | AI check CM+Yoke",
+          "comparisonRows": [
+            "Test!19",
+            "Test!21"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 18758,
+              "condition": "Lv2 Maglong",
+              "input": 10.0,
+              "ok": null,
+              "ng": 1.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!19"
+              ]
+            },
+            {
+              "metricId": 18759,
+              "condition": "Lv1 Ruijin",
+              "input": 10.0,
+              "ok": null,
+              "ng": 1.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!21"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "2. Result tension C-MG+Yoke",
+          "comparisonRows": [
+            "Test!31",
+            "Test!32",
+            "Test!33"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 50013,
+              "condition": "Lv2 Maglong | Pass",
+              "spec": "",
+              "min": 1.0,
+              "max": 2.525,
+              "avg": 1.5212,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!31"
+              ]
+            },
+            {
+              "statId": 50014,
+              "condition": "Lv3 Maglong | Fail",
+              "spec": "",
+              "min": 0.684,
+              "max": 2.095,
+              "avg": 1.4256,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!32"
+              ]
+            },
+            {
+              "statId": 50015,
+              "condition": "Lv1 Ruijin | Pass",
+              "spec": "",
+              "min": 2.209,
+              "max": 2.925,
+              "avg": 2.5807,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!33"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!14",
+        "Test!19",
+        "Test!2",
+        "Test!21",
+        "Test!31",
+        "Test!32",
+        "Test!33",
+        "Test!5",
+        "Test!6",
+        "Test!7",
+        "Test!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!14",
+      "Test!19",
+      "Test!2",
+      "Test!21",
+      "Test!31",
+      "Test!32",
+      "Test!33",
+      "Test!5",
+      "Test!6",
+      "Test!7",
+      "Test!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

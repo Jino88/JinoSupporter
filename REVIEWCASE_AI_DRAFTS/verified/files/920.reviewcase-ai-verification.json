@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 920,
+  "sourceFile": "8. BRS-201506 Report Test DOE dimension VP cutting inner side  date 12.09.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\920.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:07Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 920,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid source rows but changed-factor and outcome grouping need correction before use.",
+    "issues": [
+      "Changed factor mixes VP Normal, laser normal, and Type 1-3 inconsistently.",
+      "Type values conflict between purpose and result-table specs.",
+      "Change domain includes coating without evidence.",
+      "Measurement outcomes include duplicate or misparsed tables and wrong specs.",
+      "Function rows need paired grouping by test type and matching normal row."
+    ],
+    "requiredUserQuestions": [
+      "Is Type 3 an intentional test condition despite purpose listing two types?",
+      "Should baseline be VP Normal function rows or laser cutting normal dimension column?"
+    ],
+    "correctionPlan": [
+      "Set change domain to dimension/spec and laser cutting only if supported.",
+      "Rebuild changed factor from table headers and purpose rows.",
+      "Keep dimension and function outcomes under one DOE context but separate metrics clearly.",
+      "Remove duplicate/misparsed measurement outcomes and fix spec mapping per column.",
+      "Cite header rows plus each actual data row used for every subresult."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are overbroad and some parsed evidence is insufficient."
+  },
+  "usage": {
+    "input_tokens": 6995,
+    "output_tokens": 721,
+    "total_tokens": 7716
+  }
+}

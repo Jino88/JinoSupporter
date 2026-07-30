@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 172,
+  "sourceFile": "09. BRS-161016 GMI Report  test MTR Suspension 161014 D-1 changing tin supplier of vendoer CSY Tech vina - 2025.05.26_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\172.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:47Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 172,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but mis-scopes the changed factor and omits most report outcomes.",
+    "issues": [
+      "Changed factor should reflect tin supplier change, not only Normal vs Test labels.",
+      "Only module-line function NG is captured; other validation results are omitted.",
+      "Judgement 'improved' conflicts with report decision that results are same as normal.",
+      "Outcome parsing lacks nearby headers, so NG totals/rates may be unreliable.",
+      "Review title is taken from decap sheet instead of main test report context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary changed factor as CSY Tech Vina tin supplier change with Normal vs Test as comparison conditions.",
+      "Use TEST title, purpose, content, and decision rows as main review context.",
+      "Add all comparable outcomes: vision spot welding, SP+coil tension, SPK function, module function, and F-PCB+SP tension.",
+      "Cite header rows with each data pair before calculating rates or pass/fail judgements.",
+      "Treat decap sheet as supporting NG analysis unless creating a separate cited outcome."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient; add main title, headers, all compared rows, and decision rows."
+  },
+  "usage": {
+    "input_tokens": 4570,
+    "output_tokens": 796,
+    "total_tokens": 5366
+  }
+}

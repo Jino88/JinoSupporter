@@ -1,0 +1,498 @@
+@page "/report/bmes"
+@rendermode InteractiveServer
+@using JinoSupporter.Web.Services
+@using System.Text.Json
+@inject NgRateSettingsService NgRateSettings
+@inject WebRepository Repo
+@inject BmesReportHtmlExportService HtmlExport
+
+<PageTitle>BMES - Report</PageTitle>
+
+@* Setup-panel layout styles (.ngrate-flow grid, etc.) used to come from the inline
+   child report components. Those are now rendered as iframes, so inject the styles
+   here directly to keep the Report Setup / Progress area looking exactly as before. *@
+<NgRateReportStyles />
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span class="fw-semibold" style="font-size:16px;">RP</span>
+    <h5 class="mb-0 fw-semibold">Report</h5>
+</div>
+
+<NgRateSetupPanel LayoutClass="ngrate-flow"
+                  DataCellClass="ngrate-flow-data"
+                  ProgressCellClass="ngrate-flow-progress"
+                  StartDate="@_startDate"
+                  StartDateChanged="@((DateTime d) => _startDate = d)"
+                  EndDate="@_endDate"
+                  EndDateChanged="@((DateTime d) => _endDate = d)"
+                  IsBusy="false"
+                  IsReportBusy="@_isReportBusy"
+                  IsCredentialsConfigured="@NgRateSettings.IsCredentialsConfigured"
+                  LoginId="@NgRateSettings.LoginId"
+                  ErrorMessage="@_errorMessage"
+                  ShowClearResult="false"
+                  LogElementId="bmesReportLog"
+                  Stages="@_progress.Stages"
+                  OverallPercent="@_progress.OverallPercent"
+                  Logs="@_logs"
+                  HasSuccessfulResult="@_hasSuccessfulResult"
+                  OnSetToday="SetToday"
+                  OnClearLogs="@ClearLogs">
+    @* Minimum PPM moved into the generated report's viewer toolbar: the export now
+       carries every reason row, so the threshold is a display setting rather than a
+       generation input. *@
+    <GroupPicker>
+        <NgRateModelGroupPicker Groups="@_groups"
+                                Title="Sub Groups"
+                                SelectedGroupIds="@_selectedGroupIds"
+                                SelectedSubEntries="@_selectedSubEntries"
+                                ActiveProductGroup="@_activeProductGroup"
+                                ActiveProductGroupChanged="@((string pg) => _activeProductGroup = pg)"
+                                IsBusy="false"
+                                IsReportBusy="@_isReportBusy"
+                                IsCredentialsConfigured="@NgRateSettings.IsCredentialsConfigured"
+                                OnRefresh="ReloadGroups"
+                                OnToggleGroup="ToggleGroup"
+                                OnToggleSubEntry="ToggleSubEntry"
+                                OnGetReport="GetReportAsync" />
+    </GroupPicker>
+</NgRateSetupPanel>
+
+@* The tab menu and all seven reports live INSIDE the generated HTML; the app just
+   shows that single file. Tab switching happens in the HTML (no Blazor involved). *@
+<div class="bmes-report-tab-content">
+    @if (_exportToken is null)
+    {
+        <div class="text-muted small p-4">
+            기간과 서브그룹을 선택한 뒤 <strong>Get Report</strong>를 눌러 리포트를 생성하세요.
+        </div>
+    }
+    else
+    {
+        <iframe src="@($"/report/bmes/view/{_exportToken}")"
+                title="BMES Report"
+                style="width:100%; height:82vh; border:0; display:block;"></iframe>
+    }
+</div>
+
+<style>
+    .bmes-report-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 32px;
+        border-bottom: 1px solid #d7dee8;
+    }
+
+    .bmes-report-tab {
+        border: 1px solid transparent;
+        border-bottom: 0;
+        background: transparent;
+        color: #475569;
+        padding: 9px 18px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 6px 6px 0 0;
+    }
+
+    .bmes-report-tab:hover {
+        background: #f8fafc;
+        color: #0f172a;
+    }
+
+    .bmes-report-tab.active {
+        background: #fff;
+        border-color: #d7dee8;
+        color: #0f172a;
+        margin-bottom: -1px;
+    }
+
+    .bmes-report-tab-content {
+        background: #fff;
+        border: 1px solid #d7dee8;
+        border-top: 0;
+        padding: 18px 0 0;
+    }
+
+    .bmes-report-panel {
+        display: block;
+    }
+
+    .bmes-report-panel.hidden {
+        display: none;
+    }
+
+    .bmes-report-tab-content .pivot-wrap,
+    .bmes-report-tab-content .weekly-form-wrap {
+        overflow-x: auto !important;
+        text-align: left;
+    }
+
+    .bmes-report-tab-content .pivot-table.text-fit-table {
+        table-layout: auto !important;
+        width: max-content !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        margin-left: 0;
+        margin-right: auto;
+    }
+
+    .bmes-report-tab-content .pivot-table.text-fit-table th:not(.label-th):not(.sep-th),
+    .bmes-report-tab-content .pivot-table.text-fit-table td:not(.label-td):not(.group-name-td):not(.sep-td):not(.toggle-cell):not(.row-hide-cell) {
+        padding-left: 5px !important;
+        padding-right: 5px !important;
+    }
+
+    .bmes-report-tab-content .pivot-table.text-fit-table td.bmes-report-number-cell {
+        box-sizing: border-box;
+        width: var(--bmes-report-cell-width, auto) !important;
+        min-width: var(--bmes-report-cell-width, max-content) !important;
+        max-width: var(--bmes-report-cell-width, none) !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+</style>
+
+@code {
+    private DateTime _startDate = DateTime.Today;
+    private DateTime _endDate = DateTime.Today;
+    private const string SelectionSettingKey = "BmesReport:SelectionState";
+    private static readonly JsonSerializerOptions SelectionJsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private bool _isReportBusy;
+    private bool _hasSuccessfulResult;
+    private string _errorMessage = string.Empty;
+    private readonly List<string> _logs = new();
+
+    // Stage names live on the export service — it is what drives them — so the bars
+    // here and the progress it reports cannot drift apart.
+    private const string ProgressBaselineKey = "BmesReport:StageBaselines";
+
+    private ReportProgressTracker _progress = default!;
+
+    private List<ModelGroupRecord> _groups = new();
+    private HashSet<long> _selectedGroupIds = new();
+    private HashSet<string> _selectedSubEntries = new(StringComparer.Ordinal);
+    private string _activeProductGroup = "ETC";
+
+    private bool _isSelectionLoaded;
+
+    // Token for the current generated HTML bundle (temp folder name). The iframe
+    // points at /report/bmes/view/{token}; the tab menu lives inside that HTML.
+    private string? _exportToken;
+
+    protected override void OnInitialized()
+    {
+        _progress = new ReportProgressTracker(
+            BmesReportHtmlExportService.StageNames,
+            onChanged: () => InvokeAsync(StateHasChanged));
+        _progress.ImportBaselines(LoadStageBaselines());
+
+        ReloadGroups();
+        if (!_isSelectionLoaded)
+        {
+            LoadSelectionState();
+            _isSelectionLoaded = true;
+        }
+    }
+
+    /// <summary>Step counts from the last successful run, used as the denominator for
+    /// each stage's percentage. Absent on a first-ever run — the bars animate instead.</summary>
+    private Dictionary<string, int>? LoadStageBaselines()
+    {
+        string? value = Repo.GetSetting(ProgressBaselineKey);
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<string, int>>(value, SelectionJsonOptions);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private void SaveStageBaselines()
+    {
+        Dictionary<string, int> baselines = _progress.ExportBaselines();
+        if (baselines.Count == 0) return;
+        Repo.SetSetting(ProgressBaselineKey, JsonSerializer.Serialize(baselines, SelectionJsonOptions));
+    }
+
+    private void ReloadGroups()
+    {
+        _groups = Repo.GetModelGroups();
+        var validIds = _groups.Select(g => g.Id).ToHashSet();
+        _selectedGroupIds.RemoveWhere(id => !validIds.Contains(id));
+
+        var validEntries = _groups
+            .SelectMany(g => ModelGroupPickerHelpers.EnumerateChildEntries(g).Select(e => e.Key))
+            .ToHashSet(StringComparer.Ordinal);
+        _selectedSubEntries.RemoveWhere(key => !validEntries.Contains(key));
+        if (_isSelectionLoaded)
+            SaveSelectionState();
+
+        _activeProductGroup = ModelGroupPickerHelpers.FirstProductGroupWithRows(_groups, _activeProductGroup);
+    }
+
+    private void ToggleGroup(long id)
+    {
+        if (!_selectedGroupIds.Remove(id)) _selectedGroupIds.Add(id);
+        SaveSelectionState();
+    }
+
+    private void ToggleSubEntry(string key)
+    {
+        if (!_selectedSubEntries.Remove(key)) _selectedSubEntries.Add(key);
+        SaveSelectionState();
+    }
+
+    private void LoadSelectionState()
+    {
+        string? value = Repo.GetSetting(SelectionSettingKey);
+        if (string.IsNullOrWhiteSpace(value)) return;
+
+        BmesReportSelectionState? state = null;
+        try
+        {
+            state = JsonSerializer.Deserialize<BmesReportSelectionState>(value, SelectionJsonOptions);
+        }
+        catch
+        {
+            return;
+        }
+
+        if (state is null) return;
+
+        var groupNamesById = _groups.ToDictionary(g => g.Id, g => g.Name);
+        var groupIdsByName = _groups.ToDictionary(g => g.Name, g => g.Id, StringComparer.Ordinal);
+
+        var nextGroupIds = new HashSet<long>();
+        foreach (var item in state.RootGroups ?? new List<BmesReportSelectionRoot>())
+        {
+            if (groupNamesById.ContainsKey(item.GroupId))
+            {
+                nextGroupIds.Add(item.GroupId);
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.GroupName)
+                && groupIdsByName.TryGetValue(item.GroupName, out var recoveredId))
+            {
+                nextGroupIds.Add(recoveredId);
+            }
+        }
+
+        var validSubKeys = _groups
+            .SelectMany(g => ModelGroupPickerHelpers.EnumerateChildEntries(g).Select(e => e.Key))
+            .ToHashSet(StringComparer.Ordinal);
+
+        var nextSubEntries = new HashSet<string>(StringComparer.Ordinal);
+        var seenSubEntries = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var item in state.SubGroups ?? new List<BmesReportSelectionSubGroup>())
+        {
+            if (item is null) continue;
+            if (!seenSubEntries.Add(item.SelectionKey)) continue;
+            if (!string.IsNullOrWhiteSpace(item.SelectionKey) && validSubKeys.Contains(item.SelectionKey))
+            {
+                nextSubEntries.Add(item.SelectionKey);
+            }
+            else if (ResolveSubSelectionKey(item, groupNamesById, groupIdsByName, out var normalizedKey)
+                     && validSubKeys.Contains(normalizedKey))
+            {
+                nextSubEntries.Add(normalizedKey);
+            }
+        }
+
+        _selectedGroupIds.Clear();
+        foreach (var id in nextGroupIds)
+            _selectedGroupIds.Add(id);
+
+        _selectedSubEntries.Clear();
+        foreach (var key in nextSubEntries)
+            _selectedSubEntries.Add(key);
+    }
+
+    private void SaveSelectionState()
+    {
+        var groupById = _groups.ToDictionary(g => g.Id, g => g.Name);
+
+        var state = new BmesReportSelectionState(
+            RootGroups: _selectedGroupIds
+                .Where(id => groupById.ContainsKey(id))
+                .Select(id => new BmesReportSelectionRoot(id, groupById[id]))
+                .OrderBy(x => x.GroupId)
+                .ToList(),
+            SubGroups: _selectedSubEntries
+                .Select(key => TryParseSelectionKey(key, out var id, out var kind, out var mat, out var path)
+                    ? new BmesReportSelectionSubGroup(
+                        GroupId: id,
+                        SelectionKey: key,
+                        GroupName: groupById.GetValueOrDefault(id) ?? string.Empty,
+                        Kind: kind,
+                        Material: mat,
+                        Path: path)
+                    : null)
+                .Where(x => x is not null)
+                .Select(x => x!)
+                .OrderBy(x => x.SelectionKey, StringComparer.Ordinal)
+                .ToList());
+
+        Repo.SetSetting(SelectionSettingKey, JsonSerializer.Serialize(state, SelectionJsonOptions));
+    }
+
+    private static bool ResolveSubSelectionKey(
+        BmesReportSelectionSubGroup item,
+        Dictionary<long, string> groupNamesById,
+        Dictionary<string, long> groupIdsByName,
+        out string? resolvedKey)
+    {
+        resolvedKey = null;
+
+        if (TryParseSelectionKey(item.SelectionKey, out var parsedGroupId, out var kind, out var material, out var path))
+        {
+            if (groupNamesById.ContainsKey(parsedGroupId))
+            {
+                resolvedKey = item.SelectionKey;
+                return true;
+            }
+
+            if (string.IsNullOrWhiteSpace(item.GroupName)
+                || !groupIdsByName.TryGetValue(item.GroupName, out parsedGroupId))
+            {
+                return false;
+            }
+
+            resolvedKey = $"{parsedGroupId}|{kind}|{material}|{path}".TrimEnd('|');
+            return !string.IsNullOrEmpty(resolvedKey);
+        }
+
+        if (string.IsNullOrWhiteSpace(item.GroupName)
+            || string.IsNullOrWhiteSpace(item.Kind)
+            || string.IsNullOrWhiteSpace(item.Material))
+        {
+            return false;
+        }
+
+        if (!groupIdsByName.TryGetValue(item.GroupName, out var groupId))
+            return false;
+
+        resolvedKey = $"{groupId}|{item.Kind}|{item.Material}|{item.Path}".TrimEnd('|');
+        return !string.IsNullOrEmpty(resolvedKey);
+    }
+
+    private static bool TryParseSelectionKey(
+        string key,
+        out long groupId,
+        out string kind,
+        out string material,
+        out string path)
+    {
+        groupId = 0;
+        kind = string.Empty;
+        material = string.Empty;
+        path = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(key)) return false;
+
+        var parts = key.Split('|');
+        if (parts.Length < 3) return false;
+        if (!long.TryParse(parts[0], out groupId)) return false;
+        kind = parts[1];
+        material = parts.Length > 2 ? parts[2] : string.Empty;
+        path = parts.Length > 3 ? parts[3] : string.Empty;
+        return true;
+    }
+
+    private void SetToday()
+    {
+        _startDate = DateTime.Today;
+        _endDate = DateTime.Today;
+    }
+
+    private void ClearLogs()
+    {
+        _logs.Clear();
+        _errorMessage = string.Empty;
+    }
+
+    private async Task GetReportAsync()
+    {
+        if (_isReportBusy) return;
+        if (_endDate < _startDate)
+        {
+            _errorMessage = "End date must be on or after start date.";
+            return;
+        }
+        if (!NgRateSettings.IsCredentialsConfigured)
+        {
+            _errorMessage = "BMES credentials are not configured.";
+            return;
+        }
+        if (_selectedGroupIds.Count == 0 && _selectedSubEntries.Count == 0)
+        {
+            _errorMessage = "Select at least one sub group.";
+            return;
+        }
+
+        _isReportBusy = true;
+        _hasSuccessfulResult = false;
+        _errorMessage = string.Empty;
+        _logs.Clear();
+        _progress.Reset();
+        DateTime startDate = _startDate.Date;
+        DateTime endDate = _endDate.Date;
+        List<ModelGroupRecord> selectedGroups = ModelGroupPickerHelpers.ApplyPickerSelection(
+            _groups, _selectedGroupIds, _selectedSubEntries);
+
+        AddLog($"Report start: {startDate:yyyy-MM-dd} - {endDate:yyyy-MM-dd}, selections={_selectedGroupIds.Count + _selectedSubEntries.Count:N0}");
+        StateHasChanged();
+
+        try
+        {
+            // The whole report (all seven tabs + the tab menu) is rendered into one
+            // self-contained HTML file; the page shows it in a single iframe and tab
+            // switching happens inside the HTML, so the browser never holds all seven
+            // heavy reports live at once.
+            string token = await HtmlExport.GenerateAllTabsAsync(
+                startDate, endDate, selectedGroups, _progress, AddLog);
+
+            _exportToken = token;
+            _hasSuccessfulResult = true;
+            _progress.SettleUnfinished(failed: false);
+            SaveStageBaselines();
+            AddLog("Report complete.");
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error: {ex.Message}";
+            AddLog("[ERROR] " + ex);
+            _progress.SettleUnfinished(failed: true);
+        }
+        finally
+        {
+            _isReportBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void AddLog(string message)
+    {
+        _logs.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private sealed record BmesReportSelectionState(
+        List<BmesReportSelectionRoot> RootGroups,
+        List<BmesReportSelectionSubGroup> SubGroups);
+
+    private sealed record BmesReportSelectionRoot(long GroupId, string GroupName);
+
+    private sealed record BmesReportSelectionSubGroup(
+        long GroupId,
+        string SelectionKey,
+        string GroupName,
+        string Kind,
+        string Material,
+        string Path);
+}

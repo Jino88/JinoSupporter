@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 615,
+  "sourceFile": "4. MSU-L20S15-07DT  Report checking  gauss yoke date 3.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\615.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 615,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source evidence but the changed-factor and outcome grouping are not reliable enough for Ask AI.",
+    "issues": [
+      "Changed factor is filename instead of process condition.",
+      "Baseline/test voltage is explicit but marked unclear.",
+      "Voltage study and dry before/after study are conflated.",
+      "Some extracted stats include non-measurement values.",
+      "Final SPK spec is misassigned in dry results."
+    ],
+    "requiredUserQuestions": [
+      "Should dry before/after be a separate changed factor from voltage increase?"
+    ],
+    "correctionPlan": [
+      "Set primary voltage factor as 2000V normal vs 2300V and 2500V test.",
+      "Group SMG and MG+PT voltage outcomes under that factor with headers and data rows.",
+      "Create or clearly separate dry before/after factor for Semi Yoke and Final SPK.",
+      "Remove polluted stats from dates, gaps, jig numbers, and headers.",
+      "Correct specs, especially Final SPK 390-590G versus Semi Yoke 375-425G."
+    ],
+    "evidencePolicy": "Row citations exist, but header-data pairing and corrected grouping are required."
+  },
+  "usage": {
+    "input_tokens": 6614,
+    "output_tokens": 766,
+    "total_tokens": 7380
+  }
+}

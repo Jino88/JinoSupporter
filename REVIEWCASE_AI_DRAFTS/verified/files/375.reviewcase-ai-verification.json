@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 375,
+  "sourceFile": "2. BRS-2015 Report Test new material clean LUMIX 840 date 19.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\375.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:13Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 375,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because the changed factor and outcomes are misgrouped despite citeable source evidence existing.",
+    "issues": [
+      "Changed factor is filename-based instead of cleaning material type comparison.",
+      "Baseline and changed conditions are ambiguous among Lumix 840, Primer, No Clean, and Normal Ethanol.",
+      "Decap bond OK/NG results are converted into invalid numeric measurements.",
+      "Drop and tension outcomes are mixed with unrelated or header-only rows.",
+      "Several citations point to headers or unavailable row text, not result evidence."
+    ],
+    "requiredUserQuestions": [
+      "Should the baseline be Normal Ethanol or No Clean for Lumix 840 comparison?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to cleaning material/type with four conditions.",
+      "Preserve outcome groups: decap bond, drop test, SM+YK tension, and yoke tension.",
+      "Use result rows for decap bond and drop test, not header rows only.",
+      "Use tension rows 88-113 with date and type subgroup keys.",
+      "Remove Sheet2 summary unless its rows are fully cited and tied to the same validation."
+    ],
+    "evidencePolicy": "Row citations are insufficient; final evidence must cite condition headers plus actual result/data rows."
+  },
+  "usage": {
+    "input_tokens": 9185,
+    "output_tokens": 783,
+    "total_tokens": 9968
+  }
+}

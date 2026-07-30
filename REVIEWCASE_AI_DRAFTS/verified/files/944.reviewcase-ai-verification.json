@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 944,
+  "sourceFile": "84. TIU L5S3-01 R Report  test Recycle Semi Fr+Vp+F-pcb and Semi Yoke -  2026.04.23_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\944.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:51Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 944,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but misidentifies the changed factor and mismatches line-specific Normal/Test comparisons.",
+    "issues": [
+      "Changed factor is Test recycled semi vs Normal, not Normal vs Line L/Line R.",
+      "Line L and Line R should be subgroup keys, but are treated as changed conditions.",
+      "Several Line R pairs use Line L Normal rows instead of Line R Normal rows.",
+      "Fr+VP and Yoke have distinct recycle processes but are merged under only Fr+VP title/purpose.",
+      "Measurement rows lose inherited line/type/component grouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baseline to Normal and changed condition to Test recycled semi parts/process.",
+      "Use line, sheet/component, date, and test item as subgroup keys.",
+      "Rebuild all pairs using same-line Normal rows for each Test row.",
+      "Include both Fr+VP and Yoke purposes or split only if workbook context requires.",
+      "Regroup tension measurements with inherited line/type and component labels."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until corrected."
+  },
+  "usage": {
+    "input_tokens": 12663,
+    "output_tokens": 767,
+    "total_tokens": 13430
+  }
+}

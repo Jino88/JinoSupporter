@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 76,
+  "sourceFile": "03. BRS-161016DT  Report  New bond 3852-V28 and improve NG separate VP+CD Date  13.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\76.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:28Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 76,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because the changed factor and outcome parsing are materially incorrect.",
+    "issues": [
+      "Changed factor should be bond/glue type, not filename or generic process changes.",
+      "Baseline and test conditions are not resolved despite normal/old bond and 3852-V28 evidence.",
+      "Vision VP/CD rows are misparsed as measurement statistics and mix glue IDs, amounts, times, input, OK, NG, and NG rate.",
+      "Tension outcome misses the 0.5 kgf spec and relies on uncited row text for old bond.",
+      "LED UV comparison context is omitted from outcomes."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to new bond 3852-V28 versus normal/old bond EA6116 if row evidence confirms.",
+      "Preserve subgroup keys: date, line, bond amount, press time, wait tension, and process condition.",
+      "Rebuild VP/CD as yield/defect outcome using input, OK, NG separate, and NG rate per row.",
+      "Rebuild tension outcome with 0.5 kgf spec and separate 2h, 12h, and old bond baseline rows.",
+      "Add or exclude LED UV outcome based on the available peak/total rows."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are insufficient until missing cited row text and corrected row-level metrics are supplied."
+  },
+  "usage": {
+    "input_tokens": 5543,
+    "output_tokens": 811,
+    "total_tokens": 6354
+  }
+}

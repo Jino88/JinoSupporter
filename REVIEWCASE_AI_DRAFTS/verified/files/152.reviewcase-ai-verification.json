@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 152,
+  "sourceFile": "07. L20S15-07DT Report test CD lot IR250410013( Size 490k )_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\152.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:12Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 152,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed factor and groups unrelated row numbers as conditions, so it cannot be used as final evidence.",
+    "issues": [
+      "Changed factor 'vs 4' is unsupported; primary comparison appears lot test CD vs Normal.",
+      "Normal baseline row is not cited in the case evidence.",
+      "Tension rows 10 and 12 are treated as conditions from row numbers, likely misparsed.",
+      "Outcome grouping mixes NG/function results and tension data under an invalid condition.",
+      "Several cited rows are not shown in context, limiting verification of extracted values."
+    ],
+    "requiredUserQuestions": [
+      "Do Tension rows 10 and 12 belong to the same CD test lot or separate valid conditions?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to CD lot IR250410013 test lot versus Normal where supported.",
+      "Cite Report header, purpose, table headers, lot test row, and Normal baseline row.",
+      "Rebuild NG/function outcome using Report lot test and Normal rows only.",
+      "Verify full Tension rows 8, 10, and 12 before including them; exclude misparsed row-number conditions.",
+      "Keep tension as a separate outcome only if rows prove the same lot/test context."
+    ],
+    "evidencePolicy": "Current citations are insufficient; final evidence must cite the actual baseline/test rows and full tension rows."
+  },
+  "usage": {
+    "input_tokens": 3429,
+    "output_tokens": 814,
+    "total_tokens": 4243
+  }
+}

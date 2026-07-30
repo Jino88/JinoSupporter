@@ -1,0 +1,329 @@
+{
+  "sourceFileId": 329,
+  "sourceFile": "17. MSU-L20S15-07 Report check VP Froming machine - 2025.04.05_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\17. MSU-L20S15-07 Report check VP Froming machine - 2025.04.05_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "05.04",
+    "sheetRowCount": 24,
+    "sheetCellCount": 204,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 12
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "05.04!2",
+      "sheetName": "05.04",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | MSU-L20S15-07 REPORT CHECK VP FORMING MACHINE | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "05.04!3",
+      "sheetName": "05.04",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | Date | 2025-04-05 00:00:00"
+    },
+    {
+      "rowId": "05.04!4",
+      "sheetName": "05.04",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "05.04!5",
+      "sheetName": "05.04",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "05.04!6",
+      "sheetName": "05.04",
+      "rowNumber": 6,
+      "rowText": "| - Main line happen NG Hearing increase very hight ~ 40% (Normal ~2%) => Check Vp froming machine abnormal or not?"
+    },
+    {
+      "rowId": "05.04!7",
+      "sheetName": "05.04",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "05.04!8",
+      "sheetName": "05.04",
+      "rowNumber": 8,
+      "rowText": "| - Check all codition in froming machine: Temperature, Pressure, Temp cooling"
+    },
+    {
+      "rowId": "05.04!10",
+      "sheetName": "05.04",
+      "rowNumber": 10,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "05.04!11",
+      "sheetName": "05.04",
+      "rowNumber": 11,
+      "rowText": "| | * RESULT CHECKING"
+    },
+    {
+      "rowId": "05.04!12",
+      "sheetName": "05.04",
+      "rowNumber": 12,
+      "rowText": "| | Date | Type | | Spec | No7-1H | No7-2H | No7-3H | No7-4H | No13-2H | No13-3H | No13-4H | No14-2H | No14-3H | No14-4H | No15-1H | No15-3H | No15-4H"
+    },
+    {
+      "rowId": "05.04!13",
+      "sheetName": "05.04",
+      "rowNumber": 13,
+      "rowText": "| | 2025-04-02 00:00:00 | Temperature | | 190 ± 8℃ | 197 | 192 | 196 | 185 | 196 | 186 | 186 | | 190 | 194 | 199 | 191 | 198"
+    },
+    {
+      "rowId": "05.04!14",
+      "sheetName": "05.04",
+      "rowNumber": 14,
+      "rowText": "| | | Temperature cooling | | 80℃~110℃ | 98 | 93 | 107 | 93 | 87 | 80 | 87 | | 84 | 87 | 92 | 95 | 97"
+    },
+    {
+      "rowId": "05.04!26",
+      "sheetName": "05.04",
+      "rowNumber": 26,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "05.04!27",
+      "sheetName": "05.04",
+      "rowNumber": 27,
+      "rowText": "| - Now, check VP Forming machine don't happen abnormal. Will follow more"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-329-rc-1",
+      "reviewTitle": "| MSU-L20S15-07 REPORT CHECK VP FORMING MACHINE | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Main line happen NG Hearing increase very hight ~ 40% (Normal ~2%) => Check Vp froming machine abnormal or not? / | II. Content. / | - Check all codition in froming machine: Temperature, Pressure, Temp cooling / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment",
+            "dimension/spec"
+          ],
+          "changedFactor": "17. MSU-L20S15-07 Report check VP Froming machine - 2025.04.05",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "05.04!12",
+            "05.04!2",
+            "05.04!5",
+            "05.04!6",
+            "05.04!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "* RESULT CHECKING",
+          "comparisonRows": [
+            "05.04!12"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 51561,
+              "condition": "* RESULT CHECKING / Spec",
+              "spec": "",
+              "min": 4.0,
+              "max": 190.0,
+              "avg": 91.33333333333333,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "05.04!12"
+              ]
+            },
+            {
+              "statId": 51562,
+              "condition": "* RESULT CHECKING / No7-2H",
+              "spec": "",
+              "min": 3.9,
+              "max": 197.0,
+              "avg": 97.39166666666665,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "05.04!12"
+              ]
+            },
+            {
+              "statId": 51563,
+              "condition": "* RESULT CHECKING / No7-3H",
+              "spec": "",
+              "min": 4.0,
+              "max": 196.0,
+              "avg": 96.2,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "05.04!12"
+              ]
+            },
+            {
+              "statId": 51564,
+              "condition": "* RESULT CHECKING / No7-4H",
+              "spec": "",
+              "min": 4.2,
+              "max": 190.0,
+              "avg": 94.06666666666668,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "05.04!12"
+              ]
+            },
+            {
+              "statId": 51565,
+              "condition": "* RESULT CHECKING / No13-2H",
+              "spec": "",
+              "min": 4.2,
+              "max": 198.0,
+              "avg": 95.90000000000002,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "05.04!12"
+              ]
+            },
+            {
+              "statId": 51566,
+              "condition": "* RESULT CHECKING / No13-3H",
+              "spec": "",
+              "min": 4.1,
+              "max": 186.0,
+              "avg": 94.3,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "05.04!12"
+              ]
+            },
+            {
+              "statId": 51567,
+              "condition": "* RESULT CHECKING / No14-2H",
+              "spec": "",
+              "min": 3.8,
+              "max": 195.0,
+              "avg": 92.98888888888888,
+              "sampleCount": 9,
+              "violationCount": 0,
+              "evidenceRows": [
+                "05.04!12"
+              ]
+            },
+            {
+              "statId": 51568,
+              "condition": "* RESULT CHECKING / No14-3H",
+              "spec": "",
+              "min": 4.1,
+              "max": 193.0,
+              "avg": 95.55833333333334,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "05.04!12"
+              ]
+            },
+            {
+              "statId": 51569,
+              "condition": "* RESULT CHECKING / No14-4H",
+              "spec": "",
+              "min": 4.1,
+              "max": 196.0,
+              "avg": 95.45833333333336,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "05.04!12"
+              ]
+            },
+            {
+              "statId": 51570,
+              "condition": "* RESULT CHECKING / No15-1H",
+              "spec": "",
+              "min": 4.2,
+              "max": 199.0,
+              "avg": 98.73333333333335,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "05.04!12"
+              ]
+            },
+            {
+              "statId": 51571,
+              "condition": "* RESULT CHECKING / No15-3H",
+              "spec": "",
+              "min": 4.0,
+              "max": 197.0,
+              "avg": 99.43333333333334,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "05.04!12"
+              ]
+            },
+            {
+              "statId": 51572,
+              "condition": "* RESULT CHECKING / No15-4H",
+              "spec": "",
+              "min": 4.1,
+              "max": 198.0,
+              "avg": 98.39166666666667,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "05.04!12"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "05.04!12",
+        "05.04!2",
+        "05.04!5",
+        "05.04!6",
+        "05.04!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "05.04!12",
+      "05.04!2",
+      "05.04!5",
+      "05.04!6",
+      "05.04!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

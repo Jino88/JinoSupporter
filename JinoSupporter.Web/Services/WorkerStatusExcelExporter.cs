@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using System.Globalization;
 
 namespace JinoSupporter.Web.Services;
 
@@ -74,7 +75,7 @@ public static class WorkerStatusExcelExporter
                 ws.Cell(row, 5).Value = rec.Name;
                 ws.Cell(row, 6).Value = rec.Date;
                 ws.Cell(row, 6).Style.DateFormat.Format = "yyyy-MM-dd";
-                ws.Cell(row, 7).Value = rec.Date.ToString("ddd");
+                ws.Cell(row, 7).Value = rec.Date.ToString("ddd", CultureInfo.InvariantCulture);
                 ws.Cell(row, 8).Value = rec.WorkStatus;
                 ws.Cell(row, 9).Value = rec.DayType;
                 ws.Cell(row, 10).Value = TimeWithSchedule(rec.CheckIn, rec.SchedStart);

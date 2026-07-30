@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 817,
+  "sourceFile": "64.BRS-2015 Report checking NTI  sample change bonding line VP+CD date 20.7.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\817.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:55Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 817,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the primary changed factor and baseline/test grouping are not verified.",
+    "issues": [
+      "Changed factor is the filename, not the tested condition.",
+      "Baseline and changed conditions are marked not explicit despite Normal, ST, and Offset columns.",
+      "Offset 0.03 and Offset 0.2 levels are not grouped or cited consistently.",
+      "Outcomes mix SPL, THD, IMP, and Fo without clear comparison structure.",
+      "Graph!39 evidence is not supported by provided context."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended comparison Normal vs Offset 0.03/0.2 or NTI bonding line change vs prior line?",
+      "Should ST be treated as specification/reference or as a baseline condition?",
+      "Are Offset 0.03 and Offset 0.2 separate test levels under one review case?"
+    ],
+    "correctionPlan": [
+      "Replace filename changed factor with the actual tested process/sample condition.",
+      "Define baseline as Normal or ST based on source context.",
+      "Define changed conditions as Offset 0.03 and Offset 0.2 if supported.",
+      "Cite header rows plus representative data rows for each metric and condition.",
+      "Separate or explicitly group SPL, THD, IMP, and Fo outcomes under the validated comparison."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for final evidence because key condition rows and grouping context are incomplete."
+  },
+  "usage": {
+    "input_tokens": 4764,
+    "output_tokens": 577,
+    "total_tokens": 5341
+  }
+}

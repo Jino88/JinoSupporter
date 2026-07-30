@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 970,
+  "sourceFile": "9.2 BRS-161014 Report test suspension new mold and improve press date 8.9.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\970.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 970,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft cites existing rows but the changed-factor grouping mixes mold, design, temperature, and time conditions ambiguously.",
+    "issues": [
+      "Primary changed factor is unclear: press temperature, new mold, new design, and time are blended.",
+      "Baseline and test conditions are inconsistent with the report purpose and cited comparisons.",
+      "Subgroup key 130°C is not supported as the sole grouping context from shown rows.",
+      "Outcome rows may be valid metrics, but condition labels for rows 24/25 and 36/37 need header context.",
+      "Decision/conclusion rows are not used, so final report judgement is unverified."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended primary comparison: press temperature, mold/design, or press time?",
+      "Should New Mold vs New design be treated as the main comparison or as subgroup context?"
+    ],
+    "correctionPlan": [
+      "Rebuild changedFactors from table headers and condition rows, preserving temperature, time, mold/design, date, and type keys.",
+      "Separate or justify combined factors if temperature, mold, and time all changed together.",
+      "Verify rows 24/25 and 36/37 against their table headers before using rates and judgements.",
+      "Add cited decision/conclusion evidence if present in rows after 41.",
+      "Revise baseline/test labels to match source wording exactly enough to avoid condition mixing."
+    ],
+    "evidencePolicy": "Row citations exist, but condition-context citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3209,
+    "output_tokens": 746,
+    "total_tokens": 3955
+  }
+}

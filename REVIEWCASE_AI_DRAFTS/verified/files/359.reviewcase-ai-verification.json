@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 359,
+  "sourceFile": "19. MSU-L20S15-07 Report test New bond PT-8803M improve NG separate Susp in module - 2025.04.09_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\359.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 359,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the new-bond comparison but has blocking outcome pairing and measurement extraction errors.",
+    "issues": [
+      "SUB3 pairs mix dates; 4/14 test should compare with 4/14 normal.",
+      "Function pairs mix dates; 4/15 test should compare with 4/15 normal.",
+      "Tension outcome uses wrong spec, sample counts, and includes function rows.",
+      "Header/summary rows are treated as measurement evidence.",
+      "Changed factor domain should be material/process, not dimension/spec."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to PT-8803M new bond versus normal PT-8310M9S.",
+      "Pair outcomes by date, line/type, and test context before judging direction.",
+      "Rebuild SUB3 using rows 16/18 and 20/22.",
+      "Rebuild function using rows 40/42 and 44/46.",
+      "Rebuild tension only from rows 28-35 with 0.3 kgf spec and Type A/B subgrouping."
+    ],
+    "evidencePolicy": "Changed-factor citations are adequate, but outcome citations must be corrected and pruned."
+  },
+  "usage": {
+    "input_tokens": 7944,
+    "output_tokens": 659,
+    "total_tokens": 8603
+  }
+}

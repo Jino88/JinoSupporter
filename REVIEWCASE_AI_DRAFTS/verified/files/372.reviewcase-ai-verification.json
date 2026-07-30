@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 372,
+  "sourceFile": "2. BRS-161016 (DT) Report  test new machine dry date 2024.03.09_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\372.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:57Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 372,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because it merges distinct process sheets and misstates the changed factor and outcome groupings.",
+    "issues": [
+      "Changed factor is malformed and includes dates/times as conditions.",
+      "BP.SM, Sub 3, and Yoke processes are merged without clear subgroup control.",
+      "Several outcomes use header or unrelated rows as measurements.",
+      "Normal vs Test baselines are inconsistently paired across dates and products.",
+      "Judgements include unsupported worsening from uncited context rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary factor as new dry machine/process dry condition versus normal dry.",
+      "Split or subgroup by sheet/process and preserve date, temp, time, pad/type, and line.",
+      "Rebuild outcomes from actual result rows, not headers or detected-table artifacts.",
+      "Pair Test and Normal only within comparable process/date/condition context.",
+      "Retain concise evidence rows for title, purpose, conditions, results, and decisions."
+    ],
+    "evidencePolicy": "Row ids exist, but citations are too broad and grouping evidence is insufficient."
+  },
+  "usage": {
+    "input_tokens": 18309,
+    "output_tokens": 545,
+    "total_tokens": 18854
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 289,
+  "sourceFile": "14.. Summary data Report checking NG gauss Low ( Separate value gauss move module test ) 15.7.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\289.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:31Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 289,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid source context but changed-factor and measurement grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor includes date and duplicate conditions instead of clean low-gauss ranges vs Normal.",
+      "Measurement outcomes misapply specs across semi-yoke, final SPK, grill, and module columns.",
+      "RAW DATA measurement groups are noisy and not interpretable as final evidence.",
+      "Review title is an irrelevant graph header.",
+      "Decision row is not incorporated into the conclusion."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to semi-yoke gauss range: 440-459G, 460-469G, 470-479G versus Normal.",
+      "Keep SPK line, module line, NTI, and gauss checks as outcomes under that factor.",
+      "Rebuild gauss measurements using each column's own spec from the table header.",
+      "Remove uninterpretable RAW DATA detected-table outcomes unless mapped to clear metrics.",
+      "Add the decision that SPK gauss spec change is needed."
+    ],
+    "evidencePolicy": "Row citations exist but semantic grouping and spec citations are insufficient."
+  },
+  "usage": {
+    "input_tokens": 16321,
+    "output_tokens": 776,
+    "total_tokens": 17097
+  }
+}

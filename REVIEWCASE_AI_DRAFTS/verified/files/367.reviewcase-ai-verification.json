@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 367,
+  "sourceFile": "2. BRS-161014  GMI Report test VP #8, #10 improve bending from supplier date 20.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\367.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 367,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but changed-factor grouping and outcome extraction are not reliable enough for final evidence.",
+    "issues": [
+      "Primary changed factor is ambiguous and overbroad.",
+      "VP mold #8/#10 and forming stage are collapsed in repeated conditions.",
+      "Supplier/cutting conditions APK and GN are inconsistently treated.",
+      "Several measurement outcomes appear to use headers or summaries as raw measurements.",
+      "Combined-table outcome duplicates earlier laser/function results."
+    ],
+    "requiredUserQuestions": [
+      "Is the main comparison supplier cutting condition APK vs GN, forming stage, or mold #8 vs #10?",
+      "Should Normal row 79 be used as baseline for function NG or only as reference?"
+    ],
+    "correctionPlan": [
+      "Redefine one primary changed factor with baseline and test condition from source context.",
+      "Preserve VP mold, forming stage, supplier cutting, and cutting/not-cutting as subgroup keys.",
+      "Remove header-derived measurement outcomes unless actual measurement rows are confirmed.",
+      "Merge duplicate laser and function outcomes or cite the combined table only as a summary.",
+      "Separate raw row results from aggregate summary rows and label each clearly."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient because grouping and metric interpretation are unreliable."
+  },
+  "usage": {
+    "input_tokens": 11399,
+    "output_tokens": 791,
+    "total_tokens": 12190
+  }
+}

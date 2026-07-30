@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 136,
+  "sourceFile": "06. BRS-161016 Report  test material Frame have PT NG dimension_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\136.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 136,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Core Normal vs Test Frame comparison is supported, but measurement grouping and factor labeling need correction before use.",
+    "issues": [
+      "Changed factor should be Frame with PT NG dimension vs normal Frame, not supplier-related.",
+      "Rows 4.4!27 and 4.4!29 are cited but not shown in context for verification.",
+      "FRAME+SP Sus D rows appear to lose Test/Normal parent grouping.",
+      "Tension spec values are omitted despite being present in header rows.",
+      "Reliability/load/drop results and final decision are not fully represented."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to PT NG-dimension Frame vs normal Frame.",
+      "Remove supplier from changeDomain unless source proves it.",
+      "Verify rows 4.4!27 and 4.4!29 and assign Sus D under Test or Normal correctly.",
+      "Capture tension specs 0.4kgf and 0.2kgf where applicable.",
+      "Add concise reliability/load/drop outcome or limitation tied to decision rows."
+    ],
+    "evidencePolicy": "Citations support the main function comparison, but cited hidden rows must be visible or verified."
+  },
+  "usage": {
+    "input_tokens": 5027,
+    "output_tokens": 610,
+    "total_tokens": 5637
+  }
+}

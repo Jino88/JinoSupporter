@@ -1,0 +1,406 @@
+{
+  "sourceFileId": 908,
+  "sourceFile": "79.BRS-201506 Report checking dimension coil of sample Ng gap coil and sus 20.8.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\79.BRS-201506 Report checking dimension coil of sample Ng gap coil and sus 20.8.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "1",
+    "sheetRowCount": 26,
+    "sheetCellCount": 211,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 14
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "1!2",
+      "sheetName": "1",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT CHECK NG GAP COIL AND SUP MODEL 2015 | | | | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "1!3",
+      "sheetName": "1",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | Date | 2024-08-23 00:00:00"
+    },
+    {
+      "rowId": "1!4",
+      "sheetName": "1",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | Maker | Huong"
+    },
+    {
+      "rowId": "1!5",
+      "sheetName": "1",
+      "rowNumber": 5,
+      "rowText": "| 1. Problem"
+    },
+    {
+      "rowId": "1!6",
+      "sheetName": "1",
+      "rowNumber": 6,
+      "rowText": "| - Ng gap coil and sup"
+    },
+    {
+      "rowId": "1!7",
+      "sheetName": "1",
+      "rowNumber": 7,
+      "rowText": "| 2. Result NG and check"
+    },
+    {
+      "rowId": "1!8",
+      "sheetName": "1",
+      "rowNumber": 8,
+      "rowText": "| - Check NG gap coil and sup after UV led"
+    },
+    {
+      "rowId": "1!9",
+      "sheetName": "1",
+      "rowNumber": 9,
+      "rowText": "| | RESULT CHECK GAP COIL AND SUP"
+    },
+    {
+      "rowId": "1!10",
+      "sheetName": "1",
+      "rowNumber": 10,
+      "rowText": "| | Date | Line | Q'Ty check | NG gap coil and sus | | NG rate"
+    },
+    {
+      "rowId": "1!11",
+      "sheetName": "1",
+      "rowNumber": 11,
+      "rowText": "| | 2024-08-23 00:00:00 | E2-4A | 200 | 4 | | 0.02"
+    },
+    {
+      "rowId": "1!13",
+      "sheetName": "1",
+      "rowNumber": 13,
+      "rowText": "| - Check dimension coil of sample Ng gap coil and sup"
+    },
+    {
+      "rowId": "1!14",
+      "sheetName": "1",
+      "rowNumber": 14,
+      "rowText": "| | RESULT CHECK DIMESION"
+    },
+    {
+      "rowId": "1!15",
+      "sheetName": "1",
+      "rowNumber": 15,
+      "rowText": "| | Date | Line | Type check | Spec | | Sample Ng gap coil and sup | | | | Sample OK | | | | Sample Ng gap coil and sup | | | OK"
+    },
+    {
+      "rowId": "1!35",
+      "sheetName": "1",
+      "rowNumber": 35,
+      "rowText": "| 3. Decision"
+    },
+    {
+      "rowId": "1!36",
+      "sheetName": "1",
+      "rowNumber": 36,
+      "rowText": "| - Dimension coil of sample Ng gap coil and sup same sample OK"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-908-rc-1",
+      "reviewTitle": "REPORT CHECK NG GAP COIL AND SUP MODEL 2015 | | | | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition",
+            "dimension/spec"
+          ],
+          "changedFactor": "79.BRS-201506 Report checking dimension coil of sample Ng gap coil and sus 20.8.2024",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "1!15",
+            "1!17",
+            "1!18",
+            "1!19",
+            "1!2",
+            "1!20",
+            "1!21",
+            "1!22",
+            "1!23",
+            "1!24",
+            "1!25",
+            "1!26"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Line | Type check | Spec | Sample Ng gap coil and sup | Sample OK | Sample Ng gap coil and sup | OK",
+          "comparisonRows": [
+            "1!17",
+            "1!18",
+            "1!19",
+            "1!20",
+            "1!21",
+            "1!22",
+            "1!23",
+            "1!24",
+            "1!25",
+            "1!26"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65080,
+              "condition": "A",
+              "spec": "",
+              "min": 8.424,
+              "max": 8.451,
+              "avg": 8.436,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!17"
+              ]
+            },
+            {
+              "statId": 65081,
+              "condition": "2 | 8.36 ~ 8.42 | 8.407 | 8.38 | 8.405 | 8.406 | 8.358 | 8.377 | 8.396 | 8.413 | 8.38 | 8.407 | 8.3995 | 8.358 | 8.406",
+              "spec": "",
+              "min": 8.358,
+              "max": 8.406,
+              "avg": 8.38425,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!18"
+              ]
+            },
+            {
+              "statId": 65082,
+              "condition": "3 | 8.39 ~ 8.45 | 8.466 | 8.411 | 8.442 | 8.44 | 8.433 | 8.439 | 8.435 | 8.44 | 8.411 | 8.466 | 8.43975 | 8.433 | 8.44",
+              "spec": "",
+              "min": 8.433,
+              "max": 8.44,
+              "avg": 8.43675,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!19"
+              ]
+            },
+            {
+              "statId": 65083,
+              "condition": "B",
+              "spec": "",
+              "min": 12.584,
+              "max": 12.604,
+              "avg": 12.592,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!20"
+              ]
+            },
+            {
+              "statId": 65084,
+              "condition": "2 | 12.54 ~ 12.60 | 12.572 | 12.573 | 12.584 | 12.597 | 12.573 | 12.583 | 12.583 | 12.587 | 12.572 | 12.597 | 12.5815 | 12.573 | 12.597",
+              "spec": "",
+              "min": 12.573,
+              "max": 12.597,
+              "avg": 12.584,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!21"
+              ]
+            },
+            {
+              "statId": 65085,
+              "condition": "3 | 12.56 ~ 12.62 | 12.58 | 12.588 | 12.595 | 12.576 | 12.6 | 12.602 | 12.584 | 12.594 | 12.576 | 12.595 | 12.58475 | 12.576 | 12.602",
+              "spec": "",
+              "min": 12.576,
+              "max": 12.602,
+              "avg": 12.5905,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!22"
+              ]
+            },
+            {
+              "statId": 65086,
+              "condition": "E",
+              "spec": "",
+              "min": 1.23,
+              "max": 1.24,
+              "avg": 1.235,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!23"
+              ]
+            },
+            {
+              "statId": 65087,
+              "condition": "2 | 1.22 | 1.23 | 1.23 | 1.22 | 1.23 | 1.22 | 1.23 | 1.23 | 1.22 | 1.23 | 1.225 | 1.22 | 1.23",
+              "spec": "",
+              "min": 1.22,
+              "max": 1.23,
+              "avg": 1.225,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!24"
+              ]
+            },
+            {
+              "statId": 65088,
+              "condition": "3 | 1.22 | 1.23 | 1.23 | 1.22 | 1.22 | 1.22 | 1.21 | 1.22 | 1.22 | 1.23 | 1.225 | 1.21 | 1.22",
+              "spec": "",
+              "min": 1.21,
+              "max": 1.22,
+              "avg": 1.2175,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!25"
+              ]
+            },
+            {
+              "statId": 65089,
+              "condition": "4 | 1.22 | 1.23 | 1.22 | 1.23 | 1.23 | 1.23 | 1.22 | 1.22 | 1.22 | 1.23 | 1.225 | 1.22 | 1.23",
+              "spec": "",
+              "min": 1.22,
+              "max": 1.23,
+              "avg": 1.2275,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!26"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT CHECK DIMESION",
+          "comparisonRows": [
+            "1!15"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65090,
+              "condition": "RESULT CHECK DIMESION / Spec",
+              "spec": "",
+              "min": 1.0,
+              "max": 4.0,
+              "avg": 2.2,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!15"
+              ]
+            },
+            {
+              "statId": 65091,
+              "condition": "RESULT CHECK DIMESION / Sample Ng gap coil and sup",
+              "spec": "",
+              "min": 1.22,
+              "max": 12.6,
+              "avg": 6.798399999999999,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!15"
+              ]
+            },
+            {
+              "statId": 65092,
+              "condition": "RESULT CHECK DIMESION / Sample OK",
+              "spec": "",
+              "min": 1.22,
+              "max": 12.604,
+              "avg": 6.792200000000001,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!15"
+              ]
+            },
+            {
+              "statId": 65093,
+              "condition": "RESULT CHECK DIMESION / Sample Ng gap coil and sup",
+              "spec": "",
+              "min": 1.22,
+              "max": 12.584,
+              "avg": 6.784000000000001,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!15"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "1!15",
+        "1!17",
+        "1!18",
+        "1!19",
+        "1!2",
+        "1!20",
+        "1!21",
+        "1!22",
+        "1!23",
+        "1!24",
+        "1!25",
+        "1!26"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "1!15",
+      "1!17",
+      "1!18",
+      "1!19",
+      "1!2",
+      "1!20",
+      "1!21",
+      "1!22",
+      "1!23",
+      "1!24",
+      "1!25",
+      "1!26"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

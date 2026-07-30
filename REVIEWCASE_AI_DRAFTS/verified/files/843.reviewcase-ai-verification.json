@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 843,
+  "sourceFile": "69. TIU C11-20 Report test VP D25-10-25 raw audiobus 2026.3.7_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\843.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 843,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable defect-rate evidence but changed-factor grouping and several outcome mappings are not reliable enough for final use.",
+    "issues": [
+      "Primary change likely new AWF jig/TIU-C11-20, not only old film vs shift labels.",
+      "Rows 30 and 42 appear to be unused normal baselines, making pair grouping suspect.",
+      "Raw acoustic measurement sections are poorly grouped and include error/header artifacts.",
+      "Outcome evidence cites rows not shown in context, limiting independent verification.",
+      "Review title is an extracted graph/header row, not the report title."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended primary comparison old film normal vs new AWF jig/TIU-C11-20 with film dry status as subgroup?"
+    ],
+    "correctionPlan": [
+      "Reset title and purpose from Test 2 report rows.",
+      "Rebuild changed factor from report purpose/content and table type labels.",
+      "Re-pair each test row with the correct normal baseline preserving line, shift, film, and date context.",
+      "Remove or separately validate RAW DATA acoustic measurements before inclusion.",
+      "Keep only outcome rows with clear row-level citations and exclude header/error-derived stats."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficiently contextualized for final evidence."
+  },
+  "usage": {
+    "input_tokens": 9461,
+    "output_tokens": 1314,
+    "total_tokens": 10775
+  }
+}

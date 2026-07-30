@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 90,
+  "sourceFile": "033. MSU-L20S1507 Report test Check iussue Decap bond MG+PT not dry  date 2025.03.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\90.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:29Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 90,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures the investigation but misstates the changed-factor structure and needs source confirmation for several result rows.",
+    "issues": [
+      "Baseline/normal condition is not explicit, so the case cannot be framed as baseline vs test.",
+      "Multiple line-check actions are combined as one changed condition without clear grouping.",
+      "Baotou/vendor appears to be lot context, not a changed supplier factor.",
+      "Rows 14, 15, and 17 are cited but not provided in context for verification.",
+      "Outcome metric is too generic and should reflect MG/PT bond not dry or separation NG rate."
+    ],
+    "requiredUserQuestions": [
+      "Can rows 14, 15, and 17 be confirmed as the drafted condition/result rows?"
+    ],
+    "correctionPlan": [
+      "Remove supplier as a changed-factor domain unless current rows prove supplier comparison.",
+      "Define the case as a line-condition investigation for MG/PT bond not dry with no explicit baseline.",
+      "Keep each checked condition as a separate subresult with input, NG, and NG rate.",
+      "Add verified row text or citations for rows 14, 15, and 17.",
+      "Rename the outcome metric to MG/PT bond not dry or separation NG rate."
+    ],
+    "evidencePolicy": "Citations are partly sufficient, but missing cited row text prevents final evidence approval."
+  },
+  "usage": {
+    "input_tokens": 2927,
+    "output_tokens": 808,
+    "total_tokens": 3735
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 315,
+  "sourceFile": "16. MSU-L20S15-07 Report test DOE MACHINE PLASMA- 3.4.2025 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\315.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:08Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 315,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft omits an extractable DOE comparison for machine plasma replacement-cycle settings.",
+    "issues": [
+      "No reviewCases were generated despite citeable DOE condition rows.",
+      "Primary changed factor is unstated: electrode and nozzle replacement cycles vary.",
+      "Baseline/test grouping must preserve Test # and setting pairs.",
+      "Two sheets appear duplicative or separate runs with different Check PEN counts.",
+      "Outcome fields are not normalized or cited."
+    ],
+    "requiredUserQuestions": [
+      "Are sheets 26.03 and 26.03 (2) separate runs or duplicate table versions?"
+    ],
+    "correctionPlan": [
+      "Create one DOE review case for machine plasma setting changes.",
+      "Use Normal 2000/2400 as baseline and Test #1-24 as setting matrix.",
+      "Cite title, purpose, header, and each condition/outcome row used.",
+      "Preserve sheet, Test #, electrode cycle, nozzle cycle, and Check PEN grouping.",
+      "Capture outcomes such as NG, Pen PQC, and picture-rating columns where present."
+    ],
+    "evidencePolicy": "Context rows are sufficient, but final evidence needs explicit row citations."
+  },
+  "usage": {
+    "input_tokens": 4972,
+    "output_tokens": 770,
+    "total_tokens": 5742
+  }
+}

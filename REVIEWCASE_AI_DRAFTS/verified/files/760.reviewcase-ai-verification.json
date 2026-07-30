@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 760,
+  "sourceFile": "58.BRS-161014 Report Test improve NG hearing rate_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\760.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 760,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but incorrectly merges many independent test reports and changed factors into one case.",
+    "issues": [
+      "Multiple unrelated changed factors combined under one cf",
+      "Baseline/test pairings violate date and subgroup keys",
+      "Review title/purpose tied to NG VP sheet but outcomes cite other reports",
+      "Header/measurement candidates are treated as outcomes without judged comparison",
+      "Some cited rows are not shown in review context, limiting verification"
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split into separate review cases by sheet/report and changed factor",
+      "For each case define one baseline and one test condition context",
+      "Re-pair rows using same date, mold, lot, method, and assembly mode keys",
+      "Remove header-only measurement candidates unless tied to real changed-condition data",
+      "Add purpose/content/result/decision rows for every retained case"
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are not sufficient until grouping and comparable pairs are corrected."
+  },
+  "usage": {
+    "input_tokens": 19110,
+    "output_tokens": 614,
+    "total_tokens": 19724
+  }
+}

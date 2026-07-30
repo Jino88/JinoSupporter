@@ -1,0 +1,35 @@
+{
+  "sourceFileId": 787,
+  "sourceFile": "60.BRS-161014 Report test Suspension D cleaning pad solder date 03.11.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\787.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 787,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The comparison is valid, but cited evidence should be tightened before final Ask AI use.",
+    "issues": [
+      "Outcome/header rows 03.11!11-12 are not cited in case evidence.",
+      "changeDomain is left as unknown despite clear process-defect context.",
+      "Purpose/title strings retain raw pipe formatting.",
+      "Test quantity note 960 pcs differs from result input 932 and should be noted."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add 03.11!11 and 03.11!12 to outcome and case evidence rows.",
+      "Set changeDomain to process or manufacturing process.",
+      "Clean reviewTitle and reviewPurpose formatting.",
+      "Add a limitation noting planned quantity versus actual input difference."
+    ],
+    "evidencePolicy": "Condition rows are cited, but metric/header citations are incomplete."
+  },
+  "usage": {
+    "input_tokens": 2370,
+    "output_tokens": 715,
+    "total_tokens": 3085
+  }
+}

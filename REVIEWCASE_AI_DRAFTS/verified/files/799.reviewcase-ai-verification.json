@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 799,
+  "sourceFile": "62. TIU C11-20 Report test change spec UV3 and use 12 machine UV3 2026.2.10_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\799.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 799,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the UV3 spec/machine change but mislabels the changed condition and misgroups outcome evidence.",
+    "issues": [
+      "Changed factor should be Normal UV3 spec vs test UV3 spec, not Normal vs TIU C11-20.",
+      "TIU C11-20 is product/model context, not the test condition.",
+      "Second function comparison should likely use row 32 as Normal control, not row 28 only.",
+      "Measurement outcome is a misread defect-category table, not a separate measurement study.",
+      "Decision row supporting adoption is omitted from evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to Normal dry UV3 spec/use 2 UV machines vs test lower UV3 spec/use 1 UV machine.",
+      "Keep TIU C11-20 and Test Change Spec UV3 as model/test context or subgroup keys.",
+      "Rebuild function outcomes as date-grouped comparisons using rows 26 vs 28 and 30 vs 32 where applicable.",
+      "Remove the measurement outcome or convert defect columns into function NG subcategories.",
+      "Add decision row 43 and relevant header rows to final citations."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient until grouping and decision evidence are corrected."
+  },
+  "usage": {
+    "input_tokens": 3912,
+    "output_tokens": 649,
+    "total_tokens": 4561
+  }
+}

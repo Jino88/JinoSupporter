@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 842,
+  "sourceFile": "69. BRS-201506 CHECK GAUSS MG RESULT (ME+PQC)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\842.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:45Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 842,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because changed-factor grouping and many parsed outcomes do not match the workbook context.",
+    "issues": [
+      "Changed factor is the filename, not an evidenced process/material change.",
+      "Baseline and test conditions are not explicit despite voltage and supplier/lot evidence.",
+      "Unrelated sheets and outcome domains are merged under one factor.",
+      "Many stats are parsing artifacts from headers, lots, dates, or sample numbers.",
+      "Some cited rows are too sparse without adjacent header/data context."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary review the voltage increase test or supplier/lot comparison?",
+      "Should routine Data gauss and NG sample sheets be separate context or excluded?"
+    ],
+    "correctionPlan": [
+      "Define evidenced changed factors such as voltage level or magnet supplier/lot.",
+      "Split separate analyses if voltage, supplier lots, routine checks, and NG samples are independent.",
+      "Use row-level grouping keys: date, line, shift, supplier, lot, voltage, sample set.",
+      "Remove header-derived and non-measurement numeric artifacts from outcomes.",
+      "Cite both header/spec rows and representative data/stat rows for each outcome."
+    ],
+    "evidencePolicy": "Row existence is sufficient, but semantic citations are not sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 13243,
+    "output_tokens": 748,
+    "total_tokens": 13991
+  }
+}

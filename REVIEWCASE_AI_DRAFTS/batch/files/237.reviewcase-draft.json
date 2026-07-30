@@ -1,0 +1,204 @@
+{
+  "sourceFileId": 237,
+  "sourceFile": "11.BRS-2015 Report Test material Ring Fader paint than usual - date 13.9.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\11.BRS-2015 Report Test material Ring Fader paint than usual - date 13.9.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "201506",
+    "sheetRowCount": 18,
+    "sheetCellCount": 55,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "201506!2",
+      "sheetName": "201506",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST MATERIAL RING OF MODEL BRS-201506 | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "201506!3",
+      "sheetName": "201506",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | Date | 2024-09-14 00:00:00"
+    },
+    {
+      "rowId": "201506!4",
+      "sheetName": "201506",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | Maker | Nhung"
+    },
+    {
+      "rowId": "201506!5",
+      "sheetName": "201506",
+      "rowNumber": 5,
+      "rowText": "| 1. Purpose test"
+    },
+    {
+      "rowId": "201506!6",
+      "sheetName": "201506",
+      "rowNumber": 6,
+      "rowText": "| - Test material Ring Fader paint than usual can use or not"
+    },
+    {
+      "rowId": "201506!8",
+      "sheetName": "201506",
+      "rowNumber": 8,
+      "rowText": "| 2. Content of testing"
+    },
+    {
+      "rowId": "201506!9",
+      "sheetName": "201506",
+      "rowNumber": 9,
+      "rowText": "| - Make semi at sub VP line and check NG separate Ring + VP"
+    },
+    {
+      "rowId": "201506!16",
+      "sheetName": "201506",
+      "rowNumber": 16,
+      "rowText": "| 3.Result test"
+    },
+    {
+      "rowId": "201506!17",
+      "sheetName": "201506",
+      "rowNumber": 17,
+      "rowText": "| | 1.RESULT CHECKING AT VP LINE"
+    },
+    {
+      "rowId": "201506!18",
+      "sheetName": "201506",
+      "rowNumber": 18,
+      "rowText": "| | Date | Type | Input | OK | NG separate Ring/VP | | | | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "201506!19",
+      "sheetName": "201506",
+      "rowNumber": 19,
+      "rowText": "| | | | | | Forming | Laser cutting | Pick up | Vision VP"
+    },
+    {
+      "rowId": "201506!20",
+      "sheetName": "201506",
+      "rowNumber": 20,
+      "rowText": "| | 2024-09-13 00:00:00 | Test | 96 | 96 | 0 | 0 | 0 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "201506!22",
+      "sheetName": "201506",
+      "rowNumber": 22,
+      "rowText": "| | | Normal | 96 | 96 | 0 | 0 | 0 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "201506!26",
+      "sheetName": "201506",
+      "rowNumber": 26,
+      "rowText": "| 4. Decision"
+    },
+    {
+      "rowId": "201506!27",
+      "sheetName": "201506",
+      "rowNumber": 27,
+      "rowText": "| - Test 1st result at VP line is OK (Not yet check recycle Ring)"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-237-rc-1",
+      "reviewTitle": "REPORT TEST MATERIAL RING OF MODEL BRS-201506 | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| 1. Purpose test / | - Test material Ring Fader paint than usual can use or not / | 2. Content of testing / | - Make semi at sub VP line and check NG separate Ring + VP / | 3.Result test",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Test",
+          "baselineCondition": "Normal",
+          "changedCondition": "Test",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "201506!16",
+            "201506!2",
+            "201506!20",
+            "201506!22",
+            "201506!5",
+            "201506!6",
+            "201506!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "1.RESULT CHECKING AT VP LINE",
+          "comparisonRows": [
+            "201506!20",
+            "201506!22"
+          ],
+          "judgement": "no_change",
+          "subResults": [
+            {
+              "pairId": 3730,
+              "controlCondition": "Normal",
+              "testCondition": "Test",
+              "control": {
+                "input": 96.0,
+                "ng": 0.0,
+                "ratePercent": 0.0
+              },
+              "test": {
+                "input": 96.0,
+                "ng": 0.0,
+                "ratePercent": 0.0
+              },
+              "deltaRatePercentPoint": 0.0,
+              "effectDirection": "NO_CHANGE",
+              "evidenceRows": [
+                "201506!20",
+                "201506!22"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "201506!16",
+        "201506!2",
+        "201506!20",
+        "201506!22",
+        "201506!5",
+        "201506!6",
+        "201506!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "201506!16",
+      "201506!2",
+      "201506!20",
+      "201506!22",
+      "201506!5",
+      "201506!6",
+      "201506!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

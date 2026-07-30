@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 371,
+  "sourceFile": "2. BRS-161014 Report test find reason NG hearing 2024.1.9_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\371.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:57Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 371,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it conflates vendor, old/new dome, model, and bending-type tests and reverses the main function conclusion.",
+    "issues": [
+      "Changed factor is an incoherent mix of supplier, dome age, model, bending types, and sample labels.",
+      "Baseline/test grouping is invalid; Normal C2 Ralon is compared with E2 and bending rows as if controlled.",
+      "Function judgement says improved, but cited conclusion says Ralon has higher NG than Ges and should not be used.",
+      "Weight outcomes are misread from headers/sample numbers; source conclusion is Ralon dome is heavier than Ges.",
+      "Two sheet/report sections are merged without preserving separate test contexts."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split into separate contexts: vendor comparison and Ralon bending separation; keep Report (2) separate if it is a different version.",
+      "Set primary changed factor for main report to dome vendor/lot condition: Ges old dome versus Ralon new dome, with C2/E2 and machine/date as subgroups.",
+      "Use comparable function rows only and align baseline/test by product, date/test round, and machine where available.",
+      "Correct judgement to worse for Ralon versus Ges when supported by rows 73, 75, and conclusion row 79.",
+      "Replace bogus measurement stats with dome weight comparison using vendor weight rows and conclusion row 58."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are overbroad and do not sufficiently support grouping or conclusions."
+  },
+  "usage": {
+    "input_tokens": 6869,
+    "output_tokens": 665,
+    "total_tokens": 7534
+  }
+}

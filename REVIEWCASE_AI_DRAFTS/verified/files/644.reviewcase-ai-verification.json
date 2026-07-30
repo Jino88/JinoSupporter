@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 644,
+  "sourceFile": "43. BRS-2015 Report test Frame happen NG Burr date 7.5.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\644.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 644,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable frame test versus normal evidence exists, but grouping and measurement extraction are not reliable enough for final use.",
+    "issues": [
+      "Changed factor merges knife deburr, new frame improvement, and burr-test rounds without date subgrouping.",
+      "Subgroup keys are empty despite distinct sheets, dates, processes, and sample sizes.",
+      "Several same-domain outcomes are split or inconsistently named by numbering rather than normalized process step.",
+      "Dimension width spec is misassigned, causing false violation counts.",
+      "9.5 rows are cited but not included in provided contextRows for verification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary changed factor from title and purpose per sheet, with date or test round as subgroup keys.",
+      "Normalize outcome metrics by process step across sheets and keep sheet/date subresults.",
+      "Correct dimension parsing so width uses 14.9 to 15.15 spec and recalculate violations.",
+      "Add citeable context for all 9.5 evidence rows or remove unsupported 9.5 outcomes.",
+      "Keep candidate-only metrics as limitations unless baseline-test comparison is clear."
+    ],
+    "evidencePolicy": "Citations are row-level but incomplete and partly unreliable until 9.5 context and dimension rows are corrected."
+  },
+  "usage": {
+    "input_tokens": 12016,
+    "output_tokens": 796,
+    "total_tokens": 12812
+  }
+}

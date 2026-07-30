@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 754,
+  "sourceFile": "57. BRS-201506 Report Test AWF machine #2 increase temperature and tension date 20.6.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\754.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 754,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misidentifies the changed factor and includes unreliable grouped measurements.",
+    "issues": [
+      "Changed factor conflates outcome labels with test condition.",
+      "Primary change should be AWF #2 increased temperature and tension.",
+      "Temperature/tension stats use wrong dimension spec and bad grouping.",
+      "Function outcome duplicates total and dated rows.",
+      "Many NTI/FO measurements are unjudged bulk extracts, not validated outcomes."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to AWF #2 increased temperature and tension.",
+      "Use Coil Test versus Normal as conditions under that factor.",
+      "Keep vision spot and function NG as outcomes in one report.",
+      "Remove or separately validate unjudged NTI/FO bulk measurements.",
+      "Cite purpose, condition, AWF settings, outcome rows, and decision rows."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficiently targeted and partly misassigned."
+  },
+  "usage": {
+    "input_tokens": 11545,
+    "output_tokens": 528,
+    "total_tokens": 12073
+  }
+}

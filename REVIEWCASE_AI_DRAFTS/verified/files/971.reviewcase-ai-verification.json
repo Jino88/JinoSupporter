@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 971,
+  "sourceFile": "9.BRS-161014 Report TEST suspension happen bending date 24.8.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\971.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:38Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 971,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because the changed-factor grouping mixes unrelated conditions and several extracted NG counts are wrong.",
+    "issues": [
+      "Primary changed factor is ambiguous and over-broad.",
+      "Before/after repair is incorrectly treated as the main comparison.",
+      "Several NG counts conflict with cited rows.",
+      "Row 88 bending result is missing from the final bonding comparison.",
+      "Outcome groups mix material, vision, process, hot-press, and bonding contexts."
+    ],
+    "requiredUserQuestions": [
+      "Should the main comparison be suspension bending vs not bending, or before/after repair or hot press?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factors from section headers and row-level conditions.",
+      "Separate or clearly subgroup repair, hot-press, process, material, and bonding checks.",
+      "Correct NG counts for rows 55, 56, 49, 63, 64, and 87 from source rows.",
+      "Add row 88 to the Test 3rd SP+coil bonding comparison.",
+      "Only judge comparisons with matched section, date/test round, and condition context."
+    ],
+    "evidencePolicy": "Row citations exist, but they do not support the current grouping or several values."
+  },
+  "usage": {
+    "input_tokens": 5043,
+    "output_tokens": 712,
+    "total_tokens": 5755
+  }
+}

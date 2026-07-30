@@ -1,0 +1,285 @@
+{
+  "sourceFileId": 821,
+  "sourceFile": "65. TIU C11-20  Report Test  NEW grill 2026.2.14_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\65. TIU C11-20  Report Test  NEW grill 2026.2.14_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 26,
+    "sheetCellCount": 99,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 6,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST CHECK NEW GRILL TIU-C11-20 | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | Date | 2026-02-14 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | Marker | Trung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Test improve NG Function"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| Prepare sample NG 10Hz, 250hz, OK sample change new grill and test"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| 1. Result test"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| | Result Use NG Hearing change New Grill and check function"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | No | Date | Model | Type | | Input | OK | NG HEARING | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | | | | | | | | Noise | Touch"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | 1 | 2026-02-14 00:00:00 | TIU C11-20L | 10Hz Touch sample | | 55 | 24 | 31 | 0 | 31 | 0.56363636"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | 2 | | | 250Hz Ziiic touch sample | | 16 | 0 | 0 | 16 | 16 | 1"
+    },
+    {
+      "rowId": "Test!18",
+      "sheetName": "Test",
+      "rowNumber": 18,
+      "rowText": "| | 3 | | | OK sample | | 100 | 100 | 0 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "Test!27",
+      "sheetName": "Test",
+      "rowNumber": 27,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "Test!28",
+      "sheetName": "Test",
+      "rowNumber": 28,
+      "rowText": "| - New grill after change to NG 10HZ touch. NG reduce, need test more q'ty"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-821-rc-1",
+      "reviewTitle": "| REPORT TEST CHECK NEW GRILL TIU-C11-20 | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Test improve NG Function / | II. Content. / | Prepare sample NG 10Hz, 250hz, OK sample change new grill and test / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs TIU C11-20L, 250Hz Ziiic touch sample, OK sample, NG 10Hz ~20Hz Night shift, NG 10Hz ~20Hz Day shift",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "TIU C11-20L, 250Hz Ziiic touch sample, OK sample, NG 10Hz ~20Hz Night shift, NG 10Hz ~20Hz Day shift",
+          "subgroupKeys": [
+            "10Hz Touch sample",
+            "NG 10Hz ~20Hz Day shift"
+          ],
+          "evidenceRows": [
+            "Test!10",
+            "Test!14",
+            "Test!16",
+            "Test!18",
+            "Test!2",
+            "Test!20",
+            "Test!22",
+            "Test!24",
+            "Test!5",
+            "Test!6",
+            "Test!7",
+            "Test!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "Result Use NG Hearing change New Grill and check function",
+          "comparisonRows": [
+            "Test!14",
+            "Test!16",
+            "Test!18",
+            "Test!20",
+            "Test!22",
+            "Test!24"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 24025,
+              "condition": "TIU C11-20L | 10Hz Touch sample",
+              "input": 55.0,
+              "ok": 24.0,
+              "ng": 31.0,
+              "ratePercent": 56.36363599999999,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "metricId": 24026,
+              "condition": "250Hz Ziiic touch sample",
+              "input": 16.0,
+              "ok": 0.0,
+              "ng": 16.0,
+              "ratePercent": 100.0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "metricId": 24027,
+              "condition": "OK sample",
+              "input": 100.0,
+              "ok": 100.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!18"
+              ]
+            },
+            {
+              "metricId": 24028,
+              "condition": "TIU C11-20L | NG 10Hz ~20Hz Day shift",
+              "input": 140.0,
+              "ok": 14.0,
+              "ng": 126.0,
+              "ratePercent": 90.0,
+              "evidenceRows": [
+                "Test!20"
+              ]
+            },
+            {
+              "metricId": 24029,
+              "condition": "NG 10Hz ~20Hz Night shift",
+              "input": 220.0,
+              "ok": 18.0,
+              "ng": 202.0,
+              "ratePercent": 91.81818200000001,
+              "evidenceRows": [
+                "Test!22"
+              ]
+            },
+            {
+              "metricId": 24030,
+              "condition": "NG 10Hz ~20Hz Day shift",
+              "input": 150.0,
+              "ok": 6.0,
+              "ng": 144.0,
+              "ratePercent": 96.0,
+              "evidenceRows": [
+                "Test!24"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!10",
+        "Test!14",
+        "Test!16",
+        "Test!18",
+        "Test!2",
+        "Test!20",
+        "Test!22",
+        "Test!24",
+        "Test!5",
+        "Test!6",
+        "Test!7",
+        "Test!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!10",
+      "Test!14",
+      "Test!16",
+      "Test!18",
+      "Test!2",
+      "Test!20",
+      "Test!22",
+      "Test!24",
+      "Test!5",
+      "Test!6",
+      "Test!7",
+      "Test!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

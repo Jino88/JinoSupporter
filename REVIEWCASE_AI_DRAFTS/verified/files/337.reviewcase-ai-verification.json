@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 337,
+  "sourceFile": "17.BRS-161016 Result checking and test problem VP+CD separate date 20.10.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\337.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:52Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 337,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable VP+CD laser/plasma evidence but grouping and measurement extraction are not reliable.",
+    "issues": [
+      "Changed factor is vague; actual factors are Laser CD, Plasma, and possibly Clean Ethanol.",
+      "Baseline/test mapping is ambiguous across date sheets and normal labels.",
+      "Tension outcomes cite header rows and use invalid stats instead of data rows.",
+      "Function measurement outcome duplicates defect counts from a header row.",
+      "Unrelated Decap function sheet/model should not be included."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define conditions as Laser CD O/X, Plasma O/X, with Clean Ethanol only for 17.11.",
+      "Keep sheet/date/test round as subgroup keys or separate comparable groups.",
+      "Rebuild tension outcomes from actual data rows such as 15.10!29, 23.10!31-33, 17.11!18-21.",
+      "Keep separate/decap/function/load outcomes under correct rows and domains.",
+      "Exclude unrelated MSU-L20S15-07 Decap function analysis."
+    ],
+    "evidencePolicy": "Row citations exist, but several cited rows are headers or wrong-context evidence, so citations are insufficient."
+  },
+  "usage": {
+    "input_tokens": 9202,
+    "output_tokens": 747,
+    "total_tokens": 9949
+  }
+}

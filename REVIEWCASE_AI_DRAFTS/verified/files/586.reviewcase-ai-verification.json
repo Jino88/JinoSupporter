@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 586,
+  "sourceFile": "37. BRS-161016 Report test material from New supplier Zhongke  11.5.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\586.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:33Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 586,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparison evidence but changed-factor and outcome grouping need correction before final use.",
+    "issues": [
+      "Changed factor is too broad and mixes supplier, test labels, and MG types.",
+      "Baotou/normal supplier should be baseline context, not a separate primary factor.",
+      "Gauss outcome omits Yoke rows and misses NG conclusions for SMG long/short.",
+      "Function result is overstated as improved; source says comparable to normal and usable for MG-C.",
+      "Some cited rows are not shown in context, limiting verification of extracted metrics."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary factor as Zhongke new supplier material versus normal/Baotou baseline.",
+      "Use MG-S-A, MG-S-B, MG-C, SMG long/short, CMG/CPT, and Yoke as subgroup keys.",
+      "Add gauss judgments reflecting SMG-S-A/S-B not usable, MG-S-C OK, and include Yoke rows.",
+      "Revise function judgment to no meaningful change/equivalent with usable MG-C conclusion.",
+      "Ensure all cited metric rows are available and row citations cover headers, paired data, and decisions."
+    ],
+    "evidencePolicy": "Row citations are mostly sufficient for existence but not sufficient for final evidence until missing context and grouping citations are fixed."
+  },
+  "usage": {
+    "input_tokens": 8066,
+    "output_tokens": 815,
+    "total_tokens": 8881
+  }
+}

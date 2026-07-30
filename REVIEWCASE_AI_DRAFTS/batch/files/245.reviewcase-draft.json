@@ -1,0 +1,425 @@
+{
+  "sourceFileId": 245,
+  "sourceFile": "12. BRS-161016 DT  Report  check Reason NG sigma (THD+SPL) date 27.06.2025_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\12. BRS-161016 DT  Report  check Reason NG sigma (THD+SPL) date 27.06.2025_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test Frame bending",
+    "sheetRowCount": 45,
+    "sheetCellCount": 288,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 7,
+    "measurementStatCount": 8
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test Frame bending!2",
+      "sheetName": "Test Frame bending",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT CHECK AND IMPROVE NG SIGMA (THD+SPL) BRS-161016 | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test Frame bending!3",
+      "sheetName": "Test Frame bending",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | Date | 2025-06-27 00:00:00"
+    },
+    {
+      "rowId": "Test Frame bending!4",
+      "sheetName": "Test Frame bending",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | Marker | Le"
+    },
+    {
+      "rowId": "Test Frame bending!5",
+      "sheetName": "Test Frame bending",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test Frame bending!6",
+      "sheetName": "Test Frame bending",
+      "rowNumber": 6,
+      "rowText": "| - Check find reason NG sigma (THD+SPL)"
+    },
+    {
+      "rowId": "Test Frame bending!7",
+      "sheetName": "Test Frame bending",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test Frame bending!8",
+      "sheetName": "Test Frame bending",
+      "rowNumber": 8,
+      "rowText": "| 1. Separate Mold Frame => Test Function"
+    },
+    {
+      "rowId": "Test Frame bending!9",
+      "sheetName": "Test Frame bending",
+      "rowNumber": 9,
+      "rowText": "| 2. Check material Frame separate Frame bending and OK => Test Function"
+    },
+    {
+      "rowId": "Test Frame bending!14",
+      "sheetName": "Test Frame bending",
+      "rowNumber": 14,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test Frame bending!15",
+      "sheetName": "Test Frame bending",
+      "rowNumber": 15,
+      "rowText": "| | 1. RESULT FOLLOW NG RATE FUNCTION SEPARATE MOLD FRAME"
+    },
+    {
+      "rowId": "Test Frame bending!16",
+      "sheetName": "Test Frame bending",
+      "rowNumber": 16,
+      "rowText": "| | Date | Line | Mold Frame | SIGMA | | | | Total NG | NG rate | Hearing | | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Test Frame bending!17",
+      "sheetName": "Test Frame bending",
+      "rowNumber": 17,
+      "rowText": "| | | | | Input | THD | SPL | THD+SPL | | | Input | Noise | Touch"
+    },
+    {
+      "rowId": "Test Frame bending!33",
+      "sheetName": "Test Frame bending",
+      "rowNumber": 33,
+      "rowText": "| | 2. RESULT SEPARATE FRAME BENDING AND FRAME OK"
+    },
+    {
+      "rowId": "Test Frame bending!47",
+      "sheetName": "Test Frame bending",
+      "rowNumber": 47,
+      "rowText": "| | 2.1. RESULT CHECK FUNCTION FRAME BENDING AND FRAME OK"
+    },
+    {
+      "rowId": "Test Frame bending!54",
+      "sheetName": "Test Frame bending",
+      "rowNumber": 54,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-245-rc-1",
+      "reviewTitle": "| REPORT CHECK AND IMPROVE NG SIGMA (THD+SPL) BRS-161016 | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Check find reason NG sigma (THD+SPL) / | II. Content. / | 1. Separate Mold Frame => Test Function / | 2. Check material Frame separate Frame bending and OK => Test Function",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "mold"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs 2025-06-27 00:00:00, G3, G4, G5, G6, Frame OK, Frame bending",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "2025-06-27 00:00:00, G3, G4, G5, G6, Frame OK, Frame bending",
+          "subgroupKeys": [
+            "C2-3B",
+            "K1"
+          ],
+          "evidenceRows": [
+            "Test Frame bending!16",
+            "Test Frame bending!17",
+            "Test Frame bending!2",
+            "Test Frame bending!36",
+            "Test Frame bending!38",
+            "Test Frame bending!40",
+            "Test Frame bending!42",
+            "Test Frame bending!44",
+            "Test Frame bending!5",
+            "Test Frame bending!50",
+            "Test Frame bending!51",
+            "Test Frame bending!7",
+            "Test Frame bending!8",
+            "Test Frame bending!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "2. RESULT SEPARATE FRAME BENDING AND FRAME OK",
+          "comparisonRows": [
+            "Test Frame bending!36",
+            "Test Frame bending!38",
+            "Test Frame bending!40",
+            "Test Frame bending!42",
+            "Test Frame bending!44",
+            "Test Frame bending!50",
+            "Test Frame bending!51"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 19023,
+              "condition": "2025-06-27 00:00:00 | C2-3B | K1",
+              "input": 800.0,
+              "ok": null,
+              "ng": 41.0,
+              "ratePercent": 5.125,
+              "evidenceRows": [
+                "Test Frame bending!36"
+              ]
+            },
+            {
+              "metricId": 19024,
+              "condition": "G3",
+              "input": 1000.0,
+              "ok": null,
+              "ng": 23.0,
+              "ratePercent": 2.3,
+              "evidenceRows": [
+                "Test Frame bending!38"
+              ]
+            },
+            {
+              "metricId": 19025,
+              "condition": "G4",
+              "input": 800.0,
+              "ok": null,
+              "ng": 63.0,
+              "ratePercent": 7.875,
+              "evidenceRows": [
+                "Test Frame bending!40"
+              ]
+            },
+            {
+              "metricId": 19026,
+              "condition": "G5",
+              "input": 200.0,
+              "ok": null,
+              "ng": 4.0,
+              "ratePercent": 2.0,
+              "evidenceRows": [
+                "Test Frame bending!42"
+              ]
+            },
+            {
+              "metricId": 19027,
+              "condition": "G6",
+              "input": 200.0,
+              "ok": null,
+              "ng": 4.0,
+              "ratePercent": 2.0,
+              "evidenceRows": [
+                "Test Frame bending!44"
+              ]
+            },
+            {
+              "metricId": 19028,
+              "condition": "Frame OK",
+              "input": 2071.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test Frame bending!50"
+              ]
+            },
+            {
+              "metricId": 19029,
+              "condition": "Frame bending",
+              "input": 136.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test Frame bending!51"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "1. RESULT FOLLOW NG RATE FUNCTION SEPARATE MOLD FRAME",
+          "comparisonRows": [
+            "Test Frame bending!16"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 50585,
+              "condition": "1. RESULT FOLLOW NG RATE FUNCTION SEPARATE MOLD FRAME / Mold Frame",
+              "spec": "",
+              "min": 1.0,
+              "max": 6.0,
+              "avg": 3.857142857142857,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test Frame bending!16"
+              ]
+            },
+            {
+              "statId": 50586,
+              "condition": "1. RESULT FOLLOW NG RATE FUNCTION SEPARATE MOLD FRAME / SIGMA",
+              "spec": "",
+              "min": 560.0,
+              "max": 6854.0,
+              "avg": 3089.714285714286,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test Frame bending!16"
+              ]
+            },
+            {
+              "statId": 50587,
+              "condition": "1. RESULT FOLLOW NG RATE FUNCTION SEPARATE MOLD FRAME / Hearing",
+              "spec": "",
+              "min": 554.0,
+              "max": 6819.0,
+              "avg": 3073.4285714285716,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test Frame bending!16"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Line | Mold Frame | SIGMA | Total NG | NG rate | Hearing | Total NG | NG rate",
+          "comparisonRows": [
+            "Test Frame bending!17"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 50588,
+              "condition": "SIGMA / THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 3.0,
+              "avg": 0.8571428571428571,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test Frame bending!17"
+              ]
+            },
+            {
+              "statId": 50589,
+              "condition": "SIGMA / SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test Frame bending!17"
+              ]
+            },
+            {
+              "statId": 50590,
+              "condition": "SIGMA / THD+SPL",
+              "spec": "",
+              "min": 1.0,
+              "max": 52.0,
+              "avg": 15.428571428571429,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test Frame bending!17"
+              ]
+            },
+            {
+              "statId": 50591,
+              "condition": "Hearing / Noise",
+              "spec": "",
+              "min": 8.0,
+              "max": 69.0,
+              "avg": 39.57142857142857,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test Frame bending!17"
+              ]
+            },
+            {
+              "statId": 50592,
+              "condition": "Hearing / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 13.0,
+              "avg": 4.0,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test Frame bending!17"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test Frame bending!16",
+        "Test Frame bending!17",
+        "Test Frame bending!2",
+        "Test Frame bending!36",
+        "Test Frame bending!38",
+        "Test Frame bending!40",
+        "Test Frame bending!42",
+        "Test Frame bending!44",
+        "Test Frame bending!5",
+        "Test Frame bending!50",
+        "Test Frame bending!51",
+        "Test Frame bending!7",
+        "Test Frame bending!8",
+        "Test Frame bending!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test Frame bending!16",
+      "Test Frame bending!17",
+      "Test Frame bending!2",
+      "Test Frame bending!36",
+      "Test Frame bending!38",
+      "Test Frame bending!40",
+      "Test Frame bending!42",
+      "Test Frame bending!44",
+      "Test Frame bending!5",
+      "Test Frame bending!50",
+      "Test Frame bending!51",
+      "Test Frame bending!7",
+      "Test Frame bending!8",
+      "Test Frame bending!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

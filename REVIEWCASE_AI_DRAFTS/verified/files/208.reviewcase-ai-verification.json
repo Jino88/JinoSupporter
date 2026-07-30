@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 208,
+  "sourceFile": "10. BRS-161016 Report checking Gauss of CMG after dry_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\208.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:13Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 208,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but conflates separate SMG, CMG dry, and Yoke TF-vs-normal comparisons under an invalid filename-based changed factor.",
+    "issues": [
+      "Changed factor is filename, not the tested condition.",
+      "Baseline and test conditions are left undefined despite visible before/after dry and TF/normal labels.",
+      "Separate report contexts are merged into one case.",
+      "Several FO outcomes are misparsed as sample indices, not FO values.",
+      "Many citations point to headers only, with weak result/decision support."
+    ],
+    "requiredUserQuestions": [
+      "Should the 12.30 SMG sheet be a separate review case from the CMG dry report?",
+      "Should NTI/FO/SPL/THD be grouped under Yoke TF line vs Normal comparison?"
+    ],
+    "correctionPlan": [
+      "Replace filename factor with explicit conditions: before vs after dry CMG and Yoke TF line vs Normal as applicable.",
+      "Split or clearly subgroup the 12.30 SMG continuous vs delay jig content.",
+      "Reassign SPL, THD, FO, and Gauss outcomes to the correct changed factor.",
+      "Re-extract FO statistics from numeric value columns, excluding sample numbers.",
+      "Add concise citations to purpose, table headers, data rows, and decision rows for each case."
+    ],
+    "evidencePolicy": "Row IDs exist, but current citations are insufficient for final evidence because grouping and metric extraction are unreliable."
+  },
+  "usage": {
+    "input_tokens": 8943,
+    "output_tokens": 800,
+    "total_tokens": 9743
+  }
+}

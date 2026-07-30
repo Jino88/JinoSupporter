@@ -1,0 +1,247 @@
+{
+  "sourceFileId": 66,
+  "sourceFile": "027. MSU-20S15-07 Result check Height dimension C-MG, S-MG - Date 2025.02.28_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\027. MSU-20S15-07 Result check Height dimension C-MG, S-MG - Date 2025.02.28_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 3,
+    "sheetNames": "Sheet1; Sheet2; Sheet3",
+    "sheetRowCount": 24,
+    "sheetCellCount": 117,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 6
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet1!4",
+      "sheetName": "Sheet1",
+      "rowNumber": 4,
+      "rowText": "| | TEST HIGHT DIMENSION C-MG, S-MG"
+    },
+    {
+      "rowId": "Sheet1!6",
+      "sheetName": "Sheet1",
+      "rowNumber": 6,
+      "rowText": "| | Date | Type | C-MG | S-MG (New JIG 0.03) | Q'ty"
+    },
+    {
+      "rowId": "Sheet1!7",
+      "sheetName": "Sheet1",
+      "rowNumber": 7,
+      "rowText": "| | 2025-02-28 00:00:00 | 1 | Normal | Normal | 100"
+    },
+    {
+      "rowId": "Sheet1!8",
+      "sheetName": "Sheet1",
+      "rowNumber": 8,
+      "rowText": "| | | 2 | 0.7 | Normal | 100"
+    },
+    {
+      "rowId": "Sheet1!9",
+      "sheetName": "Sheet1",
+      "rowNumber": 9,
+      "rowText": "| | | 3 | Normal | 0.7 | 100"
+    },
+    {
+      "rowId": "Sheet1!10",
+      "sheetName": "Sheet1",
+      "rowNumber": 10,
+      "rowText": "| | | 4 | 0.7 | 0.7 | 100"
+    },
+    {
+      "rowId": "Sheet1!13",
+      "sheetName": "Sheet1",
+      "rowNumber": 13,
+      "rowText": "| | Result check dimension actual ( Spec : 0.66~0.70mm )"
+    },
+    {
+      "rowId": "Sheet1!15",
+      "sheetName": "Sheet1",
+      "rowNumber": 15,
+      "rowText": "| | Date | STT | Test | | | Normal"
+    },
+    {
+      "rowId": "Sheet1!16",
+      "sheetName": "Sheet1",
+      "rowNumber": 16,
+      "rowText": "| | | | C-MG | S-MG Short | S-MG Long | C-MG | S-MG Short | S-MG Long"
+    },
+    {
+      "rowId": "Sheet1!17",
+      "sheetName": "Sheet1",
+      "rowNumber": 17,
+      "rowText": "| | 2025-02-28 00:00:00 | 1 | 0.7 | 0.7 | 0.7 | 0.67 | 0.68 | 0.66"
+    },
+    {
+      "rowId": "Sheet1!18",
+      "sheetName": "Sheet1",
+      "rowNumber": 18,
+      "rowText": "| | | 2 | 0.7 | 0.7 | 0.7 | 0.67 | 0.68 | 0.67"
+    },
+    {
+      "rowId": "Sheet1!19",
+      "sheetName": "Sheet1",
+      "rowNumber": 19,
+      "rowText": "| | | 3 | 0.7 | 0.7 | 0.71 | 0.67 | 0.68 | 0.68"
+    },
+    {
+      "rowId": "Sheet2!12",
+      "sheetName": "Sheet2",
+      "rowNumber": 12,
+      "rowText": "| | Normal"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-66-rc-1",
+      "reviewTitle": "| | TEST HIGHT DIMENSION C-MG, S-MG",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "dimension/spec"
+          ],
+          "changedFactor": "027. MSU-20S15-07 Result check Height dimension C-MG, S-MG - Date 2025.02.28",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Sheet1!15",
+            "Sheet1!16",
+            "Sheet1!4",
+            "Sheet1!7",
+            "Sheet1!8",
+            "Sheet1!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | STT | Test | Normal",
+          "comparisonRows": [
+            "Sheet1!16"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 47278,
+              "condition": "Result check dimension actual ( Spec : 0.66~0.70mm ) / C-MG",
+              "spec": "0.66~0.70mm",
+              "min": 0.7,
+              "max": 0.7,
+              "avg": 0.7000000000000001,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!16"
+              ]
+            },
+            {
+              "statId": 47279,
+              "condition": "Result check dimension actual ( Spec : 0.66~0.70mm ) / S-MG Short",
+              "spec": "0.66~0.70mm",
+              "min": 0.7,
+              "max": 0.7,
+              "avg": 0.7000000000000001,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!16"
+              ]
+            },
+            {
+              "statId": 47280,
+              "condition": "Result check dimension actual ( Spec : 0.66~0.70mm ) / S-MG Long",
+              "spec": "0.66~0.70mm",
+              "min": 0.7,
+              "max": 0.71,
+              "avg": 0.7020000000000001,
+              "sampleCount": 10,
+              "violationCount": 2,
+              "evidenceRows": [
+                "Sheet1!16"
+              ]
+            },
+            {
+              "statId": 47281,
+              "condition": "Normal / C-MG",
+              "spec": "0.66~0.70mm",
+              "min": 0.66,
+              "max": 0.68,
+              "avg": 0.67,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!16"
+              ]
+            },
+            {
+              "statId": 47282,
+              "condition": "Normal / S-MG Short",
+              "spec": "0.66~0.70mm",
+              "min": 0.68,
+              "max": 0.69,
+              "avg": 0.6809999999999998,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!16"
+              ]
+            },
+            {
+              "statId": 47283,
+              "condition": "Normal / S-MG Long",
+              "spec": "0.66~0.70mm",
+              "min": 0.66,
+              "max": 0.68,
+              "avg": 0.674,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!16"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Sheet1!15",
+        "Sheet1!16",
+        "Sheet1!4",
+        "Sheet1!7",
+        "Sheet1!8",
+        "Sheet1!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet1!15",
+      "Sheet1!16",
+      "Sheet1!4",
+      "Sheet1!7",
+      "Sheet1!8",
+      "Sheet1!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

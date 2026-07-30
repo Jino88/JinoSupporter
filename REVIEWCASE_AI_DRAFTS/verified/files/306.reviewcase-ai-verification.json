@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 306,
+  "sourceFile": "16 BRS-161016DT  Report Checking and test VP ASS'Y GUIDE JIG date 24.9.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\306.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 306,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Valid Old JIG vs New JIG comparison exists, but the draft has changed-factor and measurement-grouping errors.",
+    "issues": [
+      "Changed factor incorrectly lists changed condition as New JIG and Old JIG.",
+      "Measurement outcomes are parser artifacts from jig IDs, not real measurements.",
+      "Function judgement ignores different NG category mix despite equal total NG rate.",
+      "Qualitative jig check rows and conclusion are not cleanly represented.",
+      "Evidence set omits useful conclusion/header rows for final reasoning."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary change factor to Old JIG baseline vs New JIG test.",
+      "Keep vision and function total NG comparisons as separate outcomes under one jig comparison.",
+      "Remove measurement outcomes derived from jig numbering rows.",
+      "Add limitation that function total NG is unchanged but defect categories differ.",
+      "Cite relevant headers, rows 29/31, 36/38, and conclusion row 25."
+    ],
+    "evidencePolicy": "Row citations exist, but only defect-result citations are sufficient; measurement citations are not valid evidence."
+  },
+  "usage": {
+    "input_tokens": 5396,
+    "output_tokens": 730,
+    "total_tokens": 6126
+  }
+}

@@ -1,0 +1,211 @@
+{
+  "sourceFileId": 630,
+  "sourceFile": "41. TIU C11-20  Report Test VP Assy press Jig 2026.1.24_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\41. TIU C11-20  Report Test VP Assy press Jig 2026.1.24_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 17,
+    "sheetCellCount": 72,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST VP ASSY PRESS JIG TIU-C11-20 | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | Date | 2026-01-24 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Test improve NG Function"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| test new VP assy press Jig cut 0.03"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| 1. Result test"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | Result check function"
+    },
+    {
+      "rowId": "Test!17",
+      "sheetName": "Test",
+      "rowNumber": 17,
+      "rowText": "| | No | Date | Shift | Model | Type | | Input | OK | NG AUDIOBUS | | | | NG HEARING | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Test!18",
+      "sheetName": "Test",
+      "rowNumber": 18,
+      "rowText": "| | | | | | | | | | SPL | SPL+RB | RB | No sound | Noise | Touch"
+    },
+    {
+      "rowId": "Test!19",
+      "sheetName": "Test",
+      "rowNumber": 19,
+      "rowText": "| | 1 | 2026-01-24 00:00:00 | Day shift | TIU C11-20R | New VP assy press Jig | | 34 | 28 | 2 | 0 | 4 | 0 | 4 | 0 | 6 | 0.17647059"
+    },
+    {
+      "rowId": "Test!21",
+      "sheetName": "Test",
+      "rowNumber": 21,
+      "rowText": "| | 2 | | | | Normal | | 2252 | 2059 | 12 | 0 | 190 | 0 | 179 | 2 | 193 | 0.0857016"
+    },
+    {
+      "rowId": "Test!24",
+      "sheetName": "Test",
+      "rowNumber": 24,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-630-rc-1",
+      "reviewTitle": "| REPORT TEST VP ASSY PRESS JIG TIU-C11-20 | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Test improve NG Function / | II. Content. / | test new VP assy press Jig cut 0.03 / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "jig",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Day shift",
+          "baselineCondition": "Normal",
+          "changedCondition": "Day shift",
+          "subgroupKeys": [
+            "TIU C11-20R",
+            "New VP assy press Jig"
+          ],
+          "evidenceRows": [
+            "Test!10",
+            "Test!19",
+            "Test!2",
+            "Test!21",
+            "Test!5",
+            "Test!6",
+            "Test!7",
+            "Test!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "Result check function",
+          "comparisonRows": [
+            "Test!19",
+            "Test!21"
+          ],
+          "judgement": "worse",
+          "subResults": [
+            {
+              "pairId": 4434,
+              "controlCondition": "Normal",
+              "testCondition": "Day shift | TIU C11-20R | New VP assy press Jig",
+              "control": {
+                "input": 2252.0,
+                "ng": 193.0,
+                "ratePercent": 8.57016
+              },
+              "test": {
+                "input": 34.0,
+                "ng": 6.0,
+                "ratePercent": 17.647059000000002
+              },
+              "deltaRatePercentPoint": 9.076899000000001,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Test!19",
+                "Test!21"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Test!10",
+        "Test!19",
+        "Test!2",
+        "Test!21",
+        "Test!5",
+        "Test!6",
+        "Test!7",
+        "Test!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!10",
+      "Test!19",
+      "Test!2",
+      "Test!21",
+      "Test!5",
+      "Test!6",
+      "Test!7",
+      "Test!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

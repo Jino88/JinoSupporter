@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 667,
+  "sourceFile": "46. BRS-161016 Report test material GN YK change dimension improve adhesion(Producft of press line - Glonics - Coating Doojin VN ) 2024.6.27_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\667.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:08Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 667,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the main Normal vs Test YK DooJin comparison but has blocking condition, subgroup, row-pairing, and conclusion-citation errors.",
+    "issues": [
+      "Changed factor is polluted with magnet/supplier subgroup labels.",
+      "Several date-matched Normal rows are omitted or mispaired.",
+      "Final decision and key conclusion rows are not cited.",
+      "Tension results need grouped Test-vs-Normal comparisons by magnet type.",
+      "Some cited rows are not present in provided context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal vs Test YK Coating DooJin VN for GN YK dimension/material change.",
+      "Move Beijing/Baotou/Boutou and MG-S-A/B/C into subgroup keys only.",
+      "Pair each test row with the same-date matching Normal row, including 18.6!26, 34, 42, and 60.",
+      "Add conclusion evidence rows 18.6!61-65 and decision context around 18.6!70 if populated.",
+      "Regroup Tension sheet rows into MG-S-A, MG-S-B, and MG-S-C Test-vs-Normal subresults with specs preserved."
+    ],
+    "evidencePolicy": "Row citations exist for many data points but are insufficient until missing matched rows and conclusion rows are cited."
+  },
+  "usage": {
+    "input_tokens": 8608,
+    "output_tokens": 820,
+    "total_tokens": 9428
+  }
+}

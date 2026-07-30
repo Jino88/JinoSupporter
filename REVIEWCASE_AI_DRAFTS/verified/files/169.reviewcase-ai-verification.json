@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 169,
+  "sourceFile": "08. TIU L5S3-01 R Result check Gauss Frame-Yoke after dry_25.11.19_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\169.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:46Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 169,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cannot be approved because comparable before/after dry evidence and metrics were not extracted.",
+    "issues": [
+      "No review case was generated.",
+      "No comparison pairs or measurement stats were extracted.",
+      "Visible data rows show only before-dry Frame and Yoke values.",
+      "Primary factor is ambiguous between before/after dry and dry method context.",
+      "Outcome grouping for Frame and Yoke is incomplete."
+    ],
+    "requiredUserQuestions": [
+      "Are after-dry Frame/Yoke rows present in the workbook but missing from extraction?",
+      "Should the primary comparison be before vs after dry, or Heat dry vs IR dry?"
+    ],
+    "correctionPlan": [
+      "Re-extract the full sheet including hidden or skipped rows.",
+      "Capture all Frame and Yoke rows with dry condition labels.",
+      "Group measurements by type and dry condition.",
+      "Compute before/after statistics for each outcome.",
+      "Cite source rows supporting each condition and result."
+    ],
+    "evidencePolicy": "Current row citations are insufficient for final evidence because test-side rows are missing."
+  },
+  "usage": {
+    "input_tokens": 1763,
+    "output_tokens": 628,
+    "total_tokens": 2391
+  }
+}

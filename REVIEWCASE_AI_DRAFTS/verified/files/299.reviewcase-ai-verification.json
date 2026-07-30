@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 299,
+  "sourceFile": "15. L20S15-07GMI  Report test new bond WE-4637H . WE-4638HS . EW 6329M2F improve NG separate SP Frame modul line_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\299.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:46Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 299,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but changed-factor and comparison grouping are inconsistent.",
+    "issues": [
+      "Changed factor names only WE-4638HS while outcomes include three test bonds.",
+      "Test bond names and bond amounts are mixed as subgroup keys instead of condition levels.",
+      "WE-4637H vision comparison likely uses wrong normal row; date grouping is not preserved.",
+      "Tension outcome is not judged despite clear spec failures versus normal rows.",
+      "Some cited rows needed for grouping are not shown in context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary factor as normal PT-8310M9S versus each new bond type.",
+      "Keep date, line, type, bond amount, and test bond as row-level grouping keys.",
+      "Pair each test condition with the matching normal row by date/test context.",
+      "Clean tension conditions for all cited rows and judge against >0.3 kgf spec.",
+      "Separate vision NG-rate and tension outcomes under the same bond-change context."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until hidden cited rows are reviewed."
+  },
+  "usage": {
+    "input_tokens": 4735,
+    "output_tokens": 739,
+    "total_tokens": 5474
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 185,
+  "sourceFile": "1. BRS-161014 Report test  reduce weight glue process ass'y VP-CD  2024.1.5_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\185.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 185,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not verified because it misdefines the glue-weight change and mixes unrelated function/process rows into tension measurements.",
+    "issues": [
+      "Changed factor should be Normal glue spec 1.4-1.6 mg vs Test 1.0-1.2 mg, not unspecified baseline vs Test/Nomal.",
+      "Tension outcome incorrectly includes function-check rows 53-56 as measurement statistics.",
+      "Function defect comparison uses uncited/missing context rows beyond shown evidence and needs Normal spelling cleanup.",
+      "Process NG results rows 33/35 are relevant but omitted as an outcome.",
+      "Evidence set is overbroad and includes section-title rows without clear role."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to reduced glue/bond amount process condition.",
+      "Set baselineCondition to Normal 1.4-1.6 mg and changedCondition to Test 1.0-1.2 mg.",
+      "Keep bond amount, tension, process NG, and function NG as separate outcomes under the same changed factor.",
+      "Remove rows 53-56 from the tension measurement outcome.",
+      "Add or verify cited rows for function Normal data and process results before approval."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient; outcome-level citations must be corrected and complete."
+  },
+  "usage": {
+    "input_tokens": 3919,
+    "output_tokens": 681,
+    "total_tokens": 4600
+  }
+}

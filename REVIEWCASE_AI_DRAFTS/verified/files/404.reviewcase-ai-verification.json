@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 404,
+  "sourceFile": "21. MSU-L20S15-07GMI  Report Test Supension partially modify the  C.L thicknees and modify the entire C.L_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\404.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 404,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft has citeable evidence but the changed-factor and outcome grouping are too noisy for final Ask AI use.",
+    "issues": [
+      "Primary changed factor mixes true C/L thickness changes with totals, flux notes, and defect labels.",
+      "526top and test sheets may represent distinct validation contexts and are merged without clear grouping.",
+      "Several measurement outcomes are header-derived or misclassified process/function defect tables.",
+      "Comparable grouping keys are incomplete for type A/B, flux condition, model/side, and test round.",
+      "Most outcomes remain not_judged despite available normal and modified condition rows."
+    ],
+    "requiredUserQuestions": [
+      "Should 526top and test sheets be one review case or separate cases?",
+      "Is bonding flux a subgroup/confounder or part of the tested change?"
+    ],
+    "correctionPlan": [
+      "Define primary factor as Normal vs partially modified C/L thickness vs entire/all-part C/L thickness, excluding totals and flux notes.",
+      "Separate or explicitly subgroup 526top X526 results from MSU-L20S1507 results if contexts differ.",
+      "Remove spurious header/statistical measurement outcomes and keep only real defect, function, and tension outcomes.",
+      "Rebuild comparisons within matching type, flux, model/side, and test-round keys.",
+      "Assign judgements with concise limitations for small sample size and any unmatched rows."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are not sufficient until header/data alignment and comparable condition grouping are corrected."
+  },
+  "usage": {
+    "input_tokens": 11068,
+    "output_tokens": 808,
+    "total_tokens": 11876
+  }
+}

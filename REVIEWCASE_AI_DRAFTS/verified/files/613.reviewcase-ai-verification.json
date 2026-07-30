@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 613,
+  "sourceFile": "4. BRS-201506 Report test material VP change condition forming date 4.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\613.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 613,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable VP Test vs Normal evidence exists, but grouping and measurement evidence need cleanup before final use.",
+    "issues": [
+      "Changed factor label conflates material and process condition without concise source-backed wording.",
+      "Tension rows mix two type/spec groups and lose merged parent context and specs.",
+      "NTI/FO measurement outcomes include auto-detected or nonsensical stats with weak row support.",
+      "Some cited measurement rows are headers only and do not substantiate calculated stats.",
+      "Review title uses FO subtable instead of overall report context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor as VP Test/new VP material under changed forming condition vs Normal/VP normal.",
+      "Keep defect outcomes but note unequal input sizes where rates are compared.",
+      "Split tension by VP+Dome SUB1 and Frame+VP Main2, retaining each spec.",
+      "Remove or separately verify NTI/FO auto-detected measurement stats with detailed data-row citations.",
+      "Use report title/purpose rows as case context and FO only as a measurement outcome if supported."
+    ],
+    "evidencePolicy": "Defect row citations are sufficient; measurement citations are incomplete or overbroad."
+  },
+  "usage": {
+    "input_tokens": 9274,
+    "output_tokens": 783,
+    "total_tokens": 10057
+  }
+}

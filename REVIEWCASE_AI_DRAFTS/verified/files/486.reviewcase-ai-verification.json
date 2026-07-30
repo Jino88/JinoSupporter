@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 486,
+  "sourceFile": "29-1. BRS-201506 Report test DOE Forming sub VP- date 14.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\486.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 486,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misidentifies the changed factor and misgroups baseline/test outcomes.",
+    "issues": [
+      "Changed factor omits actual temperature settings and extra 210-230C test condition.",
+      "Change domain labels are unsupported by source context.",
+      "Function comparisons reuse one normal row across different dates instead of matched date rounds.",
+      "VP-line NG-rate results are left as invalid measurement summaries, not judged comparisons.",
+      "Many measurement stats cite only header rows and are not reliable evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define changed factor as VP forming/cooling temperature condition versus normal, preserving each temperature set.",
+      "Treat 170-190C/90-110C and 210-230C/30-50C as separate test conditions where supported.",
+      "Regroup DOE FM results by section and date/test round before judging NG rates.",
+      "Replace header-only measurement summaries with row-backed SPL, THD, IMP, FO comparisons.",
+      "Remove unsupported domains and redundant or non-evidentiary rows."
+    ],
+    "evidencePolicy": "Row citations exist, but citation granularity and grouping are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 13340,
+    "output_tokens": 779,
+    "total_tokens": 14119
+  }
+}

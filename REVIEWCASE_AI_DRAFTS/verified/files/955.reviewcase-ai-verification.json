@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 955,
+  "sourceFile": "87. BRS-161014 Report idea Cut worker 12.18.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\955.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:22:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 955,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable as final evidence because it has no review case and only sparse before/after context.",
+    "issues": [
+      "No generated review case to verify",
+      "No extracted metrics or measurable results",
+      "Changed factor is ambiguous: cut worker, line/fid position, or inspection duration",
+      "Outcome/decision evidence is missing or not cited",
+      "Likely image/embedded content not represented in extracted rows"
+    ],
+    "requiredUserQuestions": [
+      "What is the actual changed factor shown in the before/after sections?",
+      "What final decision or result should be cited from the report?"
+    ],
+    "correctionPlan": [
+      "Inspect workbook images and hidden/merged cells around before/after sections",
+      "Create one review case if a comparable before/after change is confirmed",
+      "Cite rows for title, purpose, before/after labels, and decision/result",
+      "Preserve separate contexts for part array and visual inspection if both support same change",
+      "Leave needs_review if result cannot be text-cited"
+    ],
+    "evidencePolicy": "Current row citations are insufficient for Ask AI final evidence; decision/result citations are required."
+  },
+  "usage": {
+    "input_tokens": 1666,
+    "output_tokens": 718,
+    "total_tokens": 2384
+  }
+}

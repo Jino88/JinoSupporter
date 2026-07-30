@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 151,
+  "sourceFile": "07. L20S15-07 Report test CD lot ( 3.17 ( size510k- đã tổng hơp file DT line)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\151.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:05Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 151,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites valid rows but misidentifies the changed condition and omits key test-lot result evidence.",
+    "issues": [
+      "Changed factor is explicit: Normal vs Lot CD test CD 3.17 Size 510k.",
+      "Report!21 test-lot result row is missing from factor and outcome evidence.",
+      "Function/material outcome includes only Normal row, not the test-lot comparison.",
+      "Tension spec 1.2 kgf is present but not captured in measurement stats.",
+      "Change domain should focus on lot/material CD size, not vague process condition."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedCondition to Lot CD test CD 3.17 Size 510k.",
+      "Add Report!21 to changed factor, review case, and result outcome evidence.",
+      "Create subresults for Report!21 and Report!23 including dyne, tension test, input, OK, NG counts, NG rate, and result note.",
+      "Capture tension spec as 1.2 kgf for Tension!8 and Tension!10.",
+      "Retain one review case with material/function and tension outcomes under the same lot-test comparison."
+    ],
+    "evidencePolicy": "Citations exist, but they are incomplete because the primary test-lot row is omitted."
+  },
+  "usage": {
+    "input_tokens": 3531,
+    "output_tokens": 591,
+    "total_tokens": 4122
+  }
+}

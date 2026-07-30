@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 918,
+  "sourceFile": "8. BRS-161016TF Result check Capa Sub2, Sub3 machine_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\918.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:49Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 918,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The workbook contains citeable capacity comparison data, but the draft has no review case and the comparison grouping is not finalized.",
+    "issues": [
+      "No reviewCases were generated.",
+      "No evidence rows were checked or cited in verification.",
+      "Primary factor is ambiguous between process and machine type.",
+      "Baseline/test direction is not stated.",
+      "Outcome metrics are present but not structured."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended baseline or reference condition?",
+      "Should Sub2/Sub3 be primary grouping, or each machine type?"
+    ],
+    "correctionPlan": [
+      "Create one review case for the capacity result check table.",
+      "Define compared conditions using rows 4-5 as grouping headers.",
+      "Map cycle, average, sample time, work time, capa, and loss metrics from rows 6-14.",
+      "Preserve Sub2 machine variants and Sub3 E2 as separate conditions.",
+      "Add row citations for headers and all metric rows used."
+    ],
+    "evidencePolicy": "Rows 3-14 are sufficient citeable evidence, but citations must be attached in the corrected case."
+  },
+  "usage": {
+    "input_tokens": 1655,
+    "output_tokens": 586,
+    "total_tokens": 2241
+  }
+}

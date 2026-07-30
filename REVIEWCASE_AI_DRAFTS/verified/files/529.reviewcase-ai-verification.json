@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 529,
+  "sourceFile": "30.MSU-L20L15-07 Report test material Center Dome from new vender GES TRADING and from KR date 23.8.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\529.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 529,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the vendor/material comparison but has incomplete and misgrouped outcomes, so it is not final evidence.",
+    "issues": [
+      "Function table row 28 was misparsed as measurement statistics.",
+      "Tension test outcome is omitted despite clear GES and Normal rows.",
+      "VP+CD separate process result is omitted or underused.",
+      "GES TRADING and KR are combined as one changed condition though rows appear to report them separately.",
+      "Key cited rows 28, 29, and 31 are not shown in provided context for verification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove the false measurement-stat outcome from row 28.",
+      "Add tension outcome using rows 21-25 with spec and sample statistics.",
+      "Add VP+CD separate outcome using rows 15-19 and any KR row if present.",
+      "Model conditions as Normal baseline with separate GES TRADING and KR test conditions where evidence supports each.",
+      "Include full cited rows for function results, especially rows 28, 29, and 31."
+    ],
+    "evidencePolicy": "Citations exist per draft check but are insufficiently supported in visible context and need corrected row-level grouping."
+  },
+  "usage": {
+    "input_tokens": 4040,
+    "output_tokens": 787,
+    "total_tokens": 4827
+  }
+}

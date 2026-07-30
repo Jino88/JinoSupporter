@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 763,
+  "sourceFile": "59. BRS-201506 Report checking weight material coil and material Dome date 4.7.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\763.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:36Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 763,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable as final evidence because it lacks extracted review cases despite citeable weight-check result context.",
+    "issues": [
+      "No review case was generated.",
+      "No comparison pair or changed factor is defined.",
+      "Result rows are only partially cited.",
+      "Baseline versus test condition is unclear.",
+      "Decision rows are cited without decision content."
+    ],
+    "requiredUserQuestions": [
+      "Is this intended as a lot-date/material comparison or only a standalone weight check?"
+    ],
+    "correctionPlan": [
+      "Extract all result rows for coil and dome weights.",
+      "Preserve date, type, machine, lot, material, and sample grouping keys.",
+      "Identify any baseline and changed condition if present.",
+      "Calculate or cite min, max, and average per group.",
+      "Create a review case or exclude if no comparable condition exists."
+    ],
+    "evidencePolicy": "Current citations support context only; final evidence needs full result and decision row citations."
+  },
+  "usage": {
+    "input_tokens": 2345,
+    "output_tokens": 731,
+    "total_tokens": 3076
+  }
+}

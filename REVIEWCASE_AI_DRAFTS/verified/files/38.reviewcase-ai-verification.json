@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 38,
+  "sourceFile": "017.MSU-20S15-07 Result test sample waitting 2 day and check function_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\38.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:46:33Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 38,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The comparison context is citeable, but the generated outcome calculation and worse judgement do not match the table values.",
+    "issues": [
+      "Outcome subResult reports Normal NG 0 and waiting-2-day NG 2 with 0.6689% rate, but cited rows show multiple function defect counts and NG rates, including Hearing +1V Total NG 66/299 = 22.07% vs Normal 236/920 = 25.65%, and Hearing +0V Total NG 10/299 = 3.34% vs Normal 37/920 = 4.02%.",
+      "The judgement 'worse' is unsupported by the cited rows; the visible NG-rate metrics are lower for the waiting-2-day lot than Normal.",
+      "Outcome metric is too broad and does not preserve the separate measurement groups: Sigma/SPL/THD metrics, Hearing +1V Noise/Touch/Total NG/NG Rate, and Hearing +0V Noise/Touch/Total NG/NG Rate.",
+      "Changed factor label is mostly acceptable, but changeDomain includes 'coating' without evidence in the cited rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove unsupported 'coating' changeDomain unless external evidence proves coating relevance.",
+      "Rebuild outcomes from the cited table by preserving the measurement groups and headers.",
+      "Use Normal as baseline and Lot test waiting 2 day as changed condition, with Function!6 and Function!8 as comparison rows.",
+      "Correct calculations for at least the main NG-rate outcomes: Hearing +1V Total NG 66/299 = 22.07% vs 236/920 = 25.65%, and Hearing +0V Total NG 10/299 = 3.34% vs 37/920 = 4.02%.",
+      "Revise judgement to better or mixed depending on included metrics, not worse, unless additional cited evidence supports worsening."
+    ],
+    "evidencePolicy": "Row citations are sufficient for the comparison context and table values, but the extracted metric mapping and calculations must be corrected before use as final evidence."
+  },
+  "usage": {
+    "input_tokens": 1777,
+    "output_tokens": 968,
+    "total_tokens": 2745
+  }
+}

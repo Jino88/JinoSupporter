@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 180,
+  "sourceFile": "09.MSU - L20S15-07 REPORT TEST IMPROVE TENSION CD + VP 24.3.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\180.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:59Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 180,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites real rows but misgroups the process-condition changes and mislabels key baseline/test context.",
+    "issues": [
+      "Changed factor is filename, not the tested UV/press/wait conditions.",
+      "Multiple Type 2-6 conditions are collapsed without subgroup keys.",
+      "Baseline/test are marked not explicit despite normal and test rows.",
+      "Key setup rows for Types 2-5 and Type 6 are missing from factor evidence.",
+      "Second outcome is mislabeled as oven temperature instead of 6h/12h tension aging."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to dry UV/UC press/waiting process condition changes for VP+CD tension improvement.",
+      "Use Type 1 Normal as baseline and preserve Type 2-5 and Type 6 as subgroups.",
+      "Add evidence rows 11-14 and 43-55 where applicable.",
+      "Rename outcome 2 to tension after 6h and 12h waiting, not oven dry temperature.",
+      "Populate spec as 1.9 kgf and keep violation counts tied to that spec."
+    ],
+    "evidencePolicy": "Citations exist but are incomplete and not yet sufficient for final Ask AI evidence."
+  },
+  "usage": {
+    "input_tokens": 5102,
+    "output_tokens": 562,
+    "total_tokens": 5664
+  }
+}

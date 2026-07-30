@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 522,
+  "sourceFile": "30.1 MSU-L20S15-07  Report checking  gauss yoke date 10.6.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\522.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 522,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cannot be used because the changed factor, specs, and measurement evidence are not adequately supported.",
+    "issues": [
+      "Changed factor is filename, not the evidenced process change.",
+      "Baseline and test conditions are not defined.",
+      "Change domain supplier/material/dimension is unsupported.",
+      "CMG/PT and Final SPK specs appear misassigned from SMG spec.",
+      "Outcome evidence cites headers only, not spec/data rows."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended changed factor SMG voltage increase on low-gauss yoke samples?",
+      "What baseline condition should this voltage-increase result compare against?"
+    ],
+    "correctionPlan": [
+      "Set changed factor from source content, likely SMG voltage increase if confirmed.",
+      "Define baseline and changed conditions or mark comparison unavailable.",
+      "Remove unsupported change domains.",
+      "Re-map each metric to its own spec row values.",
+      "Cite row 11, row 15, and underlying measurement data rows for outcomes."
+    ],
+    "evidencePolicy": "Current citations prove report context only; they are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 2569,
+    "output_tokens": 664,
+    "total_tokens": 3233
+  }
+}

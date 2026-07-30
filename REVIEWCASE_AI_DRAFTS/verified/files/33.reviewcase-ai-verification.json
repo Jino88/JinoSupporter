@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 33,
+  "sourceFile": "014.MSU-20S15-07 GMI -Result check NG Bonding coil SP 201507 improve TF_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\33.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:45:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 33,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft is not approvable because it incorrectly merges unrelated changed factors and includes invalid/garbled measurement outcomes despite the source containing usable comparable evidence.",
+    "issues": [
+      "Blocking: changedFactor is incoherent and combines Old pusher vs New pusher, after-balance conditions, high-dimension coil, and bond amount max into one changed condition.",
+      "Blocking: baselineCondition is Old pusher while changedCondition also includes Old pusher, making the comparison logically invalid.",
+      "Blocking: separate report sections are mixed without preserving their own grouping keys such as date, line, type, input, NG categories, and test section.",
+      "Blocking: measurement outcomes appear to be parser artifacts from headers or categorical columns, with impossible specs and violation counts, and should not be used as evidence.",
+      "Blocking: several cited evidence rows are only headers or section labels, while key data rows such as Test!36-Test!38 and Test!24/Test!30 are not shown in contextRows for verification of their values.",
+      "Non-blocking: the workbook appears to contain valid comparable evidence for pusher improvement and balance-before/after testing, so it should not be excluded."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed-factor grouping from the actual report sections instead of one combined factor.",
+      "Create a separate comparable case for Old pusher vs New pusher under RESULT CHECK AFTER USED PUSHER IMPROVE, preserving date, line, type, UC Press NG categories, and NG Function metrics.",
+      "Create a separate comparable case or subgroup for Before balance vs After balance 1st/2st under RESULT CHECK AFTER BALANCE UC PRESS, preserving date and line context.",
+      "Treat high-dimension coil and bond-amount min/max sections only if there is citeable data showing a changed condition and comparable outcome; otherwise leave them as context or exclude those outcomes.",
+      "Remove parser-generated measurement outcomes based on headers/categorical columns unless actual numeric measurement rows with valid specs are cited.",
+      "Ensure every outcome cites both header/context rows and the exact data rows used for each baseline/test comparison."
+    ],
+    "evidencePolicy": "Current citations prove some source rows exist but are not sufficient for final evidence because many are headers/context only and the cited data rows do not support the drafted combined changed factor."
+  },
+  "usage": {
+    "input_tokens": 7569,
+    "output_tokens": 1000,
+    "total_tokens": 8569
+  }
+}

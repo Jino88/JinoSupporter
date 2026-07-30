@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 850,
+  "sourceFile": "7. BRS-161014 Report Test Magnet Tension Speed Changing_230822_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\850.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 850,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The report is comparable, but the draft misidentifies the changed factor and has unreliable outcome grouping/stat evidence.",
+    "issues": [
+      "Changed factor should be tension test speed, not the file name or material.",
+      "Baseline and changed conditions should be 3mm/min and 20mm/min from the purpose/table.",
+      "Outcome table is duplicated with conflicting sample counts.",
+      "Statistics cite too few/unclear rows and include Report!28 not shown in context.",
+      "Review title/purpose contain extracted noise."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set change domain to test method/process and changed factor to tension speed.",
+      "Define compared conditions as QM 3mm/min versus approval-sheet 20mm/min.",
+      "Create one measurement outcome for magnet tension results.",
+      "Recompute sample count and summary stats from all visible table rows.",
+      "Cite the purpose row and all result table rows supporting the comparison."
+    ],
+    "evidencePolicy": "Citations are not sufficient as final evidence until all table rows used for stats are cited."
+  },
+  "usage": {
+    "input_tokens": 2456,
+    "output_tokens": 516,
+    "total_tokens": 2972
+  }
+}

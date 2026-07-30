@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 229,
+  "sourceFile": "11. BRS-161016 TF Report test change condition dry SMG+Yoke_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\229.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 229,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites usable rows but misidentifies the primary changed factor as machine instead of dry temperature/time conditions.",
+    "issues": [
+      "Primary changed factor is dry temperature and dry time, not Machine 1 vs Machine 2.",
+      "Baseline or normal condition is not explicit and should not be invented.",
+      "Machine should be a subgroup key, not the changed condition.",
+      "Change domain should be process condition only, not material.",
+      "Outcome metric should be NG separate SMG or NG rate, not generic result checking."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Regroup changed factor as dry condition parameters: temperature and dry time.",
+      "Set baselineCondition to not explicit or parameter trial without baseline.",
+      "Use heating press machine as subgroup context with date.",
+      "Preserve each temp/time/machine row as a subresult.",
+      "Rename outcome to NG separate SMG count and NG rate."
+    ],
+    "evidencePolicy": "Citations are row-existing but not sufficient until aligned to dry temp/time grouping."
+  },
+  "usage": {
+    "input_tokens": 3157,
+    "output_tokens": 633,
+    "total_tokens": 3790
+  }
+}

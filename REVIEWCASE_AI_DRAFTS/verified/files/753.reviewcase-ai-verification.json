@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 753,
+  "sourceFile": "57. BRS-161014  Report test VP change bonding line VP+CD of Sub 1 date 23.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\753.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 753,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The SPK comparison is supported, but the changed-factor and module outcome grouping need correction before final use.",
+    "issues": [
+      "Changed factor incorrectly adds ambiguous Bonding small inside 0.05 as a main test condition.",
+      "Baseline wording duplicates Normal and mixes section labels with condition labels.",
+      "Module outcome is not comparable as drafted and lacks visible header/context for row 34.",
+      "Overall judgement should separate SPK worsened results from unjudged module results.",
+      "Title/file mismatch BRS-161014 vs BRS-161016 should be checked as metadata only."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to bonding line position: normal vs move outside 0.05 and move inside 0.05.",
+      "Normalize baseline to Normal bonding line only.",
+      "Map Bonding small inside 0.05 to source row context or remove it if unsupported.",
+      "Keep SPK as two worsened comparisons with cited rows 27 to 29.",
+      "Either add full module comparison context rows or mark module as limited/unjudged only."
+    ],
+    "evidencePolicy": "Citations support SPK; module evidence is insufficient without row 34 and headers."
+  },
+  "usage": {
+    "input_tokens": 3382,
+    "output_tokens": 676,
+    "total_tokens": 4058
+  }
+}

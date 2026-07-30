@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 428,
+  "sourceFile": "23. L20S15-07 Report test find reason CD make NG 2025.04.09_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\428.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:10Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 428,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but the changed-factor and outcome grouping are too ambiguous for final evidence.",
+    "issues": [
+      "Changed factor is the filename, not a source-supported factor.",
+      "Baseline and test conditions are not identified.",
+      "Multiple comparisons are mixed: lot date, cleaning, speed, height, delay, plasma face, tension.",
+      "Several outcomes contain parsed header/date noise instead of valid conditions.",
+      "Judgements ignore stated tension pass/fail and NG-rate context."
+    ],
+    "requiredUserQuestions": [
+      "What is the primary comparison: CD lot date, cleaning method, or process setting?",
+      "Should tension results and NG-rate results remain in one validation case?"
+    ],
+    "correctionPlan": [
+      "Define changed factor from source rows, not filename.",
+      "Set baseline/test conditions with preserved date and process keys.",
+      "Split or subgroup lot date, cleaning, speed, height, delay, and plasma-face tests.",
+      "Rebuild outcomes as NG rate, dyne, function, separation, and tension domains.",
+      "Cite header, comparison, result, and decision rows for each subgroup."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient until grouping and condition citations are corrected."
+  },
+  "usage": {
+    "input_tokens": 11963,
+    "output_tokens": 517,
+    "total_tokens": 12480
+  }
+}

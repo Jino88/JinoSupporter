@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 416,
+  "sourceFile": "22. L20S15-07 Report test CD lot replace ( Size 140K ) Ng dyne pen - 2025.06.10_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\416.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:59Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 416,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the report but misgroups the comparison and omits key lot and normal-condition evidence.",
+    "issues": [
+      "Baseline is explicit as Normal, not unspecified.",
+      "Changed lots should include Box 1~4, Box 5~9, and Box 10~14.",
+      "Function/dyne results omit Normal and Box 5~9 comparisons.",
+      "Function defect values appear misparsed across dyne, separate, function, and decap columns.",
+      "Cited tension rows 36-38 are not shown in provided context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to CD replacement test lots versus Normal.",
+      "Keep boxes as subgroup lot keys under the same CD replacement factor.",
+      "Add Box 5~9 and Normal rows for all comparable outcome domains.",
+      "Reparse row 17 headers and rows 19,21,23,25 by metric column group.",
+      "Verify and include row text for tension rows 36-38 before final use."
+    ],
+    "evidencePolicy": "Citations exist but are incomplete for final evidence because key cited rows lack visible row text."
+  },
+  "usage": {
+    "input_tokens": 4030,
+    "output_tokens": 774,
+    "total_tokens": 4804
+  }
+}

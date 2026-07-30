@@ -1,0 +1,351 @@
+{
+  "sourceFileId": 862,
+  "sourceFile": "70. TIU L5S3-01 Result test method take sample coil forming to find NG coil separate - 2026.02.13_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\70. TIU L5S3-01 Result test method take sample coil forming to find NG coil separate - 2026.02.13_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 15,
+    "sheetCellCount": 70,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 13,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| | AWF Line D3-4A TIU L5S3-01 | | | | Result test coil forming"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | Date | Time | AWF | Type | Input | NG | NG rate"
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| | 2026-02-13 00:00:00 | 10h | AWF #1 | Normal | 5 | 0 | 0"
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| | | | | VP+Coil ass'y (Not bonding) | 12 | 5 | 0.41666667"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| | | | | VP+Coil ass'y (Not UV Awf) | 9 | 4 | 0.44444444"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | | 3h | AWF #1 | Normal | 5 | 0 | 0"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | | | | VP+Coil ass'y (Not bonding) | 8 | 0 | 0"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | | | AWF #2 | Normal | 5 | 0 | 0"
+    },
+    {
+      "rowId": "Test!18",
+      "sheetName": "Test",
+      "rowNumber": 18,
+      "rowText": "| | | | | VP+Coil ass'y (Not bonding) | 8 | 0 | 0"
+    },
+    {
+      "rowId": "Test!20",
+      "sheetName": "Test",
+      "rowNumber": 20,
+      "rowText": "| | | | AWF #3 | Normal | 5 | 0 | 0"
+    },
+    {
+      "rowId": "Test!22",
+      "sheetName": "Test",
+      "rowNumber": 22,
+      "rowText": "| | | | | VP+Coil ass'y (Not bonding) | 8 | 0 | 0"
+    },
+    {
+      "rowId": "Test!24",
+      "sheetName": "Test",
+      "rowNumber": 24,
+      "rowText": "| | | | AWF #4 | Normal | 5 | 0 | 0"
+    },
+    {
+      "rowId": "Test!28",
+      "sheetName": "Test",
+      "rowNumber": 28,
+      "rowText": "| | | | AWF #5 | Normal | 5 | 0 | 0"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-862-rc-1",
+      "reviewTitle": "| | AWF Line D3-4A TIU L5S3-01 | | | | Result test coil forming",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs VP+Coil ass'y (Not bonding), AWF #1, VP+Coil ass'y (Not UV Awf), AWF #2, AWF #3, AWF #4, AWF #5",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "VP+Coil ass'y (Not bonding), AWF #1, VP+Coil ass'y (Not UV Awf), AWF #2, AWF #3, AWF #4, AWF #5",
+          "subgroupKeys": [
+            "Normal"
+          ],
+          "evidenceRows": [
+            "Test!10",
+            "Test!12",
+            "Test!14",
+            "Test!16",
+            "Test!18",
+            "Test!2",
+            "Test!20",
+            "Test!22",
+            "Test!24",
+            "Test!26",
+            "Test!28",
+            "Test!30",
+            "Test!6",
+            "Test!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "AWF Line D3-4A TIU L5S3-01 | Result test coil forming",
+          "comparisonRows": [
+            "Test!10",
+            "Test!12",
+            "Test!14",
+            "Test!16",
+            "Test!18",
+            "Test!20",
+            "Test!22",
+            "Test!24",
+            "Test!26",
+            "Test!28",
+            "Test!30",
+            "Test!6",
+            "Test!8"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 24315,
+              "condition": "AWF #1 | Normal",
+              "input": 5.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!6"
+              ]
+            },
+            {
+              "metricId": 24316,
+              "condition": "VP+Coil ass'y (Not bonding)",
+              "input": 12.0,
+              "ok": null,
+              "ng": 5.0,
+              "ratePercent": 41.666667000000004,
+              "evidenceRows": [
+                "Test!8"
+              ]
+            },
+            {
+              "metricId": 24317,
+              "condition": "VP+Coil ass'y (Not UV Awf)",
+              "input": 9.0,
+              "ok": null,
+              "ng": 4.0,
+              "ratePercent": 44.444444,
+              "evidenceRows": [
+                "Test!10"
+              ]
+            },
+            {
+              "metricId": 24318,
+              "condition": "AWF #1 | Normal",
+              "input": 5.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!12"
+              ]
+            },
+            {
+              "metricId": 24319,
+              "condition": "VP+Coil ass'y (Not bonding)",
+              "input": 8.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "metricId": 24320,
+              "condition": "AWF #2 | Normal",
+              "input": 5.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "metricId": 24321,
+              "condition": "VP+Coil ass'y (Not bonding)",
+              "input": 8.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!18"
+              ]
+            },
+            {
+              "metricId": 24322,
+              "condition": "AWF #3 | Normal",
+              "input": 5.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!20"
+              ]
+            },
+            {
+              "metricId": 24323,
+              "condition": "VP+Coil ass'y (Not bonding)",
+              "input": 8.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!22"
+              ]
+            },
+            {
+              "metricId": 24324,
+              "condition": "AWF #4 | Normal",
+              "input": 5.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!24"
+              ]
+            },
+            {
+              "metricId": 24325,
+              "condition": "VP+Coil ass'y (Not bonding)",
+              "input": 8.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!26"
+              ]
+            },
+            {
+              "metricId": 24326,
+              "condition": "AWF #5 | Normal",
+              "input": 5.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!28"
+              ]
+            },
+            {
+              "metricId": 24327,
+              "condition": "VP+Coil ass'y (Not bonding)",
+              "input": 8.0,
+              "ok": null,
+              "ng": 2.0,
+              "ratePercent": 25.0,
+              "evidenceRows": [
+                "Test!30"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!10",
+        "Test!12",
+        "Test!14",
+        "Test!16",
+        "Test!18",
+        "Test!2",
+        "Test!20",
+        "Test!22",
+        "Test!24",
+        "Test!26",
+        "Test!28",
+        "Test!30",
+        "Test!6",
+        "Test!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!10",
+      "Test!12",
+      "Test!14",
+      "Test!16",
+      "Test!18",
+      "Test!2",
+      "Test!20",
+      "Test!22",
+      "Test!24",
+      "Test!26",
+      "Test!28",
+      "Test!30",
+      "Test!6",
+      "Test!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

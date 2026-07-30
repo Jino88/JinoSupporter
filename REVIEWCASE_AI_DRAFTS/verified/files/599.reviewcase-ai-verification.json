@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 599,
+  "sourceFile": "38.2. BRS-201506 Report test increase bond corner VP+CD date 26.4.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\599.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 599,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misgroups the primary VP+CD bond test and several outcome pairings.",
+    "issues": [
+      "Review title is incorrectly taken from FO mask data.",
+      "Primary factor omits increased bond corner VP+CD and bond amount in/out spec context.",
+      "Process NG pairs reuse the first normal row instead of same-date normal rows.",
+      "Function NG pairs reuse the first normal row and omit matched normal rows.",
+      "Measurement/NTI outcomes include poorly grouped or irrelevant candidates."
+    ],
+    "requiredUserQuestions": [
+      "Should NTI SPL/THD/IMP sheets be retained as outcomes for this VP+CD bond test?"
+    ],
+    "correctionPlan": [
+      "Set title from Test VP report title.",
+      "Define factor as increased bond corner VP+CD, with VP normal in-spec bond amount versus VP Test out-spec/increased bond amount.",
+      "Rebuild process outcomes by date using matched VP Test and VP normal rows.",
+      "Rebuild function outcomes by date/test round using matched VP TEST and VP normal rows.",
+      "Remove or separately regroup unsupported measurement candidates and NTI/IMP data."
+    ],
+    "evidencePolicy": "Row citations exist, but paired baselines and grouping citations are not sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 11705,
+    "output_tokens": 792,
+    "total_tokens": 12497
+  }
+}

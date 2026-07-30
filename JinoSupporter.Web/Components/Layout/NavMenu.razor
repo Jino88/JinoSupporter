@@ -21,26 +21,31 @@
         string userRole = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
         bool can(string id) => Perms.IsAllowed(userRole, id);
 
-        bool showBmes =
-            can(AppMenus.NgRate) || can(AppMenus.BmesWorkerStatus) ||
+        bool showBmesReport = can(AppMenus.NgRate) || can(AppMenus.BmesFCost);
+        bool showSettingModel =
             can(AppMenus.BmesMakeModelGroup) ||
-            can(AppMenus.BmesSetting) ||
             can(AppMenus.BmesRoutingTable) ||
-            can(AppMenus.BmesReasonTable) ||
-            can(AppMenus.BmesFCost);
+            can(AppMenus.BmesReasonTable);
+        bool showBmes =
+            showBmesReport || can(AppMenus.BmesWorkerStatus) ||
+            showSettingModel ||
+            can(AppMenus.BmesTest3) ||
+            can(AppMenus.BmesTest4) ||
+            can(AppMenus.BmesTest5) ||
+            can(AppMenus.BmesFCost) ||
+            can(AppMenus.QrBakoData) ||
+            can(AppMenus.BmesDailyReport);
 
-        // 5-menu shape for the AI side: 4 stages of the workflow + Ask AI for
-        // querying the saved corpus. Legacy entries (original Input, Validation,
-        // Report) still resolve via direct URL; permission keys stay so the
-        // MenuPermissions rows in DB don't break.
-        bool showDi =
-            can(AppMenus.DiInputTest) || can(AppMenus.DiBatch) ||
-            can(AppMenus.DiDb)        || can(AppMenus.DiAnalysis) ||
-            can(AppMenus.DiModelAnalysis) || can(AppMenus.DiAsk);
+        bool showTestDataAnalysis =
+            can(AppMenus.DiInputBatch) ||
+            can(AppMenus.DiDb) ||
+            can(AppMenus.DiAsk);
 
-        bool showSchedule = can(AppMenus.Schedule);
-        bool showAdmin = can(AppMenus.AdminUsers) || can(AppMenus.AdminSettings) || can(AppMenus.AdminAiUsages) || can(AppMenus.AdminPaths) || can(AppMenus.TestExcelConverter) || can(AppMenus.AdminDbQuery);
-        bool showTools = showSchedule || can(AppMenus.GraphMaker) || can(AppMenus.Translate) || showDi;
+        bool showDailyTestData = can(AppMenus.DailyTestInput);
+
+        bool showSetting = can(AppMenus.BmesSetting);
+        bool showAdmin = can(AppMenus.AdminUsers) || can(AppMenus.AdminAiUsages) || can(AppMenus.TestExcelConverter) || can(AppMenus.AdminDbQuery);
+        bool showTools = can(AppMenus.GraphMaker) || can(AppMenus.Translate) || can(AppMenus.PcDownload) || showTestDataAnalysis || showDailyTestData;
     }
 
     @if (showBmes)
@@ -65,46 +70,6 @@
                         </NavLink>
                     </div>
                 }
-                @if (can(AppMenus.BmesWorkerStatus))
-                {
-                    <div class="nav-item">
-                        <NavLink class="nav-link nav-sublink" href="bmes/worker-status">
-                            <span class="nav-icon" style="font-size:11px;">👷</span> Worker Status
-                        </NavLink>
-                    </div>
-                }
-                @if (can(AppMenus.BmesMakeModelGroup))
-                {
-                    <div class="nav-item">
-                        <NavLink class="nav-link nav-sublink" href="bmes/make-model-group">
-                            <span class="nav-icon" style="font-size:11px;">🗂️</span> Model Group
-                        </NavLink>
-                    </div>
-                }
-                @if (can(AppMenus.BmesSetting))
-                {
-                    <div class="nav-item">
-                        <NavLink class="nav-link nav-sublink" href="bmes/setting">
-                            <span class="nav-icon" style="font-size:11px;">⚙️</span> Setting
-                        </NavLink>
-                    </div>
-                }
-                @if (can(AppMenus.BmesRoutingTable) || can(AppMenus.BmesSetting))
-                {
-                    <div class="nav-item">
-                        <NavLink class="nav-link nav-sublink" href="bmes/routing-table">
-                            <span class="nav-icon" style="font-size:11px;">RT</span> Routing Table
-                        </NavLink>
-                    </div>
-                }
-                @if (can(AppMenus.BmesReasonTable) || can(AppMenus.BmesSetting))
-                {
-                    <div class="nav-item">
-                        <NavLink class="nav-link nav-sublink" href="bmes/reason-table">
-                            <span class="nav-icon" style="font-size:11px;">RS</span> Reason Table
-                        </NavLink>
-                    </div>
-                }
                 @if (can(AppMenus.BmesFCost))
                 {
                     <div class="nav-item">
@@ -113,6 +78,118 @@
                         </NavLink>
                     </div>
                 }
+                @if (showBmesReport)
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="report/bmes">
+                            <span class="nav-icon" style="font-size:11px;">RP</span> Report
+                        </NavLink>
+                    </div>
+                }
+                @if (can(AppMenus.BmesWorkerStatus))
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="bmes/worker-status">
+                            <span class="nav-icon" style="font-size:11px;">👷</span> Worker Status
+                        </NavLink>
+                    </div>
+                }
+                @if (false && can(AppMenus.BmesSetting))
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="setting">
+                            <span class="nav-icon" style="font-size:11px;">⚙️</span> Setting
+                        </NavLink>
+                    </div>
+                }
+                @if (can(AppMenus.BmesTest3))
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="bmes/test3">
+                            <span class="nav-icon" style="font-size:11px;">T3</span> Test 3
+                        </NavLink>
+                    </div>
+                }
+                @if (can(AppMenus.BmesTest4))
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="bmes/test4">
+                            <span class="nav-icon" style="font-size:11px;">T4</span> Test 4
+                        </NavLink>
+                    </div>
+                }
+                @if (can(AppMenus.BmesTest5))
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="bmes/test5">
+                            <span class="nav-icon" style="font-size:11px;">BD</span> BOM &amp; Drawing
+                        </NavLink>
+                    </div>
+                }
+                @if (can(AppMenus.BmesLpa))
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="bmes/lpa">
+                            <span class="nav-icon" style="font-size:11px;">LP</span> LPA
+                        </NavLink>
+                    </div>
+                }
+                @if (showSettingModel)
+                {
+                    <div class="nav-item">
+                        <button class="nav-link nav-group-toggle nav-sublink nav-nested-toggle @(IsSettingModelActive ? "active" : "")"
+                                @onclick="ToggleSettingModel"
+                                @onclick:stopPropagation="true">
+                            <span class="nav-icon" style="font-size:11px;">SM</span> Setting Model
+                            <span class="nav-caret @(_settingModelOpen ? "open" : "")">›</span>
+                        </button>
+                    </div>
+                    @if (_settingModelOpen)
+                    {
+                        <div class="nav-submenu nav-submenu-level2">
+                            @if (can(AppMenus.BmesMakeModelGroup))
+                            {
+                                <div class="nav-item">
+                                    <NavLink class="nav-link nav-sublink nav-sublink-level2" href="bmes/make-model-group">
+                                        <span class="nav-icon" style="font-size:11px;">MG</span> Model Group
+                                    </NavLink>
+                                </div>
+                            }
+                            @if (can(AppMenus.BmesRoutingTable))
+                            {
+                                <div class="nav-item">
+                                    <NavLink class="nav-link nav-sublink nav-sublink-level2" href="bmes/routing-table">
+                                        <span class="nav-icon" style="font-size:11px;">RT</span> Routing Table
+                                    </NavLink>
+                                </div>
+                            }
+                            @if (can(AppMenus.BmesReasonTable))
+                            {
+                                <div class="nav-item">
+                                    <NavLink class="nav-link nav-sublink nav-sublink-level2" href="bmes/reason-table">
+                                        <span class="nav-icon" style="font-size:11px;">RS</span> Reason Table
+                                    </NavLink>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        }
+        @if (can(AppMenus.QrBakoData))
+        {
+            <div class="nav-item">
+                <NavLink class="nav-link" href="bmes/qr-bako-data">
+                    <span class="nav-icon">QR</span> QR BAKO DATA
+                </NavLink>
+            </div>
+        }
+        @if (can(AppMenus.BmesDailyReport))
+        {
+            <div class="nav-item">
+                <NavLink class="nav-link" href="bmes/daily-report" Match="NavLinkMatch.All">
+                    <span class="nav-icon">📊</span> DAILY REPORT
+                </NavLink>
             </div>
         }
     }
@@ -121,59 +198,24 @@
     {
         <div class="nav-section" style="margin-top:12px;">Tools</div>
 
-        @if (showSchedule)
+        @if (showTestDataAnalysis)
         {
             <div class="nav-item">
-                <button class="nav-link nav-group-toggle @(IsScheduleActive ? "active" : "")"
-                        @onclick="ToggleSchedule"
+                <button class="nav-link nav-group-toggle @(IsTestDataAnalysisActive ? "active" : "")"
+                        @onclick="ToggleTestDataAnalysis"
                         @onclick:stopPropagation="true">
-                    <span class="nav-icon">📅</span> Schedule
-                    <span class="nav-caret @(_scheduleOpen ? "open" : "")">›</span>
-                </button>
-            </div>
-            @if (_scheduleOpen)
-            {
-                <div class="nav-submenu">
-                    @if (can(AppMenus.Schedule))
-                    {
-                        <div class="nav-item">
-                            <NavLink class="nav-link nav-sublink" href="schedule">
-                                <span class="nav-icon" style="font-size:11px;">GN</span> GN LAB Schedule
-                            </NavLink>
-                        </div>
-                    }
-                </div>
-            }
-        }
-
-        @if (showDi)
-        {
-            <div class="nav-item">
-                <button class="nav-link nav-group-toggle @(IsDataInferenceActive ? "active" : "")"
-                        @onclick="ToggleDataInference"
-                        @onclick:stopPropagation="true">
-                    <span class="nav-icon">⚙</span> Data Inference
+                    <span class="nav-icon">TA</span> Test Data Analysis
                     <span class="nav-caret @(_diOpen ? "open" : "")">›</span>
                 </button>
             </div>
             @if (_diOpen)
             {
-                @* 4-menu lineup. Order = the natural workflow:
-                   Input → Analyze → per-dataset Results → cross-dataset roll-up. *@
                 <div class="nav-submenu">
-                    @if (can(AppMenus.DiInputTest))
+                    @if (can(AppMenus.DiInputBatch))
                     {
                         <div class="nav-item">
-                            <NavLink class="nav-link nav-sublink" href="data-inference-test">
-                                <span class="nav-icon" style="font-size:11px;">📥</span> Data Input
-                            </NavLink>
-                        </div>
-                    }
-                    @if (can(AppMenus.DiBatch))
-                    {
-                        <div class="nav-item">
-                            <NavLink class="nav-link nav-sublink" href="data-inference/batch">
-                                <span class="nav-icon" style="font-size:11px;">🤖</span> Data Analysis
+                            <NavLink class="nav-link nav-sublink" href="input-data-batch">
+                                <span class="nav-icon" style="font-size:11px;">BT</span> INPUT DATA (BATCH)
                             </NavLink>
                         </div>
                     }
@@ -181,23 +223,7 @@
                     {
                         <div class="nav-item">
                             <NavLink class="nav-link nav-sublink" href="data-inference/db">
-                                <span class="nav-icon" style="font-size:11px;">🗄</span> Dataset Results
-                            </NavLink>
-                        </div>
-                    }
-                    @if (can(AppMenus.DiAnalysis))
-                    {
-                        <div class="nav-item">
-                            <NavLink class="nav-link nav-sublink" href="data-inference/analysis">
-                                <span class="nav-icon" style="font-size:11px;">📊</span> Aggregated Results
-                            </NavLink>
-                        </div>
-                    }
-                    @if (can(AppMenus.DiModelAnalysis))
-                    {
-                        <div class="nav-item">
-                            <NavLink class="nav-link nav-sublink" href="data-inference/model-analysis">
-                                <span class="nav-icon" style="font-size:11px;">MA</span> Each Model Analysis
+                                <span class="nav-icon" style="font-size:11px;">RS</span> Result
                             </NavLink>
                         </div>
                     }
@@ -205,10 +231,32 @@
                     {
                         <div class="nav-item">
                             <NavLink class="nav-link nav-sublink" href="data-inference/ask">
-                                <span class="nav-icon" style="font-size:11px;">💬</span> Ask AI
+                                <span class="nav-icon" style="font-size:11px;">AI</span> Ask AI
                             </NavLink>
                         </div>
                     }
+                </div>
+            }
+        }
+
+        @if (showDailyTestData)
+        {
+            <div class="nav-item">
+                <button class="nav-link nav-group-toggle @(IsDailyTestDataActive ? "active" : "")"
+                        @onclick="ToggleDailyTestData"
+                        @onclick:stopPropagation="true">
+                    <span class="nav-icon">DT</span> Daily Test Data
+                    <span class="nav-caret @(_dailyOpen ? "open" : "")">›</span>
+                </button>
+            </div>
+            @if (_dailyOpen)
+            {
+                <div class="nav-submenu">
+                    <div class="nav-item">
+                        <NavLink class="nav-link nav-sublink" href="daily-test-data/input">
+                            <span class="nav-icon" style="font-size:11px;">IN</span> Input Data
+                        </NavLink>
+                    </div>
                 </div>
             }
         }
@@ -230,6 +278,25 @@
                 </NavLink>
             </div>
         }
+
+        @if (can(AppMenus.PcDownload))
+        {
+            <div class="nav-item">
+                <NavLink class="nav-link" href="tools/pc-download">
+                    <span class="nav-icon">💻</span> PC Download
+                </NavLink>
+            </div>
+        }
+    }
+
+    @if (showSetting)
+    {
+        <div class="nav-section" style="margin-top:12px;">Setting</div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="setting">
+                <span class="nav-icon">ST</span> Setting
+            </NavLink>
+        </div>
     }
 
     @if (showAdmin)
@@ -243,7 +310,8 @@
                 </NavLink>
             </div>
         }
-        @if (can(AppMenus.AdminSettings))
+        @*
+        @if (false && can(AppMenus.AdminSettings))
         {
             <div class="nav-item">
                 <NavLink class="nav-link" href="admin/settings">
@@ -251,6 +319,7 @@
                 </NavLink>
             </div>
         }
+        *@
         @if (can(AppMenus.AdminAiUsages))
         {
             <div class="nav-item">
@@ -259,7 +328,8 @@
                 </NavLink>
             </div>
         }
-        @if (can(AppMenus.AdminPaths))
+        @*
+        @if (false && can(AppMenus.AdminPaths))
         {
             <div class="nav-item">
                 <NavLink class="nav-link" href="admin/paths">
@@ -267,6 +337,7 @@
                 </NavLink>
             </div>
         }
+        *@
         @if (can(AppMenus.TestExcelConverter))
         {
             <div class="nav-item">
@@ -316,41 +387,59 @@
 
 @code {
     private bool _bmesOpen;
-    private bool _scheduleOpen;
+    private bool _settingModelOpen;
     private bool _diOpen;
+    private bool _dailyOpen;
 
     protected override void OnInitialized()
     {
         _bmesOpen     = IsBmesActive;
-        _scheduleOpen = IsScheduleActive;
-        _diOpen       = IsDataInferenceActive;
+        _settingModelOpen = IsSettingModelActive;
+        _diOpen       = IsTestDataAnalysisActive;
+        _dailyOpen    = IsDailyTestDataActive;
         Nav.LocationChanged += OnLocationChanged;
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
         if (IsBmesActive       && !_bmesOpen)     _bmesOpen     = true;
-        if (IsScheduleActive   && !_scheduleOpen) _scheduleOpen = true;
-        if (IsDataInferenceActive && !_diOpen)   _diOpen   = true;
+        if (IsSettingModelActive && !_settingModelOpen) _settingModelOpen = true;
+        if (IsTestDataAnalysisActive && !_diOpen) _diOpen = true;
+        if (IsDailyTestDataActive && !_dailyOpen) _dailyOpen = true;
         InvokeAsync(StateHasChanged);
     }
 
+    private string CurrentRelativePath =>
+        Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].TrimEnd('/');
+
     private bool IsBmesActive =>
-        Nav.Uri.Contains("/ng-rate",                  StringComparison.OrdinalIgnoreCase) ||
-        Nav.Uri.Contains("/bmes/",                    StringComparison.OrdinalIgnoreCase) ||
-        Nav.Uri.Contains("/bmes/worker-status",       StringComparison.OrdinalIgnoreCase) ||
-        Nav.Uri.Contains("/bmes/make-model",          StringComparison.OrdinalIgnoreCase);
+        IsBmesReportActive ||
+        CurrentRelativePath.StartsWith("ng-rate", StringComparison.OrdinalIgnoreCase) ||
+        CurrentRelativePath.StartsWith("bmes/", StringComparison.OrdinalIgnoreCase);
 
-    private bool IsDataInferenceActive =>
+    private bool IsBmesReportActive =>
+        CurrentRelativePath.StartsWith("report/bmes", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsSettingModelActive =>
+        CurrentRelativePath.StartsWith("bmes/make-model-group", StringComparison.OrdinalIgnoreCase) ||
+        CurrentRelativePath.StartsWith("bmes/routing-table", StringComparison.OrdinalIgnoreCase) ||
+        CurrentRelativePath.StartsWith("bmes/reason-table", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsLegacyReportActive =>
+        string.Equals(CurrentRelativePath, "report", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsTestDataAnalysisActive =>
+        Nav.Uri.Contains("/input-data-batch", StringComparison.OrdinalIgnoreCase) ||
         Nav.Uri.Contains("/data-inference", StringComparison.OrdinalIgnoreCase) ||
-        Nav.Uri.Contains("/report",         StringComparison.OrdinalIgnoreCase);
+        IsLegacyReportActive;
 
-    private bool IsScheduleActive =>
-        Nav.Uri.Contains("/schedule", StringComparison.OrdinalIgnoreCase);
+    private bool IsDailyTestDataActive =>
+        Nav.Uri.Contains("/daily-test-data", StringComparison.OrdinalIgnoreCase);
 
     private void ToggleBmes()          => _bmesOpen = !_bmesOpen;
-    private void ToggleSchedule()      => _scheduleOpen = !_scheduleOpen;
-    private void ToggleDataInference() => _diOpen   = !_diOpen;
+    private void ToggleSettingModel()  => _settingModelOpen = !_settingModelOpen;
+    private void ToggleTestDataAnalysis() => _diOpen = !_diOpen;
+    private void ToggleDailyTestData() => _dailyOpen = !_dailyOpen;
 
     private async Task OnNavScrollableClick()
     {

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 692,
+  "sourceFile": "49.MSU-20S15-07 Report  Test  SP-B changing data cut body  lazer process of vendor CSY Tech Vina 30.10.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\692.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 692,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable SP-B laser cut-body process test, but the draft misgroups outcomes and uses incorrect function/gap comparisons.",
+    "issues": [
+      "Function subresults use wrong Normal rows for 2025-11-01 and total comparisons.",
+      "Coil+SP gap outcome is parsed as invalid measurements instead of NG rate comparison.",
+      "Changed factor should focus on SP-B changed cut-body laser process versus Normal; supplier is not row-evidenced.",
+      "Outcome evidence omits key total comparison rows in subresults.",
+      "Some cited rows are headers or unclear extracted rows, reducing evidence quality."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to SP-B changed cut-body laser process compared with Normal production.",
+      "Rebuild function outcomes by date and total: row30 vs row32, row34 vs row36, row38 vs row40.",
+      "Rebuild Coil+SP gap outcome using rows21-26, especially total SP Test row25 versus Total Normal row26.",
+      "Remove invalid measurement-stat outcomes derived from headers.",
+      "Cite purpose/title, result tables, totals, and decision rows 47-49."
+    ],
+    "evidencePolicy": "Citations exist, but final evidence must cite actual data and total rows, not header-only rows."
+  },
+  "usage": {
+    "input_tokens": 5780,
+    "output_tokens": 804,
+    "total_tokens": 6584
+  }
+}

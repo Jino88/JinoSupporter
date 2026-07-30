@@ -102,7 +102,7 @@ class AnalysisHtmlRendererTests(unittest.TestCase):
 
     def test_brs_export_renders_measurement_and_function_breakdown(self) -> None:
         rendered = runner.analysis_html(self.brs_export())
-        for token in ("50.13", "61.45", "54.99", "Noise", "24", "Touch", "65", "89 / 2,033 (43,778 ppm)", "규격: 45-65 N"):
+        for token in ("50.13", "61.45", "54.99", "노이즈", "24", "터치", "65", "89 / 2,033 (43,778 ppm)", "규격: 45-65 N"):
             self.assertIn(token, rendered)
         self.assertIn("<html lang='ko'>", rendered)
         self.assertNotIn("<td></td>", rendered)
@@ -129,7 +129,7 @@ class AnalysisHtmlRendererTests(unittest.TestCase):
         ]
         metric["comparisons"] = [{"comparedCohort": "new", "controlCohort": "normal", "summary": "Camel fields render", "status": "VERIFIED", "evidence": []}]
         rendered = runner.analysis_html(data)
-        for token in ("Measured sample", "1 / 40 (25,000 ppm)", "2.5", "4.5", "Reject count", "2", "Camel fields render"):
+        for token in ("Measured sample", "1 / 40 (25,000 ppm)", "2.5", "4.5", "불량 수", "2", "Camel fields render"):
             self.assertIn(token, rendered)
 
     def test_small_raw_measurement_samples_survive_normalization_and_rendering(self) -> None:
@@ -152,9 +152,107 @@ class AnalysisHtmlRendererTests(unittest.TestCase):
         metric["comparisons"] = []
         metric["values"] = [{"cohort_key": "new", "min_value": 1.0, "max_value": 3.0, "average_value": 2.0, "details": details, "result_status": "OK"}]
         rendered = runner.analysis_html(data)
-        self.assertIn("Sample count", rendered)
-        self.assertIn("Sample sequence", rendered)
-        self.assertIn("[1.0,2.0,3.0]", rendered)
+        self.assertIn("N</b> 3", rendered)
+        self.assertIn("최소", rendered)
+        self.assertIn("최대", rendered)
+        self.assertIn("평균", rendered)
+        self.assertNotIn("sampleSequence", rendered)
+        self.assertNotIn("[1.0,2.0,3.0]", rendered)
+
+    def test_raw_measurement_dashboard_shows_only_korean_summary_statistics(self) -> None:
+        samples = [float(value) for value in range(1, 51)]
+        average = sum(samples) / len(samples)
+        data = self.brs_export()
+        data["report"]["summary"] = "Complete raw Sample/Average/Max/Min values were recomputed from the selected packet. No acceptance limit or release decision was present."
+        data["report"]["purpose"] = "Preserve complete raw measurement observations from the selected workbook packet."
+        data["report"]["scope"] = "Only complete Sample/Average/Max/Min tables represented in the selected packet."
+        review = data["reviews"][0]
+        review["title"] = "Complete raw measurement observations"
+        review["summary"] = "Complete raw Sample/Average/Max/Min values were recomputed from the selected packet. No acceptance limit or release decision was present."
+        review["notes"] = ["No acceptance limit, specification, or release decision was supplied in the selected packet."]
+        metric = review["metrics"][0]
+        metric["label"] = "Complete raw measurement statistics by cohort"
+        metric["values"] = [{
+            "cohort_key": "new",
+            "min_value": 1.0,
+            "max_value": 50.0,
+            "average_value": average,
+            "result_status": "OBSERVED",
+            "details": {
+                "sampleCount": len(samples),
+                "sampleSequence": samples,
+                "sampleEvidenceRange": "H2:BE2",
+                "recomputedSummary": {"sampleStandardDeviation": 14.5773797371, "range": 49.0},
+                "displayedSummaryReconciliation": "MATCH",
+            },
+        }]
+        metric["comparisons"] = []
+
+        rendered = runner.analysis_html(data)
+
+        for token in ("Complete raw measurement observations", "Complete Raw Measurement Statistics", "선택된 패킷의 원시 표본으로 최소·최대·평균을 재계산했습니다.", "선택된 워크북 패킷의 완전한 원시 측정 관측값을 보존합니다.", "검토 메모", "N</b> 50", "최소", "최대", "평균", "표준편차", "범위", "14.58", "49"):
+            self.assertIn(token, rendered)
+        for forbidden in ("H2:BE2", "sampleSequence", "sampleEvidenceRange", "[1.0,2.0,3.0", "근거 데이터 보존", "manifest/DB", "원시 표본열은 HTML에서 숨김", "<th>근거</th>", "Complete raw Sample/Average/Max/Min values were recomputed", "cohort"):
+            self.assertNotIn(forbidden, rendered)
+
+    def test_renderer_keeps_technical_source_terms_and_rounds_displayed_decimals(self) -> None:
+        data = self.brs_export()
+        review = data["reviews"][0]
+        review["title"] = "Complete raw measurement observations"
+        review["cohorts"][0]["condition"] = "Source table row label"
+        metric = review["metrics"][0]
+        metric["label"] = "Complete raw measurement statistics by cohort"
+        metric["metric_type"] = "measurement_summary"
+        metric["comparisons"] = []
+        metric["values"] = [{
+            "cohort_key": "new",
+            "valueText": "Observed 4.633",
+            "min_value": 1.234,
+            "max_value": 9.876,
+            "average_value": 4.633,
+            "result_status": "OBSERVED",
+            "details": {
+                "sampleCount": 3,
+                "sampleSequence": [1.234, 4.633, 9.876],
+                "sampleEvidenceRange": "H2:J2",
+                "recomputedSummary": {"sampleStandardDeviation": 4.633, "range": 8.642},
+            },
+        }]
+        data["reviews"][1]["metrics"][0]["comparisons"][0]["calculation"] = "4.633 - 1.234 = 3.399"
+
+        rendered = runner.analysis_html(data)
+
+        for token in (
+            "Complete raw measurement observations",
+            "Complete Raw Measurement Statistics",
+            "Source table row label",
+            "Raw Measurement statistics",
+            "1.23",
+            "9.88",
+            "4.63",
+            "8.64",
+            "4.63 - 1.23 = 3.4",
+        ):
+            self.assertIn(token, rendered)
+        for forbidden in ("1.234", "4.633", "9.876", "3.399", "H2:J2", "sampleSequence", "cohort"):
+            self.assertNotIn(forbidden, rendered)
+
+    def test_renderer_shows_source_table_metadata_and_each_metric_heading_once(self) -> None:
+        data = self.brs_export()
+        metric = data["reviews"][0]["metrics"][0]
+        metric["sourceTable"] = {
+            "caption": "RESULT CHECK GAUSS SPK ( 20S1507 )",
+            "type": "S-MG",
+        }
+        metric["comparisons"] = []
+
+        rendered = runner.analysis_html(data)
+
+        self.assertIn("원본 표 제목</b> RESULT CHECK GAUSS SPK ( 20S1507 )", rendered)
+        self.assertIn("유형</b> S-MG", rendered)
+        self.assertEqual(1, rendered.count("<strong>Long S-MG Tension</strong>"))
+        self.assertIn("rowspan='2'", rendered)
+        self.assertIn("@media(max-width:760px)", rendered)
 
 
 class CompleteRawMeasurementContractTests(unittest.TestCase):
@@ -231,23 +329,58 @@ class CompleteRawMeasurementContractTests(unittest.TestCase):
 
         manifest = runner.canonical_manifest_from_packet(packet)
         review = manifest["reviews"][0]
-        metric = review["metrics"][0]
+        statistics_metric, comparison_metric = review["metrics"]
 
         self.assertEqual("NEEDS_REVIEW", manifest["report"]["status"])
         self.assertEqual("OBSERVED_ONLY", manifest["report"]["decision"])
         self.assertEqual(["normal", "test-1800"], [cohort["key"] for cohort in review["cohorts"]])
         self.assertEqual("CONTROL", review["cohorts"][0]["role"])
-        self.assertEqual(2, len(metric["values"]))
-        self.assertEqual([1.0, 2.0, 3.0], metric["values"][0]["details"]["sampleSequence"])
-        self.assertEqual(3, metric["values"][0]["details"]["sampleCount"])
-        self.assertEqual("H2:J2", metric["values"][0]["details"]["sampleEvidenceRange"])
-        self.assertEqual("MATCH", metric["values"][0]["details"]["displayedSummaryReconciliation"])
-        self.assertAlmostEqual(1.0, metric["values"][0]["details"]["recomputedSummary"]["sampleStandardDeviation"])
-        self.assertEqual(1, len(metric["comparisons"]))
-        self.assertEqual("normal", metric["comparisons"][0]["controlCohort"])
-        self.assertEqual("test-1800", metric["comparisons"][0]["comparedCohort"])
-        self.assertEqual("OBSERVED_ONLY", metric["comparisons"][0]["status"])
+        self.assertEqual([], statistics_metric["comparisons"])
+        self.assertEqual(2, len(statistics_metric["values"]))
+        self.assertEqual([1.0, 2.0, 3.0], statistics_metric["values"][0]["details"]["sampleSequence"])
+        self.assertEqual(3, statistics_metric["values"][0]["details"]["sampleCount"])
+        self.assertEqual("H2:J2", statistics_metric["values"][0]["details"]["sampleEvidenceRange"])
+        self.assertEqual("MATCH", statistics_metric["values"][0]["details"]["displayedSummaryReconciliation"])
+        self.assertAlmostEqual(1.0, statistics_metric["values"][0]["details"]["recomputedSummary"]["sampleStandardDeviation"])
+        self.assertEqual(1, len(comparison_metric["comparisons"]))
+        self.assertEqual("normal", comparison_metric["comparisons"][0]["controlCohort"])
+        self.assertEqual("test-1800", comparison_metric["comparisons"][0]["comparedCohort"])
+        self.assertEqual("OBSERVED_ONLY", comparison_metric["comparisons"][0]["status"])
         runner.validate_complete_raw_measurement_details(packet, manifest)
+
+    def test_canonical_manifest_preserves_adjacent_source_caption_and_type(self) -> None:
+        packet = {
+            "packetSelection": {"rowTruncated": False, "cellTruncated": False, "dataTruncated": False},
+            "workbook": {"file_name": "source.xlsx"},
+            "sheetRows": [
+                {"sheet_index": 1, "sheet_name": "Sheet1", "row_number": 17, "cells": [
+                    {"column": 2, "value": "RESULT CHECK GAUSS SPK ( 20S1507 )"},
+                ]},
+                {"sheet_index": 1, "sheet_name": "Sheet1", "row_number": 18, "cells": [
+                    {"column": 2, "value": "Date"}, {"column": 3, "value": "Type( Voltage S- MG )"},
+                    {"column": 4, "value": "Spec"}, {"column": 5, "value": "Average"},
+                    {"column": 6, "value": "Max"}, {"column": 7, "value": "Min"},
+                    {"column": 8, "value": "Sample No"},
+                ]},
+                {"sheet_index": 1, "sheet_name": "Sheet1", "row_number": 20, "cells": [
+                    {"column": 3, "value": "S-MG"}, {"column": 4, "value": "1600 V"},
+                    {"column": 5, "value": 2}, {"column": 6, "value": 3}, {"column": 7, "value": 1},
+                    {"column": 8, "value": 1}, {"column": 9, "value": 2}, {"column": 10, "value": 3},
+                ]},
+            ],
+        }
+
+        manifest = runner.canonical_manifest_from_packet(packet)
+        metric = manifest["reviews"][0]["metrics"][0]
+
+        self.assertEqual(
+            {"caption": "RESULT CHECK GAUSS SPK ( 20S1507 )", "type": "S-MG"},
+            metric["sourceTable"],
+        )
+        self.assertEqual(
+            [{"kind": "source-table-metadata-v1", "caption": "RESULT CHECK GAUSS SPK ( 20S1507 )", "type": "S-MG"}],
+            metric["notes"],
+        )
 
     def test_deterministic_fallback_is_packet_evidence_backed_and_needs_review(self) -> None:
         packet = {
@@ -267,6 +400,89 @@ class CompleteRawMeasurementContractTests(unittest.TestCase):
         self.assertEqual([{"sheet": "Fallback", "range": "A1", "role": "PACKET"}], manifest["report"]["evidence"])
         self.assertEqual("OBSERVED_ONLY", metric["values"][0]["status"])
         self.assertEqual([], metric["comparisons"])
+
+
+class DefectRatePacketContractTests(unittest.TestCase):
+    def packet(self) -> dict:
+        return {
+            "workbook": {"file_name": "TIU C11-20 NG rate.xlsx"},
+            "packetSelection": {"rowTruncated": False, "cellTruncated": False, "dataTruncated": False},
+            "sheetRows": [
+                {"sheet_index": 1, "sheet_name": "Test", "row_number": 14, "cells": [
+                    {"column": 2, "value": "Result check function"},
+                ]},
+                {"sheet_index": 1, "sheet_name": "Test", "row_number": 15, "cells": [
+                    {"column": 2, "value": "No"}, {"column": 3, "value": "Date"}, {"column": 4, "value": "Type"},
+                    {"column": 7, "value": "Input"}, {"column": 8, "value": "OK"}, {"column": 9, "value": "NG AUDIOBUS"},
+                    {"column": 13, "value": "NG HEARING"}, {"column": 15, "value": "Total NG"},
+                    {"column": 16, "value": "NG rate"}, {"column": 17, "value": "Note"},
+                ]},
+                {"sheet_index": 1, "sheet_name": "Test", "row_number": 16, "cells": [
+                    {"column": 9, "value": "SPL"}, {"column": 10, "value": "SPL+RB"}, {"column": 11, "value": "RB"},
+                    {"column": 12, "value": "No sound"}, {"column": 13, "value": "Noise"}, {"column": 14, "value": "Touch"},
+                ]},
+                {"sheet_index": 1, "sheet_name": "Test", "row_number": 17, "cells": [
+                    {"column": 4, "value": "Normal forming"}, {"column": 7, "value": 67}, {"column": 8, "value": 67},
+                    {"column": 9, "value": 0}, {"column": 10, "value": 0}, {"column": 11, "value": 0}, {"column": 12, "value": 0},
+                    {"column": 13, "value": 0}, {"column": 14, "value": 0}, {"column": 15, "value": 0}, {"column": 16, "value": 0},
+                ]},
+                {"sheet_index": 1, "sheet_name": "Test", "row_number": 19, "cells": [
+                    {"column": 4, "value": "Low pressure forming"}, {"column": 7, "value": 62}, {"column": 8, "value": 61},
+                    {"column": 9, "value": 0}, {"column": 10, "value": 0}, {"column": 11, "value": 1}, {"column": 12, "value": 0},
+                    {"column": 13, "value": 1}, {"column": 14, "value": 0}, {"column": 15, "value": 1}, {"column": 16, "value": 1 / 62},
+                ]},
+                {"sheet_index": 1, "sheet_name": "Test", "row_number": 21, "cells": [
+                    {"column": 4, "value": "Normal"}, {"column": 7, "value": 110}, {"column": 8, "value": 107},
+                    {"column": 9, "value": 1}, {"column": 10, "value": 0}, {"column": 11, "value": 2}, {"column": 12, "value": 0},
+                    {"column": 13, "value": 2}, {"column": 14, "value": 0}, {"column": 15, "value": 3}, {"column": 16, "value": 3 / 110},
+                ]},
+            ],
+        }
+
+    def test_reconciled_source_rows_create_observation_only_defect_metric(self) -> None:
+        packet = self.packet()
+        defects = runner.packet_complete_defect_rates(packet)
+        self.assertEqual(["Normal forming", "Low pressure forming", "Normal"], [item["label"] for item in defects])
+        self.assertEqual([0.0, 1.0, 3.0], [item["totalNg"] for item in defects])
+        self.assertEqual("Result check function", defects[0]["sourceTable"]["caption"])
+        self.assertEqual(1.0, defects[1]["details"]["NG AUDIOBUS · RB"])
+        self.assertEqual(1.0, defects[1]["details"]["NG HEARING · Noise"])
+
+        manifest = runner.canonical_manifest_from_packet(packet)
+        review = manifest["reviews"][0]
+        metric = review["metrics"][0]
+        self.assertEqual("packet-canonical-defect-rate-observation", manifest["report"]["key"])
+        self.assertEqual("NEEDS_REVIEW", manifest["report"]["status"])
+        self.assertEqual("OBSERVED_ONLY", manifest["report"]["decision"])
+        self.assertEqual("defect_rate", metric["type"])
+        self.assertEqual("ppm", metric["unit"])
+        self.assertEqual([], metric["comparisons"])
+        self.assertEqual({"caption": "Result check function"}, metric["sourceTable"])
+        self.assertEqual(
+            [{"kind": "source-table-metadata-v1", "caption": "Result check function"}],
+            metric["notes"],
+        )
+        self.assertEqual(1.0, metric["values"][1]["numerator"])
+        self.assertEqual(62.0, metric["values"][1]["denominator"])
+        self.assertAlmostEqual((1 / 62) * 1_000_000, metric["values"][1]["ratePpm"])
+        self.assertEqual("B14:Q21", metric["evidence"][0]["range"])
+
+        rendered = runner.analysis_html(manifest)
+        for token in ("불량률", "Result check function", "Low pressure forming", "NG AUDIOBUS · RB", "NG HEARING · Noise", "1 / 62 (16,129.03 ppm)", "검토 필요", "관측값만"):
+            self.assertIn(token, rendered)
+        for forbidden in ("B14:Q21", "sampleSequence", "IMPROVED", "CAN_USE"):
+            self.assertNotIn(forbidden, rendered)
+
+    def test_mismatched_rate_and_truncated_packet_fall_back(self) -> None:
+        mismatched = self.packet()
+        mismatched["sheetRows"][4]["cells"][-1]["value"] = 0.4
+        self.assertEqual([], runner.packet_complete_defect_rates(mismatched))
+        self.assertEqual("packet-canonical-needs-review", runner.canonical_manifest_from_packet(mismatched)["report"]["key"])
+
+        truncated = self.packet()
+        truncated["packetSelection"]["dataTruncated"] = True
+        self.assertEqual([], runner.packet_complete_defect_rates(truncated))
+        self.assertEqual("packet-canonical-needs-review", runner.canonical_manifest_from_packet(truncated)["report"]["key"])
 
 
 class CuratedReuseTests(unittest.TestCase):

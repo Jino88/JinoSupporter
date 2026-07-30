@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 263,
+  "sourceFile": "13. BRS-161014 TEST AOI Check OK, NG_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\263.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 263,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft invents a baseline/test comparison from two AOI result summaries with no citeable changed-condition evidence.",
+    "issues": [
+      "No explicit changed factor or baseline condition is cited.",
+      "Rows 4 and 25 are separate AOI result records, not a condition pair.",
+      "Condition value '1' appears to be a row/sample number, not a changed condition.",
+      "Bonding and laser cutting outcomes are incorrectly grouped under one comparison."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove the invented baseline-vs-1 changed factor.",
+      "Do not use rows 4 and 25 as comparative evidence.",
+      "Keep the data only as non-comparative AOI yield/defect summaries if that format is supported.",
+      "Mark the source excluded unless additional rows show an explicit changed condition.",
+      "Retain row citations only for observed inputs, OK counts, rates, and defect notes."
+    ],
+    "evidencePolicy": "Row citations exist but support only AOI results, not a review-case comparison."
+  },
+  "usage": {
+    "input_tokens": 2095,
+    "output_tokens": 503,
+    "total_tokens": 2598
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 437,
+  "sourceFile": "24. BRS-161016 Report tracking test VP damage 15.03.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\437.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 437,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the table values but misstates the changed factor as a baseline/test comparison instead of sequential VP process tracking.",
+    "issues": [
+      "Baseline/normal condition is not evidenced.",
+      "Process checkpoints are incorrectly split between changed conditions and subgroup keys.",
+      "Outcome metric should be VP damage or NG rate, not the section title.",
+      "Conclusion row showing no VP damage is omitted.",
+      "Header row for metric columns is omitted."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Reframe changed factor as VP process checkpoint tracking from Material VP through Sub 1 and Main 2.",
+      "Use Material VP as initial checkpoint, not an implicit normal baseline.",
+      "Keep Sub 1 and Main 2 as process group context for their rows.",
+      "Rename outcome metric to VP damage count and NG rate by checkpoint.",
+      "Add rows 5.3!23 and 5.3!33 to evidence."
+    ],
+    "evidencePolicy": "Existing row citations support numeric results, but header and conclusion citations are needed before final use."
+  },
+  "usage": {
+    "input_tokens": 3710,
+    "output_tokens": 607,
+    "total_tokens": 4317
+  }
+}

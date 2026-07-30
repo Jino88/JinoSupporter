@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 618,
+  "sourceFile": "4.BRS-161014  REPORT TEST  JIG Coil Array JIG  date 30.10.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\618.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:26Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 618,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the improved Coil Array JIG test but needs corrected baseline and decision evidence before use.",
+    "issues": [
+      "Baseline is understated; row 29 shows pre-improve Coil Array with setup failure.",
+      "Decision row 36 is omitted from final evidence.",
+      "Changed factor should be JIG setting/improvement, not vague condition comparison.",
+      "Outcome domain should reflect process/JIG validation, not unknown.",
+      "Purpose/result evidence should include row 6 and result headers rows 26-28."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baselineCondition to pre-improve Coil Array setup failure.",
+      "Set changedCondition to Coil Array after improve setting.",
+      "Add evidence rows V0!6, V0!26-V0!29, V0!31, and V0!36 as applicable.",
+      "Summarize outcome as 30 input, 30 OK, 0 NG, 0% NG after improvement.",
+      "Set judgement to passed/usable only if supported by decision row 36."
+    ],
+    "evidencePolicy": "Current citations exist but are insufficient for baseline and final decision."
+  },
+  "usage": {
+    "input_tokens": 2303,
+    "output_tokens": 503,
+    "total_tokens": 2806
+  }
+}

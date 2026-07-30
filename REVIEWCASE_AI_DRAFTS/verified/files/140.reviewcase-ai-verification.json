@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 140,
+  "sourceFile": "06. TIU L5S3-01 L - Report test material Frame happen NG Burr - date 2026.04.10_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\140.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 140,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable Normal vs Test case exists, but draft overstates worse results and omits key Sub 3 and conclusion evidence.",
+    "issues": [
+      "Judgements conflict with source conclusions stating same as normal or no burr-position NG.",
+      "Sub 3 NG-rate comparison is cited but not modeled as an outcome.",
+      "Changed factor should identify NG burr Corepart frame test lot versus normal, not only generic Test.",
+      "Visual final domain should be visual defect, not unknown.",
+      "Conclusion rows are missing from outcome evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Revise changed factor to normal frame versus NG burr Corepart frame test lot.",
+      "Add Sub 3 NG-rate outcome using rows 15-17.",
+      "Change function judgement to same/equivalent unless policy requires numeric-only worsening.",
+      "Change visual final judgement to same/no burr-position NG and set visual defect domain.",
+      "Add conclusion rows 17,25,33 and relevant headers to evidence."
+    ],
+    "evidencePolicy": "Row citations are citeable but incomplete for final evidence; add conclusion and omitted outcome rows."
+  },
+  "usage": {
+    "input_tokens": 3268,
+    "output_tokens": 766,
+    "total_tokens": 4034
+  }
+}

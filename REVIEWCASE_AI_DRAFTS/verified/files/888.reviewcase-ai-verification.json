@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 888,
+  "sourceFile": "76. BRS-161014 Report TEST VP curing temperature 150 28.11.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\888.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 888,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The main 150°C vs Normal grouping is supported, but the tension section is misgrouped as a baseline/test comparison.",
+    "issues": [
+      "Tension rows are not a Normal vs 150°C comparison.",
+      "FRAME+VP appears to be a subgroup under test tension, not baseline.",
+      "Tension spec value is omitted despite a 0.5 kgf spec column.",
+      "Outcome domains mix defect rates and test-only tension without clear grouping notes."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Keep changed factor as VP curing temperature 150°C vs Normal for NG/function tables.",
+      "Revise tension outcome as test-condition-only confirmation with DOME+VP and FRAME+VP subgroups.",
+      "Capture tension spec as 0.5 kgf and retain pass status.",
+      "Add limitation that no Normal tension baseline is shown.",
+      "Clarify first outcome judgement by separating VP drop from increased laser cutting NG."
+    ],
+    "evidencePolicy": "Citations exist, but row use is insufficient for final evidence until grouping is corrected."
+  },
+  "usage": {
+    "input_tokens": 3627,
+    "output_tokens": 760,
+    "total_tokens": 4387
+  }
+}

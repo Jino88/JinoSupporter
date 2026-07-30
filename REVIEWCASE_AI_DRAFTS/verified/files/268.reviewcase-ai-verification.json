@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 268,
+  "sourceFile": "13. MSU-L20S15-07DT  Report Test DOE improve  NG weak solder  date 27.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\268.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 268,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft mixes DOE weld-time testing with sorting/recheck data, so the changed factor and outcomes are not verified.",
+    "issues": [
+      "Changed factor improperly combines two sheets and unrelated contexts.",
+      "DOE factor appears to be weld time/test condition, not the long generated condition string.",
+      "Only one test row is compared while other cited DOE rows likely represent additional time settings.",
+      "Sorting C2 move E2 results are treated as the same changed-factor outcome without support.",
+      "Several cited rows are not summarized in context, limiting verification of grouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Separate DOE spot-welding test from C2 sorting/recheck unless source proves one validation context.",
+      "Define baseline as Normal at 38ms and tests by each weld-time setting if supported.",
+      "Group all DOE rows by date/type/time/input/OK/NG/rate before judging outcome.",
+      "Keep sorting/recheck rows as context or a separate outcome only if comparable conditions are clear.",
+      "Revise evidence rows to include headers and every row used for each subgroup."
+    ],
+    "evidencePolicy": "Row existence is sufficient, but citations do not yet support final grouping or judgement."
+  },
+  "usage": {
+    "input_tokens": 3631,
+    "output_tokens": 784,
+    "total_tokens": 4415
+  }
+}

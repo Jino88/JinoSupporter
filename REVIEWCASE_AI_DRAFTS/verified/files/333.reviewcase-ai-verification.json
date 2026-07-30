@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 333,
+  "sourceFile": "17. TIU L5S3-01 R Report test improve NG function Bako  date 2025.12.03_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\333.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 333,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft has citeable test evidence but the changed-factor and outcome grouping are too broad and omit key normal baseline rows.",
+    "issues": [
+      "Changed factor combines many distinct process/JIG/UV trials into one vague comparison.",
+      "Baseline is marked not explicit despite multiple Normal rows in the source context.",
+      "Several relevant result rows are omitted, especially later Normal and improvement trials.",
+      "Bako 12-hour recheck sheet may be follow-up outcome, not the same comparison set.",
+      "Measurement outcome is derived from table headers/aggregates and is not valid row evidence."
+    ],
+    "requiredUserQuestions": [
+      "Should the Normal rows be treated as the baseline for all trial conditions?",
+      "Should the 12-hour Bako recheck sheet remain in this same review case or be a separate follow-up?"
+    ],
+    "correctionPlan": [
+      "Regroup by specific trial condition versus Normal baseline, preserving date/order context.",
+      "Add all relevant result rows, including Normal repeats and later improvement/JIG/UV trials.",
+      "Separate or clearly label the 12-hour recheck as follow-up evidence.",
+      "Remove the unsupported measurement-stat outcome from header row data.",
+      "Update evidenceRows to cite only rows supporting each condition and metric."
+    ],
+    "evidencePolicy": "Row citations exist, but coverage and assignment are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 7472,
+    "output_tokens": 723,
+    "total_tokens": 8195
+  }
+}

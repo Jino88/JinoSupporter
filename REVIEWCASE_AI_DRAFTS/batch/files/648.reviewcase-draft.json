@@ -1,0 +1,339 @@
+{
+  "sourceFileId": 648,
+  "sourceFile": "43.BRS-161014 Report test SUB 2 SMG+BPT over glue_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\43.BRS-161014 Report test SUB 2 SMG+BPT over glue_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "6.10",
+    "sheetRowCount": 27,
+    "sheetCellCount": 106,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 3,
+    "measurementStatCount": 6
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "6.10!2",
+      "sheetName": "6.10",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST SUB 2 SMG+BPT OVER GLUE BRS-161014 | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "6.10!3",
+      "sheetName": "6.10",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date | 2023-10-06 00:00:00"
+    },
+    {
+      "rowId": "6.10!4",
+      "sheetName": "6.10",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker | Thuy"
+    },
+    {
+      "rowId": "6.10!5",
+      "sheetName": "6.10",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "6.10!6",
+      "sheetName": "6.10",
+      "rowNumber": 6,
+      "rowText": "| - To test sample SMG+BPT over glue can or cant use, because worker must clean glue long time"
+    },
+    {
+      "rowId": "6.10!7",
+      "sheetName": "6.10",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "6.10!8",
+      "sheetName": "6.10",
+      "rowNumber": 8,
+      "rowText": "| - TEST: To separate sample SMG+ BPT 2 type:"
+    },
+    {
+      "rowId": "6.10!9",
+      "sheetName": "6.10",
+      "rowNumber": 9,
+      "rowText": "| + Over glue > 30%"
+    },
+    {
+      "rowId": "6.10!10",
+      "sheetName": "6.10",
+      "rowNumber": 10,
+      "rowText": "| + Over glue < 30%"
+    },
+    {
+      "rowId": "6.10!11",
+      "sheetName": "6.10",
+      "rowNumber": 11,
+      "rowText": "| -> Make sample and compare NG rate of function with normal ( worker clean glue)"
+    },
+    {
+      "rowId": "6.10!22",
+      "sheetName": "6.10",
+      "rowNumber": 22,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "6.10!23",
+      "sheetName": "6.10",
+      "rowNumber": 23,
+      "rowText": "| Result check visual"
+    },
+    {
+      "rowId": "6.10!27",
+      "sheetName": "6.10",
+      "rowNumber": 27,
+      "rowText": "| Result checking function"
+    },
+    {
+      "rowId": "6.10!29",
+      "sheetName": "6.10",
+      "rowNumber": 29,
+      "rowText": "| | Date | Type | Input | OK | Sigma | | | | Hearing | | HOHD | Total NG | Total NG rate | Note"
+    },
+    {
+      "rowId": "6.10!35",
+      "sheetName": "6.10",
+      "rowNumber": 35,
+      "rowText": "| | | Normal ( Not over glue) | 650 | 597 | 0 | 0 | 0 | 0 | 51 | 2 | 0 | 53 | 0.08153846"
+    },
+    {
+      "rowId": "6.10!37",
+      "sheetName": "6.10",
+      "rowNumber": 37,
+      "rowText": "| | => Sample SMG+BPT over glue < 30% have NG rate hearing is same same normal"
+    },
+    {
+      "rowId": "6.10!38",
+      "sheetName": "6.10",
+      "rowNumber": 38,
+      "rowText": "| | => Sample SMG+BPT over glue > 30% have NG rate hearing is higher normal"
+    },
+    {
+      "rowId": "6.10!42",
+      "sheetName": "6.10",
+      "rowNumber": 42,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-648-rc-1",
+      "reviewTitle": "REPORT TEST SUB 2 SMG+BPT OVER GLUE BRS-161014 | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To test sample SMG+BPT over glue can or cant use, because worker must clean glue long time / | II. Content. / | - TEST: To separate sample SMG+ BPT 2 type: / | + Over glue > 30%",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: Normal ( Not over glue) vs SMG+BPT over glue < 30%, SMG+BPT over glue > 30%",
+          "baselineCondition": "Normal ( Not over glue)",
+          "changedCondition": "SMG+BPT over glue < 30%, SMG+BPT over glue > 30%",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "6.10!11",
+            "6.10!2",
+            "6.10!30",
+            "6.10!31",
+            "6.10!33",
+            "6.10!35",
+            "6.10!5",
+            "6.10!6",
+            "6.10!7",
+            "6.10!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "Result checking function",
+          "comparisonRows": [
+            "6.10!31",
+            "6.10!33",
+            "6.10!35"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 22603,
+              "condition": "SMG+BPT over glue < 30%",
+              "input": 197.0,
+              "ok": 184.0,
+              "ng": 13.0,
+              "ratePercent": 6.598985,
+              "evidenceRows": [
+                "6.10!31"
+              ]
+            },
+            {
+              "metricId": 22604,
+              "condition": "SMG+BPT over glue > 30%",
+              "input": 90.0,
+              "ok": 74.0,
+              "ng": 16.0,
+              "ratePercent": 17.777777999999998,
+              "evidenceRows": [
+                "6.10!33"
+              ]
+            },
+            {
+              "metricId": 22605,
+              "condition": "Normal ( Not over glue)",
+              "input": 650.0,
+              "ok": 597.0,
+              "ng": 53.0,
+              "ratePercent": 8.153846,
+              "evidenceRows": [
+                "6.10!35"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Type | Input | OK | Sigma | Hearing | HOHD | Total NG | Total NG rate | Note",
+          "comparisonRows": [
+            "6.10!30"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 59201,
+              "condition": "Sigma / SPL",
+              "spec": "< 30%",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.17708333333333334,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "6.10!30"
+              ]
+            },
+            {
+              "statId": 59202,
+              "condition": "Sigma / THD",
+              "spec": "< 30%",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "6.10!30"
+              ]
+            },
+            {
+              "statId": 59203,
+              "condition": "Sigma / SPL+THD",
+              "spec": "< 30%",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "6.10!30"
+              ]
+            },
+            {
+              "statId": 59204,
+              "condition": "Sigma / SPL+THD+F0",
+              "spec": "< 30%",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "6.10!30"
+              ]
+            },
+            {
+              "statId": 59205,
+              "condition": "Hearing / Noise",
+              "spec": "< 30%",
+              "min": 0.9375,
+              "max": 51.0,
+              "avg": 13.649960691666665,
+              "sampleCount": 6,
+              "violationCount": 1,
+              "evidenceRows": [
+                "6.10!30"
+              ]
+            },
+            {
+              "statId": 59206,
+              "condition": "Hearing / Touch",
+              "spec": "< 30%",
+              "min": 0.0,
+              "max": 2.0,
+              "avg": 0.3396226416666666,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "6.10!30"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "6.10!11",
+        "6.10!2",
+        "6.10!30",
+        "6.10!31",
+        "6.10!33",
+        "6.10!35",
+        "6.10!5",
+        "6.10!6",
+        "6.10!7",
+        "6.10!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "6.10!11",
+      "6.10!2",
+      "6.10!30",
+      "6.10!31",
+      "6.10!33",
+      "6.10!35",
+      "6.10!5",
+      "6.10!6",
+      "6.10!7",
+      "6.10!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

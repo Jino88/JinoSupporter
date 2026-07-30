@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 939,
+  "sourceFile": "83. BRS-201506 Report Test sample SM ass'y Offset date 27.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\939.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:42Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 939,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the SM offset validation context but misgroups baseline/test rows and includes unreliable auto-extracted outcomes.",
+    "issues": [
+      "Changed factor is overloaded with dates, classes, totals, and SUB2 instead of clear SM offset sample vs normal condition.",
+      "Function comparison uses one Normal row versus Total Test; source conclusion supports Total Test versus Total Normal.",
+      "Subgroup key Class 1 is unsupported as primary grouping for the whole case.",
+      "Measurement outcomes cite headers only and contain nonsensical stats from table extraction.",
+      "SM offset SUB2 rows are treated as comparable conditions without clear baseline/test meaning."
+    ],
+    "requiredUserQuestions": [
+      "Should the main comparison be Total Test SM offset sample vs Total Normal for function NG rate?",
+      "Are SUB2 SM offset NG rows process-monitoring context or part of the baseline/test comparison?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to SM offset sample/YK+SM offset test versus normal production condition.",
+      "Use row 36 Total Test and row 37 Total Normal for function NG comparison, with row 42 as conclusion support.",
+      "Keep yoke class 1~3 and SUB2 as subgroup/context only unless rows prove they are changed factors.",
+      "Remove or rebuild header-only measurement outcomes using actual data rows and conclusions.",
+      "Separate non-comparable process monitoring metrics or mark them contextual/not judged."
+    ],
+    "evidencePolicy": "Row citations exist, but key citations are misgrouped and header-only evidence is insufficient."
+  },
+  "usage": {
+    "input_tokens": 4855,
+    "output_tokens": 842,
+    "total_tokens": 5697
+  }
+}

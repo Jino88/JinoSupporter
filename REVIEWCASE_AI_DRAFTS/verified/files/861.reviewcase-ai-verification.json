@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 861,
+  "sourceFile": "70. TIU C11-20 Report test CD press JIG improve and VP D25-10-25 raw audiobus 2026.3.9_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\861.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 861,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid cited defect comparison rows, but the changed factor and measurement grouping are not reliable.",
+    "issues": [
+      "Changed condition incorrectly uses line/shift instead of New Film + New press Jig.",
+      "Primary comparison should be Old press Jig vs New press Jig under New Film context.",
+      "RAW DATA audio measurements appear to compare VP D25-10-25 vs Normal, not the press-jig condition.",
+      "Measurement outcomes include parsed headers/errors and unsupported stats.",
+      "Review title is taken from graph scale text, not the report title."
+    ],
+    "requiredUserQuestions": [
+      "Should RAW DATA audio data be a separate VP D25-10-25 vs Normal review case?"
+    ],
+    "correctionPlan": [
+      "Set title from Test 2 report title.",
+      "Revise changed factor to New press Jig vs Old press Jig with New Film as shared context.",
+      "Keep date, line, and day shift as subgroup/context keys.",
+      "Retain defect outcome judgement as worse using Test 2 rows 24 and 26.",
+      "Remove or separately regroup RAW DATA measurement outcomes with proper headers and citations."
+    ],
+    "evidencePolicy": "Function defect citations are sufficient; measurement citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 7444,
+    "output_tokens": 787,
+    "total_tokens": 8231
+  }
+}

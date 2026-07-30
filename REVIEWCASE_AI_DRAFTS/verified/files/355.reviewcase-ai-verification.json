@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 355,
+  "sourceFile": "19. BRS-161014  Report test CMG and CPT reduce dimension + NTI data 17.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\355.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 355,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid main Normal/Test evidence but misstates the changed factor and several measurement outcomes.",
+    "issues": [
+      "Changed factor should center on reduced CMG/CPT or yoke dimensions, not supplier/material.",
+      "Gauss Normal rows are not grouped by MG+PT vs Semi Yoke.",
+      "FO outcomes are mis-extracted from labels instead of comparing actual values and averages.",
+      "NTI outcomes cite mostly header rows and include non-condition columns as stats.",
+      "Review title and metric names contain raw row text and typos."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary change to reduced dimension Test/Test Yoke versus Normal and remove unsupported domains.",
+      "Preserve gauss subgroups: MG+PT and Semi Yoke with their specs and OK result.",
+      "Rebuild FO as one measurement comparison using rows 5-15 and the AVG row.",
+      "Exclude or rebuild NTI SPL/THD/IMP only with data and average rows, not headers alone.",
+      "Use concise normalized title, purpose, metrics, and limitations."
+    ],
+    "evidencePolicy": "Main NG/function citations are sufficient; measurement citations need data and average rows, not headers only."
+  },
+  "usage": {
+    "input_tokens": 8977,
+    "output_tokens": 787,
+    "total_tokens": 9764
+  }
+}

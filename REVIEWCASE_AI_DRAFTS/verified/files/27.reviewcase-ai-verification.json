@@ -1,0 +1,43 @@
+{
+  "sourceFileId": 27,
+  "sourceFile": "01.MSU-20S15-07 Result test  frame new mold_1778470978_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\27.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:45:28Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 27,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook supports a new frame mold function-check validation, but the draft uses an invalid filename-based changed factor and insufficient row citations for the measured results.",
+    "issues": [
+      "Changed factor is incorrectly named from the source filename instead of the cited report context.",
+      "Baseline condition is not evidenced; the file appears to be a one-arm validation of a new mold rather than an explicit baseline-vs-test comparison.",
+      "Changed condition should be stated as frame new mold / new mold improvement for NG function, supported by title, purpose, and decision rows.",
+      "Outcome evidence cites mainly header row Sheet1!13 and omits the actual result rows needed to support the measurement/statistical values.",
+      "Subresult sampleCount is 7, but the visible cited context only includes a subset of data rows, so row-level support for the statistics is incomplete.",
+      "Row Sheet1!12 should be included with Sheet1!13 because the metric headers span both rows.",
+      "Decision row Sheet1!25 is relevant evidence for the validation conclusion and should be included in the case evidence."
+    ],
+    "requiredUserQuestions": [
+      "Is there an old-mold or baseline result file to compare against?"
+    ],
+    "correctionPlan": [
+      "Rename the changed factor to a source-supported factor such as Frame new mold improvement for NG function.",
+      "Set baselineCondition to not provided or no explicit old-mold baseline in this workbook.",
+      "Set changedCondition to frame new mold / new mold sample checked for speaker function.",
+      "Use title, purpose, content, result header, actual result data rows, and decision rows as evidence.",
+      "Add Sheet1!12 and all actual result rows used for the 7-sample statistics to comparisonRows and subResult evidenceRows.",
+      "Do not cite only Sheet1!13 for numeric statistics; each statistic must cite the rows containing the underlying values.",
+      "Keep the Sigma, Hearing voltage, and Total NG rate outcomes under the same new-mold validation context."
+    ],
+    "evidencePolicy": "Current evidence row citations prove source-row existence and general new-mold context, but they are not sufficient for final Ask AI evidence because the numeric outcomes lack citations to the underlying data rows."
+  },
+  "usage": {
+    "input_tokens": 2948,
+    "output_tokens": 976,
+    "total_tokens": 3924
+  }
+}

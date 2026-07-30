@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 8,
+  "sourceFile": "005.MSU-L20S15-07 REPORT CHECK VP CD Method to Improve Tension_250119_1778470541_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\8.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:48:47Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 8,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misgroups the validation by using Normal vs TEST 3 as the sole factor and includes invalid outcome statistics.",
+    "issues": [
+      "Primary factor ignores TEST 1 vs TEST 2 VP+CD Assy difference",
+      "TEST 3 semi-dry change is mixed with Normal without clear grouping",
+      "Function NG judgement uses partial columns and misses total NG rates",
+      "Measurement outcome incorrectly includes function rows as tension stats",
+      "Header-only function statistics are not valid evidence"
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild factors from the test matrix: VP+CD Assy source and Semi Dry condition",
+      "Keep tension rows 20-22 separate from function rows 33-39",
+      "Compare TEST 1, TEST 2, and TEST 3 only where conditions match the row context",
+      "Recalculate function outcomes from actual NG rate columns, not header rows",
+      "Remove generated stats that cite only headers or unrelated rows"
+    ],
+    "evidencePolicy": "Row citations exist, but grouping and metric citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 6719,
+    "output_tokens": 761,
+    "total_tokens": 7480
+  }
+}

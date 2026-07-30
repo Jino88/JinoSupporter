@@ -1,0 +1,255 @@
+{
+  "sourceFileId": 386,
+  "sourceFile": "20. BRS-161014  Report test  clean material by ethanol and primer at Sub 2 date 22.2.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\20. BRS-161014  Report test  clean material by ethanol and primer at Sub 2 date 22.2.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "NG rate",
+    "sheetRowCount": 19,
+    "sheetCellCount": 106,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 6,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "NG rate!2",
+      "sheetName": "NG rate",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST CLEAN MATERIAL BY ETHANOL AND PRIMER AT SUB 2 BRS - 161016 | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "NG rate!3",
+      "sheetName": "NG rate",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date | 2024-02-22 00:00:00"
+    },
+    {
+      "rowId": "NG rate!4",
+      "sheetName": "NG rate",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker | Thuy"
+    },
+    {
+      "rowId": "NG rate!5",
+      "sheetName": "NG rate",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "NG rate!6",
+      "sheetName": "NG rate",
+      "rowNumber": 6,
+      "rowText": "| - To finde reason SMG long separate"
+    },
+    {
+      "rowId": "NG rate!7",
+      "sheetName": "NG rate",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "NG rate!8",
+      "sheetName": "NG rate",
+      "rowNumber": 8,
+      "rowText": "| - Test clean Short SMG, Long SMG by Ethanol and Primer => make sample and checking NG rate SMG separate"
+    },
+    {
+      "rowId": "NG rate!9",
+      "sheetName": "NG rate",
+      "rowNumber": 9,
+      "rowText": "| - Q'ty test: each type 1000pcs"
+    },
+    {
+      "rowId": "NG rate!10",
+      "sheetName": "NG rate",
+      "rowNumber": 10,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "NG rate!11",
+      "sheetName": "NG rate",
+      "rowNumber": 11,
+      "rowText": "| | 1. Result checking vision"
+    },
+    {
+      "rowId": "NG rate!12",
+      "sheetName": "NG rate",
+      "rowNumber": 12,
+      "rowText": "| | Date | Type | SUB K3 | | | | | SUB manual | | | | | Total NG rate"
+    },
+    {
+      "rowId": "NG rate!13",
+      "sheetName": "NG rate",
+      "rowNumber": 13,
+      "rowText": "| | | | Input | Short SM separate | Long SM separate | Total NG | NG rate | Input | Short SM separate | Long SM separate | Total NG | NG rate"
+    },
+    {
+      "rowId": "NG rate!39",
+      "sheetName": "NG rate",
+      "rowNumber": 39,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-386-rc-1",
+      "reviewTitle": "REPORT TEST CLEAN MATERIAL BY ETHANOL AND PRIMER AT SUB 2 BRS - 161016 | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To finde reason SMG long separate / | II. Content. / | - Test clean Short SMG, Long SMG by Ethanol and Primer => make sample and checking NG rate SMG separate / | - Q'ty test: each type 1000pcs",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Clean by Ethanol, Clean by Primer",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Clean by Ethanol, Clean by Primer",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "NG rate!14",
+            "NG rate!15",
+            "NG rate!16",
+            "NG rate!17",
+            "NG rate!18",
+            "NG rate!19",
+            "NG rate!2",
+            "NG rate!5",
+            "NG rate!7",
+            "NG rate!8",
+            "NG rate!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "Date | Type | SUB K3 | SUB manual | Total NG rate",
+          "comparisonRows": [
+            "NG rate!14",
+            "NG rate!15",
+            "NG rate!16",
+            "NG rate!17",
+            "NG rate!18",
+            "NG rate!19"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 20245,
+              "condition": "Clean by Ethanol",
+              "input": 482.0,
+              "ok": null,
+              "ng": 2.0,
+              "ratePercent": 0.41493800000000003,
+              "evidenceRows": [
+                "NG rate!14"
+              ]
+            },
+            {
+              "metricId": 20246,
+              "condition": "Clean by Primer",
+              "input": 420.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG rate!15"
+              ]
+            },
+            {
+              "metricId": 20247,
+              "condition": "Clean by Ethanol",
+              "input": 12234.0,
+              "ok": null,
+              "ng": 10.0,
+              "ratePercent": 0.08173899999999999,
+              "evidenceRows": [
+                "NG rate!16"
+              ]
+            },
+            {
+              "metricId": 20248,
+              "condition": "Clean by Primer",
+              "input": 12691.0,
+              "ok": null,
+              "ng": 26.0,
+              "ratePercent": 0.20487,
+              "evidenceRows": [
+                "NG rate!17"
+              ]
+            },
+            {
+              "metricId": 20249,
+              "condition": "Clean by Ethanol",
+              "input": 12482.0,
+              "ok": null,
+              "ng": 9.0,
+              "ratePercent": 0.072104,
+              "evidenceRows": [
+                "NG rate!18"
+              ]
+            },
+            {
+              "metricId": 20250,
+              "condition": "Clean by Primer",
+              "input": 12712.0,
+              "ok": null,
+              "ng": 4.0,
+              "ratePercent": 0.031466,
+              "evidenceRows": [
+                "NG rate!19"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "NG rate!14",
+        "NG rate!15",
+        "NG rate!16",
+        "NG rate!17",
+        "NG rate!18",
+        "NG rate!19",
+        "NG rate!2",
+        "NG rate!5",
+        "NG rate!7",
+        "NG rate!8",
+        "NG rate!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "NG rate!14",
+      "NG rate!15",
+      "NG rate!16",
+      "NG rate!17",
+      "NG rate!18",
+      "NG rate!19",
+      "NG rate!2",
+      "NG rate!5",
+      "NG rate!7",
+      "NG rate!8",
+      "NG rate!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

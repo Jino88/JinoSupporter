@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 687,
+  "sourceFile": "49. BRS-161016 Report test material from New supplier Zhongke  6.7.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\687.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:42Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 687,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the report but misstates the supplier comparison and omits key decision evidence.",
+    "issues": [
+      "Changed factor is a filename, not the Zhongke vs normal Baotou supplier/material comparison.",
+      "Baseline and changed conditions are marked non-explicit despite source rows identifying them.",
+      "Outcome evidence misses normal short comparator and final decision rows.",
+      "Spec, sample count, and violation fields are unsupported and conflict with NG conclusions.",
+      "Cited row 7.6!27 is not included in provided context text."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to new Zhongke MG-S-A/MG-S-B material versus normal Baotou line/material.",
+      "Define baseline as normal SMG-S-A/S-B Baotou and changed condition as Zhongke sample test.",
+      "Group results by SMG long/MG-S-B and SMG short/MG-S-A, preserving spec and supplier context.",
+      "Add rows 43-48 and short normal comparator evidence; include row 7.6!27 text if used.",
+      "Correct judgement to not usable / supplier improvement needed with NG rates 1/40 and 4/40."
+    ],
+    "evidencePolicy": "Current citations are insufficient; final evidence must include comparison, subgroup, and decision rows."
+  },
+  "usage": {
+    "input_tokens": 3506,
+    "output_tokens": 807,
+    "total_tokens": 4313
+  }
+}

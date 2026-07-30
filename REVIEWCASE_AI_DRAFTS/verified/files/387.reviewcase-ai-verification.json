@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 387,
+  "sourceFile": "20. BRS-161014  Report test VP mold 2 add 0.05T in middle position 17.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\387.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:34Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 387,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but grouping and several extracted outcome values are incorrect.",
+    "issues": [
+      "Changed factor mixes primary test mold with totals and OK/bending subconditions.",
+      "Line and mold baselines are not preserved for C2, E2, and total rows.",
+      "VP bending NG values are mis-extracted from several rows.",
+      "Function totals rows are omitted from outcome evidence.",
+      "Header-only measurement outcomes are not valid measurements."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to test VP mold #2 with 0.05T middle position versus normal VP mold baseline.",
+      "Keep C2 and E2 as subgroup keys with their matching normal mold baselines.",
+      "Correct VP bending counts to the row bending values and include row 24.",
+      "Add total function rows 61 and 63 or justify excluding totals.",
+      "Remove header-only measurement outcomes unless supported by data rows."
+    ],
+    "evidencePolicy": "Row citations are sufficient in existence but not sufficient for final use until values and grouping are corrected."
+  },
+  "usage": {
+    "input_tokens": 7865,
+    "output_tokens": 758,
+    "total_tokens": 8623
+  }
+}

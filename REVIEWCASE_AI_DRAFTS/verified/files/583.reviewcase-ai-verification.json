@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 583,
+  "sourceFile": "36. TIU L5S3-01 R Report test Repair Sub3 JIG+VP Ass'y Press JIG to improve NG BAKO 2025.12.24_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\583.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 583,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft has citeable evidence but misgroups the changed factor and compares several test rows to an unsuitable normal row.",
+    "issues": [
+      "Changed factor should center on repaired Sub3 JIG with magnet 3.0 to 4.0, not a condition list.",
+      "Line L and Line R tests should be paired with their matching normal rows.",
+      "Early test-round baseline pairing is ambiguous and needs justification.",
+      "Measurement outcome is invalid; defect columns were treated as spec measurements.",
+      "Key evidence rows for content/decision and some table rows are missing or underused."
+    ],
+    "requiredUserQuestions": [
+      "Should magnet 3.0 to 4.0 be treated as part of the repaired Sub3 JIG condition or as a separate factor?",
+      "Are Test 1st to Test 3nd intended to compare against the Normal row at Test!28?"
+    ],
+    "correctionPlan": [
+      "Rewrite changedFactor as repaired Sub3 JIG or combined JIG plus magnet 4.0 versus normal.",
+      "Preserve subgroup keys for date, test round, day/type, and line.",
+      "Rebuild comparisons using matched normal/test rows, including Line L and Line R pairs.",
+      "Remove the measurement outcome or recast it as defect-category breakdown only.",
+      "Add concise citations for purpose, content, table header, relevant test/normal rows, and decision."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient for final evidence because grouping and pairing are not supported."
+  },
+  "usage": {
+    "input_tokens": 4244,
+    "output_tokens": 848,
+    "total_tokens": 5092
+  }
+}

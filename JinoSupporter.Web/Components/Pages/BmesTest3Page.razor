@@ -1,0 +1,2062 @@
+@page "/bmes/test3"
+@rendermode InteractiveServer
+@using System.Globalization
+@using System.Text
+@using JinoSupporter.Web.Services
+@inject ProcessMaterialMappingService MappingService
+@inject NgRateSettingsService NgRateSettings
+@inject BmesFcostActualService FCostActual
+@inject AppPathsService AppPaths
+@inject WebRepository Repo
+@inject AppActivityLogger Activity
+
+<PageTitle>Test 3</PageTitle>
+
+@{
+    var modelProcessRows = ModelProcessRows;
+    var bomMaterials = FilteredBomMaterials;
+}
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span class="fw-semibold" style="font-size:18px;">T3</span>
+    <h5 class="mb-0 fw-semibold">Test 3</h5>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(_statusMessage))
+{
+    <div class="alert @(_statusError ? "alert-danger" : "alert-success") py-2 small mb-3 d-flex align-items-center">
+        <span class="flex-fill">@_statusMessage</span>
+        <button class="btn-close btn-sm" @onclick="() => _statusMessage = string.Empty"></button>
+    </div>
+}
+
+<datalist id="test3-models">
+    @foreach (string model in _modelNames)
+    {
+        <option value="@model"></option>
+    }
+</datalist>
+<div class="test3-shell @(IsModelProcessMode ? "with-bom" : "")">
+    <section class="test3-table-wrap">
+        <div class="test3-toolbar">
+            <span class="fw-semibold small">Mappings</span>
+            <span class="badge bg-secondary">@_rows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
+            @if (FilteredRows.Count != _rows.Count)
+            {
+                <span class="text-muted small">@FilteredRows.Count.ToString("N0", CultureInfo.InvariantCulture) shown</span>
+            }
+            <div class="ms-auto test3-filter">
+                <input class="form-control form-control-sm" placeholder="Model" @bind="_filterModel" @bind:event="oninput" @bind:after="OnFilterModelChangedAsync" />
+                <input class="form-control form-control-sm" placeholder="Process" @bind="_filterProcess" @bind:event="oninput" />
+                <input class="form-control form-control-sm" placeholder="Raw material" @bind="_filterMaterial" @bind:event="oninput" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_filterModel))
+            {
+                <button class="btn btn-outline-primary btn-sm"
+                        @onclick="ReloadBomMaterialsAsync"
+                        disabled="@_bomBusy"
+                        title="Reload FCOST material candidates for the model">
+                    FCOST
+                </button>
+                <button class="btn btn-outline-danger btn-sm"
+                        @onclick="() => ResetVisibleProcessRegistrations(modelProcessRows)"
+                        disabled="@(!HasProcessRegistrations(modelProcessRows))"
+                        title="Delete process No and Ref registrations shown for this model">
+                    Reset
+                </button>
+            }
+        </div>
+        <div class="test3-table-scroll">
+            <table class="test3-table">
+                <thead>
+                    @if (IsModelProcessMode)
+                    {
+                        <tr>
+                            <th style="width:34px;"></th>
+                            <th style="width:86px;">No</th>
+                            <th style="min-width:250px;">Model</th>
+                            <th style="min-width:110px;">Process Code</th>
+                            <th style="min-width:230px;">Process Name</th>
+                            <th style="min-width:420px;">Mapped FCOST Materials</th>
+                            <th style="min-width:90px;">Usage</th>
+                            <th style="min-width:160px;">Note</th>
+                        </tr>
+                    }
+                    else
+                    {
+                        <tr>
+                            <th style="min-width:150px;">Model</th>
+                            <th style="min-width:110px;">Process Code</th>
+                            <th style="min-width:210px;">Process Name</th>
+                            <th style="min-width:150px;">Raw Material Code</th>
+                            <th style="min-width:230px;">Raw Material Name</th>
+                            <th style="min-width:90px;">Usage</th>
+                            <th style="min-width:160px;">Note</th>
+                            <th style="width:92px;"></th>
+                        </tr>
+                    }
+                </thead>
+                <tbody>
+                    @if (IsModelProcessMode)
+                    {
+                        @if (modelProcessRows.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4 small">No routing process rows for this model.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var processRow in modelProcessRows)
+                            {
+                                string processNo = GetProcessNo(processRow.Process);
+                                string referenceNo = GetReferenceProcessNo(processRow.Process);
+                                var referenceProcess = FindProcessByNo(processRow.Process.ModelName, referenceNo);
+                                <tr class="@BuildProcessDragRowClass(processRow.Process)"
+                                    @ondragover:preventDefault="true"
+                                    @ondragover="() => DragOverProcessRow(processRow.Process)"
+                                    @ondragleave="() => ClearDragOverProcessRow(processRow.Process)"
+                                    @ondrop="() => DropProcessRow(processRow.Process)">
+                                    <td class="test3-drag-cell">
+                                        <span class="test3-drag-handle"
+                                              draggable="true"
+                                              title="Drag to reorder"
+                                              @ondragstart="() => StartProcessDrag(processRow.Process)"
+                                              @ondragend="EndProcessDrag">::</span>
+                                    </td>
+                                    <td>
+                                        <div class="test3-process-no-cell">
+                                            <input class="test3-process-no"
+                                                   value="@processNo"
+                                                   placeholder="S2-1"
+                                                   title="Process number, for example S2-1"
+                                                   @onchange="e => SaveProcessNo(processRow.Process, e.Value?.ToString())" />
+                                            <button type="button"
+                                                    class="btn btn-outline-danger btn-sm py-0 px-1"
+                                                    disabled="@(!HasProcessRegistration(processRow.LinkedProcesses))"
+                                                    title="Delete this process No and Ref registration"
+                                                    @onclick="() => DeleteProcessRegistration(processRow.LinkedProcesses)">
+                                                Del
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="test3-model-pair">
+                                            @foreach (var linkedProcess in processRow.LinkedProcesses)
+                                            {
+                                                <span class="test3-model-chip @BuildModelSideClass(linkedProcess)" title="@BuildProcessTitle(linkedProcess)">
+                                                    <small>@BuildModelSideLabel(linkedProcess)</small>
+                                                    <span>@linkedProcess.ModelName</span>
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="font-monospace">@processRow.Process.ProcessCode</td>
+                                    <td>@processRow.Process.ProcessName</td>
+                                    <td>
+                                        <div class="test3-drop-zone @(IsFocusedProcess(processRow.Process) ? "active" : "")"
+                                             role="button"
+                                             tabindex="0"
+                                             @onclick="() => FocusProcess(processRow.Process)">
+                                            @if (processRow.Mappings.Count == 0 && string.IsNullOrWhiteSpace(referenceNo))
+                                            {
+                                                <span class="test3-drop-placeholder">
+                                                    @(IsFocusedProcess(processRow.Process) ? "Focused - check candidates, then Add Selected" : "Click to focus process group")
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                @if (!string.IsNullOrWhiteSpace(referenceNo))
+                                                {
+                                                    <span class="test3-process-ref" title="@BuildReferenceTitle(referenceNo, referenceProcess)">
+                                                        <span>Ref @referenceNo</span>
+                                                        <button type="button"
+                                                                class="test3-chip-remove"
+                                                                title="Clear reference"
+                                                                @onclick:stopPropagation="true"
+                                                                @onclick="() => SaveReferenceProcessNo(processRow.Process, string.Empty)">
+                                                            x
+                                                        </button>
+                                                    </span>
+                                                }
+                                                @foreach (var mapped in processRow.Mappings)
+                                                {
+                                                    var mappingRole = GetMappingRole(processRow.Process, mapped, referenceProcess);
+                                                    <span class="test3-mapped-material @mappingRole.CssClass" title="@BuildMappingTitle(mapped, mappingRole)">
+                                                        @if (processRow.LinkedProcesses.Count > 1)
+                                                        {
+                                                            <small class="test3-map-role side">@BuildMappingSideLabel(mapped)</small>
+                                                        }
+                                                        @if (!string.IsNullOrWhiteSpace(mappingRole.Label))
+                                                        {
+                                                            <small class="test3-map-role">@mappingRole.Label</small>
+                                                        }
+                                                        <span class="font-monospace">@mapped.RawMaterialCode</span>
+                                                        <span>@mapped.RawMaterialName</span>
+                                                        <button type="button"
+                                                                class="test3-chip-remove"
+                                                                title="Delete mapping"
+                                                                @onclick:stopPropagation="true"
+                                                                @onclick="() => Delete(mapped.Id)">
+                                                            x
+                                                        </button>
+                                                    </span>
+                                                }
+                                            }
+                                            <input class="test3-ref-input"
+                                                   value="@referenceNo"
+                                                   placeholder="Ref"
+                                                   title="Reference another process number, for example S2-1"
+                                                   @onclick:stopPropagation="true"
+                                                   @onchange="e => SaveReferenceProcessNo(processRow.Process, e.Value?.ToString())" />
+                                        </div>
+                                    </td>
+                                    <td class="text-end">@FormatProcessUsage(processRow.Mappings)</td>
+                                    <td>@FormatProcessNotes(processRow.Mappings)</td>
+                                </tr>
+                            }
+                        }
+                    }
+                    else
+                    {
+                        @if (FilteredRows.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4 small">No rows.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var row in FilteredRows)
+                            {
+                                <tr>
+                                    <td>@row.ModelName</td>
+                                    <td class="font-monospace">@row.ProcessCode</td>
+                                    <td>@row.ProcessName</td>
+                                    <td class="font-monospace">@row.RawMaterialCode</td>
+                                    <td>@row.RawMaterialName</td>
+                                    <td class="text-end">@FormatUsage(row)</td>
+                                    <td>@row.Note</td>
+                                    <td class="test3-row-actions">
+                                        <button class="btn btn-outline-danger btn-sm py-0 px-1" @onclick="() => Delete(row.Id)">Del</button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+    @if (IsModelProcessMode)
+    {
+        <aside class="test3-bom-tray">
+            <div class="test3-bom-title">
+                <span class="fw-semibold small">FCOST Material Candidates</span>
+                <span class="text-muted small">@_filterModel.Trim()</span>
+                @if (_focusedProcess is not null)
+                {
+                    <span class="badge bg-primary">@_focusedProcess.ProcessName</span>
+                }
+                @if (_bomBusy)
+                {
+                    <span class="spinner-border spinner-border-sm text-primary" role="status" style="width:12px;height:12px;"></span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">@bomMaterials.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
+                }
+                @if (_selectedBomMaterialCodes.Count > 0)
+                {
+                    <span class="badge bg-success">@_selectedBomMaterialCodes.Count.ToString("N0", CultureInfo.InvariantCulture) selected</span>
+                }
+                <button type="button"
+                        class="btn btn-primary btn-sm py-0 px-2"
+                        disabled="@(_focusedProcess is null || _selectedBomMaterialCodes.Count == 0)"
+                        @onclick="AddSelectedBomMaterialsToFocusedProcessAsync">
+                    Add Selected
+                </button>
+                <button type="button"
+                        class="btn btn-outline-secondary btn-sm py-0 px-2"
+                        disabled="@(_selectedBomMaterialCodes.Count == 0)"
+                        @onclick="ClearSelectedBomMaterials">
+                    Clear
+                </button>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_bomError))
+            {
+                <div class="text-danger small">@_bomError</div>
+            }
+            else if (!_bomBusy && bomMaterials.Count == 0)
+            {
+                <div class="text-muted small">No C-S-/R-S- FCOST material candidates.</div>
+            }
+            else
+            {
+                <div class="test3-bom-list">
+                    @foreach (var material in bomMaterials)
+                    {
+                        <label class="test3-bom-card @(IsBomMaterialSelected(material) ? "selected" : "")"
+                               title="@BuildBomTitle(material)">
+                            <input type="checkbox"
+                                   checked="@IsBomMaterialSelected(material)"
+                                   @onchange="e => ToggleBomMaterialSelection(material, e.Value)" />
+                            <span class="font-monospace">@material.MaterialCode</span>
+                            <span>@material.MaterialName</span>
+                            @if (material.SourceRows > 0)
+                            {
+                                <small>@material.SourceRows.ToString("N0", CultureInfo.InvariantCulture) rows</small>
+                            }
+                        </label>
+                    }
+                </div>
+            }
+        </aside>
+    }
+</div>
+
+<style>
+    .test3-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+    }
+    .test3-shell.with-bom {
+        grid-template-columns: minmax(0, 1fr) 380px;
+    }
+    .test3-table-wrap {
+        border: 1px solid #d7dee8;
+        border-radius: 6px;
+        background: #fff;
+    }
+    .test3-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-bottom: 1px solid #d7dee8;
+        min-height: 42px;
+    }
+    .test3-filter {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(110px, 180px));
+        gap: 6px;
+    }
+    .test3-filter-processes {
+        padding: 8px 10px;
+        border-bottom: 1px solid #d7dee8;
+        background: #f8fafc;
+    }
+    .test3-filter-process-list {
+        max-height: 90px;
+    }
+    .test3-process-no {
+        width: 64px;
+        height: 26px;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 2px 5px;
+        font-size: 11px;
+        text-align: center;
+    }
+    .test3-process-no-cell {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .test3-process-no-cell .btn {
+        font-size: 10px;
+        line-height: 1.3;
+        min-width: 30px;
+    }
+    .test3-model-pair {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+    .test3-model-chip {
+        display: inline-grid;
+        grid-template-columns: 18px minmax(0, 1fr);
+        align-items: center;
+        max-width: 180px;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        background: #fff;
+        color: #0f172a;
+        font-size: 11px;
+        line-height: 1.2;
+        overflow: hidden;
+    }
+    .test3-model-chip small {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        min-height: 22px;
+        background: #e2e8f0;
+        color: #334155;
+        font-size: 10px;
+        font-weight: 800;
+    }
+    .test3-model-chip span {
+        padding: 4px 6px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .test3-model-chip.left small {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+    .test3-model-chip.right small {
+        background: #dcfce7;
+        color: #166534;
+    }
+    .test3-table-scroll {
+        overflow: auto;
+        max-height: calc(100vh - 150px);
+    }
+    .test3-table {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+    .test3-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        padding: 6px 8px;
+        border-bottom: 1px solid #d7dee8;
+    }
+    .test3-table td {
+        padding: 5px 8px;
+        border-bottom: 1px solid #edf2f7;
+        color: #0f172a;
+    }
+    .test3-table tr:hover td { background: #f8fafc; }
+    .test3-table tr.drag-over td {
+        background: #eff6ff;
+        box-shadow: inset 0 2px 0 #2563eb;
+    }
+    .test3-table tr.drag-source td {
+        opacity: .65;
+    }
+    .test3-drag-cell {
+        width: 34px;
+        text-align: center;
+    }
+    .test3-drag-handle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 22px;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        background: #f8fafc;
+        color: #64748b;
+        cursor: grab;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+        user-select: none;
+    }
+    .test3-drag-handle:active {
+        cursor: grabbing;
+    }
+    .test3-drop-zone {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 5px;
+        width: 100%;
+        min-height: 31px;
+        min-width: 380px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 4px;
+        background: #f8fafc;
+        padding: 4px;
+        text-align: left;
+        cursor: pointer;
+    }
+    .test3-drop-zone:hover {
+        border-color: #2563eb;
+        background: #eff6ff;
+    }
+    .test3-drop-zone.active {
+        border-color: #2563eb;
+        background: #dbeafe;
+        box-shadow: inset 0 0 0 1px #2563eb;
+    }
+    .test3-drop-placeholder {
+        color: #94a3b8;
+        font-size: 11px;
+        padding: 2px 4px;
+    }
+    .test3-mapped-material,
+    .test3-process-ref,
+    .test3-bom-card {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        max-width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        background: #fff;
+        color: #0f172a;
+        font-size: 11px;
+        line-height: 1.2;
+        padding: 4px 6px;
+    }
+    .test3-mapped-material span:nth-child(2),
+    .test3-bom-card span:nth-child(2) {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .test3-process-ref {
+        border-color: #93c5fd;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-weight: 700;
+    }
+    .test3-mapped-material.replace {
+        border-color: #f59e0b;
+        background: #fffbeb;
+    }
+    .test3-mapped-material.add {
+        border-color: #86efac;
+        background: #f0fdf4;
+    }
+    .test3-mapped-material.same {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+        color: #64748b;
+    }
+    .test3-map-role {
+        border-radius: 3px;
+        background: #e2e8f0;
+        color: #334155;
+        font-size: 9px;
+        font-weight: 800;
+        line-height: 1;
+        padding: 2px 3px;
+        text-transform: uppercase;
+    }
+    .test3-map-role.side {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+    .test3-ref-input {
+        width: 78px;
+        height: 24px;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 2px 5px;
+        font-size: 11px;
+    }
+    .test3-chip-remove {
+        border: 0;
+        background: transparent;
+        color: #64748b;
+        font-size: 12px;
+        line-height: 1;
+        padding: 0 1px;
+    }
+    .test3-chip-remove:hover { color: #dc2626; }
+    .test3-bom-tray {
+        min-width: 0;
+        max-height: calc(100vh - 96px);
+        overflow: hidden;
+        padding: 8px 10px;
+        border: 1px solid #d7dee8;
+        border-radius: 6px;
+        background: #f8fafc;
+        position: sticky;
+        top: 8px;
+    }
+    .test3-bom-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 7px;
+    }
+    .test3-bom-list {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 4px;
+        max-height: calc(100vh - 150px);
+        overflow: auto;
+    }
+    .test3-bom-card {
+        cursor: pointer;
+        display: grid;
+        grid-template-columns: 18px minmax(104px, 140px) minmax(0, 1fr) auto;
+        width: 100%;
+        text-align: left;
+        justify-content: stretch;
+        margin: 0;
+    }
+    .test3-bom-card:hover {
+        border-color: #2563eb;
+        background: #eff6ff;
+    }
+    .test3-bom-card.selected {
+        border-color: #16a34a;
+        background: #f0fdf4;
+    }
+    .test3-bom-card input {
+        margin: 0;
+        align-self: center;
+    }
+    .test3-bom-card small {
+        color: #64748b;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+    .test3-row-actions {
+        text-align: center;
+        white-space: nowrap;
+    }
+    .test3-row-actions .btn { font-size: 10px; }
+    @@media (max-width: 980px) {
+        .test3-shell { grid-template-columns: 1fr; }
+        .test3-shell.with-bom { grid-template-columns: 1fr; }
+        .test3-bom-tray { position: static; max-height: none; }
+        .test3-bom-list { max-height: 260px; }
+        .test3-filter { grid-template-columns: 1fr; }
+        .test3-toolbar { align-items: stretch; flex-wrap: wrap; }
+    }
+</style>
+
+@code {
+    private List<ProcessMaterialMappingRow> _rows = [];
+    private List<ProcessMaterialProcessRow> _processSettings = [];
+    private List<string> _modelNames = [];
+    private List<RoutingRow> _routingRows = [];
+    private Dictionary<string, int> _routingOrderByProcess = new(StringComparer.OrdinalIgnoreCase);
+    private string _filterModel = string.Empty;
+    private string _filterProcess = string.Empty;
+    private string _filterMaterial = string.Empty;
+    private List<BmesBomMaterialCandidate> _bomMaterials = [];
+    private RoutingProcessOption? _focusedProcess;
+    private HashSet<string> _selectedBomMaterialCodes = new(StringComparer.OrdinalIgnoreCase);
+    private string _draggedProcessGroupKey = string.Empty;
+    private string _dragOverProcessGroupKey = string.Empty;
+    private string _loadedBomModel = string.Empty;
+    private string _bomError = string.Empty;
+    private int _bomLoadVersion;
+    private bool _bomBusy;
+    private string _statusMessage = string.Empty;
+    private bool _statusError;
+
+    private List<ProcessMaterialMappingRow> FilteredRows =>
+        _rows
+            .Where(IsSelectableMapping)
+            .Where(r => Matches(r.ModelName, _filterModel))
+            .Where(r => Matches(r.ProcessCode, _filterProcess) || Matches(r.ProcessName, _filterProcess))
+            .Where(r => Matches(r.RawMaterialCode, _filterMaterial) || Matches(r.RawMaterialName, _filterMaterial))
+            .OrderBy(r => r.ModelName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(r => r.ProcessName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(r => r.RawMaterialName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private bool IsModelProcessMode => !string.IsNullOrWhiteSpace(_filterModel);
+
+    private List<Test3ProcessRow> ModelProcessRows =>
+        !IsModelProcessMode
+            ? []
+            : GetRoutingProcessOptions(_filterModel)
+                .Where(p => Matches(p.ProcessCode, _filterProcess) || Matches(p.ProcessName, _filterProcess))
+                .GroupBy(BuildDisplayProcessGroupKey, StringComparer.OrdinalIgnoreCase)
+                .Select(g =>
+                {
+                    var processes = SortLinkedProcesses(g).ToList();
+                    var primary = processes[0];
+                    var mappings = processes
+                        .SelectMany(GetMappingsForProcess)
+                        .OrderBy(m => ModelSideSortIndex(m.ModelName))
+                        .ThenBy(m => m.ModelName, StringComparer.OrdinalIgnoreCase)
+                        .ThenBy(m => m.RawMaterialName, StringComparer.OrdinalIgnoreCase)
+                        .ThenBy(m => m.RawMaterialCode, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                    return new Test3ProcessRow(primary, processes, mappings);
+                })
+                .OrderBy(r => ProcessSortGroup(r.Process))
+                .ThenBy(r => ProcessSortKey(r.Process), StringComparer.OrdinalIgnoreCase)
+                .ThenBy(r => RoutingSortIndex(r.Process))
+                .ThenBy(r => NormalizeKey(r.Process.ProcessCode), StringComparer.OrdinalIgnoreCase)
+                .ThenBy(r => ProcessNameGroupSortKey(r.Process), StringComparer.OrdinalIgnoreCase)
+                .ThenBy(r => ExtractSideTokenFromModel(r.Process.ModelName), StringComparer.OrdinalIgnoreCase)
+                .ThenBy(r => r.Process.ModelName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+    private List<BmesBomMaterialCandidate> FilteredBomMaterials =>
+        _bomMaterials
+            .Where(IsSelectableMaterial)
+            .Where(m => Matches(m.MaterialCode, _filterMaterial) || Matches(m.MaterialName, _filterMaterial))
+            .OrderBy(m => m.MaterialName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(m => m.MaterialCode, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    protected override void OnInitialized()
+    {
+        _rows = MappingService.GetAll();
+        _processSettings = MappingService.GetProcessRows();
+        _routingRows = NgRateSettings.GetRoutingRows();
+        _routingOrderByProcess = BuildRoutingOrderLookup(_routingRows);
+        _modelNames = Repo.GetModelGroups()
+            .SelectMany(g => g.MidGroups.Select(m => m.Material))
+            .Concat(_routingRows.Select(r => r.ModelName))
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private void Delete(long id)
+    {
+        if (MappingService.Delete(id))
+        {
+            Activity.Log("Test 3", $"Delete mapping id={id}");
+            _rows = MappingService.GetAll();
+            SetStatus("Deleted.", false);
+        }
+    }
+
+    private void DeleteProcessRegistration(IReadOnlyList<RoutingProcessOption> processes)
+    {
+        var ids = GetProcessRegistrationIds(processes);
+        if (ids.Count == 0)
+            return;
+
+        int removed = DeleteProcessRegistrations(ids);
+        Activity.Log("Test 3", $"Delete process registration rows={removed:N0}");
+        SetStatus($"Deleted {removed:N0} process registration(s).", false);
+    }
+
+    private void ResetVisibleProcessRegistrations(IReadOnlyList<Test3ProcessRow> processRows)
+    {
+        var ids = GetProcessRegistrationIds(processRows.SelectMany(r => r.LinkedProcesses));
+        if (ids.Count == 0)
+            return;
+
+        int removed = DeleteProcessRegistrations(ids);
+        Activity.Log("Test 3", $"Reset process registrations model={_filterModel.Trim()}, rows={removed:N0}");
+        SetStatus($"Reset {removed:N0} process registration(s).", false);
+    }
+
+    private int DeleteProcessRegistrations(IReadOnlySet<long> ids)
+    {
+        int removed = 0;
+        foreach (long id in ids)
+        {
+            if (MappingService.DeleteProcess(id))
+                removed++;
+        }
+
+        _processSettings = MappingService.GetProcessRows();
+        return removed;
+    }
+
+    private bool HasProcessRegistrations(IReadOnlyList<Test3ProcessRow> processRows)
+        => processRows.Any(row => HasProcessRegistration(row.LinkedProcesses));
+
+    private bool HasProcessRegistration(IReadOnlyList<RoutingProcessOption> processes)
+        => processes.Any(process => GetProcessSetting(process) is not null);
+
+    private bool HasProcessRegistration(RoutingProcessOption process)
+        => GetProcessSetting(process) is not null;
+
+    private HashSet<long> GetProcessRegistrationIds(IEnumerable<RoutingProcessOption> processes)
+    {
+        var ids = new HashSet<long>();
+        foreach (var process in processes)
+        {
+            var setting = GetProcessSetting(process);
+            if (setting is not null)
+                ids.Add(setting.Id);
+        }
+
+        return ids;
+    }
+
+    private async Task OnFilterModelChangedAsync()
+    {
+        _focusedProcess = null;
+        _selectedBomMaterialCodes.Clear();
+        await LoadBomMaterialsAsync(force: false);
+    }
+
+    private Task ReloadBomMaterialsAsync()
+        => LoadBomMaterialsAsync(force: true);
+
+    private async Task LoadBomMaterialsAsync(bool force)
+    {
+        string model = _filterModel.Trim();
+
+        if (model.Length == 0)
+        {
+            _bomMaterials = [];
+            _loadedBomModel = string.Empty;
+            _bomError = string.Empty;
+            _bomBusy = false;
+            _bomLoadVersion++;
+            return;
+        }
+
+        if (model.Length < 3)
+        {
+            _bomMaterials = [];
+            _loadedBomModel = string.Empty;
+            _bomError = "Type at least 3 model characters to load BOM candidates.";
+            _bomBusy = false;
+            _bomLoadVersion++;
+            return;
+        }
+
+        if (!force && string.Equals(_loadedBomModel, model, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var connection = BuildNetworkDbConnection();
+        if (string.IsNullOrWhiteSpace(connection.Server) || string.IsNullOrWhiteSpace(connection.UserId))
+        {
+            _bomMaterials = [];
+            _loadedBomModel = model;
+            _bomError = "Network DB connection is not configured.";
+            _bomBusy = false;
+            return;
+        }
+
+        int version = ++_bomLoadVersion;
+        _bomBusy = true;
+        _bomError = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var rows = new List<BmesBomMaterialCandidate>();
+            foreach (string modelQuery in GetBomModelQueries(model))
+            {
+                rows.AddRange(await FCostActual.FetchBomMaterialsAsync(new BmesBomMaterialQuery
+                {
+                    Connection = connection,
+                    ModelName = modelQuery,
+                    Plant = "3200",
+                    MaxRows = 1000,
+                }));
+            }
+
+            if (version != _bomLoadVersion)
+                return;
+
+            _bomMaterials = rows
+                .GroupBy(m => NormalizeKey(m.MaterialCode) + "\t" + NormalizeKey(m.MaterialName), StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.OrderByDescending(m => m.SourceRows).First())
+                .OrderBy(m => ModelSideSortIndex(m.MaterialName))
+                .ThenBy(m => m.MaterialName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(m => m.MaterialCode, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            TrimSelectedBomMaterials();
+            _loadedBomModel = model;
+        }
+        catch (Exception ex)
+        {
+            if (version != _bomLoadVersion)
+                return;
+
+            _bomMaterials = [];
+            _loadedBomModel = model;
+            _bomError = "FCOST material load failed: " + ex.Message;
+        }
+        finally
+        {
+            if (version == _bomLoadVersion)
+            {
+                _bomBusy = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private bool IsBomMaterialSelected(BmesBomMaterialCandidate material)
+        => _selectedBomMaterialCodes.Contains(BuildBomMaterialSelectionKey(material));
+
+    private void ToggleBomMaterialSelection(BmesBomMaterialCandidate material, object? value)
+    {
+        bool selected = value is bool boolValue
+            ? boolValue
+            : bool.TryParse(value?.ToString(), out bool parsed) && parsed;
+        string key = BuildBomMaterialSelectionKey(material);
+        if (string.IsNullOrWhiteSpace(key))
+            return;
+
+        if (selected)
+            _selectedBomMaterialCodes.Add(key);
+        else
+            _selectedBomMaterialCodes.Remove(key);
+    }
+
+    private void ClearSelectedBomMaterials()
+    {
+        _selectedBomMaterialCodes.Clear();
+        SetStatus("Candidate selection cleared.", false);
+    }
+
+    private void TrimSelectedBomMaterials()
+    {
+        var validKeys = _bomMaterials
+            .Select(BuildBomMaterialSelectionKey)
+            .Where(s => s.Length > 0)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        _selectedBomMaterialCodes.RemoveWhere(key => !validKeys.Contains(key));
+    }
+
+    private string BuildProcessDragRowClass(RoutingProcessOption process)
+    {
+        string groupKey = BuildProcessGroupKey(process);
+        var classes = new List<string>(capacity: 2);
+        if (string.Equals(_draggedProcessGroupKey, groupKey, StringComparison.OrdinalIgnoreCase))
+            classes.Add("drag-source");
+        if (string.Equals(_dragOverProcessGroupKey, groupKey, StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(_draggedProcessGroupKey, groupKey, StringComparison.OrdinalIgnoreCase))
+            classes.Add("drag-over");
+        return string.Join(" ", classes);
+    }
+
+    private void StartProcessDrag(RoutingProcessOption process)
+    {
+        _draggedProcessGroupKey = BuildProcessGroupKey(process);
+        _dragOverProcessGroupKey = string.Empty;
+    }
+
+    private void DragOverProcessRow(RoutingProcessOption process)
+    {
+        if (string.IsNullOrWhiteSpace(_draggedProcessGroupKey))
+            return;
+
+        _dragOverProcessGroupKey = BuildProcessGroupKey(process);
+    }
+
+    private void ClearDragOverProcessRow(RoutingProcessOption process)
+    {
+        string groupKey = BuildProcessGroupKey(process);
+        if (string.Equals(_dragOverProcessGroupKey, groupKey, StringComparison.OrdinalIgnoreCase))
+            _dragOverProcessGroupKey = string.Empty;
+    }
+
+    private void EndProcessDrag()
+    {
+        _draggedProcessGroupKey = string.Empty;
+        _dragOverProcessGroupKey = string.Empty;
+    }
+
+    private void DropProcessRow(RoutingProcessOption targetProcess)
+    {
+        if (string.IsNullOrWhiteSpace(_draggedProcessGroupKey))
+            return;
+
+        string targetGroupKey = BuildProcessGroupKey(targetProcess);
+        if (string.Equals(_draggedProcessGroupKey, targetGroupKey, StringComparison.OrdinalIgnoreCase))
+        {
+            EndProcessDrag();
+            return;
+        }
+
+        var groups = BuildProcessOrderGroups(ModelProcessRows);
+        int sourceIndex = groups.FindIndex(g => string.Equals(g.GroupKey, _draggedProcessGroupKey, StringComparison.OrdinalIgnoreCase));
+        int targetIndex = groups.FindIndex(g => string.Equals(g.GroupKey, targetGroupKey, StringComparison.OrdinalIgnoreCase));
+        if (sourceIndex < 0 || targetIndex < 0)
+        {
+            EndProcessDrag();
+            return;
+        }
+
+        var positionLabels = BuildPositionProcessNoLabels(groups);
+        var reordered = groups.ToList();
+        var moved = reordered[sourceIndex];
+        reordered.RemoveAt(sourceIndex);
+        if (sourceIndex < targetIndex)
+            targetIndex--;
+        reordered.Insert(Math.Clamp(targetIndex, 0, reordered.Count), moved);
+
+        ApplyDraggedProcessOrder(groups, reordered, positionLabels);
+        EndProcessDrag();
+    }
+
+    private List<ProcessOrderGroup> BuildProcessOrderGroups(IReadOnlyList<Test3ProcessRow> processRows)
+    {
+        var groups = new List<ProcessOrderGroup>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in processRows)
+        {
+            string groupKey = BuildProcessGroupKey(row.Process);
+            if (!seen.Add(groupKey))
+                continue;
+
+            groups.Add(new ProcessOrderGroup(groupKey, row.Process, GetProcessNo(row.Process)));
+        }
+
+        return groups;
+    }
+
+    private static List<string> BuildPositionProcessNoLabels(IReadOnlyList<ProcessOrderGroup> groups)
+    {
+        var labels = new List<string>(groups.Count);
+        var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        int nextNumber = 1;
+
+        for (int i = 0; i < groups.Count; i++)
+        {
+            string label = NormalizeProcessNo(groups[i].ProcessNo);
+            if (string.IsNullOrWhiteSpace(label) || used.Contains(label))
+            {
+                do
+                {
+                    label = nextNumber.ToString(CultureInfo.InvariantCulture);
+                    nextNumber++;
+                }
+                while (used.Contains(label));
+            }
+
+            labels.Add(label);
+            used.Add(label);
+        }
+
+        return labels;
+    }
+
+    private void ApplyDraggedProcessOrder(
+        IReadOnlyList<ProcessOrderGroup> originalGroups,
+        IReadOnlyList<ProcessOrderGroup> reorderedGroups,
+        IReadOnlyList<string> positionLabels)
+    {
+        var remap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var newNoByGroup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int i = 0; i < reorderedGroups.Count; i++)
+        {
+            string nextNo = NormalizeProcessNo(positionLabels[i]);
+            newNoByGroup[reorderedGroups[i].GroupKey] = nextNo;
+
+            string previousNo = NormalizeProcessNo(reorderedGroups[i].ProcessNo);
+            if (!string.IsNullOrWhiteSpace(previousNo))
+                remap[previousNo] = nextNo;
+        }
+
+        var updatedProcesses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var group in reorderedGroups)
+        {
+            string nextNo = newNoByGroup[group.GroupKey];
+            foreach (var target in GetLinkedProcesses(group.Process))
+            {
+                UpsertProcessSetting(
+                    target,
+                    nextNo,
+                    RemapProcessNo(GetReferenceProcessNo(target), remap));
+                updatedProcesses.Add(BuildExactProcessKey(target));
+            }
+        }
+
+        foreach (var process in GetRoutingProcessOptions(_filterModel))
+        {
+            if (updatedProcesses.Contains(BuildExactProcessKey(process)))
+                continue;
+
+            string referenceNo = GetReferenceProcessNo(process);
+            string remappedReferenceNo = RemapProcessNo(referenceNo, remap);
+            if (!string.Equals(referenceNo, remappedReferenceNo, StringComparison.OrdinalIgnoreCase))
+                UpsertProcessSetting(process, GetProcessNo(process), remappedReferenceNo);
+        }
+
+        _processSettings = MappingService.GetProcessRows();
+        Activity.Log("Test 3", $"Drag reorder process groups={originalGroups.Count:N0}");
+        SetStatus("Process order updated by drag.", false);
+    }
+
+    private static string RemapProcessNo(string processNo, IReadOnlyDictionary<string, string> remap)
+    {
+        string normalized = NormalizeProcessNo(processNo);
+        return remap.TryGetValue(normalized, out string? nextNo) ? nextNo : normalized;
+    }
+
+    private async Task AddSelectedBomMaterialsToFocusedProcessAsync()
+    {
+        if (_focusedProcess is null)
+        {
+            SetStatus("Click DROP BOM Material Here first.", true);
+            return;
+        }
+
+        var selectedMaterials = _bomMaterials
+            .Where(IsBomMaterialSelected)
+            .Where(IsSelectableMaterial)
+            .ToList();
+
+        if (selectedMaterials.Count == 0)
+        {
+            SetStatus("Select FCOST material candidates first.", true);
+            return;
+        }
+
+        int added = 0;
+        int skipped = 0;
+        var targetProcesses = GetSimultaneousMappingProcesses(_focusedProcess);
+        var localMappings = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            foreach (var selected in selectedMaterials)
+            {
+                foreach (var resolved in ResolveMaterialsToMap(selected))
+                {
+                    foreach (var targetProcess in targetProcesses)
+                    {
+                        var targetMaterial = ResolveMaterialForTargetProcess(resolved, targetProcess);
+                        if (targetMaterial is null)
+                        {
+                            skipped++;
+                            continue;
+                        }
+
+                        string localKey = BuildLocalMappingKey(targetProcess, targetMaterial);
+                        if (!localMappings.Add(localKey))
+                        {
+                            skipped++;
+                            continue;
+                        }
+
+                        if (IsDuplicateMapping(targetProcess, targetMaterial))
+                        {
+                            skipped++;
+                            continue;
+                        }
+
+                        var edit = BuildMappingEdit(targetProcess, targetMaterial, selected);
+                        var replacement = FindReferenceReplacement(targetProcess, targetMaterial.MaterialCode, targetMaterial.MaterialName);
+                        if (replacement is not null)
+                        {
+                            edit.Note = FirstNonBlank(
+                                $"Replace Ref {GetReferenceProcessNo(targetProcess)}: {replacement.RawMaterialCode}",
+                                edit.Note);
+                        }
+                        else if (!IsExactMaterial(
+                            resolved.MaterialCode,
+                            resolved.MaterialName,
+                            targetMaterial.MaterialCode,
+                            targetMaterial.MaterialName))
+                        {
+                            edit.Note = FirstNonBlank(
+                                $"Auto L/R pair from {resolved.MaterialCode}",
+                                edit.Note);
+                        }
+
+                        MappingService.Upsert(edit);
+                        added++;
+                    }
+                }
+            }
+
+            if (added > 0)
+            {
+                Activity.Log(
+                    "Test 3",
+                    $"Batch mapping model={_focusedProcess.ModelName}, process={_focusedProcess.ProcessName}, targetProcesses={targetProcesses.Count:N0}, materials={added:N0}, skipped={skipped:N0}");
+                _rows = MappingService.GetAll();
+                _selectedBomMaterialCodes.Clear();
+                SetStatus(
+                    skipped > 0
+                        ? $"Mapped {added:N0} material(s) to {targetProcesses.Count:N0} linked process(es). Skipped {skipped:N0}."
+                        : $"Mapped {added:N0} material(s) to {targetProcesses.Count:N0} linked process(es).",
+                    false);
+            }
+            else
+            {
+                SetStatus("Selected material candidate(s) are already mapped to that process.", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            SetStatus(ex.Message, true);
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private static string BuildBomMaterialSelectionKey(BmesBomMaterialCandidate material)
+        => NormalizeKey(material.MaterialCode);
+
+    private List<string> GetBomModelQueries(string model)
+    {
+        string query = model.Trim();
+        if (query.Length == 0)
+            return [];
+
+        var exactRows = _routingRows
+            .Where(r => string.Equals(r.ModelName.Trim(), query, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        IEnumerable<RoutingRow> candidates;
+        if (exactRows.Count > 0)
+        {
+            var familyKeys = exactRows
+                .Select(r => NormalizeSideAgnosticModelName(r.ModelName))
+                .Where(s => s.Length > 0)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            candidates = _routingRows.Where(r => familyKeys.Contains(NormalizeSideAgnosticModelName(r.ModelName)));
+        }
+        else
+        {
+            candidates = _routingRows.Where(r => r.ModelName.Contains(query, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var result = candidates
+            .Select(r => r.ModelName.Trim())
+            .Where(s => s.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(ModelSideSortIndex)
+            .ThenBy(s => s, StringComparer.OrdinalIgnoreCase)
+            .Take(6)
+            .ToList();
+
+        if (!result.Any(s => string.Equals(s, query, StringComparison.OrdinalIgnoreCase)))
+            result.Insert(0, query);
+
+        return result;
+    }
+
+    private List<RoutingProcessOption> GetSimultaneousMappingProcesses(RoutingProcessOption process)
+        => GetSameNoProcesses(process)
+            .Concat(GetLinkedProcesses(process))
+            .GroupBy(BuildExactProcessKey, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
+            .OrderBy(ModelSideSortIndex)
+            .ThenBy(RoutingSortIndex)
+            .ThenBy(p => p.ModelName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private List<RoutingProcessOption> GetSameNoProcesses(RoutingProcessOption process)
+    {
+        string processNo = NormalizeProcessNo(GetProcessNo(process));
+        if (string.IsNullOrWhiteSpace(processNo))
+            return [process];
+
+        string familyKey = NormalizeSideAgnosticModelName(process.ModelName);
+        var linked = _routingRows
+            .Where(r => string.Equals(NormalizeSideAgnosticModelName(r.ModelName), familyKey, StringComparison.OrdinalIgnoreCase))
+            .Where(r => !string.IsNullOrWhiteSpace(r.ProcessName) || !string.IsNullOrWhiteSpace(r.ProcessCode))
+            .GroupBy(r => (
+                Model: NormalizeKey(r.ModelName),
+                Code: NormalizeKey(r.ProcessCode),
+                Name: NormalizeKey(r.ProcessName)))
+            .Select(g =>
+            {
+                var row = g.First();
+                return new RoutingProcessOption(
+                    row.ModelName.Trim(),
+                    row.ProcessCode.Trim(),
+                    row.ProcessName.Trim(),
+                    row.ProcessType.Trim());
+            })
+            .Where(p => string.Equals(NormalizeProcessNo(GetProcessNo(p)), processNo, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(p => NormalizeKey(p.ProcessCode), StringComparer.OrdinalIgnoreCase)
+            .ThenBy(p => ProcessNameGroupSortKey(p), StringComparer.OrdinalIgnoreCase)
+            .ThenBy(p => ExtractSideTokenFromModel(p.ModelName), StringComparer.OrdinalIgnoreCase)
+            .ThenBy(p => p.ModelName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (!linked.Any(p => IsSameProcess(p, process)))
+            linked.Add(process);
+
+        return linked;
+    }
+
+    private BmesBomMaterialCandidate? ResolveMaterialForTargetProcess(
+        BmesBomMaterialCandidate material,
+        RoutingProcessOption targetProcess)
+    {
+        string targetSide = ExtractSideTokenFromModel(targetProcess.ModelName);
+        string materialSide = ExtractSideTokenFromMaterial(material.MaterialCode, material.MaterialName);
+        if (string.IsNullOrWhiteSpace(targetSide) ||
+            string.IsNullOrWhiteSpace(materialSide) ||
+            string.Equals(targetSide, materialSide, StringComparison.OrdinalIgnoreCase))
+        {
+            return material;
+        }
+
+        string materialKey = NormalizeSideAgnosticMaterialKey(material.MaterialCode, material.MaterialName);
+        if (string.IsNullOrWhiteSpace(materialKey))
+            return null;
+
+        return _bomMaterials
+            .Where(IsSelectableMaterial)
+            .Where(m => string.Equals(NormalizeSideAgnosticMaterialKey(m.MaterialCode, m.MaterialName), materialKey, StringComparison.OrdinalIgnoreCase))
+            .Where(m => string.Equals(ExtractSideTokenFromMaterial(m.MaterialCode, m.MaterialName), targetSide, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(m => m.SourceRows)
+            .ThenBy(m => m.MaterialCode, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault();
+    }
+
+    private static string BuildLocalMappingKey(RoutingProcessOption process, BmesBomMaterialCandidate material)
+        => string.Join(
+            '\t',
+            NormalizeKey(process.ModelName),
+            NormalizeKey(process.ProcessCode),
+            NormalizeKey(process.ProcessName),
+            NormalizeKey(material.MaterialCode),
+            NormalizeKey(material.MaterialName));
+
+    private MappingRole GetMappingRole(
+        RoutingProcessOption process,
+        ProcessMaterialMappingRow mapped,
+        RoutingProcessOption? referenceProcess)
+    {
+        if (referenceProcess is null)
+            return MappingRole.None;
+
+        string referenceNo = GetReferenceProcessNo(process);
+        var exact = FindExactReferenceMaterial(process, mapped.RawMaterialCode, mapped.RawMaterialName);
+        if (exact is not null)
+            return new MappingRole("Same", "same", $"Already included by Ref {referenceNo}");
+
+        var replacement = FindReferenceReplacement(process, mapped.RawMaterialCode, mapped.RawMaterialName);
+        if (replacement is not null)
+        {
+            return new MappingRole(
+                "Replace",
+                "replace",
+                $"Replaces Ref {referenceNo}: {replacement.RawMaterialCode} / {replacement.RawMaterialName}");
+        }
+
+        return new MappingRole("Add", "add", $"Adds on top of Ref {referenceNo}");
+    }
+
+    private ProcessMaterialMappingRow? FindExactReferenceMaterial(
+        RoutingProcessOption process,
+        string rawMaterialCode,
+        string rawMaterialName)
+        => GetReferenceEffectiveMappings(process)
+            .FirstOrDefault(r => IsExactMaterial(r.RawMaterialCode, r.RawMaterialName, rawMaterialCode, rawMaterialName));
+
+    private ProcessMaterialMappingRow? FindReferenceReplacement(
+        RoutingProcessOption process,
+        string rawMaterialCode,
+        string rawMaterialName)
+    {
+        string targetKey = NormalizeSideAgnosticMaterialKey(rawMaterialCode, rawMaterialName);
+        if (string.IsNullOrWhiteSpace(targetKey))
+            return null;
+
+        return GetReferenceEffectiveMappings(process)
+            .FirstOrDefault(r =>
+                string.Equals(NormalizeSideAgnosticMaterialKey(r.RawMaterialCode, r.RawMaterialName), targetKey, StringComparison.OrdinalIgnoreCase) &&
+                !IsExactMaterial(r.RawMaterialCode, r.RawMaterialName, rawMaterialCode, rawMaterialName));
+    }
+
+    private List<ProcessMaterialMappingRow> GetReferenceEffectiveMappings(RoutingProcessOption process)
+    {
+        string referenceNo = GetReferenceProcessNo(process);
+        if (string.IsNullOrWhiteSpace(referenceNo))
+            return [];
+
+        var referenceProcess = FindProcessByNo(process.ModelName, referenceNo);
+        return referenceProcess is null ? [] : GetEffectiveMappingsForProcess(referenceProcess);
+    }
+
+    private List<ProcessMaterialMappingRow> GetEffectiveMappingsForProcess(RoutingProcessOption process, int depth = 0)
+    {
+        var direct = GetMappingsForProcess(process);
+        if (depth >= 8)
+            return direct;
+
+        string referenceNo = GetReferenceProcessNo(process);
+        if (string.IsNullOrWhiteSpace(referenceNo))
+            return direct;
+
+        var referenceProcess = FindProcessByNo(process.ModelName, referenceNo);
+        if (referenceProcess is null || IsSameProcess(referenceProcess, process))
+            return direct;
+
+        var referenceMappings = GetEffectiveMappingsForProcess(referenceProcess, depth + 1);
+        if (referenceMappings.Count == 0)
+            return direct;
+
+        var directKeys = direct
+            .Select(r => NormalizeSideAgnosticMaterialKey(r.RawMaterialCode, r.RawMaterialName))
+            .Where(s => s.Length > 0)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return referenceMappings
+            .Where(r => !directKeys.Contains(NormalizeSideAgnosticMaterialKey(r.RawMaterialCode, r.RawMaterialName)))
+            .Concat(direct)
+            .ToList();
+    }
+
+    private void FocusProcess(RoutingProcessOption process)
+    {
+        _focusedProcess = process;
+        SetStatus($"Focused process: {process.ProcessName}", false);
+    }
+
+    private bool IsFocusedProcess(RoutingProcessOption process) =>
+        _focusedProcess is not null &&
+        string.Equals(_focusedProcess.ModelName, process.ModelName, StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(NormalizeKey(_focusedProcess.ProcessCode), NormalizeKey(process.ProcessCode), StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(NormalizeKey(_focusedProcess.ProcessName), NormalizeKey(process.ProcessName), StringComparison.OrdinalIgnoreCase);
+
+    private void SaveProcessNo(RoutingProcessOption process, string? value)
+    {
+        string processNo = NormalizeProcessNo(value);
+        List<RoutingProcessOption> linkedProcesses = GetLinkedProcesses(process);
+        if (!string.IsNullOrWhiteSpace(processNo) &&
+            linkedProcesses.Any(target => IsProcessNoUsedByAnotherProcess(target, processNo, linkedProcesses)))
+        {
+            SetStatus($"Process no {processNo} is already used in this model.", true);
+            return;
+        }
+
+        foreach (var target in linkedProcesses)
+            UpsertProcessSetting(target, processNo, GetReferenceProcessNo(target));
+
+        SetStatus(
+            string.IsNullOrWhiteSpace(processNo)
+                ? $"Process no cleared for {linkedProcesses.Count:N0} linked process(es)."
+                : $"Process no saved: {processNo} ({linkedProcesses.Count:N0} linked process(es)).",
+            false);
+    }
+
+    private void SaveReferenceProcessNo(RoutingProcessOption process, string? value)
+    {
+        string referenceNo = NormalizeProcessNo(value);
+        List<RoutingProcessOption> linkedProcesses = GetLinkedProcesses(process);
+        if (!string.IsNullOrWhiteSpace(referenceNo))
+        {
+            foreach (var target in linkedProcesses)
+            {
+                var sourceProcess = FindProcessByNo(target.ModelName, referenceNo);
+                if (sourceProcess is null)
+                {
+                    SetStatus($"Process no {referenceNo} was not found for {target.ModelName}.", true);
+                    return;
+                }
+
+                if (IsSameProcess(target, sourceProcess))
+                {
+                    SetStatus("A process cannot reference itself.", true);
+                    return;
+                }
+            }
+        }
+
+        foreach (var target in linkedProcesses)
+            UpsertProcessSetting(target, GetProcessNo(target), referenceNo);
+
+        SetStatus(
+            string.IsNullOrWhiteSpace(referenceNo)
+                ? $"Reference cleared for {linkedProcesses.Count:N0} linked process(es)."
+                : $"Reference saved: {referenceNo} ({linkedProcesses.Count:N0} linked process(es)).",
+            false);
+    }
+
+    private void UpsertProcessSetting(RoutingProcessOption process, string processNo, string referenceProcessNo)
+    {
+        MappingService.UpsertProcess(new ProcessMaterialProcessEdit
+        {
+            ModelName = process.ModelName,
+            ProcessCode = process.ProcessCode,
+            ProcessName = process.ProcessName,
+            ProcessNo = processNo,
+            ReferenceProcessNo = referenceProcessNo,
+        });
+        _processSettings = MappingService.GetProcessRows();
+    }
+
+    private string GetProcessNo(RoutingProcessOption process)
+        => GetProcessSetting(process)?.ProcessNo.Trim() ?? string.Empty;
+
+    private string GetReferenceProcessNo(RoutingProcessOption process)
+        => GetProcessSetting(process)?.ReferenceProcessNo.Trim() ?? string.Empty;
+
+    private ProcessMaterialProcessRow? GetProcessSetting(RoutingProcessOption process)
+        => _processSettings.FirstOrDefault(s => ProcessSettingMatches(s, process)) ??
+           _processSettings.FirstOrDefault(s => ProcessSettingMatchesLinked(s, process));
+
+    private RoutingProcessOption? FindProcessByNo(string modelName, string processNo)
+    {
+        string normalizedNo = NormalizeProcessNo(processNo);
+        if (string.IsNullOrWhiteSpace(normalizedNo))
+            return null;
+
+        return GetRoutingProcessOptions(modelName)
+            .FirstOrDefault(p => string.Equals(NormalizeProcessNo(GetProcessNo(p)), normalizedNo, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private bool IsProcessNoUsedByAnotherProcess(
+        RoutingProcessOption process,
+        string processNo,
+        IReadOnlyList<RoutingProcessOption> excludedProcesses)
+    {
+        string normalizedNo = NormalizeProcessNo(processNo);
+        return GetRoutingProcessOptions(process.ModelName)
+            .Any(p =>
+                !excludedProcesses.Any(excluded => IsSameProcess(p, excluded)) &&
+                string.Equals(NormalizeProcessNo(GetProcessNo(p)), normalizedNo, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private List<RoutingProcessOption> GetLinkedProcesses(RoutingProcessOption process)
+    {
+        string familyKey = NormalizeSideAgnosticModelName(process.ModelName);
+        string processNameKey = NormalizeKey(process.ProcessName);
+        string processCodeKey = NormalizeKey(process.ProcessCode);
+
+        var linked = _routingRows
+            .Where(r => string.Equals(NormalizeSideAgnosticModelName(r.ModelName), familyKey, StringComparison.OrdinalIgnoreCase))
+            .Where(r => string.Equals(NormalizeKey(r.ProcessCode), processCodeKey, StringComparison.OrdinalIgnoreCase))
+            .Where(r => string.Equals(NormalizeKey(r.ProcessName), processNameKey, StringComparison.OrdinalIgnoreCase))
+            .Where(r => !string.IsNullOrWhiteSpace(r.ProcessName) || !string.IsNullOrWhiteSpace(r.ProcessCode))
+            .GroupBy(r => (
+                Model: NormalizeKey(r.ModelName),
+                Code: NormalizeKey(r.ProcessCode),
+                Name: NormalizeKey(r.ProcessName)))
+            .Select(g =>
+            {
+                var row = g.First();
+                return new RoutingProcessOption(
+                    row.ModelName.Trim(),
+                    row.ProcessCode.Trim(),
+                    row.ProcessName.Trim(),
+                    row.ProcessType.Trim());
+            })
+            .OrderBy(ModelSideSortIndex)
+            .ThenBy(p => p.ModelName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (!linked.Any(p => IsSameProcess(p, process)))
+            linked.Add(process);
+
+        return linked;
+    }
+
+    private int ProcessSortGroup(RoutingProcessOption process)
+        => string.IsNullOrWhiteSpace(GetProcessNo(process)) ? 1 : 0;
+
+    private string ProcessSortKey(RoutingProcessOption process)
+        => BuildProcessNoSortKey(GetProcessNo(process));
+
+    private int RoutingSortIndex(RoutingProcessOption process)
+        => _routingOrderByProcess.TryGetValue(BuildExactProcessKey(process), out int index)
+            ? index
+            : int.MaxValue;
+
+    private static IEnumerable<RoutingProcessOption> SortLinkedProcesses(IEnumerable<RoutingProcessOption> processes)
+        => processes
+            .OrderBy(ModelSideSortIndex)
+            .ThenBy(p => p.ModelName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(p => NormalizeKey(p.ProcessCode), StringComparer.OrdinalIgnoreCase)
+            .ThenBy(p => ProcessNameGroupSortKey(p), StringComparer.OrdinalIgnoreCase);
+
+    private static int ModelSideSortIndex(RoutingProcessOption process)
+        => ModelSideSortIndex(process.ModelName);
+
+    private static int ModelSideSortIndex(ProcessMaterialMappingRow row)
+        => ModelSideSortIndex(row.ModelName);
+
+    private static int ModelSideSortIndex(string value)
+        => ExtractSideTokenFromModel(value) switch
+        {
+            "L" => 0,
+            "R" => 1,
+            _ => 2,
+        };
+
+    private static string BuildModelSideLabel(RoutingProcessOption process)
+    {
+        string side = ExtractSideTokenFromModel(process.ModelName);
+        return string.IsNullOrWhiteSpace(side) ? "-" : side;
+    }
+
+    private static string BuildMappingSideLabel(ProcessMaterialMappingRow row)
+    {
+        string side = ExtractSideTokenFromModel(row.ModelName);
+        return string.IsNullOrWhiteSpace(side) ? "-" : side;
+    }
+
+    private static string BuildModelSideClass(RoutingProcessOption process)
+        => ExtractSideTokenFromModel(process.ModelName) switch
+        {
+            "L" => "left",
+            "R" => "right",
+            _ => string.Empty,
+        };
+
+    private static string ProcessNameGroupSortKey(RoutingProcessOption process)
+        => !string.IsNullOrWhiteSpace(process.ProcessName)
+            ? NormalizeKey(process.ProcessName)
+            : NormalizeKey(process.ProcessCode);
+
+    private List<BmesBomMaterialCandidate> ResolveMaterialsToMap(BmesBomMaterialCandidate material)
+    {
+        if (!material.HasChildren)
+            return [material];
+
+        var descendants = _bomMaterials
+            .Where(candidate => IsBomDescendant(material, candidate))
+            .Where(candidate => !candidate.HasChildren)
+            .Where(IsSelectableMaterial)
+            .Where(candidate => !string.IsNullOrWhiteSpace(candidate.MaterialCode) || !string.IsNullOrWhiteSpace(candidate.MaterialName))
+            .GroupBy(candidate => NormalizeKey(candidate.MaterialCode) + "\t" + NormalizeKey(candidate.MaterialName), StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
+            .ToList();
+
+        return descendants.Count > 0 ? descendants : [material];
+    }
+
+    private static bool IsBomDescendant(BmesBomMaterialCandidate parent, BmesBomMaterialCandidate candidate)
+    {
+        if (string.IsNullOrWhiteSpace(parent.BomPath) || string.IsNullOrWhiteSpace(candidate.BomPath))
+            return false;
+
+        return candidate.BomPath.StartsWith(parent.BomPath + ">", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsDuplicateMapping(RoutingProcessOption process, BmesBomMaterialCandidate material)
+        => IsDuplicateMapping(process, material.MaterialCode, material.MaterialName) ||
+           FindExactReferenceMaterial(process, material.MaterialCode, material.MaterialName) is not null;
+
+    private bool IsDuplicateMapping(RoutingProcessOption process, string rawMaterialCode, string rawMaterialName)
+        => _rows.Any(r =>
+        {
+            bool materialMatches =
+                !string.IsNullOrWhiteSpace(rawMaterialCode)
+                    ? string.Equals(NormalizeKey(r.RawMaterialCode), NormalizeKey(rawMaterialCode), StringComparison.OrdinalIgnoreCase)
+                    : string.Equals(NormalizeKey(r.RawMaterialName), NormalizeKey(rawMaterialName), StringComparison.OrdinalIgnoreCase);
+
+            return string.Equals(r.ModelName.Trim(), process.ModelName, StringComparison.OrdinalIgnoreCase) &&
+                   ProcessMatches(r, process) &&
+                   materialMatches;
+        });
+
+    private static ProcessMaterialMappingEdit BuildMappingEdit(
+        RoutingProcessOption process,
+        BmesBomMaterialCandidate material,
+        BmesBomMaterialCandidate selected)
+        => new()
+        {
+            ModelName = process.ModelName,
+            ProcessCode = process.ProcessCode,
+            ProcessName = process.ProcessName,
+            RawMaterialCode = material.MaterialCode,
+            RawMaterialName = material.MaterialName,
+            UsageQty = material.UsageQty is > 0 ? material.UsageQty.Value : 1m,
+            UsageUnit = FirstNonBlank(material.UsageUnit, "PC"),
+            Note = BuildMaterialNote(material, selected),
+        };
+
+    private static string BuildMaterialNote(BmesBomMaterialCandidate material, BmesBomMaterialCandidate selected)
+    {
+        string source = FirstNonBlank(material.Source, selected.Source);
+        if (!ReferenceEquals(material, selected) &&
+            (!string.IsNullOrWhiteSpace(selected.MaterialCode) || !string.IsNullOrWhiteSpace(selected.MaterialName)))
+        {
+            string selectedText = FirstNonBlank(
+                string.Join(" / ", new[] { selected.MaterialCode, selected.MaterialName }.Where(s => !string.IsNullOrWhiteSpace(s))),
+                selected.BomPathText);
+            return FirstNonBlank($"Auto from {selectedText}", source);
+        }
+
+        return FirstNonBlank(material.BomPathText, source);
+    }
+
+    private void SetStatus(string message, bool error)
+    {
+        _statusMessage = message;
+        _statusError = error;
+    }
+
+    private List<RoutingProcessOption> GetRoutingProcessOptions(string modelQuery)
+    {
+        string query = (modelQuery ?? string.Empty).Trim();
+        if (query.Length == 0 || _routingRows.Count == 0)
+            return [];
+
+        var exactMatches = _routingRows
+            .Where(r => string.Equals(r.ModelName.Trim(), query, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var matches = exactMatches.Count > 0
+            ? exactMatches
+            : _routingRows
+                .Where(r => r.ModelName.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+        return matches
+            .Where(r => !string.IsNullOrWhiteSpace(r.ProcessName) || !string.IsNullOrWhiteSpace(r.ProcessCode))
+            .GroupBy(r => (
+                Model: NormalizeKey(r.ModelName),
+                Code: NormalizeKey(r.ProcessCode),
+                Name: NormalizeKey(r.ProcessName)))
+            .Select(g =>
+            {
+                var row = g.First();
+                return new RoutingProcessOption(
+                    row.ModelName.Trim(),
+                    row.ProcessCode.Trim(),
+                    row.ProcessName.Trim(),
+                    row.ProcessType.Trim());
+            })
+            .OrderBy(RoutingSortIndex)
+            .ThenBy(p => p.ModelName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(p => p.ProcessName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(p => p.ProcessCode, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private List<ProcessMaterialMappingRow> GetMappingsForProcess(RoutingProcessOption process)
+        => _rows
+            .Where(r => string.Equals(r.ModelName.Trim(), process.ModelName, StringComparison.OrdinalIgnoreCase))
+            .Where(r => ProcessMatches(r, process))
+            .Where(IsSelectableMapping)
+            .OrderBy(r => r.RawMaterialName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(r => r.RawMaterialCode, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private static bool ProcessMatches(ProcessMaterialMappingRow row, RoutingProcessOption process)
+    {
+        bool codeMatches =
+            !string.IsNullOrWhiteSpace(row.ProcessCode) &&
+            !string.IsNullOrWhiteSpace(process.ProcessCode) &&
+            string.Equals(row.ProcessCode.Trim(), process.ProcessCode, StringComparison.OrdinalIgnoreCase);
+
+        bool nameMatches =
+            !string.IsNullOrWhiteSpace(row.ProcessName) &&
+            !string.IsNullOrWhiteSpace(process.ProcessName) &&
+            string.Equals(row.ProcessName.Trim(), process.ProcessName, StringComparison.OrdinalIgnoreCase);
+
+        return codeMatches || nameMatches;
+    }
+
+    private static bool ProcessSettingMatches(ProcessMaterialProcessRow row, RoutingProcessOption process)
+        => string.Equals(row.ModelName.Trim(), process.ModelName, StringComparison.OrdinalIgnoreCase) &&
+           string.Equals(NormalizeKey(row.ProcessCode), NormalizeKey(process.ProcessCode), StringComparison.OrdinalIgnoreCase) &&
+           string.Equals(NormalizeKey(row.ProcessName), NormalizeKey(process.ProcessName), StringComparison.OrdinalIgnoreCase);
+
+    private static bool ProcessSettingMatchesLinked(ProcessMaterialProcessRow row, RoutingProcessOption process)
+        => string.Equals(NormalizeSideAgnosticModelName(row.ModelName), NormalizeSideAgnosticModelName(process.ModelName), StringComparison.OrdinalIgnoreCase) &&
+           (!string.IsNullOrWhiteSpace(process.ProcessName)
+                ? string.Equals(NormalizeKey(row.ProcessName), NormalizeKey(process.ProcessName), StringComparison.OrdinalIgnoreCase)
+                : string.Equals(NormalizeKey(row.ProcessCode), NormalizeKey(process.ProcessCode), StringComparison.OrdinalIgnoreCase));
+
+    private static bool IsSameProcess(RoutingProcessOption left, RoutingProcessOption right)
+        => string.Equals(left.ModelName, right.ModelName, StringComparison.OrdinalIgnoreCase) &&
+           string.Equals(NormalizeKey(left.ProcessCode), NormalizeKey(right.ProcessCode), StringComparison.OrdinalIgnoreCase) &&
+           string.Equals(NormalizeKey(left.ProcessName), NormalizeKey(right.ProcessName), StringComparison.OrdinalIgnoreCase);
+
+    private static string BuildProcessGroupKey(RoutingProcessOption process)
+        => BuildDisplayProcessGroupKey(process);
+
+    private static string BuildDisplayProcessGroupKey(RoutingProcessOption process)
+    {
+        return string.Join(
+            '\t',
+            NormalizeSideAgnosticModelName(process.ModelName),
+            NormalizeKey(process.ProcessCode),
+            NormalizeKey(process.ProcessName));
+    }
+
+    private static string BuildExactProcessKey(RoutingProcessOption process)
+        => BuildExactProcessKey(process.ModelName, process.ProcessCode, process.ProcessName);
+
+    private static string BuildExactProcessKey(string modelName, string processCode, string processName)
+        => string.Join(
+            '\t',
+            NormalizeKey(modelName),
+            NormalizeKey(processCode),
+            NormalizeKey(processName));
+
+    private static Dictionary<string, int> BuildRoutingOrderLookup(IReadOnlyList<RoutingRow> rows)
+    {
+        var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < rows.Count; i++)
+        {
+            string key = BuildExactProcessKey(rows[i].ModelName, rows[i].ProcessCode, rows[i].ProcessName);
+            result.TryAdd(key, i);
+        }
+
+        return result;
+    }
+
+    private static string BuildReferenceTitle(string referenceNo, RoutingProcessOption? process)
+        => process is null
+            ? $"References process {referenceNo}"
+            : $"References {referenceNo} / {process.ProcessCode} / {process.ProcessName}";
+
+    private static string BuildProcessTitle(RoutingProcessOption process)
+    {
+        string type = string.IsNullOrWhiteSpace(process.ProcessType) ? string.Empty : $" / {process.ProcessType}";
+        return $"{process.ProcessCode} / {process.ProcessName}{type}";
+    }
+
+    private static string BuildMappingTitle(ProcessMaterialMappingRow row)
+        => $"{row.RawMaterialCode} / {row.RawMaterialName} / {FormatUsage(row)}";
+
+    private static string BuildMappingTitle(ProcessMaterialMappingRow row, MappingRole role)
+    {
+        string title = BuildMappingTitle(row);
+        return string.IsNullOrWhiteSpace(role.Title) ? title : title + " / " + role.Title;
+    }
+
+    private static string BuildBomTitle(BmesBomMaterialCandidate material)
+    {
+        string usage = material.UsageQty is > 0 ? " / " + FormatBomUsage(material) : string.Empty;
+        string source = string.IsNullOrWhiteSpace(material.Source) ? string.Empty : " / " + material.Source;
+        return $"{material.MaterialCode} / {material.MaterialName}{usage}{source}";
+    }
+
+    private static string FormatBomUsage(BmesBomMaterialCandidate material)
+    {
+        if (material.UsageQty is not > 0)
+            return string.Empty;
+
+        string unit = string.IsNullOrWhiteSpace(material.UsageUnit) ? string.Empty : " " + material.UsageUnit.Trim();
+        return material.UsageQty.Value.ToString("0.######", CultureInfo.InvariantCulture) + unit;
+    }
+
+    private static string FormatProcessUsage(IReadOnlyList<ProcessMaterialMappingRow> mappings)
+        => mappings.Count == 0
+            ? string.Empty
+            : string.Join(", ", mappings.Select(FormatUsage).Distinct(StringComparer.OrdinalIgnoreCase).Take(2)) +
+              (mappings.Count > 2 ? $" +{mappings.Count - 2}" : string.Empty);
+
+    private static string FormatProcessNotes(IReadOnlyList<ProcessMaterialMappingRow> mappings)
+        => string.Join(", ", mappings
+            .Select(r => r.Note.Trim())
+            .Where(s => s.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(2));
+
+    private BmesFcostDbConnection BuildNetworkDbConnection()
+    {
+        var c = AppPaths.Current;
+        return new BmesFcostDbConnection
+        {
+            Server = c.AdminDbQueryServer,
+            Port = c.AdminDbQueryPort > 0 ? c.AdminDbQueryPort : 1430,
+            Database = string.IsNullOrWhiteSpace(c.AdminDbQueryDatabase) ||
+                       string.Equals(c.AdminDbQueryDatabase, "master", StringComparison.OrdinalIgnoreCase)
+                ? "BMES_LIV"
+                : c.AdminDbQueryDatabase,
+            UserId = c.AdminDbQueryUserId,
+            Password = c.AdminDbQueryPassword,
+            TimeoutSeconds = Math.Clamp(Math.Max(c.AdminDbQueryTimeoutSeconds, 300), 1, 600),
+            Encrypt = c.AdminDbQueryEncrypt,
+            TrustServerCertificate = c.AdminDbQueryTrustServerCertificate,
+        };
+    }
+
+    private static string NormalizeKey(string value)
+        => (value ?? string.Empty).Trim().ToUpperInvariant();
+
+    private static bool IsSelectableMapping(ProcessMaterialMappingRow row)
+        => IsSelectableMaterial(row.RawMaterialCode, row.RawMaterialName);
+
+    private static bool IsSelectableMaterial(BmesBomMaterialCandidate material)
+        => IsSelectableMaterial(material.MaterialCode, material.MaterialName);
+
+    private static bool IsSelectableMaterial(string code, string name)
+    {
+        bool isCs = code.StartsWith("C-S-", StringComparison.OrdinalIgnoreCase);
+        bool isRs = code.StartsWith("R-S-", StringComparison.OrdinalIgnoreCase);
+        return (isCs || isRs) && !(isCs && IsAssyFrameMaterial(name));
+    }
+
+    private static bool IsAssyFrameMaterial(string name)
+        => NormalizeKey(name).Contains("ASSY FRAME", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsExactMaterial(string leftCode, string leftName, string rightCode, string rightName)
+    {
+        string leftCodeKey = NormalizeKey(leftCode);
+        string rightCodeKey = NormalizeKey(rightCode);
+        if (leftCodeKey.Length > 0 && rightCodeKey.Length > 0)
+            return string.Equals(leftCodeKey, rightCodeKey, StringComparison.OrdinalIgnoreCase);
+
+        return string.Equals(NormalizeKey(leftName), NormalizeKey(rightName), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeSideAgnosticMaterialKey(string rawMaterialCode, string rawMaterialName)
+    {
+        string nameKey = NormalizeSideAgnosticText(rawMaterialName);
+        if (!string.IsNullOrWhiteSpace(nameKey))
+            return nameKey;
+
+        return NormalizeSideAgnosticText(StripMaterialCodePrefix(rawMaterialCode));
+    }
+
+    private static string NormalizeSideAgnosticText(string? value)
+    {
+        string text = NormalizeKey(value ?? string.Empty);
+        if (text.Length == 0)
+            return string.Empty;
+
+        var sb = new StringBuilder(text.Length);
+        int index = 0;
+        while (index < text.Length)
+        {
+            if (!IsSideTokenChar(text[index]))
+            {
+                sb.Append(text[index++]);
+                continue;
+            }
+
+            int start = index;
+            while (index < text.Length && IsSideTokenChar(text[index]))
+                index++;
+
+            string token = text[start..index];
+            sb.Append(IsSideToken(token) ? "*" : token);
+        }
+
+        return sb.ToString();
+    }
+
+    private static string ExtractSideTokenFromModel(string value)
+        => ExtractSideTokenFromText(value);
+
+    private static string ExtractSideTokenFromMaterial(string rawMaterialCode, string rawMaterialName)
+    {
+        string side = ExtractSideTokenFromText(rawMaterialName);
+        return string.IsNullOrWhiteSpace(side)
+            ? ExtractSideTokenFromText(StripMaterialCodePrefix(rawMaterialCode))
+            : side;
+    }
+
+    private static string ExtractSideTokenFromText(string? value)
+    {
+        string text = NormalizeKey(value ?? string.Empty);
+        int index = 0;
+        while (index < text.Length)
+        {
+            if (!IsSideTokenChar(text[index]))
+            {
+                index++;
+                continue;
+            }
+
+            int start = index;
+            while (index < text.Length && IsSideTokenChar(text[index]))
+                index++;
+
+            string token = text[start..index];
+            if (IsSideToken(token))
+                return token;
+        }
+
+        return string.Empty;
+    }
+
+    private static bool IsSideToken(string token)
+        => string.Equals(token, "L", StringComparison.OrdinalIgnoreCase) ||
+           string.Equals(token, "R", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsSideTokenChar(char c)
+        => char.IsLetterOrDigit(c);
+
+    private static string StripMaterialCodePrefix(string value)
+    {
+        string code = (value ?? string.Empty).Trim();
+        return code.StartsWith("C-S-", StringComparison.OrdinalIgnoreCase) ||
+               code.StartsWith("R-S-", StringComparison.OrdinalIgnoreCase)
+            ? code[4..]
+            : code;
+    }
+
+    private static string NormalizeProcessNo(string? value)
+        => (value ?? string.Empty).Trim().TrimStart('#').Trim().ToUpperInvariant();
+
+    private static string NormalizeSideAgnosticModelName(string? value)
+    {
+        string modelName = NormalizeKey(value ?? string.Empty);
+        if (modelName.Length == 0)
+            return string.Empty;
+
+        string[] parts = modelName.Split('-', StringSplitOptions.None);
+        for (int i = 0; i < parts.Length; i++)
+        {
+            if (string.Equals(parts[i], "L", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(parts[i], "R", StringComparison.OrdinalIgnoreCase))
+            {
+                parts[i] = "*";
+            }
+        }
+
+        return string.Join('-', parts);
+    }
+
+    private static string BuildProcessNoSortKey(string? value)
+    {
+        string processNo = NormalizeProcessNo(value);
+        if (processNo.Length == 0)
+            return string.Empty;
+
+        var parts = new List<string>();
+        int index = 0;
+        while (index < processNo.Length)
+        {
+            int start = index;
+            bool isDigit = char.IsDigit(processNo[index]);
+            while (index < processNo.Length && char.IsDigit(processNo[index]) == isDigit)
+                index++;
+
+            string part = processNo[start..index];
+            parts.Add(isDigit ? part.PadLeft(10, '0') : part);
+        }
+
+        return string.Concat(parts);
+    }
+
+    private static string FirstNonBlank(params string[] values)
+        => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim() ?? string.Empty;
+
+    private static bool Matches(string value, string query)
+        => string.IsNullOrWhiteSpace(query) ||
+           (value ?? string.Empty).Contains(query.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    private static string FormatUsage(ProcessMaterialMappingRow row)
+    {
+        string unit = string.IsNullOrWhiteSpace(row.UsageUnit) ? string.Empty : " " + row.UsageUnit.Trim();
+        return row.UsageQty.ToString("0.######", CultureInfo.InvariantCulture) + unit;
+    }
+
+    private sealed record RoutingProcessOption(
+        string ModelName,
+        string ProcessCode,
+        string ProcessName,
+        string ProcessType);
+
+    private sealed record Test3ProcessRow(
+        RoutingProcessOption Process,
+        List<RoutingProcessOption> LinkedProcesses,
+        List<ProcessMaterialMappingRow> Mappings);
+
+    private sealed record ProcessOrderGroup(
+        string GroupKey,
+        RoutingProcessOption Process,
+        string ProcessNo);
+
+    private sealed record MappingRole(
+        string Label,
+        string CssClass,
+        string Title)
+    {
+        public static MappingRole None { get; } = new(string.Empty, string.Empty, string.Empty);
+    }
+}

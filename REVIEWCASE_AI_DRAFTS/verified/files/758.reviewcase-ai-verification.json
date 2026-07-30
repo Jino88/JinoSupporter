@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 758,
+  "sourceFile": "58. TIU C11-20 Report test change VP A2 move D3 make final  2026.2.07_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\758.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 758,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Comparable Normal vs test-jig condition evidence exists, but the changed factor and one outcome are misgrouped.",
+    "issues": [
+      "Primary changed factor appears to be VP A2 Move D3 Make Final vs Normal, not line TIU C11-20 R vs Normal.",
+      "Line/test context is mixed into changedCondition instead of subgroup context.",
+      "RA outcome depends on cited row 21, but its text is not shown in context.",
+      "Measurement outcome is derived from header-like row 12 and is not a valid measurement comparison.",
+      "Outcome domains should keep function and RA checks under the same corrected change context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedFactor to Normal vs VP A2 Move D3 Make Final/test jig new press VP+Frame.",
+      "Move TIU C11-20 R and RA/line labels to subgroupKeys or outcome context.",
+      "Add or verify row 21 and any RA header rows as evidence for the RA comparison.",
+      "Remove the header-derived measurement outcome unless real measurement rows exist.",
+      "Use rows 8, 13, 15, 21, and 23 as core evidence after correction."
+    ],
+    "evidencePolicy": "Citations are partly sufficient, but row 21 visibility and header-only measurement evidence must be fixed."
+  },
+  "usage": {
+    "input_tokens": 3232,
+    "output_tokens": 811,
+    "total_tokens": 4043
+  }
+}

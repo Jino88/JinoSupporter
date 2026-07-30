@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 317,
+  "sourceFile": "16. TIU C11-20  Report test VP find reason NG function high 2026.1.14_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\317.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 317,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but misgroups the comparison baseline and includes unsupported measurement outcomes.",
+    "issues": [
+      "Baseline is wrongly set to model/Type 1 instead of Normal lot context.",
+      "Normal lot result row is omitted from comparison evidence.",
+      "Changed factor mixes model name with test conditions.",
+      "Outcome judgement is unreliable because comparisons use the wrong control.",
+      "Measurement outcome appears unsupported by real measurement rows."
+    ],
+    "requiredUserQuestions": [
+      "Should Normal lot be the baseline for all VP test types?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor as VP mold/heating/forming conditions versus Normal lot.",
+      "Include row Test!45 and row Test!23 as key baseline evidence.",
+      "Remove model name TIU C11-20L as a changed condition.",
+      "Recalculate each test type against Normal lot or mark baseline ambiguous.",
+      "Delete unsupported measurement-stat outcome unless source rows exist."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient because key Normal baseline evidence is missing and Test!28 support is unclear."
+  },
+  "usage": {
+    "input_tokens": 5818,
+    "output_tokens": 755,
+    "total_tokens": 6573
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 426,
+  "sourceFile": "23. BRS-161016 DT Report test  suspension D used SUS-ARRAY of new vender CSY Tech Vina have phenomenon burn date 7.12.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\426.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 426,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Comparable test evidence exists, but the draft needs regrouping by test round and clearer metric parsing before final use.",
+    "issues": [
+      "1st and 2nd test rounds are mixed without subgroup keys.",
+      "Changed condition label is too vague for CSY Tech Vina SUS-array burn trial.",
+      "Vision spot rows appear to contain before/after repair values, but metric basis is unclear.",
+      "Tension result has no cited normal comparator and should not be treated as a full comparison.",
+      "Key conclusion and decision rows are not cited."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add subgroup keys for 1st vs 2nd test round on all outcomes.",
+      "Rename changed factor to Normal vs CSY Tech Vina SUS-array Suspension D burn trial.",
+      "Split or label vision spot as before repair and after repair where applicable.",
+      "Keep tension as test-only supporting measurement or exclude it from comparison outcomes.",
+      "Cite purpose, test-condition rows, normal/test rows, and conclusion rows for each outcome."
+    ],
+    "evidencePolicy": "Row citations exist, but coverage is incomplete for grouping, metric meaning, and conclusions."
+  },
+  "usage": {
+    "input_tokens": 7498,
+    "output_tokens": 1274,
+    "total_tokens": 8772
+  }
+}

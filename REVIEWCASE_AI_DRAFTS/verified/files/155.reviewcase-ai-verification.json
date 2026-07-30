@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 155,
+  "sourceFile": "07. TIU C11-20  Report test VP new mold number 4 date 26.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\155.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 155,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The main mold comparison is supported, but tension subgroup pairing and cited row visibility need correction before final use.",
+    "issues": [
+      "Tension rows appear to contain two VP subconditions that are not preserved as subgroup keys.",
+      "Normal tension rows may be paired to specific VP subconditions, but grouping is not explicit.",
+      "Cited tension rows Test!24 and Test!26 are not shown in the supplied context text.",
+      "Tension sampleCount appears unreliable for rows with multiple readings.",
+      "Title and purpose retain raw table artifacts."
+    ],
+    "requiredUserQuestions": [
+      "Should VP+COIL and FP+VP be separate tension subgroups under the new mold comparison?"
+    ],
+    "correctionPlan": [
+      "Expose or verify text for Test!24 and Test!26.",
+      "Add tension subgroup keys for VP+COIL and FP+VP, if supported by rows.",
+      "Pair each VP tension row with its corresponding Normal row or mark pairing ambiguous.",
+      "Correct tension sample counts from the source readings.",
+      "Clean title and purpose wording without changing evidence meaning."
+    ],
+    "evidencePolicy": "Function citations are sufficient; tension citations need visible row text and subgroup clarification."
+  },
+  "usage": {
+    "input_tokens": 3461,
+    "output_tokens": 779,
+    "total_tokens": 4240
+  }
+}

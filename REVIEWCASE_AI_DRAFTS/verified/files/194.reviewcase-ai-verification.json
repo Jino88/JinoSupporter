@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 194,
+  "sourceFile": "1. BRS-201506DT Report test VP improverment bending date 26.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\194.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 194,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable VP new lot validation exists, but the draft has incorrect changed-factor grouping and an invalid measurement outcome.",
+    "issues": [
+      "Changed factor is garbled and misclassified as process condition.",
+      "Changed condition wrongly includes old lot values.",
+      "Normal lot reference is inconsistently handled or omitted from outcomes.",
+      "Measurement outcome is derived from a header/non-comparable row.",
+      "Decision row and function header context are not properly used."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to VP lot/material: new lot versus old lot, with normal as reference if retained.",
+      "Normalize condition names and remove duplicates.",
+      "Keep the three NG-rate result sections under one validation case.",
+      "Remove the measurement outcome unless real measurement rows exist.",
+      "Cite purpose, compare statement, each result header/data row, and decision row."
+    ],
+    "evidencePolicy": "Data row citations are mostly sufficient, but header/decision context must be fixed and row 43 is not valid outcome evidence."
+  },
+  "usage": {
+    "input_tokens": 4990,
+    "output_tokens": 663,
+    "total_tokens": 5653
+  }
+}

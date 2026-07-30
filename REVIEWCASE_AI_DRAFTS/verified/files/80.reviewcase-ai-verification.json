@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 80,
+  "sourceFile": "03. TIU C11-20 Report Check  Press MG & YOKE from SUB2 2025.11.17_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\80.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:34Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 80,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not safe as final evidence because the changed factor and measurement grouping are ambiguous and partly misparsed.",
+    "issues": [
+      "Changed factor is a filename, not the actual process/material change.",
+      "Baseline and changed conditions are not established from cited rows.",
+      "Decision evidence suggests a JUNJIE machine/magnet change but is omitted.",
+      "Bonding amount data appears mixed with kgf and position values.",
+      "Press MG, Press YOKE, bonding, and Sheet1 timing data are not cleanly grouped."
+    ],
+    "requiredUserQuestions": [
+      "What is the primary changed condition: SUB2 source, JUNJIE machine, magnet, or press setup?",
+      "Is there a baseline/pre-change condition in this workbook or only post-change validation?"
+    ],
+    "correctionPlan": [
+      "Use report title, purpose, content, and decision rows to define the review case.",
+      "Cite the decision row as changed-condition evidence if applicable.",
+      "Separate bonding amount, Press MG, Press YOKE, and time-position tables.",
+      "Recompute specs and violations only within each correct table.",
+      "Set baseline as absent or cite explicit baseline rows if found."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient; key context rows are missing and some cited data is misgrouped."
+  },
+  "usage": {
+    "input_tokens": 5233,
+    "output_tokens": 802,
+    "total_tokens": 6035
+  }
+}

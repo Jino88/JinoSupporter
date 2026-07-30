@@ -6,21 +6,36 @@ namespace BmesNgRateStandalone.Services;
 /// <summary>
 /// NG Rate settings DB service.
 /// Settings file location is now configurable via <see cref="AppPathsService"/>
-/// (see Admin → Paths). Defaults: %LOCALAPPDATA%\…\NGRATE\ModelBmes\ngrate_settings.db.
+/// (see Admin Paths). Defaults under <see cref="AppStoragePaths.RootDirectory"/>.
 /// </summary>
 public sealed class NgRateSettingsService
 {
     private readonly AppPathsService _appPaths;
+    private static readonly string BootstrapSettingsDbDirectory =
+        AppStoragePaths.Combine("standalone-bootstrap", "ModelBmes");
 
     // ── Defaults (sourced from AppPathsService → webapp-paths.json) ─────────────
     public string DefaultDbSaveDirectory     => _appPaths.Current.NgRateDbSaveDirectory;
-    public string DefaultFCostDbSaveDirectory => DbSaveDirectory;
+    public string DefaultFCostDbSaveDirectory =>
+        HasUnifiedDbDirectory
+            ? AppPathsService.GetFCostDirectory(_appPaths.Current.DbRootDirectory)
+            : DbSaveDirectory;
     public string DefaultRoutingFilePath     => _appPaths.Current.NgRateRoutingFilePath;
     public string DefaultReasonFilePath      => _appPaths.Current.NgRateReasonFilePath;
+    public string WorkerStatusCacheDirectory =>
+        HasUnifiedDbDirectory
+            ? AppPathsService.GetWorkerStatusDirectory(_appPaths.Current.DbRootDirectory)
+            : Path.Combine(DbSaveDirectory, "3. Wk Status");
 
     // ── Settings DB location ─────────────────────────────────────────────────────
-    public string SettingsDbDirectory => _appPaths.Current.NgRateSettingsDbDirectory;
+    public string SettingsDbDirectory =>
+        string.IsNullOrWhiteSpace(_appPaths.Current.NgRateSettingsDbDirectory)
+            ? BootstrapSettingsDbDirectory
+            : _appPaths.Current.NgRateSettingsDbDirectory;
     public string SettingsDbPath      => Path.Combine(SettingsDbDirectory, "ngrate_settings.db");
+    public bool IsNgRateStorageConfigured => _appPaths.IsNgRateStorageConfigured;
+    private bool HasUnifiedDbDirectory =>
+        !string.IsNullOrWhiteSpace(_appPaths.Current.DbRootDirectory);
 
     // ── Setting keys ─────────────────────────────────────────────────────────────
     public const string KeyDbSaveDirectory  = "NgRate:DbSaveDirectory";
@@ -43,16 +58,16 @@ public sealed class NgRateSettingsService
     // ── Typed accessors ──────────────────────────────────────────────────────────
 
     public string DbSaveDirectory =>
-        GetSetting(KeyDbSaveDirectory) ?? DefaultDbSaveDirectory;
+        HasUnifiedDbDirectory ? DefaultDbSaveDirectory : GetSetting(KeyDbSaveDirectory) ?? DefaultDbSaveDirectory;
 
     public string FCostDbSaveDirectory =>
-        GetSetting(KeyFCostDbSaveDirectory) ?? DefaultFCostDbSaveDirectory;
+        HasUnifiedDbDirectory ? DefaultFCostDbSaveDirectory : GetSetting(KeyFCostDbSaveDirectory) ?? DefaultFCostDbSaveDirectory;
 
     public string RoutingFilePath =>
-        GetSetting(KeyRoutingFilePath) ?? DefaultRoutingFilePath;
+        HasUnifiedDbDirectory ? DefaultRoutingFilePath : GetSetting(KeyRoutingFilePath) ?? DefaultRoutingFilePath;
 
     public string ReasonFilePath =>
-        GetSetting(KeyReasonFilePath) ?? DefaultReasonFilePath;
+        HasUnifiedDbDirectory ? DefaultReasonFilePath : GetSetting(KeyReasonFilePath) ?? DefaultReasonFilePath;
 
     public string LoginId =>
         GetSetting(KeyLoginId) ?? string.Empty;
@@ -112,10 +127,21 @@ public sealed class NgRateSettingsService
 
     public void ApplySnapshot(NgRateSettingsSnapshot snap)
     {
-        SetSetting(KeyDbSaveDirectory,       snap.DbSaveDirectory.Trim());
-        SetSetting(KeyFCostDbSaveDirectory,  snap.FCostDbSaveDirectory.Trim());
-        SetSetting(KeyRoutingFilePath,       snap.RoutingFilePath.Trim());
-        SetSetting(KeyReasonFilePath,        snap.ReasonFilePath.Trim());
+        if (HasUnifiedDbDirectory)
+        {
+            SetSetting(KeyDbSaveDirectory,      DefaultDbSaveDirectory);
+            SetSetting(KeyFCostDbSaveDirectory, DefaultFCostDbSaveDirectory);
+            SetSetting(KeyRoutingFilePath,      DefaultRoutingFilePath);
+            SetSetting(KeyReasonFilePath,       DefaultReasonFilePath);
+        }
+        else
+        {
+            SetSetting(KeyDbSaveDirectory,      snap.DbSaveDirectory.Trim());
+            SetSetting(KeyFCostDbSaveDirectory, snap.FCostDbSaveDirectory.Trim());
+            SetSetting(KeyRoutingFilePath,      snap.RoutingFilePath.Trim());
+            SetSetting(KeyReasonFilePath,       snap.ReasonFilePath.Trim());
+        }
+
         SetSetting(KeyLoginId,               snap.LoginId.Trim());
         SetSetting(KeyPassword,              snap.Password);
         SetSetting(KeyRwtLoginId,            snap.RwtLoginId.Trim());
@@ -126,6 +152,7 @@ public sealed class NgRateSettingsService
 
     private SqliteConnection Open()
     {
+        EnsureDatabase();
         var conn = new SqliteConnection($"Data Source={SettingsDbPath}");
         conn.Open();
         return conn;
@@ -840,7 +867,7 @@ public sealed class NgRateSettingsService
 
     // ── Private ──────────────────────────────────────────────────────────────────
 
-    private void EnsureDatabase()
+    public void EnsureDatabase()
     {
         Directory.CreateDirectory(SettingsDbDirectory);
         using var conn = new SqliteConnection($"Data Source={SettingsDbPath}");

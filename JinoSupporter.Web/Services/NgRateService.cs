@@ -14,13 +14,20 @@ namespace JinoSupporter.Web.Services;
 /// </summary>
 public sealed class NgRateService(
     NgRateSettingsService settings,
-    BmesSettingsSyncService settingsSync,
-    AppActivityLogger activity)
+    AppActivityLogger activity,
+    BmesSettingsSyncService settingsSync)
 {
     private readonly NgRateSettingsService _settings = settings;
-    private readonly BmesSettingsSyncService _settingsSync = settingsSync;
     private readonly AppActivityLogger _activity = activity;
-    private const string BaseUrl = "http://bmes.bujeon.com";
+    private readonly BmesSettingsSyncService _settingsSync = settingsSync;
+    private const string BaseUrl = "https://bmes.bujeon.com";
+    private const string DailyCacheSubdirectory = "daily";
+    private const string MonthlyCacheSubdirectory = "monthly";
+    private readonly object _reusableDbLock = new();
+    private ReusableDb? _lastReusableDb;
+
+    private sealed record ReusableDb(DateTime StartDate, DateTime EndDate, string DbPath);
+    private sealed record BmesLoginResult(bool Succeeded, string Diagnostic);
 
     /// <summary>Mirrors a progress message to both the UI and the Debug/launching-console output.
     /// Use this for every status line so you can diagnose stalls live in the dotnet console
@@ -70,10 +77,24 @@ public sealed class NgRateService(
 
     /// <summary>
     /// Full flow: BMES data fetch → SQLite save → processing.
-    /// - Dates 3+ days ago : use per-day DB cache (fetch + cache if missing)
+    /// - Dates 3+ days ago : use monthly DB cache (fetch + cache if missing)
     /// - Dates 0–2 days ago: always fetch from server (data may still change)
     /// - Result is merged into a temp DB (temp_*.db); previous temp DBs are auto-deleted.
     /// </summary>
+    public async Task<string?> GetOrFetchAsync(
+        DateTime startDate,
+        DateTime endDate,
+        IProgress<string>? progress = null)
+    {
+        if (TryGetReusableDb(startDate, endDate, out string? dbPath))
+        {
+            Log(progress, $"Reusing fetched DB: {Path.GetFileName(dbPath)}");
+            return dbPath;
+        }
+
+        return await FetchAndSaveAsync(startDate, endDate, progress);
+    }
+
     public async Task<string?> FetchAndSaveAsync(
         DateTime startDate,
         DateTime endDate,
@@ -84,21 +105,22 @@ public sealed class NgRateService(
         var swStart = System.Diagnostics.Stopwatch.StartNew();
         progress?.Report("[start] Initializing…");
 
-        // Resolve & cache the daily-cache root once (avoids one ngrate_settings.db
+        // Resolve & cache the cache root once (avoids one ngrate_settings.db
         // round-trip per date being classified).
         progress?.Report("[start] Resolving NgRate save directory…");
         string saveDir = _settings.DbSaveDirectory;
-        progress?.Report("[start] Loading Routing/Reason tables from server DB...");
-        var settingsSyncResult = await _settingsSync.PullAllRowsFromServerAsync();
-        if (settingsSyncResult.Succeeded)
-            progress?.Report($"[start] Server tables saved locally ({settingsSyncResult.Rows} row(s)).");
-        else
-            progress?.Report($"[WARN] Server table load failed. Using local settings DB. {settingsSyncResult.Message}");
+        if (!_settings.IsNgRateStorageConfigured || string.IsNullOrWhiteSpace(saveDir))
+        {
+            progress?.Report("[ERROR] Configure the Working Folder in Setting first.");
+            return null;
+        }
+
+        progress?.Report("[start] Using local Routing/Reason tables.");
         progress?.Report($"[start] Save dir = {saveDir}  ({swStart.ElapsedMilliseconds} ms elapsed)");
 
         // ── 1. Classify dates ────────────────────────────────────────────────
         // · Today / yesterday   → always fetch from server (data may still change)
-        // · Otherwise           → use per-day DB cache if present, else fetch
+        // · Otherwise           → use monthly DB cache if present, else fetch
         var recentCutoff = DateTime.Today.AddDays(-2); // >= this date → always fetch (today / yesterday / 2 days ago)
         var allDates = Enumerable
             .Range(0, (int)(endDate.Date - startDate.Date).TotalDays + 1)
@@ -106,13 +128,15 @@ public sealed class NgRateService(
             .ToList();
 
         var toFetch = new List<DateTime>(); // needs BMES server fetch
-        var toCache = new List<DateTime>(); // load from per-day DB cache
+        var toCache = new List<DateTime>(); // load from monthly DB cache
 
-        string dailyDir = Path.Combine(saveDir, "daily");
+        var oldDates = allDates.Where(d => d < recentCutoff).ToList();
+        await Task.Run(() => EnsureMonthlyCacheFromDaily(oldDates, progress));
+        var monthlyCachedDates = GetMonthlyCachedDateSet(oldDates);
+
         foreach (var date in allDates)
         {
-            string p = Path.Combine(dailyDir, $"{date:yyyyMMdd}.db");
-            if (date >= recentCutoff || !File.Exists(p))
+            if (date >= recentCutoff || !monthlyCachedDates.Contains(date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))
                 toFetch.Add(date);
             else
                 toCache.Add(date);
@@ -155,9 +179,10 @@ public sealed class NgRateService(
             }
 
             progress?.Report("Logging in to BMES…");
-            if (!await LoginAsync(client, token, loginId, password))
+            BmesLoginResult login = await LoginAsync(client, token, loginId, password);
+            if (!login.Succeeded)
             {
-                progress?.Report("[ERROR] Login failed — check credentials in NG Rate Settings.");
+                progress?.Report($"[ERROR] Login failed — {login.Diagnostic}");
                 return null;
             }
             progress?.Report("Login successful.");
@@ -175,16 +200,26 @@ public sealed class NgRateService(
             }
             ranges.Add((rs, re));
 
+            // The server fetch dominates the run and its size is known up front, so
+            // report it as counted work — consumers can draw a real progress bar.
+            int fetched = 0;
+            progress.ReportSteps(0, ranges.Count, "Server fetch");
+
             foreach (var (start, end) in ranges)
             {
                 string s     = start.ToString("yyyy-MM-dd");
                 string e     = end.ToString("yyyy-MM-dd");
                 string label = start == end ? $"{start:MM/dd}" : $"{start:MM/dd} – {end:MM/dd}";
-                progress?.Report($"Fetching {label}…");
-                var rows3200 = await FetchRawRowsAsync(client, "3200", s, e, progress);
-                var rows3220 = await FetchRawRowsAsync(client, "3220", s, e, progress);
+                progress?.Report($"Fetching {label}… ({fetched + 1}/{ranges.Count})");
+                var fetch3200 = FetchRawRowsAsync(client, "3200", s, e, progress);
+                var fetch3220 = FetchRawRowsAsync(client, "3220", s, e, progress);
+                await Task.WhenAll(fetch3200, fetch3220);
+                var rows3200 = await fetch3200;
+                var rows3220 = await fetch3220;
                 if (rows3200 != null) serverRows.AddRange(rows3200);
                 if (rows3220 != null) serverRows.AddRange(rows3220);
+
+                progress.ReportSteps(++fetched, ranges.Count, "Server fetch");
             }
 
             Log(progress, $"Collected {serverRows.Count:N0} rows. Removing duplicates…");
@@ -193,30 +228,30 @@ public sealed class NgRateService(
             serverRows = await Task.Run(() => RemoveDuplicates(serverRows));
             Log(progress, $"{serverRows.Count:N0} rows after deduplication.");
 
-            // Dates other than today/yesterday → cache to per-day DB (even 0-row → empty file, so next call skips server)
+            // Dates other than today/yesterday → cache to monthly DB (even 0-row → date marker, so next call skips server)
             foreach (var date in toFetch.Where(d => d < recentCutoff))
             {
                 string dateStr = date.ToString("yyyy-MM-dd");
                 var    dayRows = serverRows
                     .Where(r => GetCol(r, "PRODUCT_DATE") == dateStr)
                     .ToList();
-                await Task.Run(() => SavePerDayDb(date, dayRows, progress));
+                await Task.Run(() => SaveMonthlyDateDb(date, dayRows, progress));
             }
 
             freshRows = serverRows;
         }
 
-        // ── 3. Load per-day cache ───────────────────────────────────────────
+        // ── 3. Load monthly cache ───────────────────────────────────────────
         if (toCache.Count > 0)
             Log(progress, $"─── Cache load  {toCache.Min():MM/dd} – {toCache.Max():MM/dd} ({toCache.Count} day(s))");
 
         var cachedRows = new List<Dictionary<string, string>>();
-        foreach (var date in toCache)
+        foreach (var monthGroup in toCache.GroupBy(d => new DateTime(d.Year, d.Month, 1)).OrderBy(g => g.Key))
         {
-            string dPath = GetPerDayDbPath(date);
-            var rows = await Task.Run(() => LoadFromPerDayDb(dPath));
+            var dates = monthGroup.OrderBy(d => d).ToList();
+            var rows = await Task.Run(() => LoadFromMonthlyDb(monthGroup.Key, dates));
             cachedRows.AddRange(rows);
-            Log(progress, $"  Cache hit {date:MM/dd}: {rows.Count:N0} rows");
+            Log(progress, $"  Monthly cache hit {monthGroup.Key:yyyy-MM}: {rows.Count:N0} rows ({dates.Count:N0} day(s))");
         }
 
         // ── 4. Merge ─────────────────────────────────────────────────────────
@@ -248,19 +283,88 @@ public sealed class NgRateService(
 
         // ── 6. Post-processing ───────────────────────────────────────────────
         var swProc = System.Diagnostics.Stopwatch.StartNew();
+        await EnsureServerTablesAsync(progress);
         Log(progress, "Running post-processing (Routing / Reason / LineShift)…");
         await Task.Run(() => ProcessData(tempPath, progress));
         Log(progress, $"[FetchAndSave] ProcessData done ({swProc.ElapsedMilliseconds} ms)");
 
+        RememberReusableDb(startDate, endDate, tempPath);
         Log(progress, $"Done. DB: {Path.GetFileName(tempPath)}  (total {swStart.ElapsedMilliseconds} ms since start)");
         return tempPath;
     }
 
-    // ── Per-day DB / Temp DB helpers ─────────────────────────────────────────
+    private bool TryGetReusableDb(DateTime startDate, DateTime endDate, out string? dbPath)
+    {
+        lock (_reusableDbLock)
+        {
+            if (_lastReusableDb is { } cached
+                && cached.StartDate == startDate.Date
+                && cached.EndDate == endDate.Date
+                && File.Exists(cached.DbPath))
+            {
+                dbPath = cached.DbPath;
+                return true;
+            }
+        }
+
+        dbPath = null;
+        return false;
+    }
+
+    private void RememberReusableDb(DateTime startDate, DateTime endDate, string dbPath)
+    {
+        lock (_reusableDbLock)
+        {
+            _lastReusableDb = new ReusableDb(startDate.Date, endDate.Date, dbPath);
+        }
+    }
+
+    private async Task EnsureServerTablesAsync(IProgress<string>? progress)
+    {
+        try
+        {
+            var routingRows = _settings.GetRoutingRows();
+            var reasonRows = _settings.GetReasonRows();
+            bool needRouting = routingRows.Count == 0
+                || routingRows.All(r => string.IsNullOrWhiteSpace(r.ProcessType));
+            bool needReason = reasonRows.Count == 0;
+
+            if (!needRouting && !needReason)
+                return;
+
+            if (needRouting)
+            {
+                Log(progress, "Routing table is missing. Loading from server…");
+                var routing = await _settingsSync.PullRoutingRowsFromServerAsync();
+                Log(progress, routing.Succeeded
+                    ? $"Routing table loaded: {routing.Rows:N0} rows."
+                    : $"[WARN] Routing table load failed: {routing.Message}");
+            }
+
+            if (needReason)
+            {
+                Log(progress, "Reason table is missing. Loading from server…");
+                var reason = await _settingsSync.PullReasonRowsFromServerAsync();
+                Log(progress, reason.Succeeded
+                    ? $"Reason table loaded: {reason.Rows:N0} rows."
+                    : $"[WARN] Reason table load failed: {reason.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log(progress, $"[WARN] Server table auto-load failed: {ex.Message}");
+        }
+    }
+
+    // ── Monthly DB / Temp DB helpers ─────────────────────────────────────────
 
     /// <summary>Per-day cache DB path: {DbSaveDirectory}/daily/yyyyMMdd.db</summary>
     private string GetPerDayDbPath(DateTime date)
-        => Path.Combine(_settings.DbSaveDirectory, "daily", $"{date:yyyyMMdd}.db");
+        => Path.Combine(_settings.DbSaveDirectory, DailyCacheSubdirectory, $"{date:yyyyMMdd}.db");
+
+    /// <summary>Monthly cache DB path: {DbSaveDirectory}/monthly/yyyyMM.db</summary>
+    private string GetMonthlyDbPath(DateTime date)
+        => Path.Combine(_settings.DbSaveDirectory, MonthlyCacheSubdirectory, $"{date:yyyyMM}.db");
 
     /// <summary>Temp merged DB path: {DbSaveDirectory}/temp_yyyyMMdd_HHmmss.db</summary>
     private string GetTempDbPath()
@@ -269,34 +373,282 @@ public sealed class NgRateService(
         return Path.Combine(_settings.DbSaveDirectory, $"temp_{ts}.db");
     }
 
-    private void SavePerDayDb(
+    private void SaveMonthlyDateDb(
         DateTime date, List<Dictionary<string, string>> rows, IProgress<string>? progress)
     {
         try
         {
-            string path = GetPerDayDbPath(date);
+            string path = GetMonthlyDbPath(date);
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
-            if (rows.Count == 0)
-            {
-                // Create an empty DB even for 0-row days → next call sees File.Exists==true and skips server
-                using var conn = new SqliteConnection($"Data Source={path}");
-                conn.Open();
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = $"CREATE TABLE IF NOT EXISTS [OrginalTable] " +
-                    $"({string.Join(", ", OrgTableColumns.Select(c => $"[{c}] TEXT"))})";
-                cmd.ExecuteNonQuery();
-                progress?.Report($"  Cached {date:MM/dd}: no data (empty marker)");
-                return;
-            }
+            using var conn = new SqliteConnection($"Data Source={path}");
+            conn.Open();
+            EnsureMonthlyCacheSchema(conn);
+            using var tx = conn.BeginTransaction();
+            ReplaceMonthlyDateRows(conn, tx, date, rows);
+            tx.Commit();
+            SaveMeta(conn);
 
-            SaveToSqlite(path, rows);
-            progress?.Report($"  Cached {date:MM/dd}: {rows.Count:N0} rows → {Path.GetFileName(path)}");
+            progress?.Report(rows.Count == 0
+                ? $"  Cached {date:MM/dd}: no data → {Path.GetFileName(path)}"
+                : $"  Cached {date:MM/dd}: {rows.Count:N0} rows → {Path.GetFileName(path)}");
         }
         catch (Exception ex)
         {
             progress?.Report($"[WARN] Failed to cache {date:MM/dd}: {ex.Message}");
         }
+    }
+
+    private void EnsureMonthlyCacheFromDaily(IReadOnlyList<DateTime> requestedDates, IProgress<string>? progress)
+    {
+        if (requestedDates.Count == 0)
+            return;
+
+        string dailyDir = Path.Combine(_settings.DbSaveDirectory, DailyCacheSubdirectory);
+        if (!Directory.Exists(dailyDir))
+            return;
+
+        var requestedDateSet = requestedDates
+            .Select(d => d.Date)
+            .ToHashSet();
+
+        var dailyFiles = Directory
+            .EnumerateFiles(dailyDir, "????????.db", SearchOption.TopDirectoryOnly)
+            .Select(path => (Path: path, Date: TryParseDailyDbDate(path)))
+            .Where(item => item.Date.HasValue)
+            .Select(item => (item.Path, Date: item.Date!.Value))
+            .Where(item => requestedDateSet.Contains(item.Date.Date))
+            .GroupBy(item => new DateTime(item.Date.Year, item.Date.Month, 1))
+            .OrderBy(group => group.Key)
+            .ToList();
+
+        if (dailyFiles.Count == 0)
+            return;
+
+        string monthlyDir = Path.Combine(_settings.DbSaveDirectory, MonthlyCacheSubdirectory);
+        Directory.CreateDirectory(monthlyDir);
+
+        foreach (var monthGroup in dailyFiles)
+        {
+            string monthPath = GetMonthlyDbPath(monthGroup.Key);
+            var cachedDates = GetMonthlyCachedDates(monthPath);
+            var missing = monthGroup
+                .Where(item => !cachedDates.Contains(item.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))
+                .OrderBy(item => item.Date)
+                .ToList();
+
+            if (missing.Count == 0)
+                continue;
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            int rowCount = 0;
+            using var conn = new SqliteConnection($"Data Source={monthPath}");
+            conn.Open();
+            EnsureMonthlyCacheSchema(conn);
+            using var tx = conn.BeginTransaction();
+
+            foreach (var item in missing)
+            {
+                var rows = LoadFromPerDayDb(item.Path);
+                ReplaceMonthlyDateRows(conn, tx, item.Date, rows);
+                rowCount += rows.Count;
+            }
+
+            tx.Commit();
+            SaveMeta(conn);
+            Log(progress, $"  Monthly cache built {monthGroup.Key:yyyy-MM}: {missing.Count:N0} day(s), {rowCount:N0} rows ({sw.ElapsedMilliseconds} ms)");
+        }
+    }
+
+    private HashSet<string> GetMonthlyCachedDateSet(IReadOnlyList<DateTime> dates)
+    {
+        var result = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var month in dates.Select(d => new DateTime(d.Year, d.Month, 1)).Distinct())
+        {
+            string monthPath = GetMonthlyDbPath(month);
+            foreach (string date in GetMonthlyCachedDates(monthPath))
+                result.Add(date);
+        }
+        return result;
+    }
+
+    private static DateTime? TryParseDailyDbDate(string path)
+    {
+        string name = Path.GetFileNameWithoutExtension(path);
+        return DateTime.TryParseExact(name, "yyyyMMdd", CultureInfo.InvariantCulture,
+            DateTimeStyles.None, out var date)
+            ? date.Date
+            : null;
+    }
+
+    private static HashSet<string> GetMonthlyCachedDates(string dbPath)
+    {
+        var dates = new HashSet<string>(StringComparer.Ordinal);
+        if (!File.Exists(dbPath))
+            return dates;
+
+        try
+        {
+            using var conn = new SqliteConnection($"Data Source={dbPath};Mode=ReadOnly");
+            conn.Open();
+
+            if (TableExists(conn, "__NgRateCachedDates"))
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT [PRODUCT_DATE] FROM [__NgRateCachedDates]";
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                    dates.Add(reader.IsDBNull(0) ? string.Empty : reader.GetString(0));
+                return dates;
+            }
+
+            if (TableExists(conn, "OrginalTable"))
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT DISTINCT [PRODUCT_DATE] FROM [OrginalTable] WHERE COALESCE([PRODUCT_DATE], '') <> ''";
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                    dates.Add(reader.IsDBNull(0) ? string.Empty : reader.GetString(0));
+            }
+        }
+        catch { }
+
+        return dates;
+    }
+
+    private List<Dictionary<string, string>> LoadFromMonthlyDb(DateTime month, IReadOnlyList<DateTime> dates)
+    {
+        var rows = new List<Dictionary<string, string>>();
+        if (dates.Count == 0)
+            return rows;
+
+        string dbPath = GetMonthlyDbPath(month);
+        if (!File.Exists(dbPath))
+            return rows;
+
+        try
+        {
+            using var conn = new SqliteConnection($"Data Source={dbPath};Mode=ReadOnly");
+            conn.Open();
+
+            var columns = GetOriginalTableColumns(conn);
+            if (columns.Count == 0)
+                return rows;
+
+            using var cmd = conn.CreateCommand();
+            var parameters = dates
+                .Select((date, index) => (Date: date, Name: $"@d{index}"))
+                .ToList();
+            cmd.CommandText =
+                $"SELECT * FROM [OrginalTable] WHERE [PRODUCT_DATE] IN ({string.Join(", ", parameters.Select(p => p.Name))})";
+            foreach (var p in parameters)
+                cmd.Parameters.AddWithValue(p.Name, p.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                var row = new Dictionary<string, string>(columns.Count, StringComparer.OrdinalIgnoreCase);
+                for (int i = 0; i < columns.Count; i++)
+                    row[columns[i]] = reader.IsDBNull(i) ? string.Empty : reader.GetValue(i).ToString()!;
+                rows.Add(row);
+            }
+        }
+        catch { }
+
+        return rows;
+    }
+
+    private static void EnsureMonthlyCacheSchema(SqliteConnection conn)
+    {
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = $"CREATE TABLE IF NOT EXISTS [OrginalTable] " +
+                $"({string.Join(", ", OrgTableColumns.Select(c => $"[{c}] TEXT"))})";
+            cmd.ExecuteNonQuery();
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText =
+                "CREATE INDEX IF NOT EXISTS [IX_OrginalTable_PRODUCT_DATE] " +
+                "ON [OrginalTable]([PRODUCT_DATE])";
+            cmd.ExecuteNonQuery();
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText =
+                "CREATE TABLE IF NOT EXISTS [__NgRateCachedDates] " +
+                "([PRODUCT_DATE] TEXT PRIMARY KEY, [RowCount] INTEGER NOT NULL, [CachedAt] TEXT NOT NULL)";
+            cmd.ExecuteNonQuery();
+        }
+    }
+
+    private static void ReplaceMonthlyDateRows(
+        SqliteConnection conn,
+        SqliteTransaction tx,
+        DateTime date,
+        List<Dictionary<string, string>> rows)
+    {
+        string dateText = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        using (var delete = conn.CreateCommand())
+        {
+            delete.Transaction = tx;
+            delete.CommandText = "DELETE FROM [OrginalTable] WHERE [PRODUCT_DATE] = @date";
+            delete.Parameters.AddWithValue("@date", dateText);
+            delete.ExecuteNonQuery();
+        }
+
+        if (rows.Count > 0)
+        {
+            string colList = string.Join(", ", OrgTableColumns.Select(c => $"[{c}]"));
+            string paramList = string.Join(", ", OrgTableColumns.Select((_, i) => $"@p{i}"));
+            using var insert = conn.CreateCommand();
+            insert.Transaction = tx;
+            insert.CommandText = $"INSERT INTO [OrginalTable] ({colList}) VALUES ({paramList})";
+
+            foreach (var row in rows)
+            {
+                insert.Parameters.Clear();
+                for (int i = 0; i < OrgTableColumns.Length; i++)
+                    insert.Parameters.AddWithValue(
+                        $"@p{i}",
+                        row.TryGetValue(OrgTableColumns[i], out var value) ? value : string.Empty);
+                insert.ExecuteNonQuery();
+            }
+        }
+
+        using (var marker = conn.CreateCommand())
+        {
+            marker.Transaction = tx;
+            marker.CommandText =
+                "INSERT INTO [__NgRateCachedDates] ([PRODUCT_DATE], [RowCount], [CachedAt]) VALUES (@date, @count, @cachedAt) " +
+                "ON CONFLICT([PRODUCT_DATE]) DO UPDATE SET [RowCount] = excluded.[RowCount], [CachedAt] = excluded.[CachedAt]";
+            marker.Parameters.AddWithValue("@date", dateText);
+            marker.Parameters.AddWithValue("@count", rows.Count);
+            marker.Parameters.AddWithValue("@cachedAt", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
+            marker.ExecuteNonQuery();
+        }
+    }
+
+    private static bool TableExists(SqliteConnection conn, string tableName)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = @name LIMIT 1";
+        cmd.Parameters.AddWithValue("@name", tableName);
+        return cmd.ExecuteScalar() is not null;
+    }
+
+    private static List<string> GetOriginalTableColumns(SqliteConnection conn)
+    {
+        var columns = new List<string>();
+        using var pragma = conn.CreateCommand();
+        pragma.CommandText = "PRAGMA table_info([OrginalTable])";
+        using var r = pragma.ExecuteReader();
+        while (r.Read())
+            columns.Add(r.GetString(1));
+        return columns;
     }
 
     private static List<Dictionary<string, string>> LoadFromPerDayDb(string dbPath)
@@ -372,26 +724,44 @@ public sealed class NgRateService(
         catch { return string.Empty; }
     }
 
-    private static async Task<bool> LoginAsync(
+    private static async Task<BmesLoginResult> LoginAsync(
         HttpClient client, string token, string id, string password)
     {
         var content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
-            ["UserInfo.USRID"] = id,
-            ["UserInfo.PWNO"]  = password,
-            ["UserInfo.LANG"]  = "EN",
-            ["UserInfo.FACCO"] = "GN",
-            ["UserInfo.STYPE"] = "P",
-            ["UserInfo.VTYPE"] = "P",
+            ["UserInfo[USRID]"] = id,
+            ["UserInfo[PWNO]"]  = password,
+            ["UserInfo[LANG]"]  = "EN",
+            ["UserInfo[FACCO]"] = "GN",
+            ["UserInfo[STYPE]"] = "P",
+            ["UserInfo[VTYPE]"] = "P",
             ["__RequestVerificationToken"] = token,
         });
         try
         {
             var response = await client.PostAsync(BaseUrl + "/MES000000/LoginCheck", content);
             string body  = await response.Content.ReadAsStringAsync();
-            return body.Contains("\"Result\":\"M\"");
+            return new BmesLoginResult(
+                body.Contains("\"Result\":\"M\""),
+                BuildLoginDiagnostic(response, body));
         }
-        catch { return false; }
+        catch (Exception ex) { return new BmesLoginResult(false, $"request error: {ex.GetType().Name}"); }
+    }
+
+    private static string BuildLoginDiagnostic(HttpResponseMessage response, string body)
+    {
+        string status = $"HTTP {(int)response.StatusCode} {response.ReasonPhrase}".Trim();
+        Match result = Regex.Match(body, "\"Result\"\\s*:\\s*\"([^\"]*)\"", RegexOptions.IgnoreCase);
+        Match message = Regex.Match(body, "\"(?:Message|ErrorMessage)\"\\s*:\\s*\"([^\"]*)\"", RegexOptions.IgnoreCase);
+        if (result.Success) status += $", Result={result.Groups[1].Value}";
+        if (message.Success) status += $", Message={SanitizeLoginMessage(message.Groups[1].Value)}";
+        return status;
+    }
+
+    private static string SanitizeLoginMessage(string value)
+    {
+        string normalized = Regex.Replace(value, @"\s+", " ").Trim();
+        return normalized.Length <= 160 ? normalized : normalized[..160] + "...";
     }
 
     private static async Task<List<Dictionary<string, string>>?> FetchRawRowsAsync(

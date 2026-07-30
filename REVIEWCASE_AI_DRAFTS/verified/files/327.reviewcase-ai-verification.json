@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 327,
+  "sourceFile": "17. BRS-161014 Report test dry 2 UV led process assy coil + sp  Date 5.12.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\327.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:34Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 327,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures the function comparison but the primary change and evidence coverage are not yet reliable.",
+    "issues": [
+      "Primary factor may be 1 UV led vs 2 UV led, not Normal vs Use 2 UV led.",
+      "Key decision evidence row is omitted from the changed-factor citations.",
+      "Cited row Report!35 is not shown in provided context for verification.",
+      "UV peak/total process results are omitted as outcomes.",
+      "Baseline meaning of Normal is ambiguous."
+    ],
+    "requiredUserQuestions": [
+      "Does Normal represent the existing 1 UV led process?",
+      "Should UV peak/total results be included as process outcomes?"
+    ],
+    "correctionPlan": [
+      "Add Report!60 as changed-factor and judgement evidence.",
+      "Verify and include the text for Report!35.",
+      "Rename conditions to match source evidence, preserving Normal only if it means baseline.",
+      "Add UV peak and total measurements as process verification outcomes.",
+      "Set judgement only after tying function and UV results to the same change context."
+    ],
+    "evidencePolicy": "Citations are partly sufficient but missing key decision and full cited-row context."
+  },
+  "usage": {
+    "input_tokens": 2416,
+    "output_tokens": 767,
+    "total_tokens": 3183
+  }
+}

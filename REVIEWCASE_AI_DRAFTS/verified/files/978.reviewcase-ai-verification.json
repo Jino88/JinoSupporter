@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 978,
+  "sourceFile": "92.BRS -2015 Result  test yoke recycle 10.10.2014_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\978.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 978,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the report but fails to encode the explicit Normal vs Lot test yoke recycle comparison and cites outcomes inadequately.",
+    "issues": [
+      "Changed factor is filename-like instead of yoke recycle use condition.",
+      "Baseline and changed conditions are marked unclear despite explicit Normal and Lot test rows.",
+      "Outcome grouping splits header rows and omits main data rows for comparisons.",
+      "Measurement subresults cite header rows only, not supporting values.",
+      "Subgroup keys such as date and line are not preserved."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to yoke recycle use: Normal vs Lot test yoke recycle.",
+      "Use rows 14-21 as primary comparison evidence with date and line context.",
+      "Combine function NG metrics under one outcome domain for this validation report.",
+      "Cite data rows for Q'Ty check, NG categories, Q'Ty NG, and NG Rate values.",
+      "Add reason-NG section as secondary outcome only if supported by rows 23-29."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient because key value rows are missing from outcome evidence."
+  },
+  "usage": {
+    "input_tokens": 4039,
+    "output_tokens": 372,
+    "total_tokens": 4411
+  }
+}

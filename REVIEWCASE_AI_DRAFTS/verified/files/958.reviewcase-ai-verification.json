@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 958,
+  "sourceFile": "89.BRS-2015 Result checking NG Line improve Gap - TF_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\958.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:10Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 958,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not verifiable because it merges unrelated reports and lacks cited baseline/test changed-condition evidence.",
+    "issues": [
+      "Changed factor is the filename, not a process/material change.",
+      "Unrelated sheets and defect domains are grouped into one case.",
+      "Baseline and changed conditions are marked not explicit.",
+      "Cited rows are mostly headers/stat anchors, not comparison evidence.",
+      "Relevant improvement rows such as repair, jig change, and compress-jig checks are omitted."
+    ],
+    "requiredUserQuestions": [
+      "Should this workbook be split into separate cases by report sheet or improvement topic?"
+    ],
+    "correctionPlan": [
+      "Identify each real changed factor from cited process-improvement rows.",
+      "Split final visual, sport welding, damage frame, and damage coil topics unless one validation context is proven.",
+      "Define baseline and changed conditions for each case with row citations.",
+      "Attach outcome rows that directly measure before/after or process-check results.",
+      "Cite title, purpose, condition header, data, and decision rows for each case."
+    ],
+    "evidencePolicy": "Row existence is sufficient, but semantic citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 8957,
+    "output_tokens": 743,
+    "total_tokens": 9700
+  }
+}

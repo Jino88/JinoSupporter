@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 759,
+  "sourceFile": "58. TIU L5S3-01 R Report  test Frame new mold #3 Set 3,4 - Date 2026.01.12_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\759.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 759,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but mislabels the changed factor and omits/overstates key outcomes.",
+    "issues": [
+      "Changed factor should be new mold #3 set 3,4 test vs normal, not Normal vs Line R.",
+      "Line R is a line/grouping key, not the changed condition.",
+      "Assembly Sub 3 NG comparison is omitted from outcomes.",
+      "Function result is overcalled as improved despite near-equal NG and final same-normal decision.",
+      "Tension spec and sample count are extracted incorrectly."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to new mold #3 set 3,4 test frame versus normal line/condition.",
+      "Set baseline as Normal and changed condition as Test/new mold; keep Line R and date as subgroup keys.",
+      "Add Assembly Sub 3 NG outcome using rows 18-21.",
+      "Revise function judgement to same/comparable or not materially different.",
+      "Fix tension spec to 0.3 kgf and sample count to 8 per condition; cite rows 31-35."
+    ],
+    "evidencePolicy": "Citations are mostly sufficient for context, but outcome headers and omitted assembly rows must be included before final use."
+  },
+  "usage": {
+    "input_tokens": 3468,
+    "output_tokens": 794,
+    "total_tokens": 4262
+  }
+}

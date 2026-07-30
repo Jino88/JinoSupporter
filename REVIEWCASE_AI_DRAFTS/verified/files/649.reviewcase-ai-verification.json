@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 649,
+  "sourceFile": "43.MSU-20S15-07 Result test  frame improve dimension mold G3-G4 date 22.9.2025 - Copy_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\649.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:28Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 649,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable G3/G4 frame-improvement validation exists, but the draft grouping and metrics are unreliable.",
+    "issues": [
+      "Changed factor wrongly lumps G3, G4, normals, TOTAL, and unrelated K1/G2 labels.",
+      "Subgroup keys are parsed numeric values, not valid row-level grouping keys.",
+      "Several outcomes are misparsed, including header-derived measurements and 100% rates from NG counts.",
+      "Sheet1/K1 data inclusion is ambiguous and may be duplicate or unrelated context.",
+      "Evidence cites many rows but mixes titles, headers, totals, and partial rows without clean comparisons."
+    ],
+    "requiredUserQuestions": [
+      "Should Sheet1 K1 data be included or excluded from this G3/G4 validation case?"
+    ],
+    "correctionPlan": [
+      "Define primary factor as frame dimension 0.78 improved mold G3/G4 versus normal line/control.",
+      "Keep G3 and G4 as separate changed conditions or subgroups under the same validation report.",
+      "Rebuild outcomes from height dimension, function, tension, and module-line sections with correct inputs, NG, rates, and dates.",
+      "Use line/model/mold/date/test section as subgroup keys; remove numeric garbage and TOTAL as a condition.",
+      "Cite only rows that contain title/purpose, baseline/test rows, totals, and decisions needed for each comparison."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient until regrouped and limited to relevant comparison rows."
+  },
+  "usage": {
+    "input_tokens": 12372,
+    "output_tokens": 838,
+    "total_tokens": 13210
+  }
+}

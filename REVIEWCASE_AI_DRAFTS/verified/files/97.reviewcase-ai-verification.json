@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 97,
+  "sourceFile": "04-1. BRS-161014  Report test CMG-SMG long reduce dimension 12.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\97.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:36Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 97,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable Normal/Test evidence but the changed factor and outcome grouping are not verified.",
+    "issues": [
+      "Changed factor is taken from filename, not row evidence.",
+      "Baseline and changed conditions are left ambiguous.",
+      "Standard, Normal, Test 1 and Test 2+ roles are not resolved.",
+      "Outcomes contain parser noise and mixed metrics.",
+      "Evidence cites many rows without tying them to specific comparisons."
+    ],
+    "requiredUserQuestions": [
+      "What physical change does Test 1 represent versus Normal?"
+    ],
+    "correctionPlan": [
+      "Define baseline as Normal only if source confirms Standard is reference.",
+      "Define Test 1 changed condition from source title or added row evidence.",
+      "Group outcomes by SPL, F0, THD and IMP summary domains.",
+      "Replace noisy subResults with valid averages and deltas from GRAPH and RAW DATA.",
+      "Cite condition-label rows and metric rows for each comparison."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficiently specific for final evidence."
+  },
+  "usage": {
+    "input_tokens": 26446,
+    "output_tokens": 749,
+    "total_tokens": 27195
+  }
+}

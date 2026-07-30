@@ -1,0 +1,249 @@
+{
+  "sourceFileId": 822,
+  "sourceFile": "65. TIU L5S3-01 R Report test new jig  F-PCB PRESS JIG #V5  to improve NG Frame deform -  date 2026.01.29_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\65. TIU L5S3-01 R Report test new jig  F-PCB PRESS JIG #V5  to improve NG Frame deform -  date 2026.01.29_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 17,
+    "sheetCellCount": 54,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] REPORT CHECK NEW JIG F-PCB PRESS JIG V5 (Add more Magnet 1.5) | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | Date | 2026-01-29 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Check F-PCB PRESS JIG V5 add more Magnet 1.5 can use or not"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Make semi sub 3 and check NG rate frame deform and f-pcb separate"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| 1. Result test"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | No | Date | Line | Process | | Input | NG | | NG rate | Note"
+    },
+    {
+      "rowId": "Test!15",
+      "sheetName": "Test",
+      "rowNumber": 15,
+      "rowText": "| | | | | | | | Frame deform | F-PCB separate"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | 1 | 2026-01-29 00:00:00 | Line R | New JIG V5 | | 52 | 0 | 0 | 0 | Frame deform G2 ~ 15% Same normal"
+    },
+    {
+      "rowId": "Test!17",
+      "sheetName": "Test",
+      "rowNumber": 17,
+      "rowText": "| | 2 | | | JIG Nỏmal | | 57 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "Test!18",
+      "sheetName": "Test",
+      "rowNumber": 18,
+      "rowText": "| | 3 | | Line L | New JIG V5 | | 30 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "Test!19",
+      "sheetName": "Test",
+      "rowNumber": 19,
+      "rowText": "| | 4 | | | JIG Nỏmal | | 30 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "Test!28",
+      "sheetName": "Test",
+      "rowNumber": 28,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "Test!29",
+      "sheetName": "Test",
+      "rowNumber": 29,
+      "rowText": "| - Result test is OK => Can apply"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-822-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] REPORT CHECK NEW JIG F-PCB PRESS JIG V5 (Add more Magnet 1.5) | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Check F-PCB PRESS JIG V5 add more Magnet 1.5 can use or not / | II. Content. / | - Make semi sub 3 and check NG rate frame deform and f-pcb separate / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "jig",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs JIG Nỏmal, Line R, Line L",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "JIG Nỏmal, Line R, Line L",
+          "subgroupKeys": [
+            "New JIG V5"
+          ],
+          "evidenceRows": [
+            "Test!13",
+            "Test!16",
+            "Test!17",
+            "Test!18",
+            "Test!19",
+            "Test!2",
+            "Test!5",
+            "Test!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "1. Result test",
+          "comparisonRows": [
+            "Test!16",
+            "Test!17",
+            "Test!18",
+            "Test!19"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 24031,
+              "condition": "Line R | New JIG V5",
+              "input": 52.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "metricId": 24032,
+              "condition": "JIG Nỏmal",
+              "input": 57.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "metricId": 24033,
+              "condition": "Line L | New JIG V5",
+              "input": 30.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!18"
+              ]
+            },
+            {
+              "metricId": 24034,
+              "condition": "JIG Nỏmal",
+              "input": 30.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!19"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!13",
+        "Test!16",
+        "Test!17",
+        "Test!18",
+        "Test!19",
+        "Test!2",
+        "Test!5",
+        "Test!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!13",
+      "Test!16",
+      "Test!17",
+      "Test!18",
+      "Test!19",
+      "Test!2",
+      "Test!5",
+      "Test!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

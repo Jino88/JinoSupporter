@@ -1,7 +1,7 @@
 using System.Windows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Syncfusion.Blazor;
+using Microsoft.Extensions.Logging;
 using BmesNgRateStandalone.Services;
 
 namespace BmesNgRateStandalone;
@@ -12,42 +12,93 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
-        var services = new ServiceCollection();
-        var appPathsService = new AppPathsService();
-        var appPaths = appPathsService.Current;
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Database:Path"] = appPaths.MainDbPath,
-                ["Schedule:Path"] = appPaths.ScheduleDbPath,
-            })
-            .Build();
+        InstallGlobalExceptionHandlers();
+        StandaloneErrorLog.Write("Startup", $"Starting BMES NG Rate Standalone {GetType().Assembly.GetName().Version}");
 
-        services.AddWpfBlazorWebView();
+        try
+        {
+            var services = new ServiceCollection();
+            var appPathsService = new AppPathsService();
+            var appPaths = appPathsService.Current;
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Database:Path"] = appPaths.MainDbPath,
+                })
+                .Build();
+
+            services.AddWpfBlazorWebView();
 #if DEBUG
-        services.AddBlazorWebViewDeveloperTools();
+            services.AddBlazorWebViewDeveloperTools();
 #endif
 
-        // Syncfusion (Community license — works without a key)
-        Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("");
-        services.AddSyncfusionBlazor();
+            services.AddLogging(builder =>
+            {
+                builder.SetMinimumLevel(LogLevel.Warning);
+                builder.AddProvider(new StandaloneFileLoggerProvider());
+            });
 
-        // App services
-        services.AddSingleton<IConfiguration>(configuration);
-        services.AddSingleton(appPathsService);
-        services.AddSingleton<WebRepository>();
-        services.AddSingleton<NgRateSettingsService>();
-        services.AddSingleton<NgRateService>();
-        services.AddSingleton<NgRateReportService>();
-        services.AddSingleton<BmesMaterialService>();
-        services.AddSingleton<BmesRoutingScrapeService>();
-        services.AddSingleton<BmesSettingsSyncService>();
-        services.AddSingleton<WorkerStatusService>();
-        services.AddSingleton<FCostService>();
-        services.AddSingleton<FCostReportService>();
+            // App services
+            services.AddSingleton<IConfiguration>(configuration);
+            services.AddSingleton(appPathsService);
+            services.AddSingleton<AppActivityLogger>();
+            services.AddSingleton<AiProviderSettingsService>();
+            services.AddSingleton<WebRepository>();
+            services.AddSingleton<NgRateSettingsService>();
+            services.AddSingleton<NgRateService>();
+            services.AddSingleton<NgRateReportService>();
+            services.AddSingleton<BmesMaterialService>();
+            services.AddSingleton<BmesRoutingScrapeService>();
+            services.AddSingleton<BmesSettingsSyncService>();
+            services.AddSingleton<WorkerStatusService>();
+            services.AddSingleton<FCostService>();
+            services.AddSingleton<FCostReportService>();
+            services.AddSingleton<BmesFcostActualService>();
+            services.AddSingleton<BmesLpaScrapeService>();
+            services.AddSingleton<BmesLpaImageService>();
+            services.AddSingleton<BmesLpaHtmlExportService>();
 
-        Services = services.BuildServiceProvider();
+            Services = services.BuildServiceProvider();
 
-        base.OnStartup(e);
+            base.OnStartup(e);
+        }
+        catch (Exception ex)
+        {
+            StandaloneErrorLog.Write("Startup failure", ex);
+            MessageBox.Show(
+                "BMES NG Rate could not start.\n\n" + ex.Message + "\n\nLog:\n" + StandaloneErrorLog.LogPath,
+                "BMES NG Rate",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            Shutdown(-1);
+        }
+    }
+
+    private void InstallGlobalExceptionHandlers()
+    {
+        DispatcherUnhandledException += (_, args) =>
+        {
+            StandaloneErrorLog.Write("DispatcherUnhandledException", args.Exception);
+            MessageBox.Show(
+                "An unexpected error occurred.\n\n" + args.Exception.Message + "\n\nLog:\n" + StandaloneErrorLog.LogPath,
+                "BMES NG Rate",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            args.Handled = true;
+        };
+
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            if (args.ExceptionObject is Exception ex)
+                StandaloneErrorLog.Write("UnhandledException", ex);
+            else
+                StandaloneErrorLog.Write("UnhandledException", args.ExceptionObject?.ToString() ?? "Unknown exception.");
+        };
+
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            StandaloneErrorLog.Write("UnobservedTaskException", args.Exception);
+            args.SetObserved();
+        };
     }
 }

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 40,
+  "sourceFile": "019.MSU-20S15-07 Result check NTI test change bonding  VP+CD_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\40.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 40,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but changed-factor grouping and several outcome extractions are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor merges three bonding changes while baseline is unclear.",
+      "Function rows cited for key conditions are not shown in context.",
+      "FO outcome stats appear parsed from labels, not measured values.",
+      "SPL/THD/IMP outcomes cite header rows without data rows.",
+      "Review title is a data row, not a case title."
+    ],
+    "requiredUserQuestions": [
+      "Are the three bonding changes separate tests or one combined validation?",
+      "What is the intended baseline for Function results?"
+    ],
+    "correctionPlan": [
+      "Inspect Function rows 5, 6, 8, and 10 and capture exact condition/result structure.",
+      "Split or subgroup the three bonding changes based on workbook layout.",
+      "Rebuild FO using actual Test, Normal, ST, and AVG values with row citations.",
+      "Rebuild SPL, THD, and IMP outcomes with data-row citations, not header-only citations.",
+      "Replace generic title and remove misparsed measurement subresults."
+    ],
+    "evidencePolicy": "Row existence is confirmed, but citations are insufficient because key data context and parsed values are unreliable."
+  },
+  "usage": {
+    "input_tokens": 7258,
+    "output_tokens": 653,
+    "total_tokens": 7911
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 738,
+  "sourceFile": "54. TIU L5S3-01 R Report test compare result check function in 3days  -  date 2026.01.07_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\738.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 738,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures the 1/2/3-day function result trend but misstates the changed factor and includes an invalid measurement outcome.",
+    "issues": [
+      "Changed factor is ambiguous and likely not baseline vs Line R.",
+      "1 Day not-dry condition is treated as subgroup instead of a compared condition.",
+      "Defect-category counts are incorrectly converted into measurement statistics.",
+      "Decision row supporting dry final sample 12h is not cited.",
+      "Header evidence is incomplete for interpreting result columns."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended comparison 1/2/3 days after not-dry 12h, or dry final sample 12h versus not-dry?"
+    ],
+    "correctionPlan": [
+      "Redefine the changed factor from source content and decision, not as Line R baseline/test.",
+      "Keep 1 Day, 2 days, and 3 Days as comparable conditions with line/type/date keys.",
+      "Remove the measurement outcome built from defect count columns.",
+      "Cite rows 8-9, 12-14, 16, 18, and 22 as applicable.",
+      "Set judgement only after clarifying whether reduced NG supports applying dry final sample 12h."
+    ],
+    "evidencePolicy": "Row citations exist, but cited evidence is incomplete and partly misused for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3318,
+    "output_tokens": 810,
+    "total_tokens": 4128
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 182,
+  "sourceFile": "1. BRS-161014 (GMI) Report test new dry machine 2023.11.03_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\182.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 182,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable new-dry-machine evidence but the changed-factor and outcome grouping are not reliable.",
+    "issues": [
+      "Changed factor is incoherent and mixes dates, row numbers, methods, temperatures, and conditions.",
+      "Baseline/test conditions should be normal dry versus new dry machine/settings, not the current old/new-method list.",
+      "Multiple products/processes/dates are merged without preserving subgroup context.",
+      "Several outcomes are misclassified or parsed from headers, pictures, or unrelated measurements.",
+      "Judgements of improvement are not supported for the full grouped case."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factor as new dry machine/process settings versus normal dry.",
+      "Keep product, sheet/date, process, temperature, time, and method as subgroup keys.",
+      "Separate or clearly subgroup Dec old/new-method VP/FR evidence if it is a distinct validation.",
+      "Remove image/header-only and malformed measurement outcomes.",
+      "Recalculate only comparable defect, tension, gauss, and function results with row-level citations."
+    ],
+    "evidencePolicy": "Row citations exist, but they are too broad and misgrouped for final evidence."
+  },
+  "usage": {
+    "input_tokens": 20882,
+    "output_tokens": 685,
+    "total_tokens": 21567
+  }
+}

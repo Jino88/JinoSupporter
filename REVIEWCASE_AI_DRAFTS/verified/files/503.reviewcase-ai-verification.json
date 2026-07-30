@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 503,
+  "sourceFile": "3. BRS-161016 Report test process CM press change from machine semi AM to K3 6AXIS AM Date 2025.2.20_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\503.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 503,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the report but misstates the baseline/test change and has parsing errors needing correction.",
+    "issues": [
+      "Changed factor should be SEMI AM baseline vs K3 6AXIS AM test, not unclear baseline with both as changed.",
+      "Change domain is overbroad; evidence supports equipment/process change, not supplier/material.",
+      "Tension test condition/spec parsing is corrupted, especially K3 row values in the condition field.",
+      "Purpose/content evidence rows omit the clearest row 6 in the main evidence list.",
+      "Judgements remain not_judged despite apparent pass-style results and decision section not captured."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baselineCondition to SEMI AM and changedCondition to K3 6AXIS AM.",
+      "Limit changeDomain to equipment and process condition.",
+      "Reparse tension rows 33-34 into condition, spec, samples, min, max, average, and result fields.",
+      "Add row 6 and relevant result/decision rows as evidence citations.",
+      "Verify final decision row 41+ and update outcome judgements if supported."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient until corrected grouping and parsed result rows are cited."
+  },
+  "usage": {
+    "input_tokens": 3442,
+    "output_tokens": 539,
+    "total_tokens": 3981
+  }
+}

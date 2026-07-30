@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 494,
+  "sourceFile": "29. TIU C11-20  Report test bond amount VP+COIL date 30.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\494.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 494,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is comparable but misgroups the primary bond-amount condition and includes a spurious measurement outcome.",
+    "issues": [
+      "Primary factor should be bond amount/type, not Normal Line vs C11-20 L.",
+      "Normal Line appears to be reference lot context, not the only baseline.",
+      "Max Spec 1st row has merged date/line context not preserved clearly.",
+      "Measurement outcome is invalid; it summarizes defect columns as measurements.",
+      "Decision row is omitted from evidence."
+    ],
+    "requiredUserQuestions": [
+      "Should Normal Line be the baseline/reference condition?",
+      "Should Max Spec 1st and 2nd be separate trials or one max-spec condition?"
+    ],
+    "correctionPlan": [
+      "Reframe changed factor as VP+COIL bond amount setting/type.",
+      "List Min Spec, Max Spec 1st, Max Spec 2nd, and Normal Line as compared conditions.",
+      "Carry merged date, line, and bond amount values into each row condition.",
+      "Remove measurement-stat outcome or convert defect categories into process-defect submetrics.",
+      "Add header and decision evidence rows, especially Test!14 and Test!26."
+    ],
+    "evidencePolicy": "Main result rows are cited, but citations need corrected header/decision support and removal of unsupported Test!15 measurement evidence."
+  },
+  "usage": {
+    "input_tokens": 3790,
+    "output_tokens": 1101,
+    "total_tokens": 4891
+  }
+}

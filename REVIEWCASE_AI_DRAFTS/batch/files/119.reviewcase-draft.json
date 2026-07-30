@@ -1,0 +1,272 @@
+{
+  "sourceFileId": 119,
+  "sourceFile": "05-1. BRS-161014 Report test Surge auto machine 01.12.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\05-1. BRS-161014 Report test Surge auto machine 01.12.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report (2)",
+    "sheetRowCount": 23,
+    "sheetCellCount": 76,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report (2)!2",
+      "sheetName": "Report (2)",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST SURGE BY AUTO MACHINE - 161014 | | | | | | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report (2)!3",
+      "sheetName": "Report (2)",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | Date | 2024-01-12 00:00:00"
+    },
+    {
+      "rowId": "Report (2)!4",
+      "sheetName": "Report (2)",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | Marker | Trung"
+    },
+    {
+      "rowId": "Report (2)!5",
+      "sheetName": "Report (2)",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report (2)!6",
+      "sheetName": "Report (2)",
+      "rowNumber": 6,
+      "rowText": "| - To reduce worker"
+    },
+    {
+      "rowId": "Report (2)!7",
+      "sheetName": "Report (2)",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report (2)!8",
+      "sheetName": "Report (2)",
+      "rowNumber": 8,
+      "rowText": "| - Test surge by auto machine ok or not?"
+    },
+    {
+      "rowId": "Report (2)!9",
+      "sheetName": "Report (2)",
+      "rowNumber": 9,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Report (2)!10",
+      "sheetName": "Report (2)",
+      "rowNumber": 10,
+      "rowText": "| 1. Result test"
+    },
+    {
+      "rowId": "Report (2)!24",
+      "sheetName": "Report (2)",
+      "rowNumber": 24,
+      "rowText": "| Test using 2000pcs sample OK check by manual and machine"
+    },
+    {
+      "rowId": "Report (2)!25",
+      "sheetName": "Report (2)",
+      "rowNumber": 25,
+      "rowText": "| Test using sample NG of PQC check by manual and machine. When test auto machine will using sample NG change all position and test"
+    },
+    {
+      "rowId": "Report (2)!26",
+      "sheetName": "Report (2)",
+      "rowNumber": 26,
+      "rowText": "| | Result test"
+    },
+    {
+      "rowId": "Report (2)!28",
+      "sheetName": "Report (2)",
+      "rowNumber": 28,
+      "rowText": "| | 1 | Sample OK | Manual | 2000 | 2000 | 0 | 0"
+    },
+    {
+      "rowId": "Report (2)!29",
+      "sheetName": "Report (2)",
+      "rowNumber": 29,
+      "rowText": "| | 2 | | Auto machine | 2000 | 2000 | 0 | 0"
+    },
+    {
+      "rowId": "Report (2)!30",
+      "sheetName": "Report (2)",
+      "rowNumber": 30,
+      "rowText": "| | 3 | Sample NG | Manual | 10 | 0 | 10 | 1"
+    },
+    {
+      "rowId": "Report (2)!31",
+      "sheetName": "Report (2)",
+      "rowNumber": 31,
+      "rowText": "| | 4 | | Auto machine | 18 | 0 | 18 | 1"
+    },
+    {
+      "rowId": "Report (2)!36",
+      "sheetName": "Report (2)",
+      "rowNumber": 36,
+      "rowText": "| | 2 | Auto machine | | 9.75 | 9.75 | 9.86 | 6 | 1.63111111 | 18870.57220708"
+    },
+    {
+      "rowId": "Report (2)!39",
+      "sheetName": "Report (2)",
+      "rowNumber": 39,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "Report (2)!40",
+      "sheetName": "Report (2)",
+      "rowNumber": 40,
+      "rowText": "| Folow resultt test auto machine can detect OK and NG sample same manual machine. => machine can use!"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-119-rc-1",
+      "reviewTitle": "REPORT TEST SURGE BY AUTO MACHINE - 161014 | | | | | | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To reduce worker / | II. Content. / | - Test surge by auto machine ok or not? / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Auto machine, Sample OK, Sample NG",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Auto machine, Sample OK, Sample NG",
+          "subgroupKeys": [
+            "Manual"
+          ],
+          "evidenceRows": [
+            "Report (2)!10",
+            "Report (2)!2",
+            "Report (2)!24",
+            "Report (2)!25",
+            "Report (2)!26",
+            "Report (2)!28",
+            "Report (2)!29",
+            "Report (2)!30",
+            "Report (2)!31",
+            "Report (2)!5",
+            "Report (2)!7",
+            "Report (2)!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "Result test",
+          "comparisonRows": [
+            "Report (2)!28",
+            "Report (2)!29",
+            "Report (2)!30",
+            "Report (2)!31"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 18069,
+              "condition": "Sample OK | Manual",
+              "input": 2000.0,
+              "ok": 2000.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Report (2)!28"
+              ]
+            },
+            {
+              "metricId": 18070,
+              "condition": "Auto machine",
+              "input": 2000.0,
+              "ok": 2000.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Report (2)!29"
+              ]
+            },
+            {
+              "metricId": 18071,
+              "condition": "Sample NG | Manual",
+              "input": 10.0,
+              "ok": 0.0,
+              "ng": 10.0,
+              "ratePercent": 100.0,
+              "evidenceRows": [
+                "Report (2)!30"
+              ]
+            },
+            {
+              "metricId": 18072,
+              "condition": "Auto machine",
+              "input": 18.0,
+              "ok": 0.0,
+              "ng": 18.0,
+              "ratePercent": 100.0,
+              "evidenceRows": [
+                "Report (2)!31"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report (2)!10",
+        "Report (2)!2",
+        "Report (2)!24",
+        "Report (2)!25",
+        "Report (2)!26",
+        "Report (2)!28",
+        "Report (2)!29",
+        "Report (2)!30",
+        "Report (2)!31",
+        "Report (2)!5",
+        "Report (2)!7",
+        "Report (2)!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report (2)!10",
+      "Report (2)!2",
+      "Report (2)!24",
+      "Report (2)!25",
+      "Report (2)!26",
+      "Report (2)!28",
+      "Report (2)!29",
+      "Report (2)!30",
+      "Report (2)!31",
+      "Report (2)!5",
+      "Report (2)!7",
+      "Report (2)!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

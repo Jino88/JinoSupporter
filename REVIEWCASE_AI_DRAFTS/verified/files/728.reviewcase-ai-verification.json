@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 728,
+  "sourceFile": "53. BRS-161014  Report test VP change mold press, Vulcanizing agent 10%, dry 120 and 150 date 29.7.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\728.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 728,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid source rows but unsafe grouping of the test matrix and outcomes.",
+    "issues": [
+      "Changed factor conflates mold press, dry temperature, vulcanizing agent, and VP mold.",
+      "Baseline is unclear and normal VP row is not integrated correctly.",
+      "Merged-cell conditions are lost, making many VP mold-only rows incomplete.",
+      "Spurious measurement outcomes summarize headers and categorical values.",
+      "Decision rows are cited in context but not used to align final judgement."
+    ],
+    "requiredUserQuestions": [
+      "Is normal-normal-normal VP mold #6 the baseline for function only or for all outcomes?",
+      "Should VP mold #4/#7/#8 be treated as test conditions or subgroup units?"
+    ],
+    "correctionPlan": [
+      "Rebuild one review case around the full validation matrix from rows 3, 7, 21-22, 49-50, and 77-86.",
+      "Preserve row keys: date, line, mold press, raw material, 2nd dry, and VP mold for every result row.",
+      "Separate or clearly nest factors for 90/120 Kgf, 120/150 C dry, and normal/+10% agent.",
+      "Keep only bending, vision/function NG rate outcomes; remove artificial measurement statistics.",
+      "Add judgement from decision rows: VP #4/#8 not usable, VP #7 condition-dependent."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient for final evidence until corrected."
+  },
+  "usage": {
+    "input_tokens": 14736,
+    "output_tokens": 841,
+    "total_tokens": 15577
+  }
+}

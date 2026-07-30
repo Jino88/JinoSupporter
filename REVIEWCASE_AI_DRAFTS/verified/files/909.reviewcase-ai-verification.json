@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 909,
+  "sourceFile": "8-2. BRS-161014  GMI Report test VP new mold #11, #12 Summary_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\909.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 909,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the mold-validation topic but misgroups conditions and includes unreliable extracted outcomes.",
+    "issues": [
+      "Changed factor includes invalid TOTAL condition and unclear baseline/test split.",
+      "VP #11 and VP #12 outcomes are merged despite different final decisions.",
+      "NG rate pairings appear row-misaligned and rate fields are unreliable.",
+      "FO and acoustic measurement outcomes include extraction artifacts from labels/header rows.",
+      "Decision and purpose rows are not used as primary evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary factor as VP new mold #11 and #12 validation against normal VP or ST context.",
+      "Separate conclusions for mold #11 and mold #12 under the same report context.",
+      "Rebuild NG rate outcomes from the correct table headers, totals, and rate columns.",
+      "Remove artifact measurement outcomes unless valid grouped measurement tables can be cited.",
+      "Add concise citations to title, purpose, NG result sections, and final decision rows."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are not sufficient until grouping and table interpretation are corrected."
+  },
+  "usage": {
+    "input_tokens": 11952,
+    "output_tokens": 762,
+    "total_tokens": 12714
+  }
+}

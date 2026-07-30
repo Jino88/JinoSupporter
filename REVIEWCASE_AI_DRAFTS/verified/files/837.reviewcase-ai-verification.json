@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 837,
+  "sourceFile": "68. BRS-161014 Report TEST VP curing temperature 120, 150 13.11.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\837.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:31Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 837,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Comparable VP curing temperature report, but the draft needs cleanup before final evidence use.",
+    "issues": [
+      "Header row was converted into a false measurement outcome.",
+      "Decision and narrative conclusion rows are not cited.",
+      "Changed factor evidence includes weak context rows but omits key result notes.",
+      "Purpose text underrepresents the 150°C condition."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove the measurement-1 outcome derived from the function table header.",
+      "Add rows 18, 29, 30, and 33 as conclusion evidence.",
+      "Keep one changed factor: Normal vs VP curing temperature 120°C and 150°C.",
+      "Revise purpose/title text to include both 120°C and 150°C testing.",
+      "Limit evidence to title, purpose, condition, result, and decision rows."
+    ],
+    "evidencePolicy": "Row citations exist, but final citations are incomplete until conclusion rows are added and header-only evidence is removed."
+  },
+  "usage": {
+    "input_tokens": 3947,
+    "output_tokens": 523,
+    "total_tokens": 4470
+  }
+}

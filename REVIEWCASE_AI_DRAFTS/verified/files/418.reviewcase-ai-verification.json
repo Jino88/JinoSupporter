@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 418,
+  "sourceFile": "22. TIU C11-20  Reportfind reason NG function high 2025.12.24_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\418.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 418,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because it conflates multiple test conditions and uses invalid controls across unrelated groups.",
+    "issues": [
+      "Changed factor combines distinct tests into one comparison.",
+      "Baseline/test assignments are often wrong or unrelated.",
+      "Date, shift, model side, and test type grouping is not preserved.",
+      "Measurement outcome is a spurious parse of defect table columns.",
+      "Key comparator rows are omitted while header/unclear rows are cited."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild as one report with separate changed factors for each stated test type.",
+      "Pair each test only with its matching normal/control row within the same date, model side, shift, and note context.",
+      "Separate VP KR, no cooling fan, no ethanol cleaning, line swap, grill hand, laser cutting, and dry-12h forming results.",
+      "Remove measurement-stat outcome unless real measurement rows exist.",
+      "Cite only section, condition, and compared data rows needed for each factor."
+    ],
+    "evidencePolicy": "Current citations prove row existence but are insufficient for final evidence because grouping and comparator citations are unsafe."
+  },
+  "usage": {
+    "input_tokens": 7329,
+    "output_tokens": 724,
+    "total_tokens": 8053
+  }
+}

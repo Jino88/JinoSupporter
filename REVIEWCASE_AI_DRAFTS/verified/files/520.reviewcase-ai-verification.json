@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 520,
+  "sourceFile": "30. TIU C11-20  Report Test Frame damage mesh 2026.04.10. - RAW soundcheck_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\520.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:30Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 520,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but changed-factor and measurement grouping are not reliable enough for Ask AI.",
+    "issues": [
+      "Changed factor should be Frame Test Type 1/2/3 vs Normal, not Day shift as a condition.",
+      "Frame Test Type 1 is incorrectly treated as subgroup context.",
+      "Function-defect results are valid but need inherited date/shift/model context handled consistently.",
+      "RAW DATA SPL/THD measurement outcomes are auto-extracted and not tied to the same comparison cleanly.",
+      "Review title and metric labels are noisy extracted row text."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rewrite changed factor as frame test type comparison with Normal baseline.",
+      "Move date, day shift, model, and lot size to subgroup/context fields.",
+      "Keep function-defect outcome from Test rows 15, 17, 19, and 21 with corrected rates.",
+      "Exclude or clearly separate unjudged RAW DATA SPL/THD soundcheck tables unless condition mapping is proven.",
+      "Replace noisy title and metrics with concise report-level labels."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations support only corrected function-result evidence, not the generated measurement grouping."
+  },
+  "usage": {
+    "input_tokens": 9090,
+    "output_tokens": 790,
+    "total_tokens": 9880
+  }
+}

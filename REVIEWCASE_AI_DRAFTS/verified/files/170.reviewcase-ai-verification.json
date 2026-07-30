@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 170,
+  "sourceFile": "08.1. MSU-L20S15-07DT  Report Test Supension B changing plating thichness from 9-18umto 13-18um ( Check Voltage 0.7V , 0.75V)  date 16.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\170.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:45Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 170,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft identifies a real spot-welding NG comparison but the primary change, baseline, and voltage grouping are not reliably formed.",
+    "issues": [
+      "Changed factor is framed as Normal vs Test instead of plating thickness 9-18µm to 13-18µm.",
+      "Baseline Normal condition may include different solder/voltage conditions, creating confounding.",
+      "Subgroup key 0.75V conflicts with cited comparison rows showing 0.7V and 0.73V.",
+      "Changed condition has an unexplained trailing value and may be derived incorrectly.",
+      "Cited row 15.5!25 is not shown in context but may be material."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended control condition for the plating-thickness change?",
+      "Should 0.7V and 0.75V be treated as separate voltage subgroups?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor as Suspension B plating thickness 9-18µm to 13-18µm if supported by rows.",
+      "Include or remove row 15.5!25 after checking its exact content.",
+      "Separate comparisons by voltage or mark voltage mismatch as a limitation.",
+      "Clean baseline and changed condition labels, removing stray generated text.",
+      "Update judgement only for valid like-for-like comparisons."
+    ],
+    "evidencePolicy": "Current row citations are partially sufficient but not final because key cited row text and grouping support are incomplete."
+  },
+  "usage": {
+    "input_tokens": 2755,
+    "output_tokens": 837,
+    "total_tokens": 3592
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 521,
+  "sourceFile": "30. TIU L5S3-01 R Report test Dry final sample and wait dry 12h to check function 2025.12.16_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\521.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 521,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not approved because the changed-factor and outcome grouping do not match the cited validation context.",
+    "issues": [
+      "Changed factor mixes treatment, timepoints, defect columns, and totals.",
+      "Baseline/test conditions omit Type 2 and unsupported normal comparator.",
+      "Before vs later OK-only retests are not comparable as simple improvement pairs.",
+      "Measurement outcome appears derived from count columns, not measurement data.",
+      "Evidence set misses key Type 2 and later result rows."
+    ],
+    "requiredUserQuestions": [
+      "Should normal comparison be included only if normal result rows exist in the sheet?"
+    ],
+    "correctionPlan": [
+      "Regroup primary factor as Type 1 dry oven treatment vs Type 2 wait 12h, with normal only if cited.",
+      "Keep before/after days as timepoint subgroup context, not changed conditions.",
+      "Recalculate NG outcomes within comparable populations and timepoints.",
+      "Remove measurement statistics unless real measurement/spec rows are present.",
+      "Cite purpose/content, header, and all relevant Type 1 and Type 2 result rows."
+    ],
+    "evidencePolicy": "Citations are row-valid but insufficient and partly misapplied for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3917,
+    "output_tokens": 779,
+    "total_tokens": 4696
+  }
+}

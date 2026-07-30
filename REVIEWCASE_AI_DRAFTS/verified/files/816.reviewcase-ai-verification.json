@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 816,
+  "sourceFile": "64.1 Summary data TEST Frame+Coil Recycle Model 161016 and module 2024.09.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\816.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:52Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 816,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the primary changed factor and comparison grouping are not supported clearly.",
+    "issues": [
+      "Changed factor 'baseline vs All' is unsupported; All appears to be a date scope, not a test condition.",
+      "Likely grouping keys such as line C2/E2, module item, and NG reason sections are not preserved.",
+      "Measurement statistics mix counts and rates from header/summary rows, producing invalid aggregates.",
+      "Evidence includes rows not shown in context and row count metadata conflicts with cited row numbers.",
+      "No explicit baseline or normal condition is cited for comparison."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended primary comparison: recycle test vs normal, line C2 vs E2, or module/item groups?",
+      "Is there a separate baseline sheet/file for normal production results?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor from explicit title/header rows and any true baseline/test condition rows.",
+      "Separate SPK, module function, and NG reason tables while preserving line/item/date keys.",
+      "Remove synthetic measurement aggregates made from mixed count/rate columns.",
+      "Validate all cited row addresses against the actual sheet and metadata.",
+      "Only approve if each outcome cites rows proving both compared conditions."
+    ],
+    "evidencePolicy": "Row citations exist, but they do not sufficiently prove the changed condition or valid comparisons."
+  },
+  "usage": {
+    "input_tokens": 6899,
+    "output_tokens": 699,
+    "total_tokens": 7598
+  }
+}

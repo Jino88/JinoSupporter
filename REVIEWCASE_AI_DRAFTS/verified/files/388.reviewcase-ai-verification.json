@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 388,
+  "sourceFile": "20. BRS-161014 DT Report test new mold  Frame #6  date 16.11.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\388.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 388,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the mold #6 validation context but misgroups baseline/test pairs and includes spurious measurement outcomes.",
+    "issues": [
+      "Changed factor wrongly includes Total as a changed condition.",
+      "Ass'y sub pairs ignore same-date Normal row for 2024-11-25.",
+      "Function pairs compare across dates instead of same-date and total rows.",
+      "Tension grouping loses merged context for Suspension D rows.",
+      "Several measurement outcomes are extraction artifacts, not valid tension/function results."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set change to Test Frame #6 versus Normal/Normal Frame #4 mold baseline only.",
+      "Pair ass'y sub by date and line context, including row 28 for 2024-11-25.",
+      "Pair function rows 49/50, 51/52, and totals 53/54 separately.",
+      "Rebuild tension results by date, frame type, item, and spec; drop artifact stats.",
+      "Keep conclusion rows 45 and 55 as judgement evidence after regrouping."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until corrected."
+  },
+  "usage": {
+    "input_tokens": 8382,
+    "output_tokens": 725,
+    "total_tokens": 9107
+  }
+}

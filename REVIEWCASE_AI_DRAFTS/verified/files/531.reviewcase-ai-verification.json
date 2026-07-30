@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 531,
+  "sourceFile": "31. BRS-161016 Report check problem damage VP to make NG air leak  21.4.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\531.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:44Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 531,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not approvable because it conflates holder-change validation with unrelated tracking and process checks.",
+    "issues": [
+      "Changed factor is nonsensical and over-broad.",
+      "Before/after holder comparison is not preserved.",
+      "Daily and total rows are treated as changed conditions.",
+      "Material, mold, process-stage tracking is wrongly merged.",
+      "Some outcomes are context-only root-cause checks."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to AOI vision and Press VP holder change.",
+      "Use before vs after holder for NG air leak, with dates as subgroups.",
+      "Keep VP vision after-holder result as post-change confirmation unless baseline exists.",
+      "Move process, material, and tracking sheets to separate cases or context.",
+      "Cite purpose, content, headers, data, and conclusion rows for each case."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 13510,
+    "output_tokens": 724,
+    "total_tokens": 14234
+  }
+}

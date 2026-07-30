@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 785,
+  "sourceFile": "60.1 MSU-L20S15-07  Report test material Yoke difference colour level 1 from Myungjin vender - test again_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\785.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 785,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but changed-factor and outcome grouping need correction before final use.",
+    "issues": [
+      "Changed factor wrongly includes auto/manual drop test as changed conditions.",
+      "Primary factor should be Myungjin Yoke color level 1 versus Normal Yoke.",
+      "Final SPK drop test has no Normal comparator and should not be grouped as Normal vs test.",
+      "Tension measurement grouping includes unrelated function rows and lost inherited conditions.",
+      "Spec values and tension subgroup comparisons are incomplete."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to Myungjin Yoke color level 1 versus Normal Yoke.",
+      "Move auto/manual drop test to outcome test-method subgroup context.",
+      "Separate final SPK drop test as test-only validation with no comparative judgement.",
+      "Regroup tension rows by inherited condition and magnet type only.",
+      "Remove function rows from tension measurement evidence and capture spec values."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are not sufficient as drafted."
+  },
+  "usage": {
+    "input_tokens": 6902,
+    "output_tokens": 751,
+    "total_tokens": 7653
+  }
+}

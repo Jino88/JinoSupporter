@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 95,
+  "sourceFile": "037.MSU - L20S15-07 REPORT TEST CHECK REASON NG HEARING ( +0V )_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\95.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 95,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it misidentifies the changed factor and misextracts NG metrics from the result table.",
+    "issues": [
+      "Changed factor wrongly compares test conditions against Total.",
+      "Baseline and changed conditions are not supported by the table.",
+      "SubResults misread type numbers and defect counts as NG values.",
+      "Totals rows are mixed with detail rows without grouping logic.",
+      "Row 14 is cited for measurements but not present in provided context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define one review case for checking reson/hearing NG at +0V.",
+      "Use test types as conditions: old lot, normal, bonding VP+CD, LED increase, and Dome date 23/3.",
+      "Treat rows 22-26 as summary totals, not changed conditions.",
+      "Re-extract Sigma and Hearing voltage NG counts/rates from the correct columns.",
+      "Remove unsupported measurement statistics or cite the actual header/data rows."
+    ],
+    "evidencePolicy": "Citations to result rows are available, but current row use and metric mapping are insufficient."
+  },
+  "usage": {
+    "input_tokens": 5707,
+    "output_tokens": 763,
+    "total_tokens": 6470
+  }
+}

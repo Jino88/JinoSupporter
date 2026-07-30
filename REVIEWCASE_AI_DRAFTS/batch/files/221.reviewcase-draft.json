@@ -1,0 +1,281 @@
+{
+  "sourceFileId": 221,
+  "sourceFile": "11. BRS-161014  Report summary NG of DCR DT line 2023.11.21_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\11. BRS-161014  Report summary NG of DCR DT line 2023.11.21_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "Report; Sheet1",
+    "sheetRowCount": 28,
+    "sheetCellCount": 114,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 8,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report!2",
+      "sheetName": "Report",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT CHECK NG PROCESS DCR BRS - 161014 DT | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report!3",
+      "sheetName": "Report",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | Date | 2023-11-21 00:00:00"
+    },
+    {
+      "rowId": "Report!4",
+      "sheetName": "Report",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | Marker | Trang"
+    },
+    {
+      "rowId": "Report!5",
+      "sheetName": "Report",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report!6",
+      "sheetName": "Report",
+      "rowNumber": 6,
+      "rowText": "| - Summary NG of DCR"
+    },
+    {
+      "rowId": "Report!7",
+      "sheetName": "Report",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report!8",
+      "sheetName": "Report",
+      "rowNumber": 8,
+      "rowText": "| - Summary NG of DCR from date 13/11 => 21/11/2023"
+    },
+    {
+      "rowId": "Report!10",
+      "sheetName": "Report",
+      "rowNumber": 10,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "Report!11",
+      "sheetName": "Report",
+      "rowNumber": 11,
+      "rowText": "| | RESULT CHECKING DCD"
+    },
+    {
+      "rowId": "Report!12",
+      "sheetName": "Report",
+      "rowNumber": 12,
+      "rowText": "| | Date | | Line | Input | OK | NG DCR | | | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "Report!13",
+      "sheetName": "Report",
+      "rowNumber": 13,
+      "rowText": "| | | | | | | No sound | high | Lown"
+    },
+    {
+      "rowId": "Report!14",
+      "sheetName": "Report",
+      "rowNumber": 14,
+      "rowText": "| | 2023-11-13 00:00:00 | | C2-3A | 1118 | 1118 | 0 | 0 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "Report!33",
+      "sheetName": "Report",
+      "rowNumber": 33,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-221-rc-1",
+      "reviewTitle": "REPORT CHECK NG PROCESS DCR BRS - 161014 DT | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Summary NG of DCR / | II. Content. / | - Summary NG of DCR from date 13/11 => 21/11/2023 / | 3.Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs 2023-11-13 00:00:00, 2023-11-14 00:00:00, 2023-11-15 00:00:00, 2023-11-16 00:00:00, 2023-11-17 00:00:00, 2023-11-18 00:00:00, 2023-11-20 00:00:00, 2023-11-21 00:00:00",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "2023-11-13 00:00:00, 2023-11-14 00:00:00, 2023-11-15 00:00:00, 2023-11-16 00:00:00, 2023-11-17 00:00:00, 2023-11-18 00:00:00, 2023-11-20 00:00:00, 2023-11-21 00:00:00",
+          "subgroupKeys": [
+            "C2-3A"
+          ],
+          "evidenceRows": [
+            "Report!14",
+            "Report!16",
+            "Report!18",
+            "Report!2",
+            "Report!20",
+            "Report!22",
+            "Report!24",
+            "Report!26",
+            "Report!28",
+            "Report!5",
+            "Report!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "RESULT CHECKING DCD",
+          "comparisonRows": [
+            "Report!14",
+            "Report!16",
+            "Report!18",
+            "Report!20",
+            "Report!22",
+            "Report!24",
+            "Report!26",
+            "Report!28"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 18808,
+              "condition": "2023-11-13 00:00:00 | C2-3A",
+              "input": 1118.0,
+              "ok": 1118.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Report!14"
+              ]
+            },
+            {
+              "metricId": 18809,
+              "condition": "2023-11-14 00:00:00",
+              "input": 1544.0,
+              "ok": 1544.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Report!16"
+              ]
+            },
+            {
+              "metricId": 18810,
+              "condition": "2023-11-15 00:00:00",
+              "input": 3498.0,
+              "ok": 3498.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Report!18"
+              ]
+            },
+            {
+              "metricId": 18811,
+              "condition": "2023-11-16 00:00:00",
+              "input": 3342.0,
+              "ok": 3342.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Report!20"
+              ]
+            },
+            {
+              "metricId": 18812,
+              "condition": "2023-11-17 00:00:00",
+              "input": 3451.0,
+              "ok": 3451.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Report!22"
+              ]
+            },
+            {
+              "metricId": 18813,
+              "condition": "2023-11-18 00:00:00",
+              "input": 3594.0,
+              "ok": 3594.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Report!24"
+              ]
+            },
+            {
+              "metricId": 18814,
+              "condition": "2023-11-20 00:00:00",
+              "input": 2479.0,
+              "ok": 2479.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Report!26"
+              ]
+            },
+            {
+              "metricId": 18815,
+              "condition": "2023-11-21 00:00:00",
+              "input": 5771.0,
+              "ok": 5767.0,
+              "ng": 4.0,
+              "ratePercent": 0.069312,
+              "evidenceRows": [
+                "Report!28"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report!14",
+        "Report!16",
+        "Report!18",
+        "Report!2",
+        "Report!20",
+        "Report!22",
+        "Report!24",
+        "Report!26",
+        "Report!28",
+        "Report!5",
+        "Report!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report!14",
+      "Report!16",
+      "Report!18",
+      "Report!2",
+      "Report!20",
+      "Report!22",
+      "Report!24",
+      "Report!26",
+      "Report!28",
+      "Report!5",
+      "Report!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

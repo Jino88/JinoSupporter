@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 236,
+  "sourceFile": "11.1 BRS-161016 Report test material YK happen  NG over flatness test again 2nd  Date 17.7.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\236.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 236,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Main comparison is supported, but grouping and non-comparative outcomes need cleanup before final use.",
+    "issues": [
+      "Changed factor incorrectly mixes MG-S-A/B tension subconditions with the primary Normal vs Test YK NG over-flatness comparison.",
+      "Tension outcomes are not clearly paired by short/long magnet subgroup and remain not judged.",
+      "Decap NG analysis is a root-cause breakdown, not a changed-condition comparison outcome.",
+      "Some citations are overbroad headers or context rows rather than direct evidence rows.",
+      "Gauss measurement statistics appear inconsistently parsed and should be checked against source layout."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal vs Test YK NG over-flatness material condition.",
+      "Move MG-S-A, MG-S-B, short/long magnet, date, line, and common lot/vendor notes to subgroup or secondary context only.",
+      "Keep decap bond, drop, gauss NG rate, function NG rate, and tension under one validation report context with clear pairings.",
+      "Exclude Decap NG root-cause tables from comparison outcomes or cite them only as explanatory follow-up for function NG.",
+      "Replace broad/header citations with direct rows for each metric and verify gauss/tension parsed values."
+    ],
+    "evidencePolicy": "Main row citations exist, but final evidence must use direct comparison rows and avoid overbroad/root-cause-only citations."
+  },
+  "usage": {
+    "input_tokens": 8456,
+    "output_tokens": 833,
+    "total_tokens": 9289
+  }
+}

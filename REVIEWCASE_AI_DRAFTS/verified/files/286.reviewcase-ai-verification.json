@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 286,
+  "sourceFile": "14. TIU C11-20  Report test VP new film 2-2 roll high function NG rate ( A2 rate 42% ) recheck low air pressure NG rate date 17.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\286.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 286,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the report topic but misgroups the comparison and includes unsupported measurement statistics.",
+    "issues": [
+      "Baseline blends 2-2 normal forming and separate Normal lot.",
+      "Changed-factor evidence omits low-pressure content row and decision row.",
+      "Measurement outcome is a header-derived artifact, not a valid measurement domain.",
+      "Evidence cites Test!16, which is not shown in source context.",
+      "Judgement ignores explicit OK decision with more-quantity caveat."
+    ],
+    "requiredUserQuestions": [
+      "Should the separate Normal lot be kept as an external reference or a third comparator?"
+    ],
+    "correctionPlan": [
+      "Set primary factor to 2-2 film roll forming pressure: normal 5.6kg vs low air pressure 3.5kg.",
+      "Treat Normal lot separately unless confirmed as part of the baseline.",
+      "Remove the measurement outcome and keep function NG-rate results only.",
+      "Add citations for low-pressure setup and decision rows.",
+      "Record judgement as OK with limited quantity caveat."
+    ],
+    "evidencePolicy": "Current citations are insufficient; corrected row-level citations are needed."
+  },
+  "usage": {
+    "input_tokens": 3604,
+    "output_tokens": 765,
+    "total_tokens": 4369
+  }
+}

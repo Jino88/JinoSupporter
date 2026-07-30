@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 105,
+  "sourceFile": "04. L20S15-07 Report test new lot CD (4-9) date   2025.04.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\105.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:45Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 105,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the changed factor and outcomes are misgrouped and cannot be final evidence.",
+    "issues": [
+      "Changed factor is filename-based, not source-derived.",
+      "Baseline/test condition is ambiguous.",
+      "Key result and decision rows are omitted.",
+      "Several outcomes are header/title parsing artifacts.",
+      "Lot-level subgroup results are not preserved."
+    ],
+    "requiredUserQuestions": [
+      "Confirm the intended comparison: CD lot 4/9 versus which other condition or lot?",
+      "Should lots 1-7 be treated as subgroups under the same CD lot validation?"
+    ],
+    "correctionPlan": [
+      "Define changed factor from purpose/content rows as new CD lot material test.",
+      "Use rows 35-39 and decision area as primary judgement evidence.",
+      "Remove title/header-derived measurement outcomes.",
+      "Group outcomes as dyne, tension, and function under one validation context.",
+      "Preserve lot numbers and lot IDs as subgroup keys."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient for final evidence because key judgement rows are missing."
+  },
+  "usage": {
+    "input_tokens": 5368,
+    "output_tokens": 759,
+    "total_tokens": 6127
+  }
+}

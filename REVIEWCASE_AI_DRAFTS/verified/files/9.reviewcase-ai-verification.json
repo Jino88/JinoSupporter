@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 9,
+  "sourceFile": "006.MSU - 20S15-07 REPORT TENSION OF CD + VP CHANGE 5s - 3s_1778470542_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\9.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:44:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 9,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The evidence supports a Dry UV LED time-change tension comparison from normal 5s to test 3s, but the draft misstates key fields and is not ready for Ask AI.",
+    "issues": [
+      "Changed factor is incorrectly populated with the source filename instead of the actual process condition change.",
+      "Baseline and changed conditions are marked as not explicit even though rows Sheet2!11 and Sheet2!12 identify Test change dry UV led 5s -> 3s and Normal (Dry UV led 5s).",
+      "Spec is incorrectly represented as > 3 in subResults; the cited row shows Spec = 1.9kgf.",
+      "Change domain includes dimension/spec, but the cited evidence primarily supports a process condition change, not a specification change.",
+      "Review title and outcome metric retain formatting noise and should be normalized.",
+      "Evidence should include Sheet2!9 or equivalent title context in addition to Sheet2!11 and Sheet2!12."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedFactor to Dry UV LED curing/dry time changed from 5s to 3s.",
+      "Set baselineCondition to Normal (Dry UV led 5s).",
+      "Set changedCondition to Test change dry UV led 5s -> 3s.",
+      "Limit changeDomain to process condition unless additional evidence proves a spec or dimension change.",
+      "Correct both subResult specs to 1.9kgf.",
+      "Normalize outcomeMetric to tension check or tension measurement after Dry UV LED time change.",
+      "Add Sheet2!9 as supporting evidence for the overall changed-factor context while retaining Sheet2!11 and Sheet2!12 for comparison data."
+    ],
+    "evidencePolicy": "Rows Sheet2!11 and Sheet2!12 are sufficient for the baseline/test comparison values, but Sheet2!9 should be included to cite the overall change context; no user judgement is required."
+  },
+  "usage": {
+    "input_tokens": 1703,
+    "output_tokens": 979,
+    "total_tokens": 2682
+  }
+}

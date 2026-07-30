@@ -1,0 +1,329 @@
+{
+  "sourceFileId": 646,
+  "sourceFile": "43. TIU L5S3-01 R Report  test repair remove bond VP to check NG function 2025.12.29_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\43. TIU L5S3-01 R Report  test repair remove bond VP to check NG function 2025.12.29_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 22,
+    "sheetCellCount": 97,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 5
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] REPORT TEST REPAIR REMOVE BOND VP/COIL AND CHECK NG FUNCTION | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date | 2025-12-29 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - NG ass'y Coil+VP high, line remove bond and re-using semi sub 3 => Test semi sub3 re-using can make NG function high or not"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Take sample semi sub 3 after remove bond => Move to line make final sample => Separate lot and check function"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| - Compare with normal"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | Result check function"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | No | Date | Type | | | Input | OK | NG BAKO | | | | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | | | | | | | | FRF high | FRF Low | FRF+SPL | THD | No sound"
+    },
+    {
+      "rowId": "Test!17",
+      "sheetName": "Test",
+      "rowNumber": 17,
+      "rowText": "| | 2 | | | Normal | | 54 | 48 | 3 | 3 | 0 | 0 | 0 | 6 | 0.11111111"
+    },
+    {
+      "rowId": "Test!21",
+      "sheetName": "Test",
+      "rowNumber": 21,
+      "rowText": "| | 4 | | | Normal | | 25 | 19 | 4 | 2 | 0 | 0 | 0 | 6 | 0.24"
+    },
+    {
+      "rowId": "Test!25",
+      "sheetName": "Test",
+      "rowNumber": 25,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "Test!26",
+      "sheetName": "Test",
+      "rowNumber": 26,
+      "rowText": "| - Result test of lot repair bond VP is same normal"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-646-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] REPORT TEST REPAIR REMOVE BOND VP/COIL AND CHECK NG FUNCTION | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - NG ass'y Coil+VP high, line remove bond and re-using semi sub 3 => Test semi sub3 re-using can make NG function high or not / | II. Content. / | - Take sample semi sub 3 after remove bond => Move to line make final sample => Separate lot and check function / | - Compare with normal",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Line L, Line R",
+          "baselineCondition": "Normal",
+          "changedCondition": "Line L, Line R",
+          "subgroupKeys": [
+            "Semi Re-using"
+          ],
+          "evidenceRows": [
+            "Test!14",
+            "Test!15",
+            "Test!17",
+            "Test!19",
+            "Test!2",
+            "Test!21",
+            "Test!5",
+            "Test!6",
+            "Test!7",
+            "Test!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "Result check function",
+          "comparisonRows": [
+            "Test!15",
+            "Test!17",
+            "Test!19",
+            "Test!21"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 22591,
+              "condition": "Line L | Semi Re-using",
+              "input": 31.0,
+              "ok": 28.0,
+              "ng": 3.0,
+              "ratePercent": 9.677419,
+              "evidenceRows": [
+                "Test!15"
+              ]
+            },
+            {
+              "metricId": 22592,
+              "condition": "Normal",
+              "input": 54.0,
+              "ok": 48.0,
+              "ng": 6.0,
+              "ratePercent": 11.111111,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "metricId": 22593,
+              "condition": "Line R | Semi Re-using",
+              "input": 24.0,
+              "ok": 19.0,
+              "ng": 5.0,
+              "ratePercent": 20.833333,
+              "evidenceRows": [
+                "Test!19"
+              ]
+            },
+            {
+              "metricId": 22594,
+              "condition": "Normal",
+              "input": 25.0,
+              "ok": 19.0,
+              "ng": 6.0,
+              "ratePercent": 24.0,
+              "evidenceRows": [
+                "Test!21"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No | Date | Type | Input | OK | NG BAKO | Total NG | NG rate",
+          "comparisonRows": [
+            "Test!14"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 59188,
+              "condition": "NG BAKO / FRF high",
+              "spec": "",
+              "min": 0.03225806,
+              "max": 4.0,
+              "avg": 1.4216017025,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "statId": 59189,
+              "condition": "NG BAKO / FRF Low",
+              "spec": "",
+              "min": 0.03225806,
+              "max": 3.0,
+              "avg": 1.03139336875,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "statId": 59190,
+              "condition": "NG BAKO / FRF+SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.1290322575,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "statId": 59191,
+              "condition": "NG BAKO / THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "statId": 59192,
+              "condition": "NG BAKO / No sound",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!14",
+        "Test!15",
+        "Test!17",
+        "Test!19",
+        "Test!2",
+        "Test!21",
+        "Test!5",
+        "Test!6",
+        "Test!7",
+        "Test!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!14",
+      "Test!15",
+      "Test!17",
+      "Test!19",
+      "Test!2",
+      "Test!21",
+      "Test!5",
+      "Test!6",
+      "Test!7",
+      "Test!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

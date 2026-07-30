@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 798,
+  "sourceFile": "62. BRS-201506 Report checking dimension AAP and AWF JIG date 12.7.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\798.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 798,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable AWF-to-AAP jig change evidence but misstates the changed factor and misgroups measurement outcomes.",
+    "issues": [
+      "Changed factor uses filename instead of AWF JIG to AAP JIG.",
+      "Baseline and changed conditions are incorrectly marked not explicit.",
+      "Outcome stats mix headers, positions, samples, and GAP rows.",
+      "Key evidence row for after-change condition is missing from factor citations.",
+      "Spec and violation interpretation are unreliable."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to jig change from AWF JIG baseline to AAP JIG changed condition.",
+      "Cite header/spec rows plus AWF, after-change, GAP, and decision rows.",
+      "Separate JIG dimension results from COIL length/width results under the same change context.",
+      "Rebuild metrics by length, width, position, sample, and spec range without mixing GAP values.",
+      "Reassess judgement only from corrected grouped measurements and decision text."
+    ],
+    "evidencePolicy": "Current citations exist but are not sufficient for final evidence; add direct condition and result rows."
+  },
+  "usage": {
+    "input_tokens": 5629,
+    "output_tokens": 681,
+    "total_tokens": 6310
+  }
+}

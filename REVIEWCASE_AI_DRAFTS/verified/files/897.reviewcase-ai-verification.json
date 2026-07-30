@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 897,
+  "sourceFile": "77.BRS-201506 Report checking problem SUB2 process MG+PT over glue date 20.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\897.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:29Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 897,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft identifies the bonding-line change and over-glue improvement but has malformed condition grouping and incomplete cited row context.",
+    "issues": [
+      "Changed condition is polluted with date and old-line text.",
+      "Baseline/test grouping conflicts with separate old-line metric row.",
+      "Subgroup key E2-4A is unexplained and may be a line/date field.",
+      "Rows 19 and 25 are cited but not shown in provided context.",
+      "Decap bond is mentioned in purpose but not represented as an outcome or limitation."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to old bonding line vs new bonding line moved inside 0.2.",
+      "Separate date, line E2-4A, and type fields as subgroup/context keys.",
+      "Verify rows 19 and 25 against source and reconcile old-line NG rates.",
+      "Keep over-glue NG rate as the judged outcome with row 25 vs 26 evidence.",
+      "Add decap bond as an uncaptured limitation if no result rows exist."
+    ],
+    "evidencePolicy": "Citations are row-level but insufficient until key comparison rows are text-verified."
+  },
+  "usage": {
+    "input_tokens": 2824,
+    "output_tokens": 777,
+    "total_tokens": 3601
+  }
+}

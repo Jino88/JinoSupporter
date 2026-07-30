@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 264,
+  "sourceFile": "13. BRS-161016 DT  Report  check Reason NG Low gauss  date 12.7.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\264.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 264,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable low-gauss evidence but changed-factor and outcome grouping are not reliable enough for final Ask AI evidence.",
+    "issues": [
+      "Changed factor mixes type, vendor, line, box, lot, and sheet/date contexts.",
+      "Baseline Normal Ruijin versus Test Beijing may be a material/vendor comparison, not just Normal vs Test.",
+      "Two sheets with different lot/date contexts are combined without preserving grouping.",
+      "Measurement outcome omits apparent Normal Ruijin gauss baseline and mixes boxes across sheets.",
+      "Some cited evidence rows are not represented in provided context text for independent validation."
+    ],
+    "requiredUserQuestions": [
+      "Should the two Low gauss sheets be treated as separate lot investigations or one combined validation?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor around MG-C vendor/lot/box comparison with Normal Ruijin kept as baseline only if supported.",
+      "Separate results by sheet, date, lot, and box before comparing outcomes.",
+      "Keep line production rows distinct from controlled Test/Normal sample rows.",
+      "Regroup gauss measurements with matching baseline/test conditions and cite headers/spec rows.",
+      "Remove unsupported condition labels and retain only row-backed factors."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficiently grouped for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4383,
+    "output_tokens": 796,
+    "total_tokens": 5179
+  }
+}

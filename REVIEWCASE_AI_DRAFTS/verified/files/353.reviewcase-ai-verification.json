@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 353,
+  "sourceFile": "19-1. BRS-161014  Report test CMG and CPT reduce dimension 17.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\353.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 353,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed factor and mispairs function results, so it cannot be used as final evidence.",
+    "issues": [
+      "Primary change is CMG/CPT dimension reduction, not line or total comparison.",
+      "E2 GMI, C2 DT, and Total are grouping/result contexts, not changed conditions.",
+      "Function outcome mispairs C2 and Total tests against E2 normal instead of matching normal rows.",
+      "Function comparison omits required normal rows for C2 and Total.",
+      "Header-derived measurement-2 statistics are invalid and should be removed."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to CMG/CPT dimension reduction from old to new dimensions.",
+      "Use Normal as baseline and Test/Test Yoke as changed condition.",
+      "Pair function rows by same line/date or total: 25 vs 27, 29 vs 31, 33 vs 35.",
+      "Keep gauss outcomes grouped by MG+PT, Semi Yoke, and Final with Test vs Normal rows.",
+      "Remove row24-only measurement statistics and cite only data-bearing rows."
+    ],
+    "evidencePolicy": "Citations exist, but current grouping and pair citations are not sufficient."
+  },
+  "usage": {
+    "input_tokens": 5513,
+    "output_tokens": 732,
+    "total_tokens": 6245
+  }
+}

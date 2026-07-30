@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 498,
+  "sourceFile": "3. BRS-161014  GMI Report test VP #8  from supplier date 27.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\498.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 498,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but changed-factor grouping mixes VP#8 test condition with outcome subgroups.",
+    "issues": [
+      "Changed condition incorrectly combines VP#8, VP#8 OK, and VP#8 NG bending.",
+      "Change domains include coating and dimension/spec without clear support.",
+      "Function subgroups may be outcome/process statuses, not separate changed factors.",
+      "Process laser/bending result has VP#8 only and no normal comparator.",
+      "Title code differs from filename code."
+    ],
+    "requiredUserQuestions": [
+      "Should VP#8 OK and VP#8 NG bending be treated as subgroups under one VP#8 test?",
+      "Should the BRS code follow the workbook title or filename?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to Normal VP#5 versus supplier test VP#8.",
+      "Move VP#8 OK and VP#8 NG bending into subgroup keys or subresults.",
+      "Limit change domain to supported supplier/mold or VP mold context.",
+      "Keep laser/bending process result as non-comparative supporting outcome unless baseline exists.",
+      "Preserve row citations for title, purpose, result headers, compared rows, and decision."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are not yet sufficient for final Ask AI use."
+  },
+  "usage": {
+    "input_tokens": 2864,
+    "output_tokens": 803,
+    "total_tokens": 3667
+  }
+}

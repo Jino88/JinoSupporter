@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 831,
+  "sourceFile": "66.BRS-2015 Report Test material suspension PCB Of new vender Wolrd HANOI VINA date 25.7.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\831.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 831,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but mis-groups the changed factor and uses suspect/incomplete outcome metrics.",
+    "issues": [
+      "Changed factor wrongly treats suspension array as the test condition.",
+      "Primary comparison should be normal vs new vendor World Hanoi Vina material.",
+      "Frame+suspension vision and tension outcomes are omitted.",
+      "Function result conflicts with decision summary and likely misread columns.",
+      "Evidence cites key data rows not shown in context, limiting auditability."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Revise changed factor to normal vs new vendor material supplier.",
+      "Use suspension array, vision, tension, and function as outcomes only.",
+      "Recalculate function NG/rates from the correct rows and decision summary.",
+      "Add vision result as worse and tension result as OK/neutral.",
+      "Cite both raw result rows and decision rows 47-51."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient until corrected rows and decision citations support each outcome."
+  },
+  "usage": {
+    "input_tokens": 3677,
+    "output_tokens": 748,
+    "total_tokens": 4425
+  }
+}

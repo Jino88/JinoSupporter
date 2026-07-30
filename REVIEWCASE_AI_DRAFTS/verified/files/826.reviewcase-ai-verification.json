@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 826,
+  "sourceFile": "66. BRS-161014  Report test improve NG separate VP+CD_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\826.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 826,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft has citeable rows but invalidly merges distinct report contexts and test factors into one broad comparison.",
+    "issues": [
+      "Two sheet/report contexts are conflated into one review case.",
+      "Changed factor mixes LED UV, VP thickness, VP loang, repeated UV passes, and material sorting.",
+      "Baseline Normal LED UV applies only to specific LED UV comparisons, not all listed outcomes.",
+      "Several outcomes treat header or layout rows as measurement evidence.",
+      "Review title and purpose conflict with much of the NG rate evidence."
+    ],
+    "requiredUserQuestions": [
+      "Should sheet 25.9 and sheet NG rate be separate review cases?"
+    ],
+    "correctionPlan": [
+      "Split or clearly scope the two report contexts before final use.",
+      "Create separate changed factors for LED UV peak up 10%, VP thickness min/max, and other trials.",
+      "Keep Normal LED UV only where rows directly compare against it.",
+      "Remove header-only derived measurements and unsupported aggregate stats.",
+      "Rebuild outcomes with row-level date, line, type, sample count, and NG-rate grouping preserved."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 9643,
+    "output_tokens": 779,
+    "total_tokens": 10422
+  }
+}

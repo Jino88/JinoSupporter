@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 467,
+  "sourceFile": "27. BRS-161014 Report check problem NG Gap frame+Yoke 2023.09.14_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\467.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:38Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 467,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The source appears to be a dimensional NG check report without citeable baseline/test changed-condition evidence.",
+    "issues": [
+      "No explicit changed factor is supported by cited rows",
+      "Baseline and changed conditions are absent",
+      "Filename is incorrectly used as the changed factor",
+      "Extracted metrics/specs appear misgrouped across Frame, BPT, and gap columns",
+      "Evidence cites mostly headers and an uncited data row, not a valid comparison"
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Do not approve this draft for Ask AI evidence",
+      "Exclude as a ReviewCase unless a real changed condition is found",
+      "If retained, recast only as a non-comparative dimensional inspection note",
+      "Re-extract full measurement data rows and correct column/spec mapping",
+      "Create a new ReviewCase only if source rows identify comparable conditions"
+    ],
+    "evidencePolicy": "Citations show context and headers but are insufficient for changed-condition evidence."
+  },
+  "usage": {
+    "input_tokens": 3555,
+    "output_tokens": 738,
+    "total_tokens": 4293
+  }
+}

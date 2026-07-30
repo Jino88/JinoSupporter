@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 772,
+  "sourceFile": "6. BRS-161016 DT Report test TIP 864 -884  date 17.09.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\772.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 772,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the TIP 864/884 versus TIP 844 theme but grouping and outcomes are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor mixes tip type with repair state and trial rounds.",
+      "TIP 864 vision outcome lacks normal comparison rows and judgement.",
+      "TIP 884 vision outcome compares partial trials and repair-after rows instead of the aggregate result.",
+      "Function check outcome is unjudged despite cited normal and test rows.",
+      "Spurious measurement outcomes come from headers or pooled defect columns."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to tip type: normal TIP 844 versus test TIP 864 and TIP 884.",
+      "Keep trial round and before/after repair as subgroup or process-stage context.",
+      "Rebuild vision outcomes using aggregate before-repair NG rates and cited normal rows for each section.",
+      "Judge function check TIP 864 and TIP 884 against TIP 844 using rows 73, 75, 77, and conclusion row 79.",
+      "Remove header-derived measurement outcomes unless a real dimensional/spec table exists."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient; key comparison and conclusion rows are missing or misused."
+  },
+  "usage": {
+    "input_tokens": 7171,
+    "output_tokens": 754,
+    "total_tokens": 7925
+  }
+}

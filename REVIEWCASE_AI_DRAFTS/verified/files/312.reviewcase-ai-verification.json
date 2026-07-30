@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 312,
+  "sourceFile": "16. BRS-161016 Report test material Plate difference collor from Myungjin vender_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\312.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:17Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 312,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The source is usable, but the draft misgroups the primary material change with drop-test methods.",
+    "issues": [
+      "Changed factor wrongly includes auto/manual drop tests as changed conditions.",
+      "Primary comparison should be Normal C-PT vs C-PT different-color levels 1 and 2 from Myungjin.",
+      "Drop-test method is a subgroup/outcome context, not a material/process change.",
+      "Merged-cell context is lost for drop rows 37 and 39.",
+      "Decision and conclusion rows are not cited."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to Normal C-PT vs Myungjin C-PT different-color level 1/level 2.",
+      "Remove auto/manual drop test from changedCondition and place under subgroup keys.",
+      "Preserve date, line, test method, and C-PT level as subgroup context.",
+      "Keep decap and function comparisons against Normal; keep drop test as no-normal-baseline reliability results.",
+      "Add conclusion evidence rows 40-42 and 51-56."
+    ],
+    "evidencePolicy": "Existing row citations are real but not sufficient until grouping is corrected and conclusion rows are added."
+  },
+  "usage": {
+    "input_tokens": 5519,
+    "output_tokens": 784,
+    "total_tokens": 6303
+  }
+}

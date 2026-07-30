@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 535,
+  "sourceFile": "31. TIU C11-20  Report Test new press Jig ( Frame+ VP) 2026.1.5_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\535.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 535,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites rows but misidentifies the primary changed factor and mispairs several baseline/test results.",
+    "issues": [
+      "Primary factor should be Normal vs new VP press jig, not shift or TOTAL.",
+      "Day/night, date, model, and dry-process variants are subgroup keys.",
+      "Several comparisons use the wrong adjacent Normal baseline rows.",
+      "Function outcome omits later rows and mixes total with per-shift rows.",
+      "RAW DATA measurement outcomes are noisy and not tied clearly to the jig change."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to Normal vs Test use new VP press Jig.",
+      "Move date, shift, model, and process variant into subgroup keys.",
+      "Pair each test row with its corresponding Normal row, or use total rows only for total comparison.",
+      "Include all function table rows through the dry-process variants or explicitly limit scope.",
+      "Remove or quarantine RAW DATA measurements unless tied to the press-jig validation."
+    ],
+    "evidencePolicy": "Row citations exist, but evidence grouping and pair citations are not sufficient for final use."
+  },
+  "usage": {
+    "input_tokens": 12319,
+    "output_tokens": 668,
+    "total_tokens": 12987
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 823,
+  "sourceFile": "65.BRS-2015 Report checking NTI  sample change bonding line VP+CD offset 0.1 date 23.7.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\823.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:08Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 823,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has a valid comparison context but misstates the changed factor and lacks complete row-level evidence for final use.",
+    "issues": [
+      "Changed factor is the filename instead of Normal vs Offset 0.1 bonding-line VP+CD offset condition.",
+      "Baseline and changed conditions are marked not explicit despite cited rows showing Normal and Offset 0.1 groups.",
+      "Changed-factor evidence omits Fo offset rows and relies on incomplete header-only citations for several sheets.",
+      "Outcomes are poorly grouped, mixing SPL, THD, IMP and Fo under generic detected-table stats.",
+      "Graph!39 is used without supplied row context, so its role cannot be verified here."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baselineCondition to Normal samples and changedCondition to Offset 0.1 samples, with ST as reference target if applicable.",
+      "Rename changedFactor to the actual bonding-line VP+CD offset 0.1 sample change.",
+      "Add cited rows for both Normal and Offset 0.1 data on Fo and representative data rows for SPL, THD and IMP.",
+      "Separate outcome metrics by sheet/domain: Fo, SPL, THD and IMP, preserving sample groups and averages.",
+      "Remove or explain Graph!39 unless its row content supports a specific plotted outcome."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for final evidence because key changed-condition and metric data rows are missing or header-only."
+  },
+  "usage": {
+    "input_tokens": 4820,
+    "output_tokens": 669,
+    "total_tokens": 5489
+  }
+}

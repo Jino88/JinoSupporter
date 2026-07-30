@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 331,
+  "sourceFile": "17. TIU C11-20  Report checking Frame+vp separate lot using Frame clean Ethanol date 22.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\331.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 331,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable test evidence but misgroups the changed factor and lacks a clear normal-lot baseline comparison.",
+    "issues": [
+      "Changed factor mixes lot, side, shift, time, and totals as one condition.",
+      "Baseline normal lot is referenced but not supported by cited result rows.",
+      "TIU C11-20R/L and shifts should likely be subgroup keys, not primary changes.",
+      "Outcome totals and time rows may be double-counted as independent results.",
+      "Decision row is cited in context but no conclusion is captured."
+    ],
+    "requiredUserQuestions": [
+      "Which rows contain the normal-lot baseline results?",
+      "Are TIU C11-20R and TIU C11-20L sides or separate test lots?"
+    ],
+    "correctionPlan": [
+      "Set primary change to Frame clean Ethanol/dry 12h test versus normal lot if supported.",
+      "Move side, shift, time, and total labels into subgroup keys.",
+      "Separate raw time rows from subtotal/total rows to avoid duplicate comparisons.",
+      "Add baseline outcome rows or mark baseline data unavailable.",
+      "Capture any decision/conclusion from the decision section if present."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient for final evidence until baseline and grouping citations are corrected."
+  },
+  "usage": {
+    "input_tokens": 3665,
+    "output_tokens": 618,
+    "total_tokens": 4283
+  }
+}

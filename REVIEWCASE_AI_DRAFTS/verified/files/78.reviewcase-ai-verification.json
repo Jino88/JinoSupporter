@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 78,
+  "sourceFile": "03. L20S15-07DT Report test  Material CD ( Lot 490k)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\78.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:29Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 78,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed factor and condition grouping, so it cannot be used as final evidence.",
+    "issues": [
+      "Changed factor 'baseline vs 4' is unsupported by visible context.",
+      "Primary comparison should be lot test CD IR250410013 vs Normal if using report rows.",
+      "Outcome grouping mixes row numbers or sample IDs as conditions.",
+      "Report!21 and Tension!10/12 are not supported by provided context text.",
+      "Spec 1.2kgf is cited in title but omitted from tension stats."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Replace changed factor with test CD lot IR250410013 versus Normal, unless hidden rows prove another factor.",
+      "Use Report!19 and Report!25 for NG rate and function/separation comparison.",
+      "Use Tension!8 as the cited tension result for the test lot and include spec 1.2kgf.",
+      "Do not treat numeric row/sample identifiers such as 4 or 7 as changed conditions.",
+      "Remove or validate hidden-row citations before approval."
+    ],
+    "evidencePolicy": "Citations exist syntactically, but cited row context is insufficient and grouping citations are not reliable."
+  },
+  "usage": {
+    "input_tokens": 3425,
+    "output_tokens": 787,
+    "total_tokens": 4212
+  }
+}

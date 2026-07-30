@@ -1,0 +1,264 @@
+{
+  "sourceFileId": 498,
+  "sourceFile": "3. BRS-161014  GMI Report test VP #8  from supplier date 27.8.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\3. BRS-161014  GMI Report test VP #8  from supplier date 27.8.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "NG rate",
+    "sheetRowCount": 22,
+    "sheetCellCount": 103,
+    "comparisonPairCount": 2,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "NG rate!3",
+      "sheetName": "NG rate",
+      "rowNumber": 3,
+      "rowText": "| TITLE | | REPORT TEST VP #8 FROM SUPPLIER BRS-161016 | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "NG rate!4",
+      "sheetName": "NG rate",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | Date | 2024-08-27 00:00:00"
+    },
+    {
+      "rowId": "NG rate!5",
+      "sheetName": "NG rate",
+      "rowNumber": 5,
+      "rowText": "| | | | | | | | | | | | | | | | | Marker | Thuy"
+    },
+    {
+      "rowId": "NG rate!6",
+      "sheetName": "NG rate",
+      "rowNumber": 6,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "NG rate!7",
+      "sheetName": "NG rate",
+      "rowNumber": 7,
+      "rowText": "| - Test VP #8 from supplier"
+    },
+    {
+      "rowId": "NG rate!8",
+      "sheetName": "NG rate",
+      "rowNumber": 8,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "NG rate!9",
+      "sheetName": "NG rate",
+      "rowNumber": 9,
+      "rowText": "| - Check NG rate of Laser cutting VP process"
+    },
+    {
+      "rowId": "NG rate!10",
+      "sheetName": "NG rate",
+      "rowNumber": 10,
+      "rowText": "| - Check rate VP bending after cutting Laser"
+    },
+    {
+      "rowId": "NG rate!11",
+      "sheetName": "NG rate",
+      "rowNumber": 11,
+      "rowText": "| - To make final and checking NG rate of function"
+    },
+    {
+      "rowId": "NG rate!12",
+      "sheetName": "NG rate",
+      "rowNumber": 12,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "NG rate!13",
+      "sheetName": "NG rate",
+      "rowNumber": 13,
+      "rowText": "| | 1. RESULT CHECKING VISION VP LASER CUTTING"
+    },
+    {
+      "rowId": "NG rate!14",
+      "sheetName": "NG rate",
+      "rowNumber": 14,
+      "rowText": "| | Date | Line | VP mold | Befor cutting laser | | | After cutting laser | | | | | | Bending after laser | Bending rate"
+    },
+    {
+      "rowId": "NG rate!23",
+      "sheetName": "NG rate",
+      "rowNumber": 23,
+      "rowText": "| | 2. RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "NG rate!28",
+      "sheetName": "NG rate",
+      "rowNumber": 28,
+      "rowText": "| | | | Normal ( VP#5) | 500 | 484 | 0 | 0 | 1 | 0 | 0 | 14 | 1 | 16 | 0.032"
+    },
+    {
+      "rowId": "NG rate!30",
+      "sheetName": "NG rate",
+      "rowNumber": 30,
+      "rowText": "| 4. Decision"
+    },
+    {
+      "rowId": "NG rate!31",
+      "sheetName": "NG rate",
+      "rowNumber": 31,
+      "rowText": "| - NG rate of VP bending is so high, NG rate of VP #8 OK still higher normal line"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-498-rc-1",
+      "reviewTitle": "| REPORT TEST VP #8 FROM SUPPLIER BRS-161016 | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Test VP #8 from supplier / | II. Content. / | - Check NG rate of Laser cutting VP process / | - Check rate VP bending after cutting Laser",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "supplier",
+            "coating",
+            "mold",
+            "dimension/spec"
+          ],
+          "changedFactor": "Condition comparison: Normal ( VP#5) vs VP #8 OK, VP #8 NG bending, VP #8",
+          "baselineCondition": "Normal ( VP#5)",
+          "changedCondition": "VP #8 OK, VP #8 NG bending, VP #8",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "NG rate!16",
+            "NG rate!26",
+            "NG rate!27",
+            "NG rate!28",
+            "NG rate!3",
+            "NG rate!6",
+            "NG rate!7",
+            "NG rate!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "2. RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "NG rate!26",
+            "NG rate!27",
+            "NG rate!28"
+          ],
+          "judgement": "worse",
+          "subResults": [
+            {
+              "pairId": 4146,
+              "controlCondition": "Normal ( VP#5)",
+              "testCondition": "VP #8 OK",
+              "control": {
+                "input": 500.0,
+                "ng": 16.0,
+                "ratePercent": 3.2
+              },
+              "test": {
+                "input": 440.0,
+                "ng": 26.0,
+                "ratePercent": 5.909091
+              },
+              "deltaRatePercentPoint": 2.7090910000000004,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "NG rate!26",
+                "NG rate!28"
+              ]
+            },
+            {
+              "pairId": 4147,
+              "controlCondition": "Normal ( VP#5)",
+              "testCondition": "VP #8 NG bending",
+              "control": {
+                "input": 500.0,
+                "ng": 16.0,
+                "ratePercent": 3.2
+              },
+              "test": {
+                "input": 29.0,
+                "ng": 4.0,
+                "ratePercent": 13.793103
+              },
+              "deltaRatePercentPoint": 10.593103000000001,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "NG rate!27",
+                "NG rate!28"
+              ]
+            }
+          ],
+          "limitations": []
+        },
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "Date | Line | VP mold | Befor cutting laser | After cutting laser | Bending after laser | Bending rate",
+          "comparisonRows": [
+            "NG rate!16"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 21279,
+              "condition": "VP #8",
+              "input": 500.0,
+              "ok": 466.0,
+              "ng": 20.0,
+              "ratePercent": 4.0,
+              "evidenceRows": [
+                "NG rate!16"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "NG rate!16",
+        "NG rate!26",
+        "NG rate!27",
+        "NG rate!28",
+        "NG rate!3",
+        "NG rate!6",
+        "NG rate!7",
+        "NG rate!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "NG rate!16",
+      "NG rate!26",
+      "NG rate!27",
+      "NG rate!28",
+      "NG rate!3",
+      "NG rate!6",
+      "NG rate!7",
+      "NG rate!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

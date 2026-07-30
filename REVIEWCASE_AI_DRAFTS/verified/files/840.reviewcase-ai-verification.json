@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 840,
+  "sourceFile": "68. TIU L5S3-01 Result separate AWF check function and Drop test find NG coil separate - 2026.02.09_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\840.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 840,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft identifies a likely coil-forming temperature comparison but misgroups AWF rounds/blank-note rows and mixes AWF and drop-test outcomes incompletely.",
+    "issues": [
+      "Changed condition incorrectly includes AWF rounds and Total as conditions.",
+      "Blank-note rows #3/#4/#5 may not belong to 500°C without merged-cell proof.",
+      "Outcome only judges drop test worse while AWF BAKO/HEARING results are separate and partly improved.",
+      "Subgroup keys are raw numeric values, not meaningful grouping keys.",
+      "Evidence includes rows beyond shown context and possible non-data total rows."
+    ],
+    "requiredUserQuestions": [
+      "Do blank Note rows after 500°C inherit the 500°C condition?",
+      "Are AWF #1-#5 repeated trials under the same temperature comparison or separate settings?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to coil forming temperature 480°C normal vs 500°C change only.",
+      "Keep AWF number, date, line, and test domain as subgroup/context keys.",
+      "Separate AWF function defect outcomes from drop/decap drop-test outcomes under the same factor.",
+      "Use only data rows with proven condition membership and exclude totals unless summarized separately.",
+      "Replace numeric subgroup keys with named keys and cite headers plus each compared data row."
+    ],
+    "evidencePolicy": "Row citations are not yet sufficient; condition inheritance and compared outcome rows need clearer support."
+  },
+  "usage": {
+    "input_tokens": 3498,
+    "output_tokens": 829,
+    "total_tokens": 4327
+  }
+}

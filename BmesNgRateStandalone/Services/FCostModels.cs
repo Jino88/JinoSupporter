@@ -200,15 +200,21 @@ public sealed class FCostSubGroupAggregate
     /// <summary>14-column sums. Index 0 = COL0001, index 13 = COL0014.</summary>
     public double[] InputByCol { get; init; } = new double[14];
     public double[] CostByCol  { get; init; } = new double[14];
+    public double[] SourceRateByCol { get; set; } = new double[14];
 
     /// <summary>Rate% = Cost / Input * 100 per column. 0 if Input=0.</summary>
     public double[] RateByCol
     {
         get
         {
-            var arr = new double[14];
-            for (int i = 0; i < 14; i++)
-                arr[i] = InputByCol[i] > 0 ? CostByCol[i] / InputByCol[i] * 100.0 : 0;
+            int count = Math.Max(InputByCol.Length, CostByCol.Length);
+            var arr = new double[count];
+            for (int i = 0; i < count; i++)
+            {
+                double input = i < InputByCol.Length ? InputByCol[i] : 0;
+                double cost = i < CostByCol.Length ? CostByCol[i] : 0;
+                arr[i] = input > 0 ? cost / input * 100.0 : 0;
+            }
             return arr;
         }
     }

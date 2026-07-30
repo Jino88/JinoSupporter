@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 699,
+  "sourceFile": "5. BRS-201506 DT Report checking and test UC Press VP+CD Date 16.12.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\699.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:09Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 699,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Comparable result rows appear present, but the changed-condition grouping and cited comparison rows need verification before use.",
+    "issues": [
+      "Rows 40 and 46 are key comparison evidence but their text is not shown.",
+      "Changed factor may be drying/press layout rather than the full three-step sequence.",
+      "Baseline and test condition labels are inferred from sparse context.",
+      "Decision content is not captured."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Expose row text for 15.8!40 and 15.8!46.",
+      "Confirm exact baseline and changed process sequence from the table headers/merged cells.",
+      "Rename changed factor to the specific process condition being tested.",
+      "Add decision row text if it contains pass/fail judgement.",
+      "Keep vision and function outcomes under the same confirmed condition comparison."
+    ],
+    "evidencePolicy": "Citations exist, but key cited row content is insufficiently visible for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3156,
+    "output_tokens": 736,
+    "total_tokens": 3892
+  }
+}

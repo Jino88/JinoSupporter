@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 818,
+  "sourceFile": "64.MSU-L20S15-07  Report test material Suspesnion NG cutting offset NG dimension_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\818.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 818,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the main Normal vs Test Suspension comparison but misjudges function and underprocesses tension A/B NG results.",
+    "issues": [
+      "Function outcome marked worse despite source conclusion of same NG rate.",
+      "Tension outcome not judged and misses reported NG rates for Suspension B.",
+      "Suspension A/B should be preserved as subgroup keys for tension results.",
+      "Spec and violation counts for tension are incorrectly blank/zero.",
+      "Decision/conclusion rows are not cited."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Change function judgement to no_change or note negligible delta with source conclusion.",
+      "Add tension comparison by Suspension A and B under the same changed factor.",
+      "Use reported tension NG rates: Test B 2/4 and Normal B 1/4.",
+      "Carry tension spec context and mark violations consistently with conclusions.",
+      "Add conclusion evidence rows 32 and 57-60 plus tension notes 40-41."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient because key conclusion rows are omitted."
+  },
+  "usage": {
+    "input_tokens": 5040,
+    "output_tokens": 484,
+    "total_tokens": 5524
+  }
+}

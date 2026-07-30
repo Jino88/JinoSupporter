@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 226,
+  "sourceFile": "11. BRS-161016 DT Report test  suspension used SUS-ARRAY of new vender CSY Tech Vina date 9.10.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\226.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 226,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The main comparison is valid, but outcome judgement and citations need cleanup before final use.",
+    "issues": [
+      "Changed factor should name SUS-ARRAY suspension new vendor CSY Tech Vina, not generic process condition.",
+      "Decision rows saying same normal and can use are not cited.",
+      "Vision spot and function judgements marked worse conflict with report conclusion.",
+      "Column/header evidence is weak for multi-number result rows."
+    ],
+    "requiredUserQuestions": [
+      "Should final judgement follow numeric rate increase or report conclusion of same normal/can use?"
+    ],
+    "correctionPlan": [
+      "Revise changed factor to new vendor CSY Tech Vina SUS-ARRAY suspension vs Normal.",
+      "Add decision rows NG rate!39 and NG rate!40 to case evidence.",
+      "Cite section/header rows for each outcome, especially NG rate!16, NG rate!23, and NG rate!29.",
+      "Separate numeric effect direction from acceptance conclusion if both are retained.",
+      "Verify vision spot metric uses intended before-repair or after-repair NG rate."
+    ],
+    "evidencePolicy": "Data row citations exist, but final evidence needs header and decision citations."
+  },
+  "usage": {
+    "input_tokens": 3689,
+    "output_tokens": 1293,
+    "total_tokens": 4982
+  }
+}

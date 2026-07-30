@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 43,
+  "sourceFile": "02. BRS-161016 GMI Report  test MTR Suspension D used Susp- Array 161014 D-1 changing tin lating method - 2025.05.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\43.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:46Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 43,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid source rows but misgroups the main case and contains incorrect module comparisons.",
+    "issues": [
+      "Review title/purpose are taken from Decap 931, not the main plating-method test report.",
+      "Changed factor is noisy and includes TOTAL; it should be normal line vs suspension D changed tin plating method.",
+      "TEST MODULE S936 and total results are compared to the S931 normal row, causing wrong deltas and judgement.",
+      "Decap reason tables are treated as measurements and cited mostly by headers, not data rows.",
+      "Evidence mixes context, headers, and outcomes without preserving model subgroup keys."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Retitle the case from TEST SPK/TEST MODULE and set purpose to the tin plating method validation.",
+      "Define one changed factor: normal line vs test suspension D with changed tin plating method; keep model as subgroup.",
+      "Recompute module outcomes using S931 rows 16/18, S936 rows 20/22, and total rows 24/26.",
+      "Convert decap sheets to root-cause context/outcomes or remove them from changed-factor measurements.",
+      "Use concise evidence rows for title, content, comparison rows, and decisions only."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient until mispaired comparisons and header-only decap citations are corrected."
+  },
+  "usage": {
+    "input_tokens": 8846,
+    "output_tokens": 1339,
+    "total_tokens": 10185
+  }
+}

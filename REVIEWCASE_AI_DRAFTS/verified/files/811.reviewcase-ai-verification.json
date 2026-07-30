@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 811,
+  "sourceFile": "63.1. TIU C11-20 Report test audiobus100% hearing 100% 2026.02.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\811.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:44Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 811,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft cannot be verified because it treats line/type data as a baseline-vs-change comparison without explicit source support.",
+    "issues": [
+      "No explicit baseline or changed-condition evidence is shown.",
+      "TIU C11-20L/R appear to be line identifiers, not proven change factors.",
+      "Row Test (2)!14 is cited but absent from supplied context rows.",
+      "Outcome grouping mixes Audiobus and Hearing NG domains under a vague metric label.",
+      "Purpose indicates root-cause investigation, not a validated condition comparison."
+    ],
+    "requiredUserQuestions": [
+      "Should this file be modeled as L vs R line comparison or excluded as non-comparative defect tracking?",
+      "Is Audiobus 100% - Hearing 100% a tested change condition from another baseline?"
+    ],
+    "correctionPlan": [
+      "Inspect full sheet including row 14 and any hidden/merged context.",
+      "Identify whether a true baseline/test condition exists.",
+      "If only defect tracking, exclude from ReviewCase evidence.",
+      "If L/R comparison is intended, set changed factor to line side and cite both rows.",
+      "Split or clearly label Audiobus and Hearing defect-rate outcomes."
+    ],
+    "evidencePolicy": "Current citations are insufficient for final evidence because changed-condition support is not explicit."
+  },
+  "usage": {
+    "input_tokens": 2462,
+    "output_tokens": 795,
+    "total_tokens": 3257
+  }
+}

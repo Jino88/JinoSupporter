@@ -2,11 +2,20 @@
 @inject AppPathsService Paths
 @inject NgRateSettingsService NgRateSettings
 @inject WebRepository Repo
+@inject NavigationManager Nav
 
 <div class="home-hero">
     <h1>BMES NG Rate</h1>
     <p class="lead">Standalone desktop host linked to JinoSupporter BMES and NG Rate source.</p>
 </div>
+
+@if (!Paths.IsNgRateStorageConfigured)
+{
+    <div class="alert alert-warning small">
+        Set the Working Folder first. NG Rate data and server tables will be stored there.
+        <a class="alert-link" href="/bmes/setting">Open Setting</a>
+    </div>
+}
 
 <div class="home-grid">
     <div class="home-card @(NgRateSettings.IsCredentialsConfigured ? "ok" : "warn")">
@@ -63,7 +72,6 @@
                 <a href="/ng-rate">By Model</a>
                 <a href="/ng-rate-by-group">By Group</a>
                 <a href="/ng-rate-all">All</a>
-                <a href="/ng-rate-for-weekly-report">Weekly Report</a>
             </div>
         </div>
     </div>
@@ -75,14 +83,14 @@
         </div>
         <div class="home-card-body small">
             <table class="path-table">
-                <tr><th>NG Rate DB</th><td><code>@NgRateSettings.DbSaveDirectory</code></td></tr>
-                <tr><th>Settings DB</th><td><code>@NgRateSettings.SettingsDbPath</code></td></tr>
-                <tr><th>Routing file</th><td><code>@NgRateSettings.RoutingFilePath</code></td></tr>
-                <tr><th>Reason file</th><td><code>@NgRateSettings.ReasonFilePath</code></td></tr>
-                <tr><th>Model BMES folder</th><td><code>@Paths.Current.ModelBmesJsonFolder</code></td></tr>
+                <tr><th>NG Rate DB</th><td><code>@DisplayPath(NgRateSettings.DbSaveDirectory)</code></td></tr>
+                <tr><th>Settings DB</th><td><code>@DisplayPath(Paths.Current.NgRateSettingsDbDirectory)</code></td></tr>
+                <tr><th>Routing file</th><td><code>@DisplayPath(NgRateSettings.RoutingFilePath)</code></td></tr>
+                <tr><th>Reason file</th><td><code>@DisplayPath(NgRateSettings.ReasonFilePath)</code></td></tr>
+                <tr><th>Model BMES folder</th><td><code>@DisplayPath(Paths.Current.ModelBmesJsonFolder)</code></td></tr>
             </table>
         </div>
-        <a class="home-card-link" href="/admin/paths">Edit paths</a>
+        <a class="home-card-link" href="/bmes/setting">Edit paths</a>
     </div>
 </div>
 
@@ -119,10 +127,22 @@
 </style>
 
 @code {
+    /// <summary>Set once per process. A fresh install has no Working Folder, so the first
+    /// screen the user sees should be Setting — nothing on Home works until it is set.
+    /// Once per run, not every visit, so Home stays reachable if they skip it.</summary>
+    private static bool _firstRunRedirected;
+
     private int _dailyDbCount;
 
     protected override void OnInitialized()
     {
+        if (!_firstRunRedirected && !Paths.IsNgRateStorageConfigured)
+        {
+            _firstRunRedirected = true;
+            Nav.NavigateTo("/bmes/setting?firstrun=1", replace: true);
+            return;
+        }
+
         try
         {
             var daily = Path.Combine(NgRateSettings.DbSaveDirectory, "daily");
@@ -133,4 +153,7 @@
             _dailyDbCount = 0;
         }
     }
+
+    private static string DisplayPath(string? path) =>
+        string.IsNullOrWhiteSpace(path) ? "Not set" : path;
 }

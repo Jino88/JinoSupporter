@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 536,
+  "sourceFile": "31. TIU L5S3-01 R Report test add more bonding Fr+VP improve NG function 2025.12.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\536.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:51Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 536,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the bonding-change topic but outcome grouping and comparisons are not reliable enough for final evidence.",
+    "issues": [
+      "Type 1 and Type 2 bonding changes are combined without preserving type as subgroup or separate condition.",
+      "Comparisons reuse one Normal row and ignore other Normal rows, so row-level pairing is ambiguous.",
+      "Judgement states improved but source decision says reduction is unstable and needs more testing.",
+      "Measurement outcome appears generated from table headers/columns, not a valid separate measurement result.",
+      "Decision/result evidence rows on instability are not cited in the review case."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Reconstruct the result table rows with headers and all condition labels.",
+      "Pair Normal and changed rows by preserved keys such as test number/date/type.",
+      "Represent Type 1 and Type 2 as separate changed conditions or explicit subgroups.",
+      "Remove the spurious measurement outcome unless real measurement evidence exists.",
+      "Update judgement to improved but unstable, citing result and decision rows."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient for final use because key decision rows and valid paired evidence are missing."
+  },
+  "usage": {
+    "input_tokens": 3622,
+    "output_tokens": 776,
+    "total_tokens": 4398
+  }
+}

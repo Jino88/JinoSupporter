@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 290,
+  "sourceFile": "14.1 BRS-161016 DT  Report  check Reason NG Low gauss ( use semi yoke low gauss make SPK move module test) date 18.7.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\290.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 290,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Comparable low-gauss yoke function data appears present, but factor naming, citations, and NG breakdown grouping need correction.",
+    "issues": [
+      "Primary factor is confounded as low gauss yoke plus CM vendor.",
+      "Main title should come from Test data, not Decap NG.",
+      "Test data!16 is central but not shown in supplied context.",
+      "Decap NG breakdown is not a valid min/max/avg measurement comparison.",
+      "Some cited rows are headers only and do not support values."
+    ],
+    "requiredUserQuestions": [
+      "Should CM vendor be treated as subgroup context rather than the primary changed factor?"
+    ],
+    "correctionPlan": [
+      "Retitle case from the Test data report title and purpose.",
+      "Define changed factor as normal yoke/gauss condition vs low-gauss semi yoke condition, with vendors as context if cited.",
+      "Add citations to Test data rows covering purpose, gauss spec, actual gauss range, and both condition result rows.",
+      "Keep function NG rate comparison as the primary outcome.",
+      "Convert Decap NG rows to supporting defect-reason breakdown with specific reason-row citations, or remove it."
+    ],
+    "evidencePolicy": "Row citations are insufficient for final evidence until central condition and breakdown value rows are cited."
+  },
+  "usage": {
+    "input_tokens": 3725,
+    "output_tokens": 799,
+    "total_tokens": 4524
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 89,
+  "sourceFile": "032.MSU - L20S15-07 REPORT TEST VP MOLD PRODUCT BY MOLD TEAM OF GLONICS_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\89.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 89,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid source context but misgroups comparisons and reverses the functional NG-rate judgement.",
+    "issues": [
+      "Judgement improved contradicts NG-rate rows and report notes.",
+      "VP rows are paired to the wrong NORMAL row instead of same date or total.",
+      "Total is incorrectly treated as part of the changed condition.",
+      "NG metric appears taken from Sigma columns, not overall Input-OK/rate columns.",
+      "Measurement outcome is unsupported by header-only evidence and mixes counts with rates."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to VP mold/product line versus normal line; keep Total as aggregation only.",
+      "Pair rows by date: 23/25, 27/29, 31/33, and total 35/37.",
+      "Recalculate NG rate from Input, OK, total NG, and rate columns.",
+      "Change functional judgement to worse or mixed per dated results and notes.",
+      "Remove or rebuild measurement outcome using actual data rows, not header-only stats."
+    ],
+    "evidencePolicy": "Row citations exist, but cited rows are insufficiently and incorrectly used for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4678,
+    "output_tokens": 774,
+    "total_tokens": 5452
+  }
+}

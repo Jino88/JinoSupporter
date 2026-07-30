@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 947,
+  "sourceFile": "85. BRS-161014 Report Check Gauss Sub 2  12.16.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\947.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:52Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 947,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures gauss measurements but fails to identify the actual changed factor, likely new jig use, with unclear baseline/test grouping.",
+    "issues": [
+      "Changed factor is filename, not source condition.",
+      "Baseline and changed conditions are unspecified.",
+      "Decision row indicates new jig but is not used as factor evidence.",
+      "Gauss table blocks are not grouped by test round or condition.",
+      "Outcome stats are generic column groups with unclear comparability."
+    ],
+    "requiredUserQuestions": [
+      "Is the comparison old jig vs new jig?",
+      "Which Gauss table block represents each condition or round?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to jig condition if confirmed by source.",
+      "Cite purpose, content, table headers, and decision rows for factor context.",
+      "Map each Gauss block to its row-level condition or round.",
+      "Separate or label Yoke, Final SPK, Gap, and 200pcs outcomes clearly.",
+      "Do not approve until baseline/test condition evidence is explicit."
+    ],
+    "evidencePolicy": "Rows exist, but citations are insufficient for changed-condition proof and grouping."
+  },
+  "usage": {
+    "input_tokens": 6549,
+    "output_tokens": 651,
+    "total_tokens": 7200
+  }
+}

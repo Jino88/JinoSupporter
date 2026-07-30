@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 383,
+  "sourceFile": "2.4 BRS-161014 Report test needle 27G of Sub 2 CM+B-PT 2023.08.09_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\383.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:30Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 383,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misgroups the primary needle-gauge comparison and tension subconditions.",
+    "issues": [
+      "Primary changed factor should be 25G-12.7mm vs 27G-12.7mm, not date vs 27G.",
+      "Baseline is explicit in content rows; it should not be marked unknown.",
+      "25G is incorrectly stored as a subgroup instead of baseline condition.",
+      "Tension rows compare 27G SM-related subconditions, not the 25G vs 27G visual comparison.",
+      "Decision section evidence is not included, so final judgement cannot be supported."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to needle size/gauge change: 25G-12.7mm baseline vs 27G-12.7mm test.",
+      "Keep bonding amount 0.45-0.55mg and date as context, not changed conditions.",
+      "Link visual NG rate rows to the needle comparison outcome.",
+      "Represent tension results as 27G validation subconditions or a separate secondary factor if supported.",
+      "Add decision/conclusion rows if present before approving final evidence."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping and conclusion citations are insufficient for final Ask AI use."
+  },
+  "usage": {
+    "input_tokens": 3065,
+    "output_tokens": 736,
+    "total_tokens": 3801
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 363,
+  "sourceFile": "19.1. BRS-161014 DT Report test C-PT ( KR send) improve coner R ( Check NTI )  date 16.11.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\363.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:38Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 363,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because the changed factor, condition grouping, and several outcome statistics are misidentified.",
+    "issues": [
+      "Changed factor is the filename, not a cited process/material change.",
+      "Baseline/test conditions are left ambiguous despite Normal, Test yoke, and ST labels.",
+      "FO outcomes are split by rows with nonsensical statistics from labels rather than values.",
+      "SPL, IMP, and THD are merged as a generic detected table without metric-level grouping.",
+      "Evidence mostly cites headers and omits needed data/average rows for metrics."
+    ],
+    "requiredUserQuestions": [
+      "What physical change distinguishes Test yoke from Normal and ST?",
+      "Is ST a third comparison condition or only a reference/control?"
+    ],
+    "correctionPlan": [
+      "Replace filename factor with the cited changed condition once confirmed.",
+      "Group conditions as Normal versus Test yoke, with ST handled separately if applicable.",
+      "Rebuild FO as one outcome using rows 5-15 and the AVG row values.",
+      "Create separate SPL, THD, and IMP outcomes with metric/frequency row context.",
+      "Cite both condition header rows and representative data/summary rows for each outcome."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for final evidence because they lack clear changed-factor and metric data support."
+  },
+  "usage": {
+    "input_tokens": 6238,
+    "output_tokens": 644,
+    "total_tokens": 6882
+  }
+}

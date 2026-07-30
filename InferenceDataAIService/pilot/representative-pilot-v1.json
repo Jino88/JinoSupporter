@@ -1,0 +1,309 @@
+{
+  "schemaVersion": "representative-pilot-v1",
+  "generatedAt": "2026-07-17",
+  "sourceRoot": "D:\\000. MyWorks\\test\\result\\InputDataFinish",
+  "purpose": "전체 이력 마이그레이션 전에 구조 추출, canonical 정규화, 비교 가능성 판정, 계산, 근거 좌표, 질의 동작을 검증하는 대표 커버리지 표본",
+  "groundTruthStatus": "COVERAGE_FIXTURE_NOT_GROUND_TRUTH",
+  "imagePolicy": {
+    "extractImages": false,
+    "analyzeImages": false,
+    "rule": "이미지 또는 이미지 중심 문서는 표 셀에서 검증 가능한 자료만 사용한다. 유효한 표 데이터가 없으면 NO_TABULAR_EVIDENCE 또는 DESCRIPTIVE_ONLY로 종료하며 이미지에서 사실이나 수치를 추론하지 않는다."
+  },
+  "selectionRules": [
+    "동일 fingerprint, 정규화 제목, layout signature가 유사한 근접 중복은 감점한다.",
+    "명확한 2-arm 비교, paired 전후, multi-arm/DOE, 복합 요인, 장기 반복, raw 측정, 수식 lineage, reference, 무표자료, 빈 파일을 최소 한 건 이상 포함한다.",
+    "같은 범주에서는 새로운 factor, outcome, layout, evidence 구조를 추가하는 워크북을 우선한다.",
+    "기존 GroupId와 renderer 분류는 다양성 확인에만 사용하며 canonical Study, Arm, Outcome의 정답으로 사용하지 않는다.",
+    "대표 점수는 필수 범주 신규 충족, 의미 신규성, layout 신규성, 극단 크기 및 표 증거 풍부도를 가산하고 근접 중복을 감점한다.",
+    "이미지는 추출하거나 분석하지 않으며 이미지 중심 파일은 NO_TABULAR_EVIDENCE, DESCRIPTIVE_ONLY 또는 제외 처리를 검증하는 음성 표본으로만 사용한다."
+  ],
+  "workbooks": [
+    {
+      "id": "P01",
+      "relativePath": "00. Report TEST new dry machine with material make press JIG 2024.03.26_1778470442_clean.xlsx",
+      "reason": "재질 15종과 230℃ 조건을 시간별로 측정한 복합 시각 보고서로, 표 셀 기반 재질·시간축 정규화를 검증한다.",
+      "categories": ["MATERIAL_MULTI_ARM", "TIME_SERIES", "PROCESS_CONDITION", "MIXED_CONTENT"],
+      "expectedCanonicalPattern": "Study → Material Arm → Time-series Observation → Cell-range Evidence"
+    },
+    {
+      "id": "P02",
+      "relativePath": "00.BRS-161016 Report test VP all mold from supplier_1778463079_1778470471_clean.xlsx",
+      "reason": "6개 시트와 12,559개 숫자에 여러 VP mold 및 날짜별 Function/VP+CD NG 비교가 들어 있는 대형 반복 자료다.",
+      "categories": ["LONGITUDINAL", "MULTI_SHEET", "MOLD_FACTOR", "FUNCTION_NG", "LARGE_TABULAR"],
+      "expectedCanonicalPattern": "Longitudinal Study → Mold Arm → Process/Function Outcome → repeated Comparison"
+    },
+    {
+      "id": "P03",
+      "relativePath": "009.MSU-L20S15-07 Report test change bonding amount VP+CD, Coil+CD_1778470550_clean.xlsx",
+      "reason": "VP+CD 및 Coil+CD 본드량 Max, Min, 1.5mg, Normal 조합과 다수 수식이 있어 본드량 질의의 핵심 표본이다.",
+      "categories": ["VP_CD", "BOND_AMOUNT", "FACTORIAL", "MULTI_ARM", "FUNCTION_NG", "FORMULA_LINEAGE"],
+      "expectedCanonicalPattern": "Factorial FactorSet → multi-arm → Function NG Outcome → formula-derived Effect → Evidence"
+    },
+    {
+      "id": "P04",
+      "relativePath": "019.MSU-20S15-07 Result check NTI test change bonding  VP+CD_clean.xlsx",
+      "reason": "bond corner 증가, speed 28→25/22, bonding line 이동과 Test/Normal raw NTI 비교가 함께 있다.",
+      "categories": ["VP_CD", "BOND_PROTOCOL", "NORMAL_CONTROL", "RAW_MEASUREMENT", "MULTI_FACTOR"],
+      "expectedCanonicalPattern": "Dose/Protocol Factor → Arm → Defect-rate and MeasurementSeries → Evidence"
+    },
+    {
+      "id": "P05",
+      "relativePath": "026.MSU-20S15-07 GMI -Result check test bonding VP+ CD  improve NG function modul_clean.xlsx",
+      "reason": "bond corner, line 위치, 두 조건 동시 변경 등 Test 1~3과 Function NG가 있어 단일 요인과 복합 요인을 분리해야 한다.",
+      "categories": ["VP_CD", "FUNCTION_NG", "MULTIPLE_STUDIES", "COMPOSITE_FACTOR", "CONFOUNDING"],
+      "expectedCanonicalPattern": "Workbook → multiple Studies → single/composite-factor Comparisons → confounding flags"
+    },
+    {
+      "id": "P06",
+      "relativePath": "01.1.. BRS-161016DT  Report NEW machine Bond Ass'y VP-CD  improve NG separate VP+CD ( after improve base) Date  2.06.2025_1778470943_clean.xlsx",
+      "reason": "12개 시트에서 신규기와 Normal의 날짜별 반복 비교가 이어져 base 개선 후 추세 일관성을 검증한다.",
+      "categories": ["VP_CD", "NEW_MACHINE", "LONGITUDINAL", "NORMAL_CONTROL", "FUNCTION_NG"],
+      "expectedCanonicalPattern": "Intervention Study → repeated time Arms → NG trend → longitudinal Cell Evidence"
+    },
+    {
+      "id": "P07",
+      "relativePath": "011.MSU-20S15-07Check coil before and after check hearing _1778471078_clean.xlsx",
+      "reason": "동일 coil의 Hearing 전후 치수와 raw gap 표가 있어 샘플 pairing과 전후 비교를 검증한다.",
+      "categories": ["PAIRED", "BEFORE_AFTER", "COIL_DIMENSION", "HEARING", "RAW_MEASUREMENT"],
+      "expectedCanonicalPattern": "Paired Observation → Before/After Arm → subject/sample pairing → Cell-range Evidence"
+    },
+    {
+      "id": "P08",
+      "relativePath": "999. MSU-L20S15-07 Hearing Before After XRAY Image_250305_clean.xlsx",
+      "reason": "표 숫자가 사실상 없는 이미지 중심 전후 자료로, 이미지 분석 없이 안전하게 근거 부족 상태로 종료해야 한다.",
+      "categories": ["IMAGE_HEAVY_NEGATIVE", "BEFORE_AFTER", "NO_TABULAR_EVIDENCE"],
+      "expectedCanonicalPattern": "Document → NO_TABULAR_EVIDENCE → no numeric Effect"
+    },
+    {
+      "id": "P09",
+      "relativePath": "48. BRS-161016 Report test before and after laser cutting 2024.07.03_clean.xlsx",
+      "reason": "Old/Now VP, bending 여부, laser 전후를 설명하지만 숫자 후보가 없는 자료로 무표 비교의 제외 동작을 검증한다.",
+      "categories": ["IMAGE_HEAVY_NEGATIVE", "BEFORE_AFTER", "LASER_PROCESS", "NO_TABULAR_EVIDENCE"],
+      "expectedCanonicalPattern": "Document → comparison intent metadata → NO_TABULAR_EVIDENCE → no Effect"
+    },
+    {
+      "id": "P10",
+      "relativePath": "07. BRS-161016 Report compare VP+CD GMI and DT line 2025.06.05_clean.xlsx",
+      "reason": "GMI/DT line의 명시적 비교 문서이지만 숫자표가 없어 수치 효과를 만들지 않아야 한다.",
+      "categories": ["VP_CD", "LINE_COMPARISON", "IMAGE_HEAVY_NEGATIVE", "NO_TABULAR_EVIDENCE"],
+      "expectedCanonicalPattern": "Explicit Comparator metadata → NO_TABULAR_EVIDENCE → DESCRIPTIVE_ONLY or excluded"
+    },
+    {
+      "id": "P11",
+      "relativePath": "03. BRS-161016 DT Report test  suspension used SUS-D cutting 40% 50% 60% date 19.1.2025_clean.xlsx",
+      "reason": "40%, 50%, 60%와 Normal을 Vision, Coil/SUS, laser, Function, Tension으로 비교하는 명확한 dose-response 자료다.",
+      "categories": ["DOSE_RESPONSE", "MULTI_ARM", "NORMAL_CONTROL", "FUNCTION_NG", "TENSION", "MULTI_OUTCOME"],
+      "expectedCanonicalPattern": "Dose-response multi-arm Study → multiple Outcomes → Normal control → Effects"
+    },
+    {
+      "id": "P12",
+      "relativePath": "014.MSU-20S15-07 Result test AWF cooling time 4s,8s,10s_clean.xlsx",
+      "reason": "4초, 8초, 10초 arm과 대형 SPL raw 데이터가 있어 순서형 조건과 표본 수를 검증한다.",
+      "categories": ["COOLING_TIME", "ORDERED_DOSE", "FUNCTION_NG", "ACOUSTIC_RAW", "MULTI_ARM"],
+      "expectedCanonicalPattern": "Ordered dose Arm → Function NG and acoustic MeasurementSeries → trend Effect"
+    },
+    {
+      "id": "P13",
+      "relativePath": "51. BRS-161014  Report test VP mold #4,#7,#8 change mold temperature and valcunizing agent 10% date 17.7.2024_clean.xlsx",
+      "reason": "mold 3종, 180/190℃, vulcanizing agent가 함께 바뀌어 단일 온도 효과로 오인하면 안 되는 자료다.",
+      "categories": ["MOLD_FACTOR", "TEMPERATURE", "COMPOSITE_FACTOR", "MULTI_ARM", "CONFOUNDING"],
+      "expectedCanonicalPattern": "Composite FactorSet → multi-arm → CONFOUNDED_MULTI_FACTOR → no isolated causal Effect"
+    },
+    {
+      "id": "P14",
+      "relativePath": "38. MSU-L20S1507 DOE Air preasure-air leak_clean.xlsx",
+      "reason": "18/100/200/300kPa, 각 10pcs, Air leak/FRF/Hearing/NTI 결과가 있는 다결과 DOE다.",
+      "categories": ["DOE", "AIR_PRESSURE", "ORDERED_DOSE", "MULTI_OUTCOME", "RAW_AND_SUMMARY"],
+      "expectedCanonicalPattern": "DOE dose Arm → multi-domain Outcome → raw/summary Evidence → trade-off Effects"
+    },
+    {
+      "id": "P15",
+      "relativePath": "1. BRS-161014 Report test DOE sub 2 manual_clean.xlsx",
+      "reason": "본드량 4구간과 bonding/drying/needle 조건, Visual·Tension 결과가 섞인 DOE로 Study 분할을 검증한다.",
+      "categories": ["DOE", "BOND_AMOUNT", "PROCESS_FACTOR", "TENSION", "STUDY_SEGMENTATION"],
+      "expectedCanonicalPattern": "DOE Study segmentation → FactorSet → Arm → continuous and defect Outcomes"
+    },
+    {
+      "id": "P16",
+      "relativePath": "017.MSU-20S15-07 Result test sample waitting 2 day and check function_clean.xlsx",
+      "reason": "Waiting 2 day와 Normal의 단순하고 명확한 직접 비교로 기본 2-arm 정규화의 기준 표본이다.",
+      "categories": ["TWO_ARM", "NORMAL_CONTROL", "WAIT_TIME", "FUNCTION_NG", "CLEAR_COMPARISON"],
+      "expectedCanonicalPattern": "Canonical two-arm Study → Function NG → validated Comparison and Effect"
+    },
+    {
+      "id": "P17",
+      "relativePath": "35. BRS-161016 Report test  compare Fr-SP +Coil not burr and Fr-SP+Coil normal  2024.5.10_clean.xlsx",
+      "reason": "not-burr와 Normal의 명시적 Function 비교로 binary factor 효과의 기준 표본이다.",
+      "categories": ["TWO_ARM", "NORMAL_CONTROL", "BINARY_FACTOR", "FUNCTION_NG"],
+      "expectedCanonicalPattern": "Canonical control/test Study → binary Factor → defect-rate Effect"
+    },
+    {
+      "id": "P18",
+      "relativePath": "54. BRS-201506 Report checking and test problem NG function high date 14.6.2024_clean.xlsx",
+      "reason": "14개 시트, 4,181개 수식, 다수 원인 가설과 공정 시험이 있어 워크북 내부 Study 분할과 수식 출처를 검증한다.",
+      "categories": ["MULTI_SHEET", "MULTIPLE_STUDIES", "HYPOTHESIS", "FUNCTION_NG", "FORMULA_LINEAGE", "CONFOUNDING"],
+      "expectedCanonicalPattern": "Multi-study workbook → hypothesis/factor segmentation → formula provenance → confounding"
+    },
+    {
+      "id": "P19",
+      "relativePath": "61. TIU L5S3-01 LR COMPARE DATA SPL D3_clean.xlsx",
+      "reason": "RAW DATA가 687열이고 숫자·수식이 매우 많은 L/R SPL 비교로 초광폭 계열 자료와 파생값 lineage를 검증한다.",
+      "categories": ["VERY_WIDE", "LARGE_TABULAR", "ACOUSTIC_RAW", "LEFT_RIGHT", "FORMULA_LINEAGE"],
+      "expectedCanonicalPattern": "Wide MeasurementSeries → derived curve/AVG → formula and source-cell lineage"
+    },
+    {
+      "id": "P20",
+      "relativePath": "BRS 161014S08ZZ Reliability Test result for dome 8.11.2023_clean.xlsx",
+      "reason": "여러 신뢰성 시험 조건과 Before/After 수치, 다수 수식이 있어 시험 항목별 paired 결과를 검증한다.",
+      "categories": ["RELIABILITY", "PAIRED", "BEFORE_AFTER", "MULTI_TEST_ITEM", "FORMULA_LINEAGE"],
+      "expectedCanonicalPattern": "Reliability Study → repeated TestItem → paired Before/After Outcome → Cell Evidence"
+    },
+    {
+      "id": "P21",
+      "relativePath": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222_clean.xlsx",
+      "reason": "1000×281 raw 표에 Normal/Strong/Back-to-Normal press 및 본드량 0.05/0.14/0.2mg 조건이 있어 대형 다요인 샘플 자료를 검증한다.",
+      "categories": ["LARGE_TABULAR", "RAW_MEASUREMENT", "PRESS_CONDITION", "BOND_AMOUNT", "MULTI_FACTOR", "SPECTRAL_OUTCOME"],
+      "expectedCanonicalPattern": "Large raw series → multi-factor/multi-arm → sample-level Observation → spectral Outcomes"
+    },
+    {
+      "id": "P22",
+      "relativePath": "05. TIU C11-20 Reference data_clean.xlsx",
+      "reason": "SPL/THD/IMP 기준 곡선만 있고 Study·대조군이 없어 인과 효과가 아닌 참조 데이터셋으로 분류해야 한다.",
+      "categories": ["REFERENCE_DATASET", "ACOUSTIC_CURVE", "NO_COMPARATOR", "DESCRIPTIVE_ONLY"],
+      "expectedCanonicalPattern": "ReferenceDataset → MeasurementSeries → DESCRIPTIVE_ONLY → no causal Effect"
+    },
+    {
+      "id": "P23",
+      "relativePath": "BRS-201506  Report Test improve NG rate_clean.xlsx",
+      "reason": "Problem list와 여러 개선 검토가 한 파일에 섞이고 표 숫자는 적어 문서 내 복수 Study 분할과 근거 부족 처리를 함께 검증한다.",
+      "categories": ["MULTIPLE_STUDIES", "ISSUE_IMPROVEMENT", "SPARSE_TABULAR", "STUDY_SEGMENTATION"],
+      "expectedCanonicalPattern": "Document → multiple Study segmentation → issue/reason/improvement → sparse Cell Evidence"
+    },
+    {
+      "id": "P24",
+      "relativePath": "036.MSU - L20S15-07 REPORT TEST MATERIAL YOKE MAX-MIN DIMENSION, PLATE MAX-MIN DIMENSION_clean.xlsx",
+      "reason": "Yoke와 Plate Max/Min dimension arm에 Function과 Gauss 결과가 있어 극단 조건 비교를 검증한다.",
+      "categories": ["EXTREME_CONDITION", "DIMENSION", "GAUSS", "FUNCTION_NG", "MULTI_OUTCOME"],
+      "expectedCanonicalPattern": "Extreme-condition Arm → continuous measurement and defect Outcome → Comparison"
+    },
+    {
+      "id": "P25",
+      "relativePath": "35.1 MSU -L 201507 RESULT CHECK GAUSS S-MG and C-MG_clean.xlsx",
+      "reason": "Boutou/Ruijin supplier 및 S-MG/C-MG 치수·Gauss·Hearing 비교가 있어 공급처와 부품 조건을 분리해야 한다.",
+      "categories": ["SUPPLIER", "DIMENSION", "GAUSS", "HEARING", "PARALLEL_ARMS", "FORMULA_LINEAGE"],
+      "expectedCanonicalPattern": "Supplier/Dimension Context → parallel Arms → measurement summary → formula provenance"
+    },
+    {
+      "id": "P26",
+      "relativePath": "034.MSU - L20S15-07 REPORT TEST IMPROVE TENSION CD + VP 24.3.2025_clean.xlsx",
+      "reason": "Normal, UV press 60s, UV 위치, double dry, 대기시간 등 여러 arm과 Tension 결과가 있어 공정 요인 혼합을 검증한다.",
+      "categories": ["VP_CD", "MULTI_ARM", "TENSION", "PROCESS_FACTOR", "WAIT_TIME", "CONFOUNDING"],
+      "expectedCanonicalPattern": "Multi-arm process Study → Tension Outcome → wait-time/process confounders"
+    },
+    {
+      "id": "P27",
+      "relativePath": "22. TIU L5S3-01 R Report Worst each process NG image  - date 2025.12.08_clean.xlsx",
+      "reason": "숫자 후보가 없는 이미지 중심 공정별 NG 문서로, 이미지 분석 없이 표 근거 부족 상태를 저장해야 한다.",
+      "categories": ["IMAGE_HEAVY_NEGATIVE", "PROCESS_NG", "NO_TABULAR_EVIDENCE"],
+      "expectedCanonicalPattern": "Document → NO_TABULAR_EVIDENCE → no taxonomy inference and no Effect"
+    },
+    {
+      "id": "P28",
+      "relativePath": "12. BRS-201506 report checking Wire AOI standard_clean.xlsx",
+      "reason": "캡처 가능한 표 셀이 없는 이미지 전용 표준서로, 표준 문서를 분석 대상 Study로 오인하지 않는지 검증한다.",
+      "categories": ["IMAGE_ONLY_NEGATIVE", "STANDARD_REFERENCE", "NO_TABULAR_EVIDENCE"],
+      "expectedCanonicalPattern": "Reference Document → NO_TABULAR_EVIDENCE → excluded from Study/Effect"
+    },
+    {
+      "id": "P29",
+      "relativePath": "60. TIU C11-20 Report check high dimension Frame + CD 2026.2.07_clean.xlsx",
+      "reason": "A1:A1에 셀·수식·병합이 없는 실제 빈 워크북으로, 조용한 성공 대신 명시적 terminal 상태를 검증한다.",
+      "categories": ["EMPTY_SOURCE", "TERMINAL_VALIDATION"],
+      "expectedCanonicalPattern": "EMPTY_SOURCE → ValidationIssue → extraction terminal state"
+    },
+    {
+      "id": "P30",
+      "relativePath": "35. TIU C11-20 Report  find reason function high 2026.01.13_clean.xlsx",
+      "reason": "forming #2/#3/#4 inside/outside, Normal, stock, hand press 등 다수 가설과 반복 대조군이 있어 분할과 confounding 판정을 검증한다.",
+      "categories": ["MULTIPLE_STUDIES", "MULTIPLE_HYPOTHESES", "NORMAL_CONTROL", "FUNCTION_NG", "CONFOUNDING"],
+      "expectedCanonicalPattern": "Multiple hypothesis Studies → repeated control → segmentation and confounding validation"
+    }
+  ],
+  "goldenQuestions": [
+    {
+      "id": "GQ01",
+      "question": "VP+CD 본드량이 증가하거나 bonding line 위치가 바뀌면 FUNCTION NG가 어떻게 달라졌나? Normal 대조군이 있는 검토만 계산하고 근거 표를 모두 보여줘.",
+      "primaryPilotIds": ["P03", "P04", "P05"],
+      "requiredBehavior": ["본드량과 line 위치 요인을 분리한다.", "Normal 대조군이 검증된 Comparison만 계산한다.", "정량 주장마다 데이터 ID와 셀 범위를 제시한다."]
+    },
+    {
+      "id": "GQ02",
+      "question": "VP+CD 신규 본딩·조립기의 base 개선 후 VP+CD separate와 Function NG가 Normal 대비 개선됐나? 날짜별 반복 결과가 일관적인지 보여줘.",
+      "primaryPilotIds": ["P06"],
+      "requiredBehavior": ["날짜별 반복 arm을 유지한다.", "Normal 대비 효과와 반복 간 방향 일관성을 구분한다.", "근거 범위를 제시한다."]
+    },
+    {
+      "id": "GQ03",
+      "question": "AWF cooling time 4초, 8초, 10초 중 Function NG가 가장 낮은 조건은 무엇이며 표본 수와 각 세부 NG를 함께 비교해줘.",
+      "primaryPilotIds": ["P12"],
+      "requiredBehavior": ["4/8/10초를 순서형 arm으로 분리한다.", "각 arm의 표본 수와 세부 NG를 함께 반환한다.", "없는 대조군이나 값을 만들지 않는다."]
+    },
+    {
+      "id": "GQ04",
+      "question": "SUS-D cutting 40%, 50%, 60%가 Normal 대비 suspension separate, coil damage, Function NG, tension에 각각 어떤 영향을 줬나?",
+      "primaryPilotIds": ["P11"],
+      "requiredBehavior": ["40/50/60/Normal arm을 보존한다.", "outcome별 단위와 효과를 분리한다.", "정량 결과에 근거를 연결한다."]
+    },
+    {
+      "id": "GQ05",
+      "question": "Air pressure 18, 100, 200, 300kPa DOE에서 Air leak, FRF, Hearing, NTI 결과의 방향성과 trade-off를 요약해줘.",
+      "primaryPilotIds": ["P14"],
+      "requiredBehavior": ["압력 arm과 kPa 단위를 보존한다.", "Air leak/FRF/Hearing/NTI를 별도 outcome으로 비교한다.", "서로 다른 outcome의 trade-off를 단일 점수로 임의 합산하지 않는다."]
+    },
+    {
+      "id": "GQ06",
+      "question": "VP mold temperature 변경이 Function NG를 개선했나? Vulcanizing agent와 mold 번호가 동시에 바뀐 자료는 단일 요인 효과로 계산하지 말고 왜 confounded인지 설명해줘.",
+      "primaryPilotIds": ["P13"],
+      "requiredBehavior": ["동시 변경 factor를 모두 열거한다.", "CONFOUNDED_MULTI_FACTOR를 반환한다.", "온도 단독 인과 효과를 계산하지 않는다."],
+      "requiredBehaviorAssertions": [
+        {
+          "type": "CONFOUNDED_FACTORS_COMPLETE",
+          "minimumFactorCount": 2,
+          "minimumComparisonCount": 1
+        },
+        {
+          "type": "REQUIRED_ANSWER_CODE",
+          "code": "CONFOUNDED_MULTI_FACTOR"
+        },
+        {
+          "type": "MAX_ELIGIBLE_EFFECT_COUNT",
+          "maximum": 0
+        }
+      ]
+    },
+    {
+      "id": "GQ07",
+      "question": "Hearing 검사 전후 coil inner dimension이 같은 샘플에서 얼마나 변했나? paired 데이터만 사용하고 표 근거를 연결해줘.",
+      "primaryPilotIds": ["P07", "P08"],
+      "requiredBehavior": ["샘플 pairing이 확인된 표 데이터만 계산한다.", "P08은 유효 표가 없으면 NO_TABULAR_EVIDENCE로 제외한다.", "이미지를 추출하거나 분석하지 않는다."]
+    },
+    {
+      "id": "GQ08",
+      "question": "BRS-161014S08ZZ 신뢰성 시험에서 시험 전후 SPL, impedance, F0, THD 변화와 NG 발생 항목을 시험 조건별로 보여줘.",
+      "primaryPilotIds": ["P20"],
+      "requiredBehavior": ["시험 조건별 paired 결과를 분리한다.", "SPL/impedance/F0/THD의 단위를 보존한다.", "표 셀과 수식 lineage만 근거로 사용한다."]
+    },
+    {
+      "id": "GQ09",
+      "question": "센터돔 검토에서 press 조건과 VP Coil/FR-VP 본드량별 WF, THD, IMP raw 측정 결과를 비교하고, 서로 다른 요인을 섞지 말고 조건별로 분리해줘.",
+      "primaryPilotIds": ["P21"],
+      "requiredBehavior": ["press와 본드량 factor를 분리한다.", "WF/THD/IMP raw series의 조건과 샘플을 보존한다.", "비교 가능하지 않은 arm을 합산하지 않는다."]
+    },
+    {
+      "id": "GQ10",
+      "question": "숫자표가 없는 VP+CD GMI/DT line 비교와 공정별 NG 이미지 자료는 NO_TABULAR_EVIDENCE로 명시하고 수치 효과를 계산하지 마. 이미지 추출/분석은 하지 마.",
+      "primaryPilotIds": ["P10", "P27", "P28"],
+      "requiredBehavior": ["NO_TABULAR_EVIDENCE 상태를 명시한다.", "수치 효과와 이미지 기반 사실을 생성하지 않는다.", "질의 결과의 제외 사유를 반환한다."]
+    }
+  ]
+}

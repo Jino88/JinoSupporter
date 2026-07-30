@@ -1,0 +1,282 @@
+{
+  "sourceFileId": 73,
+  "sourceFile": "03. BRS-161014 Report check NG VP+CD separate 11.01.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\03. BRS-161014 Report check NG VP+CD separate 11.01.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report (2)",
+    "sheetRowCount": 20,
+    "sheetCellCount": 69,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 8,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report (2)!2",
+      "sheetName": "Report (2)",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT CHECK NG VP+CD SEPARATE AT SUB 1- 161014 | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report (2)!3",
+      "sheetName": "Report (2)",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | Date | 2024-01-11 00:00:00"
+    },
+    {
+      "rowId": "Report (2)!4",
+      "sheetName": "Report (2)",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | Marker | Thủy"
+    },
+    {
+      "rowId": "Report (2)!5",
+      "sheetName": "Report (2)",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report (2)!6",
+      "sheetName": "Report (2)",
+      "rowNumber": 6,
+      "rowText": "| - To find NG reason VP+CD separate"
+    },
+    {
+      "rowId": "Report (2)!13",
+      "sheetName": "Report (2)",
+      "rowNumber": 13,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report (2)!14",
+      "sheetName": "Report (2)",
+      "rowNumber": 14,
+      "rowText": "| - To separate mold VP -> checking NG rate separate VP+CD"
+    },
+    {
+      "rowId": "Report (2)!15",
+      "sheetName": "Report (2)",
+      "rowNumber": 15,
+      "rowText": "| - To separate vender CD -> checking NG rate separate VP+CD"
+    },
+    {
+      "rowId": "Report (2)!16",
+      "sheetName": "Report (2)",
+      "rowNumber": 16,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "Report (2)!17",
+      "sheetName": "Report (2)",
+      "rowNumber": 17,
+      "rowText": "| | RESULT CHECKING VISION VP+CD OF SUB 1"
+    },
+    {
+      "rowId": "Report (2)!18",
+      "sheetName": "Report (2)",
+      "rowNumber": 18,
+      "rowText": "| | Date | Mold VP | Vender CD | Input | OK | NG VP+CD separate | NG rate"
+    },
+    {
+      "rowId": "Report (2)!19",
+      "sheetName": "Report (2)",
+      "rowNumber": 19,
+      "rowText": "| | 2024-01-11 00:00:00 | VP mold 2 | CD of Ralon | 270 | 229 | 41 | 0.15185185"
+    },
+    {
+      "rowId": "Report (2)!34",
+      "sheetName": "Report (2)",
+      "rowNumber": 34,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-73-rc-1",
+      "reviewTitle": "REPORT CHECK NG VP+CD SEPARATE AT SUB 1- 161014 | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To find NG reason VP+CD separate / | II. Content. / | - To separate mold VP -> checking NG rate separate VP+CD / | - To separate vender CD -> checking NG rate separate VP+CD",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs CD of GES, VP mold 2, VP mold 4, VP mold 7, VP mold 8, VP mold 6",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "CD of GES, VP mold 2, VP mold 4, VP mold 7, VP mold 8, VP mold 6",
+          "subgroupKeys": [
+            "CD of Ralon",
+            "CD of GES"
+          ],
+          "evidenceRows": [
+            "Report (2)!13",
+            "Report (2)!19",
+            "Report (2)!2",
+            "Report (2)!20",
+            "Report (2)!21",
+            "Report (2)!22",
+            "Report (2)!23",
+            "Report (2)!24",
+            "Report (2)!25",
+            "Report (2)!26",
+            "Report (2)!5"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "RESULT CHECKING VISION VP+CD OF SUB 1",
+          "comparisonRows": [
+            "Report (2)!19",
+            "Report (2)!20",
+            "Report (2)!21",
+            "Report (2)!22",
+            "Report (2)!23",
+            "Report (2)!24",
+            "Report (2)!25",
+            "Report (2)!26"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 17815,
+              "condition": "VP mold 2 | CD of Ralon",
+              "input": 270.0,
+              "ok": 229.0,
+              "ng": 41.0,
+              "ratePercent": 15.185185,
+              "evidenceRows": [
+                "Report (2)!19"
+              ]
+            },
+            {
+              "metricId": 17816,
+              "condition": "CD of GES",
+              "input": 510.0,
+              "ok": 510.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Report (2)!20"
+              ]
+            },
+            {
+              "metricId": 17817,
+              "condition": "VP mold 4 | CD of Ralon",
+              "input": 188.0,
+              "ok": 129.0,
+              "ng": 59.0,
+              "ratePercent": 31.382979,
+              "evidenceRows": [
+                "Report (2)!21"
+              ]
+            },
+            {
+              "metricId": 17818,
+              "condition": "CD of GES",
+              "input": 193.0,
+              "ok": 181.0,
+              "ng": 12.0,
+              "ratePercent": 6.217617000000001,
+              "evidenceRows": [
+                "Report (2)!22"
+              ]
+            },
+            {
+              "metricId": 17819,
+              "condition": "VP mold 7 | CD of GES",
+              "input": 178.0,
+              "ok": 178.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Report (2)!23"
+              ]
+            },
+            {
+              "metricId": 17820,
+              "condition": "VP mold 8 | CD of Ralon",
+              "input": 72.0,
+              "ok": 70.0,
+              "ng": 2.0,
+              "ratePercent": 2.7777779999999996,
+              "evidenceRows": [
+                "Report (2)!24"
+              ]
+            },
+            {
+              "metricId": 17821,
+              "condition": "CD of GES",
+              "input": 150.0,
+              "ok": 150.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Report (2)!25"
+              ]
+            },
+            {
+              "metricId": 17822,
+              "condition": "VP mold 6 | CD of GES",
+              "input": 150.0,
+              "ok": 150.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Report (2)!26"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report (2)!13",
+        "Report (2)!19",
+        "Report (2)!2",
+        "Report (2)!20",
+        "Report (2)!21",
+        "Report (2)!22",
+        "Report (2)!23",
+        "Report (2)!24",
+        "Report (2)!25",
+        "Report (2)!26",
+        "Report (2)!5"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report (2)!13",
+      "Report (2)!19",
+      "Report (2)!2",
+      "Report (2)!20",
+      "Report (2)!21",
+      "Report (2)!22",
+      "Report (2)!23",
+      "Report (2)!24",
+      "Report (2)!25",
+      "Report (2)!26",
+      "Report (2)!5"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 346,
+  "sourceFile": "18. BRS-201506 Report checking Xray of NG Touch date 24.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\346.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:08Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 346,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft is not a valid comparative review case because no explicit changed factor, baseline/test comparison, or citeable Xray result is present.",
+    "issues": [
+      "Changed factor is inferred from filename, not source evidence.",
+      "Baseline and changed conditions are not explicit.",
+      "Sheet1 settings are single-condition TEST data, not outcomes.",
+      "Xray result appears image/table-only with no citeable judgement text.",
+      "Measurement stats misuse row headers as evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Exclude this draft from Ask AI final evidence.",
+      "Do not use filename as the changed factor.",
+      "Reprocess only if OCR/text result rows can cite Xray findings.",
+      "Create a case only if a real baseline/test condition is documented.",
+      "Keep Sheet1 settings as context, not outcome metrics."
+    ],
+    "evidencePolicy": "Citations exist but do not support a changed-condition comparison or final Xray outcome."
+  },
+  "usage": {
+    "input_tokens": 2913,
+    "output_tokens": 582,
+    "total_tokens": 3495
+  }
+}

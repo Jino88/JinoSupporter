@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 465,
+  "sourceFile": "26. TIU L5S3-01 R Report test find reason NG BAKO high 2025.12.14_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\465.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 465,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures the report topic and result rows, but baseline/test grouping and derived measurement statistics are not reliable enough for final evidence.",
+    "issues": [
+      "Baseline or normal condition is not explicitly evidenced.",
+      "Three different test conditions are collapsed into one changed condition.",
+      "Measurement outcome appears derived from header/category data, not valid measurements.",
+      "Evidence cites Test!15 but its content is not provided in context.",
+      "Result title mentions reduce bonding amount, but listed conditions do not clearly match it."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended baseline or reference condition for the NG BAKO rate?",
+      "Should the two UV dry temperature settings and bonding-line test be separate review cases or subconditions?",
+      "Can row 15 and any missing result rows be provided to verify category headers?"
+    ],
+    "correctionPlan": [
+      "Reframe changed factor as an exploratory process-condition test unless a baseline is confirmed.",
+      "Preserve each result row as a separate tested condition with its own input, OK, NG, and rate.",
+      "Remove the unsupported measurement-stat outcome.",
+      "Add or verify missing cited rows, especially Test!15 and adjacent result/header rows.",
+      "Do not assign improvement judgement without an explicit baseline comparison."
+    ],
+    "evidencePolicy": "Citations to result rows are partly sufficient, but missing row 15 and ambiguous baseline prevent final approval."
+  },
+  "usage": {
+    "input_tokens": 3341,
+    "output_tokens": 816,
+    "total_tokens": 4157
+  }
+}

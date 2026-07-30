@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 20,
+  "sourceFile": "01. MSU-L20S15-07DT Report test check lot material CD  -11.4.2025_1778470667_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\20.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:44:57Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 20,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft invents a baseline/test comparison from row numbers even though the cited evidence describes a non-comparative lot material CD vision check report.",
+    "issues": [
+      "Changed factor is not supported: values 1, 2, 3, 4, 5, 6 appear to be table item numbers, not changed/test conditions.",
+      "No explicit baseline, normal condition, test condition, or comparable changed-condition evidence is cited.",
+      "The outcome data are inspection results by date/line/lot, but the draft frames them as a condition comparison.",
+      "Decision content is not captured; only the 'IV. Decision' heading is shown, so final acceptability cannot be verified from the provided evidence.",
+      "Source metadata is internally inconsistent because sheetRowCount is 112 while context includes row 128."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Exclude this draft as a ReviewCase unless additional source rows show an explicit material/lot change comparison or acceptance criterion.",
+      "If retained for another workflow, reframe it as a non-comparative lot inspection summary, not a baseline-vs-test review case.",
+      "Do not use No. values as changed conditions; preserve date, line, dome lot date, and run/sample grouping only as subgroup context.",
+      "Capture the actual Decision rows/content if a judgement about OK/NG is required."
+    ],
+    "evidencePolicy": "Row citations exist for inspection metrics, but they are insufficient as evidence for a changed-factor comparison or baseline/test grouping."
+  },
+  "usage": {
+    "input_tokens": 3049,
+    "output_tokens": 844,
+    "total_tokens": 3893
+  }
+}

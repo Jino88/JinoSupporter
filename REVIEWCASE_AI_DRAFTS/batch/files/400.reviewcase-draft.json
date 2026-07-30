@@ -1,0 +1,241 @@
+{
+  "sourceFileId": 400,
+  "sourceFile": "21. BRS-161014 Report TEST FRAME ARRAY JIG improve bending Suspension 2023.09.08_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\21. BRS-161014 Report TEST FRAME ARRAY JIG improve bending Suspension 2023.09.08_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "9.8",
+    "sheetRowCount": 18,
+    "sheetCellCount": 51,
+    "comparisonPairCount": 2,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "9.8!2",
+      "sheetName": "9.8",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST FRAME ARRAY JIG IMPROVE BENDING SUSPENSION_SUB 3 | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "9.8!3",
+      "sheetName": "9.8",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | Date | 2023-09-08 00:00:00"
+    },
+    {
+      "rowId": "9.8!4",
+      "sheetName": "9.8",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "9.8!5",
+      "sheetName": "9.8",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "9.8!6",
+      "sheetName": "9.8",
+      "rowNumber": 6,
+      "rowText": "| Improve bending SUSPENSION"
+    },
+    {
+      "rowId": "9.8!7",
+      "sheetName": "9.8",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "9.8!8",
+      "sheetName": "9.8",
+      "rowNumber": 8,
+      "rowText": "| Make support for 4 position suspension happen bending"
+    },
+    {
+      "rowId": "9.8!17",
+      "sheetName": "9.8",
+      "rowNumber": 17,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "9.8!18",
+      "sheetName": "9.8",
+      "rowNumber": 18,
+      "rowText": "| Result TEST"
+    },
+    {
+      "rowId": "9.8!19",
+      "sheetName": "9.8",
+      "rowNumber": 19,
+      "rowText": "| | No | Date | Type | Input | OK | NG bending | NG rate"
+    },
+    {
+      "rowId": "9.8!20",
+      "sheetName": "9.8",
+      "rowNumber": 20,
+      "rowText": "| | 1 | 2023-09-08 00:00:00 | JIG TEST | 117 | 115 | 2 | 0.01709402"
+    },
+    {
+      "rowId": "9.8!21",
+      "sheetName": "9.8",
+      "rowNumber": 21,
+      "rowText": "| | 2 | | JIG NORMAL | 117 | 86 | 31 | 0.26495726"
+    },
+    {
+      "rowId": "9.8!22",
+      "sheetName": "9.8",
+      "rowNumber": 22,
+      "rowText": "| | 3 | 2023-09-09 00:00:00 | JIG TEST | 100 | 99 | 1 | 0.01"
+    },
+    {
+      "rowId": "9.8!23",
+      "sheetName": "9.8",
+      "rowNumber": 23,
+      "rowText": "| | 4 | | JIG NORMAL | 100 | 91 | 9 | 0.09"
+    },
+    {
+      "rowId": "9.8!34",
+      "sheetName": "9.8",
+      "rowNumber": 34,
+      "rowText": "| 4. Decision"
+    },
+    {
+      "rowId": "9.8!35",
+      "sheetName": "9.8",
+      "rowNumber": 35,
+      "rowText": "| JIG improve: reduce NG bending many"
+    },
+    {
+      "rowId": "9.8!36",
+      "sheetName": "9.8",
+      "rowNumber": 36,
+      "rowText": "| => Can use new JIG improve"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-400-rc-1",
+      "reviewTitle": "REPORT TEST FRAME ARRAY JIG IMPROVE BENDING SUSPENSION_SUB 3 | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | Improve bending SUSPENSION / | II. Content. / | Make support for 4 position suspension happen bending / | 3.Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "jig"
+          ],
+          "changedFactor": "Condition comparison: JIG NORMAL vs JIG TEST",
+          "baselineCondition": "JIG NORMAL",
+          "changedCondition": "JIG TEST",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "9.8!18",
+            "9.8!2",
+            "9.8!20",
+            "9.8!21",
+            "9.8!22",
+            "9.8!23",
+            "9.8!5",
+            "9.8!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "Result TEST",
+          "comparisonRows": [
+            "9.8!20",
+            "9.8!21",
+            "9.8!22"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 3962,
+              "controlCondition": "JIG NORMAL",
+              "testCondition": "JIG TEST",
+              "control": {
+                "input": 117.0,
+                "ng": 31.0,
+                "ratePercent": 26.495726
+              },
+              "test": {
+                "input": 117.0,
+                "ng": 2.0,
+                "ratePercent": 1.709402
+              },
+              "deltaRatePercentPoint": -24.786324000000004,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "9.8!20",
+                "9.8!21"
+              ]
+            },
+            {
+              "pairId": 3963,
+              "controlCondition": "JIG NORMAL",
+              "testCondition": "JIG TEST",
+              "control": {
+                "input": 117.0,
+                "ng": 31.0,
+                "ratePercent": 26.495726
+              },
+              "test": {
+                "input": 100.0,
+                "ng": 1.0,
+                "ratePercent": 1.0
+              },
+              "deltaRatePercentPoint": -25.495726,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "9.8!21",
+                "9.8!22"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "9.8!18",
+        "9.8!2",
+        "9.8!20",
+        "9.8!21",
+        "9.8!22",
+        "9.8!23",
+        "9.8!5",
+        "9.8!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "9.8!18",
+      "9.8!2",
+      "9.8!20",
+      "9.8!21",
+      "9.8!22",
+      "9.8!23",
+      "9.8!5",
+      "9.8!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

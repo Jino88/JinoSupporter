@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 475,
+  "sourceFile": "28-1. BRS-161014 DT Report test VP mold #2,3,4,5,8,10  check the actual VP bending with the supplier    date 20.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\475.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 475,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but changed-factor grouping and several outcome groupings are not reliable.",
+    "issues": [
+      "Changed factor wrongly mixes mold number, bending status, OK/bending groups, and unstated baseline.",
+      "Supplier is not proven as a changed factor.",
+      "Second sheet appears to be a distinct mold #2 add-0.05T test context.",
+      "Merged subgroup labels are lost for several VP Bending and VP not Bending rows.",
+      "NG rate VP bending row has incorrect NG value."
+    ],
+    "requiredUserQuestions": [
+      "Should the NG rate sheet be grouped with the multi-mold VP bending report or split as a separate case?"
+    ],
+    "correctionPlan": [
+      "Redefine primary factor as test VP mold number where comparing molds.",
+      "Treat VP Bending and VP not Bending as subgroup/material-status context.",
+      "Separate before-laser, after-laser, vision, and function outcomes.",
+      "Split or clearly link the mold #2 add-0.05T sheet context.",
+      "Correct NG rate row values and propagate merged labels."
+    ],
+    "evidencePolicy": "Row citations exist, but are not sufficient until grouping and numeric extraction are corrected."
+  },
+  "usage": {
+    "input_tokens": 9320,
+    "output_tokens": 1261,
+    "total_tokens": 10581
+  }
+}

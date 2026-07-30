@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 720,
+  "sourceFile": "52. BRS-161014  Report test VP change mold press 90, dry 2nd 120⁰C and 150⁰C date 20.7.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\720.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 720,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but misidentifies the primary change and loses key test-condition grouping.",
+    "issues": [
+      "Primary changed factor should be 2nd dry 120C vs 150C at mold press 90, not VP mold list.",
+      "VP mold numbers are subgroup keys, not the main changed condition.",
+      "Continuation rows omit inherited TEST 1/TEST 2 and dry-temperature context.",
+      "Normal function rows and decision context are not fully captured.",
+      "Measurement outcomes are header-derived and not reliable evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Redefine changed factor as TEST 1 120C versus TEST 2 150C with mold press 90 fixed.",
+      "Preserve subgroup keys: date, line, lot date, VP mold, test round, dry temp.",
+      "Attach inherited test/dry context to every VP mold subresult.",
+      "Include Normal function rows only as reference/baseline where supported.",
+      "Remove or rebuild header-only measurement outcomes from actual data rows."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until corrected."
+  },
+  "usage": {
+    "input_tokens": 8977,
+    "output_tokens": 774,
+    "total_tokens": 9751
+  }
+}

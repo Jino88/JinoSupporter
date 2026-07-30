@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 21,
+  "sourceFile": "01. TIU C11-20  Report test VP new film 2-2 roll high function NG rate ( A2 rate 42% ) recheck low air pressure NG rate date 17.12.2025 - Copy_1778470674_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\21.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:08Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 21,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misgroups test rounds and includes invalid measurement outcomes.",
+    "issues": [
+      "Changed-factor grouping mixes Test and Test (2) without preserving date/test round.",
+      "Test (2) contains no low-air-pressure condition, so it cannot directly compare to the changed condition.",
+      "Baseline combines normal lot with 2-2 film normal forming, which are distinct comparator contexts.",
+      "Measurement outcome is derived from defect-count headers, not true measurements.",
+      "Key source rows for low pressure content and decision are missing from draft citations."
+    ],
+    "requiredUserQuestions": [
+      "Should Test and Test (2) be one validation case with separate test rounds or separate cases?",
+      "Should normal lot be treated only as comparator context distinct from 2-2 film normal forming?"
+    ],
+    "correctionPlan": [
+      "Use primary factor: 2-2 film roll forming pressure 5.6kg vs 3.5kg for Test sheet only.",
+      "Preserve date/sheet as test-round subgroup if combining sheets.",
+      "Keep normal lot as separate comparator context, not part of the pressure baseline.",
+      "Remove the measurement outcome and keep function NG rate defect outcome only.",
+      "Add citations for low-pressure content and decision rows, including Test!9 and Test!25."
+    ],
+    "evidencePolicy": "Core cited rows exist, but current citations are incomplete and partly misapplied."
+  },
+  "usage": {
+    "input_tokens": 5744,
+    "output_tokens": 824,
+    "total_tokens": 6568
+  }
+}

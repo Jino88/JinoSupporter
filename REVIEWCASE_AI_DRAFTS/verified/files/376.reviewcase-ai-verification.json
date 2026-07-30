@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 376,
+  "sourceFile": "2. BRS-201506 DT Report Check machine laze cutting SP and cutting laze VP  date 8.12.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\376.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:17Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 376,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft cites valid report context but invents a baseline/date comparison and misgroups SP and VP outcomes under the wrong changed factor.",
+    "issues": [
+      "No explicit baseline/test comparison is evidenced.",
+      "Changed factor as date is unsupported.",
+      "SP and VP are separate machine checks, not one VP metric under SP title.",
+      "Change domains include unsupported coating and dimension/spec.",
+      "Key cited data rows are not shown in context for independent verification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove the baseline-versus-date changed factor.",
+      "Recast as machine laser cutting validation only if non-comparative cases are allowed.",
+      "Separate SP+Coil and VP checks or define one report-level equipment qualification factor.",
+      "Use only supported equipment/process domains.",
+      "Cite title, purpose, metric header, data row, and result/decision rows for each sheet."
+    ],
+    "evidencePolicy": "Current citations exist but are insufficient and partly unsupported for the claimed comparison."
+  },
+  "usage": {
+    "input_tokens": 3012,
+    "output_tokens": 744,
+    "total_tokens": 3756
+  }
+}

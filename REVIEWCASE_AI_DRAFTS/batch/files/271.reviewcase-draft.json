@@ -1,0 +1,285 @@
+{
+  "sourceFileId": 271,
+  "sourceFile": "13. TIU C11-20 Result test Frame load tray 2025.12.18_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\13. TIU C11-20 Result test Frame load tray 2025.12.18_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 20,
+    "sheetCellCount": 72,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 8,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | RESULT TEST FRAME LOAD TRAY IMPROVE - TIU C11-20 | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | Date | 2025-12-18 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | Maker | Trung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Improve NG Frame pickup NG"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| TEST JIG improve"
+    },
+    {
+      "rowId": "Test!19",
+      "sheetName": "Test",
+      "rowNumber": 19,
+      "rowText": "| III. Result."
+    },
+    {
+      "rowId": "Test!20",
+      "sheetName": "Test",
+      "rowNumber": 20,
+      "rowText": "| Result TEST"
+    },
+    {
+      "rowId": "Test!21",
+      "sheetName": "Test",
+      "rowNumber": 21,
+      "rowText": "| | No | Date | Type JIG | Input | OK | PICKUP NG | NG rate"
+    },
+    {
+      "rowId": "Test!23",
+      "sheetName": "Test",
+      "rowNumber": 23,
+      "rowText": "| | 1 | 2025-12-18 00:00:00 | Time 1 | 32 | 30 | 2 | 0.0625"
+    },
+    {
+      "rowId": "Test!24",
+      "sheetName": "Test",
+      "rowNumber": 24,
+      "rowText": "| | 2 | | Time 2 | 32 | 30 | 2 | 0.0625"
+    },
+    {
+      "rowId": "Test!32",
+      "sheetName": "Test",
+      "rowNumber": 32,
+      "rowText": "| III. Decision."
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-271-rc-1",
+      "reviewTitle": "| RESULT TEST FRAME LOAD TRAY IMPROVE - TIU C11-20 | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Improve NG Frame pickup NG / | II. Content. / | TEST JIG improve / | III. Result.",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Time 1, Time 2, Time 3, Time 4, Time 5, Time 6, Time 7, Total",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Time 1, Time 2, Time 3, Time 4, Time 5, Time 6, Time 7, Total",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!2",
+            "Test!20",
+            "Test!23",
+            "Test!24",
+            "Test!25",
+            "Test!26",
+            "Test!27",
+            "Test!28",
+            "Test!29",
+            "Test!30",
+            "Test!5",
+            "Test!7",
+            "Test!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "Result TEST",
+          "comparisonRows": [
+            "Test!23",
+            "Test!24",
+            "Test!25",
+            "Test!26",
+            "Test!27",
+            "Test!28",
+            "Test!29",
+            "Test!30"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 19189,
+              "condition": "Time 1",
+              "input": 32.0,
+              "ok": 30.0,
+              "ng": 2.0,
+              "ratePercent": 6.25,
+              "evidenceRows": [
+                "Test!23"
+              ]
+            },
+            {
+              "metricId": 19190,
+              "condition": "Time 2",
+              "input": 32.0,
+              "ok": 30.0,
+              "ng": 2.0,
+              "ratePercent": 6.25,
+              "evidenceRows": [
+                "Test!24"
+              ]
+            },
+            {
+              "metricId": 19191,
+              "condition": "Time 3",
+              "input": 32.0,
+              "ok": 29.0,
+              "ng": 3.0,
+              "ratePercent": 9.375,
+              "evidenceRows": [
+                "Test!25"
+              ]
+            },
+            {
+              "metricId": 19192,
+              "condition": "Time 4",
+              "input": 32.0,
+              "ok": 31.0,
+              "ng": 1.0,
+              "ratePercent": 3.125,
+              "evidenceRows": [
+                "Test!26"
+              ]
+            },
+            {
+              "metricId": 19193,
+              "condition": "Time 5",
+              "input": 32.0,
+              "ok": 32.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!27"
+              ]
+            },
+            {
+              "metricId": 19194,
+              "condition": "Time 6",
+              "input": 32.0,
+              "ok": 30.0,
+              "ng": 2.0,
+              "ratePercent": 6.25,
+              "evidenceRows": [
+                "Test!28"
+              ]
+            },
+            {
+              "metricId": 19195,
+              "condition": "Time 7",
+              "input": 32.0,
+              "ok": 30.0,
+              "ng": 2.0,
+              "ratePercent": 6.25,
+              "evidenceRows": [
+                "Test!29"
+              ]
+            },
+            {
+              "metricId": 19196,
+              "condition": "Total",
+              "input": 224.0,
+              "ok": 212.0,
+              "ng": 12.0,
+              "ratePercent": 5.357143000000001,
+              "evidenceRows": [
+                "Test!30"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!2",
+        "Test!20",
+        "Test!23",
+        "Test!24",
+        "Test!25",
+        "Test!26",
+        "Test!27",
+        "Test!28",
+        "Test!29",
+        "Test!30",
+        "Test!5",
+        "Test!7",
+        "Test!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!2",
+      "Test!20",
+      "Test!23",
+      "Test!24",
+      "Test!25",
+      "Test!26",
+      "Test!27",
+      "Test!28",
+      "Test!29",
+      "Test!30",
+      "Test!5",
+      "Test!7",
+      "Test!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

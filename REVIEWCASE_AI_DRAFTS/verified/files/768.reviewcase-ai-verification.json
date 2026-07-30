@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 768,
+  "sourceFile": "6 BRS-161014 Report TEST new BP+SM ASS'Y GUIDE JIG improve 2023.08.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\768.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 768,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the jig-improvement validation but groups result row numbers/dates as changed conditions and implies an unsupported baseline comparison.",
+    "issues": [
+      "Changed factor is misgrouped as baseline vs 1,2; 1 and 2 are result sequence numbers.",
+      "Baseline/normal condition is not citeably measured in shown rows.",
+      "Outcome rows 12-13 are two test dates under the new jig, not separate test conditions.",
+      "Report!26 is cited but not provided in context, so NG-reason outcome cannot be verified here.",
+      "Decision row is listed but its content is not captured."
+    ],
+    "requiredUserQuestions": [
+      "Should this be treated as a single-arm new version (2) guide jig validation with no baseline?",
+      "Can the full NG-reason and decision rows be provided for citation?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to new version (2) BP/SM assembly guide jig improvement.",
+      "Set baseline as implicit previous jig only if documented; otherwise mark no explicit baseline.",
+      "Use dates 2023-08-18 and 2023-08-19 as subgroup keys, not changed conditions.",
+      "Keep Result check as the main outcome with input, OK, NG, and NG rate from rows 11-13.",
+      "Remove or verify the Report!26 NG-reason outcome using full row context."
+    ],
+    "evidencePolicy": "Rows 2,5-8,11-13 support title, purpose, changed condition, and results; cited Report!26 and decision evidence are insufficiently shown."
+  },
+  "usage": {
+    "input_tokens": 2507,
+    "output_tokens": 861,
+    "total_tokens": 3368
+  }
+}

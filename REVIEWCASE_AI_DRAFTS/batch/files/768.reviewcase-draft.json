@@ -1,0 +1,231 @@
+{
+  "sourceFileId": 768,
+  "sourceFile": "6 BRS-161014 Report TEST new BP+SM ASS'Y GUIDE JIG improve 2023.08.18_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\6 BRS-161014 Report TEST new BP+SM ASS'Y GUIDE JIG improve 2023.08.18_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report",
+    "sheetRowCount": 20,
+    "sheetCellCount": 49,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 3,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report!2",
+      "sheetName": "Report",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST NEW BP/SM ASS'Y GUIDE JIG IMPROVE | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report!3",
+      "sheetName": "Report",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | Date | 2023-08-18 00:00:00"
+    },
+    {
+      "rowId": "Report!4",
+      "sheetName": "Report",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | Marker | Tu/Thuy"
+    },
+    {
+      "rowId": "Report!5",
+      "sheetName": "Report",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report!6",
+      "sheetName": "Report",
+      "rowNumber": 6,
+      "rowText": "| Improve NG askew BPT+SMG"
+    },
+    {
+      "rowId": "Report!7",
+      "sheetName": "Report",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report!8",
+      "sheetName": "Report",
+      "rowNumber": 8,
+      "rowText": "| Use new version (2) JIG improve and TEST it"
+    },
+    {
+      "rowId": "Report!9",
+      "sheetName": "Report",
+      "rowNumber": 9,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "Report!10",
+      "sheetName": "Report",
+      "rowNumber": 10,
+      "rowText": "| Result check"
+    },
+    {
+      "rowId": "Report!11",
+      "sheetName": "Report",
+      "rowNumber": 11,
+      "rowText": "| | | No | Date | Input | OK | NG | NG rate"
+    },
+    {
+      "rowId": "Report!12",
+      "sheetName": "Report",
+      "rowNumber": 12,
+      "rowText": "| | | 1 | 2023-08-18 00:00:00 | 480 | 475 | 5 | 0.01041667"
+    },
+    {
+      "rowId": "Report!13",
+      "sheetName": "Report",
+      "rowNumber": 13,
+      "rowText": "| | | 2 | 2023-08-19 00:00:00 | 640 | 640 | 0 | 0"
+    },
+    {
+      "rowId": "Report!23",
+      "sheetName": "Report",
+      "rowNumber": 23,
+      "rowText": "| - Check reason NG:"
+    },
+    {
+      "rowId": "Report!39",
+      "sheetName": "Report",
+      "rowNumber": 39,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-768-rc-1",
+      "reviewTitle": "REPORT TEST NEW BP/SM ASS'Y GUIDE JIG IMPROVE | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | Improve NG askew BPT+SMG / | II. Content. / | Use new version (2) JIG improve and TEST it / | 3.Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "jig",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs 1, 2",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "1, 2",
+          "subgroupKeys": [
+            "2023-08-18 00:00:00",
+            "2023-08-19 00:00:00"
+          ],
+          "evidenceRows": [
+            "Report!12",
+            "Report!13",
+            "Report!2",
+            "Report!26",
+            "Report!5",
+            "Report!7",
+            "Report!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "Result check",
+          "comparisonRows": [
+            "Report!12",
+            "Report!13"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 23603,
+              "condition": "1 | 2023-08-18 00:00:00",
+              "input": 480.0,
+              "ok": 475.0,
+              "ng": 5.0,
+              "ratePercent": 1.041667,
+              "evidenceRows": [
+                "Report!12"
+              ]
+            },
+            {
+              "metricId": 23604,
+              "condition": "2 | 2023-08-19 00:00:00",
+              "input": 640.0,
+              "ok": 640.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Report!13"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "metric-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "- Check reason NG:",
+          "comparisonRows": [
+            "Report!26"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 23605,
+              "condition": "1 | 2023-08-18 00:00:00",
+              "input": 3.0,
+              "ok": null,
+              "ng": 2.0,
+              "ratePercent": 66.66666666666666,
+              "evidenceRows": [
+                "Report!26"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report!12",
+        "Report!13",
+        "Report!2",
+        "Report!26",
+        "Report!5",
+        "Report!7",
+        "Report!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report!12",
+      "Report!13",
+      "Report!2",
+      "Report!26",
+      "Report!5",
+      "Report!7",
+      "Report!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

@@ -1,0 +1,217 @@
+{
+  "sourceFileId": 833,
+  "sourceFile": "67. BRS-161016  Report test CD press JIG OK and worn out find reason NG separate conner date 20.09.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\67. BRS-161016  Report test CD press JIG OK and worn out find reason NG separate conner date 20.09.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "30.8",
+    "sheetRowCount": 19,
+    "sheetCellCount": 52,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "30.8!2",
+      "sheetName": "30.8",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST FIND REASON NG VP/CD SEPARATE CONNER BRS-161016 | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "30.8!3",
+      "sheetName": "30.8",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | Date | 2024-09-20 00:00:00"
+    },
+    {
+      "rowId": "30.8!4",
+      "sheetName": "30.8",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | Marker | Trang"
+    },
+    {
+      "rowId": "30.8!5",
+      "sheetName": "30.8",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "30.8!6",
+      "sheetName": "30.8",
+      "rowNumber": 6,
+      "rowText": "| - Test JIG CD press JIG OK and worn out find reason NG VP/CP separate conner"
+    },
+    {
+      "rowId": "30.8!12",
+      "sheetName": "30.8",
+      "rowNumber": 12,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "30.8!13",
+      "sheetName": "30.8",
+      "rowNumber": 13,
+      "rowText": "| - Separate 2 type JIG"
+    },
+    {
+      "rowId": "30.8!14",
+      "sheetName": "30.8",
+      "rowNumber": 14,
+      "rowText": "| ++ Type 1: JIG CD press JIG OK ( Not worn out )"
+    },
+    {
+      "rowId": "30.8!15",
+      "sheetName": "30.8",
+      "rowNumber": 15,
+      "rowText": "| ++ Type 2: JIG CD press JIG worn out"
+    },
+    {
+      "rowId": "30.8!16",
+      "sheetName": "30.8",
+      "rowNumber": 16,
+      "rowText": "| - To make same and check NG process vision VP/CD"
+    },
+    {
+      "rowId": "30.8!18",
+      "sheetName": "30.8",
+      "rowNumber": 18,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "30.8!19",
+      "sheetName": "30.8",
+      "rowNumber": 19,
+      "rowText": "| | 3. RESULT CHECKING VISION VP/CD"
+    },
+    {
+      "rowId": "30.8!20",
+      "sheetName": "30.8",
+      "rowNumber": 20,
+      "rowText": "| | Date | Line | Type | Input | OK | NG Vision VP/CD | | | | Total NG | NG Rate"
+    },
+    {
+      "rowId": "30.8!22",
+      "sheetName": "30.8",
+      "rowNumber": 22,
+      "rowText": "| | 2024-09-20 00:00:00 | C2-3B | JIG OK ( Not worn out ) (CD press JIG) | 528 | 528 | 0 | 0 | 0 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "30.8!23",
+      "sheetName": "30.8",
+      "rowNumber": 23,
+      "rowText": "| | | | JIG worn out (CD press JIG) | 528 | 528 | 0 | 0 | 0 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "30.8!31",
+      "sheetName": "30.8",
+      "rowNumber": 31,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "30.8!32",
+      "sheetName": "30.8",
+      "rowNumber": 32,
+      "rowText": "| - When use type JIG CD press JIG OK ( Not worn out) and JIG CD press JIG worn out result check NG process vision VP/CD same ( 0%). Don’t happen NG separate conner VP/CD"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-833-rc-1",
+      "reviewTitle": "| REPORT TEST FIND REASON NG VP/CD SEPARATE CONNER BRS-161016 | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Test JIG CD press JIG OK and worn out find reason NG VP/CP separate conner / | II. Content. / | - Separate 2 type JIG / | ++ Type 1: JIG CD press JIG OK ( Not worn out )",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "jig",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs JIG OK ( Not worn out ) (CD press JIG), JIG worn out (CD press JIG)",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "JIG OK ( Not worn out ) (CD press JIG), JIG worn out (CD press JIG)",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "30.8!12",
+            "30.8!2",
+            "30.8!22",
+            "30.8!23",
+            "30.8!5",
+            "30.8!6"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "3. RESULT CHECKING VISION VP/CD",
+          "comparisonRows": [
+            "30.8!22",
+            "30.8!23"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 24118,
+              "condition": "JIG OK ( Not worn out ) (CD press JIG)",
+              "input": 528.0,
+              "ok": 528.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "30.8!22"
+              ]
+            },
+            {
+              "metricId": 24119,
+              "condition": "JIG worn out (CD press JIG)",
+              "input": 528.0,
+              "ok": 528.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "30.8!23"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "30.8!12",
+        "30.8!2",
+        "30.8!22",
+        "30.8!23",
+        "30.8!5",
+        "30.8!6"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "30.8!12",
+      "30.8!2",
+      "30.8!22",
+      "30.8!23",
+      "30.8!5",
+      "30.8!6"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

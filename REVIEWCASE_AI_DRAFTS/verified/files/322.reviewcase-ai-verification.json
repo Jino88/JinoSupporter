@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 322,
+  "sourceFile": "16.BRS-2015 Report Test material Improve Frame stuck in mold date 26.10.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\322.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:30Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 322,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparison evidence but grouping and several extracted outcomes are incorrect.",
+    "issues": [
+      "Changed factor mixes totals, process labels, and test rounds as conditions.",
+      "Function pairs use wrong controls for 2nd and total comparisons.",
+      "Vision/function header-derived measurement outcomes are spurious.",
+      "Tension measurement values are incorrectly extracted from unrelated counts.",
+      "Evidence includes row 201506!39 not shown in context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to Frame Test material/improved frame vs Frame normal.",
+      "Keep 1st, 2nd, total, date, process, and outcome as subgroup context.",
+      "Rebuild function pairs: 40 vs 42, 44 vs 46, 48 vs 50.",
+      "Replace tension outcome with actual avg/min/max from rows 33 and 35.",
+      "Remove bogus measurement outcomes from rows 27 and 39 unless full rows prove them."
+    ],
+    "evidencePolicy": "Citations are sufficient for core comparisons, but some cited rows are missing or misused."
+  },
+  "usage": {
+    "input_tokens": 6418,
+    "output_tokens": 765,
+    "total_tokens": 7183
+  }
+}

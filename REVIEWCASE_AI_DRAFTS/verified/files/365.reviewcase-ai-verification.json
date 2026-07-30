@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 365,
+  "sourceFile": "19.BRS-161014 Result checking Problem NG VP damage date 611.2025 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\365.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:47Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 365,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft should be excluded because the source appears to be a single-condition VP damage tracking report, not a changed-factor comparison.",
+    "issues": [
+      "Changed factor is invented from the report date.",
+      "No explicit baseline or normal condition is cited.",
+      "No explicit test condition beyond sample tracking is cited.",
+      "Outcome rows do not establish a comparative change context.",
+      "Subgroup key E2-3B is not supported by visible context rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Do not approve this draft for Ask AI evidence.",
+      "Remove the baseline-vs-date changed factor.",
+      "Classify as excluded unless additional rows prove a true comparison.",
+      "If rebuilt, cite only explicit condition and result rows.",
+      "Keep process/function results as non-comparative context only."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient for changed-factor evidence."
+  },
+  "usage": {
+    "input_tokens": 2771,
+    "output_tokens": 703,
+    "total_tokens": 3474
+  }
+}

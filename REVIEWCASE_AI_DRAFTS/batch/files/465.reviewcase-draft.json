@@ -1,0 +1,310 @@
+{
+  "sourceFileId": 465,
+  "sourceFile": "26. TIU L5S3-01 R Report test find reason NG BAKO high 2025.12.14_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\26. TIU L5S3-01 R Report test find reason NG BAKO high 2025.12.14_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 22,
+    "sheetCellCount": 75,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 3,
+    "measurementStatCount": 4
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] REPORT TEST FIND REASON IMPROVE NG FUNCTION | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | Date | 2025-12-14 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - NG function Bako very high, rate 50%% => Test improve and find reason NG"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Test temperature dry UV VP/Coil at MAX & MIN"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| - Test running bonding linre same L line"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| => Check function"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| 1. Result test reduce bonding amount check Function"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | Result check function"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | No | Date | Type | | | Input | OK | NG BAKO | | | | Total NG | NG rate | Note"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | 1 | 2025-12-14 00:00:00 | Test temperature dry UV VP/COI MAX ( Peak 1350- Total 6482 ) | | | 393 | 179 | 188 | 26 | 0 | 0 | 214 | 0.54452926"
+    },
+    {
+      "rowId": "Test!18",
+      "sheetName": "Test",
+      "rowNumber": 18,
+      "rowText": "| | 2 | | Test temperature dry UV VP/COI MAX ( Peak 1252- Total 5537 ) | | | 517 | 170 | 283 | 64 | 0 | 0 | 347 | 0.67117988"
+    },
+    {
+      "rowId": "Test!20",
+      "sheetName": "Test",
+      "rowNumber": 20,
+      "rowText": "| | 3 | | Test using bonding line VP same L line | | | 417 | 159 | 242 | 16 | 0 | 0 | 258 | 0.61870504"
+    },
+    {
+      "rowId": "Test!24",
+      "sheetName": "Test",
+      "rowNumber": 24,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-465-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] REPORT TEST FIND REASON IMPROVE NG FUNCTION | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - NG function Bako very high, rate 50%% => Test improve and find reason NG / | II. Content. / | - Test temperature dry UV VP/Coil at MAX & MIN / | - Test running bonding linre same L line",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Test temperature dry UV VP/COI MAX ( Peak 1350- Total 6482 ), Test temperature dry UV VP/COI MAX ( Peak 1252- Total 5537 ), Test using bonding line VP same L line",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Test temperature dry UV VP/COI MAX ( Peak 1350- Total 6482 ), Test temperature dry UV VP/COI MAX ( Peak 1252- Total 5537 ), Test using bonding line VP same L line",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!12",
+            "Test!15",
+            "Test!16",
+            "Test!18",
+            "Test!2",
+            "Test!20",
+            "Test!5",
+            "Test!6",
+            "Test!7",
+            "Test!8",
+            "Test!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "Result check function",
+          "comparisonRows": [
+            "Test!16",
+            "Test!18",
+            "Test!20"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 20988,
+              "condition": "Test temperature dry UV VP/COI MAX ( Peak 1350- Total 6482 )",
+              "input": 393.0,
+              "ok": 179.0,
+              "ng": 214.0,
+              "ratePercent": 54.452926000000005,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "metricId": 20989,
+              "condition": "Test temperature dry UV VP/COI MAX ( Peak 1252- Total 5537 )",
+              "input": 517.0,
+              "ok": 170.0,
+              "ng": 347.0,
+              "ratePercent": 67.117988,
+              "evidenceRows": [
+                "Test!18"
+              ]
+            },
+            {
+              "metricId": 20990,
+              "condition": "Test using bonding line VP same L line",
+              "input": 417.0,
+              "ok": 159.0,
+              "ng": 258.0,
+              "ratePercent": 61.870504000000004,
+              "evidenceRows": [
+                "Test!20"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No | Date | Type | Input | OK | NG BAKO | Total NG | NG rate | Note",
+          "comparisonRows": [
+            "Test!15"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 54421,
+              "condition": "NG BAKO / FRF",
+              "spec": "",
+              "min": 0.4783715,
+              "max": 283.0,
+              "avg": 119.10101600166666,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!15"
+              ]
+            },
+            {
+              "statId": 54422,
+              "condition": "NG BAKO / FRF+SPL",
+              "spec": "",
+              "min": 0.0383693,
+              "max": 64.0,
+              "avg": 17.704719693333335,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!15"
+              ]
+            },
+            {
+              "statId": 54423,
+              "condition": "NG BAKO / THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!15"
+              ]
+            },
+            {
+              "statId": 54424,
+              "condition": "NG BAKO / No sound",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!15"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!12",
+        "Test!15",
+        "Test!16",
+        "Test!18",
+        "Test!2",
+        "Test!20",
+        "Test!5",
+        "Test!6",
+        "Test!7",
+        "Test!8",
+        "Test!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!12",
+      "Test!15",
+      "Test!16",
+      "Test!18",
+      "Test!2",
+      "Test!20",
+      "Test!5",
+      "Test!6",
+      "Test!7",
+      "Test!8",
+      "Test!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

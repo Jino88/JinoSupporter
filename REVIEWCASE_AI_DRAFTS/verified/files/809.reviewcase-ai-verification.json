@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 809,
+  "sourceFile": "63. TIU C11-20 Report test machine AWF dont cutting wire 2026.02.12_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\809.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 809,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The main Normal AWF #1 vs test program comparison is supported, but metric header citations and change-domain labeling need correction.",
+    "issues": [
+      "Change domain wrongly includes coating and dimension/spec.",
+      "Outcome metrics need header rows cited for table meaning.",
+      "Decision row is not cited though it supports AI coil interpretation.",
+      "Review title and purpose retain noisy pipe formatting."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changeDomain to equipment/process program change.",
+      "Add AI coil header rows 20-22 to metric-1 evidence.",
+      "Add spot welding header row 27 and related header rows to metric-2 evidence.",
+      "Add decision row 36 as supporting evidence or limitation.",
+      "Clean title and purpose text while preserving source meaning."
+    ],
+    "evidencePolicy": "Condition rows exist, but header and decision citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3153,
+    "output_tokens": 723,
+    "total_tokens": 3876
+  }
+}

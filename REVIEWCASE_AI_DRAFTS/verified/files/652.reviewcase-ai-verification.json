@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 652,
+  "sourceFile": "44. BRS-161016 VP 161014-ED Dimension #7 and other #_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\652.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:30Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 652,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable dimension data but the changed condition and comparison grouping are not verified.",
+    "issues": [
+      "Changed factor is just the filename, not an evidence-based condition.",
+      "Baseline and test conditions are explicitly unresolved.",
+      "Sheet date/cycle groups are mixed and not justified as one comparison.",
+      "Outcome grouping splits similar dimension inspection data without rationale.",
+      "NG result rows conflict with zero violation framing."
+    ],
+    "requiredUserQuestions": [
+      "Should sheets be compared by date/cycle count as the changed condition?",
+      "Which sheet or cycle count is the baseline?",
+      "Should NG result rows drive judgement alongside averages?"
+    ],
+    "correctionPlan": [
+      "Define changed factor from sheet/date/cycle evidence, not filename.",
+      "Set baseline and test conditions with cited rows or sheet context.",
+      "Preserve each sheet date and cycle count as subgroup keys.",
+      "Cite dimension, tolerance, average, and result rows for each compared sheet.",
+      "Reconcile violation counts with NG result rows before judgement."
+    ],
+    "evidencePolicy": "Row citations exist, but are insufficient for final evidence without changed-condition, tolerance, and result citations."
+  },
+  "usage": {
+    "input_tokens": 9209,
+    "output_tokens": 750,
+    "total_tokens": 9959
+  }
+}

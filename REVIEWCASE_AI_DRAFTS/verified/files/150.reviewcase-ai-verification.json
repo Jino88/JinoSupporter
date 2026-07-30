@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 150,
+  "sourceFile": "07. BRS-161016 Report compare VP+CD GMI and DT line 2025.06.05_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\150.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 150,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The file shows a GMI vs DT line comparison context but lacks extracted measurements or result evidence needed for final use.",
+    "issues": [
+      "No review cases were generated.",
+      "No comparison pairs, metrics, or measurement stats were extracted.",
+      "Only high-level title/purpose/result headers are cited.",
+      "Outcome domains such as X-Ray and Decap have no supporting data rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Re-extract the full Report sheet beyond the visible header rows.",
+      "Capture tables under X-Ray, Decap semi, and Result sections.",
+      "Group evidence by line condition: DT #1, DT #2, GMI #1, and GMI #2.",
+      "Identify metrics, sample counts, defects, and conclusions if present.",
+      "Regenerate review cases with row citations for each outcome."
+    ],
+    "evidencePolicy": "Current citations support comparison context only; they are insufficient for outcome evidence."
+  },
+  "usage": {
+    "input_tokens": 1516,
+    "output_tokens": 427,
+    "total_tokens": 1943
+  }
+}

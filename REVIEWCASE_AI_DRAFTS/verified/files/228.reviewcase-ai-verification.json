@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 228,
+  "sourceFile": "11. BRS-161016 Report test material YK happen  NG over flatness  Date 11.7.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\228.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:45Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 228,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Comparable evidence exists, but changed-factor labeling and several measurement/function judgements need correction before use.",
+    "issues": [
+      "Changed factor mixes primary YK flatness condition with magnet positions and supplier context.",
+      "Gauss measurement violations are missed despite values below the stated 480G spec.",
+      "Function outcome is marked worse although source summary says function NG is same as normal.",
+      "Duplicate gauss and tension measurement sections need grouping or de-duplication.",
+      "Some cited rows are not shown in context, limiting auditability."
+    ],
+    "requiredUserQuestions": [
+      "Should function be judged by numeric rate difference or by the report conclusion of same as normal?"
+    ],
+    "correctionPlan": [
+      "Set primary change to Test YK NG over flatness versus Normal.",
+      "Move MG-S-A/B/C and MG Ruijin to subgroup or material context only.",
+      "Correct gauss measurement judgement and violation counts against the 480G spec.",
+      "Reconcile function judgement with the report conclusion and numeric rates.",
+      "Consolidate duplicate 11.7 and Tension.Gauss measurement evidence."
+    ],
+    "evidencePolicy": "Core comparison rows are citeable, but missing-context and duplicate citations are insufficient for final approval."
+  },
+  "usage": {
+    "input_tokens": 9262,
+    "output_tokens": 788,
+    "total_tokens": 10050
+  }
+}

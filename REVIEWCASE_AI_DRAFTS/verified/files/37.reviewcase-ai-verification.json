@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 37,
+  "sourceFile": "016.MSU-20S15-07 Result check Gauss Semi Yoke  - Date 2025.02.15_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\37.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:26Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 37,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not final-ready because it turns a dated Gauss result/spec update into an unsupported comparison case.",
+    "issues": [
+      "Changed factor is taken from filename, not source evidence.",
+      "Baseline and changed condition are not explicit.",
+      "Spec update row is omitted from evidence.",
+      "Measurement evidence omits continuation rows.",
+      "Sample count is incorrect; rows show multiple samples."
+    ],
+    "requiredUserQuestions": [
+      "Is the case about updating Semi Yoke Gauss spec to 375~425G?",
+      "What prior spec or baseline should be compared, if any?"
+    ],
+    "correctionPlan": [
+      "Use Sheet1!13 as evidence for the spec update context.",
+      "Use Sheet1!7-Sheet1!9 for the full Gauss measurement set.",
+      "Recalculate sample count from all sample cells.",
+      "Do not claim baseline/test comparison unless prior spec is provided.",
+      "If no baseline exists, classify as single-condition measurement/spec record."
+    ],
+    "evidencePolicy": "Current row citation is insufficient; key spec and full measurement rows must be cited."
+  },
+  "usage": {
+    "input_tokens": 1938,
+    "output_tokens": 650,
+    "total_tokens": 2588
+  }
+}

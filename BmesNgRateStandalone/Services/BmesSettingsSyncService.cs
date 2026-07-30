@@ -22,6 +22,9 @@ public sealed class BmesSettingsSyncService(NgRateSettingsService settings, WebR
     public Task<BmesSettingsSyncResult> SyncModelGroupsAsync(IReadOnlyList<ModelGroupRecord> groups) =>
         PostRowsAsync("standalone/sync/model-groups", groups);
 
+    public Task<BmesSettingsSyncResult> SyncBmesMaterialsAsync(IReadOnlyList<BmesMaterial> rows) =>
+        PostRowsAsync("standalone/sync/bmes-materials", rows);
+
     public async Task<BmesSettingsSyncResult> PullRoutingRowsFromServerAsync()
     {
         var result = await GetRowsAsync<RoutingRow>("standalone/sync/routing-table");
@@ -53,6 +56,16 @@ public sealed class BmesSettingsSyncService(NgRateSettingsService settings, WebR
 
         _repo.SaveModelGroups(result.Rows);
         return new BmesSettingsSyncResult(true, "Model groups loaded from server DB.", result.Rows.Count);
+    }
+
+    public async Task<BmesSettingsSyncResult> PullBmesMaterialsFromServerAsync()
+    {
+        var result = await GetRowsAsync<BmesMaterial>("standalone/sync/bmes-materials");
+        if (!result.Succeeded)
+            return new BmesSettingsSyncResult(false, result.Message, 0);
+
+        int saved = _repo.UpsertBmesMaterials(result.Rows);
+        return new BmesSettingsSyncResult(true, "BMES materials loaded from server DB.", saved);
     }
 
     public async Task<BmesSettingsSyncResult> PullAllRowsFromServerAsync()

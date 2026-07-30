@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 128,
+  "sourceFile": "05. L20S15-07DT Report test  Material CD from new Supplier GES Tranding    2025.4.28_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\128.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:28Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 128,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable supplier-change evidence exists, but the draft has incorrect grouping and several misparsed measurement outcomes.",
+    "issues": [
+      "Primary factor should be GES Trading CD material supplier vs normal Ralon, with overbroad change domains removed.",
+      "Separate VP/CD outcome omits the normal comparison row.",
+      "FO outcomes are misparsed; row values are treated as sample indices instead of FO measurements.",
+      "NTI SPL/THD/IMP outcomes cite header rows only, not sufficient data rows.",
+      "Review title is taken from Decap NG instead of the main supplier test report."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename review using the Report sheet title and purpose.",
+      "Normalize baseline to Normal Supplier Ralon and changed condition to New Supplier GES Trading.",
+      "Add Report!28 to Separate VP/CD and judge against Report!26.",
+      "Rebuild FO as one measurement comparison using rows 5-15, especially averages.",
+      "Remove or mark NTI SPL/THD/IMP as unverified unless citeable data rows are added."
+    ],
+    "evidencePolicy": "Main Report citations are sufficient; FO/NTI citations are not sufficient as drafted."
+  },
+  "usage": {
+    "input_tokens": 9965,
+    "output_tokens": 653,
+    "total_tokens": 10618
+  }
+}

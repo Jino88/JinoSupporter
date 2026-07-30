@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 143,
+  "sourceFile": "06.2 BRS-161016 Summary data test VP happen NG high (Block)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\143.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 143,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not verified because it misidentifies the changed factor and does not cite the actual VP mold versus Normal VP comparison rows.",
+    "issues": [
+      "Changed factor is filename, not VP mold condition.",
+      "Baseline and test conditions are unresolved.",
+      "Evidence omits many VP mold test rows.",
+      "Outcome stats cite header rows instead of data rows.",
+      "IR lot/block grouping is not preserved."
+    ],
+    "requiredUserQuestions": [
+      "Should each IR lot/block be treated as a separate VP mold versus Normal VP comparison?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to VP mold number/type versus Normal VP.",
+      "Use Normal VP rows as baselines within each block.",
+      "Cite matching VP mold and Normal VP data rows for each comparison.",
+      "Separate or subgroup by IR lot/block and line type.",
+      "Rebuild outcomes for tension, laser, vision, function, and module metrics."
+    ],
+    "evidencePolicy": "Current citations prove row existence only; they are insufficient as final evidence."
+  },
+  "usage": {
+    "input_tokens": 4775,
+    "output_tokens": 481,
+    "total_tokens": 5256
+  }
+}

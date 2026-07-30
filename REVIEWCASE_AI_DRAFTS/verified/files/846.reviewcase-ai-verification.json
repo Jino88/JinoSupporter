@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 846,
+  "sourceFile": "69.BRS-2015 Report Test material Frame happen NG dimension date 3.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\846.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:55Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 846,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies Frame Test vs Frame normal but has incorrect outcome grouping and unsupported measurement results.",
+    "issues": [
+      "Vision comparison is misclassified as measurement and misses test 6/1000 vs normal 2/1000.",
+      "Function total comparison uses single normal row instead of TOTAL FRAME NORMAL.",
+      "Header rows 27 and 33 are cited for bogus measurement statistics.",
+      "Changed factor mixes process names with test condition.",
+      "Decision row is cited contextually but outcome conclusion is absent."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary change to Frame Test material with NG flatness dimension versus Frame normal.",
+      "Keep process sections as outcome subgroups: Frame Array, FR+SUS Vision, Function.",
+      "Add FR+SUS Vision defect comparison using rows 28 and 29.",
+      "Compare function totals row 38 against row 44, not row 40.",
+      "Remove unsupported measurement-stat outcomes from header-only rows."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient until corrected row grouping and outcome citations are used."
+  },
+  "usage": {
+    "input_tokens": 5567,
+    "output_tokens": 763,
+    "total_tokens": 6330
+  }
+}

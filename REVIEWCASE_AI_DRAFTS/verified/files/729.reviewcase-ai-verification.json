@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 729,
+  "sourceFile": "53. BRS-161014 DT Report test new bond WU-AC-10-01 process bonding ass'y VPCD+coil  date 24.7.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\729.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:24Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 729,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures the bond comparison but omits the UV dry spec change and has unreliable measurement grouping.",
+    "issues": [
+      "Changed factor omits UV dry normal vs 5000-6000 mJ/cm2 condition.",
+      "Baseline/test conditions for tension and function are underspecified.",
+      "UV dry measurement stats appear misgrouped from header/spec rows.",
+      "Tension row Tension!6 lacks clear condition label but affects decision.",
+      "Evidence includes row IDs not shown in context, limiting verification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define changed factor as WO-AC10-01 bond with UV dry spec context versus normal SR4995/normal UV as applicable.",
+      "Separate or subgroup normal UV and changed UV conditions for tension/function outcomes.",
+      "Replace UV dry header-derived stats with actual UV dry measurement rows.",
+      "Clarify Tension!6 condition and map it to the decision statements.",
+      "Cite sufficient actual data and decision rows for each outcome."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient for final evidence because key data rows and condition labels are incomplete."
+  },
+  "usage": {
+    "input_tokens": 6600,
+    "output_tokens": 772,
+    "total_tokens": 7372
+  }
+}

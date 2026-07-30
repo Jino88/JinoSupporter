@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 399,
+  "sourceFile": "21. BRS-161014 DT Report test FP161014 use PT 161014-s of Doojin coating (new vender)  date 23.11.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\399.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 399,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The main Normal vs Doojin PT coating comparison is supported, but measurement grouping and conclusion citations need cleanup before final use.",
+    "issues": [
+      "Rows 41 and 43 are cited but not visible in provided context.",
+      "Tension rows with merged Type values are not grouped into clear test/control pairs.",
+      "Spec values are embedded in condition text while spec fields are blank.",
+      "Key conclusion rows for tension and function are not cited.",
+      "Outcome judgement for tension is not aligned to the report's OK conclusion."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add visible source text for rows 41 and 43 or remove them if unavailable.",
+      "Pair Suspension C, Suspension D, and Frame+VP by Normal versus Test Frame use PT Doojin.",
+      "Move tension limits into spec fields and keep subgroup names separate.",
+      "Cite report conclusion rows 46 and 52 where used.",
+      "Set tension judgement from verified paired values and report conclusion."
+    ],
+    "evidencePolicy": "Citations are partly sufficient for defect pairs but incomplete for tension evidence and conclusions."
+  },
+  "usage": {
+    "input_tokens": 4785,
+    "output_tokens": 766,
+    "total_tokens": 5551
+  }
+}

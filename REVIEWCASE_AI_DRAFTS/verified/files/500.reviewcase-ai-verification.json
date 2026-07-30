@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 500,
+  "sourceFile": "3. BRS-161014 Report TEST Compare process hearing C2 & E2 2023.01.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\500.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:21Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 500,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it contains no review case despite clear C2 vs E2 comparison evidence.",
+    "issues": [
+      "No reviewCases were generated.",
+      "No changed-factor statement for C2 vs E2.",
+      "No metric/outcome extraction for G1/G2/G3 counts or rates.",
+      "Evidence rows were not attached to any claim.",
+      "Room/date context must be preserved."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Create one review case for hearing process/type C2 vs E2.",
+      "Use E2 and C2 as comparison conditions, not separate reports.",
+      "Extract Input 100 and G1/G2/G3 counts and rates for both conditions.",
+      "Include cross-detection rows as supporting outcome evidence.",
+      "Preserve date and room values as context keys."
+    ],
+    "evidencePolicy": "Cited rows are sufficient for the comparison, but the draft has no claim-level citations."
+  },
+  "usage": {
+    "input_tokens": 1635,
+    "output_tokens": 733,
+    "total_tokens": 2368
+  }
+}

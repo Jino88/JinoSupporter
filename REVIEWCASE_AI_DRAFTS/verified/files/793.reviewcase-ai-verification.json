@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 793,
+  "sourceFile": "61. TIU L5S3-01 LR COMPARE DATA SPL D3_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\793.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 793,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it misses the actual STD vs R LINE vs L LINE comparison and misgroups measurements.",
+    "issues": [
+      "Changed factor is filename, not the compared sample conditions.",
+      "Baseline/test conditions are marked unclear despite source rows naming STD, R LINE, and L LINE.",
+      "Key graph summary rows for STD/R/L averages are not used as primary evidence.",
+      "Specs and summary values appear mixed into measurement statistics.",
+      "RAW DATA numeric columns are mislabeled as conditions and overgrouped."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to sample line comparison: STD baseline vs R LINE and L LINE.",
+      "Cite RAW DATA sample-name rows and GRAPH summary rows for condition evidence.",
+      "Group outcomes by SPL bands, Fo, and THD frequencies from GRAPH headers/spec rows.",
+      "Recompute stats excluding spec limits and non-measurement header values.",
+      "Use RAW DATA only for detailed per-frequency support after header alignment."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient and not tied to the true comparison conditions."
+  },
+  "usage": {
+    "input_tokens": 7198,
+    "output_tokens": 550,
+    "total_tokens": 7748
+  }
+}

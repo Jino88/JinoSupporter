@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 79,
+  "sourceFile": "03. TIU C11-20  Report test tension center Dome improve VP+Coil separate date 20.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\79.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:34Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 79,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Evidence exists, but the draft misidentifies the changed factor and leaves baseline/test grouping ambiguous.",
+    "issues": [
+      "Changed factor is filename, not process/material condition.",
+      "Baseline and changed conditions are not explicit.",
+      "Three test conditions need grouping: clean, don't clean, and rubber type 4.",
+      "Change domain appears misclassified as dimension/spec.",
+      "Spec value and sample interpretation may be incomplete."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison clean ethanol vs don't clean, with rubber type 4 as a second test condition?"
+    ],
+    "correctionPlan": [
+      "Replace changed factor with VP+Coil separation test condition: cleaning/rubber type under CD Pen 50u at 230°C.",
+      "Set baseline to Normal CD Pen 50u clean ethanol.",
+      "Set changed conditions to don't clean and don't clean rubber type 4, or split if required.",
+      "Change domain to process/material rather than dimension/spec.",
+      "Populate spec 0.4 and verify sample count from result rows 18-20."
+    ],
+    "evidencePolicy": "Row citations are sufficient for existence, but final evidence needs corrected row-level grouping."
+  },
+  "usage": {
+    "input_tokens": 2789,
+    "output_tokens": 714,
+    "total_tokens": 3503
+  }
+}

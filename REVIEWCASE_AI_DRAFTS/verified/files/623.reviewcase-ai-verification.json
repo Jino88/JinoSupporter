@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 623,
+  "sourceFile": "40. TIU C11-20 Report  find reason function high 2026.01.23_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\623.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 623,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft uses citeable rows but misgroups the UV machine-off test and compares results to the wrong normal baselines.",
+    "issues": [
+      "Changed factor is mislabeled and mixes line/type with condition.",
+      "Change domain incorrectly includes dimension/spec despite spec unchanged.",
+      "Rows from Jan24 and Jan26 are compared to Jan23 normal instead of same-date normal rows.",
+      "Overall improved judgement is unsafe; Jan26 appears worse versus its same-date normal.",
+      "Measurement outcome is spurious table parsing, not a separate measurement study."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to normal 2 Dry UV machines vs turning off 1 machine/use 1 Dry UV.",
+      "Use date/test round and Dry UV2/Dry UV3 setup as subgroup keys.",
+      "Compare Jan23 tests to Test!19, Jan24 tests to Test!25, and Jan26 test to Test!29.",
+      "Revise judgements per subgroup and avoid one blanket improved conclusion.",
+      "Remove or reclassify the parsed measurement outcome as defect-category counts only."
+    ],
+    "evidencePolicy": "Citations exist, but outcome evidence is insufficient until same-date baseline rows and grouping context are used."
+  },
+  "usage": {
+    "input_tokens": 4650,
+    "output_tokens": 788,
+    "total_tokens": 5438
+  }
+}

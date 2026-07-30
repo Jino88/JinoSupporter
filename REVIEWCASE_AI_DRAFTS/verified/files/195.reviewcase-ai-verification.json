@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 195,
+  "sourceFile": "1. MSU-201507 DT Report test Check reson NG VP deform   date 28.2.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\195.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:28Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 195,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable defect-rate data but the primary changed factor and outcome grouping are not verified.",
+    "issues": [
+      "Primary factor mixes UV dry time, bonding-line type, and UC press height.",
+      "Baseline combines distinct 10s, 3s, and increased-height conditions.",
+      "Open bonding line row is cited but not shown in context provided.",
+      "Measurement outcome appears to be derived from headers/defect columns, not a separate measurement study.",
+      "Judgement is not possible until row grouping is corrected."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended primary comparison: UV dry time, bonding-line opening, or UC press height?"
+    ],
+    "correctionPlan": [
+      "Expose full cited rows 21 and 28 or remove them if unavailable.",
+      "Split results by UV dry time and type test instead of aggregating unlike baselines.",
+      "Define one clear baseline and one changed condition per comparison.",
+      "Keep VP deform, CD damage, total NG, and NG rate as defect outcomes under the same validation context.",
+      "Remove the unsupported measurement outcome unless true measurement data exists."
+    ],
+    "evidencePolicy": "Citations exist but are insufficiently transparent for row 28 and partly misused for measurement evidence."
+  },
+  "usage": {
+    "input_tokens": 3248,
+    "output_tokens": 665,
+    "total_tokens": 3913
+  }
+}

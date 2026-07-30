@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 385,
+  "sourceFile": "2.BRS-2015 Report Test material suspension PCB Of new vender Wolrd HANOI VINA date 25.7.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\385.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:34Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 385,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has the right overall report context but misstates the changed factor and contains incomplete or incorrect outcome evidence.",
+    "issues": [
+      "Changed factor should be Normal vs new vendor material, not suspension array as the condition.",
+      "Vision, tension, and decision outcomes are omitted or not integrated.",
+      "Function result conflicts with decision summary: draft uses wrong NG/rate basis and overstates worsening.",
+      "Key cited rows 201506!21 and 201506!40 are not shown in provided context for verification.",
+      "Evidence mixes generic title/purpose rows with missing data rows, weakening traceability."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to Normal vs new vendor World Hanoi Vina suspension PCB material.",
+      "Add or cite all comparable outcome sections: suspension array, frame+suspension vision, tension, and function.",
+      "Recalculate function outcome using the decision-supported NG/rate basis and mark judgement accordingly.",
+      "Include the actual data rows for cited test rows 201506!21 and 201506!40 or replace with visible decision rows.",
+      "Keep section rows as context and cite paired data/decision rows for each outcome."
+    ],
+    "evidencePolicy": "Current citations are insufficient because critical paired data rows are missing from context and one outcome conflicts with cited decision evidence."
+  },
+  "usage": {
+    "input_tokens": 3677,
+    "output_tokens": 809,
+    "total_tokens": 4486
+  }
+}

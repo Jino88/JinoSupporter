@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 380,
+  "sourceFile": "2.1 BRS-161014 Report check problem Sub 2 CM+CP 2023.08.02_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\380.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 380,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it merges separate report contexts and misstates the primary changed factors.",
+    "issues": [
+      "One changed factor combines material shine, press-jig method, bonding amount, and drop-test yoke conditions.",
+      "Baseline/test condition is incorrect; MG shiny vs MG not shiny is a primary comparison in sheet 12.9.",
+      "Several outcomes omit paired comparator rows, especially MG shiny rows needed for rate comparison.",
+      "Sheets 12.9 and 2.8 appear to be distinct validation contexts with different dates/titles.",
+      "Drop-test rows are grouped under an unrelated mixed changed factor."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split sheet 12.9 and sheet 2.8 into separate review cases unless source proves one unified report.",
+      "For sheet 12.9, set primary factor to CMG/MG shiny vs not shiny and keep bonding amount as subgroup.",
+      "Include both shiny and not-shiny rows for over-glue and decap outcomes.",
+      "For sheet 2.8, separate or clearly model press-jig method and material shine comparisons by metric section.",
+      "Treat drop-test yoke bonding-amount rows as separate context or exclude from the main material/press comparison if not comparable."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for final evidence because grouping and comparator coverage are wrong."
+  },
+  "usage": {
+    "input_tokens": 5628,
+    "output_tokens": 824,
+    "total_tokens": 6452
+  }
+}

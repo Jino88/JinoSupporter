@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 672,
+  "sourceFile": "47. BRS-161016 Report test cutting by punch machine and laser machine_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\672.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:13Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 672,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites valid rows but misgroups a crossed machine-by-mold table and loses fill-down machine context.",
+    "issues": [
+      "Changed factor incorrectly mixes machine and mold levels.",
+      "Rows with blank Type need fill-down from prior machine label.",
+      "Two #7 rows are not the same condition; each belongs to a different machine.",
+      "Outcome should be NG bending count/rate, not generic detected table.",
+      "Header row should be cited with data rows."
+    ],
+    "requiredUserQuestions": [
+      "Should the primary comparison be Punch mc vs Laser mc with Mold #4/#7 as subgroups?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to cutting machine if confirmed by report title/context.",
+      "Use Mold #4 and #7 as subgroup keys, or create a separate mold-factor case if intended.",
+      "Fill down Type for rows 7 and 9 before forming conditions.",
+      "Record outcomes as Input, OK, NG bending, and NG rate by machine and mold.",
+      "Include Sheet1!5 as header evidence plus rows 6-9."
+    ],
+    "evidencePolicy": "Data citations are present, but header and filled-down grouping context are needed."
+  },
+  "usage": {
+    "input_tokens": 1901,
+    "output_tokens": 724,
+    "total_tokens": 2625
+  }
+}

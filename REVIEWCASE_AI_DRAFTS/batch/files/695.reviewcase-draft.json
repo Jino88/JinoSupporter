@@ -1,0 +1,298 @@
+{
+  "sourceFileId": 695,
+  "sourceFile": "5. BRS-161014 Report check dimension AWF JIG 2023.11.2_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\5. BRS-161014 Report check dimension AWF JIG 2023.11.2_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Check dimesion jig AWF",
+    "sheetRowCount": 28,
+    "sheetCellCount": 78,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 7
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Check dimesion jig AWF!2",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT CHECK DIMESION AWF JIG BRS-161014 | | | | | | | | | | | | | | | | | Dept: | ME"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!3",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | Date: | 2023-11-02 00:00:00"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!4",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | Marker: | Le"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!5",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Check dimesion jig AWF!6",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 6,
+      "rowText": "| - Check AWF JIG Ok or Not"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!7",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Check dimesion jig AWF!8",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 8,
+      "rowText": "| - Check dimesion JIG by 2D machine"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!9",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 9,
+      "rowText": "| III. Result."
+    },
+    {
+      "rowId": "Check dimesion jig AWF!10",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 10,
+      "rowText": "| Result check dimension"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!11",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 11,
+      "rowText": "| | JIG | Dimension"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!12",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 12,
+      "rowText": "| | New jig | Spec: 5.06~5.07 | | Spec: 11.06~11.07"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!13",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 13,
+      "rowText": "| | 1 | 5.066 | 5.06 | 11.069"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!29",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 29,
+      "rowText": "| | => Result check dimension OK . Need check AWF MC"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!31",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 31,
+      "rowText": "| IV. Decision."
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-695-rc-1",
+      "reviewTitle": "| REPORT CHECK DIMESION AWF JIG BRS-161014 | | | | | | | | | | | | | | | | | Dept: | ME",
+      "reviewPurpose": "| I. Purpose. / | - Check AWF JIG Ok or Not / | II. Content. / | - Check dimesion JIG by 2D machine / | III. Result.",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment",
+            "jig",
+            "dimension/spec"
+          ],
+          "changedFactor": "5. BRS-161014 Report check dimension AWF JIG 2023.11.2",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Check dimesion jig AWF!11",
+            "Check dimesion jig AWF!12",
+            "Check dimesion jig AWF!2",
+            "Check dimesion jig AWF!27",
+            "Check dimesion jig AWF!5",
+            "Check dimesion jig AWF!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Check dimesion jig AWF!27"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 59937,
+              "condition": "Column 4",
+              "spec": "",
+              "min": 5.03,
+              "max": 5.066,
+              "avg": 5.048,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Check dimesion jig AWF!27"
+              ]
+            },
+            {
+              "statId": 59938,
+              "condition": "Column 6",
+              "spec": "",
+              "min": 11.029,
+              "max": 11.069,
+              "avg": 11.049,
+              "sampleCount": 13,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Check dimesion jig AWF!27"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Result check dimension",
+          "comparisonRows": [
+            "Check dimesion jig AWF!11"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 59939,
+              "condition": "Result check dimension / JIG",
+              "spec": "5.06~5.07",
+              "min": 1.0,
+              "max": 12.0,
+              "avg": 6.5,
+              "sampleCount": 12,
+              "violationCount": 12,
+              "evidenceRows": [
+                "Check dimesion jig AWF!11"
+              ]
+            },
+            {
+              "statId": 59940,
+              "condition": "Result check dimension / Dimension",
+              "spec": "5.06~5.07",
+              "min": 5.03,
+              "max": 5.066,
+              "avg": 5.055461538461538,
+              "sampleCount": 13,
+              "violationCount": 7,
+              "evidenceRows": [
+                "Check dimesion jig AWF!11"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "JIG | Dimension",
+          "comparisonRows": [
+            "Check dimesion jig AWF!12"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 59941,
+              "condition": "JIG / New jig",
+              "spec": "5.06~5.07",
+              "min": 1.0,
+              "max": 12.0,
+              "avg": 6.5,
+              "sampleCount": 12,
+              "violationCount": 12,
+              "evidenceRows": [
+                "Check dimesion jig AWF!12"
+              ]
+            },
+            {
+              "statId": 59942,
+              "condition": "Dimension / Spec: 5.06~5.07",
+              "spec": "5.06~5.07",
+              "min": 5.03,
+              "max": 5.066,
+              "avg": 5.055083333333332,
+              "sampleCount": 12,
+              "violationCount": 7,
+              "evidenceRows": [
+                "Check dimesion jig AWF!12"
+              ]
+            },
+            {
+              "statId": 59943,
+              "condition": "Dimension / Spec: 11.06~11.07",
+              "spec": "5.06~5.07",
+              "min": 11.029,
+              "max": 11.069,
+              "avg": 11.0565,
+              "sampleCount": 12,
+              "violationCount": 12,
+              "evidenceRows": [
+                "Check dimesion jig AWF!12"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Check dimesion jig AWF!11",
+        "Check dimesion jig AWF!12",
+        "Check dimesion jig AWF!2",
+        "Check dimesion jig AWF!27",
+        "Check dimesion jig AWF!5",
+        "Check dimesion jig AWF!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Check dimesion jig AWF!11",
+      "Check dimesion jig AWF!12",
+      "Check dimesion jig AWF!2",
+      "Check dimesion jig AWF!27",
+      "Check dimesion jig AWF!5",
+      "Check dimesion jig AWF!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

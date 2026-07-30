@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 637,
+  "sourceFile": "42. TIU L5S3-01 R Report test SUB 2 JIG change material - 2025.12.27_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\637.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 637,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the JIG material change but uses incorrect baseline/test pairing and omits relevant cited controls.",
+    "issues": [
+      "Change factor should state plastic-to-aluminum Sub 2 JIG material, not generic Test vs Normal only.",
+      "Change-JIG outcome pairs reuse one Normal JIG row instead of matching each date pair.",
+      "Yoke-damage outcome pairs reuse one Normal JIG row and omit later controls.",
+      "Gauss/magnetization section is referenced but not evaluated or explicitly marked unavailable.",
+      "Some outcome domains are unknown despite clear defect/damage metrics."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal/plastic JIG baseline versus aluminum Test/JIG condition.",
+      "Rebuild change-JIG pairs as adjacent/date pairs: 16-17, 18-19, 20-21, 22-23, 24-25.",
+      "Rebuild yoke-damage pairs as adjacent/date pairs: 34-35, 36-37, 38-39, 40-41, 42-43.",
+      "Keep JIG-damage pair 46-47 but note small Test sample size.",
+      "Add gauss rows if available, or add a limitation that cited gauss measurements are missing."
+    ],
+    "evidencePolicy": "Citations exist, but current pair citations are incomplete and not sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 5812,
+    "output_tokens": 805,
+    "total_tokens": 6617
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 183,
+  "sourceFile": "1. BRS-161014 DT Report test machine UC press VP-CD date 12.4.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\183.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 183,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable evidence but misgroups UV LED with the UC press comparison and misparses the tension-test spec/results.",
+    "issues": [
+      "Changed factor incorrectly combines Test machine UC press with UV led.",
+      "Vision VP/CD includes UV led as a condition without shown baseline context.",
+      "Tension spec is misread as UV energy spec, causing false violations.",
+      "Row NG rate!39 is cited but not included in provided context.",
+      "Decision row/context after row55 is not captured."
+    ],
+    "requiredUserQuestions": [
+      "Should UV led be treated as a separate condition or only supporting UV-dry context?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to Normal vs Test machine UC press VP/CD where directly compared.",
+      "Keep UV led normal/UV dry as supporting context or separate only if row evidence proves comparison.",
+      "Correct tension spec to ≥0.5 Kgf and mark both Test machine and Normal as OK, not violations.",
+      "Add or remove NG rate!39 based on its actual row content.",
+      "Include final decision rows if present before approval."
+    ],
+    "evidencePolicy": "Citations are partly sufficient, but missing cited row 39 and final decision context block approval."
+  },
+  "usage": {
+    "input_tokens": 4075,
+    "output_tokens": 788,
+    "total_tokens": 4863
+  }
+}

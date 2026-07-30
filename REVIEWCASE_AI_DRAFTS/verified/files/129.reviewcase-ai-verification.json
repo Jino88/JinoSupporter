@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 129,
+  "sourceFile": "05. TIU C11-20  Report Center Dome improve NG VP+COIL seaparate date 25.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\129.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:30Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 129,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook supports a rubber-material comparison, but the draft has parsing and outcome-grouping errors that must be corrected.",
+    "issues": [
+      "Changed factor domain is left unknown despite rubber material evidence.",
+      "Measurement-2 is a misparsed function header/defect breakdown, not a separate measurement outcome.",
+      "Tension rows appear to have multiple sample values but sampleCount is set to 1.",
+      "Tension spec/result fields are inconsistently parsed and condition text includes result labels.",
+      "Some cited rows are not shown in context, limiting full value verification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to rubber material/type comparison: normal LSR vs high-temp rubber vs EPDM 65A.",
+      "Remove measurement-2 or fold defect categories into the function defect outcome only if row values support them.",
+      "Reparse tension rows 27-29 with correct spec, pass result, sample values, min, max, and avg.",
+      "Keep function and tension outcomes under the same validation report context.",
+      "Use only rows with actual condition/result data plus title/purpose rows as evidence."
+    ],
+    "evidencePolicy": "Citations are sufficient for the main comparison after fixing/removing the header-derived outcome."
+  },
+  "usage": {
+    "input_tokens": 4216,
+    "output_tokens": 622,
+    "total_tokens": 4838
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 686,
+  "sourceFile": "49. BRS-161016  Report test VP dry temperature 150 for 1 hour to  improve VP bending date 09.07.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\686.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:34Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 686,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid comparable rows but mislabels the primary change and includes invalid auto measurement outcomes.",
+    "issues": [
+      "Primary change should be dry VP 150°C for 1 hour vs normal VP, not mold list vs normal.",
+      "VP mold numbers should be subgroup keys paired with each normal/test row.",
+      "Measurement outcomes are header-derived aggregates and not citeable comparisons.",
+      "Decision rows 71 and 75-77 are important but not cited in case evidence.",
+      "Changed-factor domain is overbroad; evidence supports process condition with mold subgroup context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baseline to Normal VP lot date 3/7 and changed condition to Test dry 1 hour at 150°C, lot date 6/7 where shown.",
+      "Move VP mold #2,#3,#6,#7,#8,#9,#10 into subgroup keys and preserve date, line, lot, and process step.",
+      "Keep laser cutting/bending NG rate and function NG rate as outcomes under one review case.",
+      "Remove measurement-1 through measurement-4 unless rebuilt from real row-level numeric comparisons.",
+      "Add decision/conclusion rows 71 and 75-77 as supporting evidence."
+    ],
+    "evidencePolicy": "Row citations for comparison data are sufficient, but citations need corrected grouping and conclusion rows."
+  },
+  "usage": {
+    "input_tokens": 11751,
+    "output_tokens": 606,
+    "total_tokens": 12357
+  }
+}

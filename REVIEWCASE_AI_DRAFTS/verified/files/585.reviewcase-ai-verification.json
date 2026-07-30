@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 585,
+  "sourceFile": "37. BRS-161016 Report test DOE bonding amount Frame VP out side 09.05.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\585.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:26Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 585,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The source is a valid DOE report, but the draft misgroups bonding-amount conditions and outcomes.",
+    "issues": [
+      "Primary factor should be bonding amount levels, not Normal vs Test2 plus dates/TOTAL.",
+      "Test1 is incorrectly treated as subgroup and mixed into Test2 comparisons.",
+      "Several comparisons use total Normal against dated test rows, losing date grouping.",
+      "Over-glue outcome omits Normal rows and appears misinterpreted.",
+      "Header/table rows are extracted as invalid measurement outcomes."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set factor as bonding amount: Normal, Test1, and Test2 levels.",
+      "Preserve date/test-round/line keys for all comparisons.",
+      "Compare like rows only: TOTAL to TOTAL and same date to same date.",
+      "Add cited bonding-amount and Normal over-glue rows; remove header-only measurements.",
+      "Recalculate outcome judgements for tension, NG rate, over-glue, and function."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient until grouping is corrected and missing baseline rows are added."
+  },
+  "usage": {
+    "input_tokens": 11844,
+    "output_tokens": 648,
+    "total_tokens": 12492
+  }
+}

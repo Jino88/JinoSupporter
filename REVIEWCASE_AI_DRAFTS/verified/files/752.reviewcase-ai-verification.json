@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 752,
+  "sourceFile": "56.BRS-161016 Report check Gauss of MG after all dry oven date 20.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\752.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:00Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 752,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable Gauss data but the changed factor and measurement grouping are materially incorrect.",
+    "issues": [
+      "Changed factor is filename-based, not evidence-based.",
+      "Baseline/test conditions are not established.",
+      "Supplier/lot groups are mixed with process/spec domains.",
+      "Outcome measurement-2 misclassifies line, voltage, and sample number as Gauss results.",
+      "Citations omit key min/max and sample rows needed to support statistics."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended comparison Baotou lot vs Ruijin lot, or before/after dry oven within each supplier?",
+      "What do the repeated Gauss columns and delta column under each supplier represent?"
+    ],
+    "correctionPlan": [
+      "Define the primary changed factor from row headers, likely supplier/lot unless oven states are proven.",
+      "Use date, line, voltage, sample number, supplier, and lot as grouping context.",
+      "Remove non-Gauss fields from outcome statistics.",
+      "Rebuild Gauss subresults using rows 5-7 plus relevant sample rows.",
+      "Set judgement only after valid groups and spec comparison are confirmed."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient and partly misapplied; add header, summary, and sample-row evidence."
+  },
+  "usage": {
+    "input_tokens": 3732,
+    "output_tokens": 796,
+    "total_tokens": 4528
+  }
+}

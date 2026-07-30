@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 93,
+  "sourceFile": "035.MSU - L20S15-07 REPORT TEST CHECK REASON NG HEARING ( +1V ) INCREASE_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\93.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:17Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 93,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because it merges unrelated test types and derives defect rates from wrong fields.",
+    "issues": [
+      "Changed factor combines many independent tests into one comparison.",
+      "Type 2 Normal is used as baseline for unrelated rows without evidence.",
+      "NG counts and rates appear taken from type numbers or wrong columns.",
+      "Measurement outcomes are ungrouped header/stat summaries, not valid comparisons.",
+      "Evidence rows exist but several cited rows lack needed header/context in the draft."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild cases by test type or explicit normal-vs-lot pairs only.",
+      "Preserve date, line, type, lot, location, supplier, and condition keys.",
+      "Recalculate NG counts/rates from the correct Sigma, +1V, and +0V columns.",
+      "Separate functional defect results from dimension/hearing measurements.",
+      "Cite header rows plus each compared data row for every outcome."
+    ],
+    "evidencePolicy": "Citations mostly exist, but are not sufficient for final evidence until grouping and column mapping are corrected."
+  },
+  "usage": {
+    "input_tokens": 11753,
+    "output_tokens": 541,
+    "total_tokens": 12294
+  }
+}

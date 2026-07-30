@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 434,
+  "sourceFile": "24, BRS-201506 VP offset_improve Worker Vision_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\434.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 434,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft has citeable problem and change-condition rows but lacks a verified comparison case and linked outcomes.",
+    "issues": [
+      "No reviewCases were generated.",
+      "No comparison pairs or metric candidates were extracted.",
+      "Changed factor likely includes process order and jig/marking changes but is not structured.",
+      "Sheet1 measurements are not linked to baseline/test conditions.",
+      "Outcome grouping is ambiguous."
+    ],
+    "requiredUserQuestions": [
+      "Should this report be treated as one validation of the Vision inspection process change?",
+      "Are Sheet1 measurements before or after the proposed change?"
+    ],
+    "correctionPlan": [
+      "Create a review case using the cited problem and change rows.",
+      "Define the primary changed factor as the Vision/process-order and jig/marking change if supported.",
+      "Map Sheet1 measurements only if their condition and timing are confirmed.",
+      "Preserve row citations for problem, current process, changed process, and jig change.",
+      "Keep status needs_review until baseline/test and outcomes are explicit."
+    ],
+    "evidencePolicy": "Citations are sufficient for change context, but not yet sufficient for outcome evidence."
+  },
+  "usage": {
+    "input_tokens": 1893,
+    "output_tokens": 442,
+    "total_tokens": 2335
+  }
+}

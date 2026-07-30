@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 260,
+  "sourceFile": "13. BRS-161014  Report check PT measure coplanarty 2023.11.22_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\260.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 260,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because it misidentifies the changed factor and converts header rows into false measurement results.",
+    "issues": [
+      "Changed factor is a filename, not the Type 1 vs Type 2 coplanarity condition.",
+      "Baseline and test conditions are not defined from cited rows.",
+      "Measurement subresults use headers/sample numbers as data, creating invalid stats and violations.",
+      "Outcome grouping misses or underuses actual result and decap bond data rows.",
+      "Evidence citations mostly support table structure, not final measurements or judgement."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factor as Type 1 under 0.01 mm versus Type 2 0.01 to 0.02 mm, if supported by source rows.",
+      "Extract actual coplanarity values from data rows, not header/sample-number rows.",
+      "Separate coplanarity measurement outcome from decap bond spread-glue outcome under the same validation context.",
+      "Cite rows containing specifications, measured values, NG rates, notes, and decision.",
+      "Remove supplier/domain claims unless explicitly evidenced."
+    ],
+    "evidencePolicy": "Row citations exist but are semantically insufficient; final evidence needs cited data and decision rows."
+  },
+  "usage": {
+    "input_tokens": 4257,
+    "output_tokens": 684,
+    "total_tokens": 4941
+  }
+}

@@ -1,0 +1,204 @@
+{
+  "sourceFileId": 864,
+  "sourceFile": "71. BRS-161014  Report separate Frame using new R-PT improment date 17.11.2023_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\71. BRS-161014  Report separate Frame using new R-PT improment date 17.11.2023_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "Report; Sheet1",
+    "sheetRowCount": 20,
+    "sheetCellCount": 63,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report!2",
+      "sheetName": "Report",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT SEPARATE LOT FRAME USING NEW R-PT IMPROMENT OF MODEL BRS-161014 | | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report!3",
+      "sheetName": "Report",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Date | 2023-11-18 00:00:00"
+    },
+    {
+      "rowId": "Report!4",
+      "sheetName": "Report",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Marker | Trung"
+    },
+    {
+      "rowId": "Report!5",
+      "sheetName": "Report",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report!6",
+      "sheetName": "Report",
+      "rowNumber": 6,
+      "rowText": "| - Improve NG Function"
+    },
+    {
+      "rowId": "Report!7",
+      "sheetName": "Report",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report!8",
+      "sheetName": "Report",
+      "rowNumber": 8,
+      "rowText": "| - separate lot Frame using new R-PT improment"
+    },
+    {
+      "rowId": "Report!9",
+      "sheetName": "Report",
+      "rowNumber": 9,
+      "rowText": "| - make sample and checking function"
+    },
+    {
+      "rowId": "Report!10",
+      "sheetName": "Report",
+      "rowNumber": 10,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "Report!11",
+      "sheetName": "Report",
+      "rowNumber": 11,
+      "rowText": "| | RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "Report!12",
+      "sheetName": "Report",
+      "rowNumber": 12,
+      "rowText": "| | Date | Type | Input | OK | Sigma | | | Hearing | | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "Report!13",
+      "sheetName": "Report",
+      "rowNumber": 13,
+      "rowText": "| | | | | | SPL | THD | SPL+THD | Noise | Touch"
+    },
+    {
+      "rowId": "Report!14",
+      "sheetName": "Report",
+      "rowNumber": 14,
+      "rowText": "| | 2023-11-18 00:00:00 | Frame Test | 1606 | 1561 | 0 | 0 | 0 | 45 | 0 | 45 | 0.02801993"
+    },
+    {
+      "rowId": "Report!16",
+      "sheetName": "Report",
+      "rowNumber": 16,
+      "rowText": "| | | Normal | 794 | 764 | 0 | 0 | 0 | 26 | 4 | 30 | 0.03778338"
+    },
+    {
+      "rowId": "Report!19",
+      "sheetName": "Report",
+      "rowNumber": 19,
+      "rowText": "| 4. Decision"
+    },
+    {
+      "rowId": "Report!20",
+      "sheetName": "Report",
+      "rowNumber": 20,
+      "rowText": "| - when use new lot Frame NG Function reduce"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-864-rc-1",
+      "reviewTitle": "REPORT SEPARATE LOT FRAME USING NEW R-PT IMPROMENT OF MODEL BRS-161014 | | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Improve NG Function / | II. Content. / | - separate lot Frame using new R-PT improment / | - make sample and checking function",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Frame Test",
+          "baselineCondition": "Normal",
+          "changedCondition": "Frame Test",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Report!14",
+            "Report!16",
+            "Report!2",
+            "Report!5",
+            "Report!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "Report!14",
+            "Report!16"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 4812,
+              "controlCondition": "Normal",
+              "testCondition": "Frame Test",
+              "control": {
+                "input": 794.0,
+                "ng": 30.0,
+                "ratePercent": 3.7783379999999998
+              },
+              "test": {
+                "input": 1606.0,
+                "ng": 45.0,
+                "ratePercent": 2.801993
+              },
+              "deltaRatePercentPoint": -0.976345,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Report!14",
+                "Report!16"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Report!14",
+        "Report!16",
+        "Report!2",
+        "Report!5",
+        "Report!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report!14",
+      "Report!16",
+      "Report!2",
+      "Report!5",
+      "Report!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

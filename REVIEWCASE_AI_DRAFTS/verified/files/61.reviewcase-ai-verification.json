@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 61,
+  "sourceFile": "025.1 MSU-L20S15-07 Result check NTI lot test New Bond SJ4774 and VE562850- 2025.06.17_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\61.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 61,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies a comparable Normal versus SJ4774/VE562850 acoustic lot test but the generated grouping and metrics are not reliable.",
+    "issues": [
+      "Review title is a nonsemantic extracted row.",
+      "Changed factor uses filename instead of tested bond/lot conditions.",
+      "Baseline and changed conditions are marked unclear despite rows naming Normal, SJ4774, and VE562850.",
+      "Outcomes mix valid graph summaries with misparsed raw numeric rows.",
+      "Some cited comparison rows are not shown in context and are weak for final evidence."
+    ],
+    "requiredUserQuestions": [
+      "Confirm SJ4774 and VE562850 are the new bond lot conditions compared with Normal."
+    ],
+    "correctionPlan": [
+      "Set title to NTI lot/New Bond acoustic result check for MSU-L20S15-07.",
+      "Define baseline as Normal and changed conditions as SJ4774 and VE562850; keep STD as reference only.",
+      "Use GRAPH rows 2-11 for summarized SPL, Fo, and THD comparisons.",
+      "Use RAW DATA rows 3, 7, 8 and section headers only to support sample grouping.",
+      "Remove misparsed subresults whose conditions are numeric cell values rather than metrics."
+    ],
+    "evidencePolicy": "Citations exist but are insufficiently targeted; final evidence needs header plus condition summary rows."
+  },
+  "usage": {
+    "input_tokens": 14108,
+    "output_tokens": 810,
+    "total_tokens": 14918
+  }
+}

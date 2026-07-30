@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 176,
+  "sourceFile": "09. TIU C11-20  Report test VP forming NO-2H NEW mold number 4 2025.12.30_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\176.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 176,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the report context but misstates the changed factor and uses insufficient outcome evidence.",
+    "issues": [
+      "Changed factor is a filename, not the tested condition.",
+      "Baseline and test conditions are marked unclear despite Normal and Test VP rows.",
+      "Outcome cites header/blank row instead of comparison data rows.",
+      "Function results are aggregated across dates/models/molds without subgroup keys.",
+      "Tension pass/fail results are omitted."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Test VP forming with new mold number 4 versus normal lot.",
+      "Use baseline Normal and changed conditions Test VP Mold KR, Mold GN, and new mold as row-level subgroups.",
+      "Preserve date, model R/L, mold type, line, and assembly type subgroup keys.",
+      "Rebuild function outcomes from rows 31,33,35,37,39,41,43 with header row 29.",
+      "Add tension outcomes from rows 48-51 with header row 46."
+    ],
+    "evidencePolicy": "Current citations are not sufficient; cite content rows plus actual comparison/result rows, not only headers."
+  },
+  "usage": {
+    "input_tokens": 3650,
+    "output_tokens": 658,
+    "total_tokens": 4308
+  }
+}

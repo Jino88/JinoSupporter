@@ -1,0 +1,131 @@
+{
+  "sourceFileId": 9,
+  "sourceFile": "006.MSU - 20S15-07 REPORT TENSION OF CD + VP CHANGE 5s - 3s_1778470542_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\006.MSU - 20S15-07 REPORT TENSION OF CD + VP CHANGE 5s - 3s_1778470542_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Sheet2",
+    "sheetRowCount": 4,
+    "sheetCellCount": 45,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 2
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet2!9",
+      "sheetName": "Sheet2",
+      "rowNumber": 9,
+      "rowText": "| RESULT CHECK TENSION CHANGE DRY UV LED FROM 5S -> 3S"
+    },
+    {
+      "rowId": "Sheet2!10",
+      "sheetName": "Sheet2",
+      "rowNumber": 10,
+      "rowText": "| Date | Type check | Spec | Min | Max | Average | #1 | #2 | #3 | #4 | #5 | #6 | #7 | #8 | #9 | #10"
+    },
+    {
+      "rowId": "Sheet2!11",
+      "sheetName": "Sheet2",
+      "rowNumber": 11,
+      "rowText": "| 2025-02-14 00:00:00 | Test change dry UV led 5s -> 3s | 1.9kgf | 1.894 | 2.382 | 2.1595 | 2.29 | 2.235 | 2.277 | 2.068 | 2.083 | 2.382 | 2.053 | 2.219 | 1.894 | 2.094"
+    },
+    {
+      "rowId": "Sheet2!12",
+      "sheetName": "Sheet2",
+      "rowNumber": 12,
+      "rowText": "| | Normal ( Dry UV led 5s ) | | 1.616 | 2.33 | 2.01275 | 2.25 | 2.301 | 2.33 | 1.97 | 1.791 | 1.616 | 1.983 | 1.861"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-9-rc-1",
+      "reviewTitle": "| RESULT CHECK TENSION CHANGE DRY UV LED FROM 5S -> 3S",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition",
+            "dimension/spec"
+          ],
+          "changedFactor": "006.MSU - 20S15-07 REPORT TENSION OF CD + VP CHANGE 5s - 3s_1778470542",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Sheet2!11",
+            "Sheet2!12"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT CHECK TENSION CHANGE DRY UV LED FROM 5S -> 3S",
+          "comparisonRows": [
+            "Sheet2!11",
+            "Sheet2!12"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 45321,
+              "condition": "Test change dry UV led 5s -> 3s",
+              "spec": "> 3",
+              "min": 1.894,
+              "max": 2.382,
+              "avg": 2.1595,
+              "sampleCount": 10,
+              "violationCount": 10,
+              "evidenceRows": [
+                "Sheet2!11"
+              ]
+            },
+            {
+              "statId": 45322,
+              "condition": "Normal ( Dry UV led 5s )",
+              "spec": "> 3",
+              "min": 1.616,
+              "max": 2.33,
+              "avg": 2.01275,
+              "sampleCount": 8,
+              "violationCount": 8,
+              "evidenceRows": [
+                "Sheet2!12"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Sheet2!11",
+        "Sheet2!12"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet2!11",
+      "Sheet2!12"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

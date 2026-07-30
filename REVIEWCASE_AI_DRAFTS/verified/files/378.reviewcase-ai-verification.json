@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 378,
+  "sourceFile": "2. MSU-L20S15-07 LIST TEST IMPROVE NG FUNCTION SPK 7.3.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\378.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 378,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not safe because it mixes machine and cooling-time conditions and omits key NG outcome structure.",
+    "issues": [
+      "Changed factor incorrectly combines machines with cooling times.",
+      "Baseline/test direction is ambiguous; 1s normal appears to be cooling-time baseline, not equipment.",
+      "Machine/date should be subgroup context for AWF#1 cooling-time comparison.",
+      "NG results are misread by using only sigma NG and missing hearing NG/rates.",
+      "Unexplained Sheet1!20 and Sheet1!34 measurement outcomes lack visible context."
+    ],
+    "requiredUserQuestions": [
+      "Should the primary comparison be coil cooling time 1s normal vs 3s/4s?",
+      "Should Sheet1 (2) E2/C2 hearing retest be included in this same review case?"
+    ],
+    "correctionPlan": [
+      "Redefine changed factor as coil cooling time if confirmed by source context.",
+      "Keep machine, date, and test item as subgroup keys.",
+      "Rebuild outcomes for sigma, Hearing +1V, and Hearing +0V NG counts and rates.",
+      "Remove or separately justify Sheet1!20 and Sheet1!34 measurement tables.",
+      "Cite header rows plus each compared condition row used for every outcome."
+    ],
+    "evidencePolicy": "Current row citations exist but are insufficient for final evidence because grouping and metric mapping are not reliable."
+  },
+  "usage": {
+    "input_tokens": 5108,
+    "output_tokens": 819,
+    "total_tokens": 5927
+  }
+}

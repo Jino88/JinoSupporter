@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 650,
+  "sourceFile": "43.MSU-20S15-07 Result test  frame improve dimension mold K1 date 5.10.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\650.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 650,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable K1 frame-improve versus normal mold evidence exists, but key metrics and subgroup grouping are misparsed.",
+    "issues": [
+      "Height dimension counts/rate appear shifted and wrong.",
+      "Function NG totals are internally inconsistent.",
+      "Tension merged-cell parent conditions are not propagated to Suspension B rows.",
+      "Tension sample counts/spec handling appear wrong.",
+      "Module-line result is mentioned in decision but not captured as an outcome."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Re-extract rows 20-37 with headers and merged-cell context.",
+      "Correct height input, OK, NG, recheck, and rate fields.",
+      "Correct function category NG sums, total NG, and rate fields.",
+      "Propagate K1/normal parent conditions to all tension subrows and capture spec.",
+      "Add or explicitly omit module-line outcome with evidence."
+    ],
+    "evidencePolicy": "Row citations are relevant but insufficient until complete table/header context and corrected values are cited."
+  },
+  "usage": {
+    "input_tokens": 4177,
+    "output_tokens": 1157,
+    "total_tokens": 5334
+  }
+}

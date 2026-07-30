@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "corpus-benchmark-selection-v1",
+  "generatedAt": "2026-07-18",
+  "sourceRoot": "D:\\000. MyWorks\\test\\result\\InputDataFinish",
+  "purpose": "Reprocess B24/B25 through strict-schema, provenance-bound staged-v2 after the v30 transport rejection.",
+  "imagePolicy": {
+    "extractImages": false,
+    "analyzeImages": false
+  },
+  "selection": {
+    "journalStatus": "FAILED",
+    "count": 2,
+    "order": "original benchmark order",
+    "executionGate": "Every finalized v3 fragment prompt must be at most 400000 bytes, ownership must be exact, fragment identity must bind the live prompt and contracts, and only validated complete manifests may be imported."
+  },
+  "workbooks": [
+    {
+      "id": "B24",
+      "relativePath": "024.MSU-20S15-07 Result check NTI test Frame improve R-PT_clean.xlsx",
+      "reason": "Strict staged-v2 retry after fail-closed response-schema rejection; no v30 fragment was accepted."
+    },
+    {
+      "id": "B25",
+      "relativePath": "025.MSU-20S15-07 Result check NTI test coil 0.096_clean.xlsx",
+      "reason": "Strict staged-v2 retry after fail-closed response-schema rejection; no v30 fragment was accepted."
+    }
+  ]
+}

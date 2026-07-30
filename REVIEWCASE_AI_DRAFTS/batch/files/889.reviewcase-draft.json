@@ -1,0 +1,301 @@
+{
+  "sourceFileId": 889,
+  "sourceFile": "76. TIU C11-20 Report  find reason NG frequency high 2026.04.18_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\76. TIU C11-20 Report  find reason NG frequency high 2026.04.18_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test (2)",
+    "sheetRowCount": 19,
+    "sheetCellCount": 74,
+    "comparisonPairCount": 2,
+    "metricCandidateCount": 3,
+    "measurementStatCount": 4
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test (2)!2",
+      "sheetName": "Test (2)",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST FIND REASON NG FUNCTION HIGH TIU-C11-20 | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test (2)!3",
+      "sheetName": "Test (2)",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date | 2026-04-18 00:00:00"
+    },
+    {
+      "rowId": "Test (2)!4",
+      "sheetName": "Test (2)",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "Test (2)!5",
+      "sheetName": "Test (2)",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test (2)!6",
+      "sheetName": "Test (2)",
+      "rowNumber": 6,
+      "rowText": "| - Find reason NG Frequency low many over 2% reason NG by Frame mesh NG ."
+    },
+    {
+      "rowId": "Test (2)!7",
+      "sheetName": "Test (2)",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test (2)!8",
+      "sheetName": "Test (2)",
+      "rowNumber": 8,
+      "rowText": "| - Separate product date 13/4 - 14/4 & 15/4 check rate function"
+    },
+    {
+      "rowId": "Test (2)!10",
+      "sheetName": "Test (2)",
+      "rowNumber": 10,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test (2)!20",
+      "sheetName": "Test (2)",
+      "rowNumber": 20,
+      "rowText": "| | Result separate each by product date make Frame"
+    },
+    {
+      "rowId": "Test (2)!21",
+      "sheetName": "Test (2)",
+      "rowNumber": 21,
+      "rowText": "| | No | Date | Line | Type | Input | OK | NG FUNCTION | | | | Total NG | NG rate | Note"
+    },
+    {
+      "rowId": "Test (2)!22",
+      "sheetName": "Test (2)",
+      "rowNumber": 22,
+      "rowText": "| | | | | | | | SPL | No sound | Noise | Touch"
+    },
+    {
+      "rowId": "Test (2)!23",
+      "sheetName": "Test (2)",
+      "rowNumber": 23,
+      "rowText": "| | 1 | 2026-01-18 00:00:00 | TIU C11-20 L ( Day shift ) | Test Using Frame Date 13/4 | 940 | 929 | 2 | 0 | 9 | 0 | 11 | 0.01170213"
+    },
+    {
+      "rowId": "Test (2)!25",
+      "sheetName": "Test (2)",
+      "rowNumber": 25,
+      "rowText": "| | 2 | | | Test Using Frame Date 15/4 | 468 | 461 | 1 | 0 | 6 | 0 | 7 | 0.01495726"
+    },
+    {
+      "rowId": "Test (2)!27",
+      "sheetName": "Test (2)",
+      "rowNumber": 27,
+      "rowText": "| | 3 | | | Normal ( Frame date 14/4 ) | 8039 | 7826 | 162 | 0 | 46 | 5 | 213 | 0.02649583"
+    },
+    {
+      "rowId": "Test (2)!29",
+      "sheetName": "Test (2)",
+      "rowNumber": 29,
+      "rowText": "| | Follow result test separate frame each by product date lot Frame date 14/4 have problem."
+    },
+    {
+      "rowId": "Test (2)!31",
+      "sheetName": "Test (2)",
+      "rowNumber": 31,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-889-rc-1",
+      "reviewTitle": "| REPORT TEST FIND REASON NG FUNCTION HIGH TIU-C11-20 | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Find reason NG Frequency low many over 2% reason NG by Frame mesh NG . / | II. Content. / | - Separate product date 13/4 - 14/4 & 15/4 check rate function / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: Normal ( Frame date 14/4 ) vs TIU C11-20 L ( Day shift ), Test Using Frame Date 15/4",
+          "baselineCondition": "Normal ( Frame date 14/4 )",
+          "changedCondition": "TIU C11-20 L ( Day shift ), Test Using Frame Date 15/4",
+          "subgroupKeys": [
+            "Test Using Frame Date 13/4"
+          ],
+          "evidenceRows": [
+            "Test (2)!2",
+            "Test (2)!22",
+            "Test (2)!23",
+            "Test (2)!25",
+            "Test (2)!27",
+            "Test (2)!5",
+            "Test (2)!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "Result separate each by product date make Frame",
+          "comparisonRows": [
+            "Test (2)!23",
+            "Test (2)!25",
+            "Test (2)!27"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 4849,
+              "controlCondition": "Normal ( Frame date 14/4 )",
+              "testCondition": "TIU C11-20 L ( Day shift ) | Test Using Frame Date 13/4",
+              "control": {
+                "input": 8039.0,
+                "ng": 213.0,
+                "ratePercent": 2.6495830000000002
+              },
+              "test": {
+                "input": 940.0,
+                "ng": 11.0,
+                "ratePercent": 1.170213
+              },
+              "deltaRatePercentPoint": -1.47937,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Test (2)!23",
+                "Test (2)!27"
+              ]
+            },
+            {
+              "pairId": 4850,
+              "controlCondition": "Normal ( Frame date 14/4 )",
+              "testCondition": "Test Using Frame Date 15/4",
+              "control": {
+                "input": 8039.0,
+                "ng": 213.0,
+                "ratePercent": 2.6495830000000002
+              },
+              "test": {
+                "input": 468.0,
+                "ng": 7.0,
+                "ratePercent": 1.4957259999999999
+              },
+              "deltaRatePercentPoint": -1.1538570000000001,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Test (2)!25",
+                "Test (2)!27"
+              ]
+            }
+          ],
+          "limitations": []
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No | Date | Line | Type | Input | OK | NG FUNCTION | Total NG | NG rate | Note",
+          "comparisonRows": [
+            "Test (2)!22"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 64795,
+              "condition": "NG FUNCTION / SPL",
+              "spec": "",
+              "min": 0.00212766,
+              "max": 162.0,
+              "avg": 27.504069361666666,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test (2)!22"
+              ]
+            },
+            {
+              "statId": 64796,
+              "condition": "NG FUNCTION / No sound",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test (2)!22"
+              ]
+            },
+            {
+              "statId": 64797,
+              "condition": "NG FUNCTION / Noise",
+              "spec": "",
+              "min": 0.0057221,
+              "max": 46.0,
+              "avg": 10.171352846666666,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test (2)!22"
+              ]
+            },
+            {
+              "statId": 64798,
+              "condition": "NG FUNCTION / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 5.0,
+              "avg": 0.833436995,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test (2)!22"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test (2)!2",
+        "Test (2)!22",
+        "Test (2)!23",
+        "Test (2)!25",
+        "Test (2)!27",
+        "Test (2)!5",
+        "Test (2)!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test (2)!2",
+      "Test (2)!22",
+      "Test (2)!23",
+      "Test (2)!25",
+      "Test (2)!27",
+      "Test (2)!5",
+      "Test (2)!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

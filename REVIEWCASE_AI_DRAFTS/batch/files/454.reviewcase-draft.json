@@ -1,0 +1,360 @@
+{
+  "sourceFileId": 454,
+  "sourceFile": "25.BRS-161016 GMI Report checking and test Frame bending date 20.4.2026_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\25.BRS-161016 GMI Report checking and test Frame bending date 20.4.2026_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 27,
+    "sheetCellCount": 107,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 5,
+    "measurementStatCount": 5
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT CHECKING AND TEST MATERIAL FRAME OK/BENDING BRS-161016 | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | Date | 2026-04-20 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Find reason NG hearing"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Checking NG rate Frame Bending"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| - Seaparate OK/Bending"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| - Make final sample checking Function"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| - Q'ty : 50pcs"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | 1. RESULT CHECKING MATERIAL FRAME BENDING"
+    },
+    {
+      "rowId": "Test!31",
+      "sheetName": "Test",
+      "rowNumber": 31,
+      "rowText": "| | 2.RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "Test!32",
+      "sheetName": "Test",
+      "rowNumber": 32,
+      "rowText": "| | No | Date | Type test | Input | OK | Sigma | | | Hearing | | Total NG | NG Rate"
+    },
+    {
+      "rowId": "Test!38",
+      "sheetName": "Test",
+      "rowNumber": 38,
+      "rowText": "| | 3 | | Normal | 792 | 742 | 3 | 3 | 3 | 32 | 9 | 50 | 0.06313131"
+    },
+    {
+      "rowId": "Test!42",
+      "sheetName": "Test",
+      "rowNumber": 42,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "Test!43",
+      "sheetName": "Test",
+      "rowNumber": 43,
+      "rowText": "| => Result checking material Frame happen NG bending rate 5~7% => separate checking Function happen NG high rate 13.6% , normal NG rate 6.3%"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-454-rc-1",
+      "reviewTitle": "| REPORT CHECKING AND TEST MATERIAL FRAME OK/BENDING BRS-161016 | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Find reason NG hearing / | II. Content. / | - Checking NG rate Frame Bending / | - Seaparate OK/Bending",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Frame, 2, Frame OK, Frame Bending",
+          "baselineCondition": "Normal",
+          "changedCondition": "Frame, 2, Frame OK, Frame Bending",
+          "subgroupKeys": [
+            "2026-04-29 00:00:00"
+          ],
+          "evidenceRows": [
+            "Test!14",
+            "Test!17",
+            "Test!19",
+            "Test!2",
+            "Test!33",
+            "Test!34",
+            "Test!36",
+            "Test!38",
+            "Test!5",
+            "Test!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "1. RESULT CHECKING MATERIAL FRAME BENDING",
+          "comparisonRows": [
+            "Test!17",
+            "Test!19"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 20923,
+              "condition": "Frame",
+              "input": 349.0,
+              "ok": 322.0,
+              "ng": 27.0,
+              "ratePercent": 7.73639,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "metricId": 20924,
+              "condition": "2 | 2026-04-29 00:00:00",
+              "input": 100.0,
+              "ok": 100.0,
+              "ng": 5.0,
+              "ratePercent": 5.0,
+              "evidenceRows": [
+                "Test!19"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "metric-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "2.RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "Test!34",
+            "Test!36",
+            "Test!38"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 20925,
+              "condition": "Frame OK",
+              "input": 290.0,
+              "ok": 275.0,
+              "ng": 15.0,
+              "ratePercent": 5.172414,
+              "evidenceRows": [
+                "Test!34"
+              ]
+            },
+            {
+              "metricId": 20926,
+              "condition": "Frame Bending",
+              "input": 22.0,
+              "ok": 19.0,
+              "ng": 3.0,
+              "ratePercent": 13.636364,
+              "evidenceRows": [
+                "Test!36"
+              ]
+            },
+            {
+              "metricId": 20927,
+              "condition": "Normal",
+              "input": 792.0,
+              "ok": 742.0,
+              "ng": 50.0,
+              "ratePercent": 6.313130999999999,
+              "evidenceRows": [
+                "Test!38"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No | Date | Type test | Input | OK | Sigma | Hearing | Total NG | NG Rate",
+          "comparisonRows": [
+            "Test!33"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 54371,
+              "condition": "Sigma / THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 3.0,
+              "avg": 0.5006313133333333,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!33"
+              ]
+            },
+            {
+              "statId": 54372,
+              "condition": "Sigma / SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 3.0,
+              "avg": 0.5006313133333333,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!33"
+              ]
+            },
+            {
+              "statId": 54373,
+              "condition": "Sigma / SPL+THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 3.0,
+              "avg": 0.6678726933333333,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!33"
+              ]
+            },
+            {
+              "statId": 54374,
+              "condition": "Hearing / Noise",
+              "spec": "",
+              "min": 0.03103448,
+              "max": 32.0,
+              "avg": 7.367967026666666,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!33"
+              ]
+            },
+            {
+              "statId": 54375,
+              "condition": "Hearing / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 9.0,
+              "avg": 2.338100836666667,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!33"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!14",
+        "Test!17",
+        "Test!19",
+        "Test!2",
+        "Test!33",
+        "Test!34",
+        "Test!36",
+        "Test!38",
+        "Test!5",
+        "Test!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!14",
+      "Test!17",
+      "Test!19",
+      "Test!2",
+      "Test!33",
+      "Test!34",
+      "Test!36",
+      "Test!38",
+      "Test!5",
+      "Test!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

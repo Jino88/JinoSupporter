@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 877,
+  "sourceFile": "73.BRS-161014 Report test change bond PT-8310 sub2 2023.11.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\877.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 877,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Main bond change comparison is supported, but tension grouping and final judgement need correction before use.",
+    "issues": [
+      "Tension rows are not paired by MG long and MG short under test vs normal conditions.",
+      "Tension outcome is left not_judged despite lower averages and a decision saying tension NG.",
+      "Old bond name is inconsistent between title and table and needs a source-note.",
+      "Changed factor domain should be bond material/adhesive, not supplier.",
+      "Sheet1 appears to contain separate trial NG results and is not addressed."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Revise changed factor to normal bond PT-8030GR(2)/EX-0930 naming versus PT-8310M9S with inconsistency noted.",
+      "Cite purpose, content, visual rows, tension rows, and decision row 33.",
+      "Group tension results into MG long and MG short pairs for test versus normal.",
+      "Set tension judgement to worse or explicitly explain why not judged despite decision.",
+      "Exclude Sheet1 as supplemental/unlinked or create separate cases if source context supports it."
+    ],
+    "evidencePolicy": "Citations are sufficient for visual comparison but incomplete for tension context and decision support."
+  },
+  "usage": {
+    "input_tokens": 4292,
+    "output_tokens": 1311,
+    "total_tokens": 5603
+  }
+}

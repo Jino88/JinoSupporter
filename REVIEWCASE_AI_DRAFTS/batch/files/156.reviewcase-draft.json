@@ -1,0 +1,249 @@
+{
+  "sourceFileId": 156,
+  "sourceFile": "07. TIU C11-20 Result test AWF JIG Cut guide more  2025.12.10_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\07. TIU C11-20 Result test AWF JIG Cut guide more  2025.12.10_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 14,
+    "sheetCellCount": 59,
+    "comparisonPairCount": 3,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | RESULT TEST AWF JIG CUTTED MORE GUIDE - TIU C11-20 | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | Date | 2025-12-10 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | Maker | Trung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Improve NG Coil deform"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| Cut more guide Jig same pic and test"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| III. Result."
+    },
+    {
+      "rowId": "Test!22",
+      "sheetName": "Test",
+      "rowNumber": 22,
+      "rowText": "| | No | Date | Type | | Input | Ok | NG COIL DAMAGE | NG COIL SEPARATE | TOTAL NG | Total NG rate"
+    },
+    {
+      "rowId": "Test!23",
+      "sheetName": "Test",
+      "rowNumber": 23,
+      "rowText": "| | 1 | 12/9/2025 (DAY) | JIG TEST | | 8 | 8 | 0 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "Test!24",
+      "sheetName": "Test",
+      "rowNumber": 24,
+      "rowText": "| | 2 | 12/9/2025 (NIGHT) | JIG TEST | | 20 | 19 | 0 | 1 | 1 | 0.05"
+    },
+    {
+      "rowId": "Test!25",
+      "sheetName": "Test",
+      "rowNumber": 25,
+      "rowText": "| | 3 | 12/10/2025 (DAY) | JIG TEST | | 20 | 17 | 0 | 3 | 3 | 0.15"
+    },
+    {
+      "rowId": "Test!26",
+      "sheetName": "Test",
+      "rowNumber": 26,
+      "rowText": "| | 4 | 12/10/2025 (DAY) | Normal | | 20 | 20 | 0 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "Test!28",
+      "sheetName": "Test",
+      "rowNumber": 28,
+      "rowText": "| III. Decision."
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-156-rc-1",
+      "reviewTitle": "| RESULT TEST AWF JIG CUTTED MORE GUIDE - TIU C11-20 | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Improve NG Coil deform / | II. Content. / | Cut more guide Jig same pic and test / | III. Result.",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment",
+            "jig"
+          ],
+          "changedFactor": "Condition comparison: 12/10/2025 (DAY) vs 12/10/2025 (DAY), 12/9/2025 (DAY), 12/9/2025 (NIGHT)",
+          "baselineCondition": "12/10/2025 (DAY)",
+          "changedCondition": "12/10/2025 (DAY), 12/9/2025 (DAY), 12/9/2025 (NIGHT)",
+          "subgroupKeys": [
+            "JIG TEST",
+            "Normal"
+          ],
+          "evidenceRows": [
+            "Test!2",
+            "Test!23",
+            "Test!24",
+            "Test!25",
+            "Test!26",
+            "Test!5",
+            "Test!7",
+            "Test!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "III. Result.",
+          "comparisonRows": [
+            "Test!23",
+            "Test!24",
+            "Test!25",
+            "Test!26"
+          ],
+          "judgement": "mixed",
+          "subResults": [
+            {
+              "pairId": 3639,
+              "controlCondition": "12/10/2025 (DAY) | Normal",
+              "testCondition": "12/9/2025 (DAY) | JIG TEST",
+              "control": {
+                "input": 20.0,
+                "ng": 0.0,
+                "ratePercent": 0.0
+              },
+              "test": {
+                "input": 8.0,
+                "ng": 0.0,
+                "ratePercent": 0.0
+              },
+              "deltaRatePercentPoint": 0.0,
+              "effectDirection": "NO_CHANGE",
+              "evidenceRows": [
+                "Test!23",
+                "Test!26"
+              ]
+            },
+            {
+              "pairId": 3640,
+              "controlCondition": "12/10/2025 (DAY) | Normal",
+              "testCondition": "12/9/2025 (NIGHT) | JIG TEST",
+              "control": {
+                "input": 20.0,
+                "ng": 0.0,
+                "ratePercent": 0.0
+              },
+              "test": {
+                "input": 20.0,
+                "ng": 1.0,
+                "ratePercent": 5.0
+              },
+              "deltaRatePercentPoint": 5.0,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Test!24",
+                "Test!26"
+              ]
+            },
+            {
+              "pairId": 3641,
+              "controlCondition": "12/10/2025 (DAY) | Normal",
+              "testCondition": "12/10/2025 (DAY) | JIG TEST",
+              "control": {
+                "input": 20.0,
+                "ng": 0.0,
+                "ratePercent": 0.0
+              },
+              "test": {
+                "input": 20.0,
+                "ng": 3.0,
+                "ratePercent": 15.0
+              },
+              "deltaRatePercentPoint": 15.0,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Test!25",
+                "Test!26"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Test!2",
+        "Test!23",
+        "Test!24",
+        "Test!25",
+        "Test!26",
+        "Test!5",
+        "Test!7",
+        "Test!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!2",
+      "Test!23",
+      "Test!24",
+      "Test!25",
+      "Test!26",
+      "Test!5",
+      "Test!7",
+      "Test!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

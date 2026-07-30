@@ -1,0 +1,292 @@
+{
+  "sourceFileId": 20,
+  "sourceFile": "01. MSU-L20S15-07DT Report test check lot material CD  -11.4.2025_1778470667_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\01. MSU-L20S15-07DT Report test check lot material CD  -11.4.2025_1778470667_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "11.04",
+    "sheetRowCount": 112,
+    "sheetCellCount": 608,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 8,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "11.04!2",
+      "sheetName": "11.04",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | MSU-L20S15-07 REPORT CHECK LOT MATERIAL CD | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "11.04!3",
+      "sheetName": "11.04",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | Date | 2025-04-11 00:00:00"
+    },
+    {
+      "rowId": "11.04!4",
+      "sheetName": "11.04",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | Marker | Le"
+    },
+    {
+      "rowId": "11.04!5",
+      "sheetName": "11.04",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "11.04!6",
+      "sheetName": "11.04",
+      "rowNumber": 6,
+      "rowText": "| - Check lot material CD OK or Not ?"
+    },
+    {
+      "rowId": "11.04!7",
+      "sheetName": "11.04",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "11.04!8",
+      "sheetName": "11.04",
+      "rowNumber": 8,
+      "rowText": "| - Separate lot material CD check process viosion VP/CD"
+    },
+    {
+      "rowId": "11.04!10",
+      "sheetName": "11.04",
+      "rowNumber": 10,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "11.04!11",
+      "sheetName": "11.04",
+      "rowNumber": 11,
+      "rowText": "| 1. RESULT CHECKING PROCESS VISION VP/CD"
+    },
+    {
+      "rowId": "11.04!12",
+      "sheetName": "11.04",
+      "rowNumber": 12,
+      "rowText": "| | No | Date | Line | Dome Lot Date | Input | OK | Vision VP/CD | | Total NG | NG Rate | Picture | | | | Note"
+    },
+    {
+      "rowId": "11.04!13",
+      "sheetName": "11.04",
+      "rowNumber": 13,
+      "rowText": "| | | | | | | | VP/CD separate | Other"
+    },
+    {
+      "rowId": "11.04!14",
+      "sheetName": "11.04",
+      "rowNumber": 14,
+      "rowText": "| | 1 | 2025-04-11 00:00:00 | C2-2A | 23/3/2025 | 9604 | 9578 | 26 | 0 | 26 | 0.00270721 | | | | | Line run"
+    },
+    {
+      "rowId": "11.04!128",
+      "sheetName": "11.04",
+      "rowNumber": 128,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-20-rc-1",
+      "reviewTitle": "| MSU-L20S15-07 REPORT CHECK LOT MATERIAL CD | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Check lot material CD OK or Not ? / | II. Content. / | - Separate lot material CD check process viosion VP/CD / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material",
+            "lot"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs 1, 2, 3, 4, 5, 6",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "1, 2, 3, 4, 5, 6",
+          "subgroupKeys": [
+            "23/3/2025",
+            "C2-2A",
+            "2025-04-11 00:00:00",
+            "C2-2B",
+            "2025-04-12 00:00:00"
+          ],
+          "evidenceRows": [
+            "11.04!14",
+            "11.04!16",
+            "11.04!18",
+            "11.04!2",
+            "11.04!20",
+            "11.04!22",
+            "11.04!24",
+            "11.04!26",
+            "11.04!28",
+            "11.04!5",
+            "11.04!6",
+            "11.04!7",
+            "11.04!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "1. RESULT CHECKING PROCESS VISION VP/CD",
+          "comparisonRows": [
+            "11.04!14",
+            "11.04!16",
+            "11.04!18",
+            "11.04!20",
+            "11.04!22",
+            "11.04!24",
+            "11.04!26",
+            "11.04!28"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 17499,
+              "condition": "1 | 2025-04-11 00:00:00 | C2-2A | 23/3/2025",
+              "input": 9604.0,
+              "ok": 9578.0,
+              "ng": 26.0,
+              "ratePercent": 0.270721,
+              "evidenceRows": [
+                "11.04!14"
+              ]
+            },
+            {
+              "metricId": 17500,
+              "condition": "2 | 23/3/2025",
+              "input": 320.0,
+              "ok": 300.0,
+              "ng": 20.0,
+              "ratePercent": 6.25,
+              "evidenceRows": [
+                "11.04!16"
+              ]
+            },
+            {
+              "metricId": 17501,
+              "condition": "3 | 23/3/2025",
+              "input": 320.0,
+              "ok": 300.0,
+              "ng": 20.0,
+              "ratePercent": 6.25,
+              "evidenceRows": [
+                "11.04!18"
+              ]
+            },
+            {
+              "metricId": 17502,
+              "condition": "4 | C2-2B | 23/3/2025",
+              "input": 8762.0,
+              "ok": 8757.0,
+              "ng": 5.0,
+              "ratePercent": 0.057065000000000005,
+              "evidenceRows": [
+                "11.04!20"
+              ]
+            },
+            {
+              "metricId": 17503,
+              "condition": "5 | 23/3/2025",
+              "input": 400.0,
+              "ok": 384.0,
+              "ng": 16.0,
+              "ratePercent": 4.0,
+              "evidenceRows": [
+                "11.04!22"
+              ]
+            },
+            {
+              "metricId": 17504,
+              "condition": "6 | 23/3/2025",
+              "input": 500.0,
+              "ok": 467.0,
+              "ng": 33.0,
+              "ratePercent": 6.6000000000000005,
+              "evidenceRows": [
+                "11.04!24"
+              ]
+            },
+            {
+              "metricId": 17505,
+              "condition": "1 | 2025-04-12 00:00:00 | C2-2A | 23/3/2025",
+              "input": 7815.0,
+              "ok": 7693.0,
+              "ng": 122.0,
+              "ratePercent": 1.5611,
+              "evidenceRows": [
+                "11.04!26"
+              ]
+            },
+            {
+              "metricId": 17506,
+              "condition": "2 | 23/3/2025",
+              "input": 3230.0,
+              "ok": 3151.0,
+              "ng": 79.0,
+              "ratePercent": 2.44582,
+              "evidenceRows": [
+                "11.04!28"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "11.04!14",
+        "11.04!16",
+        "11.04!18",
+        "11.04!2",
+        "11.04!20",
+        "11.04!22",
+        "11.04!24",
+        "11.04!26",
+        "11.04!28",
+        "11.04!5",
+        "11.04!6",
+        "11.04!7",
+        "11.04!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "11.04!14",
+      "11.04!16",
+      "11.04!18",
+      "11.04!2",
+      "11.04!20",
+      "11.04!22",
+      "11.04!24",
+      "11.04!26",
+      "11.04!28",
+      "11.04!5",
+      "11.04!6",
+      "11.04!7",
+      "11.04!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

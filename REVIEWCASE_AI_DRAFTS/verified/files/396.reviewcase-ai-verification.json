@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 396,
+  "sourceFile": "20. TIU L5S3-01 R Report test MG, Side MG happen NG Plating bloat from vendor Ruijin-  date 2025.12.05_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\396.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 396,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures the normal vs plating-bloat material comparison but needs metric and judgement cleanup before final use.",
+    "issues": [
+      "Row 14 NG count and 3% rate appear inconsistent.",
+      "Overall decision says the tested lot cannot be used but outcomes are not judged.",
+      "Changed factor omits center/side context from title and purpose.",
+      "Supplier domain is not supported by cited source rows.",
+      "Critical condition rows 14, 19, and 20 are cited but not shown in context excerpt."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Re-read rows 14, 19, and 20 and map NG subcolumns versus total NG correctly.",
+      "Use row 29 to set the overall judgement or limitation consistently.",
+      "Revise changed factor to normal vs MG plating-bloat material with small/big and center/side context as evidenced.",
+      "Remove supplier as a changed domain unless a source row supports vendor Ruijin.",
+      "Ensure all cited evidence rows include condition, sample size, NG, rate, and decision support."
+    ],
+    "evidencePolicy": "Citations exist, but sufficiency is not proven until key condition rows and decision mapping are verified."
+  },
+  "usage": {
+    "input_tokens": 2974,
+    "output_tokens": 1058,
+    "total_tokens": 4032
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 648,
+  "sourceFile": "43.BRS-161014 Report test SUB 2 SMG+BPT over glue_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\648.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:24Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 648,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Core comparison is valid, but the draft includes a spurious measurement outcome and incomplete citations.",
+    "issues": [
+      "Measurement outcome is misclassified from the function table/header, not a separate measurement study.",
+      "Changed condition should preserve two over-glue levels as subconditions, not merge them without subgroup structure.",
+      "Purpose/evidence omits explicit <30% condition row and conclusion rows supporting interpretation.",
+      "Outcome metric label is too generic and should identify total/function NG rate with hearing context.",
+      "Judgement remains not_judged despite source conclusions for <30% and >30%."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove the measurement-1 outcome and its derived stats.",
+      "Add rows 9, 10, 37, and 38 to changed-factor and outcome evidence.",
+      "Model over glue <30% and >30% as subResults under one over-glue-level factor.",
+      "Rename outcome to function total NG rate and retain input, OK, NG, and rate values.",
+      "Set concise judgement: <30% similar/acceptable vs normal; >30% worse than normal."
+    ],
+    "evidencePolicy": "Existing row IDs are citeable, but final evidence is incomplete until condition and conclusion rows are added."
+  },
+  "usage": {
+    "input_tokens": 3522,
+    "output_tokens": 801,
+    "total_tokens": 4323
+  }
+}

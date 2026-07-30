@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 917,
+  "sourceFile": "8. BRS-161016(DT) Sunmary Report TEST new JIG improve use new dry machine 7.6.2024 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\917.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 917,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source context but misidentifies run numbers as changed conditions and lacks a valid baseline/test grouping.",
+    "issues": [
+      "Changed factor is incorrectly built from row/run numbers.",
+      "Baseline condition is not evidenced in the workbook rows.",
+      "Subgroup keys mix dates, settings, and test rounds as if primary factors.",
+      "Outcome grouping mixes summary totals and detailed trials without clear structure.",
+      "Decision evidence is not captured beyond the section label."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define the changed condition as new dry machine use with improved JIG for BRS-161016.",
+      "Remove fabricated baseline comparison unless a source row proves it.",
+      "Keep date, time, temperature, height, and trial round as subgroup context.",
+      "Regroup outcomes into summary totals and detailed trial NG/OK results under one validation context.",
+      "Add decision text rows if available or mark decision content missing."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient until grouping and decision evidence are corrected."
+  },
+  "usage": {
+    "input_tokens": 5129,
+    "output_tokens": 696,
+    "total_tokens": 5825
+  }
+}

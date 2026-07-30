@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 680,
+  "sourceFile": "48. BRS-161016  Report test VP all mold #2, #4, #6, #8, #10 date 07.06.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\680.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 680,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because comparison grouping and defect metrics are misassigned.",
+    "issues": [
+      "Primary factor is ambiguous; individual molds are compared to a total normal baseline without preserving lot/block context.",
+      "Rows for improve and normal appear mixed as test conditions, including duplicate VP mold numbers from different lots.",
+      "Outcome is labeled function defect, but function columns appear blank or error-only; data used is sub-1 laser cutting/VP defect data.",
+      "NG values and rates are inconsistent with displayed total NG fields, especially rows with burr or damage defects.",
+      "Measurement outcome is spurious, using headers, VP labels, and error cells as statistics."
+    ],
+    "requiredUserQuestions": [
+      "Should the main comparison be Total VP improve versus Total VP normal with VP mold and lot as subgroups?",
+      "Are rows 13-15 normal subgroup rows for the 2024-07-05 lot?"
+    ],
+    "correctionPlan": [
+      "Regroup the case around the true changed condition before comparing outcomes.",
+      "Preserve lot date, VP mold, line, and improve/normal block as subgroup keys.",
+      "Use only citeable defect columns from the sub-1 VP section unless function data is populated.",
+      "Recalculate NG and rates from the intended columns consistently, including or excluding burr/damage by stated definition.",
+      "Remove the invalid measurement outcome and error-cell statistics."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient because grouping and metric mapping are wrong."
+  },
+  "usage": {
+    "input_tokens": 5487,
+    "output_tokens": 1117,
+    "total_tokens": 6604
+  }
+}

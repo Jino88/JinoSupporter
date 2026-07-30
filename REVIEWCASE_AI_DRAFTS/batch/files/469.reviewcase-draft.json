@@ -1,0 +1,357 @@
+{
+  "sourceFileId": 469,
+  "sourceFile": "27. BRS-161016 Report check problem separate Coil+SP 2.4.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\27. BRS-161016 Report check problem separate Coil+SP 2.4.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "5.3",
+    "sheetRowCount": 23,
+    "sheetCellCount": 118,
+    "comparisonPairCount": 3,
+    "metricCandidateCount": 7,
+    "measurementStatCount": 4
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "5.3!2",
+      "sheetName": "5.3",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT CHECK PROBLEM SEPARATE COIL+SUSPENSION BRS-161016 | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "5.3!3",
+      "sheetName": "5.3",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | Date | 2024-04-02 00:00:00"
+    },
+    {
+      "rowId": "5.3!4",
+      "sheetName": "5.3",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | Maker | Thuy"
+    },
+    {
+      "rowId": "5.3!5",
+      "sheetName": "5.3",
+      "rowNumber": 5,
+      "rowText": "| 1. Purpose test"
+    },
+    {
+      "rowId": "5.3!6",
+      "sheetName": "5.3",
+      "rowNumber": 6,
+      "rowText": "| To check reason separate Coil+SP"
+    },
+    {
+      "rowId": "5.3!16",
+      "sheetName": "5.3",
+      "rowNumber": 16,
+      "rowText": "| 2. Content of testing"
+    },
+    {
+      "rowId": "5.3!17",
+      "sheetName": "5.3",
+      "rowNumber": 17,
+      "rowText": "| - PE adjust UC press down and checking"
+    },
+    {
+      "rowId": "5.3!18",
+      "sheetName": "5.3",
+      "rowNumber": 18,
+      "rowText": "| - PE change new holder and checking"
+    },
+    {
+      "rowId": "5.3!19",
+      "sheetName": "5.3",
+      "rowNumber": 19,
+      "rowText": "| - Test change increase time UC press and Led UV"
+    },
+    {
+      "rowId": "5.3!20",
+      "sheetName": "5.3",
+      "rowNumber": 20,
+      "rowText": "| - Test use and don’t use height check at ass'y Coil+SP process"
+    },
+    {
+      "rowId": "5.3!21",
+      "sheetName": "5.3",
+      "rowNumber": 21,
+      "rowText": "| - Test change bonding line move in side"
+    },
+    {
+      "rowId": "5.3!22",
+      "sheetName": "5.3",
+      "rowNumber": 22,
+      "rowText": "| 3.Result test"
+    },
+    {
+      "rowId": "5.3!23",
+      "sheetName": "5.3",
+      "rowNumber": 23,
+      "rowText": "| | RESULT CHECKING ASS'Y COIL+SP"
+    },
+    {
+      "rowId": "5.3!26",
+      "sheetName": "5.3",
+      "rowNumber": 26,
+      "rowText": "| | 2024-04-02 00:00:00 | 7S - 7S | Use height check | Old bonding line | Normal | 100 | 97 | 3 | 0 | 0 | 0 | 3 | 0.03"
+    },
+    {
+      "rowId": "5.3!27",
+      "sheetName": "5.3",
+      "rowNumber": 27,
+      "rowText": "| | | 7.5S - 7.5S | Use height check | Old bonding line | Normal | 24 | 22 | 2 | 0 | 0 | 0 | 2 | 0.08333333"
+    },
+    {
+      "rowId": "5.3!28",
+      "sheetName": "5.3",
+      "rowNumber": 28,
+      "rowText": "| | | 7.5S - 7.5S | Don’t use height check | Old bonding line | Normal | 72 | 72 | 0 | 0 | 0 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "5.3!29",
+      "sheetName": "5.3",
+      "rowNumber": 29,
+      "rowText": "| | | 7S - 7S | Use height check | New bonding line | Normal | 128 | 123 | 5 | 0 | 0 | 0 | 5 | 0.0390625"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-469-rc-1",
+      "reviewTitle": "| REPORT CHECK PROBLEM SEPARATE COIL+SUSPENSION BRS-161016 | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| 1. Purpose test / | To check reason separate Coil+SP / | 2. Content of testing / | - PE adjust UC press down and checking / | - PE change new holder and checking",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition",
+            "dimension/spec"
+          ],
+          "changedFactor": "Condition comparison: Use height check vs Use height check, Don’t use height check",
+          "baselineCondition": "Use height check",
+          "changedCondition": "Use height check, Don’t use height check",
+          "subgroupKeys": [
+            "Normal",
+            "New bonding line",
+            "Old bonding line",
+            "Press down"
+          ],
+          "evidenceRows": [
+            "5.3!16",
+            "5.3!19",
+            "5.3!2",
+            "5.3!20",
+            "5.3!21",
+            "5.3!22",
+            "5.3!25",
+            "5.3!26",
+            "5.3!27",
+            "5.3!28",
+            "5.3!29",
+            "5.3!30",
+            "5.3!31",
+            "5.3!32",
+            "5.3!5"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "RESULT CHECKING ASS'Y COIL+SP",
+          "comparisonRows": [
+            "5.3!26",
+            "5.3!30",
+            "5.3!31",
+            "5.3!32"
+          ],
+          "judgement": "mixed",
+          "subResults": [
+            {
+              "pairId": 4095,
+              "controlCondition": "Use height check | Old bonding line | Normal",
+              "testCondition": "Use height check | New bonding line | Press down",
+              "control": {
+                "input": 100.0,
+                "ng": 3.0,
+                "ratePercent": 3.0
+              },
+              "test": {
+                "input": 136.0,
+                "ng": 6.0,
+                "ratePercent": 4.411765
+              },
+              "deltaRatePercentPoint": 1.4117650000000002,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "5.3!26",
+                "5.3!30"
+              ]
+            },
+            {
+              "pairId": 4096,
+              "controlCondition": "Use height check | Old bonding line | Normal",
+              "testCondition": "Don’t use height check | New bonding line | Press down",
+              "control": {
+                "input": 100.0,
+                "ng": 3.0,
+                "ratePercent": 3.0
+              },
+              "test": {
+                "input": 222.0,
+                "ng": 2.0,
+                "ratePercent": 0.900901
+              },
+              "deltaRatePercentPoint": -2.0990990000000003,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "5.3!26",
+                "5.3!31"
+              ]
+            },
+            {
+              "pairId": 4097,
+              "controlCondition": "Use height check | Old bonding line | Normal",
+              "testCondition": "Use height check | New bonding line | Press down",
+              "control": {
+                "input": 100.0,
+                "ng": 3.0,
+                "ratePercent": 3.0
+              },
+              "test": {
+                "input": 220.0,
+                "ng": 3.0,
+                "ratePercent": 1.363636
+              },
+              "deltaRatePercentPoint": -1.636364,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "5.3!26",
+                "5.3!32"
+              ]
+            }
+          ],
+          "limitations": []
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Time Led UV & UC press | Height check part | Bonding line | UC press | Input | OK | Coil+SP separate | Total NG | NG rate",
+          "comparisonRows": [
+            "5.3!25"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 54453,
+              "condition": "Coil+SP separate / Press 1",
+              "spec": "",
+              "min": 0.0,
+              "max": 6.0,
+              "avg": 2.7142857142857144,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "5.3!25"
+              ]
+            },
+            {
+              "statId": 54454,
+              "condition": "Coil+SP separate / Press 2",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "5.3!25"
+              ]
+            },
+            {
+              "statId": 54455,
+              "condition": "Coil+SP separate / Press 3",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.2857142857142857,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "5.3!25"
+              ]
+            },
+            {
+              "statId": 54456,
+              "condition": "Coil+SP separate / Press 4",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "5.3!25"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "5.3!16",
+        "5.3!19",
+        "5.3!2",
+        "5.3!20",
+        "5.3!21",
+        "5.3!22",
+        "5.3!25",
+        "5.3!26",
+        "5.3!27",
+        "5.3!28",
+        "5.3!29",
+        "5.3!30",
+        "5.3!31",
+        "5.3!32",
+        "5.3!5"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "5.3!16",
+      "5.3!19",
+      "5.3!2",
+      "5.3!20",
+      "5.3!21",
+      "5.3!22",
+      "5.3!25",
+      "5.3!26",
+      "5.3!27",
+      "5.3!28",
+      "5.3!29",
+      "5.3!30",
+      "5.3!31",
+      "5.3!32",
+      "5.3!5"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

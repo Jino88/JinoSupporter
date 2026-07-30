@@ -1,0 +1,1484 @@
+@page "/bmes/test5"
+@rendermode InteractiveServer
+@using System.Globalization
+@using System.Net
+@using System.Text
+@using JinoSupporter.Web.Services
+@inject BmesFcostActualService FCostActual
+@inject BmesBomCacheService BomCache
+@inject BmesPdmScrapeService Pdm
+@inject AppPathsService AppPaths
+@inject WebRepository Repo
+@inject AppActivityLogger Activity
+@inject IJSRuntime JS
+
+<PageTitle>BOM &amp; Drawing</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span class="fw-semibold" style="font-size:18px;">B&amp;D</span>
+    <h5 class="mb-0 fw-semibold">BOM &amp; Drawing</h5>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <div class="alert alert-danger py-2 small mb-3">@_errorMessage</div>
+}
+
+<div class="t5-toolbar mb-3">
+    <div class="t5-group">
+        <span class="text-muted small">
+            Model
+            @if (_modelCatalog.Count > 0)
+            {
+                <span>(@_modelCatalog.Count.ToString("N0", CultureInfo.InvariantCulture) local names)</span>
+            }
+        </span>
+        <input class="form-control form-control-sm"
+               placeholder="Type a similar model name"
+               autocomplete="off"
+               value="@_modelFilter"
+               @oninput="OnModelSearchInput"
+               disabled="@(_busy || _modelSearchBusy)" />
+        @if (!_suppressModelSuggestions &&
+             (_modelSearchBusy || _modelCandidates.Count > 0 || _modelSearchHasRun))
+        {
+            <span class="t5-suggestions">
+                @if (_modelSearchBusy)
+                {
+                    <span class="t5-suggestion-status">
+                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                        Synchronizing model names from BMES once...
+                    </span>
+                }
+                @foreach (var candidate in _modelCandidates)
+                {
+                    <button type="button"
+                            class="t5-suggestion"
+                            title="@candidate.Hint"
+                            @onclick="() => LoadSuggestedModelAsync(candidate)">
+                        <span class="t5-suggestion-main">
+                            <span>@candidate.Name</span>
+                            @if (!string.IsNullOrWhiteSpace(candidate.ProductCode))
+                            {
+                                <small>@candidate.ProductCode</small>
+                            }
+                        </span>
+                        @if (_cachedModelNames.Contains(candidate.Name))
+                        {
+                            <span class="badge bg-success">cached</span>
+                        }
+                        else if (candidate.Source == "catalog")
+                        {
+                            <span class="badge bg-primary">local</span>
+                        }
+                    </button>
+                }
+                @if (!_modelSearchBusy && _modelCandidates.Count == 0)
+                {
+                    <span class="t5-suggestion-status @(string.IsNullOrWhiteSpace(_modelSearchError) ? "" : "text-danger")">
+                        @(string.IsNullOrWhiteSpace(_modelSearchError)
+                            ? (_modelCatalog.Count == 0
+                                ? "No local model-name cache. Click Sync model names."
+                                : "No cached model name matches.")
+                            : _modelSearchError)
+                    </span>
+                }
+                else if (!_modelSearchBusy && !string.IsNullOrWhiteSpace(_modelSearchError))
+                {
+                    <span class="t5-suggestion-status text-danger">@_modelSearchError</span>
+                }
+            </span>
+        }
+    </div>
+
+    <button class="btn btn-outline-secondary btn-sm"
+            @onclick="RefreshModelCatalogAsync"
+            disabled="@(_busy || _modelSearchBusy)"
+            title="@ModelCatalogTitle">
+        @(_modelSearchBusy ? "Syncing names…" : "Sync model names")
+    </button>
+
+    <label class="t5-depth">
+        <span class="text-muted small">Depth</span>
+        <input type="number" class="form-control form-control-sm" min="1" max="12" @bind="_maxDepth" disabled="@_busy" />
+    </label>
+
+    <label class="t5-depth">
+        <span class="text-muted small">Plant</span>
+        <input class="form-control form-control-sm" @bind="Plant" disabled="@(_busy || _modelSearchBusy)" />
+    </label>
+
+    <label class="t5-date">
+        <span class="text-muted small">Work date</span>
+        <input type="date" class="form-control form-control-sm" @bind="_workDate" disabled="@_busy" />
+    </label>
+
+    <label class="t5-check">
+        <input type="checkbox" class="form-check-input" @bind="_hideNoiseCodes" disabled="@_busy" />
+        <span class="small">Hide M-P / C-S codes</span>
+    </label>
+
+    <label class="t5-check" title="Unchecked: use the local model cache first. Cache misses are fetched from BMES automatically.">
+        <input type="checkbox" class="form-check-input" @bind="_loadBomFromServer" disabled="@_busy" />
+        <span class="small">Load BOM from server</span>
+    </label>
+
+    <button class="btn btn-primary btn-sm" @onclick="LoadBomAsync" disabled="@(_busy || SelectedModels.Count == 0)">
+        Load BOM
+    </button>
+    <button class="btn btn-outline-secondary btn-sm" @onclick="DownloadHtmlAsync" disabled="@(_busy || _results.Count == 0)">
+        Download HTML
+    </button>
+    <button class="btn btn-outline-secondary btn-sm"
+            @onclick="FetchPdmAsync"
+            disabled="@(_busy || _pdmBusy)"
+            title="@($"PDM master: {_pdmTotal:N0} row(s){(string.IsNullOrWhiteSpace(_pdmFetchedAt) ? "" : ", fetched " + _pdmFetchedAt)}")">
+        @(_pdmBusy ? "Fetching…" : "Fetch PDM")
+    </button>
+</div>
+
+@{
+    var filteredModels = FilteredCachedModels;
+}
+<div class="t5-models mb-3">
+    <div class="t5-models-head">
+        <span class="fw-semibold small">Cached models</span>
+        <span class="badge bg-secondary">@SelectedModels.Count.ToString("N0", CultureInfo.InvariantCulture) selected</span>
+        <span class="text-muted small">@filteredModels.Count.ToString("N0", CultureInfo.InvariantCulture) / @_cachedModelEntries.Count.ToString("N0", CultureInfo.InvariantCulture) shown</span>
+        <button class="btn btn-link btn-sm p-0 ms-2" @onclick="SelectAllModels" disabled="@_busy">All</button>
+        <button class="btn btn-link btn-sm p-0" @onclick="ClearModelSelection" disabled="@_busy">None</button>
+    </div>
+    @if (_cachedModelEntries.Count == 0)
+    {
+        <div class="text-muted small">No successfully cached BOM model yet. Type a similar model name above to load the first one.</div>
+    }
+    else if (filteredModels.Count == 0)
+    {
+        <div class="text-muted small">No model matches "@_modelFilter".</div>
+    }
+    else
+    {
+        <div class="t5-model-chips">
+            @foreach (var model in filteredModels)
+            {
+                <label class="t5-chip @(_selectedModels.Contains(model.Name) ? "selected" : "")" title="@model.Groups">
+                    <input type="checkbox"
+                           checked="@_selectedModels.Contains(model.Name)"
+                           @onchange="e => ToggleModel(model.Name, e.Value)"
+                           disabled="@_busy" />
+                    <span>@model.Name</span>
+                </label>
+            }
+        </div>
+    }
+</div>
+
+@if (!string.IsNullOrWhiteSpace(_pdmStatus))
+{
+    <div class="small @(_pdmError ? "text-danger" : "text-muted") mb-2">@_pdmStatus</div>
+}
+
+@if (_busy)
+{
+    <div class="alert alert-info py-2 small mb-3 d-flex align-items-center gap-2">
+        <span class="spinner-border spinner-border-sm" role="status"></span>
+        <span>@_statusMessage</span>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(_statusMessage))
+{
+    <div class="alert alert-success py-2 small mb-3">@_statusMessage</div>
+}
+
+@foreach (var result in _results)
+{
+    var rows = VisibleRows(result);
+    <section class="t5-card mb-3">
+        <header class="t5-card-head">
+            <span class="fw-semibold">@result.Model</span>
+            <span class="badge bg-secondary">@rows.Count.ToString("N0", CultureInfo.InvariantCulture) rows</span>
+            @if (_hideNoiseCodes && result.Rows.Count != rows.Count)
+            {
+                <span class="text-muted small">@((result.Rows.Count - rows.Count).ToString("N0", CultureInfo.InvariantCulture)) hidden</span>
+            }
+            @{
+                var matched = MatchedProducts(result);
+            }
+            @if (matched.Count > 0)
+            {
+                <span class="text-muted small" title="Products matched in MATE for this model name">
+                    matched: @string.Join(", ", matched)
+                </span>
+            }
+            @if (!string.IsNullOrWhiteSpace(result.LoadSource))
+            {
+                <span class="badge @(result.LoadSource == "cache" ? "bg-success" : "bg-primary")"
+                      title="@result.FetchedAt">
+                    @result.LoadSource
+                </span>
+            }
+            @if (!string.IsNullOrWhiteSpace(result.Warning))
+            {
+                <span class="badge bg-warning text-dark" title="@result.Warning">cache warning</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(result.Error))
+            {
+                <span class="badge bg-danger">@result.Error</span>
+            }
+        </header>
+        @if (rows.Count > 0)
+        {
+            <div class="t5-table-wrap">
+                <table class="table table-sm table-hover t5-table mb-0">
+                    <colgroup>
+                        <col class="t5-col-level" />
+                        <col class="t5-col-material" />
+                        <col class="t5-col-code" />
+                        <col class="t5-col-pdm" />
+                        <col class="t5-col-type" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Lv</th>
+                            <th>Material</th>
+                            <th>Code</th>
+                            <th>PDMNO</th>
+                            <th>PDTNO_TX</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var product in ByProduct(rows))
+                        {
+                            <tr class="t5-product @(product.IsShared ? "shared" : "")">
+                                <td colspan="5">
+                                    @product.Product
+                                    <span class="badge bg-light text-dark ms-1">@product.Rows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
+                                </td>
+                            </tr>
+                            @foreach (var row in product.Rows)
+                            {
+                                <tr class="t5-lv@(Math.Clamp(row.BomLevel, 1, 6))">
+                                    <td class="text-muted">@row.BomLevel</td>
+                                    <td title="@row.BomPathText">
+                                        <span class="t5-tree-item" style="padding-left:@(((Math.Max(row.BomLevel, 1) - 1) * 18))px;">
+                                            <span class="t5-tree-marker">@(row.HasChildren ? "▾" : "·")</span>
+                                            <span>@DisplayName(row)</span>
+                                        </span>
+                                    </td>
+                                    <td class="text-muted small">@row.MaterialCode</td>
+                                    @{
+                                        var pdm = FindPdm(row);
+                                    }
+                                    <td class="small">
+                                        @if (pdm is not null && !string.IsNullOrWhiteSpace(pdm.Pdmno))
+                                        {
+                                            <button class="btn btn-link btn-sm p-0 t5-dwg"
+                                                    @onclick="() => DownloadDrawingAsync(pdm.Pdmno, pdm.Pdmvr)"
+                                                    disabled="@_downloadBusy"
+                                                    title="Download the DWG for this drawing">
+                                                @pdm.Pdmno
+                                            </button>
+                                        }
+                                    </td>
+                                    <td class="text-muted small">@(pdm?.PdtnoTx ?? "")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else if (string.IsNullOrWhiteSpace(result.Error))
+        {
+            <div class="t5-empty text-muted small">No BOM rows found for this model.</div>
+        }
+    </section>
+}
+
+<style>
+    .t5-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 8px;
+    }
+
+    .t5-group {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        width: 260px;
+        position: relative;
+        z-index: 4;
+    }
+
+    .t5-suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        max-height: 240px;
+        overflow-y: auto;
+        margin-top: 2px;
+        padding: 4px;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        background: #fff;
+        box-shadow: 0 5px 14px rgba(0, 0, 0, .12);
+    }
+
+    .t5-suggestion {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        border: 0;
+        border-radius: 3px;
+        padding: 5px 7px;
+        background: transparent;
+        color: #212529;
+        font-size: 12px;
+        text-align: left;
+    }
+
+    .t5-suggestion:hover,
+    .t5-suggestion:focus {
+        background: #e7f1ff;
+        outline: 0;
+    }
+
+    .t5-suggestion-main {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        align-items: flex-start;
+        line-height: 1.25;
+    }
+
+    .t5-suggestion-main small {
+        color: #6c757d;
+        font-size: 10.5px;
+    }
+
+    .t5-suggestion-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 7px;
+        color: #6c757d;
+        font-size: 11.5px;
+    }
+
+    .t5-depth {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        width: 90px;
+    }
+
+    .t5-date {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        width: 150px;
+    }
+
+    .t5-check {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        height: 31px;
+        cursor: pointer;
+    }
+
+    .t5-models {
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 8px 10px;
+        background: #fff;
+    }
+
+    .t5-models-head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+    }
+
+    .t5-model-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        max-height: 160px;
+        overflow-y: auto;
+    }
+
+    .t5-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border: 1px solid #ced4da;
+        border-radius: 14px;
+        padding: 2px 10px;
+        font-size: 12px;
+        cursor: pointer;
+        background: #f8f9fa;
+    }
+
+    .t5-chip.selected {
+        border-color: #0d6efd;
+        background: #e7f1ff;
+    }
+
+    .t5-chip input { margin: 0; }
+
+    .t5-card {
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        background: #fff;
+        overflow: hidden;
+    }
+
+    .t5-card-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .t5-table-wrap {
+        max-height: 520px;
+        overflow: auto;
+    }
+
+    .t5-table {
+        width: auto;
+        min-width: 850px;
+        table-layout: fixed;
+    }
+
+    .t5-table .t5-col-level { width: 52px; }
+    .t5-table .t5-col-material { width: 360px; }
+    .t5-table .t5-col-code { width: 155px; }
+    .t5-table .t5-col-pdm { width: 145px; }
+    .t5-table .t5-col-type { width: 180px; }
+
+    .t5-table th {
+        position: sticky;
+        top: 0;
+        background: #fff;
+        z-index: 1;
+        font-size: 12px;
+        text-align: left;
+    }
+
+    .t5-table td {
+        font-size: 12.5px;
+        vertical-align: middle;
+        text-align: left;
+    }
+
+    .t5-tree-item {
+        display: inline-flex;
+        align-items: baseline;
+    }
+
+    .t5-tree-marker {
+        display: inline-block;
+        flex: 0 0 14px;
+        width: 14px;
+        text-align: center;
+    }
+
+    .t5-table tr.t5-product td {
+        background: #eef2f7;
+        font-weight: 600;
+        font-size: 12px;
+        color: #23415e;
+    }
+
+    .t5-table tr.t5-product.shared td {
+        background: #e3f0e5;
+        color: #1e5631;
+    }
+
+    .t5-dwg {
+        font-size: 12.5px;
+        text-decoration: none;
+        vertical-align: baseline;
+    }
+
+    .t5-dwg:hover { text-decoration: underline; }
+
+    .t5-table tr.t5-lv1 td:nth-child(2) { font-weight: 600; }
+    .t5-table tr.t5-lv2 td:nth-child(2) { color: #23415e; }
+    .t5-table tr.t5-lv3 td:nth-child(2) { color: #4a5a68; }
+
+    .t5-empty { padding: 10px; }
+</style>
+
+@code {
+    private sealed class ModelBomResult
+    {
+        public string Model { get; init; } = string.Empty;
+        public List<BmesBomMaterialCandidate> Rows { get; init; } = new();
+        public string Error { get; init; } = string.Empty;
+        public string Warning { get; init; } = string.Empty;
+        public string LoadSource { get; init; } = string.Empty;
+        public string FetchedAt { get; init; } = string.Empty;
+    }
+
+    private const int MaxRowsPerModel = 2000;
+
+    /// <summary>One model name, plus the model groups it appears in (kept only as a hint).</summary>
+    private sealed record ModelEntry(string Name, string Groups);
+    private sealed record ModelSuggestion(string Name, string ProductCode, string Source, string Hint);
+
+    private List<ModelEntry> _allModels = new();
+    private List<ModelEntry> _cachedModelEntries = new();
+    private HashSet<string> _cachedModelNames = new(StringComparer.OrdinalIgnoreCase);
+    private List<BmesBomModelCandidate> _modelCatalog = new();
+    private string _modelCatalogSyncedAt = string.Empty;
+    private DateTime _modelCatalogWorkDate;
+    private string _modelFilter = string.Empty;
+    private List<ModelSuggestion> _modelCandidates = new();
+    private bool _modelSearchBusy;
+    private bool _modelSearchHasRun;
+    private string _modelSearchError = string.Empty;
+    private bool _suppressModelSuggestions;
+
+    private Dictionary<string, BmesPdmRow> _pdmByPart = new(StringComparer.OrdinalIgnoreCase);
+    private int _pdmMatched;
+    private int _pdmTotal;
+    private string _pdmFetchedAt = string.Empty;
+    private bool _pdmBusy;
+    private bool _downloadBusy;
+    private bool _pdmError;
+    private string _pdmStatus = string.Empty;
+
+    private HashSet<string> _selectedModels = new(StringComparer.OrdinalIgnoreCase);
+
+    private List<ModelBomResult> _results = new();
+
+    private int _maxDepth = 6;
+    private string _plant = "3200";
+    private DateTime _workDate = DateTime.Today;
+    private bool _hideNoiseCodes = true;
+    private bool _loadBomFromServer;
+    private bool _busy;
+    private string _statusMessage = string.Empty;
+    private string _errorMessage = string.Empty;
+
+    private string Plant
+    {
+        get => _plant;
+        set
+        {
+            string next = value ?? string.Empty;
+            if (string.Equals(_plant, next, StringComparison.Ordinal))
+                return;
+
+            _plant = next;
+            try
+            {
+                RefreshLocalModelCatalog();
+                _modelCandidates = LocalModelSuggestions(_modelFilter.Trim());
+            }
+            catch (Exception ex)
+            {
+                _modelSearchError = "Local model-name cache load failed: " + ex.Message;
+            }
+        }
+    }
+
+    private List<ModelEntry> FilteredCachedModels =>
+        string.IsNullOrWhiteSpace(_modelFilter)
+            ? _cachedModelEntries
+            : _cachedModelEntries
+                .Where(m => m.Name.Contains(_modelFilter.Trim(), StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+    private List<string> SelectedModels =>
+        _selectedModels.OrderBy(model => model, StringComparer.OrdinalIgnoreCase).ToList();
+
+    private static readonly string[] NoiseCodePrefixes = ["M-P", "C-S"];
+
+    /// <summary>
+    /// Drops <c>M-P-…</c> and <c>C-S-…</c> lines. Only the row itself goes — a <c>C-S</c>
+    /// assembly still has children, so its subtree is kept and pulled up one level for every
+    /// hidden ancestor. Level and path text are recomputed to match.
+    /// </summary>
+    private List<BmesBomMaterialCandidate> VisibleRows(ModelBomResult result)
+    {
+        if (!_hideNoiseCodes)
+            return result.Rows;
+
+        var visible = new List<BmesBomMaterialCandidate>();
+        foreach (var row in result.Rows)
+        {
+            if (IsNoiseCode(row.MaterialCode))
+                continue;
+
+            string[] codes = row.BomPath.Split('>', StringSplitOptions.RemoveEmptyEntries);
+            string[] names = row.BomPathText.Split(" > ", StringSplitOptions.None);
+
+            // codes[0] is the product, the last entry is this row; everything between is an ancestor.
+            var keep = new List<int> { 0 };
+            for (int i = 1; i < codes.Length - 1; i++)
+            {
+                if (!IsNoiseCode(codes[i]))
+                    keep.Add(i);
+            }
+            keep.Add(codes.Length - 1);
+
+            visible.Add(new BmesBomMaterialCandidate
+            {
+                ProductCode = row.ProductCode,
+                ProductName = row.ProductName,
+                ParentMaterialCode = row.ParentMaterialCode,
+                ParentMaterialName = row.ParentMaterialName,
+                MaterialCode = row.MaterialCode,
+                MaterialName = row.MaterialName,
+                UsageQty = row.UsageQty,
+                UsageUnit = row.UsageUnit,
+                BomLevel = keep.Count - 1,
+                BomPath = row.BomPath,
+                BomPathText = string.Join(" > ", keep.Select(i => i < names.Length ? names[i] : codes[i])),
+                HasChildren = row.HasChildren,
+                SourceRows = row.SourceRows,
+                Source = row.Source,
+            });
+        }
+
+        // Collapsing the C-S levels can surface the same material twice under one product
+        // (once direct, once via the hidden assembly). Keep the shallowest occurrence.
+        var deduplicated = visible
+            .GroupBy(r => r.ProductCode + "\t" + r.MaterialCode, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.OrderBy(r => r.BomLevel).First())
+            .ToList();
+
+        // Hidden M-P/C-S ancestors can leave the original HasChildren flag pointing at rows
+        // that are no longer visible. Recompute it from the adjusted display paths so arrows
+        // and bullets line up with the tree that is actually on screen.
+        var visibleParentPaths = deduplicated
+            .Select(r =>
+            {
+                int cut = r.BomPathText.LastIndexOf(" > ", StringComparison.Ordinal);
+                return cut > 0 ? r.BomPathText[..cut] : string.Empty;
+            })
+            .Where(p => p.Length > 0)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return deduplicated
+            .Select(r => CopyWithHasChildren(r, visibleParentPaths.Contains(r.BomPathText)))
+            .ToList();
+    }
+
+    private static BmesBomMaterialCandidate CopyWithHasChildren(
+        BmesBomMaterialCandidate row,
+        bool hasChildren) =>
+        new()
+        {
+            ProductCode = row.ProductCode,
+            ProductName = row.ProductName,
+            ParentMaterialCode = row.ParentMaterialCode,
+            ParentMaterialName = row.ParentMaterialName,
+            MaterialCode = row.MaterialCode,
+            MaterialName = row.MaterialName,
+            UsageQty = row.UsageQty,
+            UsageUnit = row.UsageUnit,
+            BomLevel = row.BomLevel,
+            BomPath = row.BomPath,
+            BomPathText = row.BomPathText,
+            HasChildren = hasChildren,
+            SourceRows = row.SourceRows,
+            Source = row.Source,
+        };
+
+    private sealed record ProductRows(string Product, bool IsShared, List<BmesBomMaterialCandidate> Rows);
+
+    private static string ProductLabel(BmesBomMaterialCandidate row)
+        => string.IsNullOrWhiteSpace(row.ProductName) ? row.ProductCode : row.ProductName;
+
+    /// <summary>
+    /// Sections a model's rows for display. One model name often resolves to several products
+    /// (the -L and -R sides), so once the tree is flat the useful split is by which products
+    /// share a material: common first, then the side-specific ones. With the tree intact, or
+    /// with a single product, it falls back to one section per product.
+    /// </summary>
+    private List<ProductRows> ByProduct(List<BmesBomMaterialCandidate> rows)
+    {
+        var products = rows
+            .Select(ProductLabel)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        // Grouping by usage only reads correctly on a flat list — with the hierarchy intact it
+        // would tear children away from their parents, so keep the per-product tree there.
+        if (!_hideNoiseCodes || products.Count < 2)
+        {
+            return rows
+                .GroupBy(ProductLabel)
+                .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new ProductRows(
+                    g.Key,
+                    false,
+                    // A parent's path is a prefix of its children's, so ordering by path sorts
+                    // siblings by name without lifting a child above its parent.
+                    g.OrderBy(r => r.BomPathText, StringComparer.OrdinalIgnoreCase)
+                     .ThenBy(r => r.MaterialCode, StringComparer.OrdinalIgnoreCase)
+                     .ToList()))
+                .ToList();
+        }
+
+        var byMaterial = rows
+            .GroupBy(r => r.MaterialCode, StringComparer.OrdinalIgnoreCase)
+            .Select(g => new
+            {
+                // This branch compares material usage across several products. The original
+                // BOM level belongs to one product's tree and becomes misleading after rows
+                // from all products are merged and alphabetically sorted (an unrelated row
+                // can look like the child of the row immediately above it). Display this
+                // comparison section as the flat list it actually is.
+                Row = CopyForFlatMaterialList(g.OrderBy(r => r.BomLevel).First()),
+                UsedBy = g.Select(ProductLabel)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+                    .ToList(),
+            })
+            .ToList();
+
+        return byMaterial
+            .GroupBy(m => string.Join(" | ", m.UsedBy), StringComparer.Ordinal)
+            .Select(g =>
+            {
+                var usedBy = g.First().UsedBy;
+                bool shared = usedBy.Count == products.Count;
+                string title = shared
+                    ? $"Common — all {products.Count} products"
+                    : string.Join(" + ", usedBy) + " only";
+
+                return new ProductRows(
+                    title,
+                    shared,
+                    g.Select(m => m.Row)
+                     .OrderBy(DisplayName, StringComparer.OrdinalIgnoreCase)
+                     .ThenBy(r => r.MaterialCode, StringComparer.OrdinalIgnoreCase)
+                     .ToList());
+            })
+            .OrderByDescending(s => s.IsShared)
+            .ThenBy(s => s.Product, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static BmesBomMaterialCandidate CopyForFlatMaterialList(BmesBomMaterialCandidate row) =>
+        new()
+        {
+            ProductCode = row.ProductCode,
+            ProductName = row.ProductName,
+            ParentMaterialCode = row.ParentMaterialCode,
+            ParentMaterialName = row.ParentMaterialName,
+            MaterialCode = row.MaterialCode,
+            MaterialName = row.MaterialName,
+            UsageQty = row.UsageQty,
+            UsageUnit = row.UsageUnit,
+            BomLevel = 1,
+            BomPath = row.BomPath,
+            BomPathText = row.BomPathText,
+            HasChildren = false,
+            SourceRows = row.SourceRows,
+            Source = row.Source,
+        };
+
+    /// <summary>
+    /// Products the model name actually resolved to in MATE. Shown so it is obvious when a
+    /// model name matches only one variant (e.g. the -L side but not -R).
+    /// </summary>
+    private static List<string> MatchedProducts(ModelBomResult result)
+        => result.Rows
+            .Select(r => string.IsNullOrWhiteSpace(r.ProductName) ? r.ProductCode : r.ProductName)
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private static bool IsNoiseCode(string materialCode)
+    {
+        string code = materialCode.TrimStart();
+        return NoiseCodePrefixes.Any(p => code.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+    }
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            // Model groups are only a source of model names here — the same model can sit in
+            // several groups, so it is flattened to one entry listing every group it came from.
+            _allModels = Repo.GetModelGroups()
+                .SelectMany(g => g.MidGroups.Select(m => (Group: g.Name, Model: (m.Material ?? string.Empty).Trim())))
+                .Where(x => x.Model.Length > 0)
+                .GroupBy(x => x.Model, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new ModelEntry(
+                    g.Key,
+                    string.Join(", ", g.Select(x => x.Group).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(n => n, StringComparer.OrdinalIgnoreCase))))
+                .OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            RefreshCachedModels();
+            RefreshLocalModelCatalog();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "Model list load failed: " + ex.Message;
+        }
+
+        (_pdmTotal, _pdmFetchedAt) = Pdm.GetStatus();
+    }
+
+    private void RefreshCachedModels()
+    {
+        var cached = BomCache.ListSuccessfulModels();
+        _cachedModelNames = cached
+            .Select(m => m.ModelName)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var allByName = _allModels.ToDictionary(m => m.Name, StringComparer.OrdinalIgnoreCase);
+        _cachedModelEntries = cached
+            .Select(cache =>
+            {
+                string hint = allByName.TryGetValue(cache.ModelName, out ModelEntry? known)
+                    ? known.Groups
+                    : string.Empty;
+                string cacheHint = $"{cache.RowCount:N0} BOM row(s), cached {cache.FetchedAt}";
+                return new ModelEntry(
+                    cache.ModelName,
+                    string.IsNullOrWhiteSpace(hint) ? cacheHint : hint + " · " + cacheHint);
+            })
+            .OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private void OnModelSearchInput(ChangeEventArgs args)
+    {
+        _modelFilter = args.Value?.ToString() ?? string.Empty;
+        _suppressModelSuggestions = false;
+        _modelSearchError = string.Empty;
+        string searchText = _modelFilter.Trim();
+        _modelSearchHasRun = searchText.Length >= 2;
+        _modelCandidates = LocalModelSuggestions(searchText);
+    }
+
+    private List<ModelSuggestion> LocalModelSuggestions(string searchText)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return [];
+
+        var catalogSuggestions = _modelCatalog
+            .Select(model =>
+            {
+                string name = string.IsNullOrWhiteSpace(model.ProductName)
+                    ? model.ProductCode
+                    : model.ProductName;
+                return (
+                    Model: model,
+                    Name: name,
+                    Score: ModelCatalogMatchScore(searchText, name + " " + model.ProductCode));
+            })
+            .Where(item => item.Score < int.MaxValue)
+            .OrderBy(item => item.Score)
+            .ThenBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(item => new ModelSuggestion(
+                item.Name,
+                item.Model.ProductCode,
+                "catalog",
+                $"Locally cached BMES model name: {item.Model.ProductCode}"));
+
+        return catalogSuggestions
+            .Concat(CachedBomModelSuggestions(searchText))
+            .Where(candidate => !string.IsNullOrWhiteSpace(candidate.Name))
+            .GroupBy(candidate => candidate.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .Take(10)
+            .ToList();
+    }
+
+    private List<ModelSuggestion> CachedBomModelSuggestions(string searchText) =>
+        string.IsNullOrWhiteSpace(searchText)
+            ? []
+            : _cachedModelEntries
+                .Where(model => HasUsefulModelMatch(searchText, model.Name))
+                .Select(model => (Model: model, Score: ModelMatchScore(searchText, model.Name)))
+                .OrderBy(item => item.Score)
+                .ThenBy(item => item.Model.Name, StringComparer.OrdinalIgnoreCase)
+                .Take(10)
+                .Select(item => new ModelSuggestion(
+                    item.Model.Name,
+                    string.Empty,
+                    "cache",
+                    item.Model.Groups))
+                .ToList();
+
+    private static int ModelCatalogMatchScore(string search, string candidate)
+    {
+        if (!HasUsefulModelMatch(search, candidate))
+            return int.MaxValue;
+
+        string value = NormalizeModelSearch(candidate);
+        List<string> tokens = search
+            .Split([' ', '-', '_', '/', '\\', '.'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(NormalizeModelSearch)
+            .Where(token => token.Length >= 2)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        int score = ModelMatchScore(search, candidate);
+        foreach (string token in tokens)
+        {
+            bool matched = value.Contains(token, StringComparison.Ordinal);
+            bool hasDigit = token.Any(char.IsDigit);
+            score += matched
+                ? -(hasDigit ? 250 : 70)
+                : hasDigit ? 400 : 35;
+        }
+
+        return score;
+    }
+
+    private static bool HasUsefulModelMatch(string search, string candidate)
+    {
+        string query = NormalizeModelSearch(search);
+        string value = NormalizeModelSearch(candidate);
+        if (query.Length == 0 || value.Length == 0)
+            return false;
+        if (query.Contains(value, StringComparison.Ordinal) ||
+            value.Contains(query, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return search
+            .Split([' ', '-', '_', '/', '\\', '.'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(NormalizeModelSearch)
+            .Any(token => token.Length >= 2 && value.Contains(token, StringComparison.Ordinal));
+    }
+
+    private async Task LoadSuggestedModelAsync(ModelSuggestion candidate)
+    {
+        if (_busy || string.IsNullOrWhiteSpace(candidate.Name))
+            return;
+
+        _modelFilter = candidate.Name;
+        _modelSearchBusy = false;
+        _modelSearchHasRun = false;
+        _modelCandidates = [];
+        _suppressModelSuggestions = true;
+        _selectedModels.Clear();
+        _selectedModels.Add(candidate.Name);
+        await LoadBomAsync();
+    }
+
+    private void RefreshLocalModelCatalog()
+    {
+        BmesBomModelCatalogEntry entry = BomCache.LoadModelCatalog(_plant);
+        _modelCatalog = entry.Models;
+        _modelCatalogSyncedAt = entry.SyncedAt;
+        _modelCatalogWorkDate = entry.WorkDate;
+    }
+
+    private string ModelCatalogTitle =>
+        _modelCatalog.Count == 0
+            ? "Fetch only BOM-enabled P-S finished-product codes and model names from BMES, then search them locally."
+            : $"{_modelCatalog.Count:N0} local model names · synced {_modelCatalogSyncedAt} · BOM date {_modelCatalogWorkDate:yyyy-MM-dd}";
+
+    private async Task RefreshModelCatalogAsync()
+    {
+        if (_busy || _modelSearchBusy)
+            return;
+
+        var connection = BuildNetworkDbConnection();
+        if (string.IsNullOrWhiteSpace(connection.Server) || string.IsNullOrWhiteSpace(connection.UserId))
+        {
+            _modelSearchError = "The BMES model-name synchronization connection is not configured.";
+            _modelSearchHasRun = true;
+            return;
+        }
+
+        _modelSearchBusy = true;
+        _modelSearchError = string.Empty;
+        _suppressModelSuggestions = false;
+        StateHasChanged();
+
+        try
+        {
+            List<BmesBomModelCandidate> models = await FCostActual.FetchBomModelCatalogAsync(
+                new BmesBomModelCatalogQuery
+                {
+                    Connection = connection,
+                    Plant = _plant.Trim(),
+                    WorkDate = _workDate.Date,
+                    ProductCodePrefix = "P-S-",
+                    MaxRows = 20000,
+                });
+
+            BomCache.SaveModelCatalog(_plant, _workDate, models);
+            RefreshLocalModelCatalog();
+            _modelCandidates = LocalModelSuggestions(_modelFilter.Trim());
+            _modelSearchHasRun = _modelFilter.Trim().Length >= 2;
+            _statusMessage =
+                $"{_modelCatalog.Count:N0} BMES model names saved locally. Typing now uses the local cache only.";
+        }
+        catch (Exception ex)
+        {
+            _modelSearchError = "BMES model-name synchronization failed: " + ex.Message;
+            _modelSearchHasRun = true;
+        }
+        finally
+        {
+            _modelSearchBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private static int ModelMatchScore(string search, string candidate)
+    {
+        string query = NormalizeModelSearch(search);
+        string value = NormalizeModelSearch(candidate);
+        if (query.Length == 0)
+            return int.MaxValue;
+        if (string.Equals(query, value, StringComparison.Ordinal))
+            return 0;
+        if (value.StartsWith(query, StringComparison.Ordinal))
+            return 10 + value.Length - query.Length;
+
+        int contains = value.IndexOf(query, StringComparison.Ordinal);
+        if (contains >= 0)
+            return 30 + contains + value.Length - query.Length;
+
+        return 100 + LevenshteinDistance(query, value);
+    }
+
+    private static string NormalizeModelSearch(string value) =>
+        new((value ?? string.Empty)
+            .Where(char.IsLetterOrDigit)
+            .Select(char.ToUpperInvariant)
+            .ToArray());
+
+    private static int LevenshteinDistance(string left, string right)
+    {
+        if (left.Length == 0) return right.Length;
+        if (right.Length == 0) return left.Length;
+
+        var previous = Enumerable.Range(0, right.Length + 1).ToArray();
+        var current = new int[right.Length + 1];
+
+        for (int i = 1; i <= left.Length; i++)
+        {
+            current[0] = i;
+            for (int j = 1; j <= right.Length; j++)
+            {
+                int substitution = previous[j - 1] + (left[i - 1] == right[j - 1] ? 0 : 1);
+                current[j] = Math.Min(Math.Min(previous[j] + 1, current[j - 1] + 1), substitution);
+            }
+
+            (previous, current) = (current, previous);
+        }
+
+        return previous[right.Length];
+    }
+
+    /// <summary>
+    /// Looks up the PDM master for every material the loaded BOM contains, keyed by material
+    /// name so each BOM row can show its drawing number inline.
+    /// </summary>
+    private void RefreshPdmMatches()
+    {
+        _pdmMatched = 0;
+        if (_pdmTotal == 0 || _results.Count == 0)
+        {
+            _pdmByPart = new(StringComparer.OrdinalIgnoreCase);
+            return;
+        }
+
+        try
+        {
+            var partNames = _results
+                .SelectMany(r => VisibleRows(r))
+                .Select(DisplayName)
+                .ToList();
+            var modelNames = _results.Select(r => r.Model).ToList();
+
+            var matches = Pdm.SearchByNames(partNames, modelNames);
+            _pdmMatched = matches.Count;
+
+            // PDRTX is unique per material in practice; if a duplicate ever shows up, the
+            // first one wins rather than the row silently losing its drawing number.
+            _pdmByPart = new Dictionary<string, BmesPdmRow>(StringComparer.OrdinalIgnoreCase);
+            foreach (var match in matches)
+            {
+                string key = match.Pdrtx.Trim();
+                if (key.Length > 0)
+                    _pdmByPart.TryAdd(key, match);
+            }
+        }
+        catch (Exception ex)
+        {
+            _pdmByPart = new(StringComparer.OrdinalIgnoreCase);
+            _pdmError = true;
+            _pdmStatus = "PDM match failed: " + ex.Message;
+        }
+    }
+
+    private BmesPdmRow? FindPdm(BmesBomMaterialCandidate row)
+        => _pdmByPart.TryGetValue(DisplayName(row).Trim(), out var pdm) ? pdm : null;
+
+    private async Task DownloadDrawingAsync(string pdmno, string pdmvr)
+    {
+        if (_downloadBusy)
+            return;
+
+        _downloadBusy = true;
+        _pdmError = false;
+        _pdmStatus = $"Downloading drawing {pdmno}…";
+        StateHasChanged();
+
+        try
+        {
+            var progress = new Progress<string>(msg =>
+            {
+                _pdmStatus = msg;
+                InvokeAsync(StateHasChanged);
+            });
+
+            var result = await Pdm.DownloadDrawingAsync(pdmno, pdmvr, progress);
+            if (!result.Success)
+            {
+                _pdmError = true;
+                _pdmStatus = $"✗ {pdmno}: {result.Error}";
+                return;
+            }
+
+            await BrowserDownload.DownloadBytesAsync(
+                JS, result.FileName, result.Bytes, "application/octet-stream");
+            _pdmStatus = $"✓ {result.FileName} ({result.Bytes.Length / 1024.0:N0} KB)";
+            Activity.Log("BOM & Drawing", $"DWG download {pdmno} {result.FileName}");
+        }
+        catch (Exception ex)
+        {
+            _pdmError = true;
+            _pdmStatus = $"✗ {pdmno}: {ex.Message}";
+        }
+        finally
+        {
+            _downloadBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task FetchPdmAsync()
+    {
+        if (_pdmBusy)
+            return;
+
+        _pdmBusy = true;
+        _pdmError = false;
+        _pdmStatus = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var progress = new Progress<string>(msg =>
+            {
+                _pdmStatus = msg;
+                InvokeAsync(StateHasChanged);
+            });
+
+            int saved = await Pdm.FetchAllAsync(progress);
+            if (saved < 0)
+            {
+                _pdmError = true;
+            }
+            else
+            {
+                (_pdmTotal, _pdmFetchedAt) = Pdm.GetStatus();
+                RefreshPdmMatches();
+                _pdmStatus = $"✓ {saved:N0} PDM row(s) saved.";
+                Activity.Log("BOM & Drawing", $"PDM fetch rows={saved}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _pdmError = true;
+            _pdmStatus = "✗ " + ex.Message;
+        }
+        finally
+        {
+            _pdmBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleModel(string model, object? value)
+    {
+        if (string.IsNullOrWhiteSpace(model))
+            return;
+
+        bool selected = value is bool b ? b : bool.TryParse(value?.ToString(), out bool parsed) && parsed;
+        if (selected)
+            _selectedModels.Add(model);
+        else
+            _selectedModels.Remove(model);
+    }
+
+    /// <summary>Selects what is currently on screen, so a filter narrows what "All" means.</summary>
+    private void SelectAllModels()
+    {
+        foreach (var model in FilteredCachedModels)
+            _selectedModels.Add(model.Name);
+    }
+
+    private void ClearModelSelection() => _selectedModels.Clear();
+
+    private async Task LoadBomAsync()
+    {
+        var models = SelectedModels;
+        if (models.Count == 0)
+            return;
+
+        var connection = BuildNetworkDbConnection();
+
+        _busy = true;
+        _errorMessage = string.Empty;
+        _results = new();
+        StateHasChanged();
+
+        try
+        {
+            var results = new List<ModelBomResult>();
+            int cacheLoads = 0;
+            int serverLoads = 0;
+            for (int i = 0; i < models.Count; i++)
+            {
+                string model = models[i];
+                var cacheQuery = new BmesBomCacheQuery(
+                    model,
+                    _plant.Trim(),
+                    _workDate.Date,
+                    Math.Clamp(_maxDepth, 1, 12),
+                    MaxRowsPerModel);
+                string cacheWarning = string.Empty;
+
+                _statusMessage = $"Loading BOM {i + 1}/{models.Count} — {model}";
+                StateHasChanged();
+
+                try
+                {
+                    if (!_loadBomFromServer)
+                    {
+                        try
+                        {
+                            BmesBomCacheEntry? cached = BomCache.TryLoad(cacheQuery);
+                            if (cached is not null)
+                            {
+                                results.Add(new ModelBomResult
+                                {
+                                    Model = model,
+                                    Rows = cached.Rows,
+                                    LoadSource = "cache",
+                                    FetchedAt = $"{cached.FetchedAt} · BOM date {cached.Query.WorkDate:yyyy-MM-dd}",
+                                });
+                                cacheLoads++;
+                                continue;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            cacheWarning = "Cache read failed; loaded from server instead: " + ex.Message;
+                        }
+                    }
+
+                    if (string.IsNullOrWhiteSpace(connection.Server) || string.IsNullOrWhiteSpace(connection.UserId))
+                    {
+                        results.Add(new ModelBomResult
+                        {
+                            Model = model,
+                            Error = "No local cache and the network DB connection is not configured.",
+                        });
+                        continue;
+                    }
+
+                    var rows = await FCostActual.FetchBomTreeAsync(new BmesBomMaterialQuery
+                    {
+                        Connection = connection,
+                        ModelName = model,
+                        Plant = _plant.Trim(),
+                        MaxRows = MaxRowsPerModel,
+                        MaxDepth = Math.Clamp(_maxDepth, 1, 12),
+                        WorkDate = _workDate,
+                    });
+
+                    try
+                    {
+                        BomCache.Save(cacheQuery, rows);
+                    }
+                    catch (Exception ex)
+                    {
+                        cacheWarning = string.IsNullOrWhiteSpace(cacheWarning)
+                            ? "BOM loaded, but cache save failed: " + ex.Message
+                            : cacheWarning + " " + ex.Message;
+                    }
+
+                    results.Add(new ModelBomResult
+                    {
+                        Model = model,
+                        Rows = rows,
+                        Warning = cacheWarning,
+                        LoadSource = "server",
+                        FetchedAt = DateTime.Now.ToString("O", CultureInfo.InvariantCulture),
+                    });
+                    serverLoads++;
+                }
+                catch (Exception ex)
+                {
+                    results.Add(new ModelBomResult { Model = model, Error = ex.Message });
+                }
+            }
+
+            _results = results;
+            int total = results.Sum(r => VisibleRows(r).Count);
+            int failed = results.Count(r => !string.IsNullOrWhiteSpace(r.Error));
+            _statusMessage = failed == 0
+                ? $"{results.Count} model(s), {total:N0} BOM rows — cache {cacheLoads}, server {serverLoads}."
+                : $"{results.Count} model(s), {total:N0} BOM rows, {failed} failed — cache {cacheLoads}, server {serverLoads}.";
+
+            RefreshCachedModels();
+            RefreshPdmMatches();
+            Activity.Log(
+                "BOM & Drawing",
+                $"BOM models={results.Count} rows={total} cache={cacheLoads} server={serverLoads} pdm={_pdmMatched}");
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "BOM load failed: " + ex.Message;
+            _statusMessage = string.Empty;
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DownloadHtmlAsync()
+    {
+        if (_results.Count == 0)
+            return;
+
+        byte[] bytes = Encoding.UTF8.GetBytes(BuildStandaloneHtml());
+        string label = _results.Count == 1 ? _results[0].Model : $"{_results.Count}-models";
+        string name = $"bom-{Sanitize(label)}-{DateTime.Now:yyyyMMdd-HHmm}.html";
+        await BrowserDownload.DownloadBytesAsync(JS, name, bytes, "text/html; charset=utf-8");
+        Activity.Log("BOM & Drawing", "Download HTML " + name);
+    }
+
+    private string BuildStandaloneHtml()
+    {
+        string groupLabel = string.Join(", ", _results.Select(r => r.Model));
+        var sb = new StringBuilder();
+        sb.AppendLine("<!DOCTYPE html>");
+        sb.AppendLine("<html lang=\"en\"><head><meta charset=\"utf-8\">");
+        sb.AppendLine($"<title>BOM — {Esc(groupLabel)}</title>");
+        sb.AppendLine("<style>");
+        sb.AppendLine("body{font-family:Segoe UI,Malgun Gothic,sans-serif;margin:24px;color:#212529;}");
+        sb.AppendLine("h1{font-size:18px;margin:0 0 4px;} .meta{color:#6c757d;font-size:12px;margin-bottom:18px;}");
+        sb.AppendLine("h2{font-size:14px;margin:22px 0 6px;padding-bottom:4px;border-bottom:1px solid #dee2e6;}");
+        sb.AppendLine("table{border-collapse:collapse;width:auto;min-width:850px;table-layout:fixed;font-size:12.5px;}");
+        sb.AppendLine("th,td{border:1px solid #dee2e6;padding:4px 8px;text-align:left;}");
+        sb.AppendLine("th{background:#f8f9fa;} .lv1 td.mat{font-weight:600;}");
+        sb.AppendLine("th:nth-child(1){width:52px;}th:nth-child(2){width:360px;}th:nth-child(3){width:155px;}th:nth-child(4){width:145px;}th:nth-child(5){width:180px;}th:nth-child(6){width:260px;}");
+        sb.AppendLine("tr.prod td{background:#eef2f7;font-weight:600;color:#23415e;}");
+        sb.AppendLine("tr.prod.shared td{background:#e3f0e5;color:#1e5631;}");
+        sb.AppendLine("</style></head><body>");
+        sb.AppendLine($"<h1>BOM &amp; Drawing — {Esc(groupLabel)}</h1>");
+        sb.AppendLine($"<div class=\"meta\">Plant {Esc(_plant)} · depth {_maxDepth} · work date {_workDate:yyyy-MM-dd}{(_hideNoiseCodes ? " · M-P / C-S hidden" : "")} · generated {DateTime.Now:yyyy-MM-dd HH:mm}</div>");
+
+        foreach (var result in _results)
+        {
+            var rows = VisibleRows(result);
+            sb.AppendLine($"<h2>{Esc(result.Model)} <span style=\"font-weight:400;color:#6c757d;\">({rows.Count:N0} rows)</span></h2>");
+            if (!string.IsNullOrWhiteSpace(result.Error))
+            {
+                sb.AppendLine($"<div style=\"color:#b02a37;\">{Esc(result.Error)}</div>");
+                continue;
+            }
+            if (rows.Count == 0)
+            {
+                sb.AppendLine("<div style=\"color:#6c757d;\">No BOM rows found.</div>");
+                continue;
+            }
+
+            sb.AppendLine(
+                "<table><thead><tr><th>Lv</th><th>Material</th><th>Code</th>" +
+                "<th>PDMNO</th><th>PDTNO_TX</th><th>Path</th></tr></thead><tbody>");
+            foreach (var product in ByProduct(rows))
+            {
+                sb.AppendLine(
+                    $"<tr class=\"prod{(product.IsShared ? " shared" : "")}\">" +
+                    $"<td colspan=\"6\">{Esc(product.Product)} ({product.Rows.Count:N0})</td></tr>");
+                foreach (var row in product.Rows)
+                {
+                    int level = Math.Max(row.BomLevel, 1);
+                    string indent = string.Concat(Enumerable.Repeat("&nbsp;&nbsp;&nbsp;&nbsp;", level - 1));
+                    var pdm = FindPdm(row);
+                    sb.AppendLine(
+                        $"<tr class=\"lv{level}\"><td>{level}</td>" +
+                        $"<td class=\"mat\">{indent}{Esc(DisplayName(row))}</td>" +
+                        $"<td>{Esc(row.MaterialCode)}</td>" +
+                        $"<td>{Esc(pdm?.Pdmno ?? string.Empty)}</td>" +
+                        $"<td>{Esc(pdm?.PdtnoTx ?? string.Empty)}</td>" +
+                        $"<td>{Esc(row.BomPathText)}</td></tr>");
+                }
+            }
+            sb.AppendLine("</tbody></table>");
+        }
+
+        sb.AppendLine("</body></html>");
+        return sb.ToString();
+    }
+
+    private static string Esc(string? value) => WebUtility.HtmlEncode(value ?? string.Empty);
+
+    private static string Sanitize(string value)
+    {
+        var sb = new StringBuilder();
+        foreach (char c in value)
+            sb.Append(char.IsLetterOrDigit(c) ? c : '-');
+        return sb.ToString().Trim('-');
+    }
+
+    private static string DisplayName(BmesBomMaterialCandidate row)
+        => string.IsNullOrWhiteSpace(row.MaterialName) ? row.MaterialCode : row.MaterialName;
+
+    private BmesFcostDbConnection BuildNetworkDbConnection()
+    {
+        var c = AppPaths.Current;
+        return new BmesFcostDbConnection
+        {
+            Server = c.AdminDbQueryServer,
+            Port = c.AdminDbQueryPort > 0 ? c.AdminDbQueryPort : 1430,
+            Database = string.IsNullOrWhiteSpace(c.AdminDbQueryDatabase) ||
+                       string.Equals(c.AdminDbQueryDatabase, "master", StringComparison.OrdinalIgnoreCase)
+                ? "BMES_LIV"
+                : c.AdminDbQueryDatabase,
+            UserId = c.AdminDbQueryUserId,
+            Password = c.AdminDbQueryPassword,
+            TimeoutSeconds = Math.Clamp(Math.Max(c.AdminDbQueryTimeoutSeconds, 300), 1, 600),
+            Encrypt = c.AdminDbQueryEncrypt,
+            TrustServerCertificate = c.AdminDbQueryTrustServerCertificate,
+        };
+    }
+
+}

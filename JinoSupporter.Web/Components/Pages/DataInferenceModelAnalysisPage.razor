@@ -10,7 +10,7 @@
     <div class="dima-header">
         <div>
             <div class="dima-title">Each Model Analysis</div>
-            <div class="dima-subtitle">Group AI-authored report markdown by Product Type and generate a model-level analysis.</div>
+            <div class="dima-subtitle">Product Type -> Improvement Purpose -> Reports -> Model Analysis</div>
         </div>
         <div class="dima-spacer"></div>
         <input class="form-control form-control-sm dima-search"
@@ -22,31 +22,71 @@
 
     <div class="dima-body">
         <aside class="dima-groups">
-            <div class="dima-pane-head">
-                <strong>Product Types</strong>
-                <span>@VisibleGroups.Count</span>
-            </div>
-            <div class="dima-group-list">
-                @if (VisibleGroups.Count == 0)
-                {
-                    <div class="dima-empty-small">No Product Type groups.</div>
-                }
-                else
-                {
-                    @foreach (var g in VisibleGroups)
+            <section class="dima-sidebar-section dima-product-section">
+                <div class="dima-pane-head">
+                    <strong>Product Types</strong>
+                    <span>@VisibleGroups.Count</span>
+                </div>
+                <div class="dima-group-list">
+                    @if (VisibleGroups.Count == 0)
                     {
-                        <button class="dima-group-btn @(IsSelected(g.ProductType) ? "active" : "")"
-                                @onclick="() => SelectGroup(g.ProductType)">
-                            <span class="dima-group-name">@g.ProductType</span>
-                            <span class="dima-group-meta">@g.AiReportCount / @g.ReportCount analyzed</span>
-                            @if (!string.IsNullOrWhiteSpace(g.LatestAnalysisAt))
-                            {
-                                <span class="dima-group-date">Last: @FormatDate(g.LatestAnalysisAt)</span>
-                            }
-                        </button>
+                        <div class="dima-empty-small">No Product Type groups.</div>
                     }
-                }
-            </div>
+                    else
+                    {
+                        @foreach (var g in VisibleGroups)
+                        {
+                            <button class="dima-group-btn @(IsSelected(g.ProductType) ? "active" : "")"
+                                    @onclick="() => SelectGroup(g.ProductType)">
+                                <span class="dima-group-name">@g.ProductType</span>
+                                <span class="dima-group-meta">@g.AiReportCount / @g.ReportCount analyzed</span>
+                                @if (!string.IsNullOrWhiteSpace(g.LatestAnalysisAt))
+                                {
+                                    <span class="dima-group-date">Last: @FormatDate(g.LatestAnalysisAt)</span>
+                                }
+                            </button>
+                        }
+                    }
+                </div>
+            </section>
+
+            <section class="dima-sidebar-section dima-purpose-section">
+                <div class="dima-pane-head">
+                    <strong>Improvement Purposes</strong>
+                    <span>@(SelectedGroup is null ? 0 : PurposeGroups.Count + 1)</span>
+                </div>
+                <div class="dima-purpose-list">
+                    @if (SelectedGroup is null)
+                    {
+                        <div class="dima-empty-small">Select a Product Type first.</div>
+                    }
+                    else
+                    {
+                        <button class="dima-purpose-btn @(IsPurposeSelected(AllPurposeKey) ? "active" : "")"
+                                @onclick="() => SelectPurpose(AllPurposeKey)">
+                            <span class="dima-purpose-name">All Improvement Purposes</span>
+                            <span class="dima-purpose-meta">@AiReportsForAllPurposes.Count / @_reports.Count AI reports</span>
+                        </button>
+
+                        @if (PurposeGroups.Count == 0)
+                        {
+                            <div class="dima-empty-small">No improvement purpose data.</div>
+                        }
+                        else
+                        {
+                            @foreach (var p in PurposeGroups)
+                            {
+                                <button class="dima-purpose-btn @(IsPurposeSelected(p.Key) ? "active" : "")"
+                                        title="@p.Label"
+                                        @onclick="() => SelectPurpose(p.Key)">
+                                    <span class="dima-purpose-name">@ShortText(p.Label, 86)</span>
+                                    <span class="dima-purpose-meta">@p.AiReportCount / @p.ReportCount AI reports</span>
+                                </button>
+                            }
+                        }
+                    }
+                </div>
+            </section>
         </aside>
 
         <main class="dima-main">
@@ -62,7 +102,7 @@
                     <div>
                         <div class="dima-selected">@SelectedGroup.ProductType</div>
                         <div class="dima-selected-sub">
-                            @AiReports.Count AI report(s), @_reports.Count total report(s), @NewReports.Count new or changed since latest analysis
+                            @AnalysisScopeLabel - @AiReports.Count AI report(s), @ScopedReports.Count scoped report(s), @_reports.Count total report(s), @NewReports.Count new or changed since latest analysis
                         </div>
                     </div>
                     <div class="dima-toolbar-actions">
@@ -84,13 +124,21 @@
                         <button class="btn btn-outline-primary btn-sm"
                                 @onclick="() => AnalyzeAsync(incremental: true)"
                                 disabled="@(!_canAnalyze || _latest is null || NewReports.Count == 0)">
-                            Update New Reports
+                            @IncrementalButtonLabel
                         </button>
                         <button class="btn btn-primary btn-sm"
                                 @onclick="() => AnalyzeAsync(incremental: false)"
                                 disabled="@(!_canAnalyze || AiReports.Count == 0)">
-                            Full Rebuild
+                            @FullRebuildButtonLabel
                         </button>
+                        @if (IsPurposeScoped)
+                        {
+                            <button class="btn btn-outline-primary btn-sm"
+                                    @onclick="AnalyzeAllPurposesAsync"
+                                    disabled="@(!_canAnalyze || AiReportsForAllPurposes.Count == 0)">
+                                Analyze All Purposes
+                            </button>
+                        }
                         @if (_isWaitingCli)
                         {
                             <button class="btn btn-outline-danger btn-sm" @onclick="CancelCliWait">
@@ -110,57 +158,68 @@
                     <div><strong>@SelectedGroup.AiReportCount</strong><span>AI reports</span></div>
                     <div><strong>@FormatDate(SelectedGroup.LatestAiUpdatedAt)</strong><span>Latest AI report</span></div>
                     <div><strong>@(_latest is null ? "-" : FormatDate(_latest.CreatedAt))</strong><span>Latest model analysis</span></div>
-                    <div><strong>@($"{CurrentContextChars:N0}")</strong><span>Full source chars</span></div>
+                    <div><strong>@($"{CurrentContextChars:N0}")</strong><span>Source chars</span></div>
                 </div>
 
                 <div class="dima-workspace">
                     <section class="dima-reports">
                         <div class="dima-pane-head">
-                            <strong>Reports in Product Type</strong>
-                            <span>@_reports.Count</span>
+                            <strong>@ReportsPaneTitle</strong>
+                            <span>@ScopedReports.Count</span>
                         </div>
                         <div class="dima-report-list">
-                            @foreach (var r in _reports)
+                            @if (ScopedReports.Count == 0)
                             {
-                                bool isNew = IsNewOrChanged(r);
-                                <div class="dima-report @(r.HasAiReport ? "" : "missing") @(isNew ? "new" : "")">
-                                    <div class="dima-report-head">
-                                        <div class="dima-report-name">@r.DatasetName</div>
-                                        <button class="btn btn-outline-secondary btn-sm dima-view-btn"
-                                                @onclick="() => ViewReport(r)"
-                                                disabled="@(!r.HasAiReport)">
-                                            View
-                                        </button>
+                                <div class="dima-empty-small">No reports in this improvement purpose.</div>
+                            }
+                            else
+                            {
+                                @foreach (var r in ScopedReports)
+                                {
+                                    bool isNew = IsNewOrChanged(r);
+                                    <div class="dima-report @(r.HasAiReport ? "" : "missing") @(isNew ? "new" : "")">
+                                        <div class="dima-report-head">
+                                            <div class="dima-report-name">@r.DatasetName</div>
+                                            <button class="btn btn-outline-secondary btn-sm dima-view-btn"
+                                                    @onclick="() => ViewReport(r)"
+                                                    disabled="@(!r.HasAiReport)">
+                                                View
+                                            </button>
+                                        </div>
+                                        <div class="dima-report-title">@ShortText(DisplayTitle(r), 150)</div>
+                                        @if (!string.IsNullOrWhiteSpace(r.Purpose))
+                                        {
+                                            <div class="dima-report-purpose">@ShortText(r.Purpose, 170)</div>
+                                        }
+                                        <div class="dima-report-meta">
+                                            @if (!string.IsNullOrWhiteSpace(r.ReportDate))
+                                            {
+                                                <span>@r.ReportDate</span>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(r.ReportType))
+                                            {
+                                                <span>@r.ReportType</span>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(r.PrimaryDefect))
+                                            {
+                                                <span>@r.PrimaryDefect</span>
+                                            }
+                                            @if (r.HasAiReport)
+                                            {
+                                                <span>@($"{r.GeneratedReportMarkdown.Length:N0}") chars</span>
+                                                <span>@r.ResultCount result(s)</span>
+                                            }
+                                            else
+                                            {
+                                                <span>No AI report</span>
+                                            }
+                                            @if (isNew)
+                                            {
+                                                <span class="dima-pill-new">New</span>
+                                            }
+                                        </div>
                                     </div>
-                                    <div class="dima-report-title">@ShortText(DisplayTitle(r), 150)</div>
-                                    <div class="dima-report-meta">
-                                        @if (!string.IsNullOrWhiteSpace(r.ReportDate))
-                                        {
-                                            <span>@r.ReportDate</span>
-                                        }
-                                        @if (!string.IsNullOrWhiteSpace(r.ReportType))
-                                        {
-                                            <span>@r.ReportType</span>
-                                        }
-                                        @if (!string.IsNullOrWhiteSpace(r.PrimaryDefect))
-                                        {
-                                            <span>@r.PrimaryDefect</span>
-                                        }
-                                        @if (r.HasAiReport)
-                                        {
-                                            <span>@($"{r.GeneratedReportMarkdown.Length:N0}") chars</span>
-                                            <span>@r.ResultCount result(s)</span>
-                                        }
-                                        else
-                                        {
-                                            <span>No AI report</span>
-                                        }
-                                        @if (isNew)
-                                        {
-                                            <span class="dima-pill-new">New</span>
-                                        }
-                                    </div>
-                                </div>
+                                }
                             }
                         </div>
                     </section>
@@ -169,12 +228,12 @@
                         <div class="dima-pane-head">
                             <strong>Model Analysis</strong>
                             <div class="dima-history-select">
-                                @if (_history.Count > 1)
+                                @if (ScopedHistory.Count > 1)
                                 {
                                     <select class="form-select form-select-sm"
                                             value="@(_activeAnalysisId?.ToString() ?? "")"
                                             @onchange="OnHistoryChanged">
-                                        @foreach (var h in _history)
+                                        @foreach (var h in ScopedHistory)
                                         {
                                             <option value="@h.Id">@FormatDate(h.CreatedAt) - @LanguageLabel(h.Language) - @h.AnalysisMode - @h.ReportCount</option>
                                         }
@@ -187,13 +246,13 @@
                         {
                             <div class="dima-empty dima-fill">
                                 <span class="spinner-border spinner-border-sm me-2"></span>
-                                Analyzing Product Type reports...
+                                Analyzing selected report scope...
                             </div>
                         }
                         else if (string.IsNullOrWhiteSpace(_activeMarkdown))
                         {
                             <div class="dima-empty dima-fill">
-                                No saved model analysis for this Product Type.
+                                No saved model analysis for this scope.
                             </div>
                         }
                         else
@@ -227,6 +286,7 @@
                 </div>
                 <div class="dima-modal-meta">
                     @if (!string.IsNullOrWhiteSpace(_viewReport.ReportDate)) { <span>@_viewReport.ReportDate</span> }
+                    @if (!string.IsNullOrWhiteSpace(_viewReport.Purpose)) { <span>@ShortText(_viewReport.Purpose, 90)</span> }
                     @if (!string.IsNullOrWhiteSpace(_viewReport.ReportType)) { <span>@_viewReport.ReportType</span> }
                     @if (!string.IsNullOrWhiteSpace(_viewReport.PrimaryDefect)) { <span>@_viewReport.PrimaryDefect</span> }
                     <span>@($"{_viewReport.GeneratedReportMarkdown.Length:N0}") chars</span>
@@ -246,6 +306,16 @@
         CodexCli
     }
 
+    private const string AllPurposeKey = "__all__";
+    private const string UnclassifiedPurpose = "Unclassified improvement purpose";
+
+    private sealed record PurposeGroup(
+        string Key,
+        string Label,
+        int ReportCount,
+        int AiReportCount,
+        List<ModelAnalysisReportRecord> Reports);
+
     private static readonly string[] ModelAnalysisLanguages = ["Korean", "English", "Vietnamese"];
 
     private List<ModelAnalysisGroupRecord> _groups = [];
@@ -256,6 +326,7 @@
     private ModelAnalysisExecutor _executor = ModelAnalysisExecutor.ClaudeCli;
     private long? _activeAnalysisId;
     private string _selectedProductType = "";
+    private string _selectedPurposeKey = AllPurposeKey;
     private string _search = "";
     private string _language = "Korean";
     private string _status = "";
@@ -280,11 +351,46 @@
     private ModelAnalysisGroupRecord? SelectedGroup =>
         _groups.FirstOrDefault(g => string.Equals(g.ProductType, _selectedProductType, StringComparison.OrdinalIgnoreCase));
 
-    private List<ModelAnalysisReportRecord> AiReports => _reports
+    private List<PurposeGroup> PurposeGroups => BuildPurposeGroups(_reports);
+
+    private bool IsPurposeScoped => !string.Equals(_selectedPurposeKey, AllPurposeKey, StringComparison.OrdinalIgnoreCase);
+
+    private PurposeGroup? SelectedPurposeGroup =>
+        PurposeGroups.FirstOrDefault(g => string.Equals(g.Key, _selectedPurposeKey, StringComparison.OrdinalIgnoreCase));
+
+    private List<ModelAnalysisReportRecord> ScopedReports => IsPurposeScoped
+        ? SelectedPurposeGroup?.Reports ?? new List<ModelAnalysisReportRecord>()
+        : _reports;
+
+    private List<ModelAnalysisReportRecord> AiReportsForAllPurposes => _reports
+        .Where(r => r.HasAiReport)
+        .ToList();
+
+    private List<ModelAnalysisReportRecord> AiReports => ScopedReports
         .Where(r => r.HasAiReport)
         .ToList();
 
     private int CurrentContextChars => AiReports.Sum(r => r.GeneratedReportMarkdown.Length);
+
+    private string AnalysisScopeLabel => IsPurposeScoped
+        ? $"Purpose: {SelectedPurposeGroup?.Label ?? UnclassifiedPurpose}"
+        : "All improvement purposes";
+
+    private string IncrementalButtonLabel => IsPurposeScoped
+        ? "Update Purpose"
+        : "Update New Reports";
+
+    private string FullRebuildButtonLabel => IsPurposeScoped
+        ? "Analyze Purpose"
+        : "Analyze All Purposes";
+
+    private string ReportsPaneTitle => IsPurposeScoped
+        ? "Reports in Selected Purpose"
+        : "Reports in Product Type";
+
+    private List<AiModelAnalysisRecord> ScopedHistory => _history
+        .Where(IsAnalysisForCurrentScope)
+        .ToList();
 
     private HashSet<string> LatestIncludedDatasets => ParseIncludedDatasets(_latest?.IncludedDatasetsJson);
 
@@ -301,12 +407,15 @@
 
     private void Reload()
     {
+        string previousProductType = _selectedProductType;
         _groups = Repo.GetModelAnalysisGroups();
         if (string.IsNullOrWhiteSpace(_selectedProductType)
             || !_groups.Any(g => string.Equals(g.ProductType, _selectedProductType, StringComparison.OrdinalIgnoreCase)))
         {
             _selectedProductType = _groups.FirstOrDefault()?.ProductType ?? "";
         }
+        if (!string.Equals(previousProductType, _selectedProductType, StringComparison.OrdinalIgnoreCase))
+            _selectedPurposeKey = AllPurposeKey;
         LoadSelectedGroup();
     }
 
@@ -319,7 +428,19 @@
     {
         if (_isBusy) return;
         _selectedProductType = productType;
+        _selectedPurposeKey = AllPurposeKey;
         LoadSelectedGroup();
+    }
+
+    private void SelectPurpose(string purposeKey)
+    {
+        if (_isBusy) return;
+        _selectedPurposeKey = string.IsNullOrWhiteSpace(purposeKey) ? AllPurposeKey : purposeKey;
+        EnsureSelectedPurpose();
+        _latest = LatestAnalysisForCurrentScope();
+        SetActiveAnalysis(PreferredAnalysis());
+        _status = "";
+        _statusError = false;
     }
 
     private void LoadSelectedGroup()
@@ -336,16 +457,27 @@
         }
 
         _reports = Repo.GetModelAnalysisReports(_selectedProductType);
-        _history = Repo.GetModelAnalysisHistory(_selectedProductType);
-        _latest = _history.FirstOrDefault();
+        _history = Repo.GetModelAnalysisHistory(_selectedProductType, 300);
+        EnsureSelectedPurpose();
+        _latest = LatestAnalysisForCurrentScope();
         SetActiveAnalysis(PreferredAnalysis());
         _status = "";
         _statusError = false;
     }
 
+    private void EnsureSelectedPurpose()
+    {
+        if (string.Equals(_selectedPurposeKey, AllPurposeKey, StringComparison.OrdinalIgnoreCase)) return;
+        if (PurposeGroups.Any(g => string.Equals(g.Key, _selectedPurposeKey, StringComparison.OrdinalIgnoreCase))) return;
+        _selectedPurposeKey = AllPurposeKey;
+    }
+
+    private AiModelAnalysisRecord? LatestAnalysisForCurrentScope()
+        => ScopedHistory.FirstOrDefault();
+
     private AiModelAnalysisRecord? PreferredAnalysis()
-        => _history.FirstOrDefault(h => string.Equals(h.Language, _language, StringComparison.OrdinalIgnoreCase))
-           ?? _history.FirstOrDefault();
+        => ScopedHistory.FirstOrDefault(h => string.Equals(h.Language, _language, StringComparison.OrdinalIgnoreCase))
+           ?? ScopedHistory.FirstOrDefault();
 
     private void SetActiveAnalysis(AiModelAnalysisRecord? analysis)
     {
@@ -374,7 +506,7 @@
         {
             SetStatus(incremental
                 ? "No new or changed AI reports to update."
-                : "No AI report markdown exists for this Product Type.",
+                : "No AI report markdown exists for this selected scope.",
                 true);
             return;
         }
@@ -403,9 +535,9 @@
             List<string> includedDatasets = included.Order(StringComparer.OrdinalIgnoreCase).ToList();
             bool launched = _executor == ModelAnalysisExecutor.CodexCli
                 ? LaunchCodexByLanguage(workDir, tmpDir, runId, startedUtc, SelectedGroup.ProductType,
-                    incrementalRun, included.Count, includedDatasets, hash, context)
+                    incrementalRun, IsPurposeScoped, AnalysisScopeLabel, included.Count, includedDatasets, hash, context)
                 : LaunchClaudeForAllLanguages(workDir, tmpDir, runId, startedUtc, SelectedGroup.ProductType,
-                    incrementalRun, included.Count, includedDatasets, hash, context);
+                    incrementalRun, IsPurposeScoped, AnalysisScopeLabel, included.Count, includedDatasets, hash, context);
 
             if (!launched)
             {
@@ -420,8 +552,8 @@
                 : $"{ExecutorLabel} launched";
             SetStatus(
                 incrementalRun
-                    ? $"{launchedText}. Waiting for Korean, English, and Vietnam model analysis updates from {sourceReports.Count} new or changed report(s)."
-                    : $"{launchedText}. Waiting for Korean, English, and Vietnam full model analyses from {sourceReports.Count} AI report(s).",
+                    ? $"{launchedText}. Waiting for Korean, English, and Vietnam model analysis updates from {sourceReports.Count} new or changed report(s) in {AnalysisScopeLabel}."
+                    : $"{launchedText}. Waiting for Korean, English, and Vietnam full model analyses from {sourceReports.Count} AI report(s) in {AnalysisScopeLabel}.",
                 false);
 
             await WaitForCliResultAsync(SelectedGroup.ProductType, hash, startedUtc);
@@ -437,21 +569,30 @@
         }
     }
 
+    private async Task AnalyzeAllPurposesAsync()
+    {
+        if (_isBusy) return;
+        _selectedPurposeKey = AllPurposeKey;
+        _latest = LatestAnalysisForCurrentScope();
+        SetActiveAnalysis(PreferredAnalysis());
+        await AnalyzeAsync(incremental: false);
+    }
+
     private bool LaunchClaudeForAllLanguages(string workDir, string tmpDir, string runId, DateTime startedUtc,
-        string productType, bool incrementalRun, int reportCount, IReadOnlyList<string> includedDatasets,
-        string sourceContextHash, string context)
+        string productType, bool incrementalRun, bool purposeScoped, string improvementPurposeScope,
+        int reportCount, IReadOnlyList<string> includedDatasets, string sourceContextHash, string context)
     {
         if (!AiProviders.ClaudeCliEnabled) return false;
         string requestPath = Path.Combine(tmpDir, $"model_analysis_request_{runId}.json");
         WriteModelAnalysisRequest(requestPath, productType, incrementalRun, ModelAnalysisLanguages,
-            reportCount, includedDatasets, sourceContextHash, startedUtc, context);
+            purposeScoped, improvementPurposeScope, reportCount, includedDatasets, sourceContextHash, startedUtc, context);
         string prompt = BuildModelAnalysisCliPrompt(requestPath, Repo.GetDbPath());
         return TryLaunchClaudeTerminal(workDir, prompt, $"Each Model Analysis ({productType})", requestPath);
     }
 
     private bool LaunchCodexByLanguage(string workDir, string tmpDir, string runId, DateTime startedUtc,
-        string productType, bool incrementalRun, int reportCount, IReadOnlyList<string> includedDatasets,
-        string sourceContextHash, string context)
+        string productType, bool incrementalRun, bool purposeScoped, string improvementPurposeScope,
+        int reportCount, IReadOnlyList<string> includedDatasets, string sourceContextHash, string context)
     {
         if (!AiProviders.CodexCliEnabled) return false;
         var launched = new List<string>();
@@ -459,7 +600,7 @@
         {
             string requestPath = Path.Combine(tmpDir, $"model_analysis_request_{runId}_{LanguageSlug(language)}.json");
             WriteModelAnalysisRequest(requestPath, productType, incrementalRun, new[] { language },
-                reportCount, includedDatasets, sourceContextHash, startedUtc, context);
+                purposeScoped, improvementPurposeScope, reportCount, includedDatasets, sourceContextHash, startedUtc, context);
             string prompt = BuildModelAnalysisCliPrompt(requestPath, Repo.GetDbPath());
             if (!TryLaunchCodexTerminal(workDir, prompt, $"Each Model Analysis ({productType}) - {LanguageLabel(language)}", requestPath))
             {
@@ -472,14 +613,19 @@
     }
 
     private static void WriteModelAnalysisRequest(string requestPath, string productType, bool incrementalRun,
-        IReadOnlyList<string> languages, int reportCount, IReadOnlyList<string> includedDatasets,
-        string sourceContextHash, DateTime startedUtc, string context)
+        IReadOnlyList<string> languages, bool purposeScoped, string improvementPurposeScope,
+        int reportCount, IReadOnlyList<string> includedDatasets, string sourceContextHash, DateTime startedUtc, string context)
     {
         string[] requestedLanguages = languages.ToArray();
+        string analysisMode = purposeScoped
+            ? (incrementalRun ? "purpose_incremental" : "purpose_full")
+            : (incrementalRun ? "incremental" : "full");
         var request = new
         {
             productType,
-            analysisMode = incrementalRun ? "incremental" : "full",
+            analysisMode,
+            purposeScoped,
+            improvementPurposeScope,
             language = requestedLanguages.Length == 1 ? requestedLanguages[0] : "All",
             languages = requestedLanguages,
             reportCount,
@@ -502,15 +648,19 @@
         var sb = new System.Text.StringBuilder();
         sb.AppendLine($"ProductType: {_selectedProductType}");
         sb.AppendLine($"AnalysisMode: {(incremental && _latest is not null ? "incremental_update" : "full_rebuild")}");
+        sb.AppendLine($"ImprovementPurposeScope: {AnalysisScopeLabel}");
+        sb.AppendLine($"PurposeScoped: {IsPurposeScoped}");
         sb.AppendLine($"TotalReportsInProductType: {_reports.Count}");
-        sb.AppendLine($"AiReportsInProductType: {AiReports.Count}");
+        sb.AppendLine($"ReportsInSelectedScope: {ScopedReports.Count}");
+        sb.AppendLine($"AiReportsInProductType: {AiReportsForAllPurposes.Count}");
+        sb.AppendLine($"AiReportsInSelectedScope: {AiReports.Count}");
         sb.AppendLine($"SourceReportsInThisPrompt: {sourceReports.Count}");
         sb.AppendLine();
 
         if (incremental && _latest is not null)
         {
             List<AiModelAnalysisRecord> baselines = ModelAnalysisLanguages
-                .Select(language => _history.FirstOrDefault(h => string.Equals(h.Language, language, StringComparison.OrdinalIgnoreCase)))
+                .Select(language => ScopedHistory.FirstOrDefault(h => string.Equals(h.Language, language, StringComparison.OrdinalIgnoreCase)))
                 .Where(h => h is not null)
                 .Cast<AiModelAnalysisRecord>()
                 .GroupBy(h => h.Id)
@@ -549,6 +699,7 @@
             sb.AppendLine($"ProductType: {r.ProductType}");
             if (!string.IsNullOrWhiteSpace(r.ReportDate)) sb.AppendLine($"ReportDate: {r.ReportDate}");
             if (!string.IsNullOrWhiteSpace(r.Title)) sb.AppendLine($"Title: {r.Title}");
+            if (!string.IsNullOrWhiteSpace(r.Purpose)) sb.AppendLine($"Purpose: {r.Purpose}");
             if (!string.IsNullOrWhiteSpace(r.ReportType)) sb.AppendLine($"ReportType: {r.ReportType}");
             if (!string.IsNullOrWhiteSpace(r.PrimaryDefect)) sb.AppendLine($"PrimaryDefect: {r.PrimaryDefect}");
             sb.AppendLine($"ResultRows: {r.ResultCount}");
@@ -561,66 +712,116 @@
     }
 
     private static string BuildModelAnalysisCliPrompt(string requestPath, string dbPath)
-    {
-        return string.Join(Environment.NewLine, new[]
-        {
-            "Run the Each Model Analysis workflow for JinoSupporter.",
-            $"RequestJson={requestPath}",
-            $"Database={dbPath}",
-            "",
-            "Open the request JSON. It contains productType, analysisMode, language, languages, reportCount, includedDatasets, sourceContextHash, createdAt, and context.",
-            "The context contains AI-authored per-report markdown. Use those AI_REPORT_MARKDOWN sections as the primary evidence. Do not rely on parameters alone.",
-            "Generate one complete model-level analysis for each language listed in request.languages. If request.languages has one item, generate and insert only that language.",
-            "The user's required report is not a generic risk summary. It must start with a practical action board: what to check/change next, how often similar evidence was reviewed, what the combined result says, and what exact next action should be taken.",
-            "After the action board, explain what reviews/tests were performed for this Product Type/model, group similar reviews together, show each review's result, then give the AI's overall model-level judgement.",
-            "Group similar reviews by purpose, defect/phenomenon, process, part/material, jig/mold/machine, changed condition, supplier/lot, or measurement type. Choose the grouping that best matches the evidence in the reports.",
-            "For each group, list the included report names and summarize each report's result separately before writing the group-level interpretation.",
-            "If analysisMode is incremental, use the previous model analysis for the same target language when present in the context, evaluate only the new/changed reports as new evidence, but save one complete replacement model-level analysis.",
-            "If analysisMode is full, analyze all AI report markdown in the context together.",
-            "",
-            "For each language, write concise Markdown only. No JSON in AnalysisMarkdown. No code fence.",
-            "The report must be table-centered. Avoid long prose; use short paragraphs only where judgement or caveats need explanation.",
-            "Required Markdown sections, translated naturally for the target language:",
-            "## Practical action board",
-            "Create the main table. Required semantic columns: Priority | Check/change item | Reviewed evidence count | Combined result | Why it matters | Next action.",
-            "The Check/change item column must be the factor to inspect or adjust, not the defect name itself.",
-            "Translate the table headers for the target language if appropriate, but preserve those six meanings.",
-            "## Review history by theme",
-            "Briefly state how many reports were reviewed, the main review themes, and the overall model-level direction.",
-            "## Similar review grouped results",
-            "Create a grouped evidence table. Required semantic columns: Review Group | Included Reports | Review Purpose/Condition | Result By Report | AI Group Judgment.",
-            "## Individual review result details",
-            "Use a compact table where possible. For each included report, show concrete result, judgement, and important caveats.",
-            "## Repeated patterns and differences",
-            "Explain what patterns repeat across groups and where results conflict or differ.",
-            "## AI overall judgment",
-            "Give the AI's overall judgement for this model/Product Type based only on the included reports.",
-            "## Follow-up review / improvement suggestions",
-            "Prioritize practical follow-up checks or improvements implied by the grouped evidence.",
-            "## Included reports",
-            "List all included report names.",
-            "",
-            "Rules:",
-            "1. Do not invent facts that are not present in the request context.",
-            "2. Separate stable repeated patterns from one-off or weak-sample findings.",
-            "3. When reports conflict, describe the conflict and cite the affected report names.",
-            "4. Do not collapse everything into one summary. The grouped review history is the core deliverable.",
-            "5. Mention the included report names in the Included Reports section.",
-            "6. Preserve product codes, defect names, line names, numeric values, and units verbatim.",
-            "7. AnalysisTableMarkdown must contain only the exact main table from the Practical action board section, including the Markdown header row and separator row.",
-            "",
-            "After writing the Markdown, insert exactly one row per requested language into SQLite table AiModelAnalyses in the supplied Database path.",
-            "Before inserting, ensure the table exists and includes AnalysisTableMarkdown. Create the table if needed with these columns:",
-            "Id INTEGER PRIMARY KEY AUTOINCREMENT, ProductType TEXT, AnalysisMode TEXT, Language TEXT, ReportCount INTEGER, IncludedDatasetsJson TEXT, AnalysisMarkdown TEXT, AnalysisTableMarkdown TEXT, SourceContextHash TEXT, CreatedAt TEXT.",
-            "If the table already exists but PRAGMA table_info(AiModelAnalyses) does not include AnalysisTableMarkdown, run ALTER TABLE AiModelAnalyses ADD COLUMN AnalysisTableMarkdown TEXT NOT NULL DEFAULT ''.",
-            "For every inserted row use ProductType=request.productType, AnalysisMode=request.analysisMode, Language=the exact requested language value, ReportCount=request.reportCount, IncludedDatasetsJson=json.dumps(request.includedDatasets, ensure_ascii=False), AnalysisMarkdown=the full Markdown for that language, AnalysisTableMarkdown=the exact main comparison table Markdown for that language, SourceContextHash=request.sourceContextHash, CreatedAt=current UTC ISO-8601.",
-            "Do not edit repository source files. Only read the request JSON and write the SQLite row.",
-            "Print a short completion line with productType and the inserted row ids for the requested languages."
-        });
-    }
+        => AiPromptRegistry.Render(
+            "data-inference/model-analysis-cli.md",
+            ("requestPath", requestPath),
+            ("dbPath", dbPath));
 
     private bool IsSelected(string productType)
         => string.Equals(_selectedProductType, productType, StringComparison.OrdinalIgnoreCase);
+
+    private bool IsPurposeSelected(string purposeKey)
+        => string.Equals(_selectedPurposeKey, purposeKey, StringComparison.OrdinalIgnoreCase);
+
+    private bool IsAnalysisForCurrentScope(AiModelAnalysisRecord analysis)
+    {
+        HashSet<string> included = ParseIncludedDatasets(analysis.IncludedDatasetsJson);
+        HashSet<string> current = CurrentAiDatasetSet();
+        return included.Count > 0 && included.SetEquals(current);
+    }
+
+    private HashSet<string> CurrentAiDatasetSet()
+        => AiReports.Select(r => r.DatasetName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    private static List<PurposeGroup> BuildPurposeGroups(IEnumerable<ModelAnalysisReportRecord> reports)
+        => reports
+            .Select(r => (Report: r, Label: ImprovementPurposeLabel(r)))
+            .GroupBy(x => PurposeKey(x.Label), StringComparer.OrdinalIgnoreCase)
+            .Select(g =>
+            {
+                List<ModelAnalysisReportRecord> groupedReports = g.Select(x => x.Report)
+                    .OrderByDescending(r => r.ReportDate)
+                    .ThenBy(r => r.DatasetName, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                string label = g.GroupBy(x => x.Label, StringComparer.OrdinalIgnoreCase)
+                    .OrderByDescending(x => x.Count())
+                    .ThenBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
+                    .First().Key;
+                return new PurposeGroup(
+                    g.Key,
+                    label,
+                    groupedReports.Count,
+                    groupedReports.Count(r => r.HasAiReport),
+                    groupedReports);
+            })
+            .OrderByDescending(g => g.AiReportCount)
+            .ThenByDescending(g => g.ReportCount)
+            .ThenBy(g => g.Label, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private static string ImprovementPurposeLabel(ModelAnalysisReportRecord report)
+    {
+        string text = string.Join(" ", new[]
+            {
+                report.Purpose,
+                report.Title,
+                report.ReportType,
+                report.PrimaryDefect
+            })
+            .ToLowerInvariant();
+
+        if (HasAny(text, "function", "func", "ng function")) return "Function NG";
+        if (HasAny(text, "bending", "bend")) return "VP bending / deformation";
+        if (HasAny(text, "separate", "separation", "dome", "vp+cd", "vp + cd")) return "VP+CD / DOME separation";
+        if (HasAny(text, "height", "dimension", "diameter", "gauss", "magnet", "size", "thickness", "low gauss")) return "Dimension / height / magnetic spec";
+        if (HasAny(text, "bond", "bonding", "solder", "weld", "welding", "hearing", "coil", "suspension")) return "Bonding / solder / welding";
+        if (HasAny(text, "material", "frame", "yk", "pt ", " sus", "resin", "change dimension")) return "Material / part change";
+        if (HasAny(text, "oven", "dry", "drying", "laser", "cutting", "punch", "machine", "jig", "tray", "condition", "process", "temperature", "time")) return "Process / equipment condition";
+        if (HasAny(text, "mold", "mould", "supplier", "vendor", "lot", "normal", "old ", "new mold", "comparison", "compare")) return "Mold / lot / supplier comparison";
+        if (HasAny(text, "root cause", "reason", "cause", "why", "analyze", "analysis")) return "Root cause analysis";
+
+        string reportType = HumanizeToken(report.ReportType);
+        if (!string.IsNullOrWhiteSpace(reportType)) return reportType;
+
+        string primary = FirstNonBlank(report.PrimaryDefect, report.Purpose, report.Title, UnclassifiedPurpose);
+        return ShortPurposeLabel(primary);
+    }
+
+    private static string PurposeKey(string label)
+    {
+        string compact = System.Text.RegularExpressions.Regex.Replace(label ?? "", @"\s+", " ").Trim();
+        compact = compact.Trim(' ', '.', ',', ';', ':', '-', '_', '/', '\\', '|', '"', '\'');
+        return string.IsNullOrWhiteSpace(compact)
+            ? UnclassifiedPurpose
+            : compact.ToUpperInvariant();
+    }
+
+    private static string FirstNonBlank(params string?[] values)
+        => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim() ?? "";
+
+    private static bool HasAny(string text, params string[] needles)
+        => needles.Any(n => text.Contains(n, StringComparison.OrdinalIgnoreCase));
+
+    private static string HumanizeToken(string value)
+    {
+        string text = (value ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(text) || string.Equals(text, "mixed", StringComparison.OrdinalIgnoreCase)) return "";
+        text = text.Replace('_', ' ').Replace('-', ' ');
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\s+", " ").Trim();
+        return System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(text.ToLowerInvariant());
+    }
+
+    private static string ShortPurposeLabel(string value)
+    {
+        string text = System.Text.RegularExpressions.Regex.Replace(value ?? "", @"\s+", " ").Trim();
+        if (string.IsNullOrWhiteSpace(text)) return UnclassifiedPurpose;
+        text = System.Text.RegularExpressions.Regex.Replace(
+            text,
+            @"^(to\s+)?(check|find|analyze|analyse|compare|verify|test|improve|reduce)\s+",
+            "",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        return ShortText(string.IsNullOrWhiteSpace(text) ? (value ?? UnclassifiedPurpose) : text, 52);
+    }
 
     private bool IsNewOrChanged(ModelAnalysisReportRecord r)
     {
@@ -664,7 +865,7 @@
             {
                 await Task.Delay(TimeSpan.FromSeconds(2), token);
 
-                _history = Repo.GetModelAnalysisHistory(productType);
+                _history = Repo.GetModelAnalysisHistory(productType, 300);
                 List<AiModelAnalysisRecord> hits = _history.Where(h =>
                     string.Equals(h.SourceContextHash, sourceContextHash, StringComparison.OrdinalIgnoreCase)
                     && DateTime.TryParse(h.CreatedAt, null, System.Globalization.DateTimeStyles.RoundtripKind, out var created)
@@ -682,7 +883,7 @@
                     _groups = Repo.GetModelAnalysisGroups();
                     LoadSelectedGroup();
                     SetActiveAnalysis(_history.FirstOrDefault(h => h.Id == hit.Id) ?? hit);
-                    SetStatus($"{ExecutorLabel} results received for Korean, English, and Vietnam. Included reports: {hit.ReportCount}.", false);
+                    SetStatus($"{ExecutorLabel} results received for Korean, English, and Vietnam. Scope: {AnalysisScopeLabel}. Included reports: {hit.ReportCount}.", false);
                     return;
                 }
 
@@ -809,7 +1010,10 @@
         return string.Join(Environment.NewLine, new[]
         {
             "$ErrorActionPreference = 'Continue'",
-            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
+            "$utf8NoBom = New-Object System.Text.UTF8Encoding -ArgumentList $false",
+            "[Console]::InputEncoding = $utf8NoBom",
+            "[Console]::OutputEncoding = $utf8NoBom",
+            "$OutputEncoding = $utf8NoBom",
             "try { chcp 65001 | Out-Null } catch {}",
             $"try {{ $Host.UI.RawUI.WindowTitle = {Q(title)} }} catch {{}}",
             $"Set-Location -LiteralPath {Q(workDir)}",
@@ -832,7 +1036,10 @@
         return string.Join(Environment.NewLine, new[]
         {
             "$ErrorActionPreference = 'Continue'",
-            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
+            "$utf8NoBom = New-Object System.Text.UTF8Encoding -ArgumentList $false",
+            "[Console]::InputEncoding = $utf8NoBom",
+            "[Console]::OutputEncoding = $utf8NoBom",
+            "$OutputEncoding = $utf8NoBom",
             "try { chcp 65001 | Out-Null } catch {}",
             $"try {{ $Host.UI.RawUI.WindowTitle = {Q(title)} }} catch {{}}",
             $"Set-Location -LiteralPath {Q(workDir)}",
@@ -850,18 +1057,7 @@
     }
 
     private static string FindRepoRoot()
-    {
-        string dir = AppContext.BaseDirectory;
-        for (int i = 0; i < 8; i++)
-        {
-            if (File.Exists(Path.Combine(dir, "JinoSupporter.sln"))) return dir;
-            if (File.Exists(Path.Combine(dir, "AI_EXCEL_PROC.md"))) return dir;
-            string? parent = Path.GetDirectoryName(dir.TrimEnd('\\', '/'));
-            if (string.IsNullOrEmpty(parent) || parent == dir) break;
-            dir = parent;
-        }
-        return AppContext.BaseDirectory;
-    }
+        => AiPromptRegistry.FindRepositoryRoot();
 
     private static string DisplayTitle(ModelAnalysisReportRecord r)
         => !string.IsNullOrWhiteSpace(r.Title) ? r.Title : r.PrimaryDefect;
@@ -1018,11 +1214,14 @@
 
 <style>
     .dima-root {
-        min-height: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        min-height: 0;
         display: flex;
         flex-direction: column;
         background: #f5f7fb;
         color: #172033;
+        overflow: hidden;
     }
 
     .dima-alert {
@@ -1067,6 +1266,7 @@
         display: grid;
         grid-template-columns: minmax(230px, 290px) minmax(0, 1fr);
         overflow: hidden;
+        align-items: stretch;
     }
 
     .dima-groups,
@@ -1080,11 +1280,31 @@
 
     .dima-groups {
         border-right: 1px solid #dfe5ee;
+        display: flex;
+        flex-direction: column;
     }
 
     .dima-main {
         display: flex;
         flex-direction: column;
+    }
+
+    .dima-sidebar-section {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dima-product-section {
+        flex: 0 0 auto;
+        min-height: 0;
+        max-height: min(360px, 42vh);
+        border-bottom: 1px solid #dfe5ee;
+    }
+
+    .dima-purpose-section {
+        flex: 1 1 auto;
+        min-height: 210px;
     }
 
     .dima-pane-head {
@@ -1102,13 +1322,25 @@
     }
 
     .dima-group-list,
+    .dima-purpose-list {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        padding: 8px;
+    }
+
     .dima-report-list {
         height: calc(100% - 42px);
         overflow: auto;
         padding: 8px;
     }
 
-    .dima-group-btn {
+    .dima-product-section .dima-group-list {
+        max-height: min(318px, calc(42vh - 42px));
+    }
+
+    .dima-group-btn,
+    .dima-purpose-btn {
         width: 100%;
         display: flex;
         flex-direction: column;
@@ -1123,28 +1355,45 @@
         cursor: pointer;
     }
 
-    .dima-group-btn:hover {
+    .dima-group-btn:hover,
+    .dima-purpose-btn:hover {
         background: #f8fafc;
         border-color: #bfd4ff;
     }
 
-    .dima-group-btn.active {
+    .dima-group-btn.active,
+    .dima-purpose-btn.active {
         border-color: #2563eb;
         background: #eff6ff;
     }
 
-    .dima-group-name {
+    .dima-purpose-btn {
+        padding: 7px 8px;
+        gap: 4px;
+    }
+
+    .dima-group-name,
+    .dima-purpose-name {
         font-size: 12px;
         font-weight: 750;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .dima-group-name {
         white-space: nowrap;
+    }
+
+    .dima-purpose-name {
+        line-height: 1.28;
     }
 
     .dima-group-meta,
     .dima-group-date,
+    .dima-purpose-meta,
     .dima-selected-sub,
     .dima-report-title,
+    .dima-report-purpose,
     .dima-report-meta {
         font-size: 11px;
         color: #667085;
@@ -1295,6 +1544,12 @@
     .dima-report-title {
         margin-top: 2px;
         line-height: 1.35;
+    }
+
+    .dima-report-purpose {
+        margin-top: 4px;
+        line-height: 1.35;
+        color: #475467;
     }
 
     .dima-report-meta {
@@ -1510,9 +1765,14 @@
         }
 
         .dima-groups {
-            max-height: 240px;
+            max-height: 460px;
             border-right: none;
             border-bottom: 1px solid #dfe5ee;
+        }
+
+        .dima-product-section,
+        .dima-purpose-section {
+            min-height: 180px;
         }
 
         .dima-workspace {

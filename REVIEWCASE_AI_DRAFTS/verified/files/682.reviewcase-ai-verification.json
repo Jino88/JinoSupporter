@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 682,
+  "sourceFile": "48. BRS-2015 Report Test New BP+SM ass'y machine date 29.5.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\682.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:31Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 682,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the likely machine comparison but outcome grouping and citations are not reliable enough for final evidence.",
+    "issues": [
+      "Changed-factor domain is overbroad; evidence supports mainly new machine versus normal machine.",
+      "Measurement outcomes use generic columns and cite header/unclear rows instead of verifiable data rows.",
+      "Tension, drop, and separate-glue results are not properly captured as outcome comparisons.",
+      "Key result rows 37-46 are missing or underused in outcome evidence.",
+      "Row 34 is cited but not shown in context, limiting verification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to equipment/process comparison: Normal machine vs New machine.",
+      "Rebuild outcomes for tension, drop test, separate glue, and function under the same changed factor.",
+      "Cite actual result rows for each outcome, including rows 37-46 and 50/52 as applicable.",
+      "Remove or relabel unverifiable generic measurement statistics unless raw rows support them.",
+      "Keep function NG-rate comparison but note unequal sample quantities if judging improvement."
+    ],
+    "evidencePolicy": "Current citations are insufficient; each outcome needs direct cited result rows, not only headers or unseen rows."
+  },
+  "usage": {
+    "input_tokens": 4182,
+    "output_tokens": 790,
+    "total_tokens": 4972
+  }
+}

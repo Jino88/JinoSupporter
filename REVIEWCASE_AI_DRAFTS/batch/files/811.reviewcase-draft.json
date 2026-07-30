@@ -1,0 +1,191 @@
+{
+  "sourceFileId": 811,
+  "sourceFile": "63.1. TIU C11-20 Report test audiobus100% hearing 100% 2026.02.13_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\63.1. TIU C11-20 Report test audiobus100% hearing 100% 2026.02.13_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test (2)",
+    "sheetRowCount": 15,
+    "sheetCellCount": 73,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test (2)!2",
+      "sheetName": "Test (2)",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT CHECK HEARING 100% TIU-C11-20 | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test (2)!3",
+      "sheetName": "Test (2)",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Date | 2026-02-13 00:00:00"
+    },
+    {
+      "rowId": "Test (2)!4",
+      "sheetName": "Test (2)",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "Test (2)!5",
+      "sheetName": "Test (2)",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test (2)!6",
+      "sheetName": "Test (2)",
+      "rowNumber": 6,
+      "rowText": "| - Find reason NG function high"
+    },
+    {
+      "rowId": "Test (2)!7",
+      "sheetName": "Test (2)",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test (2)!8",
+      "sheetName": "Test (2)",
+      "rowNumber": 8,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test (2)!9",
+      "sheetName": "Test (2)",
+      "rowNumber": 9,
+      "rowText": "| | 1. RESULT CHECKING FUNC TION"
+    },
+    {
+      "rowId": "Test (2)!10",
+      "sheetName": "Test (2)",
+      "rowNumber": 10,
+      "rowText": "| | No | Date | Line | Type | | Input | OK | NG AUDIOBUS | | | Total NG | NG rate | Input | NG HEARING | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Test (2)!11",
+      "sheetName": "Test (2)",
+      "rowNumber": 11,
+      "rowText": "| | | | | | | | | SPL | SPL+RB | No sound | | | | Noise | Touch"
+    },
+    {
+      "rowId": "Test (2)!12",
+      "sheetName": "Test (2)",
+      "rowNumber": 12,
+      "rowText": "| | 1 | 2026-02-13 00:00:00 | TIU C11-20L | Audiobus 100% - Hearing 100% | | 9567 | 9244 | 323 | 0 | 0 | 323 | 0.03376189 | 9244 | 319 | 82 | 401 | 0.04337949"
+    },
+    {
+      "rowId": "Test (2)!13",
+      "sheetName": "Test (2)",
+      "rowNumber": 13,
+      "rowText": "| | | | | | | | | 0.03376189 | 0 | 0 | | | | 0.03334379 | 0.00857113"
+    },
+    {
+      "rowId": "Test (2)!18",
+      "sheetName": "Test (2)",
+      "rowNumber": 18,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-811-rc-1",
+      "reviewTitle": "| REPORT CHECK HEARING 100% TIU-C11-20 | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Find reason NG function high / | II. Content. / | III. Result / | | 1. RESULT CHECKING FUNC TION",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs TIU C11-20L, TIU C11-20R",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "TIU C11-20L, TIU C11-20R",
+          "subgroupKeys": [
+            "Audiobus 100% - Hearing 100%"
+          ],
+          "evidenceRows": [
+            "Test (2)!12",
+            "Test (2)!14",
+            "Test (2)!2",
+            "Test (2)!5",
+            "Test (2)!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "1. RESULT CHECKING FUNC TION",
+          "comparisonRows": [
+            "Test (2)!12",
+            "Test (2)!14"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 23992,
+              "condition": "TIU C11-20L | Audiobus 100% - Hearing 100%",
+              "input": 9567.0,
+              "ok": 9244.0,
+              "ng": 323.0,
+              "ratePercent": 3.376189,
+              "evidenceRows": [
+                "Test (2)!12"
+              ]
+            },
+            {
+              "metricId": 23993,
+              "condition": "TIU C11-20R | Audiobus 100% - Hearing 100%",
+              "input": 11356.0,
+              "ok": 11308.0,
+              "ng": 48.0,
+              "ratePercent": 0.422684,
+              "evidenceRows": [
+                "Test (2)!14"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test (2)!12",
+        "Test (2)!14",
+        "Test (2)!2",
+        "Test (2)!5",
+        "Test (2)!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test (2)!12",
+      "Test (2)!14",
+      "Test (2)!2",
+      "Test (2)!5",
+      "Test (2)!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

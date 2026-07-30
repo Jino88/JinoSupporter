@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 411,
+  "sourceFile": "22. BRS-161014  Report test  check reason NG hearing 21.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\411.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 411,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid source rows but changed-factor and outcome grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Combines Mold VP and Mold Frame into one changed factor.",
+      "Changed condition uses row numbers instead of mold IDs.",
+      "Baseline/normal condition is not explicit and should not be invented.",
+      "Header-derived measurement outcomes appear spurious.",
+      "Subgroup keys mix dates, mold IDs, and row numbers."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split or clearly model Mold VP and Mold Frame as separate changed-factor contexts.",
+      "Use mold IDs as changed conditions: VP #3/#6/#8/#10 and Frame #1-#5.",
+      "Keep dates and test rows as subgroup keys, not primary conditions.",
+      "Remove header/stat measurement outcomes unless row-level measurement data is proven.",
+      "Rebuild outcome metrics from input, OK, NG, total NG, and NG rate rows only."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until corrected."
+  },
+  "usage": {
+    "input_tokens": 5000,
+    "output_tokens": 652,
+    "total_tokens": 5652
+  }
+}

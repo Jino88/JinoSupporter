@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 29,
+  "sourceFile": "010.MSU-20S15-07 Result Check NG  Dimension Date  2025.02.14_1778470990_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\29.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:09Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 29,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the changed factor and condition grouping are not evidence-based enough for final use.",
+    "issues": [
+      "Changed factor is derived from filename, not source evidence.",
+      "Baseline and changed conditions are left unresolved.",
+      "Dimension setting reductions, normal, and GN LAB sample need explicit grouping.",
+      "Module process/function results are not captured as outcomes.",
+      "Dimension spec is cited but not applied to judgement."
+    ],
+    "requiredUserQuestions": [
+      "Should SUMMARY dimension setting tests and MODULE NG sample module test be one review case?",
+      "What is the intended baseline: Normal line, Normal dimension, or GN LAB sample?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to SPK NG dimension evaluation after MC cutting laser setting change/reduction.",
+      "Define conditions: Reduce 0.03/0.05/0.18, Normal, GN LAB sample, and module Test SPK NG dimension vs Normal.",
+      "Add process/function outcome from MODULE result rows.",
+      "Apply 14.90–15.10 mm spec to dimension subresults.",
+      "Cite purpose, spec, comparison, result, and decision rows for each outcome."
+    ],
+    "evidencePolicy": "Row citations exist, but key cited summary rows need clearer condition text and outcome linkage before approval."
+  },
+  "usage": {
+    "input_tokens": 3494,
+    "output_tokens": 801,
+    "total_tokens": 4295
+  }
+}

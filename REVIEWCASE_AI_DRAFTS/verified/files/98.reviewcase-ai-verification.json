@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 98,
+  "sourceFile": "04. BRS-161014  Report test CMG-SMG long reduce dimension 12.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\98.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 98,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The NG-rate comparison is usable, but changed-factor evidence and measurement outcomes are not sufficiently verified.",
+    "issues": [
+      "Changed factor is underspecified versus the report title and purpose.",
+      "Changed-factor citations omit rows that define the reduced-dimension yoke test.",
+      "NTI measurement outcome cites mostly header rows, not comparable result rows.",
+      "FO measurement stats are invalid because row labels appear parsed as numeric data.",
+      "ST conditions are mixed with Normal/Test without subgroup treatment."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add citeable purpose/content rows describing the semi-yoke reduced-dimension change.",
+      "Rename the factor to reflect Normal versus reduced-dimension Test Yoke if supported.",
+      "Keep NG-rate outcome with rows 15 and 17 and its improvement judgement.",
+      "Remove or rebuild NTI measurement outcomes using actual data rows and Normal/Test averages.",
+      "Remove or rebuild FO outcome using actual FO values and exclude parsed label-number stats."
+    ],
+    "evidencePolicy": "Row existence passes, but citations are insufficient for final Ask AI evidence."
+  },
+  "usage": {
+    "input_tokens": 7211,
+    "output_tokens": 760,
+    "total_tokens": 7971
+  }
+}

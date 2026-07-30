@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 254,
+  "sourceFile": "12.1 TIU C11-20 Report checking sound check Test VP new mold V3.3 date 12.2.2026_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\254.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:30Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 254,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid comparable evidence but mislabels the changed factor and uses insufficient/duplicated citations for acoustic measurements.",
+    "issues": [
+      "Changed factor should be Test VP new mold V3.3 or VP TEST vs Normal V3 or VP NORMAL, not Normal V3 vs TIU C11-20R.",
+      "TIU C11-20R is model context, not the changed condition.",
+      "SPL, THD, and IMP outcomes are duplicated across header-derived groups.",
+      "Acoustic stats cite mainly header rows, not supporting data rows.",
+      "Tension subgroups Frame+VP and Coil+VP need separate baseline/test pairing."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to Test VP new mold V3.3 vs Normal V3 with TIU C11-20R as model context.",
+      "Map VP TEST to test mold and VP NORMAL to normal lot where supported.",
+      "Merge or remove duplicate SPL, THD, and IMP outcome groups.",
+      "Cite representative data rows or ranges for SPL, THD, and IMP statistics.",
+      "Split tension results by Frame+VP and Coil+VP while preserving their matched normal rows."
+    ],
+    "evidencePolicy": "Functional and tension row citations are sufficient; acoustic citations need data rows beyond headers."
+  },
+  "usage": {
+    "input_tokens": 10348,
+    "output_tokens": 601,
+    "total_tokens": 10949
+  }
+}

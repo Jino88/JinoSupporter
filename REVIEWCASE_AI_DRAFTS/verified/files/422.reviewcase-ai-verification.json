@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 422,
+  "sourceFile": "23 TIU C11-20 Result test new holder improve dont pick up 2025.12.25_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\422.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:17Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 422,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites real rows but conflates setup conditions with tray IDs and needs regrouping before use.",
+    "issues": [
+      "Changed factor incorrectly merges Normal, multiple test setups, and tray IDs into one changed condition.",
+      "Sheet1 No6/No13/No17 are tray-level rows, not condition comparisons.",
+      "Outcome grouping mixes summary-condition results with cherry-picked tray rows.",
+      "Baseline/test conditions need clearer separation among Normal, new holder, tray old, and tray improve.",
+      "Review title and metric names are noisy extracted headers."
+    ],
+    "requiredUserQuestions": [
+      "Should Ask AI compare the four Test summary conditions rather than individual tray IDs?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor around holder/tray setup condition, not tray number.",
+      "Use Test summary rows as primary comparison evidence.",
+      "Treat Sheet1 tray rows only as supporting subgroup detail if needed.",
+      "Separate or label Normal, new holder with old tray, new holder plus tray improve, and tray improve conditions.",
+      "Clean title, purpose, outcome metric, and condition labels."
+    ],
+    "evidencePolicy": "Row citations exist, but cited rows do not sufficiently support the current grouping."
+  },
+  "usage": {
+    "input_tokens": 3748,
+    "output_tokens": 759,
+    "total_tokens": 4507
+  }
+}

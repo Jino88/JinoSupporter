@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 550,
+  "sourceFile": "33. BRS-161014 DT Report test Suspension NG dimension -  date 2024.05.02_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\550.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:21Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 550,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has the right comparison grouping but misstates the functional judgement versus the report conclusion.",
+    "issues": [
+      "Function outcome marked worse despite report concluding same as normal and usable.",
+      "Conclusion rows are not cited for the final judgement.",
+      "Review purpose text uses content from rows not included in evidenceRows.",
+      "Function comparison should note the small rate difference as numeric context, not source judgement."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Change function judgement to no_change or acceptable/same-as-normal per report conclusion.",
+      "Retain numeric rates and delta as measured values.",
+      "Add conclusion evidence rows Test!34 and Test!37, plus Test!25 if citing process conclusion.",
+      "Add Test!8-Test!10 if purpose/spec statements remain in the case.",
+      "Keep one changed factor: Normal vs Test SP NG dimension."
+    ],
+    "evidencePolicy": "Metric row citations are sufficient, but conclusion and purpose citations must be completed before final use."
+  },
+  "usage": {
+    "input_tokens": 3137,
+    "output_tokens": 643,
+    "total_tokens": 3780
+  }
+}

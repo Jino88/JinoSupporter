@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 633,
+  "sourceFile": "41.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Primer date 6.9.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\633.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 633,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed factor and omits key report outcomes, so it is not safe as final evidence.",
+    "issues": [
+      "Changed factor is wrong: SM VISION is a test type, not the changed condition.",
+      "Correct comparison appears to be Ruijin clean Primer vs Normal clean alcohol.",
+      "Only vision outcome is modeled; glue, drop, and tension decisions are omitted.",
+      "Subgroup key is used as the changed condition evidence instead of the comparison condition.",
+      "Evidence rows include generic headers but miss cited outcome support for the full report."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baselineCondition to Normal clean alcohol.",
+      "Set changedCondition to Ruijin clean Primer or Ruijin clean with Primer.",
+      "Keep SM VISION as the vision test context, not the changed factor.",
+      "Add outcomes for separate glue, drop test, and tension under the same changed factor.",
+      "Cite rows supporting each outcome and final decision rows."
+    ],
+    "evidencePolicy": "Row citations exist but are misassigned and incomplete for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3614,
+    "output_tokens": 592,
+    "total_tokens": 4206
+  }
+}

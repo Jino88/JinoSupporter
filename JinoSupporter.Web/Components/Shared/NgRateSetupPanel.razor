@@ -1,0 +1,364 @@
+@using System.Globalization
+@inject IJSRuntime JS
+
+@if (_isCollapsed)
+{
+    <button type="button"
+            class="card shadow-sm ngrate-top-toggle ngrate-top-toggle-collapsed"
+            @onclick="ToggleCollapsed"
+            title="Show report setup and progress log">
+        <span class="fw-semibold">Report Setup / Progress Log</span>
+        <span class="small text-muted">
+            @StartDate.ToString("MM/dd/yyyy", CultureInfo.InvariantCulture)
+            -
+            @EndDate.ToString("MM/dd/yyyy", CultureInfo.InvariantCulture)
+        </span>
+        <span class="small text-muted ms-auto">
+            @if (IsBusy || IsReportBusy)
+            {
+                <span>Processing...</span>
+            }
+            else
+            {
+                <span>@Logs.Count log(s)</span>
+            }
+        </span>
+        <span class="small fw-semibold text-primary">Show</span>
+    </button>
+}
+else
+{
+<div class="@LayoutClass">
+    <div class="@DataCellClass">
+        <div class="card shadow-sm h-100">
+            <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+                <span>Report Setup</span>
+                <button type="button"
+                        class="btn btn-link btn-sm p-0 text-secondary"
+                        @onclick="ToggleCollapsed"
+                        title="Hide report setup and progress log">Hide</button>
+            </div>
+            <div class="card-body">
+                <div class="ngrate-setup-grid">
+                    <div class="ngrate-setup-main d-flex flex-column gap-3">
+                        <div>
+                            <div class="form-label small fw-semibold mb-1">Period</div>
+                            <div class="d-flex gap-2 align-items-center flex-wrap">
+                                <input type="date" class="form-control form-control-sm"
+                                       style="width:auto; flex:1; min-width:110px;"
+                                       value="@ToDateValue(StartDate)"
+                                       @onchange="HandleStartDateChanged" />
+                                <span class="small text-muted">-</span>
+                                <input type="date" class="form-control form-control-sm"
+                                       style="width:auto; flex:1; min-width:110px;"
+                                       value="@ToDateValue(EndDate)"
+                                       @onchange="HandleEndDateChanged" />
+                                <button class="btn btn-outline-secondary btn-sm" @onclick="OnSetToday">Today</button>
+                            </div>
+                        </div>
+
+                        @if (AdditionalSettings is not null)
+                        {
+                            @AdditionalSettings
+                        }
+
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="small text-muted">BMES:</span>
+                            @if (IsCredentialsConfigured)
+                            {
+                                <span class="badge bg-success">Credentials OK</span>
+                                <span class="small text-muted font-monospace">@LoginId</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">Not configured</span>
+                                <a href="@SettingsHref" class="small text-primary">@SettingsLabel</a>
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(SavedDbPath))
+                        {
+                            <div class="alert alert-success py-2 small mb-0">
+                                <div class="fw-semibold mb-1">
+                                    <span class="badge bg-success me-1">Done</span> Saved DB
+                                </div>
+                                <div class="font-monospace text-break" style="font-size:11px;">@SavedDbPath</div>
+                                @if (ShowClearResult)
+                                {
+                                    <button class="btn btn-link btn-sm p-0 mt-1 text-secondary"
+                                            @onclick="OnClearResult">Clear</button>
+                                }
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(ErrorMessage))
+                        {
+                            <div class="alert alert-danger py-2 small mb-0">
+                                <span class="badge bg-danger me-1">Error</span> @ErrorMessage
+                                @if (ShowClearResult)
+                                {
+                                    <button class="btn btn-link btn-sm p-0 ms-1 text-secondary"
+                                            @onclick="OnClearResult">Clear</button>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="ngrate-setup-groups">
+                        @GroupPicker
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="@ProgressCellClass">
+        <div class="card shadow-sm h-100 ngrate-log-card">
+            <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+                <span>Progress / Log</span>
+                <span class="d-flex align-items-center gap-2">
+                    @if (Logs.Count > 0)
+                    {
+                        <button class="btn btn-link btn-sm p-0 text-secondary" @onclick="OnClearLogs">Clear</button>
+                    }
+                    <button type="button"
+                            class="btn btn-link btn-sm p-0 text-secondary"
+                            @onclick="ToggleCollapsed"
+                            title="Hide report setup and progress log">Hide</button>
+                </span>
+            </div>
+            <div class="card-body p-0 ngrate-log-card-body">
+                <div class="p-3 pb-2">
+                    <div class="progress" style="height:5px;">
+                        @if (IsBusy || IsReportBusy)
+                        {
+                            @if (Stages is { Count: > 0 })
+                            {
+                                <div class="progress-bar" style="width:@Pct(OverallPercent);"></div>
+                            }
+                            else
+                            {
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width:100%;"></div>
+                            }
+                        }
+                        else if (Logs.Count > 0)
+                        {
+                            <div class="progress-bar @(HasSuccessfulResult ? "bg-success" : "bg-danger")" style="width:100%;"></div>
+                        }
+                    </div>
+                </div>
+
+                @if (Stages is { Count: > 0 })
+                {
+                    <div class="ngrate-stages px-3 pb-2">
+                        @foreach (ReportStage stage in Stages)
+                        {
+                            <div class="ngrate-stage">
+                                <div class="ngrate-stage-head">
+                                    <span class="ngrate-stage-name">
+                                        <span class="ngrate-stage-icon @StageIconClass(stage)">@StageIcon(stage)</span>
+                                        @stage.Name
+                                    </span>
+                                    <span class="ngrate-stage-meta">
+                                        @if (stage.Status == ReportStageStatus.Running && stage.StepTotal is int total)
+                                        {
+                                            @* Counted work — show the real n/m, not just a percentage. *@
+                                            <span class="ngrate-stage-phase">
+                                                @stage.PhaseName @stage.StepCurrent/@total
+                                            </span>
+                                        }
+                                        @if (stage.Status == ReportStageStatus.Running && stage.Percent is double p)
+                                        {
+                                            <span class="ngrate-stage-pct">@p.ToString("0")%</span>
+                                        }
+                                        @if (stage.Elapsed > TimeSpan.Zero)
+                                        {
+                                            <span>@FormatElapsed(stage.Elapsed)</span>
+                                        }
+                                    </span>
+                                </div>
+                                <div class="progress ngrate-stage-bar">
+                                    @if (stage.Status == ReportStageStatus.Running)
+                                    {
+                                        @if (stage.Percent is double pct)
+                                        {
+                                            <div class="progress-bar" style="width:@Pct(pct);"></div>
+                                        }
+                                        else
+                                        {
+                                            @* No baseline yet — animate rather than invent a number. *@
+                                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                                 style="width:100%;"></div>
+                                        }
+                                    }
+                                    else if (stage.Status == ReportStageStatus.Done)
+                                    {
+                                        <div class="progress-bar bg-success" style="width:100%;"></div>
+                                    }
+                                    else if (stage.Status == ReportStageStatus.Failed)
+                                    {
+                                        <div class="progress-bar bg-danger" style="width:100%;"></div>
+                                    }
+                                </div>
+                                @if (stage.Status == ReportStageStatus.Running && !string.IsNullOrEmpty(stage.CurrentStep))
+                                {
+                                    <div class="ngrate-stage-step" title="@stage.CurrentStep">@stage.CurrentStep</div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+
+                @if (Stages is { Count: > 0 })
+                {
+                    <div class="px-3 pb-2">
+                        <button type="button" class="btn btn-link btn-sm p-0 text-secondary"
+                                @onclick="() => _logExpanded = !_logExpanded">
+                            @(_logExpanded ? "Hide detail log" : $"Show detail log ({Logs.Count})")
+                        </button>
+                    </div>
+                }
+
+                @if (Stages is not { Count: > 0 } || _logExpanded)
+                {
+                    <div id="@LogElementId" class="font-monospace p-2 overflow-auto ngrate-log-pane">
+                        @if (Logs.Count == 0)
+                        {
+                            <span style="opacity:.4;">No log entries yet.</span>
+                        }
+                        else
+                        {
+                            @foreach (string line in Logs)
+                            {
+                                <div class="@GetLogClass(line)">@line</div>
+                            }
+                            <div id="@(LogElementId + "Bottom")" style="height:12px;"></div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+}
+
+@code {
+    [Parameter] public string LayoutClass { get; set; } = "ngrate-grid";
+    [Parameter] public string DataCellClass { get; set; } = "ngrate-cell-tl";
+    [Parameter] public string ProgressCellClass { get; set; } = "ngrate-cell-progress-log";
+
+    [Parameter, EditorRequired] public DateTime StartDate { get; set; }
+    [Parameter] public EventCallback<DateTime> StartDateChanged { get; set; }
+    [Parameter, EditorRequired] public DateTime EndDate { get; set; }
+    [Parameter] public EventCallback<DateTime> EndDateChanged { get; set; }
+
+    [Parameter] public bool IsBusy { get; set; }
+    [Parameter] public bool IsReportBusy { get; set; }
+    [Parameter] public bool IsCredentialsConfigured { get; set; }
+    [Parameter] public string LoginId { get; set; } = string.Empty;
+    [Parameter] public string SettingsHref { get; set; } = "/setting";
+    [Parameter] public string SettingsLabel { get; set; } = "Setting";
+
+    [Parameter] public string? SavedDbPath { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public bool ShowClearResult { get; set; } = true;
+    [Parameter] public EventCallback OnSetToday { get; set; }
+    [Parameter] public EventCallback OnClearResult { get; set; }
+
+    /// <summary>Opt-in: when supplied, the panel shows one progress bar per report stage
+    /// and tucks the raw log behind a toggle. Callers that leave this null keep the
+    /// original log-only panel.</summary>
+    [Parameter] public IReadOnlyList<ReportStage>? Stages { get; set; }
+    [Parameter] public double OverallPercent { get; set; }
+
+    [Parameter] public IReadOnlyList<string> Logs { get; set; } = [];
+    [Parameter] public string LogElementId { get; set; } = "ngRateLog";
+    [Parameter] public bool HasSuccessfulResult { get; set; }
+    [Parameter] public EventCallback OnClearLogs { get; set; }
+
+    [Parameter] public RenderFragment? AdditionalSettings { get; set; }
+    [Parameter, EditorRequired] public RenderFragment GroupPicker { get; set; } = default!;
+
+    private bool _isCollapsed;
+    private bool _logExpanded;
+    private bool _forceScrollLog;
+    private int _lastScrolledLogCount = -1;
+    private bool _lastScrolledBusy;
+    private bool _lastScrolledReportBusy;
+
+    private void ToggleCollapsed()
+    {
+        _isCollapsed = !_isCollapsed;
+        if (!_isCollapsed)
+            _forceScrollLog = true;
+    }
+
+    private static string Pct(double value) =>
+        Math.Clamp(value, 0d, 100d).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+
+    private static string StageIcon(ReportStage stage) => stage.Status switch
+    {
+        ReportStageStatus.Done    => "✓",
+        ReportStageStatus.Failed  => "!",
+        ReportStageStatus.Running => "•",
+        _                         => "○",
+    };
+
+    private static string StageIconClass(ReportStage stage) => stage.Status switch
+    {
+        ReportStageStatus.Done    => "text-success",
+        ReportStageStatus.Failed  => "text-danger",
+        ReportStageStatus.Running => "text-primary",
+        _                         => "text-secondary opacity-50",
+    };
+
+    private static string FormatElapsed(TimeSpan elapsed) =>
+        elapsed.TotalSeconds < 60
+            ? elapsed.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture) + "s"
+            : $"{(int)elapsed.TotalMinutes}m {elapsed.Seconds:00}s";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        bool busyChanged = _lastScrolledBusy != IsBusy || _lastScrolledReportBusy != IsReportBusy;
+        bool shouldScroll = firstRender || _forceScrollLog || Logs.Count != _lastScrolledLogCount || busyChanged;
+        _lastScrolledBusy = IsBusy;
+        _lastScrolledReportBusy = IsReportBusy;
+
+        // The log pane only exists while it is expanded (or when no stages are shown).
+        bool logVisible = Stages is not { Count: > 0 } || _logExpanded;
+        if (_isCollapsed || !logVisible || !shouldScroll) return;
+
+        _forceScrollLog = false;
+        _lastScrolledLogCount = Logs.Count;
+        try
+        {
+            await JS.InvokeVoidAsync("ngRateLog.scrollToBottom", LogElementId, LogElementId + "Bottom");
+        }
+        catch
+        {
+            // Log scrolling is best-effort; data/report flow must not fail because of JS timing.
+        }
+    }
+
+    private static string ToDateValue(DateTime value)
+        => value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    private async Task HandleStartDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var value))
+            await StartDateChanged.InvokeAsync(value.Date);
+    }
+
+    private async Task HandleEndDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var value))
+            await EndDateChanged.InvokeAsync(value.Date);
+    }
+
+    private static string GetLogClass(string line)
+    {
+        if (line.Contains("[ERROR]", StringComparison.OrdinalIgnoreCase)) return "text-danger";
+        if (line.Contains("[WARN]", StringComparison.OrdinalIgnoreCase)) return "text-warning";
+        if (line.Contains("Done", StringComparison.OrdinalIgnoreCase)) return "text-success";
+        if (line.Contains("Report complete", StringComparison.OrdinalIgnoreCase)) return "text-success";
+        return string.Empty;
+    }
+}

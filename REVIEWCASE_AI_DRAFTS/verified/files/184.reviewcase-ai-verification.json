@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 184,
+  "sourceFile": "1. BRS-161014 Report  Repair and check damage  Date 25.1.2025 line 6_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\184.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:07Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 184,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The source is a single repair inspection report, but the draft invents an unclear baseline/test comparison and includes unreliable measurement artifacts.",
+    "issues": [
+      "No explicit baseline or normal comparator is cited.",
+      "Changed factor and domains are over-broad and partly inferred.",
+      "Total rows are treated as conditions alongside daily rows.",
+      "Measurement outcomes appear to be header-derived artifacts.",
+      "Evidence cites exist but grouping is not final-use safe."
+    ],
+    "requiredUserQuestions": [
+      "Should this be modeled as single-condition repair validation rather than a comparison?"
+    ],
+    "correctionPlan": [
+      "Define the primary context as Repair Frame+Coil inspection only, unless a comparator is found.",
+      "Remove the implicit baseline/normal comparison wording.",
+      "Keep daily date and lot date as subgroup keys, with totals as summaries only.",
+      "Drop artifact measurement outcomes and retain defect/function result tables.",
+      "Cite purpose, process flow, table headers, daily rows, and total rows per outcome."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations do not support the inferred comparison."
+  },
+  "usage": {
+    "input_tokens": 11480,
+    "output_tokens": 759,
+    "total_tokens": 12239
+  }
+}

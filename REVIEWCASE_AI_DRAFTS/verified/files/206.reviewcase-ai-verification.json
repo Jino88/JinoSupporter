@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 206,
+  "sourceFile": "10. BRS-161014 Report test  JIG Ass'y Guide JIG Up Dimension   Date 7.6.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\206.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 206,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Primary Normal vs JIG VP Ass'y Guide UP 0.15mm grouping is supported, but tension measurement is polluted by function rows.",
+    "issues": [
+      "Measurement outcome incorrectly includes function rows Report!46 and Report!48 as measurement stats.",
+      "Tension spec is omitted despite row showing 0.5kgf and Pass result.",
+      "Measurement comparisonRows include non-tension rows.",
+      "Function and vision outcomes are grouped correctly but remain unjudged."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove Report!46 and Report!48 from measurement-1 comparisonRows and subResults.",
+      "Keep Report!46 and Report!48 only under function defect outcome.",
+      "Populate tension spec as 0.5kgf and retain Pass results for both conditions if modeled.",
+      "Verify tension outcome uses only Report!41 and Report!42.",
+      "Re-run verification after correcting outcome grouping."
+    ],
+    "evidencePolicy": "Row citations are sufficient for factor and defect outcomes; measurement citations need correction before approval."
+  },
+  "usage": {
+    "input_tokens": 3903,
+    "output_tokens": 431,
+    "total_tokens": 4334
+  }
+}

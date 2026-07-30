@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 469,
+  "sourceFile": "27. BRS-161016 Report check problem separate Coil+SP 2.4.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\469.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:42Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 469,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites comparable test rows but misgroups a multi-factor troubleshooting matrix and cannot be used as final evidence yet.",
+    "issues": [
+      "Changed factor is invalid: baseline and test both include height check.",
+      "Comparisons confound height check, bonding line, UC press, and time settings.",
+      "Outcome pairs omit or underuse relevant result rows in the test matrix.",
+      "Measurement outcome is misclassified; header/count data are process defect results, not measurement stats.",
+      "Subgroup keys omit key row factors such as time setting and date/test condition."
+    ],
+    "requiredUserQuestions": [
+      "Should this be one combined troubleshooting review or separate factor reviews?",
+      "Which factor is the intended primary change: height check, bonding line, UC press, or time?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factors from the test-content rows and result table columns.",
+      "Preserve row keys: date, time setting, height check, bonding line, UC press, input, OK, NG, rate.",
+      "Avoid direct effect claims where multiple factors change together.",
+      "Remove the measurement outcome or convert it to defect-count outcome summaries.",
+      "Include all cited result rows with correct control/test labels and limitations."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping and metric citations are not sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3766,
+    "output_tokens": 737,
+    "total_tokens": 4503
+  }
+}

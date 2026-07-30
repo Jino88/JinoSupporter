@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 838,
+  "sourceFile": "68. BRS-161016  Report check reason NG damage suspension date 21.09.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\838.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:31Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 838,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the before/after defect improvement but misidentifies the changed factor and omits key cause/decision evidence.",
+    "issues": [
+      "Changed factor should be Before repair JIG vs After repair JIG, not process vs repair condition.",
+      "Vision laser cutting is process context, not the primary changed condition.",
+      "Change domain is mislabeled as coating/dimension instead of JIG/process repair or marking.",
+      "Subgroup key incorrectly uses Before repair JIG as subgroup rather than baseline.",
+      "Cause and decision rows are not cited."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baselineCondition to Before repair JIG and changedCondition to After repair JIG.",
+      "Keep Vision laser cutting and line C2-3A as process/context keys.",
+      "Revise changeDomain to process/JIG repair or fixture marking improvement.",
+      "Move Before repair JIG out of subgroupKeys and preserve date/line context.",
+      "Add rows 24, 30, and/or 38 as evidence for root cause and corrective decision."
+    ],
+    "evidencePolicy": "Outcome row citations are sufficient; changed-factor rationale needs added cause/decision rows."
+  },
+  "usage": {
+    "input_tokens": 2667,
+    "output_tokens": 480,
+    "total_tokens": 3147
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 10,
+  "sourceFile": "006.MSU - 20S15-07 REPORT TEST DOE LED UV_1778470544_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\10.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 10,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it conflates UV energy rows with Normal/Test conditions and misses key function outcomes.",
+    "issues": [
+      "Changed factor incorrectly includes Peak vs Total as conditions.",
+      "VP+CD and Coil+VP+CD grouping is ambiguous.",
+      "Function outcome only evaluates air leak and ignores sigma/hearing NG rates.",
+      "Drying comparison lacks required header/context row citation.",
+      "Measurement sample counts appear inflated from summary cells."
+    ],
+    "requiredUserQuestions": [
+      "Are VP+CD and Coil+VP+CD separate test variants under one Test LED UV change?",
+      "Is Normal LED UV the intended baseline for both test variants?"
+    ],
+    "correctionPlan": [
+      "Redefine factor as Normal LED UV vs Test LED UV variants unless user says otherwise.",
+      "Keep VP+CD and Coil+VP+CD as subgroup/test-condition context.",
+      "Separate outcomes for tension, drying, air leak, sigma, hearing, and total NG rate.",
+      "Recalculate rates and judgements from rows 30-32 for all function metrics.",
+      "Add header/context citations such as rows 2, 5, 28, and 29."
+    ],
+    "evidencePolicy": "Row citations exist, but headers and full metric evidence are insufficient."
+  },
+  "usage": {
+    "input_tokens": 3788,
+    "output_tokens": 1301,
+    "total_tokens": 5089
+  }
+}

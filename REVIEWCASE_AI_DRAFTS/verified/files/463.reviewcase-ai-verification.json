@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 463,
+  "sourceFile": "26. TIU C11-20  Report test Plate supplier MYUNGJIN difference colour 2026.02.26 - Copy_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\463.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 463,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable comparable evidence but grouping, outcome coverage, and one judgement need correction before Ask AI use.",
+    "issues": [
+      "Primary changed factor is vague; link test levels to Myungjin different-color plate/PP.",
+      "Drop test result is omitted despite a FINAL auto NG/fall outcome.",
+      "Function outcome marked improved, but source decision says same as normal.",
+      "Measurement outcomes use header-only rows and appear spurious.",
+      "Decision rows are not cited for final interpretation."
+    ],
+    "requiredUserQuestions": [
+      "Do Test level 1-3 correspond to lever/color variants of the Myungjin different-color plate/PP?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to Myungjin different-color plate/PP versus normal, with test levels as subconditions.",
+      "Add drop test auto/manual outcome, including FINAL auto NG/fall and particle/noise rationale.",
+      "Revise function judgement to no_change or mixed per decision context, not improved.",
+      "Remove header-only measurement outcomes unless raw measurement rows exist.",
+      "Cite title, purpose, table rows, and decision rows for each outcome."
+    ],
+    "evidencePolicy": "Row citations exist for main numeric tables, but final evidence is incomplete without drop-test and decision-row citations."
+  },
+  "usage": {
+    "input_tokens": 6620,
+    "output_tokens": 796,
+    "total_tokens": 7416
+  }
+}

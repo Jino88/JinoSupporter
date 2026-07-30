@@ -1,0 +1,2028 @@
+@page "/bmes/qr-bako-data"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using System.Globalization
+@using JinoSupporter.Web.Services
+@inject QrBakoDataService QrBakoData
+@inject IJSRuntime JS
+
+<PageTitle>QR BAKO DATA</PageTitle>
+
+@{
+    var dashboard = BuildDashboard();
+}
+
+<div class="qr-dashboard">
+    <div class="qr-titlebar">
+        <div>
+            <div class="qr-kicker"><span class="qr-live-dot"></span>BAKO 검사결과 · DB 접수 DATA</div>
+            <h1>BAKO 검사결과 대시보드</h1>
+            <div class="qr-subtitle">FAIL 조회 · QR 추적 · 항목별 Pareto</div>
+        </div>
+        <div class="qr-actions">
+            <span class="qr-connection">@ConnectionLabel</span>
+            <button class="qr-btn primary"
+                    @onclick="LoadAsync"
+                    disabled="@(_busy || !QrBakoData.IsConfigured)">
+                @if (_busy)
+                {
+                    <span class="qr-spinner"></span>
+                    <span>Loading</span>
+                }
+                else
+                {
+                    <span>Refresh</span>
+                }
+            </button>
+            <button class="qr-btn"
+                    @onclick="ExportCsvAsync"
+                    disabled="@(_busy || _exporting || _result is null || _result.Columns.Count == 0)">
+                @if (_exporting)
+                {
+                    <span class="qr-spinner"></span>
+                    <span>Exporting</span>
+                }
+                else
+                {
+                    <span>CSV</span>
+                }
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <div class="qr-alert danger">@_error</div>
+    }
+
+    @if (_result is not null && !string.IsNullOrWhiteSpace(_result.WarningMessage))
+    {
+        <div class="qr-alert warning">@_result.WarningMessage</div>
+    }
+
+    @if (!QrBakoData.IsConfigured)
+    {
+        <div class="qr-alert warning">
+            QR BAKO DB password is not configured on the server.
+        </div>
+    }
+
+    @if (_busy && _result is null)
+    {
+        <div class="qr-panel qr-loading">
+            <span class="qr-spinner"></span>
+            <span>TCDB.dbo.BKTD 로딩 중...</span>
+        </div>
+    }
+    else if (_result is null)
+    {
+        <div class="qr-panel qr-empty">조회된 데이터가 없습니다.</div>
+    }
+    else if (_result.Columns.Count == 0)
+    {
+        <div class="qr-panel qr-empty">쿼리 결과 컬럼이 없습니다.</div>
+    }
+    else
+    {
+        <div class="qr-kpi-grid">
+            <div class="qr-kpi">
+                <span>TOTAL</span>
+                <strong>@FormatNumber(dashboard.Total)</strong>
+                <small>표시 검사건수</small>
+            </div>
+            <div class="qr-kpi good">
+                <span>PASS</span>
+                <strong>@FormatNumber(dashboard.Pass)</strong>
+                <small>@FormatPercent(dashboard.PassRate) PASS율</small>
+            </div>
+            <div class="qr-kpi bad">
+                <span>FAIL</span>
+                <strong>@FormatNumber(dashboard.Fail)</strong>
+                <small>@FormatPercent(dashboard.FailRate) FAIL율</small>
+            </div>
+            <div class="qr-kpi danger">
+                <span>불량률</span>
+                <strong>@FormatPercent(dashboard.FailRate)</strong>
+                <small>@FormatNumber(dashboard.Fail) / @FormatNumber(dashboard.Total)건</small>
+            </div>
+            <div class="qr-kpi">
+                <span>UNIQUE QR</span>
+                <strong>@FormatNumber(dashboard.UniqueQr)</strong>
+                <small>고유 시리얼</small>
+            </div>
+            <div class="qr-kpi">
+                <span>LINE</span>
+                <strong>@DisplayOrDash(dashboard.TopLine)</strong>
+                <small>최다 생산 라인</small>
+            </div>
+            <div class="qr-kpi bad">
+                <span>TOP NG ITEM</span>
+                <strong>@DisplayOrDash(dashboard.TopNgItem)</strong>
+                <small>@dashboard.TopNgItemCount.ToString("N0")건 NG</small>
+            </div>
+        </div>
+
+        <section class="qr-panel">
+            <div class="qr-panel-head">
+                <h2>검사항목 NG Pareto</h2>
+                <div>결과별 등록 @dashboard.ParetoItems.Count.ToString("N0")개 · NG 상위순 정렬</div>
+            </div>
+            <div class="qr-pareto">
+                @if (dashboard.ParetoItems.Count == 0)
+                {
+                    <div class="qr-empty mini">NG 항목이 없습니다.</div>
+                }
+                else
+                {
+                    @foreach (var item in dashboard.ParetoItems)
+                    {
+                        <div class="qr-pareto-row" title="@($"{item.Name}: {item.Count:N0}건")">
+                            <div class="qr-pareto-bar" style="@ParetoStyle(item.Count, dashboard.MaxParetoCount)">
+                                <span>@item.Count.ToString("N0")</span>
+                            </div>
+                            <div class="qr-pareto-label">@item.Name</div>
+                        </div>
+                    }
+                }
+            </div>
+        </section>
+
+        <section class="qr-panel">
+            <div class="qr-panel-head">
+                <h2>검사 이력</h2>
+                <div>행 클릭 시 검사 상세를 펼칩니다.</div>
+            </div>
+
+            <div class="qr-filterbar">
+                <input class="qr-input"
+                       placeholder="QR / 시리얼 검색..."
+                       @bind="_search"
+                       @bind:event="oninput" />
+
+                <select class="qr-input select" @bind="_lineFilter">
+                    <option value="">전체 Line</option>
+                    @foreach (var line in LineOptions())
+                    {
+                        <option value="@line">@line</option>
+                    }
+                </select>
+
+                <select class="qr-input select wide" @bind="_equipmentFilter">
+                    <option value="">전체 설비(raw)</option>
+                    @foreach (var eq in EquipmentOptions())
+                    {
+                        <option value="@eq">@eq</option>
+                    }
+                </select>
+
+                <select class="qr-input select wide" @bind="_itemFilter">
+                    <option value="">전체 항목</option>
+                    @foreach (var item in ItemOptions())
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </select>
+
+                <label class="qr-check">
+                    <input type="checkbox" @bind="_failOnly" />
+                    <span>FAIL만 보기</span>
+                </label>
+
+                <button class="qr-btn ghost" type="button" @onclick="ClearFilters">필터 초기화</button>
+
+                <div class="qr-filter-summary">
+                    @FormatNumber(dashboard.Total)건 표시 중
+                    @if (_result.TotalRows is not null)
+                    {
+                        <span>· DB total @_result.TotalRows.Value.ToString("N0")</span>
+                    }
+                    @if (_result.HitMaxRows)
+                    {
+                        <span>· Max rows 제한</span>
+                    }
+                </div>
+            </div>
+
+            <div class="qr-history-wrap">
+                <table class="qr-history">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>QR / 시리얼</th>
+                            <th>CH</th>
+                            <th>LINE</th>
+                            <th>VERSION</th>
+                            <th>시작시간</th>
+                            <th>판정</th>
+                            <th>NG건수</th>
+                            <th>NG 항목</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (dashboard.Inspections.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="9" class="qr-no-row">조건에 맞는 검사 이력이 없습니다.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var dateGroup in GroupInspectionsByDate(dashboard.Inspections))
+                            {
+                                bool dateExpanded = _expandedDateKeys.Contains(dateGroup.Key);
+                                <tr class="qr-date-row" @onclick="() => ToggleDateGroup(dateGroup.Key)">
+                                    <td colspan="9">
+                                        <span class="qr-caret">@(dateExpanded ? "▾" : "▸")</span>
+                                        <strong>@dateGroup.Label</strong>
+                                        <span>@dateGroup.Total.ToString("N0")건</span>
+                                        <span class="qr-date-pass">PASS @dateGroup.Pass.ToString("N0")</span>
+                                        <span class="qr-date-fail">FAIL @dateGroup.Fail.ToString("N0")</span>
+                                        @if (!string.IsNullOrWhiteSpace(dateGroup.TimeRange))
+                                        {
+                                            <em>@dateGroup.TimeRange</em>
+                                        }
+                                    </td>
+                                </tr>
+
+                                @if (dateExpanded)
+                                {
+                                    @foreach (var inspection in dateGroup.Inspections)
+                                    {
+                                        bool expanded = _expandedKeys.Contains(inspection.Key);
+                                        <tr class="qr-inspection-row @(inspection.IsFail ? "fail-row" : "pass-row")"
+                                            @onclick="() => ToggleInspection(inspection.Key)">
+                                            <td><span class="qr-caret">@(expanded ? "▾" : "▸")</span>@inspection.Id</td>
+                                            <td class="qr-serial">@DisplayOrDash(inspection.Serial)</td>
+                                            <td>@DisplayOrDash(inspection.Channel)</td>
+                                            <td><span class="qr-line-pill">@DisplayOrDash(inspection.Line)</span></td>
+                                            <td>@DisplayOrDash(inspection.Version)</td>
+                                            <td>@DisplayOrDash(inspection.StartTime)</td>
+                                            <td><span class="qr-result @(inspection.IsFail ? "bad" : "good")">@inspection.ResultLabel</span></td>
+                                            <td>@inspection.NgCountDisplay</td>
+                                            <td>
+                                                @if (inspection.NgItems.Count == 0)
+                                                {
+                                                    <span class="qr-muted">-</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="qr-ng-chip">@string.Join(", ", inspection.NgItems)</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                        @if (expanded)
+                                        {
+                                            <tr class="qr-detail-row">
+                                                <td colspan="9">
+                                                    <div class="qr-detail-meta">
+                                                        <span><b>종료시간</b> @DisplayOrDash(inspection.EndTime)</span>
+                                                        <span><b>총평가항목</b> @inspection.Items.Count.ToString("N0")</span>
+                                                        <span><b>Lot</b> @DisplayOrDash(inspection.Lot)</span>
+                                                        <span><b>Plant</b> @DisplayOrDash(inspection.Plant)</span>
+                                                        <span><b>Model</b> @DisplayOrDash(inspection.Model)</span>
+                                                        <span><b>계측기</b> @DisplayOrDash(inspection.Device)</span>
+                                                        <span><b>설비(raw)</b> @DisplayOrDash(inspection.RawEquipment)</span>
+                                                    </div>
+
+                                                    <div class="qr-item-grid">
+                                                        @if (inspection.Items.Count == 0)
+                                                        {
+                                                            <div class="qr-empty mini">표시할 검사항목 컬럼을 찾지 못했습니다.</div>
+                                                        }
+                                                        else
+                                                        {
+                                                            @foreach (var item in inspection.Items)
+                                                            {
+                                                                <div class="qr-item-card @(item.IsFail ? "fail" : item.IsPass ? "pass" : "")">
+                                                                    <div class="qr-item-head">
+                                                                        <span>@item.Name</span>
+                                                                        <em>@item.StatusLabel</em>
+                                                                    </div>
+                                                                    <strong>@DisplayOrDash(item.Value)</strong>
+                                                                    @if (!string.IsNullOrWhiteSpace(item.Spec))
+                                                                    {
+                                                                        <small>@item.Spec</small>
+                                                                    }
+                                                                </div>
+                                                            }
+                                                        }
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</div>
+
+<style>
+    .qr-dashboard {
+        min-height: calc(100vh - 1.5rem);
+        margin: -0.25rem -0.5rem 0;
+        padding: 0.85rem 1rem 1.4rem;
+        background: #090d14;
+        color: #e5edf8;
+        font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .qr-titlebar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.15rem;
+    }
+
+    .qr-kicker {
+        color: #ff6b63;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: uppercase;
+    }
+
+    .qr-live-dot {
+        display: inline-block;
+        width: 0.45rem;
+        height: 0.45rem;
+        margin-right: 0.42rem;
+        border-radius: 50%;
+        background: #42e18a;
+        box-shadow: 0 0 12px rgba(66, 225, 138, 0.85);
+        vertical-align: 0.05rem;
+    }
+
+    .qr-titlebar h1 {
+        margin: 0.62rem 0 0;
+        color: #eef4ff;
+        font-size: 1.35rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        line-height: 1.1;
+    }
+
+    .qr-subtitle {
+        margin-top: 0.2rem;
+        color: #94a3b8;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    .qr-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+    }
+
+    .qr-connection {
+        color: #7890ad;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.72rem;
+    }
+
+    .qr-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        min-height: 2rem;
+        padding: 0.38rem 0.72rem;
+        border: 1px solid #273449;
+        border-radius: 6px;
+        background: #121a27;
+        color: #d8e4f6;
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .qr-btn:hover:not(:disabled) {
+        border-color: #3b82f6;
+        color: #ffffff;
+    }
+
+    .qr-btn.primary {
+        border-color: #3b82f6;
+        background: #1d4ed8;
+        color: #ffffff;
+    }
+
+    .qr-btn.ghost {
+        background: #0e1520;
+        color: #7e91ac;
+    }
+
+    .qr-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.52;
+    }
+
+    .qr-spinner {
+        display: inline-block;
+        width: 0.8rem;
+        height: 0.8rem;
+        border: 2px solid rgba(255, 255, 255, 0.32);
+        border-top-color: #ffffff;
+        border-radius: 50%;
+        animation: qr-spin 0.75s linear infinite;
+    }
+
+    @@keyframes qr-spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .qr-alert {
+        margin-bottom: 0.75rem;
+        padding: 0.65rem 0.78rem;
+        border: 1px solid #34445c;
+        border-radius: 8px;
+        background: #111827;
+        color: #cbd5e1;
+        font-size: 0.82rem;
+    }
+
+    .qr-alert.danger {
+        border-color: #7f1d1d;
+        background: #1c1014;
+        color: #fecaca;
+    }
+
+    .qr-alert.warning {
+        border-color: #92400e;
+        background: #1f1a10;
+        color: #fde68a;
+    }
+
+    .qr-panel {
+        margin-top: 1rem;
+        border: 1px solid #253246;
+        border-radius: 8px;
+        background: #0d131d;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    }
+
+    .qr-loading,
+    .qr-empty {
+        padding: 1.1rem;
+        color: #93a4bb;
+        font-size: 0.86rem;
+    }
+
+    .qr-empty.mini {
+        padding: 0.85rem;
+        color: #71829a;
+        font-size: 0.78rem;
+    }
+
+    .qr-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 0.68rem;
+    }
+
+    .qr-kpi {
+        min-width: 0;
+        min-height: 5rem;
+        padding: 0.85rem 0.92rem;
+        border: 1px solid #243145;
+        border-radius: 8px;
+        background: #0d121b;
+    }
+
+    .qr-kpi.danger {
+        border-color: #6f272b;
+        background: #171014;
+    }
+
+    .qr-kpi span {
+        display: block;
+        color: #64748b;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.62rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .qr-kpi strong {
+        display: block;
+        margin-top: 0.42rem;
+        overflow: hidden;
+        color: #f8fafc;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: clamp(1.18rem, 1.9vw, 1.7rem);
+        font-weight: 800;
+        line-height: 1.05;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .qr-kpi.good strong {
+        color: #48dd8c;
+    }
+
+    .qr-kpi.bad strong,
+    .qr-kpi.danger strong {
+        color: #ff645e;
+    }
+
+    .qr-kpi small {
+        display: block;
+        margin-top: 0.32rem;
+        overflow: hidden;
+        color: #71829a;
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .qr-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1rem 1.1rem 0.65rem;
+    }
+
+    .qr-panel-head h2 {
+        margin: 0;
+        color: #f8fafc;
+        font-size: 0.9rem;
+        font-weight: 800;
+        letter-spacing: 0;
+    }
+
+    .qr-panel-head div {
+        color: #70839d;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+
+    .qr-pareto {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(4.75rem, 1fr));
+        align-items: end;
+        gap: 0.8rem;
+        min-height: 12.4rem;
+        padding: 0.6rem 1.15rem 1rem;
+        background-image:
+            linear-gradient(to top, rgba(148, 163, 184, 0.09) 1px, transparent 1px);
+        background-size: 100% 25%;
+        background-position: 0 0.6rem;
+    }
+
+    .qr-pareto-row {
+        display: grid;
+        grid-template-rows: 9.7rem 1.2rem;
+        min-width: 0;
+        align-items: end;
+    }
+
+    .qr-pareto-bar {
+        position: relative;
+        width: 52%;
+        min-height: 0.15rem;
+        height: var(--bar-height);
+        margin: 0 auto;
+        border-radius: 4px 4px 0 0;
+        background: rgba(208, 86, 78, 0.55);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .qr-pareto-row:first-child .qr-pareto-bar {
+        background: #d95d55;
+    }
+
+    .qr-pareto-bar span {
+        position: absolute;
+        left: 50%;
+        bottom: calc(100% + 0.25rem);
+        color: #72849e;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.62rem;
+        font-weight: 700;
+        transform: translateX(-50%);
+    }
+
+    .qr-pareto-label {
+        overflow: hidden;
+        color: #92a1b5;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.66rem;
+        font-weight: 700;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .qr-filterbar {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+        padding: 0 1.1rem 0.8rem;
+    }
+
+    .qr-input {
+        height: 2rem;
+        min-width: 14rem;
+        padding: 0.36rem 0.7rem;
+        border: 1px solid #263449;
+        border-radius: 6px;
+        background: #151f2d;
+        color: #dbe8f9;
+        font-size: 0.78rem;
+        outline: none;
+    }
+
+    .qr-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.14);
+    }
+
+    .qr-input.select {
+        min-width: 7.2rem;
+    }
+
+    .qr-input.select.wide {
+        min-width: 11.6rem;
+    }
+
+    .qr-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-height: 2rem;
+        padding: 0 0.75rem;
+        border: 1px solid #263449;
+        border-radius: 6px;
+        background: #101827;
+        color: #d6e2f3;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .qr-check input {
+        accent-color: #647a96;
+    }
+
+    .qr-filter-summary {
+        margin-left: auto;
+        color: #dce8f8;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.72rem;
+        font-weight: 800;
+    }
+
+    .qr-history-wrap {
+        overflow: auto;
+        max-height: calc(100vh - 28rem);
+        min-height: 18rem;
+        padding: 0 1.1rem 1rem;
+    }
+
+    .qr-history {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.78rem;
+        table-layout: fixed;
+    }
+
+    .qr-history th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        padding: 0.58rem 0.65rem;
+        border-bottom: 1px solid #273449;
+        background: #0d131d;
+        color: #657791;
+        font-size: 0.62rem;
+        font-weight: 800;
+        text-align: left;
+        text-transform: uppercase;
+    }
+
+    .qr-history td {
+        overflow: hidden;
+        padding: 0.58rem 0.65rem;
+        border-bottom: 1px solid #1c2736;
+        color: #eef4ff;
+        text-overflow: ellipsis;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .qr-history th:nth-child(1) { width: 8%; }
+    .qr-history th:nth-child(2) { width: 22%; }
+    .qr-history th:nth-child(3) { width: 5%; }
+    .qr-history th:nth-child(4) { width: 7%; }
+    .qr-history th:nth-child(5) { width: 9%; }
+    .qr-history th:nth-child(6) { width: 18%; }
+    .qr-history th:nth-child(7) { width: 9%; }
+    .qr-history th:nth-child(8) { width: 8%; }
+    .qr-history th:nth-child(9) { width: 14%; }
+
+    .qr-inspection-row {
+        cursor: pointer;
+    }
+
+    .qr-inspection-row.fail-row td {
+        background: rgba(66, 31, 42, 0.34);
+    }
+
+    .qr-inspection-row.pass-row td {
+        background: rgba(10, 18, 28, 0.82);
+    }
+
+    .qr-inspection-row:hover td {
+        background: #152131;
+    }
+
+    .qr-caret {
+        display: inline-block;
+        width: 0.9rem;
+        color: #6d7f98;
+    }
+
+    .qr-serial {
+        color: #ffffff !important;
+        font-weight: 800;
+    }
+
+    .qr-line-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.75rem;
+        padding: 0.12rem 0.38rem;
+        border-radius: 5px;
+        background: #1f3762;
+        color: #b9d4ff;
+        font-weight: 800;
+    }
+
+    .qr-result,
+    .qr-ng-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.1rem;
+        padding: 0.12rem 0.44rem;
+        border-radius: 5px;
+        font-size: 0.64rem;
+        font-weight: 900;
+    }
+
+    .qr-result.good {
+        background: #116238;
+        color: #a7f3d0;
+    }
+
+    .qr-result.bad,
+    .qr-ng-chip {
+        background: #6f272b;
+        color: #ffb4b4;
+    }
+
+    .qr-muted {
+        color: #7d8fa6;
+    }
+
+    .qr-detail-row td {
+        padding: 0;
+        background: #0c121b;
+        white-space: normal;
+    }
+
+    .qr-detail-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        padding: 0.85rem 1.85rem 0.7rem;
+        color: #8aa0bd;
+        font-size: 0.72rem;
+    }
+
+    .qr-detail-meta b {
+        margin-right: 0.25rem;
+        color: #dce8f8;
+        font-weight: 900;
+    }
+
+    .qr-item-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(10.6rem, 1fr));
+        gap: 0.48rem;
+        padding: 0 1.85rem 1rem;
+    }
+
+    .qr-item-card {
+        min-height: 3.95rem;
+        padding: 0.62rem 0.7rem;
+        border: 1px solid #253449;
+        border-radius: 6px;
+        background: #111821;
+    }
+
+    .qr-item-card.fail {
+        border-color: #aa3f3f;
+        background: #1a1014;
+    }
+
+    .qr-item-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        color: #a9c3e6;
+        font-size: 0.7rem;
+        font-weight: 900;
+    }
+
+    .qr-item-head em {
+        min-width: 1.55rem;
+        padding: 0.08rem 0.32rem;
+        border-radius: 4px;
+        background: #264c3b;
+        color: #57e89b;
+        font-size: 0.56rem;
+        font-style: normal;
+        text-align: center;
+    }
+
+    .qr-item-card.fail .qr-item-head em {
+        background: #8b2b31;
+        color: #ffc0c0;
+    }
+
+    .qr-item-card strong {
+        display: block;
+        margin-top: 0.28rem;
+        overflow-wrap: anywhere;
+        color: #ffffff;
+        font-size: 0.98rem;
+        font-weight: 900;
+        line-height: 1.15;
+    }
+
+    .qr-item-card small {
+        display: block;
+        margin-top: 0.25rem;
+        overflow: hidden;
+        color: #71829a;
+        font-size: 0.62rem;
+        font-weight: 800;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .qr-no-row {
+        padding: 1.5rem !important;
+        color: #71829a !important;
+        text-align: center;
+    }
+
+    .qr-date-row {
+        cursor: pointer;
+    }
+
+    .qr-date-row td {
+        padding: 0.62rem 0.65rem;
+        border-top: 1px solid #263449;
+        border-bottom: 1px solid #263449;
+        background: #111a28;
+        color: #dce8f8;
+        font-weight: 800;
+        white-space: normal;
+    }
+
+    .qr-date-row strong {
+        margin-right: 0.65rem;
+        color: #ffffff;
+        font-size: 0.86rem;
+    }
+
+    .qr-date-row span:not(.qr-caret),
+    .qr-date-row em {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 0.5rem;
+        color: #8aa0bd;
+        font-size: 0.72rem;
+        font-style: normal;
+        font-weight: 800;
+    }
+
+    .qr-date-pass {
+        color: #57e89b !important;
+    }
+
+    .qr-date-fail {
+        color: #ffb4b4 !important;
+    }
+
+    @@media (max-width: 1200px) {
+        .qr-kpi-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .qr-history-wrap {
+            max-height: none;
+        }
+    }
+
+    @@media (max-width: 760px) {
+        .qr-dashboard {
+            margin: -0.25rem -0.75rem 0;
+            padding: 0.8rem 0.75rem 1rem;
+        }
+
+        .qr-titlebar {
+            flex-direction: column;
+        }
+
+        .qr-actions {
+            justify-content: flex-start;
+            width: 100%;
+        }
+
+        .qr-kpi-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .qr-filterbar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .qr-input,
+        .qr-input.select,
+        .qr-input.select.wide,
+        .qr-check,
+        .qr-btn.ghost,
+        .qr-filter-summary {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .qr-history {
+            min-width: 58rem;
+        }
+    }
+
+    /* Light theme override: keep the dashboard layout, remove dark surfaces and text clipping. */
+    .qr-dashboard {
+        margin: 0 !important;
+        padding: 0.75rem 0 1rem !important;
+        background: #f6f8fb;
+        color: #0f172a;
+    }
+
+    .qr-titlebar {
+        padding: 0 0.25rem;
+    }
+
+    .qr-kicker {
+        color: #b42318;
+    }
+
+    .qr-titlebar h1 {
+        color: #0f172a;
+    }
+
+    .qr-subtitle,
+    .qr-connection,
+    .qr-panel-head div,
+    .qr-empty,
+    .qr-muted {
+        color: #64748b;
+    }
+
+    .qr-btn {
+        border-color: #cbd5e1;
+        background: #ffffff;
+        color: #334155;
+    }
+
+    .qr-btn:hover:not(:disabled) {
+        border-color: #2563eb;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .qr-btn.primary {
+        border-color: #2563eb;
+        background: #2563eb;
+        color: #ffffff;
+    }
+
+    .qr-btn.ghost {
+        border-color: #dbe4ee;
+        background: #f8fafc;
+        color: #475569;
+    }
+
+    .qr-spinner {
+        border-color: rgba(37, 99, 235, 0.22);
+        border-top-color: #2563eb;
+    }
+
+    .qr-alert {
+        border-color: #dbe4ee;
+        background: #ffffff;
+        color: #334155;
+    }
+
+    .qr-alert.danger {
+        border-color: #fecaca;
+        background: #fff5f5;
+        color: #991b1b;
+    }
+
+    .qr-alert.warning {
+        border-color: #fde68a;
+        background: #fffbeb;
+        color: #92400e;
+    }
+
+    .qr-panel,
+    .qr-kpi,
+    .qr-item-card {
+        border-color: #dbe4ee;
+        background: #ffffff;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    }
+
+    .qr-kpi.danger,
+    .qr-item-card.fail {
+        border-color: #fecaca;
+        background: #fff7f7;
+    }
+
+    .qr-kpi span {
+        color: #64748b;
+    }
+
+    .qr-kpi strong,
+    .qr-panel-head h2,
+    .qr-item-card strong,
+    .qr-serial {
+        color: #0f172a !important;
+    }
+
+    .qr-kpi.good strong {
+        color: #15803d !important;
+    }
+
+    .qr-kpi.bad strong,
+    .qr-kpi.danger strong {
+        color: #dc2626 !important;
+    }
+
+    .qr-kpi small,
+    .qr-pareto-bar span,
+    .qr-pareto-label,
+    .qr-no-row {
+        color: #64748b !important;
+    }
+
+    .qr-pareto {
+        background-image: linear-gradient(to top, #e5e7eb 1px, transparent 1px);
+    }
+
+    .qr-pareto-bar {
+        background: #fca5a5;
+    }
+
+    .qr-pareto-row:first-child .qr-pareto-bar {
+        background: #ef4444;
+    }
+
+    .qr-input,
+    .qr-check {
+        border-color: #cbd5e1;
+        background: #ffffff;
+        color: #0f172a;
+    }
+
+    .qr-input::placeholder {
+        color: #94a3b8;
+    }
+
+    .qr-filter-summary {
+        color: #334155;
+    }
+
+    .qr-history-wrap {
+        padding: 0 1rem 1rem;
+        background: #ffffff;
+    }
+
+    .qr-history {
+        min-width: 72rem;
+        background: #ffffff;
+    }
+
+    .qr-history th {
+        border-bottom-color: #cbd5e1;
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .qr-history td {
+        border-bottom-color: #e5e7eb;
+        color: #0f172a;
+    }
+
+    .qr-date-row td {
+        border-top-color: #dbe4ee;
+        border-bottom-color: #cbd5e1;
+        background: #eef4ff;
+        color: #334155;
+    }
+
+    .qr-date-row:hover td {
+        background: #e0ecff;
+    }
+
+    .qr-date-row strong {
+        color: #0f172a;
+    }
+
+    .qr-date-row span:not(.qr-caret),
+    .qr-date-row em {
+        color: #475569;
+    }
+
+    .qr-date-pass {
+        color: #15803d !important;
+    }
+
+    .qr-date-fail {
+        color: #dc2626 !important;
+    }
+
+    .qr-inspection-row.fail-row td {
+        background: #fff1f2;
+    }
+
+    .qr-inspection-row.pass-row td {
+        background: #ffffff;
+    }
+
+    .qr-inspection-row:hover td {
+        background: #f8fafc;
+    }
+
+    .qr-caret {
+        color: #64748b;
+    }
+
+    .qr-line-pill {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .qr-result.good {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .qr-result.bad,
+    .qr-ng-chip {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .qr-detail-row td {
+        background: #f8fafc;
+    }
+
+    .qr-detail-meta {
+        padding: 0.85rem 1rem 0.7rem;
+        color: #475569;
+    }
+
+    .qr-detail-meta b {
+        color: #0f172a;
+    }
+
+    .qr-item-grid {
+        grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+        padding: 0 1rem 1rem;
+    }
+
+    .qr-item-head {
+        color: #1e40af;
+    }
+
+    .qr-item-head em {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .qr-item-card.fail .qr-item-head em {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .qr-item-card small {
+        overflow: visible;
+        color: #64748b;
+        text-overflow: clip;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    @@media (max-width: 760px) {
+        .qr-dashboard {
+            margin: 0 !important;
+            padding: 0.75rem 0 1rem !important;
+        }
+    }
+</style>
+
+@code {
+    private static readonly QrItemDefinition[] ItemDefinitions =
+    [
+        new("FRF", ["frf"]),
+        new("FO", ["fo", "f0"]),
+        new("THD", ["thd"]),
+        new("SPL1", ["spl1", "spl_1"]),
+        new("SPL2", ["spl2", "spl_2"]),
+        new("Implimit", ["implimit", "imp_limit", "impedance_limit"]),
+        new("Imp2kHz", ["imp2khz", "imp_2khz", "imp2k"]),
+        new("Polarity", ["polarity", "polar"]),
+        new("RB_100", ["rb100", "rb_100"]),
+        new("RB_Limit", ["rblimit", "rb_limit"]),
+        new("RB_250", ["rb250", "rb_250"]),
+        new("RB_900", ["rb900", "rb_900"]),
+        new("SEQS_Spectrum", ["seqsspectrum", "seqs_spectrum", "spectrum"]),
+    ];
+
+    private QrBakoDataResult? _result;
+    private List<QrInspection> _inspections = [];
+    private readonly HashSet<string> _expandedKeys = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _expandedDateKeys = new(StringComparer.Ordinal);
+    private string _error = string.Empty;
+    private string _search = string.Empty;
+    private string _lineFilter = string.Empty;
+    private string _equipmentFilter = string.Empty;
+    private string _itemFilter = string.Empty;
+    private int _maxRows;
+    private bool _busy;
+    private bool _exporting;
+    private bool _failOnly;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _maxRows = QrBakoData.DefaultMaxRows;
+        if (QrBakoData.IsConfigured)
+            await LoadAsync();
+    }
+
+    private string ConnectionLabel
+    {
+        get
+        {
+            var s = QrBakoData.Snapshot;
+            return $"{s.Server},{s.Port} / {s.Database} / {s.UserId}";
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        if (_busy) return;
+
+        _busy = true;
+        _error = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            _result = await QrBakoData.FetchAsync(new QrBakoDataQuery { MaxRows = _maxRows });
+            _maxRows = _result.MaxRows;
+            _inspections = BuildInspections(_result);
+            _expandedKeys.Clear();
+            _expandedDateKeys.Clear();
+            if (_inspections.Count > 0)
+            {
+                _expandedKeys.Add(_inspections[0].Key);
+                _expandedDateKeys.Add(_inspections[0].DateKey);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private QrDashboard BuildDashboard()
+    {
+        List<QrInspection> inspections = FilterInspections();
+        int total = inspections.Count;
+        int fail = inspections.Count(x => x.IsFail);
+        int pass = total - fail;
+
+        List<QrParetoItem> pareto = inspections
+            .SelectMany(ParetoItemsFor)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .Select(g => new QrParetoItem(g.Key, g.Count()))
+            .OrderByDescending(x => x.Count)
+            .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        QrParetoItem? topNg = pareto.FirstOrDefault();
+
+        string topLine = inspections
+            .Where(x => !string.IsNullOrWhiteSpace(x.Line))
+            .GroupBy(x => x.Line, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(g => g.Count())
+            .ThenBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.Key)
+            .FirstOrDefault() ?? string.Empty;
+
+        int uniqueQr = inspections
+            .Where(x => !string.IsNullOrWhiteSpace(x.Serial))
+            .Select(x => x.Serial)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+
+        return new QrDashboard(
+            inspections,
+            pareto,
+            total,
+            pass,
+            fail,
+            total == 0 ? 0 : pass / (double)total,
+            total == 0 ? 0 : fail / (double)total,
+            uniqueQr,
+            topLine,
+            topNg?.Name ?? string.Empty,
+            topNg?.Count ?? 0,
+            pareto.Count == 0 ? 0 : pareto.Max(x => x.Count));
+    }
+
+    private List<QrInspection> FilterInspections()
+    {
+        IEnumerable<QrInspection> query = _inspections;
+
+        string search = (_search ?? string.Empty).Trim();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(x =>
+                ContainsIgnoreCase(x.Id, search)
+                || ContainsIgnoreCase(x.Serial, search)
+                || ContainsIgnoreCase(x.Line, search)
+                || ContainsIgnoreCase(x.Model, search)
+                || ContainsIgnoreCase(x.Lot, search)
+                || x.NgItems.Any(item => ContainsIgnoreCase(item, search))
+                || x.Row.Values.Any(value => ContainsIgnoreCase(value, search)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(_lineFilter))
+            query = query.Where(x => string.Equals(x.Line, _lineFilter, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(_equipmentFilter))
+        {
+            query = query.Where(x =>
+                string.Equals(x.RawEquipment, _equipmentFilter, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(x.Device, _equipmentFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(_itemFilter))
+        {
+            query = query.Where(x =>
+                x.Items.Any(item => string.Equals(item.Name, _itemFilter, StringComparison.OrdinalIgnoreCase))
+                || x.NgItems.Any(item => string.Equals(item, _itemFilter, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        if (_failOnly)
+            query = query.Where(x => x.IsFail);
+
+        return query.ToList();
+    }
+
+    private static List<QrDateGroup> GroupInspectionsByDate(IReadOnlyList<QrInspection> inspections) =>
+        inspections
+            .GroupBy(x => x.DateKey, StringComparer.Ordinal)
+            .Select(g =>
+            {
+                List<QrInspection> rows = g.ToList();
+                string label = rows.FirstOrDefault()?.DateLabel ?? "날짜 없음";
+                string minTime = rows.Select(x => x.TimeOnly).Where(x => !string.IsNullOrWhiteSpace(x)).DefaultIfEmpty(string.Empty).Min() ?? string.Empty;
+                string maxTime = rows.Select(x => x.TimeOnly).Where(x => !string.IsNullOrWhiteSpace(x)).DefaultIfEmpty(string.Empty).Max() ?? string.Empty;
+                string range = string.IsNullOrWhiteSpace(minTime) || string.IsNullOrWhiteSpace(maxTime)
+                    ? string.Empty
+                    : minTime == maxTime ? minTime : $"{minTime} ~ {maxTime}";
+                int fail = rows.Count(x => x.IsFail);
+
+                return new QrDateGroup(
+                    g.Key,
+                    label,
+                    rows,
+                    rows.Count,
+                    rows.Count - fail,
+                    fail,
+                    range);
+            })
+            .OrderByDescending(x => x.Key, StringComparer.Ordinal)
+            .ToList();
+
+    private static List<QrInspection> BuildInspections(QrBakoDataResult result)
+    {
+        var map = new QrColumnMap(result.Columns);
+        var rows = new List<QrInspection>(result.Rows.Count);
+
+        for (int i = 0; i < result.Rows.Count; i++)
+        {
+            rows.Add(BuildInspection(result.Rows[i], i, map));
+        }
+
+        return rows;
+    }
+
+    private static QrInspection BuildInspection(QrBakoDataRow row, int index, QrColumnMap map)
+    {
+        List<QrInspectionItem> items = BuildItems(row, map);
+        string failText = map.FirstValue(row,
+            "NG Item", "NGItem", "NG 항목", "NG항목", "Fail Item", "FailItem",
+            "Fail Name", "FailName", "NG Name", "NGName", "NG Code", "NGCode");
+
+        List<string> ngItems = ResolveNgItems(failText, items);
+        string judge = map.FirstValue(row,
+            "Result", "Judge", "Judgement", "Judgment", "Total Result", "Test Result",
+            "판정", "OKNG", "PassFail", "Pass Fail");
+
+        bool judgeFail = IsFailText(judge);
+        bool itemFail = items.Any(x => x.IsFail);
+        bool isFail = judgeFail || itemFail || ngItems.Count > 0;
+        if (ngItems.Count == 0 && itemFail)
+            ngItems = items.Where(x => x.IsFail).Select(x => x.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+        string id = FirstNonEmpty(
+            map.FirstValue(row, "ID", "Id", "No", "Seq", "SEQ", "Index"),
+            (index + 1).ToString(CultureInfo.InvariantCulture));
+
+        string serial = map.FirstValue(row,
+            "QR", "QR Code", "QRCode", "Serial", "Serial No", "SerialNo", "Barcode", "Barcode No", "BarcodeNo", "SN");
+
+        string startTime = FirstNonEmpty(
+            map.FirstValue(row, "Test Time", "TestTime", "Start Time", "StartTime", "시작시간", "Begin Time", "BeginTime", "Date Time", "DateTime"),
+            map.Value(row, map.FindContaining("test", "time")));
+        var dateParts = ResolveInspectionDate(startTime);
+
+        string endTime = map.FirstValue(row, "End Time", "EndTime", "Finish Time", "FinishTime", "종료시간");
+        string ngCountText = FirstNonEmpty(
+            map.FirstValue(row, "NG Count", "NGCount", "NG건수", "Fail Count", "FailCount"),
+            ngItems.Count.ToString(CultureInfo.InvariantCulture));
+
+        return new QrInspection
+        {
+            Row = row,
+            Key = $"{index}:{id}:{serial}:{startTime}",
+            Id = id,
+            Serial = serial,
+            Channel = map.FirstValue(row, "CH", "Ch", "Channel"),
+            Line = map.FirstValue(row, "Line", "LINE", "Line No", "LineNo", "생산 라인"),
+            Version = map.FirstValue(row, "Version", "Ver", "VERSION", "SW Version", "SWVersion"),
+            StartTime = startTime,
+            DateKey = dateParts.Key,
+            DateLabel = dateParts.Label,
+            TimeOnly = dateParts.TimeOnly,
+            EndTime = endTime,
+            Judge = judge,
+            Lot = map.FirstValue(row, "Lot", "LOT", "Lot No", "LotNo"),
+            Plant = map.FirstValue(row, "Plant", "PLANT"),
+            Model = map.FirstValue(row, "Model", "MODEL", "Model Name", "ModelName"),
+            Device = map.FirstValue(row, "Instrument", "Tester", "Machine", "Equipment", "계측기", "Device"),
+            RawEquipment = map.FirstValue(row, "설비(raw)", "Equipment Raw", "EquipmentRaw", "Raw Equipment", "RawEquipment", "Raw", "RAW"),
+            Items = items,
+            NgItems = ngItems,
+            NgCountDisplay = ngCountText,
+            IsFail = isFail,
+        };
+    }
+
+    private static List<QrInspectionItem> BuildItems(QrBakoDataRow row, QrColumnMap map)
+    {
+        var items = new List<QrInspectionItem>();
+        var used = new HashSet<int>();
+
+        foreach (var definition in ItemDefinitions)
+        {
+            int? valueIndex = map.Find(definition.Aliases);
+            valueIndex ??= map.FindValueColumn(definition.Aliases);
+            int? statusIndex = map.FindStatusColumn(definition.Aliases);
+            int? specIndex = map.FindSpecColumn(definition.Aliases);
+            int? lowerIndex = map.FindLimitColumn(definition.Aliases, ["lsl", "lower", "low", "min"]);
+            int? upperIndex = map.FindLimitColumn(definition.Aliases, ["usl", "upper", "high", "max"]);
+
+            string value = FirstNonEmpty(map.Value(row, valueIndex), map.Value(row, statusIndex));
+            string statusText = map.Value(row, statusIndex);
+            string explicitSpec = map.Value(row, specIndex);
+            string lower = map.Value(row, lowerIndex);
+            string upper = map.Value(row, upperIndex);
+            string spec = BuildSpecText(explicitSpec, lower, upper);
+
+            if (string.IsNullOrWhiteSpace(value)
+                && string.IsNullOrWhiteSpace(statusText)
+                && string.IsNullOrWhiteSpace(spec))
+                continue;
+
+            QrItemState state = ClassifyItemState(FirstNonEmpty(statusText, value));
+            items.Add(new QrInspectionItem(
+                definition.Name,
+                value,
+                spec,
+                state));
+
+            AddIfPresent(used, valueIndex);
+            AddIfPresent(used, statusIndex);
+            AddIfPresent(used, specIndex);
+            AddIfPresent(used, lowerIndex);
+            AddIfPresent(used, upperIndex);
+        }
+
+        foreach (int columnIndex in map.ColumnIndexes)
+        {
+            if (used.Contains(columnIndex) || map.IsMetadataColumn(columnIndex))
+                continue;
+
+            string columnName = map.Columns[columnIndex].Name;
+            string value = map.Value(row, columnIndex);
+            if (string.IsNullOrWhiteSpace(value) || !LooksLikeInspectionItem(columnName, value))
+                continue;
+
+            QrItemState state = ClassifyItemState(value);
+            items.Add(new QrInspectionItem(TrimItemName(columnName), value, string.Empty, state));
+            used.Add(columnIndex);
+        }
+
+        return items
+            .GroupBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
+            .ToList();
+    }
+
+    private IReadOnlyList<string> LineOptions() =>
+        _inspections
+            .Select(x => x.Line)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private IReadOnlyList<string> EquipmentOptions() =>
+        _inspections
+            .SelectMany(x => new[] { x.RawEquipment, x.Device })
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private IReadOnlyList<string> ItemOptions() =>
+        _inspections
+            .SelectMany(x => x.Items.Select(item => item.Name).Concat(x.NgItems))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private void ToggleInspection(string key)
+    {
+        if (!_expandedKeys.Add(key))
+            _expandedKeys.Remove(key);
+    }
+
+    private void ToggleDateGroup(string key)
+    {
+        if (!_expandedDateKeys.Add(key))
+            _expandedDateKeys.Remove(key);
+    }
+
+    private void ClearFilters()
+    {
+        _search = string.Empty;
+        _lineFilter = string.Empty;
+        _equipmentFilter = string.Empty;
+        _itemFilter = string.Empty;
+        _failOnly = false;
+    }
+
+    private async Task ExportCsvAsync()
+    {
+        if (_exporting || _result is null || _result.Columns.Count == 0) return;
+
+        _exporting = true;
+        _error = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var rows = new List<IEnumerable<string?>>();
+            rows.Add(_result.Columns.Select(c => c.Name));
+            rows.AddRange(FilterInspections().Select(r => r.Row.Values.Select(v => (string?)v)));
+
+            byte[] bytes = CsvExportUtility.Build(rows);
+            string fileName = $"QR_BAKO_DATA_BKTD_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            await BrowserDownload.DownloadBytesAsync(JS, fileName, bytes, CsvExportUtility.ContentType);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _exporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private static List<string> ResolveNgItems(string failText, IReadOnlyList<QrInspectionItem> items)
+    {
+        var result = new List<string>();
+        string normalizedFailText = NormalizeColumnName(failText);
+
+        if (!string.IsNullOrWhiteSpace(normalizedFailText))
+        {
+            foreach (var definition in ItemDefinitions)
+            {
+                if (definition.Aliases.Any(alias => normalizedFailText.Contains(NormalizeColumnName(alias), StringComparison.OrdinalIgnoreCase)))
+                    result.Add(definition.Name);
+            }
+
+            if (result.Count == 0)
+            {
+                result.AddRange(failText
+                    .Split([',', ';', '/', '|', '\r', '\n', '\t'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Where(x => !string.Equals(x, "-", StringComparison.OrdinalIgnoreCase)));
+            }
+        }
+
+        result.AddRange(items.Where(x => x.IsFail).Select(x => x.Name));
+
+        return result
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static string BuildSpecText(string explicitSpec, string lower, string upper)
+    {
+        if (!string.IsNullOrWhiteSpace(lower) || !string.IsNullOrWhiteSpace(upper))
+            return $"spec {DisplayOrDash(lower)} ~ {DisplayOrDash(upper)}";
+
+        if (string.IsNullOrWhiteSpace(explicitSpec))
+            return string.Empty;
+
+        string spec = explicitSpec.Trim();
+        return spec.StartsWith("spec", StringComparison.OrdinalIgnoreCase) ? spec : $"spec {spec}";
+    }
+
+    private static QrItemState ClassifyItemState(string value)
+    {
+        if (IsFailText(value)) return QrItemState.Fail;
+        if (IsPassText(value)) return QrItemState.Pass;
+        return QrItemState.Unknown;
+    }
+
+    private static bool IsFailText(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        string text = value.Trim();
+        return text.Contains("FAIL", StringComparison.OrdinalIgnoreCase)
+            || text.Equals("NG", StringComparison.OrdinalIgnoreCase)
+            || text.Contains(" NG", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("N/G", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("REJECT", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("불량", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsPassText(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        string text = value.Trim();
+        return text.Contains("PASS", StringComparison.OrdinalIgnoreCase)
+            || text.Equals("OK", StringComparison.OrdinalIgnoreCase)
+            || text.Contains(" OK", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("GOOD", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("양품", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool LooksLikeInspectionItem(string columnName, string value)
+    {
+        string normalized = NormalizeColumnName(columnName);
+        if (normalized.Length == 0)
+            return false;
+
+        if (normalized.Contains("spec", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("time", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("date", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("serial", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("barcode", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("version", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (IsPassText(value) || IsFailText(value))
+            return true;
+
+        return value.Any(char.IsDigit)
+            && normalized.Length <= 24
+            && !normalized.Contains("count", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string TrimItemName(string columnName)
+    {
+        string name = columnName.Trim();
+        foreach (string suffix in new[] { " Value", "_Value", " Result", "_Result", " Judge", "_Judge" })
+        {
+            if (name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                return name[..^suffix.Length].Trim();
+        }
+
+        return name;
+    }
+
+    private static void AddIfPresent(HashSet<int> set, int? index)
+    {
+        if (index is int i)
+            set.Add(i);
+    }
+
+    private static bool ContainsIgnoreCase(string value, string query) =>
+        !string.IsNullOrWhiteSpace(value)
+        && value.Contains(query, StringComparison.OrdinalIgnoreCase);
+
+    private static string FirstNonEmpty(params string[] values) =>
+        values.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? string.Empty;
+
+    private static string FormatNumber(int value) => value.ToString("N0", CultureInfo.CurrentCulture);
+
+    private static string FormatPercent(double value) => value.ToString("P1", CultureInfo.CurrentCulture);
+
+    private static string DisplayOrDash(string value) =>
+        string.IsNullOrWhiteSpace(value) ? "-" : value.Trim();
+
+    private static (string Key, string Label, string TimeOnly) ResolveInspectionDate(string value)
+    {
+        string text = value?.Trim() ?? string.Empty;
+        if (DateTime.TryParse(text, CultureInfo.CurrentCulture, DateTimeStyles.AssumeLocal, out DateTime current)
+            || DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out current))
+        {
+            return (
+                current.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                current.ToString("yyyy-MM-dd (ddd)", CultureInfo.CurrentCulture),
+                current.ToString("HH:mm:ss", CultureInfo.InvariantCulture));
+        }
+
+        if (text.Length >= 10)
+        {
+            string dateText = text[..10].Replace('/', '-').Replace('.', '-');
+            if (DateTime.TryParseExact(dateText, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date))
+            {
+                string timeOnly = text.Length >= 19 ? text.Substring(11, 8) : string.Empty;
+                return (
+                    date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    date.ToString("yyyy-MM-dd (ddd)", CultureInfo.CurrentCulture),
+                    timeOnly);
+            }
+        }
+
+        return ("0000-00-00", "날짜 없음", string.Empty);
+    }
+
+    private static string ParetoStyle(int count, int max)
+    {
+        double pct = max <= 0 ? 0 : Math.Clamp(count / (double)max, 0.03, 1.0);
+        return $"--bar-height:{(pct * 9.2).ToString("0.###", CultureInfo.InvariantCulture)}rem;";
+    }
+
+    private static IEnumerable<string> ParetoItemsFor(QrInspection inspection) =>
+        inspection.NgItems.Count == 0 && inspection.IsFail
+            ? new[] { "미분류" }
+            : inspection.NgItems;
+
+    private static string NormalizeColumnName(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        return new string(value
+            .Where(char.IsLetterOrDigit)
+            .Select(char.ToLowerInvariant)
+            .ToArray());
+    }
+
+    private sealed class QrColumnMap
+    {
+        private static readonly string[] MetadataNames =
+        [
+            "id", "no", "seq", "index", "qr", "qrcode", "serial", "serialno", "barcode", "barcodeno", "sn",
+            "ch", "channel", "line", "lineno", "version", "ver", "testtime", "starttime", "begintime",
+            "datetime", "endtime", "finishtime", "result", "judge", "judgement", "judgment", "totalresult",
+            "testresult", "okng", "passfail", "ngitem", "failitem", "ngname", "failname", "ngcode",
+            "failcode", "ngcount", "failcount", "lot", "lotno", "plant", "model", "modelname",
+            "instrument", "tester", "machine", "equipment", "device", "raw", "equipmentraw", "rawequipment"
+        ];
+
+        private readonly Dictionary<string, int> _exact = new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _metadata = new(MetadataNames, StringComparer.OrdinalIgnoreCase);
+
+        public QrColumnMap(IReadOnlyList<QrBakoDataColumn> columns)
+        {
+            Columns = columns;
+            for (int i = 0; i < columns.Count; i++)
+            {
+                string key = NormalizeColumnName(columns[i].Name);
+                if (!string.IsNullOrWhiteSpace(key) && !_exact.ContainsKey(key))
+                    _exact.Add(key, i);
+            }
+        }
+
+        public IReadOnlyList<QrBakoDataColumn> Columns { get; }
+
+        public IEnumerable<int> ColumnIndexes => Enumerable.Range(0, Columns.Count);
+
+        public int? Find(params string[] candidates)
+        {
+            foreach (string candidate in candidates)
+            {
+                string key = NormalizeColumnName(candidate);
+                if (!string.IsNullOrWhiteSpace(key) && _exact.TryGetValue(key, out int index))
+                    return index;
+            }
+
+            return null;
+        }
+
+        public int? FindContaining(params string[] tokens)
+        {
+            string[] normalizedTokens = tokens
+                .Select(NormalizeColumnName)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToArray();
+
+            if (normalizedTokens.Length == 0)
+                return null;
+
+            for (int i = 0; i < Columns.Count; i++)
+            {
+                string name = NormalizeColumnName(Columns[i].Name);
+                if (normalizedTokens.All(token => name.Contains(token, StringComparison.OrdinalIgnoreCase)))
+                    return i;
+            }
+
+            return null;
+        }
+
+        public int? FindValueColumn(IReadOnlyList<string> aliases) =>
+            FindColumnByAliasAndSuffix(aliases, ["value", "val", "data", "measure", "meas"]);
+
+        public int? FindStatusColumn(IReadOnlyList<string> aliases) =>
+            FindColumnByAliasAndSuffix(aliases, ["judge", "judgement", "judgment", "result", "status", "okng", "passfail"]);
+
+        public int? FindSpecColumn(IReadOnlyList<string> aliases) =>
+            FindColumnByAliasAndSuffix(aliases, ["spec", "std", "standard"]);
+
+        public int? FindLimitColumn(IReadOnlyList<string> aliases, IReadOnlyList<string> suffixes) =>
+            FindColumnByAliasAndSuffix(aliases, suffixes);
+
+        public string FirstValue(QrBakoDataRow row, params string[] aliases) =>
+            Value(row, Find(aliases));
+
+        public string Value(QrBakoDataRow row, int? index)
+        {
+            if (index is not int i || i < 0 || i >= row.Values.Count)
+                return string.Empty;
+
+            return row.Values[i]?.Trim() ?? string.Empty;
+        }
+
+        public bool IsMetadataColumn(int index)
+        {
+            if (index < 0 || index >= Columns.Count)
+                return true;
+
+            string normalized = NormalizeColumnName(Columns[index].Name);
+            return _metadata.Contains(normalized)
+                || normalized.Contains("time", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("date", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private int? FindColumnByAliasAndSuffix(IReadOnlyList<string> aliases, IReadOnlyList<string> suffixes)
+        {
+            foreach (string alias in aliases)
+            {
+                string normalizedAlias = NormalizeColumnName(alias);
+                if (string.IsNullOrWhiteSpace(normalizedAlias))
+                    continue;
+
+                foreach (string suffix in suffixes)
+                {
+                    string normalizedSuffix = NormalizeColumnName(suffix);
+                    foreach (var pair in _exact)
+                    {
+                        string name = pair.Key;
+                        if (name == normalizedAlias + normalizedSuffix
+                            || name == normalizedSuffix + normalizedAlias
+                            || (name.Contains(normalizedAlias, StringComparison.OrdinalIgnoreCase)
+                                && name.Contains(normalizedSuffix, StringComparison.OrdinalIgnoreCase)))
+                            return pair.Value;
+                    }
+                }
+            }
+
+            return null;
+        }
+    }
+
+    private sealed record QrItemDefinition(string Name, string[] Aliases);
+
+    private sealed record QrInspectionItem(string Name, string Value, string Spec, QrItemState State)
+    {
+        public bool IsFail => State == QrItemState.Fail;
+        public bool IsPass => State == QrItemState.Pass;
+        public string StatusLabel => State switch
+        {
+            QrItemState.Fail => "NG",
+            QrItemState.Pass => "OK",
+            _ => "-",
+        };
+    }
+
+    private sealed class QrInspection
+    {
+        public required QrBakoDataRow Row { get; init; }
+        public string Key { get; init; } = string.Empty;
+        public string Id { get; init; } = string.Empty;
+        public string Serial { get; init; } = string.Empty;
+        public string Channel { get; init; } = string.Empty;
+        public string Line { get; init; } = string.Empty;
+        public string Version { get; init; } = string.Empty;
+        public string StartTime { get; init; } = string.Empty;
+        public string DateKey { get; init; } = "0000-00-00";
+        public string DateLabel { get; init; } = "날짜 없음";
+        public string TimeOnly { get; init; } = string.Empty;
+        public string EndTime { get; init; } = string.Empty;
+        public string Judge { get; init; } = string.Empty;
+        public string Lot { get; init; } = string.Empty;
+        public string Plant { get; init; } = string.Empty;
+        public string Model { get; init; } = string.Empty;
+        public string Device { get; init; } = string.Empty;
+        public string RawEquipment { get; init; } = string.Empty;
+        public List<QrInspectionItem> Items { get; init; } = [];
+        public List<string> NgItems { get; init; } = [];
+        public string NgCountDisplay { get; init; } = "0";
+        public bool IsFail { get; init; }
+        public string ResultLabel => IsFail ? "FAIL" : "PASS";
+    }
+
+    private sealed record QrParetoItem(string Name, int Count);
+
+    private sealed record QrDateGroup(
+        string Key,
+        string Label,
+        List<QrInspection> Inspections,
+        int Total,
+        int Pass,
+        int Fail,
+        string TimeRange);
+
+    private sealed record QrDashboard(
+        List<QrInspection> Inspections,
+        List<QrParetoItem> ParetoItems,
+        int Total,
+        int Pass,
+        int Fail,
+        double PassRate,
+        double FailRate,
+        int UniqueQr,
+        string TopLine,
+        string TopNgItem,
+        int TopNgItemCount,
+        int MaxParetoCount);
+
+    private enum QrItemState
+    {
+        Unknown,
+        Pass,
+        Fail,
+    }
+}

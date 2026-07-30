@@ -1,0 +1,233 @@
+{
+  "sourceFileId": 844,
+  "sourceFile": "69. TIU L5S3-01 R Result check Coil rating -  date 2026.02.11_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\69. TIU L5S3-01 R Result check Coil rating -  date 2026.02.11_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "01.12",
+    "sheetRowCount": 21,
+    "sheetCellCount": 61,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 4
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "01.12!2",
+      "sheetName": "01.12",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] RESULT CHECK COIL RATING | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "01.12!3",
+      "sheetName": "01.12",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | Date | 2026-02-11 00:00:00"
+    },
+    {
+      "rowId": "01.12!4",
+      "sheetName": "01.12",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "01.12!5",
+      "sheetName": "01.12",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "01.12!6",
+      "sheetName": "01.12",
+      "rowNumber": 6,
+      "rowText": "| - Check Coil rating"
+    },
+    {
+      "rowId": "01.12!7",
+      "sheetName": "01.12",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "01.12!8",
+      "sheetName": "01.12",
+      "rowNumber": 8,
+      "rowText": "| - Check weight coil and make coil rating"
+    },
+    {
+      "rowId": "01.12!9",
+      "sheetName": "01.12",
+      "rowNumber": 9,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "01.12!10",
+      "sheetName": "01.12",
+      "rowNumber": 10,
+      "rowText": "| 1. Result weight coil"
+    },
+    {
+      "rowId": "01.12!11",
+      "sheetName": "01.12",
+      "rowNumber": 11,
+      "rowText": "| | Date | No | Result (mg) | No | Result (mg)"
+    },
+    {
+      "rowId": "01.12!12",
+      "sheetName": "01.12",
+      "rowNumber": 12,
+      "rowText": "| | 2026-02-11 00:00:00 | 1 | 1.9 | 11 | 1.9"
+    },
+    {
+      "rowId": "01.12!13",
+      "sheetName": "01.12",
+      "rowNumber": 13,
+      "rowText": "| | | 2 | 1.9 | 12 | 2"
+    },
+    {
+      "rowId": "01.12!25",
+      "sheetName": "01.12",
+      "rowNumber": 25,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-844-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] RESULT CHECK COIL RATING | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Check Coil rating / | II. Content. / | - Check weight coil and make coil rating / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "coating"
+          ],
+          "changedFactor": "69. TIU L5S3-01 R Result check Coil rating - date 2026.02.11",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "01.12!11",
+            "01.12!2",
+            "01.12!21",
+            "01.12!5",
+            "01.12!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "01.12!21"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 63569,
+              "condition": "Result (mg)",
+              "spec": "",
+              "min": 1.9,
+              "max": 1.9,
+              "avg": 1.9,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "01.12!21"
+              ]
+            },
+            {
+              "statId": 63570,
+              "condition": "Result (mg)",
+              "spec": "",
+              "min": 1.8,
+              "max": 2.0,
+              "avg": 1.90588235,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "01.12!21"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "1. Result weight coil",
+          "comparisonRows": [
+            "01.12!11"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 63571,
+              "condition": "1. Result weight coil / Result (mg)",
+              "spec": "",
+              "min": 1.8,
+              "max": 2.0,
+              "avg": 1.9,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "01.12!11"
+              ]
+            },
+            {
+              "statId": 63572,
+              "condition": "1. Result weight coil / Result (mg)",
+              "spec": "",
+              "min": 1.8,
+              "max": 2.0,
+              "avg": 1.9142857142857144,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "01.12!11"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "01.12!11",
+        "01.12!2",
+        "01.12!21",
+        "01.12!5",
+        "01.12!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "01.12!11",
+      "01.12!2",
+      "01.12!21",
+      "01.12!5",
+      "01.12!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

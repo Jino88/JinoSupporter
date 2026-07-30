@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 782,
+  "sourceFile": "60. BRS-161014 Report check reason NG solder weak Date 16.8.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\782.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 782,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable source rows but the changed-factor and subgroup grouping are semantically incorrect.",
+    "issues": [
+      "Changed factor conflates machines, process types, and missing baseline.",
+      "AWF #1-#5 grouping is not preserved in several subresults.",
+      "Rows 39-47 are omitted from outcome evidence and conclusion.",
+      "Metric header rows 21-22 are not cited for NG definitions.",
+      "Repair heating set point conclusion is not represented."
+    ],
+    "requiredUserQuestions": [
+      "Should the final changed factor be AWF/heating set point repair, separate lot frame, or both?",
+      "Should post-repair 0/300 be treated as a separate after-repair outcome?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor around the actual investigation conditions.",
+      "Preserve AWF number, machine, lot frame, and repair status as subgroup keys.",
+      "Add rows 21-22 and 39-47 to cited evidence where used.",
+      "Correct subresult condition labels for AWF #1-#5 and Machine 1/2.",
+      "Represent row 47 conclusion and post-repair result explicitly."
+    ],
+    "evidencePolicy": "Current citations exist but are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3745,
+    "output_tokens": 790,
+    "total_tokens": 4535
+  }
+}

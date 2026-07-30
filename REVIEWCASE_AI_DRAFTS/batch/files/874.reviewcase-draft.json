@@ -1,0 +1,198 @@
+{
+  "sourceFileId": 874,
+  "sourceFile": "73. BRS-161014  Report test find reason NG Frame damage  date 3.11.2024 line #3_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\73. BRS-161014  Report test find reason NG Frame damage  date 3.11.2024 line #3_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "3.11",
+    "sheetRowCount": 15,
+    "sheetCellCount": 44,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "3.11!2",
+      "sheetName": "3.11",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT CHEK REASON NG FRAME DAMAGE - BRS-161016 | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "3.11!3",
+      "sheetName": "3.11",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | Date | 2024-11-03 00:00:00"
+    },
+    {
+      "rowId": "3.11!4",
+      "sheetName": "3.11",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | Marker | Le"
+    },
+    {
+      "rowId": "3.11!5",
+      "sheetName": "3.11",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "3.11!6",
+      "sheetName": "3.11",
+      "rowNumber": 6,
+      "rowText": "| - Find reason NG frame damage"
+    },
+    {
+      "rowId": "3.11!7",
+      "sheetName": "3.11",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "3.11!8",
+      "sheetName": "3.11",
+      "rowNumber": 8,
+      "rowText": "| - Checking process happen NG frame damage"
+    },
+    {
+      "rowId": "3.11!16",
+      "sheetName": "3.11",
+      "rowNumber": 16,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "3.11!17",
+      "sheetName": "3.11",
+      "rowNumber": 17,
+      "rowText": "| | 1. RESULT CHECK PROCESS VISION FS"
+    },
+    {
+      "rowId": "3.11!18",
+      "sheetName": "3.11",
+      "rowNumber": 18,
+      "rowText": "| | Date | Line | Type | | Input | OK | Vision FS | | Total NG | NG Rate | Note"
+    },
+    {
+      "rowId": "3.11!19",
+      "sheetName": "3.11",
+      "rowNumber": 19,
+      "rowText": "| | | | | | | | Frame damage | Other"
+    },
+    {
+      "rowId": "3.11!20",
+      "sheetName": "3.11",
+      "rowNumber": 20,
+      "rowText": "| | 2024-11-03 00:00:00 | C2-6A | Test | | 1547 | 1545 | 2 | 0 | 2 | 0.00129282 | Run all process Don’t remove semi frame+coil tray"
+    },
+    {
+      "rowId": "3.11!21",
+      "sheetName": "3.11",
+      "rowNumber": 21,
+      "rowText": "| | | | Normal | | 1500 | 1487 | 13 | 0 | 13 | 0.00866667"
+    },
+    {
+      "rowId": "3.11!22",
+      "sheetName": "3.11",
+      "rowNumber": 22,
+      "rowText": "| | - Result check reaon NG Frame damage reaon main by remove semi frorm JIG to tray stock happen NG frame damage"
+    },
+    {
+      "rowId": "3.11!25",
+      "sheetName": "3.11",
+      "rowNumber": 25,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-874-rc-1",
+      "reviewTitle": "| REPORT CHEK REASON NG FRAME DAMAGE - BRS-161016 | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Find reason NG frame damage / | II. Content. / | - Checking process happen NG frame damage / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Test",
+          "baselineCondition": "Normal",
+          "changedCondition": "Test",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "3.11!2",
+            "3.11!20",
+            "3.11!21",
+            "3.11!5",
+            "3.11!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "1. RESULT CHECK PROCESS VISION FS",
+          "comparisonRows": [
+            "3.11!20",
+            "3.11!21"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 4833,
+              "controlCondition": "Normal",
+              "testCondition": "Test",
+              "control": {
+                "input": 1500.0,
+                "ng": 13.0,
+                "ratePercent": 0.866667
+              },
+              "test": {
+                "input": 1547.0,
+                "ng": 2.0,
+                "ratePercent": 0.129282
+              },
+              "deltaRatePercentPoint": -0.737385,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "3.11!20",
+                "3.11!21"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "3.11!2",
+        "3.11!20",
+        "3.11!21",
+        "3.11!5",
+        "3.11!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "3.11!2",
+      "3.11!20",
+      "3.11!21",
+      "3.11!5",
+      "3.11!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

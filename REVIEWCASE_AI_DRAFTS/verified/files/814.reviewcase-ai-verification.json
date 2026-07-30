@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 814,
+  "sourceFile": "64. TIU C11-20 Report test machine AWF improve NG AI coil & SPot offset 2026.02.25_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\814.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 814,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The main comparison appears valid, but outcome and purpose citations need tightening before final evidence use.",
+    "issues": [
+      "Outcome section header rows are not cited for AI coil and spot welding metrics.",
+      "Purpose text row is referenced in the draft but not included in evidenceRows.",
+      "Date/line context appears merged or blank for normal rows and should be preserved if applicable.",
+      "Decision row supporting improvement is omitted from cited evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add row 6 to evidence for the stated purpose.",
+      "Add rows 21 and 28 as outcome metric evidence.",
+      "Add row 37 as decision evidence if using the improvement conclusion.",
+      "Preserve date and line C1120R as subgroup context if inherited by the normal rows.",
+      "Recheck final evidenceRows include all rows used in title, purpose, factor, metrics, results, and decision."
+    ],
+    "evidencePolicy": "Current row citations prove the pair values but are incomplete for metric labels and stated context."
+  },
+  "usage": {
+    "input_tokens": 3110,
+    "output_tokens": 752,
+    "total_tokens": 3862
+  }
+}

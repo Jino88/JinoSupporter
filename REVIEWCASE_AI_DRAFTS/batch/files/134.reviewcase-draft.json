@@ -1,0 +1,334 @@
+{
+  "sourceFileId": 134,
+  "sourceFile": "06. BRS-161014 Report test change Coil 3D dimension 17.1.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\06. BRS-161014 Report test change Coil 3D dimension 17.1.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report (2)",
+    "sheetRowCount": 37,
+    "sheetCellCount": 192,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 7
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report (2)!2",
+      "sheetName": "Report (2)",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST CHANGE COIL 3D DIMENSION - 161014 | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report (2)!3",
+      "sheetName": "Report (2)",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | Date | 2024-01-17 00:00:00"
+    },
+    {
+      "rowId": "Report (2)!4",
+      "sheetName": "Report (2)",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | Marker | Trung"
+    },
+    {
+      "rowId": "Report (2)!5",
+      "sheetName": "Report (2)",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report (2)!6",
+      "sheetName": "Report (2)",
+      "rowNumber": 6,
+      "rowText": "| - To improve NG hearing"
+    },
+    {
+      "rowId": "Report (2)!7",
+      "sheetName": "Report (2)",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report (2)!8",
+      "sheetName": "Report (2)",
+      "rowNumber": 8,
+      "rowText": "| - To test change Coil 3D dimension: from"
+    },
+    {
+      "rowId": "Report (2)!9",
+      "sheetName": "Report (2)",
+      "rowNumber": 9,
+      "rowText": "| ++ To stretching coil by manual machine and and make final, checking NG rate of function"
+    },
+    {
+      "rowId": "Report (2)!10",
+      "sheetName": "Report (2)",
+      "rowNumber": 10,
+      "rowText": "| ++ Check x-ray of OK sample"
+    },
+    {
+      "rowId": "Report (2)!11",
+      "sheetName": "Report (2)",
+      "rowNumber": 11,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Report (2)!12",
+      "sheetName": "Report (2)",
+      "rowNumber": 12,
+      "rowText": "| | 1. RESULT CHECKING COIL 3D DIMENSION"
+    },
+    {
+      "rowId": "Report (2)!13",
+      "sheetName": "Report (2)",
+      "rowNumber": 13,
+      "rowText": "| | Date | Sample | Position | Length | Wide | Sample | Position | Length | Wide"
+    },
+    {
+      "rowId": "Report (2)!30",
+      "sheetName": "Report (2)",
+      "rowNumber": 30,
+      "rowText": "| | 2. RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "Report (2)!33",
+      "sheetName": "Report (2)",
+      "rowNumber": 33,
+      "rowText": "| | 2024-01-17 00:00:00 | Test COIL | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "Report (2)!35",
+      "sheetName": "Report (2)",
+      "rowNumber": 35,
+      "rowText": "| | | Normal | 799 | 783 | 0 | 0 | 0 | 0 | 16 | 0 | 0 | 16 | 0.02002503"
+    },
+    {
+      "rowId": "Report (2)!54",
+      "sheetName": "Report (2)",
+      "rowNumber": 54,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-134-rc-1",
+      "reviewTitle": "REPORT TEST CHANGE COIL 3D DIMENSION - 161014 | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To improve NG hearing / | II. Content. / | - To test change Coil 3D dimension: from / | ++ To stretching coil by manual machine and and make final, checking NG rate of function",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "dimension/spec"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Test COIL",
+          "baselineCondition": "Normal",
+          "changedCondition": "Test COIL",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Report (2)!13",
+            "Report (2)!2",
+            "Report (2)!32",
+            "Report (2)!33",
+            "Report (2)!35",
+            "Report (2)!5",
+            "Report (2)!7",
+            "Report (2)!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "2. RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "Report (2)!33",
+            "Report (2)!35"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 3618,
+              "controlCondition": "Normal",
+              "testCondition": "Test COIL",
+              "control": {
+                "input": 799.0,
+                "ng": 16.0,
+                "ratePercent": 2.002503
+              },
+              "test": {
+                "input": 10.0,
+                "ng": 0.0,
+                "ratePercent": 0.0
+              },
+              "deltaRatePercentPoint": -2.002503,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Report (2)!33",
+                "Report (2)!35"
+              ]
+            }
+          ],
+          "limitations": []
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "1. RESULT CHECKING COIL 3D DIMENSION",
+          "comparisonRows": [
+            "Report (2)!13"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 48967,
+              "condition": "1. RESULT CHECKING COIL 3D DIMENSION / Position",
+              "spec": "",
+              "min": 1.0,
+              "max": 3.0,
+              "avg": 2.0,
+              "sampleCount": 15,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!13"
+              ]
+            },
+            {
+              "statId": 48968,
+              "condition": "1. RESULT CHECKING COIL 3D DIMENSION / Length",
+              "spec": "",
+              "min": 11.08,
+              "max": 11.1,
+              "avg": 11.088666666666667,
+              "sampleCount": 15,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!13"
+              ]
+            },
+            {
+              "statId": 48969,
+              "condition": "1. RESULT CHECKING COIL 3D DIMENSION / Wide",
+              "spec": "",
+              "min": 5.02,
+              "max": 5.06,
+              "avg": 5.043333333333334,
+              "sampleCount": 15,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!13"
+              ]
+            },
+            {
+              "statId": 48970,
+              "condition": "1. RESULT CHECKING COIL 3D DIMENSION / Length",
+              "spec": "",
+              "min": 11.08,
+              "max": 11.1,
+              "avg": 11.09,
+              "sampleCount": 15,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!13"
+              ]
+            },
+            {
+              "statId": 48971,
+              "condition": "1. RESULT CHECKING COIL 3D DIMENSION / Wide",
+              "spec": "",
+              "min": 5.02,
+              "max": 5.06,
+              "avg": 5.046666666666667,
+              "sampleCount": 15,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!13"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Type | Input | OK | Sigma | Hearing | HOHD | Total NG | Total NG rate",
+          "comparisonRows": [
+            "Report (2)!32"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 48972,
+              "condition": "Sigma / SPL+THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 8.0,
+              "avg": 1.8333333333333333,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!32"
+              ]
+            },
+            {
+              "statId": 48973,
+              "condition": "Hearing / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 9.0,
+              "avg": 2.1666666666666665,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!32"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report (2)!13",
+        "Report (2)!2",
+        "Report (2)!32",
+        "Report (2)!33",
+        "Report (2)!35",
+        "Report (2)!5",
+        "Report (2)!7",
+        "Report (2)!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report (2)!13",
+      "Report (2)!2",
+      "Report (2)!32",
+      "Report (2)!33",
+      "Report (2)!35",
+      "Report (2)!5",
+      "Report (2)!7",
+      "Report (2)!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

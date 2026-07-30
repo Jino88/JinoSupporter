@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 256,
+  "sourceFile": "12.BRS-161016 GMI Test VP all mold block date 4.9.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\256.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 256,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not safe because the primary comparison and outcomes are misgrouped despite existing row citations.",
+    "issues": [
+      "Primary factor mixes Normal(#6), VP#12, lot, and mold labels.",
+      "Baseline appears to be Normal Lot, not Normal(#6) mold only.",
+      "VP mold, IR, line, date, and lot are not preserved as subgroups.",
+      "Several measurement outcomes are parser artifacts from IDs or headers.",
+      "Function, bending, and mold-block tables are combined without clear grouping."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended primary comparison Normal lot vs VP special lot?"
+    ],
+    "correctionPlan": [
+      "Redefine changed factor using cited normal-lot and special-lot rows.",
+      "Keep VP mold, IR/IV, line, date, and lot date as subgroup keys.",
+      "Remove parser-artifact measurement statistics from IDs and headers.",
+      "Separate or clearly link bending, function, and mold-block outcomes under one validation context.",
+      "Rebuild outcome metrics from actual NG counts, inputs, and rates only."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are not sufficient to support the current grouping."
+  },
+  "usage": {
+    "input_tokens": 9115,
+    "output_tokens": 667,
+    "total_tokens": 9782
+  }
+}

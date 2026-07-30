@@ -1,0 +1,591 @@
+{
+  "sourceFileId": 132,
+  "sourceFile": "05. TIU L5S3-01 R Result Coil Offset_251115_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\05. TIU L5S3-01 R Result Coil Offset_251115_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "13.11; SPL",
+    "sheetRowCount": 152,
+    "sheetCellCount": 3934,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 31
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "13.11!2",
+      "sheetName": "13.11",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 R RESULT TEST FRAME | | | | | | | | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "13.11!3",
+      "sheetName": "13.11",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | | | | Date | 2025-11-15 00:00:00"
+    },
+    {
+      "rowId": "13.11!4",
+      "sheetName": "13.11",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | | | | Maker | Nhung"
+    },
+    {
+      "rowId": "13.11!5",
+      "sheetName": "13.11",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "13.11!6",
+      "sheetName": "13.11",
+      "rowNumber": 6,
+      "rowText": "| - Ass'y Frame/VP/Coil offset many, rate ~ 70%"
+    },
+    {
+      "rowId": "13.11!8",
+      "sheetName": "13.11",
+      "rowNumber": 8,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "13.11!9",
+      "sheetName": "13.11",
+      "rowNumber": 9,
+      "rowText": "| - Using Frame test with normal Awf Jig => Check NG rate Coil +VP offset"
+    },
+    {
+      "rowId": "13.11!12",
+      "sheetName": "13.11",
+      "rowNumber": 12,
+      "rowText": "| III. Result."
+    },
+    {
+      "rowId": "13.11!13",
+      "sheetName": "13.11",
+      "rowNumber": 13,
+      "rowText": "| 1. Result test"
+    },
+    {
+      "rowId": "13.11!16",
+      "sheetName": "13.11",
+      "rowNumber": 16,
+      "rowText": "| | Picture sample after Ass'y Coil Offset"
+    },
+    {
+      "rowId": "13.11!17",
+      "sheetName": "13.11",
+      "rowNumber": 17,
+      "rowText": "| | OK | | #1 | | #2 | | #3 | | #4 | | #5 | | #6 | | #7 | | #8 | | #9 | | #10 | | #11"
+    },
+    {
+      "rowId": "13.11!24",
+      "sheetName": "13.11",
+      "rowNumber": 24,
+      "rowText": "| | NG | | #1 | | #2 | | #3 | | #4 | | #5 | | #6 | | #7 | | #8 | | #9 | | #10 | | #11"
+    },
+    {
+      "rowId": "13.11!76",
+      "sheetName": "13.11",
+      "rowNumber": 76,
+      "rowText": "| III. Decision."
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-132-rc-1",
+      "reviewTitle": "| TIU L5S3-01 R RESULT TEST FRAME | | | | | | | | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Ass'y Frame/VP/Coil offset many, rate ~ 70% / | II. Content. / | - Using Frame test with normal Awf Jig => Check NG rate Coil +VP offset / | III. Result.",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment",
+            "process condition"
+          ],
+          "changedFactor": "05. TIU L5S3-01 R Result Coil Offset_251115",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "13.11!13",
+            "13.11!2",
+            "13.11!5",
+            "13.11!8",
+            "13.11!9",
+            "SPL!28",
+            "SPL!29"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "SPL!28"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 48868,
+              "condition": "HZ",
+              "spec": "",
+              "min": 20.0,
+              "max": 560.0,
+              "avg": 164.82542372881358,
+              "sampleCount": 59,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!28"
+              ]
+            },
+            {
+              "statId": 48869,
+              "condition": "OK_MAX",
+              "spec": "",
+              "min": 73.446,
+              "max": 86.323,
+              "avg": 82.69237288135592,
+              "sampleCount": 59,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!28"
+              ]
+            },
+            {
+              "statId": 48870,
+              "condition": "OK-MIN",
+              "spec": "",
+              "min": 70.123,
+              "max": 84.205,
+              "avg": 80.28772881355934,
+              "sampleCount": 59,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!28"
+              ]
+            },
+            {
+              "statId": 48871,
+              "condition": "NG-MAX",
+              "spec": "",
+              "min": 74.606,
+              "max": 87.319,
+              "avg": 83.6489152542373,
+              "sampleCount": 59,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!28"
+              ]
+            },
+            {
+              "statId": 48872,
+              "condition": "NG-MIN",
+              "spec": "",
+              "min": 70.653,
+              "max": 84.835,
+              "avg": 80.73574576271184,
+              "sampleCount": 59,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!28"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "HZ | OK | 편심 | HZ | OK_MAX | OK-MIN | NG-MAX | NG-MIN",
+          "comparisonRows": [
+            "SPL!29"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 48873,
+              "condition": "# 1",
+              "spec": "",
+              "min": 70.78,
+              "max": 84.861,
+              "avg": 81.28859999999999,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48874,
+              "condition": "HZ / # 2",
+              "spec": "",
+              "min": 70.787,
+              "max": 84.211,
+              "avg": 80.73143333333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48875,
+              "condition": "HZ / # 3",
+              "spec": "",
+              "min": 71.364,
+              "max": 84.324,
+              "avg": 80.67959999999997,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48876,
+              "condition": "HZ / # 4",
+              "spec": "",
+              "min": 71.556,
+              "max": 84.923,
+              "avg": 80.99588333333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48877,
+              "condition": "HZ / # 5",
+              "spec": "",
+              "min": 72.726,
+              "max": 84.996,
+              "avg": 81.61079999999998,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48878,
+              "condition": "HZ / # 6",
+              "spec": "",
+              "min": 70.123,
+              "max": 84.494,
+              "avg": 80.53854999999999,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48879,
+              "condition": "HZ / # 7",
+              "spec": "",
+              "min": 71.493,
+              "max": 84.407,
+              "avg": 80.75453333333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48880,
+              "condition": "HZ / # 8",
+              "spec": "",
+              "min": 71.955,
+              "max": 86.264,
+              "avg": 81.79870000000003,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48881,
+              "condition": "HZ / # 9",
+              "spec": "",
+              "min": 71.485,
+              "max": 85.728,
+              "avg": 81.67218333333332,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48882,
+              "condition": "HZ / # 10",
+              "spec": "",
+              "min": 73.446,
+              "max": 86.323,
+              "avg": 82.70191666666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48883,
+              "condition": "편심 / # 1",
+              "spec": "",
+              "min": 73.036,
+              "max": 85.732,
+              "avg": 82.16361666666667,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48884,
+              "condition": "HZ / # 2",
+              "spec": "",
+              "min": 72.802,
+              "max": 86.398,
+              "avg": 82.31633333333336,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48885,
+              "condition": "HZ / # 3",
+              "spec": "",
+              "min": 72.063,
+              "max": 86.063,
+              "avg": 82.20426666666665,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48886,
+              "condition": "HZ / # 4",
+              "spec": "",
+              "min": 74.606,
+              "max": 87.319,
+              "avg": 83.69243333333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48887,
+              "condition": "HZ / # 5",
+              "spec": "",
+              "min": 71.691,
+              "max": 84.835,
+              "avg": 80.86311666666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48888,
+              "condition": "HZ / # 6",
+              "spec": "",
+              "min": 73.214,
+              "max": 85.684,
+              "avg": 82.16530000000003,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48889,
+              "condition": "HZ / # 7",
+              "spec": "",
+              "min": 72.974,
+              "max": 85.945,
+              "avg": 82.24334999999998,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48890,
+              "condition": "HZ / # 8",
+              "spec": "",
+              "min": 71.916,
+              "max": 85.259,
+              "avg": 81.53498333333336,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48891,
+              "condition": "HZ / # 9",
+              "spec": "",
+              "min": 72.988,
+              "max": 86.094,
+              "avg": 82.18548333333335,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48892,
+              "condition": "HZ / # 10",
+              "spec": "",
+              "min": 70.653,
+              "max": 85.519,
+              "avg": 81.34366666666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48893,
+              "condition": "HZ / # 11",
+              "spec": "",
+              "min": 72.399,
+              "max": 85.336,
+              "avg": 81.68245,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48894,
+              "condition": "HZ",
+              "spec": "",
+              "min": 20.0,
+              "max": 600.0,
+              "avg": 172.07833333333335,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48895,
+              "condition": "OK_MAX",
+              "spec": "",
+              "min": 73.446,
+              "max": 86.323,
+              "avg": 82.74648333333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48896,
+              "condition": "OK-MIN",
+              "spec": "",
+              "min": 70.123,
+              "max": 84.205,
+              "avg": 80.34523333333337,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48897,
+              "condition": "NG-MAX",
+              "spec": "",
+              "min": 74.606,
+              "max": 87.319,
+              "avg": 83.69243333333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            },
+            {
+              "statId": 48898,
+              "condition": "NG-MIN",
+              "spec": "",
+              "min": 70.653,
+              "max": 84.835,
+              "avg": 80.79441666666665,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!29"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "13.11!13",
+        "13.11!2",
+        "13.11!5",
+        "13.11!8",
+        "13.11!9",
+        "SPL!28",
+        "SPL!29"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "13.11!13",
+      "13.11!2",
+      "13.11!5",
+      "13.11!8",
+      "13.11!9",
+      "SPL!28",
+      "SPL!29"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

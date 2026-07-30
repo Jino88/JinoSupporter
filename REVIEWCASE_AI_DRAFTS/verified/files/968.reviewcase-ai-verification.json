@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 968,
+  "sourceFile": "9.1 BRS-161014 Report TEST suspension after hot press and DOE temperature dring date 30.8.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\968.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:31Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 968,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but changed-factor and outcome grouping are too ambiguous for final Ask AI use.",
+    "issues": [
+      "Changed factor wrongly lumps hot press, drying temperature, jig reverse, material C/D, and bending status.",
+      "SUB-3 comparisons use arbitrary Normal+JIG Reverse baseline and ignore normal 100C/120C rows.",
+      "Temperature, time, jig method, and likely merged parent keys are not preserved in results grouping.",
+      "SP+coil bonding rows mix condition rows with bending subrows, risking double counting.",
+      "Conclusion row says bending is main reason but is not included in draft evidence."
+    ],
+    "requiredUserQuestions": [
+      "Should the primary comparison be hot press improvement, drying temperature DOE, jig reverse method, or combined conditions?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factors from content rows as multi-factor DOE conditions with temperature/time/jig keys.",
+      "Pair SUB-3 rows only within comparable condition groups, preserving 100C, 120C, 140C, and hot-press status.",
+      "Separate material suspension check, SUB-3 bending check, and SP+coil bonding outcomes under the same report context.",
+      "Use rows 63-64 as conclusion evidence and align judgement with stated bending root cause.",
+      "Verify full rows 39-45 and headers before computing SP+coil bonding metrics."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping support is insufficient without headers, merged-key context, and conclusion citations."
+  },
+  "usage": {
+    "input_tokens": 4875,
+    "output_tokens": 801,
+    "total_tokens": 5676
+  }
+}

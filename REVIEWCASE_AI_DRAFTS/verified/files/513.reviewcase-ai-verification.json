@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 513,
+  "sourceFile": "30. BRS-161014 Report TEST new Jig ass'y Frame+Yoke by hand_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\513.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:07Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 513,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparison evidence but mispairs the 2023-09-28 test with the wrong Normal row and includes invalid measurement stats.",
+    "issues": [
+      "2023-09-28 improved test is compared to 2023-09-16 Normal instead of same-date Normal.",
+      "Judgement overstates improvement; same-date 2023-09-28 test is slightly worse than Normal and source says same.",
+      "Date/test round and after-improve status are not preserved as subgroup keys.",
+      "Measurement outcome is derived from headers/table values incorrectly and should not be a separate measurement case.",
+      "Outcome comparisonRows omit the 2023-09-28 Normal evidence row."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Compare 2023-09-16 test row with 2023-09-16 Normal row only.",
+      "Compare 2023-09-28 after-improve test row with 2023-09-28 Normal row only.",
+      "Add date/test round and jig improvement status as subgroup context.",
+      "Revise judgement to mixed or same based on row-level NG rates and row 29 conclusion.",
+      "Remove the measurement outcome or recast table columns as defect categories under function NG results."
+    ],
+    "evidencePolicy": "Row citations exist, but current pair citations are insufficient because the correct same-date Normal row is not used."
+  },
+  "usage": {
+    "input_tokens": 3643,
+    "output_tokens": 636,
+    "total_tokens": 4279
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "sourceFileId": 672,
+  "sourceFile": "47. BRS-161016 Report test cutting by punch machine and laser machine_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\47. BRS-161016 Report test cutting by punch machine and laser machine_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Sheet1",
+    "sheetRowCount": 5,
+    "sheetCellCount": 28,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet1!5",
+      "sheetName": "Sheet1",
+      "rowNumber": 5,
+      "rowText": "| Type | Mold | Input | OK | NG bending | NG rate"
+    },
+    {
+      "rowId": "Sheet1!6",
+      "sheetName": "Sheet1",
+      "rowNumber": 6,
+      "rowText": "| Punch mc | #4 | 101 | 59 | 42 | 0.41584158"
+    },
+    {
+      "rowId": "Sheet1!7",
+      "sheetName": "Sheet1",
+      "rowNumber": 7,
+      "rowText": "| | #7 | 100 | 90 | 10 | 0.1"
+    },
+    {
+      "rowId": "Sheet1!8",
+      "sheetName": "Sheet1",
+      "rowNumber": 8,
+      "rowText": "| Laser mc | #4 | 97 | 33 | 64 | 0.65979381"
+    },
+    {
+      "rowId": "Sheet1!9",
+      "sheetName": "Sheet1",
+      "rowNumber": 9,
+      "rowText": "| | #7 | 97 | 67 | 30 | 0.30927835"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-672-rc-1",
+      "reviewTitle": "| Type | Mold | Input | OK | NG bending | NG rate",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "coating",
+            "equipment",
+            "dimension/spec"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs #7, Punch mc, Laser mc",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "#7, Punch mc, Laser mc",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Sheet1!6",
+            "Sheet1!7",
+            "Sheet1!8",
+            "Sheet1!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Sheet1!6",
+            "Sheet1!7",
+            "Sheet1!8",
+            "Sheet1!9"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 22812,
+              "condition": "Punch mc",
+              "input": 101.0,
+              "ok": 59.0,
+              "ng": 42.0,
+              "ratePercent": 41.584158,
+              "evidenceRows": [
+                "Sheet1!6"
+              ]
+            },
+            {
+              "metricId": 22813,
+              "condition": "#7",
+              "input": 100.0,
+              "ok": 90.0,
+              "ng": 10.0,
+              "ratePercent": 10.0,
+              "evidenceRows": [
+                "Sheet1!7"
+              ]
+            },
+            {
+              "metricId": 22814,
+              "condition": "Laser mc",
+              "input": 97.0,
+              "ok": 33.0,
+              "ng": 64.0,
+              "ratePercent": 65.979381,
+              "evidenceRows": [
+                "Sheet1!8"
+              ]
+            },
+            {
+              "metricId": 22815,
+              "condition": "#7",
+              "input": 97.0,
+              "ok": 67.0,
+              "ng": 30.0,
+              "ratePercent": 30.927834999999998,
+              "evidenceRows": [
+                "Sheet1!9"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Sheet1!6",
+        "Sheet1!7",
+        "Sheet1!8",
+        "Sheet1!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet1!6",
+      "Sheet1!7",
+      "Sheet1!8",
+      "Sheet1!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

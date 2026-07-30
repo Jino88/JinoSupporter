@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 632,
+  "sourceFile": "41.BRS-161014 Report test new machine combine Bonding+Ass'y Frame+SP at sub 3_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\632.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:55Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 632,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misgroups the primary change and baseline/test conditions.",
+    "issues": [
+      "Primary change should be new combined Bonding+Ass'y plus bonding line change, not Test machine 1/2.",
+      "Tension baseline is explicit Normal; visual result has only test machines and no normal comparator.",
+      "Suspension C/D should be subgroup keys for tension results.",
+      "Rows 26 and 28 are cited but their text is not shown in supplied context.",
+      "Judgements remain not_judged despite report decision approving new machine."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baseline to Normal/previous separate bonding and assembly process where supported by purpose/content.",
+      "Set changed condition to new combined Bonding+Ass'y Frame+SP with bonding line change.",
+      "Treat Test machine 1 and 2 as visual-result subconditions, not primary changed factors.",
+      "Group tension by Normal vs new machine, with Suspension C and D as subgroups.",
+      "Add row 26 and 28 text or remove them if unavailable, then align judgement with reported conclusion."
+    ],
+    "evidencePolicy": "Citations are mostly sufficient, but missing displayed rows 26/28 must be available for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3477,
+    "output_tokens": 605,
+    "total_tokens": 4082
+  }
+}

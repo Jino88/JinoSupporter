@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 746,
+  "sourceFile": "55. TIU L5S3-01 R Report  test find method repair bond VP+coil  2026.01.08_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\746.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:05Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 746,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is comparable but changed-factor grouping and extracted outcome values are not reliable enough for final evidence.",
+    "issues": [
+      "Primary factor appears to be repair method, not Line L/R.",
+      "Line L/R likely should be subgroup keys if repair method is common.",
+      "Function table column mapping is inconsistent for OK/NG values.",
+      "Measurement outcome is header-derived and not citeable as measurement data.",
+      "Key cited test rows 14 and 18 are not shown in context."
+    ],
+    "requiredUserQuestions": [
+      "Are Line L and Line R separate methods or only line-side subgroups?"
+    ],
+    "correctionPlan": [
+      "Reframe changed factor as Normal vs repair bond VP/Coil method if supported.",
+      "Keep Line L/R as subgroup keys or separate paired rows as appropriate.",
+      "Re-parse result table columns using merged headers before storing OK/NG/rates.",
+      "Remove header-only measurement stats or replace with cited data rows.",
+      "Include all comparison rows needed to support each subresult."
+    ],
+    "evidencePolicy": "Row citations exist, but cited evidence is insufficient until grouping and table parsing are corrected."
+  },
+  "usage": {
+    "input_tokens": 3660,
+    "output_tokens": 1288,
+    "total_tokens": 4948
+  }
+}

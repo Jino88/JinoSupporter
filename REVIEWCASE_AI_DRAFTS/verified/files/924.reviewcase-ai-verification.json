@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 924,
+  "sourceFile": "8.1 Summary DATA TEST_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\924.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:12Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 924,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cannot be verified because the GMI JIG comparison and measurement grouping are not supported by explicit row context.",
+    "issues": [
+      "Baseline condition is not explicit or cited.",
+      "Blank condition rows likely lost merged-cell labels.",
+      "GMI JIG is treated as changed factor without proven comparator.",
+      "Measurement outcome is a header-derived artifact, not real statistics.",
+      "SPK NG and Module NG domains are combined ambiguously."
+    ],
+    "requiredUserQuestions": [
+      "What do the blank Type rows represent?",
+      "What baseline should GMI JIG be compared against?",
+      "Should SPK NG and Module NG be separate outcome domains?"
+    ],
+    "correctionPlan": [
+      "Recover merged-cell or source labels for rows 5,7,9,13.",
+      "Define valid comparison groups before judging GMI JIG.",
+      "Use rows 3-4 as headers and numeric rows as outcomes, not measurement stats.",
+      "Separate SPK NG and Module NG metrics if they are distinct processes.",
+      "Cite all compared condition rows and relevant header rows."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient for final evidence because key condition labels and comparator rows are missing."
+  },
+  "usage": {
+    "input_tokens": 3325,
+    "output_tokens": 484,
+    "total_tokens": 3809
+  }
+}

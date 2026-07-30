@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 334,
+  "sourceFile": "17.1 BRS-161014 C2+E2  Report test Center Dome improve bending of Ralon vender 16.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\334.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 334,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid comparable evidence but misclassifies the change and mispairs key function results.",
+    "issues": [
+      "Change domain should be CD supplier/lot, not equipment.",
+      "Changed factor wrongly includes aggregate labels as conditions.",
+      "Function C2 and total comparisons use wrong controls and omit rows 39 and 43.",
+      "Vision C2 outcome is mislabeled from a picture row.",
+      "Measurement outcomes from header/summary rows are not citeable results."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary change to improved bending CD lot/supplier Ralon vs normal CD supplier GES.",
+      "Use E2, C2, and Total C2+E2 as subgroup or aggregate keys only.",
+      "Rebuild function outcomes: E2 row33 vs35 worse, C2 row37 vs39 no change, total row41 vs43 worse.",
+      "Rename vision outcomes by table section and compare E2 row14 vs15 and C2 row27 vs28.",
+      "Remove unsupported measurement outcomes from rows 32 and 36."
+    ],
+    "evidencePolicy": "Row citations exist, but semantic citations are insufficient until pairings and labels are corrected."
+  },
+  "usage": {
+    "input_tokens": 5338,
+    "output_tokens": 1065,
+    "total_tokens": 6403
+  }
+}

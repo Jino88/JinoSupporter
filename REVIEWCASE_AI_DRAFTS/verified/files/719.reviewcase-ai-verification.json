@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 719,
+  "sourceFile": "51.MSU-L20S15-07 Report Test suspension L20S15-07 change packing method from vacuum to Nito packing of vender CSY Tech Vina_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\719.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 719,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Valid comparable report, but draft misgroups the changed factor and includes irrelevant/misclassified measurement evidence.",
+    "issues": [
+      "Changed factor incorrectly mixes packing method with coating subgroup.",
+      "Spot welding outcome omits no-bonding subgroup comparison.",
+      "Tension outcome includes function rows and unlabeled continuation rows need regrouping.",
+      "Sheet2 detected table is not tied to the packing-method comparison.",
+      "Review title and citations miss stronger title, purpose, and decision rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary change to Nito packing versus vacuum packing for CSY Tech Vina suspension L20S15-07.",
+      "Treat bonding and no-bonding coating cream as subgroups, not changed conditions.",
+      "Add spot-welding subresults for both coating subgroups using rows 15-18.",
+      "Keep function comparison rows 41 and 43 separate from tension results.",
+      "Remove Sheet2 detected-table outcome and cite title/purpose/decision rows 2, 6, 47-53."
+    ],
+    "evidencePolicy": "Row citations exist, but current grouping citations are insufficient until irrelevant Sheet2 rows are removed and decision/context rows are added."
+  },
+  "usage": {
+    "input_tokens": 6250,
+    "output_tokens": 558,
+    "total_tokens": 6808
+  }
+}

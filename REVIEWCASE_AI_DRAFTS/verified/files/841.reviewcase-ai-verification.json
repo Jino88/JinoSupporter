@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 841,
+  "sourceFile": "69. BRS-161016  Report test change method repair NG hearing  date 11.10.2024 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\841.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:44Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 841,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misgroups the voltage-level comparison and includes incomplete or spurious outcomes, so it cannot be final evidence.",
+    "issues": [
+      "Changed factor should be normal output voltage vs +5%, +10%, +15%, not unspecified baseline vs hearing repair.",
+      "Comparison table rows are incomplete; normal, +5%, +15% rows are omitted from outcomes.",
+      "Initial function-check table is mixed into the changed-factor comparison without clear role.",
+      "Measurement outcomes are invalid extractions from headers or unrelated numeric fields.",
+      "Citation 14.10!41 is not provided in source context and evidence includes weak section/header rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define one changed factor: hearing repair output-voltage setting level, with normal as baseline and +5/+10/+15 as changed conditions.",
+      "Group results by date/run and preserve paired rows under the same date where blank dates inherit the prior date.",
+      "Rebuild hearing comparison outcomes using rows 42-90, including normal, +5%, +10%, and +15% rows as applicable.",
+      "Keep rows 21-37 only as precheck/context or a separate functional yield outcome, not as the primary voltage comparison.",
+      "Remove bogus measurement/stat outcomes and any unsupported row citations."
+    ],
+    "evidencePolicy": "Current citations exist partly but are insufficient because key comparison rows are missing and one cited row is not in context."
+  },
+  "usage": {
+    "input_tokens": 7964,
+    "output_tokens": 673,
+    "total_tokens": 8637
+  }
+}

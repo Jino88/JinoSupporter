@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 433,
+  "sourceFile": "23.BRS-MSU L20S15-07  LIST TEST IMPROVE NG FUNCTION_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\433.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 433,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because it collapses many distinct test changes into one filename factor and converts plan text/dates into false measurements.",
+    "issues": [
+      "Changed factor is the filename, not the actual tested changes.",
+      "Multiple independent test items are wrongly merged into one comparison context.",
+      "Baseline and changed conditions are marked unknown despite row-level conditions.",
+      "Outcomes and stats are fabricated from text, dates, quantities, and headers.",
+      "Actual result evidence is mostly missing or not grouped with Sheet2 data rows."
+    ],
+    "requiredUserQuestions": [
+      "Should this plan list be treated as final validation evidence or only test-planning context?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factors from each test item and content row, preserving coil, frame, yoke, AWF, jig, and date context.",
+      "Separate baseline normal conditions from changed frame, coil, yoke, jig, bonding, VP hardness, and process conditions.",
+      "Remove generated measurement statistics derived from headers, dates, item numbers, and quantities.",
+      "Use Sheet1 rows as plan/status/sample-size evidence only unless actual results are present.",
+      "Add Sheet2 data rows and module results as outcomes only where comparable conditions are clear."
+    ],
+    "evidencePolicy": "Row citations exist, but they cite the wrong evidence for factors and outcomes; citations are insufficient for final use."
+  },
+  "usage": {
+    "input_tokens": 6651,
+    "output_tokens": 625,
+    "total_tokens": 7276
+  }
+}

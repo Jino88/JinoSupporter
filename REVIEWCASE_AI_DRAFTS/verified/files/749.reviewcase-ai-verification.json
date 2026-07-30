@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 749,
+  "sourceFile": "56. BRS-201506 Report Test Checking dimension coil date 18.6.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\749.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 749,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not verified because the primary comparison and measurement grouping are ambiguous and evidence citations are too weak.",
+    "issues": [
+      "Changed factor is the filename, not a sourced process change.",
+      "Baseline and test conditions are not established.",
+      "Date, machine, position, and sheet grouping keys are not preserved.",
+      "Outcomes duplicate header-derived tables and include non-measurement values.",
+      "Spec 0.60 is not applied despite values above the limit."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison by date/test round or by AWF machine?",
+      "Are 18.6, 21.6, and 25.6 separate trials under one investigation?",
+      "Does Spec Max 0.60mm apply to all coil dimension positions?"
+    ],
+    "correctionPlan": [
+      "Replace filename factor with sourced date/machine/test-round comparison.",
+      "Define baseline and changed/test conditions or mark them explicitly unknown.",
+      "Use actual measurement data rows, not only headers or summary rows.",
+      "Group results by date, machine, sample number, short/long position, and gap metric.",
+      "Recalculate limits and violations against Spec Max 0.60mm if applicable."
+    ],
+    "evidencePolicy": "Current row citations prove the report exists but are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 10532,
+    "output_tokens": 703,
+    "total_tokens": 11235
+  }
+}

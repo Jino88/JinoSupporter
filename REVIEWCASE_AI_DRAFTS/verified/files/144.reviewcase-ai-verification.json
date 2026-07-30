@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 144,
+  "sourceFile": "06.MSU-20S15-07 Result test CD from New vendor GES - 2025.04.28_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\144.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 144,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the GES vs RALON vendor comparison but has incorrect condition grouping, line pairing, and a spurious measurement outcome.",
+    "issues": [
+      "Changed condition wrongly includes Dyne and VP+CD separate as factors.",
+      "Function results do not preserve line grouping; C2 test is paired with the wrong normal row.",
+      "Subgroup keys should include line/date for E2-4B and C2 comparisons.",
+      "Header/function row statistics create an invalid measurement outcome.",
+      "Tension outcome lacks judged paired comparison by line and spec/result context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to vendor/source CD: Normal RALON vs Test GES.",
+      "Use Dyne, VP+CD separate, function, and tension only as outcomes.",
+      "Pair function rows by line: E2-4B test vs normal and C2 test vs normal.",
+      "Remove the header-derived measurement outcome.",
+      "Rebuild tension comparisons by line with pass/NG, spec, min, max, avg, and sample count noted."
+    ],
+    "evidencePolicy": "Citations are mostly sufficient, but corrected outcomes must cite the exact paired data rows and avoid header-only rows."
+  },
+  "usage": {
+    "input_tokens": 5694,
+    "output_tokens": 792,
+    "total_tokens": 6486
+  }
+}

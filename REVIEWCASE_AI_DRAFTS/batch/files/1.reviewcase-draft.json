@@ -1,0 +1,197 @@
+{
+  "sourceFileId": 1,
+  "sourceFile": "00. Report TEST new dry machine with material make press JIG 2024.03.26_1778470442_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\00. Report TEST new dry machine with material make press JIG 2024.03.26_1778470442_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Sheet1",
+    "sheetRowCount": 20,
+    "sheetCellCount": 109,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 3
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet1!2",
+      "sheetName": "Sheet1",
+      "rowNumber": 2,
+      "rowText": "| REPORT TEST NEW DRY MACHINE WITH MATERIAL MAKE PRESS JIG"
+    },
+    {
+      "rowId": "Sheet1!4",
+      "sheetName": "Sheet1",
+      "rowNumber": 4,
+      "rowText": "| Sample | Picture | Thickness | Name MTR | | | | Note | | | | Method test and dry machine setting at 230◦C"
+    },
+    {
+      "rowId": "Sheet1!5",
+      "sheetName": "Sheet1",
+      "rowNumber": 5,
+      "rowText": "| | | | | 1min | 3min | 5min"
+    },
+    {
+      "rowId": "Sheet1!6",
+      "sheetName": "Sheet1",
+      "rowNumber": 6,
+      "rowText": "| 1 | | 8.01mm | Bake line | 52 | 72 | 88"
+    },
+    {
+      "rowId": "Sheet1!7",
+      "sheetName": "Sheet1",
+      "rowNumber": 7,
+      "rowText": "| 2 | | 6.11mm | AL 6061 | 55 | 75 | 89"
+    },
+    {
+      "rowId": "Sheet1!8",
+      "sheetName": "Sheet1",
+      "rowNumber": 8,
+      "rowText": "| 3 | | 10.66mm | MC Nylon Black | 49 | 68 | 83"
+    },
+    {
+      "rowId": "Sheet1!9",
+      "sheetName": "Sheet1",
+      "rowNumber": 9,
+      "rowText": "| 4 | | 16.31mm | Ure Thare | 48 | 65 | 82 | NG Melt"
+    },
+    {
+      "rowId": "Sheet1!10",
+      "sheetName": "Sheet1",
+      "rowNumber": 10,
+      "rowText": "| 5 | | 12.66mm | Alcetan black | 51 | 69 | 85"
+    },
+    {
+      "rowId": "Sheet1!11",
+      "sheetName": "Sheet1",
+      "rowNumber": 11,
+      "rowText": "| 6 | | 5.06mm | PC Green | 56 | 78 | 94"
+    },
+    {
+      "rowId": "Sheet1!12",
+      "sheetName": "Sheet1",
+      "rowNumber": 12,
+      "rowText": "| 7 | | 6.79mm | Peek | 54 | 76 | 92"
+    },
+    {
+      "rowId": "Sheet1!13",
+      "sheetName": "Sheet1",
+      "rowNumber": 13,
+      "rowText": "| 8 | | 8.93mm | Teflon | 50 | 70 | 87"
+    },
+    {
+      "rowId": "Sheet1!14",
+      "sheetName": "Sheet1",
+      "rowNumber": 14,
+      "rowText": "| 9 | | 10.50mm | ABS | 51 | 72 | 88"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-1-rc-1",
+      "reviewTitle": "| REPORT TEST NEW DRY MACHINE WITH MATERIAL MAKE PRESS JIG",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material",
+            "coating",
+            "equipment",
+            "jig",
+            "process condition"
+          ],
+          "changedFactor": "00. Report TEST new dry machine with material make press JIG 2024.03.26_1778470442",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Sheet1!2",
+            "Sheet1!4",
+            "Sheet1!5"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Sample | Picture | Thickness | Name MTR | Note | Method test and dry machine setting at 230◦C",
+          "comparisonRows": [
+            "Sheet1!5"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 45074,
+              "condition": "Name MTR / 1min",
+              "spec": "",
+              "min": 48.0,
+              "max": 56.0,
+              "avg": 51.733333333333334,
+              "sampleCount": 15,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!5"
+              ]
+            },
+            {
+              "statId": 45075,
+              "condition": "Name MTR / 3min",
+              "spec": "",
+              "min": 65.0,
+              "max": 78.0,
+              "avg": 72.33333333333333,
+              "sampleCount": 15,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!5"
+              ]
+            },
+            {
+              "statId": 45076,
+              "condition": "Name MTR / 5min",
+              "spec": "",
+              "min": 82.0,
+              "max": 94.0,
+              "avg": 88.6,
+              "sampleCount": 15,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!5"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Sheet1!2",
+        "Sheet1!4",
+        "Sheet1!5"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet1!2",
+      "Sheet1!4",
+      "Sheet1!5"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

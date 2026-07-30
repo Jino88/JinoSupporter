@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 466,
+  "sourceFile": "27. BRS-161014 DT Report test VP mold #7,9 add 0.05mm  date 12.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\466.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 466,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable test evidence but changed-factor and comparison grouping are not reliable enough for final use.",
+    "issues": [
+      "Changed factor is overbroad and includes totals as conditions.",
+      "Baseline/test roles are confused, including test-vs-test comparisons.",
+      "Date, line, and sheet/run grouping are not preserved in several pairs.",
+      "Measurement outcomes appear to be header-derived noise, not valid results.",
+      "Decision rows are underused despite summarizing key conclusions."
+    ],
+    "requiredUserQuestions": [
+      "Should sheet 7.3 (2) be treated as a separate follow-up run or the same validation report?"
+    ],
+    "correctionPlan": [
+      "Define factor as VP mold #7/#9 center add 0.05mm versus normal VP molds.",
+      "Separate #7 and #9 as subgroups under that factor.",
+      "Rebuild comparisons within matching date, line, process step, and sheet/run context.",
+      "Use total rows and decision rows for summary evidence where appropriate.",
+      "Remove invalid measurement/header-derived outcomes."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping and relevance are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 13781,
+    "output_tokens": 771,
+    "total_tokens": 14552
+  }
+}

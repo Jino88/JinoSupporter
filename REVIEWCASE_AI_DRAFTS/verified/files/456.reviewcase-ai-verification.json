@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 456,
+  "sourceFile": "26. BRS-161014 DT Report test CD supplier Ralon  -  date 2024.03.11_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\456.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 456,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Core Ralon vs GES comparison and rates are supported, but grouping context and evidence scope need correction.",
+    "issues": [
+      "VP/Fr setting is treated as changed condition instead of shared subgroup context.",
+      "Subgroup keys omit date, line C2-3A, and VP/Fr context for function results.",
+      "Review title is taken from decap analysis rather than main supplier test report.",
+      "Decap NG evidence is cited but not modeled as a supplementary Ralon defect-analysis outcome."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to Normal CD supplier GES vs Test CD supplier Ralon.",
+      "Move date, line C2-3A, and VP/Fr settings into subgroup/context keys where applicable.",
+      "Use the main Test report title and purpose rows for the review case.",
+      "Add or explicitly exclude the Decap NG root-cause breakdown as non-comparative supplementary evidence.",
+      "Add header/purpose citations such as Test!10, Test!14, and Test!21 if used."
+    ],
+    "evidencePolicy": "Citations support compared rows, but context/header and decap-use citations are incomplete."
+  },
+  "usage": {
+    "input_tokens": 3738,
+    "output_tokens": 784,
+    "total_tokens": 4522
+  }
+}

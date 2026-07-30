@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 204,
+  "sourceFile": "10. BRS-161014 DT Report Tesst marking ink check JIG CD Press  date 24.4.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\204.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 204,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "This file records a 15-piece jig OK check but lacks a comparable changed-condition review case.",
+    "issues": [
+      "No baseline versus test condition is identified",
+      "No changed manufacturing factor is evidenced",
+      "No metrics or measurements beyond OK labels",
+      "Rows support a simple inspection result only"
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Mark the draft as excluded",
+      "Do not create an Ask AI review case",
+      "Retain rows 5-16,24,33 only as exclusion support",
+      "State that all 15 checked items were OK if cataloged",
+      "Do not infer a process change from the jig check title"
+    ],
+    "evidencePolicy": "Citations are sufficient for exclusion and OK-count context, not for final change evidence."
+  },
+  "usage": {
+    "input_tokens": 1677,
+    "output_tokens": 506,
+    "total_tokens": 2183
+  }
+}

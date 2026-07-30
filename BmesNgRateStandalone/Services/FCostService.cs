@@ -13,16 +13,16 @@ namespace BmesNgRateStandalone.Services;
 /// Re-uses NgRateSettingsService for credentials + save directory so the user only has
 /// to configure BMES login once.
 /// </summary>
-public sealed class FCostService(NgRateSettingsService settings)
+public sealed class FCostService(NgRateSettingsService settings, AppActivityLogger activity)
 {
     private readonly NgRateSettingsService _settings = settings;
-    private const string BaseUrl = "http://bmes.bujeon.com";
+    private readonly AppActivityLogger _activity = activity;
+    private const string BaseUrl = "https://bmes.bujeon.com";
+    private sealed record BmesLoginResult(bool Succeeded, string Diagnostic);
 
-    private static void Log(IProgress<string>? progress, string msg)
+    private void Log(IProgress<string>? progress, string msg)
     {
-        string tagged = $"[FCost {DateTime.Now:HH:mm:ss.fff}] {msg}";
-        System.Diagnostics.Debug.WriteLine(tagged);
-        Console.WriteLine(tagged);
+        _activity.Log("FCost", msg);
         progress?.Report(msg);
     }
 
@@ -62,9 +62,10 @@ public sealed class FCostService(NgRateSettingsService settings)
         }
 
         Log(progress, $"Logging in as {id}…");
-        if (!await LoginAsync(client, token, id, pwd))
+        BmesLoginResult login = await LoginAsync(client, token, id, pwd);
+        if (!login.Succeeded)
         {
-            Log(progress, "[ERROR] BMES login failed (check id/password).");
+            Log(progress, "[ERROR] BMES login failed — " + login.Diagnostic);
             return null;
         }
 
@@ -226,9 +227,10 @@ public sealed class FCostService(NgRateSettingsService settings)
         }
 
         Log(progress, $"RAW backfill: login as {id}");
-        if (!await LoginAsync(client, token, id, pwd))
+        BmesLoginResult login = await LoginAsync(client, token, id, pwd);
+        if (!login.Succeeded)
         {
-            string msg = "BMES login failed.";
+            string msg = "BMES login failed — " + login.Diagnostic;
             Log(progress, "[ERROR] " + msg);
             result.Failures.Add(msg);
             return result;
@@ -304,26 +306,44 @@ public sealed class FCostService(NgRateSettingsService settings)
         catch { return string.Empty; }
     }
 
-    private static async Task<bool> LoginAsync(
+    private static async Task<BmesLoginResult> LoginAsync(
         HttpClient client, string token, string id, string password)
     {
         var content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
-            ["UserInfo.USRID"] = id,
-            ["UserInfo.PWNO"]  = password,
-            ["UserInfo.LANG"]  = "EN",
-            ["UserInfo.FACCO"] = "GN",
-            ["UserInfo.STYPE"] = "P",
-            ["UserInfo.VTYPE"] = "P",
+            ["UserInfo[USRID]"] = id,
+            ["UserInfo[PWNO]"]  = password,
+            ["UserInfo[LANG]"]  = "EN",
+            ["UserInfo[FACCO]"] = "GN",
+            ["UserInfo[STYPE]"] = "P",
+            ["UserInfo[VTYPE]"] = "P",
             ["__RequestVerificationToken"] = token,
         });
         try
         {
             var response = await client.PostAsync(BaseUrl + "/MES000000/LoginCheck", content);
             string body  = await response.Content.ReadAsStringAsync();
-            return body.Contains("\"Result\":\"M\"");
+            return new BmesLoginResult(
+                body.Contains("\"Result\":\"M\""),
+                BuildLoginDiagnostic(response, body));
         }
-        catch { return false; }
+        catch (Exception ex) { return new BmesLoginResult(false, $"request error: {ex.GetType().Name}"); }
+    }
+
+    private static string BuildLoginDiagnostic(HttpResponseMessage response, string body)
+    {
+        string status = $"HTTP {(int)response.StatusCode} {response.ReasonPhrase}".Trim();
+        Match result = Regex.Match(body, "\"Result\"\\s*:\\s*\"([^\"]*)\"", RegexOptions.IgnoreCase);
+        Match message = Regex.Match(body, "\"(?:Message|ErrorMessage)\"\\s*:\\s*\"([^\"]*)\"", RegexOptions.IgnoreCase);
+        if (result.Success) status += $", Result={result.Groups[1].Value}";
+        if (message.Success) status += $", Message={SanitizeLoginMessage(message.Groups[1].Value)}";
+        return status;
+    }
+
+    private static string SanitizeLoginMessage(string value)
+    {
+        string normalized = Regex.Replace(value, @"\s+", " ").Trim();
+        return normalized.Length <= 160 ? normalized : normalized[..160] + "...";
     }
 
     /// <summary>Parsed BMES F-Cost response: data rows + the per-response column metadata
@@ -531,9 +551,13 @@ public sealed class FCostService(NgRateSettingsService settings)
             using var conn = new SqliteConnection($"Data Source={dbPath};Mode=ReadOnly");
             conn.Open();
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT Status FROM FCostRawPulls WHERE QueryDate = @qdate;";
+            cmd.CommandText = "SELECT Status, RowCount FROM FCostRawPulls WHERE QueryDate = @qdate;";
             cmd.Parameters.AddWithValue("@qdate", queryDate.ToString("yyyy-MM-dd"));
-            return string.Equals(cmd.ExecuteScalar() as string, "OK", StringComparison.OrdinalIgnoreCase);
+            using var r = cmd.ExecuteReader();
+            if (!r.Read()) return false;
+            string status = r.IsDBNull(0) ? string.Empty : r.GetString(0);
+            int rowCount = r.IsDBNull(1) ? 0 : Convert.ToInt32(r.GetValue(1));
+            return string.Equals(status, "OK", StringComparison.OrdinalIgnoreCase) && rowCount > 0;
         }
         catch
         {

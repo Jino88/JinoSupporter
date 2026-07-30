@@ -1,0 +1,196 @@
+{
+  "sourceFileId": 474,
+  "sourceFile": "27. TIU L5S3-01 R Report test JIG Fpcb press 15.12.2025_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\27. TIU L5S3-01 R Report test JIG Fpcb press 15.12.2025_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 14,
+    "sheetCellCount": 36,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] REPORT TEST F-PCB PRESS JIG CHANGE MANGNET | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | Date | 2025-12-15 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Test F-PCB Press JIG change Magnet smaller to improve NG Frame damage"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Check NG rate at process Ass'y F-PCB Press JIG"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| 1. Result check"
+    },
+    {
+      "rowId": "Test!15",
+      "sheetName": "Test",
+      "rowNumber": 15,
+      "rowText": "| | No | Date | Type | Input | OK | NG Frame stick Press Jig | NG rate"
+    },
+    {
+      "rowId": "Test!17",
+      "sheetName": "Test",
+      "rowNumber": 17,
+      "rowText": "| | 1 | 2025-12-15 00:00:00 | Test | 580 | 580 | 0 | 0"
+    },
+    {
+      "rowId": "Test!18",
+      "sheetName": "Test",
+      "rowNumber": 18,
+      "rowText": "| | 2 | | Normal JIG | 1000 | 988 | 12 | 0.012"
+    },
+    {
+      "rowId": "Test!20",
+      "sheetName": "Test",
+      "rowNumber": 20,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "Test!21",
+      "sheetName": "Test",
+      "rowNumber": 21,
+      "rowText": "| - F-PCB Press JIG change Magnet Can Use"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-474-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] REPORT TEST F-PCB PRESS JIG CHANGE MANGNET | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Test F-PCB Press JIG change Magnet smaller to improve NG Frame damage / | II. Content. / | - Check NG rate at process Ass'y F-PCB Press JIG / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "jig",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal JIG vs Test",
+          "baselineCondition": "Normal JIG",
+          "changedCondition": "Test",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!17",
+            "Test!18",
+            "Test!2",
+            "Test!5",
+            "Test!6",
+            "Test!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "1. Result check",
+          "comparisonRows": [
+            "Test!17",
+            "Test!18"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 4104,
+              "controlCondition": "Normal JIG",
+              "testCondition": "Test",
+              "control": {
+                "input": 1000.0,
+                "ng": 12.0,
+                "ratePercent": 1.2
+              },
+              "test": {
+                "input": 580.0,
+                "ng": 0.0,
+                "ratePercent": 0.0
+              },
+              "deltaRatePercentPoint": -1.2,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Test!17",
+                "Test!18"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Test!17",
+        "Test!18",
+        "Test!2",
+        "Test!5",
+        "Test!6",
+        "Test!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!17",
+      "Test!18",
+      "Test!2",
+      "Test!5",
+      "Test!6",
+      "Test!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

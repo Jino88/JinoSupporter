@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 413,
+  "sourceFile": "22. BRS-161016 Report test  SP 161014-D of CSY TECH VINA with abnormal surface not shiny date 2024.12.07_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\413.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 413,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the main Normal vs not-shiny suspension test context but has incorrect NG totals and omits reliability/final decision evidence.",
+    "issues": [
+      "Vision spot uses defect columns instead of total NG/rate.",
+      "S711 function outcome records NG as 0 despite total NG values.",
+      "Reliability results and OK rationale are omitted.",
+      "Final decision rows are not cited.",
+      "Changed factor wording/domain should be tightened to test suspension lot condition."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Recalculate vision spot using total NG 4 vs 5 and cited rates.",
+      "Recalculate S711 function using total NG 5 vs 7 and cited rates.",
+      "Add reliability outcome rows for auto drop, manual drop, and load test with particle rationale.",
+      "Add final decision rows to case evidence.",
+      "Rename changed factor to Normal vs test suspension D not shiny lot condition."
+    ],
+    "evidencePolicy": "Citations exist but are incomplete and some cited values are misread."
+  },
+  "usage": {
+    "input_tokens": 5603,
+    "output_tokens": 749,
+    "total_tokens": 6352
+  }
+}

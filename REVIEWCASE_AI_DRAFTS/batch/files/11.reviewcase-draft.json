@@ -1,0 +1,162 @@
+{
+  "sourceFileId": 11,
+  "sourceFile": "008.MSU-20S15-07 Test MC check Height dimension 1 2025.01.25_1778470549_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\008.MSU-20S15-07 Test MC check Height dimension 1 2025.01.25_1778470549_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 3,
+    "sheetNames": "Sheet1; Sheet2; Sheet3",
+    "sheetRowCount": 15,
+    "sheetCellCount": 107,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 1
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet1!3",
+      "sheetName": "Sheet1",
+      "rowNumber": 3,
+      "rowText": "| CHECK SENSOR ZERO SET ON THE JIG ( 6 POSITION )"
+    },
+    {
+      "rowId": "Sheet1!4",
+      "sheetName": "Sheet1",
+      "rowNumber": 4,
+      "rowText": "| Date | Posistion on the jig | | | | | | Note"
+    },
+    {
+      "rowId": "Sheet1!5",
+      "sheetName": "Sheet1",
+      "rowNumber": 5,
+      "rowText": "| | 1 | 2 | 3 | 4 | 5 | 6"
+    },
+    {
+      "rowId": "Sheet1!6",
+      "sheetName": "Sheet1",
+      "rowNumber": 6,
+      "rowText": "| 2025-01-25 00:00:00 | 0 | 0.043 | -0.006 | -0.045 | -0.010 | 0.018 | 6 Posistion of jig not same when setting sensor zero"
+    },
+    {
+      "rowId": "Sheet1!18",
+      "sheetName": "Sheet1",
+      "rowNumber": 18,
+      "rowText": "| RESULT CHECK HEIGHT OF SAMPLE"
+    },
+    {
+      "rowId": "Sheet1!19",
+      "sheetName": "Sheet1",
+      "rowNumber": 19,
+      "rowText": "| Date | Q'Ty check | NG hight | | NG low | | Q'Ty NG | | NG Rate"
+    },
+    {
+      "rowId": "Sheet1!20",
+      "sheetName": "Sheet1",
+      "rowNumber": 20,
+      "rowText": "| 2025-01-25 00:00:00 | 300 | 66 | | 0 | | 66 | | 0.22"
+    },
+    {
+      "rowId": "Sheet1!22",
+      "sheetName": "Sheet1",
+      "rowNumber": 22,
+      "rowText": "| RESULT CHECK HEIGHT OF SAMPLE ( Spec : 1.80 ~ 2.0 )"
+    },
+    {
+      "rowId": "Sheet1!23",
+      "sheetName": "Sheet1",
+      "rowNumber": 23,
+      "rowText": "| Date | No | Check height of sample ( 50pcs ) | | | | | | | | | | Min | Max | Average"
+    },
+    {
+      "rowId": "Sheet1!24",
+      "sheetName": "Sheet1",
+      "rowNumber": 24,
+      "rowText": "| | | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10"
+    },
+    {
+      "rowId": "Sheet1!25",
+      "sheetName": "Sheet1",
+      "rowNumber": 25,
+      "rowText": "| 2025-01-25 00:00:00 | 1 | 1.928 | 1.936 | 1.925 | 1.942 | 1.989 | 1.972 | 1.986 | 1.921 | 1.926 | 1.979 | 1.921 | 2.02 | 1.9801"
+    },
+    {
+      "rowId": "Sheet1!26",
+      "sheetName": "Sheet1",
+      "rowNumber": 26,
+      "rowText": "| | 2 | 2.012 | 2.018 | 1.985 | 1.989 | 1.989 | 2.016 | 1.98 | 1.981 | 2.02 | 1.986"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-11-rc-1",
+      "reviewTitle": "| CHECK SENSOR ZERO SET ON THE JIG ( 6 POSITION )",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment",
+            "dimension/spec"
+          ],
+          "changedFactor": "008.MSU-20S15-07 Test MC check Height dimension 1 2025.01.25_1778470549",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Sheet1!25"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT CHECK HEIGHT OF SAMPLE ( Spec : 1.80 ~ 2.0 )",
+          "comparisonRows": [
+            "Sheet1!25"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 45325,
+              "condition": "2025-01-25 00:00:00 | 1 | 1.928 | 1.936 | 1.925 | 1.942 | 1.989 | 1.972 | 1.986 | 1.921 | 1.926 | 1.979 | 1.921 | 2.02",
+              "spec": "1.80 ~ 2.0",
+              "min": 1.921,
+              "max": 2.02,
+              "avg": 1.9801,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!25"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Sheet1!25"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet1!25"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

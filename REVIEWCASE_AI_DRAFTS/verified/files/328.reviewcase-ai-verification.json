@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 328,
+  "sourceFile": "17. BRS-2015  Report test  clean material by ethanol and primer at Sub 2 date 22.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\328.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 328,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft cites real rows but mixes cleaning method, supplier/source, and dry-temperature comparisons without a clear baseline/test structure.",
+    "issues": [
+      "Changed factor is over-broad and combines unrelated condition labels.",
+      "Baseline condition is not explicit despite decision row indicating 80C-10min vs 100-110C-11min.",
+      "Decision evidence row is not included in review case citations.",
+      "Supplier/source labels may be subgroup context, not the primary changed factor.",
+      "Outcome grouping needs header/context confirmation for rows 21-26."
+    ],
+    "requiredUserQuestions": [
+      "Are rows 21-26 primarily comparing dry temperature/time under primer cleaning?",
+      "Should China/Baotou be treated as material subgroup context rather than changed factor?"
+    ],
+    "correctionPlan": [
+      "Add decision row 34 as conclusion evidence.",
+      "Redefine changed factor around cleaning method and, if supported, primer dry temperature/time.",
+      "Separate or clearly subgroup vision check rows 14-16 and SM separate rows 21-26.",
+      "Set explicit baseline/test conditions from cited rows only.",
+      "Remove unsupported supplier/material primary-change claims unless headers prove them."
+    ],
+    "evidencePolicy": "Metric row citations exist, but factor and conclusion citations are incomplete."
+  },
+  "usage": {
+    "input_tokens": 3454,
+    "output_tokens": 794,
+    "total_tokens": 4248
+  }
+}

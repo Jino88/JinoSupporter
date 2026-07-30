@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 14,
+  "sourceFile": "01. BRS-161014 Report test DT machine concept for VP vision auto 01.05.2024_1778470575_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\14.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:44:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 14,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft has citeable report context but misidentifies the changed factor as a baseline-vs-Type/Total comparison and likely mis-maps the Type 1 row result fields.",
+    "issues": [
+      "Changed factor grouping is not supported: 'Type 1' and 'Total' appear to be result row categories, not a changed condition compared against an implicit baseline.",
+      "Baseline condition is not explicit in the cited evidence, so the draft should not frame this as baseline/normal vs test condition.",
+      "Outcome extraction appears inconsistent with the report decision stating no NG; the Type 1 subresult shows ng=1.0, likely confusing the NO/index column with an NG value.",
+      "Evidence row citations include rows 29 and 39, but their row text is not shown in contextRows, making final verification of metric values and column alignment incomplete.",
+      "Outcome domain 'unknown' and metric 'Result' are too generic for final Ask AI evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Reframe the changed factor as validation of the DT machine concept/VP vision auto pickup and re-assembly process, not as Type 1/Total versus baseline.",
+      "Remove the unsupported baseline/normal comparison unless source rows explicitly identify a baseline condition.",
+      "Re-check rows 29 through 39 against the header row 28 and map columns correctly: NO, Date, Type, Input, OK, NG Pickup, NG VP, NG rate.",
+      "Use row 62 as decision evidence that the test had no NG and MC can be used, if row citation exists and is available.",
+      "Set outcome metric to a concrete manufacturing result such as NG Pickup, NG VP, NG rate, Input, and OK count, with Type as subgroup context.",
+      "Include full cited row text for metric rows before approval."
+    ],
+    "evidencePolicy": "Citations are partly sufficient for report purpose and test context, but not sufficient for final evidence because key metric rows are not visible and the changed-condition citation does not support the drafted comparison."
+  },
+  "usage": {
+    "input_tokens": 2231,
+    "output_tokens": 949,
+    "total_tokens": 3180
+  }
+}

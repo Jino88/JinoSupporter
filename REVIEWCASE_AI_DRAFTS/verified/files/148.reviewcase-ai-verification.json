@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 148,
+  "sourceFile": "07. BRS-161016 DT Report test Bond SJ4765 improve separate VP-CD   date 3.6.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\148.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:10Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 148,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the SJ4765 vs EA6116 comparison but has incorrect tension measurement grouping and contaminated measurement rows.",
+    "issues": [
+      "Function rows 42-43 are wrongly parsed as tension measurements.",
+      "Tension rows mix direct glue comparison with extra dry/new-machine conditions.",
+      "Measurement sample counts appear incorrect from row data.",
+      "Changed factor should note glue change with VP+CD process, not only generic process condition."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove rows 42-43 from measurement outcome.",
+      "Keep rows 42-43 only under function defect outcome.",
+      "Group tension results by date and secondary process condition.",
+      "Use rows 33-34 as direct 2025-06-03 tension comparison.",
+      "Treat rows 35-37 as separate 2025-06-04 tension subgroup or limitation."
+    ],
+    "evidencePolicy": "Citations exist and support conditions, but measurement citations must be corrected before final use."
+  },
+  "usage": {
+    "input_tokens": 4806,
+    "output_tokens": 661,
+    "total_tokens": 5467
+  }
+}

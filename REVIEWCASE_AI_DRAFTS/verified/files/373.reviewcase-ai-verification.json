@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 373,
+  "sourceFile": "2. BRS-161016 GMI  Report test new Locate 4 pin - 2025.06.17_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\373.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 373,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites valid source rows but misidentifies the changed factor as dates instead of the locate design change from 2 pins to 4 pins.",
+    "issues": [
+      "Changed factor is incorrectly grouped as date conditions.",
+      "Baseline and test conditions should be 2-pin locate vs 4-pin locate.",
+      "Dates and line E2-3A should be subgroup/context keys, not changed conditions.",
+      "Rows 14-16 are cited but their text is not shown in provided context.",
+      "Decision row is cited in context but final decision content is absent."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedFactor to locate design change from 2 pins to 4 pins.",
+      "Set baselineCondition to 2-pin locate design and changedCondition to 4-pin locate design.",
+      "Move dates and E2-3A line into subgroupKeys or subResults conditions.",
+      "Verify and include row text/citations for rows 14-16 results.",
+      "Add decision content if present, otherwise note it is unavailable."
+    ],
+    "evidencePolicy": "Row 2 supports the design change and result rows support outcomes, but current citations need regrouping before use."
+  },
+  "usage": {
+    "input_tokens": 2638,
+    "output_tokens": 661,
+    "total_tokens": 3299
+  }
+}

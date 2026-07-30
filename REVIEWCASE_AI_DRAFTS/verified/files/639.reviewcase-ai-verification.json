@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 639,
+  "sourceFile": "42.BRS-161014 Report test change condition dry SUB 2 SMG+BPT (Time and method) 2023.10.05_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\639.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:08Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 639,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but misgroups the dry method and dry-time changes and leaves the normal baseline ambiguous.",
+    "issues": [
+      "Changed factor omits explicit dry-time change from 25min to 18'23s.",
+      "Baseline is explicit as Normal (25min), not unknown.",
+      "Tension rows mix method change, time change, and normal baseline under one factor.",
+      "Process result comparison cites test row but does not include normal row as a subresult.",
+      "Key change-evidence rows 9-10 are not cited."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baselineCondition to Normal (25min) where applicable.",
+      "Create or separate changed factors for array-JIG/dry-oven method and dry-time 18'23s.",
+      "Map Long-SM and Short-SM as subgroup keys under each condition.",
+      "Add process-check normal result row 17 and any missing test row to subResults.",
+      "Cite rows 9-10, 14-17, and 19-25 for condition and outcome evidence."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient for final changed-factor grouping."
+  },
+  "usage": {
+    "input_tokens": 3573,
+    "output_tokens": 756,
+    "total_tokens": 4329
+  }
+}

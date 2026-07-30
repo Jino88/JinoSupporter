@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 395,
+  "sourceFile": "20. TIU C11-20  Report test Frame mold #2 -#3 each by cavty 2026.1.27_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\395.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 395,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misgroups the frame-mold validation and invents mixed changed conditions.",
+    "issues": [
+      "Changed factor conflates Normal, mold IDs, LEFT, model text, and row numbers.",
+      "Baseline Normal does not apply to all per-cavity mold comparison rows.",
+      "Cavity and mold pair context is not preserved as subgroup keys.",
+      "Measurement outcomes are derived from defect-count tables and appear invalid.",
+      "Review title is a raw data row, not a case summary."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to frame mold condition comparison for TIU-C11-20 function testing.",
+      "Separate or clearly subgroup Normal summary rows from #1 vs #2 and #2 vs #3 cavity tables.",
+      "Remove LEFT, numeric row labels, and model text from changedCondition unless row context proves them factors.",
+      "Keep Input, OK, NG categories, Total NG, and NG rate as function-defect outcomes only.",
+      "Rewrite title and citations around purpose, result headers, condition rows, and cavity rows."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 12343,
+    "output_tokens": 782,
+    "total_tokens": 13125
+  }
+}

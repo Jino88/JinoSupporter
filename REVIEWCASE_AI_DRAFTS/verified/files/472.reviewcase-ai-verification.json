@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 472,
+  "sourceFile": "27. MSU-L20S15-07 Report test Find reason NG  LOT DOME 3-17  date 28.4.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\472.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:49Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 472,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable comparative evidence but misstates the primary changed factor and mixes subgrouped result rows.",
+    "issues": [
+      "Changed factor should be CD treatment/method comparison, not implicit normal baseline vs tests.",
+      "Rows by date/test round are mixed, especially the 2025-05-08 laser marking function result.",
+      "Function defect data appears incorrectly converted into a separate measurement outcome.",
+      "Baseline/test labels and lot context need clearer row-level preservation.",
+      "Some cited rows are not shown in context, limiting independent verification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Reframe cf-1 as Laser marking CD+Plasma vs Primer clean CD+Plasma for CD lot 2025-03-17.",
+      "Keep date/test round/input quantity as subgroup keys for each outcome row.",
+      "Remove measurement-2 unless raw evidence proves it is a valid measurement table.",
+      "Retain separate VP/CD, tension, assy tension, and function as outcomes under the same comparison context.",
+      "Verify unseen cited rows 23, 30, 38, 42, and 45 before final approval."
+    ],
+    "evidencePolicy": "Citations mostly point to relevant rows, but unseen cited data rows and one suspect derived outcome prevent sufficient final evidence."
+  },
+  "usage": {
+    "input_tokens": 5033,
+    "output_tokens": 586,
+    "total_tokens": 5619
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "sourceFileId": 574,
+  "sourceFile": "35.MSU-20S15-07 Result checking Problem NG VP damagedate 1.11.2025 -_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\35.MSU-20S15-07 Result checking Problem NG VP damagedate 1.11.2025 -_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "15.10; Sheet1",
+    "sheetRowCount": 16,
+    "sheetCellCount": 66,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 1,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "15.10!2",
+      "sheetName": "15.10",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT CHECKING AND TEST PROBLEM FINAL SAMPLE NG VP DAMAGE OF MODEL MSU-L20L15-07 | | | | | | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "15.10!3",
+      "sheetName": "15.10",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | Date | 2025-11-01 00:00:00"
+    },
+    {
+      "rowId": "15.10!4",
+      "sheetName": "15.10",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | Maker | Thao"
+    },
+    {
+      "rowId": "15.10!5",
+      "sheetName": "15.10",
+      "rowNumber": 5,
+      "rowText": "| 1. Purpose test"
+    },
+    {
+      "rowId": "15.10!6",
+      "sheetName": "15.10",
+      "rowNumber": 6,
+      "rowText": "| - Checking reason NG VP damage at modul"
+    },
+    {
+      "rowId": "15.10!8",
+      "sheetName": "15.10",
+      "rowNumber": 8,
+      "rowText": "| 2. Content of testing"
+    },
+    {
+      "rowId": "15.10!9",
+      "sheetName": "15.10",
+      "rowNumber": 9,
+      "rowText": "| - Using 150pcs tracking process SUB4"
+    },
+    {
+      "rowId": "15.10!10",
+      "sheetName": "15.10",
+      "rowNumber": 10,
+      "rowText": "| -"
+    },
+    {
+      "rowId": "15.10!11",
+      "sheetName": "15.10",
+      "rowNumber": 11,
+      "rowText": "| 3.Result test"
+    },
+    {
+      "rowId": "15.10!13",
+      "sheetName": "15.10",
+      "rowNumber": 13,
+      "rowText": "| | 1. RESULT CHECKING SUB 4"
+    },
+    {
+      "rowId": "15.10!14",
+      "sheetName": "15.10",
+      "rowNumber": 14,
+      "rowText": "| | Date | Line | Input | SPK Array | | | AI | | | Height dimension check | | | Suger Check | | | Sigma | | | Hearing"
+    },
+    {
+      "rowId": "15.10!15",
+      "sheetName": "15.10",
+      "rowNumber": 15,
+      "rowText": "| | | | | VP damage | OK | NG rate | VP damage | OK | NG rate | VP damage | OK | NG rate | VP damage | OK | NG rate | VP damage | OK | NG rate | VP damage | OK | NG rate"
+    },
+    {
+      "rowId": "15.10!28",
+      "sheetName": "15.10",
+      "rowNumber": 28,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-574-rc-1",
+      "reviewTitle": "REPORT CHECKING AND TEST PROBLEM FINAL SAMPLE NG VP DAMAGE OF MODEL MSU-L20L15-07 | | | | | | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| 1. Purpose test / | - Checking reason NG VP damage at modul / | 2. Content of testing / | - Using 150pcs tracking process SUB4 / | -",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs 2025-11-01 00:00:00",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "2025-11-01 00:00:00",
+          "subgroupKeys": [
+            "E2-4B"
+          ],
+          "evidenceRows": [
+            "15.10!11",
+            "15.10!16",
+            "15.10!2",
+            "15.10!5",
+            "15.10!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "1. RESULT CHECKING SUB 4",
+          "comparisonRows": [
+            "15.10!16"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 21989,
+              "condition": "2025-11-01 00:00:00 | E2-4B",
+              "input": 150.0,
+              "ok": null,
+              "ng": 5.0,
+              "ratePercent": 3.3333333333333335,
+              "evidenceRows": [
+                "15.10!16"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "15.10!11",
+        "15.10!16",
+        "15.10!2",
+        "15.10!5",
+        "15.10!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "15.10!11",
+      "15.10!16",
+      "15.10!2",
+      "15.10!5",
+      "15.10!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

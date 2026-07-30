@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 505,
+  "sourceFile": "3. BRS-201506 DT Report checking and test porblem Frame + VP NG damage Date 14.12.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\505.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:51Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 505,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable process-condition evidence but misgroups conditions and includes a spurious measurement outcome.",
+    "issues": [
+      "Changed factor omits 0.13mm insert-tape test row.",
+      "Baseline/test grouping is asserted without decision support.",
+      "Measurement outcome is derived from headers, not measurements.",
+      "Outcome title/header citations are incomplete.",
+      "No final judgement should be inferred from the draft."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Include row 29 as a compared condition.",
+      "Frame factor as JIG/process condition comparison across Normal, 0.13mm tape, 0.19mm tape, and VP Array JIG.",
+      "Use defect outcome rows 29,31,33,35 with OK/NG/rate and defect-type columns.",
+      "Remove the synthetic measurement outcome.",
+      "Add rows 26-28 as outcome title/header evidence."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until omitted condition and header evidence are added."
+  },
+  "usage": {
+    "input_tokens": 3193,
+    "output_tokens": 590,
+    "total_tokens": 3783
+  }
+}

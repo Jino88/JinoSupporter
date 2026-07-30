@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 278,
+  "sourceFile": "14. BRS-161014 DT Report test change MC open test  from manual to MC auto  date 29.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\278.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:00Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 278,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft cannot be verified because no review case was generated and the primary changed factor is ambiguous.",
+    "issues": [
+      "No comparison pair or review case extracted",
+      "Primary change may be manual-to-MC auto or coil turns",
+      "Baseline/test conditions are not mapped",
+      "Only partial result rows are shown",
+      "No checked evidence rows recorded"
+    ],
+    "requiredUserQuestions": [
+      "Is the primary change manual open test to MC auto or coil turn count?",
+      "What condition is the baseline for comparison?"
+    ],
+    "correctionPlan": [
+      "Create one review case with explicit changed factor",
+      "Map baseline and test conditions from cited rows",
+      "Extract all result rows including actual 54-turn data if present",
+      "Group DCR/open-test outcomes under the same validation context",
+      "Add row citations for title, purpose, content, table header, results, and decision"
+    ],
+    "evidencePolicy": "Current citations are contextual but insufficient; final evidence needs complete row-level result citations."
+  },
+  "usage": {
+    "input_tokens": 1968,
+    "output_tokens": 584,
+    "total_tokens": 2552
+  }
+}

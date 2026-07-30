@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 609,
+  "sourceFile": "4. BRS-161014 Report check problem main 2 (VP+FR separate) 2023.08.10_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\609.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:12Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 609,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures the jig-type comparison but misstates the changed factor as baseline versus tests and under-specifies outcomes.",
+    "issues": [
+      "Changed factor should be jig type comparison, not implicit baseline vs Type 1/2/3.",
+      "Baseline/test direction is unsupported by cited rows.",
+      "Outcome omits explicit press OK counts and VP separate counts.",
+      "Row 25 is cited but not shown in provided context.",
+      "Decision section content is not cited."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rewrite changed factor as Type Jig: Type 1 vs Type 2 vs Type 3.",
+      "Do not claim a baseline unless a cited row proves it.",
+      "Extract/cite row 25 and any decision rows after row 54.",
+      "Record press OK, press NG, and VP separate results per jig type.",
+      "Add limitation if final selected jig is not stated in cited evidence."
+    ],
+    "evidencePolicy": "Citations support existence of a jig test, but are insufficient for final grouping and judgement."
+  },
+  "usage": {
+    "input_tokens": 2618,
+    "output_tokens": 755,
+    "total_tokens": 3373
+  }
+}

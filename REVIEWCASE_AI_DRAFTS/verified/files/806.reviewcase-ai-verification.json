@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 806,
+  "sourceFile": "63. BRS-161016  Report test VP mold #2, #3, #4, #5, #6, #7, #8, #9, #10 IR240828007 improve VP bending date 30.08.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\806.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 806,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable test data but the changed-factor and comparator grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Baseline is ambiguous; only one normal mold row is shown and only for function.",
+      "Changed condition omits test mold #10 in the factor and function outcome.",
+      "Mold numbers are treated as changed conditions rather than subgroup keys under the VP mold improvement test.",
+      "Header-derived measurement outcomes are spurious and not supported by data rows.",
+      "Function outcome omits available test mold #10 and baseline context."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended comparison improved test VP molds #2-#10 versus normal VP mold data?",
+      "Should mold number be treated as subgroup context rather than separate changed conditions?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to improved/test VP mold design for IR240828007 if supported.",
+      "Use mold number, date, line, and process stage as subgroup keys.",
+      "Include test mold #10 rows in changed condition and all applicable outcomes.",
+      "Add normal baseline rows only where valid and label limitations for missing baselines.",
+      "Remove header-only measurement-stat outcomes or rebuild them from actual data rows."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping and some outcome citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 11620,
+    "output_tokens": 626,
+    "total_tokens": 12246
+  }
+}

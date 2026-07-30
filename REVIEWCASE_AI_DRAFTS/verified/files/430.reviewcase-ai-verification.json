@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 430,
+  "sourceFile": "23. TIU C11-20  Report test Plate supplier MYUNGJIN NG difference colour 100% 2026.02.11_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\430.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 430,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the main Normal vs Test PT NG color comparison but outcome coverage and judgements need correction.",
+    "issues": [
+      "AI bonding and function judgements conflict with decision rows stating same as normal.",
+      "Decap bonding result is omitted from outcomes.",
+      "Drop test Auto/Manual comparison and particle-related NG explanation are omitted.",
+      "Evidence set omits key decision rows supporting final interpretation.",
+      "Changed-factor label should reflect PT/plate NG color condition, not overstate supplier as proven factor."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add decision rows Test!67-Test!69 and drop explanation Test!50 to evidence.",
+      "Revise AI bonding and function judgements to align with report conclusion or mark numeric delta as non-decisive.",
+      "Add decap bonding OK 8/8pcs outcome using Test!35 and decision support.",
+      "Add drop test manual/auto outcomes using Test!46-Test!50.",
+      "Refine changed factor to Normal vs Test PT/plate NG color with supplier as title/context only if not row-proven."
+    ],
+    "evidencePolicy": "Existing row citations are valid but incomplete for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4059,
+    "output_tokens": 685,
+    "total_tokens": 4744
+  }
+}

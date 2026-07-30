@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 556,
+  "sourceFile": "33. TIU C11-20 Result checking and test voltage hearing machine date 14.1.2026_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\556.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 556,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because the changed factor and outcome grouping do not match the cited frame-design comparison context.",
+    "issues": [
+      "Primary change should be test/new frame design versus normal lot, not R&B NG versus R&B OK.",
+      "Baseline and test conditions are misassigned from apparent result categories.",
+      "Outcome metric is mislabeled as decision instead of pickup/function/hearing results.",
+      "Test!46 and Test!48 are cited but their row contents are not provided for verification.",
+      "Relevant Sheet1 L/R TEST versus Normal comparisons are cited but not properly grouped by side and NG type."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factor as frame design change compared with normal lot.",
+      "Use L/R side as subgroup context and keep pickup tray/loading as separate metrics.",
+      "Extract and review Test!46 and Test!48 row text before using them.",
+      "Separate function/hearing-voltage outcomes from pickup-process NG-rate outcomes if both are retained.",
+      "Cite purpose and comparison rows such as Test!6 and Test!10 with the result rows."
+    ],
+    "evidencePolicy": "Current citations are insufficient; key cited rows are not visible and grouping citations are incomplete."
+  },
+  "usage": {
+    "input_tokens": 3227,
+    "output_tokens": 697,
+    "total_tokens": 3924
+  }
+}

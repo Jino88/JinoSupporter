@@ -1,0 +1,251 @@
+{
+  "sourceFileId": 181,
+  "sourceFile": "1. BRS-161014  Report test new design of LAI machine- 2024.10.19_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\1. BRS-161014  Report test new design of LAI machine- 2024.10.19_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "NG rate",
+    "sheetRowCount": 18,
+    "sheetCellCount": 86,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 6,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "NG rate!2",
+      "sheetName": "NG rate",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST NEW DESIGN OF LAI MACHINE TO IMPROVE COIL DAMAGE / FRAME DAMAGE BRS-161016 | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "NG rate!3",
+      "sheetName": "NG rate",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | Date | 2024-10-19 00:00:00"
+    },
+    {
+      "rowId": "NG rate!4",
+      "sheetName": "NG rate",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | Marker | Thuy"
+    },
+    {
+      "rowId": "NG rate!5",
+      "sheetName": "NG rate",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "NG rate!6",
+      "sheetName": "NG rate",
+      "rowNumber": 6,
+      "rowText": "| - To improve NG Coil damage / Frame damage"
+    },
+    {
+      "rowId": "NG rate!12",
+      "sheetName": "NG rate",
+      "rowNumber": 12,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "NG rate!13",
+      "sheetName": "NG rate",
+      "rowNumber": 13,
+      "rowText": "| - Checking vision Frame+Coil on 1 week, 300pcs/day and summury data"
+    },
+    {
+      "rowId": "NG rate!15",
+      "sheetName": "NG rate",
+      "rowNumber": 15,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "NG rate!16",
+      "sheetName": "NG rate",
+      "rowNumber": 16,
+      "rowText": "| | RESULT CHECKING VISION FRAME+COIL"
+    },
+    {
+      "rowId": "NG rate!17",
+      "sheetName": "NG rate",
+      "rowNumber": 17,
+      "rowText": "| | Date | Line | Input | OK | Vision Frame+Coil | | | | Total NG | NG rate"
+    },
+    {
+      "rowId": "NG rate!18",
+      "sheetName": "NG rate",
+      "rowNumber": 18,
+      "rowText": "| | | | | | Coil Separate | Coil damage | Frame damage | Coil float in Jig"
+    },
+    {
+      "rowId": "NG rate!19",
+      "sheetName": "NG rate",
+      "rowNumber": 19,
+      "rowText": "| | 2024-10-19 00:00:00 | E2-3B | 400 | 396 | 0 | 0 | 0 | 4 | 4 | 0.01"
+    },
+    {
+      "rowId": "NG rate!31",
+      "sheetName": "NG rate",
+      "rowNumber": 31,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-181-rc-1",
+      "reviewTitle": "| REPORT TEST NEW DESIGN OF LAI MACHINE TO IMPROVE COIL DAMAGE / FRAME DAMAGE BRS-161016 | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To improve NG Coil damage / Frame damage / | II. Content. / | - Checking vision Frame+Coil on 1 week, 300pcs/day and summury data / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs 2024-10-19 00:00:00, 2024-10-20 00:00:00, 2024-10-21 00:00:00, 2024-10-22 00:00:00, 2024-10-23 00:00:00, 2024-10-24 00:00:00",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "2024-10-19 00:00:00, 2024-10-20 00:00:00, 2024-10-21 00:00:00, 2024-10-22 00:00:00, 2024-10-23 00:00:00, 2024-10-24 00:00:00",
+          "subgroupKeys": [
+            "E2-3B"
+          ],
+          "evidenceRows": [
+            "NG rate!12",
+            "NG rate!19",
+            "NG rate!2",
+            "NG rate!20",
+            "NG rate!21",
+            "NG rate!22",
+            "NG rate!23",
+            "NG rate!24",
+            "NG rate!5"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "RESULT CHECKING VISION FRAME+COIL",
+          "comparisonRows": [
+            "NG rate!19",
+            "NG rate!20",
+            "NG rate!21",
+            "NG rate!22",
+            "NG rate!23",
+            "NG rate!24"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 18417,
+              "condition": "2024-10-19 00:00:00 | E2-3B",
+              "input": 400.0,
+              "ok": 396.0,
+              "ng": 4.0,
+              "ratePercent": 1.0,
+              "evidenceRows": [
+                "NG rate!19"
+              ]
+            },
+            {
+              "metricId": 18418,
+              "condition": "2024-10-20 00:00:00 | E2-3B",
+              "input": 300.0,
+              "ok": 299.0,
+              "ng": 1.0,
+              "ratePercent": 0.333333,
+              "evidenceRows": [
+                "NG rate!20"
+              ]
+            },
+            {
+              "metricId": 18419,
+              "condition": "2024-10-21 00:00:00 | E2-3B",
+              "input": 300.0,
+              "ok": 299.0,
+              "ng": 1.0,
+              "ratePercent": 0.333333,
+              "evidenceRows": [
+                "NG rate!21"
+              ]
+            },
+            {
+              "metricId": 18420,
+              "condition": "2024-10-22 00:00:00 | E2-3B",
+              "input": 300.0,
+              "ok": 298.0,
+              "ng": 2.0,
+              "ratePercent": 0.666667,
+              "evidenceRows": [
+                "NG rate!22"
+              ]
+            },
+            {
+              "metricId": 18421,
+              "condition": "2024-10-23 00:00:00 | E2-3B",
+              "input": 400.0,
+              "ok": 390.0,
+              "ng": 10.0,
+              "ratePercent": 2.5,
+              "evidenceRows": [
+                "NG rate!23"
+              ]
+            },
+            {
+              "metricId": 18422,
+              "condition": "2024-10-24 00:00:00 | E2-3B",
+              "input": 200.0,
+              "ok": 195.0,
+              "ng": 5.0,
+              "ratePercent": 2.5,
+              "evidenceRows": [
+                "NG rate!24"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "NG rate!12",
+        "NG rate!19",
+        "NG rate!2",
+        "NG rate!20",
+        "NG rate!21",
+        "NG rate!22",
+        "NG rate!23",
+        "NG rate!24",
+        "NG rate!5"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "NG rate!12",
+      "NG rate!19",
+      "NG rate!2",
+      "NG rate!20",
+      "NG rate!21",
+      "NG rate!22",
+      "NG rate!23",
+      "NG rate!24",
+      "NG rate!5"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

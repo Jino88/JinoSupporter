@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 773,
+  "sourceFile": "6. BRS-161016 Report test CM cap jig_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\773.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 773,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The file has citeable CMG/new cap jig validation context and class results but no clear baseline or extracted review case.",
+    "issues": [
+      "No generated review case to verify",
+      "No baseline or comparator condition is identified",
+      "Changed factor wording varies between CMG cap jig and new cap jig",
+      "Outcome metrics are present only as simple class counts and rates"
+    ],
+    "requiredUserQuestions": [
+      "Should this be treated as a one-condition jig validation rather than a comparison?"
+    ],
+    "correctionPlan": [
+      "Create one review case for CMG/new cap jig validation if one-arm evidence is allowed",
+      "Use rows 5-6 and 14-15 for purpose and test condition",
+      "Use rows 19-23 for result table and class distribution",
+      "State that no baseline comparison is available",
+      "Do not infer comparative improvement or acceptance beyond the cited result"
+    ],
+    "evidencePolicy": "Citations are sufficient for condition and results, but insufficient for a comparative changed-factor claim."
+  },
+  "usage": {
+    "input_tokens": 1679,
+    "output_tokens": 544,
+    "total_tokens": 2223
+  }
+}

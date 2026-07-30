@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 470,
+  "sourceFile": "27. BRS-201506 Report checking and test SUB2  date 12.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\470.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:52Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 470,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies a relevant JIG comparison but misgroups dates, omits an apparent jig comparison, and includes unsupported measurement outcomes.",
+    "issues": [
+      "Change domain should be jig/equipment/process, not material.",
+      "Apr 11 New JIG is paired with Apr 9 Normal line instead of same-date Normal line.",
+      "Early Normal jig vs Test jig class result appears omitted or mixed into the wrong factor.",
+      "Header-derived measurement outcomes are not valid final evidence.",
+      "Some key cited rows lack full context text, especially row 29."
+    ],
+    "requiredUserQuestions": [
+      "Should rows 15-20 be a separate Normal jig vs Test jig comparison or part of the same JIG validation?"
+    ],
+    "correctionPlan": [
+      "Reclassify changed factor as JIG/equipment/process condition.",
+      "Group New JIG vs Normal line by inherited date: Apr 9 rows 30/32 and Apr 11 rows 34/36.",
+      "Add or explicitly exclude the Normal jig vs Test jig class 1-3 comparison with supporting rows.",
+      "Remove header-only measurement statistics unless real data rows support them.",
+      "Cite complete header and data rows for each outcome, including row 29 details if used."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are insufficient because key outcomes are mispaired or header-only."
+  },
+  "usage": {
+    "input_tokens": 4445,
+    "output_tokens": 815,
+    "total_tokens": 5260
+  }
+}

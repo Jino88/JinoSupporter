@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 871,
+  "sourceFile": "72. TIU L5S3-01 R Test AWF Tension 7g - 12.02.2026_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\871.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 871,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cannot be verified because the changed factor and outcome grouping are misidentified and citations omit the actual tension rows.",
+    "issues": [
+      "Changed factor is filename/equipment instead of AWF tension condition.",
+      "Baseline and test conditions are not established from row evidence.",
+      "Evidence cites only headers, not rows with tension and results.",
+      "Outcome stats appear to mix inputs, defects, rates, and percent rows.",
+      "AWF number and possible merged-note inheritance are not preserved."
+    ],
+    "requiredUserQuestions": [
+      "Is Tension 3~6g the baseline and Tension 7g the test?",
+      "Do rows with blank Note inherit the preceding tension condition?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to AWF tension setting.",
+      "Define baseline/test conditions only from cited data rows.",
+      "Cite rows 6, 8, and all related AWF result rows, not only headers.",
+      "Separate BAKO defects, HEARING defects, input counts, and total rate metrics.",
+      "Preserve date, line, AWF number, and tension note as grouping keys."
+    ],
+    "evidencePolicy": "Insufficient; header citations exist but condition/result row citations are required."
+  },
+  "usage": {
+    "input_tokens": 3445,
+    "output_tokens": 712,
+    "total_tokens": 4157
+  }
+}

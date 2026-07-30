@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 332,
+  "sourceFile": "17. TIU C11-20  Report test material Grill change design improve NG VP damge date 15.1.2026_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\332.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:47Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 332,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is citeable but misidentifies the primary changed factor as model instead of new grill design versus normal lot.",
+    "issues": [
+      "Primary changed factor should be grill design change, not TIU C11-20R model.",
+      "Model TIU C11-20R should be subgroup/context, not changed condition.",
+      "First outcome metric is too generic; it should describe pick-up Grill NG.",
+      "Metric/header evidence rows are incomplete for outcome labels.",
+      "Change domain may need product design/material rather than material only."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedFactor to new grill change design vs normal lot.",
+      "Set baselineCondition to Normal and changedCondition to Test Grill change design.",
+      "Move TIU C11-20R to subgroupKeys with date/model context.",
+      "Rename first outcome to pick-up Grill NG/result checking pick-up.",
+      "Add header/title rows for each metric, including rows 20, 26-27, 33-34."
+    ],
+    "evidencePolicy": "Data row citations exist, but header/metric citations should be added before final use."
+  },
+  "usage": {
+    "input_tokens": 3488,
+    "output_tokens": 770,
+    "total_tokens": 4258
+  }
+}

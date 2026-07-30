@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 202,
+  "sourceFile": "10. BRS-161014  Report check PROBLEM SUB 2 CMCP 2023.11.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\202.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:59Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 202,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source rows but the changed-factor grouping and extracted outcome values are not reliable.",
+    "issues": [
+      "Changed factor improperly combines unrelated countermeasure trials and an artifact value.",
+      "Baseline/test conditions are not coherent across date, machine, material, lot, and process changes.",
+      "Outcome values for dry-oven comparison have incorrect NG counts.",
+      "Flat copper result is paired to dry-oven baseline without evidence of comparability.",
+      "Some cited rows are not shown in context, limiting citation auditability."
+    ],
+    "requiredUserQuestions": [
+      "Should the sequential trials be one report with multiple factors or separate review cases?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factors from the Type rows, preserving date, machine, lot, material, and process conditions.",
+      "Separate dry-oven before/after machine #1 from material, cleaning, lot, pressure, and machine comparisons.",
+      "Correct Input, OK, NG, and NG-rate values from each cited result row.",
+      "Remove unsupported subgroup key and artifact condition labels.",
+      "Include only evidence rows directly supporting each factor and outcome."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until regrouped and value-checked."
+  },
+  "usage": {
+    "input_tokens": 4011,
+    "output_tokens": 784,
+    "total_tokens": 4795
+  }
+}

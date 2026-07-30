@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 17,
+  "sourceFile": "01. BRS-161016DT  Report  New bond EV 562850 and improve NG separate VP+CD Date  05.5.2025_1778470595_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\17.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 17,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misidentifies the changed factor and mishandles LED UV and subgroup grouping.",
+    "issues": [
+      "Changed factor is filename instead of process comparison",
+      "Baseline/test conditions are explicit but left unresolved",
+      "Glue/bond groups VE 562850 and EA-16116 need preserved",
+      "LED UV outcome uses header-derived invalid stats",
+      "Vision VP+CD result is omitted or unclassified"
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison Dry UV 395nm vs normal 365nm, with glue as subgroup?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to new Dry UV 395nm vs normal Dry UV 365nm",
+      "Use title/purpose/content rows only as context evidence",
+      "Group tension rows by glue/bond while retaining shared line/date context",
+      "Rebuild LED UV outcome from rows 20-24 with test and normal values cited",
+      "Add or explicitly exclude VP+CD vision result with row 34 evidence"
+    ],
+    "evidencePolicy": "Row citations exist, but key outcome citations and grouping are not sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3963,
+    "output_tokens": 770,
+    "total_tokens": 4733
+  }
+}

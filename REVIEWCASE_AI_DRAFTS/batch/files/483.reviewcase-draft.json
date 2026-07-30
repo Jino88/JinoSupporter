@@ -1,0 +1,869 @@
+{
+  "sourceFileId": 483,
+  "sourceFile": "28. TIU C11-20  Report Test Frame #1-B improve damage mesh 2026.03.31. - RAW soundcheck_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\28. TIU C11-20  Report Test Frame #1-B improve damage mesh 2026.03.31. - RAW soundcheck_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 3,
+    "sheetNames": "Test; GRAPH; RAW DATA",
+    "sheetRowCount": 162,
+    "sheetCellCount": 3969,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 41
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "GRAPH!1",
+      "sheetName": "GRAPH",
+      "rowNumber": 1,
+      "rowText": "■ SPL"
+    },
+    {
+      "rowId": "GRAPH!75",
+      "sheetName": "GRAPH",
+      "rowNumber": 75,
+      "rowText": "■ THD"
+    },
+    {
+      "rowId": "RAW DATA!2",
+      "sheetName": "RAW DATA",
+      "rowNumber": 2,
+      "rowText": "| STANDARD | | STD"
+    },
+    {
+      "rowId": "RAW DATA!3",
+      "sheetName": "RAW DATA",
+      "rowNumber": 3,
+      "rowText": "| Test Sample Name 1 | | Frame Test | | | | | STD | | | | | | | | | | | | | | | | | | | | | | | | | Frame Test | | | | | | | | | | | | Normal L"
+    },
+    {
+      "rowId": "RAW DATA!4",
+      "sheetName": "RAW DATA",
+      "rowNumber": 4,
+      "rowText": "| Test Sample Name 2 | | Normal L | | | | SPL_FREQ1 | 123.39425 | | | | | | | | | SPL_FREQ1 | | | | | | 122.71075 | 124.014 | 122.708 | 123.158 | 122.90225 | 122.87625 | 122.79825 | 123.4765 | 122.78775 | 122.8015 | 123.023325 | | 122.94725 | 123.549 | 123.09025 | 123.8975 | 123.1715 | 123.1435 | 124.0405 | 123.068 | 123.053 | 123.14475 | 123.310525"
+    },
+    {
+      "rowId": "RAW DATA!5",
+      "sheetName": "RAW DATA",
+      "rowNumber": 5,
+      "rowText": "| Test Sample Name 3 | | | | | | SPL_FREQ2 | 131.0535 | | | | | | | | | SPL_FREQ2 | | | | | | 130.46925 | 131.17275 | 130.60975 | 130.973 | 130.7365 | 130.72675 | 130.74475 | 130.87725 | 130.72725 | 130.8065 | 130.784375 | | 130.7295 | 130.8835 | 130.689 | 130.90425 | 130.86725 | 130.822 | 131.7645 | 130.83775 | 130.7285 | 130.91325 | 130.91395"
+    },
+    {
+      "rowId": "RAW DATA!6",
+      "sheetName": "RAW DATA",
+      "rowNumber": 6,
+      "rowText": "| Test Sample Name 4 | | | | | | SPL_FREQ3 | 116.31433333 | | | | | | | | | SPL_FREQ3 | | | | | | 116.11484615 | 116.53112821 | 116.18661538 | 116.45561538 | 116.35094872 | 116.00266667 | 116.38379487 | 116.18507692 | 116.26820513 | 116.33125641 | 116.28101538 | | 116.00410256 | 116.01220513 | 115.69261538 | 115.8874359 | 116.30917949 | 116.14020513 | 117.09728205 | 116.19217949 | 116.24028205 | 116.15653846 | 116..."
+    },
+    {
+      "rowId": "RAW DATA!7",
+      "sheetName": "RAW DATA",
+      "rowNumber": 7,
+      "rowText": "| Test Sample Name 5 | | | | | | SPL | AVG | L | R | 3 | 4 | 5 | | | | | | | | | | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | AVG | | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | AVG"
+    },
+    {
+      "rowId": "RAW DATA!8",
+      "sheetName": "RAW DATA",
+      "rowNumber": 8,
+      "rowText": "| Test Sample Name 6 | | | | | | FREQ | STD_AVG | STD #L | STD #R | STD #3 | STD #4 | STD #5 | MASK - | MASK + | | | | | | | | Frame Test #1 | Frame Test #2 | Frame Test #3 | Frame Test #4 | Frame Test #5 | Frame Test #6 | Frame Test #7 | Frame Test #8 | Frame Test #9 | Frame Test #10 | Frame Test_AVG | | Normal L #1 | Normal L #2 | Normal L #3 | Normal L #4 | Normal L #5 | Normal L #6 | Normal L #7 | Normal L #8..."
+    },
+    {
+      "rowId": "RAW DATA!9",
+      "sheetName": "RAW DATA",
+      "rowNumber": 9,
+      "rowText": "| Normal | | | | | | 20 | 88.776 | 88.776 | | | | | 85.576 | 91.976 | | | | | | | | 88.779 | 90.606 | 88.875 | 88.962 | 88.565 | 88.883 | 88.804 | 89.584 | 88.224 | 88.859 | 89.0141 | | 88.452 | 89.885 | 89.158 | 90.221 | 89.039 | 88.96 | 88.762 | 89.262 | 88.717 | 88.94 | 89.1396 | | | 0.1255"
+    },
+    {
+      "rowId": "RAW DATA!10",
+      "sheetName": "RAW DATA",
+      "rowNumber": 10,
+      "rowText": "| | | | | | | 21.2 | 89.858 | 89.858 | | | | | 86.658 | 93.058 | | | | | | | | 89.548 | 91.418 | 89.528 | 90.051 | 89.376 | 89.721 | 89.639 | 90.613 | 89.055 | 89.766 | 89.8715 | | 89.379 | 90.28 | 90.13 | 90.803 | 89.834 | 89.784 | 89.444 | 89.998 | 89.5 | 90.016 | 89.9168 | | | 0.0453"
+    },
+    {
+      "rowId": "RAW DATA!11",
+      "sheetName": "RAW DATA",
+      "rowNumber": 11,
+      "rowText": "| | | | | | | 22.4 | 90.416 | 90.416 | | | | | 87.216 | 93.616 | | | | | | | | 90.211 | 92.162 | 90.233 | 90.091 | 90.054 | 90.403 | 90.303 | 91.396 | 89.962 | 90.528 | 90.5343 | | 90.007 | 90.84 | 90.754 | 91.394 | 90.624 | 90.58 | 90.457 | 90.739 | 90.326 | 90.715 | 90.6436 | | | 0.1093"
+    },
+    {
+      "rowId": "RAW DATA!43",
+      "sheetName": "RAW DATA",
+      "rowNumber": 43,
+      "rowText": "| | | | | | | 140 | 113.002 | 113.002 | | | | | 111.302 | 114.702 | | Frame Test # | Normal L # | # | # | Normal L | Normal R | 112.193 | 113.501 | 112.152 | 112.599 | 112.342 | 112.405 | 112.213 | 112.97 | 112.178 | 112.324 | 112.4877 | | 112.444 | 112.983 | 112.698 | 113.492 | 112.881 | 112.777 | 113.475 | 112.74 | 112.715 | 112.75 | 112.8955 | | | 0.4078"
+    },
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST FRAME NG DAMAGE MESH IMPROVE TIU-C11-20 | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Test improve NG Function"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| Make final and Test function:"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| 1. Result test"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | Result check function"
+    },
+    {
+      "rowId": "Test!15",
+      "sheetName": "Test",
+      "rowNumber": 15,
+      "rowText": "| | 1 | 2026-03-31 00:00:00 | Day shift | TIU C11-20R | Frame Test Mold #1-B | | 98 | 96 | 0 | 0 | 0 | 1 | 1 | 2 | 0.02040816"
+    },
+    {
+      "rowId": "Test!17",
+      "sheetName": "Test",
+      "rowNumber": 17,
+      "rowText": "| | 2 | | | | Normal | | 280 | 276 | 0 | 0 | 0 | 4 | 0 | 4 | 0.01428571"
+    },
+    {
+      "rowId": "Test!33",
+      "sheetName": "Test",
+      "rowNumber": 33,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "Test!34",
+      "sheetName": "Test",
+      "rowNumber": 34,
+      "rowText": "| - Follow result test:"
+    },
+    {
+      "rowId": "Test!35",
+      "sheetName": "Test",
+      "rowNumber": 35,
+      "rowText": "| - Frame Test Mold #1-B Check SPL : There is an improvement compared to before the improvement. => Frame after improve can use!"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-483-rc-1",
+      "reviewTitle": "| Test Sample Name 1 | | Frame Test | | | | | STD | | | | | | | | | | | | | | | | | | | | | | | | | Frame Test | | | | | | | | | | | | Normal L",
+      "reviewPurpose": "| I. Purpose. / | - Test improve NG Function / | II. Content. / | Make final and Test function: / | - Mold #1-B : Q'ty 100pcs",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Day shift",
+          "baselineCondition": "Normal",
+          "changedCondition": "Day shift",
+          "subgroupKeys": [
+            "TIU C11-20R",
+            "Frame Test Mold #1-B"
+          ],
+          "evidenceRows": [
+            "RAW DATA!3",
+            "RAW DATA!4",
+            "RAW DATA!5",
+            "RAW DATA!6",
+            "RAW DATA!7",
+            "RAW DATA!8",
+            "RAW DATA!9",
+            "Test!15",
+            "Test!17"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "Result check function",
+          "comparisonRows": [
+            "Test!15",
+            "Test!17"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 21203,
+              "condition": "Day shift | TIU C11-20R | Frame Test Mold #1-B",
+              "input": 98.0,
+              "ok": 96.0,
+              "ng": 2.0,
+              "ratePercent": 2.040816,
+              "evidenceRows": [
+                "Test!15"
+              ]
+            },
+            {
+              "metricId": 21204,
+              "condition": "Normal",
+              "input": 280.0,
+              "ok": 276.0,
+              "ng": 4.0,
+              "ratePercent": 1.428571,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Test Sample Name 1 | Frame Test | STD | Frame Test | Normal L",
+          "comparisonRows": [
+            "RAW DATA!6",
+            "RAW DATA!7",
+            "RAW DATA!8"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 54650,
+              "condition": "Frame Test / SPL_FREQ3",
+              "spec": "",
+              "min": 20.0,
+              "max": 530.0,
+              "avg": 158.01206896551724,
+              "sampleCount": 58,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!6"
+              ]
+            },
+            {
+              "statId": 54651,
+              "condition": "STD / SPL_FREQ3",
+              "spec": "",
+              "min": -1.4582,
+              "max": -1.1359,
+              "avg": -1.2349043478260868,
+              "sampleCount": 23,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!6"
+              ]
+            },
+            {
+              "statId": 54652,
+              "condition": "SPL",
+              "spec": "",
+              "min": 20.0,
+              "max": 560.0,
+              "avg": 164.82542372881358,
+              "sampleCount": 59,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!7"
+              ]
+            },
+            {
+              "statId": 54653,
+              "condition": "AVG",
+              "spec": "",
+              "min": 88.776,
+              "max": 125.771,
+              "avg": 109.01637288135589,
+              "sampleCount": 59,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!7"
+              ]
+            },
+            {
+              "statId": 54654,
+              "condition": "Test Sample Name 4 / L",
+              "spec": "",
+              "min": 88.776,
+              "max": 125.771,
+              "avg": 109.01637288135589,
+              "sampleCount": 59,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!7"
+              ]
+            },
+            {
+              "statId": 54655,
+              "condition": "AVG",
+              "spec": "",
+              "min": 89.0141,
+              "max": 125.5123,
+              "avg": 108.71668983050847,
+              "sampleCount": 59,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!7"
+              ]
+            },
+            {
+              "statId": 54656,
+              "condition": "AVG",
+              "spec": "",
+              "min": 89.1396,
+              "max": 125.7359,
+              "avg": 108.98061016949154,
+              "sampleCount": 59,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!7"
+              ]
+            },
+            {
+              "statId": 54657,
+              "condition": "Test Sample Name 5 / Test Sample Name 6",
+              "spec": "",
+              "min": 20.0,
+              "max": 10000.0,
+              "avg": 4207.5,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54658,
+              "condition": "SPL / FREQ",
+              "spec": "",
+              "min": 20.0,
+              "max": 600.0,
+              "avg": 172.07833333333335,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54659,
+              "condition": "AVG / STD_AVG",
+              "spec": "",
+              "min": 88.776,
+              "max": 126.476,
+              "avg": 109.30736666666662,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54660,
+              "condition": "L / STD #L",
+              "spec": "",
+              "min": 88.776,
+              "max": 126.476,
+              "avg": 109.30736666666662,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54661,
+              "condition": "R / MASK -",
+              "spec": "",
+              "min": 85.576,
+              "max": 124.776,
+              "avg": 107.0157,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54662,
+              "condition": "R / MASK +",
+              "spec": "",
+              "min": 91.976,
+              "max": 128.176,
+              "avg": 111.59903333333337,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54663,
+              "condition": "Frame Test #1",
+              "spec": "",
+              "min": 88.779,
+              "max": 125.921,
+              "avg": 108.64996666666667,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54664,
+              "condition": "Frame Test #2",
+              "spec": "",
+              "min": 90.606,
+              "max": 127.295,
+              "avg": 110.24851666666667,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54665,
+              "condition": "Frame Test #3",
+              "spec": "",
+              "min": 88.875,
+              "max": 125.924,
+              "avg": 108.69050000000001,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54666,
+              "condition": "Frame Test #4",
+              "spec": "",
+              "min": 88.962,
+              "max": 126.406,
+              "avg": 109.05098333333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54667,
+              "condition": "Frame Test #5",
+              "spec": "",
+              "min": 88.565,
+              "max": 126.109,
+              "avg": 108.74941666666668,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54668,
+              "condition": "Frame Test #6",
+              "spec": "",
+              "min": 88.883,
+              "max": 126.083,
+              "avg": 108.8901,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54669,
+              "condition": "Frame Test #7",
+              "spec": "",
+              "min": 88.804,
+              "max": 126.046,
+              "avg": 108.74660000000003,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54670,
+              "condition": "Frame Test #8",
+              "spec": "",
+              "min": 89.584,
+              "max": 126.714,
+              "avg": 109.58411666666665,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54671,
+              "condition": "Frame Test #9",
+              "spec": "",
+              "min": 88.224,
+              "max": 126.029,
+              "avg": 108.59041666666663,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54672,
+              "condition": "Frame Test #10",
+              "spec": "",
+              "min": 88.859,
+              "max": 126.027,
+              "avg": 108.88940000000001,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54673,
+              "condition": "AVG / Frame Test_AVG",
+              "spec": "",
+              "min": 89.0141,
+              "max": 126.2554,
+              "avg": 109.00900166666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54674,
+              "condition": "Normal L #1",
+              "spec": "",
+              "min": 88.452,
+              "max": 126.119,
+              "avg": 108.78721666666665,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54675,
+              "condition": "Normal L #2",
+              "spec": "",
+              "min": 89.885,
+              "max": 126.769,
+              "avg": 109.41885000000002,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54676,
+              "condition": "Normal L #3",
+              "spec": "",
+              "min": 89.158,
+              "max": 126.275,
+              "avg": 109.16106666666668,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54677,
+              "condition": "Normal L #4",
+              "spec": "",
+              "min": 90.221,
+              "max": 127.048,
+              "avg": 109.82480000000002,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54678,
+              "condition": "Normal L #5",
+              "spec": "",
+              "min": 89.039,
+              "max": 126.247,
+              "avg": 109.25075000000001,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54679,
+              "condition": "Normal L #6",
+              "spec": "",
+              "min": 88.96,
+              "max": 126.266,
+              "avg": 109.15191666666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54680,
+              "condition": "Normal L #7",
+              "spec": "",
+              "min": 88.762,
+              "max": 127.195,
+              "avg": 109.63864999999997,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54681,
+              "condition": "Normal L #8",
+              "spec": "",
+              "min": 89.262,
+              "max": 126.186,
+              "avg": 109.22274999999999,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54682,
+              "condition": "Normal L #9",
+              "spec": "",
+              "min": 88.717,
+              "max": 126.129,
+              "avg": 109.05028333333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54683,
+              "condition": "Normal L #10",
+              "spec": "",
+              "min": 88.94,
+              "max": 126.307,
+              "avg": 109.21206666666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            },
+            {
+              "statId": 54684,
+              "condition": "AVG / Normal L_AVG",
+              "spec": "",
+              "min": 89.1396,
+              "max": 126.4541,
+              "avg": 109.27183500000001,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!8"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Test Sample Name 6 | FREQ | STD_AVG | STD #L | STD #R | STD #3 | STD #4 | STD #5 | MASK - | MASK + | Frame Test #1 | Frame Test #2 | Frame Test #3 | Frame Test #4 | Frame Test #5 |...",
+          "comparisonRows": [
+            "RAW DATA!14"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 54685,
+              "condition": "FREQ / START",
+              "spec": "",
+              "min": 20.0,
+              "max": 10000.0,
+              "avg": 4207.5,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!14"
+              ]
+            },
+            {
+              "statId": 54686,
+              "condition": "FREQ / END",
+              "spec": "",
+              "min": 40.0,
+              "max": 20000.0,
+              "avg": 6705.0,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!14"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "RAW DATA!42",
+            "RAW DATA!43"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 54687,
+              "condition": "SPL MASK (Approval Sheets) / Freq 1",
+              "spec": "",
+              "min": 200.0,
+              "max": 710.0,
+              "avg": 414.0,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!42"
+              ]
+            },
+            {
+              "statId": 54688,
+              "condition": "SPL MASK (Approval Sheets) / Freq 2",
+              "spec": "",
+              "min": 800.0,
+              "max": 1500.0,
+              "avg": 1056.0,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!42"
+              ]
+            },
+            {
+              "statId": 54689,
+              "condition": "Freq 3 / Frame Test #",
+              "spec": "",
+              "min": -1.6551,
+              "max": -1.1359,
+              "avg": -1.3336809523809525,
+              "sampleCount": 42,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!43"
+              ]
+            },
+            {
+              "statId": 54690,
+              "condition": "Freq 3 / Normal L #",
+              "spec": "",
+              "min": -1.8578,
+              "max": -1.3267,
+              "avg": -1.6100190476190477,
+              "sampleCount": 42,
+              "violationCount": 0,
+              "evidenceRows": [
+                "RAW DATA!43"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "RAW DATA!14",
+        "RAW DATA!3",
+        "RAW DATA!4",
+        "RAW DATA!42",
+        "RAW DATA!43",
+        "RAW DATA!5",
+        "RAW DATA!6",
+        "RAW DATA!7",
+        "RAW DATA!8",
+        "RAW DATA!9",
+        "Test!15",
+        "Test!17"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "RAW DATA!14",
+      "RAW DATA!3",
+      "RAW DATA!4",
+      "RAW DATA!42",
+      "RAW DATA!43",
+      "RAW DATA!5",
+      "RAW DATA!6",
+      "RAW DATA!7",
+      "RAW DATA!8",
+      "RAW DATA!9",
+      "Test!15",
+      "Test!17"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

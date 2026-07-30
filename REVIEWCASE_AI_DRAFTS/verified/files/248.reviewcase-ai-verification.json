@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 248,
+  "sourceFile": "12. BRS-201506 Report test VP using die punch cutting inside V2 4cavity date 24.9.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\248.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 248,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid overall VP Test vs Normal grouping but contains blocking metric and measurement evidence errors.",
+    "issues": [
+      "Bonding test NG value conflicts with cited rows.",
+      "Measurement outcomes are duplicated and partly erroneous.",
+      "Short-size spec is misassigned in measurement-2.",
+      "Measurement citations use header/summary rows without raw data support.",
+      "Evidence includes row 29, not shown in supplied context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Correct bonding subResults from rows 33-34.",
+      "Keep one dimension measurement outcome with correct long and short specs.",
+      "Cite actual dimension data rows, not only headers.",
+      "Remove false short-size violations caused by wrong spec.",
+      "Retain VP Test Die Punch V2 4 cavity vs VP Normal/Normal comparison context."
+    ],
+    "evidencePolicy": "Citations are sufficient for defect comparisons except bonding extraction; measurement citations are insufficient."
+  },
+  "usage": {
+    "input_tokens": 4701,
+    "output_tokens": 600,
+    "total_tokens": 5301
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 318,
+  "sourceFile": "16. TIU L5S3-01 R Report test clean material MG, Yoke by LUMIX - 840  date 2025.12.02_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\318.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 318,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The main Lumix 840 versus ethanol comparison is plausible, but key evidence and normalization issues must be fixed before final use.",
+    "issues": [
+      "Test!14 is cited but its row text is not supplied for verification.",
+      "Changed factor domain is mislabeled as dimension/spec.",
+      "Tension test condition should map Test to Lumix 840 explicitly.",
+      "Spec value 1Kgf is omitted from tension stat.",
+      "Evidence list includes broad header rows and misses decision row."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Include or verify Test!14 row text and values.",
+      "Change domain to cleaning/process or material cleaning.",
+      "Normalize tension condition Test as Clean by Lumix 840.",
+      "Populate tension spec as 1Kgf from the header row context.",
+      "Add decision row Test!23 and trim nonessential header citations."
+    ],
+    "evidencePolicy": "Citations are directionally sufficient but not final because a key cited data row is absent from the provided context."
+  },
+  "usage": {
+    "input_tokens": 3011,
+    "output_tokens": 749,
+    "total_tokens": 3760
+  }
+}

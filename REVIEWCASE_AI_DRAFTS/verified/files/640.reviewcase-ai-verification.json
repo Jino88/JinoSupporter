@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 640,
+  "sourceFile": "42.BRS-2015 Report Test MG of new vender Qing Dao Date 4.5.2024 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\640.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:10Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 640,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is comparable but misgroups the changed factor and contains incorrect/missing outcome extraction.",
+    "issues": [
+      "Changed factor incorrectly includes SM/YOKE vision as test conditions.",
+      "Vision pairs use wrong baseline row and NG counts.",
+      "Separate-glue NG plating result is missing as a judged outcome.",
+      "Auto measurement outcomes are mostly header/noise groupings.",
+      "Function result should be treated as same/slightly improved, not material improvement."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to New MG QingDao vs Normal RuiJin vendor MG.",
+      "Rebuild vision outcomes by SM and YOKE rows with matching baselines.",
+      "Add separate-glue outcome using A/B and C-MG NG plating decisions.",
+      "Replace noisy measurement blocks with valid tension/drop/function outcomes only.",
+      "Cite full supporting rows for 37,38,60,72 or remove uncited claims."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until mispaired and missing outcome rows are corrected."
+  },
+  "usage": {
+    "input_tokens": 7624,
+    "output_tokens": 753,
+    "total_tokens": 8377
+  }
+}

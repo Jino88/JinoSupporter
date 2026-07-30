@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 174,
+  "sourceFile": "09. L20S15-07 Report test CD lot IR250425027 ( Size 40k )_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\174.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:52Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 174,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the comparison; the source supports CD test lot IR250425027 versus Normal, not numbered Sheet1 conditions.",
+    "issues": [
+      "Changed factor is wrong and treats row numbers as conditions.",
+      "Critical comparison rows Report!19, Report!21, Tension!8, and Tension!10 are omitted.",
+      "Sheet1 rows appear to be repeated checks or background, not the primary changed factor.",
+      "Outcomes omit the tension measurements and report-level function/dyne results.",
+      "Evidence exists but grouping is not reliable for Ask AI."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to CD lot IR250425027 versus Normal.",
+      "Use Report!19 and Report!21 for dyne, tension-test count, separation, and function NG results.",
+      "Use Tension!8 and Tension!10 for VP+CD tension measurements against spec.",
+      "Keep Sheet1 only as supporting or exclude it unless its condition labels are clarified.",
+      "Rebuild outcomes under one validation report context with cited row-level results."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient because key comparison rows are missing and Sheet1 is overused."
+  },
+  "usage": {
+    "input_tokens": 4862,
+    "output_tokens": 628,
+    "total_tokens": 5490
+  }
+}

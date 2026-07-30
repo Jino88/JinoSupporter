@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 607,
+  "sourceFile": "4. BRS-161014  Report test machine ass'y Frame + Yoke_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\607.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 607,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid defect data but misidentifies dates as the changed factor and leaves the baseline/test condition unresolved.",
+    "issues": [
+      "Primary changed factor should not be a date list.",
+      "Baseline or normal condition is not evidenced.",
+      "Key changed-condition citation is missing from evidenceRows.",
+      "Merged-date daily rows have ambiguous round-only conditions.",
+      "Process and vision outputs need clearer grouping under one validation context."
+    ],
+    "requiredUserQuestions": [
+      "What baseline condition should be compared against the cut 0.1 mm Test Master JIG condition?",
+      "Should the daily vision check sheet be included as the same validation case as the process result sheet?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to Test Master JIG after 0.1 mm cutting if confirmed by source context.",
+      "Mark baseline as not provided unless a cited row proves it.",
+      "Add purpose and changed-condition rows to changedFactor evidence.",
+      "Propagate dates into daily check 2nd-5th and total rows.",
+      "Separate outcome labels for process assembly defects and vision damage checks."
+    ],
+    "evidencePolicy": "Row ids appear citeable, but citations are incomplete for changed-condition evidence."
+  },
+  "usage": {
+    "input_tokens": 5456,
+    "output_tokens": 780,
+    "total_tokens": 6236
+  }
+}

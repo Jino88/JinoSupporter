@@ -1,0 +1,34 @@
+{
+  "sourceFileId": 7,
+  "sourceFile": "004.MSU-L20S15-07 REPORT TEST BONDING MORE 4POINT PAD 2025.01.18_1778470525_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\7.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:34Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 7,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook contains only a single-condition bonding test summary with no comparable baseline or changed-factor evidence.",
+    "issues": [
+      "No baseline/test pair or changed-condition comparison is present.",
+      "Only aggregate counts and NG rates for one type are shown.",
+      "Draft needs_review status should be exclusion for no comparable evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set ReviewCase status to excluded.",
+      "Use reason: no citeable changed-condition comparison.",
+      "Do not create a primary changed factor from the single Type value.",
+      "Retain rows only as descriptive source context if needed."
+    ],
+    "evidencePolicy": "Rows are sufficient to justify exclusion, not sufficient for final comparative evidence."
+  },
+  "usage": {
+    "input_tokens": 1268,
+    "output_tokens": 435,
+    "total_tokens": 1703
+  }
+}

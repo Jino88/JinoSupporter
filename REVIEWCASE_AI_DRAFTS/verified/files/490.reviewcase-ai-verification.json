@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 490,
+  "sourceFile": "29. BRS-201506 Report test DOE Forming sub VP- date 14.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\490.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 490,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable DOE evidence but changed-factor and outcome grouping are not reliable for final Ask AI use.",
+    "issues": [
+      "Changed factor conflates VP type with multiple forming and cooling temperatures.",
+      "Unsupported temperature levels appear in the changed condition.",
+      "SPK function pairs do not preserve date, machine, and matching baseline context.",
+      "Many measurement outcomes are header-derived artifacts rather than judged comparisons.",
+      "Several cited evidence rows are not shown in the provided context for value verification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary factor as forming/cooling temperature DOE versus normal VP.",
+      "Split test conditions by exact temperature set and preserve date, machine, line, and stage keys.",
+      "Rebuild VP-line and SPK-line defect outcomes from actual data rows with matched normal rows.",
+      "Group NTI SPL, THD, IMP, and FO as measurement outcomes with condition headers and data rows cited.",
+      "Remove header-only/stat-artifact outcomes and unsupported temperature labels."
+    ],
+    "evidencePolicy": "Row citations prove existence only; final evidence needs condition and data-row citations sufficient for each comparison."
+  },
+  "usage": {
+    "input_tokens": 13183,
+    "output_tokens": 771,
+    "total_tokens": 13954
+  }
+}

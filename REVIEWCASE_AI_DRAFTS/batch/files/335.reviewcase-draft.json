@@ -1,0 +1,758 @@
+{
+  "sourceFileId": 335,
+  "sourceFile": "17.2 BRS 161016 Report check dimension compare CD vendor Ralon and GES 2024.02.18_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\17.2 BRS 161016 Report check dimension compare CD vendor Ralon and GES 2024.02.18_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Sheet1",
+    "sheetRowCount": 49,
+    "sheetCellCount": 290,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 39
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet1!2",
+      "sheetName": "Sheet1",
+      "rowNumber": 2,
+      "rowText": "| RESULT CHECK DIMENSION CD"
+    },
+    {
+      "rowId": "Sheet1!3",
+      "sheetName": "Sheet1",
+      "rowNumber": 3,
+      "rowText": "| Vendor | Sample | Dimension | | | | | | MIN | MAX | AVG"
+    },
+    {
+      "rowId": "Sheet1!4",
+      "sheetName": "Sheet1",
+      "rowNumber": 4,
+      "rowText": "| | | P1 | P2 | P3 | P4 | P5 | P6 | | | | | | | | | | | | | | 1+5 | 2+4 | 3+6"
+    },
+    {
+      "rowId": "Sheet1!5",
+      "sheetName": "Sheet1",
+      "rowNumber": 5,
+      "rowText": "| Ralon | #1 | 0.596 | 0.5883 | 0.658 | 0.6707 | 0.675 | 0.6418 | 0.5883 | 0.675 | 0.63165 | | | | | | | | | | | 1.271 | 1.259 | 1.2998"
+    },
+    {
+      "rowId": "Sheet1!6",
+      "sheetName": "Sheet1",
+      "rowNumber": 6,
+      "rowText": "| | #2 | 0.5959 | 0.6549 | 0.6544 | 0.6221 | 0.6284 | 0.6348 | 0.5959 | 0.6549 | 0.6254 | | | | | | | | | | | 1.2243 | 1.277 | 1.2892"
+    },
+    {
+      "rowId": "Sheet1!7",
+      "sheetName": "Sheet1",
+      "rowNumber": 7,
+      "rowText": "| | #3 | 0.6716 | 0.6739 | 0.6542 | 0.5993 | 0.5994 | 0.6559 | 0.5993 | 0.6739 | 0.6366 | | | | | | | | | | | 1.271 | 1.2732 | 1.3101"
+    },
+    {
+      "rowId": "Sheet1!8",
+      "sheetName": "Sheet1",
+      "rowNumber": 8,
+      "rowText": "| | #4 | 0.644 | 0.652 | 0.6526 | 0.6271 | 0.6355 | 0.6289 | 0.6271 | 0.6526 | 0.63985 | | | | | | | | | | | 1.2795 | 1.2791 | 1.2815"
+    },
+    {
+      "rowId": "Sheet1!9",
+      "sheetName": "Sheet1",
+      "rowNumber": 9,
+      "rowText": "| | #5 | 0.6061 | 0.5993 | 0.6621 | 0.6706 | 0.6644 | 0.6371 | 0.5993 | 0.6706 | 0.63495 | | | | | | | | | | | 1.2705 | 1.2699 | 1.2992"
+    },
+    {
+      "rowId": "Sheet1!10",
+      "sheetName": "Sheet1",
+      "rowNumber": 10,
+      "rowText": "| | MIN | 0.5959 | 0.5883 | 0.6526 | 0.5993 | 0.5994 | 0.6289"
+    },
+    {
+      "rowId": "Sheet1!11",
+      "sheetName": "Sheet1",
+      "rowNumber": 11,
+      "rowText": "| | MAX | 0.6716 | 0.6739 | 0.6621 | 0.6707 | 0.675 | 0.6559"
+    },
+    {
+      "rowId": "Sheet1!12",
+      "sheetName": "Sheet1",
+      "rowNumber": 12,
+      "rowText": "| | AVG | 0.63375 | 0.6311 | 0.65735 | 0.635 | 0.6372 | 0.6424"
+    },
+    {
+      "rowId": "Sheet1!13",
+      "sheetName": "Sheet1",
+      "rowNumber": 13,
+      "rowText": "| Ges | #1 | 0.6897 | 0.697 | 0.665 | 0.6601 | 0.6654 | 0.7014 | 0.6601 | 0.7014 | 0.68075 | | | | | | | | | | | 1.3551 | 1.3571 | 1.3664"
+    },
+    {
+      "rowId": "Sheet1!45",
+      "sheetName": "Sheet1",
+      "rowNumber": 45,
+      "rowText": "| Result check dimension CD"
+    },
+    {
+      "rowId": "Sheet1!47",
+      "sheetName": "Sheet1",
+      "rowNumber": 47,
+      "rowText": "| Vendor | Sample | Dimension"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-335-rc-1",
+      "reviewTitle": "| RESULT CHECK DIMENSION CD",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "supplier",
+            "dimension/spec"
+          ],
+          "changedFactor": "17.2 BRS 161016 Report check dimension compare CD vendor Ralon and GES 2024.02.18",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Sheet1!12",
+            "Sheet1!13",
+            "Sheet1!14",
+            "Sheet1!15",
+            "Sheet1!16",
+            "Sheet1!17",
+            "Sheet1!20",
+            "Sheet1!5",
+            "Sheet1!6",
+            "Sheet1!7",
+            "Sheet1!8",
+            "Sheet1!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT CHECK DIMENSION CD",
+          "comparisonRows": [
+            "Sheet1!13",
+            "Sheet1!14",
+            "Sheet1!15",
+            "Sheet1!16",
+            "Sheet1!17",
+            "Sheet1!4",
+            "Sheet1!5",
+            "Sheet1!6",
+            "Sheet1!7",
+            "Sheet1!8",
+            "Sheet1!9"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 51585,
+              "condition": "Ralon",
+              "spec": "",
+              "min": 0.5883,
+              "max": 0.675,
+              "avg": 0.63165,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!5"
+              ]
+            },
+            {
+              "statId": 51586,
+              "condition": "#2 | 0.5959 | 0.6549 | 0.6544 | 0.6221 | 0.6284 | 0.6348 | 0.5959 | 0.6549",
+              "spec": "",
+              "min": 0.5959,
+              "max": 0.6549,
+              "avg": 0.6254,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!6"
+              ]
+            },
+            {
+              "statId": 51587,
+              "condition": "#3 | 0.6716 | 0.6739 | 0.6542 | 0.5993 | 0.5994 | 0.6559 | 0.5993 | 0.6739",
+              "spec": "",
+              "min": 0.5993,
+              "max": 0.6739,
+              "avg": 0.6366,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!7"
+              ]
+            },
+            {
+              "statId": 51588,
+              "condition": "#4 | 0.644 | 0.652 | 0.6526 | 0.6271 | 0.6355 | 0.6289 | 0.6271 | 0.6526",
+              "spec": "",
+              "min": 0.6271,
+              "max": 0.6526,
+              "avg": 0.63985,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!8"
+              ]
+            },
+            {
+              "statId": 51589,
+              "condition": "#5 | 0.6061 | 0.5993 | 0.6621 | 0.6706 | 0.6644 | 0.6371 | 0.5993 | 0.6706",
+              "spec": "",
+              "min": 0.5993,
+              "max": 0.6706,
+              "avg": 0.63495,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!9"
+              ]
+            },
+            {
+              "statId": 51590,
+              "condition": "Ges",
+              "spec": "",
+              "min": 0.6601,
+              "max": 0.7014,
+              "avg": 0.68075,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!13"
+              ]
+            },
+            {
+              "statId": 51591,
+              "condition": "#2 | 0.6834 | 0.6933 | 0.6623 | 0.6655 | 0.6712 | 0.7062 | 0.6623 | 0.7062",
+              "spec": "",
+              "min": 0.6623,
+              "max": 0.7062,
+              "avg": 0.68425,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!14"
+              ]
+            },
+            {
+              "statId": 51592,
+              "condition": "#3 | 0.6484 | 0.6566 | 0.697 | 0.6676 | 0.6806 | 0.6493 | 0.6484 | 0.697",
+              "spec": "",
+              "min": 0.6484,
+              "max": 0.697,
+              "avg": 0.6727,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!15"
+              ]
+            },
+            {
+              "statId": 51593,
+              "condition": "#4 | 0.6741 | 0.6904 | 0.6766 | 0.667 | 0.6746 | 0.6793 | 0.667 | 0.6904",
+              "spec": "",
+              "min": 0.667,
+              "max": 0.6904,
+              "avg": 0.6787,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!16"
+              ]
+            },
+            {
+              "statId": 51594,
+              "condition": "#5 | 0.6818 | 0.6744 | 0.638 | 0.6752 | 0.6766 | 0.7099 | 0.638 | 0.7099",
+              "spec": "",
+              "min": 0.638,
+              "max": 0.7099,
+              "avg": 0.67395,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!17"
+              ]
+            },
+            {
+              "statId": 51616,
+              "condition": "Dimension / P1",
+              "spec": "",
+              "min": 0.5959,
+              "max": 0.6716,
+              "avg": 0.6227199999999999,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!4"
+              ]
+            },
+            {
+              "statId": 51617,
+              "condition": "Dimension / P2",
+              "spec": "",
+              "min": 0.5883,
+              "max": 0.6739,
+              "avg": 0.63368,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!4"
+              ]
+            },
+            {
+              "statId": 51618,
+              "condition": "Dimension / P3",
+              "spec": "",
+              "min": 0.6526,
+              "max": 0.6621,
+              "avg": 0.6562600000000001,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!4"
+              ]
+            },
+            {
+              "statId": 51619,
+              "condition": "Dimension / P4",
+              "spec": "",
+              "min": 0.5993,
+              "max": 0.6707,
+              "avg": 0.63796,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!4"
+              ]
+            },
+            {
+              "statId": 51620,
+              "condition": "Dimension / P5",
+              "spec": "",
+              "min": 0.5994,
+              "max": 0.675,
+              "avg": 0.64054,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!4"
+              ]
+            },
+            {
+              "statId": 51621,
+              "condition": "Dimension / P6",
+              "spec": "",
+              "min": 0.6289,
+              "max": 0.6559,
+              "avg": 0.6397,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!4"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Sheet1!12",
+            "Sheet1!20",
+            "Sheet1!24",
+            "Sheet1!56",
+            "Sheet1!64",
+            "Sheet1!68"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 51595,
+              "condition": "P1",
+              "spec": "",
+              "min": 0.5959,
+              "max": 0.6716,
+              "avg": 0.63375,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!12"
+              ]
+            },
+            {
+              "statId": 51596,
+              "condition": "P2",
+              "spec": "",
+              "min": 0.5883,
+              "max": 0.6739,
+              "avg": 0.6311,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!12"
+              ]
+            },
+            {
+              "statId": 51597,
+              "condition": "P3",
+              "spec": "",
+              "min": 0.6526,
+              "max": 0.6621,
+              "avg": 0.65735,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!12"
+              ]
+            },
+            {
+              "statId": 51598,
+              "condition": "P4",
+              "spec": "",
+              "min": 0.5993,
+              "max": 0.6707,
+              "avg": 0.635,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!12"
+              ]
+            },
+            {
+              "statId": 51599,
+              "condition": "P5",
+              "spec": "",
+              "min": 0.5994,
+              "max": 0.675,
+              "avg": 0.6372,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!12"
+              ]
+            },
+            {
+              "statId": 51600,
+              "condition": "P6",
+              "spec": "",
+              "min": 0.6289,
+              "max": 0.6559,
+              "avg": 0.6424,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!12"
+              ]
+            },
+            {
+              "statId": 51601,
+              "condition": "Ges 3",
+              "spec": "",
+              "min": -0.0525,
+              "max": 0.6897,
+              "avg": 0.66905,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!20"
+              ]
+            },
+            {
+              "statId": 51602,
+              "condition": "Ges 4",
+              "spec": "",
+              "min": -0.0683,
+              "max": 0.697,
+              "avg": 0.6768,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!20"
+              ]
+            },
+            {
+              "statId": 51603,
+              "condition": "Ges 5",
+              "spec": "",
+              "min": 0.0146,
+              "max": 0.697,
+              "avg": 0.6675,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!20"
+              ]
+            },
+            {
+              "statId": 51604,
+              "condition": "Ges 6",
+              "spec": "",
+              "min": -0.0608,
+              "max": 0.6752,
+              "avg": 0.66765,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!20"
+              ]
+            },
+            {
+              "statId": 51605,
+              "condition": "Ges 7",
+              "spec": "",
+              "min": -0.066,
+              "max": 0.6806,
+              "avg": 0.673,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!20"
+              ]
+            },
+            {
+              "statId": 51606,
+              "condition": "Ges 8",
+              "spec": "",
+              "min": -0.0204,
+              "max": 0.7099,
+              "avg": 0.6796,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!20"
+              ]
+            },
+            {
+              "statId": 51607,
+              "condition": "Ges 3",
+              "spec": "",
+              "min": -0.0525,
+              "max": -0.0181,
+              "avg": -0.0353,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!24"
+              ]
+            },
+            {
+              "statId": 51608,
+              "condition": "Ges 4",
+              "spec": "",
+              "min": -0.0683,
+              "max": -0.0231,
+              "avg": -0.0457,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!24"
+              ]
+            },
+            {
+              "statId": 51609,
+              "condition": "Ges 6",
+              "spec": "",
+              "min": -0.0608,
+              "max": -0.0045,
+              "avg": -0.03265,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!24"
+              ]
+            },
+            {
+              "statId": 51610,
+              "condition": "Ges 7",
+              "spec": "",
+              "min": -0.066,
+              "max": -0.0056,
+              "avg": -0.0358,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!24"
+              ]
+            },
+            {
+              "statId": 51611,
+              "condition": "Posi 1",
+              "spec": "",
+              "min": 5.9631,
+              "max": 5.9803,
+              "avg": 5.9717,
+              "sampleCount": 17,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!56"
+              ]
+            },
+            {
+              "statId": 51612,
+              "condition": "Posi 2",
+              "spec": "",
+              "min": 11.9635,
+              "max": 11.9789,
+              "avg": 11.9712,
+              "sampleCount": 17,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!56"
+              ]
+            },
+            {
+              "statId": 51613,
+              "condition": "Ralon 3",
+              "spec": "",
+              "min": -0.0165,
+              "max": 5.9966,
+              "avg": 5.9881,
+              "sampleCount": 22,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!64"
+              ]
+            },
+            {
+              "statId": 51614,
+              "condition": "Ralon 4",
+              "spec": "",
+              "min": 0.0242,
+              "max": 11.9783,
+              "avg": 11.9588,
+              "sampleCount": 22,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!64"
+              ]
+            },
+            {
+              "statId": 51615,
+              "condition": "Ralon 3",
+              "spec": "",
+              "min": -0.0165,
+              "max": -0.0163,
+              "avg": -0.0164,
+              "sampleCount": 20,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!68"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Vendor | Sample | Dimension",
+          "comparisonRows": [
+            "Sheet1!48"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 51622,
+              "condition": "Dimension / Posi 1",
+              "spec": "",
+              "min": 5.9631,
+              "max": 5.9803,
+              "avg": 5.9735,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!48"
+              ]
+            },
+            {
+              "statId": 51623,
+              "condition": "Dimension / Posi 2",
+              "spec": "",
+              "min": 11.9635,
+              "max": 11.9789,
+              "avg": 11.97174,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!48"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Sheet1!12",
+        "Sheet1!13",
+        "Sheet1!14",
+        "Sheet1!15",
+        "Sheet1!16",
+        "Sheet1!17",
+        "Sheet1!20",
+        "Sheet1!24",
+        "Sheet1!4",
+        "Sheet1!48",
+        "Sheet1!5",
+        "Sheet1!56",
+        "Sheet1!6",
+        "Sheet1!64",
+        "Sheet1!68",
+        "Sheet1!7",
+        "Sheet1!8",
+        "Sheet1!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet1!12",
+      "Sheet1!13",
+      "Sheet1!14",
+      "Sheet1!15",
+      "Sheet1!16",
+      "Sheet1!17",
+      "Sheet1!20",
+      "Sheet1!24",
+      "Sheet1!4",
+      "Sheet1!48",
+      "Sheet1!5",
+      "Sheet1!56",
+      "Sheet1!6",
+      "Sheet1!64",
+      "Sheet1!68",
+      "Sheet1!7",
+      "Sheet1!8",
+      "Sheet1!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

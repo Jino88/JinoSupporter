@@ -1,0 +1,489 @@
+{
+  "sourceFileId": 405,
+  "sourceFile": "21. TIU C11-20  Report check SPL 20KHZ  2025.12.24_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\21. TIU C11-20  Report check SPL 20KHZ  2025.12.24_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 46,
+    "sheetCellCount": 281,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 15,
+    "measurementStatCount": 4
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT CHECKING SPL AT 20KHZ TIU-C11-20 | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | Date | 2025-12-24 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Check rate SPL 20khz"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Check rate SPL 20khz"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| Result check"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| | No | Date | Shift | Model | Time | Input | Check SPL | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | | | | | | | SPL 10Khz | SPL 20Khz"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | 0 | All | All | R/L | Total | 80703 | 327 | 317 | 644 | 0.00797988"
+    },
+    {
+      "rowId": "Test!34",
+      "sheetName": "Test",
+      "rowNumber": 34,
+      "rowText": "| | | | | | Total | 5892 | 31 | 31 | 62 | 0.01052274 | | | | - C Duyên trả lot hàng test Plasma cho SX"
+    },
+    {
+      "rowId": "Test!35",
+      "sheetName": "Test",
+      "rowNumber": 35,
+      "rowText": "| | 1 | 2025-12-25 00:00:00 | Day shift | TIU C11-20R | Total | 8486 | 38 | 12 | 50 | 0.00589206 | | | | - Line L từ lót số 3 là hàng tách chờ khô VP 24H | | | | | | | | | | | Lấy tỉ lệ NG k cần giữ hàng => Báo SX dán tem tách lot cả 2 loại"
+    },
+    {
+      "rowId": "Test!55",
+      "sheetName": "Test",
+      "rowNumber": 55,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-405-rc-1",
+      "reviewTitle": "| REPORT CHECKING SPL AT 20KHZ TIU-C11-20 | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Check rate SPL 20khz / | II. Content. / | - Check rate SPL 20khz / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Total, 10h00-12h00, 13h00-15h00, 15h00-17h00, 17h00-19h00, All, Day shift, TIU C11-20L",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Total, 10h00-12h00, 13h00-15h00, 15h00-17h00, 17h00-19h00, All, Day shift, TIU C11-20L",
+          "subgroupKeys": [
+            "TIU C11-20R",
+            "All",
+            "R/L",
+            "Total"
+          ],
+          "evidenceRows": [
+            "Test!12",
+            "Test!13",
+            "Test!14",
+            "Test!15",
+            "Test!16",
+            "Test!17",
+            "Test!18",
+            "Test!19",
+            "Test!2",
+            "Test!20",
+            "Test!21",
+            "Test!22",
+            "Test!23",
+            "Test!24",
+            "Test!25",
+            "Test!26",
+            "Test!27",
+            "Test!28",
+            "Test!5",
+            "Test!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "Result check",
+          "comparisonRows": [
+            "Test!13",
+            "Test!14",
+            "Test!15",
+            "Test!16",
+            "Test!17",
+            "Test!18",
+            "Test!19",
+            "Test!20",
+            "Test!22",
+            "Test!23",
+            "Test!24",
+            "Test!25",
+            "Test!26",
+            "Test!27",
+            "Test!28"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 20462,
+              "condition": "All | All | R/L | Total",
+              "input": 80703.0,
+              "ok": null,
+              "ng": 644.0,
+              "ratePercent": 0.797988,
+              "evidenceRows": [
+                "Test!13"
+              ]
+            },
+            {
+              "metricId": 20463,
+              "condition": "Day shift | TIU C11-20R",
+              "input": 1223.0,
+              "ok": null,
+              "ng": 11.0,
+              "ratePercent": 0.899428,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "metricId": 20464,
+              "condition": "10h00-12h00",
+              "input": 1575.0,
+              "ok": null,
+              "ng": 5.0,
+              "ratePercent": 0.31746,
+              "evidenceRows": [
+                "Test!15"
+              ]
+            },
+            {
+              "metricId": 20465,
+              "condition": "13h00-15h00",
+              "input": 1629.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "metricId": 20466,
+              "condition": "15h00-17h00",
+              "input": 1794.0,
+              "ok": null,
+              "ng": 7.0,
+              "ratePercent": 0.39019,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "metricId": 20467,
+              "condition": "17h00-19h00",
+              "input": 1991.0,
+              "ok": null,
+              "ng": 5.0,
+              "ratePercent": 0.25113,
+              "evidenceRows": [
+                "Test!18"
+              ]
+            },
+            {
+              "metricId": 20468,
+              "condition": "Total",
+              "input": 8212.0,
+              "ok": null,
+              "ng": 28.0,
+              "ratePercent": 0.340964,
+              "evidenceRows": [
+                "Test!19"
+              ]
+            },
+            {
+              "metricId": 20469,
+              "condition": "TIU C11-20L",
+              "input": 684.0,
+              "ok": null,
+              "ng": 6.0,
+              "ratePercent": 0.8771930000000001,
+              "evidenceRows": [
+                "Test!20"
+              ]
+            },
+            {
+              "metricId": 20470,
+              "condition": "Total",
+              "input": 684.0,
+              "ok": null,
+              "ng": 6.0,
+              "ratePercent": 0.8771930000000001,
+              "evidenceRows": [
+                "Test!22"
+              ]
+            },
+            {
+              "metricId": 20471,
+              "condition": "Night shift | TIU C11-20R",
+              "input": 636.0,
+              "ok": null,
+              "ng": 4.0,
+              "ratePercent": 0.628931,
+              "evidenceRows": [
+                "Test!23"
+              ]
+            },
+            {
+              "metricId": 20472,
+              "condition": "10h00-12h00",
+              "input": 1771.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!24"
+              ]
+            },
+            {
+              "metricId": 20473,
+              "condition": "13h00-15h00",
+              "input": 1956.0,
+              "ok": null,
+              "ng": 5.0,
+              "ratePercent": 0.255624,
+              "evidenceRows": [
+                "Test!25"
+              ]
+            },
+            {
+              "metricId": 20474,
+              "condition": "15h00-17h00",
+              "input": 1491.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!26"
+              ]
+            },
+            {
+              "metricId": 20475,
+              "condition": "17h00-19h00",
+              "input": 1430.0,
+              "ok": null,
+              "ng": 14.0,
+              "ratePercent": 0.979021,
+              "evidenceRows": [
+                "Test!27"
+              ]
+            },
+            {
+              "metricId": 20476,
+              "condition": "Total",
+              "input": 7284.0,
+              "ok": null,
+              "ng": 23.0,
+              "ratePercent": 0.315761,
+              "evidenceRows": [
+                "Test!28"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No | Date | Shift | Model | Time | Input | Check SPL | Total NG | NG rate",
+          "comparisonRows": [
+            "Test!12"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 53153,
+              "condition": "Check SPL / SPL 10Khz",
+              "spec": "",
+              "min": 0.0,
+              "max": 327.0,
+              "avg": 44.625,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!12"
+              ]
+            },
+            {
+              "statId": 53154,
+              "condition": "Check SPL / SPL 20Khz",
+              "spec": "",
+              "min": 0.0,
+              "max": 317.0,
+              "avg": 43.625,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!12"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Test!21"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 53155,
+              "condition": "Total / 10h00-19h00",
+              "spec": "",
+              "min": 8.0,
+              "max": 17.0,
+              "avg": 12.6,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!21"
+              ]
+            },
+            {
+              "statId": 53156,
+              "condition": "Not check",
+              "spec": "",
+              "min": 7.0,
+              "max": 9807.0,
+              "avg": 4433.64,
+              "sampleCount": 25,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!21"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!12",
+        "Test!13",
+        "Test!14",
+        "Test!15",
+        "Test!16",
+        "Test!17",
+        "Test!18",
+        "Test!19",
+        "Test!2",
+        "Test!20",
+        "Test!21",
+        "Test!22",
+        "Test!23",
+        "Test!24",
+        "Test!25",
+        "Test!26",
+        "Test!27",
+        "Test!28",
+        "Test!5",
+        "Test!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!12",
+      "Test!13",
+      "Test!14",
+      "Test!15",
+      "Test!16",
+      "Test!17",
+      "Test!18",
+      "Test!19",
+      "Test!2",
+      "Test!20",
+      "Test!21",
+      "Test!22",
+      "Test!23",
+      "Test!24",
+      "Test!25",
+      "Test!26",
+      "Test!27",
+      "Test!28",
+      "Test!5",
+      "Test!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

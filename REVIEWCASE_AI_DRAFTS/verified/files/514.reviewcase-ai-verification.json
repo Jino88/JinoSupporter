@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 514,
+  "sourceFile": "30. BRS-161016  Report test VP mold #7 add 0.3mm  date 15.4.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\514.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 514,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid citeable source rows but grouping and outcome extraction need correction before final use.",
+    "issues": [
+      "Changed factor incorrectly includes Total and coating domain.",
+      "VP/CD pairs mismatch date/line/mold context and omit normal rows.",
+      "Header-derived measurement outcomes are not valid measurements.",
+      "Several outcome metrics remain unjudged despite comparable totals.",
+      "Evidence omits decision rows and some paired control rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to VP mold #7 add 0.3mm thickness vs normal VP molds.",
+      "Remove Total from condition labels and keep totals as aggregate rows.",
+      "Rebuild pairs by sheet, date, line, mold and include rows 67, 71 and 75.",
+      "Delete invalid measurement outcomes from header/stat artifacts.",
+      "Add concise judgements for laser cutting, bending, VP/CD and function using matched rows and decisions."
+    ],
+    "evidencePolicy": "Row citations exist but are incomplete for paired evidence and include non-evidence header artifacts."
+  },
+  "usage": {
+    "input_tokens": 12794,
+    "output_tokens": 719,
+    "total_tokens": 13513
+  }
+}

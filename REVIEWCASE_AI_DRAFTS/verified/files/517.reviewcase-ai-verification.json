@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 517,
+  "sourceFile": "30. MSU-L20S15-07  Report checking  gauss yoke date 3.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\517.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 517,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source context but misidentifies and conflates the changed conditions, so it is not safe as final evidence.",
+    "issues": [
+      "Changed factor is filename, not tested condition.",
+      "Baseline/test are marked unclear though rows show 2000V vs 2300V/2500V.",
+      "Voltage test and dry-time comparison are conflated.",
+      "Measurement stats look duplicated or malformed.",
+      "Evidence lacks clear header-to-data grouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor for voltage analysis as magnetic voltage: normal 2000V vs tests 2300V and 2500V.",
+      "Separate dry comparison as before vs after dry 30 minutes, or create a second review case if needed.",
+      "Group outcomes by SMG, MG+PT, Semi Yoke, and Final SPK with their specs.",
+      "Recompute stats from actual data rows and remove duplicate malformed candidates.",
+      "Cite purpose/content rows, section headers, condition headers, and matching data rows."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are not sufficient for final evidence until condition headers and data rows are paired."
+  },
+  "usage": {
+    "input_tokens": 6557,
+    "output_tokens": 785,
+    "total_tokens": 7342
+  }
+}

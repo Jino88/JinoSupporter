@@ -1,0 +1,218 @@
+{
+  "sourceFileId": 5,
+  "sourceFile": "002.MSU - 20S15-07 RESULT CHECK TENSION VP . CD USE PLASMA_1778470509_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\002.MSU - 20S15-07 RESULT CHECK TENSION VP . CD USE PLASMA_1778470509_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Sheet1",
+    "sheetRowCount": 10,
+    "sheetCellCount": 104,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 4
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet1!12",
+      "sheetName": "Sheet1",
+      "rowNumber": 12,
+      "rowText": "| RESULT CHECK TENSION V/P + CD"
+    },
+    {
+      "rowId": "Sheet1!13",
+      "sheetName": "Sheet1",
+      "rowNumber": 13,
+      "rowText": "| Date | Modle | Type check | | Spec | Sample no | | | | | | | | | | Min | Max | Average"
+    },
+    {
+      "rowId": "Sheet1!14",
+      "sheetName": "Sheet1",
+      "rowNumber": 14,
+      "rowText": "| | | | | | #1 | #2 | #3 | #4 | #5 | #6 | #7 | #8 | #9 | #10"
+    },
+    {
+      "rowId": "Sheet1!15",
+      "sheetName": "Sheet1",
+      "rowNumber": 15,
+      "rowText": "| 2025-01-07 00:00:00 | MSU - L20S15-07 | Tension V/P + CD (Dyne 40) | CD use plasma | > 1.530kgf | 1.702 | 1.884 | 2.326 | 2.303 | 2.234 | 1.554 | 1.725 | 1.526 | 1.371 | 1.566 | 1.371 | 2.326 | 1.8191"
+    },
+    {
+      "rowId": "Sheet1!16",
+      "sheetName": "Sheet1",
+      "rowNumber": 16,
+      "rowText": "| | | | CD not use plasma | > 1.530kgf | 1.96 | 1.604 | 1.573 | 1.938 | 1.203 | 1.976 | 1.505 | 1.44 | 1.312 | 1.991 | 1.203 | 1.991 | 1.6502"
+    },
+    {
+      "rowId": "Sheet1!46",
+      "sheetName": "Sheet1",
+      "rowNumber": 46,
+      "rowText": "| RESULT TEST TENSION VP AND CD AND COMPARE LAB AND E2"
+    },
+    {
+      "rowId": "Sheet1!47",
+      "sheetName": "Sheet1",
+      "rowNumber": 47,
+      "rowText": "| Date | Modle | Type check | | Spec | Sample no | | | | | | | | | | Min | Max | Average"
+    },
+    {
+      "rowId": "Sheet1!48",
+      "sheetName": "Sheet1",
+      "rowNumber": 48,
+      "rowText": "| | | | | | #1 | #2 | #3 | #4 | #5 | #6 | #7 | #8 | #9 | #10"
+    },
+    {
+      "rowId": "Sheet1!49",
+      "sheetName": "Sheet1",
+      "rowNumber": 49,
+      "rowText": "| 2025-01-07 00:00:00 | MSU - L20S15-07 | Tension V/P + CD (Dyne 40) | Dome plasma of lab and make sample as'y VP dome of lab | > 1.530kgf | 1.772 | 1.825 | 2.293 | 2.177 | 2.486 | 2.142 | 1.954 | 2.459 | 2.089 | 2.227 | 1.772 | 2.486 | 2.1424"
+    },
+    {
+      "rowId": "Sheet1!50",
+      "sheetName": "Sheet1",
+      "rowNumber": 50,
+      "rowText": "| | | | Dome plasma of lab and make sampel as'y VP dome of E2 | > 1.530kgf | 3.228 | 2.482 | 3.01 | 3.371 | 2.662 | 2.349 | 2.647 | 2.354 | 2.966 | 2.983 | 2.349 | 3.371 | 2.8052"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-5-rc-1",
+      "reviewTitle": "| RESULT CHECK TENSION V/P + CD",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition",
+            "dimension/spec"
+          ],
+          "changedFactor": "002.MSU - 20S15-07 RESULT CHECK TENSION VP . CD USE PLASMA_1778470509",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Sheet1!15",
+            "Sheet1!16",
+            "Sheet1!46",
+            "Sheet1!49",
+            "Sheet1!50"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT CHECK TENSION V/P + CD",
+          "comparisonRows": [
+            "Sheet1!15",
+            "Sheet1!16"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 45300,
+              "condition": "MSU - L20S15-07 | Tension V/P + CD (Dyne 40) | CD use plasma | > 1.530kgf",
+              "spec": "> 1.530kgf",
+              "min": 1.371,
+              "max": 2.326,
+              "avg": 1.8191,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!15"
+              ]
+            },
+            {
+              "statId": 45301,
+              "condition": "CD not use plasma | > 1.530kgf",
+              "spec": "> 1.530kgf",
+              "min": 1.203,
+              "max": 1.991,
+              "avg": 1.6502,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!16"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT TEST TENSION VP AND CD AND COMPARE LAB AND E2",
+          "comparisonRows": [
+            "Sheet1!49",
+            "Sheet1!50"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 45302,
+              "condition": "MSU - L20S15-07 | Tension V/P + CD (Dyne 40) | Dome plasma of lab and make sample as'y VP dome of lab | > 1.530kgf",
+              "spec": "> 1.530kgf",
+              "min": 1.772,
+              "max": 2.486,
+              "avg": 2.1424,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!49"
+              ]
+            },
+            {
+              "statId": 45303,
+              "condition": "Dome plasma of lab and make sampel as'y VP dome of E2 | > 1.530kgf",
+              "spec": "> 1.530kgf",
+              "min": 2.349,
+              "max": 3.371,
+              "avg": 2.8052,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!50"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Sheet1!15",
+        "Sheet1!16",
+        "Sheet1!46",
+        "Sheet1!49",
+        "Sheet1!50"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet1!15",
+      "Sheet1!16",
+      "Sheet1!46",
+      "Sheet1!49",
+      "Sheet1!50"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

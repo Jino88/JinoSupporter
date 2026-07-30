@@ -14,7 +14,9 @@ namespace BmesNgRateStandalone.Services;
 /// </summary>
 public sealed class BmesRoutingScrapeService(NgRateSettingsService settings)
 {
-    private const string BaseUrl = "http://bmes.bujeon.com";
+    // HTTPS, matching BmesLpaScrapeService: over plain http the anti-forgery cookie does not
+    // survive the redirect to https and the login POST fails validation.
+    private const string BaseUrl = "https://bmes.bujeon.com";
 
     private static readonly string[] Werks = { "3200", "3210", "3220" };
 
@@ -75,7 +77,7 @@ public sealed class BmesRoutingScrapeService(NgRateSettingsService settings)
         progress?.Report("Logging in…");
         if (!await LoginAsync(client, token, loginId, password))
         {
-            progress?.Report("[ERROR] Login failed — check credentials in BMES Setting.");
+            progress?.Report("[ERROR] Login failed — check credentials in Setting.");
             return -1;
         }
 

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 779,
+  "sourceFile": "6.1 BRS-161014DT report test Frame array A cutting + Laser support JIG new version 2023.11.09_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\779.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:47Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 779,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft uses citeable rows but misstates the changed factor and incompletely groups the outcomes for the jig upgrade validation.",
+    "issues": [
+      "Changed factor is too generic; actual factor is Frame array A cutting down 2mm plus new Laser support JIG.",
+      "Unsupported change domain includes coating.",
+      "Critical context rows for content and old/new JIG combinations are not cited.",
+      "Laser cutting/vision comparison rows 23-24 are not fully grouped as an outcome.",
+      "Sheet1 intermediate condition suggests multi-condition context, not just Normal vs TEST."
+    ],
+    "requiredUserQuestions": [
+      "Should the New Frame array A plus Old Laser support JIG condition be modeled as a separate failed intermediate condition?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to combined Frame array A cutting JIG and Laser support JIG improvement.",
+      "Remove unsupported coating domain.",
+      "Add evidence rows 8, 20, 32, 47, 48 and Sheet1 rows 8-10 where used.",
+      "Create a comparative outcome for laser cutting/vision using rows 21-24.",
+      "Preserve process-change outcome rows 33-35 under the same changed-factor context."
+    ],
+    "evidencePolicy": "Row citations exist, but key context citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3603,
+    "output_tokens": 802,
+    "total_tokens": 4405
+  }
+}

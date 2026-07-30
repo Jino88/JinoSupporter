@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 744,
+  "sourceFile": "55. MSU-L20S15-07GMI - Report test Type new bond  A-3424B Ass'y VP+CD- 2026.01.21_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\744.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:42Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 744,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparison evidence but misidentifies the primary changed factor and includes unreliable outcome grouping.",
+    "issues": [
+      "Changed factor is dates vs normal, but source indicates New Bond A-3424B vs Normal SJ4765.",
+      "Dates and line E2-4A should be subgroup context, not changed condition.",
+      "Several outcomes use header-only or misparsed rows, especially FO and NTI measurement stats.",
+      "Decision/result rows summarizing major NG findings are omitted from evidence.",
+      "Outcome domains and metrics are too generic or incorrect for AOI, UC press, function, tension, and reliability."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baseline to Normal SJ4765 and changed condition to New Bond A-3424B VP+CD.",
+      "Keep date, line, model, sample qty, and VP+CD as subgroup/context keys.",
+      "Rebuild outcomes from actual result tables and decision rows, excluding bogus FO row-number stats.",
+      "Group all valid domains under the same New Bond validation report: bond amount, AOI, UC press, function, tension, drop, reliability, SPL/THD/IMP/FO if parsed correctly.",
+      "Add concise citations to purpose, comparison, result, decap analysis, and decision rows."
+    ],
+    "evidencePolicy": "Row citations exist, but many are insufficient or misassigned; corrected row-level citations are required."
+  },
+  "usage": {
+    "input_tokens": 15134,
+    "output_tokens": 693,
+    "total_tokens": 15827
+  }
+}

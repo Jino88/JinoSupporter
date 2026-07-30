@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 812,
+  "sourceFile": "63.1. TIU L5S3-01 LR REPORT DATA SPL - 2026.01.20_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\812.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 812,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable STD, R LINE, and L LINE context but the changed factor and outcome grouping are not reliable.",
+    "issues": [
+      "Changed factor is the filename, not the evidenced STD vs R LINE vs L LINE comparison.",
+      "Baseline and test conditions are marked unclear despite source rows identifying STD and line samples.",
+      "Outcome metrics mix headers, specs, frequencies, and data values as conditions.",
+      "Several subresults appear transposed or misgrouped and cannot support final conclusions.",
+      "Review title and purpose are not meaningful for the validation report."
+    ],
+    "requiredUserQuestions": [
+      "Should R LINE and L LINE be treated as separate test conditions against STD?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to STD reference versus R LINE and L LINE sample lines.",
+      "Use RAW DATA sample-name rows and GRAPH summary rows as changed-condition evidence.",
+      "Separate SPL, Fo, and THD outcomes using report headers and spec rows.",
+      "Remove transposed numeric-condition subresults unless regrouped by true frequency and sample columns.",
+      "Rewrite title and purpose to reflect TIU L5S3-01 LR SPL validation."
+    ],
+    "evidencePolicy": "Row citations exist, but cited rows are not sufficient until grouping is corrected."
+  },
+  "usage": {
+    "input_tokens": 11124,
+    "output_tokens": 794,
+    "total_tokens": 11918
+  }
+}

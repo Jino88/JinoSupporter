@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 84,
+  "sourceFile": "03.MSU-20S15-07 Result test CD date 3.17 lot NG separate 0%_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\84.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:46Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 84,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misgroups conditions and misreads several NG/rate values, so it is not safe as final evidence.",
+    "issues": [
+      "Functional NG and rate values conflict with result rows.",
+      "Plasma 2/3 time VP+CD test is improperly merged into normal-vs-CD function comparison.",
+      "Baseline/test grouping is ambiguous beyond the single normal row.",
+      "Measurement outcome cites mainly header context and is not valid evidence.",
+      "Cited rows Sheet1!18 and Sheet1!30 are not shown in provided context."
+    ],
+    "requiredUserQuestions": [
+      "Should the plasma 2/3 time VP+CD check be a separate changed factor from function testing?"
+    ],
+    "correctionPlan": [
+      "Reparse result columns using row headers and row-level values.",
+      "Separate function check from VP+CD plasma-time check unless source proves one comparison context.",
+      "Limit baseline comparison to rows with a valid normal/control condition.",
+      "Remove or rebuild measurement outcome with data-row citations, not header-only evidence.",
+      "Verify missing cited rows 18 and 30 before reuse."
+    ],
+    "evidencePolicy": "Row citations exist for some conditions, but current citations are insufficient due to missing context and value mismatches."
+  },
+  "usage": {
+    "input_tokens": 5093,
+    "output_tokens": 791,
+    "total_tokens": 5884
+  }
+}

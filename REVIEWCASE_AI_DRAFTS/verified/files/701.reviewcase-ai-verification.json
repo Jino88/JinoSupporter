@@ -1,0 +1,35 @@
+{
+  "sourceFileId": 701,
+  "sourceFile": "5. MSU-201507 Report Check Gauss SPK 13.3.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\701.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 701,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook is a single SPK gauss check report with no explicit baseline/test changed factor, so it is not a valid comparative ReviewCase.",
+    "issues": [
+      "Changed factor is derived from filename, not row evidence",
+      "Baseline and changed conditions are not explicit",
+      "Only one sample measurement condition is present",
+      "Outcome can be cited, but not tied to a change comparison"
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Do not use this as final Ask AI comparative evidence",
+      "Exclude from ReviewCase set or store as non-comparative measurement record",
+      "If retained, remove changed-factor framing",
+      "Cite rows 15-16 only for the SPK gauss measurement result"
+    ],
+    "evidencePolicy": "Rows exist and support the measurement, but not a changed-condition comparison."
+  },
+  "usage": {
+    "input_tokens": 2303,
+    "output_tokens": 380,
+    "total_tokens": 2683
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 70,
+  "sourceFile": "028.MSU-20S15-07 GMI -Result test new pusher press coil SP improve NG function_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\70.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 70,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable old-vs-new pusher evidence exists, but the draft grouping and metrics are not reliable enough for final use.",
+    "issues": [
+      "Changed factor is polluted with dates, metrics, and baseline text.",
+      "Changed condition incorrectly includes old pusher.",
+      "Key change-context rows are omitted from evidence.",
+      "Outcome metric uses header text instead of NG metrics.",
+      "Measurement outcomes are parsing artifacts from dates and headers."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to old pusher vs improved/new pusher only.",
+      "Use rows 23-25 and 33-45 as change and result context.",
+      "Rebuild outcomes around input, glue clots, SP+coil separate, SP+coil gap, total NG, and NG rate.",
+      "Remove invalid measurement-stat outcomes parsed from headers or dates.",
+      "Preserve date, line, and type as subgroup keys, not changed factors."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are insufficient and misgrouped for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3875,
+    "output_tokens": 639,
+    "total_tokens": 4514
+  }
+}

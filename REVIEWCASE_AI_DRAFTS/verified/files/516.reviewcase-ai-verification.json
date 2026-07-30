@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 516,
+  "sourceFile": "30. BRS-201506 Result TEST Sub2 improve drop test NG 2024.03.14_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\516.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:12Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 516,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable validation data but changed-factor grouping and several outcomes are materially incorrect.",
+    "issues": [
+      "Baseline is explicit as Normal 110do, not unknown.",
+      "Changed factor is mixed cleaning/glue/temperature process condition, not supplier.",
+      "Some cited rows exceed reported sheet row count and are not in provided context.",
+      "Header/count rows were misclassified as measurement outcomes.",
+      "Tension and function outcomes appear incomplete or misgrouped."
+    ],
+    "requiredUserQuestions": [
+      "Does O/X indicate which test modules are included or excluded?"
+    ],
+    "correctionPlan": [
+      "Use Normal 110do as baseline where comparative rows support it.",
+      "Group conditions by process change: cleaning method, glue, and temperature.",
+      "Remove bogus detected-table and header-derived measurement outcomes.",
+      "Verify actual row existence for rows 21, 26, 27, 29, 31, and 33.",
+      "Rebuild Drop, Tension, and Checking Function outcomes from complete condition rows."
+    ],
+    "evidencePolicy": "Current citations are insufficient because key cited rows are unshown or possibly invalid and some cite headers only."
+  },
+  "usage": {
+    "input_tokens": 4144,
+    "output_tokens": 771,
+    "total_tokens": 4915
+  }
+}

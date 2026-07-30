@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 441,
+  "sourceFile": "24. TIU C11-20  Report test VP cutting Dry 24hour from Sub1 check Function  2025.12.26_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\441.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 441,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but changed-factor grouping, pair matching, and numeric outcomes are not reliable.",
+    "issues": [
+      "Changed factor mixes process, model side, shift, and date instead of isolating VP dry/plasma conditions.",
+      "Function comparisons use mismatched normal rows and omit matched normal/plasma rows.",
+      "VP separate section compares later test-only dates to one normal row and has wrong NG values.",
+      "Measurement outcomes are spurious header/table extractions and should not be final evidence.",
+      "Evidence list includes broad context but not sufficient row-level grouping for each comparison."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary factor as Normal versus VP cut dry 24h forming and/or VP dry 24h plus Frame Plasma, with 12h plasma handled separately if used.",
+      "Rebuild function pairs within same section, date, shift, model side, and note/cleaning context where available.",
+      "Rebuild VP separate outcome using only rows with valid matched normal baseline; treat later test-only rows as trend data, not comparisons.",
+      "Correct input, NG, OK, VP separate, and rate values from each cited row.",
+      "Remove bogus measurement outcomes and keep only defect-rate outcomes with row citations."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are overbroad and some comparisons cite mismatched rows."
+  },
+  "usage": {
+    "input_tokens": 12016,
+    "output_tokens": 821,
+    "total_tokens": 12837
+  }
+}

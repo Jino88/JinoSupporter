@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 835,
+  "sourceFile": "67. TIU L5S3-01 R REPORT TEST CHANGE TEMPERATURE COIL FORMING 500 - 2026.01.15_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\835.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:36Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 835,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because the changed factor and condition grouping are misidentified despite citeable source evidence.",
+    "issues": [
+      "Changed factor is filename, not coil forming temperature.",
+      "Baseline and changed conditions are wrongly marked not explicit.",
+      "Evidence omits key 500°C and 490°C rows.",
+      "Outcomes aggregate headers/statistics instead of row-level defect rates.",
+      "Secondary condition after dry is not preserved."
+    ],
+    "requiredUserQuestions": [
+      "Should 490°C be included as a separate test condition in this case?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to coil forming temperature.",
+      "Define baseline as normal 480°C and tests as 500°C and 490°C if included.",
+      "Use AWF number and after-dry status as subgroup keys.",
+      "Rebuild outcomes from BAKO and HEARING defects plus total rate per condition.",
+      "Cite header rows and all condition rows used for comparisons."
+    ],
+    "evidencePolicy": "Current citations are insufficient; final evidence must cite condition rows, not headers only."
+  },
+  "usage": {
+    "input_tokens": 3766,
+    "output_tokens": 588,
+    "total_tokens": 4354
+  }
+}

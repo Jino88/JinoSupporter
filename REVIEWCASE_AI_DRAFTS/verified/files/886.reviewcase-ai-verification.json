@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 886,
+  "sourceFile": "75.BRS-2015 Report Test change speed bonding VP inside improve tension CD+Coil date 16.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\886.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:10Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 886,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misidentifies the primary change and contains unreliable outcome grouping.",
+    "issues": [
+      "Primary factor should be speed change 30 to 26, not Normal vs Bonding Test.",
+      "Total Test is an aggregate, not a changed condition.",
+      "Function comparisons mix dates and controls without preserving row grouping.",
+      "Tension measurements include parsing errors such as speed treated as spec and date values as data.",
+      "Multiple measurement outcomes duplicate or mislabel the same tension/bond/function tables."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to bonding VP inside speed change from 30 to 26, with corner context where supported.",
+      "Treat Normal/Bonding Test as result table conditions only under the speed-change validation.",
+      "Regroup function results by date and table section; exclude aggregate rows from pairwise changed conditions.",
+      "Re-extract tension using spec ≥1.53 Kgf and speed 26 vs normal speed 30 columns only.",
+      "Separate bond amount and function metrics from tension, keeping one validation report context."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficiently grouped for final evidence."
+  },
+  "usage": {
+    "input_tokens": 9181,
+    "output_tokens": 643,
+    "total_tokens": 9824
+  }
+}

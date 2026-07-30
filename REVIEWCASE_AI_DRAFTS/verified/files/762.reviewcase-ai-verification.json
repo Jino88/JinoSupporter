@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 762,
+  "sourceFile": "59. BRS-161014  Report checking NG height dimension SPK final date 27.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\762.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 762,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft conflates E2/C2 SPK comparison with VP mold data and misidentifies the changed factor.",
+    "issues": [
+      "Primary changed factor should be E2 vs C2 for main report, not VP mold lots.",
+      "Two sheets appear to contain different comparison contexts and are merged incorrectly.",
+      "Baseline/test condition includes date, headers, and sample numbers as conditions.",
+      "Many caliper measurement rows are parsed as numeric sequences, not valid outcomes.",
+      "Judgements and domains are not supported by the cited grouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild main case around E2 vs C2 height dimension SPK comparison.",
+      "Separate or exclude VP mold sheet unless source context proves it belongs to the same validation.",
+      "Keep Go/No jig and caliper results as outcomes under E2 vs C2.",
+      "Remove header/date/number rows from changed conditions and subgroup keys.",
+      "Reparse caliper table using row and column headers before calculating summaries."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient and partly misapplied."
+  },
+  "usage": {
+    "input_tokens": 10788,
+    "output_tokens": 533,
+    "total_tokens": 11321
+  }
+}

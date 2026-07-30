@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 137,
+  "sourceFile": "06. L20S15-07DT Report test CD lot ( 3.17 ( size510k)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\137.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 137,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid source rows but misstates the changed condition and omits key test-result rows needed for comparison.",
+    "issues": [
+      "Changed factor should be Normal vs Lot CD test CD 3.17 size 510k, not unspecified.",
+      "Line C2 and E2 should be preserved as subgroup keys.",
+      "Main outcome uses only Normal rows and omits Lot CD test rows Report!21 and Report!25.",
+      "Separate VP/CD and function NG results are not grouped with the same validation context.",
+      "Tension spec is present in header but not captured in the measurement outcome."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed condition to Lot CD test CD 3.17 size 510k and baseline to Normal.",
+      "Add Report!21 and Report!25 to comparison rows and subresults for C2 and E2.",
+      "Use C2 and E2 as subgroup keys for report-result metrics.",
+      "Include dyne, tension, VP/CD separate, sigma/hearing/function NG outcomes under one changed-factor context.",
+      "Capture tension spec 1.2 kgf from Tension!4 and retain Tension!8/Tension!10 comparison."
+    ],
+    "evidencePolicy": "Row citations exist, but final evidence is insufficient until omitted test rows and correct grouping are added."
+  },
+  "usage": {
+    "input_tokens": 3856,
+    "output_tokens": 567,
+    "total_tokens": 4423
+  }
+}

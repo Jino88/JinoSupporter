@@ -1,0 +1,334 @@
+{
+  "sourceFileId": 820,
+  "sourceFile": "65. BRS-161016 Report Test improve NG hearing rate    Date 28.08.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\65. BRS-161016 Report Test improve NG hearing rate    Date 28.08.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "28.8",
+    "sheetRowCount": 25,
+    "sheetCellCount": 116,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 5,
+    "measurementStatCount": 5
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "28.8!2",
+      "sheetName": "28.8",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | BRS-161016 - REPORT CHECK NG HEARING HIGH TO FIND REASON NG | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "28.8!3",
+      "sheetName": "28.8",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | Date | 2024-08-28 00:00:00"
+    },
+    {
+      "rowId": "28.8!4",
+      "sheetName": "28.8",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | Marker | Le"
+    },
+    {
+      "rowId": "28.8!5",
+      "sheetName": "28.8",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "28.8!6",
+      "sheetName": "28.8",
+      "rowNumber": 6,
+      "rowText": "| - Test use 1 AWF machine + 1 mold Frame + all mold VP ( #2,#3,#4,#6,#10 lot date 21/8) OK or Not ?"
+    },
+    {
+      "rowId": "28.8!8",
+      "sheetName": "28.8",
+      "rowNumber": 8,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "28.8!9",
+      "sheetName": "28.8",
+      "rowNumber": 9,
+      "rowText": "| -Test use AWF #1 machine + Frame mold #2 + all mold VP"
+    },
+    {
+      "rowId": "28.8!10",
+      "sheetName": "28.8",
+      "rowNumber": 10,
+      "rowText": "| - Make sample and check function"
+    },
+    {
+      "rowId": "28.8!11",
+      "sheetName": "28.8",
+      "rowNumber": 11,
+      "rowText": "| - Make sample and check function"
+    },
+    {
+      "rowId": "28.8!14",
+      "sheetName": "28.8",
+      "rowNumber": 14,
+      "rowText": "| III.Result"
+    },
+    {
+      "rowId": "28.8!16",
+      "sheetName": "28.8",
+      "rowNumber": 16,
+      "rowText": "| | 1. Result check function"
+    },
+    {
+      "rowId": "28.8!17",
+      "sheetName": "28.8",
+      "rowNumber": 17,
+      "rowText": "| | No | Date | Line | Type | | Input | OK | Sigma | | | Hearing | | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "28.8!31",
+      "sheetName": "28.8",
+      "rowNumber": 31,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "28.8!32",
+      "sheetName": "28.8",
+      "rowNumber": 32,
+      "rowText": "| - Result check function separate AWF #2 machine+ Frame mold #2 + All mold VP: Same condition line have mold VP #4 NG function high than compared to mold #2,3,6,10 =>Material VP #4 have problem"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-820-rc-1",
+      "reviewTitle": "| BRS-161016 - REPORT CHECK NG HEARING HIGH TO FIND REASON NG | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Test use 1 AWF machine + 1 mold Frame + all mold VP ( #2,#3,#4,#6,#10 lot date 21/8) OK or Not ? / | II. Content. / | -Test use AWF #1 machine + Frame mold #2 + all mold VP / | - Make sample and check function",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Frame #2 AWF #1, 2, 3, 4, 5",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Frame #2 AWF #1, 2, 3, 4, 5",
+          "subgroupKeys": [
+            "VP#3",
+            "VP#4",
+            "VP#6",
+            "VP#10"
+          ],
+          "evidenceRows": [
+            "28.8!18",
+            "28.8!19",
+            "28.8!2",
+            "28.8!21",
+            "28.8!23",
+            "28.8!25",
+            "28.8!27",
+            "28.8!5",
+            "28.8!6",
+            "28.8!8",
+            "28.8!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "1. Result check function",
+          "comparisonRows": [
+            "28.8!19",
+            "28.8!21",
+            "28.8!23",
+            "28.8!25",
+            "28.8!27"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 24020,
+              "condition": "Frame #2 AWF #1",
+              "input": 190.0,
+              "ok": 187.0,
+              "ng": 3.0,
+              "ratePercent": 1.5789469999999999,
+              "evidenceRows": [
+                "28.8!19"
+              ]
+            },
+            {
+              "metricId": 24021,
+              "condition": "2 | VP#3",
+              "input": 180.0,
+              "ok": 179.0,
+              "ng": 1.0,
+              "ratePercent": 0.555556,
+              "evidenceRows": [
+                "28.8!21"
+              ]
+            },
+            {
+              "metricId": 24022,
+              "condition": "3 | VP#4",
+              "input": 200.0,
+              "ok": 193.0,
+              "ng": 7.0,
+              "ratePercent": 3.5000000000000004,
+              "evidenceRows": [
+                "28.8!23"
+              ]
+            },
+            {
+              "metricId": 24023,
+              "condition": "4 | VP#6",
+              "input": 200.0,
+              "ok": 195.0,
+              "ng": 5.0,
+              "ratePercent": 2.5,
+              "evidenceRows": [
+                "28.8!25"
+              ]
+            },
+            {
+              "metricId": 24024,
+              "condition": "5 | VP#10",
+              "input": 200.0,
+              "ok": 199.0,
+              "ng": 1.0,
+              "ratePercent": 0.5,
+              "evidenceRows": [
+                "28.8!27"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No | Date | Line | Type | Input | OK | Sigma | Hearing | Total NG | Total NG rate",
+          "comparisonRows": [
+            "28.8!18"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 63127,
+              "condition": "Sigma / SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "28.8!18"
+              ]
+            },
+            {
+              "statId": 63128,
+              "condition": "Sigma / THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.10049999999999999,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "28.8!18"
+              ]
+            },
+            {
+              "statId": 63129,
+              "condition": "Sigma / SPL+THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "28.8!18"
+              ]
+            },
+            {
+              "statId": 63130,
+              "condition": "Hearing / Noise",
+              "spec": "",
+              "min": 0.0,
+              "max": 5.0,
+              "avg": 1.005078947,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "28.8!18"
+              ]
+            },
+            {
+              "statId": 63131,
+              "condition": "Hearing / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 2.0,
+              "avg": 0.6030555559999999,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "28.8!18"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "28.8!18",
+        "28.8!19",
+        "28.8!2",
+        "28.8!21",
+        "28.8!23",
+        "28.8!25",
+        "28.8!27",
+        "28.8!5",
+        "28.8!6",
+        "28.8!8",
+        "28.8!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "28.8!18",
+      "28.8!19",
+      "28.8!2",
+      "28.8!21",
+      "28.8!23",
+      "28.8!25",
+      "28.8!27",
+      "28.8!5",
+      "28.8!6",
+      "28.8!8",
+      "28.8!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

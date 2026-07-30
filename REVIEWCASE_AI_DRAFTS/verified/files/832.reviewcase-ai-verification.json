@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 832,
+  "sourceFile": "66.MSU-L20S15-07  Report test material ring plate difference colour level 4 from Myungjin vender_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\832.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 832,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparative evidence but misgroups the changed factor and has drop-test and conclusion handling errors.",
+    "issues": [
+      "Auto/manual drop tests are outcome subgroups, not changed conditions.",
+      "Manual drop comparison cites auto normal row instead of manual normal row.",
+      "Function table shows higher NG for test while text says OK/same normal.",
+      "Bond spread result is omitted as an outcome or limitation.",
+      "Decision rows are not used to qualify conclusions."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to plate ring color level 4 material from Myungjin versus Normal.",
+      "Move auto/manual drop labels to reliability subresults and pair manual test with row 39.",
+      "Record function numeric result as worse and note conflicting textual conclusion.",
+      "Add bond spread condition result as a separate outcome or stated limitation.",
+      "Add decision/conclusion rows 51-58 as evidence for final judgement context."
+    ],
+    "evidencePolicy": "Row citations exist, but key citations and grouping are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4994,
+    "output_tokens": 732,
+    "total_tokens": 5726
+  }
+}

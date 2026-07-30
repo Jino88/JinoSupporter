@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 309,
+  "sourceFile": "16. BRS-161014 Report check reason NG solder weak Date 4.12.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\309.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 309,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but the changed-factor and subgroup grouping are ambiguous and likely over-combined.",
+    "issues": [
+      "Changed factor incorrectly mixes cooling time, coil move test, and row indices.",
+      "Baseline/test conditions are unclear for 0s, 2s, Normal 5s, and coil move E2.",
+      "Rows for AWF machines #1/#2/#4/#5 appear to be subgroup references, not same comparison.",
+      "Missing visible row context for Report!26 and Report!28 in supplied context.",
+      "Outcome grouping lacks clear table headers for input/OK/NG/rate interpretation."
+    ],
+    "requiredUserQuestions": [
+      "Should cooling-time test and coil AWF3 move E2 be separate changed factors?",
+      "Are #1/#2/#4/#5 reference machines or part of the same comparison?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factors from report content: cooling AWF3 0s/2s/Normal 5s and coil move E2 if supported.",
+      "Preserve machine number AWF #3 and other machine IDs as subgroup keys, not conditions unless proven.",
+      "Use table header rows plus result rows 26,28,30,32,34,36,38,40 as evidence.",
+      "Remove row-number labels such as 1 and 2 from changedCondition text.",
+      "Create separate outcomes or subresults only after baseline/test grouping is clear."
+    ],
+    "evidencePolicy": "Row citations exist, but cited context is insufficient for final grouping approval."
+  },
+  "usage": {
+    "input_tokens": 3390,
+    "output_tokens": 700,
+    "total_tokens": 4090
+  }
+}

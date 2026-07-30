@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 32,
+  "sourceFile": "013.MSU-20S15-07 Result test new frame improve_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\32.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:45:44Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 32,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The Normal vs Frame improve comparison is citeable in the Function sheet, but the draft mis-parses the function results and incorrectly attaches NTI THD measurement data without condition-comparison evidence.",
+    "issues": [
+      "Function rows support a changed factor of Normal vs Frame improve, but the outcome subResults incorrectly use Sigma values as NG/rate and omit the actual Hearing +1V and +0V Total NG and NG Rate columns.",
+      "NTI THD outcome is not verified as comparable between Normal and Frame improve; the cited row NTI THD!1 is only a header and does not identify Normal or Frame improve.",
+      "NTI THD subResults use frequency labels as conditions, which does not preserve the actual changed-factor grouping.",
+      "Evidence for NTI frequency, impedance, F0, and THD appears to be spec/sample measurement data, but the provided rows do not prove whether those samples are Frame improve, Normal, or another condition.",
+      "The review title and changed factor are acceptable in general, but outcome grouping must separate citeable Function comparison results from unsupported NTI measurement summaries."
+    ],
+    "requiredUserQuestions": [
+      "Are the NTI sheets for Frame improve only, Normal only, or both conditions?"
+    ],
+    "correctionPlan": [
+      "Keep the changed factor as Normal vs Frame improve using Function!3, Function!6, and Function!8 as evidence.",
+      "Rebuild the Function outcome to report Input, OK, Hearing +1V Noise/Touch/Total NG/NG Rate, and Hearing +0V Noise/Touch/Total NG/NG Rate for both Frame improve and Normal.",
+      "Remove the NTI THD measurement outcome from this comparison unless source rows cite the condition for each NTI sample and allow Normal vs Frame improve comparison.",
+      "If NTI sheets are single-condition spec validation, create a separate outcome only if condition evidence is available and cite both headers and relevant sample/result rows, not header-only rows.",
+      "Do not approve for Ask AI until all outcome evidence rows directly support the condition labels and metrics used."
+    ],
+    "evidencePolicy": "Function-sheet citations are sufficient for the Normal vs Frame improve functional comparison, but NTI citations are insufficient because they are header-only and do not cite changed-condition membership or actual comparable sample rows."
+  },
+  "usage": {
+    "input_tokens": 5778,
+    "output_tokens": 949,
+    "total_tokens": 6727
+  }
+}

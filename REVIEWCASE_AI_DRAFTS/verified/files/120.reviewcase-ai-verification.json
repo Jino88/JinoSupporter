@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 120,
+  "sourceFile": "05. BRS-161014 Report Check type NG and OK VP material  01.12.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\120.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 120,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cannot be approved because it lacks a review case and omits key result rows for the mold/type analysis.",
+    "issues": [
+      "No review case was generated despite citeable report evidence.",
+      "Full result table is not captured; decision references molds not shown.",
+      "Primary grouping by mold versus defect type is unresolved.",
+      "Metrics and outcome counts were not extracted."
+    ],
+    "requiredUserQuestions": [
+      "Should this be modeled as mold-to-mold comparison of VP deform type counts?"
+    ],
+    "correctionPlan": [
+      "Inspect the full sheet, especially rows between the visible result and decision.",
+      "Extract all mold rows with date, input, Type 1, Type 2, and Type 3 counts.",
+      "Create one review case with mold as grouping context and VP deform type counts as outcomes.",
+      "Cite title, purpose, content, result header, all result rows, and decision.",
+      "Clarify whether Type 3 is the NG-risk category."
+    ],
+    "evidencePolicy": "Current citations are insufficient; row-level evidence must include the complete result table and decision."
+  },
+  "usage": {
+    "input_tokens": 1669,
+    "output_tokens": 727,
+    "total_tokens": 2396
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 392,
+  "sourceFile": "20. BRS-201506 Report checking class 1~ 3 date 27.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\392.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:47Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 392,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source rows but changed-factor and outcome grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor is overbroad and mixes class labels with totals as conditions.",
+      "Baseline/test meaning of Normal versus Yoke classes is not fully established.",
+      "Measurement outcomes are auto-stat aggregates from headers, not valid row-level results.",
+      "Subgroup key Class 1 is incorrect because all yoke classes are compared.",
+      "Function rows appear duplicated or split without preserved date/round context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary factor as yoke class sorting/check condition versus Normal only if supported by rows.",
+      "Preserve date, line/jig, test round, class, and function type as grouping keys.",
+      "Replace aggregate measurement stats with actual input/OK rate/function NG result rows.",
+      "Separate totals from conditions and avoid treating headers as measurements.",
+      "Remove or explain duplicate Normal/function blocks before approval."
+    ],
+    "evidencePolicy": "Row citations exist, but cited evidence is not sufficient until data rows and grouping context are corrected."
+  },
+  "usage": {
+    "input_tokens": 6406,
+    "output_tokens": 755,
+    "total_tokens": 7161
+  }
+}

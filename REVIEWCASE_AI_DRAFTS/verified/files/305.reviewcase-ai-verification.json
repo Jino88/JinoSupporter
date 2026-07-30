@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 305,
+  "sourceFile": "15.BRS-161016  Report test material Suspension-D improve abnormal spot welding of CYS vender_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\305.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:59Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 305,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable validation is present, but outcome parsing and subgroup inheritance need correction before use.",
+    "issues": [
+      "Function outcome values conflict with decision rows and visible normal row.",
+      "Tension/measurement rows lose parent condition for B subgroups.",
+      "Baking condition is incomplete; it should include 60℃ and 30 min.",
+      "Outcome headers are misassigned for the tension table.",
+      "Decision rows are not fully used to validate judgements."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Reparse function rows 35-37 including total NG, rate, and OK fields.",
+      "Inherit parent test type for A/B tension subgroups.",
+      "Rename changed condition to plasma surface vs baking 60℃ 30 min vs normal.",
+      "Use row 39 as tension header and separate it from function metrics.",
+      "Add decision rows 48-55 as supporting evidence and set cautious judgements."
+    ],
+    "evidencePolicy": "Row citations exist, but cited content is not yet sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4851,
+    "output_tokens": 670,
+    "total_tokens": 5521
+  }
+}

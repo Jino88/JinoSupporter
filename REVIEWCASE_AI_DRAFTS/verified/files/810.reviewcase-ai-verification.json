@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 810,
+  "sourceFile": "63. TIU L5S3-01 L Report test change mask SPL Bako +-3db to improve NG SPL at Bac ninh -  date 2026.01.20_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\810.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:44Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 810,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the changed-factor and line-level pairings are not reliable enough for final evidence.",
+    "issues": [
+      "Primary factor should be mask SPL ±4db normal vs ±3db test, not lines as changed conditions.",
+      "Line L and Line R must remain subgroup keys; Line R tests are paired to wrong Normal rows.",
+      "A2 and D3 comparisonRows omit the matching Line R Normal rows.",
+      "Sheet1 ±2db/GMI/DT data is ambiguously merged into the same changed factor.",
+      "Measurement/header-derived statistics are not valid final outcomes."
+    ],
+    "requiredUserQuestions": [
+      "Should Sheet1 GMI/DT ±2db/±3db data be included or treated as background only?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to mask SPL tolerance change: Normal ±4db vs Test ±3db.",
+      "Rebuild D3 pairs by line: Test!17 vs Test!19 and Test!21 vs Test!23.",
+      "Rebuild A2 pairs by line: Test!28 vs Test!30 and Test!32 vs Test!34.",
+      "Keep line, function, date, and unit as subgroup keys, not changed factors.",
+      "Remove header-derived measurement outcomes or convert defect columns to cited count/rate outcomes only."
+    ],
+    "evidencePolicy": "Row citations exist, but final evidence needs corrected pairing and complete matched-row citations."
+  },
+  "usage": {
+    "input_tokens": 7432,
+    "output_tokens": 830,
+    "total_tokens": 8262
+  }
+}

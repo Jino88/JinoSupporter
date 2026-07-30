@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 405,
+  "sourceFile": "21. TIU C11-20  Report check SPL 20KHZ  2025.12.24_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\405.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:13Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 405,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "This is an SPL NG-rate monitoring report without citeable baseline/test changed-condition evidence.",
+    "issues": [
+      "No explicit changed factor or baseline/test condition is cited.",
+      "Table grouping values were incorrectly treated as changed conditions.",
+      "Shift, model, time, and totals should remain row grouping keys only.",
+      "Measurement outcomes are derived from headers or detected-table artifacts.",
+      "Decision/notes rows do not establish a comparable changed condition."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Exclude this draft from Ask AI final evidence as a ReviewCase.",
+      "Do not use date, shift, model, time, or Total as changed factors.",
+      "Remove header-derived measurement statistics.",
+      "If retained elsewhere, recast as non-comparative SPL NG-rate summary.",
+      "Require explicit changed-condition rows before creating a ReviewCase."
+    ],
+    "evidencePolicy": "Citations support reported NG-rate rows but not changed-condition evidence."
+  },
+  "usage": {
+    "input_tokens": 4412,
+    "output_tokens": 637,
+    "total_tokens": 5049
+  }
+}

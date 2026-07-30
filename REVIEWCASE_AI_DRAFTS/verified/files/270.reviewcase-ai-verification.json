@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 270,
+  "sourceFile": "13. TIU C11-20  Report test VP find reason NG function high 2026.1.12_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\270.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 270,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Citeable comparison rows exist, but the draft merges unrelated factors and uses invalid controls.",
+    "issues": [
+      "Changed factor mixes process type, lot/date, model, position, and mold temperature.",
+      "Stock-date comparisons use mismatched Normal rows and models.",
+      "Film-forming tests are wrongly grouped with stock-date and position tests.",
+      "Measurement outcome is a header-derived artifact, not valid measurement evidence.",
+      "Evidence set includes broad/header rows and weak section grouping."
+    ],
+    "requiredUserQuestions": [
+      "Should Test and Test (2) be treated as duplicate revisions or separate evidence?",
+      "What is the primary factor: VP stock date, film-forming process, position, or mold temperature?"
+    ],
+    "correctionPlan": [
+      "Split review cases or factors by distinct test context.",
+      "Pair stock-date rows with same-model Normal date 14/1 controls.",
+      "Keep film-forming comparisons only against the local Normal row.",
+      "Treat position results as separate positional subgroup analysis.",
+      "Remove artifact measurement stats and cite only data rows plus section headers."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 10313,
+    "output_tokens": 774,
+    "total_tokens": 11087
+  }
+}

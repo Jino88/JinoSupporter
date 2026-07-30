@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 307,
+  "sourceFile": "16. BRS-161014  Report test Center Dome improve bending of Ralon vender l 16.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\307.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 307,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misgroups the Ralon vs GES supplier comparison and several outcome pairings.",
+    "issues": [
+      "Changed factor should be Ralon improved CD lot/vendor vs normal GES CD, not equipment.",
+      "Changed condition incorrectly includes aggregate label Total.",
+      "Function outcome pairs compare C2 and total Ralon rows against the E2 GES baseline instead of matching C2 and total GES rows.",
+      "Measurement outcomes are header/formula artifacts and should be removed.",
+      "Vision outcomes need clearer metric labels and handling of vision abnormal versus total NG."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set change domain to material/supplier and define baseline as normal GES CD, test as improved Ralon CD.",
+      "Keep E2, C2, total, AWF machine #1, and test stage as subgroup context.",
+      "Repair function pairs: E2 rows 33/35, C2 rows 37/39, total rows 41/43.",
+      "Remove non-evidence measurement artifacts from rows 32 and 36.",
+      "Recheck vision rows 14/15 and 27/28 for total NG and vision abnormal interpretations."
+    ],
+    "evidencePolicy": "Row citations exist, but cited grouping is not sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 5308,
+    "output_tokens": 807,
+    "total_tokens": 6115
+  }
+}

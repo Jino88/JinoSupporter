@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 951,
+  "sourceFile": "86. BRS-161014 Report  Test FRAME ARRAY A JIG improve and NEW BASE machine laser Cutting SUS Date 23.1.2025 line 6_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\951.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:12Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 951,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but grouping and comparisons are not reliable enough for Ask AI.",
+    "issues": [
+      "Changed factor conflates jig, laser support, new base, and totals.",
+      "Normal/test pairs ignore date-adjacent grouping and reuse one control row.",
+      "Base old/new context may be a key subgroup or separate factor.",
+      "Several measurement outcomes are header/noise artifacts.",
+      "Section 2 total/control row is inconsistent and needs review."
+    ],
+    "requiredUserQuestions": [
+      "Is new base machine a separate changed factor or only subgroup context?",
+      "Should the inconsistent Section 2 total row be treated as Normal total?"
+    ],
+    "correctionPlan": [
+      "Redefine changed factor without using Total as a condition.",
+      "Rebuild each outcome using date-adjacent Normal/Test rows and totals separately.",
+      "Preserve Base old/new as subgroup or split if confirmed.",
+      "Remove header-derived measurement artifacts; keep only valid tension data.",
+      "Recalculate rates, deltas, and judgements after regrouping."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient because grouping evidence is misused."
+  },
+  "usage": {
+    "input_tokens": 11996,
+    "output_tokens": 1289,
+    "total_tokens": 13285
+  }
+}

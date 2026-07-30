@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 110,
+  "sourceFile": "04. TIU L5S3-01 R Result test Frame - date 2025.11.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\110.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 110,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook excerpt lacks a citeable comparable changed condition and measured outcome evidence.",
+    "issues": [
+      "No baseline versus test condition is defined",
+      "No measurement values or NG-rate results are extracted",
+      "Result area appears to rely on pictures only",
+      "Prior offset rate is context, not a verified result"
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Extract any hidden/table result rows if present",
+      "Add image-derived results only if manually transcribed and cited",
+      "Define baseline and test conditions if evidence exists",
+      "Cite measured NG rate or offset outcomes",
+      "Re-run verification after evidence is added"
+    ],
+    "evidencePolicy": "Current row citations support context only, not final comparative evidence."
+  },
+  "usage": {
+    "input_tokens": 1692,
+    "output_tokens": 502,
+    "total_tokens": 2194
+  }
+}

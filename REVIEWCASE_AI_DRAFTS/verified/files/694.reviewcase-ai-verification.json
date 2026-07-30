@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 694,
+  "sourceFile": "5. BRS- 161014  Report checking NG low gauss yoke date 2024.01.17_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\694.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 694,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not verified because the changed factor and measurement grouping are generic and materially misparsed.",
+    "issues": [
+      "Changed factor is filename, not the tested condition.",
+      "Baseline and changed conditions are not identified.",
+      "BPT thickness and process-stage comparisons are conflated.",
+      "Gauss metrics use wrong thickness spec and invalid violations.",
+      "Data citations rely on rows not shown or header-only rows."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison BPT thickness type, process stage, or both as separate factors?"
+    ],
+    "correctionPlan": [
+      "Define changed factors from source context: BPT 0.33 vs 0.32 and/or before/after assy/dry.",
+      "Map each metric to its correct gauss spec, not BPT thickness spec.",
+      "Rebuild outcomes using actual data rows with preserved stage/type grouping.",
+      "Remove duplicate header-derived outcomes and impossible stats.",
+      "Cite purpose, header, and data rows for each corrected outcome."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are insufficient until data rows and grouping are corrected."
+  },
+  "usage": {
+    "input_tokens": 7787,
+    "output_tokens": 648,
+    "total_tokens": 8435
+  }
+}

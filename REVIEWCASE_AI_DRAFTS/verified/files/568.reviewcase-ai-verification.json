@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 568,
+  "sourceFile": "35. BRS-161016 Report test new bond G06-0003_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\568.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:55Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 568,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the bond change but has incorrect grouping and missing or invalid outcomes.",
+    "issues": [
+      "Changed condition wrongly includes MG+Yoke; it is an outcome joint/subgroup, not the changed factor.",
+      "Function outcome mispairs round data and omits the second normal comparison row.",
+      "Tension test comparison is missing despite clear new vs normal rows.",
+      "Measurement outcome is a bad parse of function-table columns and should not stand as an outcome.",
+      "Change domain and subgroup keys are overbroad or incomplete."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to normal bond G06-0002 vs new/test bond G06-0003 only.",
+      "Treat MG+PT, MG+Yoke, test round, and outcome type as subgroup/context keys where supported.",
+      "Rebuild function results as round-matched pairs, including the second normal row.",
+      "Add tension test outcome using rows 41 and 42 with strength summary and judgement.",
+      "Remove the spurious measurement outcome and tighten evidence rows to cited comparison rows plus title/purpose."
+    ],
+    "evidencePolicy": "Citations prove row existence but are overbroad and not sufficient for final evidence until corrected."
+  },
+  "usage": {
+    "input_tokens": 5129,
+    "output_tokens": 770,
+    "total_tokens": 5899
+  }
+}

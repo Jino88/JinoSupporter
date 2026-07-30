@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "corpus-benchmark-selection-v1",
+  "generatedAt": "2026-07-18",
+  "sourceRoot": "D:\\000. MyWorks\\test\\result\\InputDataFinish",
+  "purpose": "Reprocess B14 with immutable deterministic formula overlay and provenance-bound staged-v2.",
+  "imagePolicy": {
+    "extractImages": false,
+    "analyzeImages": false
+  },
+  "formulaPolicy": {
+    "deriveFormulaValues": true,
+    "captureMutation": false,
+    "unsupportedFormulaBehavior": "FAIL_CLOSED"
+  },
+  "selection": {
+    "journalStatus": "FAILED",
+    "count": 1,
+    "executionGate": "The overlay must re-derive exactly from the current source, preserve every Capture formula cache as NULL, reduce unresolved formulas to zero, and every finalized staged prompt must be at most 400000 bytes."
+  },
+  "workbooks": [
+    {
+      "id": "B14",
+      "relativePath": "018.MSU-20S15-07 Result test improve NG function 1_clean.xlsx",
+      "reason": "Formula-safe audit: 1234 uncached formulas resolve to 1149 numeric values and 85 #DIV/0! results; projected staged plan has 24 parts and zero prompt-budget violations."
+    }
+  ]
+}

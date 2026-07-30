@@ -1,4 +1,4 @@
-"""Helper for AI Batch processing per AI_EXCEL_PROC.md schema.
+"""Helper for AI Batch processing per AI_EXCEL_PROC schema.
 
 Provides:
  - get_excel_paste(name) -> str
@@ -7,7 +7,7 @@ Provides:
  - commit_dataset(name, result, tr_ko, tr_en, tr_vi) -> bool
  - log_failed(name, reason)
 
-`result` is the normalized dict matching AI_EXCEL_PROC.md JSON spec.
+`result` is the normalized dict matching the AI_EXCEL_PROC JSON spec.
 Translations tr_xx are dicts containing the narrative fields in that language:
   document: { title, purpose, content }
   conclusions: { conclusion_id: { topic, statement_from_report, normalized_interpretation } }

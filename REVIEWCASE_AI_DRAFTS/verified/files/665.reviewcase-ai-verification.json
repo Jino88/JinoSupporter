@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 665,
+  "sourceFile": "46. BRS-161014 DT Report test VP lot change point and VP #7,#9 center dome add 0.05mm    date 27.6.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\665.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 665,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but changed-factor and outcome grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Primary change is not simply all VP molds versus unknown baseline.",
+      "Lot change point and center dome 0.05mm are mixed with mold IDs.",
+      "Sheet1 heat/Normal table is partially included and may be separate context.",
+      "Measurement/stat outcomes cite header rows and appear auto-derived, not row-supported.",
+      "Some relevant Sheet1 rows are omitted while selected rows are used."
+    ],
+    "requiredUserQuestions": [
+      "Should Sheet1 heat-aging and Normal data be part of this same review case?",
+      "Is the intended comparison lot change point versus center dome add 0.05mm, or versus Normal?"
+    ],
+    "correctionPlan": [
+      "Regroup changed factors around lot change point and center dome add 0.05mm; keep mold numbers as subgroups.",
+      "Do not invent an explicit baseline unless Normal is validated as comparable.",
+      "Separate, complete, or exclude Sheet1 based on confirmed context.",
+      "Remove header-only measurement summaries or replace with cited data-row outcomes.",
+      "Rebuild evidence rows with headers plus all relevant condition/result rows."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping support is insufficient and header-only stats are not acceptable."
+  },
+  "usage": {
+    "input_tokens": 8773,
+    "output_tokens": 771,
+    "total_tokens": 9544
+  }
+}

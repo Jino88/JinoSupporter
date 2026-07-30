@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 792,
+  "sourceFile": "61. TIU C11-20  Report Test  sampleOK audiobus and hearing again 2026.2.8_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\792.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:13Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 792,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misgroups RA comparisons and overstates improvement.",
+    "issues": [
+      "Changed factor is noisy; primary factor should be Normal vs D3 hearing OK moved RA, with R/L as subgroups.",
+      "RA L-side test is compared to Normal-R instead of Normal-L.",
+      "Overall RA judgement cannot be simply improved; R improves slightly while L worsens vs its own baseline.",
+      "Normal-L row is cited but omitted from RA comparison rows and subresults.",
+      "Function-check rows appear descriptive or separate; their link to the changed factor is not proven."
+    ],
+    "requiredUserQuestions": [
+      "Confirm whether R/L are side subgroups and not separate changed factors."
+    ],
+    "correctionPlan": [
+      "Rewrite changed factor as Normal vs test unit OK hearing D3 moved RA.",
+      "Create separate R and L subgroup comparisons using matched Normal-R and Normal-L baselines.",
+      "Set RA judgement to mixed or not_judged, not improved.",
+      "Include Test!24 in RA comparison rows and L-side subresult.",
+      "Treat function-check rows as contextual/descriptive unless comparable conditions are clear."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until matched baselines and headers are corrected."
+  },
+  "usage": {
+    "input_tokens": 3083,
+    "output_tokens": 793,
+    "total_tokens": 3876
+  }
+}

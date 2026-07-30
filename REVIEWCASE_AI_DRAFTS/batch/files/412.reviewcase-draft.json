@@ -1,0 +1,211 @@
+{
+  "sourceFileId": 412,
+  "sourceFile": "22. BRS-161014 Report Test Frame Mold Cavity_230909_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\22. BRS-161014 Report Test Frame Mold Cavity_230909_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "Report; Sheet1",
+    "sheetRowCount": 26,
+    "sheetCellCount": 152,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 3
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report!2",
+      "sheetName": "Report",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST Frame Mold & Cavity | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report!3",
+      "sheetName": "Report",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | Date | 2023-09-09 00:00:00"
+    },
+    {
+      "rowId": "Report!4",
+      "sheetName": "Report",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | Marker"
+    },
+    {
+      "rowId": "Report!5",
+      "sheetName": "Report",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report!6",
+      "sheetName": "Report",
+      "rowNumber": 6,
+      "rowText": "| - To checking relation Function NG Rate & Frame Mold, Cavity"
+    },
+    {
+      "rowId": "Report!7",
+      "sheetName": "Report",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report!11",
+      "sheetName": "Report",
+      "rowNumber": 11,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "Report!12",
+      "sheetName": "Report",
+      "rowNumber": 12,
+      "rowText": "| RESUTL TEST 1st"
+    },
+    {
+      "rowId": "Report!13",
+      "sheetName": "Report",
+      "rowNumber": 13,
+      "rowText": "| | Date | No | Cavity | SIGMA | | | Hearing | | | | Total NG rate"
+    },
+    {
+      "rowId": "Report!14",
+      "sheetName": "Report",
+      "rowNumber": 14,
+      "rowText": "| | | | | Input | THD NG | NG Rate | Input | Noise NG | Touch NG | NG Rate"
+    },
+    {
+      "rowId": "Report!15",
+      "sheetName": "Report",
+      "rowNumber": 15,
+      "rowText": "| | 2023-09-09 00:00:00 | 1 | #1-A | 30 | 1 | 0.03333333 | 29 | 11 | 8 | 0.65517241 | 0.68850575"
+    },
+    {
+      "rowId": "Report!16",
+      "sheetName": "Report",
+      "rowNumber": 16,
+      "rowText": "| | | 2 | #1-B | 30 | 0 | 0 | 30 | 11 | 9 | 0.66666667 | 0.66666667"
+    },
+    {
+      "rowId": "Report!23",
+      "sheetName": "Report",
+      "rowNumber": 23,
+      "rowText": "| Result Test 2nd"
+    },
+    {
+      "rowId": "Report!33",
+      "sheetName": "Report",
+      "rowNumber": 33,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-412-rc-1",
+      "reviewTitle": "REPORT TEST Frame Mold & Cavity | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To checking relation Function NG Rate & Frame Mold, Cavity / | II. Content. / | 3.Result / | RESUTL TEST 1st",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "mold"
+          ],
+          "changedFactor": "22. BRS-161014 Report Test Frame Mold Cavity_230909",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Report!12",
+            "Report!13",
+            "Report!2",
+            "Report!5",
+            "Report!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESUTL TEST 1st",
+          "comparisonRows": [
+            "Report!13"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 53742,
+              "condition": "RESUTL TEST 1st / Cavity",
+              "spec": "",
+              "min": 1.0,
+              "max": 1.0,
+              "avg": 1.0,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report!13"
+              ]
+            },
+            {
+              "statId": 53743,
+              "condition": "RESUTL TEST 1st / SIGMA",
+              "spec": "",
+              "min": 17.0,
+              "max": 30.0,
+              "avg": 26.142857142857142,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report!13"
+              ]
+            },
+            {
+              "statId": 53744,
+              "condition": "RESUTL TEST 1st / Hearing",
+              "spec": "",
+              "min": 17.0,
+              "max": 30.0,
+              "avg": 25.571428571428573,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report!13"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report!12",
+        "Report!13",
+        "Report!2",
+        "Report!5",
+        "Report!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report!12",
+      "Report!13",
+      "Report!2",
+      "Report!5",
+      "Report!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

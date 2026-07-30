@@ -1,0 +1,186 @@
+{
+  "sourceFileId": 280,
+  "sourceFile": "14. BRS-161014 Report test sample separate VP Frame_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\14. BRS-161014 Report test sample separate VP Frame_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "06.02",
+    "sheetRowCount": 18,
+    "sheetCellCount": 58,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 1,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "06.02!2",
+      "sheetName": "06.02",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST SAMPLE VP+FRAME SEPARATE - 161014 | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "06.02!3",
+      "sheetName": "06.02",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | Date | 2024-02-06 00:00:00"
+    },
+    {
+      "rowId": "06.02!4",
+      "sheetName": "06.02",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | Marker"
+    },
+    {
+      "rowId": "06.02!5",
+      "sheetName": "06.02",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "06.02!6",
+      "sheetName": "06.02",
+      "rowNumber": 6,
+      "rowText": "| - To test sample VP+Frame separate can or can't use"
+    },
+    {
+      "rowId": "06.02!7",
+      "sheetName": "06.02",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "06.02!8",
+      "sheetName": "06.02",
+      "rowNumber": 8,
+      "rowText": "| - To take picture 10pcs sample VP+Frame separate => checking function => OK function will move module line to test"
+    },
+    {
+      "rowId": "06.02!10",
+      "sheetName": "06.02",
+      "rowNumber": 10,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "06.02!11",
+      "sheetName": "06.02",
+      "rowNumber": 11,
+      "rowText": "| | RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "06.02!12",
+      "sheetName": "06.02",
+      "rowNumber": 12,
+      "rowText": "| | Date | Type | Input | OK | Sigma | | | | Hearing | | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "06.02!13",
+      "sheetName": "06.02",
+      "rowNumber": 13,
+      "rowText": "| | | | | | SPL | THD | SPL+THD | SPL+THD+F0 | Noise | Touch"
+    },
+    {
+      "rowId": "06.02!14",
+      "sheetName": "06.02",
+      "rowNumber": 14,
+      "rowText": "| | 2024-01-16 00:00:00 | Test VP+Frame separate | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "06.02!19",
+      "sheetName": "06.02",
+      "rowNumber": 19,
+      "rowText": "| | Test sample"
+    },
+    {
+      "rowId": "06.02!29",
+      "sheetName": "06.02",
+      "rowNumber": 29,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-280-rc-1",
+      "reviewTitle": "REPORT TEST SAMPLE VP+FRAME SEPARATE - 161014 | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To test sample VP+Frame separate can or can't use / | II. Content. / | - To take picture 10pcs sample VP+Frame separate => checking function => OK function will move module line to test / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Test VP+Frame separate",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Test VP+Frame separate",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "06.02!14",
+            "06.02!2",
+            "06.02!5",
+            "06.02!6",
+            "06.02!7",
+            "06.02!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "06.02!14"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 19237,
+              "condition": "Test VP+Frame separate",
+              "input": 10.0,
+              "ok": 10.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "06.02!14"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "06.02!14",
+        "06.02!2",
+        "06.02!5",
+        "06.02!6",
+        "06.02!7",
+        "06.02!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "06.02!14",
+      "06.02!2",
+      "06.02!5",
+      "06.02!6",
+      "06.02!7",
+      "06.02!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

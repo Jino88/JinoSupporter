@@ -1,0 +1,198 @@
+{
+  "sourceFileId": 567,
+  "sourceFile": "35. BRS-161016 Report test  compare Fr-SP +Coil not burr and Fr-SP+Coil normal  2024.5.10_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\35. BRS-161016 Report test  compare Fr-SP +Coil not burr and Fr-SP+Coil normal  2024.5.10_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "10.5",
+    "sheetRowCount": 16,
+    "sheetCellCount": 61,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "10.5!2",
+      "sheetName": "10.5",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | BRS-161016 - REPORT TEST COMPARE FR/SP +COIl NOT BURR AND FR/SP+COIL NORMAL | | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "10.5!3",
+      "sheetName": "10.5",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | Date | 2024-05-10 00:00:00"
+    },
+    {
+      "rowId": "10.5!4",
+      "sheetName": "10.5",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | Marker | Le"
+    },
+    {
+      "rowId": "10.5!5",
+      "sheetName": "10.5",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "10.5!6",
+      "sheetName": "10.5",
+      "rowNumber": 6,
+      "rowText": "| - Test compare FR/SP +Coil not burr and FR/SP+Coil normal"
+    },
+    {
+      "rowId": "10.5!8",
+      "sheetName": "10.5",
+      "rowNumber": 8,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "10.5!9",
+      "sheetName": "10.5",
+      "rowNumber": 9,
+      "rowText": "| -Make sample and check function"
+    },
+    {
+      "rowId": "10.5!21",
+      "sheetName": "10.5",
+      "rowNumber": 21,
+      "rowText": "| III.Result"
+    },
+    {
+      "rowId": "10.5!23",
+      "sheetName": "10.5",
+      "rowNumber": 23,
+      "rowText": "| | 1. RESULT CHECK FUNCTION"
+    },
+    {
+      "rowId": "10.5!24",
+      "sheetName": "10.5",
+      "rowNumber": 24,
+      "rowText": "| | Line | Date | Type | Input | OK | Sigma | | | Hearing | | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "10.5!25",
+      "sheetName": "10.5",
+      "rowNumber": 25,
+      "rowText": "| | | | | | | SPL | SPL+THD | SPL+THD+F0 | Noise | Touch"
+    },
+    {
+      "rowId": "10.5!26",
+      "sheetName": "10.5",
+      "rowNumber": 26,
+      "rowText": "| | C2-3A | 2024-05-10 00:00:00 | FR/SP+Coil not burr | 134 | 132 | 0 | 0 | 0 | 2 | 0 | 2 | 0.01492537"
+    },
+    {
+      "rowId": "10.5!28",
+      "sheetName": "10.5",
+      "rowNumber": 28,
+      "rowText": "| | | | Normal | 150 | 148 | 0 | 0 | 0 | 2 | 0 | 2 | 0.01333333"
+    },
+    {
+      "rowId": "10.5!33",
+      "sheetName": "10.5",
+      "rowNumber": 33,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-567-rc-1",
+      "reviewTitle": "| BRS-161016 - REPORT TEST COMPARE FR/SP +COIl NOT BURR AND FR/SP+COIL NORMAL | | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Test compare FR/SP +Coil not burr and FR/SP+Coil normal / | II. Content. / | -Make sample and check function / | III.Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: Normal vs FR/SP+Coil not burr",
+          "baselineCondition": "Normal",
+          "changedCondition": "FR/SP+Coil not burr",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "10.5!2",
+            "10.5!26",
+            "10.5!28",
+            "10.5!5",
+            "10.5!6",
+            "10.5!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "1. RESULT CHECK FUNCTION",
+          "comparisonRows": [
+            "10.5!26",
+            "10.5!28"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 21865,
+              "condition": "FR/SP+Coil not burr",
+              "input": 134.0,
+              "ok": 132.0,
+              "ng": 2.0,
+              "ratePercent": 1.492537,
+              "evidenceRows": [
+                "10.5!26"
+              ]
+            },
+            {
+              "metricId": 21866,
+              "condition": "Normal",
+              "input": 150.0,
+              "ok": 148.0,
+              "ng": 2.0,
+              "ratePercent": 1.3333329999999999,
+              "evidenceRows": [
+                "10.5!28"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "10.5!2",
+        "10.5!26",
+        "10.5!28",
+        "10.5!5",
+        "10.5!6",
+        "10.5!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "10.5!2",
+      "10.5!26",
+      "10.5!28",
+      "10.5!5",
+      "10.5!6",
+      "10.5!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

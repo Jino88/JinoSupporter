@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 526,
+  "sourceFile": "30.2.MSU-20S15-07 Result check NTI test new material center Dome from GES TRADING and KR_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\526.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 526,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid source rows but unreliable factor and measurement extraction, so it cannot be final evidence.",
+    "issues": [
+      "Tension results are grouped by sample column instead of condition rows.",
+      "FO outcomes are malformed and numeric stats use labels as values.",
+      "NTI SPL/THD/IMP tables are over-expanded and not summarized by condition averages.",
+      "Changed factor mixes vendor and clean/laser secondary conditions without subgroup keys.",
+      "Several outcome citations point only to headers, not value rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to center dome material/vendor: Normal baseline vs KR and GES TRADING tests.",
+      "Keep clean/no-clean and laser/no-laser as subgroup context for VP+CD rows.",
+      "Rebuild tension outcomes from rows 27,29-33 by condition with min/max/avg.",
+      "Rebuild function outcomes from actual condition rows with input, OK, NG, rate.",
+      "Rebuild FO and NTI outcomes using condition averages and cite representative value rows."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for many computed outcomes because header-only and malformed rows are cited."
+  },
+  "usage": {
+    "input_tokens": 13967,
+    "output_tokens": 727,
+    "total_tokens": 14694
+  }
+}

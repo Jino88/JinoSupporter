@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 748,
+  "sourceFile": "56 TIU C11-20 Report test jig press VPCD sub1 raw 2026.2.5_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\748.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:00Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 748,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but changed-factor grouping, pair matching, and measurement inclusion need correction before use.",
+    "issues": [
+      "Review title is taken from graph axis, not report title.",
+      "Changed factor mixes model, shift, date, and jig condition instead of primary jig/process change.",
+      "Several Normal comparisons ignore nearby matched rows by date/shift/test round.",
+      "RAW DATA measurement outcomes are mostly header/spec artifacts and not verified as changed-condition results.",
+      "RA line and over-glue outcome domains/rates are unclear or mislabeled."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set title and purpose from Test (2) report rows.",
+      "Define primary change as repaired/new press jig VP/CD Sub1 cut 0.1mm versus Normal, with date/shift/time as subgroups.",
+      "Re-pair each result row to its adjacent Normal row preserving date, shift, and test round.",
+      "Remove or quarantine RAW DATA artifact measurements unless a valid SPL/THD comparison is reconstructed.",
+      "Recheck RA line headers and NG calculations before judging that outcome."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for final evidence until corrected pair/header rows are cited."
+  },
+  "usage": {
+    "input_tokens": 12083,
+    "output_tokens": 790,
+    "total_tokens": 12873
+  }
+}

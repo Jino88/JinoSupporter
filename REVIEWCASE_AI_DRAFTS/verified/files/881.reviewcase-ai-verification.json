@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 881,
+  "sourceFile": "74.BRS-2015 Report checking NTI  NG SPL sample date 14.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\881.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:51Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 881,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable Normal vs NG SPL evidence but the changed factor, baselines, and outcome grouping are not reliable enough for final use.",
+    "issues": [
+      "Changed factor is filename-derived instead of Normal vs NG SPL samples.",
+      "Baseline and changed conditions are left explicit as unknown.",
+      "Fo evidence cites only Normal rows, not matching the proposed comparison.",
+      "Outcome grouping mixes SPL, THD, IMP, Fo and graph/header rows without clear metric-level evidence.",
+      "Many subresults cite only header rows, not data rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal samples vs NG SPL samples, with ST as reference if applicable.",
+      "Group outcomes by workbook validation context with separate metrics for SPL, THD, IMP, and Fo.",
+      "Add data-row citations for each metric and condition, not only headers.",
+      "Include NG SPL Fo rows or remove Fo from the comparison if absent.",
+      "Replace vague title and filename-based factor with source-supported labels."
+    ],
+    "evidencePolicy": "Row citations prove source row existence but are insufficient as final evidence because condition and metric citations are incomplete."
+  },
+  "usage": {
+    "input_tokens": 4720,
+    "output_tokens": 532,
+    "total_tokens": 5252
+  }
+}

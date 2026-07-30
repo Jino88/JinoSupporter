@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 341,
+  "sourceFile": "18. BRS-161014 DT Report test VP mold #7,9 add 0.05mm  date 16.2.2024 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\341.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 341,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but mis-groups the primary comparison and several outcomes.",
+    "issues": [
+      "Changed factor wrongly mixes normal, test #7 OK, #7 bending, #9, and totals as both baseline and test.",
+      "Primary comparison should be add 0.05mm test molds #7/#9 versus normal mold, not #7 bending as control.",
+      "VP/CD outcome omits the normal row and compares #7 OK to #9 incorrectly.",
+      "Function outcome omits normal control and conflicts with decision that test #7/#9 are worse than normal.",
+      "Measurement outcomes are header-derived artifacts, not valid measurements."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to VP mold center add 0.05mm for test molds #7 and #9 versus normal VP mold #8/Normal.",
+      "Use row 21 as Sub1 normal control for rows 19 and 20.",
+      "Use row 32 as VP/CD normal control for rows 26, 28, and 30 as applicable.",
+      "Use row 60 as function normal control for rows 52, 56, and 58.",
+      "Remove header-based measurement outcomes and cite purpose, result, and decision rows."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations do not support the draft grouping or judgements."
+  },
+  "usage": {
+    "input_tokens": 6407,
+    "output_tokens": 646,
+    "total_tokens": 7053
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 869,
+  "sourceFile": "72. BRS-161014  Report test find reason NG VPCD separate (Dính dầu) date 26.10.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\869.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 869,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but outcome grouping and measurement extraction errors block final use.",
+    "issues": [
+      "Three abnormal conditions are lumped without clear factor-level structure.",
+      "Tension measurement includes unrelated function rows as zero values.",
+      "Weekly recheck lacks date/test-round subgroup keys and may miss rows.",
+      "Decap NG analysis sheets are omitted from outcomes.",
+      "Evidence list is broad and includes weak header/context rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define changed factor as condition type with Normal and three abnormal levels, or split if evidence requires.",
+      "Keep only rows 27-30 in tension outcome.",
+      "Regroup weekly recheck by date and condition; include all applicable rows and totals.",
+      "Add Decap NG sheet outcomes for each abnormal condition.",
+      "Trim citations to rows supporting each metric and decision."
+    ],
+    "evidencePolicy": "Row citations exist, but citations are not sufficient until invalid and omitted evidence is corrected."
+  },
+  "usage": {
+    "input_tokens": 11136,
+    "output_tokens": 959,
+    "total_tokens": 12095
+  }
+}

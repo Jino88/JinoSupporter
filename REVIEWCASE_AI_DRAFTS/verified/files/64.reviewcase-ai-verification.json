@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 64,
+  "sourceFile": "026.MSU-20S15-07 GMI -Result check test bonding VP+ CD  improve NG function modul_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\64.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 64,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it misidentifies the changed factor and mixes distinct SPL mark and VP+CD bonding studies.",
+    "issues": [
+      "Changed factor is nonsensical and lacks a clear baseline/test condition.",
+      "Two report contexts are merged without justification.",
+      "Normal, +0.05, -0.05, and corner-bond variants are not grouped by date and line.",
+      "Many RAW DATA/GRAPH measurements are spurious or header-derived.",
+      "Key evidence cites mostly headers rather than comparable result rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Create separate review cases or clearly justify one combined validation context.",
+      "Define changed factors from source content: SPL mark limit change and VP+CD bonding changes.",
+      "Group NG Function outcomes by date, line, and type check with matched Normal rows.",
+      "Keep tension as a separate outcome under the applicable +0.05 plus corner-bond condition.",
+      "Remove raw/header-derived measurement stats unless tied to explicit sample conditions."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are insufficient for final evidence because grouping and comparable result rows are wrong."
+  },
+  "usage": {
+    "input_tokens": 17803,
+    "output_tokens": 748,
+    "total_tokens": 18551
+  }
+}

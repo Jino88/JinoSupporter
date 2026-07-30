@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 675,
+  "sourceFile": "47. TIU C11-20  Report check NG VP deform 2026.01.28_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\675.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 675,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed factor and cannot be used as final evidence without regrouping.",
+    "issues": [
+      "Baseline condition is not evidenced.",
+      "Changed condition is incorrectly narrowed to tray sampling.",
+      "Key test context rows are omitted.",
+      "Position-NG mapping and sampling outcomes are mixed without clear factor grouping.",
+      "Decision rows are not tied to the proposed comparison."
+    ],
+    "requiredUserQuestions": [
+      "Should this file be treated as a defect investigation rather than a comparison case?",
+      "What is the intended primary factor: position, handling method, process stage, or grill offset test?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor from cited source context, not metric hints.",
+      "Include rows for position results, handling checks, offset test, sampling, and decisions.",
+      "Separate position mapping from sampling-stage outcomes if both are retained.",
+      "Do not claim baseline/test comparison unless source supports it.",
+      "Mark excluded if no comparable changed-condition factor can be established."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for the proposed comparison."
+  },
+  "usage": {
+    "input_tokens": 3103,
+    "output_tokens": 757,
+    "total_tokens": 3860
+  }
+}

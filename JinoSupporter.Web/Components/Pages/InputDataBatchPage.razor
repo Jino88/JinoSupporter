@@ -1,0 +1,2853 @@
+@page "/input-data-batch"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Text.Json
+@using JinoSupporter.Web.Services
+@inject IWebHostEnvironment Env
+@inject IJSRuntime JS
+@inject InputDataComPipelineService ComPipeline
+@inject WebRepository Repo
+
+<PageTitle>INPUT DATA</PageTitle>
+
+<div class="input-data-root">
+    <header class="page-head">
+        <div>
+            <div class="kicker">TEST DATA ANALYSIS</div>
+            <h1>INPUT DATA</h1>
+        </div>
+        <span class="status-chip @(_statusError ? "error" : "ok")">@_status</span>
+    </header>
+
+    <section class="panel">
+        <div class="panel-head">
+            <div>
+                <h2>Excel Input Data 입력</h2>
+                <p>Excel COM으로 원본을 읽고, 병합셀 구조와 raw grid를 DB에 저장합니다.</p>
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <label class="source-field">
+                <span>Excel 파일 또는 폴더</span>
+                <div class="source-input-row">
+                    <input class="form-control form-control-sm"
+                           @bind="_inputPath"
+                           disabled="@_isRunning" />
+                    <label class="btn btn-outline-secondary btn-sm file-picker-button @(_isRunning ? "disabled" : "")"
+                           title="Excel 파일 선택">
+                        파일 선택
+                        <InputFile class="file-picker-input"
+                                   OnChange="OnInputFileSelectedAsync"
+                                   accept=".xlsx,.xlsm,.xlsb,.xls"
+                                   disabled="@_isRunning" />
+                    </label>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_selectedInputFileStatus))
+                {
+                    <small class="@(_selectedInputFileError ? "source-status error-text" : "source-status")">
+                        @_selectedInputFileStatus
+                    </small>
+                }
+            </label>
+            <label>
+                <span>데이터셋</span>
+                <input class="form-control form-control-sm"
+                       @bind="_dataset"
+                       disabled="@_isRunning" />
+            </label>
+            <label>
+                <span>처리 개수</span>
+                <input class="form-control form-control-sm"
+                       type="number"
+                       min="0"
+                       @bind="_limitText"
+                       disabled="@_isRunning" />
+            </label>
+        </div>
+
+        <div class="toolbar">
+            <label class="check">
+                <input type="checkbox" @bind="_runAiReviewCase" disabled="@_isRunning" />
+                AI 인식/추출 적합성 점검까지 실행
+            </label>
+
+            @if (_isRunning)
+            {
+                <button class="btn btn-outline-danger btn-sm" type="button" @onclick="CancelRun">
+                    중지
+                </button>
+            }
+            else
+            {
+                <button class="btn btn-primary btn-sm" type="button" @onclick="RunPipelineAsync">
+                    실행
+                </button>
+            }
+        </div>
+    </section>
+
+    @if (_lastRun is not null)
+    {
+        <section class="panel">
+            <div class="panel-head">
+                <div>
+                    <h2>마지막 실행 결과</h2>
+                    <p>@_lastRun.FinishedAt</p>
+                </div>
+            </div>
+
+            <div class="summary-grid">
+                <div><span>파일</span><strong>@_lastRun.SuccessCount / @_lastRun.FileCount OK</strong></div>
+                <div><span>시트</span><strong>@_lastRun.SheetCount.ToString("N0")</strong></div>
+                <div><span>셀</span><strong>@_lastRun.TotalCells.ToString("N0")</strong></div>
+                <div><span>병합셀</span><strong>@_lastRun.MergeCount.ToString("N0")</strong></div>
+                <div><span>후보</span><strong>@_lastRun.CandidateCount.ToString("N0")</strong></div>
+                <div><span>AI 점검</span><strong>@_lastRun.ReviewCaseCount.ToString("N0")</strong></div>
+            </div>
+
+            @if (_lastRun.Files.Count > 0)
+            {
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>파일</th>
+                                <th>상태</th>
+                                <th>Grid</th>
+                                <th>병합셀</th>
+                                <th>AI</th>
+                                <th>검토</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in _lastRun.Files)
+                            {
+                                <tr>
+                                    <td title="@row.SourcePath">@row.SourceFileName</td>
+                                    <td class="@(row.Success ? "ok-text" : "error-text")" title="@row.Error">
+                                        @(row.Success ? "OK" : "Failed")
+                                    </td>
+                                    <td>@row.SheetCount.ToString("N0") sheets / @row.TotalCells.ToString("N0") cells</td>
+                                    <td>@row.MergeCount.ToString("N0")</td>
+                                    <td>@AiStatus(row)</td>
+                                    <td>
+                                        <button class="btn btn-outline-secondary btn-sm"
+                                                type="button"
+                                                title="@row.SourcePath"
+                                                disabled="@(!CanOpenSourcePath(row.SourcePath))"
+                                                @onclick="@(() => OpenExcelFile(row.SourcePath))">
+                                            Excel 열기
+                                        </button>
+                                        @if (row.AiSaved && row.WorkbookId > 0)
+                                        {
+                                            <button class="btn btn-outline-primary btn-sm"
+                                                    type="button"
+                                                    @onclick="@(() => LoadReviewCase(row))">
+                                                보기
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="muted">-</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    }
+
+    @if (_recentReviewCases.Count > 0)
+    {
+        <section class="panel">
+            <div class="panel-head">
+                <div>
+                    <h2>저장된 AI 인식 결과</h2>
+                    <p>이 데이터셋에 DB 저장된 최신 AI 인식/추출 점검 결과입니다.</p>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="RefreshRecentReviewCases">
+                    새로고침
+                </button>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>파일</th>
+                            <th>상태</th>
+                            <th>Ask AI</th>
+                            <th>생성시각</th>
+                            <th>검토</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (InputDataReviewCaseListRecord row in _recentReviewCases)
+                        {
+                            <tr>
+                                <td title="@row.SourcePath">@row.SourceFileName</td>
+                                <td>@DisplayStatus(row.Status)</td>
+                                <td class="@(row.ApprovedForAskAi ? "ok-text" : "error-text")">
+                                    @(row.ApprovedForAskAi ? "승인됨" : "확인 필요")
+                                </td>
+                                <td>@row.CreatedAt</td>
+                                <td>
+                                    <button class="btn btn-outline-secondary btn-sm"
+                                            type="button"
+                                            title="@row.SourcePath"
+                                            disabled="@(!CanOpenSourcePath(row.SourcePath))"
+                                            @onclick="@(() => OpenExcelFile(row.SourcePath))">
+                                        Excel 열기
+                                    </button>
+                                    <button class="btn btn-outline-primary btn-sm"
+                                            type="button"
+                                            @onclick="@(() => LoadReviewCase(row.WorkbookId, row.SourceFileName, row.SourcePath))">
+                                        보기
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm"
+                                            type="button"
+                                            @onclick="@(() => DeleteReviewCaseAsync(row))">
+                                        삭제
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+
+    @if (_selectedReviewCase is not null && _reviewView is not null)
+    {
+        <section class="panel review-panel">
+            <div class="panel-head">
+                <div>
+                    <h2>AI 인식 결과 검토</h2>
+                    <p>@_selectedReviewFileName</p>
+                </div>
+                <div class="review-badges">
+                    <span class="status-chip @(_selectedReviewCase.ApprovedForAskAi ? "ok" : "error")">
+                        @(_selectedReviewCase.ApprovedForAskAi ? "Ask AI 추출 가능" : "데이터 확인 필요")
+                    </span>
+                    <span class="status-chip">@DisplayStatus(_selectedReviewCase.Status)</span>
+                    <button class="btn btn-outline-secondary btn-sm"
+                            type="button"
+                            title="@_selectedReviewSourcePath"
+                            disabled="@(!CanOpenSourcePath(_selectedReviewSourcePath))"
+                            @onclick="@(() => OpenExcelFile(_selectedReviewSourcePath))">
+                        원본 Excel 열기
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm"
+                            type="button"
+                            @onclick="DeleteSelectedReviewCaseAsync">
+                        인식 결과 삭제
+                    </button>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_openFileStatus))
+            {
+                <p class="open-file-status">@_openFileStatus</p>
+            }
+
+            <div class="review-grid">
+                <div class="review-block">
+                    <span>AI 요약</span>
+                    <p>@_reviewView.Summary</p>
+                </div>
+                <div class="review-block">
+                    <span>신뢰도</span>
+                    <strong>@DisplayConfidence(_reviewView.Confidence)</strong>
+                </div>
+                <div class="review-block">
+                    <span>추출 상태</span>
+                    <strong>@DisplayStatus(_reviewView.VerificationStatus)</strong>
+                </div>
+            </div>
+
+            @if (_reviewView.Cases.Count > 0)
+            {
+                <h3>AI 인식 결과</h3>
+                @foreach (GeneratedCaseView item in _reviewView.Cases)
+                {
+                    <div class="recognition-card">
+                        <div class="case-title">
+                            <strong>@item.Title</strong>
+                            <span>@item.ReviewCaseId</span>
+                        </div>
+                        <p>@item.Purpose</p>
+
+                        @if (item.ChangedFactors.Count > 0)
+                        {
+                            <div class="recognized-factors">
+                                @foreach (ChangedFactorView factor in item.ChangedFactors)
+                                {
+                                    <div class="recognized-factor">
+                                        <span>데이터 구분</span>
+                                        <strong>@factor.Domain</strong>
+                                        <dl>
+                                            <dt>항목</dt>
+                                            <dd>@factor.Name</dd>
+                                            <dt>기준</dt>
+                                            <dd>@factor.Baseline</dd>
+                                            <dt>비교</dt>
+                                            <dd>@factor.Changed</dd>
+                                        </dl>
+                                        @if (factor.SubgroupKeys.Count > 0)
+                                        {
+                                            <div class="chip-row">
+                                                @foreach (string key in factor.SubgroupKeys.Take(18))
+                                                {
+                                                    <span>@key</span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @if (item.Outcomes.Count > 0)
+                        {
+                            <div class="recognized-outcomes">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>데이터 영역</th>
+                                            <th>인식한 데이터</th>
+                                            <th>AI 인식 내용</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (OutcomeView outcome in item.Outcomes)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <strong>@outcome.Domain</strong>
+                                                </td>
+                                                <td>@outcome.Metric</td>
+                                                <td>@outcome.Summary</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+
+                        @if (item.Outcomes.Any(outcome => outcome.RecognizedTables.Count > 0))
+                        {
+                            <div class="recognized-data-tables">
+                                @foreach (OutcomeView outcome in item.Outcomes.Where(outcome => outcome.RecognizedTables.Count > 0))
+                                {
+                                    @foreach (RecognizedTableView table in outcome.RecognizedTables)
+                                    {
+                                        <div class="recognized-data-table">
+                                            <div class="recognized-data-head">
+                                                <strong>@FirstNonBlank(table.Title, outcome.Domain)</strong>
+                                                <span>@outcome.Metric</span>
+                                            </div>
+                                            <div class="recognized-data-scroll">
+                                                <table>
+                                                    @if (table.Headers.Count > 0)
+                                                    {
+                                                        <thead>
+                                                            <tr>
+                                                                @foreach (string header in table.Headers)
+                                                                {
+                                                                    <th>@header</th>
+                                                                }
+                                                            </tr>
+                                                        </thead>
+                                                    }
+                                                    <tbody>
+                                                        @foreach (IReadOnlyList<string> dataRow in table.Rows)
+                                                        {
+                                                            <tr>
+                                                                @foreach (string cell in dataRow)
+                                                                {
+                                                                    <td>@cell</td>
+                                                                }
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            }
+
+            @if (_reviewView.Issues.Count > 0)
+            {
+                <h3>이슈 / 주의사항</h3>
+                <ul class="review-list">
+                    @foreach (string item in _reviewView.Issues)
+                    {
+                        <li>@item</li>
+                    }
+                </ul>
+            }
+
+            @if (_reviewView.GenerationInvalid)
+            {
+                <h3>AI 생성 실패</h3>
+                <p class="review-warning">
+                    AI 인식 JSON이 유효하지 않아서 사용자 확인 질문을 받지 않습니다.
+                    원본 Excel을 열어 확인한 뒤 다시 실행해야 합니다.
+                </p>
+            }
+            else if (_reviewView.RequiredQuestions.Count > 0 && _reviewView.Cases.Count == 0)
+            {
+                <h3>AI 생성 불완전</h3>
+                <p class="review-warning">
+                    AI 인식 결과가 없어서 사용자 확인 질문을 받지 않습니다.
+                    원본 Excel을 열어 확인한 뒤 다시 실행해야 합니다.
+                </p>
+            }
+            else if (_reviewView.RequiredQuestions.Count > 0)
+            {
+                <h3>사용자 확인 필요</h3>
+                <div class="answer-panel">
+                    @for (int i = 0; i < _reviewView.RequiredQuestions.Count; i++)
+                    {
+                        <label class="answer-row">
+                            <span>질문 @(i + 1)</span>
+                            <strong>@DisplayQuestion(_reviewView.RequiredQuestions[i])</strong>
+                            @if (i < _reviewView.QuestionRowReferences.Count && _reviewView.QuestionRowReferences[i].Count > 0)
+                            {
+                                <div class="question-row-preview">
+                                    <div class="question-row-preview-title">질문에서 언급한 원본 행</div>
+                                    @foreach (QuestionRowReferenceView rowRef in _reviewView.QuestionRowReferences[i])
+                                    {
+                                        <div class="question-ref-row">
+                                            <div class="question-ref-head">
+                                                <span class="row-ref-chip">@rowRef.RequestedRef</span>
+                                                @if (!rowRef.RequestedRef.Equals(rowRef.ActualRef, StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    <span class="actual-ref">실제 @rowRef.ActualRef</span>
+                                                }
+                                            </div>
+                                            @if (rowRef.Cells.Count > 0)
+                                            {
+                                                <div class="question-ref-cells">
+                                                    @foreach (QuestionCellView cell in rowRef.Cells)
+                                                    {
+                                                        <span><b>@cell.Label</b>@cell.Value</span>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="question-ref-missing">저장된 COM grid에서 해당 행을 찾지 못했습니다.</div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            <textarea class="form-control form-control-sm"
+                                      rows="2"
+                                      @bind="_questionAnswers[i]"
+                                      placeholder="여기에 답변을 입력하세요. 예: 1min을 기준군으로 승인 / 단위는 mm"></textarea>
+                        </label>
+                    }
+
+                    <label class="answer-row">
+                        <span>추가 메모</span>
+                        <textarea class="form-control form-control-sm"
+                                  rows="2"
+                                  @bind="_reviewMemo"
+                                  placeholder="필요하면 추가 확인 내용이나 수정 지시를 입력하세요."></textarea>
+                    </label>
+
+                    <label class="check approval-check">
+                        <input type="checkbox" @bind="_approveForAskAi" />
+                        위 답변 기준으로 Ask AI 추출에 사용 가능
+                    </label>
+
+                    <div class="toolbar">
+                        <button class="btn btn-primary btn-sm" type="button" @onclick="SaveUserReviewAsync">
+                            답변 저장
+                        </button>
+                        @if (!string.IsNullOrWhiteSpace(_reviewSaveStatus))
+                        {
+                            <span class="save-status">@_reviewSaveStatus</span>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (_reviewView.CorrectionPlan.Count > 0)
+            {
+                <h3>보정 방향</h3>
+                <ul class="review-list">
+                    @foreach (string item in _reviewView.CorrectionPlan)
+                    {
+                        <li>@item</li>
+                    }
+                </ul>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(_reviewView.EvidencePolicy))
+            {
+                <h3>근거 사용 기준</h3>
+                <p class="review-text">@_reviewView.EvidencePolicy</p>
+            }
+
+            <details>
+                <summary>검증 JSON 원문</summary>
+                <pre class="json-view">@_reviewView.VerificationJsonPretty</pre>
+            </details>
+            <details>
+                <summary>AI 인식 JSON 원문</summary>
+                <pre class="json-view">@_reviewView.GenerationJsonPretty</pre>
+            </details>
+        </section>
+    }
+    else if (!string.IsNullOrWhiteSpace(_reviewLoadError))
+    {
+        <section class="panel">
+            <h2>AI 인식 결과 검토</h2>
+            <p class="error-text">@_reviewLoadError</p>
+        </section>
+    }
+
+    @if (_log.Count > 0)
+    {
+        <section class="panel">
+            <div class="panel-head">
+                <h2>Log</h2>
+                <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="_log.Clear" disabled="@_isRunning">
+                    Clear
+                </button>
+            </div>
+            <pre class="log" @ref="_logRef">@string.Join(Environment.NewLine, _log)</pre>
+        </section>
+    }
+</div>
+
+@code {
+    private const string DefaultInputPath = @"D:\000. MyWorks\test\result\InputDataFinish";
+    private const long MaxSelectedInputFileBytes = 512L * 1024 * 1024;
+
+    private readonly List<string> _log = [];
+    private List<InputDataReviewCaseListRecord> _recentReviewCases = [];
+    private readonly object _logLock = new();
+    private CancellationTokenSource? _cts;
+    private InputDataComPipelineResult? _lastRun;
+    private InputDataReviewCaseRecord? _selectedReviewCase;
+    private ReviewCaseView? _reviewView;
+    private ElementReference _logRef;
+
+    private string _inputPath = DefaultInputPath;
+    private string _dataset = "InputData";
+    private string _limitText = "";
+    private string _status = "Ready";
+    private bool _statusError;
+    private string _selectedInputFileStatus = "";
+    private bool _selectedInputFileError;
+    private bool _runAiReviewCase;
+    private bool _isRunning;
+    private bool _scrollLog;
+    private string _selectedReviewFileName = "";
+    private string _selectedReviewSourcePath = "";
+    private string _reviewLoadError = "";
+    private string _openFileStatus = "";
+    private List<string> _questionAnswers = [];
+    private string _reviewMemo = "";
+    private bool _approveForAskAi;
+    private string _reviewSaveStatus = "";
+
+    protected override void OnInitialized()
+    {
+        RefreshRecentReviewCases();
+    }
+
+    private async Task OnInputFileSelectedAsync(InputFileChangeEventArgs e)
+    {
+        if (_isRunning) return;
+
+        IBrowserFile? file = e.File;
+        if (file is null) return;
+
+        try
+        {
+            string selectedDir = Path.Combine(
+                Env.ContentRootPath,
+                "tmp",
+                "input-data-selected",
+                DateTime.UtcNow.ToString("yyyyMMdd_HHmmss_fff"));
+            Directory.CreateDirectory(selectedDir);
+
+            string targetPath = Path.Combine(selectedDir, SafeFileName(file.Name));
+            await using FileStream output = File.Create(targetPath);
+            await using Stream input = file.OpenReadStream(MaxSelectedInputFileBytes);
+            await input.CopyToAsync(output);
+
+            _inputPath = targetPath;
+            _selectedInputFileError = false;
+            _selectedInputFileStatus = $"선택됨: {file.Name} ({FormatBytes(file.Size)})";
+            _statusError = false;
+            _status = "File selected";
+        }
+        catch (Exception ex)
+        {
+            _selectedInputFileError = true;
+            _selectedInputFileStatus = $"파일 선택 실패: {ex.Message}";
+            _statusError = true;
+            _status = "File select failed";
+            AddLogLine(ex.ToString());
+        }
+    }
+
+    private async Task RunPipelineAsync()
+    {
+        if (_isRunning) return;
+
+        _isRunning = true;
+        _statusError = false;
+        _status = _runAiReviewCase ? "Running COM + AI pipeline..." : "Running COM extraction...";
+        _log.Clear();
+        ClearReviewSelection();
+        _cts = new CancellationTokenSource();
+
+        try
+        {
+            var request = new InputDataComPipelineRequest(
+                _inputPath.Trim(),
+                _dataset.Trim(),
+                ParseLimit(),
+                _runAiReviewCase);
+
+            _lastRun = await ComPipeline.RunAsync(request, AddLogLine, _cts.Token);
+            _status = $"Complete: {_lastRun.SuccessCount:N0}/{_lastRun.FileCount:N0} file(s), {_lastRun.TotalCells:N0} cell(s), {_lastRun.MergeCount:N0} merge(s)";
+            RefreshRecentReviewCases();
+            AutoSelectReviewCase(_lastRun);
+        }
+        catch (OperationCanceledException)
+        {
+            _statusError = true;
+            _status = "Stopped";
+        }
+        catch (Exception ex)
+        {
+            _statusError = true;
+            _status = ex.Message;
+            AddLogLine(ex.ToString());
+        }
+        finally
+        {
+            _isRunning = false;
+            _cts?.Dispose();
+            _cts = null;
+        }
+    }
+
+    private void CancelRun() => _cts?.Cancel();
+
+    private void OpenExcelFile(string sourcePath)
+    {
+        string path = (sourcePath ?? "").Trim().Trim('"');
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            _openFileStatus = $"Excel 파일을 찾을 수 없습니다: {path}";
+            return;
+        }
+
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = Path.GetFullPath(path),
+                UseShellExecute = true,
+                Verb = "open",
+                WorkingDirectory = Path.GetDirectoryName(path) ?? ""
+            };
+            System.Diagnostics.Process.Start(psi);
+            _openFileStatus = $"Excel 열기 요청 완료: {Path.GetFileName(path)}";
+        }
+        catch (Exception ex)
+        {
+            _openFileStatus = $"Excel 열기 실패: {ex.Message}";
+        }
+    }
+
+    private static bool CanOpenSourcePath(string sourcePath)
+        => !string.IsNullOrWhiteSpace(sourcePath) && File.Exists(sourcePath.Trim().Trim('"'));
+
+    private void AddLogLine(string line)
+    {
+        lock (_logLock)
+        {
+            _log.Add(line);
+            if (_log.Count > 300)
+                _log.RemoveRange(0, _log.Count - 300);
+        }
+
+        _scrollLog = true;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void AutoSelectReviewCase(InputDataComPipelineResult result)
+    {
+        InputDataComPipelineFileResult? row = result.Files.FirstOrDefault(x => x.AiSaved && x.WorkbookId > 0);
+        if (row is not null)
+            LoadReviewCase(row);
+    }
+
+    private void RefreshRecentReviewCases()
+    {
+        try
+        {
+            _recentReviewCases = Repo.GetRecentInputDataReviewCases(_dataset.Trim(), 20);
+        }
+        catch (Exception ex)
+        {
+            _reviewLoadError = ex.Message;
+        }
+    }
+
+    private void LoadReviewCase(InputDataComPipelineFileResult row)
+        => LoadReviewCase(row.WorkbookId, row.SourceFileName, row.SourcePath);
+
+    private void LoadReviewCase(long workbookId, string sourceFileName, string sourcePath = "")
+    {
+        ClearReviewSelection();
+        _selectedReviewFileName = sourceFileName;
+        _selectedReviewSourcePath = sourcePath;
+
+        try
+        {
+            List<InputDataReviewCaseRecord> cases = Repo.GetInputDataReviewCases(workbookId);
+            if (cases.Count == 0)
+            {
+                _reviewLoadError = $"No AI recognition row was found for workbookId={workbookId}.";
+                return;
+            }
+
+            _selectedReviewCase = cases[0];
+            _reviewView = BuildReviewView(_selectedReviewCase);
+            AttachRecognizedDataTables(_selectedReviewCase.WorkbookId, _reviewView);
+            AttachQuestionRowReferences(_selectedReviewCase.WorkbookId, _reviewView);
+            LoadUserReviewState(_selectedReviewCase, _reviewView);
+        }
+        catch (Exception ex)
+        {
+            _reviewLoadError = ex.Message;
+        }
+    }
+
+    private void AttachQuestionRowReferences(long workbookId, ReviewCaseView view)
+    {
+        view.QuestionRowReferences.Clear();
+        List<string> knownSheets = KnownEvidenceSheetNames(view);
+
+        foreach (string question in view.RequiredQuestions)
+        {
+            List<string> requestedRefs = ExtractQuestionRowRefs(question);
+            List<string> lookupRefs = ResolveQuestionLookupRefs(requestedRefs, knownSheets);
+            List<InputDataComRowPreview> rows = lookupRefs.Count == 0
+                ? []
+                : Repo.GetInputDataComRows(workbookId, lookupRefs);
+
+            var rowsByRef = rows.ToDictionary(row => row.RowRef, StringComparer.OrdinalIgnoreCase);
+            var questionRefs = new List<QuestionRowReferenceView>();
+            foreach (string requestedRef in requestedRefs)
+            {
+                InputDataComRowPreview? row = null;
+                if (!rowsByRef.TryGetValue(requestedRef, out row)
+                    && ParseInputDataRowRef(requestedRef) is { } parsed)
+                {
+                    foreach (string sheetName in knownSheets)
+                    {
+                        if (rowsByRef.TryGetValue($"{sheetName}!{parsed.RowNumber}", out row))
+                            break;
+                    }
+                }
+
+                questionRefs.Add(BuildQuestionRowReference(requestedRef, row));
+            }
+
+            view.QuestionRowReferences.Add(questionRefs);
+        }
+    }
+
+    private void AttachRecognizedDataTables(long workbookId, ReviewCaseView view)
+    {
+        foreach (GeneratedCaseView reviewCase in view.Cases)
+        {
+            foreach (OutcomeView outcome in reviewCase.Outcomes)
+            {
+                bool isTension = IsTensionOutcome(outcome);
+                if (!isTension && outcome.RecognizedTables.Count > 0) continue;
+
+                List<string> baseRowRefs = (outcome.EvidenceRows.Count > 0 ? outcome.EvidenceRows : outcome.ComparisonRows)
+                    .Where(row => !string.IsNullOrWhiteSpace(row))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                List<string> rowRefs = isTension
+                    ? ExpandRowRefs(baseRowRefs, before: 24, after: 6, maxRows: 160)
+                    : baseRowRefs.Take(80).ToList();
+                if (rowRefs.Count == 0) continue;
+
+                List<InputDataComRowPreview> rows = Repo.GetInputDataComRows(workbookId, rowRefs);
+                if (isTension && !HasTensionStatsTable(outcome))
+                {
+                    RecognizedTableView? tensionTable = BuildTensionMeasurementTable(rows);
+                    if (tensionTable is not null)
+                        outcome.RecognizedTables.Insert(0, tensionTable);
+                }
+
+                if (outcome.RecognizedTables.Count > 0) continue;
+
+                RecognizedTableView? table = BuildRecognizedTableFromRawGrid(outcome, rows);
+                if (table is not null)
+                    outcome.RecognizedTables.Add(table);
+            }
+        }
+    }
+
+    private async Task DeleteReviewCaseAsync(InputDataReviewCaseListRecord row)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>(
+            "confirm",
+            $"저장된 AI 인식 결과를 삭제할까요?\n\n{row.SourceFileName}\n{row.ReviewCaseId}");
+        if (!confirmed) return;
+
+        try
+        {
+            bool deleted = Repo.DeleteInputDataReviewCase(row.Id);
+            RefreshRecentReviewCases();
+
+            if (_selectedReviewCase?.Id == row.Id)
+                ClearReviewSelection();
+
+            _statusError = !deleted;
+            _status = deleted ? "AI recognition deleted" : "AI recognition not found";
+        }
+        catch (Exception ex)
+        {
+            _statusError = true;
+            _status = "AI recognition delete failed";
+            _reviewLoadError = ex.Message;
+            AddLogLine(ex.ToString());
+        }
+    }
+
+    private async Task DeleteSelectedReviewCaseAsync()
+    {
+        if (_selectedReviewCase is null) return;
+
+        bool confirmed = await JS.InvokeAsync<bool>(
+            "confirm",
+            $"현재 열려 있는 AI 인식 결과를 삭제할까요?\n\n{_selectedReviewFileName}\n{_selectedReviewCase.ReviewCaseId}");
+        if (!confirmed) return;
+
+        try
+        {
+            bool deleted = Repo.DeleteInputDataReviewCase(_selectedReviewCase.Id);
+            ClearReviewSelection();
+            RefreshRecentReviewCases();
+            _statusError = !deleted;
+            _status = deleted ? "AI recognition deleted" : "AI recognition not found";
+        }
+        catch (Exception ex)
+        {
+            _statusError = true;
+            _status = "AI recognition delete failed";
+            _reviewLoadError = ex.Message;
+            AddLogLine(ex.ToString());
+        }
+    }
+
+    private void ClearReviewSelection()
+    {
+        _selectedReviewCase = null;
+        _reviewView = null;
+        _selectedReviewFileName = "";
+        _selectedReviewSourcePath = "";
+        _reviewLoadError = "";
+        _openFileStatus = "";
+        _questionAnswers = [];
+        _reviewMemo = "";
+        _approveForAskAi = false;
+        _reviewSaveStatus = "";
+    }
+
+    private void LoadUserReviewState(InputDataReviewCaseRecord row, ReviewCaseView view)
+    {
+        _questionAnswers = Enumerable.Repeat("", view.RequiredQuestions.Count).ToList();
+        _reviewMemo = "";
+        _approveForAskAi = row.ApprovedForAskAi;
+        _reviewSaveStatus = string.IsNullOrWhiteSpace(row.UserReviewedAt)
+            ? ""
+            : $"저장됨: {row.UserReviewedAt}";
+
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(row.UserAnswerJson);
+            JsonElement root = doc.RootElement;
+            if (TryGetProperty(root, "answers", out JsonElement answers) && answers.ValueKind == JsonValueKind.Array)
+            {
+                int i = 0;
+                foreach (JsonElement answer in answers.EnumerateArray())
+                {
+                    if (i >= _questionAnswers.Count) break;
+                    _questionAnswers[i] = JsonString(answer, "answer");
+                    i++;
+                }
+            }
+
+            _reviewMemo = JsonString(root, "memo");
+        }
+        catch
+        {
+            // Older rows have no user review JSON.
+        }
+    }
+
+    private Task SaveUserReviewAsync()
+    {
+        if (_selectedReviewCase is null || _reviewView is null) return Task.CompletedTask;
+
+        string now = DateTime.UtcNow.ToString("O");
+        var payload = new
+        {
+            source = "InputDataBatchPage",
+            reviewedAt = now,
+            approvedForAskAi = _approveForAskAi,
+            questions = _reviewView.RequiredQuestions,
+            answers = _reviewView.RequiredQuestions.Select((question, index) => new
+            {
+                question,
+                answer = index < _questionAnswers.Count ? _questionAnswers[index].Trim() : ""
+            }).ToList(),
+            memo = _reviewMemo.Trim()
+        };
+
+        string json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = false });
+        Repo.SaveInputDataReviewCaseUserReview(new InputDataReviewCaseUserReviewSave(
+            _selectedReviewCase.Id,
+            json,
+            _approveForAskAi,
+            now));
+
+        LoadReviewCase(_selectedReviewCase.WorkbookId, _selectedReviewFileName);
+        RefreshRecentReviewCases();
+        _reviewSaveStatus = _approveForAskAi
+            ? "답변 저장 및 Ask AI 추출 사용 가능 처리"
+            : "답변 저장 완료";
+        return Task.CompletedTask;
+    }
+
+    private static string DisplayQuestion(string question)
+    {
+        if (question.Contains("Should 1min be treated", StringComparison.OrdinalIgnoreCase))
+            return "1min을 기준군/control로 보고 3min/5min을 비교군으로 처리할까요?";
+        if (question.Contains("What unit should be assigned", StringComparison.OrdinalIgnoreCase))
+            return "F:H 측정값의 단위는 무엇으로 저장할까요?";
+
+        return question;
+    }
+
+    private static string SafeFileName(string fileName)
+    {
+        string name = Path.GetFileName(fileName ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            name = "selected-input.xlsx";
+
+        char[] invalid = Path.GetInvalidFileNameChars();
+        var chars = name.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray();
+        return new string(chars);
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB"];
+        double value = bytes;
+        int unit = 0;
+        while (value >= 1024 && unit < units.Length - 1)
+        {
+            value /= 1024;
+            unit++;
+        }
+
+        return unit == 0 ? $"{bytes} {units[unit]}" : $"{value:N1} {units[unit]}";
+    }
+
+    private int ParseLimit()
+        => int.TryParse(_limitText, out int value) && value > 0 ? value : 0;
+
+    private static string AiStatus(InputDataComPipelineFileResult row)
+        => row.AiAttempted
+            ? row.AiSaved ? DisplayStatus(row.ReviewCaseStatus) : "실패"
+            : "실행 안 함";
+
+    private static string DisplayStatus(string status)
+        => status.Trim().ToLowerInvariant() switch
+        {
+            "verified" => "추출 가능",
+            "passed" => "점검 완료",
+            "user_verified" => "사용자 확인 완료",
+            "needs_review" => "확인 필요",
+            "failed" => "실패",
+            "excluded" => "제외",
+            "" => "-",
+            _ => status
+        };
+
+    private static string DisplayConfidence(string confidence)
+        => confidence.Trim().ToLowerInvariant() switch
+        {
+            "high" => "높음",
+            "medium" => "중간",
+            "low" => "낮음",
+            "" => "-",
+            _ => confidence
+        };
+
+    private static ReviewCaseView BuildReviewView(InputDataReviewCaseRecord row)
+    {
+        var view = new ReviewCaseView
+        {
+            Status = row.Status,
+            ApprovedForAskAi = row.ApprovedForAskAi,
+            GenerationJsonPretty = PrettyJson(row.GenerationJson),
+            VerificationJsonPretty = PrettyJson(row.VerificationJson)
+        };
+
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(row.VerificationJson);
+            JsonElement root = doc.RootElement;
+            view.VerificationStatus = FirstNonBlank(JsonString(root, "verificationStatus"), JsonString(root, "status"));
+            view.Confidence = JsonString(root, "confidence");
+            view.Summary = JsonString(root, "summary");
+            view.EvidencePolicy = JsonString(root, "evidencePolicy");
+            view.Issues = JsonStringList(root, "issues");
+            view.RequiredQuestions = JsonStringList(root, "requiredUserQuestions");
+            view.CorrectionPlan = JsonStringList(root, "correctionPlan");
+        }
+        catch (Exception ex)
+        {
+            view.Summary = $"Verification JSON could not be parsed: {ex.Message}";
+        }
+
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(row.GenerationJson);
+            JsonElement root = doc.RootElement;
+            if (TryGetProperty(root, "reviewCases", out JsonElement cases) && cases.ValueKind == JsonValueKind.Array)
+            {
+                foreach (JsonElement caseElement in cases.EnumerateArray())
+                {
+                    var item = new GeneratedCaseView
+                    {
+                        ReviewCaseId = FirstNonBlank(JsonString(caseElement, "reviewCaseId"), row.ReviewCaseId),
+                        Title = FirstNonBlank(JsonString(caseElement, "reviewTitle"), row.ReviewCaseId),
+                        Purpose = JsonString(caseElement, "reviewPurpose"),
+                        EvidenceRows = JsonStringList(caseElement, "evidenceRows"),
+                        EvidenceCells = JsonStringList(caseElement, "evidenceCells"),
+                        Limitations = JsonStringList(caseElement, "limitations")
+                    };
+
+                    if (TryGetProperty(caseElement, "changedFactors", out JsonElement factors) && factors.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (JsonElement factorElement in factors.EnumerateArray())
+                        {
+                            item.ChangedFactors.Add(new ChangedFactorView
+                            {
+                                Domain = JsonString(factorElement, "changeDomain"),
+                                Name = JsonString(factorElement, "changedFactor"),
+                                Baseline = JsonString(factorElement, "baselineCondition"),
+                                Changed = JsonString(factorElement, "changedCondition"),
+                                SubgroupKeys = JsonStringList(factorElement, "subgroupKeys"),
+                                EvidenceRows = JsonStringList(factorElement, "evidenceRows"),
+                                EvidenceCells = JsonStringList(factorElement, "evidenceCells")
+                            });
+                        }
+                    }
+
+                    if (TryGetProperty(caseElement, "outcomes", out JsonElement outcomes)
+                        && outcomes.ValueKind != JsonValueKind.Undefined
+                        && outcomes.ValueKind != JsonValueKind.Null
+                        && outcomes.GetRawText() != "[]")
+                    {
+                        item.Outcomes = ReadOutcomeViews(outcomes);
+                        item.OutcomesJson = PrettyJson(outcomes.GetRawText());
+                    }
+
+                    view.Cases.Add(item);
+                }
+            }
+        }
+        catch
+        {
+            view.GenerationInvalid = true;
+        }
+
+        if (view.Cases.Count == 0 && LooksLikeGenerationFailure(view))
+            view.GenerationInvalid = true;
+        if (view.GenerationInvalid)
+            view.RequiredQuestions.Clear();
+
+        if (string.IsNullOrWhiteSpace(view.Summary) && view.Cases.Count > 0)
+            view.Summary = view.Cases[0].Title;
+        if (string.IsNullOrWhiteSpace(view.VerificationStatus))
+            view.VerificationStatus = row.Status;
+        if (string.IsNullOrWhiteSpace(view.Confidence))
+            view.Confidence = "-";
+
+        return view;
+    }
+
+    private static List<OutcomeView> ReadOutcomeViews(JsonElement outcomes)
+    {
+        var rows = new List<OutcomeView>();
+        if (outcomes.ValueKind != JsonValueKind.Array) return rows;
+
+        foreach (JsonElement outcome in outcomes.EnumerateArray())
+        {
+            string raw = outcome.GetRawText();
+            var row = new OutcomeView
+            {
+                OutcomeId = JsonString(outcome, "outcomeId"),
+                Domain = FirstNonBlank(JsonString(outcome, "outcomeDomain"), JsonString(outcome, "domain"), "-"),
+                Metric = FirstNonBlank(JsonString(outcome, "outcomeMetric"), JsonString(outcome, "metric"), JsonString(outcome, "item"), "-"),
+                Summary = FirstNonBlank(JsonString(outcome, "resultSummary"), JsonString(outcome, "summary"), JsonString(outcome, "result"), "-"),
+                ComparisonRows = JsonStringList(outcome, "comparisonRows"),
+                EvidenceRows = JsonStringList(outcome, "evidenceRows"),
+                EvidenceCells = JsonStringList(outcome, "evidenceCells"),
+                RecognizedTables = ReadRecognizedTables(outcome),
+                RawJsonPretty = PrettyJson(raw)
+            };
+
+            if (row.ComparisonRows.Count == 0)
+                row.ComparisonRows = JsonStringList(outcome, "sourceRows");
+
+            rows.Add(row);
+        }
+
+        return rows;
+    }
+
+    private static bool IsTensionOutcome(OutcomeView outcome)
+    {
+        string text = string.Join(" ", new[] { outcome.OutcomeId, outcome.Domain, outcome.Metric, outcome.Summary });
+        return text.Contains("tension", StringComparison.OrdinalIgnoreCase)
+               || text.Contains("RESULT CHECKING TENSION", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool HasTensionStatsTable(OutcomeView outcome)
+        => outcome.RecognizedTables.Any(table =>
+            table.Headers.Any(header => header.Contains("Long S-MG", StringComparison.OrdinalIgnoreCase))
+            && table.Rows.Any(row => row.Count > 0 && row[0].Contains("Std", StringComparison.OrdinalIgnoreCase)));
+
+    private static List<string> ExpandRowRefs(IReadOnlyList<string> rowRefs, int before, int after, int maxRows)
+    {
+        List<(string SheetName, int RowNumber)> parsed = rowRefs
+            .Select(ParseInputDataRowRef)
+            .Where(row => row.HasValue)
+            .Select(row => row!.Value)
+            .ToList();
+        if (parsed.Count == 0)
+            return rowRefs.Take(maxRows).ToList();
+
+        var expanded = new List<string>();
+        foreach (IGrouping<string, (string SheetName, int RowNumber)> group in parsed.GroupBy(row => row.SheetName, StringComparer.OrdinalIgnoreCase))
+        {
+            int start = Math.Max(1, group.Min(row => row.RowNumber) - before);
+            int end = group.Max(row => row.RowNumber) + after;
+            for (int rowNumber = start; rowNumber <= end; rowNumber++)
+                expanded.Add($"{group.Key}!{rowNumber}");
+        }
+
+        return expanded
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(maxRows)
+            .ToList();
+    }
+
+    private static (string SheetName, int RowNumber)? ParseInputDataRowRef(string rowRef)
+    {
+        string text = (rowRef ?? "").Trim();
+        int bang = text.LastIndexOf('!');
+        if (bang <= 0 || bang >= text.Length - 1) return null;
+
+        string sheetName = text[..bang].Trim();
+        string rowText = text[(bang + 1)..].Trim();
+        return int.TryParse(rowText, out int rowNumber) && rowNumber > 0 && !string.IsNullOrWhiteSpace(sheetName)
+            ? (sheetName, rowNumber)
+            : null;
+    }
+
+    private static List<string> ExtractQuestionRowRefs(string question)
+    {
+        string text = question ?? "";
+        return System.Text.RegularExpressions.Regex.Matches(text, @"([A-Za-z0-9_. \-]+)!(\d+)")
+            .Cast<System.Text.RegularExpressions.Match>()
+            .Select(match => $"{match.Groups[1].Value.Trim()}!{match.Groups[2].Value.Trim()}")
+            .Where(rowRef => ParseInputDataRowRef(rowRef).HasValue)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(16)
+            .ToList();
+    }
+
+    private static List<string> ResolveQuestionLookupRefs(IReadOnlyList<string> requestedRefs, IReadOnlyList<string> knownSheets)
+    {
+        var refs = new List<string>();
+        foreach (string requestedRef in requestedRefs)
+        {
+            refs.Add(requestedRef);
+            if (ParseInputDataRowRef(requestedRef) is not { } parsed) continue;
+
+            foreach (string sheetName in knownSheets)
+                refs.Add($"{sheetName}!{parsed.RowNumber}");
+        }
+
+        return refs
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(80)
+            .ToList();
+    }
+
+    private static List<string> KnownEvidenceSheetNames(ReviewCaseView view)
+    {
+        var rowRefs = new List<string>();
+        foreach (GeneratedCaseView reviewCase in view.Cases)
+        {
+            rowRefs.AddRange(reviewCase.EvidenceRows);
+            foreach (ChangedFactorView factor in reviewCase.ChangedFactors)
+                rowRefs.AddRange(factor.EvidenceRows);
+            foreach (OutcomeView outcome in reviewCase.Outcomes)
+            {
+                rowRefs.AddRange(outcome.EvidenceRows);
+                rowRefs.AddRange(outcome.ComparisonRows);
+            }
+        }
+
+        return rowRefs
+            .Select(ParseInputDataRowRef)
+            .Where(row => row.HasValue)
+            .Select(row => row!.Value.SheetName)
+            .Where(sheetName => !string.IsNullOrWhiteSpace(sheetName))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(8)
+            .ToList();
+    }
+
+    private static QuestionRowReferenceView BuildQuestionRowReference(string requestedRef, InputDataComRowPreview? row)
+    {
+        var view = new QuestionRowReferenceView
+        {
+            RequestedRef = requestedRef,
+            ActualRef = row?.RowRef ?? requestedRef
+        };
+
+        if (row is null) return view;
+
+        view.Cells = row.Cells
+            .Where(cell => !string.IsNullOrWhiteSpace(cell.CellValue))
+            .OrderBy(cell => cell.ColNumber)
+            .Take(18)
+            .Select(cell => new QuestionCellView(
+                FirstNonBlank(cell.ColLabel, cell.CellAddress) + ": ",
+                CleanTableText(cell.CellValue)))
+            .ToList();
+
+        return view;
+    }
+
+    private static RecognizedTableView? BuildTensionMeasurementTable(IReadOnlyList<InputDataComRowPreview> sourceRows)
+    {
+        List<InputDataComRowPreview> rows = sourceRows
+            .OrderBy(row => row.SheetName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(row => row.RowNumber)
+            .ToList();
+        if (rows.Count == 0) return null;
+
+        int categoryIndex = rows.FindIndex(row =>
+            RowContains(row, "Long S-MG")
+            && RowContains(row, "Short")
+            && RowContains(row, "YOKE"));
+        if (categoryIndex < 0) return null;
+
+        int conditionIndex = -1;
+        for (int i = categoryIndex + 1; i < Math.Min(rows.Count, categoryIndex + 5); i++)
+        {
+            int conditionCount = rows[i].Cells.Count(cell => IsBondCondition(cell.CellValue));
+            if (conditionCount >= 2)
+            {
+                conditionIndex = i;
+                break;
+            }
+        }
+
+        if (conditionIndex < 0) return null;
+
+        int dataStartIndex = -1;
+        int noCol = 0;
+        for (int i = conditionIndex + 1; i < Math.Min(rows.Count, conditionIndex + 8); i++)
+        {
+            if (TryFindMeasurementNoColumn(rows[i], out noCol))
+            {
+                dataStartIndex = i;
+                break;
+            }
+        }
+
+        if (dataStartIndex < 0 || noCol <= 0) return null;
+
+        List<TensionValueColumn> valueColumns = BuildTensionValueColumns(
+            rows[categoryIndex],
+            rows[conditionIndex],
+            rows[dataStartIndex],
+            noCol);
+        if (valueColumns.Count == 0) return null;
+
+        var table = new RecognizedTableView { Title = "RESULT CHECKING TENSION - Measurement" };
+        table.Headers.Add("No");
+        table.Headers.AddRange(valueColumns.Select(column => $"{column.Group} {column.Condition}"));
+
+        var numericValues = valueColumns.ToDictionary(column => column.ColNumber, _ => new List<double>());
+        for (int i = dataStartIndex; i < rows.Count; i++)
+        {
+            InputDataComRowPreview row = rows[i];
+            if (RowLooksLikeQtyCheckHeader(row)) break;
+
+            string label = CleanTableText(FirstNonBlank(CellValueAt(row, noCol), FirstNonEmptyCellValue(row)));
+            bool isMeasurementRow = TryParseIntegerLabel(label, out _);
+            bool isSummaryRow = IsTensionSummaryLabel(label);
+            if (!isMeasurementRow && !isSummaryRow)
+            {
+                if (table.Rows.Count > 0 && !RowHasAnyValue(row, valueColumns.Select(column => column.ColNumber)))
+                    break;
+                continue;
+            }
+
+            var cells = new List<string> { label };
+            foreach (TensionValueColumn column in valueColumns)
+            {
+                string value = CleanTableText(CellValueAt(row, column.ColNumber));
+                cells.Add(value);
+                if (isMeasurementRow && TryParseDouble(value, out double numericValue))
+                    numericValues[column.ColNumber].Add(numericValue);
+            }
+
+            table.Rows.Add(cells);
+            if (label.Equals("AVG", StringComparison.OrdinalIgnoreCase))
+                break;
+        }
+
+        if (table.Rows.Count == 0) return null;
+
+        var stdDevRow = new List<string> { "Std Dev" };
+        foreach (TensionValueColumn column in valueColumns)
+            stdDevRow.Add(FormatStatValue(SampleStdDev(numericValues[column.ColNumber])));
+        table.Rows.Add(stdDevRow);
+        return table;
+    }
+
+    private static List<TensionValueColumn> BuildTensionValueColumns(
+        InputDataComRowPreview categoryRow,
+        InputDataComRowPreview conditionRow,
+        InputDataComRowPreview firstDataRow,
+        int noCol)
+    {
+        var categoryColumns = categoryRow.Cells
+            .Where(cell => !string.IsNullOrWhiteSpace(cell.CellValue))
+            .Select(cell => (cell.ColNumber, Group: NormalizeTensionGroup(cell.CellValue)))
+            .Where(cell => !string.IsNullOrWhiteSpace(cell.Group))
+            .OrderBy(cell => cell.ColNumber)
+            .ToList();
+
+        List<int> dataColumns = firstDataRow.Cells
+            .Where(cell => cell.ColNumber > noCol && TryParseDouble(cell.CellValue, out _))
+            .Select(cell => cell.ColNumber)
+            .OrderBy(col => col)
+            .Take(8)
+            .ToList();
+
+        var columns = new List<TensionValueColumn>();
+        for (int i = 0; i < dataColumns.Count; i++)
+        {
+            int colNumber = dataColumns[i];
+            string group = ResolveTensionGroup(categoryColumns, colNumber, i);
+            if (string.IsNullOrWhiteSpace(group)) continue;
+
+            string condition = CleanTableText(CellValueAt(conditionRow, colNumber));
+            if (string.IsNullOrWhiteSpace(condition))
+                condition = CleanTableText(NearestNonEmptyCellValue(conditionRow, colNumber));
+            if (string.IsNullOrWhiteSpace(condition))
+                condition = $"Value {i + 1}";
+
+            columns.Add(new TensionValueColumn(colNumber, group, condition));
+        }
+
+        return columns;
+    }
+
+    private static string ResolveTensionGroup(List<(int ColNumber, string Group)> categoryColumns, int colNumber, int index)
+    {
+        for (int i = categoryColumns.Count - 1; i >= 0; i--)
+        {
+            if (categoryColumns[i].ColNumber <= colNumber)
+                return categoryColumns[i].Group;
+        }
+
+        return index switch
+        {
+            0 or 1 => "Long S-MG",
+            2 or 3 => "Short - S-MG",
+            _ => "YOKE"
+        };
+    }
+
+    private static string NormalizeTensionGroup(string value)
+    {
+        string text = CleanTableText(value);
+        if (text.Contains("Long", StringComparison.OrdinalIgnoreCase) && text.Contains("S-MG", StringComparison.OrdinalIgnoreCase))
+            return "Long S-MG";
+        if (text.Contains("Short", StringComparison.OrdinalIgnoreCase) && text.Contains("S-MG", StringComparison.OrdinalIgnoreCase))
+            return "Short - S-MG";
+        if (text.Equals("YOKE", StringComparison.OrdinalIgnoreCase) || text.Contains("YOKE", StringComparison.OrdinalIgnoreCase))
+            return "YOKE";
+        return "";
+    }
+
+    private static bool TryFindMeasurementNoColumn(InputDataComRowPreview row, out int noCol)
+    {
+        foreach (InputDataComCellPreview cell in row.Cells.Where(cell => !string.IsNullOrWhiteSpace(cell.CellValue)).OrderBy(cell => cell.ColNumber))
+        {
+            if (!TryParseIntegerLabel(cell.CellValue, out _)) continue;
+
+            int numericValues = row.Cells.Count(candidate =>
+                candidate.ColNumber > cell.ColNumber
+                && TryParseDouble(candidate.CellValue, out _));
+            if (numericValues >= 3)
+            {
+                noCol = cell.ColNumber;
+                return true;
+            }
+        }
+
+        noCol = 0;
+        return false;
+    }
+
+    private static bool RowContains(InputDataComRowPreview row, string value)
+        => row.Cells.Any(cell => cell.CellValue.Contains(value, StringComparison.OrdinalIgnoreCase));
+
+    private static bool IsBondCondition(string value)
+    {
+        string text = CleanTableText(value);
+        return text.Contains("New Bond", StringComparison.OrdinalIgnoreCase)
+               || text.Contains("Normal Bond", StringComparison.OrdinalIgnoreCase)
+               || text.Contains("G06-", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool RowLooksLikeQtyCheckHeader(InputDataComRowPreview row)
+    {
+        string text = string.Join(" ", row.Cells.Select(cell => CleanTableText(cell.CellValue)));
+        return text.Contains("Q'ty check", StringComparison.OrdinalIgnoreCase)
+               || (text.Contains("Date", StringComparison.OrdinalIgnoreCase)
+                   && text.Contains("Line", StringComparison.OrdinalIgnoreCase)
+                   && text.Contains("NG Rate", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool RowHasAnyValue(InputDataComRowPreview row, IEnumerable<int> columnNumbers)
+        => columnNumbers.Any(colNumber => !string.IsNullOrWhiteSpace(CellValueAt(row, colNumber)));
+
+    private static string FirstNonEmptyCellValue(InputDataComRowPreview row)
+        => CleanTableText(row.Cells
+            .OrderBy(cell => cell.ColNumber)
+            .FirstOrDefault(cell => !string.IsNullOrWhiteSpace(cell.CellValue))
+            ?.CellValue ?? "");
+
+    private static string NearestNonEmptyCellValue(InputDataComRowPreview row, int colNumber)
+        => CleanTableText(row.Cells
+            .Where(cell => !string.IsNullOrWhiteSpace(cell.CellValue))
+            .OrderBy(cell => Math.Abs(cell.ColNumber - colNumber))
+            .ThenBy(cell => cell.ColNumber)
+            .FirstOrDefault()
+            ?.CellValue ?? "");
+
+    private static bool IsTensionSummaryLabel(string label)
+    {
+        string text = CleanTableText(label).Trim();
+        return text.Equals("Min", StringComparison.OrdinalIgnoreCase)
+               || text.Equals("Max", StringComparison.OrdinalIgnoreCase)
+               || text.Equals("AVG", StringComparison.OrdinalIgnoreCase)
+               || text.Equals("Average", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool TryParseIntegerLabel(string value, out int number)
+    {
+        number = 0;
+        if (!TryParseDouble(value, out double numeric)) return false;
+        int rounded = (int)Math.Round(numeric);
+        if (rounded <= 0 || Math.Abs(numeric - rounded) > 0.0001) return false;
+
+        number = rounded;
+        return true;
+    }
+
+    private static bool TryParseDouble(string value, out double number)
+    {
+        string text = CleanTableText(value).TrimEnd('%');
+        return double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out number)
+               || double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.CurrentCulture, out number);
+    }
+
+    private static double SampleStdDev(IReadOnlyList<double> values)
+    {
+        if (values.Count <= 1) return 0;
+
+        double average = values.Average();
+        double variance = values.Sum(value => Math.Pow(value - average, 2)) / (values.Count - 1);
+        return Math.Sqrt(variance);
+    }
+
+    private static string FormatStatValue(double value)
+        => value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string CleanTableText(string text)
+    {
+        string value = (text ?? "")
+            .Replace("\r", " ", StringComparison.Ordinal)
+            .Replace("\n", " ", StringComparison.Ordinal)
+            .Replace("\"", "", StringComparison.Ordinal)
+            .Trim();
+        while (value.Contains("  ", StringComparison.Ordinal))
+            value = value.Replace("  ", " ", StringComparison.Ordinal);
+        return value;
+    }
+
+    private static List<RecognizedTableView> ReadRecognizedTables(JsonElement outcome)
+    {
+        var tables = new List<RecognizedTableView>();
+        AddRecognizedTablesFromProperty(outcome, "recognizedTables", tables);
+        AddRecognizedTablesFromProperty(outcome, "recognizedTable", tables);
+        AddRecognizedTablesFromProperty(outcome, "dataTables", tables);
+        AddRecognizedTablesFromProperty(outcome, "dataTable", tables);
+        AddRecognizedTablesFromProperty(outcome, "table", tables);
+
+        if (tables.Count == 0 && TryGetProperty(outcome, "subResults", out JsonElement subResults))
+            AddRecognizedTableFromElement(subResults, "AI 인식 상세", tables);
+
+        return tables
+            .Where(table => table.Headers.Count > 0 && table.Rows.Count > 0)
+            .Take(8)
+            .ToList();
+    }
+
+    private static void AddRecognizedTablesFromProperty(JsonElement root, string name, List<RecognizedTableView> tables)
+    {
+        if (!TryGetProperty(root, name, out JsonElement value)) return;
+
+        if (value.ValueKind == JsonValueKind.Array)
+        {
+            foreach (JsonElement item in value.EnumerateArray())
+                AddRecognizedTableFromElement(item, "", tables);
+        }
+        else
+        {
+            AddRecognizedTableFromElement(value, "", tables);
+        }
+    }
+
+    private static void AddRecognizedTableFromElement(JsonElement value, string fallbackTitle, List<RecognizedTableView> tables)
+    {
+        if (value.ValueKind == JsonValueKind.Object)
+        {
+            string title = FirstNonBlank(JsonString(value, "title"), JsonString(value, "name"), fallbackTitle);
+            List<string> headers = JsonStringList(value, "columns");
+            if (headers.Count == 0) headers = JsonStringList(value, "headers");
+
+            JsonElement rowsElement = default;
+            if (!TryGetProperty(value, "rows", out rowsElement)
+                && !TryGetProperty(value, "dataRows", out rowsElement)
+                && !TryGetProperty(value, "items", out rowsElement))
+            {
+                return;
+            }
+
+            RecognizedTableView table = BuildRecognizedTable(title, headers, rowsElement);
+            if (table.Rows.Count > 0)
+                tables.Add(table);
+            return;
+        }
+
+        if (value.ValueKind == JsonValueKind.Array)
+        {
+            RecognizedTableView table = BuildRecognizedTable(fallbackTitle, [], value);
+            if (table.Rows.Count > 0)
+                tables.Add(table);
+        }
+    }
+
+    private static RecognizedTableView BuildRecognizedTable(string title, List<string> headers, JsonElement rowsElement)
+    {
+        var table = new RecognizedTableView { Title = title };
+        table.Headers.AddRange(headers.Where(header => !string.IsNullOrWhiteSpace(header)));
+        if (rowsElement.ValueKind != JsonValueKind.Array) return table;
+
+        foreach (JsonElement row in rowsElement.EnumerateArray())
+        {
+            if (row.ValueKind == JsonValueKind.Array)
+            {
+                List<string> cells = row.EnumerateArray().Select(JsonCellText).ToList();
+                if (table.Headers.Count == 0)
+                    table.Headers.AddRange(Enumerable.Range(1, cells.Count).Select(index => $"값 {index}"));
+                table.Rows.Add(NormalizeTableRow(cells, table.Headers.Count));
+            }
+            else if (row.ValueKind == JsonValueKind.Object)
+            {
+                if (table.Headers.Count == 0)
+                {
+                    table.Headers.AddRange(row.EnumerateObject()
+                        .Select(prop => prop.Name)
+                        .Where(name => !LooksLikeEvidenceProperty(name))
+                        .ToList());
+                }
+
+                var cells = new List<string>();
+                foreach (string header in table.Headers)
+                {
+                    cells.Add(TryGetProperty(row, header, out JsonElement cell) ? JsonCellText(cell) : "");
+                }
+
+                table.Rows.Add(NormalizeTableRow(cells, table.Headers.Count));
+            }
+        }
+
+        table.Rows = table.Rows
+            .Where(row => row.Any(cell => !string.IsNullOrWhiteSpace(cell)))
+            .Take(80)
+            .ToList();
+        FinalizeRecognizedTable(table);
+        return table;
+    }
+
+    private static bool LooksLikeEvidenceProperty(string name)
+        => name.Equals("evidenceRows", StringComparison.OrdinalIgnoreCase)
+           || name.Equals("evidenceCells", StringComparison.OrdinalIgnoreCase)
+           || name.Equals("rowId", StringComparison.OrdinalIgnoreCase)
+           || name.Equals("sheetName", StringComparison.OrdinalIgnoreCase)
+           || name.Equals("rowNumber", StringComparison.OrdinalIgnoreCase);
+
+    private static string JsonCellText(JsonElement value)
+    {
+        string text = value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : value.GetRawText();
+        text = text.Replace("\r", " ", StringComparison.Ordinal).Replace("\n", " ", StringComparison.Ordinal).Trim();
+        return text.Length <= 260 ? text : text[..260] + "...";
+    }
+
+    private static List<string> NormalizeTableRow(List<string> cells, int width)
+    {
+        if (cells.Count > width)
+            return cells.Take(width).ToList();
+        if (cells.Count < width)
+            cells.AddRange(Enumerable.Repeat("", width - cells.Count));
+        return cells;
+    }
+
+    private static RecognizedTableView? BuildRecognizedTableFromRawGrid(OutcomeView outcome, IReadOnlyList<InputDataComRowPreview> sourceRows)
+    {
+        IReadOnlyList<InputDataComCellPreview> columns = RecognizedColumns(sourceRows);
+        if (columns.Count == 0) return null;
+
+        var table = new RecognizedTableView
+        {
+            Title = outcome.Domain
+        };
+        table.Headers.AddRange(columns.Select(column => column.ColLabel));
+
+        foreach (InputDataComRowPreview row in sourceRows)
+        {
+            List<string> cells = columns
+                .Select(column => CellValueAt(row, column.ColNumber))
+                .ToList();
+            if (cells.Any(cell => !string.IsNullOrWhiteSpace(cell)))
+                table.Rows.Add(cells);
+        }
+
+        FinalizeRecognizedTable(table);
+        return table.Rows.Count == 0 ? null : table;
+    }
+
+    private static void FinalizeRecognizedTable(RecognizedTableView table)
+    {
+        NormalizeContinuationRatioRows(table);
+        PivotComparisonRows(table);
+    }
+
+    private static void NormalizeContinuationRatioRows(RecognizedTableView table)
+    {
+        if (table.Headers.Count == 0 || table.Rows.Count == 0) return;
+
+        int labelIndex = FindHeaderIndex(table.Headers, "Type");
+        if (labelIndex < 0) labelIndex = FindHeaderIndex(table.Headers, "Item");
+        if (labelIndex < 0) labelIndex = FindHeaderIndex(table.Headers, "Result");
+        if (labelIndex < 0) labelIndex = 0;
+
+        List<string>? previousMainRow = null;
+        var normalizedRows = new List<IReadOnlyList<string>>();
+        foreach (IReadOnlyList<string> rawRow in table.Rows)
+        {
+            var row = rawRow.ToList();
+            NormalizeTableRow(row, table.Headers.Count);
+
+            if (previousMainRow is not null && LooksLikeContinuationRatioRow(table.Headers, row))
+            {
+                string previousLabel = labelIndex < previousMainRow.Count ? previousMainRow[labelIndex] : "";
+                row[labelIndex] = $"{FirstNonBlank(previousLabel, "이전 조건")} 비율";
+
+                for (int i = 0; i < row.Count; i++)
+                {
+                    if (i == labelIndex || IsIdentityHeader(table.Headers[i])) continue;
+                    if (TryParseDouble(row[i], out double value) && value >= 0 && value <= 1)
+                        row[i] = FormatPercent(value);
+                }
+            }
+            else if (HasIdentityValue(table.Headers, row))
+            {
+                previousMainRow = row.ToList();
+            }
+
+            normalizedRows.Add(row);
+        }
+
+        table.Rows = normalizedRows;
+    }
+
+    private static void PivotComparisonRows(RecognizedTableView table)
+    {
+        if (table.Headers.Count == 0 || table.Rows.Count < 2) return;
+        if (LooksAlreadyPivoted(table.Headers)) return;
+
+        int conditionIndex = FindComparisonConditionIndex(table.Headers, table.Rows);
+        if (conditionIndex < 0) return;
+
+        List<int> sharedIndices = Enumerable.Range(0, table.Headers.Count)
+            .Where(index => index != conditionIndex && IsSharedComparisonHeader(table.Headers[index]))
+            .ToList();
+        List<int> valueIndices = Enumerable.Range(0, table.Headers.Count)
+            .Where(index => index != conditionIndex && !sharedIndices.Contains(index))
+            .ToList();
+        if (valueIndices.Count == 0) return;
+
+        var groups = new List<ComparisonRowGroup>();
+        var passthrough = new List<IReadOnlyList<string>>();
+        ComparisonRowGroup current = new();
+
+        foreach (IReadOnlyList<string> rawRow in table.Rows)
+        {
+            List<string> row = NormalizeTableRow(rawRow.ToList(), table.Headers.Count);
+            string condition = conditionIndex < row.Count ? row[conditionIndex] : "";
+            ComparisonRole role = DetermineComparisonRole(condition);
+            if (role.Kind == ComparisonRoleKind.None)
+            {
+                passthrough.Add(row);
+                continue;
+            }
+
+            if (!role.IsRatio && current.HasMain(role.Kind) && current.HasAnyOpposite(role.Kind))
+            {
+                groups.Add(current);
+                current = new ComparisonRowGroup();
+            }
+
+            current.Set(role, row);
+        }
+
+        if (current.HasAny)
+            groups.Add(current);
+
+        if (groups.Count == 0 || !groups.Any(group => group.TestMain is not null && group.NormalMain is not null))
+            return;
+
+        var headers = new List<string>();
+        headers.AddRange(sharedIndices.Select(index => table.Headers[index]));
+        headers.Add("대조군");
+        headers.Add("비교군");
+        headers.AddRange(valueIndices.Select(index => $"대조군 {table.Headers[index]}"));
+        headers.AddRange(valueIndices.Select(index => $"비교군 {table.Headers[index]}"));
+
+        bool hasRatioRows = groups.Any(group => group.NormalRatio is not null || group.TestRatio is not null);
+        if (hasRatioRows)
+        {
+            headers.AddRange(valueIndices.Select(index => $"대조군 비율 {table.Headers[index]}"));
+            headers.AddRange(valueIndices.Select(index => $"비교군 비율 {table.Headers[index]}"));
+        }
+
+        var rows = new List<IReadOnlyList<string>>();
+        foreach (ComparisonRowGroup group in groups.Where(group => group.TestMain is not null && group.NormalMain is not null))
+        {
+            List<string> normal = group.NormalMain!;
+            List<string> test = group.TestMain!;
+            var row = new List<string>();
+
+            foreach (int index in sharedIndices)
+                row.Add(MergeSharedCell(index < normal.Count ? normal[index] : "", index < test.Count ? test[index] : ""));
+
+            row.Add(conditionIndex < normal.Count ? normal[conditionIndex] : "Normal");
+            row.Add(conditionIndex < test.Count ? test[conditionIndex] : "Test");
+            row.AddRange(valueIndices.Select(index => index < normal.Count ? normal[index] : ""));
+            row.AddRange(valueIndices.Select(index => index < test.Count ? test[index] : ""));
+
+            if (hasRatioRows)
+            {
+                List<string>? normalRatio = group.NormalRatio;
+                List<string>? testRatio = group.TestRatio;
+                row.AddRange(valueIndices.Select(index => normalRatio is not null && index < normalRatio.Count ? normalRatio[index] : ""));
+                row.AddRange(valueIndices.Select(index => testRatio is not null && index < testRatio.Count ? testRatio[index] : ""));
+            }
+
+            rows.Add(row);
+        }
+
+        if (rows.Count == 0) return;
+
+        table.Headers = headers;
+        table.Rows = rows.Concat(passthrough).Take(80).ToList();
+    }
+
+    private static int FindComparisonConditionIndex(IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyList<string>> rows)
+    {
+        foreach (string candidate in new[] { "Type", "Item", "Condition", "Result" })
+        {
+            int index = FindHeaderIndex(headers, candidate);
+            if (index >= 0 && rows.Any(row => index < row.Count && DetermineComparisonRole(row[index]).Kind != ComparisonRoleKind.None))
+                return index;
+        }
+
+        for (int index = 0; index < headers.Count; index++)
+        {
+            if (rows.Any(row => index < row.Count && DetermineComparisonRole(row[index]).Kind != ComparisonRoleKind.None))
+                return index;
+        }
+
+        return -1;
+    }
+
+    private static bool IsSharedComparisonHeader(string header)
+    {
+        string text = CleanTableText(header).ToLowerInvariant();
+        return text is "date" or "line" or "process" or "section" or "model" or "sheet"
+               || text.Contains("검토", StringComparison.OrdinalIgnoreCase)
+               || text.Contains("영역", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool LooksAlreadyPivoted(IReadOnlyList<string> headers)
+    {
+        bool hasNormal = headers.Any(header =>
+            header.Contains("대조군", StringComparison.OrdinalIgnoreCase)
+            || header.Contains("Normal ", StringComparison.OrdinalIgnoreCase)
+            || header.StartsWith("Normal", StringComparison.OrdinalIgnoreCase));
+        bool hasTest = headers.Any(header =>
+            header.Contains("비교군", StringComparison.OrdinalIgnoreCase)
+            || header.Contains("Test ", StringComparison.OrdinalIgnoreCase)
+            || header.StartsWith("Test", StringComparison.OrdinalIgnoreCase));
+        return hasNormal && hasTest && FindHeaderIndex(headers, "Type") < 0;
+    }
+
+    private static ComparisonRole DetermineComparisonRole(string value)
+    {
+        string text = CleanTableText(value);
+        if (string.IsNullOrWhiteSpace(text)) return new ComparisonRole(ComparisonRoleKind.None, false);
+
+        bool isRatio = text.Contains("비율", StringComparison.OrdinalIgnoreCase)
+                       || text.Contains("rate", StringComparison.OrdinalIgnoreCase)
+                       || text.Contains("%", StringComparison.OrdinalIgnoreCase);
+        if (text.Contains("Normal", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("Control", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("Baseline", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("대조", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("기준", StringComparison.OrdinalIgnoreCase))
+        {
+            return new ComparisonRole(ComparisonRoleKind.Normal, isRatio);
+        }
+
+        if (text.Contains("Test", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("New ", StringComparison.OrdinalIgnoreCase)
+            || text.StartsWith("New", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("Changed", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("비교", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("변경", StringComparison.OrdinalIgnoreCase))
+        {
+            return new ComparisonRole(ComparisonRoleKind.Test, isRatio);
+        }
+
+        return new ComparisonRole(ComparisonRoleKind.None, false);
+    }
+
+    private static string MergeSharedCell(string normalValue, string testValue)
+    {
+        string normal = CleanTableText(normalValue);
+        string test = CleanTableText(testValue);
+        if (string.IsNullOrWhiteSpace(normal)) return test;
+        if (string.IsNullOrWhiteSpace(test)) return normal;
+        return normal.Equals(test, StringComparison.OrdinalIgnoreCase) ? normal : $"{normal} / {test}";
+    }
+
+    private static bool LooksLikeContinuationRatioRow(IReadOnlyList<string> headers, IReadOnlyList<string> row)
+    {
+        if (HasIdentityValue(headers, row)) return false;
+
+        int numericCount = 0;
+        int ratioLikeCount = 0;
+        for (int i = 0; i < Math.Min(headers.Count, row.Count); i++)
+        {
+            if (IsIdentityHeader(headers[i])) continue;
+            if (!TryParseDouble(row[i], out double value)) continue;
+
+            numericCount++;
+            if (value >= 0 && value <= 1)
+                ratioLikeCount++;
+        }
+
+        return numericCount > 0 && ratioLikeCount == numericCount;
+    }
+
+    private static bool HasIdentityValue(IReadOnlyList<string> headers, IReadOnlyList<string> row)
+    {
+        for (int i = 0; i < Math.Min(headers.Count, row.Count); i++)
+        {
+            if (!IsIdentityHeader(headers[i])) continue;
+            if (!string.IsNullOrWhiteSpace(row[i]))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsIdentityHeader(string header)
+    {
+        string text = CleanTableText(header).ToLowerInvariant();
+        return text is "no" or "date" or "line" or "type" or "item"
+               || text.Contains("q'ty check", StringComparison.OrdinalIgnoreCase)
+               || text == "input"
+               || text == "ok"
+               || text == "ng"
+               || text == "total ng"
+               || text == "ng rate"
+               || text == "total ng rate";
+    }
+
+    private static int FindHeaderIndex(IReadOnlyList<string> headers, string name)
+    {
+        for (int i = 0; i < headers.Count; i++)
+        {
+            if (headers[i].Equals(name, StringComparison.OrdinalIgnoreCase))
+                return i;
+        }
+
+        return -1;
+    }
+
+    private static string FormatPercent(double value)
+        => (value * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "%";
+
+    private static IReadOnlyList<InputDataComCellPreview> RecognizedColumns(IReadOnlyList<InputDataComRowPreview> rows)
+    {
+        List<InputDataComCellPreview> cells = rows.SelectMany(row => row.Cells).ToList();
+        if (cells.Count == 0) return [];
+
+        List<InputDataComCellPreview> nonEmpty = cells
+            .Where(cell => !string.IsNullOrWhiteSpace(cell.CellValue))
+            .ToList();
+        if (nonEmpty.Count == 0) return [];
+
+        int minCol = nonEmpty.Min(cell => cell.ColNumber);
+        int maxCol = nonEmpty.Max(cell => cell.ColNumber);
+        return cells
+            .Where(cell => cell.ColNumber >= minCol && cell.ColNumber <= maxCol)
+            .GroupBy(cell => cell.ColNumber)
+            .Select(group => group.First())
+            .OrderBy(cell => cell.ColNumber)
+            .ToList();
+    }
+
+    private static string CellValueAt(InputDataComRowPreview row, int colNumber)
+        => row.Cells.FirstOrDefault(cell => cell.ColNumber == colNumber)?.CellValue ?? "";
+
+    private static bool LooksLikeGenerationFailure(ReviewCaseView view)
+    {
+        string joined = string.Join(" | ", new[] { view.Summary, view.EvidencePolicy }
+            .Concat(view.Issues)
+            .Concat(view.CorrectionPlan));
+        return joined.Contains("generatedReviewCaseJsonPath", StringComparison.OrdinalIgnoreCase)
+               || joined.Contains("유효한 JSON", StringComparison.OrdinalIgnoreCase)
+               || joined.Contains("valid JSON", StringComparison.OrdinalIgnoreCase)
+               || joined.Contains("JSON으로 파싱", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool TryGetProperty(JsonElement root, string name, out JsonElement value)
+    {
+        if (root.ValueKind == JsonValueKind.Object)
+        {
+            foreach (JsonProperty prop in root.EnumerateObject())
+            {
+                if (string.Equals(prop.Name, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    value = prop.Value;
+                    return true;
+                }
+            }
+        }
+
+        value = default;
+        return false;
+    }
+
+    private static string JsonString(JsonElement root, string name)
+    {
+        if (!TryGetProperty(root, name, out JsonElement value)) return "";
+        return value.ValueKind == JsonValueKind.String
+            ? value.GetString() ?? ""
+            : value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined
+                ? ""
+                : value.GetRawText();
+    }
+
+    private static List<string> JsonStringList(JsonElement root, string name)
+    {
+        var list = new List<string>();
+        if (!TryGetProperty(root, name, out JsonElement value)) return list;
+
+        if (value.ValueKind == JsonValueKind.Array)
+        {
+            foreach (JsonElement item in value.EnumerateArray())
+                list.Add(JsonElementText(item));
+        }
+        else if (value.ValueKind != JsonValueKind.Null && value.ValueKind != JsonValueKind.Undefined)
+        {
+            list.Add(JsonElementText(value));
+        }
+
+        return list.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+    }
+
+    private static string JsonElementText(JsonElement value)
+        => value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : value.GetRawText();
+
+    private static string PrettyJson(string json)
+    {
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(json);
+            return JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch
+        {
+            return json;
+        }
+    }
+
+    private static string FirstNonBlank(params string[] values)
+        => values.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_scrollLog) return;
+        _scrollLog = false;
+
+        try
+        {
+            await JS.InvokeVoidAsync("inputDataBatchScrollLog", _logRef);
+        }
+        catch
+        {
+            // Ignore JS timing errors while the log block is being created/removed.
+        }
+    }
+
+    private sealed class ReviewCaseView
+    {
+        public string Status { get; set; } = "";
+        public bool ApprovedForAskAi { get; set; }
+        public string VerificationStatus { get; set; } = "";
+        public string Confidence { get; set; } = "";
+        public string Summary { get; set; } = "";
+        public string EvidencePolicy { get; set; } = "";
+        public List<string> Issues { get; set; } = [];
+        public List<string> RequiredQuestions { get; set; } = [];
+        public List<List<QuestionRowReferenceView>> QuestionRowReferences { get; set; } = [];
+        public List<string> CorrectionPlan { get; set; } = [];
+        public List<GeneratedCaseView> Cases { get; set; } = [];
+        public bool GenerationInvalid { get; set; }
+        public string GenerationJsonPretty { get; set; } = "";
+        public string VerificationJsonPretty { get; set; } = "";
+    }
+
+    private sealed class GeneratedCaseView
+    {
+        public string ReviewCaseId { get; set; } = "";
+        public string Title { get; set; } = "";
+        public string Purpose { get; set; } = "";
+        public List<ChangedFactorView> ChangedFactors { get; set; } = [];
+        public List<OutcomeView> Outcomes { get; set; } = [];
+        public List<string> EvidenceRows { get; set; } = [];
+        public List<string> EvidenceCells { get; set; } = [];
+        public List<string> Limitations { get; set; } = [];
+        public string OutcomesJson { get; set; } = "";
+    }
+
+    private sealed class OutcomeView
+    {
+        public string OutcomeId { get; set; } = "";
+        public string Domain { get; set; } = "";
+        public string Metric { get; set; } = "";
+        public string Summary { get; set; } = "";
+        public List<string> ComparisonRows { get; set; } = [];
+        public List<string> EvidenceRows { get; set; } = [];
+        public List<string> EvidenceCells { get; set; } = [];
+        public List<RecognizedTableView> RecognizedTables { get; set; } = [];
+        public string RawJsonPretty { get; set; } = "";
+    }
+
+    private sealed class RecognizedTableView
+    {
+        public string Title { get; set; } = "";
+        public List<string> Headers { get; set; } = [];
+        public List<IReadOnlyList<string>> Rows { get; set; } = [];
+    }
+
+    private sealed record TensionValueColumn(int ColNumber, string Group, string Condition);
+
+    private sealed class QuestionRowReferenceView
+    {
+        public string RequestedRef { get; set; } = "";
+        public string ActualRef { get; set; } = "";
+        public List<QuestionCellView> Cells { get; set; } = [];
+    }
+
+    private sealed record QuestionCellView(string Label, string Value);
+
+    private enum ComparisonRoleKind
+    {
+        None,
+        Normal,
+        Test
+    }
+
+    private readonly record struct ComparisonRole(ComparisonRoleKind Kind, bool IsRatio);
+
+    private sealed class ComparisonRowGroup
+    {
+        public List<string>? NormalMain { get; private set; }
+        public List<string>? TestMain { get; private set; }
+        public List<string>? NormalRatio { get; private set; }
+        public List<string>? TestRatio { get; private set; }
+        public bool HasAny => NormalMain is not null || TestMain is not null || NormalRatio is not null || TestRatio is not null;
+
+        public bool HasMain(ComparisonRoleKind kind)
+            => kind == ComparisonRoleKind.Normal ? NormalMain is not null : TestMain is not null;
+
+        public bool HasAnyOpposite(ComparisonRoleKind kind)
+            => kind == ComparisonRoleKind.Normal
+                ? TestMain is not null || TestRatio is not null
+                : NormalMain is not null || NormalRatio is not null;
+
+        public void Set(ComparisonRole role, List<string> row)
+        {
+            if (role.Kind == ComparisonRoleKind.Normal)
+            {
+                if (role.IsRatio) NormalRatio = row;
+                else NormalMain = row;
+            }
+            else if (role.Kind == ComparisonRoleKind.Test)
+            {
+                if (role.IsRatio) TestRatio = row;
+                else TestMain = row;
+            }
+        }
+    }
+
+    private sealed class ChangedFactorView
+    {
+        public string Domain { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Baseline { get; set; } = "";
+        public string Changed { get; set; } = "";
+        public List<string> SubgroupKeys { get; set; } = [];
+        public List<string> EvidenceRows { get; set; } = [];
+        public List<string> EvidenceCells { get; set; } = [];
+    }
+}
+
+<script>
+    window.inputDataBatchScrollLog = (el) => {
+        if (!el) return;
+        el.scrollTop = el.scrollHeight;
+    };
+</script>
+
+<style>
+    .input-data-root {
+        min-height: calc(100vh - 24px);
+        padding: 18px;
+        background: #f6f7fb;
+        color: #0f172a;
+    }
+
+    .page-head,
+    .panel-head,
+    .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    .page-head {
+        margin-bottom: 14px;
+    }
+
+    .kicker {
+        font-size: 11px;
+        font-weight: 800;
+        color: #64748b;
+        letter-spacing: 0;
+    }
+
+    h1 {
+        margin: 2px 0 0;
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: 0;
+    }
+
+    .panel {
+        margin-top: 12px;
+        padding: 14px;
+        border: 1px solid #d7deea;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    .panel h2 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: 0;
+    }
+
+    .panel p {
+        margin: 4px 0 0;
+        color: #64748b;
+        font-size: 12px;
+    }
+
+    .status-chip {
+        border: 1px solid #d7deea;
+        border-radius: 6px;
+        background: #fff;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .status-chip.ok {
+        color: #166534;
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+    }
+
+    .status-chip.error {
+        color: #991b1b;
+        background: #fef2f2;
+        border-color: #fecaca;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: minmax(380px, 2fr) minmax(180px, 0.7fr) 90px;
+        gap: 10px;
+        margin-top: 14px;
+    }
+
+    .form-grid label {
+        min-width: 0;
+    }
+
+    .form-grid span {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #475569;
+    }
+
+    .source-input-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .file-picker-button {
+        position: relative;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .file-picker-button.disabled {
+        pointer-events: none;
+        opacity: .65;
+    }
+
+    .file-picker-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .source-status {
+        display: block;
+        margin-top: 5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 11px;
+        color: #64748b;
+    }
+
+    .toolbar {
+        justify-content: flex-start;
+        margin-top: 12px;
+    }
+
+    .check {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #334155;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .summary-grid div {
+        min-width: 0;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 8px;
+        background: #f8fafc;
+    }
+
+    .summary-grid span {
+        display: block;
+        font-size: 11px;
+        font-weight: 800;
+        color: #64748b;
+    }
+
+    .summary-grid strong {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 12px;
+        color: #0f172a;
+    }
+
+    .table-wrap {
+        margin-top: 10px;
+        overflow: auto;
+        border: 1px solid #d7deea;
+        border-radius: 6px;
+    }
+
+    table {
+        width: 100%;
+        min-width: 760px;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    th,
+    td {
+        border-bottom: 1px solid #e2e8f0;
+        border-right: 1px solid #e2e8f0;
+        padding: 7px 8px;
+        vertical-align: top;
+    }
+
+    th {
+        background: #eef2f7;
+        font-weight: 800;
+    }
+
+    td {
+        max-width: 360px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    td .btn + .btn {
+        margin-left: 6px;
+    }
+
+    .ok-text {
+        color: #166534;
+        font-weight: 800;
+    }
+
+    .error-text {
+        color: #991b1b;
+        font-weight: 800;
+    }
+
+    .muted {
+        color: #94a3b8;
+    }
+
+    .review-badges {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .review-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(120px, 0.35fr) minmax(120px, 0.35fr);
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .review-block,
+    .case-card,
+    .factor-grid div {
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: #f8fafc;
+    }
+
+    .review-block {
+        min-width: 0;
+        padding: 10px;
+    }
+
+    .review-block span,
+    .factor-grid span,
+    .case-title span {
+        display: block;
+        font-size: 11px;
+        font-weight: 800;
+        color: #64748b;
+    }
+
+    .review-block p,
+    .review-text,
+    .case-card p,
+    .factor-grid p {
+        margin: 4px 0 0;
+        color: #334155;
+        line-height: 1.45;
+        white-space: normal;
+    }
+
+    .recognition-card {
+        margin-top: 8px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #fff;
+        padding: 10px;
+    }
+
+    .recognized-factors {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .recognized-factor {
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: #f8fafc;
+        padding: 10px;
+    }
+
+    .recognized-factor span,
+    .recognized-outcomes th {
+        font-size: 11px;
+        font-weight: 800;
+        color: #64748b;
+    }
+
+    .recognized-factor dl {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 5px 8px;
+        margin: 8px 0 0;
+        font-size: 12px;
+    }
+
+    .recognized-factor dt {
+        color: #64748b;
+        font-weight: 800;
+    }
+
+    .recognized-factor dd {
+        margin: 0;
+        color: #0f172a;
+        overflow-wrap: anywhere;
+    }
+
+    .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 8px;
+    }
+
+    .chip-row span {
+        border: 1px solid #dbe3ef;
+        border-radius: 4px;
+        background: #eef2f7;
+        padding: 2px 5px;
+        font-size: 11px;
+        color: #334155;
+    }
+
+    .recognized-outcomes {
+        margin-top: 10px;
+        overflow: auto;
+        border: 1px solid #d7deea;
+        border-radius: 6px;
+    }
+
+    .recognized-outcomes table {
+        min-width: 780px;
+    }
+
+    .recognized-outcomes td {
+        max-width: none;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        line-height: 1.45;
+    }
+
+    .recognized-outcomes td:nth-child(1) {
+        width: 160px;
+    }
+
+    .recognized-outcomes td:nth-child(2) {
+        width: 260px;
+    }
+
+    .recognized-outcomes td:nth-child(3) {
+        width: auto;
+    }
+
+    .recognized-data-tables {
+        display: grid;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .recognized-data-table {
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background: #fff;
+        overflow: hidden;
+    }
+
+    .recognized-data-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 10px;
+        border-bottom: 1px solid #dbe3ef;
+        background: #f1f5f9;
+    }
+
+    .recognized-data-head strong {
+        font-size: 12px;
+        color: #0f172a;
+    }
+
+    .recognized-data-head span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 11px;
+        color: #64748b;
+    }
+
+    .recognized-data-scroll {
+        overflow: auto;
+        max-height: 420px;
+    }
+
+    .recognized-data-scroll table {
+        min-width: 920px;
+        font-size: 11px;
+    }
+
+    .recognized-data-scroll th,
+    .recognized-data-scroll td {
+        min-width: 72px;
+        max-width: 220px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        text-overflow: clip;
+        overflow: visible;
+        line-height: 1.35;
+        background: #fff;
+    }
+
+    .recognized-data-scroll thead th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #e2e8f0;
+        font-weight: 800;
+        color: #334155;
+    }
+
+    .review-panel h3 {
+        margin: 14px 0 6px;
+        font-size: 13px;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .review-list {
+        margin: 0;
+        padding-left: 18px;
+        color: #334155;
+        font-size: 12px;
+        line-height: 1.55;
+    }
+
+    .review-list.compact {
+        margin-top: 8px;
+    }
+
+    .review-warning,
+    .open-file-status {
+        margin: 8px 0 0;
+        border: 1px solid #fed7aa;
+        border-radius: 6px;
+        background: #fff7ed;
+        color: #9a3412;
+        padding: 8px 10px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .answer-panel {
+        display: grid;
+        gap: 10px;
+        margin-top: 8px;
+        padding: 10px;
+        border: 1px solid #d7deea;
+        border-radius: 6px;
+        background: #f8fafc;
+    }
+
+    .answer-row {
+        display: grid;
+        gap: 5px;
+    }
+
+    .answer-row span {
+        font-size: 11px;
+        font-weight: 800;
+        color: #64748b;
+    }
+
+    .answer-row strong {
+        color: #0f172a;
+        font-size: 12px;
+    }
+
+    .question-row-preview {
+        display: grid;
+        gap: 6px;
+        padding: 8px;
+        border: 1px solid #dbe3ef;
+        border-radius: 6px;
+        background: #fff;
+    }
+
+    .question-row-preview-title {
+        font-size: 11px;
+        font-weight: 800;
+        color: #334155;
+    }
+
+    .question-ref-row {
+        display: grid;
+        gap: 5px;
+        padding: 6px;
+        border: 1px solid #e2e8f0;
+        border-radius: 5px;
+        background: #f8fafc;
+    }
+
+    .question-ref-head {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .question-ref-head .row-ref-chip,
+    .question-ref-head .actual-ref {
+        display: inline-flex;
+        width: fit-content;
+        margin: 0;
+        padding: 2px 6px;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        background: #e2e8f0;
+        color: #0f172a;
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .question-ref-head .actual-ref {
+        background: #ecfeff;
+        color: #155e75;
+        border-color: #a5f3fc;
+    }
+
+    .question-ref-cells {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .question-ref-cells span,
+    .question-ref-missing {
+        display: inline-flex;
+        width: fit-content;
+        max-width: 360px;
+        margin: 0;
+        padding: 3px 6px;
+        border: 1px solid #dbe3ef;
+        border-radius: 4px;
+        background: #fff;
+        color: #334155;
+        font-size: 11px;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    .question-ref-cells b {
+        margin-right: 3px;
+        color: #64748b;
+    }
+
+    .answer-row textarea {
+        resize: vertical;
+    }
+
+    .approval-check {
+        margin-top: 2px;
+    }
+
+    .save-status {
+        color: #166534;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .case-card {
+        margin-top: 8px;
+        padding: 10px;
+    }
+
+    .case-title {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .case-title strong {
+        font-size: 13px;
+    }
+
+    .factor-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .factor-grid div {
+        padding: 8px;
+    }
+
+    details {
+        margin-top: 10px;
+    }
+
+    summary {
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 800;
+        color: #334155;
+    }
+
+    .json-view {
+        max-height: 360px;
+        overflow: auto;
+        margin: 8px 0 0;
+        padding: 10px;
+        border: 1px solid #d7deea;
+        border-radius: 6px;
+        background: #0f172a;
+        color: #e2e8f0;
+        font-size: 12px;
+        white-space: pre-wrap;
+    }
+
+    .log {
+        max-height: 300px;
+        overflow: auto;
+        margin: 10px 0 0;
+        padding: 10px;
+        border: 1px solid #d7deea;
+        border-radius: 6px;
+        background: #0f172a;
+        color: #e2e8f0;
+        font-size: 12px;
+        white-space: pre-wrap;
+    }
+
+    @@media (max-width: 1100px) {
+        .form-grid,
+        .summary-grid,
+        .review-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

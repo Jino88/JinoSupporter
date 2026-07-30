@@ -1,0 +1,207 @@
+{
+  "sourceFileId": 770,
+  "sourceFile": "6. BRS-161014DT report test Frame array A cutting = improve problem can not vision sus after cutting 2023.11.03_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\6. BRS-161014DT report test Frame array A cutting = improve problem can not vision sus after cutting 2023.11.03_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Check dimesion jig AWF",
+    "sheetRowCount": 16,
+    "sheetCellCount": 38,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Check dimesion jig AWF!2",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST FRAME ARRAY A JIG CUTTING | | | | | | | | | | | | | Dept: | ME"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!3",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date: | 2023-11-03 00:00:00"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!4",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker: | Tu"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!5",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Check dimesion jig AWF!6",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 6,
+      "rowText": "| - Improve issue can not see afer laser cutting sus"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!7",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Check dimesion jig AWF!8",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 8,
+      "rowText": "| - Cutting more down 2mm for suspension drop after cutting"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!16",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 16,
+      "rowText": "| III. Result."
+    },
+    {
+      "rowId": "Check dimesion jig AWF!17",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 17,
+      "rowText": "| Result check"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!18",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 18,
+      "rowText": "| - After check vision: position inside we can see, but outside (Frame) worker difficult see"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!31",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 31,
+      "rowText": "| - One more problem: when use JIG cutting more down 2mm happen NG cutting suspension NG"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!32",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 32,
+      "rowText": "| | No | Date | Type | Input | OK | NG not cutting | NG rate"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!33",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 33,
+      "rowText": "| | 1 | 2023-11-03 00:00:00 | JIG TEST | 12 | 5 | 7 | 0.58333333"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!34",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 34,
+      "rowText": "| | 2 | | Normal | 12 | 12 | 0 | 0"
+    },
+    {
+      "rowId": "Check dimesion jig AWF!46",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 46,
+      "rowText": "| IV. Decision."
+    },
+    {
+      "rowId": "Check dimesion jig AWF!47",
+      "sheetName": "Check dimesion jig AWF",
+      "rowNumber": 47,
+      "rowText": "| Can not use JIG"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-770-rc-1",
+      "reviewTitle": "| REPORT TEST FRAME ARRAY A JIG CUTTING | | | | | | | | | | | | | Dept: | ME",
+      "reviewPurpose": "| I. Purpose. / | - Improve issue can not see afer laser cutting sus / | II. Content. / | - Cutting more down 2mm for suspension drop after cutting / | III. Result.",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "coating",
+            "equipment",
+            "jig",
+            "dimension/spec"
+          ],
+          "changedFactor": "Condition comparison: Normal vs JIG TEST",
+          "baselineCondition": "Normal",
+          "changedCondition": "JIG TEST",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Check dimesion jig AWF!2",
+            "Check dimesion jig AWF!33",
+            "Check dimesion jig AWF!34",
+            "Check dimesion jig AWF!5",
+            "Check dimesion jig AWF!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "- One more problem: when use JIG cutting more down 2mm happen NG cutting suspension NG",
+          "comparisonRows": [
+            "Check dimesion jig AWF!33",
+            "Check dimesion jig AWF!34"
+          ],
+          "judgement": "worse",
+          "subResults": [
+            {
+              "pairId": 4689,
+              "controlCondition": "Normal",
+              "testCondition": "JIG TEST",
+              "control": {
+                "input": 12.0,
+                "ng": 0.0,
+                "ratePercent": 0.0
+              },
+              "test": {
+                "input": 12.0,
+                "ng": 7.0,
+                "ratePercent": 58.333332999999996
+              },
+              "deltaRatePercentPoint": 58.333332999999996,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Check dimesion jig AWF!33",
+                "Check dimesion jig AWF!34"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Check dimesion jig AWF!2",
+        "Check dimesion jig AWF!33",
+        "Check dimesion jig AWF!34",
+        "Check dimesion jig AWF!5",
+        "Check dimesion jig AWF!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Check dimesion jig AWF!2",
+      "Check dimesion jig AWF!33",
+      "Check dimesion jig AWF!34",
+      "Check dimesion jig AWF!5",
+      "Check dimesion jig AWF!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

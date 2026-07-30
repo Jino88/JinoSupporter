@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 324,
+  "sourceFile": "17. BRS-161014  Report test VP mold 2 add 0.05T in middle position 16.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\324.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:33Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 324,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable report is citeable, but the draft misgroups conditions and includes extraction errors.",
+    "issues": [
+      "Changed condition mixes test subgroups and totals with the actual test mold condition.",
+      "VP bending outcome omits normal baseline row 22 and has wrong NG count for row 21.",
+      "Spurious measurement outcome from function-table columns should not be treated as measurement stats.",
+      "Subgroup keys such as E2 line, Sub 1, OK/bending, and total are not preserved.",
+      "Header/evidence support is incomplete for some outcome tables."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary comparison to test VP mold #2 add 0.05T versus normal VP mold #4.",
+      "Treat OK, bending, and total test rows as subgroups or aggregates, not separate changed conditions.",
+      "Add baseline row 22 to VP bending and correct test bending NG to 71.",
+      "Remove measurement-1 or convert it into function defect column breakdown tied to rows 36, 38, 40, and 42.",
+      "Add relevant header rows for each table and keep line/Sub 1 context."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping and header citations need correction before final use."
+  },
+  "usage": {
+    "input_tokens": 4834,
+    "output_tokens": 800,
+    "total_tokens": 5634
+  }
+}

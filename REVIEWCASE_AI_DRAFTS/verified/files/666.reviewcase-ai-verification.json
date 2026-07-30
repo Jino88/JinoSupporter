@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 666,
+  "sourceFile": "46. BRS-161016  Report test VP mold #9 dry temperature 150 for 1 hour, 2hour to  improve VP bending date 27.06.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\666.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:00Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 666,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Core comparison is dry 150°C VP mold #9 for 1h/2h versus normal VP mold #9, but the draft needs cleanup before final use.",
+    "issues": [
+      "Unsupported change domains include coating and dimension/spec.",
+      "Changed factor is duplicated and omits drying temperature in the normalized label.",
+      "Lot date and lot-improve differences need subgroup or limitation treatment.",
+      "Measurement outcome from row 57 is a header artifact, not valid results.",
+      "Decision rows supporting non-use are not cited."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Normalize changed factor to dry 150°C 1h/2h test vs normal VP mold #9.",
+      "Limit change domain to mold/process condition unless more evidence supports others.",
+      "Add lot date and lot-improve notes as subgroup keys or limitations.",
+      "Remove the row 57 measurement outcome artifact.",
+      "Add cited conclusion rows such as 13.5!64 and 13.5!70 if using final judgement."
+    ],
+    "evidencePolicy": "Main comparison row citations are sufficient; header artifact and conclusion citations must be corrected."
+  },
+  "usage": {
+    "input_tokens": 6300,
+    "output_tokens": 760,
+    "total_tokens": 7060
+  }
+}

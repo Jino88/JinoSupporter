@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 689,
+  "sourceFile": "49. TIU C11-20 Report  find reason function high 2026.01.28_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\689.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:42Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 689,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but misgroups changed factors, baselines, and outcomes, causing wrong judgements.",
+    "issues": [
+      "Changed factor wrongly combines line-transfer and bonding-amount tests.",
+      "Normal baselines are not paired by adjacent shift, line, and section rows.",
+      "Overall judgement marked improved despite mixed NG-rate results.",
+      "Measurement outcome is invalid; header/defect columns were treated as measurements.",
+      "Evidence includes non-cited header rows and omits needed pair context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split into line-transfer test and bonding-amount test changed factors.",
+      "Pair rows 17/19, 21/23, 25/27, 29/31, 38/40, and 42/44 only.",
+      "Recalculate each NG-rate delta and mark mixed where applicable.",
+      "Remove the measurement outcome unless real measurement rows exist.",
+      "Cite purpose, content, section headers, and each paired result row."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient because pair grouping and header-only evidence are unreliable."
+  },
+  "usage": {
+    "input_tokens": 6416,
+    "output_tokens": 770,
+    "total_tokens": 7186
+  }
+}

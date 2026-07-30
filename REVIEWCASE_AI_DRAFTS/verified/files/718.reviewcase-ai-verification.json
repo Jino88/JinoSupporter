@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 718,
+  "sourceFile": "51.BRS-161014 Report check problem AI vision spot welding_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\718.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:42Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 718,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft identifies relevant AI spot welding inspection rows but does not verify a valid baseline/change-factor structure.",
+    "issues": [
+      "No explicit baseline or manufacturing change factor is evidenced.",
+      "Inspection categories are incorrectly grouped as changed conditions.",
+      "Several cited rows lack visible row text or headers in the draft context.",
+      "PQC, worker, AI OK/NG, and summary results need clearer grouping by sample source and date.",
+      "Some metric interpretations may depend on omitted intermediate headers."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Reframe as AI vision inspection validation unless a true process change is shown.",
+      "Use AI decision, recheck method, date, and sample source as grouping keys.",
+      "Verify full source text for rows 16, 22, 35, and 49 plus their headers.",
+      "Separate initial AI NG rate, PQC recheck, worker check, AI OK/WK NG, and summary outcomes.",
+      "Remove baseline/test wording unless source rows explicitly support it."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient until omitted cited rows and headers are verified."
+  },
+  "usage": {
+    "input_tokens": 3465,
+    "output_tokens": 770,
+    "total_tokens": 4235
+  }
+}

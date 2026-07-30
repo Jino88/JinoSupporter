@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 350,
+  "sourceFile": "18. TIU C11-20  Report test VP finf reason NG funtion 2026.1.15_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\350.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 350,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites real rows but incorrectly merges several distinct VP function test comparisons into one changed-factor case.",
+    "issues": [
+      "Changed factor over-groups temperature, lot date, line, AWF, shift, and A2/D3 movement tests.",
+      "Baseline Normal rows are section-specific and should not be pooled across unrelated comparisons.",
+      "Model/side keys such as C11-20L and C11-20R are treated as changed conditions instead of subgroup context.",
+      "Header-derived measurement outcome is not a valid measurement result and duplicates defect-category counts.",
+      "Some cited evidence rows are not shown in context, limiting interpretation of missing intermediate rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split cases by report sections or Type contexts: temperature/force, lot date 6/1, same-lot A2-D3, AWF, and A2-to-D3 movement.",
+      "Assign the matching Normal baseline within each section only.",
+      "Preserve model, side, date, shift, lot, machine, and process route as subgroup keys where applicable.",
+      "Keep functional NG metrics as outcomes with input, OK, total NG, NG rate, and defect categories.",
+      "Remove the generated measurement-stat outcome unless true measurement data exists."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient for final evidence until regrouped with section-level context."
+  },
+  "usage": {
+    "input_tokens": 8772,
+    "output_tokens": 802,
+    "total_tokens": 9574
+  }
+}

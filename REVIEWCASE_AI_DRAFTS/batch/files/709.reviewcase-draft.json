@@ -1,0 +1,215 @@
+{
+  "sourceFileId": 709,
+  "sourceFile": "50. TIU L5S3-01 R Report test JIG magnetization change material to improve yoke damage- 2026.01.05_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\50. TIU L5S3-01 R Report test JIG magnetization change material to improve yoke damage- 2026.01.05_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 18,
+    "sheetCellCount": 52,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 REPORT TEST UPPER CAP JIG MAGNETIZATION CHANGE MATERIAL FROM PEEK TO TITANIUM | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | Date | 2026-01-05 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - After magnetization happen NG yoke damage, happen NG daily => Test Jig change material can use or not"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Check NG rate at process Magnetization"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| 1. Result gauss check (Spec: 220~500G)"
+    },
+    {
+      "rowId": "Test!15",
+      "sheetName": "Test",
+      "rowNumber": 15,
+      "rowText": "| | Position | #1 | #2 | #3 | #4"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | 1 | 380 | 274 | 326 | 338"
+    },
+    {
+      "rowId": "Test!17",
+      "sheetName": "Test",
+      "rowNumber": 17,
+      "rowText": "| | 2 | 433 | 289 | 364 | 342"
+    },
+    {
+      "rowId": "Test!18",
+      "sheetName": "Test",
+      "rowNumber": 18,
+      "rowText": "| 2. Result check Yoke damage"
+    },
+    {
+      "rowId": "Test!20",
+      "sheetName": "Test",
+      "rowNumber": 20,
+      "rowText": "| | 1 | 2026-01-05 00:00:00 | Test | 256 | 240 | 16 | 0.0625"
+    },
+    {
+      "rowId": "Test!21",
+      "sheetName": "Test",
+      "rowNumber": 21,
+      "rowText": "| | 2 | | Normal JIG | 256 | 253 | 3 | 0.01171875"
+    },
+    {
+      "rowId": "Test!23",
+      "sheetName": "Test",
+      "rowNumber": 23,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "Test!24",
+      "sheetName": "Test",
+      "rowNumber": 24,
+      "rowText": "| - Result JIG test still NG hight => Can not change"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-709-rc-1",
+      "reviewTitle": "| TIU L5S3-01 REPORT TEST UPPER CAP JIG MAGNETIZATION CHANGE MATERIAL FROM PEEK TO TITANIUM | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - After magnetization happen NG yoke damage, happen NG daily => Test Jig change material can use or not / | II. Content. / | - Check NG rate at process Magnetization / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material",
+            "jig",
+            "dimension/spec"
+          ],
+          "changedFactor": "Condition comparison: Normal JIG vs Test",
+          "baselineCondition": "Normal JIG",
+          "changedCondition": "Test",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!2",
+            "Test!20",
+            "Test!21",
+            "Test!5",
+            "Test!6",
+            "Test!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "2. Result check Yoke damage",
+          "comparisonRows": [
+            "Test!20",
+            "Test!21"
+          ],
+          "judgement": "worse",
+          "subResults": [
+            {
+              "pairId": 4572,
+              "controlCondition": "Normal JIG",
+              "testCondition": "Test",
+              "control": {
+                "input": 256.0,
+                "ng": 3.0,
+                "ratePercent": 1.171875
+              },
+              "test": {
+                "input": 256.0,
+                "ng": 16.0,
+                "ratePercent": 6.25
+              },
+              "deltaRatePercentPoint": 5.078125,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Test!20",
+                "Test!21"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Test!2",
+        "Test!20",
+        "Test!21",
+        "Test!5",
+        "Test!6",
+        "Test!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!2",
+      "Test!20",
+      "Test!21",
+      "Test!5",
+      "Test!6",
+      "Test!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

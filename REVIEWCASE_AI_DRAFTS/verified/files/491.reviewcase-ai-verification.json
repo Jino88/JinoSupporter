@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 491,
+  "sourceFile": "29. MSU-L20S15-07 LIST TEST IMPROVE NG FUNCTION SPK 20225.03.05_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\491.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:24Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 491,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because it merges many independent SPK improvement tests into one incorrect comparison case.",
+    "issues": [
+      "Many numbered experiments are collapsed into one changed factor.",
+      "Change domain is wrongly labeled as supplier.",
+      "Baseline and test rows are mismatched across unrelated items.",
+      "NG metrics are misread from Sigma/SPL columns instead of total NG rates.",
+      "Evidence includes header/formula rows and omits many valid groups."
+    ],
+    "requiredUserQuestions": [
+      "Should each numbered test item be reviewed as a separate case/context?"
+    ],
+    "correctionPlan": [
+      "Split or regroup by No., item family, date, requester, and normal baseline.",
+      "Define each primary changed factor from the item text within its group.",
+      "Use matching Normal rows only within the same comparable group.",
+      "Recalculate outcomes using Total NG and NG rate columns for Sigma and Hearing domains.",
+      "Remove header/formula-only evidence rows and cite only condition/result rows."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient because grouping and metric interpretation are invalid."
+  },
+  "usage": {
+    "input_tokens": 12708,
+    "output_tokens": 756,
+    "total_tokens": 13464
+  }
+}

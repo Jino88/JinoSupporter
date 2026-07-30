@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 145,
+  "sourceFile": "06.TIU L5S3 Check Sound check lot Frame + coil offset compare normal 15.11_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\145.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:59Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 145,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies a valid normal versus frame+coil offset comparison but needs corrected factor, conditions, and outcome grouping.",
+    "issues": [
+      "Changed factor is filename-based, not evidence-based.",
+      "Baseline and test conditions are left explicit as unknown.",
+      "Outcome metric is generic and mixes SPL, IMP, THD tables.",
+      "HZ/frequency axis is treated as a measured condition.",
+      "Change domain as lot is not supported by cited headers."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to frame+coil offset sample versus normal sample.",
+      "Set baseline to normal goods and test to frame+coil offset sample.",
+      "Keep SPL, impedance, and THD as separate outcomes under one factor.",
+      "Treat HZ as frequency axis, not a condition/result group.",
+      "Use header rows plus representative data rows for each table."
+    ],
+    "evidencePolicy": "Cited rows support the comparison headers, but final evidence needs corrected row grouping and metric citations."
+  },
+  "usage": {
+    "input_tokens": 6098,
+    "output_tokens": 592,
+    "total_tokens": 6690
+  }
+}

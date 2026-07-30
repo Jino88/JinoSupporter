@@ -1,0 +1,44 @@
+{
+  "sourceFileId": 56,
+  "sourceFile": "021.MSU-20S15-07 Result check NTI check lot date Dome 3-23 and 3-17 Date 12.4.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\56.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:47:31Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 56,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft identifies a plausible 3/23 vs 3/17 comparison but is not verified because the changed factor, baseline/test direction, and outcome/stat citations are ambiguous or incorrectly extracted.",
+    "issues": [
+      "Changed factor is set to the full filename instead of a source-supported manufacturing factor such as Dome lot/date 3/23 vs 3/17.",
+      "BaselineCondition and changedCondition are explicitly not defined, while the workbook appears to compare Test 3/23 and Test 3/17.",
+      "FO outcome subResults appear incorrectly parsed from labels such as #1/#2/#3 rather than FO measurement values around 661-692, making those statistics unreliable.",
+      "SPL/THD/IMP outcome uses only header-row citations for many calculated stats, which is insufficient to verify min/max/avg/sample counts.",
+      "Outcome metric 'Detected table' is too generic and merges SPL, THD, and IMP without clear metric-level grouping.",
+      "ST, MASK 1, and MASK 2 appear as reference/spec/context columns and should not be mixed as peer changed-condition results unless the source proves they are comparable conditions.",
+      "The draft does not cite NTI_종합, which may contain summary context needed to identify the actual validation purpose and comparison direction."
+    ],
+    "requiredUserQuestions": [
+      "Is 3/17 the baseline and 3/23 the changed lot/date?",
+      "What manufacturing factor changed between Dome 3/17 and Dome 3/23?"
+    ],
+    "correctionPlan": [
+      "Rename the changed factor to the source-supported comparison, likely Dome lot/date 3/23 vs 3/17, only if confirmed by workbook evidence.",
+      "Set baselineCondition and changedCondition explicitly, or keep the case in needs_review if the direction cannot be proven.",
+      "Recompute FO results using the numeric FO values in FO DATA rows 5-10, not the # labels.",
+      "Split or clearly label SPL, THD, IMP, and FO as separate outcome metrics under the same changed-factor context.",
+      "Add data-row citations, not only header rows, for SPL/THD/IMP statistics sufficient to support min/max/avg/sample counts.",
+      "Treat ST/MASK columns as subgroup/reference/spec context unless the workbook proves they are separate comparison conditions.",
+      "Review NTI_종합 rows for validation purpose, summary judgement, and primary changed-factor wording before final approval."
+    ],
+    "evidencePolicy": "Evidence row citations are sufficient to show that 3/23 and 3/17 columns exist, but insufficient to verify the draft's changed-factor definition, baseline direction, and calculated outcome statistics."
+  },
+  "usage": {
+    "input_tokens": 5108,
+    "output_tokens": 999,
+    "total_tokens": 6107
+  }
+}

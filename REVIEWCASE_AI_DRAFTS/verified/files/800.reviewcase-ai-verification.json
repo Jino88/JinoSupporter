@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 800,
+  "sourceFile": "62. TIU L5S3-01 R Report  test change condition UV Dry Coil+VP, F-PCB sealing to improve NG function- 2026.01.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\800.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:28Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 800,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but misidentifies the primary changed factor and mispairs key function results.",
+    "issues": [
+      "Primary change is UV Dry condition, not Normal vs Line R/Line L.",
+      "Line R and Line L are subgroup keys, not changed conditions.",
+      "Line L test is paired to the wrong Normal row.",
+      "UV Dry measurement stats use header-only evidence and wrong specs.",
+      "Review title/purpose wrongly centered on Decap sheet instead of main Test report."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal UV Dry vs Test UV Dry condition, with dry note as secondary context.",
+      "Keep Line R/Line L and machine areas as subgroup keys.",
+      "Pair Line R Test row 26 with Normal row 28; pair Line L Test row 30 with Normal row 32.",
+      "Cite UV Dry condition rows 11 and 14-21 for peak/total comparisons.",
+      "Use Decap NG sheet only as supplemental defect-analysis context if linked to the same validation."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficiently grouped; header-only citations cannot support measurements."
+  },
+  "usage": {
+    "input_tokens": 5285,
+    "output_tokens": 780,
+    "total_tokens": 6065
+  }
+}

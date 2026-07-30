@@ -1,42 +1,146 @@
-@page "/data-inference/db"
+@page "/data-inference/db-legacy"
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 @inject WebRepository Repo
 @inject IJSRuntime JS
 @inject AppActivityLogger Activity
-
 <PageTitle>Data Inference — DB Data</PageTitle>
 
 <div class="didb-root">
 
 <!-- ── Header ──────────────────────────────────────────────────────────────── -->
 <div class="didb-header">
-    <span class="didb-title">Saved Datasets</span>
+    <span class="didb-title">Ask AI Result</span>
     <span class="didb-count">
-        @FilteredReports.Count dataset(s)@DatasetFilterSuffix
+        @_askAiHistory.Count saved Ask AI result(s)
     </span>
     <div style="flex:1;"></div>
-    <label class="didb-filter-label">AI Batch</label>
-    <select class="form-select form-select-sm didb-filter-select" @bind="AiBatchFilter">
-        <option value="all">All</option>
-        <option value="batched">AI Batched</option>
-        <option value="pending">Not Batched</option>
-    </select>
-    <label class="didb-filter-label">Product Type</label>
-    <select class="form-select form-select-sm didb-filter-select" @bind="ProductTypeFilter">
-        <option value="">All</option>
-        @foreach (var pt in _productTypeOptions)
-        {
-            <option value="@pt">@pt</option>
-        }
-    </select>
     <button class="btn btn-outline-secondary btn-sm" @onclick="Refresh">↻ Refresh</button>
-    <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDeleteAll"
-            disabled="@(_reports.Count == 0)">🗑 Delete All</button>
 </div>
 
 <!-- ── Table ────────────────────────────────────────────────────────────────── -->
-@if (_reports.Count == 0)
+<CurrentProblemWorkflowStrip ContextLabel="Result" />
+
+@{
+    AskAiHistoryRecord? selectedAskAi = SelectedAskAiHistory;
+    List<AskAiPerDatasetResult> selectedAskAiRows = selectedAskAi is null
+        ? []
+        : AskAiPerDatasetRows(selectedAskAi.PerDatasetJson);
+}
+<section class="didb-ask-result">
+    <div class="didb-ask-result-head">
+        <div>
+            <div class="didb-ask-result-title">Ask AI Analysis Result</div>
+            <div class="didb-ask-result-sub">Latest saved analysis from Ask AI</div>
+        </div>
+        @if (_askAiHistory.Count > 0)
+        {
+            <select class="form-select form-select-sm didb-ask-select"
+                    value="@_selectedAskAiHistoryId"
+                    @onchange="OnAskAiHistoryChanged">
+                @foreach (var h in _askAiHistory)
+                {
+                    <option value="@h.Id">@AskAiHistoryOptionLabel(h)</option>
+                }
+            </select>
+        }
+    </div>
+    @if (selectedAskAi is null)
+    {
+        <div class="didb-ask-empty">No saved Ask AI analysis result.</div>
+    }
+    else
+    {
+        <div class="didb-ask-meta">
+            <span>@FormatDate(selectedAskAi.CreatedAt)</span>
+            <span>Product Type @(string.IsNullOrWhiteSpace(selectedAskAi.ProductTypeFilter) ? "All" : selectedAskAi.ProductTypeFilter)</span>
+            <span>@selectedAskAiRows.Count.ToString("N0") dataset(s)</span>
+        </div>
+        <div class="didb-ask-question">@selectedAskAi.Question</div>
+        @if (IsAskAiHtmlReport(selectedAskAi.Overall))
+        {
+            <iframe class="didb-ask-html-frame"
+                    title="Ask AI analysis result"
+                    sandbox="allow-scripts allow-popups allow-forms allow-downloads"
+                    srcdoc="@selectedAskAi.Overall"></iframe>
+        }
+        else
+        {
+            <div class="didb-ask-markdown">@AiMarkdown(selectedAskAi.Overall)</div>
+        }
+        @if (selectedAskAiRows.Count > 0)
+        {
+            <details class="didb-ask-evidence">
+                <summary>Evidence datasets used by Ask AI (@selectedAskAiRows.Count)</summary>
+                @foreach (var row in selectedAskAiRows)
+                {
+                    <div class="didb-ask-dataset">
+                        <div class="didb-ask-dataset-name">@row.DatasetName</div>
+                        @if (IsAskAiHtmlReport(row.Answer))
+                        {
+                            <iframe class="didb-ask-dataset-frame"
+                                    title="@($"Ask AI dataset evidence - {row.DatasetName}")"
+                                    sandbox="allow-scripts allow-popups allow-forms allow-downloads"
+                                    srcdoc="@row.Answer"></iframe>
+                        }
+                        else
+                        {
+                            <div class="didb-ask-markdown">@AiMarkdown(row.Answer)</div>
+                        }
+                    </div>
+                }
+            </details>
+        }
+    }
+</section>
+
+<details class="didb-source-datasets">
+    <summary>
+        <span>Source datasets</span>
+        <small>@FilteredReports.Count.ToString("N0") dataset(s)@DatasetFilterSuffix</small>
+    </summary>
+    <div class="didb-source-toolbar">
+        <span class="didb-filter-label">AI Batch</span>
+        <select class="form-select form-select-sm didb-filter-select-sm" @bind="AiBatchFilter">
+            <option value="all">All</option>
+            <option value="batched">Batched</option>
+            <option value="pending">Pending</option>
+        </select>
+        <span class="didb-filter-label">AI Result</span>
+        <select class="form-select form-select-sm didb-filter-select-sm" @bind="AiResultFilter">
+            <option value="all">All</option>
+            <option value="has">Has result</option>
+            <option value="new">New</option>
+            <option value="index">Index</option>
+            <option value="old">Old</option>
+            <option value="none">None</option>
+        </select>
+        <span class="didb-filter-label">Product Type</span>
+        <select class="form-select form-select-sm didb-filter-select" @bind="ProductTypeFilter">
+            <option value="">All</option>
+            @foreach (var pt in _productTypeOptions)
+            {
+                <option value="@pt">@pt</option>
+            }
+        </select>
+        <div style="flex:1;"></div>
+        <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDeleteAll"
+                disabled="@(_reports.Count == 0)">Delete All</button>
+    </div>
+
+@if (_isLoadingReports && _reports.Count == 0)
+{
+    <div class="didb-empty">
+        Loading saved datasets...
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(_loadReportsError) && _reports.Count == 0)
+{
+    <div class="didb-empty">
+        @_loadReportsError
+    </div>
+}
+else if (_reports.Count == 0)
 {
     <div class="didb-empty">
         No saved datasets yet.<br />
@@ -69,6 +173,7 @@ else
                     <th>Measurements</th>
                     <th>Saved</th>
                     <th>AI Batched</th>
+                    <th>AI Result</th>
                     <th></th>
                 </tr>
             </thead>
@@ -121,6 +226,12 @@ else
                                 <span class="text-muted">—</span>
                             }
                         </td>
+                        <td>
+                            <span class="@AiResultBadgeClass(r.AiResultKind)"
+                                  title="@AiResultTitle(r)">
+                                @AiResultLabel(r.AiResultKind)
+                            </span>
+                        </td>
                         <td @onclick:stopPropagation="true" style="white-space:nowrap;">
                             <button class="btn btn-sm py-0 px-2 me-1 @(expanded ? "btn-primary" : "btn-outline-primary")"
                                     style="font-size:12px;"
@@ -138,11 +249,56 @@ else
 
                     @if (expanded)
                     {
-                        <!-- New AI bundle (AI_EXCEL_PROC.md schema) — shown when
+                        <!-- New AI bundle (AI_EXCEL_PROC schema) — shown when
                              the row was processed via the new CLI flow. -->
                         @if (_expandedAiDoc is not null)
                         {
                             var doc = _expandedAiDoc;
+                            if (IsInputDataTestBatchDoc(doc))
+                            {
+                                string inputDataTestHtml = InputDataTestBatchDisplayHtml(doc);
+
+                                <tr class="didb-detail-row">
+                                    <td colspan="10" style="padding:0;">
+                                        <div class="didb-input-test-result">
+                                            <div class="didb-input-test-head">
+                                                <div>
+                                                    <div class="didb-input-test-title">
+                                                        <span>INPUT DATA(TEST)</span>
+                                                        <strong>@(string.IsNullOrWhiteSpace(doc.Title) ? doc.SourceDataset : doc.Title)</strong>
+                                                    </div>
+                                                    <div class="didb-input-test-meta">
+                                                        <span>@doc.SourceDataset</span>
+                                                        @if (!string.IsNullOrWhiteSpace(doc.SourceFile))
+                                                        {
+                                                            <span>@doc.SourceFile</span>
+                                                        }
+                                                        <span>@doc.SchemaVersion</span>
+                                                    </div>
+                                                </div>
+                                                <span class="didb-ai-result didb-ai-result-new">new</span>
+                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(inputDataTestHtml))
+                                            {
+                                                <div class="didb-input-test-html">
+                                                    <iframe class="didb-input-test-html-frame"
+                                                            sandbox=""
+                                                            title="INPUT DATA(TEST) AI generated HTML"
+                                                            srcdoc="@inputDataTestHtml"></iframe>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="didb-ai-generated-report">
+                                                    @AiMarkdown(doc.GeneratedReportMarkdown)
+                                                </div>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
                             string aiLang = _aiCardLang;
                             string docTitle       = AiDocTitle(doc, aiLang);
                             string docPurpose     = AiDocPurpose(doc, aiLang);
@@ -156,6 +312,10 @@ else
                             var aiAssumptions     = AiLogAssumptions(doc, aiLang);
                             var aiWarnings        = AiLogWarnings(doc, aiLang);
                             var aiAllComparisons  = BuildAiControlComparisons(doc);
+                            var aiMicroPairRowsAll = BuildMicroSpeakerPairRows(doc);
+                            var aiMicroPairRows = aiMicroPairRowsAll
+                                .Take(_aiCardShowAll ? aiMicroPairRowsAll.Count : 12)
+                                .ToList();
                             var aiComparisons     = aiAllComparisons
                                 .Where(x => (x.Variant.InputCount ?? 0) >= 50 || (x.Baseline.InputCount ?? 0) >= 50)
                                 .ToList();
@@ -222,7 +382,7 @@ else
                                 .ToList();
 
                             <tr class="didb-detail-row">
-                                <td colspan="9" style="padding:0;">
+                                <td colspan="10" style="padding:0;">
                                     <div class="didb-ai-dashboard">
                                         <div class="didb-ai-hero">
                                             <div>
@@ -847,6 +1007,50 @@ else
                                             </section>
 
                                             <section class="didb-ai-panel">
+                                                <h3>MicroSpeaker Pair Result</h3>
+                                                @if (aiMicroPairRows.Count == 0)
+                                                {
+                                                    <div class="didb-ai-empty">No MicroSpeaker comparison_pairs rows.</div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="didb-ai-pair-table-wrap">
+                                                        <table class="didb-ai-comp-table didb-ai-metric-table didb-ai-pair-table">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Item</th>
+                                                                    <th>Control</th>
+                                                                    <th>Test</th>
+                                                                    <th class="n">Control</th>
+                                                                    <th class="n">Test</th>
+                                                                    <th class="n">Delta</th>
+                                                                    <th>Effect</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @foreach (var pair in aiMicroPairRows)
+                                                                {
+                                                                    <tr>
+                                                                        <td title="@pair.Item"><strong>@AiBrief(pair.Item, 52)</strong><span>@pair.Evidence</span></td>
+                                                                        <td title="@pair.ControlCondition">@AiBrief(pair.ControlCondition, 34)</td>
+                                                                        <td title="@pair.TestCondition">@AiBrief(pair.TestCondition, 34)</td>
+                                                                        <td class="n">@PairCountRate(pair.ControlInput, pair.ControlNg, pair.ControlRate)</td>
+                                                                        <td class="n">@PairCountRate(pair.TestInput, pair.TestNg, pair.TestRate)</td>
+                                                                        <td class="n">@FormatSignedPoint(pair.DeltaRate)</td>
+                                                                        <td><span class="didb-ai-status @MicroPairEffectClass(pair.Effect)">@pair.Effect</span></td>
+                                                                    </tr>
+                                                                }
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                    @if (!_aiCardShowAll && aiMicroPairRowsAll.Count > aiMicroPairRows.Count)
+                                                    {
+                                                        <div class="didb-ai-empty">@((aiMicroPairRowsAll.Count - aiMicroPairRows.Count).ToString("N0")) more pair row(s). Use Show full dashboard.</div>
+                                                    }
+                                                }
+                                            </section>
+
+                                            <section class="didb-ai-panel">
                                                 @if (AiUsesProcessReview(aiReportKind))
                                                 {
                                                     <h3>Pair Summary</h3>
@@ -1054,13 +1258,14 @@ else
                                     </div>
                                 </td>
                             </tr>
+                            }
                         }
 
                         <!-- Summary row (legacy DatasetSummary card) -->
                         @if (_expandedSummary is not null)
                         {
                             <tr class="didb-detail-row">
-                                <td colspan="9" style="padding:0;">
+                                <td colspan="10" style="padding:0;">
                                     <div class="didb-summary">
                                         @* Language pills — only render once per row.
                                            "en" is always offered (the original AI output).
@@ -1426,7 +1631,7 @@ else
                         @if (_corrCells.Count > 0 && _corrLines.Count >= 2 && _corrCheckTypes.Count >= 2)
                         {
                             <tr class="didb-detail-row">
-                                <td colspan="9" style="padding:0;">
+                                <td colspan="10" style="padding:0;">
                                     <div class="didb-summary">
                                         <button class="didb-section-toggle"
                                                 @onclick="() => _showHeatmap = !_showHeatmap"
@@ -1502,7 +1707,7 @@ else
                         @if (_expandedMeasurements.Count > 0)
                         {
                             <tr class="didb-detail-row">
-                                <td colspan="9" style="padding:0;">
+                                <td colspan="10" style="padding:0;">
                                     <div class="didb-sub-wrap">
                                         <button class="didb-section-toggle"
                                                 @onclick="() => _showMeasurements = !_showMeasurements"
@@ -1555,7 +1760,7 @@ else
                         else if (_expandedMeasurements.Count == 0 && _expanded == r.DatasetName)
                         {
                             <tr class="didb-detail-row">
-                                <td colspan="9">
+                                <td colspan="10">
                                     <div style="padding:8px 16px; font-size:12px; color:#94a3b8; font-style:italic;">
                                         No normalized measurements — run Analyze on Input Data, then Save.
                                     </div>
@@ -1570,7 +1775,7 @@ else
                                  || !string.IsNullOrWhiteSpace(_expandedExcelPaste)))
                         {
                             <tr class="didb-detail-row">
-                                <td colspan="9" style="padding:0;">
+                                <td colspan="10" style="padding:0;">
                                     <button class="didb-section-toggle"
                                             @onclick="() => _showSource = !_showSource"
                                             @onclick:stopPropagation="true">
@@ -1686,7 +1891,7 @@ else
                         @if (_expandedImages.Count > 0)
                         {
                             <tr class="didb-detail-row">
-                                <td colspan="9" style="padding:0;">
+                                <td colspan="10" style="padding:0;">
                                     <button class="didb-section-toggle"
                                             @onclick="() => _showAttachedImages = !_showAttachedImages"
                                             @onclick:stopPropagation="true">
@@ -1715,7 +1920,7 @@ else
                         @if (_expandedFiles.Count > 0)
                         {
                             <tr class="didb-detail-row">
-                                <td colspan="9" style="padding:0;">
+                                <td colspan="10" style="padding:0;">
                                     <div class="didb-imgs-wrap">
                                         <div class="didb-imgs-title">📎 Backup Files (@_expandedFiles.Count)</div>
                                         <div class="didb-files-list">
@@ -1737,7 +1942,7 @@ else
                 @if (HasMoreReports)
                 {
                     <tr class="didb-load-row" @onclick="LoadMoreDatasets">
-                        <td colspan="9">
+                        <td colspan="10">
                             Loading on scroll... click to load more @VisibleReports.Count.ToString("N0") / @FilteredReports.Count.ToString("N0")
                         </td>
                     </tr>
@@ -1746,6 +1951,8 @@ else
         </table>
     </div>
 }
+
+</details>
 
 <!-- ── Delete confirm ───────────────────────────────────────────────────────── -->
 @if (_deleteTarget is not null)
@@ -1812,8 +2019,123 @@ else
     .didb-count  { font-size: 12px; color: #94a3b8; }
     .didb-filter-label  { font-size: 12px; font-weight: 600; color: #64748b; white-space: nowrap; }
     .didb-filter-select { width: 160px; }
+    .didb-filter-select-sm { width: 104px; }
     .didb-empty  {
         padding: 60px; text-align: center; color: #94a3b8; font-size: 14px; line-height: 1.7;
+    }
+    .didb-ask-result {
+        flex-shrink: 0;
+        margin: 0 14px 10px;
+        border: 1px solid #d7e1ee;
+        border-radius: 6px;
+        background: #fff;
+        overflow: hidden;
+    }
+    .didb-ask-result-head {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; padding: 9px 11px;
+        border-bottom: 1px solid #e2e8f0; background: #f8fafc;
+    }
+    .didb-ask-result-title {
+        font-size: 13px; font-weight: 850; color: #17202a;
+    }
+    .didb-ask-result-sub {
+        margin-top: 2px; font-size: 11px; color: #64748b;
+    }
+    .didb-ask-select {
+        width: min(520px, 46vw);
+        font-size: 12px;
+    }
+    .didb-ask-empty {
+        padding: 18px 12px; color: #94a3b8; font-size: 13px; text-align: center;
+    }
+    .didb-ask-meta {
+        display: flex; flex-wrap: wrap; gap: 6px;
+        padding: 9px 11px 0;
+    }
+    .didb-ask-meta span {
+        display: inline-flex; align-items: center;
+        border: 1px solid #e2e8f0; border-radius: 999px;
+        background: #f8fafc; padding: 2px 8px;
+        color: #475569; font-size: 11px; font-weight: 700;
+    }
+    .didb-ask-question {
+        padding: 8px 11px 10px;
+        color: #17202a; font-size: 13px; font-weight: 750;
+        overflow-wrap: anywhere;
+    }
+    .didb-ask-html-frame {
+        display: block; width: 100%;
+        height: min(900px, 58vh); min-height: 520px;
+        border: 0; border-top: 1px solid #e2e8f0; background: #fff;
+    }
+    .didb-ask-markdown {
+        padding: 10px 12px;
+        border-top: 1px solid #e2e8f0;
+        color: #17202a; font-size: 13px; line-height: 1.6;
+    }
+    .didb-ask-evidence {
+        border-top: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+    .didb-ask-evidence summary {
+        cursor: pointer;
+        padding: 9px 11px;
+        color: #334155; font-size: 12px; font-weight: 800;
+    }
+    .didb-ask-dataset {
+        margin: 0 11px 10px;
+        border: 1px solid #d7e1ee; border-radius: 6px;
+        background: #fff; overflow: hidden;
+    }
+    .didb-ask-dataset-name {
+        padding: 7px 10px;
+        background: #f1f5f9; border-bottom: 1px solid #e2e8f0;
+        color: #1d4ed8; font-size: 12px; font-weight: 850;
+        overflow-wrap: anywhere;
+    }
+    .didb-ask-dataset-frame {
+        display: block; width: 100%; height: 420px; min-height: 320px;
+        border: 0; background: #fff;
+    }
+    .didb-source-datasets {
+        flex-shrink: 0;
+        margin: 0 14px 12px;
+        border: 1px solid #d7e1ee;
+        border-radius: 6px;
+        background: #fff;
+        overflow: hidden;
+    }
+    .didb-source-datasets summary {
+        cursor: pointer;
+        padding: 9px 11px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .didb-source-datasets summary span {
+        font-weight: 850;
+        color: #17202a;
+        font-size: 12px;
+    }
+    .didb-source-datasets summary small {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .didb-source-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 9px 11px;
+        border-top: 1px solid #e2e8f0;
+        background: #fff;
+    }
+    .didb-source-datasets .didb-table-wrap {
+        max-height: 62vh;
     }
     .didb-table-wrap { flex: 1; overflow: auto; }
     .didb-table      { border-collapse: collapse; width: 100%; font-size: 13px; }
@@ -1833,6 +2155,207 @@ else
     }
     .didb-caret      { color: #94a3b8; font-size: 11px; width: 28px; text-align: center; }
     .didb-date       { font-size: 11px; color: #94a3b8; }
+    .didb-ai-result {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 44px; padding: 2px 8px; border-radius: 999px;
+        font-size: 10px; font-weight: 800; text-transform: uppercase;
+        border: 1px solid #cbd5e1; background: #f8fafc; color: #64748b;
+    }
+    .didb-ai-result-new  { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .didb-ai-result-index { background: #e0f2fe; color: #075985; border-color: #7dd3fc; }
+    .didb-ai-result-old  { background: #ffedd5; color: #9a3412; border-color: #fdba74; }
+    .didb-ai-result-none { background: #f1f5f9; color: #94a3b8; border-color: #e2e8f0; }
+    .didb-input-test-result {
+        padding: 14px 16px 18px; background: #f8fafc;
+        border-left: 4px solid #2563eb;
+    }
+    .didb-input-test-head {
+        display: flex; align-items: flex-start; justify-content: space-between;
+        gap: 12px; padding: 12px 14px; background: #fff;
+        border: 1px solid #d9e0e7; border-radius: 8px 8px 0 0;
+    }
+    .didb-input-test-title {
+        display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .didb-input-test-title span {
+        display: inline-flex; align-items: center; padding: 2px 8px;
+        border-radius: 999px; background: #dbeafe; color: #1d4ed8;
+        border: 1px solid #93c5fd; font-size: 10px; font-weight: 800;
+    }
+    .didb-input-test-title strong {
+        color: #17202a; font-size: 15px; overflow-wrap: anywhere;
+    }
+    .didb-input-test-meta {
+        display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px;
+        color: #64748b; font-size: 11px;
+    }
+    .didb-input-test-meta span {
+        display: inline-flex; max-width: 520px; overflow: hidden; text-overflow: ellipsis;
+        white-space: nowrap; border: 1px solid #e2e8f0; background: #f8fafc;
+        border-radius: 999px; padding: 2px 8px;
+    }
+    .didb-input-test-html {
+        padding: 14px; background: #fff; border: 1px solid #d9e0e7;
+        border-top: none; border-radius: 0 0 8px 8px;
+        color: #17202a; font-size: 13px; line-height: 1.55;
+        overflow-x: auto;
+    }
+    .didb-input-test-html-frame {
+        display: block;
+        width: 100%;
+        height: min(1300px, 72vh);
+        min-height: 720px;
+        border: 0;
+        background: #fff;
+    }
+    .didb-input-test-html table {
+        width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px;
+    }
+    .didb-input-test-html th,
+    .didb-input-test-html td {
+        border: 1px solid #d9e0e7; padding: 6px 8px; vertical-align: top;
+    }
+    .didb-input-test-html th {
+        background: #eef3f8; color: #354253; font-weight: 800;
+    }
+    .didb-input-test-html h1,
+    .didb-input-test-html h2,
+    .didb-input-test-html h3 {
+        margin: 12px 0 8px; color: #17202a;
+    }
+    .didb-input-test-html .idt-report {
+        display: grid; gap: 10px;
+    }
+    .didb-input-test-html .idt-ai-preanalysis,
+    .didb-input-test-html .idt-judgement,
+    .didb-input-test-html .idt-evidence,
+    .didb-input-test-html .idt-actions {
+        border: 1px solid #d9e0e7; border-radius: 8px;
+        background: #fff; padding: 10px 12px;
+    }
+    .didb-input-test-html .idt-ai-preanalysis {
+        border-left: 4px solid #2563eb;
+    }
+    .didb-input-test-html .idt-judgement {
+        border-left: 4px solid #0f766e;
+    }
+    .didb-input-test-html .idt-actions {
+        border-left: 4px solid #7c3aed;
+    }
+    .didb-input-test-html .idt-ai-preanalysis h3,
+    .didb-input-test-html .idt-judgement h3,
+    .didb-input-test-html .idt-evidence h3,
+    .didb-input-test-html .idt-actions h3 {
+        margin: 0 0 8px; font-size: 13px; font-weight: 850; color: #17202a;
+    }
+    .didb-input-test-html .idt-ai-preanalysis dl {
+        display: grid; grid-template-columns: max-content minmax(0, 1fr);
+        gap: 5px 10px; margin: 0;
+    }
+    .didb-input-test-html .idt-ai-preanalysis dt {
+        color: #64748b; font-weight: 800;
+    }
+    .didb-input-test-html .idt-ai-preanalysis dd {
+        margin: 0; color: #17202a; overflow-wrap: anywhere;
+    }
+    .didb-input-test-html .idt-chip-row {
+        display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .didb-input-test-html .idt-chip {
+        display: inline-flex; align-items: center; max-width: 280px;
+        padding: 3px 9px; border-radius: 999px;
+        border: 1px solid #cbd5e1; background: #f8fafc; color: #334155;
+        font-size: 11px; font-weight: 750; line-height: 1.35;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .didb-input-test-html .idt-purpose-tags .idt-chip {
+        background: #dbeafe; border-color: #93c5fd; color: #1d4ed8;
+    }
+    .didb-input-test-html .idt-check-tags .idt-chip {
+        background: #ecfdf5; border-color: #86efac; color: #166534;
+    }
+    .didb-input-test-html .idt-brief,
+    .didb-input-test-html .idt-process {
+        border: 1px solid #d9e0e7; border-radius: 8px;
+        background: #fff; padding: 10px 12px;
+    }
+    .didb-input-test-html .idt-brief h3,
+    .didb-input-test-html .idt-process h3 {
+        margin: 0 0 8px; font-size: 13px; font-weight: 850; color: #17202a;
+    }
+    .didb-input-test-html .idt-brief ul {
+        margin: 0; padding-left: 18px;
+    }
+    .didb-input-test-html .idt-brief li {
+        margin: 3px 0;
+    }
+    .didb-input-test-html .idt-process {
+        border-left: 4px solid #2563eb;
+    }
+    .didb-input-test-html .idt-compare {
+        border: 1px solid #cbd5e1; border-radius: 8px;
+        background: #f8fafc; padding: 10px 12px; display: grid; gap: 10px;
+    }
+    .didb-input-test-html .idt-compare h3 {
+        margin: 0; font-size: 13px; font-weight: 850; color: #17202a;
+    }
+    .didb-input-test-html .idt-compare-row {
+        border: 1px solid #e2e8f0; border-radius: 8px;
+        background: #fff; padding: 10px; display: grid; gap: 8px;
+    }
+    .didb-input-test-html .idt-compare-title {
+        font-size: 12px; font-weight: 850; color: #17202a;
+    }
+    .didb-input-test-html .idt-compare-bars {
+        display: grid; gap: 7px;
+    }
+    .didb-input-test-html .idt-compare-bar {
+        display: grid; grid-template-columns: minmax(84px, 150px) minmax(86px, 120px) 1fr;
+        align-items: center; gap: 8px; min-height: 24px; font-size: 12px;
+    }
+    .didb-input-test-html .idt-compare-bar span {
+        min-width: 0; color: #475569; font-weight: 750;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .didb-input-test-html .idt-compare-bar b {
+        color: #17202a; text-align: right; font-variant-numeric: tabular-nums;
+    }
+    .didb-input-test-html .idt-compare-bar i {
+        display: block; height: 10px; min-width: 3px; max-width: 100%;
+        border-radius: 999px; background: #64748b;
+    }
+    .didb-input-test-html .idt-compare-bar.idt-baseline i {
+        background: #64748b;
+    }
+    .didb-input-test-html .idt-compare-bar.idt-test i {
+        background: #2563eb;
+    }
+    .didb-input-test-html .idt-delta {
+        justify-self: start; display: inline-flex; align-items: center;
+        padding: 2px 8px; border-radius: 999px; border: 1px solid #cbd5e1;
+        background: #f8fafc; color: #334155; font-size: 11px; font-weight: 850;
+        font-variant-numeric: tabular-nums;
+    }
+    .didb-input-test-html .idt-delta-bad {
+        border-color: #fecaca; background: #fef2f2; color: #b91c1c;
+    }
+    .didb-input-test-html .idt-delta-good {
+        border-color: #bbf7d0; background: #f0fdf4; color: #15803d;
+    }
+    .didb-input-test-html .idt-delta-neutral {
+        border-color: #fde68a; background: #fffbeb; color: #92400e;
+    }
+    .didb-input-test-html .idt-compare-note {
+        margin: 0; color: #64748b; font-size: 11px;
+    }
+    @@media (max-width: 640px) {
+        .didb-input-test-html .idt-compare-bar {
+            grid-template-columns: 1fr minmax(72px, 110px);
+        }
+        .didb-input-test-html .idt-compare-bar i {
+            grid-column: 1 / -1;
+        }
+    }
     td.n             { text-align: right; font-variant-numeric: tabular-nums; }
     .didb-set-pt     { color: #2563eb; cursor: pointer; font-size: 12px;
                        text-decoration: underline dashed; text-underline-offset: 3px; }
@@ -2065,7 +2588,7 @@ else
     }
     .didb-show-details:hover { color: #1e293b; text-decoration: underline; }
 
-    /* AI_EXCEL_PROC.md schema bundle card */
+    /* AI_EXCEL_PROC schema bundle card */
     .didb-aicard {
         padding: 12px 16px; background: #f8fafc;
         border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;
@@ -2370,6 +2893,56 @@ else
         border: 1px solid #d9e0e7; border-radius: 8px; background: #fff;
         padding: 8px 10px;
     }
+    .didb-ai-vbar-chart {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+        gap: 10px;
+        align-items: end;
+        padding: 10px 12px;
+    }
+    .didb-ai-vbar-item {
+        min-width: 0;
+        display: grid;
+        grid-template-rows: auto 118px auto auto;
+        gap: 4px;
+        align-items: end;
+        text-align: center;
+    }
+    .didb-ai-vbar-value {
+        color: #17202a;
+        font-size: 11px;
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+    }
+    .didb-ai-vbar-plot {
+        height: 118px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        border-left: 1px solid #cfd8e3;
+        border-bottom: 1px solid #aebdca;
+        background: linear-gradient(to top, #eef3f8 1px, transparent 1px);
+        background-size: 100% 29px;
+    }
+    .didb-ai-vbar {
+        width: 46%;
+        min-width: 22px;
+        border-radius: 4px 4px 0 0;
+    }
+    .didb-ai-vbar-label {
+        min-height: 28px;
+        color: #17202a;
+        font-size: 10px;
+        font-weight: 800;
+        overflow-wrap: anywhere;
+    }
+    .didb-ai-vbar-detail {
+        min-height: 26px;
+        color: #617084;
+        font-size: 9px;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+    }
     .didb-ai-generated-report pre {
         margin: 8px 0 12px; padding: 9px 10px; overflow-x: auto;
         background: #f3f6f9; border: 1px solid #d9e0e7; border-radius: 6px;
@@ -2518,6 +3091,24 @@ else
     .didb-ai-pair-row.didb-ai-heat-worse { background: #fff7f5; border-color: #efb2aa; }
     .didb-ai-pair-row.didb-ai-heat-improved { background: #f3fbf5; border-color: #a9d9b8; }
     .didb-ai-pair-row.didb-ai-heat-flat { background: #fffaf0; border-color: #edcf94; }
+    .didb-ai-pair-table-wrap {
+        max-height: 360px;
+        overflow: auto;
+        border: 1px solid #d9e0e7;
+        border-radius: 8px;
+    }
+    .didb-ai-pair-table {
+        min-width: 980px;
+    }
+    .didb-ai-pair-table td span {
+        display: block;
+        margin-top: 2px;
+        color: #617084;
+        font-size: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
     .didb-ai-mini-row {
         border-top: 1px solid #edf1f5; padding: 8px 0;
     }
@@ -3093,13 +3684,41 @@ else
 
 @code {
     private sealed record ImgThumb(string MediaType, string DataUrl, string FileName);
+    private sealed class AskAiPerDatasetResult
+    {
+        public string DatasetName { get; set; } = "";
+        public string Answer { get; set; } = "";
+    }
+
+    private sealed record ReportLoadState(
+        string? Expanded,
+        List<RawReportInfo> Reports,
+        HashSet<string> OcrCached,
+        List<NormalizedMeasurement> ExpandedMeasurements,
+        DatasetSummaryRecord? ExpandedSummary,
+        AiDocBundle? ExpandedAiDoc,
+        List<AskAiHistoryRecord> AskAiHistory);
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "dataset")]
+    public string? QueryDataset { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "aiResult")]
+    public string? QueryAiResult { get; set; }
 
     private const int DatasetRenderBatchSize = 80;
     private List<RawReportInfo>          _reports              = [];
     private string                       _productTypeFilter    = "";
     private string                       _aiBatchFilter        = "all";
+    private string                       _aiResultFilter       = "all";
     private string?                      _expanded             = null;
+    private string?                      _appliedQueryDataset  = null;
     private int                          _visibleReportCount   = DatasetRenderBatchSize;
+    private bool                         _isLoadingReports;
+    private string                       _loadReportsError     = "";
+    private List<AskAiHistoryRecord>     _askAiHistory         = [];
+    private long                         _selectedAskAiHistoryId;
     private DotNetObjectReference<DataInferenceDbPage>? _lazyLoadRef;
 
     private string ProductTypeFilter
@@ -3124,6 +3743,17 @@ else
         }
     }
 
+    private string AiResultFilter
+    {
+        get => _aiResultFilter;
+        set
+        {
+            if (_aiResultFilter == value) return;
+            _aiResultFilter = value;
+            ResetVisibleReports();
+        }
+    }
+
     private List<string> _productTypeOptions => _reports
         .Select(r => r.ProductType)
         .Where(p => !string.IsNullOrWhiteSpace(p))
@@ -3137,7 +3767,8 @@ else
         {
             bool hasProduct = !string.IsNullOrEmpty(_productTypeFilter);
             bool hasBatch = _aiBatchFilter != "all";
-            return hasProduct || hasBatch ? $" / {_reports.Count} total" : "";
+            bool hasAiResult = _aiResultFilter != "all";
+            return hasProduct || hasBatch || hasAiResult ? $" / {_reports.Count} total" : "";
         }
     }
 
@@ -3150,6 +3781,15 @@ else
             "pending" => string.IsNullOrWhiteSpace(r.BatchedAt),
             _ => true,
         })
+        .Where(r => _aiResultFilter switch
+        {
+            "has" => NormalizeAiResultKind(r.AiResultKind) != "none",
+            "new" => NormalizeAiResultKind(r.AiResultKind) == "new",
+            "index" => NormalizeAiResultKind(r.AiResultKind) == "index",
+            "old" => NormalizeAiResultKind(r.AiResultKind) == "old",
+            "none" => NormalizeAiResultKind(r.AiResultKind) == "none",
+            _ => true,
+        })
         .ToList();
 
     private List<RawReportInfo> VisibleReports
@@ -3160,6 +3800,65 @@ else
     private void ResetVisibleReports()
     {
         _visibleReportCount = DatasetRenderBatchSize;
+    }
+
+    private AskAiHistoryRecord? SelectedAskAiHistory
+        => _askAiHistory.FirstOrDefault(h => h.Id == _selectedAskAiHistoryId)
+           ?? _askAiHistory.FirstOrDefault();
+
+    private void EnsureSelectedAskAiHistory()
+    {
+        if (_askAiHistory.Count == 0)
+        {
+            _selectedAskAiHistoryId = 0;
+            return;
+        }
+
+        if (!_askAiHistory.Any(h => h.Id == _selectedAskAiHistoryId))
+            _selectedAskAiHistoryId = _askAiHistory[0].Id;
+    }
+
+    private void OnAskAiHistoryChanged(ChangeEventArgs e)
+    {
+        if (long.TryParse(e.Value?.ToString(), out long id))
+            _selectedAskAiHistoryId = id;
+    }
+
+    private static string AskAiHistoryOptionLabel(AskAiHistoryRecord h)
+        => $"{FormatDate(h.CreatedAt)} - {ShortText(h.Question, 72)}";
+
+    private static string ShortText(string? value, int maxLength)
+    {
+        string text = (value ?? "").Trim();
+        return text.Length <= maxLength ? text : text[..maxLength] + "...";
+    }
+
+    private static List<AskAiPerDatasetResult> AskAiPerDatasetRows(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return [];
+
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<List<AskAiPerDatasetResult>>(
+                    json,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static bool IsAskAiHtmlReport(string? value)
+    {
+        string text = (value ?? "").TrimStart();
+        if (text.Length == 0) return false;
+
+        return text.StartsWith("<!doctype", StringComparison.OrdinalIgnoreCase)
+               || text.StartsWith("<html", StringComparison.OrdinalIgnoreCase)
+               || (text.Contains("<body", StringComparison.OrdinalIgnoreCase)
+                   && text.Contains("</html>", StringComparison.OrdinalIgnoreCase));
     }
 
     private List<NormalizedMeasurement>  _expandedMeasurements = [];
@@ -3281,6 +3980,684 @@ else
             _                        => (head, "didb-rt-default"),
         };
     }
+
+    private static string NormalizeAiResultKind(string kind)
+    {
+        string value = (kind ?? "").Trim().ToLowerInvariant();
+        return value is "new" or "index" or "old" or "none" ? value : "none";
+    }
+
+    private static string NormalizeAiResultQuery(string kind)
+    {
+        string value = (kind ?? "").Trim().ToLowerInvariant();
+        return value is "all" or "has" or "new" or "index" or "old" or "none" ? value : "";
+    }
+
+    private static string AiResultLabel(string kind)
+        => NormalizeAiResultKind(kind) switch
+        {
+            "new" => "new",
+            "index" => "index",
+            "old" => "old",
+            _ => "none",
+        };
+
+    private static string AiResultBadgeClass(string kind)
+        => "didb-ai-result didb-ai-result-" + AiResultLabel(kind);
+
+    private static string AiResultTitle(RawReportInfo row)
+    {
+        string kind = AiResultLabel(row.AiResultKind);
+        string version = string.IsNullOrWhiteSpace(row.AiSchemaVersion)
+            ? ""
+            : $" / {row.AiSchemaVersion}";
+        return kind switch
+        {
+            "new" => $"New INPUT DATA (BATCH) analysis{version}",
+            "index" => $"First-pass current-problem index{version}",
+            "old" => $"Existing legacy analysis{version}",
+            _ => "No saved AI analysis result",
+        };
+    }
+
+    private static bool IsInputDataTestBatchDoc(AiDocBundle doc)
+        => string.Equals(doc.SchemaVersion, "input-data-test-batch-v1", StringComparison.OrdinalIgnoreCase)
+           || (doc.RawJson ?? "").Contains("INPUT_DATA_BATCH_FROM_INPUT_DATA_TEST", StringComparison.OrdinalIgnoreCase);
+
+    private sealed record InputDataDisplayTable(List<string> Headers, List<List<string>> Rows);
+
+    private static string InputDataTestBatchDisplayHtml(AiDocBundle doc)
+    {
+        string originalHtml = (doc.AnalysisHtml ?? "").Trim();
+        if (!string.IsNullOrWhiteSpace(originalHtml))
+            return originalHtml;
+
+        if (string.IsNullOrWhiteSpace(doc.GeneratedReportMarkdown))
+            return "";
+
+        return "<!doctype html><html><head><meta charset=\"utf-8\"><style>body{font-family:Segoe UI,Arial,sans-serif;margin:16px;color:#17202a;line-height:1.45}section{border:1px solid #d9e0e7;border-radius:8px;padding:12px}h3{margin:0 0 8px;font-size:14px}</style></head><body><section><h3>AI analysis</h3><p>"
+               + HtmlEnc(doc.GeneratedReportMarkdown).Replace("\n", "<br>")
+               + "</p></section></body></html>";
+    }
+
+    private static void AppendChipRow(System.Text.StringBuilder sb, string cssClass, IEnumerable<string> tags, string prefix)
+    {
+        var cleanTags = tags
+            .Select(CleanInputDataTag)
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Select(t => ShortTag(t))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(cssClass.Contains("purpose", StringComparison.OrdinalIgnoreCase) ? 6 : 8)
+            .ToList();
+        if (cleanTags.Count == 0) cleanTags.Add(prefix);
+
+        sb.Append("<div class=\"idt-chip-row ").Append(cssClass).Append("\">");
+        foreach (string tag in cleanTags)
+        {
+            sb.Append("<span class=\"idt-chip\">")
+              .Append(HtmlEnc(prefix)).Append(": ")
+              .Append(HtmlEnc(tag))
+              .Append("</span>");
+        }
+        sb.Append("</div>");
+    }
+
+    private static List<string> BuildInputDataPurposeTags(AiDocBundle doc, string text)
+    {
+        var tags = new List<string>();
+        foreach (string label in new[] { "목적", "시험 의도", "Purpose", "Test intent", "Goal" })
+        {
+            AddTagCandidates(tags, ExtractLabeledInputDataTags(text, label));
+        }
+        AddTagCandidates(tags, ExtractMalformedInputDataFrontItems(text, 3));
+        AddTagCandidates(tags, SplitTagText(doc.Purpose));
+        if (tags.Count == 0)
+            AddTagCandidates(tags, ExtractMalformedInputDataFrontValues(text).Take(1));
+        if (tags.Count > 0) return tags;
+
+        foreach (string label in new[] { "검토 목적", "Review purpose" })
+        {
+            AddTagCandidates(tags, ExtractLabeledInputDataTags(text, label));
+        }
+        return tags.Count == 0 ? ["분석 목적 확인"] : tags;
+    }
+
+    private static List<string> BuildInputDataCheckTags(AiDocBundle doc, string text)
+    {
+        string haystack = (doc.Title + " " + doc.Purpose + " " + doc.GeneratedReportMarkdown + " " + text).ToLowerInvariant();
+        var tags = new List<string>();
+        foreach (string label in new[]
+                 {
+                     "검토 태그", "검토 항목", "검토사항", "검토 사항", "확인 항목",
+                     "대상불량", "대상 불량",
+                     "Review tags", "Review item", "Review items", "Check tags", "Check item", "Check items",
+                     "Target defect", "Target defects"
+                 })
+        {
+            AddTagCandidates(tags, ExtractLabeledInputDataTags(text, label));
+        }
+        AddTagCandidates(tags, ExtractMalformedInputDataFrontItems(text, 4));
+        AddTagCandidates(tags, ExtractMalformedInputDataFrontItems(text, 5));
+        AddTagCandidates(tags, ExtractMalformedInputDataFrontItems(text, 2));
+        AddTagCandidates(tags, [doc.PrimaryDefect]);
+        AddTagCandidates(tags, doc.RelatedDefects);
+        AddTagCandidates(tags, doc.Parts);
+        AddTagCandidates(tags, doc.Processes);
+        foreach (var result in doc.Results)
+        {
+            AddTagCandidates(tags,
+            [
+                result.ConditionProcess,
+                result.ChangedFactor,
+                result.MeasurementType,
+                result.MetricName
+            ]);
+        }
+        foreach (var hint in doc.Hints)
+        {
+            AddTagCandidates(tags,
+            [
+                hint.CheckItem,
+                hint.DefectName,
+                hint.RelatedProcess,
+                hint.RelatedPart
+            ]);
+        }
+
+        var candidates = new[]
+        {
+            "Laser cutting", "VP bending", "Vision", "Function", "Hearing",
+            "Noise", "Touch", "SPL", "THD", "F0", "VP/CD", "Line",
+            "Mold", "Supplier", "Block test",
+            "Old lot", "New lot"
+        };
+
+        AddTagCandidates(tags, candidates.Where(k => haystack.Contains(k.ToLowerInvariant())));
+        return tags.Count == 0 ? ["결과 확인"] : tags;
+    }
+
+    private static void AddTagCandidates(List<string> tags, IEnumerable<string?> values)
+    {
+        foreach (string? value in values)
+        {
+            string tag = CleanInputDataTag(value);
+            if (!string.IsNullOrWhiteSpace(tag)
+                && !tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+            {
+                tags.Add(tag);
+            }
+        }
+    }
+
+    private static IEnumerable<string> ExtractLabeledInputDataTags(string? text, string label)
+    {
+        if (string.IsNullOrWhiteSpace(text)) yield break;
+        string[] lines = text.Replace("\r\n", "\n").Split('\n');
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string line = System.Text.RegularExpressions.Regex.Replace(lines[i], @"\s+", " ").Trim();
+            if (line.Length == 0) continue;
+
+            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(
+                line,
+                @"^\s*" + System.Text.RegularExpressions.Regex.Escape(label) + @"\s*[:：]\s*(.{2,180})$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (!match.Success) continue;
+
+            foreach (string tag in SplitTagText(match.Groups[1].Value))
+                yield return tag;
+            continue;
+        }
+
+        for (int i = 0; i < lines.Length - 1; i++)
+        {
+            string line = System.Text.RegularExpressions.Regex.Replace(lines[i], @"\s+", " ").Trim(' ', '#', '-', '*', '·', ':', '：');
+            if (!line.Equals(label, StringComparison.OrdinalIgnoreCase)) continue;
+
+            for (int j = i + 1; j < lines.Length && j <= i + 3; j++)
+            {
+                string next = System.Text.RegularExpressions.Regex.Replace(lines[j], @"\s+", " ").Trim(' ', '-', '*', '·', ':', '：');
+                if (next.Length < 2) continue;
+                foreach (string tag in SplitTagText(next))
+                    yield return tag;
+                break;
+            }
+        }
+    }
+
+    private static IEnumerable<string> SplitTagText(string value)
+        => System.Text.RegularExpressions.Regex.Split(value ?? "", @"[,\n;|，、]+")
+            .Select(x => x.Trim(' ', '-', '*', '·', ':', '：'))
+            .Where(x => x.Length >= 2);
+
+    private static string CleanInputDataTag(string? value)
+    {
+        string tag = System.Text.RegularExpressions.Regex.Replace(value ?? "", "<[^>]+>", " ");
+        tag = System.Text.RegularExpressions.Regex.Replace(tag, @"\s+", " ").Trim(' ', '-', '*', '·', ':', '：');
+        tag = StripMalformedInputDataLabelPrefix(tag);
+        tag = System.Text.RegularExpressions.Regex.Replace(
+            tag,
+            @"^(검토\s*목적|목적|시험\s*의도|검토\s*태그|검토\s*항목|검토\s*사항|검토사항|확인\s*항목|대상\s*불량|대상불량|review\s*purpose|purpose|test\s*intent|goal|review\s*tags?|review\s*items?|check\s*tags?|check\s*items?|target\s*defects?)\s*[:：]\s*",
+            "",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+
+        if (tag.Length < 2) return "";
+        if (LooksLikeMalformedInputDataValue(tag)) return "";
+        if (LooksLikeSourceFileTag(tag)) return "";
+        if (IsGenericInputDataTag(tag)) return "";
+        return tag;
+    }
+
+    private static bool LooksLikeSourceFileTag(string tag)
+    {
+        string s = tag.Trim();
+        if (s.Contains(".xlsx", StringComparison.OrdinalIgnoreCase)
+            || s.Contains(".xlsm", StringComparison.OrdinalIgnoreCase)
+            || s.Contains("_clean_textonly", StringComparison.OrdinalIgnoreCase)
+            || s.Contains("_textonly", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (System.Text.RegularExpressions.Regex.IsMatch(s, @"^[0-9a-f]{12,16}[_-]", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            return true;
+
+        return s.Length > 45
+               && System.Text.RegularExpressions.Regex.IsMatch(s, @"\b(report|result|test|summary)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+               && System.Text.RegularExpressions.Regex.IsMatch(s, @"\b(clean|textonly|copy|date|\d{4}[.-]\d{1,2}[.-]\d{1,2})\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    }
+
+    private static bool IsGenericInputDataTag(string tag)
+    {
+        string s = tag.Trim().ToLowerInvariant();
+        string[] generic =
+        [
+            "input data", "input data test", "workbook analysis", "analysis",
+            "report", "result", "test", "normal", "ok", "ng", "date", "line",
+            "source file", "dataset", "file", "sheet", "input_data_test_analysis",
+            "lot", "material", "ng rate", "rate"
+        ];
+        return generic.Contains(s, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string ShortTag(string value)
+    {
+        string tag = System.Text.RegularExpressions.Regex.Replace(value ?? "", @"\s+", " ").Trim();
+        return tag.Length <= 34 ? tag : tag[..34].Trim() + "...";
+    }
+
+    private static void AppendInputDataBrief(System.Text.StringBuilder sb, string text, string? markdown)
+    {
+        var bullets = ExtractBriefLines(text)
+            .Concat(ExtractBriefLines(markdown))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(4)
+            .ToList();
+        if (bullets.Count == 0) bullets.Add("AI 분석 원문을 표시용 요약 형태로 정리했습니다.");
+
+        sb.Append("<section class=\"idt-brief\"><h3>해석</h3><ul>");
+        foreach (string bullet in bullets)
+        {
+            sb.Append("<li>").Append(HtmlEnc(ShortSentence(bullet))).Append("</li>");
+        }
+        sb.Append("</ul></section>");
+    }
+
+    private static IEnumerable<string> ExtractBriefLines(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) yield break;
+        foreach (string raw in System.Text.RegularExpressions.Regex.Split(text, @"\r?\n+"))
+        {
+            string line = System.Text.RegularExpressions.Regex.Replace(raw, @"\s+", " ").Trim(' ', '-', '*', '·');
+            if (line.Length < 12) continue;
+            if (line.Contains('|')) continue;
+            if (line.StartsWith("Date ", StringComparison.OrdinalIgnoreCase)) continue;
+            if (IsInputDataFrontMetadataLine(line)) continue;
+            line = StripMalformedInputDataLabelPrefix(line);
+            if (line.Length < 12) continue;
+            yield return line;
+        }
+    }
+
+    private static bool IsInputDataFrontMetadataLine(string line)
+    {
+        string text = System.Text.RegularExpressions.Regex.Replace(line ?? "", @"\s+", " ").Trim();
+        if (text.Length == 0) return false;
+        if (System.Text.RegularExpressions.Regex.IsMatch(text, @"^[?\s]{2,}[:：]")) return true;
+        if (LooksLikeMalformedInputDataMetadataLine(text)) return true;
+        if (TrySplitMalformedInputDataLabelRow(text, out _, out _)) return true;
+
+        string lower = text.ToLowerInvariant();
+        string[] prefixes =
+        [
+            "검토 목적:", "검토 태그:", "목적:", "대상불량:", "대상 불량:", "검토사항:", "검토 사항:",
+            "model:", "date:", "confidence:", "review purpose:", "review tags:",
+            "purpose:", "target defect:", "review item:", "review items:"
+        ];
+        return prefixes.Any(p => lower.StartsWith(p.ToLowerInvariant(), StringComparison.Ordinal));
+    }
+
+    private static string ShortSentence(string value)
+    {
+        string text = System.Text.RegularExpressions.Regex.Replace(value ?? "", @"\s+", " ").Trim();
+        text = StripMalformedInputDataLabelPrefix(text);
+        return text.Length <= 120 ? text : text[..120].Trim() + "...";
+    }
+
+    private static IEnumerable<string> ExtractMalformedInputDataFrontValues(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) yield break;
+        foreach (string raw in System.Text.RegularExpressions.Regex.Split(text, @"\r?\n+").Take(10))
+        {
+            string line = System.Text.RegularExpressions.Regex.Replace(raw, @"\s+", " ").Trim(' ', '-', '*', '·');
+            if (!TryGetMalformedInputDataMetadataValue(line, out string value)) continue;
+
+            if (value.Length >= 2) yield return value;
+        }
+    }
+
+    private static IEnumerable<string> ExtractMalformedInputDataFrontItems(string? text, int ordinal)
+    {
+        int index = 0;
+        foreach (string value in ExtractMalformedInputDataFrontValues(text))
+        {
+            index++;
+            if (index != ordinal) continue;
+            foreach (string item in SplitTagText(value))
+                yield return item;
+            yield break;
+        }
+    }
+
+    private static bool LooksLikeMalformedInputDataMetadataLine(string line)
+    {
+        string text = System.Text.RegularExpressions.Regex.Replace(line ?? "", @"\s+", " ").Trim();
+        int colon = FirstInputDataColonIndex(text);
+        if (colon <= 0 || colon > 40) return false;
+
+        string value = text[(colon + 1)..].Trim(' ', '-', '*', '·', ':', '：');
+        return value.Length >= 2
+               && value.Length <= 240
+               && LooksLikeMalformedInputDataLabel(text[..colon]);
+    }
+
+    private static string StripMalformedInputDataLabelPrefix(string value)
+    {
+        string text = System.Text.RegularExpressions.Regex.Replace(value ?? "", @"\s+", " ").Trim(' ', '-', '*', '·', ':', '：');
+        if (TrySplitMalformedInputDataLabelRow(text, out _, out string rowValue))
+            return rowValue;
+
+        int colon = FirstInputDataColonIndex(text);
+        if (colon <= 0 || colon > 40) return text;
+
+        string prefix = text[..colon].Trim();
+        string remainder = text[(colon + 1)..].Trim(' ', '-', '*', '·', ':', '：');
+        if (remainder.Length < 2) return text;
+        return LooksLikeMalformedInputDataLabel(prefix) ? remainder : text;
+    }
+
+    private static bool TryGetMalformedInputDataMetadataValue(string line, out string value)
+    {
+        value = "";
+        string text = System.Text.RegularExpressions.Regex.Replace(line ?? "", @"\s+", " ").Trim(' ', '-', '*', '·');
+        if (TrySplitMalformedInputDataLabelRow(text, out _, out value))
+            return true;
+
+        int colon = FirstInputDataColonIndex(text);
+        if (colon <= 0 || colon > 40) return false;
+        if (!LooksLikeMalformedInputDataLabel(text[..colon])) return false;
+
+        value = text[(colon + 1)..].Trim(' ', '-', '*', '·', ':', '：');
+        return value.Length >= 2;
+    }
+
+    private static bool TrySplitMalformedInputDataLabelRow(string line, out string label, out string value)
+    {
+        label = "";
+        value = "";
+        string text = System.Text.RegularExpressions.Regex.Replace(line ?? "", @"\s+", " ").Trim(' ', '-', '*', '·');
+        if (text.Length == 0) return false;
+
+        System.Text.RegularExpressions.Match m = System.Text.RegularExpressions.Regex.Match(text, @"^(\S{2,40})\s+(.{2,240})$");
+        if (!m.Success) return false;
+        string first = m.Groups[1].Value.Trim();
+        if (!LooksLikeMalformedInputDataLabel(first)) return false;
+
+        label = first;
+        value = m.Groups[2].Value.Trim(' ', '-', '*', '·', ':', '：');
+        return value.Length >= 2;
+    }
+
+    private static int FirstInputDataColonIndex(string text)
+    {
+        int ascii = (text ?? "").IndexOf(':');
+        int wide = (text ?? "").IndexOf('：');
+        if (ascii < 0) return wide;
+        if (wide < 0) return ascii;
+        return Math.Min(ascii, wide);
+    }
+
+    private static bool LooksLikeMalformedInputDataLabel(string value)
+    {
+        string text = System.Text.RegularExpressions.Regex.Replace(value ?? "", @"\s+", "");
+        if (text.Length == 0 || text.Length > 40) return false;
+        if (text.Contains('?') || text.Contains('\uFFFD')) return true;
+
+        foreach (char ch in text)
+        {
+            if (char.IsControl(ch)) return true;
+            if (ch is >= '\u0080' and <= '\u009F') return true;
+            if (ch is >= '\u4E00' and <= '\u9FFF') return true;
+            if (ch is >= '\uF900' and <= '\uFAFF') return true;
+        }
+        return false;
+    }
+
+    private static bool LooksLikeMalformedInputDataValue(string value)
+    {
+        string text = System.Text.RegularExpressions.Regex.Replace(value ?? "", @"\s+", " ").Trim();
+        if (text.Length == 0) return false;
+        if (text.Contains('\uFFFD')) return true;
+        if (text.Contains('?') && text.Any(ch => ch is >= '\u0080')) return true;
+        return text.Any(ch => ch is >= '\u0080' and <= '\u009F');
+    }
+
+    private static List<InputDataDisplayTable> ExtractInputDataTables(string html)
+    {
+        var result = new List<InputDataDisplayTable>();
+        if (string.IsNullOrWhiteSpace(html)) return result;
+
+        var matches = System.Text.RegularExpressions.Regex.Matches(
+            html,
+            @"<table\b[^>]*>(.*?)</table>",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
+
+        foreach (System.Text.RegularExpressions.Match match in matches)
+        {
+            var rowMatches = System.Text.RegularExpressions.Regex.Matches(
+                match.Groups[1].Value,
+                @"<tr\b[^>]*>(.*?)</tr>",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
+            if (rowMatches.Count == 0) continue;
+
+            var parsedRows = rowMatches
+                .Select(r => ExtractHtmlCells(r.Groups[1].Value))
+                .Where(cells => cells.Count > 0)
+                .ToList();
+            if (parsedRows.Count < 2) continue;
+            if (LooksLikeInputDataMetadataTable(parsedRows)) continue;
+
+            List<string> headers = parsedRows[0];
+            List<List<string>> rows = parsedRows.Skip(1).ToList();
+            int maxCols = Math.Max(headers.Count, rows.Select(r => r.Count).DefaultIfEmpty(0).Max());
+            if (maxCols == 0) continue;
+            while (headers.Count < maxCols) headers.Add($"C{headers.Count + 1}");
+            foreach (var row in rows)
+                while (row.Count < maxCols) row.Add("");
+
+            result.Add(new InputDataDisplayTable(headers, rows));
+        }
+        return result;
+    }
+
+    private static bool LooksLikeInputDataMetadataTable(List<List<string>> rows)
+    {
+        if (rows.Count < 4) return false;
+
+        int maxCols = rows.Select(r => r.Count).DefaultIfEmpty(0).Max();
+        if (maxCols > 2) return false;
+
+        int labelHits = rows
+            .Select(r => CellAt(r, 0))
+            .Count(IsInputDataMetadataLabel);
+        return labelHits >= 3;
+    }
+
+    private static bool IsInputDataMetadataLabel(string value)
+    {
+        string s = System.Text.RegularExpressions.Regex.Replace(value ?? "", @"\s+", " ").Trim();
+        if (s.Length == 0) return false;
+
+        string lower = s.ToLowerInvariant();
+        string[] labels =
+        [
+            "검토 목적", "검토 태그", "목적", "대상불량", "대상 불량", "검토사항", "검토 사항",
+            "model", "date", "confidence", "review purpose", "review tags", "purpose",
+            "target defect", "review item", "review items"
+        ];
+        if (labels.Contains(lower, StringComparer.OrdinalIgnoreCase)) return true;
+
+        if (LooksLikeMalformedInputDataLabel(s)) return true;
+        return s is "??" or "?? ??" or "????";
+    }
+
+    private static List<string> ExtractHtmlCells(string rowHtml)
+    {
+        var cells = new List<string>();
+        var matches = System.Text.RegularExpressions.Regex.Matches(
+            rowHtml,
+            @"<t[hd]\b[^>]*>(.*?)</t[hd]>",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
+        foreach (System.Text.RegularExpressions.Match match in matches)
+            cells.Add(PlainTextFromHtml(match.Groups[1].Value));
+        return cells;
+    }
+
+    private static void AppendProcessSeparatedTable(System.Text.StringBuilder sb, InputDataDisplayTable table)
+    {
+        int processIdx = FindColumn(table.Headers, "process", "process block", "공정", "프로세스");
+        var displayRows = ExpandBundledReviewRows(table.Headers, table.Rows);
+        var groups = processIdx >= 0
+            ? displayRows.GroupBy(r => FirstDisplayValue(CellAt(r, processIdx), "Unknown Process"), StringComparer.OrdinalIgnoreCase)
+            : displayRows.GroupBy(_ => "Result", StringComparer.OrdinalIgnoreCase);
+
+        foreach (var group in groups)
+        {
+            var rows = group.ToList();
+            sb.Append("<section class=\"idt-process\"><h3>Process: ")
+              .Append(HtmlEnc(ShortSentence(group.Key)))
+              .Append("</h3>");
+            AppendHtmlTable(sb, table.Headers, rows, processIdx);
+            sb.Append("</section>");
+        }
+    }
+
+    private static List<List<string>> ExpandBundledReviewRows(List<string> headers, List<List<string>> rows)
+    {
+        var expanded = new List<List<string>>();
+        foreach (var row in rows)
+        {
+            var partsByColumn = new Dictionary<int, List<string>>();
+            for (int i = 0; i < headers.Count; i++)
+            {
+                List<string> parts = SplitParallelCell(headers[i], CellAt(row, i));
+                if (parts.Count > 1) partsByColumn[i] = parts;
+            }
+
+            int maxParts = partsByColumn.Values.Select(x => x.Count).DefaultIfEmpty(1).Max();
+            int alignedColumns = partsByColumn.Values.Count(x => x.Count == maxParts);
+            if (maxParts <= 1 || alignedColumns < 2)
+            {
+                expanded.Add(row);
+                continue;
+            }
+
+            for (int partIndex = 0; partIndex < maxParts; partIndex++)
+            {
+                var next = new List<string>(row);
+                for (int col = 0; col < headers.Count; col++)
+                {
+                    if (!partsByColumn.TryGetValue(col, out List<string>? parts)) continue;
+                    next[col] = parts.Count == maxParts
+                        ? parts[partIndex]
+                        : FirstDisplayValue(parts.FirstOrDefault(), CellAt(row, col));
+                }
+                expanded.Add(next);
+            }
+        }
+        return expanded;
+    }
+
+    private static List<string> SplitParallelCell(string header, string value)
+    {
+        string text = System.Text.RegularExpressions.Regex.Replace(value ?? "", @"\s+", " ").Trim();
+        if (text.Length == 0) return [""];
+
+        string h = (header ?? "").ToLowerInvariant();
+        bool canSplit = h.Contains("test") || h.Contains("condition") || h.Contains("factor")
+                        || h.Contains("type") || h.Contains("input") || h.Contains("ok")
+                        || h.Contains("ng") || h.Contains("rate") || h.Contains("result")
+                        || h.Contains("judge");
+        if (!canSplit) return [text];
+
+        string[] parts;
+        if (System.Text.RegularExpressions.Regex.IsMatch(text, @"\s+vs\.?\s+", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+        {
+            parts = System.Text.RegularExpressions.Regex.Split(text, @"\s+vs\.?\s+", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        }
+        else if (text.Contains(',') && (h.Contains("factor") || h.Contains("input") || h.Contains("ok") || h.Contains("ng") || h.Contains("rate") || h.Contains("result") || h.Contains("test") || h.Contains("condition")))
+        {
+            parts = text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        }
+        else if ((h.Contains("factor") || h.Contains("test") || h.Contains("condition") || h.Contains("type"))
+                 && System.Text.RegularExpressions.Regex.IsMatch(text, @"\s+/\s+"))
+        {
+            parts = System.Text.RegularExpressions.Regex.Split(text, @"\s+/\s+");
+        }
+        else
+        {
+            return [text];
+        }
+
+        var cleaned = parts
+            .Select(p => System.Text.RegularExpressions.Regex.Replace(p, @"\s+", " ").Trim())
+            .Where(p => p.Length > 0)
+            .ToList();
+        if (cleaned.Count <= 1) return [text];
+
+        if (cleaned[0].StartsWith("VP ", StringComparison.OrdinalIgnoreCase))
+        {
+            for (int i = 1; i < cleaned.Count; i++)
+                if (cleaned[i].StartsWith("#", StringComparison.Ordinal))
+                    cleaned[i] = "VP " + cleaned[i];
+        }
+
+        return cleaned;
+    }
+
+    private static void AppendHtmlTable(System.Text.StringBuilder sb, List<string> headers, List<List<string>> rows, int hiddenIndex)
+    {
+        var indexes = Enumerable.Range(0, headers.Count)
+            .Where(i => i != hiddenIndex)
+            .Take(14)
+            .ToList();
+        sb.Append("<table><thead><tr>");
+        foreach (int i in indexes) sb.Append("<th>").Append(HtmlEnc(headers[i])).Append("</th>");
+        sb.Append("</tr></thead><tbody>");
+        foreach (var row in rows)
+        {
+            sb.Append("<tr>");
+            foreach (int i in indexes) sb.Append("<td>").Append(HtmlEnc(CellAt(row, i))).Append("</td>");
+            sb.Append("</tr>");
+        }
+        sb.Append("</tbody></table>");
+    }
+
+    private static int FindColumn(List<string> headers, params string[] keywords)
+    {
+        for (int i = 0; i < headers.Count; i++)
+        {
+            string header = (headers[i] ?? "").Trim().ToLowerInvariant();
+            if (keywords.Any(k => header.Contains(k.ToLowerInvariant()))) return i;
+        }
+        return -1;
+    }
+
+    private static string CellAt(List<string> row, int index)
+        => index >= 0 && index < row.Count ? row[index] : "";
+
+    private static string FirstDisplayValue(params string?[] values)
+        => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim() ?? "";
+
+    private static double? FirstNumber(string text)
+    {
+        System.Text.RegularExpressions.Match m = System.Text.RegularExpressions.Regex.Match(text ?? "", @"-?\d+(?:\.\d+)?");
+        if (!m.Success) return null;
+        return double.TryParse(m.Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double value)
+            ? value
+            : null;
+    }
+
+    private static string PlainTextFromHtml(string html)
+    {
+        if (string.IsNullOrWhiteSpace(html)) return "";
+        string text = System.Text.RegularExpressions.Regex.Replace(html, @"<br\s*/?>", "\n", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"</(p|div|li|tr|h[1-6])>", "\n", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"<[^>]+>", " ");
+        text = System.Net.WebUtility.HtmlDecode(text);
+        return System.Text.RegularExpressions.Regex.Replace(text, @"[ \t]+", " ").Trim();
+    }
+
+    private static string HtmlEnc(string? value)
+        => System.Net.WebUtility.HtmlEncode(value ?? "");
 
     private static string DeltaClass(string sign) => (sign ?? "").ToLowerInvariant() switch
     {
@@ -3410,6 +4787,20 @@ else
         public AiResultRow Variant        { get; init; } = new();
         public double? RelativeChangePct  { get; init; }
     }
+
+    private sealed record MicroSpeakerPairRow(
+        string Item,
+        string ControlCondition,
+        string TestCondition,
+        double? ControlInput,
+        double? ControlNg,
+        double? ControlRate,
+        double? TestInput,
+        double? TestNg,
+        double? TestRate,
+        double? DeltaRate,
+        string Effect,
+        string Evidence);
 
     private sealed record AiAbsoluteNgRow(AiResultRow Row, string Label, double RatePercent, double? InputCount, double? NgCount);
     private sealed record AiAbsoluteNgGroup(string Process, List<AiAbsoluteNgRow> Rows, AiAbsoluteNgRow Worst, AiAbsoluteNgRow Best);
@@ -3792,6 +5183,137 @@ else
 
     private static bool AiShowsPrimaryDefect(string kind)
         => kind is "defect_root_cause" or "ng_without_baseline" or "image_dependent";
+
+    private static List<MicroSpeakerPairRow> BuildMicroSpeakerPairRows(AiDocBundle doc)
+        => doc.Results
+            .Where(r => string.Equals(r.MeasurementType, "NG rate pair", StringComparison.OrdinalIgnoreCase))
+            .Select(ReadMicroSpeakerPairRow)
+            .OrderByDescending(r => MicroPairSortRank(r.Effect))
+            .ThenByDescending(r => Math.Abs(r.DeltaRate ?? 0))
+            .ToList();
+
+    private static MicroSpeakerPairRow ReadMicroSpeakerPairRow(AiResultRow row)
+    {
+        string item = row.MetricName;
+        string controlCondition = "";
+        string testCondition = "";
+        double? controlInput = null;
+        double? controlNg = null;
+        double? controlRate = null;
+        double? testInput = row.InputCount;
+        double? testNg = row.NgCount;
+        double? testRate = row.NgRatePercent.HasValue ? row.NgRatePercent.Value / 100.0 : row.NgRateDecimal;
+        double? deltaRate = row.MetricValue.HasValue ? row.MetricValue.Value / 100.0 : null;
+        string effect = FirstNonEmpty(row.Judgement, row.ConditionGroup);
+        string evidence = "";
+
+        if (!string.IsNullOrWhiteSpace(row.SourceCellsJson))
+        {
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(row.SourceCellsJson);
+                var root = doc.RootElement;
+                item = FirstNonEmpty(JsonText(root, "compare_item", "compareItem"), item);
+                controlCondition = JsonText(root, "control_condition", "controlCondition");
+                testCondition = JsonText(root, "test_condition", "testCondition");
+                controlInput = JsonDouble(root, "control_input", "controlInput");
+                controlNg = JsonDouble(root, "control_ng", "controlNg");
+                controlRate = JsonDouble(root, "control_rate", "controlRate");
+                testInput = JsonDouble(root, "test_input", "testInput") ?? testInput;
+                testNg = JsonDouble(root, "test_ng", "testNg") ?? testNg;
+                testRate = JsonDouble(root, "test_rate", "testRate") ?? testRate;
+                deltaRate = JsonDouble(root, "delta_rate", "deltaRate") ?? deltaRate;
+                effect = FirstNonEmpty(JsonText(root, "effect_direction", "effectDirection"), effect);
+                evidence = JsonText(root, "evidence");
+            }
+            catch
+            {
+                // Keep the persisted AiResults fallback values.
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(controlCondition) || string.IsNullOrWhiteSpace(testCondition))
+        {
+            string[] parts = (row.Line ?? "").Split(" -> ", 2, StringSplitOptions.TrimEntries);
+            if (parts.Length == 2)
+            {
+                controlCondition = FirstNonEmpty(controlCondition, parts[0]);
+                testCondition = FirstNonEmpty(testCondition, parts[1]);
+            }
+        }
+
+        return new MicroSpeakerPairRow(
+            FirstNonEmpty(item, "Pair"),
+            controlCondition,
+            testCondition,
+            controlInput,
+            controlNg,
+            controlRate,
+            testInput,
+            testNg,
+            testRate,
+            deltaRate,
+            FirstNonEmpty(effect, "NO_CHANGE"),
+            evidence);
+    }
+
+    private static string JsonText(System.Text.Json.JsonElement root, params string[] names)
+    {
+        foreach (string name in names)
+        {
+            if (root.TryGetProperty(name, out var value) && value.ValueKind != System.Text.Json.JsonValueKind.Null)
+                return value.ToString();
+        }
+        return "";
+    }
+
+    private static double? JsonDouble(System.Text.Json.JsonElement root, params string[] names)
+    {
+        foreach (string name in names)
+        {
+            if (!root.TryGetProperty(name, out var value) || value.ValueKind == System.Text.Json.JsonValueKind.Null)
+                continue;
+            if (value.ValueKind == System.Text.Json.JsonValueKind.Number && value.TryGetDouble(out double number))
+                return number;
+            if (double.TryParse(value.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out number))
+                return number;
+        }
+        return null;
+    }
+
+    private static int MicroPairSortRank(string effect)
+        => effect.ToUpperInvariant() switch
+        {
+            "WORSENED" => 3,
+            "IMPROVED" => 2,
+            _ => 1,
+        };
+
+    private static string PairCountRate(double? input, double? ng, double? rate)
+    {
+        string count = input.HasValue || ng.HasValue
+            ? $"{FormatPairNumber(input)} / {FormatPairNumber(ng)}"
+            : "-";
+        string pct = rate.HasValue ? $" / {rate.Value * 100.0:F2}%" : "";
+        return count + pct;
+    }
+
+    private static string FormatPairNumber(double? value)
+        => value.HasValue ? value.Value.ToString(value.Value % 1 == 0 ? "N0" : "N2") : "-";
+
+    private static string FormatSignedPoint(double? value)
+        => value.HasValue ? $"{value.Value * 100.0:+0.00;-0.00;0.00}%p" : "-";
+
+    private static string MicroPairEffectClass(string effect)
+        => effect.ToUpperInvariant() switch
+        {
+            "WORSENED" => "didb-ai-status-fail",
+            "IMPROVED" => "didb-ai-status-pass",
+            _ => "didb-ai-status-warn",
+        };
+
+    private static string FirstNonEmpty(params string?[] values)
+        => values.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? "";
 
     private static string AiReportFocusText(
         AiDocBundle doc,
@@ -5460,8 +6982,12 @@ else
             ? tr.Title : doc.Title;
 
     private static string AiDocPurpose(AiDocBundle doc, string lang)
-        => doc.DocTranslations.TryGetValue(lang, out var tr) && !string.IsNullOrWhiteSpace(tr.Purpose)
-            ? tr.Purpose : doc.Purpose;
+    {
+        string value = doc.DocTranslations.TryGetValue(lang, out var tr) && !string.IsNullOrWhiteSpace(tr.Purpose)
+            ? tr.Purpose
+            : doc.Purpose;
+        return IsInputDataTestBatchDoc(doc) ? CleanInputDataTag(value) : value;
+    }
 
     private static List<string> AiDocContent(AiDocBundle doc, string lang)
         => doc.DocTranslations.TryGetValue(lang, out var tr) && tr.Content.Count > 0
@@ -5627,16 +7153,21 @@ else
             }
 
             double max = Math.Max(1.0, items.Select(NumberValue).DefaultIfEmpty(0).Max());
-            sb.Append("<div class=\"didb-ai-md-visual didb-ai-md-bars\">");
+            sb.Append("<div class=\"didb-ai-md-visual didb-ai-md-bars didb-ai-vbar-chart\">");
             foreach (var item in items)
             {
-                double width = Math.Clamp(NumberValue(item) / max * 100.0, 3.0, 100.0);
-                sb.Append("<div class=\"didb-ai-bar-row didb-ai-bar-compact didb-ai-visual-bar-row\"><div class=\"didb-ai-bar-label\"><strong>")
-                  .Append(Enc(item.Label)).Append("</strong><span>")
-                  .Append(Enc(item.Value)).Append("</span></div><div class=\"didb-ai-bar-track\"><div class=\"didb-ai-bar ")
-                  .Append(BarClass(item.Status)).Append("\" style=\"width:")
-                  .Append(width.ToString("F1", System.Globalization.CultureInfo.InvariantCulture))
-                  .Append("%\"></div></div></div>");
+                double value = NumberValue(item);
+                double height = value <= 0
+                    ? 0
+                    : Math.Clamp(value / max * 100.0, 5.0, 100.0);
+                sb.Append("<div class=\"didb-ai-vbar-item\" title=\"")
+                  .Append(Enc(item.Detail)).Append("\"><div class=\"didb-ai-vbar-value\">")
+                  .Append(Enc(item.Value)).Append("</div><div class=\"didb-ai-vbar-plot\"><div class=\"didb-ai-vbar ")
+                  .Append(BarClass(item.Status)).Append("\" style=\"height:")
+                  .Append(height.ToString("F1", System.Globalization.CultureInfo.InvariantCulture))
+                  .Append("%\"></div></div><div class=\"didb-ai-vbar-label\">")
+                  .Append(Enc(item.Label)).Append("</div><div class=\"didb-ai-vbar-detail\">")
+                  .Append(Enc(item.Detail)).Append("</div></div>");
             }
             sb.Append("</div>");
             return sb.ToString();
@@ -5893,7 +7424,14 @@ else
            && !string.IsNullOrWhiteSpace(tr.Reason)
             ? tr.Reason : row.Reason;
 
-    protected override void OnInitialized() => ReloadReports();
+    protected override Task OnInitializedAsync()
+        => LoadReportsAsync(applyQueryTarget: true);
+
+    protected override void OnParametersSet()
+    {
+        if (!_isLoadingReports && _reports.Count > 0)
+            ApplyQueryTarget();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -5912,10 +7450,10 @@ else
         }
     }
 
-    private void Refresh()
+    private async Task Refresh()
     {
         Activity.Log("Data Inference DB", "Refresh saved datasets");
-        ReloadReports();
+        await LoadReportsAsync(applyQueryTarget: true);
     }
 
     [JSInvokable]
@@ -5991,10 +7529,80 @@ else
             .OrderBy(s => s, StringComparer.OrdinalIgnoreCase);
     }
 
+    private async Task LoadReportsAsync(bool applyQueryTarget)
+    {
+        if (_isLoadingReports) return;
+
+        _isLoadingReports = true;
+        _loadReportsError = "";
+        await Task.Yield();
+
+        try
+        {
+            string? expanded = _expanded;
+            ReportLoadState state = await Task.Run(() => LoadReportData(expanded));
+            ApplyReportLoadState(state);
+            if (applyQueryTarget)
+                ApplyQueryTarget();
+        }
+        catch (Exception ex)
+        {
+            _loadReportsError = $"Load saved datasets failed: {ex.Message}";
+            Activity.Log("Data Inference DB", _loadReportsError);
+        }
+        finally
+        {
+            _isLoadingReports = false;
+        }
+    }
+
+    private ReportLoadState LoadReportData(string? expanded)
+    {
+        List<NormalizedMeasurement> expandedMeasurements = [];
+        DatasetSummaryRecord? expandedSummary = null;
+        AiDocBundle? expandedAiDoc = null;
+
+        if (!string.IsNullOrEmpty(expanded))
+        {
+            expandedMeasurements = Repo.GetNormalizedMeasurements(expanded);
+            expandedSummary      = Repo.GetDatasetSummaryRecord(expanded);
+            expandedAiDoc        = Repo.GetAiDocBundle(expanded);
+        }
+
+        return new ReportLoadState(
+            expanded,
+            Repo.GetAllRawReports(),
+            Repo.GetDatasetsWithExtractedText(),
+            expandedMeasurements,
+            expandedSummary,
+            expandedAiDoc,
+            Repo.GetAskAiHistory(50));
+    }
+
+    private void ApplyReportLoadState(ReportLoadState state)
+    {
+        _reports   = state.Reports;
+        _ocrCached = state.OcrCached;
+        _askAiHistory = state.AskAiHistory;
+        EnsureSelectedAskAiHistory();
+        if (_visibleReportCount < DatasetRenderBatchSize)
+            _visibleReportCount = DatasetRenderBatchSize;
+
+        if (!string.IsNullOrEmpty(state.Expanded)
+            && string.Equals(state.Expanded, _expanded, StringComparison.Ordinal))
+        {
+            _expandedMeasurements = state.ExpandedMeasurements;
+            _expandedSummary      = state.ExpandedSummary;
+            _expandedAiDoc        = state.ExpandedAiDoc;
+        }
+    }
+
     private void ReloadReports()
     {
         _reports    = Repo.GetAllRawReports();
         _ocrCached  = Repo.GetDatasetsWithExtractedText();
+        _askAiHistory = Repo.GetAskAiHistory(50);
+        EnsureSelectedAskAiHistory();
         if (_visibleReportCount < DatasetRenderBatchSize)
             _visibleReportCount = DatasetRenderBatchSize;
 
@@ -6007,6 +7615,41 @@ else
             _expandedMeasurements = Repo.GetNormalizedMeasurements(_expanded);
             _expandedSummary      = Repo.GetDatasetSummaryRecord(_expanded);
             _expandedAiDoc        = Repo.GetAiDocBundle(_expanded);
+        }
+    }
+
+    private void ApplyQueryTarget()
+    {
+        string requestedAiResult = NormalizeAiResultQuery(QueryAiResult ?? "");
+        if (!string.IsNullOrWhiteSpace(requestedAiResult))
+            _aiResultFilter = requestedAiResult;
+
+        string target = (QueryDataset ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(target) || _reports.Count == 0) return;
+
+        RawReportInfo? report = _reports.FirstOrDefault(r =>
+            string.Equals(r.DatasetName, target, StringComparison.OrdinalIgnoreCase));
+        if (report is null) return;
+
+        List<RawReportInfo> filtered = FilteredReports;
+        int index = filtered.FindIndex(r =>
+            string.Equals(r.DatasetName, report.DatasetName, StringComparison.OrdinalIgnoreCase));
+
+        if (index < 0)
+        {
+            _aiResultFilter = "all";
+            filtered = FilteredReports;
+            index = filtered.FindIndex(r =>
+                string.Equals(r.DatasetName, report.DatasetName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (index >= 0)
+            _visibleReportCount = Math.Max(_visibleReportCount, Math.Max(DatasetRenderBatchSize, index + 1));
+
+        if (_expanded != report.DatasetName || !string.Equals(_appliedQueryDataset, target, StringComparison.OrdinalIgnoreCase))
+        {
+            ExpandDataset(report.DatasetName);
+            _appliedQueryDataset = target;
         }
     }
 
@@ -6102,32 +7745,42 @@ else
     {
         if (_expanded == name)
         {
-            _expanded = null; _expandedMeasurements = []; _expandedSummary = null;
-            _expandedAiDoc = null; _aiCardShowAll = false;
-            _expandedImages = []; _expandedFiles = [];
-            _expandedOcrText = ""; _expandedExcelPaste = "";
-            _corrCells.Clear(); _corrLines.Clear(); _corrCheckTypes.Clear();
+            ClearExpandedDataset();
         }
         else
         {
-            _expanded             = name;
-            Activity.Log("Data Inference DB", $"View dataset '{name}'");
-            _expandedMeasurements = Repo.GetNormalizedMeasurements(name);
-            _expandedSummary      = Repo.GetDatasetSummaryRecord(name);
-            _expandedAiDoc        = Repo.GetAiDocBundle(name);
-            _aiCardShowAll        = false;
-            _expandedImages       = Repo.GetRawReportImages(name).Select((img, i) =>
-            {
-                string b64     = Convert.ToBase64String(img.Data);
-                string dataUrl = $"data:{img.MediaType};base64,{b64}";
-                string fname   = img.FileName.Length > 0 ? img.FileName : $"img-{i + 1}";
-                return new ImgThumb(img.MediaType, dataUrl, fname);
-            }).ToList();
-            _expandedFiles        = Repo.GetRawReportFileInfos(name);
-            _expandedOcrText      = Repo.GetExtractedText(name, WebRepository.TextKindOcr) ?? "";
-            _expandedExcelPaste   = Repo.GetExtractedText(name, WebRepository.TextKindExcelPaste) ?? "";
-            BuildCorrelationPivot();
+            ExpandDataset(name);
         }
+    }
+
+    private void ClearExpandedDataset()
+    {
+        _expanded = null; _expandedMeasurements = []; _expandedSummary = null;
+        _expandedAiDoc = null; _aiCardShowAll = false;
+        _expandedImages = []; _expandedFiles = [];
+        _expandedOcrText = ""; _expandedExcelPaste = "";
+        _corrCells.Clear(); _corrLines.Clear(); _corrCheckTypes.Clear();
+    }
+
+    private void ExpandDataset(string name)
+    {
+        _expanded             = name;
+        Activity.Log("Data Inference DB", $"View dataset '{name}'");
+        _expandedMeasurements = Repo.GetNormalizedMeasurements(name);
+        _expandedSummary      = Repo.GetDatasetSummaryRecord(name);
+        _expandedAiDoc        = Repo.GetAiDocBundle(name);
+        _aiCardShowAll        = false;
+        _expandedImages       = Repo.GetRawReportImages(name).Select((img, i) =>
+        {
+            string b64     = Convert.ToBase64String(img.Data);
+            string dataUrl = $"data:{img.MediaType};base64,{b64}";
+            string fname   = img.FileName.Length > 0 ? img.FileName : $"img-{i + 1}";
+            return new ImgThumb(img.MediaType, dataUrl, fname);
+        }).ToList();
+        _expandedFiles        = Repo.GetRawReportFileInfos(name);
+        _expandedOcrText      = Repo.GetExtractedText(name, WebRepository.TextKindOcr) ?? "";
+        _expandedExcelPaste   = Repo.GetExtractedText(name, WebRepository.TextKindExcelPaste) ?? "";
+        BuildCorrelationPivot();
     }
 
     private void ConfirmDelete(string name) => _deleteTarget = name;

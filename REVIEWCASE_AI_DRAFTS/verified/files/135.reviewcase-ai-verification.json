@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 135,
+  "sourceFile": "06. BRS-161016 DT  Report  check Reason NG Hearing improve TF   Date 6.2.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\135.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:36Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 135,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable evidence rows but incorrectly merges several distinct investigations into one changed-factor case.",
+    "issues": [
+      "Changed factor mixes JIG old/new, frame cavity, VP bond amount, and frame bending conditions.",
+      "Baseline and test conditions are not comparable across sheets.",
+      "Outcome metric for the JIG comparison is mislabeled as VP bond amount.",
+      "Measurement/stat outcomes include header-derived or unrelated summaries not valid comparisons.",
+      "Subgroup keys are arbitrary and do not preserve sheet-specific grouping context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split into separate review cases or changed factors by investigation sheet/context.",
+      "Keep JIG Frame+Yoke Old vs New as its own verified comparison.",
+      "Treat VP bond MAX vs MIN, frame cavity checks, and frame bending checks separately.",
+      "Relabel outcome metrics using the actual section for each comparison.",
+      "Remove header-derived measurement summaries unless tied to a valid condition comparison."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient until regrouped by comparable changed condition."
+  },
+  "usage": {
+    "input_tokens": 11312,
+    "output_tokens": 429,
+    "total_tokens": 11741
+  }
+}

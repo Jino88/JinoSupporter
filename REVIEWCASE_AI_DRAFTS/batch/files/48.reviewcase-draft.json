@@ -1,0 +1,207 @@
+{
+  "sourceFileId": 48,
+  "sourceFile": "02. TIU C11-20  Report test Frame clean by athanol , Dry at 80C (5') check VP separate , function 20.12.2025_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\02. TIU C11-20  Report test Frame clean by athanol , Dry at 80C (5') check VP separate , function 20.12.2025_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 18,
+    "sheetCellCount": 76,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST FRAME CLEAN ATHANOL AND DRYING 80°C 5MIN TIU-C11-20 | | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | Date | 2025-12-20 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | Marker | Trung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Find reason NG Frame + VP separate"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Test Clean material Frame and Drying temperature 80°C 5min"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| Make final sample and check function => checking Frame + VP separate"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| Compare with normal lot"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | 1. Result check function"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | No | Date | Type | | | Input | OK | VP SEPARATE | NG AUDIOBUS | | | | NG HEARING | | Total NG | NG rate | Note"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | 1 | 2025-12-20 00:00:00 | Frame clean by ethanol + Drying temperature 80°C time 5min | | | 18 | 16 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 2 | 0.11111111 | Test R line"
+    },
+    {
+      "rowId": "Test!18",
+      "sheetName": "Test",
+      "rowNumber": 18,
+      "rowText": "| | 2 | | Normal | | | 20 | 19 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 1 | 0.05"
+    },
+    {
+      "rowId": "Test!21",
+      "sheetName": "Test",
+      "rowNumber": 21,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-48-rc-1",
+      "reviewTitle": "| REPORT TEST FRAME CLEAN ATHANOL AND DRYING 80°C 5MIN TIU-C11-20 | | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Find reason NG Frame + VP separate / | II. Content. / | - Test Clean material Frame and Drying temperature 80°C 5min / | Make final sample and check function => checking Frame + VP separate",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Frame clean by ethanol + Drying temperature 80°C time 5min",
+          "baselineCondition": "Normal",
+          "changedCondition": "Frame clean by ethanol + Drying temperature 80°C time 5min",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!10",
+            "Test!16",
+            "Test!18",
+            "Test!2",
+            "Test!5",
+            "Test!7",
+            "Test!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "1. Result check function",
+          "comparisonRows": [
+            "Test!16",
+            "Test!18"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 17742,
+              "condition": "Frame clean by ethanol + Drying temperature 80°C time 5min",
+              "input": 18.0,
+              "ok": 16.0,
+              "ng": 2.0,
+              "ratePercent": 11.111111,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "metricId": 17743,
+              "condition": "Normal",
+              "input": 20.0,
+              "ok": 19.0,
+              "ng": 1.0,
+              "ratePercent": 5.0,
+              "evidenceRows": [
+                "Test!18"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!10",
+        "Test!16",
+        "Test!18",
+        "Test!2",
+        "Test!5",
+        "Test!7",
+        "Test!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!10",
+      "Test!16",
+      "Test!18",
+      "Test!2",
+      "Test!5",
+      "Test!7",
+      "Test!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

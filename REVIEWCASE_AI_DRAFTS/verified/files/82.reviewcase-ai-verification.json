@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 82,
+  "sourceFile": "03. TIU L5S3-01 R Report  test Frame Point change remove CTF -Date 2026.02.04_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\82.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 82,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed factor and uses incorrect subgroup comparisons for the D3 function result.",
+    "issues": [
+      "Changed factor should be Normal vs Test/remove CTF, not Normal vs Line L/Line R.",
+      "Line L and Line R are subgroup keys, not changed conditions.",
+      "Line R comparison incorrectly uses Line L Normal row instead of Line R Normal row.",
+      "Measurement outcome is fabricated from defect table headers and should be removed.",
+      "Key change evidence row Test!8 is missing from citations."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to remove CTF width/length/height with baseline Normal and changed condition Test.",
+      "Use subgroupKeys for Line L and Line R plus D3 line/function context.",
+      "Compare Test!15 vs Test!17 for Line L and Test!19 vs Test!21 for Line R.",
+      "Remove the measurement outcome and keep one function defect outcome table.",
+      "Add Test!8 and relevant header/result rows to evidence citations."
+    ],
+    "evidencePolicy": "Current citations exist but are not sufficient because key change and correct Line R evidence are missing."
+  },
+  "usage": {
+    "input_tokens": 3744,
+    "output_tokens": 703,
+    "total_tokens": 4447
+  }
+}

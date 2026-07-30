@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 181,
+  "sourceFile": "1. BRS-161014  Report test new design of LAI machine- 2024.10.19_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\181.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 181,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the report topic but misgroups dates as the changed condition instead of the new LAI machine design validation.",
+    "issues": [
+      "Changed factor should be new LAI machine design, not daily dates.",
+      "No explicit normal/baseline comparator is cited.",
+      "Dates are time subgroups, with line E2-3B as subgroup context.",
+      "Result header rows are needed to support metric meanings.",
+      "Outcome should include daily NG counts/rates under one validation context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedCondition to new LAI machine design/test design.",
+      "Set baselineCondition to not explicit or none cited.",
+      "Move dates and E2-3B into subgroup keys/subresults.",
+      "Add result header evidence rows NG rate!16-18.",
+      "Keep one process-defect outcome with daily input, OK, NG, and NG rate."
+    ],
+    "evidencePolicy": "Citations are partly sufficient, but headers and title/purpose rows must support the corrected grouping."
+  },
+  "usage": {
+    "input_tokens": 2955,
+    "output_tokens": 753,
+    "total_tokens": 3708
+  }
+}

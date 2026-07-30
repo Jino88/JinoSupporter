@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 827,
+  "sourceFile": "66. TIU C11-20 Report Check Gauss Sub2 2026.02.25_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\827.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 827,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft is not verified because the changed factor, baseline/test grouping, and measurement evidence are ambiguous.",
+    "issues": [
+      "Changed factor is filename-derived, not evidence-derived.",
+      "Baseline and changed conditions are not explicit.",
+      "Spec over 460G is not applied to outcome stats.",
+      "Time check index is treated as measurement data.",
+      "Test and Sheet1 tables may be duplicate or separate groups."
+    ],
+    "requiredUserQuestions": [
+      "What is the baseline condition for comparison?",
+      "Is Sheet1 raw data duplicated from Test or a separate dataset?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to separate position/check gauss method if confirmed by source.",
+      "Cite purpose/content rows for changed-condition evidence.",
+      "Apply the 460G spec and recalculate pass/fail.",
+      "Remove time-check row numbers as outcome values.",
+      "Group Test and Sheet1 tables by source meaning, not column number."
+    ],
+    "evidencePolicy": "Current citations support table existence but not sufficient final evidence for changed factor or comparison."
+  },
+  "usage": {
+    "input_tokens": 4970,
+    "output_tokens": 750,
+    "total_tokens": 5720
+  }
+}

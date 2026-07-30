@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 923,
+  "sourceFile": "8. MSU-L20S15-07 Report test Find reason NG  LOT DOME 3-17 ( Marking Laser )  date 28.4.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\923.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 923,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable test evidence but changed-factor grouping and one extracted outcome are not reliable enough for final Ask AI use.",
+    "issues": [
+      "Primary factor should be laser marking vs primer clean, not implicit baseline vs combined conditions.",
+      "Lot/date and IR type are subgroup keys, not separate changed factors.",
+      "Normal plasma appears only in assy tension and should not define the whole baseline.",
+      "Function header row was incorrectly converted into measurement statistics.",
+      "Some cited evidence rows are not shown in context, limiting auditability."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to CD treatment/process comparison: laser marking CD vs primer clean CD, with plasma common.",
+      "Set subgroup keys for CD lot date, test date, IR/type, and normal plasma reference where applicable.",
+      "Remove dimension/spec from changed-factor domain; keep 1.2 kgf as outcome spec context.",
+      "Delete the spurious measurement outcome from the function header and keep function as defect counts.",
+      "Include cited rows 23, 32, 39, 48, and 51 in context or remove unsupported citations."
+    ],
+    "evidencePolicy": "Row citations are mostly sufficient but need missing cited rows exposed and header-derived metrics removed."
+  },
+  "usage": {
+    "input_tokens": 5749,
+    "output_tokens": 647,
+    "total_tokens": 6396
+  }
+}

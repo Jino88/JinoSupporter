@@ -1,0 +1,301 @@
+{
+  "sourceFileId": 229,
+  "sourceFile": "11. BRS-161016 TF Report test change condition dry SMG+Yoke_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\11. BRS-161016 TF Report test change condition dry SMG+Yoke_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "12.12",
+    "sheetRowCount": 19,
+    "sheetCellCount": 71,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 8,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "12.12!2",
+      "sheetName": "12.12",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST CHANGE CONDITION DRY SMG+YOKE BRS-161016 TF LINE | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "12.12!3",
+      "sheetName": "12.12",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | Date | 2025-01-08 00:00:00"
+    },
+    {
+      "rowId": "12.12!4",
+      "sheetName": "12.12",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | Marker | Thuy"
+    },
+    {
+      "rowId": "12.12!5",
+      "sheetName": "12.12",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "12.12!6",
+      "sheetName": "12.12",
+      "rowNumber": 6,
+      "rowText": "| Improve NG SMG+Yoke separate"
+    },
+    {
+      "rowId": "12.12!11",
+      "sheetName": "12.12",
+      "rowNumber": 11,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "12.12!12",
+      "sheetName": "12.12",
+      "rowNumber": 12,
+      "rowText": "| - Test change condition dry: temperature and dry time and checking"
+    },
+    {
+      "rowId": "12.12!13",
+      "sheetName": "12.12",
+      "rowNumber": 13,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "12.12!14",
+      "sheetName": "12.12",
+      "rowNumber": 14,
+      "rowText": "| | RESULT CHECKING"
+    },
+    {
+      "rowId": "12.12!15",
+      "sheetName": "12.12",
+      "rowNumber": 15,
+      "rowText": "| | Date | Dry temp | Dry time | Heating press machine | Input | OK | NG separate SMG | NG rate"
+    },
+    {
+      "rowId": "12.12!16",
+      "sheetName": "12.12",
+      "rowNumber": 16,
+      "rowText": "| | 2025-01-08 00:00:00 | 320 | 7min15s | Machine 1 | 12 | 11 | 1 | 0.08333333"
+    },
+    {
+      "rowId": "12.12!17",
+      "sheetName": "12.12",
+      "rowNumber": 17,
+      "rowText": "| | | | | Mahine 2 | 11 | 11 | 0 | 0"
+    },
+    {
+      "rowId": "12.12!18",
+      "sheetName": "12.12",
+      "rowNumber": 18,
+      "rowText": "| | | | 8min20s | Machine 1 | 15 | 15 | 0 | 0"
+    },
+    {
+      "rowId": "12.12!20",
+      "sheetName": "12.12",
+      "rowNumber": 20,
+      "rowText": "| | | 340 | 7min15s | Machine 1 | 24 | 22 | 2 | 0.08333333"
+    },
+    {
+      "rowId": "12.12!22",
+      "sheetName": "12.12",
+      "rowNumber": 22,
+      "rowText": "| | | 350 | 7min15s | Machine 1 | 94 | 94 | 0 | 0"
+    },
+    {
+      "rowId": "12.12!29",
+      "sheetName": "12.12",
+      "rowNumber": 29,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-229-rc-1",
+      "reviewTitle": "| REPORT TEST CHANGE CONDITION DRY SMG+YOKE BRS-161016 TF LINE | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | Improve NG SMG+Yoke separate / | II. Content. / | - Test change condition dry: temperature and dry time and checking / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Machine 1, Mahine 2",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Machine 1, Mahine 2",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "12.12!11",
+            "12.12!12",
+            "12.12!16",
+            "12.12!17",
+            "12.12!18",
+            "12.12!19",
+            "12.12!2",
+            "12.12!20",
+            "12.12!21",
+            "12.12!22",
+            "12.12!23",
+            "12.12!5"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "RESULT CHECKING",
+          "comparisonRows": [
+            "12.12!16",
+            "12.12!17",
+            "12.12!18",
+            "12.12!19",
+            "12.12!20",
+            "12.12!21",
+            "12.12!22",
+            "12.12!23"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 18876,
+              "condition": "Machine 1",
+              "input": 12.0,
+              "ok": 11.0,
+              "ng": 1.0,
+              "ratePercent": 8.333333,
+              "evidenceRows": [
+                "12.12!16"
+              ]
+            },
+            {
+              "metricId": 18877,
+              "condition": "Mahine 2",
+              "input": 11.0,
+              "ok": 11.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "12.12!17"
+              ]
+            },
+            {
+              "metricId": 18878,
+              "condition": "Machine 1",
+              "input": 15.0,
+              "ok": 15.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "12.12!18"
+              ]
+            },
+            {
+              "metricId": 18879,
+              "condition": "Mahine 2",
+              "input": 15.0,
+              "ok": 15.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "12.12!19"
+              ]
+            },
+            {
+              "metricId": 18880,
+              "condition": "Machine 1",
+              "input": 24.0,
+              "ok": 22.0,
+              "ng": 2.0,
+              "ratePercent": 8.333333,
+              "evidenceRows": [
+                "12.12!20"
+              ]
+            },
+            {
+              "metricId": 18881,
+              "condition": "Mahine 2",
+              "input": 24.0,
+              "ok": 22.0,
+              "ng": 2.0,
+              "ratePercent": 8.333333,
+              "evidenceRows": [
+                "12.12!21"
+              ]
+            },
+            {
+              "metricId": 18882,
+              "condition": "Machine 1",
+              "input": 94.0,
+              "ok": 94.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "12.12!22"
+              ]
+            },
+            {
+              "metricId": 18883,
+              "condition": "Mahine 2",
+              "input": 90.0,
+              "ok": 89.0,
+              "ng": 1.0,
+              "ratePercent": 1.111111,
+              "evidenceRows": [
+                "12.12!23"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "12.12!11",
+        "12.12!12",
+        "12.12!16",
+        "12.12!17",
+        "12.12!18",
+        "12.12!19",
+        "12.12!2",
+        "12.12!20",
+        "12.12!21",
+        "12.12!22",
+        "12.12!23",
+        "12.12!5"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "12.12!11",
+      "12.12!12",
+      "12.12!16",
+      "12.12!17",
+      "12.12!18",
+      "12.12!19",
+      "12.12!2",
+      "12.12!20",
+      "12.12!21",
+      "12.12!22",
+      "12.12!23",
+      "12.12!5"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

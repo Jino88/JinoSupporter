@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 829,
+  "sourceFile": "66.1 BRS-161014  Report Summary data test improve NG separate VP+CD 2024.09.17_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\829.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 829,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but incorrectly merges separate LED UV, VP thickness, glue, bond-line, and CD press jig tests into one changed factor.",
+    "issues": [
+      "Multiple independent tests are combined under one changed factor.",
+      "Function NG pairing crosses line subgroup and omits the matching E2 normal row.",
+      "VP thickness min/max is a separate changed factor, not part of LED UV baseline.",
+      "CD press jig OK vs worn is a separate comparison with equal zero NG, not a LED UV changed condition.",
+      "Glue/bond-line sections are incomplete or not represented with valid comparable outcomes."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split review into separate changed-factor contexts for LED UV peak, VP thickness, CD press jig, and any citeable glue or bond-line test.",
+      "For LED UV, pair C2-3A test row 25 with normal row 26 and E2-3B test row 27 with normal row 28.",
+      "Keep line and date as subgroup keys for tension and function outcomes.",
+      "Rejudge CD press jig as no difference using rows 81 and 82 only.",
+      "Exclude or flag glue and bond-line results unless comparable cited result rows are available."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until comparisons preserve test context and subgroup keys."
+  },
+  "usage": {
+    "input_tokens": 6705,
+    "output_tokens": 661,
+    "total_tokens": 7366
+  }
+}

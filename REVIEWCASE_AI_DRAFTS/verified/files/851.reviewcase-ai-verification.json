@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 851,
+  "sourceFile": "7. BRS-161016 DT Report test TIP 884 repair to U844 same dimension (3D)   date 19.09.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\851.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 851,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misgroups the validation; primary comparison should center on TIP 884 repair dimension versus TIP 844 normal with before/after repair and function results kept as subgroups.",
+    "issues": [
+      "Changed factor string is incoherent and includes unsupported TIP 864.",
+      "Baseline/test conditions mix tip type with repair stage incorrectly.",
+      "Vision comparison wrongly pairs TIP 884 before repair with TIP 844 after repair.",
+      "Function outcome is not judged despite report conclusion and likely extraction typo.",
+      "Measurement outcome is header-derived and not valid evidence."
+    ],
+    "requiredUserQuestions": [
+      "Confirm whether function row condition is TIP 884 repair dimension or TIP 864."
+    ],
+    "correctionPlan": [
+      "Set primary factor to TIP 884 repair dimension versus TIP 844 normal.",
+      "Keep repair stage as subgroup: before repair and after repair spot welding.",
+      "Use valid vision rows for same-stage comparisons and TIP 884 before/after result.",
+      "Add cited conclusion rows for usability and function interpretation.",
+      "Remove header-only measurement outcome."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until corrected grouping uses result and conclusion rows."
+  },
+  "usage": {
+    "input_tokens": 4305,
+    "output_tokens": 770,
+    "total_tokens": 5075
+  }
+}

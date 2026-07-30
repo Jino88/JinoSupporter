@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 929,
+  "sourceFile": "80.BRS-201506 Report check dimension of sample Ng hearing 26.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\929.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:26Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 929,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not safe as final evidence because the changed factor and measurement groupings are materially misidentified.",
+    "issues": [
+      "Changed factor is the filename, not the compared conditions.",
+      "Baseline/test conditions are left unclear despite OK vs NG sample context.",
+      "Parsed measurement stats mix row labels, sample numbers, and values.",
+      "Outcome domains should separate vision, coil A-B dimension, and coil offset frame.",
+      "Conclusion and decision rows are not used as evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set factor to sample condition: OK vs NG noise and NG touch.",
+      "Use Sample OK as comparator and NG noise/NG touch as abnormal groups.",
+      "Regroup outcomes by the three report sections and retain date/line/type context.",
+      "Re-extract numeric tables from actual data rows and remove label-derived stats.",
+      "Cite section headers, data rows, conclusion row, and decision row."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient and misgrouped for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4912,
+    "output_tokens": 752,
+    "total_tokens": 5664
+  }
+}

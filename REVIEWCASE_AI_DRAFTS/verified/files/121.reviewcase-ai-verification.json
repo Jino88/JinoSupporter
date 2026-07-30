@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 121,
+  "sourceFile": "05. BRS-161016  Report test change Spec UV Led 1 to improve NG function Module - date 30.05.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\121.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 121,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable test report, but the draft needs correction before use as final evidence.",
+    "issues": [
+      "Primary changed factor omits actual UV LED 1 spec increase.",
+      "Key evidence row for spec change is missing.",
+      "Vision judgement conflicts with source note saying same as normal.",
+      "Tension result is left unjudged despite pass/same-normal note.",
+      "Tension sample count appears misread."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to UV LED 1 total spec 750-1100 to 1000-1500 mJ/cm2, with Normal vs Test as conditions.",
+      "Add Test!11 and relevant baseline/test UV rows, including Test!20, to evidence.",
+      "Revise vision outcome to same/no material difference or flag numeric-rate ambiguity.",
+      "Revise tension outcome to pass/same as normal and correct sample interpretation.",
+      "Keep vision, function, UV dry, and tension under one validation-report context."
+    ],
+    "evidencePolicy": "Row citations exist but are incomplete for changed spec and conclusions."
+  },
+  "usage": {
+    "input_tokens": 4076,
+    "output_tokens": 733,
+    "total_tokens": 4809
+  }
+}

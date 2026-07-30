@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 566,
+  "sourceFile": "35. BRS-161014 Report TEST   CD RALON of new suppiler_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\566.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:51Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 566,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Changed factor is likely new CD Ralon versus normal line, but outcome grouping and tension-test comparison need correction.",
+    "issues": [
+      "Changed condition should be stated as new CD Ralon, not generic CD Ralon.",
+      "Tension-test pairing appears incomplete; VP+Coil is not a baseline/test condition.",
+      "Dome/CD damage outcome label conflicts with the numeric NG-rate rows.",
+      "Decision notes CD damage needing IQC/PQC review, so final judgement cannot be simply acceptable.",
+      "Some key evidence rows are cited but not visible in provided context text."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to normal line/current CD versus new CD Ralon supplier/material.",
+      "Verify row 24 and row 38 labels before keeping the two NG-rate comparisons.",
+      "Rebuild tension outcome using all relevant rows, including any normal rows such as row 47.",
+      "Separate visual/CD damage conclusion from function NG-rate conclusion if supported by rows.",
+      "Add decision rows 58-59 as evidence for final judgement limitations."
+    ],
+    "evidencePolicy": "Row citations exist, but key cited rows need visible text and correct pairing before final use."
+  },
+  "usage": {
+    "input_tokens": 3572,
+    "output_tokens": 784,
+    "total_tokens": 4356
+  }
+}

@@ -1,0 +1,236 @@
+{
+  "sourceFileId": 850,
+  "sourceFile": "7. BRS-161014 Report Test Magnet Tension Speed Changing_230822_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\7. BRS-161014 Report Test Magnet Tension Speed Changing_230822_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report",
+    "sheetRowCount": 20,
+    "sheetCellCount": 50,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 4
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report!2",
+      "sheetName": "Report",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report!3",
+      "sheetName": "Report",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | Date"
+    },
+    {
+      "rowId": "Report!4",
+      "sheetName": "Report",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | Marker"
+    },
+    {
+      "rowId": "Report!5",
+      "sheetName": "Report",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report!6",
+      "sheetName": "Report",
+      "rowNumber": 6,
+      "rowText": "| 1. Reliability Test Room test tension test not same Approval Sheets . QM : 3mm/min . Approval Sheets : 20mm/min"
+    },
+    {
+      "rowId": "Report!13",
+      "sheetName": "Report",
+      "rowNumber": 13,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report!15",
+      "sheetName": "Report",
+      "rowNumber": 15,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "Report!17",
+      "sheetName": "Report",
+      "rowNumber": 17,
+      "rowText": "| | Sample | 3mm/min | 20mm/min | Differ"
+    },
+    {
+      "rowId": "Report!18",
+      "sheetName": "Report",
+      "rowNumber": 18,
+      "rowText": "| | #1 | 103.2 | 111.3"
+    },
+    {
+      "rowId": "Report!19",
+      "sheetName": "Report",
+      "rowNumber": 19,
+      "rowText": "| | #2 | 105.3 | 104.9"
+    },
+    {
+      "rowId": "Report!20",
+      "sheetName": "Report",
+      "rowNumber": 20,
+      "rowText": "| | #3 | 103.8 | 120.7"
+    },
+    {
+      "rowId": "Report!21",
+      "sheetName": "Report",
+      "rowNumber": 21,
+      "rowText": "| | #4 | 104.2 | 109"
+    },
+    {
+      "rowId": "Report!36",
+      "sheetName": "Report",
+      "rowNumber": 36,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-850-rc-1",
+      "reviewTitle": "| | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | 1. Reliability Test Room test tension test not same Approval Sheets . QM : 3mm/min . Approval Sheets : 20mm/min / | II. Content. / | 3.Result / | | Sample | 3mm/min | 20mm/min | Differ",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material"
+          ],
+          "changedFactor": "7. BRS-161014 Report Test Magnet Tension Speed Changing_230822",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Report!13",
+            "Report!17",
+            "Report!2",
+            "Report!28",
+            "Report!5",
+            "Report!6"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Report!28"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 63676,
+              "condition": "3mm/min",
+              "spec": "",
+              "min": 103.2,
+              "max": 124.2,
+              "avg": 108.5375,
+              "sampleCount": 9,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report!28"
+              ]
+            },
+            {
+              "statId": 63677,
+              "condition": "20mm/min",
+              "spec": "",
+              "min": 103.0,
+              "max": 120.7,
+              "avg": 109.625,
+              "sampleCount": 9,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report!28"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "II. Content.",
+          "comparisonRows": [
+            "Report!17"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 63678,
+              "condition": "II. Content. / 3mm/min",
+              "spec": "",
+              "min": 103.2,
+              "max": 124.2,
+              "avg": 108.53750000000001,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report!17"
+              ]
+            },
+            {
+              "statId": 63679,
+              "condition": "II. Content. / 20mm/min",
+              "spec": "",
+              "min": 103.0,
+              "max": 120.7,
+              "avg": 109.62499999999999,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report!17"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report!13",
+        "Report!17",
+        "Report!2",
+        "Report!28",
+        "Report!5",
+        "Report!6"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report!13",
+      "Report!17",
+      "Report!2",
+      "Report!28",
+      "Report!5",
+      "Report!6"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

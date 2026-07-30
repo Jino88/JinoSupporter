@@ -1,0 +1,566 @@
+{
+  "sourceFileId": 929,
+  "sourceFile": "80.BRS-201506 Report check dimension of sample Ng hearing 26.8.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\80.BRS-201506 Report check dimension of sample Ng hearing 26.8.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "1",
+    "sheetRowCount": 52,
+    "sheetCellCount": 424,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 23
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "1!2",
+      "sheetName": "1",
+      "rowNumber": 2,
+      "rowText": "| TITLE | CHECK SAMPLE NG HEARING AND COMPARE SAMPLE OK | | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "1!3",
+      "sheetName": "1",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Date | 2024-08-26 00:00:00"
+    },
+    {
+      "rowId": "1!4",
+      "sheetName": "1",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Maker | Huong"
+    },
+    {
+      "rowId": "1!5",
+      "sheetName": "1",
+      "rowNumber": 5,
+      "rowText": "| 1. Problem"
+    },
+    {
+      "rowId": "1!6",
+      "sheetName": "1",
+      "rowNumber": 6,
+      "rowText": "| - NG hearing"
+    },
+    {
+      "rowId": "1!7",
+      "sheetName": "1",
+      "rowNumber": 7,
+      "rowText": "| 2. Result NG and check"
+    },
+    {
+      "rowId": "1!8",
+      "sheetName": "1",
+      "rowNumber": 8,
+      "rowText": "| 2.1 Check vision sample NG noise , Ng touch , Sample OK"
+    },
+    {
+      "rowId": "1!9",
+      "sheetName": "1",
+      "rowNumber": 9,
+      "rowText": "| | RESULT CHECK VISION"
+    },
+    {
+      "rowId": "1!10",
+      "sheetName": "1",
+      "rowNumber": 10,
+      "rowText": "| | Date | Line | Type check | 1 | | | 2 | | | 3 | | | 4"
+    },
+    {
+      "rowId": "1!11",
+      "sheetName": "1",
+      "rowNumber": 11,
+      "rowText": "| | 2024-08-26 00:00:00 | E2-4A | NG noise | Have particle | | | Have particle | | | Have particle | | | Have particle"
+    },
+    {
+      "rowId": "1!18",
+      "sheetName": "1",
+      "rowNumber": 18,
+      "rowText": "| | | | NG touch | | | | | | | Have particle"
+    },
+    {
+      "rowId": "1!25",
+      "sheetName": "1",
+      "rowNumber": 25,
+      "rowText": "| | | | OK"
+    },
+    {
+      "rowId": "1!33",
+      "sheetName": "1",
+      "rowNumber": 33,
+      "rowText": "| | RESULT CHECK DIMESION"
+    },
+    {
+      "rowId": "1!34",
+      "sheetName": "1",
+      "rowNumber": 34,
+      "rowText": "| | Date | Line | Type check | Spec | | Sample NG noise | | | | Sample NG touch | | | | Sample OK"
+    },
+    {
+      "rowId": "1!56",
+      "sheetName": "1",
+      "rowNumber": 56,
+      "rowText": "| => Check dimesion coil ( A-B ) of sample NG noise , Ng touch , sample OK : Over spec"
+    },
+    {
+      "rowId": "1!58",
+      "sheetName": "1",
+      "rowNumber": 58,
+      "rowText": "| | RESULT CHECK DIMENSION COIL OFFSET FRAME"
+    },
+    {
+      "rowId": "1!59",
+      "sheetName": "1",
+      "rowNumber": 59,
+      "rowText": "| | Date | Line | Type check | Sample NG noise | | | | Sample NG touch | | | | Sample OK"
+    },
+    {
+      "rowId": "1!83",
+      "sheetName": "1",
+      "rowNumber": 83,
+      "rowText": "| 3. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-929-rc-1",
+      "reviewTitle": "CHECK SAMPLE NG HEARING AND COMPARE SAMPLE OK | | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "dimension/spec"
+          ],
+          "changedFactor": "80.BRS-201506 Report check dimension of sample Ng hearing 26.8.2024",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "1!11",
+            "1!18",
+            "1!2",
+            "1!34",
+            "1!42",
+            "1!45",
+            "1!47",
+            "1!59"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "1!42",
+            "1!45",
+            "1!47"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65646,
+              "condition": "B 4",
+              "spec": "",
+              "min": 12.5763,
+              "max": 12.6604,
+              "avg": 12.60470833,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!47"
+              ]
+            },
+            {
+              "statId": 65647,
+              "condition": "B 8",
+              "spec": "",
+              "min": 12.5585,
+              "max": 12.6834,
+              "avg": 12.62775,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!47"
+              ]
+            },
+            {
+              "statId": 65648,
+              "condition": "B 12",
+              "spec": "",
+              "min": 12.5427,
+              "max": 12.6466,
+              "avg": 12.59398333,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!47"
+              ]
+            },
+            {
+              "statId": 65661,
+              "condition": "B / A",
+              "spec": "",
+              "min": 1.0,
+              "max": 12.0,
+              "avg": 6.0,
+              "sampleCount": 18,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!42"
+              ]
+            },
+            {
+              "statId": 65662,
+              "condition": "Min",
+              "spec": "",
+              "min": -0.0098,
+              "max": 1.0,
+              "avg": 0.20682105263157896,
+              "sampleCount": 19,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!42"
+              ]
+            },
+            {
+              "statId": 65663,
+              "condition": "A / B",
+              "spec": "",
+              "min": 1.0,
+              "max": 12.0,
+              "avg": 6.0,
+              "sampleCount": 18,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!45"
+              ]
+            },
+            {
+              "statId": 65664,
+              "condition": "Average / Min",
+              "spec": "",
+              "min": -0.0098,
+              "max": 1.0,
+              "avg": 0.20682105263157896,
+              "sampleCount": 19,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!45"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Line | Type check | 1 | 2 | 3 | 4",
+          "comparisonRows": [
+            "1!11"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65649,
+              "condition": "Type check / NG noise",
+              "spec": "",
+              "min": 1.0,
+              "max": 12.0,
+              "avg": 6.0,
+              "sampleCount": 18,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!11"
+              ]
+            },
+            {
+              "statId": 65650,
+              "condition": "RESULT CHECK VISION / Have particle",
+              "spec": "",
+              "min": 1.0,
+              "max": 3.0,
+              "avg": 2.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!11"
+              ]
+            },
+            {
+              "statId": 65651,
+              "condition": "RESULT CHECK VISION / Have particle",
+              "spec": "",
+              "min": 2.0,
+              "max": 12.606,
+              "avg": 9.315928571428572,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!11"
+              ]
+            },
+            {
+              "statId": 65652,
+              "condition": "RESULT CHECK VISION / Have particle",
+              "spec": "",
+              "min": 1.0,
+              "max": 12.6834,
+              "avg": 9.211042857142857,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!11"
+              ]
+            },
+            {
+              "statId": 65653,
+              "condition": "RESULT CHECK VISION / Have particle",
+              "spec": "",
+              "min": 4.0,
+              "max": 12.6359,
+              "avg": 9.614457142857143,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!11"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "2024-08-26 00:00:00 | E2-4A | NG noise | Have particle | Have particle | Have particle | Have particle",
+          "comparisonRows": [
+            "1!18"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65654,
+              "condition": "NG noise / NG touch",
+              "spec": "",
+              "min": 1.0,
+              "max": 12.0,
+              "avg": 6.0,
+              "sampleCount": 18,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!18"
+              ]
+            },
+            {
+              "statId": 65655,
+              "condition": "RESULT CHECK VISION / Have particle",
+              "spec": "",
+              "min": 1.0,
+              "max": 12.6834,
+              "avg": 9.211042857142857,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!18"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-4",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT CHECK DIMESION",
+          "comparisonRows": [
+            "1!34"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65656,
+              "condition": "RESULT CHECK DIMESION / Type check",
+              "spec": "",
+              "min": 1.0,
+              "max": 12.0,
+              "avg": 6.0,
+              "sampleCount": 18,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!34"
+              ]
+            },
+            {
+              "statId": 65657,
+              "condition": "RESULT CHECK DIMESION / Spec",
+              "spec": "",
+              "min": 1.0,
+              "max": 3.0,
+              "avg": 2.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!34"
+              ]
+            },
+            {
+              "statId": 65658,
+              "condition": "RESULT CHECK DIMESION / Sample NG noise",
+              "spec": "",
+              "min": 1.0,
+              "max": 12.5846,
+              "avg": 9.16587142857143,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!34"
+              ]
+            },
+            {
+              "statId": 65659,
+              "condition": "RESULT CHECK DIMESION / Sample NG touch",
+              "spec": "",
+              "min": 1.0,
+              "max": 12.6834,
+              "avg": 9.211042857142857,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!34"
+              ]
+            },
+            {
+              "statId": 65660,
+              "condition": "RESULT CHECK DIMESION / Sample OK",
+              "spec": "",
+              "min": 1.0,
+              "max": 12.6466,
+              "avg": 9.196371428571426,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!34"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-5",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT CHECK DIMENSION COIL OFFSET FRAME",
+          "comparisonRows": [
+            "1!59"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65665,
+              "condition": "RESULT CHECK DIMENSION COIL OFFSET FRAME / Type check",
+              "spec": "",
+              "min": 1.0,
+              "max": 12.0,
+              "avg": 6.0,
+              "sampleCount": 18,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!59"
+              ]
+            },
+            {
+              "statId": 65666,
+              "condition": "RESULT CHECK DIMENSION COIL OFFSET FRAME / Sample NG noise",
+              "spec": "",
+              "min": -0.0098,
+              "max": 1.0,
+              "avg": 0.20682105263157896,
+              "sampleCount": 19,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!59"
+              ]
+            },
+            {
+              "statId": 65667,
+              "condition": "RESULT CHECK DIMENSION COIL OFFSET FRAME / Sample NG touch",
+              "spec": "",
+              "min": 0.0719,
+              "max": 1.0,
+              "avg": 0.22293684210526313,
+              "sampleCount": 19,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!59"
+              ]
+            },
+            {
+              "statId": 65668,
+              "condition": "RESULT CHECK DIMENSION COIL OFFSET FRAME / Sample OK",
+              "spec": "",
+              "min": -0.0366,
+              "max": 1.0,
+              "avg": 0.20646315789473682,
+              "sampleCount": 19,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!59"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "1!11",
+        "1!18",
+        "1!2",
+        "1!34",
+        "1!42",
+        "1!45",
+        "1!47",
+        "1!59"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "1!11",
+      "1!18",
+      "1!2",
+      "1!34",
+      "1!42",
+      "1!45",
+      "1!47",
+      "1!59"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

@@ -1,88 +1,61 @@
-@page "/bmes/f-cost"
+@* Route and render mode live on BmesFCost.razor, not here: BmesReportHtmlExportService
+   renders this component through the standalone HtmlRenderer, which supports no render
+   modes at all, so a @@rendermode directive on the component itself makes the export
+   fail outright. Keeping it a plain component also matches the other three report tabs. *@
+@using System.Diagnostics
+@using System.Globalization
+@using System.Text.Json
 @using BmesNgRateStandalone.Services
 @inject FCostService          FCost
 @inject FCostReportService    FCostReportSvc
+@inject BmesFcostActualService FCostActual
+@inject NgRateService         NgRate
+@inject NgRateReportService   NgRateReportSvc
 @inject NgRateSettingsService NgRateSettings
+@inject AppPathsService       AppPaths
 @inject WebRepository         Repo
+@inject IJSRuntime            JS
+@inject AppActivityLogger     Activity
 
-<PageTitle>BMES — F-Cost</PageTitle>
+@if (ShowPageTitle)
+{
+    <PageTitle>@(IsTrendReportRoute ? "Report - Major Model Defect Rate Trend" : "BMES - F-Cost")</PageTitle>
+}
 
-<div class="d-flex align-items-center gap-2 mb-3">
-    <span style="font-size:20px;">💰</span>
-    <h5 class="mb-0 fw-semibold">F-Cost</h5>
-</div>
+@if (ShowPageHeader)
+{
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <span class="fw-semibold" style="font-size:20px;">$</span>
+        <h5 class="mb-0 fw-semibold">@(IsTrendReportRoute ? "Report - Major Model Defect Rate Trend" : "F-Cost")</h5>
+    </div>
+}
 
+@if (ShowSetup)
+{
 <div class="row g-3">
 
-    <!-- ══ Get Data ══════════════════════════════════════════════════════════ -->
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header small fw-semibold">Get Data</div>
-            <div class="card-body d-flex flex-column gap-3">
-                <div>
-                    <div class="form-label small fw-semibold mb-1">Search Date (SDATE)</div>
-                    <div class="d-flex gap-2 align-items-center flex-wrap">
-                        <input type="date" class="form-control form-control-sm"
-                               style="width:auto; min-width:160px;"
-                               @bind="_queryDate" @bind:format="yyyy-MM-dd" />
-                        <button class="btn btn-outline-secondary btn-sm" @onclick="SetToday">Today</button>
-                    </div>
-                </div>
-
-                <div class="d-flex align-items-center gap-2">
-                    <span class="small text-muted">BMES:</span>
-                    @if (NgRateSettings.IsCredentialsConfigured)
-                    {
-                        <span class="badge bg-success">Credentials OK</span>
-                        <span class="small text-muted font-monospace">@NgRateSettings.LoginId</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-warning text-dark">Not configured</span>
-                        <a href="/admin/settings" class="small text-primary">→ Admin Settings</a>
-                    }
-                </div>
-
-                <div class="small text-muted">
-                    Save folder:
-                    <span class="font-monospace text-break">@NgRateSettings.FCostDbSaveDirectory</span>
-                </div>
-
-                <button class="btn btn-primary"
-                        @onclick="GetDataAsync"
-                        disabled="@(_isBusy || !NgRateSettings.IsCredentialsConfigured)">
-                    @if (_isBusy)
-                    { <span class="spinner-border spinner-border-sm me-1"></span><span>Fetching…</span> }
-                    else { <span>Get Data</span> }
-                </button>
-
-                @if (!string.IsNullOrEmpty(_savedDbPath))
-                {
-                    <div class="alert alert-success py-2 small mb-0">
-                        <div class="fw-semibold mb-1">
-                            <span class="badge bg-success me-1">Done</span> Saved DB
-                        </div>
-                        <div class="font-monospace text-break" style="font-size:11px;">@_savedDbPath</div>
-                    </div>
-                }
-                @if (!string.IsNullOrEmpty(_errorMessage))
-                {
-                    <div class="alert alert-danger py-2 small mb-0">
-                        <span class="badge bg-danger me-1">Error</span> @_errorMessage
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-
-    <!-- ══ Generate Report ═══════════════════════════════════════════════════ -->
-    <div class="col-md-6">
+    <div class="col-12">
         <div class="card shadow-sm h-100">
             <div class="card-header small fw-semibold">Report</div>
             <div class="card-body d-flex flex-column gap-2">
                 <div class="small text-muted">
-                    Builds the report from <code>fcost_raw.db</code>. Dates up to 3 days before
-                    the selected end date use cached RAW data; the last 3 dates are refreshed.
+                    Builds the report from <code>fcost_raw.db</code>. Missing dates in the selected
+                    range are fetched automatically before report generation; the last 3 dates are
+                    refreshed every run.
+                </div>
+
+                <div class="d-flex align-items-center gap-2 flex-wrap small">
+                    <span class="text-muted">BMES:</span>
+                    @if (NgRateSettings.IsCredentialsConfigured)
+                    {
+                        <span class="badge bg-success">Credentials OK</span>
+                        <span class="text-muted font-monospace">@NgRateSettings.LoginId</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">Not configured</span>
+                        <a href="/setting" class="text-primary">Setting</a>
+                    }
                 </div>
 
                 <div class="row g-2 align-items-end">
@@ -115,12 +88,31 @@
                     </label>
                 </div>
 
+                <div class="small">
+                    <div>
+                        <span class="text-muted">RAW DB:</span>
+                        <span class="font-monospace text-break">@FCost.GetRawDbPath()</span>
+                    </div>
+                    @if (_rawStatus is not null && _rawStatus.Exists)
+                    {
+                        <div class="text-muted">
+                            Pulls @_rawStatus.SuccessCount:N0 OK / @_rawStatus.FailedCount:N0 failed,
+                            rows @_rawStatus.TotalRows:N0,
+                            range @_rawStatus.FirstDate - @_rawStatus.LastDate
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted">No RAW DB yet. Generate Report will create it.</div>
+                    }
+                </div>
+
                 <button class="btn btn-success mt-1"
                         @onclick="GetReportAsync"
                         disabled="@(_isReportBusy || !NgRateSettings.IsCredentialsConfigured)">
                     @if (_isReportBusy)
-                    { <span class="spinner-border spinner-border-sm me-1"></span><span>Loading…</span> }
-                    else { <span>▶ Generate Report</span> }
+                    { <span class="spinner-border spinner-border-sm me-1"></span><span>Loading...</span> }
+                    else { <span>Generate Report</span> }
                 </button>
                 @if (!NgRateSettings.IsCredentialsConfigured)
                 {
@@ -134,96 +126,441 @@
         </div>
     </div>
 </div>
+}
 
-<!-- ══ Model / Line-Group roll-up (sums of Input + F-Cost across matching Materials) ══ -->
-<div class="row g-3 mt-1">
-    <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-header small fw-semibold">F-COST RAW Backfill</div>
-            <div class="card-body d-flex flex-column gap-3">
-                <div class="small text-muted">
-                    Pulls one BMES F-COST day at a time into <code>fcost_raw.db</code>.
-                    Successful dates are skipped on the next run unless Force is checked.
-                </div>
+@if (_report is not null)
+{
+    var weeklyColumnIndexes = ReportColumnIndexes();
+    var weeklyTotalInputByColumn = ComputeTotalInputByColumn(weeklyColumnIndexes);
+    var weeklyTotalCostByColumn = ComputeTotalCostByColumn(weeklyColumnIndexes);
+    var weeklyModelRows = BuildWeeklyModelRows();
+    var weeklyTotalRates = ComputeWeeklyTotalRates(weeklyColumnIndexes, weeklyModelRows);
+    var trendRows = BuildMajorTrendRows(weeklyColumnIndexes);
+    var trendRowsWithChildren = trendRows
+        .Where(r => r.ParentRowId is not null)
+        .Select(r => r.ParentRowId!)
+        .ToHashSet(StringComparer.Ordinal);
+    var visibleTrendRows = trendRows
+        .Where(r => r.ParentRowId is null || IsHierarchyRowExpanded(_expandedTrendRows, r.ParentRowId))
+        .ToList();
+    int trendFirstColumnIndex = weeklyColumnIndexes.Count > 0 ? weeklyColumnIndexes[0] : -1;
+    double weeklyBasisTotalRate = ComputeWeeklyBasisTotalRate();
+    int weeklySummaryRowSpan = weeklyModelRows.Count + 1;
 
-                <div class="row g-2 align-items-end">
-                    <div class="col-sm-auto">
-                        <label class="form-label small text-muted mb-1">Start</label>
-                        <input type="date" class="form-control form-control-sm"
-                               @bind="_rawStartDate" @bind:format="yyyy-MM-dd" />
-                    </div>
-                    <div class="col-sm-auto">
-                        <label class="form-label small text-muted mb-1">End</label>
-                        <input type="date" class="form-control form-control-sm"
-                               @bind="_rawEndDate" @bind:format="yyyy-MM-dd" />
-                    </div>
-                    <div class="col-sm-auto">
-                        <label class="form-check small mb-2">
-                            <input class="form-check-input" type="checkbox" @bind="_rawForce" />
-                            <span class="form-check-label">Force re-fetch</span>
-                        </label>
-                    </div>
-                    <div class="col-sm-auto">
-                        <button class="btn btn-outline-primary btn-sm"
-                                @onclick="BackfillRawAsync"
-                                disabled="@(_isRawBackfillBusy || !NgRateSettings.IsCredentialsConfigured)">
-                            @if (_isRawBackfillBusy)
+    <div class="d-flex justify-content-end mt-3">
+        <button class="btn btn-outline-success btn-sm"
+                @onclick="ExportCsvAsync"
+                disabled="@_isExportingCsv">
+            @if (_isExportingCsv)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Exporting...</span>
+            }
+            else
+            {
+                <span>Export CSV</span>
+            }
+        </button>
+    </div>
+
+    @if ((IsTrendReportRoute || ShowMajorTrendCard) && trendRows.Count > 0)
+    {
+        <div class="card shadow-sm mt-3 fcost-trend-card">
+            <div class="card-body p-0">
+                <div class="fcost-trend-title"><span></span> @(ShowAllPeriodColumns ? "FCOST Trend (전체)" : "FCOST Trend")</div>
+                <div style="overflow-x:auto;">
+                    <table class="fcost-trend-table">
+                        <thead>
+                            <tr>
+                                <th class="trend-model-th">모델</th>
+                                <th class="trend-metric-th">지표</th>
+                                @foreach (int ci in weeklyColumnIndexes)
+                                {
+                                    <th class="@(ci == trendFirstColumnIndex ? "trend-period-start" : ColBoundaryClass(ci))">@WeeklySummaryColumnHeader(ci)</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in visibleTrendRows)
                             {
-                                <span class="spinner-border spinner-border-sm me-1"></span><span>Running</span>
+                                bool canExpandTrend = trendRowsWithChildren.Contains(row.RowId);
+                                bool expandedTrend = IsHierarchyRowExpanded(_expandedTrendRows, row.RowId);
+                                string trendRowId = row.RowId;
+                                string trendDepthClass = row.Depth > 0 ? "trend-child-row" : "";
+                                <tr class="@($"trend-defect-row {trendDepthClass}")">
+                                    <td class="@($"trend-model-td {(row.Depth > 0 ? "trend-child-model" : "")}")">
+                                        @if (canExpandTrend)
+                                        {
+                                            <button type="button"
+                                                    class="trend-expand-btn"
+                                                    title="Sub Group"
+                                                    @onclick="@(() => ToggleTrendRow(trendRowId))">@(expandedTrend ? "-" : "+")</button>
+                                        }
+                                        else
+                                        {
+                                            <span class="trend-expand-spacer"></span>
+                                        }
+                                        @if (row.Depth > 0)
+                                        {
+                                            <span class="trend-bgroup-badge">Sub Group</span>
+                                        }
+                                        <strong>@TrendModelDisplayName(row.ModelName)</strong>
+                                    </td>
+                                     <td class="trend-metric-td">불량률</td>
+                                    @foreach (int ci in weeklyColumnIndexes)
+                                    {
+                                        double v = row.NgPpmByColumn.TryGetValue(ci, out double ppm) ? ppm : 0;
+                                        <td class="@(ci == trendFirstColumnIndex ? "trend-period-start" : ColBoundaryClass(ci))">@FormatTrendPpm(v)</td>
+                                    }
+                                </tr>
+                                <tr class="@($"trend-fcost-row {trendDepthClass}")">
+                                    <td class="@($"trend-model-td trend-model-muted {(row.Depth > 0 ? "trend-child-model" : "")}")">
+                                        <span class="trend-expand-spacer"></span>@TrendModelDisplayName(row.ModelName)
+                                    </td>
+                                    <td class="trend-metric-td">F-COST</td>
+                                    @foreach (int ci in weeklyColumnIndexes)
+                                    {
+                                        double v = ValueAt(row.CostByCol, ci);
+                                        <td class="@(ci == trendFirstColumnIndex ? "trend-period-start" : ColBoundaryClass(ci))">@FormatTrendCurrency(v)</td>
+                                    }
+                                </tr>
+                                <tr class="@($"trend-share-row {trendDepthClass}")">
+                                    <td class="@($"trend-model-td trend-model-muted {(row.Depth > 0 ? "trend-child-model" : "")}")">
+                                        <span class="trend-expand-spacer"></span>@TrendModelDisplayName(row.ModelName)
+                                    </td>
+                                     <td class="trend-metric-td">비중</td>
+                                    @foreach (int ci in weeklyColumnIndexes)
+                                    {
+                                        double modelCost = ValueAt(row.CostByCol, ci);
+                                        double totalCost = weeklyTotalCostByColumn.TryGetValue(ci, out double tc) ? tc : 0;
+                                        double share = totalCost > 0 ? modelCost / totalCost * 100.0 : 0;
+                                        <td class="@(ci == trendFirstColumnIndex ? "trend-period-start" : ColBoundaryClass(ci))">@FormatTrendPercent(share)</td>
+                                    }
+                                </tr>
+                            }
+                            @if (_report.Total is not null)
+                            {
+                                <tr class="trend-total-row trend-total-first-row">
+                                    <td class="trend-model-td" rowspan="3"><strong>Total (BMES)</strong></td>
+                                    <td class="trend-metric-td">Total Input</td>
+                                    @foreach (int ci in weeklyColumnIndexes)
+                                    {
+                                        <td class="@(ci == trendFirstColumnIndex ? "trend-period-start" : ColBoundaryClass(ci))">@FormatTrendNumber(GetBmesTotalInput(ci))</td>
+                                    }
+                                </tr>
+                                <tr class="trend-total-row">
+                                    <td class="trend-metric-td">Total FCOST</td>
+                                    @foreach (int ci in weeklyColumnIndexes)
+                                    {
+                                        <td class="@(ci == trendFirstColumnIndex ? "trend-period-start" : ColBoundaryClass(ci))">@FormatTrendCurrency(GetBmesTotalCost(ci))</td>
+                                    }
+                                </tr>
+                                <tr class="trend-total-row">
+                                    <td class="trend-metric-td">TOTAL RATE</td>
+                                    @foreach (int ci in weeklyColumnIndexes)
+                                    {
+                                        <td class="@(ci == trendFirstColumnIndex ? "trend-period-start" : ColBoundaryClass(ci))">@FormatTrendRate(GetBmesTotalRate(ci))</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (IsTrendReportRoute && !ShowAllPeriodColumns)
+    {
+        @if (!string.IsNullOrWhiteSpace(_rawBreakdownError))
+        {
+            <div class="alert alert-warning mt-3 mb-0 small">@_rawBreakdownError</div>
+        }
+        @if (_rawMaterialBreakdown is not null)
+        {
+            var rawBreakdownRows = BuildRawBreakdownViewRows();
+            int rawBreakdownColSpan = 4 + _rawMaterialBreakdown.Periods.Count;
+
+            <div class="card shadow-sm mt-3 fcost-breakdown-card">
+                <div class="card-header small fw-semibold d-flex align-items-center gap-2 flex-wrap">
+                    <span>FCOST Raw Material Breakdown</span>
+                    <span class="text-muted" style="font-size:11px;">
+                        Network DB @_rawMaterialBreakdown.SourceTable,
+                        @_rawMaterialBreakdown.Rows.Count.ToString("N0", CultureInfo.InvariantCulture) raw material row(s),
+                        Display @_fcostCurrencyMode
+                    </span>
+                    <div class="fcost-breakdown-actions">
+                        <button type="button"
+                                class="btn btn-outline-secondary btn-sm"
+                                @onclick="ExpandAllRawBreakdownRows"
+                                disabled="@(_rawMaterialBreakdown.Rows.Count == 0)">
+                            Expand All
+                        </button>
+                        <button type="button"
+                                class="btn btn-outline-secondary btn-sm"
+                                @onclick="CollapseAllRawBreakdownRows"
+                                disabled="@(_rawMaterialBreakdown.Rows.Count == 0)">
+                            Collapse
+                        </button>
+                        <button type="button"
+                                class="btn btn-outline-success btn-sm"
+                                @onclick="ExportRawBreakdownExcelAsync"
+                                disabled="@(_isExportingRawBreakdownExcel || _rawMaterialBreakdown.Rows.Count == 0)">
+                            @if (_isExportingRawBreakdownExcel)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                <span>Exporting...</span>
                             }
                             else
                             {
-                                <span>Backfill RAW</span>
+                                <span>Export Excel</span>
                             }
                         </button>
                     </div>
-                </div>
-
-                <div class="small">
-                    <div><span class="text-muted">RAW DB:</span> <span class="font-monospace text-break">@FCost.GetRawDbPath()</span></div>
-                    @if (_rawStatus is not null && _rawStatus.Exists)
-                    {
-                        <div class="text-muted">
-                            Pulls @_rawStatus.SuccessCount:N0 OK / @_rawStatus.FailedCount:N0 failed,
-                            rows @_rawStatus.TotalRows:N0,
-                            range @_rawStatus.FirstDate - @_rawStatus.LastDate
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-muted">No RAW DB yet.</div>
-                    }
-                </div>
-
-                @if (_rawBackfillResult is not null)
-                {
-                    <div class="alert alert-success py-2 small mb-0">
-                        Done: fetched @_rawBackfillResult.FetchedDays:N0,
-                        skipped @_rawBackfillResult.SkippedDays:N0,
-                        failed @_rawBackfillResult.FailedDays:N0,
-                        rows @_rawBackfillResult.TotalRows:N0
-                    </div>
-                }
-                @if (!string.IsNullOrEmpty(_rawBackfillError))
-                {
-                    <div class="alert alert-danger py-2 small mb-0">@_rawBackfillError</div>
-                }
-                @if (_rawBackfillProgress.Count > 0)
-                {
-                    <div class="small font-monospace bg-light border rounded p-2"
-                         style="max-height:160px; overflow:auto; white-space:pre-wrap;">
-                        @foreach (var line in _rawBackfillProgress.TakeLast(12))
+                    <div class="fcost-currency-tools fcost-breakdown-currency-tools">
+                        <label>
+                            <span>Display</span>
+                            <select class="form-select form-select-sm fcost-currency-select"
+                                    value="@_fcostCurrencyMode"
+                                    @onchange="SetFCostCurrencyMode">
+                                <option value="@CurrencyVnd">VND</option>
+                                <option value="@CurrencyUsd">USD</option>
+                                <option value="@CurrencyKrw">KRW</option>
+                            </select>
+                        </label>
+                        <span class="fcost-rate-source">@FormatExchangeRateSummary()</span>
+                        @if (!string.IsNullOrWhiteSpace(SelectedCurrencyWarning))
                         {
-                            <div>@line</div>
+                            <span class="fcost-currency-warning">@SelectedCurrencyWarning</span>
                         }
                     </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_rawMaterialBreakdown.WarningMessage))
+                {
+                    <div class="alert alert-warning m-2 mb-0 small">@_rawMaterialBreakdown.WarningMessage</div>
                 }
+                <div class="card-body p-0">
+                    <div style="overflow-x:auto;">
+                        <table class="fcost-breakdown-table">
+                            <thead>
+                                <tr>
+                                    <th class="breakdown-group-th">Model Group</th>
+                                    <th class="breakdown-model-th">Model</th>
+                                    <th class="breakdown-material-th">Raw Material</th>
+                                    <th class="breakdown-price-th">
+                                        <div>Unit Price (DB)</div>
+                                        <div class="breakdown-rate-hint">VND / USD / KRW</div>
+                                    </th>
+                                    @foreach (var period in _rawMaterialBreakdown.Periods)
+                                    {
+                                        <th>
+                                            <div>@period.Header</div>
+                                            @if (!string.IsNullOrWhiteSpace(FormatPeriodExchangeRate(period)))
+                                            {
+                                                <div class="breakdown-rate-hint">@FormatPeriodExchangeRate(period)</div>
+                                            }
+                                        </th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (_rawMaterialBreakdown.Rows.Count == 0)
+                                {
+                                    <tr>
+                                        <td colspan="@rawBreakdownColSpan" class="text-center text-muted py-3">
+                                            No FCOST raw material data for selected model groups.
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    foreach (var row in rawBreakdownRows)
+                                    {
+                                        <tr class="@row.CssClass">
+                                            <td class="breakdown-group-td">@row.GroupName</td>
+                                            <td class="breakdown-model-td">@row.ModelName</td>
+                                            <td class="breakdown-material-td">
+                                                <div class="@($"breakdown-tree-label depth-{row.Depth}")">
+                                                    @if (row.IsExpandable)
+                                                    {
+                                                        <button type="button"
+                                                                class="breakdown-expand-btn"
+                                                                title="@(row.IsExpanded ? "Collapse" : "Expand")"
+                                                                aria-label="@(row.IsExpanded ? "Collapse row" : "Expand row")"
+                                                                @onclick="() => ToggleRawBreakdownRow(row.RowId)">
+                                                            @(row.IsExpanded ? "-" : "+")
+                                                        </button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="breakdown-expand-spacer"></span>
+                                                    }
+                                                    <span>
+                                                        <span class="fw-semibold">@row.MaterialName</span>
+                                                        @if (!string.IsNullOrWhiteSpace(row.MaterialCode))
+                                                        {
+                                                            <span class="d-block font-monospace text-muted" style="font-size:10px;">@row.MaterialCode</span>
+                                                        }
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td class="breakdown-price-td">@row.UnitPriceText</td>
+                                            @foreach (var period in _rawMaterialBreakdown.Periods)
+                                            {
+                                                decimal value = row.FCostByPeriod.GetValueOrDefault(period.Key);
+                                                decimal qty = row.EquivalentQtyByPeriod.GetValueOrDefault(period.Key);
+                                                row.PriceByPeriod.TryGetValue(period.Key, out var price);
+                                                string qtyText = FormatBreakdownQty(qty, price);
+                                                <td class="@(value == 0 ? "zero" : "")">
+                                                    <div class="breakdown-amount-qty">
+                                                        <span class="breakdown-amount">@FormatDisplayCurrency(value, period)</span>
+                                                        <span class="breakdown-qty">@qtyText</span>
+                                                    </div>
+                                                </td>
+                                            }
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
+        }
+    }
+
+    @if (ShowFCostWeeklyReport)
+    {
+    <div class="card shadow-sm mt-3 fcost-weekly-card">
+        <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+            <span>@(ShowAllPeriodColumns ? "Weekly Report (전체)" : "Weekly Report")</span>
+                <span class="text-muted" style="font-size:11px;">@(ShowAllPeriodColumns ? "목표 불량률 (Period 선택 전체 기간)" : "목표 불량률 (WEEK: 4주 내림차순, MONTH: 3달 내림차순)")</span>
+        </div>
+        <div class="card-body p-0">
+            <div style="overflow-x:auto;">
+                <table class="fcost-weekly-table">
+                    <thead>
+                        <tr>
+                            <th class="weekly-site-th">구분</th>
+                            <th class="weekly-model-th">모델</th>
+                            <th class="weekly-target-th">목표 불량률</th>
+                            <th class="weekly-target-th">달성률</th>
+                            @foreach (int ci in weeklyColumnIndexes)
+                            {
+                                <th class="@ColBoundaryClass(ci)">@WeeklySummaryColumnHeader(ci)</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int modelIndex = 0; modelIndex < weeklyModelRows.Count; modelIndex++)
+                        {
+                            var modelRow = modelIndex < weeklyModelRows.Count ? weeklyModelRows[modelIndex] : null;
+
+                            <tr class="weekly-model-row">
+                                @if (modelIndex == 0)
+                                {
+                                    <td class="weekly-site-td" rowspan="@weeklySummaryRowSpan">GN</td>
+                                }
+                                <td class="weekly-model-td">
+                                    @if (modelRow is null)
+                                    {
+                                        <span class="zero">-</span>
+                                    }
+                                else
+                                {
+                                    <strong>@modelRow.ModelName</strong>
+                                }
+                            </td>
+                            <td class="weekly-target-td weekly-model-target-td">
+                                @if (modelRow is null)
+                                {
+                                    <span class="zero">-</span>
+                                }
+                                else
+                                {
+                                    <input class="weekly-model-target-input"
+                                           type="text"
+                                           inputmode="numeric"
+                                           value="@GetWeeklyModelTargetRateInput(modelRow.ModelName)"
+                                           @oninput="@((ChangeEventArgs e) => SetWeeklyModelTargetRate(modelRow.ModelName, e))" />
+                                }
+                            </td>
+                            <td class="weekly-target-td weekly-model-achievement-td">
+                                @if (modelRow is null)
+                                {
+                                    <span class="zero">-</span>
+                                }
+                                else
+                                {
+                                    <span class="weekly-model-achievement">@FormatWeeklyAchievement(modelRow, weeklyColumnIndexes)</span>
+                                }
+                            </td>
+                                 @foreach (int ci in weeklyColumnIndexes)
+                                 {
+                                     bool hasValue = modelRow is not null &&
+                                         (ValueAt(modelRow.SourceRateByCol, ci) > 0 ||
+                                          ValueAt(modelRow.InputByCol, ci) > 0 ||
+                                          ValueAt(modelRow.CostByCol, ci) > 0);
+                                     <td class="@ColBoundaryClass(ci)">
+                                         @if (!hasValue || modelRow is null)
+                                         {
+                                             <span class="zero">-</span>
+                                         }
+                                         else
+                                         {
+                                             double rate = ValueAt(modelRow.SourceRateByCol, ci);
+                                             if (rate == 0 && ValueAt(modelRow.InputByCol, ci) > 0)
+                                                 rate = ValueAt(modelRow.CostByCol, ci) / ValueAt(modelRow.InputByCol, ci) * 100.0;
+                                             <span class="weekly-model-rate">@FormatWeeklyPpmFromRate(rate)</span>
+                                         }
+                                     </td>
+                                 }
+                            </tr>
+                        }
+                        <tr class="weekly-total-row">
+                            <td class="weekly-total-label" colspan="3"><strong>TOTAL 불량률</strong></td>
+                            @for (int i = 0; i < weeklyColumnIndexes.Count; i++)
+                            {
+                                double v = weeklyTotalRates[i];
+                                <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(weeklyColumnIndexes[i])">@FormatWeeklyPpmFromRate(v)</td>
+                            }
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            @if (ShowWeeklyActionItems)
+            {
+                <div class="fcost-weekly-config">
+                    <label class="fcost-weekly-list-editor">
+                        <span>주간 항목</span>
+                        <textarea class="form-control form-control-sm" rows="2" @bind="_weeklyActionItemsText"></textarea>
+                    </label>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveWeeklyReportSettings">저장</button>
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="ResetWeeklyReportSettings">초기화</button>
+                        @if (!string.IsNullOrWhiteSpace(_weeklySettingsStatus))
+                        {
+                            <span class="small text-muted">@_weeklySettingsStatus</span>
+                        }
+                    </div>
+                    @if (WeeklyActionItems.Count > 0)
+                    {
+                        <div class="fcost-weekly-saved-list">
+                            @foreach (string item in WeeklyActionItems)
+                            {
+                                <div><span class="weekly-list-bullet"></span> @item</div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
         </div>
     </div>
-</div>
+    }
+}
 
-@if (_report is not null && HasPeriodColumnToggles)
+<!-- Model / Sub Group roll-up (sums of Input + F-Cost across matching Materials) -->
+@if (!IsTrendReportRoute && ShowRegularFCostDetails && _report is not null && HasPeriodColumnToggles)
 {
     <div class="d-flex align-items-center gap-2 flex-wrap mt-3 small">
         <span class="text-muted fw-semibold">Columns:</span>
@@ -251,15 +588,15 @@
     </div>
 }
 
-@if (_report is not null && (_report.SubGroups.Count > 0 || _report.Total is not null))
+@if (!IsTrendReportRoute && ShowRegularFCostDetails && _report is not null && (_report.SubGroups.Count > 0 || _report.Total is not null))
 {
     var subColumnIndexes = VisibleFCostColumnIndexes();
     <div class="card shadow-sm mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-            <span>📋 Model / Line-Group Summary — Σ Input · Σ F-Cost · Rate% (recomputed from sums)</span>
+            <span>Model / Sub Group Summary - Input / F-Cost / 불량률%</span>
             <span class="text-muted" style="font-size:11px;">
-                @_report.SubGroups.Count line-group bucket(s) · @_report.UnmappedMaterials.Count unmapped
-                · sorted by previous-week Rate%
+                @_report.SubGroups.Count sub group bucket(s), @_report.UnmappedMaterials.Count unmapped
+                sorted by previous-week 불량률
             </span>
         </div>
         <div class="card-body p-0">
@@ -282,7 +619,7 @@
                             bool sgLabelOnCost  = !_showInput && _showCost;
                             bool sgLabelOnRate  = !_showInput && !_showCost && _showRate;
                         }
-                        @* Total row — recomputed from the SubGroup sums (same
+                        @* Total row ??recomputed from the SubGroup sums (same
                            helper feeds the bottom per-Material table's Total row
                            below, so top + bottom always agree). _report.Total
                            from BMES often misses INAMT and would render all
@@ -333,7 +670,7 @@
                                     <td class="label-td"><span class="ztype-badge">RATE %</span></td>
                                     @for (int i = 0; i < N; i++)
                                     {
-                                        // Weighted rate: Σcost / Σinput * 100. 0 if input=0.
+                                        // Weighted rate: 誇cost / 誇input * 100. 0 if input=0.
                                         double v = totalInput[i] > 0
                                             ? totalCost[i] / totalInput[i] * 100.0
                                             : 0;
@@ -342,7 +679,7 @@
                                 </tr>
                             }
                         }
-                        @* Mid → Sub1 → Sub2 expand/collapse hierarchy. Mid rows are always
+                        @* Mid ??Sub1 ??Sub2 expand/collapse hierarchy. Mid rows are always
                            visible; Sub rows render only when their ancestor is expanded.
                            InputByCol/CostByCol on parent rows are sums of leaf descendants. *@
                         @{
@@ -358,7 +695,7 @@
                             if (sgRows == 0) { continue; }
                             int    padPx     = 8 + row.Depth * 16;
                             bool   canExp    = fcostHasKids.Contains(row.RowId);
-                            bool   expanded  = _expandedFCostRows.Contains(row.RowId);
+                            bool   expanded  = IsHierarchyRowExpanded(_expandedFCostRows, row.RowId);
                             string capturedId = row.RowId;
                             string rowCls    = row.Depth switch
                             {
@@ -368,14 +705,14 @@
                             };
                             @if (_showInput)
                             {
-                                <tr class="@rowCls">
+                                <tr class="@($"{rowCls} fcost-row-input")">
                                     @if (sgLabelOnInput)
                                     {
                                         <td class="label-td" rowspan="@sgRows"
                                             style="padding-left: @(padPx)px; cursor: @(canExp ? "pointer" : "default");"
                                             @onclick="@(() => { if (canExp) ToggleFCostRow(capturedId); })">
                                             @if (canExp)
-                                            { <span class="fcost-tog">@(expanded ? "▼" : "▶")</span> }
+                                            { <span class="fcost-tog">@(expanded ? "[-]" : "[+]")</span> }
                                             else
                                             { <span class="fcost-tog fcost-tog-blank"></span> }
                                             <span class="hier-level-badge">@FCostLevelLabel(row, fcostHasKids)</span>
@@ -385,21 +722,21 @@
                                     <td class="label-td"><span class="ztype-badge">INPUT</span></td>
                                     @foreach (int ci in subColumnIndexes)
                                     {
-                                        double v = row.InputByCol[ci];
+                                        double v = ValueAt(row.InputByCol, ci);
                                         <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(ci, oneBased: false)">@FormatNum(v)</td>
                                     }
                                 </tr>
                             }
                             @if (_showCost)
                             {
-                                <tr class="@rowCls">
+                                <tr class="@($"{rowCls} fcost-row-cost")">
                                     @if (sgLabelOnCost)
                                     {
                                         <td class="label-td" rowspan="@sgRows"
                                             style="padding-left: @(padPx)px; cursor: @(canExp ? "pointer" : "default");"
                                             @onclick="@(() => { if (canExp) ToggleFCostRow(capturedId); })">
                                             @if (canExp)
-                                            { <span class="fcost-tog">@(expanded ? "▼" : "▶")</span> }
+                                            { <span class="fcost-tog">@(expanded ? "[-]" : "[+]")</span> }
                                             else
                                             { <span class="fcost-tog fcost-tog-blank"></span> }
                                             <span class="hier-level-badge">@FCostLevelLabel(row, fcostHasKids)</span>
@@ -409,21 +746,21 @@
                                     <td class="label-td"><span class="ztype-badge">F-COST</span></td>
                                     @foreach (int ci in subColumnIndexes)
                                     {
-                                        double v = row.CostByCol[ci];
+                                        double v = ValueAt(row.CostByCol, ci);
                                         <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(ci, oneBased: false)">@FormatNum(v)</td>
                                     }
                                 </tr>
                             }
                             @if (_showRate)
                             {
-                                <tr class="@rowCls">
+                                <tr class="@($"{rowCls} fcost-row-rate")">
                                     @if (sgLabelOnRate)
                                     {
                                         <td class="label-td" rowspan="@sgRows"
                                             style="padding-left: @(padPx)px; cursor: @(canExp ? "pointer" : "default");"
                                             @onclick="@(() => { if (canExp) ToggleFCostRow(capturedId); })">
                                             @if (canExp)
-                                            { <span class="fcost-tog">@(expanded ? "▼" : "▶")</span> }
+                                            { <span class="fcost-tog">@(expanded ? "[-]" : "[+]")</span> }
                                             else
                                             { <span class="fcost-tog fcost-tog-blank"></span> }
                                             <span class="hier-level-badge">@FCostLevelLabel(row, fcostHasKids)</span>
@@ -434,7 +771,7 @@
                                     @{ var rate = row.RateByCol; }
                                     @foreach (int ci in subColumnIndexes)
                                     {
-                                        double v = rate[ci];
+                                        double v = ValueAt(rate, ci);
                                         <td class="@(v == 0 ? "zero" : "") @ColBoundaryClass(ci, oneBased: false)">@FormatRate(v)</td>
                                     }
                                 </tr>
@@ -448,25 +785,30 @@
                 <div class="alert alert-warning small m-3 mb-0">
                     <strong>Unmapped (@_report.UnmappedMaterials.Count):</strong>
                     Materials whose <code>MatnrTx_ModNoTx</code> (or fallback <code>MatnrTx_VeridTx</code>)
-                    didn't match any LineShift in the saved ModelGroups —
-                    @string.Join(", ", _report.UnmappedMaterials.Take(10).Select(m => m.DisplayName))
-                    @(_report.UnmappedMaterials.Count > 10 ? $" … (+{_report.UnmappedMaterials.Count - 10})" : "")
+                    didn't match any LineShift in the saved ModelGroups ??                    @string.Join(", ", _report.UnmappedMaterials.Take(10).Select(m => m.DisplayName))
+                    @(_report.UnmappedMaterials.Count > 10 ? $" ??(+{_report.UnmappedMaterials.Count - 10})" : "")
+                    <a class="btn btn-sm btn-outline-dark ms-2 py-0"
+                       href="@BuildUnmappedModelGroupUrl(_report.UnmappedMaterials)"
+                       target="_blank"
+                       rel="noopener">
+                        Open Model Group for these
+                    </a>
                 </div>
             }
         </div>
     </div>
 }
 
-<!-- ══ Total + per-Material table ═══════════════════════════════════════════ -->
-@if (_report is not null)
+<!-- Total + per-Material table -->
+@if (!IsTrendReportRoute && ShowRegularFCostDetails && _report is not null)
 {
     var materialColumnIndexes = VisibleFCostColumnIndexes();
 
     <div class="card shadow-sm mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-            <span>📊 F-Cost — query date @_report.QueryDate</span>
+            <span>F-Cost Query Date @_report.QueryDate</span>
             <span class="text-muted" style="font-size:11px;">
-                @_report.Materials.Count materials · @_report.TotalRows rows
+                @_report.Materials.Count materials / @_report.TotalRows rows
             </span>
         </div>
         <div class="card-body p-0">
@@ -474,7 +816,7 @@
                 <table class="fcost-table">
                     <thead>
                         <tr>
-                            <th class="label-th" style="width:280px;">제품명</th>
+                            <th class="label-th" style="width:280px;">모델</th>
                             <th class="label-th" style="width:100px;">Type</th>
                             @foreach (int ci in materialColumnIndexes)
                             {
@@ -489,7 +831,7 @@
                             bool matLabelOnCost  = !_showInput && _showCost;
                             bool matLabelOnRate  = !_showInput && !_showCost && _showRate;
                         }
-                        @* Bottom Total — same sum-of-subgroups helper as the
+                        @* Bottom Total ??same sum-of-subgroups helper as the
                            top SubGroup Summary uses, so the two Total rows
                            always show identical numbers. *@
                         @if (matRows > 0 && _report.SubGroups.Count > 0)
@@ -639,11 +981,13 @@
     }
     .fcost-table td.label-td { text-align: left; font-family: inherit; }
 
-    .fcost-row-total td  { background: #fef3c7; color: #78350f; font-weight: 700;
-                            border-top: 2px solid #fbbf24; }
-    .fcost-row-input td  { background: #eff6ff; }
-    .fcost-row-cost  td  { background: #fff; }
-    .fcost-row-rate  td  { background: #f0fdf4; color: #166534; font-weight: 600; }
+    .fcost-row-total td  { background: #fff3c4; color: #6b3a00; font-weight: 700;
+                            border-top: 2px solid #eab308; border-bottom: 2px solid #eab308; }
+    .fcost-row-input td,
+    .fcost-row-cost  td,
+    .fcost-row-rate  td  { background: #fff; color: #0f172a; font-weight: 500; }
+    .fcost-row-input td  { border-top: 1px solid #cbd5e1; }
+    .fcost-row-rate  td  { font-weight: 600; }
 
     .ztype-badge {
         display: inline-block; font-size: 10px; font-weight: 700;
@@ -652,32 +996,447 @@
     }
     .zero { color: #cbd5e1; }
 
-    /* SubGroup Summary — Mid → Sub1 → Sub2 expand/collapse hierarchy */
-    .fcost-row-mid  td { background: #fef3c7; color: #78350f; font-weight: 700;
-                        border-top: 2px solid #fbbf24; }
-    .fcost-row-sub1 td { background: #eff6ff; color: #1e293b; font-weight: 600; }
+    /* SubGroup Summary ??Mid ??Sub1 ??Sub2 expand/collapse hierarchy */
+    .fcost-row-mid  td { background: #fff; color: #0f172a; font-weight: 700; }
+    .fcost-row-mid.fcost-row-input td { border-top: 2px solid #94a3b8; }
+    .fcost-row-sub1 td { background: #fff; color: #1e293b; font-weight: 600; }
     .fcost-row-sub2 td { background: #fff;    color: #475569; font-weight: 500; font-size: 11.5px; }
     .fcost-tog        { display: inline-block; width: 14px; color: #6366f1;
                         font-size: 10px; margin-right: 4px; }
     .fcost-tog-blank  { width: 14px; }
 
-    /* Day / Week / Month period dividers — left border on the first column of each
+    /* Day / Week / Month period dividers ??left border on the first column of each
        period block. Heavier than the regular row border so the eye picks out where
-       the day → week → month transition happens. */
+       the day ??week ??month transition happens. */
     .fcost-table th.col-day-start,
     .fcost-table td.col-day-start    { border-left: 2px solid #93c5fd; }
     .fcost-table th.col-week-start,
     .fcost-table td.col-week-start   { border-left: 2px solid #86efac; }
     .fcost-table th.col-month-start,
     .fcost-table td.col-month-start  { border-left: 2px solid #fcd34d; }
+
+    .fcost-weekly-card { border-color: #d7dee8; }
+    .fcost-weekly-table { font-size: 12px; white-space: nowrap; border-collapse: collapse; width: max-content; table-layout: fixed; }
+    .fcost-weekly-table th {
+        background: #e5e7eb; color: #1f2937; font-weight: 700;
+        padding: 8px 12px; text-align: center; border: 1px solid #64748b;
+    }
+    .fcost-weekly-table th { width: 150px; min-width: 150px; }
+    .fcost-weekly-table th.weekly-site-th,
+    .fcost-weekly-table th.weekly-target-th,
+    .fcost-weekly-table th.weekly-target-th + th.weekly-target-th,
+    .fcost-weekly-table th.weekly-model-th,
+    .fcost-weekly-table th.weekly-metric-th { width: 150px; min-width: 150px; text-align: center; }
+    .fcost-weekly-table td {
+        width: 150px; min-width: 150px; padding: 6px 10px; text-align: center;
+        border: 1px solid #94a3b8; font-family: monospace; vertical-align: middle;
+    }
+    .fcost-weekly-table td.weekly-site-td,
+    .fcost-weekly-table td.weekly-target-td,
+    .fcost-weekly-table td.weekly-model-td,
+    .fcost-weekly-table td.weekly-metric-td,
+    .fcost-weekly-table td.weekly-model-target-td,
+    .fcost-weekly-table td.weekly-model-achievement-td {
+        background: #fff; color: #0f172a; font-family: inherit; text-align: center;
+    }
+    .fcost-weekly-table td.weekly-model-td { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+    .fcost-weekly-table .weekly-model-target-input {
+        width: 100%; margin: 0; padding: 0; border: 0; outline: 0; background: transparent;
+        color: inherit; font: inherit; text-align: center; box-shadow: none;
+    }
+    .fcost-weekly-table .weekly-model-achievement {
+        font-weight: 700;
+    }
+    .weekly-total-row td { background: #fff7cc; color: #6b3a00; font-weight: 700; }
+    .weekly-total-cost-row td { background: #fff; color: #0f172a; }
+    .weekly-total-input-row td { background: #fff; color: #0f172a; }
+    .fcost-weekly-table td.weekly-total-label {
+        background: #fff; color: #0f172a; font-family: inherit; font-weight: 700; text-align: center;
+    }
+    .weekly-model-row td { background: #fff; color: #0f172a; }
+    .weekly-model-rate { font-weight: 700; margin-top: 1px; }
+    .weekly-model-cost-row td { background: #fff; color: #0f172a; }
+    .weekly-model-input-row td { background: #fff; color: #0f172a; }
+    .weekly-model-share-row td { background: #fff; color: #475569; font-size: 11px; }
+    .weekly-model-amount { color: #475569; font-weight: 600; }
+    .weekly-model-share { color: #475569; font-weight: 600; }
+    .fcost-weekly-table th.col-day-start,
+    .fcost-weekly-table td.col-day-start    { border-left: 2px solid #93c5fd; }
+    .fcost-weekly-table th.col-week-start,
+    .fcost-weekly-table td.col-week-start   { border-left: 2px solid #86efac; }
+    .fcost-weekly-table th.col-month-start,
+    .fcost-weekly-table td.col-month-start  { border-left: 2px solid #fcd34d; }
+    .fcost-weekly-config {
+        display: grid; gap: 8px; padding: 10px 12px; border-top: 1px solid #dbe3ef;
+        background: #f8fafc; font-size: 12px;
+    }
+    .fcost-weekly-config-grid {
+        display: grid; grid-template-columns: repeat(3, minmax(120px, 160px)); gap: 8px;
+    }
+    .fcost-weekly-config label span {
+        display: block; color: #64748b; font-size: 11px; font-weight: 700; margin-bottom: 3px;
+    }
+    .fcost-weekly-list-editor { max-width: 760px; }
+    .fcost-weekly-saved-list {
+        display: grid; gap: 2px; color: #0f172a; font-size: 15px; background: #fff;
+        border: 1px solid #dbe3ef; padding: 8px 10px;
+    }
+    .weekly-list-bullet { color: #000; margin-right: 6px; }
+
+    .fcost-trend-card { border-color: #111827; }
+    .fcost-trend-title {
+        padding: 4px 2px 5px; color: #000; font-size: 13px; font-weight: 800;
+    }
+    .fcost-trend-title span { margin-right: 5px; }
+    .fcost-currency-tools {
+        display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap;
+        color: #475569; font-size: 12px; font-weight: 700;
+    }
+    .fcost-currency-tools label {
+        display: flex; align-items: center; gap: 5px; margin: 0;
+    }
+    .fcost-currency-tools label span {
+        white-space: nowrap;
+    }
+    .fcost-currency-tools .form-select-sm,
+    .fcost-currency-tools .form-control-sm {
+        height: 32px; min-height: 32px; padding-top: 4px; padding-bottom: 4px;
+        font-size: 12px; line-height: 1.4;
+    }
+    .fcost-currency-select {
+        width: 92px;
+    }
+    .fcost-rate-source {
+        color: #64748b;
+        font-size: 11px;
+        line-height: 1.35;
+        max-width: 640px;
+        white-space: normal;
+    }
+    .fcost-currency-status {
+        color: #64748b; line-height: 32px;
+    }
+    .fcost-currency-warning {
+        color: #b45309; line-height: 32px;
+    }
+    .fcost-breakdown-currency-tools {
+        margin-left: auto;
+    }
+    .fcost-breakdown-actions {
+        display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .fcost-breakdown-actions .btn-sm {
+        min-height: 28px; padding: 3px 8px; font-size: 11px; font-weight: 700;
+    }
+    .fcost-trend-table {
+        font-size: 12px; white-space: nowrap; border-collapse: collapse; width: 100%;
+        color: #000;
+    }
+    .fcost-trend-table th {
+        background: #d9d9d9; color: #000; font-weight: 700;
+        padding: 5px 8px; border: 1px solid #111827; text-align: center;
+    }
+    .fcost-trend-table td {
+        padding: 3px 8px; border: 1px solid #111827; text-align: right;
+        font-family: monospace; background: #fff; vertical-align: middle;
+    }
+    .fcost-trend-table .trend-model-th { min-width: 210px; }
+    .fcost-trend-table .trend-metric-th { min-width: 88px; }
+    .fcost-trend-table .trend-model-td,
+    .fcost-trend-table .trend-metric-td {
+        text-align: center; font-family: inherit;
+    }
+    .fcost-trend-table .trend-model-td {
+        max-width: 240px; overflow: hidden; text-overflow: ellipsis;
+    }
+    .fcost-trend-table .trend-model-muted { color: #9ca3af; }
+    .fcost-trend-table .trend-child-row td { background: #f8fafc; }
+    .fcost-trend-table .trend-child-model { padding-left: 24px; }
+    .trend-expand-btn {
+        width: 18px; height: 18px; padding: 0; margin-right: 5px;
+        border: 1px solid #6b7280; background: #fff; color: #111827;
+        font-size: 12px; line-height: 16px; font-weight: 700; text-align: center;
+    }
+    .trend-expand-spacer {
+        display: inline-block; width: 23px;
+    }
+    .trend-bgroup-badge {
+        display: inline-block; margin-right: 6px; padding: 1px 4px;
+        border: 1px solid #9ca3af; background: #eef2ff; color: #374151;
+        font-size: 10px; line-height: 1.2; font-weight: 700;
+    }
+    .fcost-trend-table .trend-period-start,
+    .fcost-trend-table .col-week-start,
+    .fcost-trend-table .col-month-start { border-left: 3px double #111827; }
+    .trend-defect-row td { color: #000; }
+    .trend-fcost-row td,
+    .trend-share-row td { color: #000; }
+    .fcost-trend-table .trend-total-row td {
+        background: #f8fafc; color: #000; font-weight: 800;
+    }
+    .fcost-trend-table .trend-total-first-row td {
+        border-top: 2px solid #111827;
+    }
+    .fcost-breakdown-table {
+        width: max-content; min-width: 100%; border-collapse: collapse;
+        font-size: 12px; color: #111827;
+    }
+    .fcost-breakdown-table th,
+    .fcost-breakdown-table td {
+        border: 1px solid #d7dee8; padding: 5px 7px; white-space: nowrap;
+        text-align: right; font-variant-numeric: tabular-nums;
+    }
+    .fcost-breakdown-table th {
+        background: #f8fafc; color: #334155; font-weight: 700;
+        text-align: center;
+    }
+    .fcost-breakdown-table .breakdown-rate-hint {
+        color: #64748b;
+        font-size: 10px;
+        font-weight: 500;
+        line-height: 1.2;
+        margin-top: 2px;
+        white-space: nowrap;
+    }
+    .fcost-breakdown-table .breakdown-group-th,
+    .fcost-breakdown-table .breakdown-model-th,
+    .fcost-breakdown-table .breakdown-material-th,
+    .fcost-breakdown-table .breakdown-price-th,
+    .fcost-breakdown-table .breakdown-group-td,
+    .fcost-breakdown-table .breakdown-model-td,
+    .fcost-breakdown-table .breakdown-material-td,
+    .fcost-breakdown-table .breakdown-price-td {
+        text-align: left;
+    }
+    .fcost-breakdown-table .breakdown-group-th { min-width: 110px; }
+    .fcost-breakdown-table .breakdown-model-th { min-width: 150px; }
+    .fcost-breakdown-table .breakdown-material-th { min-width: 240px; }
+    .fcost-breakdown-table .breakdown-price-th { min-width: 120px; }
+    .fcost-breakdown-table .breakdown-price-td {
+        color: #0f172a;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .fcost-breakdown-table .breakdown-amount-qty {
+        display: grid;
+        grid-template-columns: minmax(90px, 1fr) minmax(70px, auto);
+        align-items: baseline;
+        column-gap: 10px;
+        width: 100%;
+    }
+    .fcost-breakdown-table .breakdown-amount {
+        text-align: left;
+        font-weight: 700;
+    }
+    .fcost-breakdown-table .breakdown-qty {
+        color: #0f172a;
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.25;
+        text-align: right;
+        white-space: nowrap;
+    }
+    .fcost-breakdown-table .breakdown-price-line {
+        color: #64748b;
+        font-size: 10px;
+        line-height: 1.25;
+        margin-top: 2px;
+    }
+    .fcost-breakdown-table .breakdown-price-line {
+        color: #475569;
+    }
+    .fcost-breakdown-table .breakdown-group-start td {
+        border-top: 2px solid #64748b;
+    }
+    .fcost-breakdown-table .breakdown-grand-total-row td {
+        background: #fff7cc; color: #111827; font-weight: 800;
+        border-top: 2px solid #111827; border-bottom: 2px solid #111827;
+    }
+    .fcost-breakdown-table .breakdown-total-row td {
+        background: #eff6ff; color: #111827; font-weight: 800;
+    }
+    .fcost-breakdown-table .breakdown-subtotal-row td {
+        background: #f8fafc; color: #111827; font-weight: 700;
+    }
+    .fcost-breakdown-table .breakdown-material-row td {
+        background: #fff;
+    }
+    .breakdown-tree-label {
+        display: flex; align-items: flex-start; gap: 6px;
+    }
+    .breakdown-tree-label.depth-1 { padding-left: 10px; }
+    .breakdown-tree-label.depth-2 { padding-left: 24px; }
+    .breakdown-tree-label.depth-3 { padding-left: 38px; }
+    .breakdown-expand-btn {
+        flex: 0 0 auto; width: 18px; height: 18px; padding: 0;
+        border: 1px solid #94a3b8; background: #fff; color: #0f172a;
+        font-size: 12px; line-height: 16px; font-weight: 800; text-align: center;
+    }
+    .breakdown-expand-spacer {
+        display: inline-block; flex: 0 0 auto; width: 18px; height: 18px;
+    }
 </style>
 
 @code {
-    /// <summary>Sum InputByCol / CostByCol across every saved SubGroup. Both
-    /// the SubGroup Summary's Total row and the per-Material table's Total row
-    /// call this so the two Totals are always identical (same data, same code
-    /// path). Unmapped materials are excluded by design — they appear in the
-    /// "Unmapped (N)" callout below the SubGroup Summary instead.</summary>
+    [Parameter] public bool TrendReportOnly { get; set; }
+
+    /// <summary>Show the "주요 모델 불량률 TREND" card above the regular F-COST tables
+    /// instead of only on the trend-only route, which is where it sat originally.</summary>
+    [Parameter] public bool ShowMajorTrendCard { get; set; }
+    [Parameter] public bool ShowPageTitle { get; set; } = true;
+    [Parameter] public bool ShowPageHeader { get; set; } = true;
+    [Parameter] public bool ShowSetup { get; set; } = true;
+    [Parameter] public bool ShowFCostWeeklyReport { get; set; }
+    [Parameter] public bool ShowAllPeriodColumns { get; set; }
+    [Parameter] public bool ShowWeeklyActionItems { get; set; } = true;
+    [Parameter] public bool ShowRegularFCostDetails { get; set; } = true;
+
+    // ── Static-HTML export mode ────────────────────────────────────────────────
+    // BmesReportHtmlExportService renders this page four times (F-COST, F-COST(전체),
+    // 목표 불량률, 목표 불량률(전체)). Building the report is expensive — RAW backfill,
+    // report build, raw-material breakdown — so only the first instance computes it and
+    // publishes the result through OnExportComputed; the other three receive that
+    // snapshot via ExportSharedReport and go straight to rendering.
+    [Parameter] public bool ExportMode { get; set; }
+    [Parameter] public DateTime? ExportStart { get; set; }
+    [Parameter] public DateTime? ExportEnd { get; set; }
+    [Parameter] public IReadOnlyList<ModelGroupRecord>? ExportGroups { get; set; }
+    [Parameter] public NgRateReportService.NgRateReport? ExportSharedNgTrend { get; set; }
+    [Parameter] public FCostExportSnapshot? ExportSharedReport { get; set; }
+    [Parameter] public Action<FCostExportSnapshot>? OnExportComputed { get; set; }
+    [Parameter] public IProgress<string>? ExportProgress { get; set; }
+    private bool _exportGenerated;
+
+    /// <summary>Everything the four F-COST export tabs render from, computed once.</summary>
+    public sealed record FCostExportSnapshot(
+        FCostReport Report,
+        NgRateReportService.NgRateReport? NgRateTrendByMid,
+        List<ModelGroupRecord> ModelGroups,
+        BmesFcostRawBreakdownResult? RawMaterialBreakdown,
+        FCostRawStatus? RawStatus,
+        DateTime StartDate,
+        DateTime EndDate);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!ExportMode || _exportGenerated) return;
+
+        // Follower tab: reuse the leader's computed report, no data access at all.
+        if (ExportSharedReport is { } snapshot)
+        {
+            _exportGenerated = true;
+            _report            = snapshot.Report;
+            _ngRateTrendByMid  = snapshot.NgRateTrendByMid;
+            _reportModelGroups = snapshot.ModelGroups;
+            _rawMaterialBreakdown = snapshot.RawMaterialBreakdown;
+            _rawStatus         = snapshot.RawStatus;
+            _reportStartDate   = snapshot.StartDate;
+            _reportEndDate     = snapshot.EndDate;
+            return;
+        }
+
+        // Leader tab: compute once, then hand the result to the followers.
+        if (ExportStart is { } start && ExportEnd is { } end && ExportGroups is { Count: > 0 } groups)
+        {
+            _exportGenerated = true;
+            await GenerateReportAsync(
+                start, end,
+                progress: ExportProgress,
+                selectedGroups: groups,
+                sharedNgRateTrendReport: ExportSharedNgTrend);
+
+            if (_report is not null)
+            {
+                OnExportComputed?.Invoke(new FCostExportSnapshot(
+                    _report, _ngRateTrendByMid, _reportModelGroups, _rawMaterialBreakdown,
+                    _rawStatus, _reportStartDate, _reportEndDate));
+            }
+        }
+    }
+
+    private const double DefaultWeeklyBaselineRate = 6.12;
+    private const double DefaultWeeklyFirstTargetRate = 2.00;
+    private const double DefaultWeeklySecondTargetRate = 0.70;
+    private const int WeeklyReportWeekColumnCount = 4;
+    private const int WeeklyReportMonthColumnCount = 3;
+    private const double TrendRemainderMinSharePercent = 0.05;
+    private const string DefaultWeeklyActionItemsText = "목표불량률 모델 정렬 161016, X526/626 기본값 T/F 체크";
+    private const string WeeklyBaselineRateSettingKey = "FCostWeeklyReport:BaselineRate";
+    private const string WeeklyFirstTargetRateSettingKey = "FCostWeeklyReport:FirstTargetRate";
+    private const string WeeklySecondTargetRateSettingKey = "FCostWeeklyReport:SecondTargetRate";
+    private const string WeeklyModelTargetRatesSettingKey = "FCostWeeklyReport:ModelTargetRates";
+    private const string WeeklyActionItemsSettingKey = "FCostWeeklyReport:ActionItems";
+    private const string FCostCurrencyModeSettingKey = "FCostReport:CurrencyMode";
+    private const string CurrencyVnd = "VND";
+    private const string CurrencyUsd = "USD";
+    private const string CurrencyKrw = "KRW";
+    private const string RawBreakdownTotalRowId = "raw-breakdown-total";
+
+    private double _weeklyBaselineRate = DefaultWeeklyBaselineRate;
+    private double _weeklyFirstTargetRate = DefaultWeeklyFirstTargetRate;
+    private double _weeklySecondTargetRate = DefaultWeeklySecondTargetRate;
+    private Dictionary<string, double> _weeklyModelTargetRates = new(StringComparer.Ordinal);
+    private string _weeklyActionItemsText = string.Empty;
+    private string _weeklySettingsStatus = string.Empty;
+
+    private List<string> WeeklyActionItems =>
+        (_weeklyActionItemsText ?? string.Empty)
+            .Split(new[] { "\r\n", "\n" }, StringSplitOptions.None)
+            .Select(line => line.Trim())
+            .Where(line => line.Length > 0)
+            .ToList();
+
+    private sealed record FCostWeeklyModelRow(
+        string ModelName,
+        double SortRate,
+        double SortCost,
+        double[] InputByCol,
+        double[] CostByCol,
+        double[] SourceRateByCol);
+
+    private sealed record FCostTrendModelRow(
+        string RowId,
+        string? ParentRowId,
+        string ModelName,
+        string GroupName,
+        string NgGroupKey,
+        int Depth,
+        double[] InputByCol,
+        double[] CostByCol,
+        Dictionary<int, double> NgPpmByColumn);
+
+    private sealed record RawBreakdownViewRow(
+        string RowId,
+        string GroupName,
+        string ModelName,
+        string MaterialName,
+        string MaterialCode,
+        string UnitPriceText,
+        int Depth,
+        string CssClass,
+        bool IsExpandable,
+        bool IsExpanded,
+        Dictionary<string, decimal> FCostByPeriod,
+        Dictionary<string, decimal> EquivalentQtyByPeriod,
+        Dictionary<string, BmesFcostRawMaterialPeriodPrice> PriceByPeriod);
+
+    private sealed class FCostTrendAggregate
+    {
+        public FCostTrendAggregate(string display, int columnCount)
+        {
+            Display = display;
+            InputByCol = new double[columnCount];
+            CostByCol = new double[columnCount];
+        }
+
+        public string Display { get; }
+        public double[] InputByCol { get; }
+        public double[] CostByCol { get; }
+    }
+
+    /// <summary>Compute report totals for the requested columns. Prefer BMES' own
+    /// Total triplet when it has both Input and F-COST values; raw range data can
+    /// miss the FCOST continuation row, so fall back to materials and SubGroups.</summary>
     private (double[] Input, double[] Cost) ComputeSubGroupTotals(IReadOnlyList<int> columnIndexes)
     {
         int columnCount = columnIndexes.Count;
@@ -693,20 +1452,626 @@
                 input[i] = _report.Total.Input?.GetCol(sourceIdx) ?? 0;
                 cost[i]  = _report.Total.Cost ?.GetCol(sourceIdx) ?? 0;
             }
-            return (input, cost);
+            if (HasInputAndCost(input, cost)) return (input, cost);
+            Array.Clear(input);
+            Array.Clear(cost);
         }
+
+        foreach (var mat in _report.Materials)
+        {
+            for (int i = 0; i < columnCount; i++)
+            {
+                int sourceIdx = columnIndexes[i] + 1;
+                input[i] += mat.Input?.GetCol(sourceIdx) ?? 0;
+                cost[i]  += mat.Cost ?.GetCol(sourceIdx) ?? 0;
+            }
+        }
+        if (HasInputAndCost(input, cost)) return (input, cost);
+        Array.Clear(input);
+        Array.Clear(cost);
 
         foreach (var sg in _report.SubGroups)
         {
             for (int i = 0; i < columnCount; i++)
             {
                 int sourceIdx = columnIndexes[i];
-                if (sourceIdx >= sg.InputByCol.Length) continue;
-                input[i] += sg.InputByCol[sourceIdx];
-                cost[i]  += sg.CostByCol[sourceIdx];
+                if (sourceIdx < 0) continue;
+                input[i] += ValueAt(sg.InputByCol, sourceIdx);
+                cost[i]  += ValueAt(sg.CostByCol, sourceIdx);
             }
         }
         return (input, cost);
+    }
+
+    private static bool HasInputAndCost(IReadOnlyList<double> input, IReadOnlyList<double> cost)
+        => input.Any(v => v > 0) && cost.Any(v => v > 0);
+
+    private List<FCostTrendModelRow> BuildMajorTrendRows(IReadOnlyList<int> columnIndexes)
+    {
+        var rows = new List<FCostTrendModelRow>();
+        if (_report is null || columnIndexes.Count == 0) return rows;
+
+        int columnCount = _report.ColumnHeaders.Count;
+        if (columnCount == 0) columnCount = _report.Columns.Count;
+        if (columnCount == 0) return rows;
+
+        var groupRows = BuildSelectedGroupTrendAggregates(columnCount);
+        var emitted = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var group in _reportModelGroups
+            .OrderBy(g => g.SortOrder)
+            .ThenBy(g => g.Name, StringComparer.Ordinal))
+        {
+            if (string.IsNullOrWhiteSpace(group.Name)) continue;
+            if (!emitted.Add(group.Name)) continue;
+            if (!groupRows.TryGetValue(group.Name, out var groupRow)) continue;
+            if (!TrendHasData(groupRow.InputByCol, groupRow.CostByCol, columnIndexes)) continue;
+
+            rows.Add(new FCostTrendModelRow(
+                RowId: $"G::{group.Name}",
+                ParentRowId: null,
+                ModelName: group.Name,
+                GroupName: group.Name,
+                NgGroupKey: group.Name,
+                Depth: 0,
+                InputByCol: groupRow.InputByCol,
+                CostByCol: groupRow.CostByCol,
+                NgPpmByColumn: columnIndexes.ToDictionary(
+                    ci => ci,
+                    ci => LookupNgTrendPpmByGroupKey(group.Name, ci))));
+        }
+
+        if (rows.Count > 0)
+        {
+            AppendBmesRemainderTrendRow(rows, columnIndexes);
+            return rows;
+        }
+
+        var fallbackRows = BuildFCostHierarchy()
+            .Where(r => r.Depth == 0)
+            .Where(r => TrendModelHasData(r, columnIndexes))
+            .OrderBy(r => r.Display, StringComparer.Ordinal)
+            .Select(r => new FCostTrendModelRow(
+                RowId: r.RowId,
+                ParentRowId: null,
+                ModelName: r.Display,
+                GroupName: string.Empty,
+                NgGroupKey: r.NgGroupKey,
+                Depth: r.Depth,
+                InputByCol: r.InputByCol,
+                CostByCol: r.CostByCol,
+                NgPpmByColumn: columnIndexes.ToDictionary(
+                    ci => ci,
+                    ci => LookupNgTrendPpmByGroupKey(r.NgGroupKey, ci))))
+            .ToList();
+        AppendBmesRemainderTrendRow(fallbackRows, columnIndexes);
+        return fallbackRows;
+    }
+
+    private static string TrendModelDisplayName(string modelName)
+    {
+        int separator = modelName.IndexOf('_');
+        if (separator <= 0 || separator >= modelName.Length - 1)
+            return modelName;
+
+        string prefix = modelName[..separator];
+        string suffix = modelName[(separator + 1)..];
+        return suffix.StartsWith(prefix + "_", StringComparison.Ordinal)
+            ? suffix
+            : modelName;
+    }
+
+    private Dictionary<string, FCostTrendAggregate> BuildSelectedGroupTrendAggregates(int columnCount)
+    {
+        var result = new Dictionary<string, FCostTrendAggregate>(StringComparer.Ordinal);
+        if (_report is null) return result;
+
+        foreach (var sg in _report.SubGroups)
+        {
+            if (string.IsNullOrWhiteSpace(sg.GroupName)) continue;
+            if (!result.TryGetValue(sg.GroupName, out var aggregate))
+            {
+                aggregate = new FCostTrendAggregate(sg.GroupName, columnCount);
+                result[sg.GroupName] = aggregate;
+            }
+
+            for (int i = 0; i < columnCount; i++)
+            {
+                aggregate.InputByCol[i] += ValueAt(sg.InputByCol, i);
+                aggregate.CostByCol[i] += ValueAt(sg.CostByCol, i);
+            }
+        }
+
+        return result;
+    }
+
+    private void AppendBmesRemainderTrendRow(List<FCostTrendModelRow> rows, IReadOnlyList<int> columnIndexes)
+    {
+        if (_report is null || rows.Count == 0 || columnIndexes.Count == 0) return;
+
+        int columnCount = _report.ColumnHeaders.Count;
+        if (columnCount == 0) columnCount = _report.Columns.Count;
+        if (columnCount == 0) return;
+
+        var totalInputByColumn = ComputeTotalInputByColumn(columnIndexes);
+        var totalCostByColumn = ComputeTotalCostByColumn(columnIndexes);
+        var shownRows = rows.Where(r => r.ParentRowId is null).ToList();
+
+        var remainderInput = new double[columnCount];
+        var remainderCost = new double[columnCount];
+        bool hasMeaningfulRemainder = false;
+
+        foreach (int ci in columnIndexes)
+        {
+            if (ci < 0 || ci >= columnCount) continue;
+
+            double totalInput = totalInputByColumn.GetValueOrDefault(ci);
+            double totalCost = totalCostByColumn.GetValueOrDefault(ci);
+            double shownInput = shownRows.Sum(r => ValueAt(r.InputByCol, ci));
+            double shownCost = shownRows.Sum(r => ValueAt(r.CostByCol, ci));
+
+            double diffInput = totalInput - shownInput;
+            double diffCost = totalCost - shownCost;
+            if (diffInput < 0 && Math.Abs(diffInput) < 0.5) diffInput = 0;
+            if (diffCost < 0 && Math.Abs(diffCost) < 0.5) diffCost = 0;
+
+            remainderInput[ci] = Math.Max(0, diffInput);
+            remainderCost[ci] = Math.Max(0, diffCost);
+
+            if (totalCost > 0 && remainderCost[ci] / totalCost * 100.0 >= TrendRemainderMinSharePercent)
+                hasMeaningfulRemainder = true;
+        }
+
+        if (!hasMeaningfulRemainder) return;
+
+        rows.Add(new FCostTrendModelRow(
+            RowId: "M::__BMES_REMAINDER__",
+            ParentRowId: null,
+            ModelName: "기타_누락",
+            GroupName: string.Empty,
+            NgGroupKey: string.Empty,
+            Depth: 0,
+            InputByCol: remainderInput,
+            CostByCol: remainderCost,
+            NgPpmByColumn: columnIndexes.ToDictionary(ci => ci, _ => 0.0)));
+    }
+
+    private static bool TrendModelHasData(FCostHierarchyRow row, IReadOnlyList<int> columnIndexes)
+        => TrendHasData(row.InputByCol, row.CostByCol, columnIndexes);
+
+    private static bool TrendHasData(
+        IReadOnlyList<double>? inputByCol,
+        IReadOnlyList<double>? costByCol,
+        IReadOnlyList<int> columnIndexes)
+        => columnIndexes.Any(ci =>
+            ci >= 0 &&
+            ((costByCol is not null && ci < costByCol.Count && costByCol[ci] > 0) ||
+             (inputByCol is not null && ci < inputByCol.Count && inputByCol[ci] > 0)));
+
+    private static bool TrendHasCostData(IReadOnlyList<double>? costByCol, IReadOnlyList<int> columnIndexes)
+        => columnIndexes.Any(ci => costByCol is not null && ci >= 0 && ci < costByCol.Count && costByCol[ci] > 0);
+
+    private static double TrendCostSum(IReadOnlyList<double>? costByCol, IReadOnlyList<int> columnIndexes)
+    {
+        if (costByCol is null) return 0;
+        double total = 0;
+        foreach (int ci in columnIndexes)
+        {
+            if (ci >= 0 && ci < costByCol.Count)
+                total += costByCol[ci];
+        }
+        return total;
+    }
+
+    private Dictionary<string, FCostTrendAggregate> BuildMaterialTrendAggregates()
+    {
+        var aggregates = new Dictionary<string, FCostTrendAggregate>(StringComparer.OrdinalIgnoreCase);
+        if (_report is null) return aggregates;
+
+        int columnCount = _report.ColumnHeaders.Count;
+        foreach (var material in _report.Materials)
+        {
+            foreach (string key in MaterialTrendKeys(material).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                if (string.IsNullOrWhiteSpace(key)) continue;
+                if (!aggregates.TryGetValue(key, out var aggregate))
+                {
+                    aggregate = new FCostTrendAggregate(key, columnCount);
+                    aggregates[key] = aggregate;
+                }
+
+                for (int i = 1; i <= columnCount; i++)
+                {
+                    aggregate.InputByCol[i - 1] += material.Input?.GetCol(i) ?? 0;
+                    aggregate.CostByCol[i - 1] += material.Cost?.GetCol(i) ?? 0;
+                }
+            }
+        }
+
+        return aggregates;
+    }
+
+    private static IEnumerable<string> MaterialTrendKeys(FCostMaterialBlock material)
+    {
+        string matnrTx = material.Input?.MatnrTx ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(matnrTx))
+            yield return matnrTx.Trim();
+    }
+
+    private double LookupNgTrendPpmByGroupKey(string groupKey, int fcostColumnIndex)
+    {
+        if (_ngRateTrendByMid is null || string.IsNullOrWhiteSpace(groupKey)) return 0;
+
+        foreach (string trendKey in NgTrendColumnKeyCandidates(fcostColumnIndex))
+        {
+            foreach (string keyCandidate in GetNgTrendKeyCandidates(groupKey))
+            {
+                var rows = _ngRateTrendByMid.GroupSummary.GetValueOrDefault(keyCandidate);
+                if (rows is null) continue;
+
+                var total = rows.FirstOrDefault(r => r.IsTotal) ?? rows.FirstOrDefault();
+                if (total?.Ppm.TryGetValue(trendKey, out double ppm) == true)
+                    return ppm;
+            }
+        }
+
+        return 0;
+    }
+
+    private static IEnumerable<string> GetNgTrendKeyCandidates(string groupKey)
+    {
+        string? current = groupKey?.Trim();
+        if (string.IsNullOrWhiteSpace(current)) yield break;
+
+        yield return current;
+
+        while (true)
+        {
+            int sep = current.LastIndexOf("::", StringComparison.Ordinal);
+            if (sep <= 0) yield break;
+
+            current = current[..sep];
+            if (!string.IsNullOrWhiteSpace(current))
+                yield return current;
+        }
+    }
+
+    private IEnumerable<string> NgTrendColumnKeyCandidates(int fcostColumnIndex)
+    {
+        if (_report?.Columns is not { Count: > 0 } columns ||
+            fcostColumnIndex < 0 ||
+            fcostColumnIndex >= columns.Count)
+            yield break;
+
+        var col = columns[fcostColumnIndex];
+        var candidates = col.Kind switch
+        {
+            FCostPeriodKind.Week => new[]
+            {
+                NormalizeNgWeekKey(col.PDate),
+                NormalizeNgWeekKey(col.Code),
+                col.Code,
+                col.Code.Replace("-", string.Empty, StringComparison.Ordinal),
+                col.PDate,
+            },
+            FCostPeriodKind.Month => new[]
+            {
+                NormalizeNgMonthKey(col.PDate),
+                NormalizeNgMonthKey(col.Code),
+                col.Code,
+                col.PDate,
+            },
+            FCostPeriodKind.Day => new[]
+            {
+                NormalizeNgDateKey(col.PDate),
+                NormalizeNgDateKey(col.Code),
+                col.PDate,
+                col.Code,
+            },
+            _ => new[]
+            {
+                col.Code,
+                col.PDate,
+            },
+        };
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (string candidate in candidates)
+        {
+            string key = candidate.Trim();
+            if (key.Length > 0 && seen.Add(key))
+                yield return key;
+        }
+    }
+
+    private double[] ComputeTotalRates(IReadOnlyList<int> columnIndexes)
+    {
+        var rates = new double[columnIndexes.Count];
+        if (_report is null)
+            return rates;
+
+        var usedSource = new bool[columnIndexes.Count];
+        if (_report.SubGroups.Count > 0)
+        {
+            for (int i = 0; i < columnIndexes.Count; i++)
+            {
+                int ci = columnIndexes[i];
+                double weightedSourceRate = 0;
+                double sourceInput = 0;
+
+                foreach (var sg in _report.SubGroups)
+                {
+                    double rateInput = ValueAt(sg.InputByCol, ci);
+                    if (rateInput <= 0) continue;
+
+                    weightedSourceRate += ValueAt(sg.SourceRateByCol, ci) * rateInput;
+                    sourceInput += rateInput;
+                }
+
+                if (sourceInput > 0)
+                {
+                    rates[i] = weightedSourceRate / sourceInput;
+                    usedSource[i] = true;
+                }
+            }
+        }
+
+        var (input, cost) = ComputeSubGroupTotals(columnIndexes);
+        for (int i = 0; i < columnIndexes.Count; i++)
+            if (!usedSource[i])
+                rates[i] = input[i] > 0 ? cost[i] / input[i] * 100.0 : 0;
+        return rates;
+    }
+
+    private double[] ComputeWeeklyTotalRates(
+        IReadOnlyList<int> columnIndexes,
+        IReadOnlyList<FCostWeeklyModelRow> modelRows)
+    {
+        var rates = new double[columnIndexes.Count];
+        bool hasNgRate = false;
+
+        for (int i = 0; i < columnIndexes.Count; i++)
+        {
+            int ci = columnIndexes[i];
+            double sum = 0;
+            int count = 0;
+            foreach (var row in modelRows)
+            {
+                double rate = ValueAt(row.SourceRateByCol, ci);
+                if (rate <= 0) continue;
+                sum += rate;
+                count++;
+            }
+
+            if (count > 0)
+            {
+                rates[i] = sum / count;
+                hasNgRate = true;
+            }
+        }
+
+        return hasNgRate ? rates : ComputeTotalRates(columnIndexes);
+    }
+
+    private double ResolveLatestWeeklyPpm(
+        FCostWeeklyModelRow modelRow,
+        IReadOnlyList<int> columnIndexes)
+    {
+        if (_report?.Columns is not { Count: > 0 } columns)
+            return 0;
+
+        foreach (int ci in columnIndexes)
+        {
+            if (ci < 0 || ci >= columns.Count) continue;
+            if (columns[ci].Kind != FCostPeriodKind.Week) continue;
+
+            double rate = ValueAt(modelRow.SourceRateByCol, ci);
+            if (rate > 0)
+                return rate * 10000.0;
+        }
+
+        return 0;
+    }
+
+    private Dictionary<int, double> ComputeTotalInputByColumn(IReadOnlyList<int> columnIndexes)
+    {
+        var (input, _) = ComputeSubGroupTotals(columnIndexes);
+        var map = new Dictionary<int, double>();
+        for (int i = 0; i < columnIndexes.Count; i++)
+            map[columnIndexes[i]] = input[i];
+        return map;
+    }
+
+    private List<int> ReportColumnIndexes()
+        => ShowAllPeriodColumns ? AllFCostColumnIndexes() : WeeklyReportColumnIndexes();
+
+    private List<int> WeeklyReportColumnIndexes()
+    {
+        if (_report?.Columns is not { Count: > 0 } columns) return new List<int>();
+
+        var validVisible = Enumerable.Range(0, columns.Count)
+            .ToList();
+
+        var weekColumns = validVisible
+            .Where(ci => columns[ci].Kind == FCostPeriodKind.Week)
+            .OrderByDescending(ci => FCostPeriodSortKey(columns[ci]))
+            .Take(WeeklyReportWeekColumnCount);
+
+        var monthColumns = validVisible
+            .Where(ci => columns[ci].Kind == FCostPeriodKind.Month)
+            .OrderByDescending(ci => FCostPeriodSortKey(columns[ci]))
+            .Take(WeeklyReportMonthColumnCount);
+
+        return weekColumns
+            .Concat(monthColumns)
+            .ToList();
+    }
+
+    private double ComputeWeeklyBasisTotalRate()
+    {
+        int basisColumnIndex = FindLatestWeekColumnIndex0();
+        if (basisColumnIndex < 0) return 0;
+
+        var (input, cost) = ComputeSubGroupTotals(new[] { basisColumnIndex });
+        return input.Length > 0 && input[0] > 0 ? cost[0] / input[0] * 100.0 : 0;
+    }
+
+    private Dictionary<int, double> ComputeTotalCostByColumn(IReadOnlyList<int> columnIndexes)
+    {
+        var (_, cost) = ComputeSubGroupTotals(columnIndexes);
+        var map = new Dictionary<int, double>();
+        for (int i = 0; i < columnIndexes.Count; i++)
+            map[columnIndexes[i]] = cost[i];
+        return map;
+    }
+
+    private double GetBmesTotalInput(int columnIndex)
+        => GetBmesTotalValue(_report?.Total?.Input, columnIndex);
+
+    private double GetBmesTotalCost(int columnIndex)
+        => GetBmesTotalValue(_report?.Total?.Cost, columnIndex);
+
+    private double GetBmesTotalRate(int columnIndex)
+        => GetBmesTotalValue(_report?.Total?.Rate, columnIndex);
+
+    private static double GetBmesTotalValue(FCostRow? row, int columnIndex)
+        => row?.GetCol(columnIndex + 1) ?? 0;
+
+    private List<FCostWeeklyModelRow> BuildWeeklyModelRows()
+    {
+        int basisColumnIndex = FindLatestWeekColumnIndex0();
+        if (basisColumnIndex < 0) return new List<FCostWeeklyModelRow>();
+
+        var ngModelRows = BuildWeeklyModelRowsFromNgRate(basisColumnIndex);
+        if (ngModelRows.Count > 0)
+            return ngModelRows;
+
+        var modelRows = BuildFCostHierarchy()
+            .Where(r => r.Depth == 0)
+            .ToList();
+
+        return modelRows
+            .Where(r => ValueAt(r.InputByCol, basisColumnIndex) > 0 &&
+                        (ValueAt(r.SourceRateByCol, basisColumnIndex) > 0 ||
+                         ValueAt(r.CostByCol, basisColumnIndex) > 0))
+            .Select(r => new FCostWeeklyModelRow(
+                r.Display,
+                ResolveWeeklyRateFromSource(ValueAt(r.SourceRateByCol, basisColumnIndex),
+                                          ValueAt(r.InputByCol, basisColumnIndex),
+                                          ValueAt(r.CostByCol, basisColumnIndex)),
+                ValueAt(r.CostByCol, basisColumnIndex),
+                r.InputByCol,
+                r.CostByCol,
+                r.SourceRateByCol))
+            .ToList();
+    }
+
+    private List<FCostWeeklyModelRow> BuildWeeklyModelRowsFromNgRate(int basisColumnIndex)
+    {
+        if (_report is null || _ngRateTrendByMid is null || _reportModelGroups.Count == 0)
+            return new List<FCostWeeklyModelRow>();
+
+        int columnCount = _report.ColumnHeaders.Count > 0 ? _report.ColumnHeaders.Count : _report.Columns.Count;
+        if (columnCount <= 0)
+            return new List<FCostWeeklyModelRow>();
+
+        var rows = new List<FCostWeeklyModelRow>();
+        var emitted = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var group in _reportModelGroups
+            .OrderBy(g => g.SortOrder)
+            .ThenBy(g => g.Name, StringComparer.Ordinal))
+        {
+            foreach (var mid in group.MidGroups)
+            {
+                if (string.IsNullOrWhiteSpace(mid.Material)) continue;
+                if (!emitted.Add($"{group.Name}::{mid.Material}")) continue;
+
+                var rateByCol = new double[columnCount];
+                string ngKey = $"{group.Name}::{mid.Material}";
+                for (int ci = 0; ci < columnCount; ci++)
+                    rateByCol[ci] = PpmToRatePercent(LookupNgTrendPpmByGroupKey(ngKey, ci));
+
+                rows.Add(new FCostWeeklyModelRow(
+                    mid.Material,
+                    ValueAt(rateByCol, basisColumnIndex),
+                    0,
+                    new double[columnCount],
+                    new double[columnCount],
+                    rateByCol));
+            }
+        }
+
+        return rows;
+    }
+
+    private int FindLatestWeekColumnIndex0()
+    {
+        if (_report?.Columns is not { Count: > 0 } columns) return -1;
+
+        var weekIndexes = columns
+            .Where(c => c.Kind == FCostPeriodKind.Week)
+            .OrderByDescending(FCostPeriodSortKey)
+            .Select(c => c.Index - 1)
+            .ToList();
+
+        return weekIndexes.Count > 0 ? weekIndexes[0] : -1;
+    }
+
+    private long FCostPeriodSortKey(FCostColumnMeta col)
+    {
+        string pdate = (col.PDate ?? string.Empty).Trim();
+        string code = (col.Code ?? string.Empty).Trim();
+
+        if (col.Kind == FCostPeriodKind.Week)
+        {
+            foreach (string candidate in new[] { pdate, code })
+            {
+                string digits = candidate.Replace("-", string.Empty, StringComparison.Ordinal);
+                if (long.TryParse(digits, out long value))
+                    return value;
+            }
+        }
+
+        if (col.Kind == FCostPeriodKind.Month)
+        {
+            foreach (string candidate in new[] { pdate, code })
+            {
+                if (long.TryParse(candidate, out long value))
+                    return value;
+            }
+        }
+
+        return col.Index;
+    }
+
+    private string WeeklySummaryColumnHeader(int columnIndex)
+    {
+        if (_report?.Columns is { Count: > 0 } columns &&
+            columnIndex >= 0 &&
+            columnIndex < columns.Count)
+        {
+            var col = columns[columnIndex];
+            if (col.Kind == FCostPeriodKind.Week)
+            {
+                string code = !string.IsNullOrWhiteSpace(col.Code) ? col.Code : col.Header;
+                int dash = code.LastIndexOf('-');
+                if (dash >= 0 && dash + 1 < code.Length && int.TryParse(code[(dash + 1)..], out int week))
+                    return $"W{week:D2}";
+            }
+
+            if (col.Kind == FCostPeriodKind.Month &&
+                DateTime.TryParseExact(col.PDate, "yyyyMM", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime month))
+            {
+                return month.ToString("MMM", CultureInfo.InvariantCulture);
+            }
+
+            return col.Header;
+        }
+
+        return _report is not null &&
+               columnIndex >= 0 &&
+               columnIndex < _report.ColumnHeaders.Count
+            ? _report.ColumnHeaders[columnIndex]
+            : string.Empty;
     }
 
     private static string FormatNum(double v)
@@ -715,28 +2080,283 @@
     private static string FormatRate(double v)
         => v == 0 ? "-" : v.ToString("0.00") + "%";
 
-    private DateTime _queryDate    = DateTime.Today;
-    private bool     _isBusy;
-    private string?  _savedDbPath;
-    private string   _errorMessage = string.Empty;
+    private static string FormatWeeklyRate(double v)
+        => v == 0 ? "-" : v.ToString("0.00") + "%";
 
-    private DateTime _rawStartDate = new(2025, 1, 1);
-    private DateTime _rawEndDate   = DateTime.Today;
-    private bool     _rawForce;
-    private bool     _isRawBackfillBusy;
-    private string   _rawBackfillError = string.Empty;
-    private List<string> _rawBackfillProgress = new();
-    private FCostRawBackfillResult? _rawBackfillResult;
+    private static string FormatWeeklyPpm(double v)
+        => v == 0 ? "-" : ((long)Math.Round(v)).ToString("N0");
+
+    private static string FormatWeeklyPpmFromRate(double v)
+        => v == 0 ? "-" : ((long)Math.Round(v * 10000.0)).ToString("N0");
+
+    private static string FormatWeeklyTargetPpm(double v)
+        => v > 0 ? Math.Truncate(v).ToString("0", CultureInfo.InvariantCulture) : "-";
+
+    private static double PpmToRatePercent(double ppm)
+        => ppm > 0 ? ppm / 10000.0 : 0;
+
+    private static string FormatCompactPercent(double v)
+        => v == 0 ? "-" : v.ToString("0.00") + "%";
+
+    private static string FormatTargetRate(double v)
+        => v.ToString("0.00") + "%";
+
+    private string FormatWeeklyAchievement(FCostWeeklyModelRow modelRow, IReadOnlyList<int> columnIndexes)
+    {
+        double targetPpm = GetWeeklyModelTargetRate(modelRow.ModelName);
+        if (targetPpm <= 0) return "-";
+
+        double actualPpm = ResolveLatestWeeklyRate(modelRow, columnIndexes) * 10000.0;
+        return FormatAchievement(targetPpm, actualPpm);
+    }
+
+    private double ResolveLatestWeeklyRate(FCostWeeklyModelRow modelRow, IReadOnlyList<int> columnIndexes)
+    {
+        var columns = _report?.Columns ?? Array.Empty<FCostColumnMeta>();
+        foreach (int ci in columnIndexes)
+        {
+            if (ci < 0 || ci >= columns.Count) continue;
+            if (columns[ci].Kind != FCostPeriodKind.Week) continue;
+
+            double rate = ValueAt(modelRow.SourceRateByCol, ci);
+            if (rate > 0)
+                return rate;
+        }
+
+        return 0;
+    }
+
+    private static string FormatAchievement(double targetPpm, double actualPpm)
+        => targetPpm > 0 && actualPpm > 0 ? (targetPpm / actualPpm * 100.0).ToString("0") + "%" : "-";
+
+    private static string FormatCurrency(double v)
+        => v == 0 ? "-" : "$" + ((long)Math.Round(v)).ToString("N0");
+
+    private static string FormatTrendPpm(double? v)
+        => v is > 0 ? ((long)Math.Round(v.Value)).ToString("N0") : "-";
+
+    private static string FormatTrendNumber(double v)
+        => v == 0 ? "-" : ((long)Math.Round(v)).ToString("N0");
+
+    private static string FormatTrendCurrency(double v)
+        => v == 0 ? "-" : "$ " + ((long)Math.Round(v)).ToString("N0");
+
+    private static string FormatTrendRate(double v)
+        => v == 0 ? "-" : v.ToString("0.00") + "%";
+
+    private static string FormatTrendPercent(double v)
+        => v == 0 ? "-" : v.ToString("0.0") + "%";
+
+    private string FormatDisplayCurrency(decimal v, BmesFcostRawBreakdownPeriod period)
+    {
+        if (v == 0)
+            return "-";
+
+        decimal? converted = ConvertDisplayCurrency(v, period.Key);
+        if (converted is null)
+            return "-";
+
+        string format = string.Equals(_fcostCurrencyMode, CurrencyUsd, StringComparison.Ordinal)
+            ? "N2"
+            : "N0";
+        return _fcostCurrencyMode + " " + converted.Value.ToString(format, CultureInfo.InvariantCulture);
+    }
+
+    private decimal? ConvertDisplayCurrency(decimal vndValue, string periodKey)
+    {
+        BmesFcostExchangeRate? rate = GetExchangeRate(periodKey);
+        decimal? krwPerUsd = BmesAppliedKrwPerUsd(rate?.KrwPerUsd);
+        decimal? krwPerVnd = BmesAppliedKrwPerVnd(rate?.KrwPerVnd);
+        return _fcostCurrencyMode switch
+        {
+            CurrencyUsd => krwPerUsd is > 0 && krwPerVnd is > 0
+                ? vndValue * krwPerVnd.Value / krwPerUsd.Value
+                : null,
+            CurrencyKrw => krwPerVnd is > 0 ? vndValue * krwPerVnd.Value : null,
+            _ => vndValue,
+        };
+    }
+
+    private BmesFcostExchangeRate? GetExchangeRate(string periodKey)
+        => _rawMaterialBreakdown?.ExchangeRates.FirstOrDefault(r =>
+            string.Equals(r.PeriodKey, periodKey, StringComparison.Ordinal));
+
+    private string FormatExchangeRateSummary()
+    {
+        if (_rawMaterialBreakdown?.ExchangeRates is not { Count: > 0 } rates)
+            return "Exchange rates: none";
+
+        var parts = rates
+            .GroupBy(r => r.StandardDate.Date)
+            .OrderByDescending(g => g.Key)
+            .Select(g =>
+            {
+                var rate = g.First();
+                return $"{rate.StandardDate:yyyy-MM-dd} {FormatExchangeRatePair(rate)}";
+            })
+            .ToList();
+
+        return "Exchange rates from BMES dbo.TCURR: " + string.Join("; ", parts);
+    }
+
+    private string FormatPeriodExchangeRate(BmesFcostRawBreakdownPeriod period)
+    {
+        if (string.Equals(_fcostCurrencyMode, CurrencyVnd, StringComparison.Ordinal))
+            return string.Empty;
+
+        BmesFcostExchangeRate? rate = GetExchangeRate(period.Key);
+        if (rate is null)
+            return "Rate missing";
+
+        return _fcostCurrencyMode switch
+        {
+            CurrencyUsd => rate.KrwPerUsd is > 0 && rate.KrwPerVnd is > 0
+                ? $"{rate.StandardDate:MM-dd} {FormatKrwUsd(rate.KrwPerUsd)} / {FormatKrwVnd(rate.KrwPerVnd)}"
+                : "Rate missing",
+            CurrencyKrw => rate.KrwPerVnd is > 0
+                ? $"{rate.StandardDate:MM-dd} {FormatKrwVnd(rate.KrwPerVnd)}"
+                : "Rate missing",
+            _ => string.Empty,
+        };
+    }
+
+    private static string FormatExchangeRatePair(BmesFcostExchangeRate rate)
+        => $"{FormatKrwUsd(rate.KrwPerUsd)}, {FormatKrwVnd(rate.KrwPerVnd)}";
+
+    private static string FormatKrwUsd(decimal? rate)
+        => BmesAppliedKrwPerUsd(rate) is { } applied
+            ? "KRW/USD " + applied.ToString("N2", CultureInfo.InvariantCulture)
+            : "KRW/USD -";
+
+    private static string FormatKrwVnd(decimal? rate)
+        => BmesAppliedKrwPerVnd(rate) is { } applied
+            ? "KRW/VND " + applied.ToString("N2", CultureInfo.InvariantCulture)
+            : "KRW/VND -";
+
+    private static decimal? BmesAppliedKrwPerUsd(decimal? rate)
+        => rate is > 0
+            ? Math.Round(rate.Value, 2, MidpointRounding.AwayFromZero)
+            : null;
+
+    private static decimal? BmesAppliedKrwPerVnd(decimal? rate)
+        => rate is > 0
+            ? Math.Round(rate.Value, 2, MidpointRounding.AwayFromZero)
+            : null;
+
+    private static decimal SumBreakdownPeriod(
+        IEnumerable<BmesFcostRawMaterialBreakdownRow> rows,
+        string periodKey)
+        => rows.Sum(r => r.FCostByPeriod.GetValueOrDefault(periodKey));
+
+    private static string DisplayBreakdownName(string name, string code)
+        => !string.IsNullOrWhiteSpace(name)
+            ? name
+            : (!string.IsNullOrWhiteSpace(code) ? code : "-");
+
+    private static string FormatLimitedSummary(IEnumerable<string> values, int limit)
+    {
+        var list = values
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .ToList();
+        if (list.Count == 0)
+            return "-";
+
+        string summary = string.Join(", ", list.Take(limit));
+        int remaining = list.Count - limit;
+        return remaining > 0
+            ? $"{summary} (+{remaining.ToString(CultureInfo.InvariantCulture)})"
+            : summary;
+    }
+
+    private static BmesFcostRawMaterialPeriodPrice? PickBreakdownUnitPrice(
+        IReadOnlyDictionary<string, BmesFcostRawMaterialPeriodPrice> priceByPeriod,
+        IReadOnlyList<BmesFcostRawBreakdownPeriod> periods)
+    {
+        foreach (var period in periods)
+        {
+            if (priceByPeriod.TryGetValue(period.Key, out var price) &&
+                IsUsableBreakdownPrice(price))
+                return price;
+        }
+
+        return priceByPeriod.Values.FirstOrDefault(IsUsableBreakdownPrice);
+    }
+
+    private static bool IsUsableBreakdownPrice(BmesFcostRawMaterialPeriodPrice price)
+        => !price.IsMixed &&
+           price.UnitPrice is > 0 &&
+           !string.IsNullOrWhiteSpace(price.Currency);
+
+    private static string FormatEquivalentQty(decimal value)
+        => value >= 1000
+            ? value.ToString("N0", CultureInfo.InvariantCulture)
+            : value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static string FormatBreakdownQty(decimal value, BmesFcostRawMaterialPeriodPrice? price)
+    {
+        if (value <= 0)
+            return "-";
+
+        return FormatEquivalentQty(value) + FormatQtyUnitSuffix(price);
+    }
+
+    private static string FormatQtyUnitSuffix(BmesFcostRawMaterialPeriodPrice? price)
+    {
+        if (price is null || price.IsMixed || string.IsNullOrWhiteSpace(price.PriceUnit))
+            return string.Empty;
+
+        return " " + price.PriceUnit.Trim();
+    }
+
+    private static string FormatUnitPrice(BmesFcostRawMaterialPeriodPrice? price)
+    {
+        if (price is null)
+            return "-";
+        if (price.IsMixed)
+            return "Price mixed";
+        if (price.UnitPrice is null || string.IsNullOrWhiteSpace(price.Currency))
+            return "-";
+
+        string unit = string.IsNullOrWhiteSpace(price.PriceUnit)
+            ? string.Empty
+            : "/" + price.PriceUnit.Trim();
+        return FormatPriceAmount(price.Currency, price.UnitPrice.Value) + unit;
+    }
+
+    private static string FormatPriceAmount(string currency, decimal value)
+    {
+        string format = Math.Abs(value) < 1m && value != 0m
+            ? "0.######"
+            : "N2";
+        return currency.Trim().ToUpperInvariant() + " " + value.ToString(format, CultureInfo.InvariantCulture);
+    }
+
     private FCostRawStatus? _rawStatus;
+    private BmesFcostRawBreakdownResult? _rawMaterialBreakdown;
+    private string _rawBreakdownError = string.Empty;
+    private string _fcostCurrencyMode = CurrencyVnd;
 
     private bool         _isReportBusy;
+    private bool         _isExportingCsv;
+    private bool         _isExportingRawBreakdownExcel;
     private string       _reportError = string.Empty;
     private string       _reportStatusMessage = string.Empty;
-    private DateTime     _reportStartDate = DateTime.Today.AddDays(-13);
+    private DateTime     _reportStartDate = DefaultReportStartDate(DateTime.Today);
     private DateTime     _reportEndDate   = DateTime.Today;
     private FCostReport? _report;
+    private NgRateReportService.NgRateReport? _ngRateTrendByMid;
+    private List<ModelGroupRecord> _reportModelGroups = new();
+    private IReadOnlyList<ModelGroupRecord>? _groupOverride;
+    private IProgress<string>? _externalProgress;
+    private NgRateReportService.NgRateReport? _sharedNgRateTrendReport;
+    private Task<NgRateReportService.NgRateReport?>? _sharedNgRateTrendReportTask;
 
-    // Row visibility toggles — control which Z-type rows render in both tables.
+    private bool IsTrendReportRoute => TrendReportOnly;
+
+    private static DateTime DefaultReportStartDate(DateTime endDate)
+        => new DateTime(endDate.Year, endDate.Month, 1).AddMonths(-2);
+
+    // Row visibility toggles ??control which Z-type rows render in both tables.
     private bool _showInput = true;
     private bool _showCost  = true;
     private bool _showRate  = true;
@@ -753,13 +2373,179 @@
         (_showInput ? 1 : 0) + (_showCost ? 1 : 0) + (_showRate ? 1 : 0);
 
     // SubGroup Summary hierarchy: rows in the table are tied together by parentId
-    // so the user can collapse / expand Mid → Sub1 → Sub2 trees. By default only
+    // so the user can collapse / expand Mid ??Sub1 ??Sub2 trees. By default only
     // the top (Mid) rows are visible; clicking opens deeper levels.
     private HashSet<string> _expandedFCostRows = new(StringComparer.Ordinal);
+    private HashSet<string> _expandedTrendRows = new(StringComparer.Ordinal);
+    private HashSet<string> _expandedRawBreakdownRows = new(StringComparer.Ordinal);
 
     protected override void OnInitialized()
     {
         _rawStatus = FCost.GetRawStatus();
+        LoadWeeklyReportSettings();
+        LoadCurrencySettings();
+    }
+
+    private void LoadCurrencySettings()
+    {
+        _fcostCurrencyMode = NormalizeCurrencyMode(Repo.GetSetting(FCostCurrencyModeSettingKey));
+    }
+
+    private void SetFCostCurrencyMode(ChangeEventArgs e)
+    {
+        _fcostCurrencyMode = NormalizeCurrencyMode(Convert.ToString(e.Value));
+        SaveCurrencySettings();
+    }
+
+    private void SaveCurrencySettings()
+    {
+        Repo.SetSetting(FCostCurrencyModeSettingKey, _fcostCurrencyMode);
+    }
+
+    private static string NormalizeCurrencyMode(string? value)
+    {
+        string normalized = (value ?? string.Empty).Trim().ToUpperInvariant();
+        return normalized switch
+        {
+            CurrencyUsd => CurrencyUsd,
+            CurrencyKrw => CurrencyKrw,
+            _ => CurrencyVnd,
+        };
+    }
+
+    private string SelectedCurrencyWarning => _fcostCurrencyMode switch
+    {
+        CurrencyUsd when HasMissingExchangeRate(requireUsd: true) => "BMES exchange rate missing for one or more periods.",
+        CurrencyKrw when HasMissingExchangeRate(requireUsd: false) => "BMES KRW/VND exchange rate missing for one or more periods.",
+        _ => string.Empty,
+    };
+
+    private bool HasMissingExchangeRate(bool requireUsd)
+    {
+        if (_rawMaterialBreakdown?.Periods is not { Count: > 0 } periods)
+            return false;
+
+        foreach (var period in periods)
+        {
+            BmesFcostExchangeRate? rate = GetExchangeRate(period.Key);
+            if (rate?.KrwPerVnd is not > 0)
+                return true;
+            if (requireUsd && rate.KrwPerUsd is not > 0)
+                return true;
+        }
+
+        return false;
+    }
+
+    private void LoadWeeklyReportSettings()
+    {
+        _weeklyBaselineRate = ReadWeeklyDoubleSetting(WeeklyBaselineRateSettingKey, DefaultWeeklyBaselineRate);
+        _weeklyFirstTargetRate = ReadWeeklyDoubleSetting(WeeklyFirstTargetRateSettingKey, DefaultWeeklyFirstTargetRate);
+        _weeklySecondTargetRate = ReadWeeklyDoubleSetting(WeeklySecondTargetRateSettingKey, DefaultWeeklySecondTargetRate);
+        _weeklyModelTargetRates = ReadWeeklyModelTargetRatesSetting(WeeklyModelTargetRatesSettingKey);
+        _weeklyActionItemsText = Repo.GetSetting(WeeklyActionItemsSettingKey) ?? DefaultWeeklyActionItemsText;
+    }
+
+    private double ReadWeeklyDoubleSetting(string key, double defaultValue)
+    {
+        string? value = Repo.GetSetting(key);
+        if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double invariantValue))
+            return invariantValue;
+        if (double.TryParse(value, NumberStyles.Float, CultureInfo.CurrentCulture, out double localValue))
+            return localValue;
+        return defaultValue;
+    }
+
+    private Dictionary<string, double> ReadWeeklyModelTargetRatesSetting(string key)
+    {
+        string? value = Repo.GetSetting(key);
+        if (string.IsNullOrWhiteSpace(value))
+            return new Dictionary<string, double>(StringComparer.Ordinal);
+
+        try
+        {
+            Dictionary<string, double>? loaded = JsonSerializer.Deserialize<Dictionary<string, double>>(value);
+            if (loaded is null)
+                return new Dictionary<string, double>(StringComparer.Ordinal);
+
+            var normalized = new Dictionary<string, double>(StringComparer.Ordinal);
+            foreach (var kvp in loaded)
+            {
+                if (!string.IsNullOrWhiteSpace(kvp.Key))
+                    normalized[kvp.Key.Trim()] = kvp.Value;
+            }
+
+            return normalized;
+        }
+        catch
+        {
+            return new Dictionary<string, double>(StringComparer.Ordinal);
+        }
+    }
+
+    private string GetWeeklyModelTargetRateInput(string? modelName)
+    {
+        if (string.IsNullOrWhiteSpace(modelName))
+            return string.Empty;
+
+        return _weeklyModelTargetRates.TryGetValue(modelName.Trim(), out double rate)
+            ? Math.Truncate(rate).ToString("N0", CultureInfo.InvariantCulture)
+            : string.Empty;
+    }
+
+    private double GetWeeklyModelTargetRate(string? modelName)
+    {
+        if (string.IsNullOrWhiteSpace(modelName))
+            return 0;
+
+        return _weeklyModelTargetRates.TryGetValue(modelName.Trim(), out double rate)
+            ? rate
+            : 0;
+    }
+
+    private void SetWeeklyModelTargetRate(string? modelName, ChangeEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(modelName))
+            return;
+
+        if (TryParseModelTargetRate(Convert.ToString(e.Value), out double rate))
+            _weeklyModelTargetRates[modelName.Trim()] = Math.Truncate(rate);
+        else
+            _weeklyModelTargetRates.Remove(modelName.Trim());
+
+        SaveWeeklyReportSettings();
+    }
+
+    private static bool TryParseModelTargetRate(string? value, out double rate)
+    {
+        rate = 0;
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        string normalized = value.Replace(",", string.Empty, StringComparison.Ordinal);
+        return double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out rate) ||
+               double.TryParse(normalized, NumberStyles.Float, CultureInfo.CurrentCulture, out rate);
+    }
+
+    private void SaveWeeklyReportSettings()
+    {
+        Repo.SetSetting(WeeklyBaselineRateSettingKey, _weeklyBaselineRate.ToString(CultureInfo.InvariantCulture));
+        Repo.SetSetting(WeeklyFirstTargetRateSettingKey, _weeklyFirstTargetRate.ToString(CultureInfo.InvariantCulture));
+        Repo.SetSetting(WeeklySecondTargetRateSettingKey, _weeklySecondTargetRate.ToString(CultureInfo.InvariantCulture));
+        Repo.SetSetting(WeeklyModelTargetRatesSettingKey, JsonSerializer.Serialize(_weeklyModelTargetRates));
+        Repo.SetSetting(WeeklyActionItemsSettingKey, _weeklyActionItemsText ?? string.Empty);
+        _weeklySettingsStatus = "Saved.";
+    }
+
+    private void ResetWeeklyReportSettings()
+    {
+        _weeklyBaselineRate = DefaultWeeklyBaselineRate;
+        _weeklyFirstTargetRate = DefaultWeeklyFirstTargetRate;
+        _weeklySecondTargetRate = DefaultWeeklySecondTargetRate;
+        _weeklyModelTargetRates.Clear();
+        _weeklyActionItemsText = DefaultWeeklyActionItemsText;
+        SaveWeeklyReportSettings();
+        _weeklySettingsStatus = "Reset.";
     }
 
     private bool HasPeriodColumnToggles =>
@@ -819,7 +2605,8 @@
         _ => int.MaxValue,
     };
 
-    private bool IsPeriodExpanded(FCostPeriodKind kind) => kind switch
+    // A static snapshot has no Expand button, so export mode always shows every column.
+    private bool IsPeriodExpanded(FCostPeriodKind kind) => ExportMode || kind switch
     {
         FCostPeriodKind.Day => _showAllDayColumns,
         FCostPeriodKind.Week => _showAllWeekColumns,
@@ -838,6 +2625,164 @@
         if (!_expandedFCostRows.Remove(rowId)) _expandedFCostRows.Add(rowId);
     }
 
+    private void ToggleTrendRow(string rowId)
+    {
+        if (!_expandedTrendRows.Remove(rowId)) _expandedTrendRows.Add(rowId);
+    }
+
+    private void ToggleRawBreakdownRow(string rowId)
+    {
+        if (!_expandedRawBreakdownRows.Remove(rowId)) _expandedRawBreakdownRows.Add(rowId);
+    }
+
+    private void ExpandAllRawBreakdownRows()
+    {
+        if (_rawMaterialBreakdown?.Rows is not { Count: > 0 } rows)
+            return;
+
+        _expandedRawBreakdownRows.Add(RawBreakdownTotalRowId);
+        foreach (var groupRows in rows.GroupBy(r => r.GroupName))
+        {
+            string groupName = RawBreakdownText(groupRows.Key, "Unassigned");
+            _expandedRawBreakdownRows.Add(RawBreakdownGroupRowId(groupName));
+
+            foreach (var modelRows in groupRows.GroupBy(r => r.ModelName))
+            {
+                string modelName = RawBreakdownText(modelRows.Key, "Unassigned");
+                _expandedRawBreakdownRows.Add(RawBreakdownModelRowId(groupName, modelName));
+            }
+        }
+    }
+
+    private void CollapseAllRawBreakdownRows()
+    {
+        _expandedRawBreakdownRows.Clear();
+    }
+
+    private List<RawBreakdownViewRow> BuildRawBreakdownViewRows()
+    {
+        var result = new List<RawBreakdownViewRow>();
+        if (_rawMaterialBreakdown is null || _rawMaterialBreakdown.Rows.Count == 0)
+            return result;
+
+        var periods = _rawMaterialBreakdown.Periods;
+        bool totalExpanded = IsHierarchyRowExpanded(_expandedRawBreakdownRows, RawBreakdownTotalRowId);
+        result.Add(new RawBreakdownViewRow(
+            RawBreakdownTotalRowId,
+            "Total",
+            string.Empty,
+            "Total",
+            string.Empty,
+            string.Empty,
+            0,
+            "breakdown-grand-total-row",
+            true,
+            totalExpanded,
+            SumRawBreakdownPeriods(_rawMaterialBreakdown.Rows, periods),
+            new Dictionary<string, decimal>(StringComparer.Ordinal),
+            new Dictionary<string, BmesFcostRawMaterialPeriodPrice>(StringComparer.Ordinal)));
+
+        if (!totalExpanded)
+            return result;
+
+        foreach (var groupRows in _rawMaterialBreakdown.Rows
+            .GroupBy(r => RawBreakdownText(r.GroupName, "Unassigned"))
+            .OrderBy(g => g.Key, StringComparer.Ordinal))
+        {
+            var groupList = groupRows.ToList();
+            string groupName = groupRows.Key;
+            string groupRowId = RawBreakdownGroupRowId(groupName);
+            bool groupExpanded = IsHierarchyRowExpanded(_expandedRawBreakdownRows, groupRowId);
+            result.Add(new RawBreakdownViewRow(
+                groupRowId,
+                groupName,
+                "Total",
+                "Model Group Total",
+                string.Empty,
+                string.Empty,
+                1,
+                "breakdown-total-row",
+                true,
+                groupExpanded,
+                SumRawBreakdownPeriods(groupList, periods),
+                new Dictionary<string, decimal>(StringComparer.Ordinal),
+                new Dictionary<string, BmesFcostRawMaterialPeriodPrice>(StringComparer.Ordinal)));
+
+            if (!groupExpanded)
+                continue;
+
+            foreach (var modelRows in groupList
+                .GroupBy(r => RawBreakdownText(r.ModelName, "Unassigned"))
+                .OrderBy(g => g.Key, StringComparer.Ordinal))
+            {
+                var modelList = modelRows.ToList();
+                string modelName = modelRows.Key;
+                string modelRowId = RawBreakdownModelRowId(groupName, modelName);
+                bool modelExpanded = IsHierarchyRowExpanded(_expandedRawBreakdownRows, modelRowId);
+                result.Add(new RawBreakdownViewRow(
+                    modelRowId,
+                    groupName,
+                    modelName,
+                    "Sub Total",
+                    string.Empty,
+                    string.Empty,
+                    2,
+                    "breakdown-subtotal-row",
+                    true,
+                    modelExpanded,
+                    SumRawBreakdownPeriods(modelList, periods),
+                    new Dictionary<string, decimal>(StringComparer.Ordinal),
+                    new Dictionary<string, BmesFcostRawMaterialPeriodPrice>(StringComparer.Ordinal)));
+
+                if (!modelExpanded)
+                    continue;
+
+                foreach (var row in modelList
+                    .OrderByDescending(r => r.TotalFCostVnd)
+                    .ThenBy(r => DisplayBreakdownName(r.MaterialName, r.MaterialCode), StringComparer.Ordinal)
+                    .ThenBy(r => r.MaterialCode, StringComparer.Ordinal))
+                {
+                    BmesFcostRawMaterialPeriodPrice? unitPrice = PickBreakdownUnitPrice(row.PriceByPeriod, periods);
+                    result.Add(new RawBreakdownViewRow(
+                        $"RM::{groupName}::{modelName}::{row.MaterialCode}",
+                        groupName,
+                        modelName,
+                        DisplayBreakdownName(row.MaterialName, row.MaterialCode),
+                        row.MaterialCode,
+                        FormatUnitPrice(unitPrice),
+                        3,
+                        "breakdown-material-row",
+                        false,
+                        false,
+                        new Dictionary<string, decimal>(row.FCostByPeriod, StringComparer.Ordinal),
+                        new Dictionary<string, decimal>(row.EquivalentQtyByPeriod, StringComparer.Ordinal),
+                        new Dictionary<string, BmesFcostRawMaterialPeriodPrice>(row.PriceByPeriod, StringComparer.Ordinal)));
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private static Dictionary<string, decimal> SumRawBreakdownPeriods(
+        IEnumerable<BmesFcostRawMaterialBreakdownRow> rows,
+        IReadOnlyList<BmesFcostRawBreakdownPeriod> periods)
+    {
+        var result = new Dictionary<string, decimal>(StringComparer.Ordinal);
+        foreach (var period in periods)
+            result[period.Key] = rows.Sum(r => r.FCostByPeriod.GetValueOrDefault(period.Key));
+        return result;
+    }
+
+    private static string RawBreakdownGroupRowId(string groupName)
+        => "RG::" + groupName;
+
+    private static string RawBreakdownModelRowId(string groupName, string modelName)
+        => "RMODEL::" + groupName + "::" + modelName;
+
+    private static string RawBreakdownText(string value, string fallback)
+        => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+
     /// <summary>One row in the SubGroup-Summary tree. <see cref="InputByCol"/> /
     /// <see cref="CostByCol"/> are the SUM of every leaf descendant under this node;
     /// <see cref="RateByCol"/> is recomputed from the sums to preserve weighting.</summary>
@@ -845,24 +2790,70 @@
         string   RowId,
         string?  ParentId,
         string   Display,
+        string   NgGroupKey,
         int      Depth,
         int      MatchedMaterialCount,
         double[] InputByCol,
-        double[] CostByCol)
+        double[] CostByCol,
+        double[] SourceRateByCol)
     {
         public double[] RateByCol
         {
             get
             {
-                var arr = new double[InputByCol.Length];
+                int count = Math.Max(InputByCol.Length, CostByCol.Length);
+                var arr = new double[count];
                 for (int i = 0; i < arr.Length; i++)
-                    arr[i] = InputByCol[i] > 0 ? CostByCol[i] / InputByCol[i] * 100.0 : 0;
+                {
+                    double input = ValueAt(InputByCol, i);
+                    double cost = ValueAt(CostByCol, i);
+                    arr[i] = input > 0 ? cost / input * 100.0 : 0;
+                }
                 return arr;
             }
         }
     }
 
-    /// <summary>Build the Mid → Sub1 → Sub2 hierarchy from <c>_report.SubGroups</c>.
+    private static string NormalizeNgWeekKey(string value)
+    {
+        string text = (value ?? string.Empty).Trim();
+        if (text.Length == 0) return string.Empty;
+        if (text.StartsWith("W:", StringComparison.Ordinal)) return text;
+
+        string compact = text.Replace("-", string.Empty, StringComparison.Ordinal);
+        return compact.Length >= 6 && compact.All(char.IsDigit)
+            ? "W:" + compact[..6]
+            : string.Empty;
+    }
+
+    private static string NormalizeNgMonthKey(string value)
+    {
+        string text = (value ?? string.Empty).Trim();
+        if (text.Length == 0) return string.Empty;
+        if (text.StartsWith("M:", StringComparison.Ordinal)) return text;
+
+        string compact = text.Replace("-", string.Empty, StringComparison.Ordinal);
+        return compact.Length >= 6 && compact.All(char.IsDigit)
+            ? "M:" + compact[..6]
+            : string.Empty;
+    }
+
+    private static string NormalizeNgDateKey(string value)
+    {
+        string text = (value ?? string.Empty).Trim();
+        if (text.Length == 0) return string.Empty;
+        if (DateTime.TryParseExact(text, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime day))
+            return day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        return text;
+    }
+
+    private static double ValueAt(IReadOnlyList<double>? values, int index)
+        => values is not null && index >= 0 && index < values.Count ? values[index] : 0;
+
+    private static double ResolveWeeklyRateFromSource(double sourceRate, double input, double cost)
+        => sourceRate > 0 ? sourceRate : (input > 0 ? cost / input * 100.0 : 0);
+
+    /// <summary>Build the Mid ??Sub1 ??Sub2 hierarchy from <c>_report.SubGroups</c>.
     /// The flat leaf rows are bucketed by (GroupName, MidGroupName) for the Mid level
     /// and by the first path segment of <c>SubGroupKey</c> for Sub1. Leaves whose
     /// path is two segments or deeper emit Sub2 rows; one-segment leaves stop at Sub1
@@ -884,21 +2875,29 @@
             string midRowId = $"M::{midGroup.Key.GroupName}::{midGroup.Key.MidGroupName}";
             var midInput   = new double[colCount];
             var midCost    = new double[colCount];
+            var midSourceRateNumerator = new double[colCount];
+            var midSourceRateInput     = new double[colCount];
             int midMatCnt  = 0;
             foreach (var sg in midGroup)
             {
                 for (int i = 0; i < colCount; i++)
                 {
-                    midInput[i] += sg.InputByCol[i];
-                    midCost[i]  += sg.CostByCol[i];
+                    midInput[i] += ValueAt(sg.InputByCol, i);
+                    midCost[i]  += ValueAt(sg.CostByCol, i);
+                    midSourceRateNumerator[i] += ValueAt(sg.SourceRateByCol, i) * ValueAt(sg.InputByCol, i);
+                    midSourceRateInput[i]     += ValueAt(sg.InputByCol, i);
                 }
                 midMatCnt += sg.MatchedMaterialCount;
             }
+
+            var midSourceRate = BuildWeightedRateFromInputs(midSourceRateNumerator, midSourceRateInput);
             rows.Add(new FCostHierarchyRow(
                 RowId: midRowId, ParentId: null,
-                Display: midGroup.Key.MidGroupName, Depth: 0,
+                Display: midGroup.Key.MidGroupName,
+                NgGroupKey: $"{midGroup.Key.GroupName}::{midGroup.Key.MidGroupName}",
+                Depth: 0,
                 MatchedMaterialCount: midMatCnt,
-                InputByCol: midInput, CostByCol: midCost));
+                InputByCol: midInput, CostByCol: midCost, SourceRateByCol: midSourceRate));
 
             // Group leaves under this Mid by first path segment to derive Sub1.
             var bySub1 = midGroup
@@ -912,23 +2911,31 @@
 
                 var s1Input  = new double[colCount];
                 var s1Cost   = new double[colCount];
+                var s1SourceRateNumerator = new double[colCount];
+                var s1SourceRateInput = new double[colCount];
                 int s1MatCnt = 0;
                 foreach (var x in sub1Group)
                 {
                     for (int i = 0; i < colCount; i++)
                     {
-                        s1Input[i] += x.Sg.InputByCol[i];
-                        s1Cost[i]  += x.Sg.CostByCol[i];
+                        s1Input[i] += ValueAt(x.Sg.InputByCol, i);
+                        s1Cost[i]  += ValueAt(x.Sg.CostByCol, i);
+                        s1SourceRateNumerator[i] += ValueAt(x.Sg.SourceRateByCol, i) * ValueAt(x.Sg.InputByCol, i);
+                        s1SourceRateInput[i]     += ValueAt(x.Sg.InputByCol, i);
                     }
                     s1MatCnt += x.Sg.MatchedMaterialCount;
                 }
+
+                var s1SourceRate = BuildWeightedRateFromInputs(s1SourceRateNumerator, s1SourceRateInput);
                 rows.Add(new FCostHierarchyRow(
                     RowId: sub1RowId, ParentId: midRowId,
-                    Display: sub1Display, Depth: 1,
+                    Display: sub1Display,
+                    NgGroupKey: $"{midGroup.Key.GroupName}::{midGroup.Key.MidGroupName}::{sub1Display}",
+                    Depth: 1,
                     MatchedMaterialCount: s1MatCnt,
-                    InputByCol: s1Input, CostByCol: s1Cost));
+                    InputByCol: s1Input, CostByCol: s1Cost, SourceRateByCol: s1SourceRate));
 
-                // Sub2+ leaves only when the path has more than one segment — otherwise
+                // Sub2+ leaves only when the path has more than one segment ??otherwise
                 // the Sub1 row IS the leaf and a Sub2 row would just duplicate it.
                 foreach (var x in sub1Group)
                 {
@@ -937,13 +2944,24 @@
                     string leafRowId   = $"S2::{x.Sg.SubGroupKey}";
                     rows.Add(new FCostHierarchyRow(
                         RowId: leafRowId, ParentId: sub1RowId,
-                        Display: leafDisplay, Depth: 2,
+                        Display: leafDisplay,
+                        NgGroupKey: x.Sg.SubGroupKey.Replace(" / ", "::", StringComparison.Ordinal),
+                        Depth: 2,
                         MatchedMaterialCount: x.Sg.MatchedMaterialCount,
-                        InputByCol: x.Sg.InputByCol, CostByCol: x.Sg.CostByCol));
+                        InputByCol: x.Sg.InputByCol, CostByCol: x.Sg.CostByCol, SourceRateByCol: x.Sg.SourceRateByCol));
                 }
             }
         }
         return rows;
+    }
+
+    private static double[] BuildWeightedRateFromInputs(double[] numerator, double[] input)
+    {
+        int count = Math.Min(numerator.Length, input.Length);
+        var rates = new double[count];
+        for (int i = 0; i < count; i++)
+            rates[i] = input[i] > 0 ? numerator[i] / input[i] : 0;
+        return rates;
     }
 
     /// <summary>Extract the path portion of a SubGroupKey ("Group::Material::path")
@@ -961,15 +2979,24 @@
 
     private static string FCostLevelLabel(FCostHierarchyRow row, IReadOnlySet<string> rowsWithChildren)
     {
-        if (row.Depth == 0) return "Model Name";
-        if (row.Depth == 1 && rowsWithChildren.Contains(row.RowId)) return "Building-Group";
-        return "Line-Group";
+        if (row.Depth == 0) return "Model";
+        return "Sub Group";
     }
+
+    /// <summary>
+    /// Whether a hierarchy row counts as opened. The static export has no toggle to
+    /// click, so every level is opened there — otherwise the exported F-COST tabs would
+    /// show only the top (Mid) rows with no way to reach Sub1/Sub2.
+    /// </summary>
+    private bool IsHierarchyRowExpanded(HashSet<string> expandedRowIds, string rowId)
+        => ExportMode || expandedRowIds.Contains(rowId);
 
     private bool IsFCostRowVisible(
         FCostHierarchyRow row,
         IReadOnlyDictionary<string, FCostHierarchyRow> byId)
     {
+        if (ExportMode) return true;
+
         string? pid = row.ParentId;
         while (pid is not null)
         {
@@ -1003,76 +3030,357 @@
         };
     }
 
-    private bool HasUsableDb =>
-        (!string.IsNullOrEmpty(_savedDbPath) && File.Exists(_savedDbPath)) ||
-        FCostReportSvc.FindMostRecentDb() is { Length: > 0 };
-
-    private void SetToday() => _queryDate = DateTime.Today;
-
-    private async Task BackfillRawAsync()
+    public async Task GenerateReportAsync(
+        DateTime startDate,
+        DateTime endDate,
+        IProgress<string>? progress = null,
+        IReadOnlyList<ModelGroupRecord>? selectedGroups = null,
+        NgRateReportService.NgRateReport? sharedNgRateTrendReport = null,
+        Task<NgRateReportService.NgRateReport?>? sharedNgRateTrendReportTask = null)
     {
-        if (_isRawBackfillBusy) return;
+        _reportStartDate = startDate.Date;
+        _reportEndDate = endDate.Date;
 
-        _isRawBackfillBusy = true;
-        _rawBackfillError = string.Empty;
-        _rawBackfillResult = null;
-        _rawBackfillProgress.Clear();
-        StateHasChanged();
-
-        var progress = new Progress<string>(msg =>
-        {
-            _rawBackfillProgress.Add(msg);
-            if (_rawBackfillProgress.Count > 80)
-                _rawBackfillProgress.RemoveRange(0, _rawBackfillProgress.Count - 80);
-            _ = InvokeAsync(StateHasChanged);
-        });
-
+        _externalProgress = progress;
+        _groupOverride = selectedGroups?.ToList();
+        _sharedNgRateTrendReport = sharedNgRateTrendReport;
+        _sharedNgRateTrendReportTask = sharedNgRateTrendReportTask;
         try
         {
-            _rawBackfillResult = await FCost.BackfillRawAsync(
-                _rawStartDate,
-                _rawEndDate,
-                force: _rawForce,
-                progress: progress);
-            _rawStatus = FCost.GetRawStatus();
-        }
-        catch (Exception ex)
-        {
-            _rawBackfillError = ex.Message;
+            await GetReportAsync();
+            if (_report is null)
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(_reportError)
+                    ? "F-COST trend report did not produce results."
+                    : _reportError);
         }
         finally
         {
-            _isRawBackfillBusy = false;
+            _externalProgress = null;
+            _groupOverride = null;
+            _sharedNgRateTrendReport = null;
+            _sharedNgRateTrendReportTask = null;
+        }
+    }
+
+    private async Task ExportCsvAsync()
+    {
+        if (_isExportingCsv) return;
+
+        _isExportingCsv = true;
+        _reportError = string.Empty;
+        await InvokeAsync(StateHasChanged);
+        await Task.Yield();
+
+        try
+        {
+            if (_report is null)
+            {
+                _reportError = "No CSV rows to export.";
+                return;
+            }
+
+            byte[] bytes = BuildCurrentFCostCsv();
+            if (bytes.Length == 0)
+            {
+                _reportError = "CSV export produced an empty file.";
+                return;
+            }
+
+            string kind = IsTrendReportRoute ? "Trend" : "FCost";
+            Activity.Log("F-COST", $"Export {kind} CSV");
+            string name = $"BMES_{kind}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            await BrowserDownload.DownloadBytesAsync(JS, name, bytes, CsvExportUtility.ContentType);
+        }
+        catch (Exception ex)
+        {
+            _reportError = $"Export failed: {ex.Message}";
+        }
+        finally
+        {
+            _isExportingCsv = false;
             StateHasChanged();
         }
     }
 
-    private async Task GetDataAsync()
+    private async Task ExportRawBreakdownExcelAsync()
     {
-        _errorMessage = string.Empty;
-        _savedDbPath  = null;
-        _isBusy       = true;
-        StateHasChanged();
+        if (_isExportingRawBreakdownExcel) return;
 
-        var progress = new Progress<string>(_ => { });
+        _isExportingRawBreakdownExcel = true;
+        _rawBreakdownError = string.Empty;
+        await InvokeAsync(StateHasChanged);
+        await Task.Yield();
+
         try
         {
-            string? dbPath = await FCost.FetchAndSaveAsync(_queryDate, progress);
-            if (string.IsNullOrEmpty(dbPath))
-                _errorMessage = "Fetch failed — check credentials / logs.";
-            else
-                _savedDbPath = dbPath;
+            if (_rawMaterialBreakdown is null || _rawMaterialBreakdown.Rows.Count == 0)
+            {
+                _rawBreakdownError = "No raw material breakdown rows to export.";
+                return;
+            }
+
+            byte[] bytes = FCostRawBreakdownExcelExporter.Export(
+                _rawMaterialBreakdown,
+                _fcostCurrencyMode,
+                _reportStartDate,
+                _reportEndDate);
+
+            if (bytes.Length == 0)
+            {
+                _rawBreakdownError = "Raw material breakdown Excel export produced an empty file.";
+                return;
+            }
+
+            Activity.Log("F-COST", "Export raw material breakdown Excel");
+            string name = $"BMES_FCost_RawMaterialBreakdown_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            await BrowserDownload.DownloadBytesAsync(JS, name, bytes, BrowserDownload.XlsxContentType);
         }
         catch (Exception ex)
         {
-            _errorMessage = ex.Message;
+            _rawBreakdownError = $"Raw material breakdown export failed: {ex.Message}";
         }
         finally
         {
-            _isBusy = false;
+            _isExportingRawBreakdownExcel = false;
             StateHasChanged();
         }
     }
+
+    private byte[] BuildCurrentFCostCsv()
+    {
+        if (_report is null)
+            return Array.Empty<byte>();
+
+        var columnIndexes = IsTrendReportRoute
+            ? ReportColumnIndexes()
+            : AllFCostColumnIndexes();
+        if (columnIndexes.Count == 0)
+            return Array.Empty<byte>();
+
+        return CsvExportUtility.Build(IsTrendReportRoute
+            ? BuildTrendCsvRows(columnIndexes)
+            : BuildRegularFCostCsvRows(columnIndexes));
+    }
+
+    private IEnumerable<IEnumerable<string?>> BuildTrendCsvRows(IReadOnlyList<int> columnIndexes)
+    {
+        var trendRows = BuildMajorTrendRows(columnIndexes);
+        var totalCostByColumn = ComputeTotalCostByColumn(columnIndexes);
+
+        yield return new string?[] { "Major Model Defect Rate Trend", $"{_reportStartDate:yyyy-MM-dd} - {_reportEndDate:yyyy-MM-dd}" };
+        yield return new[] { "Level", "Model", "Metric" }.Concat(columnIndexes.Select(WeeklySummaryColumnHeader));
+
+        foreach (var row in trendRows)
+        {
+            string level = row.Depth > 0 ? "Sub Group" : "Model";
+            yield return BuildCsvRow(level, TrendModelDisplayName(row.ModelName), "NG PPM",
+                columnIndexes.Select(ci =>
+                {
+                    double v = row.NgPpmByColumn.TryGetValue(ci, out double ppm) ? ppm : 0;
+                    return FormatTrendPpm(v);
+                }));
+            yield return BuildCsvRow(level, TrendModelDisplayName(row.ModelName), "F-COST",
+                columnIndexes.Select(ci => FormatTrendCurrency(ValueAt(row.CostByCol, ci))));
+            yield return BuildCsvRow(level, TrendModelDisplayName(row.ModelName), "F-COST Share",
+                columnIndexes.Select(ci =>
+                {
+                    double totalCost = totalCostByColumn.TryGetValue(ci, out double tc) ? tc : 0;
+                    double share = totalCost > 0 ? ValueAt(row.CostByCol, ci) / totalCost * 100.0 : 0;
+                    return FormatTrendPercent(share);
+                }));
+        }
+
+        if (_report?.Total is not null)
+        {
+            yield return Array.Empty<string?>();
+            yield return BuildCsvRow("Total", "Total (BMES)", "Total Input",
+                columnIndexes.Select(ci => FormatTrendNumber(GetBmesTotalInput(ci))));
+            yield return BuildCsvRow("Total", "Total (BMES)", "Total F-COST",
+                columnIndexes.Select(ci => FormatTrendCurrency(GetBmesTotalCost(ci))));
+            yield return BuildCsvRow("Total", "Total (BMES)", "TOTAL RATE",
+                columnIndexes.Select(ci => FormatTrendRate(GetBmesTotalRate(ci))));
+        }
+    }
+
+    private IEnumerable<IEnumerable<string?>> BuildRegularFCostCsvRows(IReadOnlyList<int> columnIndexes)
+    {
+        bool weeklyOnly = ShowFCostWeeklyReport && !ShowRegularFCostDetails;
+        if (!weeklyOnly)
+            yield return new string?[] { "F-Cost Report", $"{_reportStartDate:yyyy-MM-dd} - {_reportEndDate:yyyy-MM-dd}" };
+
+        if (ShowFCostWeeklyReport)
+        {
+            foreach (var row in BuildWeeklyFCostCsvRows())
+                yield return row;
+            if (ShowRegularFCostDetails)
+                yield return Array.Empty<string?>();
+        }
+
+        if (!ShowRegularFCostDetails)
+            yield break;
+
+        yield return new string?[] { "Model / Sub Group Summary" };
+        yield return FCostMetricHeader(columnIndexes);
+
+        var totalInputByColumn = ComputeTotalInputByColumn(columnIndexes);
+        var totalCostByColumn = ComputeTotalCostByColumn(columnIndexes);
+        foreach (var row in FCostMetricRows(
+                     "Model / Sub Group Summary",
+                     "Total",
+                     "Total",
+                     columnIndexes,
+                     ci => totalInputByColumn.GetValueOrDefault(ci),
+                     ci => totalCostByColumn.GetValueOrDefault(ci)))
+        {
+            yield return row;
+        }
+
+        var hierarchyRows = BuildFCostHierarchy();
+        var rowsWithChildren = hierarchyRows
+            .Where(r => r.ParentId is not null)
+            .Select(r => r.ParentId!)
+            .ToHashSet(StringComparer.Ordinal);
+
+        foreach (var row in hierarchyRows)
+        {
+            foreach (var metricRow in FCostMetricRows(
+                         "Model / Sub Group Summary",
+                         FCostLevelLabel(row, rowsWithChildren),
+                         row.Display,
+                         columnIndexes,
+                         ci => ValueAt(row.InputByCol, ci),
+                         ci => ValueAt(row.CostByCol, ci)))
+            {
+                yield return metricRow;
+            }
+        }
+
+        yield return Array.Empty<string?>();
+        yield return new string?[] { "Material Detail" };
+        yield return FCostMetricHeader(columnIndexes);
+
+        if (_report?.SubGroups.Count > 0)
+        {
+            foreach (var row in FCostMetricRows(
+                         "Material Detail",
+                         "Total",
+                         _report.Total?.DisplayName is { Length: > 0 } totalName ? totalName : "Total",
+                         columnIndexes,
+                         ci => totalInputByColumn.GetValueOrDefault(ci),
+                         ci => totalCostByColumn.GetValueOrDefault(ci)))
+            {
+                yield return row;
+            }
+        }
+
+        foreach (var material in _report?.Materials ?? new List<FCostMaterialBlock>())
+        {
+            foreach (var row in FCostMetricRows(
+                         "Material Detail",
+                         material.ProductGroup,
+                         material.DisplayName,
+                         columnIndexes,
+                         ci => material.Input?.GetCol(ci + 1) ?? 0,
+                         ci => material.Cost?.GetCol(ci + 1) ?? 0))
+            {
+                yield return row;
+            }
+        }
+    }
+
+    private IEnumerable<IEnumerable<string?>> BuildWeeklyFCostCsvRows()
+    {
+        var weeklyColumnIndexes = ReportColumnIndexes();
+        if (weeklyColumnIndexes.Count == 0)
+            yield break;
+
+        var weeklyRows = BuildWeeklyModelRows();
+        var totalRates = ComputeWeeklyTotalRates(weeklyColumnIndexes, weeklyRows);
+
+        yield return new[] { "구분", "모델", "목표 불량률", "달성률" }
+            .Concat(weeklyColumnIndexes.Select(WeeklySummaryColumnHeader));
+
+        foreach (var model in weeklyRows)
+        {
+            yield return BuildCsvRow(
+                "GN",
+                model.ModelName,
+                FormatWeeklyTargetPpm(GetWeeklyModelTargetRate(model.ModelName)),
+                FormatWeeklyAchievement(model, weeklyColumnIndexes),
+                weeklyColumnIndexes.Select(ci => FormatWeeklyPpmFromRate(WeeklyCellRate(model, ci))));
+        }
+
+        yield return BuildCsvRow("Total", "TOTAL 불량률", string.Empty, string.Empty,
+            totalRates.Select(FormatWeeklyPpmFromRate));
+    }
+
+    private static double WeeklyCellRate(FCostWeeklyModelRow modelRow, int columnIndex)
+    {
+        double rate = ValueAt(modelRow.SourceRateByCol, columnIndex);
+        if (rate > 0)
+            return rate;
+
+        double input = ValueAt(modelRow.InputByCol, columnIndex);
+        return input > 0 ? ValueAt(modelRow.CostByCol, columnIndex) / input * 100.0 : 0;
+    }
+
+    private List<int> AllFCostColumnIndexes()
+    {
+        if (_report is null) return new List<int>();
+        int count = _report.Columns.Count > 0 ? _report.Columns.Count : _report.ColumnHeaders.Count;
+        return Enumerable.Range(0, count).ToList();
+    }
+
+    private IEnumerable<string?> FCostMetricHeader(IReadOnlyList<int> columnIndexes)
+        => new[] { "Section", "Level", "Name", "Type" }.Concat(columnIndexes.Select(FCostColumnHeader));
+
+    private IEnumerable<IEnumerable<string?>> FCostMetricRows(
+        string section,
+        string level,
+        string name,
+        IReadOnlyList<int> columnIndexes,
+        Func<int, double> inputOf,
+        Func<int, double> costOf)
+    {
+        if (_showInput)
+            yield return BuildCsvRow(section, level, name, "INPUT", columnIndexes.Select(ci => FormatNum(inputOf(ci))));
+
+        if (_showCost)
+            yield return BuildCsvRow(section, level, name, "F-COST", columnIndexes.Select(ci => FormatNum(costOf(ci))));
+
+        if (_showRate)
+        {
+            yield return BuildCsvRow(section, level, name, "RATE %",
+                columnIndexes.Select(ci =>
+                {
+                    double input = inputOf(ci);
+                    double cost = costOf(ci);
+                    return FormatRate(input > 0 ? cost / input * 100.0 : 0);
+                }));
+        }
+    }
+
+    private IEnumerable<string?> BuildCsvRow(
+        string first,
+        string second,
+        string third,
+        IEnumerable<string?> values)
+        => new[] { first, second, third }.Concat(values);
+
+    private IEnumerable<string?> BuildCsvRow(
+        string first,
+        string second,
+        string third,
+        string fourth,
+        IEnumerable<string?> values)
+        => new[] { first, second, third, fourth }.Concat(values);
+
+    private string FCostColumnHeader(int columnIndex)
+        => _report is not null &&
+           columnIndex >= 0 &&
+           columnIndex < _report.ColumnHeaders.Count
+            ? _report.ColumnHeaders[columnIndex]
+            : string.Empty;
 
     private async Task GetReportAsync()
     {
@@ -1081,6 +3389,12 @@
         _reportError = string.Empty;
         _reportStatusMessage = string.Empty;
         _report = null;
+        _ngRateTrendByMid = null;
+        _reportModelGroups = new();
+        _rawMaterialBreakdown = null;
+        _rawBreakdownError = string.Empty;
+        _expandedTrendRows.Clear();
+        _expandedRawBreakdownRows.Clear();
         StateHasChanged();
 
         try
@@ -1099,13 +3413,14 @@
             _reportStatusMessage =
                 $"Preparing RAW cache. Cached through {forceFrom.AddDays(-1):yyyy-MM-dd}; refreshing {forceFrom:yyyy-MM-dd} - {end:yyyy-MM-dd}.";
 
-            var progress = new Progress<string>(msg =>
+            IProgress<string> progress = new Progress<string>(msg =>
             {
                 _reportStatusMessage = msg;
+                _externalProgress?.Report(msg);
                 _ = InvokeAsync(StateHasChanged);
             });
 
-            await FCost.BackfillRawAsync(
+            var backfill = await FCost.BackfillRawAsync(
                 start,
                 end,
                 force: false,
@@ -1113,21 +3428,63 @@
                 progress: progress);
             _rawStatus = FCost.GetRawStatus();
 
-            var groups = Repo.GetModelGroups();
-            _reportStatusMessage = "Building report from RAW DB...";
+            var groups = _groupOverride?.ToList() ?? Repo.GetModelGroups();
+            _reportModelGroups = groups;
+            LogFCostReportStage("before report build", groups.Count);
+            _reportStatusMessage = backfill.FailedDays > 0
+                ? $"RAW cache completed with {backfill.FailedDays:N0} failed day(s). Building report from available data..."
+                : "RAW cache ready. Building report...";
             _report = await FCostReportSvc.GenerateRawRangeReportAsync(
                 FCost.GetRawDbPath(),
                 start,
                 end,
                 groupsForSubGroupRollup: groups,
                 progress: progress);
+            LogFCostReportStage("after F-COST report build", groups.Count);
+            await BuildRawMaterialBreakdownAsync(groups, progress);
+            LogFCostReportStage("after raw material breakdown", groups.Count);
+            if (_sharedNgRateTrendReport is not null)
+            {
+                _ngRateTrendByMid = _sharedNgRateTrendReport;
+                progress.Report("Reusing Daily NG Rate trend summary.");
+                LogFCostReportStage("after shared NG trend reuse", groups.Count);
+            }
+            else if (_sharedNgRateTrendReportTask is not null)
+            {
+                progress.Report("Waiting for Daily NG Rate trend summary.");
+                try
+                {
+                    var sharedTrend = await _sharedNgRateTrendReportTask;
+                    if (sharedTrend is not null)
+                    {
+                        _ngRateTrendByMid = sharedTrend;
+                        progress.Report("Reusing Daily NG Rate trend summary.");
+                        LogFCostReportStage("after shared NG trend wait", groups.Count);
+                    }
+                    else
+                    {
+                        progress.Report("Daily NG Rate trend summary unavailable; skipping NG Rate trend.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    progress.Report("[WARN] Daily NG Rate trend summary unavailable: " + ex.Message);
+                }
+            }
+            else
+            {
+                await BuildNgRateTrendAsync(groups, start, end, progress);
+                LogFCostReportStage("after NG trend build", groups.Count);
+            }
             _showAllDayColumns = false;
             _showAllWeekColumns = false;
             _showAllMonthColumns = false;
             _reportStatusMessage = $"Report ready: {start:yyyy-MM-dd} - {end:yyyy-MM-dd}.";
+            LogFCostReportStage("report ready", groups.Count);
         }
         catch (Exception ex)
         {
+            _externalProgress?.Report("[F-COST ERROR] " + ex);
             _reportError = $"Error: {ex.Message}";
         }
         finally
@@ -1137,38 +3494,359 @@
         }
     }
 
-    private async Task GetReportLegacyAsync()
+    private void LogFCostReportStage(string stage, int selectedGroupCount)
     {
-        if (_isReportBusy) return;
-        _isReportBusy = true;
-        _reportError  = string.Empty;
-        _report       = null;
-        StateHasChanged();
+        try
+        {
+            using var process = Process.GetCurrentProcess();
+            double workingSetMb = process.WorkingSet64 / 1024d / 1024d;
+            double managedMb = GC.GetTotalMemory(forceFullCollection: false) / 1024d / 1024d;
+            Activity.Log(
+                "F-COST Memory",
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0}: workingSet={1:N1} MB, managed={2:N1} MB, selectedGroups={3:N0}, sourceRows={4:N0}, materials={5:N0}, subGroups={6:N0}, unmapped={7:N0}, rawRows={8:N0}, rawPeriods={9:N0}",
+                    stage,
+                    workingSetMb,
+                    managedMb,
+                    selectedGroupCount,
+                    _report?.TotalRows ?? 0,
+                    _report?.Materials.Count ?? 0,
+                    _report?.SubGroups.Count ?? 0,
+                    _report?.UnmappedMaterials.Count ?? 0,
+                    _rawMaterialBreakdown?.Rows.Count ?? 0,
+                    _rawMaterialBreakdown?.Periods.Count ?? 0));
+        }
+        catch
+        {
+            // Diagnostics must not interfere with report generation.
+        }
+    }
+
+    private async Task BuildRawMaterialBreakdownAsync(
+        IReadOnlyList<ModelGroupRecord> groups,
+        IProgress<string>? progress)
+    {
+        _rawMaterialBreakdown = null;
+        _rawBreakdownError = string.Empty;
+        _expandedRawBreakdownRows.Clear();
+
+        if (_report is null)
+            return;
+
+        List<BmesFcostRawBreakdownPeriod> periods = BuildRawBreakdownPeriods(WeeklyReportColumnIndexes());
+        if (periods.Count == 0)
+            return;
+
+        List<BmesFcostRawBreakdownLineShift> lineShifts = BuildRawBreakdownLineShifts(groups);
+        if (lineShifts.Count == 0)
+            return;
+
+        var connection = BuildNetworkDbConnection();
+        if (string.IsNullOrWhiteSpace(connection.Server) || string.IsNullOrWhiteSpace(connection.UserId))
+        {
+            _rawBreakdownError = "Network DB connection is not configured for FCOST raw material breakdown.";
+            progress?.Report("[WARN] " + _rawBreakdownError);
+            return;
+        }
 
         try
         {
-            string? dbPath = _savedDbPath ?? FCostReportSvc.FindMostRecentDb();
-            if (string.IsNullOrEmpty(dbPath) || !File.Exists(dbPath))
+            progress?.Report($"Loading network DB FCOST raw material breakdown ({periods.Count:N0} period(s), {lineShifts.Count:N0} line shift(s))...");
+            _rawMaterialBreakdown = await FCostActual.FetchRawBreakdownAsync(new BmesFcostRawBreakdownQuery
             {
-                _reportError = "No fcost_*.db found. Run Get Data first.";
-                return;
-            }
-
-            // Always roll up over every defined ModelGroup — picker UI was removed
-            // in favour of in-table Mid → Sub1 → Sub2 expand/collapse.
-            var groups = Repo.GetModelGroups();
-            _report = await FCostReportSvc.GenerateReportAsync(
-                dbPath,
-                groupsForSubGroupRollup: groups);
+                Connection = connection,
+                Fact = "GN",
+                Plant = "3200",
+                Periods = periods,
+                LineShifts = lineShifts,
+            });
+            progress?.Report($"Network DB FCOST raw material breakdown ready: {_rawMaterialBreakdown.Rows.Count:N0} row(s).");
         }
         catch (Exception ex)
         {
-            _reportError = $"Error: {ex.Message}";
-        }
-        finally
-        {
-            _isReportBusy = false;
-            StateHasChanged();
+            _rawBreakdownError = "Network DB FCOST raw material breakdown failed: " + ex.Message;
+            progress?.Report("[WARN] " + _rawBreakdownError);
+            _rawMaterialBreakdown = new BmesFcostRawBreakdownResult
+            {
+                Periods = periods,
+                Rows = [],
+            };
         }
     }
+
+    private BmesFcostDbConnection BuildNetworkDbConnection()
+    {
+        var c = AppPaths.Current;
+        return new BmesFcostDbConnection
+        {
+            Server = c.AdminDbQueryServer,
+            Port = c.AdminDbQueryPort > 0 ? c.AdminDbQueryPort : 1430,
+            Database = string.IsNullOrWhiteSpace(c.AdminDbQueryDatabase) ||
+                       string.Equals(c.AdminDbQueryDatabase, "master", StringComparison.OrdinalIgnoreCase)
+                ? "BMES_LIV"
+                : c.AdminDbQueryDatabase,
+            UserId = c.AdminDbQueryUserId,
+            Password = c.AdminDbQueryPassword,
+            TimeoutSeconds = Math.Clamp(Math.Max(c.AdminDbQueryTimeoutSeconds, 300), 1, 600),
+            Encrypt = c.AdminDbQueryEncrypt,
+            TrustServerCertificate = c.AdminDbQueryTrustServerCertificate,
+        };
+    }
+
+    private List<BmesFcostRawBreakdownPeriod> BuildRawBreakdownPeriods(IReadOnlyList<int> columnIndexes)
+    {
+        var periods = new List<BmesFcostRawBreakdownPeriod>();
+        if (_report?.Columns is not { Count: > 0 } columns)
+            return periods;
+
+        int ordinal = 0;
+        foreach (int ci in columnIndexes)
+        {
+            if (ci < 0 || ci >= columns.Count)
+                continue;
+
+            var col = columns[ci];
+            if (col.Kind is not (FCostPeriodKind.Week or FCostPeriodKind.Month))
+                continue;
+
+            if (TryBuildRawBreakdownPeriod(col, ordinal, WeeklySummaryColumnHeader(ci), out var period))
+            {
+                periods.Add(period);
+                ordinal++;
+            }
+        }
+
+        return periods;
+    }
+
+    private static bool TryBuildRawBreakdownPeriod(
+        FCostColumnMeta col,
+        int ordinal,
+        string header,
+        out BmesFcostRawBreakdownPeriod period)
+    {
+        period = new BmesFcostRawBreakdownPeriod(ordinal, string.Empty, string.Empty, string.Empty, DateTime.MinValue, DateTime.MinValue);
+
+        if (col.Kind == FCostPeriodKind.Week &&
+            TryParseFcostWeek(col.Code, col.PDate, out int year, out int week))
+        {
+            DateTime start = ISOWeek.ToDateTime(year, week, DayOfWeek.Monday).Date;
+            string key = $"{year:0000}-{week:00}";
+            period = new BmesFcostRawBreakdownPeriod(
+                ordinal,
+                key,
+                string.IsNullOrWhiteSpace(header) ? $"W{week:00}" : header,
+                "Week",
+                start,
+                start.AddDays(7));
+            return true;
+        }
+
+        if (col.Kind == FCostPeriodKind.Month &&
+            TryParseFcostMonth(col.Code, col.PDate, out year, out int month))
+        {
+            DateTime start = new(year, month, 1);
+            string key = $"{year:0000}{month:00}";
+            period = new BmesFcostRawBreakdownPeriod(
+                ordinal,
+                key,
+                string.IsNullOrWhiteSpace(header) ? start.ToString("MMM", CultureInfo.InvariantCulture) : header,
+                "Month",
+                start,
+                start.AddMonths(1));
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryParseFcostWeek(string code, string pdate, out int year, out int week)
+    {
+        foreach (string raw in new[] { code, pdate })
+        {
+            string value = (raw ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(value))
+                continue;
+
+            string compact = value.Replace("-", string.Empty, StringComparison.Ordinal);
+            if (compact.Length >= 6 &&
+                int.TryParse(compact[..4], NumberStyles.Integer, CultureInfo.InvariantCulture, out year) &&
+                int.TryParse(compact[4..6], NumberStyles.Integer, CultureInfo.InvariantCulture, out week) &&
+                week >= 1 &&
+                week <= ISOWeek.GetWeeksInYear(year))
+            {
+                return true;
+            }
+        }
+
+        year = 0;
+        week = 0;
+        return false;
+    }
+
+    private static bool TryParseFcostMonth(string code, string pdate, out int year, out int month)
+    {
+        foreach (string raw in new[] { pdate, code })
+        {
+            string value = (raw ?? string.Empty).Trim().Replace("-", string.Empty, StringComparison.Ordinal);
+            if (value.Length >= 6 &&
+                int.TryParse(value[..4], NumberStyles.Integer, CultureInfo.InvariantCulture, out year) &&
+                int.TryParse(value[4..6], NumberStyles.Integer, CultureInfo.InvariantCulture, out month) &&
+                month is >= 1 and <= 12)
+            {
+                return true;
+            }
+        }
+
+        year = 0;
+        month = 0;
+        return false;
+    }
+
+    private static List<BmesFcostRawBreakdownLineShift> BuildRawBreakdownLineShifts(
+        IReadOnlyList<ModelGroupRecord> groups)
+    {
+        var result = new List<BmesFcostRawBreakdownLineShift>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var group in groups)
+        {
+            string groupName = string.IsNullOrWhiteSpace(group.Name) ? "-" : group.Name.Trim();
+            foreach (var mid in group.MidGroups)
+            {
+                string modelName = string.IsNullOrWhiteSpace(mid.Material) ? groupName : mid.Material.Trim();
+                foreach (string rawLineShift in mid.LineShifts)
+                {
+                    string lineShift = rawLineShift.Trim();
+                    if (string.IsNullOrWhiteSpace(lineShift) || !seen.Add(lineShift))
+                        continue;
+
+                    result.Add(new BmesFcostRawBreakdownLineShift(groupName, modelName, lineShift));
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private async Task BuildNgRateTrendAsync(
+        IReadOnlyList<ModelGroupRecord> groups,
+        DateTime start,
+        DateTime end,
+        IProgress<string>? progress)
+    {
+        if (!NgRateSettings.IsCredentialsConfigured || !NgRateSettings.IsNgRateStorageConfigured)
+            return;
+
+        var (mapping, groupNames) = BuildNgMidMapping(groups);
+        if (mapping.Count == 0 || groupNames.Count == 0)
+            return;
+
+        try
+        {
+            _reportStatusMessage = "Building NG Rate trend for registered models...";
+            progress?.Report(_reportStatusMessage);
+
+            string? ngDbPath = await NgRate.GetOrFetchAsync(start, end, progress);
+            if (string.IsNullOrWhiteSpace(ngDbPath))
+                return;
+
+            _ngRateTrendByMid = await NgRateReportSvc.GenerateSummaryReportAsync(
+                ngDbPath,
+                mapping,
+                groupNames,
+                progress,
+                start,
+                end,
+                weightedGroupSummary: true);
+        }
+        catch (Exception ex)
+        {
+            progress?.Report("[WARN] NG Rate trend skipped: " + ex.Message);
+            _ngRateTrendByMid = null;
+        }
+    }
+
+    private static (Dictionary<string, IReadOnlyList<string>> Mapping, List<string> GroupNames) BuildNgMidMapping(
+        IReadOnlyList<ModelGroupRecord> groups)
+    {
+        var mapping = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var groupNames = new List<string>();
+        var seenGroups = new HashSet<string>(StringComparer.Ordinal);
+
+        void AddGroupName(string groupName)
+        {
+            if (seenGroups.Add(groupName))
+                groupNames.Add(groupName);
+        }
+
+        void AddMembership(string lineShift, string groupName)
+        {
+            if (string.IsNullOrWhiteSpace(lineShift) || string.IsNullOrWhiteSpace(groupName)) return;
+            if (!mapping.TryGetValue(lineShift, out var list))
+            {
+                list = new List<string>();
+                mapping[lineShift] = list;
+            }
+
+            if (!list.Contains(groupName, StringComparer.Ordinal))
+                list.Add(groupName);
+
+            AddGroupName(groupName);
+        }
+
+        foreach (var group in groups)
+        {
+            foreach (var mid in group.MidGroups)
+            {
+                if (string.IsNullOrWhiteSpace(mid.Material)) continue;
+                string midKey = $"{group.Name}::{mid.Material}";
+
+                foreach (string lineShift in mid.LineShifts)
+                {
+                    AddMembership(lineShift, group.Name);
+                    AddMembership(lineShift, midKey);
+                }
+
+                foreach (var sub in mid.SubGroups)
+                {
+                    string subKey = ModelGroupPickerHelpers.SubGroupKeyOf(group.Name, mid.Material, sub);
+                    foreach (string lineShift in sub.AllLineShifts)
+                        AddMembership(lineShift, subKey);
+
+                    // Use a temporary mapping local to this sub node to add full leaf keys.
+                    var leafMapping = new Dictionary<string, string>(StringComparer.Ordinal);
+                    var leafGroupNames = new List<string>();
+                    ModelGroupPickerHelpers.BuildSubLeafMapping(group.Name, mid.Material, sub, string.Empty, leafMapping, leafGroupNames);
+
+                    foreach (var kv in leafMapping)
+                        AddMembership(kv.Key, kv.Value);
+                    foreach (var leafName in leafGroupNames)
+                        AddGroupName(leafName);
+                }
+            }
+        }
+
+        return (
+            mapping.ToDictionary(kv => kv.Key, kv => (IReadOnlyList<string>)kv.Value, StringComparer.Ordinal),
+            groupNames);
+    }
+
+    private static string BuildUnmappedModelGroupUrl(IEnumerable<FCostMaterialBlock> unmapped)
+    {
+        var materials = unmapped
+            .Select(m => m.Material)
+            .Where(m => !string.IsNullOrWhiteSpace(m))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(m => m, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (materials.Count == 0)
+            return "/bmes/make-model-group";
+
+        string query = string.Join("&", materials.Select(m => "m=" + Uri.EscapeDataString(m)));
+        return "/bmes/make-model-group?source=fcost&" + query;
+    }
 }
+

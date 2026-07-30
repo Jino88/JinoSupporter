@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import tempfile
+import threading
 import unittest
 from unittest import mock
 from pathlib import Path
@@ -25,6 +26,637 @@ def cell(row: int, column: int, value: object, merge: dict | None = None) -> dic
         "rawValue": value,
         "merge": merge or {"role": "none"},
     }
+
+
+class SemanticLocatorBatchingTests(unittest.TestCase):
+    def test_partitions_by_count_and_bytes_without_dropping_oversized_chunks(self) -> None:
+        jobs = [
+            ({"chunkId": "one", "cells": [{"displayValue": "a" * 40}]}, Path("one")),
+            ({"chunkId": "two", "cells": [{"displayValue": "b" * 40}]}, Path("two")),
+            ({"chunkId": "huge", "cells": [{"displayValue": "c" * 1000}]}, Path("huge")),
+            ({"chunkId": "four", "cells": [{"displayValue": "d"}]}, Path("four")),
+        ]
+        batches = cli._partition_semantic_locator_jobs(
+            jobs,
+            batch_size=2,
+            batch_max_bytes=250,
+        )
+        flattened = [
+            job[0]["chunkId"]
+            for batch in batches
+            for job in batch
+        ]
+        self.assertEqual(["one", "two", "huge", "four"], flattened)
+        self.assertTrue(any(batch[0][0]["chunkId"] == "huge" for batch in batches))
+        self.assertTrue(all(len(batch) <= 2 for batch in batches))
+
+
+class CanonicalWorkflowCliTests(unittest.TestCase):
+    def test_form_preflight_parser_accepts_configured_output_root(self) -> None:
+        parser = cli.build_parser()
+        args = parser.parse_args(
+            [
+                "form-preflight",
+                "--db",
+                "canonical.sqlite",
+                "--input",
+                "archive",
+                "--out",
+                "configured/form-preflight/latest.json",
+                "--output-root",
+                "configured",
+                "--cancel-file",
+                "configured/form-preflight/cancel.request",
+            ]
+        )
+
+        self.assertEqual(args.output_root, "configured")
+        self.assertEqual(
+            args.cancel_file,
+            "configured/form-preflight/cancel.request",
+        )
+
+    def test_form_registry_parsers_expose_review_analyze_and_decide(
+        self,
+    ) -> None:
+        parser = cli.build_parser()
+        review = parser.parse_args(
+            [
+                "form-group-review",
+                "--db",
+                "canonical.sqlite",
+                "--report",
+                "latest.json",
+            ]
+        )
+        analyze = parser.parse_args(
+            [
+                "form-family-analyze",
+                "--db",
+                "canonical.sqlite",
+                "--report",
+                "latest.json",
+                "--family-id",
+                "family-123",
+            ]
+        )
+        decide = parser.parse_args(
+            [
+                "form-family-decide",
+                "--db",
+                "canonical.sqlite",
+                "--report",
+                "latest.json",
+                "--family-id",
+                "family-123",
+                "--decision",
+                "REGISTER_NEW",
+                "--reviewer",
+                "tester",
+            ]
+        )
+
+        self.assertIs(review.func, cli.cmd_form_group_review)
+        self.assertIs(analyze.func, cli.cmd_form_family_analyze)
+        self.assertEqual("medium", analyze.reasoning_effort)
+        self.assertIs(decide.func, cli.cmd_form_family_decide)
+        self.assertEqual("tester", decide.reviewer)
+
+    def test_form_pipeline_complete_parser_defaults_to_all_groups(
+        self,
+    ) -> None:
+        args = cli.build_parser().parse_args(
+            [
+                "form-pipeline-complete",
+                "--db",
+                "canonical.sqlite",
+                "--input",
+                "archive",
+                "--output-root",
+                "configured",
+                "--reviewer",
+                "cli-user",
+            ]
+        )
+
+        self.assertIs(args.func, cli.cmd_form_pipeline_complete)
+        self.assertEqual(2, args.analysis_workers)
+        self.assertEqual("low", args.reasoning_effort)
+        self.assertEqual(0, args.max_families)
+        self.assertFalse(args.skip_corpus)
+        self.assertEqual(400_000, args.draft_monolithic_max_bytes)
+
+    def test_form_family_decision_rebuilds_report_and_review(self) -> None:
+        output_root = self.root / "configured-output"
+        report = output_root / "form-preflight" / "latest.json"
+        report.parent.mkdir(parents=True)
+        report.write_text("{}", encoding="utf-8")
+        args = cli.build_parser().parse_args(
+            [
+                "form-family-decide",
+                "--db",
+                str(self.root / "canonical.sqlite"),
+                "--report",
+                str(report),
+                "--family-id",
+                "family-123",
+                "--decision",
+                "EXCLUDE",
+                "--reviewer",
+                "tester",
+                "--output-root",
+                str(output_root),
+            ]
+        )
+        with (
+            mock.patch.object(
+                cli,
+                "decide_form_family",
+                return_value={
+                    "status": "EXCLUDED",
+                    "familyId": "family-123",
+                    "memberCount": 2,
+                    "linkedFormSignatureId": "",
+                },
+            ) as decide,
+            mock.patch.object(
+                cli,
+                "reclassify_form_preflight_report",
+                return_value={
+                    "knownFormManifestPath": "manifest.json",
+                    "summary": {"knownForms": 0},
+                },
+            ) as reclassify,
+            mock.patch.object(
+                cli,
+                "write_form_group_review",
+                return_value={"summary": {"pendingCount": 1}},
+            ) as review,
+            mock.patch.object(cli, "print_json") as print_json,
+        ):
+            result = args.func(args)
+
+        self.assertEqual(0, result)
+        decide.assert_called_once()
+        reclassify.assert_called_once()
+        review.assert_called_once()
+        self.assertEqual(
+            "EXCLUDED",
+            print_json.call_args.args[0]["status"],
+        )
+
+    def test_output_path_under_root_allows_configured_root_only(self) -> None:
+        configured_root = Path(self.temp.name) / "configured-output"
+        expected = configured_root / "form-preflight" / "latest.json"
+
+        actual = cli.output_path_under_root(
+            str(expected),
+            expected,
+            configured_root,
+        )
+
+        self.assertEqual(actual, expected.resolve())
+        self.assertTrue(actual.parent.is_dir())
+        with self.assertRaises(SystemExit):
+            cli.output_path_under_root(
+                str(Path(self.temp.name) / "outside" / "latest.json"),
+                expected,
+                configured_root,
+            )
+
+    def test_database_scoped_output_path_allows_configured_output_tree(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as external_temp:
+            external = Path(external_temp)
+            configured_root = external / "configured-output"
+            database = (
+                configured_root
+                / "universal-grid"
+                / "InputDataFinish.sqlite"
+            )
+            database.parent.mkdir(parents=True)
+            database.touch()
+            expected = (
+                configured_root
+                / "wpf-evidence"
+                / "old-new.answer.json"
+            )
+
+            actual = cli.database_scoped_output_path(
+                str(expected),
+                cli.OUTPUT_DIR / "evidence-answers" / "default.json",
+                database,
+            )
+
+            self.assertEqual(expected.resolve(), actual)
+            self.assertTrue(actual.parent.is_dir())
+            with self.assertRaises(SystemExit):
+                cli.database_scoped_output_path(
+                    str(external / "outside" / "answer.json"),
+                    cli.OUTPUT_DIR / "evidence-answers" / "default.json",
+                    database,
+                )
+
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory(dir=cli.SERVICE_DIR)
+        self.root = Path(self.temp.name)
+
+    def tearDown(self) -> None:
+        self.temp.cleanup()
+
+    def test_evidence_answer_command_writes_and_validates_deterministic_outputs(
+        self,
+    ) -> None:
+        pack = {
+            "schemaVersion": "canonical-evidence-pack-v1",
+            "question": "새로운 공정 인자가 새로운 결과에 영향을 주나?",
+            "normalizedQuestion": "",
+            "queryTokens": [],
+            "searchTokens": [],
+            "queryRoleHints": {
+                "outcomeTerms": [],
+                "contextOrFactorTerms": [],
+                "relationGateApplied": False,
+            },
+            "studyCandidates": [],
+            "answerEligibleEffects": [],
+            "excludedCandidates": [],
+            "eligibleEffectSummary": [],
+            "summary": {
+                "relevantStudyCount": 0,
+                "answerEligibleEffectCount": 0,
+                "excludedCandidateCount": 0,
+            },
+        }
+        pack_path = self.root / "pack.json"
+        answer_path = self.root / "answer.json"
+        markdown_path = self.root / "answer.md"
+        pack_path.write_text(
+            json.dumps(pack, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        args = cli.build_parser().parse_args(
+            [
+                "evidence-answer",
+                "--pack",
+                str(pack_path),
+                "--out-json",
+                str(answer_path),
+                "--out-markdown",
+                str(markdown_path),
+            ]
+        )
+        with mock.patch.object(cli, "print_json"):
+            self.assertEqual(0, args.func(args))
+        answer = json.loads(answer_path.read_text(encoding="utf-8"))
+        self.assertEqual("NO_RELEVANT_DATA", answer["answerStatus"])
+        self.assertIn("근거 기반 답변", markdown_path.read_text(encoding="utf-8"))
+
+        validate_args = cli.build_parser().parse_args(
+            [
+                "evidence-answer-validate",
+                "--pack",
+                str(pack_path),
+                "--answer",
+                str(answer_path),
+            ]
+        )
+        with mock.patch.object(cli, "print_json"):
+            self.assertEqual(0, validate_args.func(validate_args))
+
+    def test_ingest_workbook_parser_exposes_review_gated_workflow_options(
+        self,
+    ) -> None:
+        args = cli.build_parser().parse_args(
+            [
+                "ingest-workbook",
+                "--db",
+                "knowledge.sqlite",
+                "--input",
+                "new.xlsx",
+                "--capture-backend",
+                "com",
+                "--covered-cell-mode",
+                "blank",
+                "--dismiss-auth-dialog",
+                "--auth-dialog-title",
+                "Company Login",
+                "--auth-dialog-class",
+                "#32770",
+                "--auth-dialog-button",
+                "Continue",
+                "--workers",
+                "2",
+                "--batch-size",
+                "4",
+                "--draft-monolithic-max-bytes",
+                "234567",
+                "--draft-fragment-max-chunks",
+                "5",
+                "--draft-fragment-max-cells",
+                "600",
+                "--draft-fragment-max-bytes",
+                "123456",
+                "--draft-fragment-workers",
+                "2",
+                "--derive-formula-values",
+                "--no-resume",
+            ]
+        )
+        self.assertIs(cli.cmd_ingest_workbook, args.func)
+        self.assertEqual(2, args.workers)
+        self.assertEqual("com", args.capture_backend)
+        self.assertEqual("blank", args.covered_cell_mode)
+        self.assertTrue(args.dismiss_auth_dialog)
+        self.assertEqual("Company Login", args.auth_dialog_title)
+        self.assertEqual("#32770", args.auth_dialog_class)
+        self.assertEqual("Continue", args.auth_dialog_button)
+        self.assertEqual(4, args.batch_size)
+        self.assertEqual(234567, args.draft_monolithic_max_bytes)
+        self.assertEqual(5, args.draft_fragment_max_chunks)
+        self.assertEqual(600, args.draft_fragment_max_cells)
+        self.assertEqual(123456, args.draft_fragment_max_bytes)
+        self.assertEqual(2, args.draft_fragment_workers)
+        self.assertTrue(args.derive_formula_values)
+        self.assertTrue(args.no_resume)
+
+    def test_openxml_index_parser_exposes_parallel_reader_count(self) -> None:
+        args = cli.build_parser().parse_args(
+            [
+                "openxml-index",
+                "--input",
+                "corpus",
+                "--workers",
+                "4",
+            ]
+        )
+        self.assertIs(cli.cmd_openxml_index, args.func)
+        self.assertEqual(4, args.workers)
+
+    def test_parallel_capture_extraction_preserves_source_order_and_errors(
+        self,
+    ) -> None:
+        sources = [
+            self.root / "a.xlsx",
+            self.root / "b.xlsx",
+            self.root / "c.xlsx",
+        ]
+        first_pair_started = threading.Barrier(2)
+
+        def extract(source: Path) -> dict:
+            if source.name in {"a.xlsx", "b.xlsx"}:
+                first_pair_started.wait(timeout=2)
+            if source.name == "b.xlsx":
+                raise ValueError("broken fixture")
+            return {"source": {"fileName": source.name}}
+
+        with mock.patch.object(
+            cli,
+            "extract_openxml_workbook",
+            side_effect=extract,
+        ):
+            results = list(
+                cli._ordered_capture_v2_extractions(
+                    sources,
+                    workers=2,
+                )
+            )
+
+        self.assertEqual(sources, [item[0] for item in results])
+        self.assertEqual("a.xlsx", results[0][1]["source"]["fileName"])
+        self.assertIsNone(results[0][2])
+        self.assertIsNone(results[1][1])
+        self.assertIsInstance(results[1][2], ValueError)
+        self.assertEqual("c.xlsx", results[2][1]["source"]["fileName"])
+        self.assertIsNone(results[2][2])
+
+    def test_related_studies_parser_is_domain_neutral_and_bounded(
+        self,
+    ) -> None:
+        args = cli.build_parser().parse_args(
+            [
+                "related-studies",
+                "--db",
+                "knowledge.sqlite",
+                "--target",
+                "DATA-ARBITRARY",
+                "--limit",
+                "7",
+            ]
+        )
+        self.assertIs(cli.cmd_related_studies, args.func)
+        self.assertEqual("DATA-ARBITRARY", args.target)
+        self.assertEqual(7, args.limit)
+
+    def test_concept_curation_cli_lists_and_rejects_with_json(
+        self,
+    ) -> None:
+        database = self.root / "concept-curation.sqlite"
+        candidate_uid = "schema_candidate_cli_fixture"
+        with cli.connect_rw(database) as connection:
+            cli.ensure_universal_schema(connection)
+            connection.execute(
+                """
+                INSERT INTO knowledge_schema_candidates(
+                    candidate_uid, candidate_kind, normalized_value,
+                    original_value, suggested_canonical_name,
+                    occurrence_count, status, first_seen_at, last_seen_at
+                ) VALUES (
+                    ?, 'CONCEPT:ARBITRARY_CONTEXT', 'fixture context',
+                    'Fixture context', '', 1, 'OPEN',
+                    '2026-07-18T00:00:00Z',
+                    '2026-07-18T00:00:00Z'
+                )
+                """,
+                (candidate_uid,),
+            )
+            connection.commit()
+
+        candidates = cli.build_parser().parse_args(
+            [
+                "concept-candidates",
+                "--db",
+                str(database),
+                "--kind",
+                "CONCEPT:ARBITRARY_CONTEXT",
+                "--query",
+                "fixture",
+            ]
+        )
+        printed: list[dict] = []
+        with mock.patch.object(
+            cli,
+            "print_json",
+            side_effect=printed.append,
+        ):
+            self.assertEqual(0, candidates.func(candidates))
+        self.assertEqual("concept-candidate-list-v1", printed[0]["schemaVersion"])
+        self.assertEqual(candidate_uid, printed[0]["candidates"][0]["candidateUid"])
+
+        concepts = cli.build_parser().parse_args(
+            [
+                "concept-list",
+                "--db",
+                str(database),
+                "--kind",
+                "OUTCOME",
+                "--query",
+                "function ng",
+            ]
+        )
+        printed.clear()
+        with mock.patch.object(
+            cli,
+            "print_json",
+            side_effect=printed.append,
+        ):
+            self.assertEqual(0, concepts.func(concepts))
+        self.assertEqual("canonical-concept-list-v1", printed[0]["schemaVersion"])
+        self.assertGreaterEqual(printed[0]["count"], 1)
+
+        reject = cli.build_parser().parse_args(
+            [
+                "concept-resolve",
+                "--db",
+                str(database),
+                "--candidate-uid",
+                candidate_uid,
+                "--action",
+                "REJECT",
+                "--reviewer",
+                "cli-human",
+                "--note",
+                "Workbook-local context.",
+            ]
+        )
+        printed.clear()
+        with mock.patch.object(
+            cli,
+            "print_json",
+            side_effect=printed.append,
+        ):
+            self.assertEqual(0, reject.func(reject))
+        self.assertEqual("concept-resolution-v1", printed[0]["schemaVersion"])
+        self.assertEqual("REJECTED", printed[0]["candidate"]["status"])
+
+        alias = cli.build_parser().parse_args(
+            [
+                "concept-alias-upsert",
+                "--db",
+                str(database),
+                "--concept-uid",
+                "concept_fixture",
+                "--alias",
+                "fixture alias",
+                "--reviewer",
+                "cli-human",
+                "--note",
+                "Checked source.",
+            ]
+        )
+        self.assertIs(cli.cmd_concept_alias_upsert, alias.func)
+
+    def test_review_and_golden_acceptance_parsers_expose_safe_workflows(
+        self,
+    ) -> None:
+        review = cli.build_parser().parse_args(
+            [
+                "review-decide",
+                "--db",
+                "knowledge.sqlite",
+                "--comparison-id",
+                "CMP-ARBITRARY",
+                "--decision",
+                "APPROVE",
+                "--reviewer",
+                "human-1",
+                "--reason",
+                "Checked source and pairing.",
+                "--study-comparability",
+                "VALID",
+                "--study-confounding",
+                "NONE",
+                "--comparison-validity",
+                "VALID",
+                "--comparison-confounding",
+                "NONE",
+                "--matching-basis",
+                "same unit and period",
+            ]
+        )
+        self.assertIs(cli.cmd_review_decide, review.func)
+        self.assertEqual("CMP-ARBITRARY", review.comparison_id)
+        self.assertEqual("VALID", review.study_comparability)
+        self.assertEqual("NONE", review.comparison_confounding)
+
+        acceptance = cli.build_parser().parse_args(
+            [
+                "golden-acceptance",
+                "--db",
+                "knowledge.sqlite",
+                "--out-dir",
+                "outputs/golden-acceptance/test",
+            ]
+        )
+        self.assertIs(cli.cmd_golden_acceptance, acceptance.func)
+        self.assertTrue(
+            acceptance.manifest.endswith("representative-pilot-v1.json")
+        )
+
+    def test_ingest_corpus_parser_exposes_durable_chunk_and_retry_options(
+        self,
+    ) -> None:
+        args = cli.build_parser().parse_args(
+            [
+                "ingest-corpus",
+                "--db",
+                "knowledge.sqlite",
+                "--input",
+                "corpus",
+                "--source-manifest",
+                "pilot.json",
+                "--offset",
+                "50",
+                "--limit",
+                "25",
+                "--workbook-workers",
+                "4",
+                "--com-workers",
+                "1",
+                "--packet-workers",
+                "2",
+                "--ai-workers",
+                "3",
+                "--db-workers",
+                "1",
+                "--locator-workers",
+                "3",
+                "--draft-fragment-max-chunks",
+                "7",
+                "--draft-monolithic-max-bytes",
+                "345678",
+                "--draft-fragment-workers",
+                "4",
+                "--derive-formula-values",
+                "--retry-failed",
+            ]
+        )
+        self.assertIs(cli.cmd_ingest_corpus, args.func)
+        self.assertEqual(50, args.offset)
+        self.assertEqual(25, args.limit)
+        self.assertEqual(4, args.workbook_workers)
+        self.assertEqual(1, args.com_workers)
+        self.assertEqual(2, args.packet_workers)
+        self.assertEqual(3, args.ai_workers)
+        self.assertEqual(1, args.db_workers)
+        self.assertEqual(3, args.locator_workers)
+        self.assertEqual(7, args.draft_fragment_max_chunks)
+        self.assertEqual(345678, args.draft_monolithic_max_bytes)
+        self.assertEqual(4, args.draft_fragment_workers)
+        self.assertTrue(args.derive_formula_values)
+        self.assertTrue(args.retry_failed)
+        self.assertEqual("pilot.json", args.source_manifest)
 
 
 class UniversalGridIngestionTests(unittest.TestCase):
@@ -196,6 +828,15 @@ class UniversalGridIngestionTests(unittest.TestCase):
             self.assertIn("options_json", run_columns)
             self.assertTrue(cli.table_exists(conn, "ingest_items"))
             self.assertTrue(cli.table_exists(conn, "schema_migrations"))
+            self.assertTrue(cli.table_exists(conn, "knowledge_studies"))
+            self.assertTrue(cli.table_exists(conn, "knowledge_effects"))
+            self.assertTrue(cli.table_exists(conn, "evidence_items"))
+            self.assertEqual(
+                1,
+                conn.execute(
+                    "SELECT COUNT(*) FROM schema_migrations WHERE migration_name='canonical-study-evidence-v1'"
+                ).fetchone()[0],
+            )
 
     def test_import_preserves_fixed_coordinates_and_merge_metadata(self) -> None:
         self.write_payload()
@@ -299,6 +940,16 @@ class UniversalGridIngestionTests(unittest.TestCase):
             self.assertEqual(5, imported["evidence"])
             self.assertEqual(1, conn.execute("SELECT COUNT(*) FROM analysis_reports").fetchone()[0])
             self.assertEqual(1, conn.execute("SELECT COUNT(*) FROM analysis_comparisons").fetchone()[0])
+            self.assertEqual(1, conn.execute("SELECT COUNT(*) FROM knowledge_studies").fetchone()[0])
+            self.assertEqual(2, conn.execute("SELECT COUNT(*) FROM knowledge_arms").fetchone()[0])
+            self.assertEqual(1, conn.execute("SELECT COUNT(*) FROM knowledge_outcomes").fetchone()[0])
+            self.assertEqual(2, conn.execute("SELECT COUNT(*) FROM knowledge_observations").fetchone()[0])
+            self.assertEqual(1, conn.execute("SELECT COUNT(*) FROM knowledge_comparisons").fetchone()[0])
+            self.assertEqual(2, conn.execute("SELECT COUNT(*) FROM knowledge_effects").fetchone()[0])
+            self.assertEqual(5, conn.execute("SELECT COUNT(*) FROM evidence_items").fetchone()[0])
+            public_data_id = conn.execute("SELECT public_data_id FROM knowledge_studies").fetchone()[0]
+            self.assertRegex(public_data_id, r"^DATA-[0-9A-F]{12}$")
+            self.assertEqual(imported["canonical"]["analysisUid"], conn.execute("SELECT analysis_uid FROM workbook_analyses").fetchone()[0])
 
             verification = cli.verify_analysis_report(conn, imported["analysisReportId"])
             self.assertTrue(verification["ok"])
@@ -308,6 +959,128 @@ class UniversalGridIngestionTests(unittest.TestCase):
             metric = exported["reviews"][0]["metrics"][0]
             self.assertEqual(["test", "control"], [value["cohort_key"] for value in metric["values"]])
             self.assertEqual(-10000, metric["comparisons"][0]["delta_value"])
+
+    def test_canonical_projection_is_idempotent_and_public_ids_are_stable(self) -> None:
+        self.write_payload()
+        manifest_path = self.root / "fixture.analysis.json"
+        manifest_path.write_text(json.dumps(self.analysis_manifest(), ensure_ascii=False), encoding="utf-8")
+        with cli.connect_rw(self.db) as conn:
+            cli.ensure_universal_schema(conn)
+            cli.import_com_json(conn, "FixtureDataset", self.raw_json)
+            first = cli.import_analysis_manifest(conn, manifest_path, cli.read_analysis_manifest(manifest_path))
+            first_ids = {
+                "data": conn.execute("SELECT public_data_id FROM knowledge_studies").fetchone()[0],
+                "comparison": conn.execute("SELECT public_comparison_id FROM knowledge_comparisons").fetchone()[0],
+                "evidence": [
+                    row[0]
+                    for row in conn.execute("SELECT public_evidence_id FROM evidence_items ORDER BY public_evidence_id")
+                ],
+            }
+            second = cli.import_analysis_manifest(conn, manifest_path, cli.read_analysis_manifest(manifest_path))
+            second_ids = {
+                "data": conn.execute("SELECT public_data_id FROM knowledge_studies").fetchone()[0],
+                "comparison": conn.execute("SELECT public_comparison_id FROM knowledge_comparisons").fetchone()[0],
+                "evidence": [
+                    row[0]
+                    for row in conn.execute("SELECT public_evidence_id FROM evidence_items ORDER BY public_evidence_id")
+                ],
+            }
+            counts = cli.knowledge_counts(conn)
+            integrity = cli.validate_knowledge_integrity(conn)
+
+        self.assertNotEqual(first["analysisReportId"], second["analysisReportId"])
+        self.assertEqual(first_ids, second_ids)
+        self.assertEqual(5, len(second_ids["evidence"]))
+        self.assertEqual(1, counts["knowledge_studies"])
+        self.assertEqual(1, counts["knowledge_comparisons"])
+        self.assertEqual(5, counts["evidence_items"])
+        self.assertTrue(integrity["ok"], integrity)
+
+    def test_aggregation_guard_rejects_unreviewed_legacy_effect(self) -> None:
+        self.write_payload()
+        manifest_path = self.root / "fixture.analysis.json"
+        manifest_path.write_text(json.dumps(self.analysis_manifest(), ensure_ascii=False), encoding="utf-8")
+        with cli.connect_rw(self.db) as conn:
+            cli.ensure_universal_schema(conn)
+            cli.import_com_json(conn, "FixtureDataset", self.raw_json)
+            cli.import_analysis_manifest(conn, manifest_path, cli.read_analysis_manifest(manifest_path))
+            effect_id = int(conn.execute("SELECT effect_id FROM knowledge_effects ORDER BY effect_id LIMIT 1").fetchone()[0])
+            comparison_id = int(conn.execute("SELECT comparison_id FROM knowledge_comparisons").fetchone()[0])
+            with self.assertRaisesRegex(Exception, "aggregation-eligible effect"):
+                conn.execute("UPDATE knowledge_effects SET aggregation_eligible=1 WHERE effect_id=?", (effect_id,))
+            conn.execute(
+                """
+                UPDATE knowledge_comparisons
+                SET validity_status='VALID', confounding_status='NONE',
+                    aggregation_eligible=1, verification_status='VERIFIED'
+                WHERE comparison_id=?
+                """,
+                (comparison_id,),
+            )
+            conn.execute(
+                "UPDATE knowledge_effects SET verification_status='VERIFIED', aggregation_eligible=1 WHERE effect_id=?",
+                (effect_id,),
+            )
+            self.assertEqual(1, conn.execute("SELECT aggregation_eligible FROM knowledge_effects WHERE effect_id=?", (effect_id,)).fetchone()[0])
+
+    def test_canonical_schema_represents_vp_cd_context_and_changed_factor(self) -> None:
+        self.write_payload()
+        manifest_path = self.root / "fixture.analysis.json"
+        manifest_path.write_text(json.dumps(self.analysis_manifest(), ensure_ascii=False), encoding="utf-8")
+        with cli.connect_rw(self.db) as conn:
+            cli.ensure_universal_schema(conn)
+            cli.import_com_json(conn, "FixtureDataset", self.raw_json)
+            cli.import_analysis_manifest(conn, manifest_path, cli.read_analysis_manifest(manifest_path))
+            study_id = int(conn.execute("SELECT study_id FROM knowledge_studies").fetchone()[0])
+            process_concept_id = int(
+                conn.execute(
+                    "SELECT concept_id FROM knowledge_concepts WHERE canonical_name='VP+CD assembly'"
+                ).fetchone()[0]
+            )
+            factor_concept_id = int(
+                conn.execute(
+                    "SELECT concept_id FROM knowledge_concepts WHERE canonical_name='Bonding amount'"
+                ).fetchone()[0]
+            )
+            conn.execute(
+                """
+                INSERT INTO knowledge_study_contexts(
+                    context_uid, study_id, context_kind, concept_id,
+                    original_value, normalized_value, verification_status
+                ) VALUES ('context_fixture_vp_cd', ?, 'PROCESS', ?,
+                          'VP+CD 조립', 'vp+cd assembly', 'VERIFIED')
+                """,
+                (study_id, process_concept_id),
+            )
+            conn.execute(
+                """
+                INSERT INTO knowledge_factors(
+                    factor_uid, study_id, concept_id, factor_key, factor_domain,
+                    original_label, baseline_condition, changed_condition,
+                    change_direction, isolation_status, verification_status
+                ) VALUES ('factor_fixture_bond_amount', ?, ?, 'vp-cd-bonding-amount',
+                          'ASSEMBLY', 'VP+CD 본드량', 'Normal', '1.5 mg',
+                          'INCREASED', 'ISOLATED', 'VERIFIED')
+                """,
+                (study_id, factor_concept_id),
+            )
+            context = conn.execute(
+                """
+                SELECT c.original_value, k.canonical_name
+                FROM knowledge_study_contexts c
+                JOIN knowledge_concepts k ON k.concept_id=c.concept_id
+                """
+            ).fetchone()
+            factor = conn.execute(
+                """
+                SELECT f.baseline_condition, f.changed_condition, k.canonical_name
+                FROM knowledge_factors f
+                JOIN knowledge_concepts k ON k.concept_id=f.concept_id
+                """
+            ).fetchone()
+
+        self.assertEqual(("VP+CD 조립", "VP+CD assembly"), tuple(context))
+        self.assertEqual(("Normal", "1.5 mg", "Bonding amount"), tuple(factor))
 
     def test_analysis_import_rejects_evidence_outside_the_source_grid(self) -> None:
         self.write_payload()
@@ -321,6 +1094,35 @@ class UniversalGridIngestionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "outside the source UsedRange"):
                 cli.import_analysis_manifest(conn, manifest_path, cli.read_analysis_manifest(manifest_path))
             self.assertEqual(0, conn.execute("SELECT COUNT(*) FROM analysis_reports").fetchone()[0])
+
+    def test_universal_packet_compacts_empty_grid_cells_without_losing_zero_or_coordinates(self) -> None:
+        self.write_payload()
+        with cli.connect_rw(self.db) as conn:
+            cli.ensure_universal_schema(conn)
+            imported = cli.import_com_json(conn, "FixtureDataset", self.raw_json)
+            packet = cli.build_universal_packet(conn, imported["workbookId"], row_limit=20, cell_limit=20)
+
+        self.assertEqual("inference-data-ai-reviewcase-packet-v2", packet["schemaVersion"])
+        self.assertNotIn("sheetCells", packet)
+        self.assertFalse(packet["packetSelection"]["dataTruncated"])
+        cells = [cell for row in packet["sheetRows"] for cell in row["cells"]]
+        self.assertIn("C3", [cell["address"] for cell in cells])
+        self.assertIn("0", [str(cell["value"]) for cell in cells])
+        self.assertTrue(all(cell["value"] not in (None, "") for cell in cells))
+
+    def test_universal_packet_marks_limited_source_as_needs_review_only(self) -> None:
+        self.write_payload()
+        with cli.connect_rw(self.db) as conn:
+            cli.ensure_universal_schema(conn)
+            imported = cli.import_com_json(conn, "FixtureDataset", self.raw_json)
+            packet = cli.build_universal_packet(conn, imported["workbookId"], row_limit=1, cell_limit=1)
+
+        selection = packet["packetSelection"]
+        self.assertTrue(selection["dataTruncated"])
+        self.assertTrue(selection["rowTruncated"] or selection["cellTruncated"])
+        self.assertEqual(1, selection["includedCells"])
+        self.assertIn("packetSelection.dataTruncated", packet["reviewCaseContract"]["packetCompletenessRule"])
+        self.assertTrue(any("NEEDS_REVIEW" in note for note in packet["notes"]))
 
     def test_quick_index_passes_a_single_excel_as_input_file(self) -> None:
         source = self.root / "single.xlsx"

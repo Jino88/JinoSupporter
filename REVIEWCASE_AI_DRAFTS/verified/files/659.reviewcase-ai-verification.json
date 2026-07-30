@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 659,
+  "sourceFile": "45. BRS-161014 DT Report test VP improve NG bending after lazer cutting of vender Alpha    date 21.6.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\659.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:47Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 659,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures a comparable validation report but misgroups factors and omits key outcome rows.",
+    "issues": [
+      "Changed factor mixes mold numbers, totals, and time conditions.",
+      "Mold and 1Hr/2Hr conditions are not preserved as subgroup keys.",
+      "Material and function outcomes omit #8/#10, totals, and Normal rows.",
+      "Sheet1 duplicate table is treated as separate unknown outcome.",
+      "Header-only measurement stats are not valid final evidence."
+    ],
+    "requiredUserQuestions": [
+      "Should time condition be primary and mold number be subgroup?"
+    ],
+    "correctionPlan": [
+      "Define one validation context for post-laser VP bending improvement at vendor Alpha.",
+      "Use Normal as baseline and 1Hr/150C vs 2Hr/150C as changed conditions with mold as subgroup.",
+      "Include all relevant rows for material, vision, function, totals, Normal, and decisions.",
+      "Remove duplicate Sheet1 unknown outcome unless used only as cross-check.",
+      "Replace header-derived measurement stats with row-level defect metrics."
+    ],
+    "evidencePolicy": "Row citations exist but are incomplete and include weak header/duplicate evidence."
+  },
+  "usage": {
+    "input_tokens": 13402,
+    "output_tokens": 772,
+    "total_tokens": 14174
+  }
+}

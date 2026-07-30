@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 384,
+  "sourceFile": "2.BRS-161014  REPORT TEST  JIG Frame Array A JIG  UP version  date 28.10.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\384.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:24Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 384,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The report is comparable, but the draft misstates the baseline/change grouping and needs metric/header cleanup before final use.",
+    "issues": [
+      "Baseline should be plastic JIG material, not an unspecified normal condition.",
+      "Changed condition should be steel JIG material after change, not both conditions combined.",
+      "Outcome domain and metric are too vague for spot-welding OK/NG and NG-rate results.",
+      "Header rows for OK, NG categories, total NG, and NG rate are not cited.",
+      "Row 34 supports an accept/use conclusion that is not reflected in judgement."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to JIG frame Array A material change from plastic to steel.",
+      "Set baselineCondition to JIG Material plastic and changedCondition to JIG after change Material steel.",
+      "Rename outcome to spot-welding inspection OK/NG and NG rate for JIG frame Array A.",
+      "Add V0!27 and V0!28 as evidence for metric headers.",
+      "Set judgement to passed/accepted with limitation that sample sizes differ."
+    ],
+    "evidencePolicy": "Citations are mostly sufficient for conditions and conclusion, but metric header rows must be added."
+  },
+  "usage": {
+    "input_tokens": 2467,
+    "output_tokens": 493,
+    "total_tokens": 2960
+  }
+}

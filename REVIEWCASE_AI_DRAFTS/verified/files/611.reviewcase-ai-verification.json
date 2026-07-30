@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 611,
+  "sourceFile": "4. BRS-161016 GMI Report test material MG-C have abnormal surface of Baotou supplier date 05.09.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\611.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 611,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid comparative context but misgroups the changed factor and corrupts key Gauss and measurement outcomes.",
+    "issues": [
+      "Changed factor wrongly includes metrics and sample labels as conditions.",
+      "Primary comparison should be Test MG-C Baotou abnormal surface vs Normal MG-C Ruijin/normal.",
+      "Gauss semi Yoke NG result cited in conclusion is missed or misclassified.",
+      "Measurement outcomes are badly parsed with wrong specs and impossible aggregates.",
+      "Tension and function outcomes need proper baseline/test grouping and judgement."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rewrite changed factor as MG-C abnormal surface Baotou supplier versus normal MG-C control.",
+      "Keep test domains as outcomes: drop, decap, tension, gauss, function.",
+      "Rebuild Gauss results, including semi Yoke NG 4/379 and MG+PT no-change separately.",
+      "Remove corrupted measurement-stat blocks or replace with row-faithful values/specs.",
+      "Use final conclusion row only as summary support, not a substitute for corrected tables."
+    ],
+    "evidencePolicy": "Citations exist, but current row use is not sufficient because key cited evidence is misgrouped or misparsed."
+  },
+  "usage": {
+    "input_tokens": 10903,
+    "output_tokens": 699,
+    "total_tokens": 11602
+  }
+}

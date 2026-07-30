@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 986,
+  "sourceFile": "BRS-201506 Sub VP - Result check material Film AEM - Date 2024.11.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\986.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 986,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites real result rows but misgroups the changed factor and baseline/test conditions for this material NG investigation.",
+    "issues": [
+      "Changed factor labels row numbers as conditions instead of actual material/process context.",
+      "Baseline or normal condition is not evidenced in the cited rows.",
+      "Rows 11-13 appear to add mainline move and timer-delay changes, not just material lot checks.",
+      "Changed condition omits result rows 9-13 despite including their outcomes.",
+      "Outcome metric title is generic and should identify NG broken after VP forming rate."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary case the new Film AEM material lot, or the timer-delay/mainline corrective action?",
+      "Should rows 1-10 be treated as repeated checks of the same NG material lot?",
+      "Should rows 12-13 be separated as corrective-action validation?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor using evidenced context: new lot Film AEM material after VP forming, with process notes as subgroups if applicable.",
+      "Do not use sequence numbers as changed conditions; extract condition names from note/type/context rows.",
+      "Set baseline as absent/not provided unless a normal lot row is found.",
+      "Group rows 11-13 separately or as subgroups for production move and timer delay.",
+      "Update outcome metric to NG broken after forming rate with all cited input, NG, and NG rate rows."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient to support the current comparison grouping."
+  },
+  "usage": {
+    "input_tokens": 3584,
+    "output_tokens": 799,
+    "total_tokens": 4383
+  }
+}

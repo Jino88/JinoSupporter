@@ -1,0 +1,318 @@
+{
+  "sourceFileId": 813,
+  "sourceFile": "64. BRS-161014 Report TEST sample NG air leak date 08.11.2023_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\64. BRS-161014 Report TEST sample NG air leak date 08.11.2023_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report (2)",
+    "sheetRowCount": 21,
+    "sheetCellCount": 84,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 3,
+    "measurementStatCount": 6
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report (2)!2",
+      "sheetName": "Report (2)",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST SAMPLE NG AIR LEAK -161014 | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report (2)!3",
+      "sheetName": "Report (2)",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | Date | 2023-11-09 00:00:00"
+    },
+    {
+      "rowId": "Report (2)!4",
+      "sheetName": "Report (2)",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | Marker | Thuy"
+    },
+    {
+      "rowId": "Report (2)!5",
+      "sheetName": "Report (2)",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report (2)!6",
+      "sheetName": "Report (2)",
+      "rowNumber": 6,
+      "rowText": "| - Want to test sample NG air leak can or can not use"
+    },
+    {
+      "rowId": "Report (2)!8",
+      "sheetName": "Report (2)",
+      "rowNumber": 8,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report (2)!9",
+      "sheetName": "Report (2)",
+      "rowNumber": 9,
+      "rowText": "| - To separate 2 type NG air leak"
+    },
+    {
+      "rowId": "Report (2)!10",
+      "sheetName": "Report (2)",
+      "rowNumber": 10,
+      "rowText": "| 1. NG sample at 5~10 Pa Leak"
+    },
+    {
+      "rowId": "Report (2)!11",
+      "sheetName": "Report (2)",
+      "rowNumber": 11,
+      "rowText": "| 2. NG sample Big leak"
+    },
+    {
+      "rowId": "Report (2)!12",
+      "sheetName": "Report (2)",
+      "rowNumber": 12,
+      "rowText": "| => To check NG rate of function and move modul line to test"
+    },
+    {
+      "rowId": "Report (2)!13",
+      "sheetName": "Report (2)",
+      "rowNumber": 13,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "Report (2)!14",
+      "sheetName": "Report (2)",
+      "rowNumber": 14,
+      "rowText": "| | RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "Report (2)!17",
+      "sheetName": "Report (2)",
+      "rowNumber": 17,
+      "rowText": "| | 2023-11-08 00:00:00 | NG sample 5~10 Pa Leak | 16 | 11 | 0 | 0 | 2 | 0 | 3 | 0 | 5 | 0.3125"
+    },
+    {
+      "rowId": "Report (2)!19",
+      "sheetName": "Report (2)",
+      "rowNumber": 19,
+      "rowText": "| | | NG sample Big Leak | 63 | 49 | 0 | 0 | 3 | 5 | 11 | 0 | 19 | 0.3015873"
+    },
+    {
+      "rowId": "Report (2)!26",
+      "sheetName": "Report (2)",
+      "rowNumber": 26,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-813-rc-1",
+      "reviewTitle": "REPORT TEST SAMPLE NG AIR LEAK -161014 | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Want to test sample NG air leak can or can not use / | II. Content. / | - To separate 2 type NG air leak / | 1. NG sample at 5~10 Pa Leak",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs NG sample 5~10 Pa Leak, NG sample Big Leak, Total",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "NG sample 5~10 Pa Leak, NG sample Big Leak, Total",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Report (2)!12",
+            "Report (2)!16",
+            "Report (2)!17",
+            "Report (2)!19",
+            "Report (2)!2",
+            "Report (2)!21",
+            "Report (2)!5",
+            "Report (2)!6",
+            "Report (2)!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "Report (2)!17",
+            "Report (2)!19",
+            "Report (2)!21"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 23994,
+              "condition": "NG sample 5~10 Pa Leak",
+              "input": 16.0,
+              "ok": 11.0,
+              "ng": 5.0,
+              "ratePercent": 31.25,
+              "evidenceRows": [
+                "Report (2)!17"
+              ]
+            },
+            {
+              "metricId": 23995,
+              "condition": "NG sample Big Leak",
+              "input": 63.0,
+              "ok": 49.0,
+              "ng": 19.0,
+              "ratePercent": 30.15873,
+              "evidenceRows": [
+                "Report (2)!19"
+              ]
+            },
+            {
+              "metricId": 23996,
+              "condition": "Total",
+              "input": 79.0,
+              "ok": 60.0,
+              "ng": 24.0,
+              "ratePercent": 30.379747000000002,
+              "evidenceRows": [
+                "Report (2)!21"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Type | Input | OK | Sigma | Hearing | Total NG | Total NG rate",
+          "comparisonRows": [
+            "Report (2)!16"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 62992,
+              "condition": "Sigma / SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!16"
+              ]
+            },
+            {
+              "statId": 62993,
+              "condition": "Sigma / THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!16"
+              ]
+            },
+            {
+              "statId": 62994,
+              "condition": "Sigma / SPL+THD",
+              "spec": "",
+              "min": 0.15789474,
+              "max": 5.0,
+              "avg": 1.794371345,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!16"
+              ]
+            },
+            {
+              "statId": 62995,
+              "condition": "Sigma / SPL+THD+F0",
+              "spec": "",
+              "min": 0.0,
+              "max": 5.0,
+              "avg": 1.7452485366666668,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!16"
+              ]
+            },
+            {
+              "statId": 62996,
+              "condition": "Hearing / Noise",
+              "spec": "",
+              "min": 0.57894737,
+              "max": 14.0,
+              "avg": 4.960380116666666,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!16"
+              ]
+            },
+            {
+              "statId": 62997,
+              "condition": "Hearing / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!16"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report (2)!12",
+        "Report (2)!16",
+        "Report (2)!17",
+        "Report (2)!19",
+        "Report (2)!2",
+        "Report (2)!21",
+        "Report (2)!5",
+        "Report (2)!6",
+        "Report (2)!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report (2)!12",
+      "Report (2)!16",
+      "Report (2)!17",
+      "Report (2)!19",
+      "Report (2)!2",
+      "Report (2)!21",
+      "Report (2)!5",
+      "Report (2)!6",
+      "Report (2)!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

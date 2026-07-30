@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 543,
+  "sourceFile": "32. BRS-201506 Report test New base JIG improvement NG VP laser cutting offset- date 15.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\543.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 543,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misgroups the main comparison; source supports Normal vs Test process sequence using the new base jig, not G1/G2/date conditions.",
+    "issues": [
+      "Changed factor incorrectly treats G1/G2/G3 and dates as test conditions.",
+      "Baseline/test conditions ignore stated Normal and Test process flows.",
+      "Key sub VP result rows 21-24 are omitted from the main evidence.",
+      "G1/G2/G3 appear to be limit/subgroup categories, not primary changed factors.",
+      "Measurement outcomes from rows 34/48 are poorly labeled and may be extracted table artifacts."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to Normal flow vs Test flow under new base jig context.",
+      "Use rows 10-14 for condition definition and purpose/content context.",
+      "Add rows 21-24 as main comparative outcome evidence for input, NG counts, and NG rate.",
+      "Keep G1/G2/G3 as subgroup or limit context only.",
+      "Rebuild function/measurement outcomes with proper headers and exclude artifact conditions such as formula errors."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient because key comparative rows are missing and several cited rows do not support the drafted changed factor."
+  },
+  "usage": {
+    "input_tokens": 5167,
+    "output_tokens": 759,
+    "total_tokens": 5926
+  }
+}

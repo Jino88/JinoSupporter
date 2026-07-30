@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 35,
+  "sourceFile": "015.MSU - L20S15-07 REPORT TEST CM+SM FOLLOW SUPPLIER IMPROVE GAUSS FOR MODULE date 2025.02.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\35.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:26Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 35,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because the changed-factor grouping and function-defect calculations are misinterpreted.",
+    "issues": [
+      "Baseline combines Test1 and Test2 despite different C-MG suppliers.",
+      "Cleanest Test2 vs Test3 comparison for S-MG change is not used.",
+      "Outcome compares Test1 vs Test3, confounding C-MG and S-MG changes.",
+      "NG counts and rates appear taken from wrong columns.",
+      "Measurement outcomes are header/config artifacts, not valid results."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split or redefine changed factors by test round and magnet condition.",
+      "Use Test2 as baseline for Test3 when assessing S-MG Maglong change.",
+      "Keep Test1 vs Test2 as separate C-MG supplier comparison if needed.",
+      "Recalculate outcomes from the actual result columns and row18 headers.",
+      "Remove bogus measurement outcomes unless real measurement rows exist."
+    ],
+    "evidencePolicy": "Row citations exist, but row18/header context and corrected result-row citations are required."
+  },
+  "usage": {
+    "input_tokens": 4181,
+    "output_tokens": 1023,
+    "total_tokens": 5204
+  }
+}

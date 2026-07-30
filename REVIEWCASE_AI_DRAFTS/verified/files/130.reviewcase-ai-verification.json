@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 130,
+  "sourceFile": "05. TIU C11-20 Reference data_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\130.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:26Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 130,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Workbook appears to be reference measurement tables only, with no citeable baseline/test changed-condition evidence.",
+    "issues": [
+      "No explicit changed factor is supported by rows.",
+      "Baseline and changed conditions are absent.",
+      "Columns #1-#10 look like samples, not comparable conditions.",
+      "Filename was used as the changed factor without row evidence.",
+      "Outcome grouping mixes SPL, THD, and IMP under an unsupported comparison."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Exclude this draft from final Ask AI evidence.",
+      "Do not treat the filename as a changed factor.",
+      "If retained, classify as reference measurement data only.",
+      "Use SPL, THD, and IMP sheets as separate metrics without comparison judgement.",
+      "Require additional source rows before creating any baseline/test case."
+    ],
+    "evidencePolicy": "Row citations prove table existence only, not a changed-condition comparison."
+  },
+  "usage": {
+    "input_tokens": 5333,
+    "output_tokens": 348,
+    "total_tokens": 5681
+  }
+}

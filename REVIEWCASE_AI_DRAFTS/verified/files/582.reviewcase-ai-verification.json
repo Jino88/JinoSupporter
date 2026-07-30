@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 582,
+  "sourceFile": "36. TIU C11-20 Report check gauss find reason NG high 2025.1.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\582.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:18Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 582,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparable rows but misgroups Gauss conditions and includes an invalid measurement outcome.",
+    "issues": [
+      "Gauss <550G is wrongly placed as subgroup instead of test condition.",
+      "Changed condition omits one compared Gauss bin and mixes line with condition.",
+      "Measurement outcome is derived from header row and is not valid evidence.",
+      "Defect breakdown columns are not represented clearly.",
+      "Date/line merged context should be preserved for all Gauss rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary comparison as Normal vs Gauss bins under TIU C11-20 R.",
+      "Include <550G, 550-569G, and >570G as changed/test conditions.",
+      "Use Normal row as baseline with row 20 citation.",
+      "Remove bogus measurement-stat outcome from header row.",
+      "Keep process defect outcome with input, OK, total NG, NG rate and optional defect breakdown by row."
+    ],
+    "evidencePolicy": "Row citations exist and are sufficient after regrouping; header-only measurement citations are insufficient."
+  },
+  "usage": {
+    "input_tokens": 3572,
+    "output_tokens": 762,
+    "total_tokens": 4334
+  }
+}

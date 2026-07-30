@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 542,
+  "sourceFile": "32. BRS-161016 Report test increase bonding VP+CD  21.4.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\542.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 542,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not approved because the changed-factor grouping conflicts with the report purpose and cited condition rows.",
+    "issues": [
+      "Primary factor says reduce-bond speeds 35/40/55, but source purpose says increase bond by reducing corner speed 30 to 20.",
+      "Baseline includes Normal speed 70 without clear link to the stated VP+CD bonding test.",
+      "Function outcome rows 50/52/56 are not shown in context and may be misgrouped against Normal speed 30.",
+      "Measurement outcomes are polluted by header rows and unrelated numeric extraction.",
+      "Speed 20 and speed 25 bonding-amount rows are not properly represented in outcomes."
+    ],
+    "requiredUserQuestions": [
+      "Should the main comparison be Normal speed 30 vs increased bond corner speed 20/25, or the function rows using speeds 35/40/55?"
+    ],
+    "correctionPlan": [
+      "Rebuild the changed factor from the test content and bonding-speed table.",
+      "Separate bonding amount evidence from function NG-rate results.",
+      "Verify full text for rows 49-58 before judging function comparisons.",
+      "Remove header-derived measurement statistics that are not real measurements.",
+      "Use only conditions directly supported by cited rows."
+    ],
+    "evidencePolicy": "Row citations exist, but content citations are insufficient for final evidence until grouping is corrected."
+  },
+  "usage": {
+    "input_tokens": 4542,
+    "output_tokens": 777,
+    "total_tokens": 5319
+  }
+}

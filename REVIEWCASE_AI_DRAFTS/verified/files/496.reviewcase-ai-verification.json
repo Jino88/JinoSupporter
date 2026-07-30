@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 496,
+  "sourceFile": "29. TIU L5S3-01 R Report test JIG SUB3 & Jig VP press improve check function 2025.12.15_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\496.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:38Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 496,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable source evidence but the changed-factor and comparison grouping are not reliable enough for final Ask AI use.",
+    "issues": [
+      "Changed factor mixes baseline and test conditions incorrectly.",
+      "Date/test-round grouping is not preserved for Normal rows.",
+      "Comparisons cross different AWF and UV conditions without subgroup control.",
+      "Outcome measurement section appears to parse headers/data incorrectly.",
+      "Key cited row Test!23 is not shown in supplied context."
+    ],
+    "requiredUserQuestions": [
+      "Should AWF and UV dry settings be subgroups or separate changed factors?",
+      "Is the primary claim improved jig versus normal jig within each date group?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor as jig improvement or VP press jig test, not a combined condition list.",
+      "Group rows by merged date/test round and preserve machine, AWF, UV, and jig state.",
+      "Compare each test only against the relevant same-group Normal or normal semi sub3 condition.",
+      "Remove or recalc the measurement-stat outcome from actual data rows.",
+      "Cite header plus all data rows used, including decision row if used for conclusion."
+    ],
+    "evidencePolicy": "Row citations are partly sufficient for existence but insufficient for validated grouping."
+  },
+  "usage": {
+    "input_tokens": 4526,
+    "output_tokens": 788,
+    "total_tokens": 5314
+  }
+}

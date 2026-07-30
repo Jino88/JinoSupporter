@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 712,
+  "sourceFile": "50.BRS-161016 Report test VP mold #4,#7,#8 change temp mold and dry 2nd  improve VP bending date 13.07.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\712.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:33Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 712,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed factor and omits key tested conditions, so it cannot be used as final evidence.",
+    "issues": [
+      "Changed factor framed as VP mold #7/#8 vs no baseline, but source shows tests across molds and temperature conditions.",
+      "VP mold #4 evidence rows are ignored despite being visible test results.",
+      "Rows 26,27,29,30,32,33,35,36 are cited but not shown in context for verification of extracted values.",
+      "Outcome is labeled vision laser cutting, while decision emphasizes VP bending NG.",
+      "Test type, 1st molding, 2nd cure temperature, lot, and mold should be preserved as grouping keys."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factor around test condition set: test type with 1st molding and 2nd cure temperature, keeping VP mold as subgroup unless evidence proves mold is primary.",
+      "Include all VP mold #4,#7,#8 rows for each test round.",
+      "Separate or clearly label laser cutting, bending, total NG, and downstream checks under one validation context.",
+      "Cite visible source rows for every extracted metric and condition.",
+      "Use the decision row to support the final judgement that tested conditions were not acceptable."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient because key cited rows are not displayed and grouping evidence is incomplete."
+  },
+  "usage": {
+    "input_tokens": 3710,
+    "output_tokens": 828,
+    "total_tokens": 4538
+  }
+}

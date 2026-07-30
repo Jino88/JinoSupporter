@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 445,
+  "sourceFile": "25. BRS-161014  GMI Report test VP NG surface abnormal 12.16.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\445.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:55Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 445,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the main VP surface-abnormal comparison but omits cited vision, reliability, decision, and subgroup context needed for final evidence.",
+    "issues": [
+      "Missing Sub 1 vision comparison outcome rows 26-27.",
+      "Missing reliability pass outcomes rows 38-40.",
+      "Missing final decision row 49.",
+      "Date, line, and machine subgroup keys are not preserved.",
+      "Changed factor wording is cluttered and should be normalized."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to VP material surface abnormal versus normal VP material.",
+      "Add Sub 1 vision outcome with rows 22-27.",
+      "Add reliability outcomes with rows 35-40.",
+      "Add module and SPK function subgroup keys: date, line or machine.",
+      "Add decision evidence row 49 and concise conclusion context."
+    ],
+    "evidencePolicy": "Current citations exist but are incomplete for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3770,
+    "output_tokens": 561,
+    "total_tokens": 4331
+  }
+}

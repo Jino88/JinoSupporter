@@ -49,6 +49,15 @@
                     @_reasonRefreshMsg
                 </span>
             }
+            <button class="btn btn-primary btn-sm" @onclick="UpdateReasonToServer"
+                    disabled="@(_serverSyncBusy || _reasonRefreshBusy)"
+                    title="Send local Reason Table rows to the server DB">
+                @if (_serverSyncBusy)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" style="width:10px; height:10px;"></span>
+                }
+                Update To Server
+            </button>
             <button class="btn btn-outline-primary btn-sm" @onclick="RefreshReasonFromDailyDbs"
                     disabled="@_reasonRefreshBusy"
                     title="Scan all Daily DBs and add missing (ProcessName, NgName) pairs">
@@ -324,13 +333,14 @@
     private bool _reasonRefreshBusy;
     private string _reasonRefreshMsg = string.Empty;
     private bool _reasonRefreshError;
+    private bool _serverSyncBusy;
 
     private string _statusMsg = string.Empty;
     private bool _statusError;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await PullReasonFromServer();
+        _reasonRows = NgRateSettings.GetReasonRows();
     }
 
     private IReadOnlyList<string> ReasonOptions => _reasonRows
@@ -422,7 +432,7 @@
                string.Equals(r.ProcessName, pn, StringComparison.Ordinal)
             && string.Equals(r.NgName, ng, StringComparison.Ordinal));
 
-    private async Task AddReasonFromSearch()
+    private void AddReasonFromSearch()
     {
         var newRow = new ReasonRow
         {
@@ -442,17 +452,17 @@
             NgName = newRow.NgName,
             Reason = newRow.Reason,
         };
-        await SyncReasonToServer("Reason row added.");
+        SetStatus("Reason row added locally. Click Update To Server to sync.", false);
     }
 
-    private async Task AddReasonFromPair(string pn, string ng)
+    private void AddReasonFromPair(string pn, string ng)
     {
         var newRow = new ReasonRow { ProcessName = pn, NgName = ng, Reason = string.Empty };
         long newId = NgRateSettings.AddReasonRow(newRow);
         _reasonRows = NgRateSettings.GetReasonRows();
         _editReasonId = newId;
         _editReason = new ReasonRow { Id = newId, ProcessName = pn, NgName = ng, Reason = string.Empty };
-        await SyncReasonToServer("Reason row added.");
+        SetStatus("Reason row added locally. Click Update To Server to sync.", false);
     }
 
     private void StartReasonEdit(ReasonRow r)
@@ -468,13 +478,13 @@
         };
     }
 
-    private async Task SaveReasonEdit()
+    private void SaveReasonEdit()
     {
         NgRateSettings.UpdateReasonRow(_editReason);
         _reasonRows = NgRateSettings.GetReasonRows();
         _editReasonId = -1;
         _quickReasonId = -1;
-        await SyncReasonToServer("Reason row saved.");
+        SetStatus("Reason row saved locally. Click Update To Server to sync.", false);
     }
 
     private void CancelReasonEdit() => _editReasonId = -1;
@@ -487,15 +497,16 @@
         _quickReasonValue = r.Reason ?? string.Empty;
     }
 
-    private async Task OnQuickReasonKeyDown(KeyboardEventArgs e)
+    private Task OnQuickReasonKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
-            await SaveQuickReasonEdit(_quickReasonId);
+            SaveQuickReasonEdit(_quickReasonId);
         else if (e.Key == "Escape")
             _quickReasonId = -1;
+        return Task.CompletedTask;
     }
 
-    private async Task SaveQuickReasonEdit(long id)
+    private void SaveQuickReasonEdit(long id)
     {
         if (_quickReasonSaving || id <= 0 || _quickReasonId != id) return;
         var row = _reasonRows.FirstOrDefault(r => r.Id == id);
@@ -519,7 +530,7 @@
             NgRateSettings.UpdateReasonRow(row);
             _reasonRows = NgRateSettings.GetReasonRows();
             _quickReasonId = -1;
-            await SyncReasonToServer("Reason row saved.");
+            SetStatus("Reason row saved locally. Click Update To Server to sync.", false);
         }
         finally
         {
@@ -527,21 +538,21 @@
         }
     }
 
-    private async Task DeleteReasonRow(long id)
+    private void DeleteReasonRow(long id)
     {
         NgRateSettings.DeleteReasonRow(id);
         _reasonRows = NgRateSettings.GetReasonRows();
         if (_editReasonId == id) _editReasonId = -1;
-        await SyncReasonToServer("Reason row deleted.");
+        SetStatus("Reason row deleted locally. Click Update To Server to sync.", false);
     }
 
-    private async Task ImportReasonFromFile()
+    private void ImportReasonFromFile()
     {
         int count = NgRateSettings.ImportReasonFromFile(NgRateSettings.ReasonFilePath);
         _reasonRows = NgRateSettings.GetReasonRows();
         _editReasonId = -1;
         if (count > 0)
-            await SyncReasonToServer($"Imported {count} reason rows from file.");
+            SetStatus($"Imported {count} reason rows locally. Click Update To Server to sync.", false);
         else
             SetStatus("File not found or empty.", true);
     }
@@ -568,7 +579,7 @@
             _reasonRefreshMsg = added > 0
                 ? $"Added {added} new pair(s)."
                 : "No new pairs. ReasonTable already covers all DB values.";
-            await SyncReasonToServer(_reasonRefreshMsg);
+            SetStatus($"{_reasonRefreshMsg} Saved locally. Click Update To Server to sync.", false);
         }
         catch (Exception ex)
         {
@@ -588,24 +599,28 @@
         _statusError = isError;
     }
 
-    private async Task PullReasonFromServer()
+    private async Task UpdateReasonToServer()
     {
-        var result = await BmesSettingsSync.PullReasonRowsFromServerAsync();
-        _reasonRows = NgRateSettings.GetReasonRows();
-        _editReasonId = -1;
-
-        if (result.Succeeded)
-            SetStatus($"Loaded {result.Rows} reason row(s) from server DB.", false);
-        else
-            SetStatus($"Server load failed. Showing local DB: {result.Message}", true);
+        if (_serverSyncBusy) return;
+        _serverSyncBusy = true;
+        try
+        {
+            _reasonRows = NgRateSettings.GetReasonRows();
+            await SyncReasonToServer();
+        }
+        finally
+        {
+            _serverSyncBusy = false;
+            StateHasChanged();
+        }
     }
 
-    private async Task SyncReasonToServer(string localMessage)
+    private async Task SyncReasonToServer()
     {
         var result = await BmesSettingsSync.SyncReasonRowsAsync(_reasonRows);
         if (result.Succeeded)
-            SetStatus($"{localMessage} Server synced ({result.Rows} rows).", false);
+            SetStatus($"Reason table updated to server ({result.Rows} rows).", false);
         else
-            SetStatus($"{localMessage} Local DB saved, but server sync failed: {result.Message}", true);
+            SetStatus($"Server update failed. Local DB is unchanged: {result.Message}", true);
     }
 }

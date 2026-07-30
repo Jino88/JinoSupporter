@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 415,
+  "sourceFile": "22. BRS-201506 Report checking NTI test coil wire RCW KTP 18-0.093mm date 1.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\415.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 415,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable NTI condition evidence but the changed factor and outcome grouping are not verified.",
+    "issues": [
+      "Changed factor is taken from filename, not row-proven.",
+      "Baseline/test roles for Normal, Coil Test, and ST are ambiguous.",
+      "Outcomes are generic and mix SPL, THD, IMP, FO, and metadata.",
+      "Sheet3 and mask/id-derived stats appear non-comparable.",
+      "No clear specs or final judgement are supported."
+    ],
+    "requiredUserQuestions": [
+      "Is Normal the baseline and Coil Test the changed coil-wire condition?",
+      "Should ST be a separate condition or reference subgroup?"
+    ],
+    "correctionPlan": [
+      "Replace filename factor with row-supported coil-wire test condition.",
+      "Define baseline, changed condition, and ST handling.",
+      "Regroup outcomes as SPL, THD, IMP, and FO only.",
+      "Remove Sheet3, mask, row-number, and ID-derived stats.",
+      "Cite header plus relevant data or summary rows for each outcome."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for final evidence grouping."
+  },
+  "usage": {
+    "input_tokens": 8075,
+    "output_tokens": 758,
+    "total_tokens": 8833
+  }
+}

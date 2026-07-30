@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 227,
+  "sourceFile": "11. BRS-161016 GMI Report test DOE Laser VP main 2- 2025.06.25_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\227.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:44Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 227,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misgroups the DOE laser delay factors and omits later test conditions.",
+    "issues": [
+      "Changed factor is labeled as generic Type comparison, not laser delay Value/GAP DOE settings.",
+      "Only Test No.1-No.7 are evaluated; Test No.8-No.15 are omitted.",
+      "Changed condition incorrectly includes Standard as a test condition.",
+      "Outcome metric is the table title, not NG count, NG rate, or defect mode results.",
+      "Subgroup keys omit date, line, and setting values needed for row-level grouping."
+    ],
+    "requiredUserQuestions": [
+      "Confirm whether Test No.1-No.5 and Test No.6-No.15 are separate on/off delay sweeps."
+    ],
+    "correctionPlan": [
+      "Redefine the primary factor as DOE laser delay setting with Value and GAP levels.",
+      "Use Standard row as baseline and include all Test No.1-No.15 rows.",
+      "Separate or annotate on-delay/off-delay sweeps if confirmed by source context.",
+      "Set outcomes to Cutting offset NG, Not cut all NG, Total NG, and NG rate.",
+      "Cite header rows plus every compared data row."
+    ],
+    "evidencePolicy": "Row citations exist but are incomplete and not sufficient for final evidence until corrected."
+  },
+  "usage": {
+    "input_tokens": 4624,
+    "output_tokens": 786,
+    "total_tokens": 5410
+  }
+}

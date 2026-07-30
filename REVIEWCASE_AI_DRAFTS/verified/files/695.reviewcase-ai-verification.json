@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 695,
+  "sourceFile": "5. BRS-161014 Report check dimension AWF JIG 2023.11.2_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\695.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:55Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 695,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not verified because it misdefines the change context and derives incorrect measurement outcomes for a new AWF jig dimension check.",
+    "issues": [
+      "Changed factor is filename, not the tested new AWF jig/dimension check.",
+      "Baseline/test conditions are not applicable or not stated; this is spec conformance.",
+      "Outcome stats wrongly treat jig item numbers as measurements.",
+      "Spec mapping is wrong for the 11.06~11.07 dimension.",
+      "Final OK result row is omitted from the case evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to new AWF jig dimension/spec verification.",
+      "Use spec conformance framing rather than baseline vs changed comparison.",
+      "Rebuild outcomes as two dimension metrics: 5.06~5.07 and 11.06~11.07.",
+      "Exclude jig sequence numbers from measurement statistics.",
+      "Cite header/spec rows, actual measurement rows, and final OK/need machine-check result row."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient and partly misapplied; add measurement and final-result rows before use."
+  },
+  "usage": {
+    "input_tokens": 3311,
+    "output_tokens": 645,
+    "total_tokens": 3956
+  }
+}

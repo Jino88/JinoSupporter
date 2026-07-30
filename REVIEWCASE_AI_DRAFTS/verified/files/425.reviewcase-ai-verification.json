@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 425,
+  "sourceFile": "23. BRS-161014 Report test bond 0930-S and 0930 at SUB3 date 9.9.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\425.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:18Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 425,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the report theme but misstates the changed-factor structure and loses merged-row subgroup context.",
+    "issues": [
+      "Changed factor should be 0930-S to 0930, not unspecified baseline versus both bonds.",
+      "Key change evidence row Report!8 is omitted from citations.",
+      "Tension Type D rows lose parent bond condition from merged-cell grouping.",
+      "Some cited result rows are not shown in context text for value verification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baselineCondition to Bond 0930-S and changedCondition to Bond 0930.",
+      "Add Report!8 as primary changed-factor evidence.",
+      "Relabel tension rows as Bond 0930 Type C/D and Bond 0930-S Type C/D.",
+      "Keep frame bonding, vision, and tension as outcomes under one change context.",
+      "Verify result values against rows 18, 19, 23, 24, 29, and 31 before final use."
+    ],
+    "evidencePolicy": "Citations are partly sufficient, but primary change row and merged-condition support must be added."
+  },
+  "usage": {
+    "input_tokens": 3467,
+    "output_tokens": 770,
+    "total_tokens": 4237
+  }
+}

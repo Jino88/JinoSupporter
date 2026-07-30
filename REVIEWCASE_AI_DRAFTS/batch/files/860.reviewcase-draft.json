@@ -1,0 +1,296 @@
+{
+  "sourceFileId": 860,
+  "sourceFile": "70. BRS-161016  Report checking NG Touch sample date 12.10.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\70. BRS-161016  Report checking NG Touch sample date 12.10.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "201506; Sheet2",
+    "sheetRowCount": 25,
+    "sheetCellCount": 88,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 1,
+    "measurementStatCount": 5
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "201506!2",
+      "sheetName": "201506",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT CHECKING NG TOUCH SAMPLE OF MODEL BRS-161016 | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "201506!3",
+      "sheetName": "201506",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date | 2024-10-12 00:00:00"
+    },
+    {
+      "rowId": "201506!4",
+      "sheetName": "201506",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Maker | Le"
+    },
+    {
+      "rowId": "201506!5",
+      "sheetName": "201506",
+      "rowNumber": 5,
+      "rowText": "| 1. Purpose test"
+    },
+    {
+      "rowId": "201506!6",
+      "sheetName": "201506",
+      "rowNumber": 6,
+      "rowText": "| - Checking Reason NG Touch"
+    },
+    {
+      "rowId": "201506!8",
+      "sheetName": "201506",
+      "rowNumber": 8,
+      "rowText": "| 2. Content of testing"
+    },
+    {
+      "rowId": "201506!9",
+      "sheetName": "201506",
+      "rowNumber": 9,
+      "rowText": "| - Using Ink marking in coil and checking"
+    },
+    {
+      "rowId": "201506!10",
+      "sheetName": "201506",
+      "rowNumber": 10,
+      "rowText": "| - Checking Gauss OK and NG sample"
+    },
+    {
+      "rowId": "201506!11",
+      "sheetName": "201506",
+      "rowNumber": 11,
+      "rowText": "| - Q'ty : 5pcs"
+    },
+    {
+      "rowId": "201506!12",
+      "sheetName": "201506",
+      "rowNumber": 12,
+      "rowText": "| 3.Result test"
+    },
+    {
+      "rowId": "201506!14",
+      "sheetName": "201506",
+      "rowNumber": 14,
+      "rowText": "| | RESULT CHECKING INK"
+    },
+    {
+      "rowId": "201506!15",
+      "sheetName": "201506",
+      "rowNumber": 15,
+      "rowText": "| | Item | PIC"
+    },
+    {
+      "rowId": "201506!24",
+      "sheetName": "201506",
+      "rowNumber": 24,
+      "rowText": "| | Result | NG | | NG | | NG | | OK | | OK"
+    },
+    {
+      "rowId": "201506!26",
+      "sheetName": "201506",
+      "rowNumber": 26,
+      "rowText": "| | Date | Type Test | Input | OK | NG Touch Yoke | Rate"
+    },
+    {
+      "rowId": "201506!31",
+      "sheetName": "201506",
+      "rowNumber": 31,
+      "rowText": "| 4. Decision"
+    },
+    {
+      "rowId": "Sheet2!3",
+      "sheetName": "Sheet2",
+      "rowNumber": 3,
+      "rowText": "| | | | | Bóc keo | | | Thả rơi | Tension | Tổng"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-860-rc-1",
+      "reviewTitle": "REPORT CHECKING NG TOUCH SAMPLE OF MODEL BRS-161016 | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| 1. Purpose test / | - Checking Reason NG Touch / | 2. Content of testing / | - Using Ink marking in coil and checking / | - Checking Gauss OK and NG sample",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Marking Ink Coil",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Marking Ink Coil",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "201506!12",
+            "201506!2",
+            "201506!27",
+            "201506!5",
+            "201506!8",
+            "Sheet2!3",
+            "Sheet2!4"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "Result | NG | NG | NG | OK | OK",
+          "comparisonRows": [
+            "201506!27"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 24312,
+              "condition": "Marking Ink Coil",
+              "input": 5.0,
+              "ok": 2.0,
+              "ng": 3.0,
+              "ratePercent": 60.0,
+              "evidenceRows": [
+                "201506!27"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Sheet2!3"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 64237,
+              "condition": "Thả rơi",
+              "spec": "",
+              "min": 24.0,
+              "max": 48.0,
+              "avg": 33.6,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!3"
+              ]
+            },
+            {
+              "statId": 64238,
+              "condition": "Tension",
+              "spec": "",
+              "min": 24.0,
+              "max": 72.0,
+              "avg": 43.2,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!3"
+              ]
+            },
+            {
+              "statId": 64239,
+              "condition": "Tổng",
+              "spec": "",
+              "min": 72.0,
+              "max": 240.0,
+              "avg": 163.2,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!3"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Bóc keo | Thả rơi | Tension | Tổng",
+          "comparisonRows": [
+            "Sheet2!4"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 64240,
+              "condition": "Bóc keo / MG+PT",
+              "spec": "",
+              "min": 24.0,
+              "max": 48.0,
+              "avg": 33.6,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!4"
+              ]
+            },
+            {
+              "statId": 64241,
+              "condition": "Thả rơi / semi Yoke",
+              "spec": "",
+              "min": 24.0,
+              "max": 48.0,
+              "avg": 33.6,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!4"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "201506!12",
+        "201506!2",
+        "201506!27",
+        "201506!5",
+        "201506!8",
+        "Sheet2!3",
+        "Sheet2!4"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "201506!12",
+      "201506!2",
+      "201506!27",
+      "201506!5",
+      "201506!8",
+      "Sheet2!3",
+      "Sheet2!4"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 555,
+  "sourceFile": "33. TIU C11-20  Report Test  Frame recycle  2026.04.23_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\555.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:29Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 555,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures the validation report but changed-factor grouping and outcome extraction need correction before use.",
+    "issues": [
+      "Primary change appears to be frame recycle, not model/type R/L vs Normal.",
+      "R/L variants should likely be subgroup keys, not changed conditions.",
+      "Header rows were converted into measurement outcomes without real measurement data.",
+      "Key cited rows for R/L conditions are not shown in supplied context.",
+      "Source row count conflicts with cited row numbers beyond 35."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Reframe changed factor as frame recycle condition with Normal baseline if source rows support it.",
+      "Keep TIU C11-20R and TIU C11-20L as model/side subgroups.",
+      "Retain visual spot welding and function defect outcomes under one validation case.",
+      "Remove measurement outcomes derived only from table headers.",
+      "Verify cited data rows 15,16,20,44,45,49 against the workbook text."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient until key condition rows and non-header metrics are verified."
+  },
+  "usage": {
+    "input_tokens": 4326,
+    "output_tokens": 767,
+    "total_tokens": 5093
+  }
+}

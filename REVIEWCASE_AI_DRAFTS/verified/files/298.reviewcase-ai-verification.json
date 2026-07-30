@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 298,
+  "sourceFile": "15. BRS-201506 Report checking tension sample weak solder date 16.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\298.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 298,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it misidentifies the changed factor and uses setup-table statistics instead of the cited tension test results.",
+    "issues": [
+      "Changed factor is filename, not the tested weak-solder sample condition.",
+      "Baseline/test conditions are not clearly derived from evidence.",
+      "Actual tension results and 0.03 Kgf spec are omitted from outcomes.",
+      "Sheet1 process settings are misparsed as measurement outcomes.",
+      "Evidence cites headers/purpose but not the key result rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to weak-solder sample tension check for model BRS-201506.",
+      "Use no explicit baseline unless source provides one; set changed condition to tested weak-solder samples.",
+      "Create outcome for tension result versus 0.03 Kgf spec with 10 samples.",
+      "Cite Report rows for purpose, quantity, spec, and both result rows.",
+      "Keep Sheet1 rows only as setup context for AWF machines/settings, not primary outcome."
+    ],
+    "evidencePolicy": "Current citations are insufficient; final evidence must cite the spec and result rows directly."
+  },
+  "usage": {
+    "input_tokens": 2969,
+    "output_tokens": 649,
+    "total_tokens": 3618
+  }
+}

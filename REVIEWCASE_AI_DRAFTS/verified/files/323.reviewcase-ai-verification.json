@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 323,
+  "sourceFile": "17 BRS-161014 Report check dimension Frame array JIG+MTR 2023.09.07_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\323.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:07Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 323,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The draft is incomplete because citeable rows show a possible dimensional comparison but no review case was created.",
+    "issues": [
+      "No review case was generated from available measurement rows.",
+      "Baseline versus test condition is not defined.",
+      "Dimension positions are present but not structured as metrics.",
+      "Evidence rows are limited to one small table."
+    ],
+    "requiredUserQuestions": [
+      "Should FRAME ARRAY JIG be treated as baseline and JIG+FRAME as test?"
+    ],
+    "correctionPlan": [
+      "Create one review case using Type as the changed factor.",
+      "Use dimension positions 1-8 as outcome measurements.",
+      "Cite header and both measurement rows.",
+      "State baseline/test only if supported or user-confirmed.",
+      "Keep status needs_review until comparison direction is confirmed."
+    ],
+    "evidencePolicy": "Rows are citeable but current empty case provides insufficient final evidence."
+  },
+  "usage": {
+    "input_tokens": 1192,
+    "output_tokens": 571,
+    "total_tokens": 1763
+  }
+}

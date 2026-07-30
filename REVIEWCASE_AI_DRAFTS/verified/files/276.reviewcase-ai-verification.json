@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 276,
+  "sourceFile": "13.BRS-201506 Report Test clean material CD improve NG tension CD+Coil date 30.9.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\276.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 276,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because it merges distinct test factors and includes malformed or unrelated outcomes.",
+    "issues": [
+      "Clean material and UV LED change factors are incorrectly merged.",
+      "Baseline/test conditions include totals and malformed labels.",
+      "Several outcomes are extraction artifacts, not valid comparisons.",
+      "Sheet2 and some cited rows appear unrelated or lack context.",
+      "Judgements are based on incomplete or mismatched row grouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split clean-material tests from UV LED condition tests.",
+      "Use No Clean as baseline only for clean-material comparisons.",
+      "Keep date, sheet, section, type, and test round as grouping keys.",
+      "Rebuild outcomes from VP+CD vision, tension, CD+Coil tension, and function tables only.",
+      "Remove Sheet2, totals-as-conditions, #DIV/0, and non-comparison stats."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient because many do not support the claimed grouping."
+  },
+  "usage": {
+    "input_tokens": 13060,
+    "output_tokens": 746,
+    "total_tokens": 13806
+  }
+}

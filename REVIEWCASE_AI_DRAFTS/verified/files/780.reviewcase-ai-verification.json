@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 780,
+  "sourceFile": "6.1. BRS-161016 GMI Report test TIP 864   date 18.09.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\780.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:45Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 780,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the primary comparison; the report compares TIP 864 against normal TIP 844, not before-repair versus after-repair status.",
+    "issues": [
+      "Changed factor should be TIP 864 vs TIP 844 normal.",
+      "Vision judgement incorrectly treats repair as improvement.",
+      "Baseline/test conditions mix repair state, voltage, and tip type.",
+      "Measurement outcome from defect columns is not a valid measurement domain.",
+      "Conclusion rows indicate vision worse for TIP 864 and function similar."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to TIP 864 versus TIP 844 normal.",
+      "Keep repair state and voltage as subgroup/context keys.",
+      "Rebuild vision outcome comparing TIP 864 totals to TIP 844 normal totals.",
+      "Set function outcome as similar/no meaningful difference using TIP 864 and TIP 844 rows.",
+      "Remove bogus measurement outcome or recast defect-type counts under process defect."
+    ],
+    "evidencePolicy": "Citations are citeable but grouping is insufficient; include purpose, normal TIP 844, result rows, and conclusion rows."
+  },
+  "usage": {
+    "input_tokens": 4361,
+    "output_tokens": 569,
+    "total_tokens": 4930
+  }
+}

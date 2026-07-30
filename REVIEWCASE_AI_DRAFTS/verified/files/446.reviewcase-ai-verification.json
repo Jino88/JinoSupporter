@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 446,
+  "sourceFile": "25. BRS-161014 Report test bond 8030 at SUB3 date 12.9.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\446.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 446,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable test data but the changed-factor and condition grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor incorrectly mixes Bond 8030, Bond 0930, row index 2, and Total as changed conditions.",
+      "Baseline versus test bond is ambiguous; Bond 0930 may be comparator, not co-changed condition.",
+      "Vision row labeled 2 | 0.3mg appears misparsed as a condition.",
+      "Tension section and decision are referenced in context but not captured as outcomes/evidence.",
+      "Evidence rows for cited metric data exist but source row text for key result rows is not available here for full validation."
+    ],
+    "requiredUserQuestions": [
+      "Is Bond 0930 the baseline/control for Bond 8030?",
+      "Should the tension results and final decision be included in the review case?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to bond change/test Bond 8030 with comparator Bond 0930 if supported by rows.",
+      "Remove Total and row number 2 from changedCondition.",
+      "Treat 0.3mg and any numbering as subgroup/context only unless evidence proves otherwise.",
+      "Review rows 27-36 and add tension and decision outcomes if populated.",
+      "Cite the exact result rows supporting each condition and metric after regrouping."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until key result and decision rows are rechecked."
+  },
+  "usage": {
+    "input_tokens": 2932,
+    "output_tokens": 572,
+    "total_tokens": 3504
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 44,
+  "sourceFile": "02. BRS-161016 Report  check NG separate VP DOME_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\44.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 44,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the changed-factor and outcome grouping are not reliable for final evidence.",
+    "issues": [
+      "Changed factor is invented from dates and check rounds, not a process change.",
+      "Baseline and test conditions are ambiguous or mislabeled.",
+      "Waiting-time test appears to be a distinct 5s/10s/15s comparison.",
+      "Jig-check evidence is omitted despite being part of the report context.",
+      "Tension-test condition parsing is likely wrong."
+    ],
+    "requiredUserQuestions": [
+      "Should the primary factor be waiting time after bonding/assembly VP/CD, or the NG separate VP DOME investigation overall?",
+      "Should jig-check results be included as an outcome in this review case?"
+    ],
+    "correctionPlan": [
+      "Rebuild changedFactors from explicit report/test headings only.",
+      "Keep date, line, round, jig type, and normal/test labels as subgroup keys.",
+      "Separate or justify waiting-time test versus inspection-history outcomes.",
+      "Add Check jig outcomes or document exclusion.",
+      "Reparse tension-test rows with correct type, spec, and condition labels."
+    ],
+    "evidencePolicy": "Row citations exist, but citations do not support the current changed-factor grouping."
+  },
+  "usage": {
+    "input_tokens": 7987,
+    "output_tokens": 783,
+    "total_tokens": 8770
+  }
+}

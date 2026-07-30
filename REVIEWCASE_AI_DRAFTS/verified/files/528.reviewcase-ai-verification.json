@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 528,
+  "sourceFile": "30.3.MSU-L20S15-07 Result test new material center Dome from GES TRADING date 24.8.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\528.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:34Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 528,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source evidence but misgroups the changed factor and includes many invalid parsed measurement outcomes.",
+    "issues": [
+      "Changed factor mixes vendor and laser subconditions instead of separating primary vendor change with laser/no-laser context.",
+      "Baseline/test labels conflict across Normal Ralon, CD KR, and GES TRADING comparisons.",
+      "Many measurement outcomes are parsed from headers or IDs, not actual metric values.",
+      "FO and NTI statistics appear numerically invalid and over-aggregated.",
+      "Some cited rows are headers only and insufficient for claimed results."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to center dome/CD material vendor GES TRADING versus normal/Ralon or CD KR as supported per section.",
+      "Keep laser versus no-laser as subgroup/process condition, with separate results where shown.",
+      "Rebuild outcomes from real result rows: VP+CD assembly, tension, function NG, NTI SPL/THD/IMP, and FO.",
+      "Remove header-derived and malformed measurement stats.",
+      "Cite both header/context rows and the exact data rows used for each comparison."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient because many support only headers or malformed aggregations."
+  },
+  "usage": {
+    "input_tokens": 14813,
+    "output_tokens": 527,
+    "total_tokens": 15340
+  }
+}

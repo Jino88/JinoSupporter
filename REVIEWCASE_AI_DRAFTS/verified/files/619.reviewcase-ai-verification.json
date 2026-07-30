@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 619,
+  "sourceFile": "4.BRS-2015 Report Test VP use new heating block date 04.09.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\619.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:33Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 619,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is comparable but misidentifies the changed factor and lacks sufficient row-level evidence.",
+    "issues": [
+      "Changed factor is filename-based and wrong domain; not coating.",
+      "Baseline/test are incorrectly marked not explicit.",
+      "Data rows 1!24-1!29 and decision 1!34 are missing from citations.",
+      "Function metrics are duplicated or mislabeled.",
+      "Date, line, and heating-block No. subgroup keys are not preserved."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to VP new heating block with laser cutting vs normal VP die punch.",
+      "Set baseline to Normal using VP die punch V1 and changed conditions to heating block No 13-3H/14-3H.",
+      "Recite function headers plus rows 1!24-1!29 and decision row 1!34.",
+      "Regroup outcomes under one validation report, separating function and any citeable vision results.",
+      "Apply judgement from decision as OK/same as normal with limitations if no spec exists."
+    ],
+    "evidencePolicy": "Current header-only citations are insufficient; cite condition/result rows and decision rows."
+  },
+  "usage": {
+    "input_tokens": 4079,
+    "output_tokens": 770,
+    "total_tokens": 4849
+  }
+}

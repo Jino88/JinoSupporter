@@ -14,11 +14,13 @@ obj/
 
 # Logs / temp
 *.log
+*.pid
 *.tmp
 *.temp
 Temp/
 tmp/
 _tmp*/
+_tmp_*.py
 _batch_tmp/
 _tmp_build_verify/
 _batch_launch_*.ps1
@@ -26,6 +28,18 @@ _batch_prompt_*.txt
 _batch_selected_*.txt
 _batch_one_*.txt
 _batch_one_*_build.py
+_ask_launch_codex_*.ps1
+_ask_prompt_codex_*.txt
+_daily_test_launch_codex_*.ps1
+_daily_test_prompt_codex_*.txt
+_input_data_test_launch_codex_*.ps1
+_input_data_test_prompt_codex_*.txt
+_input_data_test_extract_launch_*.ps1
+_input_data_test_extract_prompt_*.txt
+_input_data_batch_launch_codex_*.ps1
+_input_data_batch_prompt_codex_*.txt
+_model_analysis_launch_*.ps1
+_model_analysis_prompt_*.txt
 _batch_tmp_*.txt
 _build_one_payload.py
 _ai_batch_commit_run.py
@@ -37,6 +51,8 @@ _batch_auto.py
 __pycache__/
 
 # Build / release artifacts
+artifacts/
+*/artifacts/
 dist/
 standalone-updates/
 wwwroot/standalone/

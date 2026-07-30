@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 242,
+  "sourceFile": "12. BRS-161014  Report checking problem sub1 TF line_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\242.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 242,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but changed-factor and outcome grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor incorrectly mixes Normal line, VP TF line, lots, totals, D shift, and defect labels.",
+      "NG Process TF Line rows appear to be process/defect tracking, not a baseline-vs-test comparison.",
+      "NG rate lot rows lack a Normal line baseline and should not be merged with NG rate function comparison.",
+      "Measurement outcomes include header/text artifacts parsed as statistics.",
+      "Evidence is overbroad and includes rows not tied to the stated comparison."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Create the primary comparison as Normal line vs VP TF line using NG rate function rows only.",
+      "Treat lot, date, UC press, and Total VP TF line as subgroup or separate tracking context, not changed factors.",
+      "Remove parsed header/statistical measurement artifacts from NG Process TF Line outcomes.",
+      "Keep functional NG metrics as input, OK, NG, total NG rate with row-level date/line/type grouping.",
+      "Limit evidence rows to cited rows that directly support each comparison and metric."
+    ],
+    "evidencePolicy": "Row citations exist but are overbroad and insufficient until regrouped."
+  },
+  "usage": {
+    "input_tokens": 19077,
+    "output_tokens": 644,
+    "total_tokens": 19721
+  }
+}

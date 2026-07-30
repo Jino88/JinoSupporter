@@ -1,0 +1,366 @@
+{
+  "sourceFileId": 310,
+  "sourceFile": "16. BRS-161014 Report test MTR VP OK-G2-G3 2023.09.07_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\16. BRS-161014 Report test MTR VP OK-G2-G3 2023.09.07_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report",
+    "sheetRowCount": 28,
+    "sheetCellCount": 145,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 5,
+    "measurementStatCount": 6
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report!2",
+      "sheetName": "Report",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST MTR VP : OK/G2/G3 | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report!3",
+      "sheetName": "Report",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | Date | 2023-09-07 00:00:00"
+    },
+    {
+      "rowId": "Report!4",
+      "sheetName": "Report",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | Marker | Thuy/Tu"
+    },
+    {
+      "rowId": "Report!5",
+      "sheetName": "Report",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report!6",
+      "sheetName": "Report",
+      "rowNumber": 6,
+      "rowText": "| - Check VP deform can use or not?"
+    },
+    {
+      "rowId": "Report!7",
+      "sheetName": "Report",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report!8",
+      "sheetName": "Report",
+      "rowNumber": 8,
+      "rowText": "| - Use material VP: OK/G2/NG"
+    },
+    {
+      "rowId": "Report!9",
+      "sheetName": "Report",
+      "rowNumber": 9,
+      "rowText": "| ++. Check process"
+    },
+    {
+      "rowId": "Report!10",
+      "sheetName": "Report",
+      "rowNumber": 10,
+      "rowText": "| ++. Check function"
+    },
+    {
+      "rowId": "Report!15",
+      "sheetName": "Report",
+      "rowNumber": 15,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "Report!16",
+      "sheetName": "Report",
+      "rowNumber": 16,
+      "rowText": "| Result TEST LASER CUTTING"
+    },
+    {
+      "rowId": "Report!17",
+      "sheetName": "Report",
+      "rowNumber": 17,
+      "rowText": "| | | No | Date | Type | Input | OK | NG | | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Report!22",
+      "sheetName": "Report",
+      "rowNumber": 22,
+      "rowText": "| | | 4 | | G2 | 50 | 50 | 0 | 0 | 0 | 0 | 0 | - Test again"
+    },
+    {
+      "rowId": "Report!34",
+      "sheetName": "Report",
+      "rowNumber": 34,
+      "rowText": "| RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "Report!46",
+      "sheetName": "Report",
+      "rowNumber": 46,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-310-rc-1",
+      "reviewTitle": "REPORT TEST MTR VP : OK/G2/G3 | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Check VP deform can use or not? / | II. Content. / | - Use material VP: OK/G2/NG / | ++. Check process",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material",
+            "coating",
+            "dimension/spec"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs OK, 4, VP OK, VP G2, VP G3",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "OK, 4, VP OK, VP G2, VP G3",
+          "subgroupKeys": [
+            "G2"
+          ],
+          "evidenceRows": [
+            "Report!16",
+            "Report!19",
+            "Report!2",
+            "Report!22",
+            "Report!37",
+            "Report!38",
+            "Report!40",
+            "Report!42",
+            "Report!5",
+            "Report!7",
+            "Report!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "Result TEST LASER CUTTING",
+          "comparisonRows": [
+            "Report!19",
+            "Report!22"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 19439,
+              "condition": "OK",
+              "input": 50.0,
+              "ok": 49.0,
+              "ng": 0.0,
+              "ratePercent": 2.0,
+              "evidenceRows": [
+                "Report!19"
+              ]
+            },
+            {
+              "metricId": 19440,
+              "condition": "4 | G2",
+              "input": 50.0,
+              "ok": 50.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Report!22"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "metric-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "Report!38",
+            "Report!40",
+            "Report!42"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 19441,
+              "condition": "VP OK",
+              "input": 45.0,
+              "ok": 25.0,
+              "ng": 22.0,
+              "ratePercent": 48.888889,
+              "evidenceRows": [
+                "Report!38"
+              ]
+            },
+            {
+              "metricId": 19442,
+              "condition": "VP G2",
+              "input": 39.0,
+              "ok": 16.0,
+              "ng": 23.0,
+              "ratePercent": 58.974359,
+              "evidenceRows": [
+                "Report!40"
+              ]
+            },
+            {
+              "metricId": 19443,
+              "condition": "VP G3",
+              "input": 40.0,
+              "ok": 25.0,
+              "ng": 17.0,
+              "ratePercent": 42.5,
+              "evidenceRows": [
+                "Report!42"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Type | Input | OK | Sigma | Hearing | HOHD | Total NG | Total NG rate | Noise/Touch Rate",
+          "comparisonRows": [
+            "Report!37"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 51494,
+              "condition": "Sigma / SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report!37"
+              ]
+            },
+            {
+              "statId": 51495,
+              "condition": "Sigma / THD",
+              "spec": "",
+              "min": 0.04347826,
+              "max": 1.0,
+              "avg": 0.5246260566666667,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report!37"
+              ]
+            },
+            {
+              "statId": 51496,
+              "condition": "Sigma / SPL+THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 2.0,
+              "avg": 0.5249554366666667,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report!37"
+              ]
+            },
+            {
+              "statId": 51497,
+              "condition": "Sigma / SPL+THD+F0",
+              "spec": "",
+              "min": 0.0,
+              "max": 2.0,
+              "avg": 0.7014260250000001,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report!37"
+              ]
+            },
+            {
+              "statId": 51498,
+              "condition": "Hearing / Noise",
+              "spec": "",
+              "min": 0.18181818,
+              "max": 14.0,
+              "avg": 4.190575835,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report!37"
+              ]
+            },
+            {
+              "statId": 51499,
+              "condition": "Hearing / Touch",
+              "spec": "",
+              "min": 0.34782609,
+              "max": 13.0,
+              "avg": 4.891749981666667,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report!37"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report!16",
+        "Report!19",
+        "Report!2",
+        "Report!22",
+        "Report!37",
+        "Report!38",
+        "Report!40",
+        "Report!42",
+        "Report!5",
+        "Report!7",
+        "Report!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report!16",
+      "Report!19",
+      "Report!2",
+      "Report!22",
+      "Report!37",
+      "Report!38",
+      "Report!40",
+      "Report!42",
+      "Report!5",
+      "Report!7",
+      "Report!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

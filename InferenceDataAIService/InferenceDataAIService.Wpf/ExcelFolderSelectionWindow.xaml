@@ -1,0 +1,232 @@
+<Window x:Class="InferenceDataAIService.Wpf.ExcelFolderSelectionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="여러 검색 폴더 지정"
+        Width="920"
+        Height="580"
+        MinWidth="700"
+        MinHeight="440"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        Background="{StaticResource AppBackgroundBrush}"
+        Foreground="{StaticResource TextBrush}"
+        FontFamily="Segoe UI"
+        FontSize="12"
+        ShowInTaskbar="False">
+  <shell:WindowChrome.WindowChrome>
+    <shell:WindowChrome CaptionHeight="38"
+                        ResizeBorderThickness="6"
+                        CornerRadius="0"
+                        GlassFrameThickness="0"
+                        UseAeroCaptionButtons="False" />
+  </shell:WindowChrome.WindowChrome>
+
+  <Window.Resources>
+    <Style x:Key="DialogWindowButtonStyle"
+           TargetType="Button">
+      <Setter Property="Width" Value="46" />
+      <Setter Property="Height" Value="38" />
+      <Setter Property="MinWidth" Value="46" />
+      <Setter Property="MinHeight" Value="38" />
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Foreground" Value="#B8B8B8" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome"
+              Value="True" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="ChromeBorder"
+                    Background="{TemplateBinding Background}">
+              <ContentPresenter HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="ChromeBorder"
+                        Property="Background"
+                        Value="#A43D43" />
+                <Setter Property="Foreground" Value="White" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </Window.Resources>
+
+  <Border Background="{StaticResource AppBackgroundBrush}"
+          BorderBrush="{StaticResource StrongBorderBrush}"
+          BorderThickness="1">
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="38" />
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
+
+      <Border Background="{StaticResource TitleBarBrush}"
+              BorderBrush="#303030"
+              BorderThickness="0,0,0,1">
+        <Grid>
+          <StackPanel Orientation="Horizontal"
+                      Margin="14,0,0,0"
+                      VerticalAlignment="Center">
+            <Border Width="18"
+                    Height="18"
+                    Background="#203C34"
+                    BorderBrush="#2C8C70"
+                    BorderThickness="1"
+                    CornerRadius="4">
+              <TextBlock Text="+"
+                         Foreground="#7FE0BE"
+                         FontWeight="Bold"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center" />
+            </Border>
+            <TextBlock Text="여러 검색 폴더 지정"
+                       Margin="9,0,0,0"
+                       Foreground="#DDDDDD"
+                       FontWeight="SemiBold"
+                       VerticalAlignment="Center" />
+          </StackPanel>
+          <Button Content="&#xE8BB;"
+                  HorizontalAlignment="Right"
+                  Style="{StaticResource DialogWindowButtonStyle}"
+                  Click="CloseButton_Click" />
+        </Grid>
+      </Border>
+
+      <Grid Grid.Row="1" Margin="20">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="*" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+          <TextBlock Text="여러 검색 폴더 지정"
+                     FontSize="20"
+                     FontWeight="SemiBold"
+                     Foreground="{StaticResource StrongTextBrush}" />
+          <TextBlock Margin="0,6,0,0"
+                     Style="{StaticResource MutedTextStyle}"
+                     Text="목록의 모든 폴더와 하위 폴더에서 Excel 파일을 검색합니다. 확인한 목록은 다음 실행 때 그대로 불러옵니다." />
+        </StackPanel>
+
+        <Border Grid.Row="1"
+                Margin="0,16,0,0"
+                Style="{StaticResource CardStyle}"
+                BorderBrush="#3F5F53">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="FolderPathEntryText"
+                     MinHeight="34"
+                     VerticalContentAlignment="Center"
+                     KeyDown="FolderPathEntryText_KeyDown"
+                     ToolTip="폴더 경로를 직접 입력하거나 붙여넣으세요." />
+            <Button Grid.Column="1"
+                    Content="직접 입력 추가"
+                    Margin="8,0,0,0"
+                    Click="AddTypedFolder_Click" />
+            <Button Grid.Column="2"
+                    Content="폴더 찾아 추가"
+                    Margin="8,0,0,0"
+                    Click="BrowseFolder_Click" />
+          </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="0,14,0,7">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <TextBlock x:Name="FolderHistorySummary"
+                     VerticalAlignment="Center"
+                     Foreground="#7FE0BE"
+                     FontWeight="SemiBold" />
+          <Button Grid.Column="1"
+                  Content="선택 삭제"
+                  Margin="8,0,0,0"
+                  Click="RemoveSelectedFolders_Click" />
+          <Button Grid.Column="2"
+                  Content="전체 지우기"
+                  Margin="8,0,0,0"
+                  Click="ClearFolders_Click" />
+        </Grid>
+
+    <DataGrid x:Name="FoldersGrid"
+              Grid.Row="3"
+              AutoGenerateColumns="False"
+              CanUserAddRows="False"
+              IsReadOnly="True"
+              SelectionMode="Extended"
+              SelectionUnit="FullRow">
+      <DataGrid.Resources>
+        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
+                         Color="#493268" />
+        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"
+                         Color="#3C2A58" />
+        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
+                         Color="#FFFFFF" />
+        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}"
+                         Color="#FFFFFF" />
+        <Style TargetType="DataGridCell"
+               BasedOn="{StaticResource {x:Type DataGridCell}}">
+          <Setter Property="Background" Value="Transparent" />
+          <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+              <Setter Property="Background" Value="#493268" />
+              <Setter Property="Foreground" Value="White" />
+            </Trigger>
+          </Style.Triggers>
+        </Style>
+      </DataGrid.Resources>
+      <DataGrid.Columns>
+            <DataGridTextColumn Header="검색 폴더"
+                                Binding="{Binding Path}"
+                                Width="*" />
+            <DataGridTextColumn Header="상태"
+                                Binding="{Binding Availability}"
+                                Width="120" />
+          </DataGrid.Columns>
+        </DataGrid>
+
+        <Grid Grid.Row="4" Margin="0,16,0,0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <TextBlock VerticalAlignment="Center"
+                     Foreground="{StaticResource MutedTextBrush}"
+                     Text="확인을 누르면 이 목록 전체에서 Excel을 가져와 DB와 비교합니다." />
+          <Button Grid.Column="1"
+                  Content="취소"
+                  MinWidth="92"
+                  Margin="8,0,0,0"
+                  IsCancel="True" />
+          <Button Grid.Column="2"
+                  Content="확인하고 검색"
+                  MinWidth="132"
+                  Margin="8,0,0,0"
+                  Style="{StaticResource PrimaryButtonStyle}"
+                  IsDefault="True"
+                  Click="Confirm_Click" />
+        </Grid>
+      </Grid>
+    </Grid>
+  </Border>
+</Window>

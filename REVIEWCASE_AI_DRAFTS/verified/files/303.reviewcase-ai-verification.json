@@ -1,0 +1,35 @@
+{
+  "sourceFileId": 303,
+  "sourceFile": "15. TIU L5S3-01 R Result check Gauss Yoke max spec 440~450G_25.12.02_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\303.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 303,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Workbook is a single spec-check result with measurements but no comparative changed-condition ReviewCase evidence.",
+    "issues": [
+      "No changed factor or baseline/test condition is present.",
+      "No reviewCases were generated for verification.",
+      "Extracted rows show spec check only, not comparative analysis.",
+      "Draft status needs_review should be excluded."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Mark sourceFileId 303 as excluded.",
+      "Use title, purpose, and result rows only to support exclusion.",
+      "Do not create a comparative ReviewCase from this file.",
+      "Record exclude reason as non-comparable spec check with no changed condition."
+    ],
+    "evidencePolicy": "Rows cited are sufficient for exclusion, not for final comparative evidence."
+  },
+  "usage": {
+    "input_tokens": 1774,
+    "output_tokens": 558,
+    "total_tokens": 2332
+  }
+}

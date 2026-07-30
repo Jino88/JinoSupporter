@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 92,
+  "sourceFile": "034.MSU - L20S15-07 REPORT TEST IMPROVE TENSION CD + VP 24.3.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\92.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 92,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source evidence but misidentifies changed factors and includes invalid outcome groupings.",
+    "issues": [
+      "Changed factor is filename, not process condition.",
+      "Baseline/test conditions are explicit but not captured.",
+      "Multiple type-test factors are collapsed ambiguously.",
+      "Several outcomes are spurious duplicate extractions.",
+      "Spec 1.9kgf and below-spec results are not handled."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Replace changed factor with tested dry UV/UC press/waiting conditions.",
+      "Capture Type 1 normal as baseline and Types 2-6 as test conditions.",
+      "Preserve grouping by date, line, type, position, wait time, and sample set.",
+      "Remove invalid outcomes measurement-3 through measurement-8.",
+      "Apply 1.9kgf spec to tension outcomes and recalculate violations."
+    ],
+    "evidencePolicy": "Row citations exist, but citations are insufficient until grouping and metrics are corrected."
+  },
+  "usage": {
+    "input_tokens": 9169,
+    "output_tokens": 744,
+    "total_tokens": 9913
+  }
+}

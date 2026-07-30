@@ -1,0 +1,202 @@
+{
+  "sourceFileId": 796,
+  "sourceFile": "62. BRS-161016 Check new magnetic machine (QM data)_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\62. BRS-161016 Check new magnetic machine (QM data)_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Data CMG",
+    "sheetRowCount": 58,
+    "sheetCellCount": 501,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 4
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Data CMG!2",
+      "sheetName": "Data CMG",
+      "rowNumber": 2,
+      "rowText": "| BRS-161016 PQC CHECK GAUSS RESULT"
+    },
+    {
+      "rowId": "Data CMG!3",
+      "sheetName": "Data CMG",
+      "rowNumber": 3,
+      "rowText": "| Date | | 2024-09-19 00:00:00 | | | | 2024-09-20 00:00:00"
+    },
+    {
+      "rowId": "Data CMG!4",
+      "sheetName": "Data CMG",
+      "rowNumber": 4,
+      "rowText": "| Line | NO. | Old machine (Voltage: 906V) | | New machine (Voltage: 2153V) | | Old machine (Voltage: 906V) | | New machine (Voltage: 2212V)"
+    },
+    {
+      "rowId": "Data CMG!5",
+      "sheetName": "Data CMG",
+      "rowNumber": 5,
+      "rowText": "| | | MG-C (S > 1100G) | | MG-C (S > 1100G) | | MG-C (S > 1100G) | | MG-C (S > 1100G)"
+    },
+    {
+      "rowId": "Data CMG!6",
+      "sheetName": "Data CMG",
+      "rowNumber": 6,
+      "rowText": "| Min | | 1214 | 517 | 1199 | 506 | 1149 | 488 | 1249 | 530"
+    },
+    {
+      "rowId": "Data CMG!7",
+      "sheetName": "Data CMG",
+      "rowNumber": 7,
+      "rowText": "| Max | | 1293 | 564 | 1307 | 577 | 1290 | 583 | 1295 | 572"
+    },
+    {
+      "rowId": "Data CMG!8",
+      "sheetName": "Data CMG",
+      "rowNumber": 8,
+      "rowText": "| Aver | | 1254.26 | 543.78 | 1256.18 | 549.7 | 1259.26 | 544.22 | 1273.7 | 551.06"
+    },
+    {
+      "rowId": "Data CMG!9",
+      "sheetName": "Data CMG",
+      "rowNumber": 9,
+      "rowText": "| STDEV | | 18.63202619 | 12.27890875 | 23.95386399 | 16.43806558 | 23.00244335 | 15.78390319 | 11.68289348 | 9.5570079"
+    },
+    {
+      "rowId": "Data CMG!10",
+      "sheetName": "Data CMG",
+      "rowNumber": 10,
+      "rowText": "| E2-3B | 1 | 1218 | 530 | 1303 | 577 | 1254 | 529 | 1260 | 550"
+    },
+    {
+      "rowId": "Data CMG!11",
+      "sheetName": "Data CMG",
+      "rowNumber": 11,
+      "rowText": "| | 2 | 1227 | 533 | 1199 | 506 | 1277 | 540 | 1264 | 551"
+    },
+    {
+      "rowId": "Data CMG!12",
+      "sheetName": "Data CMG",
+      "rowNumber": 12,
+      "rowText": "| | 3 | 1231 | 526 | 1256 | 552 | 1265 | 550 | 1272 | 557"
+    },
+    {
+      "rowId": "Data CMG!13",
+      "sheetName": "Data CMG",
+      "rowNumber": 13,
+      "rowText": "| | 4 | 1259 | 535 | 1293 | 572 | 1283 | 556 | 1291 | 568"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-796-rc-1",
+      "reviewTitle": "| BRS-161016 PQC CHECK GAUSS RESULT",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "supplier",
+            "material",
+            "equipment"
+          ],
+          "changedFactor": "62. BRS-161016 Check new magnetic machine (QM data)",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Data CMG!5"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Line | NO. | Old machine (Voltage: 906V) | New machine (Voltage: 2153V) | Old machine (Voltage: 906V) | New machine (Voltage: 2212V)",
+          "comparisonRows": [
+            "Data CMG!5"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 62631,
+              "condition": "Old machine (Voltage: 906V) / MG-C (S > 1100G)",
+              "spec": "> 1100G",
+              "min": 18.63202619,
+              "max": 1293.0,
+              "avg": 1230.497923580577,
+              "sampleCount": 52,
+              "violationCount": 1,
+              "evidenceRows": [
+                "Data CMG!5"
+              ]
+            },
+            {
+              "statId": 62632,
+              "condition": "New machine (Voltage: 2153V) / MG-C (S > 1100G)",
+              "spec": "> 1100G",
+              "min": 23.95386399,
+              "max": 1307.0,
+              "avg": 1232.4833435382693,
+              "sampleCount": 52,
+              "violationCount": 1,
+              "evidenceRows": [
+                "Data CMG!5"
+              ]
+            },
+            {
+              "statId": 62633,
+              "condition": "Old machine (Voltage: 906V) / MG-C (S > 1100G)",
+              "spec": "> 1100G",
+              "min": 23.00244335,
+              "max": 1290.0,
+              "avg": 1235.4858162182693,
+              "sampleCount": 52,
+              "violationCount": 1,
+              "evidenceRows": [
+                "Data CMG!5"
+              ]
+            },
+            {
+              "statId": 62634,
+              "condition": "New machine (Voltage: 2212V) / MG-C (S > 1100G)",
+              "spec": "> 1100G",
+              "min": 11.68289348,
+              "max": 1295.0,
+              "avg": 1249.4304402592306,
+              "sampleCount": 52,
+              "violationCount": 1,
+              "evidenceRows": [
+                "Data CMG!5"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Data CMG!5"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Data CMG!5"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

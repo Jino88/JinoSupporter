@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 366,
+  "sourceFile": "19.BRS-2015DT Report Test Material RING was bending   date 9.1.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\366.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 366,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The report supports a Normal vs Ring Bending material comparison, but the draft needs grouping and citation cleanup before final use.",
+    "issues": [
+      "Changed condition incorrectly includes VP LINE as part of the primary factor.",
+      "Several cited comparison rows are not shown in the supplied context for verification.",
+      "Title and purpose contain extracted pipe clutter.",
+      "Source row count conflicts with cited row numbers beyond 57.",
+      "Outcome section headers and final decision rows are under-cited."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to Normal vs Ring Bending material only.",
+      "Keep VP line and process names as outcome or subgroup context.",
+      "Verify and expose rows 28, 36, 43, 49, and 57 text before approval.",
+      "Clean title and purpose text.",
+      "Add section header and conclusion rows 61-64 as supporting evidence."
+    ],
+    "evidencePolicy": "Row citations are partly sufficient, but hidden cited rows and missing conclusion citations prevent approval."
+  },
+  "usage": {
+    "input_tokens": 5024,
+    "output_tokens": 732,
+    "total_tokens": 5756
+  }
+}

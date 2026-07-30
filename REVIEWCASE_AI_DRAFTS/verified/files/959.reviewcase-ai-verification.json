@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 959,
+  "sourceFile": "9. BRS-161014  GMI Report test Frame abnormal visual plate deform date 28.9.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\959.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 959,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The comparison is citeable, but the function judgement conflicts with the report conclusion and decision rows are omitted.",
+    "issues": [
+      "Function outcome marked worse despite source conclusion saying same as normal.",
+      "Final decision and conclusion rows are not cited.",
+      "Outcome metric for first table is too broad and mixes Sub 3/Main context.",
+      "Change domain and outcome domain remain generic."
+    ],
+    "requiredUserQuestions": [
+      "Should a 2.5% vs 2.0% function NG rate be treated as worse or as same per the report conclusion?"
+    ],
+    "correctionPlan": [
+      "Add rows NG rate!28 and NG rate!30 as decision evidence.",
+      "Revise function judgement to match the accepted interpretation.",
+      "Clarify first outcome as Sub 3/Main NG rate check.",
+      "Set domains to visual/frame condition and function/NG rate.",
+      "Keep Normal as baseline and Frame test as changed condition."
+    ],
+    "evidencePolicy": "Row citations exist, but conclusion/decision evidence is incomplete."
+  },
+  "usage": {
+    "input_tokens": 2997,
+    "output_tokens": 748,
+    "total_tokens": 3745
+  }
+}

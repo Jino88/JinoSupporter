@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 905,
+  "sourceFile": "79. TIU C11-20  Report Test AWF JIG improve 2026.5.6_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\905.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 905,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Changed-factor pairing is correct, but outcome evidence is incomplete and may mislead versus the stated wire-offset purpose.",
+    "issues": [
+      "Header rows defining defect categories are not cited.",
+      "Targeted wire-offset result is omitted.",
+      "Judgement only reflects total NG, not all relevant outcomes.",
+      "Evidence rows omit result-table title and headers."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add Test!24-Test!26 as evidence for metrics and columns.",
+      "Keep changed factor as Normal vs New AWF Jig.",
+      "Add wire-offset defect outcome: New AWF Jig 17 vs Normal 19, improved.",
+      "Retain total NG outcome as worsened: 26/40 vs 25/40.",
+      "Clarify overall result is mixed, not simply worse."
+    ],
+    "evidencePolicy": "Current row citations prove the pair but are insufficient for metric definitions."
+  },
+  "usage": {
+    "input_tokens": 2353,
+    "output_tokens": 687,
+    "total_tokens": 3040
+  }
+}

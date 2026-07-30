@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 862,
+  "sourceFile": "70. TIU L5S3-01 Result test method take sample coil forming to find NG coil separate - 2026.02.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\862.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 862,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The draft has citeable data but misgroups the primary condition and machine/time context.",
+    "issues": [
+      "Changed factor incorrectly says baseline is not explicit; Normal is explicit.",
+      "AWF #1-#5 are subgroup/equipment keys, not changed conditions.",
+      "Time groups 10h and 3h are not preserved in the comparison structure.",
+      "Type conditions are mixed with equipment, causing invalid baseline/test grouping.",
+      "Rows Test!26 and Test!30 are cited but not present in supplied context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to Type: Normal vs VP+Coil ass'y variants.",
+      "Use AWF number and time as subgroup keys.",
+      "Keep Not bonding and Not UV Awf as separate changed conditions or subconditions.",
+      "Add header row Test!4 and all cited data rows to evidence.",
+      "Recompute outcome summaries by matching Type within each time/AWF subgroup."
+    ],
+    "evidencePolicy": "Row citations are generally sufficient, but missing displayed rows and misgrouping prevent approval."
+  },
+  "usage": {
+    "input_tokens": 3434,
+    "output_tokens": 630,
+    "total_tokens": 4064
+  }
+}

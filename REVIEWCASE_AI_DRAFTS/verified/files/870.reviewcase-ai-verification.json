@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 870,
+  "sourceFile": "72. TIU C11-20  Report Test Frame damage mesh 2026.03.28. - RAW soundcheck_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\870.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:38Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 870,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but the changed-factor and baseline grouping are not reliable.",
+    "issues": [
+      "Changed factor wrongly mixes shift, model, and test type.",
+      "L-side tests use the R-side Normal baseline.",
+      "R and L model/type groups are not preserved.",
+      "SPL/THD measurement stats include header artifacts and are not judged.",
+      "Review title is taken from raw data instead of the report context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Redefine factor as Frame Test Type versus Normal within TIU C11-20R and TIU C11-20L groups.",
+      "Compare Type 1 and Type 3 to R Normal; compare Type 2 and Type 4 to L Normal.",
+      "Keep date and shift as context, not changed conditions.",
+      "Summarize function NG outcomes from Test rows, including Type 4 failure and Normal L noise result.",
+      "Either rebuild SPL/THD outcomes from valid graph/raw tables or omit them as unverified."
+    ],
+    "evidencePolicy": "Row citations exist, but semantic citations are insufficient until regrouped."
+  },
+  "usage": {
+    "input_tokens": 9770,
+    "output_tokens": 773,
+    "total_tokens": 10543
+  }
+}

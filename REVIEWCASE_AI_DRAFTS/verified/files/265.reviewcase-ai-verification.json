@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 265,
+  "sourceFile": "13. BRS-161016 Report check VP+CD waiting long time to Led UV afer bonding  28.4.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\265.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 265,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the report theme but misdefines the changed factor and includes misparsed non-comparison measurements.",
+    "issues": [
+      "Changed factor should be waiting time before LED UV, not normal vs unspecified test.",
+      "Baseline and levels need regrouping across 17s normal, longer waits, and dry UV variants.",
+      "LED UV/bonding setup rows are controls, not outcome comparisons.",
+      "Picture/NG row appears misparsed as measurement data.",
+      "Vision outcome is incomplete if rows beyond 28 contain other wait-time levels."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to waiting time from VP+CD bonding/assembly to LED UV.",
+      "Set 17s normal as baseline only if supported; list each wait-time level as changed conditions.",
+      "Keep vision and tension as outcomes under the same factor, preserving row-level wait-time keys.",
+      "Move LED UV energy and bonding amount rows to process/setup context unless compared as conditions.",
+      "Remove misparsed picture-derived statistics or replace with citeable defect results rows."
+    ],
+    "evidencePolicy": "Row citations exist, but cited rows are not sufficient until grouping and misparsed outcomes are corrected."
+  },
+  "usage": {
+    "input_tokens": 5265,
+    "output_tokens": 572,
+    "total_tokens": 5837
+  }
+}

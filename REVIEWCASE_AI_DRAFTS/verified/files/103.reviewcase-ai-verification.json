@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 103,
+  "sourceFile": "04. L20S15-07 Report test CD lot IR 250427004 lot size 120k ( incoming 2025.05.02)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\103.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 103,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misgroups the changed factor and misparses key result metrics.",
+    "issues": [
+      "Changed factor should be test CD lot versus Normal, with lots as subgroups, not only Lot 3 and Lot 4.",
+      "Report outcomes mix dyne input with function NG totals and omit Lot 1 and Lot 2.",
+      "Decision row supports Lot 3 can use but is not cited, creating scope ambiguity.",
+      "Tension spec is present in the sheet but omitted from parsed stats.",
+      "Outcome domains need separation for dyne, tension, separate VP/CD, and function checks."
+    ],
+    "requiredUserQuestions": [
+      "Should the final judgement apply to all four test lots or only Lot 3 as stated in the decision?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to Normal vs test CD lot IR250427004.",
+      "Keep Lot 1 to Lot 4 as subgroup keys under the test lot.",
+      "Reparse Report table into dyne, tension result, VP/CD separate, NG Sigma, NG Hearing, total NG, and NG rate fields.",
+      "Add decision and tension spec rows to evidence.",
+      "Align judgement scope with the decision row before approval."
+    ],
+    "evidencePolicy": "Row citations exist, but decision/spec citations and metric-specific rows are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4810,
+    "output_tokens": 813,
+    "total_tokens": 5623
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 912,
+  "sourceFile": "8. BRS-161014 Report  Test check reason NG spot burn ( Separate Suspension D) Date 2.4.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\912.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 912,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Source contains comparable Suspension D versus Normal spot-welding NG results, but the draft has no usable review case.",
+    "issues": [
+      "No reviewCases were generated.",
+      "Comparison metrics are not structured.",
+      "Relevant result rows appear incompletely extracted.",
+      "Test round, C2/E2, lot, and total groupings must be preserved.",
+      "Baseline/test condition is not encoded."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Create a review case for Suspension D separate lot versus Normal.",
+      "Extract input, OK, NG burn, solder weak, total NG, and NG rate.",
+      "Cite all detail and total rows, including omitted adjacent rows.",
+      "Separate or label Test 1st, Test 2nd, C2, E2, and total contexts.",
+      "Set Normal as baseline and Suspension D lots as test conditions if supported by full rows."
+    ],
+    "evidencePolicy": "Current citations show changed-condition evidence but are incomplete for final use."
+  },
+  "usage": {
+    "input_tokens": 2464,
+    "output_tokens": 744,
+    "total_tokens": 3208
+  }
+}

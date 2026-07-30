@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 928,
+  "sourceFile": "80.BRS-161014 Report checking and test process solder date 8.12.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\928.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:26Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 928,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft mixes several unrelated solder investigations into one changed factor and maps key defect rates incorrectly.",
+    "issues": [
+      "Changed factor combines lot, pad clean, plasma, drying, AWF, shift, and tip conditions.",
+      "Baseline/test conditions are not comparable across dates, lots, machines, and process settings.",
+      "Pair subresults use re-spot sample counts as input instead of production input/NG rate.",
+      "Night shift and AWF metrics are separate descriptive tables, not evidence for the same comparison.",
+      "Evidence list includes rows without shown context and omits needed headers for defect columns."
+    ],
+    "requiredUserQuestions": [
+      "Should this file be split into separate cases for pad cleaning/plasma, AWF machine checks, and tip changes?"
+    ],
+    "correctionPlan": [
+      "Split review cases by one primary changed factor and preserve date/lot/machine subgroups.",
+      "Rebuild baseline/test pairs only within comparable E2/F-PCB lot and process contexts.",
+      "Use production input, total NG, NG rate, and after-repair NG rate from the correct columns.",
+      "Keep night shift and AWF summaries as separate outcomes only if tied to a defined comparison.",
+      "Cite header rows plus every compared data row for each corrected outcome."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping and column mapping are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 9491,
+    "output_tokens": 751,
+    "total_tokens": 10242
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 294,
+  "sourceFile": "15. BRS-161014 Report test MAIN 2 JIG improve damage FS 2023.09.06_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\294.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:34Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 294,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable evidence but misgroups the Test/Normal comparisons and cites incomplete outcome rows.",
+    "issues": [
+      "Changed factor label is malformed and mixes Test with an unexplained '2'.",
+      "1st-round Normal row is reused as control for 2nd and 3rd rounds.",
+      "Outcome comparison omits paired Normal rows for 2nd and 3rd rounds.",
+      "Metric should be NG damage FS or NG rate, not Result TEST.",
+      "9.6 and 9.8 appear to be context or unpaired trials, not direct Normal/Test pairs."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define changed factor as improved Test jig versus Normal, with round/cutting settings as subgroups.",
+      "Pair 1st Test with 1st Normal, 2nd Test with 2nd Normal, and 3rd Test with 3rd Normal.",
+      "Use rows 9.9!20-9.9!25 as the main comparative outcome evidence.",
+      "Set outcome metric to NG damage FS rate and keep input/NG counts as support.",
+      "Treat 9.6 and 9.8 as purpose/preliminary context unless full paired rows prove comparability."
+    ],
+    "evidencePolicy": "Row citations are citeable but not yet sufficient because key paired rows are omitted or misused."
+  },
+  "usage": {
+    "input_tokens": 4269,
+    "output_tokens": 819,
+    "total_tokens": 5088
+  }
+}

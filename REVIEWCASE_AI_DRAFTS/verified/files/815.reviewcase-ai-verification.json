@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 815,
+  "sourceFile": "64. TIU L5S3-01 R.L Result check dimension Frame -  date 2026.01.28_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\815.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 815,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The file is a one-condition Frame R/L dimension inspection, not a comparable changed-factor review.",
+    "issues": [
+      "No explicit baseline/test or changed-condition evidence.",
+      "Changed factor is inferred from filename, not source rows.",
+      "Outcomes cite header/summary rows instead of all measured data rows.",
+      "Spec violations appear miscomputed for A dimensions above 3.90.",
+      "Duplicate/overlapping measurement groupings are present."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Exclude from changed-factor Ask AI evidence.",
+      "If retained, reclassify as dimensional inspection only.",
+      "Cite actual measurement rows for each Frame R/L A/B value.",
+      "Recompute spec conformance against 3.87-3.90 and 6.00-6.03.",
+      "Remove filename-derived changed factor and duplicate outcomes."
+    ],
+    "evidencePolicy": "Citations support inspection context only; they do not support a changed-condition comparison."
+  },
+  "usage": {
+    "input_tokens": 3365,
+    "output_tokens": 680,
+    "total_tokens": 4045
+  }
+}

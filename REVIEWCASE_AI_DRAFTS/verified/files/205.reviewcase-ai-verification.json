@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 205,
+  "sourceFile": "10. BRS-161014 Report check reason NG separate VP+Frame main2 2023.08.30_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\205.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 205,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The before/after repair NG-rate comparison is mostly supported, but citations and framing need cleanup before final use.",
+    "issues": [
+      "Changed-factor domain should be process repair/setup, not material.",
+      "Metric/header rows are not cited in the case evidence.",
+      "Decision context says NG still occurs and proposes vacuum pickup, which is not captured as a limitation.",
+      "Title and purpose fields include extraction artifacts."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Change domain to process condition or repair/setup condition.",
+      "Add Report!23 and Report!24 as evidence for NG-rate metric and columns.",
+      "Add Report!27 as a limitation that NG remains after repair.",
+      "Optionally cite Report!40 as a recommendation, not tested evidence.",
+      "Clean title and purpose text."
+    ],
+    "evidencePolicy": "Core comparison rows exist, but metric/header and limitation citations are insufficient."
+  },
+  "usage": {
+    "input_tokens": 2340,
+    "output_tokens": 727,
+    "total_tokens": 3067
+  }
+}

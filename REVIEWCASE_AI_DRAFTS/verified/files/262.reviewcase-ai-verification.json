@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 262,
+  "sourceFile": "13. BRS-161014 Report test tracking 1k material 01.09.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\262.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:42Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 262,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites real rows but does not establish a valid baseline/test comparison or stable changed-factor grouping.",
+    "issues": [
+      "No explicit normal or baseline condition is evidenced.",
+      "Changed factor conflates material sorting, lines, and process steps.",
+      "Several outcomes are process-flow yields, not comparable condition results.",
+      "Some outcome metric labels are misassigned from unrelated rows.",
+      "Functional result parsing appears ambiguous."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended primary comparison for this report?",
+      "Should this be treated as a sorted-1k validation tracking report rather than baseline/test comparison?"
+    ],
+    "correctionPlan": [
+      "Identify the primary changed condition from purpose/content and decision rows.",
+      "If no baseline exists, mark comparison as non-comparative or use not_judged validation context.",
+      "Regroup outcomes by table section and preserve line/process/date keys.",
+      "Correct mislabeled outcomeMetric values and ambiguous functional parsing.",
+      "Cite section headers plus each metric row used."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient to support the current comparison grouping."
+  },
+  "usage": {
+    "input_tokens": 6794,
+    "output_tokens": 569,
+    "total_tokens": 7363
+  }
+}

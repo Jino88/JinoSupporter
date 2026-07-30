@@ -1,0 +1,4028 @@
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+@using ClosedXML.Excel
+@using System.Diagnostics
+@using System.Text
+@using System.Text.Json
+@using System.Text.Json.Nodes
+@inject AiProviderSettingsService AiProviders
+@inject AppActivityLogger ActivityLog
+@inject IJSRuntime JS
+
+<PageTitle>INPUT DATA (TEST)</PageTitle>
+
+<div class="idt-root">
+    <aside class="idt-left">
+        <div class="idt-head">
+            <div>
+                <div class="idt-kicker">TEST DATA ANALYSIS</div>
+                <h1>INPUT DATA (TEST)</h1>
+            </div>
+            <button class="idt-icon-btn" title="Reset" @onclick="ResetAll" disabled="@_isBusy">R</button>
+        </div>
+
+        <label class="idt-drop @(HasWorkbook ? "has-file" : "")">
+            <InputFile OnChange="OnExcelSelected"
+                       accept=".xlsx,.xlsm"
+                       disabled="@_isBusy"
+                       class="idt-file-input" />
+            <span class="idt-drop-icon">XLSX</span>
+            <span class="idt-drop-title">Excel</span>
+            <span class="idt-drop-name">@WorkbookLabel</span>
+        </label>
+
+        @if (HasWorkbook)
+        {
+            <div class="idt-file-meta">
+                <span>@_sheetCount sheet</span>
+                <span>@_rowCount row</span>
+                <span>@_cellCount cell</span>
+                @if (_excelTextTruncated)
+                {
+                    <span class="idt-warn">truncated</span>
+                }
+            </div>
+
+            <div class="idt-extract-card @(HasAiStructure ? "ready" : "")">
+                <button class="btn btn-outline-primary btn-sm"
+                        type="button"
+                        @onclick="RunFileExtractionAsync"
+                        disabled="@(_isBusy || !AiProviders.CodexCliEnabled || !HasWorkbook)">
+                    @if (_isStructureExtracting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    Step 1 Extract
+                </button>
+                <div class="idt-extract-info">
+                    <strong>@AiStructureStatusLabel</strong>
+                    @if (!string.IsNullOrWhiteSpace(_aiStructureTextPath))
+                    {
+                        <span title="@_aiStructureTextPath">@Path.GetFileName(_aiStructureTextPath)</span>
+                    }
+                </div>
+            </div>
+        }
+
+        <section class="idt-left-section">
+            <label class="idt-label" for="idt-purpose">검토 목적</label>
+            <textarea id="idt-purpose"
+                      class="idt-textarea purpose"
+                      @bind="_reviewPurpose"
+                      @bind:event="oninput"
+                      disabled="@_isBusy"
+                      placeholder="예: 변경 조건 영향, NG 증가 원인, 공정별 위험도, 다음 액션"></textarea>
+        </section>
+
+        <section class="idt-left-section">
+            <label class="idt-label" for="idt-context">기준 / 메모</label>
+            <textarea id="idt-context"
+                      class="idt-textarea context"
+                      @bind="_reviewContext"
+                      @bind:event="oninput"
+                      disabled="@_isBusy"
+                      placeholder="제품, 기간, 비교 기준, 반드시 봐야 할 항목"></textarea>
+        </section>
+
+        @if (!AiProviders.CodexCliEnabled)
+        {
+            <div class="idt-status error">
+                Codex CLI is disabled.
+            </div>
+        }
+        @if (!string.IsNullOrWhiteSpace(_status))
+        {
+            <div class="idt-status @(_statusError ? "error" : "ok")">@_status</div>
+        }
+    </aside>
+
+    <main class="idt-main">
+        <div class="idt-mainbar">
+            <div>
+                <div class="idt-title">Sequential AI Analysis</div>
+                <div class="idt-subtitle">@StepSummary</div>
+            </div>
+            <div class="idt-main-actions">
+                <select class="form-select form-select-sm idt-session-select"
+                        value="@_selectedSavedSession"
+                        @onchange="OnSavedSessionChanged"
+                        disabled="@_isBusy">
+                    <option value="">Load saved...</option>
+                    @foreach (var session in _savedSessions)
+                    {
+                        <option value="@session.Path">@session.Label</option>
+                    }
+                </select>
+                <button class="btn btn-outline-secondary btn-sm"
+                        @onclick="SaveSessionAsync"
+                        disabled="@(_isBusy || !HasWorkbook)">
+                    Save
+                </button>
+                <button class="btn btn-outline-primary btn-sm"
+                        @onclick="ToggleAutoPromptPanel"
+                        disabled="@_isBusy">
+                    Auto Prompt (@SelectedAutoPromptCount/@_autoPrompts.Count)
+                </button>
+                <button class="btn btn-primary btn-sm"
+                        @onclick="AddStep"
+                        disabled="@_isBusy">
+                    + Prompt
+                </button>
+            </div>
+        </div>
+
+        @if (_autoPromptOpen)
+        {
+            <section class="idt-auto-panel">
+                <div class="idt-auto-head">
+                    <div>
+                        <div class="idt-auto-title">Auto Prompt</div>
+                        <div class="idt-auto-subtitle">Analysis defaults and user-added Auto Prompt items.</div>
+                    </div>
+                    <button class="idt-auto-close" @onclick="ToggleAutoPromptPanel" title="Close">X</button>
+                </div>
+                <div class="idt-auto-preview-wrap">
+                    <div class="idt-auto-preview-label">
+                        <strong>Analysis Runner Prompt</strong>
+                        <span>Fixed wrapper sent with each analysis step. Checked Auto Prompt items are added through RequestJson.autoPrompts.</span>
+                    </div>
+                    <textarea class="idt-auto-preview compact" readonly value="@AnalysisRunnerPromptPreview"></textarea>
+                </div>
+                <div class="idt-auto-defaults">
+                        <div class="idt-auto-preview-wrap">
+                            <div class="idt-auto-preview-label">
+                                <strong>Default Analysis Prompt</strong>
+                                <span>Used when Step prompt and checked Auto Prompt items are empty.</span>
+                            </div>
+                            <textarea class="idt-auto-preview compact" readonly value="@DefaultAnalysisPromptPreview"></textarea>
+                        </div>
+                        <div class="idt-auto-preview-wrap">
+                            <div class="idt-auto-preview-label">
+                                <strong>Review Index Reference Prompt</strong>
+                                <span>@DetailedReviewIndexPath</span>
+                            </div>
+                            <textarea class="idt-auto-preview compact" readonly value="@ReviewIndexPromptPreview"></textarea>
+                        </div>
+                        <div class="idt-auto-preview-wrap">
+                            <div class="idt-auto-preview-label">
+                                <strong>Workbook Evidence Prompt</strong>
+                                <span>Step 1 structure, merged cells, normalized rows, and previous analysis context.</span>
+                            </div>
+                            <textarea class="idt-auto-preview compact" readonly value="@WorkbookEvidencePromptPreview"></textarea>
+                        </div>
+                        <div class="idt-auto-preview-wrap">
+                            <div class="idt-auto-preview-label">
+                                <strong>Output Rules Prompt</strong>
+                                <span>Visible answer shape, table layout, read-only rule, and JSON output contract.</span>
+                            </div>
+                            <textarea class="idt-auto-preview compact" readonly value="@AnalysisOutputPromptPreview"></textarea>
+                        </div>
+                    </div>
+                    @if (_autoPrompts.Count == 0)
+                    {
+                        <div class="idt-auto-empty">No Analysis Auto Prompt. Add only the prompts you need.</div>
+                    }
+                    else
+                    {
+                        <div class="idt-auto-list">
+                            @foreach (var prompt in _autoPrompts)
+                            {
+                                <label class="idt-auto-item" title="@prompt.Description">
+                                    <input type="checkbox"
+                                           checked="@prompt.Enabled"
+                                           @onchange="@(e => SetAutoPromptEnabled(prompt, e))"
+                                           disabled="@_isBusy" />
+                                    <span>
+                                        <strong>@prompt.Title</strong>
+                                        <em>@prompt.Description</em>
+                                    </span>
+                                    @if (prompt.IsCustom)
+                                    {
+                                        <button type="button"
+                                                class="idt-auto-remove"
+                                                title="Remove"
+                                                @onclick="() => RemoveCustomAutoPrompt(prompt)"
+                                                @onclick:stopPropagation="true"
+                                                disabled="@_isBusy">X</button>
+                                    }
+                                </label>
+                            }
+                        </div>
+                    }
+                    <div class="idt-auto-add">
+                        <input class="form-control form-control-sm"
+                               placeholder="Analysis Auto Prompt title"
+                               value="@_newAutoPromptTitle"
+                               @oninput="@(e => _newAutoPromptTitle = e.Value?.ToString() ?? string.Empty)"
+                               disabled="@_isBusy" />
+                        <textarea class="idt-auto-add-text"
+                                  placeholder="Analysis Auto Prompt content"
+                                  value="@_newAutoPromptContent"
+                                  @oninput="@(e => _newAutoPromptContent = e.Value?.ToString() ?? string.Empty)"
+                                  disabled="@_isBusy"></textarea>
+                        <button class="btn btn-primary btn-sm"
+                                type="button"
+                                @onclick="AddCustomAutoPrompt"
+                                disabled="@(_isBusy || string.IsNullOrWhiteSpace(_newAutoPromptContent))">
+                            Add Analysis Prompt
+                        </button>
+                    </div>
+            </section>
+        }
+
+        <div class="idt-steps">
+            <section class="idt-step @(_isStructureExtracting ? "running" : "")">
+                <div class="idt-step-head">
+                    <div>
+                        <div class="idt-step-title">Step 1 - Extract Excel Data</div>
+                        <div class="idt-step-meta">@ExtractionStepMeta</div>
+                    </div>
+                    <div class="idt-step-actions">
+                        @if (_isStructureExtracting)
+                        {
+                            <button class="btn btn-outline-danger btn-sm"
+                                    @onclick="CancelCliWait">
+                                Stop wait
+                            </button>
+                        }
+                        <button class="btn btn-primary btn-sm"
+                                type="button"
+                                @onclick="RunFileExtractionAsync"
+                                disabled="@(_isBusy || !AiProviders.CodexCliEnabled || !HasWorkbook)">
+                            @if (_isStructureExtracting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            Extract File
+                        </button>
+                    </div>
+                </div>
+
+                <div class="idt-result-pane">
+                    <div class="idt-label-row">
+                        <span class="idt-label">Extracted Data</span>
+                        @if (!string.IsNullOrWhiteSpace(_aiStructureCompletedAt))
+                        {
+                            <span class="idt-result-time">@_aiStructureCompletedAt</span>
+                        }
+                    </div>
+                    @if (_isStructureExtracting)
+                    {
+                        <div class="idt-result loading">
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            @_status
+                        </div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(_aiStructureHtml))
+                    {
+                        <div class="idt-result html-report idt-extracted-data">@((Microsoft.AspNetCore.Components.MarkupString)_aiStructureHtml)</div>
+                    }
+                    else
+                    {
+                        <div class="idt-result empty">No extracted data. Run Step 1 first.</div>
+                    }
+                </div>
+            </section>
+
+            @foreach (var step in _steps)
+            {
+                <section class="idt-step @(step.IsRunning ? "running" : "")">
+                    <div class="idt-step-head">
+                        <div>
+                            <div class="idt-step-title">Step @DisplayStepNumber(step)</div>
+                            <div class="idt-step-meta">@StepMeta(step)</div>
+                        </div>
+                        <div class="idt-step-actions">
+                            @if (step.IsRunning)
+                            {
+                                <button class="btn btn-outline-danger btn-sm"
+                                        @onclick="CancelCliWait">
+                                    Stop wait
+                                </button>
+                            }
+                            <button class="btn btn-dark btn-sm"
+                                    @onclick="() => RunStepAsync(step)"
+                                    disabled="@(!CanRun(step))"
+                                    title="@RunDisabledReason(step)">
+                                @if (step.IsRunning)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                }
+                                Run Codex
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="idt-step-grid">
+                        <div class="idt-prompt-pane">
+                            <label class="idt-label" for="@PromptId(step)">Prompt</label>
+                            <textarea id="@PromptId(step)"
+                                      class="idt-textarea prompt"
+                                      @bind="step.Prompt"
+                                      @bind:event="oninput"
+                                      disabled="@_isBusy"
+                                      placeholder="@PromptPlaceholderText(step)"></textarea>
+                        </div>
+
+                        <div class="idt-result-pane">
+                            <div class="idt-label-row">
+                                <span class="idt-label">AI Result</span>
+                                @if (!string.IsNullOrWhiteSpace(step.CompletedAt))
+                                {
+                                    <span class="idt-result-time">@step.CompletedAt</span>
+                                }
+                            </div>
+                            @if (step.IsRunning)
+                            {
+                                <div class="idt-result loading">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    @_status
+                                </div>
+                            }
+                            else if (!string.IsNullOrWhiteSpace(step.Error))
+                            {
+                                <pre class="idt-result error-text">@step.Error</pre>
+                            }
+                            else if (!string.IsNullOrWhiteSpace(step.ResultHtml))
+                            {
+                                <div class="idt-result idt-ai-html-host">
+                                    <iframe class="idt-ai-html-frame"
+                                            sandbox=""
+                                            title="AI generated analysis HTML"
+                                            srcdoc="@step.ResultHtml"></iframe>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="idt-result empty">No result.</div>
+                            }
+                        </div>
+                    </div>
+                </section>
+            }
+        </div>
+    </main>
+</div>
+
+<style>
+    .idt-root {
+        height: calc(100vh - 24px);
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr);
+        gap: 10px;
+        padding: 10px;
+        overflow: hidden;
+        background: #f6f8fb;
+    }
+
+    .idt-left, .idt-step {
+        border: 1px solid #d9e2ee;
+        background: #fff;
+        border-radius: 6px;
+    }
+
+    .idt-left {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+        padding: 10px;
+        overflow-y: auto;
+    }
+
+    .idt-head, .idt-mainbar, .idt-step-head, .idt-label-row, .idt-main-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .idt-session-select {
+        width: 210px;
+        font-size: 12px;
+    }
+
+    .idt-kicker {
+        font-size: 11px;
+        font-weight: 800;
+        color: #0f766e;
+        letter-spacing: .02em;
+    }
+
+    .idt-head h1 {
+        margin: 1px 0 0;
+        font-size: 16px;
+        font-weight: 850;
+        color: #0f172a;
+    }
+
+    .idt-icon-btn {
+        width: 32px;
+        height: 32px;
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        border-radius: 6px;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .idt-drop {
+        position: relative;
+        display: grid;
+        place-items: center;
+        gap: 7px;
+        min-height: 108px;
+        border: 2px dashed #94a3b8;
+        border-radius: 6px;
+        background: #f8fafc;
+        cursor: pointer;
+        text-align: center;
+        padding: 12px;
+    }
+
+    .idt-drop:hover {
+        border-color: #0f766e;
+        background: #f0fdfa;
+    }
+
+    .idt-drop.has-file {
+        border-color: #14b8a6;
+        background: #f0fdfa;
+    }
+
+    .idt-file-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .idt-drop-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 52px;
+        height: 34px;
+        border-radius: 4px;
+        background: #134e4a;
+        color: #ccfbf1;
+        font-size: 12px;
+        font-weight: 850;
+    }
+
+    .idt-drop-title {
+        font-size: 14px;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .idt-drop-name {
+        max-width: 100%;
+        font-size: 12px;
+        color: #475569;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .idt-file-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        font-size: 11px;
+        color: #475569;
+    }
+
+    .idt-file-meta span {
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        border-radius: 4px;
+        padding: 3px 7px;
+    }
+
+    .idt-file-meta .idt-warn {
+        border-color: #fed7aa;
+        background: #fff7ed;
+        color: #9a3412;
+    }
+
+    .idt-extract-card {
+        display: grid;
+        gap: 7px;
+        padding: 8px;
+        border: 1px solid #dbe3ef;
+        border-radius: 6px;
+        background: #f8fafc;
+    }
+
+    .idt-extract-card.ready {
+        border-color: #bbf7d0;
+        background: #f0fdf4;
+    }
+
+    .idt-extract-card .btn {
+        width: 100%;
+    }
+
+    .idt-extract-info {
+        min-width: 0;
+        display: grid;
+        gap: 2px;
+        font-size: 11px;
+        color: #475569;
+    }
+
+    .idt-extract-info strong {
+        color: #0f172a;
+        font-size: 12px;
+    }
+
+    .idt-extract-info span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .idt-left-section {
+        display: grid;
+        gap: 6px;
+    }
+
+    .idt-label {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 800;
+        color: #334155;
+    }
+
+    .idt-textarea {
+        resize: vertical;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 9px 10px;
+        font-size: 13px;
+        line-height: 1.45;
+        color: #0f172a;
+        background: #fff;
+        outline: none;
+    }
+
+    .idt-textarea:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+    }
+
+    .idt-textarea.purpose { min-height: 86px; }
+    .idt-textarea.context { min-height: 70px; }
+    .idt-textarea.prompt  { min-height: 128px; height: 128px; }
+
+    .idt-status {
+        border-radius: 6px;
+        padding: 9px 10px;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .idt-status.ok {
+        border: 1px solid #bbf7d0;
+        background: #f0fdf4;
+        color: #166534;
+    }
+
+    .idt-status.error {
+        border: 1px solid #fecaca;
+        background: #fef2f2;
+        color: #991b1b;
+    }
+
+    .idt-main {
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .idt-mainbar {
+        flex-shrink: 0;
+        padding: 4px 2px 10px;
+    }
+
+    .idt-title {
+        font-size: 17px;
+        font-weight: 850;
+        color: #111827;
+    }
+
+    .idt-subtitle {
+        margin-top: 2px;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .idt-steps {
+        min-height: 0;
+        overflow-y: auto;
+        display: grid;
+        gap: 10px;
+        padding-right: 3px;
+    }
+
+    .idt-auto-panel {
+        flex-shrink: 0;
+        display: grid;
+        gap: 8px;
+        margin: 0 2px 10px;
+        padding: 10px;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+        background: #eff6ff;
+    }
+
+    .idt-auto-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .idt-auto-title {
+        font-size: 13px;
+        font-weight: 850;
+        color: #1e3a8a;
+    }
+
+    .idt-auto-subtitle {
+        margin-top: 2px;
+        font-size: 11px;
+        color: #475569;
+    }
+
+    .idt-auto-close {
+        width: 26px;
+        height: 26px;
+        border: 1px solid #93c5fd;
+        border-radius: 5px;
+        background: #fff;
+        color: #1d4ed8;
+        font-size: 11px;
+        font-weight: 850;
+    }
+
+    .idt-auto-preview-wrap {
+        display: grid;
+        gap: 6px;
+    }
+
+    .idt-auto-defaults {
+        display: grid;
+        gap: 10px;
+    }
+
+    .idt-auto-preview-label {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        flex-wrap: wrap;
+        font-size: 11px;
+        color: #64748b;
+    }
+
+    .idt-auto-preview-label strong {
+        font-size: 12px;
+        color: #0f172a;
+    }
+
+    .idt-auto-preview {
+        width: 100%;
+        min-height: 260px;
+        max-height: 360px;
+        resize: vertical;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+        padding: 8px;
+        background: #fff;
+        color: #0f172a;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 11px;
+        line-height: 1.4;
+        white-space: pre;
+    }
+
+    .idt-auto-preview.compact {
+        min-height: 150px;
+        max-height: 220px;
+    }
+
+    .idt-auto-empty {
+        padding: 10px;
+        border: 1px dashed #93c5fd;
+        border-radius: 6px;
+        background: #fff;
+        color: #475569;
+        font-size: 12px;
+    }
+
+    .idt-auto-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 7px;
+    }
+
+    .idt-auto-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        min-width: 0;
+        margin: 0;
+        padding: 8px;
+        border: 1px solid #dbeafe;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+    }
+
+    .idt-auto-item input {
+        margin-top: 3px;
+        flex-shrink: 0;
+    }
+
+    .idt-auto-item span {
+        min-width: 0;
+        display: grid;
+        gap: 2px;
+        flex: 1;
+    }
+
+    .idt-auto-item strong {
+        font-size: 12px;
+        color: #0f172a;
+    }
+
+    .idt-auto-item em {
+        font-style: normal;
+        font-size: 11px;
+        line-height: 1.35;
+        color: #64748b;
+    }
+
+    .idt-auto-remove {
+        width: 22px;
+        height: 22px;
+        flex-shrink: 0;
+        border: 1px solid #fecaca;
+        border-radius: 4px;
+        background: #fff;
+        color: #b91c1c;
+        font-size: 10px;
+        font-weight: 850;
+    }
+
+    .idt-auto-add {
+        display: grid;
+        grid-template-columns: minmax(180px, 260px) minmax(260px, 1fr) auto;
+        gap: 7px;
+        align-items: stretch;
+    }
+
+    .idt-auto-add-text {
+        min-height: 32px;
+        max-height: 86px;
+        resize: vertical;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 6px 8px;
+        font-size: 12px;
+        line-height: 1.35;
+        color: #0f172a;
+    }
+
+    .idt-auto-add .btn {
+        white-space: nowrap;
+    }
+
+    @@media (max-width: 1280px) {
+        .idt-mainbar {
+            align-items: flex-start;
+        }
+
+        .idt-main-actions {
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+    }
+
+    .idt-step {
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+    }
+
+    .idt-step.running {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, .12);
+    }
+
+    .idt-step-title {
+        font-size: 14px;
+        font-weight: 850;
+        color: #0f172a;
+    }
+
+    .idt-step-meta, .idt-result-time {
+        font-size: 11px;
+        color: #64748b;
+    }
+
+    .idt-step-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .idt-step-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+        min-height: 0;
+    }
+
+    .idt-prompt-pane, .idt-result-pane {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .idt-result {
+        flex: 1;
+        min-height: 260px;
+        max-height: 54vh;
+        margin: 0;
+        overflow: auto;
+        border: 1px solid #dbe3ef;
+        border-radius: 6px;
+        background: #fbfdff;
+        color: #0f172a;
+        padding: 10px;
+        font-size: 13px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .idt-result.empty, .idt-result.loading {
+        display: flex;
+        align-items: center;
+        color: #64748b;
+    }
+
+    .idt-result.error-text {
+        border-color: #fecaca;
+        background: #fff7f7;
+        color: #991b1b;
+    }
+
+    .idt-ai-html-host {
+        padding: 0;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .idt-ai-html-frame {
+        display: block;
+        width: 100%;
+        height: min(1200px, calc(100vh - 230px));
+        min-height: 620px;
+        border: 0;
+        background: #fff;
+    }
+
+    .idt-result.html-report {
+        white-space: normal;
+        font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .idt-result.html-report h2 {
+        margin: 0 0 10px;
+        font-size: 18px;
+        font-weight: 850;
+        color: #0f172a;
+    }
+
+    .idt-result.html-report h3 {
+        margin: 14px 0 8px;
+        font-size: 14px;
+        font-weight: 850;
+        color: #1e293b;
+    }
+
+    .idt-result.html-report p {
+        margin: 6px 0;
+    }
+
+    .idt-result.html-report table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0;
+        font-size: 12px;
+    }
+
+    .idt-result.html-report th,
+    .idt-result.html-report td {
+        border: 1px solid #dbe3ef;
+        padding: 7px 8px;
+        vertical-align: top;
+    }
+
+    .idt-result.html-report th {
+        background: #f1f5f9;
+        font-weight: 800;
+    }
+
+    .idt-result.html-report .idt-report {
+        display: grid;
+        gap: 10px;
+    }
+
+    .idt-result.html-report .idt-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .idt-result.html-report .idt-chip {
+        display: inline-flex;
+        align-items: center;
+        max-width: 260px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 11px;
+        font-weight: 750;
+        line-height: 1.35;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .idt-result.html-report .idt-purpose-tags .idt-chip {
+        background: #dbeafe;
+        border-color: #93c5fd;
+        color: #1d4ed8;
+    }
+
+    .idt-result.html-report .idt-check-tags .idt-chip {
+        background: #ecfdf5;
+        border-color: #86efac;
+        color: #166534;
+    }
+
+    .idt-result.html-report .idt-brief,
+    .idt-result.html-report .idt-process {
+        border: 1px solid #dbe3ef;
+        border-radius: 6px;
+        background: #fff;
+        padding: 10px 12px;
+    }
+
+    .idt-result.html-report .idt-brief h3,
+    .idt-result.html-report .idt-process h3 {
+        margin: 0 0 8px;
+        font-size: 13px;
+        font-weight: 850;
+        color: #0f172a;
+    }
+
+    .idt-result.html-report .idt-brief ul {
+        margin: 0;
+        padding-left: 18px;
+    }
+
+    .idt-result.html-report .idt-brief li {
+        margin: 3px 0;
+    }
+
+    .idt-result.html-report .idt-process {
+        border-left: 4px solid #2563eb;
+    }
+
+    .idt-result.html-report .idt-mini-bars {
+        display: grid;
+        gap: 6px;
+        margin: 8px 0 10px;
+        padding: 8px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: #f8fafc;
+    }
+
+    .idt-result.html-report .idt-bar {
+        display: grid;
+        grid-template-columns: minmax(100px, 1.1fr) minmax(120px, 3fr) auto;
+        align-items: center;
+        gap: 8px;
+        min-height: 18px;
+        font-size: 11px;
+    }
+
+    .idt-result.html-report .idt-bar-label {
+        color: #334155;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .idt-result.html-report .idt-bar-track {
+        height: 8px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        overflow: hidden;
+    }
+
+    .idt-result.html-report .idt-bar-fill {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: #2563eb;
+    }
+
+    .idt-result.html-report .idt-bar-value {
+        color: #475569;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .idt-extracted-data {
+        min-height: 320px;
+    }
+
+    .idt-extracted-data .sheet-block {
+        margin: 0 0 18px;
+    }
+
+    .idt-extracted-data .sheet-block + .sheet-block {
+        padding-top: 14px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .idt-extracted-data .text-list {
+        margin: 8px 0 12px;
+        padding-left: 18px;
+    }
+
+    .idt-extracted-data .text-list li {
+        margin: 3px 0;
+    }
+
+    @@media (max-width: 980px) {
+        .idt-root {
+            height: auto;
+            min-height: calc(100vh - 24px);
+            grid-template-columns: 1fr;
+            overflow: auto;
+        }
+
+        .idt-main, .idt-left {
+            overflow: visible;
+        }
+
+        .idt-step-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .idt-auto-add {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@code {
+    private const long MaxUploadBytes = 100L * 1024L * 1024L;
+    private const int MaxExtractChars = 280_000;
+    private const int MaxRowsPerSheet = 8_000;
+    private const int MaxColumnsPerSheet = 180;
+    private const int MaxCellChars = 220;
+    private const string DetailedReviewIndexPath = InputDataTestAnalysisSupport.DetailedReviewIndexPath;
+
+    private readonly List<AnalysisStep> _steps = [new(1)];
+    private readonly List<AutoPromptOption> _autoPrompts = LoadAutoPromptOptions();
+    private List<SavedSessionInfo> _savedSessions = [];
+    private CancellationTokenSource? _cliWaitCts;
+
+    private bool _isBusy;
+    private bool _autoPromptOpen;
+    private bool _statusError;
+    private string _status = "";
+    private string _reviewPurpose = "";
+    private string _reviewContext = "";
+    private string _workbookFileName = "";
+    private string _workbookPath = "";
+    private string _excelTextPath = "";
+    private string _excelText = "";
+    private string _aiStructureDir = "";
+    private string _aiStructureJsonPath = "";
+    private string _aiStructureTextPath = "";
+    private string _aiStructureRenderedRequestPath = "";
+    private string _aiStructureCompletedAt = "";
+    private string _aiStructureHtml = "";
+    private string _lastSavedPath = "";
+    private string _selectedSavedSession = "";
+    private string _newAutoPromptTitle = "";
+    private string _newAutoPromptContent = "";
+    private bool _excelTextTruncated;
+    private bool _isStructureExtracting;
+    private DateTimeOffset? _aiStructureExtractionStartedAt;
+    private int _sheetCount;
+    private int _rowCount;
+    private int _cellCount;
+    private int _aiStructureImageCount;
+
+    private bool HasWorkbook => !string.IsNullOrWhiteSpace(_excelTextPath) && File.Exists(_excelTextPath);
+
+    private bool HasAiStructure
+        => !string.IsNullOrWhiteSpace(_aiStructureJsonPath)
+           && File.Exists(_aiStructureJsonPath)
+           && !string.IsNullOrWhiteSpace(_aiStructureTextPath)
+           && File.Exists(_aiStructureTextPath);
+
+    private string WorkbookLabel => HasWorkbook
+        ? _workbookFileName
+        : _isBusy
+            ? "Loading..."
+            : "Drop or select .xlsx / .xlsm";
+
+    private string AiStructureStatusLabel => HasAiStructure
+        ? $"AI structure ready (Excel cells + {_aiStructureImageCount:N0} image(s), PNG deleted)"
+        : _isStructureExtracting
+            ? $"AI structure extraction running... {FormatElapsedSince(_aiStructureExtractionStartedAt)}"
+            : "Run Step 1 first.";
+
+    private string StepSummary
+        => $"Step 1 extraction {(HasAiStructure ? "done" : "needed")}, {_steps.Count} analysis step(s), {_steps.Count(s => !string.IsNullOrWhiteSpace(s.ResultHtml))} completed";
+
+    private string ExtractionStepMeta
+        => _isStructureExtracting
+            ? "running"
+        : HasAiStructure
+                ? "done, program cells saved, images deleted after extraction"
+                : "ready";
+
+    private int SelectedAutoPromptCount => _autoPrompts.Count(p => p.Enabled);
+
+    private string AnalysisRunnerPromptPreview
+        => BuildCodexPrompt("{analysis request json}");
+
+    private string DefaultAnalysisPromptPreview
+        => BuildDefaultAnalysisPrompt();
+
+    private string ReviewIndexPromptPreview
+        => BuildReviewIndexPrompt("{analysis request json}");
+
+    private string WorkbookEvidencePromptPreview
+        => BuildWorkbookEvidencePrompt();
+
+    private string AnalysisOutputPromptPreview
+        => BuildAnalysisOutputPrompt();
+
+    protected override void OnInitialized()
+    {
+        RefreshSavedSessions();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try { await JS.InvokeVoidAsync("diFullPage.enter"); } catch { }
+    }
+
+    private async Task OnExcelSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file is null) return;
+
+        string ext = Path.GetExtension(file.Name).ToLowerInvariant();
+        if (ext is not ".xlsx" and not ".xlsm")
+        {
+            SetStatus("Only .xlsx and .xlsm files are supported.", true);
+            return;
+        }
+
+        _isBusy = true;
+        SetStatus("Reading workbook...", false);
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            await using Stream input = file.OpenReadStream(MaxUploadBytes);
+            using var ms = new MemoryStream();
+            await input.CopyToAsync(ms);
+            byte[] bytes = ms.ToArray();
+
+            WorkbookExtractResult extracted = await Task.Run(() => ExtractWorkbookText(bytes));
+            string runDir = PrepareUploadDirectory(file.Name);
+            string safeName = SafeFileName(file.Name);
+
+            _workbookPath = Path.Combine(runDir, safeName);
+            _excelTextPath = Path.Combine(runDir, Path.GetFileNameWithoutExtension(safeName) + ".extracted.txt");
+            await File.WriteAllBytesAsync(_workbookPath, bytes);
+            await File.WriteAllTextAsync(_excelTextPath, extracted.Text, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+            _workbookFileName = file.Name;
+            _excelText = extracted.Text;
+            _excelTextTruncated = extracted.Truncated;
+            _sheetCount = extracted.SheetCount;
+            _rowCount = extracted.RowCount;
+            _cellCount = extracted.CellCount;
+            ClearAiStructure();
+
+            if (_steps.Count == 0)
+                _steps.Add(new AnalysisStep(1));
+
+            SetStatus($"Workbook loaded: {_sheetCount} sheet(s), {_rowCount:N0} row(s).", false);
+        }
+        catch (Exception ex)
+        {
+            ClearWorkbook();
+            SetStatus($"Excel load failed: {ex.Message}", true);
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private async Task OnSavedSessionChanged(ChangeEventArgs e)
+    {
+        string path = e.Value?.ToString() ?? "";
+        _selectedSavedSession = path;
+        if (string.IsNullOrWhiteSpace(path)) return;
+
+        await LoadSavedSessionAsync(path);
+        _selectedSavedSession = "";
+    }
+
+    private async Task LoadSavedSessionAsync(string path)
+    {
+        if (_isBusy) return;
+
+        _isBusy = true;
+        SetStatus("Loading saved INPUT DATA (TEST) session...", false);
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            string json = await File.ReadAllTextAsync(path);
+            using JsonDocument doc = JsonDocument.Parse(json);
+            JsonElement root = doc.RootElement;
+
+            if (root.TryGetProperty("workbook", out JsonElement workbook))
+            {
+                _workbookFileName = JsonString(workbook, "fileName");
+                _workbookPath = ResolveSessionPath(JsonString(workbook, "workbookPath"), path);
+                _excelTextPath = ResolveSessionPath(JsonString(workbook, "extractedTextPath"), path);
+                _sheetCount = JsonInt(workbook, "sheetCount");
+                _rowCount = JsonInt(workbook, "rowCount");
+                _cellCount = JsonInt(workbook, "cellCount");
+                _excelTextTruncated = JsonBool(workbook, "extractedTextTruncated");
+                _excelText = File.Exists(_excelTextPath)
+                    ? await File.ReadAllTextAsync(_excelTextPath)
+                    : "";
+
+                if (workbook.TryGetProperty("aiStructure", out JsonElement aiStructure))
+                {
+                    _aiStructureDir = ResolveSessionPath(JsonString(aiStructure, "dir"), path);
+                    _aiStructureJsonPath = ResolveSessionPath(JsonString(aiStructure, "jsonPath"), path);
+                    _aiStructureTextPath = ResolveSessionPath(JsonString(aiStructure, "textPath"), path);
+                    _aiStructureRenderedRequestPath = ResolveSessionPath(JsonString(aiStructure, "renderedRequestPath"), path);
+                    _aiStructureCompletedAt = JsonString(aiStructure, "completedAt");
+                    _aiStructureImageCount = JsonInt(aiStructure, "imageCount");
+                    _aiStructureHtml = LoadAiStructureHtml(_aiStructureJsonPath);
+                }
+                else
+                {
+                    ClearAiStructure();
+                }
+            }
+
+            _reviewPurpose = JsonString(root, "reviewPurpose");
+            _reviewContext = JsonString(root, "reviewContext");
+            LoadAutoPromptState(root);
+            LoadSavedSteps(root);
+
+            _lastSavedPath = path;
+            SetStatus($"Loaded: {path}", false);
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Load failed: {ex.Message}", true);
+        }
+        finally
+        {
+            _isBusy = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void AddStep()
+    {
+        _steps.Add(new AnalysisStep(_steps.Count + 1));
+    }
+
+    private void ToggleAutoPromptPanel()
+    {
+        if (_isBusy) return;
+        _autoPromptOpen = !_autoPromptOpen;
+    }
+
+    private void AddCustomAutoPrompt()
+    {
+        if (_isBusy) return;
+
+        string content = _newAutoPromptContent.Trim();
+        if (string.IsNullOrWhiteSpace(content)) return;
+
+        string title = string.IsNullOrWhiteSpace(_newAutoPromptTitle)
+            ? $"Custom Prompt {_autoPrompts.Count(p => p.IsCustom) + 1}"
+            : _newAutoPromptTitle.Trim();
+
+        _autoPrompts.Add(new AutoPromptOption(
+            $"custom_{Guid.NewGuid():N}",
+            title,
+            ShortPromptSummary(content),
+            "Custom",
+            "",
+            content,
+            true,
+            isCustom: true));
+
+        _newAutoPromptTitle = "";
+        _newAutoPromptContent = "";
+        PersistAutoPromptLibrary();
+    }
+
+    private void RemoveCustomAutoPrompt(AutoPromptOption prompt)
+    {
+        if (_isBusy || !prompt.IsCustom) return;
+        _autoPrompts.Remove(prompt);
+        PersistAutoPromptLibrary();
+    }
+
+    private void SetAutoPromptEnabled(AutoPromptOption prompt, ChangeEventArgs e)
+    {
+        if (_isBusy) return;
+        prompt.Enabled = e.Value is bool b && b;
+        PersistAutoPromptLibrary();
+    }
+
+    private void PersistAutoPromptLibrary()
+    {
+        if (SaveAutoPromptLibrary(_autoPrompts))
+            SetStatus("Auto Prompt saved.", false);
+        else
+            SetStatus("Auto Prompt save failed. Check file permission.", true);
+    }
+
+    private bool CanRun(AnalysisStep step)
+        => !_isBusy
+           && AiProviders.CodexCliEnabled
+           && HasWorkbook
+           && HasAiStructure;
+
+    private string RunDisabledReason(AnalysisStep step)
+    {
+        if (_isBusy) return "Busy.";
+        if (!AiProviders.CodexCliEnabled) return "Codex CLI is disabled.";
+        if (!HasWorkbook) return "Load an Excel workbook first.";
+        if (!HasAiStructure) return "Run Step 1 Extract File first.";
+        return "Run Codex";
+    }
+
+    private async Task RunStepAsync(AnalysisStep step)
+    {
+        if (!CanRun(step)) return;
+
+        _isBusy = true;
+        step.IsRunning = true;
+        step.Error = "";
+        step.Result = "";
+        step.ResultHtml = "";
+        step.CompletedAt = "";
+        int displayStep = DisplayStepNumber(step);
+        SetStatus($"Step {displayStep}: Codex CLI running...", false);
+        await InvokeAsync(StateHasChanged);
+
+        string workDir = FindRepoRoot();
+        string tmpDir = Path.Combine(workDir, "tmp");
+        Directory.CreateDirectory(tmpDir);
+
+        string runId = Guid.NewGuid().ToString("N")[..12];
+        string requestPath = Path.Combine(tmpDir, $"input_data_test_request_{runId}.json");
+        string outputPath = Path.Combine(tmpDir, $"input_data_test_output_{runId}.txt");
+        string donePath = Path.Combine(tmpDir, $"input_data_test_done_{runId}.json");
+
+        try
+        {
+            WriteStepRequest(requestPath, runId, step);
+            string prompt = BuildCodexPrompt(requestPath);
+            ActivityLog.Log("InputDataTest", $"launch Codex CLI step={displayStep} request={requestPath}");
+
+            if (!TryLaunchCodexTerminal(workDir, prompt, $"INPUT DATA (TEST) - Step {displayStep}", outputPath, donePath))
+            {
+                step.Error = "Failed to launch Codex CLI.";
+                SetStatus(step.Error, true);
+                return;
+            }
+
+            _cliWaitCts?.Cancel();
+            _cliWaitCts?.Dispose();
+            _cliWaitCts = new CancellationTokenSource(TimeSpan.FromMinutes(30));
+            CancellationToken token = _cliWaitCts.Token;
+
+            while (!token.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2), token);
+
+                if (!File.Exists(donePath))
+                {
+                    SetStatus($"Step {displayStep}: waiting for Codex result... {DateTime.Now:HH:mm:ss}", false);
+                    await InvokeAsync(StateHasChanged);
+                    continue;
+                }
+
+                string result = File.Exists(outputPath)
+                    ? await File.ReadAllTextAsync(outputPath, token)
+                    : "";
+
+                string doneJson = await File.ReadAllTextAsync(donePath, token);
+                int exitCode = ReadExitCode(doneJson);
+                if (exitCode != 0)
+                {
+                    step.Error = string.IsNullOrWhiteSpace(result)
+                        ? $"Codex CLI exited with code {exitCode}."
+                        : $"Codex CLI exited with code {exitCode}.\n\n{result.Trim()}";
+                    SetStatus($"Step {displayStep}: Codex CLI failed.", true);
+                    return;
+                }
+
+                var parsed = ParseStepResult(result);
+                step.Result = parsed.AnalysisText;
+                step.ResultHtml = parsed.AnalysisHtml;
+                if (!string.IsNullOrWhiteSpace(parsed.Error))
+                {
+                    step.Error = parsed.Error;
+                    SetStatus($"Step {displayStep}: Codex output did not include display HTML.", true);
+                    return;
+                }
+                step.CompletedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                SetStatus($"Step {displayStep}: analysis complete.", false);
+                TryDeleteFile(requestPath);
+                TryDeleteFile(outputPath);
+                TryDeleteFile(donePath);
+                return;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            step.Error = "Waiting was stopped. The Codex CLI terminal may still finish.";
+            SetStatus(step.Error, true);
+        }
+        catch (Exception ex)
+        {
+            step.Error = ex.Message;
+            SetStatus($"Step {displayStep}: {ex.Message}", true);
+        }
+        finally
+        {
+            step.IsRunning = false;
+            _isBusy = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void CancelCliWait()
+    {
+        try { _cliWaitCts?.Cancel(); } catch { }
+    }
+
+    private async Task RunFileExtractionAsync()
+    {
+        if (!HasWorkbook)
+        {
+            SetStatus("Excel file is required before extraction.", true);
+            return;
+        }
+        if (!AiProviders.CodexCliEnabled)
+        {
+            SetStatus("Codex CLI is disabled.", true);
+            return;
+        }
+
+        _isBusy = true;
+        ClearAiStructure();
+        _isStructureExtracting = true;
+        DateTimeOffset extractionStartedAt = DateTimeOffset.Now;
+        _aiStructureExtractionStartedAt = extractionStartedAt;
+        SetStatus($"AI structure extraction running... {FormatElapsedSince(extractionStartedAt)}", false);
+        await InvokeAsync(StateHasChanged);
+
+        string workDir = FindRepoRoot();
+        string rendererPath = Path.Combine(workDir, "JinoSupporter.Web", "tools", "input_data_test_render_excel.py");
+        string baseDir = Path.GetDirectoryName(_workbookPath) ?? Path.Combine(workDir, "tmp", "input-data-test");
+        string runId = Guid.NewGuid().ToString("N")[..12];
+        string structureDir = Path.Combine(baseDir, "ai-structure", $"{DateTime.Now:yyyyMMdd_HHmmss}_{runId}");
+        string imageDir = Path.Combine(structureDir, "images");
+        string renderedRequestPath = Path.Combine(structureDir, "rendered-request.json");
+        string requestPath = Path.Combine(structureDir, "extract-request.json");
+        string outputJsonPath = Path.Combine(structureDir, "ai-structure.json");
+        string outputTextPath = Path.Combine(structureDir, "ai-structure.txt");
+        string progressPath = Path.Combine(structureDir, "extract-progress.json");
+        string donePath = Path.Combine(structureDir, "extract-done.json");
+
+        try
+        {
+            Directory.CreateDirectory(structureDir);
+            WriteAiStructureRequest(requestPath, runId, structureDir, imageDir, renderedRequestPath, outputJsonPath, outputTextPath);
+            string prompt = BuildAiStructurePrompt(requestPath, renderedRequestPath);
+            ActivityLog.Log("InputDataTest", $"launch AI structure extraction request={requestPath}");
+
+            if (!TryLaunchAiStructureExtractionTerminal(
+                    workDir,
+                    rendererPath,
+                    _workbookPath,
+                    structureDir,
+                    imageDir,
+                    renderedRequestPath,
+                    prompt,
+                    "INPUT DATA (TEST) - Extract File",
+                    outputJsonPath,
+                    progressPath,
+                    donePath))
+            {
+                SetStatus("Failed to launch AI structure extraction.", true);
+                return;
+            }
+
+            _cliWaitCts?.Cancel();
+            _cliWaitCts?.Dispose();
+            _cliWaitCts = new CancellationTokenSource(TimeSpan.FromMinutes(60));
+            CancellationToken token = _cliWaitCts.Token;
+
+            while (!token.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2), token);
+                if (!File.Exists(donePath))
+                {
+                    string elapsedText = FormatElapsedSince(extractionStartedAt);
+                    string progress = ReadAiStructureProgress(progressPath, elapsedText);
+                    SetStatus(string.IsNullOrWhiteSpace(progress)
+                        ? $"AI structure extraction running... {elapsedText}"
+                        : progress,
+                        false);
+                    await InvokeAsync(StateHasChanged);
+                    continue;
+                }
+
+                string doneJson = await File.ReadAllTextAsync(donePath, token);
+                int exitCode = ReadExitCode(doneJson);
+                bool usedFallbackStructure = false;
+                string rawJson;
+                if (exitCode != 0)
+                {
+                    string errorText = File.Exists(outputJsonPath)
+                        ? await File.ReadAllTextAsync(outputJsonPath, token)
+                        : "";
+                    if (!TryBuildAiStructureFallbackJson(renderedRequestPath, errorText, out rawJson))
+                    {
+                        string elapsedText = FormatElapsedSince(extractionStartedAt);
+                        SetStatus(string.IsNullOrWhiteSpace(errorText)
+                            ? $"AI structure extraction failed after {elapsedText}. Exit code: {exitCode}."
+                            : $"AI structure extraction failed after {elapsedText}. Exit code: {exitCode}. {errorText.Trim()}",
+                            true);
+                        return;
+                    }
+
+                    usedFallbackStructure = true;
+                }
+                else if (!File.Exists(outputJsonPath))
+                {
+                    SetStatus($"AI structure extraction finished without JSON output after {FormatElapsedSince(extractionStartedAt)}.", true);
+                    return;
+                }
+                else
+                {
+                    rawJson = await File.ReadAllTextAsync(outputJsonPath, token);
+                }
+
+                string cleanJson = EnrichAiStructureJsonWithRenderedMetadata(CleanJsonText(rawJson), renderedRequestPath);
+                using JsonDocument doc = JsonDocument.Parse(cleanJson);
+                string formattedJson = JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
+                string structureText = AiStructureJsonToText(doc.RootElement);
+                string structureHtml = AiStructureJsonToHtml(doc.RootElement);
+                int imageCount = CountRenderedImages(renderedRequestPath);
+                await File.WriteAllTextAsync(outputJsonPath, formattedJson, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), token);
+                await File.WriteAllTextAsync(outputTextPath, structureText, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), token);
+                WriteAiStructureSheetFiles(doc.RootElement, structureDir);
+                DeleteDirectorySafe(imageDir);
+
+                _aiStructureDir = structureDir;
+                _aiStructureJsonPath = outputJsonPath;
+                _aiStructureTextPath = outputTextPath;
+                _aiStructureRenderedRequestPath = renderedRequestPath;
+                _aiStructureImageCount = imageCount;
+                _aiStructureCompletedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                _aiStructureHtml = structureHtml;
+                string completedElapsedText = FormatElapsedSince(extractionStartedAt);
+                SetStatus(usedFallbackStructure
+                    ? $"Step 1 complete with Excel fallback: Codex CLI failed, exact Excel cells saved, {_aiStructureImageCount:N0} rendered image(s) deleted. Elapsed {completedElapsedText}."
+                    : $"Step 1 complete: Excel cells saved, {_aiStructureImageCount:N0} image(s) verified, PNG files deleted. Elapsed {completedElapsedText}.",
+                    false);
+                return;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            SetStatus($"AI structure wait was stopped after {FormatElapsedSince(extractionStartedAt)}. The terminal may still finish.", true);
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"AI structure extraction failed after {FormatElapsedSince(extractionStartedAt)}: {ex.Message}", true);
+        }
+        finally
+        {
+            _isStructureExtracting = false;
+            _aiStructureExtractionStartedAt = null;
+            _isBusy = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task SaveSessionAsync()
+    {
+        if (!HasWorkbook)
+        {
+            SetStatus("Excel file is required before save.", true);
+            return;
+        }
+
+        _isBusy = true;
+        SetStatus("Saving INPUT DATA (TEST) session...", false);
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            string savedDir = Path.Combine(FindRepoRoot(), "tmp", "input-data-test", "saved");
+            Directory.CreateDirectory(savedDir);
+
+            string safeBase = Path.GetFileNameWithoutExtension(SafeFileName(_workbookFileName));
+            if (string.IsNullOrWhiteSpace(safeBase)) safeBase = "input-data-test";
+            string saveStem = $"{DateTime.Now:yyyyMMdd_HHmmss}_{safeBase}";
+            string savePath = Path.Combine(savedDir, $"{saveStem}.json");
+            string assetDir = Path.Combine(savedDir, saveStem);
+            Directory.CreateDirectory(assetDir);
+
+            string savedWorkbookPath = CopySessionFile(_workbookPath, assetDir, SafeFileName(_workbookFileName));
+            string extractedName = $"{Path.GetFileNameWithoutExtension(SafeFileName(_workbookFileName))}.extracted.txt";
+            string savedExtractedTextPath = CopySessionFile(_excelTextPath, assetDir, extractedName);
+            if (string.IsNullOrWhiteSpace(savedExtractedTextPath) && !string.IsNullOrWhiteSpace(_excelText))
+            {
+                savedExtractedTextPath = Path.Combine(assetDir, extractedName);
+                await File.WriteAllTextAsync(savedExtractedTextPath, _excelText, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            }
+            string savedAiJsonPath = CopySessionFile(_aiStructureJsonPath, assetDir, "ai-structure.json");
+            string savedAiTextPath = CopySessionFile(_aiStructureTextPath, assetDir, "ai-structure.txt");
+            string savedRenderedRequestPath = CopySessionFile(_aiStructureRenderedRequestPath, assetDir, "ai-structure-rendered-request.json");
+
+            var payload = new
+            {
+                savedAtUtc = DateTime.UtcNow.ToString("o"),
+                workflow = "INPUT DATA (TEST)",
+                workbook = new
+                {
+                    fileName = _workbookFileName,
+                    workbookPath = string.IsNullOrWhiteSpace(savedWorkbookPath) ? _workbookPath : savedWorkbookPath,
+                    extractedTextPath = string.IsNullOrWhiteSpace(savedExtractedTextPath) ? _excelTextPath : savedExtractedTextPath,
+                    sheetCount = _sheetCount,
+                    rowCount = _rowCount,
+                    cellCount = _cellCount,
+                    extractedTextTruncated = _excelTextTruncated,
+                    aiStructure = new
+                    {
+                        dir = _aiStructureDir,
+                        jsonPath = string.IsNullOrWhiteSpace(savedAiJsonPath) ? _aiStructureJsonPath : savedAiJsonPath,
+                        textPath = string.IsNullOrWhiteSpace(savedAiTextPath) ? _aiStructureTextPath : savedAiTextPath,
+                        renderedRequestPath = string.IsNullOrWhiteSpace(savedRenderedRequestPath) ? _aiStructureRenderedRequestPath : savedRenderedRequestPath,
+                        imageCount = _aiStructureImageCount,
+                        completedAt = _aiStructureCompletedAt
+                    }
+                },
+                reviewPurpose = _reviewPurpose,
+                reviewContext = _reviewContext,
+                autoPrompts = _autoPrompts.Select(p => new
+                {
+                    key = p.Key,
+                    title = p.Title,
+                    description = p.Description,
+                    sourceLabel = p.SourceLabel,
+                    sourcePath = p.SourcePath,
+                    sectionTitle = "",
+                    content = p.Content,
+                    isCustom = p.IsCustom,
+                    enabled = p.Enabled
+                }).ToArray(),
+                steps = _steps.Select(s => new
+                {
+                    step = s.Number,
+                    prompt = s.Prompt,
+                    analysisText = s.Result,
+                    analysisHtml = s.ResultHtml,
+                    error = s.Error,
+                    completedAt = s.CompletedAt
+                }).ToArray()
+            };
+
+            await File.WriteAllTextAsync(
+                savePath,
+                JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }),
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+            _lastSavedPath = savePath;
+            RefreshSavedSessions();
+            SetStatus($"Saved: {savePath}", false);
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Save failed: {ex.Message}", true);
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private void RefreshSavedSessions()
+    {
+        try
+        {
+            string savedDir = Path.Combine(FindRepoRoot(), "tmp", "input-data-test", "saved");
+            if (!Directory.Exists(savedDir))
+            {
+                _savedSessions = [];
+                return;
+            }
+
+            _savedSessions = Directory.EnumerateFiles(savedDir, "*.json")
+                .Select(p => new FileInfo(p))
+                .OrderByDescending(f => f.LastWriteTime)
+                .Take(80)
+                .Select(f => new SavedSessionInfo(f.FullName, $"{f.LastWriteTime:yyyy-MM-dd HH:mm} - {Path.GetFileNameWithoutExtension(f.Name)}"))
+                .ToList();
+        }
+        catch
+        {
+            _savedSessions = [];
+        }
+    }
+
+    private static string CopySessionFile(string sourcePath, string assetDir, string fileName)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath)) return "";
+            string targetPath = Path.Combine(assetDir, SafeFileName(fileName));
+            File.Copy(sourcePath, targetPath, overwrite: true);
+            return targetPath;
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private static string ResolveSessionPath(string value, string sessionJsonPath)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "";
+        if (Path.IsPathRooted(value)) return value;
+        string? dir = Path.GetDirectoryName(sessionJsonPath);
+        return string.IsNullOrWhiteSpace(dir) ? value : Path.GetFullPath(Path.Combine(dir, value));
+    }
+
+    private void LoadSavedSteps(JsonElement root)
+    {
+        _steps.Clear();
+        if (root.TryGetProperty("steps", out JsonElement steps) && steps.ValueKind == JsonValueKind.Array)
+        {
+            foreach (JsonElement item in steps.EnumerateArray())
+            {
+                int number = JsonInt(item, "step", _steps.Count + 1);
+                _steps.Add(new AnalysisStep(number)
+                {
+                    Prompt = JsonString(item, "prompt"),
+                    Result = JsonString(item, "analysisText", "resultText", "result"),
+                    ResultHtml = JsonString(item, "analysisHtml", "resultHtml", "html"),
+                    Error = JsonString(item, "error"),
+                    CompletedAt = JsonString(item, "completedAt")
+                });
+            }
+        }
+
+        if (_steps.Count == 0)
+            _steps.Add(new AnalysisStep(1));
+    }
+
+    private void LoadAutoPromptState(JsonElement root)
+    {
+        if (!root.TryGetProperty("autoPrompts", out JsonElement prompts) || prompts.ValueKind != JsonValueKind.Array)
+            return;
+
+        _autoPrompts.Clear();
+
+        foreach (JsonElement item in prompts.EnumerateArray())
+        {
+            string key = JsonString(item, "key");
+            string title = JsonString(item, "title");
+            string description = JsonString(item, "description");
+            string sourceLabel = JsonString(item, "sourceLabel");
+            string sourcePath = JsonString(item, "sourcePath");
+            string content = JsonString(item, "content");
+            bool enabled = JsonBool(item, "enabled");
+            bool isCustom = JsonBool(item, "isCustom")
+                || sourceLabel.Equals("Custom", StringComparison.OrdinalIgnoreCase)
+                || key.StartsWith("custom_", StringComparison.OrdinalIgnoreCase);
+
+            AutoPromptOption? existing = _autoPrompts.FirstOrDefault(p => p.Key == key);
+            if (existing is not null)
+            {
+                existing.Enabled = enabled;
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(title)) title = "Custom Prompt";
+            if (string.IsNullOrWhiteSpace(description)) description = ShortPromptSummary(content);
+            _autoPrompts.Add(new AutoPromptOption(
+                string.IsNullOrWhiteSpace(key) ? $"custom_{Guid.NewGuid():N}" : key,
+                title,
+                description,
+                string.IsNullOrWhiteSpace(sourceLabel) ? "Custom" : sourceLabel,
+                sourcePath,
+                content,
+                enabled,
+                isCustom));
+        }
+    }
+
+    private void ResetAll()
+    {
+        if (_isBusy) return;
+        ClearWorkbook();
+        _reviewPurpose = "";
+        _reviewContext = "";
+        _selectedSavedSession = "";
+        _newAutoPromptTitle = "";
+        _newAutoPromptContent = "";
+        _steps.Clear();
+        _steps.Add(new AnalysisStep(1));
+        SetStatus("", false);
+    }
+
+    private void ClearWorkbook()
+    {
+        _workbookFileName = "";
+        _workbookPath = "";
+        _excelTextPath = "";
+        _excelText = "";
+        _excelTextTruncated = false;
+        _sheetCount = 0;
+        _rowCount = 0;
+        _cellCount = 0;
+        ClearAiStructure();
+    }
+
+    private void ClearAiStructure()
+    {
+        _aiStructureDir = "";
+        _aiStructureJsonPath = "";
+        _aiStructureTextPath = "";
+        _aiStructureRenderedRequestPath = "";
+        _aiStructureCompletedAt = "";
+        _aiStructureHtml = "";
+        _aiStructureImageCount = 0;
+        _isStructureExtracting = false;
+    }
+
+    private void WriteStepRequest(string requestPath, string runId, AnalysisStep step)
+    {
+        var previous = _steps
+            .Where(s => s.Number < step.Number && !string.IsNullOrWhiteSpace(s.Result))
+            .Select(s => new
+            {
+                step = DisplayStepNumber(s),
+                prompt = s.Prompt,
+                resultText = s.Result,
+                resultHtmlSaved = !string.IsNullOrWhiteSpace(s.ResultHtml),
+                completedAt = s.CompletedAt
+            })
+            .ToArray();
+        var reviewIndex = new
+        {
+            indexHtmlPath = DetailedReviewIndexPath,
+            exists = File.Exists(DetailedReviewIndexPath),
+            matchKeys = InputDataTestAnalysisSupport.BuildReviewIndexMatchKeys(
+                _workbookFileName,
+                _workbookPath,
+                _excelTextPath),
+            usage = "Open this HTML as the AI-generated taxonomy/reference table after workbook-text AI pre-analysis. Match by matchKeys when possible, but do not replace workbook-text AI classification with filename lookup."
+        };
+
+        var request = new
+        {
+            runId,
+            createdAt = DateTime.UtcNow.ToString("o"),
+            workflow = "INPUT DATA (TEST)",
+            workbook = new
+            {
+                fileName = _workbookFileName,
+                workbookPath = _workbookPath,
+                extractedTextPath = _excelTextPath,
+                sheetCount = _sheetCount,
+                rowCount = _rowCount,
+                cellCount = _cellCount,
+                extractedTextTruncated = _excelTextTruncated,
+                aiStructure = new
+                {
+                    jsonPath = _aiStructureJsonPath,
+                    textPath = _aiStructureTextPath,
+                    renderedRequestPath = _aiStructureRenderedRequestPath,
+                    imageCount = _aiStructureImageCount,
+                    completedAt = _aiStructureCompletedAt
+                }
+            },
+            reviewIndex,
+            reviewPurpose = _reviewPurpose,
+            reviewContext = _reviewContext,
+            autoPrompts = BuildSelectedAutoPromptPayloads(),
+            currentStep = new
+            {
+                step = DisplayStepNumber(step),
+                prompt = step.Prompt
+            },
+            previousSteps = previous
+        };
+
+        File.WriteAllText(
+            requestPath,
+            JsonSerializer.Serialize(request, new JsonSerializerOptions { WriteIndented = true }),
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+    }
+
+    private void WriteAiStructureRequest(
+        string requestPath,
+        string runId,
+        string structureDir,
+        string imageDir,
+        string renderedRequestPath,
+        string outputJsonPath,
+        string outputTextPath)
+    {
+        var request = new
+        {
+            runId,
+            createdAt = DateTime.UtcNow.ToString("o"),
+            workflow = "INPUT DATA (TEST) AI structure extraction",
+            workbook = new
+            {
+                fileName = _workbookFileName,
+                workbookPath = _workbookPath,
+                extractedTextPath = _excelTextPath,
+                sheetCount = _sheetCount,
+                rowCount = _rowCount,
+                cellCount = _cellCount
+            },
+            output = new
+            {
+                structureDir,
+                imageDir,
+                renderedRequestPath,
+                outputJsonPath,
+                outputTextPath
+            },
+            instruction = "Render the workbook, save Excel COM programExtract cells/merged ranges, then let AI use programExtract first and images only for visual verification."
+        };
+
+        File.WriteAllText(
+            requestPath,
+            JsonSerializer.Serialize(request, new JsonSerializerOptions { WriteIndented = true }),
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+    }
+
+    private AutoPromptPayload[] BuildSelectedAutoPromptPayloads()
+        => _autoPrompts
+            .Where(p => p.Enabled)
+            .Select(p => new AutoPromptPayload(
+                p.Key,
+                p.Title,
+                p.Description,
+                p.SourceLabel,
+                p.Content))
+            .ToArray();
+
+    private static List<AutoPromptOption> LoadAutoPromptOptions()
+    {
+        string libraryPath = AutoPromptLibraryPath();
+        MigrateLegacyAutoPromptLibraryIfNeeded(libraryPath);
+        if (File.Exists(libraryPath))
+        {
+            return LoadAutoPromptLibrary(libraryPath);
+        }
+
+        _ = SaveAutoPromptLibrary([]);
+        return [];
+    }
+
+    private static List<AutoPromptOption> BuildDefaultAutoPromptOptions()
+    {
+        var options = new List<AutoPromptOption>();
+        EnsureBuiltInAutoPrompts(options);
+
+        string path = AiPromptRegistry.ResolvePath("data-inference/ai-excel-proc.md");
+        if (!File.Exists(path))
+        {
+            options.Add(new AutoPromptOption(
+                "md_missing",
+                "ai-excel-proc.md not found",
+                "Missing MD file.",
+                "Preset",
+                "",
+                $"Missing file: {path}",
+                false));
+            return options;
+        }
+
+        string markdown = File.ReadAllText(path);
+        foreach (MarkdownSection section in SplitMarkdownSections(markdown))
+        {
+            string title = string.IsNullOrWhiteSpace(section.Title)
+                ? "ai-excel-proc.md"
+                : section.Title.Trim();
+            options.Add(new AutoPromptOption(
+                $"md_{Slug(title)}",
+                title,
+                ShortAutoPromptDescription(title, section.Content),
+                "Preset",
+                "",
+                section.Content,
+                IsDefaultAutoPromptSection(title)));
+        }
+
+        return options;
+    }
+
+    private static bool EnsureBuiltInAutoPrompts(List<AutoPromptOption> options)
+        => false;
+
+    private static string AutoPromptLibraryPath()
+    {
+        string dir = AppStoragePaths.Combine("InputDataTest");
+        Directory.CreateDirectory(dir);
+        return Path.Combine(dir, "auto-prompts.json");
+    }
+
+    private static string LegacyAutoPromptLibraryPath()
+        => Path.Combine(FindRepoRoot(), "tmp", "input-data-test", "auto-prompts.json");
+
+    private static void MigrateLegacyAutoPromptLibraryIfNeeded(string libraryPath)
+    {
+        try
+        {
+            if (File.Exists(libraryPath)) return;
+            string legacyPath = LegacyAutoPromptLibraryPath();
+            if (!File.Exists(legacyPath)) return;
+
+            string? dir = Path.GetDirectoryName(libraryPath);
+            if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
+            File.Copy(legacyPath, libraryPath, overwrite: false);
+        }
+        catch { }
+    }
+
+    private static List<AutoPromptOption> LoadAutoPromptLibrary(string path)
+    {
+        try
+        {
+            string json = File.ReadAllText(path);
+            var records = JsonSerializer.Deserialize<List<AutoPromptStorage>>(
+                json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+
+            var options = records
+                .Where(r => !string.IsNullOrWhiteSpace(r.Key))
+                .Select(r => new AutoPromptOption(
+                    r.Key,
+                    string.IsNullOrWhiteSpace(r.Title) ? r.Key : r.Title,
+                    string.IsNullOrWhiteSpace(r.Description) ? ShortPromptSummary(r.Content) : r.Description,
+                    string.IsNullOrWhiteSpace(r.SourceLabel) ? "Preset" : r.SourceLabel,
+                    "",
+                    r.Content ?? "",
+                    r.Enabled,
+                    r.IsCustom))
+                .ToList();
+
+            return options;
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static bool SaveAutoPromptLibrary(IEnumerable<AutoPromptOption> prompts)
+    {
+        try
+        {
+            string path = AutoPromptLibraryPath();
+            var records = prompts.Select(p => new AutoPromptStorage(
+                p.Key,
+                p.Title,
+                p.Description,
+                p.SourceLabel,
+                p.Content,
+                p.Enabled,
+                p.IsCustom)).ToList();
+
+            File.WriteAllText(
+                path,
+                JsonSerializer.Serialize(records, new JsonSerializerOptions { WriteIndented = true }),
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            return true;
+        }
+        catch { return false; }
+    }
+
+    private static List<MarkdownSection> SplitMarkdownSections(string markdown)
+    {
+        var sections = new List<MarkdownSection>();
+        var sb = new StringBuilder();
+        string title = "ai-excel-proc.md";
+
+        foreach (string rawLine in (markdown ?? "").Replace("\r\n", "\n").Split('\n'))
+        {
+            string line = rawLine.TrimEnd('\r');
+            if (IsMajorMarkdownHeading(line))
+            {
+                if (sb.Length > 0)
+                {
+                    sections.Add(new MarkdownSection(title, sb.ToString().Trim()));
+                    sb.Clear();
+                }
+
+                title = HeadingTitle(line);
+            }
+
+            sb.AppendLine(line);
+        }
+
+        if (sb.Length > 0)
+            sections.Add(new MarkdownSection(title, sb.ToString().Trim()));
+
+        return sections;
+    }
+
+    private static bool IsMajorMarkdownHeading(string line)
+    {
+        string trimmed = (line ?? "").TrimStart();
+        return trimmed.StartsWith("# ", StringComparison.Ordinal)
+            || trimmed.StartsWith("## ", StringComparison.Ordinal);
+    }
+
+    private static string HeadingTitle(string line)
+        => (line ?? "").Trim().TrimStart('#').Trim();
+
+    private static bool IsDefaultAutoPromptSection(string title)
+        => false;
+
+    private static string ShortAutoPromptDescription(string title, string content)
+        => title switch
+        {
+            "AI Excel Process Report Contract" => "Main contract.",
+            "Purpose" => "Analysis goal.",
+            "Target Report Style" => "Report style.",
+            "Non-Negotiable Output Contract" => "Required outputs.",
+            "Required Report Shape" => "Report sections.",
+            "Visual Block Formats" => "Visual format.",
+            "Report Quality Gate" => "Quality checks.",
+            "Batch Execution Workflow" => "Batch workflow.",
+            "Workbook Analysis Rules" => "Excel reading rules.",
+            "Report Type Classification" => "Report type rules.",
+            "Baseline Pairing Rules" => "Baseline rules.",
+            "Structured JSON Shape" => "DB JSON shape.",
+            "Final Commit Rule" => "Commit rule.",
+            _ => ShortPromptSummary(content)
+        };
+
+    private static string ShortPromptSummary(string content)
+    {
+        foreach (string rawLine in (content ?? "").Replace("\r\n", "\n").Split('\n'))
+        {
+            string line = rawLine.Trim();
+            if (line.Length == 0 || line.StartsWith("#", StringComparison.Ordinal) || line.StartsWith("```", StringComparison.Ordinal))
+                continue;
+            line = line.TrimStart('-', '*').Trim();
+            if (line.Length == 0) continue;
+            return line.Length <= 56 ? line : line[..56] + "...";
+        }
+
+        return "Custom instruction.";
+    }
+
+    private static string Slug(string value)
+    {
+        var sb = new StringBuilder();
+        foreach (char ch in (value ?? "").ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(ch)) sb.Append(ch);
+            else if (sb.Length > 0 && sb[^1] != '_') sb.Append('_');
+        }
+        return sb.ToString().Trim('_');
+    }
+
+    private static string BuildCodexPrompt(string requestPath)
+        => InputDataTestAnalysisSupport.BuildCodexPrompt(requestPath);
+
+    private static string BuildDefaultAnalysisPrompt()
+        => InputDataTestAnalysisSupport.BuildDefaultAnalysisPrompt();
+
+    private static string BuildReviewIndexPrompt(string requestPath)
+        => InputDataTestAnalysisSupport.BuildReviewIndexPrompt(requestPath);
+
+    private static string BuildWorkbookEvidencePrompt()
+        => InputDataTestAnalysisSupport.BuildWorkbookEvidencePrompt();
+
+    private static string BuildAnalysisOutputPrompt()
+        => InputDataTestAnalysisSupport.BuildAnalysisOutputPrompt();
+
+    private static string BuildAiStructurePrompt(string requestPath, string renderedRequestPath)
+        => throw new NotSupportedException("INPUT DATA(TEST) is disabled.");
+
+    private static StepResult ParseStepResult(string raw)
+    {
+        InputDataTestAnalysisResult result = InputDataTestAnalysisSupport.ParseStepResult(raw);
+        return new StepResult(result.AnalysisText, result.AnalysisHtml, result.Error);
+    }
+
+    private static string CleanJsonText(string raw)
+    {
+        string text = (raw ?? "").Trim();
+        if (!text.StartsWith("```", StringComparison.Ordinal)) return text;
+
+        int firstNewline = text.IndexOf('\n');
+        if (firstNewline >= 0) text = text[(firstNewline + 1)..];
+        int fence = text.LastIndexOf("```", StringComparison.Ordinal);
+        if (fence >= 0) text = text[..fence];
+        return text.Trim();
+    }
+
+    private static string EnrichAiStructureJsonWithRenderedMetadata(string aiJson, string renderedRequestPath)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(aiJson)
+                || string.IsNullOrWhiteSpace(renderedRequestPath)
+                || !File.Exists(renderedRequestPath))
+            {
+                return aiJson;
+            }
+
+            JsonNode? aiNode = JsonNode.Parse(aiJson);
+            JsonNode? renderedNode = JsonNode.Parse(File.ReadAllText(renderedRequestPath));
+            if (aiNode is not JsonObject aiRoot
+                || renderedNode is not JsonObject renderedRoot
+                || aiRoot["sheets"] is not JsonArray aiSheets
+                || renderedRoot["sheets"] is not JsonArray renderedSheets)
+            {
+                return aiJson;
+            }
+
+            var renderedByIndex = new Dictionary<int, JsonObject>();
+            var renderedByName = new Dictionary<string, JsonObject>(StringComparer.OrdinalIgnoreCase);
+            foreach (JsonNode? renderedSheetNode in renderedSheets)
+            {
+                if (renderedSheetNode is not JsonObject renderedSheet) continue;
+                int sheetIndex = NodeInt(renderedSheet["sheetIndex"]);
+                string sheetName = NodeString(renderedSheet["sheetName"]);
+                if (sheetIndex > 0) renderedByIndex[sheetIndex] = renderedSheet;
+                if (!string.IsNullOrWhiteSpace(sheetName)) renderedByName[sheetName] = renderedSheet;
+            }
+
+            foreach (JsonNode? aiSheetNode in aiSheets)
+            {
+                if (aiSheetNode is not JsonObject aiSheet) continue;
+                int sheetIndex = NodeInt(aiSheet["sheetIndex"]);
+                string sheetName = NodeString(aiSheet["sheetName"]);
+                JsonObject? renderedSheet = null;
+                if (sheetIndex > 0) renderedByIndex.TryGetValue(sheetIndex, out renderedSheet);
+                if (renderedSheet is null && !string.IsNullOrWhiteSpace(sheetName))
+                    renderedByName.TryGetValue(sheetName, out renderedSheet);
+                if (renderedSheet is null) continue;
+
+                aiSheet["sourceUsedRange"] = CloneJsonNode(renderedSheet["usedRange"]);
+                aiSheet["sourceEffectiveRange"] = CloneJsonNode(renderedSheet["effectiveRange"]);
+                aiSheet["sheetMergedCells"] = BuildSheetMergedCells(renderedSheet);
+                aiSheet["excelMergeSemantics"] = CloneJsonNode(renderedSheet["mergeSemantics"]);
+                aiSheet["renderPolicy"] = CloneJsonNode(renderedSheet["renderPolicy"]);
+                aiSheet["renderedChunks"] = BuildRenderedChunkSummaries(renderedSheet);
+                aiSheet["textOnlyRanges"] = CloneJsonNode(renderedSheet["textOnlyRanges"]);
+                aiSheet["shapes"] = CloneJsonNode(renderedSheet["shapes"]);
+            }
+
+            JsonArray notes = aiRoot["extractionNotes"] as JsonArray ?? new JsonArray();
+            if (aiRoot["extractionNotes"] is not JsonArray)
+                aiRoot["extractionNotes"] = notes;
+            notes.Add("Excel source metadata was preserved after AI extraction: sourceUsedRange, sourceEffectiveRange, sheetMergedCells, excelMergeSemantics, renderedChunks, textOnlyRanges, and shapes.");
+
+            return aiRoot.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch
+        {
+            return aiJson;
+        }
+    }
+
+    private static JsonNode? CloneJsonNode(JsonNode? node)
+        => node is null ? null : JsonNode.Parse(node.ToJsonString());
+
+    private static JsonArray BuildSheetMergedCells(JsonObject renderedSheet)
+    {
+        var result = new JsonArray();
+        if (renderedSheet["mergedCells"] is not JsonArray mergedCells)
+            return result;
+
+        var semanticsByRange = new Dictionary<string, JsonObject>(StringComparer.OrdinalIgnoreCase);
+        if (renderedSheet["mergeSemantics"] is JsonArray mergeSemantics)
+        {
+            foreach (JsonNode? semanticNode in mergeSemantics)
+            {
+                if (semanticNode is not JsonObject semantic) continue;
+                string range = NodeString(semantic["range"]);
+                if (!string.IsNullOrWhiteSpace(range))
+                    semanticsByRange[range] = semantic;
+            }
+        }
+
+        foreach (JsonNode? itemNode in mergedCells)
+        {
+            if (itemNode is not JsonObject item) continue;
+            string range = NodeString(item["address"]);
+            var merged = new JsonObject
+            {
+                ["range"] = range,
+                ["address"] = range,
+                ["text"] = NodeString(item["text"]),
+                ["source"] = "excel",
+                ["originalSource"] = NodeString(item["source"]),
+                ["rowStart"] = NodeInt(item["rowStart"]),
+                ["rowEnd"] = NodeInt(item["rowEnd"]),
+                ["columnStart"] = NodeInt(item["columnStart"]),
+                ["columnEnd"] = NodeInt(item["columnEnd"])
+            };
+            if (semanticsByRange.TryGetValue(range, out JsonObject? semantic))
+            {
+                merged["roleHint"] = NodeString(semantic["roleHint"]);
+                merged["meaningHint"] = NodeString(semantic["meaningHint"]);
+                merged["appliesTo"] = CloneJsonNode(semantic["appliesTo"]);
+            }
+            string fallbackSource = NodeString(item["fallbackSource"]);
+            if (!string.IsNullOrWhiteSpace(fallbackSource))
+                merged["fallbackSource"] = fallbackSource;
+            result.Add(merged);
+        }
+
+        return result;
+    }
+
+    private static JsonArray BuildRenderedChunkSummaries(JsonObject renderedSheet)
+    {
+        var result = new JsonArray();
+        if (renderedSheet["chunks"] is not JsonArray chunks)
+            return result;
+
+        foreach (JsonNode? chunkNode in chunks)
+        {
+            if (chunkNode is not JsonObject chunk) continue;
+            result.Add(new JsonObject
+            {
+                ["chunkIndex"] = NodeInt(chunk["chunkIndex"]),
+                ["kind"] = NodeString(chunk["kind"]),
+                ["rangeAddress"] = NodeString(chunk["rangeAddress"]),
+                ["rowStart"] = NodeInt(chunk["rowStart"]),
+                ["rowEnd"] = NodeInt(chunk["rowEnd"]),
+                ["columnStart"] = NodeInt(chunk["columnStart"]),
+                ["columnEnd"] = NodeInt(chunk["columnEnd"]),
+                ["reason"] = NodeString(chunk["reason"]),
+                ["sourceRows"] = NodeString(chunk["sourceRows"]),
+                ["sourceShape"] = NodeString(chunk["sourceShape"]),
+                ["imageWidth"] = NodeInt(chunk["imageWidth"]),
+                ["imageHeight"] = NodeInt(chunk["imageHeight"])
+            });
+        }
+
+        return result;
+    }
+
+    private static string NodeString(JsonNode? node)
+        => node is null ? "" : node.GetValueKind() == JsonValueKind.String ? node.GetValue<string>() ?? "" : node.ToString();
+
+    private static int NodeInt(JsonNode? node)
+    {
+        if (node is null) return 0;
+        try
+        {
+            if (node.GetValueKind() == JsonValueKind.Number)
+                return node.GetValue<int>();
+        }
+        catch { }
+        return int.TryParse(NodeString(node), out int value) ? value : 0;
+    }
+
+    private static string JsonString(JsonElement root, params string[] names)
+    {
+        foreach (string name in names)
+        {
+            if (!root.TryGetProperty(name, out JsonElement value)) continue;
+            string text = value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : value.ToString();
+            if (!string.IsNullOrWhiteSpace(text)) return text;
+        }
+        return "";
+    }
+
+    private static int JsonInt(JsonElement root, string name, int fallback = 0)
+    {
+        if (!root.TryGetProperty(name, out JsonElement value)) return fallback;
+        if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int n)) return n;
+        return int.TryParse(value.ToString(), out n) ? n : fallback;
+    }
+
+    private static bool JsonBool(JsonElement root, string name, bool fallback = false)
+    {
+        if (!root.TryGetProperty(name, out JsonElement value)) return fallback;
+        if (value.ValueKind is JsonValueKind.True or JsonValueKind.False) return value.GetBoolean();
+        return bool.TryParse(value.ToString(), out bool b) ? b : fallback;
+    }
+
+    private static bool TryLaunchCodexTerminal(string workDir, string prompt, string title, string outputPath, string donePath)
+    {
+        string launchId = Guid.NewGuid().ToString("N")[..12];
+        string promptPath = Path.Combine(workDir, $"_input_data_test_prompt_codex_{launchId}.txt");
+        string scriptPath = Path.Combine(workDir, $"_input_data_test_launch_codex_{launchId}.ps1");
+
+        try
+        {
+            File.WriteAllText(promptPath, prompt, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            File.WriteAllText(
+                scriptPath,
+                BuildCodexLauncherScript(workDir, promptPath, scriptPath, title, outputPath, donePath),
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        }
+        catch
+        {
+            return false;
+        }
+
+        try
+        {
+            var wt = new ProcessStartInfo
+            {
+                FileName = "wt.exe",
+                UseShellExecute = false,
+                CreateNoWindow = false,
+            };
+            wt.ArgumentList.Add("-d");
+            wt.ArgumentList.Add(workDir);
+            wt.ArgumentList.Add("powershell.exe");
+            wt.ArgumentList.Add("-NoExit");
+            wt.ArgumentList.Add("-NoProfile");
+            wt.ArgumentList.Add("-ExecutionPolicy");
+            wt.ArgumentList.Add("Bypass");
+            wt.ArgumentList.Add("-File");
+            wt.ArgumentList.Add(scriptPath);
+            var proc = Process.Start(wt);
+            if (proc is not null) ChildProcessJob.Assign(proc);
+            return proc is not null;
+        }
+        catch { }
+
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                WorkingDirectory = workDir,
+                UseShellExecute = false,
+                CreateNoWindow = false,
+            };
+            psi.ArgumentList.Add("/k");
+            psi.ArgumentList.Add("powershell.exe");
+            psi.ArgumentList.Add("-NoExit");
+            psi.ArgumentList.Add("-NoProfile");
+            psi.ArgumentList.Add("-ExecutionPolicy");
+            psi.ArgumentList.Add("Bypass");
+            psi.ArgumentList.Add("-File");
+            psi.ArgumentList.Add(scriptPath);
+            var proc = Process.Start(psi);
+            if (proc is not null) ChildProcessJob.Assign(proc);
+            return proc is not null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static string BuildCodexLauncherScript(string workDir, string promptPath, string scriptPath, string title, string outputPath, string donePath)
+    {
+        static string Q(string value) => "'" + (value ?? "").Replace("'", "''") + "'";
+        return string.Join(Environment.NewLine, new[]
+        {
+            "$ErrorActionPreference = 'Continue'",
+            "$utf8NoBom = New-Object System.Text.UTF8Encoding -ArgumentList $false",
+            "[Console]::InputEncoding = $utf8NoBom",
+            "[Console]::OutputEncoding = $utf8NoBom",
+            "$OutputEncoding = $utf8NoBom",
+            "try { chcp 65001 | Out-Null } catch {}",
+            $"try {{ $Host.UI.RawUI.WindowTitle = {Q(title)} }} catch {{}}",
+            $"Set-Location -LiteralPath {Q(workDir)}",
+            "",
+            $"$promptPath = {Q(promptPath)}",
+            $"$scriptPath = {Q(scriptPath)}",
+            $"$outputPath = {Q(outputPath)}",
+            $"$donePath = {Q(donePath)}",
+            "Remove-Item -LiteralPath $outputPath -Force -ErrorAction SilentlyContinue",
+            "Remove-Item -LiteralPath $donePath -Force -ErrorAction SilentlyContinue",
+            "$prompt = Get-Content -LiteralPath $promptPath -Raw -Encoding UTF8",
+            "$exitCode = 0",
+            "try {",
+            $"    $prompt | & codex exec -c 'model_reasoning_effort=\"xhigh\"' --cd {Q(workDir)} --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check --color never --output-last-message $outputPath -",
+            "    $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }",
+            "} catch {",
+            "    $exitCode = 1",
+            "    $_ | Out-String | Tee-Object -FilePath $outputPath -Append",
+            "}",
+            "if ($exitCode -ne 0) {",
+            "    Write-Host ('Codex exited with code ' + $exitCode + '.') -ForegroundColor Yellow",
+            "}",
+            "$done = @{ exitCode = $exitCode; completedAt = [DateTime]::UtcNow.ToString('o') } | ConvertTo-Json -Compress",
+            "Set-Content -LiteralPath $donePath -Value $done -Encoding UTF8",
+            "Remove-Item -LiteralPath $promptPath -Force -ErrorAction SilentlyContinue",
+            "Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue",
+        });
+    }
+
+    private static int ReadExitCode(string doneJson)
+    {
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(doneJson);
+            if (doc.RootElement.TryGetProperty("exitCode", out JsonElement exit)
+                && exit.ValueKind == JsonValueKind.Number
+                && exit.TryGetInt32(out int value))
+            {
+                return value;
+            }
+        }
+        catch { }
+        return 0;
+    }
+
+    private static string ReadAiStructureProgress(string progressPath, string elapsedText = "")
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(progressPath) || !File.Exists(progressPath))
+                return "";
+
+            using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(progressPath));
+            JsonElement root = doc.RootElement;
+            string stage = JsonString(root, "stage");
+            string message = JsonString(root, "message");
+            string elapsed = string.IsNullOrWhiteSpace(elapsedText)
+                ? JsonString(root, "elapsed")
+                : elapsedText;
+            int percent = JsonInt(root, "percent");
+
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(stage)) parts.Add(stage);
+            if (percent > 0) parts.Add($"{percent}%");
+            if (!string.IsNullOrWhiteSpace(message)) parts.Add(message);
+            if (!string.IsNullOrWhiteSpace(elapsed)) parts.Add(elapsed);
+            return parts.Count == 0 ? "" : $"AI structure extraction: {string.Join(" - ", parts)}";
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private static string FormatElapsedSince(DateTimeOffset? startedAt)
+        => startedAt is null ? "00:00:00" : FormatElapsed(DateTimeOffset.Now - startedAt.Value);
+
+    private static string FormatElapsed(TimeSpan elapsed)
+    {
+        if (elapsed < TimeSpan.Zero)
+            elapsed = TimeSpan.Zero;
+
+        int totalHours = (int)Math.Floor(elapsed.TotalHours);
+        return $"{totalHours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}";
+    }
+
+    private static int CountRenderedImages(string renderedRequestPath)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(renderedRequestPath) || !File.Exists(renderedRequestPath))
+                return 0;
+
+            using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(renderedRequestPath));
+            if (!doc.RootElement.TryGetProperty("sheets", out JsonElement sheets)
+                || sheets.ValueKind != JsonValueKind.Array)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            foreach (JsonElement sheet in sheets.EnumerateArray())
+            {
+                if (!sheet.TryGetProperty("chunks", out JsonElement chunks)
+                    || chunks.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                foreach (JsonElement chunk in chunks.EnumerateArray())
+                {
+                    if (string.IsNullOrWhiteSpace(JsonString(chunk, "imagePath"))) continue;
+                    count++;
+                }
+            }
+
+            return count;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private static bool TryBuildAiStructureFallbackJson(string renderedRequestPath, string failureText, out string json)
+    {
+        json = "";
+        try
+        {
+            if (string.IsNullOrWhiteSpace(renderedRequestPath) || !File.Exists(renderedRequestPath))
+                return false;
+
+            using JsonDocument renderedDoc = JsonDocument.Parse(File.ReadAllText(renderedRequestPath));
+            JsonElement root = renderedDoc.RootElement;
+            if (!root.TryGetProperty("sheets", out JsonElement sheets)
+                || sheets.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            var sheetPayloads = new List<object>();
+            foreach (JsonElement sheet in sheets.EnumerateArray())
+            {
+                int sheetIndex = JsonInt(sheet, "sheetIndex");
+                string sheetName = JsonString(sheet, "sheetName");
+                var chunksRead = new List<int>();
+                if (sheet.TryGetProperty("chunks", out JsonElement chunks)
+                    && chunks.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (JsonElement chunk in chunks.EnumerateArray())
+                    {
+                        int chunkIndex = JsonInt(chunk, "chunkIndex");
+                        if (chunkIndex > 0) chunksRead.Add(chunkIndex);
+                    }
+                }
+
+                string sourceRange = BuildFallbackSourceRange(sheet);
+                var visibleText = new List<object>();
+                var cellRows = new List<string[]>();
+                if (sheet.TryGetProperty("programExtract", out JsonElement programExtract)
+                    && programExtract.TryGetProperty("cells", out JsonElement cells)
+                    && cells.ValueKind == JsonValueKind.Array)
+                {
+                    int order = 1;
+                    foreach (JsonElement cell in cells.EnumerateArray())
+                    {
+                        string text = JsonString(cell, "text");
+                        if (string.IsNullOrWhiteSpace(text)) continue;
+
+                        string address = JsonString(cell, "address");
+                        int row = JsonInt(cell, "row");
+                        int column = JsonInt(cell, "column");
+                        cellRows.Add([address, row.ToString(), column.ToString(), text]);
+
+                        if (visibleText.Count < 250)
+                        {
+                            visibleText.Add(new
+                            {
+                                order = order,
+                                role = InferFallbackTextRole(text),
+                                text
+                            });
+                        }
+                        order++;
+                    }
+                }
+
+                var mergedCells = new List<object>();
+                if (sheet.TryGetProperty("mergedCells", out JsonElement merged)
+                    && merged.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (JsonElement item in merged.EnumerateArray())
+                    {
+                        string range = JsonString(item, "address", "range");
+                        int rowStart = JsonInt(item, "rowStart");
+                        int rowEnd = JsonInt(item, "rowEnd");
+                        int colStart = JsonInt(item, "columnStart");
+                        int colEnd = JsonInt(item, "columnEnd");
+                        mergedCells.Add(new
+                        {
+                            text = JsonString(item, "text"),
+                            range,
+                            source = "excel",
+                            meaning = "Excel merged range from rendered request",
+                            appliesTo = new[] { $"rows {rowStart}-{rowEnd}, columns {colStart}-{colEnd}" }
+                        });
+                    }
+                }
+
+                sheetPayloads.Add(new
+                {
+                    sheetIndex,
+                    sheetName,
+                    chunksRead,
+                    visibleText,
+                    sections = Array.Empty<object>(),
+                    tables = new[]
+                    {
+                        new
+                        {
+                            title = "ProgramExtract visible cells",
+                            sourceRange,
+                            layout = new
+                            {
+                                headerRows = Array.Empty<string[]>(),
+                                bodyRows = Array.Empty<string[]>()
+                            },
+                            mergedCells,
+                            normalizedRows = Array.Empty<object>(),
+                            headers = new[] { "Address", "Row", "Column", "Text" },
+                            rows = cellRows,
+                            notes = new[]
+                            {
+                                "Fallback structure generated because Codex CLI did not return valid Step 1 JSON.",
+                                "Exact programExtract cell text and Excel merged ranges are preserved; image-assisted grouping and normalizedRows were not generated."
+                            }
+                        }
+                    },
+                    unreadableAreas = Array.Empty<string>()
+                });
+            }
+
+            var notes = new List<string>
+            {
+                "Codex CLI returned a non-zero exit during image-assisted extraction; fallback uses rendered-request programExtract cells and mergedCells."
+            };
+            string shortFailure = ShortFailureText(failureText);
+            if (!string.IsNullOrWhiteSpace(shortFailure))
+                notes.Add(shortFailure);
+
+            var payload = new
+            {
+                fileName = JsonString(root, "fileName"),
+                sheets = sheetPayloads,
+                extractionNotes = notes
+            };
+
+            json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+            return true;
+        }
+        catch
+        {
+            json = "";
+            return false;
+        }
+    }
+
+    private static string BuildFallbackSourceRange(JsonElement sheet)
+    {
+        if (!sheet.TryGetProperty("usedRange", out JsonElement usedRange)
+            || usedRange.ValueKind != JsonValueKind.Object)
+        {
+            return "programExtract visible cells";
+        }
+
+        int rowStart = JsonInt(usedRange, "rowStart");
+        int rowEnd = JsonInt(usedRange, "rowEnd");
+        int columnStart = JsonInt(usedRange, "columnStart");
+        int columnEnd = JsonInt(usedRange, "columnEnd");
+        return $"usedRange R{rowStart}C{columnStart}:R{rowEnd}C{columnEnd}";
+    }
+
+    private static string InferFallbackTextRole(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return "other";
+        string trimmed = text.Trim();
+        if (trimmed.StartsWith("I.", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("II.", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("III.", StringComparison.OrdinalIgnoreCase)
+            || trimmed.Contains("Purpose", StringComparison.OrdinalIgnoreCase)
+            || trimmed.Contains("Result", StringComparison.OrdinalIgnoreCase))
+        {
+            return "section_header";
+        }
+        if (trimmed.Length >= 20) return "paragraph";
+        return "table_text";
+    }
+
+    private static string ShortFailureText(string failureText)
+    {
+        string text = (failureText ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(text)) return "";
+        text = text.Replace("\r", " ").Replace("\n", " ");
+        while (text.Contains("  ", StringComparison.Ordinal))
+            text = text.Replace("  ", " ");
+        const int maxLength = 500;
+        return text.Length <= maxLength ? $"Codex failure excerpt: {text}" : $"Codex failure excerpt: {text[..maxLength]}...";
+    }
+
+    private static string AiStructureJsonToText(JsonElement root)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("# AI Excel Structure Extraction");
+
+        string fileName = JsonString(root, "fileName");
+        if (!string.IsNullOrWhiteSpace(fileName))
+            sb.AppendLine($"File: {FlattenStructureText(fileName)}");
+
+        if (!root.TryGetProperty("sheets", out JsonElement sheets)
+            || sheets.ValueKind != JsonValueKind.Array)
+        {
+            sb.AppendLine();
+            sb.AppendLine("## Raw JSON");
+            sb.AppendLine(root.ToString());
+            return sb.ToString().TrimEnd() + Environment.NewLine;
+        }
+
+        foreach (JsonElement sheet in sheets.EnumerateArray())
+        {
+            int sheetIndex = JsonInt(sheet, "sheetIndex");
+            string sheetName = JsonString(sheet, "sheetName");
+            string heading = sheetIndex > 0
+                ? $"## Sheet {sheetIndex}: {FlattenStructureText(sheetName)}"
+                : $"## Sheet: {FlattenStructureText(sheetName)}";
+            sb.AppendLine();
+            sb.AppendLine(heading.TrimEnd());
+
+            var chunksRead = JsonStringArray(sheet, "chunksRead");
+            if (chunksRead.Count > 0)
+                sb.AppendLine($"Chunks read: {string.Join(", ", chunksRead)}");
+
+            AppendSheetSourceMetadataText(sb, sheet);
+            AppendVisibleText(sb, sheet);
+            AppendSections(sb, sheet);
+            AppendTables(sb, sheet);
+            AppendNamedStringArray(sb, sheet, "unreadableAreas", "Unreadable Areas");
+        }
+
+        AppendNamedStringArray(sb, root, "extractionNotes", "Extraction Notes");
+
+        return sb.ToString().TrimEnd() + Environment.NewLine;
+    }
+
+    private static string LoadAiStructureHtml(string jsonPath)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(jsonPath) || !File.Exists(jsonPath)) return "";
+            using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(jsonPath));
+            return AiStructureJsonToHtml(doc.RootElement);
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private static string AiStructureJsonToHtml(JsonElement root)
+    {
+        static string H(string value) => System.Net.WebUtility.HtmlEncode(value ?? "");
+
+        var sb = new StringBuilder();
+        string fileName = JsonString(root, "fileName");
+        sb.Append("<h2>Step 1 Extracted Excel Data</h2>");
+        if (!string.IsNullOrWhiteSpace(fileName))
+            sb.Append("<p><strong>File:</strong> ").Append(H(fileName)).Append("</p>");
+
+        if (!root.TryGetProperty("sheets", out JsonElement sheets)
+            || sheets.ValueKind != JsonValueKind.Array)
+        {
+            sb.Append("<p>No sheet structure was returned.</p>");
+            return sb.ToString();
+        }
+
+        foreach (JsonElement sheet in sheets.EnumerateArray())
+        {
+            int sheetIndex = JsonInt(sheet, "sheetIndex");
+            string sheetName = JsonString(sheet, "sheetName");
+            sb.Append("<div class=\"sheet-block\">");
+            sb.Append("<h3>Sheet ");
+            if (sheetIndex > 0) sb.Append(sheetIndex).Append(" - ");
+            sb.Append(H(sheetName)).Append("</h3>");
+
+            AppendSheetSourceMetadataHtml(sb, sheet);
+
+            if (sheet.TryGetProperty("visibleText", out JsonElement texts)
+                && texts.ValueKind == JsonValueKind.Array)
+            {
+                sb.Append("<ul class=\"text-list\">");
+                foreach (JsonElement item in texts.EnumerateArray())
+                {
+                    string text = JsonString(item, "text");
+                    if (string.IsNullOrWhiteSpace(text)) continue;
+                    string role = JsonString(item, "role");
+                    sb.Append("<li>");
+                    if (!string.IsNullOrWhiteSpace(role))
+                        sb.Append("<strong>").Append(H(role)).Append(":</strong> ");
+                    sb.Append(H(text)).Append("</li>");
+                }
+                sb.Append("</ul>");
+            }
+
+            if (sheet.TryGetProperty("sections", out JsonElement sections)
+                && sections.ValueKind == JsonValueKind.Array)
+            {
+                foreach (JsonElement section in sections.EnumerateArray())
+                {
+                    string title = JsonString(section, "title");
+                    if (!string.IsNullOrWhiteSpace(title))
+                        sb.Append("<p><strong>").Append(H(title)).Append("</strong></p>");
+
+                    var body = JsonStringArray(section, "body");
+                    if (body.Count == 0) continue;
+                    sb.Append("<ul class=\"text-list\">");
+                    foreach (string line in body)
+                        sb.Append("<li>").Append(H(line)).Append("</li>");
+                    sb.Append("</ul>");
+                }
+            }
+
+            if (sheet.TryGetProperty("tables", out JsonElement tables)
+                && tables.ValueKind == JsonValueKind.Array)
+            {
+                foreach (JsonElement table in tables.EnumerateArray())
+                {
+                    AppendAiTableHtml(sb, table);
+                }
+            }
+
+            var unreadable = JsonStringArray(sheet, "unreadableAreas");
+            if (unreadable.Count > 0)
+            {
+                sb.Append("<p><strong>Unreadable areas</strong></p><ul class=\"text-list\">");
+                foreach (string item in unreadable)
+                    sb.Append("<li>").Append(H(item)).Append("</li>");
+                sb.Append("</ul>");
+            }
+
+            sb.Append("</div>");
+        }
+
+        var notesRoot = JsonStringArray(root, "extractionNotes");
+        if (notesRoot.Count > 0)
+        {
+            sb.Append("<h3>Extraction Notes</h3><ul class=\"text-list\">");
+            foreach (string note in notesRoot)
+                sb.Append("<li>").Append(H(note)).Append("</li>");
+            sb.Append("</ul>");
+        }
+
+        return sb.ToString();
+    }
+
+    private static void AppendSheetSourceMetadataHtml(StringBuilder sb, JsonElement sheet)
+    {
+        static string H(string value) => System.Net.WebUtility.HtmlEncode(value ?? "");
+
+        if (sheet.TryGetProperty("sheetMergedCells", out JsonElement mergedCells)
+            && mergedCells.ValueKind == JsonValueKind.Array
+            && mergedCells.GetArrayLength() > 0)
+        {
+            sb.Append("<p><strong>Excel merged cells preserved:</strong> ")
+                .Append(mergedCells.GetArrayLength())
+                .Append("</p><ul class=\"text-list\">");
+            foreach (JsonElement item in mergedCells.EnumerateArray())
+                sb.Append("<li>").Append(H(JsonObjectOneLine(item))).Append("</li>");
+            sb.Append("</ul>");
+        }
+
+        if (sheet.TryGetProperty("renderedChunks", out JsonElement chunks)
+            && chunks.ValueKind == JsonValueKind.Array
+            && chunks.GetArrayLength() > 0)
+        {
+            sb.Append("<p><strong>Rendered PNG regions</strong></p><ul class=\"text-list\">");
+            foreach (JsonElement item in chunks.EnumerateArray())
+                sb.Append("<li>").Append(H(JsonObjectOneLine(item))).Append("</li>");
+            sb.Append("</ul>");
+        }
+    }
+
+    private static void AppendAiTableHtml(StringBuilder sb, JsonElement table)
+    {
+        static string H(string value) => System.Net.WebUtility.HtmlEncode(value ?? "");
+
+        string title = JsonString(table, "title");
+        if (!string.IsNullOrWhiteSpace(title))
+            sb.Append("<h3>").Append(H(title)).Append("</h3>");
+
+        bool renderedLayout = false;
+        if (table.TryGetProperty("layout", out JsonElement layout) && layout.ValueKind == JsonValueKind.Object)
+        {
+            var headerRows = JsonStringMatrix(layout, "headerRows");
+            var bodyRows = JsonStringMatrix(layout, "bodyRows");
+            if (headerRows.Count > 0 || bodyRows.Count > 0)
+            {
+                renderedLayout = true;
+                sb.Append("<p><strong>Original layout</strong></p><table>");
+                if (headerRows.Count > 0)
+                {
+                    sb.Append("<thead>");
+                    foreach (var row in headerRows)
+                    {
+                        sb.Append("<tr>");
+                        foreach (string cell in row)
+                            sb.Append("<th>").Append(H(cell)).Append("</th>");
+                        sb.Append("</tr>");
+                    }
+                    sb.Append("</thead>");
+                }
+
+                sb.Append("<tbody>");
+                foreach (var row in bodyRows)
+                {
+                    sb.Append("<tr>");
+                    foreach (string cell in row)
+                        sb.Append("<td>").Append(H(cell)).Append("</td>");
+                    sb.Append("</tr>");
+                }
+                sb.Append("</tbody></table>");
+            }
+        }
+
+        if (table.TryGetProperty("mergedCells", out JsonElement mergedCells)
+            && mergedCells.ValueKind == JsonValueKind.Array
+            && mergedCells.GetArrayLength() > 0)
+        {
+            sb.Append("<p><strong>Merged cell meaning</strong></p><ul class=\"text-list\">");
+            foreach (JsonElement item in mergedCells.EnumerateArray())
+                sb.Append("<li>").Append(H(JsonObjectOneLine(item))).Append("</li>");
+            sb.Append("</ul>");
+        }
+
+        if (table.TryGetProperty("normalizedRows", out JsonElement normalizedRows)
+            && normalizedRows.ValueKind == JsonValueKind.Array
+            && normalizedRows.GetArrayLength() > 0)
+        {
+            sb.Append("<p><strong>AI-readable normalized rows</strong></p>");
+            AppendJsonObjectArrayHtml(sb, normalizedRows);
+        }
+
+        if (!renderedLayout)
+            AppendFallbackFlatTableHtml(sb, table);
+
+        var notes = JsonStringArray(table, "notes");
+        if (notes.Count > 0)
+        {
+            sb.Append("<ul class=\"text-list\">");
+            foreach (string note in notes)
+                sb.Append("<li>").Append(H(note)).Append("</li>");
+            sb.Append("</ul>");
+        }
+    }
+
+    private static void AppendFallbackFlatTableHtml(StringBuilder sb, JsonElement table)
+    {
+        static string H(string value) => System.Net.WebUtility.HtmlEncode(value ?? "");
+
+        var headers = JsonStringArray(table, "headers");
+        sb.Append("<table>");
+        if (headers.Count > 0)
+        {
+            sb.Append("<thead><tr>");
+            foreach (string header in headers)
+                sb.Append("<th>").Append(H(header)).Append("</th>");
+            sb.Append("</tr></thead>");
+        }
+
+        sb.Append("<tbody>");
+        if (table.TryGetProperty("rows", out JsonElement rows) && rows.ValueKind == JsonValueKind.Array)
+        {
+            foreach (JsonElement row in rows.EnumerateArray())
+            {
+                sb.Append("<tr>");
+                var cells = row.ValueKind == JsonValueKind.Array
+                    ? row.EnumerateArray().Select(JsonValueText).ToList()
+                    : new List<string> { JsonValueText(row) };
+
+                int minCells = Math.Max(headers.Count, cells.Count);
+                for (int i = 0; i < minCells; i++)
+                {
+                    string cell = i < cells.Count ? cells[i] : "";
+                    sb.Append("<td>").Append(H(cell)).Append("</td>");
+                }
+                sb.Append("</tr>");
+            }
+        }
+        sb.Append("</tbody></table>");
+    }
+
+    private static void AppendJsonObjectArrayHtml(StringBuilder sb, JsonElement rows)
+    {
+        static string H(string value) => System.Net.WebUtility.HtmlEncode(value ?? "");
+
+        var columns = new List<string>();
+        foreach (JsonElement row in rows.EnumerateArray())
+        {
+            if (row.ValueKind != JsonValueKind.Object) continue;
+            foreach (JsonProperty property in row.EnumerateObject())
+            {
+                if (!columns.Contains(property.Name, StringComparer.OrdinalIgnoreCase))
+                    columns.Add(property.Name);
+            }
+        }
+
+        if (columns.Count == 0)
+        {
+            sb.Append("<ul class=\"text-list\">");
+            foreach (JsonElement row in rows.EnumerateArray())
+                sb.Append("<li>").Append(H(JsonValueText(row))).Append("</li>");
+            sb.Append("</ul>");
+            return;
+        }
+
+        sb.Append("<table><thead><tr>");
+        foreach (string column in columns)
+            sb.Append("<th>").Append(H(column)).Append("</th>");
+        sb.Append("</tr></thead><tbody>");
+
+        foreach (JsonElement row in rows.EnumerateArray())
+        {
+            sb.Append("<tr>");
+            foreach (string column in columns)
+            {
+                string text = "";
+                if (row.ValueKind == JsonValueKind.Object
+                    && row.TryGetProperty(column, out JsonElement value))
+                {
+                    text = JsonInlineText(value);
+                }
+                sb.Append("<td>").Append(H(text)).Append("</td>");
+            }
+            sb.Append("</tr>");
+        }
+        sb.Append("</tbody></table>");
+    }
+
+    private static void WriteAiStructureSheetFiles(JsonElement root, string structureDir)
+    {
+        try
+        {
+            if (!root.TryGetProperty("sheets", out JsonElement sheets)
+                || sheets.ValueKind != JsonValueKind.Array)
+            {
+                return;
+            }
+
+            string sheetDir = Path.Combine(structureDir, "sheets");
+            string tableDir = Path.Combine(structureDir, "tables");
+            Directory.CreateDirectory(sheetDir);
+            Directory.CreateDirectory(tableDir);
+            foreach (JsonElement sheet in sheets.EnumerateArray())
+            {
+                int sheetIndex = JsonInt(sheet, "sheetIndex");
+                string sheetName = JsonString(sheet, "sheetName");
+                string stem = SafeFileName($"sheet_{sheetIndex:00}_{sheetName}");
+                if (string.IsNullOrWhiteSpace(stem)) stem = $"sheet_{sheetIndex:00}";
+
+                File.WriteAllText(
+                    Path.Combine(sheetDir, $"{stem}.json"),
+                    JsonSerializer.Serialize(sheet, new JsonSerializerOptions { WriteIndented = true }),
+                    new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                File.WriteAllText(
+                    Path.Combine(sheetDir, $"{stem}.txt"),
+                    AiStructureSheetToText(sheet),
+                    new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+                if (!sheet.TryGetProperty("tables", out JsonElement tables)
+                    || tables.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                int tableIndex = 1;
+                foreach (JsonElement table in tables.EnumerateArray())
+                {
+                    string tableTitle = JsonString(table, "title");
+                    string tableStem = SafeFileName($"sheet_{sheetIndex:00}_table_{tableIndex:00}_{tableTitle}");
+                    if (string.IsNullOrWhiteSpace(tableStem))
+                        tableStem = $"sheet_{sheetIndex:00}_table_{tableIndex:00}";
+
+                    File.WriteAllText(
+                        Path.Combine(tableDir, $"{tableStem}.json"),
+                        JsonSerializer.Serialize(table, new JsonSerializerOptions { WriteIndented = true }),
+                        new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                    File.WriteAllText(
+                        Path.Combine(tableDir, $"{tableStem}.txt"),
+                        AiStructureTableToText(table),
+                        new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                    tableIndex++;
+                }
+            }
+        }
+        catch
+        {
+            // Sheet-level files are helpful for inspection, but the main JSON/TXT is the source of truth.
+        }
+    }
+
+    private static string AiStructureSheetToText(JsonElement sheet)
+    {
+        var sb = new StringBuilder();
+        int sheetIndex = JsonInt(sheet, "sheetIndex");
+        string sheetName = JsonString(sheet, "sheetName");
+        sb.AppendLine(sheetIndex > 0
+            ? $"# Sheet {sheetIndex}: {FlattenStructureText(sheetName)}"
+            : $"# Sheet: {FlattenStructureText(sheetName)}");
+        AppendVisibleText(sb, sheet);
+        AppendSections(sb, sheet);
+        AppendTables(sb, sheet);
+        AppendNamedStringArray(sb, sheet, "unreadableAreas", "Unreadable Areas");
+        return sb.ToString().TrimEnd() + Environment.NewLine;
+    }
+
+    private static string AiStructureTableToText(JsonElement table)
+    {
+        var sb = new StringBuilder();
+        string title = JsonString(table, "title");
+        sb.AppendLine(string.IsNullOrWhiteSpace(title)
+            ? "# Table"
+            : $"# {FlattenStructureText(title)}");
+
+        AppendTableLayoutText(sb, table);
+        AppendMergedCellsText(sb, table);
+        AppendNormalizedRowsText(sb, table);
+
+        var headers = JsonStringArray(table, "headers");
+        if (headers.Count > 0)
+            sb.AppendLine("Headers\t" + string.Join('\t', headers));
+
+        if (table.TryGetProperty("rows", out JsonElement rows) && rows.ValueKind == JsonValueKind.Array)
+        {
+            int rowNo = 1;
+            foreach (JsonElement row in rows.EnumerateArray())
+            {
+                var cells = row.ValueKind == JsonValueKind.Array
+                    ? row.EnumerateArray().Select(JsonValueText).ToList()
+                    : new List<string> { JsonValueText(row) };
+                sb.AppendLine($"R{rowNo}\t{string.Join('\t', cells)}");
+                rowNo++;
+            }
+        }
+
+        var notes = JsonStringArray(table, "notes");
+        foreach (string note in notes)
+            sb.AppendLine($"Note\t{note}");
+
+        return sb.ToString().TrimEnd() + Environment.NewLine;
+    }
+
+    private static void AppendSheetSourceMetadataText(StringBuilder sb, JsonElement sheet)
+    {
+        if (sheet.TryGetProperty("sheetMergedCells", out JsonElement mergedCells)
+            && mergedCells.ValueKind == JsonValueKind.Array
+            && mergedCells.GetArrayLength() > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine($"### Excel Merged Cells Preserved ({mergedCells.GetArrayLength()})");
+            int index = 1;
+            foreach (JsonElement item in mergedCells.EnumerateArray())
+            {
+                sb.AppendLine($"Merged {index}\t{JsonObjectOneLine(item)}");
+                index++;
+            }
+        }
+
+        if (sheet.TryGetProperty("renderedChunks", out JsonElement chunks)
+            && chunks.ValueKind == JsonValueKind.Array
+            && chunks.GetArrayLength() > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine("### Rendered PNG Regions");
+            foreach (JsonElement item in chunks.EnumerateArray())
+                sb.AppendLine($"Chunk\t{JsonObjectOneLine(item)}");
+        }
+
+        if (sheet.TryGetProperty("textOnlyRanges", out JsonElement textOnlyRanges)
+            && textOnlyRanges.ValueKind == JsonValueKind.Array
+            && textOnlyRanges.GetArrayLength() > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine("### Text-Only Ranges");
+            foreach (JsonElement item in textOnlyRanges.EnumerateArray())
+                sb.AppendLine($"TextOnly\t{JsonObjectOneLine(item)}");
+        }
+    }
+
+    private static void AppendVisibleText(StringBuilder sb, JsonElement sheet)
+    {
+        if (!sheet.TryGetProperty("visibleText", out JsonElement items)
+            || items.ValueKind != JsonValueKind.Array)
+        {
+            return;
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("### Visible Text");
+        foreach (JsonElement item in items.EnumerateArray())
+        {
+            string text = FlattenStructureText(JsonString(item, "text"));
+            if (string.IsNullOrWhiteSpace(text)) continue;
+
+            int order = JsonInt(item, "order");
+            string role = FlattenStructureText(JsonString(item, "role"));
+            string prefix = order > 0 ? $"{order}. " : "";
+            string roleText = string.IsNullOrWhiteSpace(role) ? "" : $"[{role}] ";
+            sb.AppendLine($"- {prefix}{roleText}{text}");
+        }
+    }
+
+    private static void AppendSections(StringBuilder sb, JsonElement sheet)
+    {
+        if (!sheet.TryGetProperty("sections", out JsonElement sections)
+            || sections.ValueKind != JsonValueKind.Array)
+        {
+            return;
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("### Sections");
+        foreach (JsonElement section in sections.EnumerateArray())
+        {
+            string title = FlattenStructureText(JsonString(section, "title"));
+            string role = FlattenStructureText(JsonString(section, "role"));
+            string label = string.IsNullOrWhiteSpace(title) ? "Untitled" : title;
+            if (!string.IsNullOrWhiteSpace(role)) label += $" ({role})";
+            sb.AppendLine($"#### {label}");
+
+            foreach (string line in JsonStringArray(section, "body"))
+                sb.AppendLine($"- {line}");
+        }
+    }
+
+    private static void AppendTables(StringBuilder sb, JsonElement sheet)
+    {
+        if (!sheet.TryGetProperty("tables", out JsonElement tables)
+            || tables.ValueKind != JsonValueKind.Array)
+        {
+            return;
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("### Tables");
+        foreach (JsonElement table in tables.EnumerateArray())
+        {
+            string title = FlattenStructureText(JsonString(table, "title"));
+            sb.AppendLine($"#### {(string.IsNullOrWhiteSpace(title) ? "Table" : title)}");
+
+            AppendTableLayoutText(sb, table);
+            AppendMergedCellsText(sb, table);
+            AppendNormalizedRowsText(sb, table);
+
+            var headers = JsonStringArray(table, "headers");
+            if (headers.Count > 0)
+                sb.AppendLine("Headers\t" + string.Join('\t', headers));
+
+            if (table.TryGetProperty("rows", out JsonElement rows) && rows.ValueKind == JsonValueKind.Array)
+            {
+                int rowNo = 1;
+                foreach (JsonElement row in rows.EnumerateArray())
+                {
+                    var cells = row.ValueKind == JsonValueKind.Array
+                        ? row.EnumerateArray().Select(JsonValueText).ToList()
+                        : new List<string> { JsonValueText(row) };
+                    sb.AppendLine($"R{rowNo}\t{string.Join('\t', cells)}");
+                    rowNo++;
+                }
+            }
+
+            var notes = JsonStringArray(table, "notes");
+            foreach (string note in notes)
+                sb.AppendLine($"Note\t{note}");
+        }
+    }
+
+    private static void AppendTableLayoutText(StringBuilder sb, JsonElement table)
+    {
+        if (!table.TryGetProperty("layout", out JsonElement layout) || layout.ValueKind != JsonValueKind.Object)
+            return;
+
+        var headerRows = JsonStringMatrix(layout, "headerRows");
+        if (headerRows.Count > 0)
+        {
+            sb.AppendLine("Original layout header rows");
+            int rowNo = 1;
+            foreach (var row in headerRows)
+            {
+                sb.AppendLine($"H{rowNo}\t{string.Join('\t', row)}");
+                rowNo++;
+            }
+        }
+
+        var bodyRows = JsonStringMatrix(layout, "bodyRows");
+        if (bodyRows.Count > 0)
+        {
+            sb.AppendLine("Original layout body rows");
+            int rowNo = 1;
+            foreach (var row in bodyRows)
+            {
+                sb.AppendLine($"B{rowNo}\t{string.Join('\t', row)}");
+                rowNo++;
+            }
+        }
+    }
+
+    private static void AppendMergedCellsText(StringBuilder sb, JsonElement table)
+    {
+        if (!table.TryGetProperty("mergedCells", out JsonElement mergedCells)
+            || mergedCells.ValueKind != JsonValueKind.Array)
+        {
+            return;
+        }
+
+        int index = 1;
+        foreach (JsonElement item in mergedCells.EnumerateArray())
+        {
+            sb.AppendLine($"Merged {index}\t{JsonObjectOneLine(item)}");
+            index++;
+        }
+    }
+
+    private static void AppendNormalizedRowsText(StringBuilder sb, JsonElement table)
+    {
+        if (!table.TryGetProperty("normalizedRows", out JsonElement rows)
+            || rows.ValueKind != JsonValueKind.Array)
+        {
+            return;
+        }
+
+        int rowNo = 1;
+        sb.AppendLine("AI-readable normalized rows");
+        foreach (JsonElement row in rows.EnumerateArray())
+        {
+            sb.AppendLine($"N{rowNo}\t{JsonObjectOneLine(row)}");
+            rowNo++;
+        }
+    }
+
+    private static void AppendNamedStringArray(StringBuilder sb, JsonElement root, string propertyName, string title)
+    {
+        var values = JsonStringArray(root, propertyName);
+        if (values.Count == 0) return;
+
+        sb.AppendLine();
+        sb.AppendLine($"### {title}");
+        foreach (string value in values)
+            sb.AppendLine($"- {value}");
+    }
+
+    private static List<string> JsonStringArray(JsonElement root, string name)
+    {
+        if (!root.TryGetProperty(name, out JsonElement value) || value.ValueKind != JsonValueKind.Array)
+            return [];
+
+        var results = new List<string>();
+        foreach (JsonElement item in value.EnumerateArray())
+        {
+            string text = JsonValueText(item);
+            if (!string.IsNullOrWhiteSpace(text))
+                results.Add(text);
+        }
+
+        return results;
+    }
+
+    private static List<List<string>> JsonStringMatrix(JsonElement root, string name)
+    {
+        if (!root.TryGetProperty(name, out JsonElement value) || value.ValueKind != JsonValueKind.Array)
+            return [];
+
+        var rows = new List<List<string>>();
+        foreach (JsonElement row in value.EnumerateArray())
+        {
+            if (row.ValueKind == JsonValueKind.Array)
+            {
+                rows.Add(row.EnumerateArray().Select(JsonValueText).ToList());
+            }
+            else
+            {
+                rows.Add(new List<string> { JsonValueText(row) });
+            }
+        }
+
+        return rows;
+    }
+
+    private static string JsonObjectOneLine(JsonElement value)
+    {
+        if (value.ValueKind != JsonValueKind.Object)
+            return JsonInlineText(value);
+
+        var parts = new List<string>();
+        foreach (JsonProperty property in value.EnumerateObject())
+        {
+            string text = JsonInlineText(property.Value);
+            if (string.IsNullOrWhiteSpace(text)) continue;
+            parts.Add($"{property.Name}={text}");
+        }
+
+        return string.Join("; ", parts);
+    }
+
+    private static string JsonInlineText(JsonElement value)
+    {
+        if (value.ValueKind == JsonValueKind.Array)
+        {
+            var parts = new List<string>();
+            foreach (JsonElement item in value.EnumerateArray())
+                parts.Add(item.ValueKind is JsonValueKind.Object or JsonValueKind.Array ? JsonObjectOneLine(item) : JsonValueText(item));
+            return string.Join(" | ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
+        }
+
+        if (value.ValueKind == JsonValueKind.Object)
+            return JsonObjectOneLine(value);
+
+        return JsonValueText(value);
+    }
+
+    private static string JsonValueText(JsonElement value)
+    {
+        string text = value.ValueKind switch
+        {
+            JsonValueKind.String => value.GetString() ?? "",
+            JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False => value.ToString(),
+            JsonValueKind.Null or JsonValueKind.Undefined => "",
+            _ => value.ToString()
+        };
+        return FlattenStructureText(text);
+    }
+
+    private static string FlattenStructureText(string value)
+        => (value ?? "")
+            .Replace('\t', ' ')
+            .Replace('\r', ' ')
+            .Replace('\n', ' ')
+            .Trim();
+
+    private static WorkbookExtractResult ExtractWorkbookText(byte[] bytes)
+    {
+        using var ms = new MemoryStream(bytes);
+        using var wb = new XLWorkbook(ms);
+        var sb = new StringBuilder();
+        int sheetCount = 0;
+        int rowCount = 0;
+        int cellCount = 0;
+        bool truncated = false;
+
+        foreach (IXLWorksheet ws in wb.Worksheets)
+        {
+            IXLRange? used = ws.RangeUsed();
+            if (used is null) continue;
+
+            int firstRow = used.FirstRow().RowNumber();
+            int lastRow = Math.Min(used.LastRow().RowNumber(), firstRow + MaxRowsPerSheet - 1);
+            int firstCol = used.FirstColumn().ColumnNumber();
+            int lastCol = Math.Min(used.LastColumn().ColumnNumber(), firstCol + MaxColumnsPerSheet - 1);
+
+            if (sheetCount > 0) sb.AppendLine();
+            sb.Append("## Sheet: ").AppendLine(ws.Name);
+            sheetCount++;
+
+            for (int r = firstRow; r <= lastRow; r++)
+            {
+                var values = new List<string>(lastCol - firstCol + 2) { $"R{r}" };
+                bool hasValue = false;
+
+                for (int c = firstCol; c <= lastCol; c++)
+                {
+                    IXLCell cell = ws.Cell(r, c);
+                    string value = cell.IsEmpty() ? "" : cell.GetFormattedString();
+                    value = CleanCellText(value);
+                    if (value.Length > MaxCellChars)
+                        value = value[..MaxCellChars] + "...";
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        hasValue = true;
+                        cellCount++;
+                    }
+                    values.Add(value);
+                }
+
+                if (!hasValue) continue;
+                sb.AppendLine(string.Join('\t', values));
+                rowCount++;
+
+                if (sb.Length > MaxExtractChars)
+                {
+                    truncated = true;
+                    sb.Length = MaxExtractChars;
+                    sb.AppendLine();
+                    sb.AppendLine("[TRUNCATED]");
+                    return new WorkbookExtractResult(sb.ToString(), sheetCount, rowCount, cellCount, truncated);
+                }
+            }
+
+            if (used.LastRow().RowNumber() > lastRow || used.LastColumn().ColumnNumber() > lastCol)
+            {
+                truncated = true;
+                sb.AppendLine("[SHEET RANGE TRUNCATED]");
+            }
+        }
+
+        return new WorkbookExtractResult(sb.ToString(), sheetCount, rowCount, cellCount, truncated);
+    }
+
+    private static string CleanCellText(string value)
+        => (value ?? "")
+            .Replace('\t', ' ')
+            .Replace('\r', ' ')
+            .Replace('\n', ' ')
+            .Trim();
+
+    private static string PrepareUploadDirectory(string fileName)
+    {
+        string root = FindRepoRoot();
+        string dir = Path.Combine(root, "tmp", "input-data-test", DateTime.Now.ToString("yyyyMMdd_HHmmss") + "_" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(dir);
+        return dir;
+    }
+
+    private static string SafeFileName(string fileName)
+    {
+        string safe = string.Join("_", (fileName ?? "workbook.xlsx").Split(Path.GetInvalidFileNameChars()));
+        return string.IsNullOrWhiteSpace(safe) ? "workbook.xlsx" : safe;
+    }
+
+    private static string FindRepoRoot()
+    {
+        string dir = AppContext.BaseDirectory;
+        for (int i = 0; i < 8; i++)
+        {
+            if (File.Exists(Path.Combine(dir, "JinoSupporter.sln"))) return dir;
+            string? parent = Path.GetDirectoryName(dir.TrimEnd('\\', '/'));
+            if (string.IsNullOrEmpty(parent) || parent == dir) break;
+            dir = parent;
+        }
+
+        string current = Directory.GetCurrentDirectory();
+        dir = current;
+        for (int i = 0; i < 8; i++)
+        {
+            if (File.Exists(Path.Combine(dir, "JinoSupporter.sln"))) return dir;
+            string? parent = Path.GetDirectoryName(dir.TrimEnd('\\', '/'));
+            if (string.IsNullOrEmpty(parent) || parent == dir) break;
+            dir = parent;
+        }
+
+        return current;
+    }
+
+    private static void TryDeleteFile(string path)
+    {
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
+                File.Delete(path);
+        }
+        catch { }
+    }
+
+    private static void DeleteDirectorySafe(string path)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path)) return;
+            string fullPath = Path.GetFullPath(path);
+            if (!Path.GetFileName(fullPath).Equals("images", StringComparison.OrdinalIgnoreCase)) return;
+            Directory.Delete(fullPath, recursive: true);
+        }
+        catch { }
+    }
+
+    private void SetStatus(string message, bool error)
+    {
+        _status = message;
+        _statusError = error;
+    }
+
+    private static int DisplayStepNumber(AnalysisStep step) => step.Number + 1;
+
+    private static string PromptId(AnalysisStep step) => $"idt-prompt-{step.Number}";
+
+    private static string PromptPlaceholderText(AnalysisStep step)
+        => step.Number == 1
+            ? "Step 2 analysis prompt"
+            : "Additional analysis prompt based on previous result";
+
+    private static string PromptPlaceholder(AnalysisStep step)
+        => step.Number == 1
+            ? "첫 분석 프롬프트"
+            : "이전 결과 기준 추가 분석 프롬프트";
+
+    private static string StepMeta(AnalysisStep step)
+    {
+        if (step.IsRunning) return "running";
+        if (!string.IsNullOrWhiteSpace(step.Error)) return "error";
+        if (!string.IsNullOrWhiteSpace(step.ResultHtml)) return "done";
+        return "ready";
+    }
+
+    private static bool TryLaunchAiStructureExtractionTerminal(
+        string workDir,
+        string rendererPath,
+        string workbookPath,
+        string structureDir,
+        string imageDir,
+        string renderedRequestPath,
+        string prompt,
+        string title,
+        string outputJsonPath,
+        string progressPath,
+        string donePath)
+    {
+        string launchId = Guid.NewGuid().ToString("N")[..12];
+        string promptPath = Path.Combine(workDir, $"_input_data_test_extract_prompt_{launchId}.txt");
+        string scriptPath = Path.Combine(workDir, $"_input_data_test_extract_launch_{launchId}.ps1");
+
+        try
+        {
+            File.WriteAllText(promptPath, prompt, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            File.WriteAllText(
+                scriptPath,
+                BuildAiStructureExtractionLauncherScript(
+                    workDir,
+                    rendererPath,
+                    workbookPath,
+                    structureDir,
+                    imageDir,
+                    renderedRequestPath,
+                    promptPath,
+                    scriptPath,
+                    title,
+                    outputJsonPath,
+                    progressPath,
+                    donePath),
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        }
+        catch
+        {
+            return false;
+        }
+
+        try
+        {
+            var wt = new ProcessStartInfo
+            {
+                FileName = "wt.exe",
+                UseShellExecute = false,
+                CreateNoWindow = false,
+            };
+            wt.ArgumentList.Add("-d");
+            wt.ArgumentList.Add(workDir);
+            wt.ArgumentList.Add("powershell.exe");
+            wt.ArgumentList.Add("-NoExit");
+            wt.ArgumentList.Add("-NoProfile");
+            wt.ArgumentList.Add("-ExecutionPolicy");
+            wt.ArgumentList.Add("Bypass");
+            wt.ArgumentList.Add("-File");
+            wt.ArgumentList.Add(scriptPath);
+            var proc = Process.Start(wt);
+            if (proc is not null) ChildProcessJob.Assign(proc);
+            return proc is not null;
+        }
+        catch { }
+
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                WorkingDirectory = workDir,
+                UseShellExecute = false,
+                CreateNoWindow = false,
+            };
+            psi.ArgumentList.Add("/k");
+            psi.ArgumentList.Add("powershell.exe");
+            psi.ArgumentList.Add("-NoExit");
+            psi.ArgumentList.Add("-NoProfile");
+            psi.ArgumentList.Add("-ExecutionPolicy");
+            psi.ArgumentList.Add("Bypass");
+            psi.ArgumentList.Add("-File");
+            psi.ArgumentList.Add(scriptPath);
+            var proc = Process.Start(psi);
+            if (proc is not null) ChildProcessJob.Assign(proc);
+            return proc is not null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static string BuildAiStructureExtractionLauncherScript(
+        string workDir,
+        string rendererPath,
+        string workbookPath,
+        string structureDir,
+        string imageDir,
+        string renderedRequestPath,
+        string promptPath,
+        string scriptPath,
+        string title,
+        string outputJsonPath,
+        string progressPath,
+        string donePath)
+    {
+        static string Q(string value) => "'" + (value ?? "").Replace("'", "''") + "'";
+        return string.Join(Environment.NewLine, new[]
+        {
+            "$ErrorActionPreference = 'Continue'",
+            "$utf8NoBom = New-Object System.Text.UTF8Encoding -ArgumentList $false",
+            "[Console]::InputEncoding = $utf8NoBom",
+            "[Console]::OutputEncoding = $utf8NoBom",
+            "$OutputEncoding = $utf8NoBom",
+            "try { chcp 65001 | Out-Null } catch {}",
+            $"try {{ $Host.UI.RawUI.WindowTitle = {Q(title)} }} catch {{}}",
+            $"Set-Location -LiteralPath {Q(workDir)}",
+            "",
+            $"$rendererPath = {Q(rendererPath)}",
+            $"$workbookPath = {Q(workbookPath)}",
+            $"$structureDir = {Q(structureDir)}",
+            $"$imageDir = {Q(imageDir)}",
+            $"$renderedRequestPath = {Q(renderedRequestPath)}",
+            $"$promptPath = {Q(promptPath)}",
+            $"$scriptPath = {Q(scriptPath)}",
+            $"$outputJsonPath = {Q(outputJsonPath)}",
+            $"$progressPath = {Q(progressPath)}",
+            $"$donePath = {Q(donePath)}",
+            "New-Item -ItemType Directory -Force -Path $structureDir | Out-Null",
+            "New-Item -ItemType Directory -Force -Path $imageDir | Out-Null",
+            "Remove-Item -LiteralPath $outputJsonPath -Force -ErrorAction SilentlyContinue",
+            "Remove-Item -LiteralPath $progressPath -Force -ErrorAction SilentlyContinue",
+            "Remove-Item -LiteralPath $donePath -Force -ErrorAction SilentlyContinue",
+            "",
+            "$script:ExtractionStopwatch = [System.Diagnostics.Stopwatch]::StartNew()",
+            "",
+            "function Get-ElapsedText() {",
+            "    try {",
+            "        return $script:ExtractionStopwatch.Elapsed.ToString('hh\\:mm\\:ss')",
+            "    } catch {",
+            "        return '00:00:00'",
+            "    }",
+            "}",
+            "",
+            "function Write-ProgressJson([string]$stage, [int]$percent, [string]$message) {",
+            "    try {",
+            "        @{ stage = $stage; percent = $percent; message = $message; elapsed = (Get-ElapsedText) } | ConvertTo-Json -Compress | Set-Content -LiteralPath $progressPath -Encoding UTF8",
+            "    } catch {}",
+            "}",
+            "",
+            "$exitCode = 0",
+            "try {",
+            "    Write-ProgressJson 'render' 10 'Rendering workbook images and extracting Excel cells.'",
+            "    & python $rendererPath $workbookPath $imageDir $renderedRequestPath 36 3",
+            "    $renderExit = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }",
+            "    if ($renderExit -ne 0) {",
+            "        $exitCode = $renderExit",
+            "        Write-ProgressJson 'render_failed' 100 ('Workbook render failed. Exit code ' + $renderExit + '.')",
+            "        if (Test-Path -LiteralPath $renderedRequestPath) { Get-Content -LiteralPath $renderedRequestPath -Raw -Encoding UTF8 | Set-Content -LiteralPath $outputJsonPath -Encoding UTF8 }",
+            "    } else {",
+            "        $rendered = Get-Content -LiteralPath $renderedRequestPath -Raw -Encoding UTF8 | ConvertFrom-Json",
+            "        $summary = $rendered.deterministicSummary",
+            "        $fastStructure = $rendered.deterministicStructure",
+            "        $fastConfidence = 0",
+            "        if ($null -ne $summary -and $null -ne $summary.confidence) { $fastConfidence = [int]$summary.confidence }",
+            "        $needsAiRefine = $true",
+            "        if ($null -ne $summary -and $null -ne $summary.needsAiRefine) { $needsAiRefine = [System.Convert]::ToBoolean($summary.needsAiRefine) }",
+            "        if ($null -ne $fastStructure) {",
+            "            Write-ProgressJson 'fast_complete' 100 ('Fast deterministic structure complete. Confidence ' + $fastConfidence + '%, needs AI refine=' + $needsAiRefine + '. Codex skipped by default.')",
+            "            $fastStructure | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $outputJsonPath -Encoding UTF8",
+            "            $exitCode = 0",
+            "        } else {",
+            "            Write-ProgressJson 'ai' 45 'Codex structure extraction running because fast deterministic structure was not produced.'",
+            "            $imageArgs = New-Object System.Collections.Generic.List[string]",
+            "            foreach ($sheet in $rendered.sheets) {",
+            "                foreach ($chunk in $sheet.chunks) {",
+            "                    $imageArgs.Add('-i')",
+            "                    $imageArgs.Add([string]$chunk.imagePath)",
+            "                }",
+            "            }",
+            "            $prompt = Get-Content -LiteralPath $promptPath -Raw -Encoding UTF8",
+            $"            $prompt | & codex exec @imageArgs -c 'model_reasoning_effort=\"xhigh\"' --cd {Q(workDir)} --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check --color never --output-last-message $outputJsonPath -",
+            "            $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }",
+            "            if ($exitCode -eq 0) { Write-ProgressJson 'complete' 100 'Codex structure extraction complete.' } else { Write-ProgressJson 'fallback' 90 ('Codex failed. The web app will try Excel fallback. Exit code ' + $exitCode + '.') }",
+            "        }",
+            "    }",
+            "} catch {",
+            "    $exitCode = 1",
+            "    Write-ProgressJson 'failed' 100 $_.Exception.Message",
+            "    $_ | Out-String | Tee-Object -FilePath $outputJsonPath -Append",
+            "}",
+            "$done = @{ exitCode = $exitCode; completedAt = [DateTime]::UtcNow.ToString('o') } | ConvertTo-Json -Compress",
+            "Set-Content -LiteralPath $donePath -Value $done -Encoding UTF8",
+            "Remove-Item -LiteralPath $promptPath -Force -ErrorAction SilentlyContinue",
+            "Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue",
+        });
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { _cliWaitCts?.Cancel(); } catch { }
+        _cliWaitCts?.Dispose();
+        try { await JS.InvokeVoidAsync("diFullPage.leave"); } catch { }
+    }
+
+    private sealed record WorkbookExtractResult(
+        string Text,
+        int SheetCount,
+        int RowCount,
+        int CellCount,
+        bool Truncated);
+
+    private sealed record StepResult(string AnalysisText, string AnalysisHtml, string Error);
+
+    private sealed record MarkdownSection(string Title, string Content);
+
+    private sealed record AutoPromptPayload(
+        string Key,
+        string Title,
+        string Description,
+        string SourceLabel,
+        string Content);
+
+    private sealed record SavedSessionInfo(string Path, string Label);
+
+    private sealed record AutoPromptStorage(
+        string Key,
+        string Title,
+        string Description,
+        string SourceLabel,
+        string Content,
+        bool Enabled,
+        bool IsCustom);
+
+    private sealed class AutoPromptOption(
+        string key,
+        string title,
+        string description,
+        string sourceLabel,
+        string sourcePath,
+        string content,
+        bool enabled,
+        bool isCustom = false)
+    {
+        public string Key { get; } = key;
+        public string Title { get; } = title;
+        public string Description { get; } = description;
+        public string SourceLabel { get; } = sourceLabel;
+        public string SourcePath { get; } = sourcePath;
+        public string Content { get; } = content;
+        public bool Enabled { get; set; } = enabled;
+        public bool IsCustom { get; } = isCustom;
+    }
+
+    private sealed class AnalysisStep(int number)
+    {
+        public int Number { get; } = number;
+        public string Prompt { get; set; } = "";
+        public string Result { get; set; } = "";
+        public string ResultHtml { get; set; } = "";
+        public string Error { get; set; } = "";
+        public string CompletedAt { get; set; } = "";
+        public bool IsRunning { get; set; }
+    }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 796,
+  "sourceFile": "62. BRS-161016 Check new magnetic machine (QM data)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\796.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 796,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the comparison and uses invalid statistics/evidence for an old-vs-new magnetic machine gauss check.",
+    "issues": [
+      "Changed factor is filename, not old vs new magnetic machine.",
+      "Baseline/test conditions omit machine and voltage details.",
+      "Date groups and repeated old/new comparisons are not preserved.",
+      "Statistics appear corrupted by summary rows or wrong columns.",
+      "Evidence cites only spec row, not condition headers or result rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to equipment: old magnetic machine vs new magnetic machine.",
+      "Use old machine 906V as baseline and new machine 2153V/2212V as changed conditions.",
+      "Preserve date groups 2024-09-19 and 2024-09-20 as subgroup context.",
+      "Rebuild outcome metrics from rows 6-9 and sample rows without mixing summary labels as measurements.",
+      "Cite rows 3-9 at minimum, plus sample rows used for any computed stats."
+    ],
+    "evidencePolicy": "Current citation is insufficient; condition headers, dates, specs, and statistics need row citations."
+  },
+  "usage": {
+    "input_tokens": 2662,
+    "output_tokens": 622,
+    "total_tokens": 3284
+  }
+}

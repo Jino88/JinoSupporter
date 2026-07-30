@@ -1,0 +1,320 @@
+{
+  "sourceFileId": 840,
+  "sourceFile": "68. TIU L5S3-01 Result separate AWF check function and Drop test find NG coil separate - 2026.02.09_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\68. TIU L5S3-01 Result separate AWF check function and Drop test find NG coil separate - 2026.02.09_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 17,
+    "sheetCellCount": 186,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 7,
+    "measurementStatCount": 8
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| | AWF FUNCTION LineD3-4A TIU L5S3-01 | | | | | | | | | | | | | | | Drop test | | | Decap NG Drop test"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | Date | Line | AWF | BAKO | | | | | | HEARING | | | | Total rate | Note | Input | NG | NG rate"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| | | | | Input | FRF high | FRF Low | FRF+SPL | SPL+THD | No sound | Input | Touch | Noise | No sound"
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| | 2026-02-09 00:00:00 | D3-4A | #1 | 70 | 3 | 0 | 0 | 0 | 0 | 67 | 0 | 0 | 0 | 0.04285714 | Coil forming normal 480°C | 5 | 1 | 0.2 | NG Bako FRF hight: Not to coil separate"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| | | | | | 0.04285714 | 0 | 0 | 0 | 0 | | 0 | 0 | 0"
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| | | | | 100 | 0 | 0 | 0 | 0 | 0 | 100 | 0 | 0 | 0 | 0 | Temp Forming coil change 500° | 5 | 2 | 0.4"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| | | | | | 0 | 0 | 0 | 0 | 0 | | 0 | 0 | 0"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| | | | #2 | 70 | 1 | 0 | 0 | 0 | 0 | 69 | 0 | 0 | 0 | 0.01428571 | Coil forming normal 480°C | 5 | 2 | 0.4 | NG Bako FRF hight: Not to coil separate"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| | | | | | 0.01428571 | 0 | 0 | 0 | 0 | | 0 | 0 | 0"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | | | #3 | 70 | 0 | 0 | 0 | 0 | 0 | 70 | 0 | 0 | 0 | 0 | | 5 | 0 | 0 | OK"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | | | | | 0 | 0 | 0 | 0 | 0 | | 0 | 0 | 0"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | | | #4 | 70 | 2 | 0 | 0 | 0 | 0 | 68 | 0 | 0 | 0 | 0.02857143 | | 5 | 1 | 0.2 | Frama deform"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-840-rc-1",
+      "reviewTitle": "| | AWF FUNCTION LineD3-4A TIU L5S3-01 | | | | | | | | | | | | | | | Drop test | | | Decap NG Drop test",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment"
+          ],
+          "changedFactor": "Condition comparison: Coil forming normal 480°C vs Temp Forming coil change 500°, #3, #4, #5, Total",
+          "baselineCondition": "Coil forming normal 480°C",
+          "changedCondition": "Temp Forming coil change 500°, #3, #4, #5, Total",
+          "subgroupKeys": [
+            "0",
+            "70",
+            "2",
+            "68",
+            "0.02857143",
+            "1",
+            "69",
+            "0.01428571"
+          ],
+          "evidenceRows": [
+            "Test!10",
+            "Test!12",
+            "Test!14",
+            "Test!16",
+            "Test!18",
+            "Test!2",
+            "Test!5",
+            "Test!6",
+            "Test!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "AWF FUNCTION LineD3-4A TIU L5S3-01 | Drop test | Decap NG Drop test",
+          "comparisonRows": [
+            "Test!6",
+            "Test!8"
+          ],
+          "judgement": "worse",
+          "subResults": [
+            {
+              "pairId": 4776,
+              "controlCondition": "Coil forming normal 480°C",
+              "testCondition": "Temp Forming coil change 500°",
+              "control": {
+                "input": 5.0,
+                "ng": 1.0,
+                "ratePercent": 20.0
+              },
+              "test": {
+                "input": 5.0,
+                "ng": 2.0,
+                "ratePercent": 40.0
+              },
+              "deltaRatePercentPoint": 20.0,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Test!6",
+                "Test!8"
+              ]
+            }
+          ],
+          "limitations": []
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Line | AWF | BAKO | HEARING | Total rate | Note | Input | NG | NG rate",
+          "comparisonRows": [
+            "Test!5"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 63344,
+              "condition": "BAKO / FRF high",
+              "spec": "",
+              "min": 0.0,
+              "max": 7.0,
+              "avg": 1.0846153838461539,
+              "sampleCount": 13,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!5"
+              ]
+            },
+            {
+              "statId": 63345,
+              "condition": "BAKO / FRF Low",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 13,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!5"
+              ]
+            },
+            {
+              "statId": 63346,
+              "condition": "BAKO / FRF+SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 13,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!5"
+              ]
+            },
+            {
+              "statId": 63347,
+              "condition": "BAKO / SPL+THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 13,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!5"
+              ]
+            },
+            {
+              "statId": 63348,
+              "condition": "BAKO / No sound",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 13,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!5"
+              ]
+            },
+            {
+              "statId": 63349,
+              "condition": "HEARING / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 13,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!5"
+              ]
+            },
+            {
+              "statId": 63350,
+              "condition": "HEARING / Noise",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 13,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!5"
+              ]
+            },
+            {
+              "statId": 63351,
+              "condition": "HEARING / No sound",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 13,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!5"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!10",
+        "Test!12",
+        "Test!14",
+        "Test!16",
+        "Test!18",
+        "Test!2",
+        "Test!5",
+        "Test!6",
+        "Test!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!10",
+      "Test!12",
+      "Test!14",
+      "Test!16",
+      "Test!18",
+      "Test!2",
+      "Test!5",
+      "Test!6",
+      "Test!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

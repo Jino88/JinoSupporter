@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 349,
+  "sourceFile": "18. TIM-338-R_WF 센터돔 불량 샘플 측정 Data_251222_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\349.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:16Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 349,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable measurement headers but the changed factor and outcome grouping are not verified.",
+    "issues": [
+      "Changed factor is the filename, not an evidenced condition.",
+      "Baseline and test conditions are left undefined.",
+      "Poron press, mask/spec rows, and FR VP mass conditions are mixed.",
+      "TOP/BOTTOM side and replicate keys are not preserved as subgroups.",
+      "Evidence mostly cites headers/spec rows, not enough data rows."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison Poron Normal vs Strong vs Back-to-Normal press?",
+      "Should FR VP 0.3mg/0.4mg conditions be a separate review case?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor from source headers, not filename.",
+      "Define baseline as Normal press and changed/recovery conditions if confirmed.",
+      "Keep TOP/BOTTOM and replicate number as subgroup keys.",
+      "Treat SET MASK rows as specs or references, not changed-condition evidence.",
+      "Add THD/IMP data-row citations and split FR VP if applicable."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient for final evidence grouping."
+  },
+  "usage": {
+    "input_tokens": 8106,
+    "output_tokens": 774,
+    "total_tokens": 8880
+  }
+}

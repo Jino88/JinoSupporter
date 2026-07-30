@@ -1,0 +1,317 @@
+{
+  "sourceFileId": 563,
+  "sourceFile": "34. TIU L5S3-01 R Report test find reason NG BAKO 2025.12.22_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\34. TIU L5S3-01 R Report test find reason NG BAKO 2025.12.22_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 40,
+    "sheetCellCount": 217,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 8,
+    "measurementStatCount": 5
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] REPORT TEST FIND REASON IMPROVE NG FUNCTION | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date | 2025-12-22 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Sample check bako from yesterday is OK => after 1 day check again NG R line 18/70pcs ~ 25%, L line 6/47pcs ~ 12% => Test find reason NG"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Type 1: Using semi sub 3 stock from 20/12"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| - Type 2: Using semi sub 3 make today"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| => Make final sample and Check function (Using new bonding line Fr/VP)"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!15",
+      "sheetName": "Test",
+      "rowNumber": 15,
+      "rowText": "| | Result check function"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | No | Date | Type | | | Input | OK | NG BAKO | | | | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Test!22",
+      "sheetName": "Test",
+      "rowNumber": 22,
+      "rowText": "| | 3 | | Normal | | | 1058 | 842 | 40 | 176 | 0 | 0 | 0 | 216 | 0.20415879"
+    },
+    {
+      "rowId": "Test!24",
+      "sheetName": "Test",
+      "rowNumber": 24,
+      "rowText": "| | 4 | 2025-12-23 00:00:00 | After 1 day | Type 1: Semi sub 3 stock 20/12 | OK | 52 | 40 | 6 | 6 | 0 | 0 | 0 | 12 | 0.23076923"
+    },
+    {
+      "rowId": "Test!41",
+      "sheetName": "Test",
+      "rowNumber": 41,
+      "rowText": "| | Type | | Before | | | After"
+    },
+    {
+      "rowId": "Test!53",
+      "sheetName": "Test",
+      "rowNumber": 53,
+      "rowText": "| | - SPL unstable => Before is center => After 1 day check position start low, position 8k high"
+    },
+    {
+      "rowId": "Test!55",
+      "sheetName": "Test",
+      "rowNumber": 55,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-563-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] REPORT TEST FIND REASON IMPROVE NG FUNCTION | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Sample check bako from yesterday is OK => after 1 day check again NG R line 18/70pcs ~ 25%, L line 6/47pcs ~ 12% => Test find reason NG / | II. Content. / | - Type 1: Using semi sub 3 stock from 20/12 / | - Type 2: Using semi sub 3 make today",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal vs After 1 day, Type 2: Semi sub 3 make today 22/12, Type 1: Semi sub 3 stock 20/12, FRF High, FRF Low, Total",
+          "baselineCondition": "Normal",
+          "changedCondition": "After 1 day, Type 2: Semi sub 3 make today 22/12, Type 1: Semi sub 3 stock 20/12, FRF High, FRF Low, Total",
+          "subgroupKeys": [
+            "OK",
+            "Type 1: Semi sub 3 stock 20/12"
+          ],
+          "evidenceRows": [
+            "Test!17",
+            "Test!18",
+            "Test!2",
+            "Test!20",
+            "Test!22",
+            "Test!24",
+            "Test!26",
+            "Test!28",
+            "Test!30",
+            "Test!32",
+            "Test!5",
+            "Test!6",
+            "Test!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "Result check function",
+          "comparisonRows": [
+            "Test!22",
+            "Test!24"
+          ],
+          "judgement": "worse",
+          "subResults": [
+            {
+              "pairId": 4294,
+              "controlCondition": "Normal",
+              "testCondition": "After 1 day | Type 1: Semi sub 3 stock 20/12 | OK",
+              "control": {
+                "input": 1058.0,
+                "ng": 216.0,
+                "ratePercent": 20.415879
+              },
+              "test": {
+                "input": 52.0,
+                "ng": 12.0,
+                "ratePercent": 23.076923
+              },
+              "deltaRatePercentPoint": 2.6610439999999986,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Test!22",
+                "Test!24"
+              ]
+            }
+          ],
+          "limitations": []
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No | Date | Type | Input | OK | NG BAKO | Total NG | NG rate",
+          "comparisonRows": [
+            "Test!17"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 56796,
+              "condition": "NG BAKO / FRF high",
+              "spec": "",
+              "min": 0.0,
+              "max": 40.0,
+              "avg": 3.400185346363637,
+              "sampleCount": 22,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "statId": 56797,
+              "condition": "NG BAKO / FRF Low",
+              "spec": "",
+              "min": 0.0,
+              "max": 176.0,
+              "avg": 10.057886838181819,
+              "sampleCount": 22,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "statId": 56798,
+              "condition": "NG BAKO / FRF+SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 22,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "statId": 56799,
+              "condition": "NG BAKO / THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 22,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "statId": 56800,
+              "condition": "NG BAKO / No sound",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 22,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!17",
+        "Test!18",
+        "Test!2",
+        "Test!20",
+        "Test!22",
+        "Test!24",
+        "Test!26",
+        "Test!28",
+        "Test!30",
+        "Test!32",
+        "Test!5",
+        "Test!6",
+        "Test!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!17",
+      "Test!18",
+      "Test!2",
+      "Test!20",
+      "Test!22",
+      "Test!24",
+      "Test!26",
+      "Test!28",
+      "Test!30",
+      "Test!32",
+      "Test!5",
+      "Test!6",
+      "Test!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

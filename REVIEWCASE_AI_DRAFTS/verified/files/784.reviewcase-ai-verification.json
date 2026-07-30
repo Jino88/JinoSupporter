@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 784,
+  "sourceFile": "60. TIU L5S3-01 L Check SPL separate AWF - 2026.01.16_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\784.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 784,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable STD vs AWF comparison evidence but the changed factor and outcome grouping are not final-ready.",
+    "issues": [
+      "Changed factor is the filename, not the actual STD vs AWF sample comparison.",
+      "Baseline and changed conditions are incorrectly marked not explicit despite STD and AWF labels.",
+      "Outcome stats mix specs, averages, and raw numeric rows into invalid subresults.",
+      "Key result rows for STD and AWF #1-#5 are not used as primary comparison evidence.",
+      "Review title and metric labels are header artifacts."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to STD versus separate AWF sample variants.",
+      "Use STD as baseline and AWF #1-#5 as changed conditions or subgroups.",
+      "Cite RAW DATA sample-name rows and GRAPH result rows showing STD/AWF values.",
+      "Rebuild outcomes around SPL bands, Fo, and THD metrics only.",
+      "Remove numeric-condition subresults created from raw table offsets."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficiently targeted for final evidence."
+  },
+  "usage": {
+    "input_tokens": 7918,
+    "output_tokens": 529,
+    "total_tokens": 8447
+  }
+}

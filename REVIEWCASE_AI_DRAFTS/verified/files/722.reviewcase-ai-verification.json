@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 722,
+  "sourceFile": "52. TIU C11-20 Report test VP not speard 2026.1.30_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\722.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:52Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 722,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable evidence exists, but the draft misgroups the changed factor and pairs later tests with the wrong normal rows.",
+    "issues": [
+      "Primary factor should be VP not spread sample vs normal lot, not line TIU C11-20 R.",
+      "Rows 19 and 23 are incorrectly compared to row 17 instead of their adjacent normal rows.",
+      "Comparison rows omit normal evidence rows 21 and 25.",
+      "Measurement outcome appears to be defect-category breakdown, not a separate measurement domain.",
+      "Evidence cites Test!14, which is not supported by the supplied context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baselineCondition to Normal lot and changedCondition to Test VP not spread sample.",
+      "Keep TIU C11-20 R and date as subgroup context.",
+      "Pair Test!15 with Test!17, Test!19 with Test!21, and Test!23 with Test!25.",
+      "Recalculate deltas using each matched normal row.",
+      "Remove the separate measurement outcome or convert it to defect-category details with valid row citations."
+    ],
+    "evidencePolicy": "Citations are not sufficient until valid paired rows and header/context rows are used; avoid unsupported Test!14."
+  },
+  "usage": {
+    "input_tokens": 3847,
+    "output_tokens": 774,
+    "total_tokens": 4621
+  }
+}

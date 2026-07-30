@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 126,
+  "sourceFile": "05. L20S15-07 Report test CD lot IR 250430007  ( Size 260k ) box 1,2,3,4,5,6,7,8,9_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\126.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 126,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook is a CD lot-use validation, but the draft misgroups boxes and includes invalid extracted metrics.",
+    "issues": [
+      "Baseline/test comparison is not explicit; this is a lot qualification context.",
+      "Changed factor omits Box 9 and incorrectly treats Box 1 as subgroup only.",
+      "Bogus numeric outcomes were extracted from title/header rows.",
+      "Report result outcomes are incomplete; final summary rows are not modeled.",
+      "Evidence rows exist but some key cited rows are not shown in context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to CD lot IR250430007 size 260K boxes 1-9 qualification.",
+      "Use boxes 1-9 as subgroup keys, not changed conditions.",
+      "Remove title/header-derived measurement outcomes.",
+      "Model dyne, tension, VP/CD separate, and function results from result rows.",
+      "Cite final summary/decision rows and all relevant box rows."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient until regrouped around real result rows."
+  },
+  "usage": {
+    "input_tokens": 5285,
+    "output_tokens": 760,
+    "total_tokens": 6045
+  }
+}

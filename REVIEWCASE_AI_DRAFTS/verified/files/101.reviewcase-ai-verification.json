@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 101,
+  "sourceFile": "04. BRS-161016 GMI Report test  suspension - D happen NG dimension- date 2024.05.27_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\101.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 101,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable Test vs Normal evidence exists, but metric grouping and measurement extraction are not reliable enough for final use.",
+    "issues": [
+      "Review title is too narrow for the full validation report.",
+      "Vision spot judgement may use a subcount instead of total before/after repair NG.",
+      "Function result needs limitation that higher NG was attributed away from suspension.",
+      "Tension and dimension measurement groups are misparsed with wrong sample counts/specs.",
+      "Dimension citations use summary/header rows without clear row-level Test/Normal mapping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Retitle case around suspension-D NG dimension usability validation.",
+      "Recompute vision spot using the correct total NG rate columns and keep before/after repair separate if needed.",
+      "Keep function as worse overall but add source conclusion about non-suspension cause.",
+      "Regroup tension with actual sample values, min, max, avg, and pass result only.",
+      "Regroup dimension as Test/Normal by Long/Short with correct specs and result rows."
+    ],
+    "evidencePolicy": "Citations are partly sufficient for defect pairs but insufficient for final measurement evidence until regrouped."
+  },
+  "usage": {
+    "input_tokens": 7873,
+    "output_tokens": 777,
+    "total_tokens": 8650
+  }
+}

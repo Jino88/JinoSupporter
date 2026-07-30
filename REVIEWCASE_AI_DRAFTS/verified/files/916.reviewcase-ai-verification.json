@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 916,
+  "sourceFile": "8. BRS-161016(DT) Sunmary Report TEST new JIG improve use new dry machine 6.7.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\916.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 916,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable evidence but misgroups the changed factor and test rounds, so it is not ready for Ask AI.",
+    "issues": [
+      "Changed factor is nonsensical row values rather than new dry machine and improved jig.",
+      "No explicit baseline condition is cited.",
+      "Dates, rounds, and Total are mixed into changed conditions.",
+      "Outcome should be defect/yield NG rate, not generic measurement.",
+      "Decision/result evidence is incomplete for final judgement."
+    ],
+    "requiredUserQuestions": [
+      "Should this be treated as a single-condition validation rather than a baseline-vs-test comparison?",
+      "If comparison is required, what is the old or normal dry machine/jig baseline?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to new dry machine use with improved jig for BRS-161016.",
+      "Mark baseline as not cited or user-supplied, not inferred from row numbers.",
+      "Keep date, time, temperature, jig height, and test round as subgroup keys.",
+      "Rebuild outcomes as Input, OK, NG types, total NG, and NG rate by date/round.",
+      "Add complete result and decision row citations before approval."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are not sufficient for final evidence until grouping and key result rows are corrected."
+  },
+  "usage": {
+    "input_tokens": 3573,
+    "output_tokens": 804,
+    "total_tokens": 4377
+  }
+}

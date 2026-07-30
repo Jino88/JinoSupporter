@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 679,
+  "sourceFile": "48. BRS-161014 Report test tracking process Main 1-Main 2_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\679.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:24Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 679,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source context but does not define a valid changed-factor comparison or cite result rows adequately.",
+    "issues": [
+      "Changed factor is filename-derived, not evidence-derived.",
+      "Baseline and changed/test conditions are not explicit.",
+      "Outcome stats cite only the header, not the data rows.",
+      "Process-stage grouping is incomplete and may omit Main 1/result rows.",
+      "Aggregated sample counts are not traceable to cited rows."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended comparison Main 1 vs Main 2 process stages, or tracking all process steps?",
+      "Should this be treated as root-cause tracking rather than a changed-condition validation?"
+    ],
+    "correctionPlan": [
+      "Redefine changed factor from report evidence, e.g. process tracking stage/location if supported.",
+      "Use actual result rows as evidence for each process step and metric.",
+      "Preserve process/stage keys such as Main 1, Main 2, Sub 4 and operation name.",
+      "Separate or group outcomes by the same tracking context only after all rows are visible.",
+      "Remove unsupported aggregate statistics or recalculate with row-level citations."
+    ],
+    "evidencePolicy": "Current citations are insufficient; header/title rows must be supplemented with cited result rows."
+  },
+  "usage": {
+    "input_tokens": 2614,
+    "output_tokens": 575,
+    "total_tokens": 3189
+  }
+}

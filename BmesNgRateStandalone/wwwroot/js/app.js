@@ -1,6 +1,831 @@
 // ?? NG Rate Summary Chart ?????????????????????????????????????????????????????
+// Returns the current page's document.title so the tab strip can label a tab with the
+// page's own <PageTitle> rather than a name guessed from the URL.
+window.appDocTitle = function () { return document.title || ''; };
+
+// Reading document.title once after a render is not enough: Blazor's <PageTitle> writes it
+// asynchronously, so a read taken right after navigating still returns the PREVIOUS page's
+// title and the new tab gets mislabelled. Watch <head> for title changes and push each one
+// to the layout instead.
+window.appTitleWatcher = {
+    _observer: null,
+
+    start: function (dotNetRef) {
+        this.stop();
+        if (!dotNetRef || !document.head) return;
+
+        const notify = () => {
+            const title = (document.title || '').trim();
+            if (!title) return;
+            // The circuit may already be gone when a page is torn down.
+            dotNetRef.invokeMethodAsync('OnDocumentTitleChanged', title).catch(() => { });
+        };
+
+        // subtree/childList so a replaced <title> element is caught, not just edited text.
+        this._observer = new MutationObserver(notify);
+        this._observer.observe(document.head, { childList: true, characterData: true, subtree: true });
+        notify();   // seed the tab we landed on
+    },
+
+    stop: function () {
+        if (this._observer) {
+            this._observer.disconnect();
+            this._observer = null;
+        }
+    }
+};
+
+window.ngRateLog = {
+    _observers: {},
+
+    scrollToBottom: function (elementId, markerId) {
+        const el = document.getElementById(elementId);
+        if (!el) {
+            [25, 75, 150, 300, 600, 1000].forEach(delay =>
+                setTimeout(() => window.ngRateLog.scrollToBottom(elementId, markerId), delay));
+            return;
+        }
+
+        const scroll = () => {
+            el.style.overflowAnchor = 'none';
+            el.scrollTop = el.scrollHeight;
+        };
+
+        const schedule = () => {
+            scroll();
+            requestAnimationFrame(() => {
+                scroll();
+                requestAnimationFrame(scroll);
+            });
+            [0, 25, 75, 150, 300, 600, 1000, 1500].forEach(delay => setTimeout(scroll, delay));
+        };
+
+        const existing = window.ngRateLog._observers[elementId];
+        if (!existing || existing.el !== el) {
+            if (existing && existing.observer) existing.observer.disconnect();
+
+            const observer = new MutationObserver(schedule);
+            observer.observe(el, { childList: true, subtree: true, characterData: true });
+            window.ngRateLog._observers[elementId] = { el, observer };
+        }
+
+        schedule();
+    }
+};
+
+window.ngRateTableStyle = {
+    _observer: null,
+    _scheduled: false,
+
+    start: function () {
+        this.schedule();
+        if (this._observer || !document.body) return;
+
+        this._observer = new MutationObserver(() => this.schedule());
+        this._observer.observe(document.body, { childList: true, subtree: true });
+    },
+
+    schedule: function () {
+        if (this._scheduled) return;
+        this._scheduled = true;
+        requestAnimationFrame(() => {
+            this._scheduled = false;
+            this.apply();
+        });
+    },
+
+    apply: function () {
+        document.querySelectorAll('.pivot-table').forEach(table => this.applyTable(table));
+    },
+
+    applyTable: function (table) {
+        const rows = Array.from(table.tBodies || []).flatMap(body => Array.from(body.rows || []));
+        const maxByColumn = new Map();
+
+        rows.forEach(row => {
+            Array.from(row.cells || []).forEach(cell => cell.classList.remove('ppm-max-cell'));
+        });
+
+        rows.filter(row => this.isEligibleRow(row)).forEach(row => {
+            Array.from(row.cells || []).forEach((cell, columnIndex) => {
+                if (!this.isDataCell(cell)) return;
+
+                const value = this.parseNumber(cell.textContent);
+                if (value == null || value <= 0) return;
+
+                const current = maxByColumn.get(columnIndex);
+                if (!current || value > current.value) {
+                    maxByColumn.set(columnIndex, { value, cells: [cell] });
+                } else if (Math.abs(value - current.value) < 0.5) {
+                    current.cells.push(cell);
+                }
+            });
+        });
+
+        maxByColumn.forEach(entry => {
+            if (entry.cells.length === 0) return;
+            entry.cells.forEach(cell => cell.classList.add('ppm-max-cell'));
+        });
+    },
+
+    isEligibleRow: function (row) {
+        const skip = [
+            'total-row',
+            'hier-group-row',
+            'grp-overall-row',
+            'grp-total-row',
+            'wr-mid-row'
+        ];
+        return !skip.some(className => row.classList.contains(className));
+    },
+
+    isDataCell: function (cell) {
+        if (!cell || cell.tagName !== 'TD') return false;
+        const skip = ['label-td', 'sep-td', 'toggle-cell', 'row-hide-cell'];
+        return !skip.some(className => cell.classList.contains(className));
+    },
+
+    parseNumber: function (text) {
+        const match = (text || '').replace(/\([^)]*\)/g, '').match(/-?\d[\d,]*(?:\.\d+)?/);
+        if (!match) return null;
+        const value = Number(match[0].replace(/,/g, ''));
+        return Number.isFinite(value) ? value : null;
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => window.ngRateTableStyle.start());
+
+window.bmesReportTableSizer = {
+    _observer: null,
+    _scheduled: false,
+    _resizeAttached: false,
+
+    start: function () {
+        this.schedule();
+        if (!this._resizeAttached) {
+            this._resizeAttached = true;
+            window.addEventListener('resize', () => this.schedule());
+        }
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => this.schedule()).catch(() => {});
+        }
+        if (this._observer || !document.body) return;
+
+        this._observer = new MutationObserver(() => this.schedule());
+        this._observer.observe(document.body, { childList: true, subtree: true });
+    },
+
+    schedule: function () {
+        if (this._scheduled) return;
+        this._scheduled = true;
+        requestAnimationFrame(() => {
+            this._scheduled = false;
+            this.apply();
+        });
+    },
+
+    apply: function () {
+        const root = document.querySelector('.bmes-report-tab-content');
+        if (!root) return;
+
+        root.querySelectorAll('.pivot-table.text-fit-table')
+            .forEach(table => this.applyTable(table));
+    },
+
+    applyTable: function (table) {
+        table.querySelectorAll('.bmes-report-number-cell')
+            .forEach(cell => cell.classList.remove('bmes-report-number-cell'));
+
+        const numericCells = Array.from(table.querySelectorAll('td'))
+            .filter(cell => this.isNumericValueCell(cell));
+
+        numericCells.forEach(cell => cell.classList.add('bmes-report-number-cell'));
+
+        const width = this.measureMaxNumberCellWidth(table);
+        if (!width) {
+            table.style.removeProperty('--bmes-report-cell-width');
+            return;
+        }
+
+        table.style.setProperty('--bmes-report-cell-width', `${width}px`);
+    },
+
+    measureMaxNumberCellWidth: function (table) {
+        const clone = table.cloneNode(true);
+        clone.removeAttribute('id');
+        clone.style.setProperty('--bmes-report-cell-width', '');
+        clone.style.setProperty('table-layout', 'auto', 'important');
+        clone.style.setProperty('width', 'max-content', 'important');
+        clone.style.setProperty('min-width', '0', 'important');
+        clone.style.setProperty('max-width', 'none', 'important');
+
+        clone.querySelectorAll('th,td').forEach(cell => {
+            cell.classList.remove('bmes-report-number-cell');
+            cell.style.setProperty('width', 'auto', 'important');
+            cell.style.setProperty('min-width', '0', 'important');
+            cell.style.setProperty('max-width', 'none', 'important');
+        });
+
+        const host = document.createElement('div');
+        host.style.position = 'fixed';
+        host.style.left = '-100000px';
+        host.style.top = '0';
+        host.style.visibility = 'hidden';
+        host.style.pointerEvents = 'none';
+        host.style.width = 'max-content';
+        host.style.maxWidth = 'none';
+        host.appendChild(clone);
+        document.body.appendChild(host);
+
+        try {
+            let max = 0;
+            clone.querySelectorAll('td').forEach(cell => {
+                if (!this.isNumericValueCell(cell)) return;
+                const width = Math.ceil(cell.getBoundingClientRect().width);
+                if (width > max) max = width;
+            });
+
+            return max > 0 ? Math.max(48, max + 6) : 0;
+        } finally {
+            host.remove();
+        }
+    },
+
+    isNumericValueCell: function (cell) {
+        if (!cell || cell.tagName !== 'TD' || cell.colSpan !== 1) return false;
+        const skip = [
+            'label-td',
+            'group-name-td',
+            'sep-td',
+            'toggle-cell',
+            'row-hide-cell'
+        ];
+        if (skip.some(className => cell.classList.contains(className))) return false;
+        return this.parseNumber(cell.textContent) != null;
+    },
+
+    parseNumber: function (text) {
+        const normalized = (text || '').replace(/\([^)]*\)/g, '').trim();
+        if (!normalized || normalized === '-') return null;
+
+        const match = normalized.match(/-?\d[\d,]*(?:\.\d+)?/);
+        if (!match) return null;
+
+        const value = Number(match[0].replace(/,/g, ''));
+        return Number.isFinite(value) ? value : null;
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => window.bmesReportTableSizer.start());
+
+window.ngRateImageCopy = {
+    copyElementToClipboard: async function (elementId) {
+        const source = document.getElementById(elementId);
+        if (!source) throw new Error(`Copy target not found: ${elementId}`);
+        if (!navigator.clipboard || !window.ClipboardItem) {
+            throw new Error('This browser does not support image clipboard copy.');
+        }
+
+        if (document.fonts && document.fonts.ready) {
+            await document.fonts.ready;
+        }
+
+        let blob = null;
+        let renderError = null;
+
+        try {
+            const canvas = await this.renderToCanvas(source);
+            blob = await this.canvasToBlob(canvas);
+        } catch (ex) {
+            renderError = ex;
+        }
+
+        if (!blob && source.querySelector('.pivot-table, table')) {
+            try {
+                const canvas = this.renderTablesToCanvas(source);
+                blob = await this.canvasToBlob(canvas);
+            } catch (ex) {
+                renderError = renderError || ex;
+            }
+        }
+
+        if (!blob) {
+            throw renderError || new Error('Failed to render the table image.');
+        }
+
+        await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+        ]);
+    },
+
+    canvasToBlob: function (canvas) {
+        return new Promise((resolve, reject) => {
+            try {
+                canvas.toBlob(blob => {
+                    if (blob) resolve(blob);
+                    else reject(new Error('Failed to render the table image.'));
+                }, 'image/png');
+            } catch (ex) {
+                reject(ex);
+            }
+        });
+    },
+
+    renderToCanvas: async function (source) {
+        const initialSize = this.measure(source);
+        const host = document.createElement('div');
+        host.style.position = 'fixed';
+        host.style.left = '-100000px';
+        host.style.top = '0';
+        host.style.width = `${initialSize.width}px`;
+        host.style.background = '#fff';
+        host.style.pointerEvents = 'none';
+        host.style.zIndex = '-1';
+
+        const clone = source.cloneNode(true);
+        clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+        host.appendChild(clone);
+        document.body.appendChild(host);
+
+        try {
+            this.inlineStyles(source, clone);
+            this.prepareClone(clone, initialSize.width);
+
+            const width = Math.ceil(Math.max(initialSize.width, clone.scrollWidth, clone.getBoundingClientRect().width));
+            const height = Math.ceil(Math.max(initialSize.height, clone.scrollHeight, clone.getBoundingClientRect().height));
+            clone.style.width = `${width}px`;
+            host.style.width = `${width}px`;
+
+            const serialized = new XMLSerializer().serializeToString(clone);
+            const svg = [
+                `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">`,
+                '<foreignObject width="100%" height="100%">',
+                serialized,
+                '</foreignObject>',
+                '</svg>'
+            ].join('');
+
+            const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
+            try {
+                const img = await this.loadImage(url);
+                const scale = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.ceil(width * scale);
+                canvas.height = Math.ceil(height * scale);
+                canvas.style.width = `${width}px`;
+                canvas.style.height = `${height}px`;
+
+                const ctx = canvas.getContext('2d');
+                ctx.setTransform(scale, 0, 0, scale, 0, 0);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+                return canvas;
+            } finally {
+                URL.revokeObjectURL(url);
+            }
+        } finally {
+            host.remove();
+        }
+    },
+
+    measure: function (source) {
+        const rect = source.getBoundingClientRect();
+        let width = Math.ceil(Math.max(1, rect.width, source.offsetWidth || 0, source.scrollWidth || 0));
+        let height = Math.ceil(Math.max(1, rect.height, source.offsetHeight || 0, source.scrollHeight || 0));
+
+        source.querySelectorAll('.pivot-wrap, table').forEach(el => {
+            const r = el.getBoundingClientRect();
+            width = Math.max(width, Math.ceil(r.width), el.offsetWidth || 0, el.scrollWidth || 0);
+            height = Math.max(height, Math.ceil(r.bottom - rect.top), el.offsetHeight || 0, el.scrollHeight || 0);
+        });
+
+        return { width, height };
+    },
+
+    inlineStyles: function (source, clone) {
+        const sourceNodes = [source, ...source.querySelectorAll('*')];
+        const cloneNodes = [clone, ...clone.querySelectorAll('*')];
+
+        sourceNodes.forEach((src, index) => {
+            const dst = cloneNodes[index];
+            if (!dst) return;
+            const computed = window.getComputedStyle(src);
+            let cssText = '';
+            for (let i = 0; i < computed.length; i++) {
+                const prop = computed[i];
+                cssText += `${prop}:${computed.getPropertyValue(prop)};`;
+            }
+            dst.style.cssText = cssText;
+        });
+    },
+
+    prepareClone: function (clone, width) {
+        clone.querySelectorAll('[data-copy-hidden="true"]').forEach(el => el.remove());
+        clone.style.background = '#fff';
+        clone.style.overflow = 'visible';
+        clone.style.width = `${width}px`;
+        clone.style.maxWidth = 'none';
+        clone.style.boxShadow = 'none';
+
+        clone.querySelectorAll('.pivot-wrap').forEach(el => {
+            el.style.overflow = 'visible';
+            el.style.width = 'auto';
+            el.style.maxWidth = 'none';
+        });
+
+        clone.querySelectorAll('.pivot-table, table').forEach(el => {
+            el.style.setProperty('table-layout', 'auto', 'important');
+            el.style.setProperty('width', 'max-content', 'important');
+            el.style.setProperty('min-width', '100%', 'important');
+            el.style.setProperty('max-width', 'none', 'important');
+        });
+
+        this.prepareTableTextForCopy(clone);
+
+        clone.querySelectorAll('th').forEach(el => {
+            el.style.position = 'static';
+            el.style.top = 'auto';
+        });
+    },
+
+    prepareTableTextForCopy: function (root) {
+        root.querySelectorAll('.pivot-table th, .pivot-table td, table th, table td').forEach(el => {
+            el.style.overflow = 'visible';
+            el.style.textOverflow = 'clip';
+        });
+
+        const valueCells = Array.from(root.querySelectorAll('.pivot-table th:not(.label-th):not(.sep-th), .pivot-table td:not(.label-td):not(.sep-td)'))
+            .filter(el => (el.colSpan || 1) === 1);
+
+        valueCells.forEach(el => {
+            const style = window.getComputedStyle(el);
+            el.style.boxSizing = 'border-box';
+            el.style.paddingLeft = `${Math.max(this.cssPx(style.paddingLeft), 5)}px`;
+            el.style.paddingRight = `${Math.max(this.cssPx(style.paddingRight), 5)}px`;
+            el.style.maxWidth = 'none';
+        });
+
+        root.querySelectorAll('.ppm-cell-value, .ppm-delta').forEach(el => {
+            el.style.lineHeight = '1.22';
+            el.style.overflow = 'visible';
+        });
+
+        this.applyCopyCellWidths(valueCells);
+    },
+
+    applyCopyCellWidths: function (cells) {
+        if (!cells || !cells.length) return;
+
+        const measurer = document.createElement('span');
+        measurer.style.position = 'fixed';
+        measurer.style.left = '-100000px';
+        measurer.style.top = '0';
+        measurer.style.visibility = 'hidden';
+        measurer.style.pointerEvents = 'none';
+        measurer.style.whiteSpace = 'nowrap';
+        document.body.appendChild(measurer);
+
+        try {
+            cells.forEach(cell => {
+                const style = window.getComputedStyle(cell);
+                const paddingLeft = Math.max(this.cssPx(style.paddingLeft), 5);
+                const paddingRight = Math.max(this.cssPx(style.paddingRight), 5);
+                const measuredText = this.measureCellTextWidth(cell, measurer);
+                const currentWidth = Math.ceil(cell.getBoundingClientRect().width);
+                const floor = cell.tagName === 'TD' ? 64 : 54;
+                const width = Math.ceil(Math.max(currentWidth, measuredText + paddingLeft + paddingRight + 10, floor));
+
+                cell.style.setProperty('box-sizing', 'border-box', 'important');
+                cell.style.setProperty('width', `${width}px`, 'important');
+                cell.style.setProperty('min-width', `${width}px`, 'important');
+                cell.style.setProperty('max-width', 'none', 'important');
+            });
+        } finally {
+            measurer.remove();
+        }
+    },
+
+    measureCellTextWidth: function (cell, measurer) {
+        const parts = Array.from(cell.querySelectorAll('.ppm-cell-value, .ppm-delta'));
+        if (parts.length) {
+            return parts.reduce((max, part) => {
+                const text = this.copyText(part);
+                if (!text) return max;
+                return Math.max(max, this.measureTextWidth(text, window.getComputedStyle(part), measurer));
+            }, 0);
+        }
+
+        const text = this.copyText(cell);
+        return text ? this.measureTextWidth(text, window.getComputedStyle(cell), measurer) : 0;
+    },
+
+    measureTextWidth: function (text, style, measurer) {
+        measurer.style.font = this.canvasFont(style);
+        measurer.style.fontVariantNumeric = style.fontVariantNumeric || 'normal';
+        measurer.style.letterSpacing = style.letterSpacing || 'normal';
+        measurer.textContent = text;
+        return Math.ceil(measurer.getBoundingClientRect().width);
+    },
+
+    renderTablesToCanvas: function (source) {
+        const initialSize = this.measure(source);
+        const host = document.createElement('div');
+        host.style.position = 'fixed';
+        host.style.left = '-100000px';
+        host.style.top = '0';
+        host.style.width = `${initialSize.width}px`;
+        host.style.background = '#fff';
+        host.style.pointerEvents = 'none';
+        host.style.zIndex = '-1';
+
+        const clone = source.cloneNode(true);
+        host.appendChild(clone);
+        document.body.appendChild(host);
+
+        try {
+            this.prepareClone(clone, initialSize.width);
+            return this.drawTablesFromElement(clone);
+        } finally {
+            host.remove();
+        }
+    },
+
+    drawTablesFromElement: function (root) {
+        const items = [];
+
+        root.querySelectorAll('.card-header').forEach(header => {
+            const rect = header.getBoundingClientRect();
+            if (this.isRenderable(header, rect)) {
+                items.push({ type: 'header', el: header, rect });
+            }
+        });
+
+        root.querySelectorAll('.pivot-table, table').forEach(table => {
+            Array.from(table.rows || []).forEach(row => {
+                Array.from(row.cells || []).forEach(cell => {
+                    const rect = cell.getBoundingClientRect();
+                    if (this.isRenderable(cell, rect)) {
+                        items.push({ type: 'cell', el: cell, rect });
+                    }
+                });
+            });
+        });
+
+        if (!items.length) {
+            throw new Error('No copyable table was found.');
+        }
+
+        const bounds = items.reduce((acc, item) => ({
+            left: Math.min(acc.left, item.rect.left),
+            top: Math.min(acc.top, item.rect.top),
+            right: Math.max(acc.right, item.rect.right),
+            bottom: Math.max(acc.bottom, item.rect.bottom)
+        }), {
+            left: Number.POSITIVE_INFINITY,
+            top: Number.POSITIVE_INFINITY,
+            right: Number.NEGATIVE_INFINITY,
+            bottom: Number.NEGATIVE_INFINITY
+        });
+
+        const padding = 4;
+        const rowHeightScale = 1;
+        const width = Math.ceil(bounds.right - bounds.left + padding * 2);
+        const height = Math.ceil((bounds.bottom - bounds.top) * rowHeightScale + padding * 2);
+        const scale = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.ceil(width * scale);
+        canvas.height = Math.ceil(height * scale);
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, width, height);
+
+        items
+            .sort((a, b) => (a.rect.top - b.rect.top) || (a.rect.left - b.rect.left))
+            .forEach(item => {
+                const x = item.rect.left - bounds.left + padding;
+                const y = (item.rect.top - bounds.top) * rowHeightScale + padding;
+                const w = item.rect.width;
+                const h = item.rect.height * rowHeightScale;
+
+                if (item.type === 'header') {
+                    this.drawHeader(ctx, item.el, x, y, w, h);
+                } else {
+                    this.drawCell(ctx, item.el, x, y, w, h);
+                }
+            });
+
+        return canvas;
+    },
+
+    isRenderable: function (el, rect) {
+        if (!rect || rect.width <= 0 || rect.height <= 0) return false;
+        const style = window.getComputedStyle(el);
+        return style.display !== 'none' && style.visibility !== 'hidden';
+    },
+
+    drawHeader: function (ctx, header, x, y, w, h) {
+        const style = window.getComputedStyle(header);
+        ctx.fillStyle = this.canvasColor(style.backgroundColor, '#f8fafc');
+        ctx.fillRect(x, y, w, h);
+        this.drawBorder(ctx, x, y, w, h, style);
+
+        const text = this.copyText(header);
+        if (!text) return;
+
+        this.drawText(ctx, text, x + 8, y, Math.max(0, w - 16), h, style, {
+            align: 'left',
+            baseline: 'middle'
+        });
+    },
+
+    drawCell: function (ctx, cell, x, y, w, h) {
+        const style = window.getComputedStyle(cell);
+        ctx.fillStyle = this.canvasColor(style.backgroundColor, '#fff');
+        ctx.fillRect(x, y, w, h);
+        this.drawBorder(ctx, x, y, w, h, style);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x + 1, y + 1, Math.max(0, w - 2), Math.max(0, h - 2));
+        ctx.clip();
+
+        const valueEl = cell.querySelector('.ppm-cell-value');
+        const deltaEl = cell.querySelector('.ppm-delta');
+        if (valueEl) {
+            const valueStyle = window.getComputedStyle(valueEl);
+            const deltaStyle = deltaEl ? window.getComputedStyle(deltaEl) : null;
+            const valueText = this.copyText(valueEl);
+            const deltaText = deltaEl ? this.copyText(deltaEl) : '';
+
+            if (deltaText) {
+                const valueLineHeight = this.canvasLineHeight(valueStyle);
+                const deltaLineHeight = this.canvasLineHeight(deltaStyle);
+                const gap = Math.max(1, this.cssPx(deltaStyle.marginTop));
+                const blockHeight = valueLineHeight + gap + deltaLineHeight;
+                const blockTop = y + Math.max(1, (h - blockHeight) / 2);
+
+                this.drawText(ctx, valueText, x, blockTop, w, valueLineHeight, valueStyle, {
+                    align: 'right',
+                    baseline: 'middle'
+                });
+                this.drawText(ctx, deltaText, x, blockTop + valueLineHeight + gap, w, deltaLineHeight, deltaStyle, {
+                    align: 'right',
+                    baseline: 'middle'
+                });
+            } else {
+                this.drawText(ctx, valueText, x, y, w, h, valueStyle, {
+                    align: style.textAlign,
+                    baseline: 'middle'
+                });
+            }
+        } else {
+            const text = this.copyText(cell);
+            if (text) {
+                this.drawText(ctx, text, x, y, w, h, style, {
+                    align: style.textAlign,
+                    baseline: 'middle'
+                });
+            }
+        }
+
+        ctx.restore();
+    },
+
+    drawBorder: function (ctx, x, y, w, h, style) {
+        const color = this.canvasColor(style.borderTopColor, '#9ca3af');
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = Math.max(1, this.cssPx(style.borderTopWidth) || 1);
+        ctx.strokeRect(x + 0.5, y + 0.5, Math.max(0, w - 1), Math.max(0, h - 1));
+        ctx.restore();
+    },
+
+    drawText: function (ctx, text, x, y, w, h, style, options) {
+        const paddingLeft = this.cssPx(style.paddingLeft);
+        const paddingRight = this.cssPx(style.paddingRight);
+        const align = (options && options.align) || style.textAlign || 'left';
+        const baseline = (options && options.baseline) || 'middle';
+        const maxWidth = Math.max(0, w - paddingLeft - paddingRight);
+        if (!text || maxWidth <= 0) return;
+
+        ctx.save();
+        ctx.font = this.canvasFont(style);
+        ctx.fillStyle = this.canvasColor(style.color, '#111827');
+        ctx.textBaseline = baseline;
+
+        let textX = x + paddingLeft;
+        ctx.textAlign = 'left';
+        if (align === 'center') {
+            textX = x + w / 2;
+            ctx.textAlign = 'center';
+        } else if (align === 'right' || align === 'end') {
+            textX = x + w - paddingRight;
+            ctx.textAlign = 'right';
+        }
+
+        let textY = y + h / 2;
+        if (baseline === 'top') {
+            textY = y;
+        } else if (baseline === 'bottom') {
+            textY = y + h;
+        }
+
+        ctx.fillText(this.fitText(ctx, text, maxWidth), textX, textY);
+        ctx.restore();
+    },
+
+    fitText: function (ctx, text, maxWidth) {
+        if (ctx.measureText(text).width <= maxWidth) return text;
+        if (maxWidth <= ctx.measureText('...').width) return '';
+
+        let lo = 0;
+        let hi = text.length;
+        while (lo < hi) {
+            const mid = Math.ceil((lo + hi) / 2);
+            if (ctx.measureText(text.slice(0, mid) + '...').width <= maxWidth) lo = mid;
+            else hi = mid - 1;
+        }
+        return text.slice(0, lo) + '...';
+    },
+
+    copyText: function (el) {
+        const clone = el.cloneNode(true);
+        clone.querySelectorAll('[data-copy-hidden="true"], button, script, style').forEach(node => node.remove());
+        return (clone.textContent || '').replace(/\s+/g, ' ').trim();
+    },
+
+    canvasFont: function (style) {
+        return `${style.fontStyle || 'normal'} ${style.fontWeight || '400'} ${style.fontSize || '12px'} ${style.fontFamily || 'sans-serif'}`;
+    },
+
+    canvasLineHeight: function (style) {
+        if (!style) return 12;
+
+        const lineHeight = this.cssPx(style.lineHeight);
+        if (lineHeight > 0) return lineHeight;
+
+        const fontSize = this.cssPx(style.fontSize) || 12;
+        return Math.ceil(fontSize * 1.2);
+    },
+
+    cssPx: function (value) {
+        const n = Number.parseFloat(value || '0');
+        return Number.isFinite(n) ? n : 0;
+    },
+
+    canvasColor: function (value, fallback) {
+        if (!value || value === 'transparent') return fallback;
+        const compact = value.replace(/\s+/g, '');
+        if (compact === 'rgba(0,0,0,0)' || compact.endsWith(',0)')) return fallback;
+        return value;
+    },
+
+    loadImage: function (url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('Failed to load rendered SVG image.'));
+            img.src = url;
+        });
+    }
+};
+
 window.ngRateChart = {
     _instances: {},
+    _valueLabelsPlugin: {
+        id: 'ngRateSummaryValueLabels',
+        afterDatasetsDraw: function (chart) {
+            const options = chart.options.plugins.ngRateSummaryValueLabels || {};
+            if (options.display === false) return;
+
+            const ctx = chart.ctx;
+            ctx.save();
+            ctx.font = '600 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillStyle = '#111827';
+
+            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                if (dataset.type !== 'line' || !chart.isDatasetVisible(datasetIndex)) return;
+                const meta = chart.getDatasetMeta(datasetIndex);
+
+                meta.data.forEach((point, pointIndex) => {
+                    const value = dataset.data[pointIndex];
+                    if (value == null || !Number.isFinite(Number(value))) return;
+
+                    const y = Math.max(chart.chartArea.top + 12, point.y - 8);
+                    ctx.fillText(Number(value).toLocaleString(), point.x, y);
+                });
+            });
+
+            ctx.restore();
+        }
+    },
 
     render: function (canvasId, labels, barDatasets, totalDataset) {
         if (this._instances[canvasId]) {
@@ -21,11 +846,15 @@ window.ngRateChart = {
         this._instances[canvasId] = new Chart(canvas, {
             type: 'bar',
             data: { labels: labels, datasets: datasets },
+            plugins: [this._valueLabelsPlugin],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
+                    ngRateSummaryValueLabels: {
+                        display: labels.filter(l => l !== '').length <= 14
+                    },
                     legend: {
                         position: 'bottom',
                         labels: { boxWidth: 12, padding: 10, font: { size: 10 } }
@@ -111,10 +940,39 @@ document.addEventListener('DOMContentLoaded', () => {
 window.ngRateGroupChart = {
     _instances: {},
     _palette: [
-        '#6366f1', '#14b8a6', '#f97316', '#ef4444', '#8b5cf6',
-        '#0ea5e9', '#f59e0b', '#10b981', '#ec4899', '#64748b',
-        '#a855f7', '#22c55e', '#eab308', '#06b6d4', '#dc2626'
+        '#4f46e5', '#2563eb', '#14b8a6', '#f97316', '#ef4444',
+        '#8b5cf6', '#0ea5e9', '#f59e0b', '#10b981', '#ec4899',
+        '#64748b', '#a855f7', '#22c55e', '#eab308', '#06b6d4'
     ],
+    _valueLabelsPlugin: {
+        id: 'ngRateValueLabels',
+        afterDatasetsDraw: function (chart) {
+            const options = chart.options.plugins.ngRateValueLabels || {};
+            if (options.display === false) return;
+
+            const ctx = chart.ctx;
+            ctx.save();
+            ctx.font = '600 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillStyle = '#111827';
+
+            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                if (!chart.isDatasetVisible(datasetIndex)) return;
+                const meta = chart.getDatasetMeta(datasetIndex);
+
+                meta.data.forEach((point, pointIndex) => {
+                    const value = dataset.data[pointIndex];
+                    if (value == null || !Number.isFinite(Number(value))) return;
+
+                    const y = Math.max(chart.chartArea.top + 12, point.y - 8);
+                    ctx.fillText(Number(value).toLocaleString(), point.x, y);
+                });
+            });
+
+            ctx.restore();
+        }
+    },
 
     render: function (canvasId, labels, series) {
         if (this._instances[canvasId]) {
@@ -133,26 +991,38 @@ window.ngRateGroupChart = {
                 label: s.name,
                 data: s.values,
                 borderColor: color,
-                backgroundColor: color + '22',
+                backgroundColor: color + '18',
                 borderWidth: 2,
+                pointBackgroundColor: color,
+                pointBorderColor: color,
                 pointRadius: 3,
                 pointHoverRadius: 5,
                 spanGaps: false, // don't bridge across separators / missing points
-                tension: 0.25,
+                tension: 0.4,
             };
         });
 
         this._instances[canvasId] = new Chart(canvas, {
             type: 'line',
             data: { labels: labels, datasets: datasets },
+            plugins: [this._valueLabelsPlugin],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
+                    ngRateValueLabels: {
+                        display: datasets.length <= 2 && labels.filter(l => l !== '').length <= 14
+                    },
                     legend: {
                         position: 'bottom',
-                        labels: { boxWidth: 12, padding: 8, font: { size: 10 } }
+                        labels: {
+                            boxWidth: 10,
+                            padding: 8,
+                            usePointStyle: true,
+                            font: { size: 10 },
+                            color: '#111827'
+                        }
                     },
                     tooltip: {
                         filter: item => !sepIdx.has(item.dataIndex),
@@ -168,11 +1038,13 @@ window.ngRateGroupChart = {
                             maxRotation: 0,
                             callback: function (val, i) { return sepIdx.has(i) ? '' : labels[i]; }
                         },
-                        grid: { color: ctx => sepIdx.has(ctx.index) ? '#94a3b8' : '#f1f5f9' }
+                        grid: { color: ctx => sepIdx.has(ctx.index) ? '#cbd5e1' : '#edf2f7' },
+                        border: { color: '#cbd5e1' }
                     },
                     y: {
                         ticks: { font: { size: 10 }, callback: v => v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v },
-                        grid: { color: '#e2e8f0' },
+                        grid: { color: '#e5e7eb' },
+                        border: { display: false },
                         beginAtZero: true,
                     }
                 }
@@ -614,6 +1486,20 @@ window.downloadBase64File = function (filename, base64, contentType) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+};
+
+window.downloadFileFromStream = async function (filename, contentStreamReference, contentType) {
+    const arrayBuffer = await contentStreamReference.arrayBuffer();
+    const blob = new Blob([arrayBuffer], { type: contentType || 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 };
 
 window.diDragDrop = {
@@ -1089,6 +1975,42 @@ window.diFullPage = {
     }
 };
 
+window.didbLazy = {
+    _dotnet: null,
+    _el: null,
+    _onScroll: null,
+    _pending: false,
+
+    init: function (dotnetRef) {
+        this.dispose();
+        this._dotnet = dotnetRef;
+        this._el = document.querySelector('.didb-table-wrap');
+        if (!this._el) return;
+
+        this._onScroll = () => {
+            if (!this._dotnet || !this._el || this._pending) return;
+            const remaining = this._el.scrollHeight - this._el.scrollTop - this._el.clientHeight;
+            if (remaining > 700) return;
+
+            this._pending = true;
+            Promise.resolve(this._dotnet.invokeMethodAsync('LoadMoreDatasets'))
+                .finally(() => window.setTimeout(() => { this._pending = false; }, 80));
+        };
+
+        this._el.addEventListener('scroll', this._onScroll, { passive: true });
+        window.setTimeout(this._onScroll, 0);
+    },
+
+    dispose: function () {
+        if (this._el && this._onScroll)
+            this._el.removeEventListener('scroll', this._onScroll);
+        this._dotnet = null;
+        this._el = null;
+        this._onScroll = null;
+        this._pending = false;
+    }
+};
+
 // ?? Paste Image Handler ???????????????????????????????????????????????????????
 window.pasteImageHandler = {
     _dotnetRef: null,
@@ -1244,5 +2166,17 @@ window.backupFileHandler = {
     }
 };
 
+window.jinoDailyTest = window.jinoDailyTest || {};
+window.jinoDailyTest.openHtml = function (title, html) {
+    const win = window.open('', '_blank');
+    if (!win) return false;
 
-
+    win.document.open();
+    win.document.write(html || '');
+    win.document.close();
+    try {
+        win.document.title = title || 'Daily Test Data Analysis';
+        win.focus();
+    } catch (_) { }
+    return true;
+};

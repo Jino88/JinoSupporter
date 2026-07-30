@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 282,
+  "sourceFile": "14. BRS-161016  Report Test material PT 161016 Happen NG Hardness date16.10.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\282.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:09Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 282,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid source rows but misgroups test methods as changed conditions and has an auto drop-test citation error.",
+    "issues": [
+      "Changed factor incorrectly includes Drop Test Manual/Auto as changed conditions.",
+      "Drop Test Manual/Auto should be subgroup or method context under PT Test vs Normal.",
+      "Auto drop-test comparison uses manual Normal row instead of auto Normal row.",
+      "Decap bond result is cited but missing as an outcome.",
+      "Decision rows are not used to support summarized conclusions."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to Normal vs PT Test material condition.",
+      "Treat Manual and Auto as drop-test method subgroups.",
+      "Fix auto drop-test evidence and control values to use row 29 with row 28.",
+      "Add decap bond outcome using rows 16 and 17 or remove those citations.",
+      "Cite decision rows 34 to 36 for final outcome support."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping and one comparison citation are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3881,
+    "output_tokens": 679,
+    "total_tokens": 4560
+  }
+}

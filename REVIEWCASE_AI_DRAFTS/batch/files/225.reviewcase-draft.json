@@ -1,0 +1,321 @@
+{
+  "sourceFileId": 225,
+  "sourceFile": "11. BRS-161014 Report test Yoke of V0 and V1 jig  date 25.1.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\11. BRS-161014 Report test Yoke of V0 and V1 jig  date 25.1.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report (2)",
+    "sheetRowCount": 19,
+    "sheetCellCount": 91,
+    "comparisonPairCount": 2,
+    "metricCandidateCount": 3,
+    "measurementStatCount": 6
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report (2)!2",
+      "sheetName": "Report (2)",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST YOKE ASS'Y ADHESION V0/V1 JIG - 161014 | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report (2)!3",
+      "sheetName": "Report (2)",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date | 2024-01-25 00:00:00"
+    },
+    {
+      "rowId": "Report (2)!4",
+      "sheetName": "Report (2)",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker | Trung"
+    },
+    {
+      "rowId": "Report (2)!5",
+      "sheetName": "Report (2)",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report (2)!6",
+      "sheetName": "Report (2)",
+      "rowNumber": 6,
+      "rowText": "| - To find reason NG hearing"
+    },
+    {
+      "rowId": "Report (2)!7",
+      "sheetName": "Report (2)",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report (2)!8",
+      "sheetName": "Report (2)",
+      "rowNumber": 8,
+      "rowText": "| - To separate Yoke of 2 type jig Yoke ass'y adhesion V0 and V1 jig, move main 2 make final and compare NG rate of function"
+    },
+    {
+      "rowId": "Report (2)!19",
+      "sheetName": "Report (2)",
+      "rowNumber": 19,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Report (2)!20",
+      "sheetName": "Report (2)",
+      "rowNumber": 20,
+      "rowText": "| | 1. RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "Report (2)!21",
+      "sheetName": "Report (2)",
+      "rowNumber": 21,
+      "rowText": "| | Date | Line | Type | Input | OK | Sigma | | | | Hearing | | HOHD | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "Report (2)!22",
+      "sheetName": "Report (2)",
+      "rowNumber": 22,
+      "rowText": "| | | | | | | SPL | THD | SPL+THD | SPL+THD+F0 | Noise | Touch"
+    },
+    {
+      "rowId": "Report (2)!23",
+      "sheetName": "Report (2)",
+      "rowNumber": 23,
+      "rowText": "| | 2024-01-25 00:00:00 | E2 | Test V0 jig | 500 | 497 | 0 | 1 | 0 | 0 | 2 | 0 | 0 | 3 | 0.006"
+    },
+    {
+      "rowId": "Report (2)!25",
+      "sheetName": "Report (2)",
+      "rowNumber": 25,
+      "rowText": "| | | | Test V1 jig | 498 | 497 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 1 | 0.00200803"
+    },
+    {
+      "rowId": "Report (2)!27",
+      "sheetName": "Report (2)",
+      "rowNumber": 27,
+      "rowText": "| | | | Normal ( V0+V1 jig) | 800 | 795 | 0 | 0 | 1 | 0 | 4 | 0 | 0 | 5 | 0.00625"
+    },
+    {
+      "rowId": "Report (2)!30",
+      "sheetName": "Report (2)",
+      "rowNumber": 30,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-225-rc-1",
+      "reviewTitle": "REPORT TEST YOKE ASS'Y ADHESION V0/V1 JIG - 161014 | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To find reason NG hearing / | II. Content. / | - To separate Yoke of 2 type jig Yoke ass'y adhesion V0 and V1 jig, move main 2 make final and compare NG rate of function / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material",
+            "jig",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal ( V0+V1 jig) vs Test V0 jig, Test V1 jig",
+          "baselineCondition": "Normal ( V0+V1 jig)",
+          "changedCondition": "Test V0 jig, Test V1 jig",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Report (2)!2",
+            "Report (2)!22",
+            "Report (2)!23",
+            "Report (2)!25",
+            "Report (2)!27",
+            "Report (2)!5",
+            "Report (2)!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "1. RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "Report (2)!23",
+            "Report (2)!25",
+            "Report (2)!27"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 3704,
+              "controlCondition": "Normal ( V0+V1 jig)",
+              "testCondition": "Test V0 jig",
+              "control": {
+                "input": 800.0,
+                "ng": 5.0,
+                "ratePercent": 0.625
+              },
+              "test": {
+                "input": 500.0,
+                "ng": 3.0,
+                "ratePercent": 0.6
+              },
+              "deltaRatePercentPoint": -0.025000000000000022,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Report (2)!23",
+                "Report (2)!27"
+              ]
+            },
+            {
+              "pairId": 3705,
+              "controlCondition": "Normal ( V0+V1 jig)",
+              "testCondition": "Test V1 jig",
+              "control": {
+                "input": 800.0,
+                "ng": 5.0,
+                "ratePercent": 0.625
+              },
+              "test": {
+                "input": 498.0,
+                "ng": 1.0,
+                "ratePercent": 0.200803
+              },
+              "deltaRatePercentPoint": -0.42419700000000005,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Report (2)!25",
+                "Report (2)!27"
+              ]
+            }
+          ],
+          "limitations": []
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Line | Type | Input | OK | Sigma | Hearing | HOHD | Total NG | Total NG rate",
+          "comparisonRows": [
+            "Report (2)!22"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 50346,
+              "condition": "Sigma / SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!22"
+              ]
+            },
+            {
+              "statId": 50347,
+              "condition": "Sigma / THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.22222222166666664,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!22"
+              ]
+            },
+            {
+              "statId": 50348,
+              "condition": "Sigma / SPL+THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.19999999999999998,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!22"
+              ]
+            },
+            {
+              "statId": 50349,
+              "condition": "Sigma / SPL+THD+F0",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!22"
+              ]
+            },
+            {
+              "statId": 50350,
+              "condition": "Hearing / Noise",
+              "spec": "",
+              "min": 0.66666667,
+              "max": 4.0,
+              "avg": 1.5777777783333333,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!22"
+              ]
+            },
+            {
+              "statId": 50351,
+              "condition": "Hearing / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!22"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report (2)!2",
+        "Report (2)!22",
+        "Report (2)!23",
+        "Report (2)!25",
+        "Report (2)!27",
+        "Report (2)!5",
+        "Report (2)!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report (2)!2",
+      "Report (2)!22",
+      "Report (2)!23",
+      "Report (2)!25",
+      "Report (2)!27",
+      "Report (2)!5",
+      "Report (2)!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

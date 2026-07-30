@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 325,
+  "sourceFile": "17. BRS-161014 DT  Report test VP NG spread, oily surface ( Loang dầu) date 28.10.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\325.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:34Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 325,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The draft captures relevant result areas but the primary changed factor and test condition are not sufficiently proven from the provided rows.",
+    "issues": [
+      "Changed condition appears taken from problem text, not clearly from comparable result rows.",
+      "Rows supporting test condition labels are cited but not shown in provided context.",
+      "Decap NG sheet is related analysis but not integrated or explicitly excluded.",
+      "Tension result has no Normal comparator, so it should not be framed as a Normal comparison."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended comparison Normal vs the defect lot, or only a defect-lot investigation?"
+    ],
+    "correctionPlan": [
+      "Inspect rows 20, 25, and 32 to confirm actual Type or condition labels.",
+      "Revise changed factor to match the workbook's explicit compared conditions.",
+      "Separate non-comparative defect analysis from comparative validation outcomes if needed.",
+      "Mark tension test as single-condition evidence unless a Normal row exists.",
+      "State how the Decap NG sheet supports or is excluded from the case."
+    ],
+    "evidencePolicy": "Row citations exist, but key changed-condition evidence is not sufficiently demonstrated."
+  },
+  "usage": {
+    "input_tokens": 4066,
+    "output_tokens": 772,
+    "total_tokens": 4838
+  }
+}

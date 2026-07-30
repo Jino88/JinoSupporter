@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 393,
+  "sourceFile": "20. BRS161016 PQC DATA Gauss checking result_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\393.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 393,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but the changed factor, grouping, and some statistics are not verified enough for final evidence.",
+    "issues": [
+      "Changed factor is a filename, not the actual Baotou maglong vs China Machine comparison.",
+      "Baseline and changed conditions are not assigned from source context.",
+      "Spec/violation handling appears wrong for semi yoke where a value below 480G is present.",
+      "Sample counts for aggregate MG rows appear unreliable.",
+      "Sheet2 duplicate/summary role is unclear and Sheet3 PQC status outcomes are omitted."
+    ],
+    "requiredUserQuestions": [
+      "Should Baotou maglong or China Machine be treated as baseline?",
+      "Is Sheet2 only a duplicate summary/chart source or a separate outcome?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to the actual compared conditions and domains.",
+      "Define baseline and changed condition or mark as side-by-side comparison if no baseline exists.",
+      "Recalculate sample counts and violations from detailed rows for each section.",
+      "Separate MG gauss and semi-yoke gauss outcomes while keeping shared comparison context.",
+      "Decide whether to include Sheet3 PQC NG/status rows as an additional outcome or exclude with reason."
+    ],
+    "evidencePolicy": "Row citations exist, but aggregate-only citations are insufficient without headers, specs, and detailed sample rows."
+  },
+  "usage": {
+    "input_tokens": 3689,
+    "output_tokens": 810,
+    "total_tokens": 4499
+  }
+}

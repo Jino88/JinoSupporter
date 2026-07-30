@@ -100,7 +100,7 @@
                         </div>
                         @if (g.MidGroups.Count == 0)
                         {
-                            <div class="text-muted small ps-2 py-1">(empty — click an S-GR in the right panel or click "+ Model")</div>
+                            <div class="text-muted small ps-2 py-1">(empty - click a Shift Group in the right panel or click "+ Model")</div>
                         }
                         else
                         {
@@ -118,7 +118,7 @@
                                             @if (midAct)
                                             {
                                                 <span class="grp-active-dot"
-                                                      title="Shift-Groups go into the active group">●</span>
+                                                      title="Shift Groups go into the active model">●</span>
                                             }
                                             <span class="mid-badge" title="Model Name">Model</span>
                                             <input class="mid-name-input"
@@ -128,9 +128,9 @@
                                                    placeholder="Model" />
                                             <span class="text-muted ms-1" style="font-size:10px;">@mid.TotalLineShifts</span>
                                             <button class="btn btn-sm btn-outline-primary py-0 px-2 ms-auto"
-                                                    title="Add line-group"
+                                                    title="Add sub group"
                                                     @onclick="() => AddSubGroupAtMidTop(gidx, midx)"
-                                                    @onclick:stopPropagation="true">+ S-GR</button>
+                                                    @onclick:stopPropagation="true">+ Sub Group</button>
                                             <button class="btn btn-sm btn-outline-danger py-0 px-2"
                                                     title="Remove mid-group"
                                                     @onclick="() => RemoveMidGroupAt(gidx, midx)"
@@ -194,7 +194,7 @@
                         else
                         {
                             <span>No data in BmesMaterials table.</span><br />
-                            <span>Please run "Fetch all materials" in BMES Setting first.</span>
+                            <span>Please run "Fetch all materials" in Setting first.</span>
                         }
                     </div>
                 }
@@ -231,11 +231,11 @@
         </div>
     </div>
 
-    <!-- ══ Right: Shift-Groups for selected Maktx ═══════════════════════════ -->
+    <!-- Right: Shift Groups for selected Maktx -->
     <div class="col-md-4">
         <div class="card shadow-sm">
             <div class="card-header fw-semibold small d-flex align-items-center gap-2">
-                <span>🧭 Shift-Groups</span>
+                <span>🧭 Shift Groups</span>
                 @if (!string.IsNullOrEmpty(_selectedMaktx))
                 {
                     <span class="text-muted" style="font-size:11px;">— @_selectedMaktx</span>
@@ -258,7 +258,7 @@
                 else if (_lineShifts.Count == 0)
                 {
                     <div class="text-center text-muted py-4 small">
-                        No Shift-Group in DB for this MATERIALNAME.
+                        No Shift Group in DB for this MATERIALNAME.
                     </div>
                 }
                 else
@@ -268,7 +268,7 @@
                         <thead>
                             <tr>
                                 <th style="width:38px;">#</th>
-                                <th>Shift-Group</th>
+                                <th>Shift Group</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -629,8 +629,13 @@
 
         try
         {
-            var result = await BmesSettingsSync.PullModelGroupsFromServerAsync();
-            if (result.Succeeded)
+            var groupResult = await BmesSettingsSync.PullModelGroupsFromServerAsync();
+            var materialResult = await BmesSettingsSync.PullBmesMaterialsFromServerAsync();
+
+            if (materialResult.Succeeded)
+                Reload();
+
+            if (groupResult.Succeeded)
             {
                 bool loaded = LoadGroupsFromDb();
                 if (!loaded)
@@ -640,16 +645,33 @@
                     _activeMidIdx = -1;
                     _activeSub = null;
                 }
+            }
 
-                _saveStatus = result.Rows > 0
-                    ? $"Loaded {result.Rows} model group(s) from server DB. Local DB saved."
-                    : "Server DB has no model groups. Using local empty group.";
-                _saveError = false;
+            var messages = new List<string>();
+            if (groupResult.Succeeded)
+            {
+                messages.Add(groupResult.Rows > 0
+                    ? $"Loaded {groupResult.Rows} model group(s) from server DB."
+                    : "Server DB has no model groups. Using local empty group.");
             }
             else
             {
-                _saveStatus = $"Server model group load failed. Using local DB: {result.Message}";
-                _saveError = true;
+                messages.Add($"Server model group load failed. Using local DB: {groupResult.Message}");
+            }
+
+            messages.Add(materialResult.Succeeded
+                ? $"Loaded {materialResult.Rows:N0} BMES material row(s) from server DB."
+                : $"BMES Materials load failed: {materialResult.Message}");
+
+            _saveStatus = string.Join(" ", messages);
+            _saveError = !groupResult.Succeeded || !materialResult.Succeeded;
+
+            if (materialResult.Succeeded
+                && string.IsNullOrEmpty(_selectedMaktx)
+                && _focusMaterials.Count > 0
+                && _rows.Count > 0)
+            {
+                await OnSelectRow(_rows[0].Maktx, _rows[0].Mtype);
             }
         }
         finally
@@ -772,7 +794,7 @@
         if (list is null) return;
         var newSub = new SubGroupVm { Name = $"Line {list.Count + 1}" };
         list.Add(newSub);
-        _activeSub = newSub;
+        SetActiveSubRef(newSub);
     }
 
     private void AddSubGroupAtMidTop(int groupIdx, int midIdx)
@@ -826,7 +848,7 @@
         if (!CanMoveSubInto(source, target))
         {
             _saveError = true;
-            _saveStatus = "B-GR can only be dropped into another B-GR under the same Model.";
+            _saveStatus = "Sub Group can only be dropped into another Sub Group under the same Model.";
             return;
         }
 
@@ -835,9 +857,9 @@
 
         sourceList.Remove(source);
         target.SubGroups.Add(source);
-        _activeSub = source;
+        SetActiveSubRef(source);
         _saveError = false;
-        _saveStatus = $"Moved B-GR '{SubDisplayName(source)}' into '{SubDisplayName(target)}'.";
+        _saveStatus = $"Moved Sub Group '{SubDisplayName(source)}' into '{SubDisplayName(target)}'.";
     }
 
     /// <summary>Remove <paramref name="target"/> from whatever parent list contains it.</summary>
@@ -902,11 +924,16 @@
     }
 
     private static string SubDisplayName(SubGroupVm sub)
-        => string.IsNullOrWhiteSpace(sub.Name) ? "B-GR" : sub.Name;
+        => string.IsNullOrWhiteSpace(sub.Name) ? "Sub Group" : sub.Name;
 
     private void SetActiveSubRef(SubGroupVm sub)
     {
         _activeSub = sub;
+        if (TryFindSubLocation(sub, out int groupIdx, out int midIdx))
+        {
+            _activeGroupIdx = groupIdx;
+            _activeMidIdx = midIdx;
+        }
     }
 
     public bool IsActiveSub(SubGroupVm s) => ReferenceEquals(_activeSub, s);
@@ -929,6 +956,12 @@
         }
         if (_activeGroupIdx < 0 || _activeGroupIdx >= _groups.Count)
             _activeGroupIdx = _groups.Count - 1;
+
+        if (_activeSub is not null && TryFindSubLocation(_activeSub, out int activeSubGroupIdx, out int activeSubMidIdx))
+        {
+            _activeGroupIdx = activeSubGroupIdx;
+            _activeMidIdx = activeSubMidIdx;
+        }
 
         var grp = _groups[_activeGroupIdx];
         if (_activeMidIdx < 0 || _activeMidIdx >= grp.MidGroups.Count)
@@ -967,6 +1000,27 @@
         if (ReferenceEquals(parent, target)) return true;
         foreach (var c in parent.SubGroups)
             if (SubContains(c, target)) return true;
+        return false;
+    }
+
+    private bool TryFindSubLocation(SubGroupVm target, out int groupIdx, out int midIdx)
+    {
+        for (int gi = 0; gi < _groups.Count; gi++)
+        {
+            var grp = _groups[gi];
+            for (int mi = 0; mi < grp.MidGroups.Count; mi++)
+            {
+                if (SubBelongsToMid(target, grp.MidGroups[mi]))
+                {
+                    groupIdx = gi;
+                    midIdx = mi;
+                    return true;
+                }
+            }
+        }
+
+        groupIdx = -1;
+        midIdx = -1;
         return false;
     }
 

@@ -8,7 +8,7 @@ public sealed class AiProviderSettingsSnapshot
     public bool ClaudeCliEnabled { get; set; } = false;
     public bool ClaudeApiEnabled { get; set; } = true;
     public bool CodexCliEnabled  { get; set; } = true;
-    public bool CodexApiEnabled  { get; set; } = false;
+    public bool CodexApiEnabled  { get; set; } = true;
 }
 
 public sealed class AiProviderSettingsService

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 271,
+  "sourceFile": "13. TIU C11-20 Result test Frame load tray 2025.12.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\271.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:57Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 271,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable test-result evidence but misclassifies repeated trials as baseline/test changed conditions.",
+    "issues": [
+      "No explicit baseline or normal condition is cited.",
+      "Time 1-7 are repeated runs, not changed factors.",
+      "Changed factor should be improved test jig/frame load tray.",
+      "Metric header row is not cited in case evidence.",
+      "Judgement cannot compare improvement without prior baseline data."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Recast as single-condition validation of improved test jig/frame load tray.",
+      "Set baselineCondition to not provided rather than a comparator.",
+      "Move Time 1-7 and Total into subgroup or subResults only.",
+      "Add Test!21 as metric-header evidence.",
+      "Limit judgement to observed pickup NG rate unless baseline evidence is added."
+    ],
+    "evidencePolicy": "Row citations exist, but header and changed-factor support need correction before final use."
+  },
+  "usage": {
+    "input_tokens": 2806,
+    "output_tokens": 730,
+    "total_tokens": 3536
+  }
+}

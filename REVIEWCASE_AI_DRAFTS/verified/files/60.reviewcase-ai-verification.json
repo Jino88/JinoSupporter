@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 60,
+  "sourceFile": "024.MSU-20S15-07 Result check NTI test Frame improve R-PT_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\60.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:57Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 60,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid condition evidence but unsafe grouping and misparsed measurement outcomes require correction.",
+    "issues": [
+      "Review title is taken from a FO data row, not the report purpose.",
+      "Normal condition appears in data but is not handled as baseline, reference, or separate comparison.",
+      "FO measurement subresults are misparsed from labels instead of numeric FO values.",
+      "SPL/THD measurement evidence cites mainly header rows, not metric rows.",
+      "IMP and NTI summary sheets are omitted from outcome grouping."
+    ],
+    "requiredUserQuestions": [
+      "Should Normal be treated as reference baseline or excluded from the main comparison?",
+      "Is the primary change Test1 new yoke plus S/M jig versus Test2 normal yoke under the same R-PT frame?",
+      "Should SPL, THD, IMP, and FO all be retained as one validation case?"
+    ],
+    "correctionPlan": [
+      "Replace title and purpose with the report-level function/frame-improvement context.",
+      "Rebuild changed factor around Test1 new yoke plus S/M jig versus Test2 normal yoke, with Normal explicitly classified.",
+      "Reparse FO rows using numeric values and AVG row, removing label-derived stats.",
+      "Add actual SPL, THD, IMP, FO metric rows beyond headers for cited comparisons.",
+      "Group outcomes by Function, SPL, THD, IMP, and FO under the same changed-factor context."
+    ],
+    "evidencePolicy": "Condition citations are adequate, but measurement citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 8246,
+    "output_tokens": 843,
+    "total_tokens": 9089
+  }
+}

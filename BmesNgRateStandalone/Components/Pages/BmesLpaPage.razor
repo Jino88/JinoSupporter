@@ -1,0 +1,308 @@
+@page "/bmes/lpa"
+@using BmesNgRateStandalone.Services
+@inject BmesLpaScrapeService Lpa
+@inject BmesLpaHtmlExportService HtmlExport
+@inject BmesLpaImageService LpaImages
+@inject IJSRuntime JS
+@inject AppActivityLogger Activity
+
+<PageTitle>LPA</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span class="fw-semibold" style="font-size:18px;">LPA</span>
+    <h5 class="mb-0 fw-semibold">Layered Process Audit</h5>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body d-flex flex-wrap align-items-end gap-3">
+        <div>
+            <label class="form-label small fw-semibold mb-1" for="lpaFrom">Audit Date From</label>
+            <input id="lpaFrom" type="date" class="form-control form-control-sm"
+                   style="max-width:170px;" @bind="_from" />
+        </div>
+        <div>
+            <label class="form-label small fw-semibold mb-1" for="lpaTo">Audit Date To</label>
+            <input id="lpaTo" type="date" class="form-control form-control-sm"
+                   style="max-width:170px;" @bind="_to" />
+        </div>
+        <div>
+            <label class="form-label small fw-semibold mb-1" for="lpaFacco">FACCO</label>
+            <input id="lpaFacco" class="form-control form-control-sm"
+                   style="max-width:110px;" @bind="_facco" />
+        </div>
+        <button type="button" class="btn btn-success btn-sm" @onclick="SearchAsync" disabled="@_isBusy">
+            @if (_isBusy)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Loading…</span>
+            }
+            else
+            {
+                <span>Search</span>
+            }
+        </button>
+        @if (_lastResult is not null)
+        {
+            <button type="button" class="btn btn-outline-primary btn-sm"
+                    @onclick="ExportExcelAsync" disabled="@(_isBusy || _isExporting)"
+                    title="Export the Defect Detail (Check Point × Date) matrix to Excel, with images">
+                @if (_isExporting)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    <span>Excel…</span>
+                }
+                else
+                {
+                    <span>Export Excel (Defect Detail)</span>
+                }
+            </button>
+        }
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(_status))
+{
+    <div class="alert @(_isError ? "alert-danger" : "alert-secondary") py-2 small mb-3">
+        <div>@_status</div>
+        @* Only while a counted step is running: login and HTML generation have no total to
+           show, and a bar stuck at an arbitrary width reads as a hang. *@
+        @if (_progTotal > 0)
+        {
+            <div class="lpa-prog mt-1" role="progressbar"
+                 aria-valuenow="@_progDone" aria-valuemin="0" aria-valuemax="@_progTotal">
+                <div class="lpa-prog-bar" style="width:@ProgressWidth"></div>
+            </div>
+        }
+    </div>
+}
+
+@* The list, the NG pivot and every row's checklist live INSIDE the generated HTML, shown in
+   an iframe via srcdoc (no server route in this WPF host). Photos load straight from BMES. *@
+<div class="lpa-view">
+    @if (_html is null)
+    {
+        <div class="text-muted small p-4">
+            Set the audit date range and conditions, then click <strong>Search</strong> to generate the result.
+        </div>
+    }
+    else
+    {
+        <iframe srcdoc="@_html" title="BMES LPA"
+                style="width:100%; height:84vh; border:0; display:block;"></iframe>
+    }
+</div>
+
+<style>
+    .lpa-prog { height: 4px; background: #dfe5ec; border-radius: 2px; overflow: hidden; }
+    .lpa-prog-bar { height: 100%; background: #0d6efd; border-radius: 2px; transition: width .15s linear; }
+    .lpa-view { background: #fff; border: 1px solid #d7dee8; border-radius: 6px; }
+</style>
+
+@code {
+    /// <summary>Default search start date. LPA records go back to 2026-06-08, but a shorter
+    /// default range keeps Search quick; earlier dates can still be typed in.</summary>
+    private static readonly DateTime LpaFirstDate = new(2026, 7, 20);
+
+    private DateTime _from = LpaFirstDate;
+    private DateTime _to   = DateTime.Today;
+    private string _facco  = "GN";
+    // Not exposed in the UI: BMES is always queried with USEYN=Y, so there is nothing to choose.
+    private const string UseYnFilter = "Y";
+
+    private bool _isBusy;
+    private bool _isExporting;
+    private bool _isError;
+    private string _status = string.Empty;
+
+    /// <summary>Counted progress for the two steps that have a known total — the detail
+    /// prefetch and the Excel photo download. 0 total = nothing countable is running, which
+    /// is what hides the bar.</summary>
+    private int _progDone;
+    private int _progTotal;
+
+    /// <summary>Built as one string rather than interpolated into the style attribute: an
+    /// @-expression carrying its own quotes inside a quoted attribute is where Razor starts
+    /// guessing.  Invariant culture so a ko-KR host does not emit "29,4%".</summary>
+    private string ProgressWidth =>
+        (_progTotal <= 0 ? 0 : Math.Clamp(_progDone * 100.0 / _progTotal, 0, 100))
+            .ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "%";
+
+    private void SetProgress(int done, int total)
+    {
+        _progDone = done;
+        _progTotal = total;
+    }
+
+    private void ClearProgress() => SetProgress(0, 0);
+
+    /// <summary>The generated viewer HTML, dropped into the iframe's srcdoc.</summary>
+    private string? _html;
+
+    /// <summary>The last successful search, kept so the Excel export can rebuild the NG matrix
+    /// (and fetch its photos) without hitting BMES again.</summary>
+    private BmesLpaScrapeService.LpaResult? _lastResult;
+    private IReadOnlyDictionary<string, BmesLpaScrapeService.LpaResult>? _lastDetails;
+
+    private static string Cell(IReadOnlyDictionary<string, string> row, string key)
+        => row.TryGetValue(key, out string? v) ? v ?? string.Empty : string.Empty;
+
+    private async Task SearchAsync()
+    {
+        if (_isBusy) return;
+        _isBusy      = true;
+        _isError     = false;
+        _lastResult  = null;
+        _lastDetails = null;
+        _status      = "Contacting BMES…";
+        ClearProgress();
+        StateHasChanged();
+
+        string facco = _facco?.Trim() is { Length: > 0 } f ? f : "GN";
+
+        var query = new BmesLpaScrapeService.LpaQuery
+        {
+            Facco    = facco,
+            DateFrom = _from.ToString("yyyyMMdd"),
+            DateTo   = _to.ToString("yyyyMMdd"),
+            UseYn    = UseYnFilter,
+        };
+
+        var progress = new Progress<string>(m => { _status = m; InvokeAsync(StateHasChanged); });
+
+        try
+        {
+            var result = await Lpa.FetchAsync(query, progress);
+            if (!result.IsSuccess)
+            {
+                _isError = true;
+                _status  = result.Error ?? "Unknown error.";
+                _html    = null;
+                return;
+            }
+
+            var detailQueries = result.Rows
+                .Select(r => new { Lqrno = BmesLpaHtmlExportService.RowLqrno(r), Row = r })
+                .Where(x => x.Lqrno.Length > 0)
+                .GroupBy(x => x.Lqrno, StringComparer.Ordinal)
+                .Select(g => new BmesLpaScrapeService.LpaDetailQuery
+                {
+                    Lqrno = g.Key,
+                    Facco = facco,
+                    Dicno = Cell(g.First().Row, "DICNO"),
+                    Auloc = Cell(g.First().Row, "AULOC"),
+                    Implv = Cell(g.First().Row, "IMPLV"),
+                })
+                .ToList();
+
+            _status = $"{result.Rows.Count:N0} row(s) loaded. Fetching {detailQueries.Count:N0} detail(s)…";
+            SetProgress(0, detailQueries.Count);
+            StateHasChanged();
+
+            var counter = new Progress<(int Done, int Total)>(c =>
+            {
+                SetProgress(c.Done, c.Total);
+                InvokeAsync(StateHasChanged);
+            });
+
+            var details = await Lpa.FetchDetailsAsync(detailQueries, progress, counter);
+            _lastResult  = result;
+            _lastDetails = details;
+
+            _status = "Generating HTML…";
+            ClearProgress();
+            StateHasChanged();
+
+            // DirectBmesImages: the viewer's <img> point straight at BMES (no /bmes/lpa/img
+            // route exists in this BlazorWebView host); photos load on demand as before.
+            _html = HtmlExport.RenderHtml(new BmesLpaHtmlExportService.ExportInput
+            {
+                Columns          = result.Columns,
+                Rows             = result.Rows,
+                Details          = details,
+                From             = _from,
+                To               = _to,
+                Facco            = facco,
+                DirectBmesImages = true,
+            });
+
+            int failed = details.Values.Count(d => !d.IsSuccess);
+            _status = $"{result.Rows.Count:N0} row(s), {details.Count - failed:N0} detail(s) done." +
+                      (failed > 0 ? $" {failed:N0} detail(s) failed." : string.Empty);
+            Activity.Log("BMES LPA", $"{result.Rows.Count} rows, {details.Count} details");
+        }
+        catch (Exception ex)
+        {
+            _isError = true;
+            _status  = $"Unexpected error: {ex.Message}";
+        }
+        finally
+        {
+            _isBusy = false;
+            ClearProgress();
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Rebuild the NG matrix from the last search and write it to an .xlsx (NG Summary /
+    /// Defect Detail / List) with the photos embedded. Photos come from <see cref="BmesLpaImageService"/>
+    /// (DB-cached), downloaded on first export and instant afterwards.
+    /// </summary>
+    private async Task ExportExcelAsync()
+    {
+        if (_isExporting || _lastResult is null || _lastDetails is null) return;
+        _isExporting = true;
+        _isError     = false;
+        StateHasChanged();
+
+        try
+        {
+            var rowsList = _lastResult.Rows.ToList();
+            var matrix   = BmesLpaHtmlExportService.BuildNgMatrix(rowsList, _lastDetails);
+            var pivot    = BmesLpaHtmlExportService.BuildPivotData(rowsList, 7, 4, 3);
+            // 'NG by Check Item' sheet: same Check Item rows the viewer shows under the model pivot.
+            var checkRows = BmesLpaHtmlExportService.BuildCheckPivotRows(rowsList, _lastDetails);
+            var list     = BmesLpaHtmlExportService.BuildListTable(_lastResult.Columns, _lastResult.Rows);
+
+            var paths = BmesLpaExcelExporter.ImagePaths(matrix);
+            _status = $"Preparing {paths.Count:N0} image(s) for Excel…";
+            SetProgress(0, paths.Count);
+            StateHasChanged();
+
+            var images = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+            int n = 0;
+            foreach (string p in paths)
+            {
+                byte[]? bytes = await LpaImages.GetAsync(p, view: true);
+                if (bytes is not null) images[p] = bytes;
+                if (++n % 10 == 0 || n == paths.Count)
+                {
+                    _status = $"Excel images {n:N0} / {paths.Count:N0}…";
+                    SetProgress(n, paths.Count);
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+
+            string facco = _facco?.Trim() is { Length: > 0 } f ? f : "GN";
+            string title = $"LPA Defect Detail · {_from:yyyy-MM-dd} ~ {_to:yyyy-MM-dd} · FACCO {facco} · NG {matrix.NgCount:N0}";
+            byte[] file  = BmesLpaExcelExporter.Export(pivot, checkRows, matrix, images, list, title);
+            string name  = $"LPA_DefectDetail_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+            await BrowserDownload.DownloadBytesAsync(JS, name, file, BrowserDownload.XlsxContentType);
+
+            _status = $"Excel saved · NG {matrix.NgCount:N0}, images {images.Count:N0}/{paths.Count:N0}.";
+            Activity.Log("BMES LPA", $"Excel export {matrix.NgCount} NG, {images.Count} images");
+        }
+        catch (Exception ex)
+        {
+            _isError = true;
+            _status  = $"Excel export failed: {ex.Message}";
+        }
+        finally
+        {
+            _isExporting = false;
+            ClearProgress();
+            StateHasChanged();
+        }
+    }
+}

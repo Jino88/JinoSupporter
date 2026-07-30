@@ -1,0 +1,1849 @@
+@using System.Globalization
+@using JinoSupporter.Web.Services
+@inject NgRateService         NgRate
+@inject NgRateSettingsService NgRateSettings
+@inject NgRateReportService   NgRateReportSvc
+@inject WebRepository         Repo
+@inject IJSRuntime            JS
+@inject AppActivityLogger     Activity
+
+<NgRateReportStyles />
+@ExportPeriodMeta()
+
+@if (ShowTitle)
+{
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <h5 class="mb-0 fw-semibold">Report - NG Rate Daily</h5>
+    </div>
+}
+
+@if (ShowSetup)
+{
+    <NgRateSetupPanel LayoutClass="ngrate-flow"
+                      DataCellClass="ngrate-flow-data"
+                      ProgressCellClass="ngrate-flow-progress"
+                      StartDate="@_startDate"
+                      StartDateChanged="@((DateTime d) => _startDate = d)"
+                      EndDate="@_endDate"
+                      EndDateChanged="@((DateTime d) => _endDate = d)"
+                      IsBusy="@_isBusy"
+                      IsReportBusy="@_isReportBusy"
+                      IsCredentialsConfigured="@NgRateSettings.IsCredentialsConfigured"
+                      LoginId="@NgRateSettings.LoginId"
+                      SavedDbPath="@_savedDbPath"
+                      ErrorMessage="@_errorMessage"
+                      ShowClearResult="false"
+                      LogElementId="@LogElementId"
+                      Logs="@_logs"
+                      HasSuccessfulResult="@(_report is not null)"
+                      OnSetToday="SetToday"
+                      OnClearLogs="@(() => _logs.Clear())">
+        <AdditionalSettings>
+            <div>
+                <label class="form-label small fw-semibold mb-1" for="dailyReasonPpmThreshold">Reason Table minimum PPM</label>
+                <input id="dailyReasonPpmThreshold"
+                       type="number"
+                       class="form-control form-control-sm"
+                       style="max-width:180px;"
+                       min="1"
+                       step="1"
+                       @bind="DailyReasonPpmThreshold"
+                       @bind:event="oninput" />
+            </div>
+        </AdditionalSettings>
+        <GroupPicker>
+            <NgRateSimpleGroupPicker Groups="@_groups"
+                                     SelectedGroupNames="@_selectedGroupNames"
+                                     IsBusy="@_isBusy"
+                                     IsReportBusy="@_isReportBusy"
+                                     IsCredentialsConfigured="@NgRateSettings.IsCredentialsConfigured"
+                                     OnReload="ReloadGroups"
+                                     OnSelectAll="SelectAllGroups"
+                                     OnClearSelection="ClearSelectedGroups"
+                                     OnToggleGroup="ToggleGroup"
+                                     OnGetReport="GetReportAsync" />
+        </GroupPicker>
+    </NgRateSetupPanel>
+}
+
+@if (_report is not null && _reportByMid is not null)
+{
+    @if (!ReasonOnly)
+    {
+    <div class="card shadow-sm mt-3"
+         data-daily-section="@ExportSectionKey("summary")" data-daily-label="Summary">
+        <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+            <span>Summary - Group / Model x Date / Week / Month (PPM)</span>
+            <span class="text-muted" style="font-size:11px;">
+                D @VisibleDateCols.Count/@_report.DateCols.Count - W @VisibleWeekCols.Count/@_report.WeekCols.Count - M @VisibleMonthCols.Count/@_report.MonthCols.Count - @_report.TotalRows rows
+            </span>
+            <div class="d-flex align-items-center gap-2 ms-auto">
+                <button type="button"
+                        class="btn btn-outline-secondary btn-sm daily-copy-btn"
+                        @onclick="() => CopyElementToClipboardAsync(DailySummaryCopyTargetId)"
+                        disabled="@(IsCopying(DailySummaryCopyTargetId) || !string.IsNullOrEmpty(_reportError) || TotalColCount == 0)">
+                    @CopyButtonText(DailySummaryCopyTargetId)
+                </button>
+                <button type="button"
+                        class="btn btn-outline-success btn-sm daily-copy-btn"
+                        @onclick="ExportDailySummaryCsvAsync"
+                        disabled="@(_isExportingDailySummary || !string.IsNullOrEmpty(_reportError) || TotalColCount == 0)">
+                    @if (_isExportingDailySummary)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        <span>Exporting...</span>
+                    }
+                    else
+                    {
+                        <span>Export CSV</span>
+                    }
+                </button>
+                <label class="form-check form-check-inline d-flex align-items-center gap-1 m-0" style="font-size:11px;">
+                    <input type="checkbox" class="form-check-input m-0" @bind="_showDailySummaryDelta" />
+                    <span>증감률</span>
+                </label>
+                <div class="btn-group btn-group-sm">
+                    @if (HiddenMonthCount > 0 || _monthExpanded)
+                    {
+                        <button class="btn btn-outline-warning"
+                                @onclick="() => _monthExpanded = !_monthExpanded">
+                            @(_monthExpanded ? $"Month ({_report.MonthCols.Count - DefaultMonthCap} hide)" : $"Month (+{HiddenMonthCount})")
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            @if (!string.IsNullOrEmpty(_copyError))
+            {
+                <div class="alert alert-warning m-3 py-2 small">@_copyError</div>
+            }
+            @if (!string.IsNullOrEmpty(_reportError))
+            {
+                <div class="alert alert-danger m-3 py-2 small">@_reportError</div>
+            }
+            else if (TotalColCount == 0)
+            {
+                <div class="text-muted small p-4 text-center">No data.</div>
+            }
+            else
+            {
+                <div id="@DailySummaryCopyTargetId" class="pivot-wrap">
+                    <table class="pivot-table text-fit-table daily-summary-table">
+                        <thead>
+                            <tr>
+                                <th class="label-th" style="width:260px;" rowspan="2">Group / Model</th>
+                                @if (VisibleDateCols.Count > 0)
+                                {
+                                    <th class="blk-date" colspan="@VisibleDateCols.Count">Date</th>
+                                    <th class="sep-th" rowspan="2"></th>
+                                }
+                                @if (VisibleWeekCols.Count > 0)
+                                {
+                                    <th class="blk-week" colspan="@VisibleWeekCols.Count">Week</th>
+                                    <th class="sep-th" rowspan="2"></th>
+                                }
+                                @if (VisibleMonthCols.Count > 0)
+                                {
+                                    <th class="blk-month" colspan="@VisibleMonthCols.Count">Month</th>
+                                }
+                            </tr>
+                            <tr>
+                                @foreach (var col in VisibleDateCols)  { <th>@col.Header</th> }
+                                @foreach (var col in VisibleWeekCols)  { <th>@col.Header</th> }
+                                @foreach (var col in VisibleMonthCols) { <th>@col.Header</th> }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var group in SelectedGroups)
+                            {
+                                string groupName = group.Name;
+
+                                <tr class="grp-total-row">
+                                    <td class="label-td">
+                                        <strong>@ReportGroupDisplayName(groupName)</strong>
+                                    </td>
+                                    @foreach (var col in VisibleDateCols)
+                                    {
+                                        double v = MeanOfMembers(groupName, col.Key, null);
+                                        @SummaryPpmCell(v, PreviousDatePpm(col, key => MeanOfMembers(groupName, key, null)))
+                                    }
+                                    @if (VisibleDateCols.Count > 0) { <td class="sep-td"></td> }
+                                    @foreach (var col in VisibleWeekCols)
+                                    {
+                                        double v = MeanOfMembers(groupName, col.Key, null);
+                                        @SummaryPpmCell(v, PreviousWeekPpm(col, key => MeanOfMembers(groupName, key, null)))
+                                    }
+                                    @if (VisibleWeekCols.Count > 0) { <td class="sep-td"></td> }
+                                    @foreach (var col in VisibleMonthCols)
+                                    {
+                                        double v = MeanOfMembers(groupName, col.Key, null);
+                                        @SummaryPpmCell(v, PreviousMonthPpm(col, key => MeanOfMembers(groupName, key, null)))
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+    }
+    else
+    {
+        <div class="d-flex align-items-center gap-2 mt-3 px-3">
+            <span class="small fw-semibold">고질 불량 - Model Reason</span>
+            <button type="button"
+                    class="btn btn-outline-success btn-sm ms-auto"
+                    @onclick="ExportChronicReasonCsvAsync"
+                    disabled="@(_isExportingReason || TotalColCount == 0)">
+                @if (_isExportingReason)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    <span>Exporting...</span>
+                }
+                else
+                {
+                    <span>Export CSV</span>
+                }
+            </button>
+        </div>
+        @if (!string.IsNullOrEmpty(_copyError))
+        {
+            <div class="alert alert-warning mx-3 mt-2 mb-0 py-2 small">@_copyError</div>
+        }
+    }
+
+    @foreach (var model in OrderedModels.Where(ModelHasVisibleData))
+    {
+        var summaryRows = GetModelSummaryRows(model.Key);
+        bool showReasonTable = ReasonOnly || IsDailyReasonModelVisible(model.Key);
+        var dailyReasonReferenceCol = DailyReasonReferenceDateColumn(model.Key);
+        var reasonRows = showReasonTable
+            ? GetModelReasonRows(model.Key, dailyReasonReferenceCol?.Key)
+            : new List<DailyReasonRow>();
+        bool enableReasonCollapse = ReasonOnly;
+        string dailyReasonReferenceHeader = dailyReasonReferenceCol?.Header ?? "Last Date";
+        var modelCopyTargetId = ModelCopyTargetId(model.Key);
+
+        <div id="@modelCopyTargetId" class="daily-model-copy-target"
+             data-daily-section="@ExportSectionKey(model.Key)" data-daily-label="@model.Material">
+            @if (!ReasonOnly)
+            {
+            <div class="card shadow-sm mt-3">
+                <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+                    <span>@model.Material</span>
+                    <span class="text-muted" style="font-size:11px;">@model.GroupName - Process Type</span>
+                    <button type="button"
+                            class="btn btn-outline-secondary btn-sm ms-auto daily-copy-btn"
+                            data-copy-hidden="true"
+                            @onclick="() => CopyElementToClipboardAsync(modelCopyTargetId)"
+                            disabled="@IsCopying(modelCopyTargetId)">
+                        @CopyButtonText(modelCopyTargetId)
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    @if (summaryRows.Count == 0)
+                    {
+                        <div class="text-muted small p-4 text-center">No process data.</div>
+                    }
+                    else
+                    {
+                        <div class="pivot-wrap">
+                            <table class="pivot-table text-fit-table">
+                                <thead>
+                                    <tr>
+                                        <th class="label-th" style="width:160px;">Process Type</th>
+                                        @foreach (var col in VisibleDateCols)  { <th>@col.Header</th> }
+                                        @if (VisibleDateCols.Count > 0) { <th class="sep-th"></th> }
+                                        @foreach (var col in VisibleWeekCols)  { <th>@col.Header</th> }
+                                        @if (VisibleWeekCols.Count > 0) { <th class="sep-th"></th> }
+                                        @foreach (var col in VisibleMonthCols) { <th>@col.Header</th> }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in summaryRows)
+                                    {
+                                        <tr class="@(row.IsTotal ? "total-row" : "rank-row")">
+                                            <td class="label-td">@row.ProcessType</td>
+                                            @foreach (var col in VisibleDateCols)
+                                            {
+                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                <td class="@PpmClass(v)">@FormatPpm(v)</td>
+                                            }
+                                            @if (VisibleDateCols.Count > 0) { <td class="sep-td"></td> }
+                                            @foreach (var col in VisibleWeekCols)
+                                            {
+                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                <td class="@PpmClass(v)">@FormatPpm(v)</td>
+                                            }
+                                            @if (VisibleWeekCols.Count > 0) { <td class="sep-td"></td> }
+                                            @foreach (var col in VisibleMonthCols)
+                                            {
+                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                <td class="@PpmClass(v)">@FormatPpm(v)</td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                }
+                </div>
+            </div>
+            }
+
+            <div class="card shadow-sm @(ReasonOnly ? "mt-3" : "mt-2")">
+                <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+                    <span>@model.Material</span>
+                    <span class="text-muted" style="font-size:11px;">
+                        @model.GroupName -
+                        @if (ReasonOnly)
+                        {
+                            <text>Reason</text>
+                        }
+                        else
+                        {
+                            @* In a static export the threshold is a viewer setting, so the
+                               heading carries a template the toolbar rewrites on change. *@
+                            <span data-ppm-label="@ExportReasonLabelTemplate(dailyReasonReferenceHeader)">@($"Reason Detail >= {FormatPpm(DailyReasonPpmThreshold)} PPM ({dailyReasonReferenceHeader})")</span>
+                        }
+                    </span>
+                    @if (!ReasonOnly)
+                    {
+                        <button type="button"
+                                class="btn btn-outline-secondary btn-sm ms-auto daily-copy-btn"
+                                @onclick="() => ToggleDailyReasonModel(model.Key)">
+                            @(showReasonTable ? "Hide" : "Load")
+                        </button>
+                    }
+                </div>
+                <div class="card-body p-0">
+                    @if (!showReasonTable)
+                    {
+                    }
+                    else if (reasonRows.Count == 0)
+                    {
+                        <div class="text-muted small p-4 text-center">
+                            @(ReasonOnly ? "No reason data." : $"No reason data at or above {FormatPpm(DailyReasonPpmThreshold)} PPM.")
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="pivot-wrap">
+                            <table class="pivot-table text-fit-table">
+                            <thead>
+                                <tr>
+                                    <th class="label-th" style="min-width:110px;">Reason</th>
+                                    <th class="label-th" style="width:44px;">No</th>
+                                    <th class="label-th" style="width:80px;">Type</th>
+                                    <th class="label-th process-name-col" style="min-width:160px;">Process Name</th>
+                                    <th class="label-th ng-name-col" style="min-width:120px;">NG Name</th>
+                                    @foreach (var col in VisibleDateCols)  { <th>@col.Header</th> }
+                                    @if (VisibleDateCols.Count > 0) { <th class="sep-th"></th> }
+                                    @foreach (var col in VisibleWeekCols)  { <th>@col.Header</th> }
+                                    @if (VisibleWeekCols.Count > 0) { <th class="sep-th"></th> }
+                                    @foreach (var col in VisibleMonthCols) { <th>@col.Header</th> }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in reasonRows)
+                                {
+                                    bool collapsed = enableReasonCollapse && IsReasonSectionCollapsed(model.Key, row.Reason);
+                                    if (!row.IsTotal && collapsed)
+                                    {
+                                        continue;
+                                    }
+
+                                    if (row.IsTotal)
+                                    {
+                                        <tr class="total-row">
+                                            @if (enableReasonCollapse)
+                                            {
+                                                <td class="toggle-cell label-td fw-bold"
+                                                    @onclick="@(() => ToggleReasonSection(model.Key, row.Reason))">
+                                                    <span class="toggle-icon">@(collapsed ? ">" : "v")</span>
+                                                    @row.Reason
+                                                </td>
+                                            }
+                                            else
+                                            {
+                                                <td class="label-td fw-bold">@row.Reason</td>
+                                            }
+                                            <td></td>
+                                            <td></td>
+                                            <td class="label-td text-muted" style="font-size:10px;">Total</td>
+                                            <td></td>
+                                            @foreach (var col in VisibleDateCols)
+                                            {
+                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                <td class="@PpmClass(v)">@FormatPpm(v)</td>
+                                            }
+                                            @if (VisibleDateCols.Count > 0) { <td class="sep-td"></td> }
+                                            @foreach (var col in VisibleWeekCols)
+                                            {
+                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                <td class="@PpmClass(v)">@FormatPpm(v)</td>
+                                            }
+                                            @if (VisibleWeekCols.Count > 0) { <td class="sep-td"></td> }
+                                            @foreach (var col in VisibleMonthCols)
+                                            {
+                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                <td class="@PpmClass(v)">@FormatPpm(v)</td>
+                                            }
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        <tr class="rank-row" data-ppm="@ExportReasonPpm(row, dailyReasonReferenceCol?.Key)">
+                                            <td class="label-td" style="color:#94a3b8; font-size:10px;">@row.Reason</td>
+                                            <td class="label-td">@row.No</td>
+                                            <td class="label-td"><span class="pt-badge">@row.ProcessType</span></td>
+                                            <td class="label-td process-name-col">@row.ProcessName</td>
+                                            <td class="label-td ng-name-col">@row.NgName</td>
+                                            @foreach (var col in VisibleDateCols)
+                                            {
+                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                <td class="@PpmClass(v)">@FormatPpm(v)</td>
+                                            }
+                                            @if (VisibleDateCols.Count > 0) { <td class="sep-td"></td> }
+                                            @foreach (var col in VisibleWeekCols)
+                                            {
+                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                <td class="@PpmClass(v)">@FormatPpm(v)</td>
+                                            }
+                                            @if (VisibleWeekCols.Count > 0) { <td class="sep-td"></td> }
+                                            @foreach (var col in VisibleMonthCols)
+                                            {
+                                                double v = row.Ppm.GetValueOrDefault(col.Key);
+                                                <td class="@PpmClass(v)">@FormatPpm(v)</td>
+                                            }
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public bool ShowTitle { get; set; } = true;
+    [Parameter] public bool ShowSetup { get; set; } = true;
+    [Parameter] public bool ReasonOnly { get; set; }
+    [Parameter] public double DailyReasonPpmThreshold { get; set; } = 1000d;
+
+    // ── Static-HTML export mode ────────────────────────────────────────────────
+    // When ExportMode is set (used by BmesReportHtmlExportService via HtmlRenderer),
+    // the component auto-generates from the Export* inputs during its lifecycle,
+    // shows every period column (no caps — a static snapshot cannot expand), and
+    // pushes its computed shared hierarchy back out via OnExportComputed so the
+    // other report tabs can reuse it without re-scraping BMES.
+    [Parameter] public bool ExportMode { get; set; }
+    [Parameter] public DateTime? ExportStart { get; set; }
+    [Parameter] public DateTime? ExportEnd { get; set; }
+    [Parameter] public IReadOnlyList<ModelGroupRecord>? ExportGroups { get; set; }
+    [Parameter] public Action<HierReports?, NgRateReportService.NgRateReport?>? OnExportComputed { get; set; }
+    [Parameter] public IProgress<string>? ExportProgress { get; set; }
+    private bool _exportGenerated;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ExportMode && !_exportGenerated
+            && ExportStart is { } start && ExportEnd is { } end
+            && ExportGroups is { Count: > 0 } groups)
+        {
+            _exportGenerated = true;
+            await GenerateReportAsync(start, end, groups, ExportProgress);
+            OnExportComputed?.Invoke(CurrentHierarchyReports, CurrentSummaryReport);
+        }
+    }
+
+    private DateTime _startDate = DateTime.Today;
+    private DateTime _endDate = DateTime.Today;
+    private bool _isBusy;
+    private bool _isReportBusy;
+    private string? _savedDbPath;
+    private string _errorMessage = string.Empty;
+    private string _reportError = string.Empty;
+    private readonly List<string> _logs = new();
+    private const string LogElementId = "ngRateLogDaily";
+    private IProgress<string>? _externalProgress;
+
+    private List<ModelGroupRecord> _groups = new();
+    private IReadOnlyList<ModelGroupRecord>? _groupOverride;
+    private HashSet<string> _selectedGroupNames = new(StringComparer.Ordinal);
+    private List<DailyModelRef> _modelOrder = new();
+    private HashSet<string> _expandedReasonSections = new(StringComparer.Ordinal);
+    private HashSet<string> _visibleDailyReasonModels = new(StringComparer.Ordinal);
+
+    private NgRateReportService.NgRateReport? _report;
+    private NgRateReportService.NgRateReport? _reportByMid;
+    private NgRateReportService.NgRateReport? _reportByModel;
+    private NgRateReportService.NgRateReport? _reportBySubGroup;
+    private NgRateReportService.NgRateReport? _reportBySubLeaf;
+    private HierPpmLookup _hierLookup = new();
+    private IReadOnlyList<ModelGroupRecord> _allGroups = [];
+    private Dictionary<long, string> _allGroupNamesById = new();
+
+    private const string DailySummaryCopyTargetId = "dailySummaryCopyTarget";
+    private const int DefaultDateCap = 7;
+    private const int DefaultWeekCap = 3;
+    private const int DefaultMonthCap = 3;
+    private const int MaxDisplayReasonRows = 10;
+    private const string OtherReason = "Other";
+    private bool _monthExpanded;
+    private bool _showDailySummaryDelta = true;
+    private bool _isExportingDailySummary;
+    private bool _isExportingReason;
+    private string _copyingElementId = string.Empty;
+    private string _copiedElementId = string.Empty;
+    private string _copyError = string.Empty;
+
+    private sealed record DailyModelRef(string Key, string GroupName, string Material, int LineShiftCount);
+
+    private sealed record DailyReasonRow(
+        string Reason,
+        int No,
+        bool IsTotal,
+        string ProcessType,
+        string ProcessName,
+        string NgName,
+        Dictionary<string, double> Ppm);
+
+    private sealed record ChronicProcessCsvExport(
+        string ReferencePeriodKey,
+        IReadOnlyList<NgRateReportService.PeriodColumn> DateColumns,
+        IReadOnlyList<NgRateReportService.PeriodColumn> WeekColumns,
+        IReadOnlyList<NgRateReportService.PeriodColumn> MonthColumns,
+        IReadOnlyList<ChronicProcessCsvRow> Rows);
+
+    private sealed record ChronicBucketRef(
+        string Key,
+        string BGrName,
+        string ModelName,
+        string GroupName);
+
+    private sealed record ChronicProcessCsvRow(
+        string BGrName,
+        string ModelName,
+        string ProcessType,
+        string ProcessName,
+        string NgName,
+        bool IsTotal,
+        Dictionary<string, double> Ppm);
+
+    private sealed record DeltaDisplay(string Text, string CssClass);
+
+    private IReadOnlyList<NgRateReportService.PeriodColumn> VisibleDateCols =>
+        _report is null ? Array.Empty<NgRateReportService.PeriodColumn>()
+        : ExportMode ? _report.DateCols
+        : _report.DateCols.Take(DefaultDateCap).ToList();
+
+    private IReadOnlyList<NgRateReportService.PeriodColumn> VisibleWeekCols =>
+        _report is null ? Array.Empty<NgRateReportService.PeriodColumn>()
+        : ExportMode ? _report.WeekCols
+        : _report.WeekCols.Take(DefaultWeekCap).ToList();
+
+    private IReadOnlyList<NgRateReportService.PeriodColumn> VisibleMonthCols =>
+        _report is null ? Array.Empty<NgRateReportService.PeriodColumn>()
+        : ExportMode || _monthExpanded ? _report.MonthCols
+        : _report.MonthCols.Take(DefaultMonthCap).ToList();
+
+    private int HiddenDateCount => _report is null ? 0 : Math.Max(0, _report.DateCols.Count - VisibleDateCols.Count);
+    private int HiddenWeekCount => _report is null ? 0 : Math.Max(0, _report.WeekCols.Count - VisibleWeekCols.Count);
+    private int HiddenMonthCount => _report is null ? 0 : Math.Max(0, _report.MonthCols.Count - VisibleMonthCols.Count);
+
+    private int TotalColCount =>
+        _report is null ? 0 : VisibleDateCols.Count + VisibleWeekCols.Count + VisibleMonthCols.Count;
+
+    private List<ModelGroupRecord> SelectedGroups =>
+        _groups.Where(g => _selectedGroupNames.Contains(g.Name)).ToList();
+
+    public NgRateReportService.NgRateReport? CurrentSummaryReport => _report;
+
+    public HierReports? CurrentHierarchyReports =>
+        _report is null
+            ? null
+            : new HierReports
+            {
+                ByGroup = _report,
+                ByMid = _reportByMid,
+                BySub1 = _reportBySubGroup,
+                BySub2 = _reportBySubLeaf,
+                ByLs = _reportByModel,
+                Groups = SelectedGroups,
+            };
+
+    private List<DailyModelRef> OrderedModels =>
+        _modelOrder
+            .Where(m => _selectedGroupNames.Contains(m.GroupName))
+            .ToList();
+
+    protected override void OnInitialized()
+    {
+        _allGroups = Repo.GetModelGroups();
+        _allGroupNamesById = _allGroups.ToDictionary(g => g.Id, g => g.Name);
+        ReloadGroups();
+    }
+
+    private void ReloadGroups()
+    {
+        if (_groupOverride is null)
+        {
+            if (_allGroups.Count == 0)
+            {
+                _allGroups = Repo.GetModelGroups();
+                _allGroupNamesById = _allGroups.ToDictionary(g => g.Id, g => g.Name);
+            }
+
+            _groups = _allGroups.ToList();
+        }
+        else
+        {
+            _groups = _groupOverride.ToList();
+        }
+
+        _selectedGroupNames.RemoveWhere(n => !_groups.Any(g => g.Name == n));
+        SyncModelOrder();
+    }
+
+    private void SelectAllGroups()
+    {
+        _selectedGroupNames = new HashSet<string>(_groups.Select(g => g.Name), StringComparer.Ordinal);
+        SyncModelOrder();
+    }
+
+    private void ClearSelectedGroups()
+    {
+        _selectedGroupNames.Clear();
+        SyncModelOrder();
+    }
+
+    private void ToggleGroup(string name, bool selected)
+    {
+        if (selected) _selectedGroupNames.Add(name);
+        else _selectedGroupNames.Remove(name);
+        SyncModelOrder();
+    }
+
+    private void ToggleGroup((string Name, bool Selected) args)
+        => ToggleGroup(args.Name, args.Selected);
+
+    private void SetToday()
+    {
+        _startDate = DateTime.Today;
+        _endDate = DateTime.Today;
+    }
+
+    public async Task GenerateReportAsync(
+        DateTime startDate,
+        DateTime endDate,
+        IReadOnlyList<ModelGroupRecord> selectedGroups,
+        IProgress<string>? progress = null)
+    {
+        _groupOverride = selectedGroups.ToList();
+        await GenerateReportAsync(
+            startDate,
+            endDate,
+            selectedGroups.Select(g => g.Name).Distinct(StringComparer.Ordinal).ToList(),
+            progress);
+    }
+
+    public async Task GenerateReportAsync(
+        DateTime startDate,
+        DateTime endDate,
+        IReadOnlyCollection<string> selectedGroupNames,
+        IProgress<string>? progress = null)
+    {
+        _startDate = startDate.Date;
+        _endDate = endDate.Date;
+        ReloadGroups();
+        _selectedGroupNames = selectedGroupNames
+            .Where(name => _groups.Any(g => string.Equals(g.Name, name, StringComparison.Ordinal)))
+            .ToHashSet(StringComparer.Ordinal);
+        SyncModelOrder();
+
+        _externalProgress = progress;
+        try
+        {
+            await GetReportAsync();
+            if (_report is null)
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(_reportError)
+                    ? "Daily report did not produce results."
+                    : _reportError);
+        }
+        finally
+        {
+            _externalProgress = null;
+        }
+    }
+
+    public Task UseSharedHierarchyReportAsync(
+        DateTime startDate,
+        DateTime endDate,
+        IReadOnlyList<ModelGroupRecord> selectedGroups,
+        HierReports sharedHierarchy,
+        IProgress<string>? progress = null)
+    {
+        _groupOverride = selectedGroups.ToList();
+        return UseSharedHierarchyReportAsync(
+            startDate,
+            endDate,
+            selectedGroups.Select(g => g.Name).Distinct(StringComparer.Ordinal).ToList(),
+            sharedHierarchy,
+            progress);
+    }
+
+    public Task UseSharedHierarchyReportAsync(
+        DateTime startDate,
+        DateTime endDate,
+        IReadOnlyCollection<string> selectedGroupNames,
+        HierReports sharedHierarchy,
+        IProgress<string>? progress = null)
+    {
+        if (!sharedHierarchy.HasData || sharedHierarchy.ByGroup is null || sharedHierarchy.ByMid is null)
+            throw new InvalidOperationException("Shared Daily report data is not ready.");
+
+        _startDate = startDate.Date;
+        _endDate = endDate.Date;
+        ReloadGroups();
+        _selectedGroupNames = selectedGroupNames
+            .Where(name => _groups.Any(g => string.Equals(g.Name, name, StringComparison.Ordinal)))
+            .ToHashSet(StringComparer.Ordinal);
+
+        _isBusy = false;
+        _isReportBusy = false;
+        _errorMessage = string.Empty;
+        _reportError = string.Empty;
+        _savedDbPath = sharedHierarchy.ByGroup.DbPath;
+        _report = sharedHierarchy.ByGroup;
+        _reportByMid = sharedHierarchy.ByMid;
+        _reportByModel = sharedHierarchy.ByLs;
+        _reportBySubGroup = sharedHierarchy.BySub1;
+        _reportBySubLeaf = sharedHierarchy.BySub2;
+        _hierLookup = HierPpmLookup.From(sharedHierarchy);
+        _expandedReasonSections.Clear();
+        _visibleDailyReasonModels.Clear();
+        _monthExpanded = false;
+        _copyError = string.Empty;
+        SyncModelOrder();
+        ExpandDailyReasonModelsByDefault();
+        progress?.Report("Using Daily report data.");
+
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task GetReportAsync()
+    {
+        if (_isReportBusy || _isBusy || _selectedGroupNames.Count == 0) return;
+        if (_endDate < _startDate)
+        {
+            _reportError = "End date must be on or after start date.";
+            return;
+        }
+        if (!NgRateSettings.IsCredentialsConfigured)
+        {
+            _reportError = "BMES credentials are not configured.";
+            return;
+        }
+
+        _isReportBusy = true;
+        _isBusy = true;
+        _reportError = string.Empty;
+        _errorMessage = string.Empty;
+        _savedDbPath = null;
+        _report = null;
+        _reportByMid = null;
+        _reportByModel = null;
+        _reportBySubGroup = null;
+        _reportBySubLeaf = null;
+        _hierLookup = new();
+        _expandedReasonSections.Clear();
+        _visibleDailyReasonModels.Clear();
+        _monthExpanded = false;
+        _logs.Clear();
+        Activity.Log("NG Rate Daily", $"Get Data {_startDate:yyyy-MM-dd} ~ {_endDate:yyyy-MM-dd}");
+        StateHasChanged();
+
+        IProgress<string> progress = new Progress<string>(AddLog);
+
+        try
+        {
+            progress.Report($"Fetching data: {_startDate:yyyy-MM-dd} ~ {_endDate:yyyy-MM-dd}");
+            string? dbPath = await NgRate.GetOrFetchAsync(_startDate, _endDate, progress);
+            _isBusy = false;
+
+            if (string.IsNullOrEmpty(dbPath))
+            {
+                _errorMessage = "Data fetch or save failed - check the log.";
+                _reportError = _errorMessage;
+                return;
+            }
+
+            _savedDbPath = dbPath;
+            ReloadGroups();
+            var selectedGroups = SelectedGroups;
+            Activity.Log("NG Rate Daily", $"Generate Report selectedGroups={selectedGroups.Count:N0}");
+            progress.Report($"Using DB: {Path.GetFileName(dbPath)}");
+
+            var hier = await HierReportBuilder.BuildAsync(
+                NgRateReportSvc, dbPath, selectedGroups, progress,
+                includeMidDetailReport: true);
+
+            if (!hier.HasData || hier.ByGroup is null || hier.ByMid is null)
+            {
+                _reportError = "No LineShift found in the selected groups.";
+                return;
+            }
+
+            _report = hier.ByGroup;
+            _reportByMid = hier.ByMid;
+            _reportByModel = hier.ByLs;
+            _reportBySubGroup = hier.BySub1;
+            _reportBySubLeaf = hier.BySub2;
+            _hierLookup = HierPpmLookup.From(hier);
+            SyncModelOrder();
+            ExpandDailyReasonModelsByDefault();
+        }
+        catch (Exception ex)
+        {
+            _reportError = $"Error: {ex.Message}";
+            _logs.Add($"[{DateTime.Now:HH:mm:ss}] [ERROR] {ex}");
+        }
+        finally
+        {
+            _isBusy = false;
+            _isReportBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SyncModelOrder()
+    {
+        var available = BuildDefaultModelOrder();
+        var byKey = available.ToDictionary(m => m.Key, StringComparer.Ordinal);
+        var synced = new List<DailyModelRef>();
+
+        foreach (var existing in _modelOrder)
+        {
+            if (byKey.Remove(existing.Key, out var current))
+                synced.Add(current);
+        }
+
+        synced.AddRange(available.Where(m => byKey.ContainsKey(m.Key)));
+        _modelOrder = synced;
+        var visibleKeys = _modelOrder.Select(m => m.Key).ToHashSet(StringComparer.Ordinal);
+        _visibleDailyReasonModels.RemoveWhere(k => !visibleKeys.Contains(k));
+    }
+
+    private void ExpandDailyReasonModelsByDefault()
+    {
+        if (ReasonOnly) return;
+
+        foreach (var model in OrderedModels.Where(ModelHasVisibleData))
+            _visibleDailyReasonModels.Add(model.Key);
+    }
+
+    private List<DailyModelRef> BuildDefaultModelOrder()
+    {
+        var result = new List<DailyModelRef>();
+        foreach (var group in _groups.Where(g => _selectedGroupNames.Contains(g.Name)))
+        {
+            foreach (var mid in group.MidGroups)
+            {
+                if (string.IsNullOrEmpty(mid.Material) || mid.LineShifts.Count == 0) continue;
+                string key = ModelKey(group.Name, mid.Material);
+                result.Add(new DailyModelRef(key, group.Name, mid.Material, mid.LineShifts.Count));
+            }
+        }
+        return result;
+    }
+
+    private void ResetModelOrder()
+    {
+        _modelOrder = BuildDefaultModelOrder();
+    }
+
+    private void RemoveModel(string key)
+    {
+        _modelOrder.RemoveAll(m => string.Equals(m.Key, key, StringComparison.Ordinal));
+        _expandedReasonSections.RemoveWhere(k => k.StartsWith(key + "||", StringComparison.Ordinal));
+        _visibleDailyReasonModels.Remove(key);
+    }
+
+    private void MoveModel(string key, int delta)
+    {
+        var current = _modelOrder.FirstOrDefault(m => string.Equals(m.Key, key, StringComparison.Ordinal));
+        if (current is null) return;
+
+        var groupIndexes = _modelOrder
+            .Select((model, index) => new { model, index })
+            .Where(x => string.Equals(x.model.GroupName, current.GroupName, StringComparison.Ordinal))
+            .Select(x => x.index)
+            .ToList();
+
+        int pos = groupIndexes.FindIndex(i => string.Equals(_modelOrder[i].Key, key, StringComparison.Ordinal));
+        int newPos = pos + delta;
+        if (pos < 0 || newPos < 0 || newPos >= groupIndexes.Count) return;
+
+        int idx = groupIndexes[pos];
+        int newIdx = groupIndexes[newPos];
+        (_modelOrder[idx], _modelOrder[newIdx]) = (_modelOrder[newIdx], _modelOrder[idx]);
+        _copiedElementId = string.Empty;
+    }
+
+    private bool IsFirstOrderedModel(string key)
+    {
+        var current = OrderedModels.FirstOrDefault(m => string.Equals(m.Key, key, StringComparison.Ordinal));
+        if (current is null) return true;
+
+        return OrderedModels
+            .Where(m => string.Equals(m.GroupName, current.GroupName, StringComparison.Ordinal))
+            .FirstOrDefault()?.Key == key;
+    }
+
+    private bool IsLastOrderedModel(string key)
+    {
+        var current = OrderedModels.FirstOrDefault(m => string.Equals(m.Key, key, StringComparison.Ordinal));
+        if (current is null) return true;
+
+        return OrderedModels
+            .Where(m => string.Equals(m.GroupName, current.GroupName, StringComparison.Ordinal))
+            .LastOrDefault()?.Key == key;
+    }
+
+    private async Task CopyElementToClipboardAsync(string elementId)
+    {
+        if (string.IsNullOrWhiteSpace(elementId) || !string.IsNullOrEmpty(_copyingElementId)) return;
+
+        _copyingElementId = elementId;
+        _copiedElementId = string.Empty;
+        _copyError = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            await JS.InvokeVoidAsync("ngRateImageCopy.copyElementToClipboard", elementId);
+            _copiedElementId = elementId;
+        }
+        catch (Exception ex)
+        {
+            _copyError = $"Copy failed: {ex.Message}";
+        }
+        finally
+        {
+            _copyingElementId = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportDailySummaryCsvAsync()
+    {
+        if (_isExportingDailySummary) return;
+
+        _isExportingDailySummary = true;
+        _copyError = string.Empty;
+        await InvokeAsync(StateHasChanged);
+        await Task.Yield();
+
+        try
+        {
+            if (_report is null)
+            {
+                _copyError = "No CSV rows to export.";
+                return;
+            }
+
+            Activity.Log("NG Rate Daily", "Export daily Sub Group summary CSV");
+            byte[] bytes = BuildDailySummaryCsv();
+            if (bytes.Length == 0)
+            {
+                _copyError = "CSV export produced an empty file.";
+                return;
+            }
+
+            string name = $"NgRate_DailyBGrSummary_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            await BrowserDownload.DownloadBytesAsync(JS, name, bytes, CsvExportUtility.ContentType);
+        }
+        catch (Exception ex)
+        {
+            _copyError = $"Export failed: {ex.Message}";
+        }
+        finally
+        {
+            _isExportingDailySummary = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportChronicReasonCsvAsync()
+    {
+        if (_isExportingReason) return;
+
+        _isExportingReason = true;
+        _copyError = string.Empty;
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(50);
+
+        try
+        {
+            var export = BuildChronicProcessCsvExport();
+            if (export is null || export.Rows.Count == 0)
+            {
+                _copyError = "No CSV rows to export.";
+                return;
+            }
+
+            Activity.Log("NG Rate Daily", $"Export chronic process CSV rows={export.Rows.Count:N0}");
+            byte[] bytes = await Task.Run(() => BuildChronicProcessCsv(export));
+            if (bytes.Length == 0)
+            {
+                _copyError = "CSV export produced an empty file.";
+                return;
+            }
+
+            string name = $"NgRate_ChronicProcess_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            await BrowserDownload.DownloadBytesAsync(JS, name, bytes, CsvExportUtility.ContentType);
+        }
+        catch (Exception ex)
+        {
+            _copyError = $"Export failed: {ex.Message}";
+        }
+        finally
+        {
+            _isExportingReason = false;
+            StateHasChanged();
+        }
+    }
+
+    private byte[] BuildDailySummaryCsv()
+    {
+        if (_report is null)
+            return Array.Empty<byte>();
+
+        var dateCols = _report.DateCols.ToList();
+        var weekCols = _report.WeekCols.ToList();
+        var monthCols = _report.MonthCols.ToList();
+        var columns = DistinctPeriodColumns(dateCols.Concat(weekCols).Concat(monthCols)).ToList();
+        if (columns.Count == 0)
+            return Array.Empty<byte>();
+
+        var sb = new System.Text.StringBuilder();
+        CsvExportUtility.AppendRow(sb, new[] { "Level", "Group", "Model", "Sub Group", "Process Type" }
+            .Concat(columns.Select(c => c.Header)));
+
+        void AddRow(
+            string level,
+            string group,
+            string model,
+            string bGr,
+            string processType,
+            Func<string, double> valueOf)
+        {
+            var values = new List<string> { level, group, model, bGr, processType };
+            foreach (var col in columns)
+                values.Add(FormatCsvPpm(valueOf(col.Key)));
+            CsvExportUtility.AppendRow(sb, values);
+        }
+
+        AddRow("Total", string.Empty, string.Empty, "TOTAL", string.Empty, MeanOfGroups);
+
+        foreach (var group in SelectedGroups)
+        {
+            string groupName = group.Name;
+            bool shouldSplitByBuckets = !IsRootSelection(group);
+            var buckets = shouldSplitByBuckets
+                ? BuildChronicBucketRefs()
+                    .Where(b => string.Equals(b.GroupName, groupName, StringComparison.Ordinal) &&
+                                BGrHasData(b, dateCols, weekCols, monthCols))
+                    .ToList()
+                : new List<ChronicBucketRef>();
+
+            AddRow("Group", groupName, string.Empty, "TOTAL", "TOTAL",
+                key => MeanOfMembers(groupName, key, null));
+
+            if (shouldSplitByBuckets)
+            {
+                foreach (var bucket in buckets)
+                {
+                    AddRow("Sub Group", groupName, bucket.ModelName, bucket.BGrName, "TOTAL",
+                        key => BGrPpm(bucket.Key, key));
+
+                    foreach (var processRow in GetBGrSummaryRows(bucket.Key).Where(r => !r.IsTotal))
+                    {
+                        AddRow("Process Type", groupName, bucket.ModelName, bucket.BGrName, processRow.ProcessType,
+                            key => processRow.Ppm.GetValueOrDefault(key));
+                    }
+                }
+            }
+        }
+
+        return CsvExportUtility.ToUtf8BomBytes(sb);
+    }
+
+    private static byte[] BuildChronicProcessCsv(ChronicProcessCsvExport export)
+    {
+        var columns = DistinctPeriodColumns(export.DateColumns
+            .Concat(export.WeekColumns)
+            .Concat(export.MonthColumns))
+            .ToList();
+        var sb = new System.Text.StringBuilder();
+
+        CsvExportUtility.AppendRow(sb, new[] { "Sub Group", "MODEL", "Type", "Process", "NG NAME", "Reference PPM" }
+            .Concat(columns.Select(c => c.Header)));
+
+        foreach (var row in export.Rows)
+        {
+            var values = new List<string>
+            {
+                row.BGrName,
+                row.ModelName,
+                row.ProcessType,
+                row.ProcessName,
+                row.NgName,
+                FormatCsvPpm(CsvRefValue(row.Ppm, export.ReferencePeriodKey)),
+            };
+
+            foreach (var col in columns)
+            {
+                double v = row.Ppm.GetValueOrDefault(col.Key);
+                values.Add(FormatCsvPpm(v));
+            }
+
+            CsvExportUtility.AppendRow(sb, values);
+        }
+
+        return CsvExportUtility.ToUtf8BomBytes(sb);
+    }
+
+    private static string FormatCsvPpm(double value)
+        => NgRateModeSupport.FormatPpm(value);
+
+    private static double CsvRefValue(IReadOnlyDictionary<string, double> ppm, string referencePeriodKey)
+    {
+        if (!string.IsNullOrEmpty(referencePeriodKey))
+            return ppm.GetValueOrDefault(referencePeriodKey);
+
+        return ppm.Values.DefaultIfEmpty(0).Max();
+    }
+
+    private static IEnumerable<NgRateReportService.PeriodColumn> DistinctPeriodColumns(
+        IEnumerable<NgRateReportService.PeriodColumn> columns)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var column in columns)
+        {
+            if (seen.Add(column.Key))
+                yield return column;
+        }
+    }
+
+    private static void AppendCsvRow(System.Text.StringBuilder sb, IEnumerable<string> values)
+    {
+        bool first = true;
+        foreach (string value in values)
+        {
+            if (!first) sb.Append(',');
+            first = false;
+            sb.Append(EscapeCsv(value));
+        }
+        sb.AppendLine();
+    }
+
+    private static string EscapeCsv(string? value)
+    {
+        string text = value ?? string.Empty;
+        if (!text.Contains('"') && !text.Contains(',') && !text.Contains('\r') && !text.Contains('\n'))
+            return text;
+
+        return "\"" + text.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
+    }
+
+    private ChronicProcessCsvExport? BuildChronicProcessCsvExport()
+    {
+        if (_report is null || _reportBySubGroup is null)
+            return null;
+
+        var dateCols = _report.DateCols.ToList();
+        var weekCols = _report.WeekCols.ToList();
+        var monthCols = _report.MonthCols.ToList();
+        if (dateCols.Count == 0 && weekCols.Count == 0 && monthCols.Count == 0)
+            return null;
+
+        var periodKeys = DistinctPeriodColumns(dateCols.Concat(weekCols).Concat(monthCols))
+            .Select(c => c.Key)
+            .ToList();
+        if (periodKeys.Count == 0)
+            return null;
+
+        var rows = new List<ChronicProcessCsvRow>();
+        foreach (var model in OrderedModels)
+        {
+            var details = BuildChronicProcessCsvDetails(model, periodKeys);
+            if (details.Count == 0)
+                continue;
+
+            var typeGroups = details
+                .GroupBy(r => r.ProcessType)
+                .Select(g =>
+                {
+                    var typeRows = g.ToList();
+                    return new
+                    {
+                        ProcessType = g.Key,
+                        Rows = typeRows,
+                        Total = SumPpm(typeRows, periodKeys),
+                    };
+                })
+                .OrderByDescending(g => RefValue(g.Total))
+                .ThenBy(g => ProcessTypeRank(g.ProcessType))
+                .ThenBy(g => g.ProcessType, StringComparer.Ordinal)
+                .ToList();
+
+            foreach (var typeGroup in typeGroups)
+            {
+                rows.Add(new ChronicProcessCsvRow(
+                    BGrName: model.GroupName,
+                    ModelName: model.Material,
+                    ProcessType: typeGroup.ProcessType,
+                    ProcessName: "TOTAL",
+                    NgName: string.Empty,
+                    IsTotal: true,
+                    Ppm: typeGroup.Total));
+
+                var processGroups = typeGroup.Rows
+                    .GroupBy(r => r.ProcessName)
+                    .Select(g =>
+                    {
+                        var processRows = g.ToList();
+                        return new
+                        {
+                            ProcessName = g.Key,
+                            Rows = processRows,
+                            Total = SumPpm(processRows, periodKeys),
+                        };
+                    })
+                    .OrderByDescending(g => RefValue(g.Total))
+                    .ThenBy(g => g.ProcessName, StringComparer.Ordinal)
+                    .ToList();
+
+                foreach (var processGroup in processGroups)
+                {
+                    foreach (var detail in processGroup.Rows
+                        .OrderByDescending(r => RefValue(r.Ppm))
+                        .ThenBy(r => r.NgName, StringComparer.Ordinal))
+                    {
+                        rows.Add(detail);
+                    }
+                }
+            }
+        }
+
+        return new ChronicProcessCsvExport(
+            ReferencePeriodKey: SortRefKey().Key,
+            DateColumns: dateCols,
+            WeekColumns: weekCols,
+            MonthColumns: monthCols,
+            Rows: rows);
+    }
+
+    private IEnumerable<ChronicBucketRef> BuildChronicBucketRefs()
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var model in OrderedModels)
+        {
+            var group = _groups.FirstOrDefault(g =>
+                string.Equals(g.Name, model.GroupName, StringComparison.Ordinal));
+            var mid = group?.MidGroups.FirstOrDefault(m =>
+                string.Equals(m.Material, model.Material, StringComparison.Ordinal));
+            if (group is null || mid is null)
+                continue;
+
+            foreach (var sub in mid.SubGroups)
+            {
+                if (string.IsNullOrWhiteSpace(sub.Name) || !sub.AllLineShifts.Any())
+                    continue;
+
+                string key = ModelGroupPickerHelpers.SubGroupKeyOf(group.Name, mid.Material, sub);
+                if (!seen.Add(key))
+                    continue;
+
+                yield return new ChronicBucketRef(
+                    Key: key,
+                    BGrName: sub.Name,
+                    ModelName: mid.Material,
+                    GroupName: group.Name);
+            }
+        }
+    }
+
+    private List<ChronicProcessCsvRow> BuildChronicProcessCsvDetails(
+        DailyModelRef model,
+        IReadOnlyList<string> periodKeys)
+    {
+        var rows = new Dictionary<(string ProcessType, string ProcessName, string NgName), Dictionary<string, double>>();
+        if (_reportByMid is null)
+            return new List<ChronicProcessCsvRow>();
+
+        foreach (var row in _reportByMid.ReasonRows.Where(r => !r.IsTotal))
+        {
+            var groupPpm = row.Groups.FirstOrDefault(g =>
+                string.Equals(g.GroupName, model.Key, StringComparison.Ordinal));
+            if (groupPpm is null)
+                continue;
+
+            var ppm = PeriodDict(periodKeys, key => groupPpm.Ppm.GetValueOrDefault(key));
+            if (!HasAnyPpm(ppm))
+                continue;
+
+            var key = (row.ProcessType, row.ProcessName, row.NgName);
+            if (!rows.TryGetValue(key, out var current))
+            {
+                current = PeriodDict(periodKeys, _ => 0);
+                rows[key] = current;
+            }
+
+            foreach (string periodKey in periodKeys)
+                current[periodKey] += ppm.GetValueOrDefault(periodKey);
+        }
+
+        return rows
+            .Select(kv => new ChronicProcessCsvRow(
+                BGrName: model.GroupName,
+                ModelName: model.Material,
+                ProcessType: kv.Key.ProcessType,
+                ProcessName: kv.Key.ProcessName,
+                NgName: kv.Key.NgName,
+                IsTotal: false,
+                Ppm: kv.Value))
+            .Where(r => HasAnyPpm(r.Ppm))
+            .ToList();
+    }
+
+    private static Dictionary<string, double> SumPpm(
+        IEnumerable<ChronicProcessCsvRow> rows,
+        IEnumerable<string> periodKeys)
+    {
+        var rowList = rows.ToList();
+        return PeriodDict(periodKeys, key => rowList.Sum(r => r.Ppm.GetValueOrDefault(key)));
+    }
+
+    private bool IsCopying(string elementId)
+        => string.Equals(_copyingElementId, elementId, StringComparison.Ordinal);
+
+    private string CopyButtonText(string elementId)
+    {
+        if (IsCopying(elementId)) return "Copying...";
+        return string.Equals(_copiedElementId, elementId, StringComparison.Ordinal) ? "Copied" : "Copy";
+    }
+
+    private bool IsDailyReasonModelVisible(string modelKey)
+        => _visibleDailyReasonModels.Contains(modelKey);
+
+    private void ToggleDailyReasonModel(string modelKey)
+    {
+        if (!_visibleDailyReasonModels.Remove(modelKey))
+            _visibleDailyReasonModels.Add(modelKey);
+    }
+
+    private void ToggleReasonSection(string modelKey, string reason)
+    {
+        string key = ReasonSectionKey(modelKey, reason);
+        if (!_expandedReasonSections.Remove(key)) _expandedReasonSections.Add(key);
+    }
+
+    // Nothing is collapsed in the static export — it has no toggle to click, so a
+    // collapsed section would be unreachable.
+    private bool IsReasonSectionCollapsed(string modelKey, string reason)
+        => !ExportMode && !_expandedReasonSections.Contains(ReasonSectionKey(modelKey, reason));
+
+    private static string ReasonSectionKey(string modelKey, string reason)
+        => modelKey + "||" + reason;
+
+    private List<NgRateReportService.SummaryPivotRow> GetModelSummaryRows(string modelKey)
+    {
+        if (_reportByMid is null) return new();
+        var rows = _reportByMid.GroupSummary.GetValueOrDefault(modelKey);
+        if (rows is null) return new();
+        return rows
+            .OrderBy(r => r.IsTotal ? 0 : 1)
+            .ThenBy(r => r.IsTotal ? 0 : ProcessTypeRank(r.ProcessType))
+            .ThenBy(r => r.ProcessType, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    private List<DailyReasonRow> GetModelReasonRows(string modelKey)
+        => GetModelReasonRows(modelKey, DailyReasonReferenceDateColumn(modelKey)?.Key);
+
+    private List<DailyReasonRow> GetModelReasonRows(string modelKey, string? referenceDateKey)
+        => GetModelReasonRows(modelKey, VisibleDateCols, VisibleWeekCols, VisibleMonthCols, referenceDateKey);
+
+    private List<DailyReasonRow> GetModelReasonRows(
+        string modelKey,
+        IReadOnlyList<NgRateReportService.PeriodColumn> dateCols,
+        IReadOnlyList<NgRateReportService.PeriodColumn> weekCols,
+        IReadOnlyList<NgRateReportService.PeriodColumn> monthCols,
+        string? referenceDateKey = null)
+    {
+        var result = new List<DailyReasonRow>();
+        if (_reportByMid is null) return result;
+
+        var periodKeys = PeriodKeys(dateCols, weekCols, monthCols).ToList();
+        if (periodKeys.Count == 0) return result;
+        bool showDailyHighPpmDetails = !ReasonOnly;
+        referenceDateKey = string.IsNullOrEmpty(referenceDateKey)
+            ? dateCols.FirstOrDefault()?.Key ?? string.Empty
+            : referenceDateKey;
+        if (showDailyHighPpmDetails && string.IsNullOrEmpty(referenceDateKey))
+            return result;
+
+        var sections = _reportByMid.ReasonRows
+            .Where(r => !r.IsTotal)
+            .GroupBy(r => r.Reason)
+            .Select(group =>
+            {
+                var details = new List<DailyReasonRow>();
+                foreach (var row in group)
+                {
+                    var groupPpm = row.Groups.FirstOrDefault(g =>
+                        string.Equals(g.GroupName, modelKey, StringComparison.Ordinal));
+                    if (groupPpm is null) continue;
+
+                    var ppm = PeriodDict(periodKeys, key => groupPpm.Ppm.GetValueOrDefault(key));
+                    if (!HasAnyPpm(ppm)) continue;
+
+                    var detail = new DailyReasonRow(
+                        Reason: row.Reason,
+                        No: row.No,
+                        IsTotal: false,
+                        ProcessType: row.ProcessType,
+                        ProcessName: row.ProcessName,
+                        NgName: row.NgName,
+                        Ppm: ppm);
+
+                    if (showDailyHighPpmDetails &&
+                        detail.Ppm.GetValueOrDefault(referenceDateKey) < DailyReasonPpmThreshold)
+                    {
+                        continue;
+                    }
+
+                    details.Add(detail);
+                }
+
+                var total = PeriodDict(periodKeys, key => details.Sum(r => r.Ppm.GetValueOrDefault(key)));
+                double referencePpm = showDailyHighPpmDetails
+                    ? total.GetValueOrDefault(referenceDateKey)
+                    : RefValue(total);
+                return new { Reason = group.Key, Details = details, Total = total, Ref = referencePpm };
+            })
+            .Where(s => s.Details.Count > 0)
+            .OrderBy(s => showDailyHighPpmDetails ? 0 : IsOtherReason(s.Reason) ? 1 : 0)
+            .ThenByDescending(s => s.Ref)
+            .ThenBy(s => s.Reason, StringComparer.Ordinal)
+            .ToList();
+
+        var visibleSections = showDailyHighPpmDetails
+            ? sections
+            : sections.Take(MaxDisplayReasonRows);
+
+        foreach (var section in visibleSections)
+        {
+            result.Add(new DailyReasonRow(
+                Reason: section.Reason,
+                No: 0,
+                IsTotal: true,
+                ProcessType: string.Empty,
+                ProcessName: "Total",
+                NgName: string.Empty,
+                Ppm: section.Total));
+
+            int no = 0;
+            IEnumerable<DailyReasonRow> visibleDetails = section.Details
+                .OrderByDescending(d => showDailyHighPpmDetails
+                    ? d.Ppm.GetValueOrDefault(referenceDateKey)
+                    : RefValue(d.Ppm))
+                .ThenBy(d => d.ProcessType, StringComparer.Ordinal)
+                .ThenBy(d => d.ProcessName, StringComparer.Ordinal)
+                .ThenBy(d => d.NgName, StringComparer.Ordinal);
+
+            if (!showDailyHighPpmDetails)
+                visibleDetails = visibleDetails.Take(MaxDisplayReasonRows);
+
+            foreach (var detail in visibleDetails)
+            {
+                no++;
+                result.Add(detail with { No = no });
+            }
+        }
+
+        return result;
+    }
+
+    private NgRateReportService.PeriodColumn? DailyReasonReferenceDateColumn(string modelKey)
+    {
+        if (VisibleDateCols.Count == 0)
+            return null;
+
+        foreach (var col in VisibleDateCols)
+        {
+            if (ModelHasDailyReasonPpm(modelKey, col.Key, DailyReasonPpmThreshold))
+                return col;
+        }
+
+        foreach (var col in VisibleDateCols)
+        {
+            if (ModelHasDailyReasonPpm(modelKey, col.Key, 0d))
+                return col;
+        }
+
+        return VisibleDateCols[0];
+    }
+
+    private bool ModelHasDailyReasonPpm(string modelKey, string dateKey, double threshold)
+    {
+        if (_reportByMid is null || string.IsNullOrEmpty(dateKey))
+            return false;
+
+        foreach (var row in _reportByMid.ReasonRows)
+        {
+            if (row.IsTotal)
+                continue;
+
+            var groupPpm = row.Groups.FirstOrDefault(g =>
+                string.Equals(g.GroupName, modelKey, StringComparison.Ordinal));
+            if (groupPpm is null)
+                continue;
+
+            double ppm = groupPpm.Ppm.GetValueOrDefault(dateKey);
+            if (threshold <= 0d ? ppm > 0d : ppm >= threshold)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Marks a top-level block of the Daily tab so the static export can split it into
+    /// sub-tabs (Summary + one per model) and keep only the selected one mounted. Null
+    /// outside export mode, which drops the attribute and leaves the interactive page as a
+    /// single continuous scroll.
+    /// </summary>
+    private string? ExportSectionKey(string key) => ExportMode ? key : null;
+
+    /// <summary>
+    /// Reference-date PPM of a reason detail row, as a <c>data-ppm</c> value for the static
+    /// export's viewer toolbar. Null outside export mode so Blazor omits the attribute and
+    /// the interactive page's markup is unchanged.
+    /// </summary>
+    private string? ExportReasonPpm(DailyReasonRow row, string? referenceDateKey)
+        => !ExportMode || string.IsNullOrEmpty(referenceDateKey)
+            ? null
+            : row.Ppm.GetValueOrDefault(referenceDateKey)
+                 .ToString("0.####", System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>Heading template whose <c>{v}</c> the viewer toolbar replaces with the live
+    /// threshold. Null outside export mode.</summary>
+    private string? ExportReasonLabelTemplate(string referenceHeader)
+        => ExportMode ? $"Reason Detail >= {{v}} PPM ({referenceHeader})" : null;
+
+    /// <summary>
+    /// Period block sizes for the static export's viewer toolbar. Every table in this tab
+    /// lays its period columns out as date → week → month at the right edge of each row,
+    /// so the viewer can locate them by counting back from the end once it knows these
+    /// three counts — no per-cell tagging needed. Emitted once per tab body.
+    /// </summary>
+    private MarkupString ExportPeriodMeta()
+    {
+        if (!ExportMode) return default;
+        string json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            date  = VisibleDateCols.Count,
+            week  = VisibleWeekCols.Count,
+            month = VisibleMonthCols.Count,
+        });
+        return new MarkupString($"<script type=\"application/json\" data-periods>{json}</script>");
+    }
+
+    private double MeanOfGroups(string colKey)
+        => WeightedReportPpm(_report, SelectedGroups.Select(g => g.Name), colKey, null);
+
+    private double MeanOfMembers(string groupName, string colKey, string? processType)
+        => ReadSummaryPpm(_report, groupName, colKey, processType);
+
+    private double MidPpmAvgOfSubs(string groupName, string material, string colKey)
+        => MidGroupPpm(groupName, material, colKey);
+
+    private double MidGroupPpm(string groupName, string material, string colKey, string? processType = null)
+    {
+        if (_reportByMid is null) return 0;
+        string key = ModelKey(groupName, material);
+        var rows = _reportByMid.GroupSummary.GetValueOrDefault(key);
+        if (rows is null) return 0;
+
+        var row = processType is null
+            ? rows.FirstOrDefault(r => r.IsTotal)
+            : rows.FirstOrDefault(r => !r.IsTotal && r.ProcessType == processType);
+        return row?.Ppm.GetValueOrDefault(colKey) ?? 0;
+    }
+
+    private List<NgRateReportService.SummaryPivotRow> GetBGrSummaryRows(string bGrKey)
+    {
+        if (_reportBySubGroup is null) return [];
+        var rows = _reportBySubGroup.GroupSummary.GetValueOrDefault(bGrKey);
+        return rows ?? [];
+    }
+
+    private double BGrPpm(string bGrKey, string colKey, string? processType = null)
+    {
+        var rows = GetBGrSummaryRows(bGrKey);
+        var row = processType is null
+            ? rows.FirstOrDefault(r => r.IsTotal)
+            : rows.FirstOrDefault(r => !r.IsTotal && string.Equals(r.ProcessType, processType, StringComparison.Ordinal));
+        return row?.Ppm.GetValueOrDefault(colKey) ?? 0;
+    }
+
+    private static double ReadSummaryPpm(
+        NgRateReportService.NgRateReport? report,
+        string groupName,
+        string colKey,
+        string? processType = null)
+    {
+        if (report is null) return 0;
+        var rows = report.GroupSummary.GetValueOrDefault(groupName);
+        var row = processType is null
+            ? rows?.FirstOrDefault(r => r.IsTotal)
+            : rows?.FirstOrDefault(r => !r.IsTotal && string.Equals(r.ProcessType, processType, StringComparison.Ordinal));
+        return row?.Ppm.GetValueOrDefault(colKey) ?? 0;
+    }
+
+    private static double WeightedReportPpm(
+        NgRateReportService.NgRateReport? report,
+        IEnumerable<string> groupNames,
+        string colKey,
+        string? processType)
+    {
+        if (report is null) return 0;
+        var selected = groupNames.Where(g => !string.IsNullOrWhiteSpace(g)).ToHashSet(StringComparer.Ordinal);
+        if (selected.Count == 0) return 0;
+
+        if (report.GroupRawIn.Count > 0)
+        {
+            return report.GroupRawIn
+                .Where(kv => selected.Contains(kv.Key.Item4) &&
+                             kv.Key.Item5 == colKey &&
+                             (processType is null || string.Equals(kv.Key.Item1, processType, StringComparison.Ordinal)))
+                .GroupBy(kv => (kv.Key.Item1, kv.Key.Item2, kv.Key.Item3))
+                .Sum(g => ToPpm(g.Sum(kv => kv.Value.I), g.Sum(kv => kv.Value.N)));
+        }
+
+        double sum = 0;
+        int count = 0;
+        foreach (string groupName in selected)
+        {
+            double v = ReadSummaryPpm(report, groupName, colKey, processType);
+            if (v <= 0) continue;
+            sum += v;
+            count++;
+        }
+        return count == 0 ? 0 : sum / count;
+    }
+
+    private static double ToPpm(double input, double ng)
+        => input <= 0 || ng <= 0 ? 0 : ng / input * 1_000_000d;
+
+    private bool IsRootSelection(ModelGroupRecord group)
+        => _allGroupNamesById.TryGetValue(group.Id, out string? rootName)
+            ? string.Equals(rootName, group.Name, StringComparison.Ordinal)
+            : _groupOverride is null;
+
+    private bool BGrHasData(
+        ChronicBucketRef bucket,
+        IReadOnlyList<NgRateReportService.PeriodColumn> dateCols,
+        IReadOnlyList<NgRateReportService.PeriodColumn> weekCols,
+        IReadOnlyList<NgRateReportService.PeriodColumn> monthCols)
+    {
+        foreach (var col in dateCols) if (BGrPpm(bucket.Key, col.Key) > 0) return true;
+        foreach (var col in weekCols) if (BGrPpm(bucket.Key, col.Key) > 0) return true;
+        foreach (var col in monthCols) if (BGrPpm(bucket.Key, col.Key) > 0) return true;
+        return false;
+    }
+
+    private bool ModelHasVisibleData(DailyModelRef model)
+    {
+        foreach (var col in VisibleDateCols) if (MidPpmAvgOfSubs(model.GroupName, model.Material, col.Key) > 0) return true;
+        foreach (var col in VisibleWeekCols) if (MidPpmAvgOfSubs(model.GroupName, model.Material, col.Key) > 0) return true;
+        foreach (var col in VisibleMonthCols) if (MidPpmAvgOfSubs(model.GroupName, model.Material, col.Key) > 0) return true;
+        return false;
+    }
+
+    private bool ModelHasData(
+        DailyModelRef model,
+        IReadOnlyList<NgRateReportService.PeriodColumn> dateCols,
+        IReadOnlyList<NgRateReportService.PeriodColumn> weekCols,
+        IReadOnlyList<NgRateReportService.PeriodColumn> monthCols)
+    {
+        foreach (var col in dateCols) if (MidPpmAvgOfSubs(model.GroupName, model.Material, col.Key) > 0) return true;
+        foreach (var col in weekCols) if (MidPpmAvgOfSubs(model.GroupName, model.Material, col.Key) > 0) return true;
+        foreach (var col in monthCols) if (MidPpmAvgOfSubs(model.GroupName, model.Material, col.Key) > 0) return true;
+        return false;
+    }
+
+    private IEnumerable<string> VisiblePeriodKeys()
+        => PeriodKeys(VisibleDateCols, VisibleWeekCols, VisibleMonthCols);
+
+    private static IEnumerable<string> PeriodKeys(
+        IReadOnlyList<NgRateReportService.PeriodColumn> dateCols,
+        IReadOnlyList<NgRateReportService.PeriodColumn> weekCols,
+        IReadOnlyList<NgRateReportService.PeriodColumn> monthCols)
+        => dateCols.Select(c => c.Key)
+            .Concat(weekCols.Select(c => c.Key))
+            .Concat(monthCols.Select(c => c.Key));
+
+    private (string Key, string Bucket) SortRefKey()
+    {
+        if (VisibleWeekCols.Count >= 2) return (VisibleWeekCols[1].Key, "week");
+        if (VisibleWeekCols.Count == 1) return (VisibleWeekCols[0].Key, "week");
+        if (VisibleDateCols.Count > 0) return (VisibleDateCols[0].Key, "date");
+        if (VisibleMonthCols.Count > 0) return (VisibleMonthCols[0].Key, "month");
+        return (string.Empty, string.Empty);
+    }
+
+    private double RefValue(Dictionary<string, double> ppm)
+    {
+        var (key, _) = SortRefKey();
+        if (!string.IsNullOrEmpty(key)) return ppm.GetValueOrDefault(key);
+        return ppm.Values.DefaultIfEmpty(0).Max();
+    }
+
+    private static Dictionary<string, double> PeriodDict(
+        IEnumerable<string> keys,
+        Func<string, double> valueOf)
+    {
+        var dict = new Dictionary<string, double>(StringComparer.Ordinal);
+        foreach (string key in keys)
+        {
+            if (!dict.ContainsKey(key))
+                dict[key] = valueOf(key);
+        }
+
+        return dict;
+    }
+
+    private static bool HasAnyPpm(Dictionary<string, double> ppm)
+        => ppm.Values.Any(v => v > 0);
+
+    private static bool IsOtherReason(string reason)
+        => string.Equals(reason, OtherReason, StringComparison.OrdinalIgnoreCase);
+
+    private static string ModelKey(string groupName, string material)
+        => NgRateModeSupport.ModelKey(groupName, material);
+
+    private static string ModelCopyTargetId(string modelKey)
+        => "dailyModelCopy_" + new string(modelKey.Select(ch => char.IsLetterOrDigit(ch) ? ch : '_').ToArray());
+
+    private static string FormatPpm(double v)
+        => NgRateModeSupport.FormatPpm(v);
+
+    private static string PpmClass(double v)
+        => NgRateModeSupport.PpmClass(v);
+
+    private RenderFragment SummaryPpmCell(double value, double? previous) => builder =>
+    {
+        int seq = 0;
+        builder.OpenElement(seq++, "td");
+        builder.AddAttribute(seq++, "class", PpmClass(value));
+        builder.OpenElement(seq++, "span");
+        builder.AddAttribute(seq++, "class", "ppm-cell-value");
+        builder.AddContent(seq++, FormatPpm(value));
+        builder.CloseElement();
+
+        if (_showDailySummaryDelta)
+        {
+            var delta = BuildDeltaDisplay(value, previous);
+            if (delta is not null)
+            {
+                builder.OpenElement(seq++, "span");
+                builder.AddAttribute(seq++, "class", delta.CssClass);
+                builder.AddContent(seq++, delta.Text);
+                builder.CloseElement();
+            }
+        }
+
+        builder.CloseElement();
+    };
+
+    private double? PreviousDatePpm(NgRateReportService.PeriodColumn col, Func<string, double> valueOf)
+        => PreviousColumnPpm(_report?.DateCols, col, valueOf);
+
+    private double? PreviousWeekPpm(NgRateReportService.PeriodColumn col, Func<string, double> valueOf)
+        => PreviousColumnPpm(_report?.WeekCols, col, valueOf);
+
+    private double? PreviousMonthPpm(NgRateReportService.PeriodColumn col, Func<string, double> valueOf)
+        => PreviousColumnPpm(_report?.MonthCols, col, valueOf);
+
+    private static double? PreviousColumnPpm(
+        IReadOnlyList<NgRateReportService.PeriodColumn>? cols,
+        NgRateReportService.PeriodColumn col,
+        Func<string, double> valueOf)
+    {
+        if (cols is null) return null;
+
+        for (int i = 0; i < cols.Count; i++)
+        {
+            if (!string.Equals(cols[i].Key, col.Key, StringComparison.Ordinal)) continue;
+            if (i + 1 >= cols.Count) return null;
+
+            for (int j = i + 1; j < cols.Count; j++)
+            {
+                double previous = valueOf(cols[j].Key);
+                if (previous > 0) return previous;
+            }
+
+            return valueOf(cols[i].Key);
+        }
+
+        return null;
+    }
+
+    private static DeltaDisplay? BuildDeltaDisplay(double current, double? previous)
+    {
+        if (current <= 0) return null;
+        if (!previous.HasValue) return null;
+
+        long delta = (long)Math.Round(current - previous.Value);
+        if (delta == 0)
+            return new DeltaDisplay("0", "ppm-delta ppm-delta-flat");
+
+        string text = delta > 0
+            ? "+" + delta.ToString("N0", CultureInfo.InvariantCulture)
+            : delta.ToString("N0", CultureInfo.InvariantCulture);
+        string css = delta > 0 ? "ppm-delta ppm-delta-up" : "ppm-delta ppm-delta-down";
+        return new DeltaDisplay(text, css);
+    }
+
+    private static string ReportGroupDisplayName(string groupName)
+    {
+        if (string.IsNullOrWhiteSpace(groupName)) return string.Empty;
+
+        int idx = groupName.IndexOf('_', StringComparison.Ordinal);
+        return idx >= 0 && idx + 1 < groupName.Length
+            ? groupName[(idx + 1)..]
+            : groupName;
+    }
+
+    private void AddLog(string message)
+    {
+        _logs.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
+        _externalProgress?.Report(message);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private static int ProcessTypeRank(string pt)
+        => NgRateModeSupport.ProcessTypeRank(pt);
+}

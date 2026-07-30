@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 807,
+  "sourceFile": "63. MSU-L20S15-07GMI - Report test  new bond  A-3424E, A-3424F,A-3502B Ass'y VP+CD_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\807.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 807,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misidentifies the changed factor and misparses key outcomes.",
+    "issues": [
+      "Changed factor is dates, not new bond material/type versus Normal(SJ4765).",
+      "A-3424E and A-3424F are merged without preserving type as the main test condition.",
+      "Test 3502-B sheet is omitted despite filename and sheet list.",
+      "Function outcome uses wrong columns; total NG/rates are not captured.",
+      "Tension stats lack type context and use sampleCount 1 instead of the 10-piece test context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary change to Normal(SJ4765) versus new bond types A-3424E, A-3424F, and any supported A-3502B data.",
+      "Keep date, line, and bond type as grouping keys for each result row.",
+      "Re-extract AOI bonding, UC press, AOI assy, function/separate, decap NG, reliability, and tension outcomes by correct columns.",
+      "Add or explicitly exclude Test 3502-B with row evidence.",
+      "Update judgements and summaries using decision rows for each tested bond."
+    ],
+    "evidencePolicy": "Row citations exist, but cited evidence is incomplete and some parsed values do not match row meaning."
+  },
+  "usage": {
+    "input_tokens": 9893,
+    "output_tokens": 817,
+    "total_tokens": 10710
+  }
+}

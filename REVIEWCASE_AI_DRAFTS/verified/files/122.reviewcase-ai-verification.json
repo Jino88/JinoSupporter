@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 122,
+  "sourceFile": "05. BRS-161016  Report test VP happen NG different color- date 27.05.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\122.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 122,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but mis-pairs several test rows with the wrong normal rows and includes a questionable header-only measurement outcome.",
+    "issues": [
+      "Primary change should be test VP different color lot vs normal VP, not a broad condition list.",
+      "Second-date laser, VP/CD, and function comparisons use prior normal rows instead of same date/line normal rows.",
+      "Outcome comparison row lists omit required paired normal rows Test!23, Test!36, and Test!52.",
+      "Measurement-2 appears derived from a header or non-comparable row and should not be final evidence.",
+      "Tension sample counts/grouping need verification against the five reported values per row."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to test VP different color lot IR250520007 versus normal VP molds.",
+      "Pair each test row with the adjacent normal row sharing the same date, line, section, and context.",
+      "Add Test!23, Test!36, and Test!52 to the relevant outcome evidence and recompute deltas.",
+      "Remove Measurement-2 unless actual data rows support it.",
+      "Verify tension grouping and sample counts, then judge as pass/same normal if supported."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are incomplete and one cited row is questionable."
+  },
+  "usage": {
+    "input_tokens": 7411,
+    "output_tokens": 770,
+    "total_tokens": 8181
+  }
+}

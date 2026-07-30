@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 246,
+  "sourceFile": "12. BRS-161016 Report  Test JIG CD Load Tray Repair date 25.4.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\246.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 246,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Main Test JIG versus Normal comparison is supported, but the tension outcome is misgrouped and needs correction before use.",
+    "issues": [
+      "Tension outcome incorrectly includes function rows 31-32 as measurement stats.",
+      "Normal tension row 26 is omitted despite showing no valid normal data.",
+      "Tension spec is parsed blank though row 25 shows 0.5kgf.",
+      "Tension sample count/stat parsing appears inconsistent with row 25 values.",
+      "Function and vision outcomes appear supported by cited rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove rows 31-32 from the tension measurement outcome.",
+      "Add row 26 as normal tension evidence with no valid data limitation.",
+      "Set tension spec to 0.5kgf if using row 25.",
+      "Do not compare tension against Normal unless valid normal values exist.",
+      "Keep vision and function comparisons under the same Test JIG after repair factor."
+    ],
+    "evidencePolicy": "Citations are sufficient for vision/function, but insufficient and partly wrong for tension."
+  },
+  "usage": {
+    "input_tokens": 4178,
+    "output_tokens": 995,
+    "total_tokens": 5173
+  }
+}

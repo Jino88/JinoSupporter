@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 813,
+  "sourceFile": "64. BRS-161014 Report TEST sample NG air leak date 08.11.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\813.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:49Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 813,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the leak-sample report but misgroups the changed factor and includes invalid derived measurement evidence.",
+    "issues": [
+      "No explicit normal baseline is evidenced.",
+      "Primary comparison should be NG leak type only.",
+      "Total is an aggregate, not a changed condition.",
+      "Measurement outcome is derived from a header row.",
+      "Decision content is not captured."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to NG air leak sample type.",
+      "Use 5~10 Pa leak and Big Leak as compared conditions.",
+      "Move Total to aggregate result or omit as condition.",
+      "Remove the header-based measurement outcome.",
+      "Cite purpose, type-definition, result-header, and data rows only."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient until grouping and invalid measurement evidence are corrected."
+  },
+  "usage": {
+    "input_tokens": 3284,
+    "output_tokens": 714,
+    "total_tokens": 3998
+  }
+}

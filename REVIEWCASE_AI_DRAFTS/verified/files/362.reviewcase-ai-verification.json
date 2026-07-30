@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 362,
+  "sourceFile": "19. TIU C11-20  Report TestDont use VP press Jig ( Frame+ VP) 2025.12.24_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\362.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:34Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 362,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid comparable evidence but misidentifies the primary changed factor and mishandles tension data.",
+    "issues": [
+      "Primary changed factor should be use vs no use of VP press jig, not Normal vs TIU C11-20R.",
+      "TIU C11-20R is model context, not the changed condition.",
+      "Tension outcome is not a valid two-condition comparison; normal row has no samples.",
+      "Tension spec and sample count are extracted incorrectly.",
+      "Changed/test condition is placed as subgroup instead of main factor."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baseline to Normal use VP press jig and changed condition to Test no VP press jig.",
+      "Move TIU C11-20R to subgroup/model context.",
+      "Keep defect and function outcomes under the jig-use comparison.",
+      "For tension, cite both test and normal rows or mark as test-only with no normal data.",
+      "Correct tension spec to 0.4 and sample count to the measured 10 values."
+    ],
+    "evidencePolicy": "Row citations exist and are citeable, but are not sufficient until factor labels and tension evidence are corrected."
+  },
+  "usage": {
+    "input_tokens": 4212,
+    "output_tokens": 645,
+    "total_tokens": 4857
+  }
+}

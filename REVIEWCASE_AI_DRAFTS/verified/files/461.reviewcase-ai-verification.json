@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 461,
+  "sourceFile": "26. MSU-L20S15-07GMI  Report Test Supension-B changing tin supplier of vendor CSY Tech Vina  26.6.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\461.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 461,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but changed-factor and outcome grouping need correction before Ask AI use.",
+    "issues": [
+      "Primary change should be tin supplier test versus normal; polish/non-polish are subgroup conditions.",
+      "Vision welding comparison mismatches subgroup keys and may compare Polish to Normal B only.",
+      "Tension SUSP+COIL grouping loses A/B and merged Test/Normal context.",
+      "Measurement outcome includes function and NG rows as false zero measurements.",
+      "Header-derived measurement-3 is not a valid outcome."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to tin supplier change with baseline Normal and test CSY tin supplier.",
+      "Keep Polish and Non-polish plus A/B or module line as subgroup keys.",
+      "Rebuild each outcome within its own section: SPK vision, SPK tension, SPK function, module spot NG, module tension, module function.",
+      "Remove false measurement stats from rows 48-50 and 55-57 and delete header-only measurement-3.",
+      "Add judgements only after same-subgroup Normal versus Test comparisons are aligned."
+    ],
+    "evidencePolicy": "Row citations exist, but several are misgrouped or invalid as outcome evidence."
+  },
+  "usage": {
+    "input_tokens": 6304,
+    "output_tokens": 792,
+    "total_tokens": 7096
+  }
+}

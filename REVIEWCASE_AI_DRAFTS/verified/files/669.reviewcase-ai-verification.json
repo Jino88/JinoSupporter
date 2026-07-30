@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 669,
+  "sourceFile": "46. TIU C11-20  Report check VP deform. 2026.1.27_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\669.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:10Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 669,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft uses an incorrect changed-factor grouping; the evidence supports visual-stage comparison for VP deform, not shift comparison.",
+    "issues": [
+      "Primary changed factor is visual stage, not Day shift.",
+      "Baseline should be Before visual, not Day shift.",
+      "Shift, date, model, and input count should be subgroup/context keys.",
+      "Referenced Test!14 is not shown in supplied context and may affect grouping.",
+      "Purpose/content mention 500 pcs while results show 630 pcs."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to Before visual vs After Visual VP deform check.",
+      "Set baselineCondition to Before visual and changedCondition to After Visual.",
+      "Move Day shift, date, model TIU C11-20L, and input 630 to subgroup/context.",
+      "Verify Test!14 and include it only if it is an intermediate visual-stage row.",
+      "Cite title, purpose/content, header, result rows, and decision rows."
+    ],
+    "evidencePolicy": "Citations are mostly sufficient, but final evidence must include the header and verified condition rows; unresolved Test!14 prevents approval."
+  },
+  "usage": {
+    "input_tokens": 2338,
+    "output_tokens": 707,
+    "total_tokens": 3045
+  }
+}

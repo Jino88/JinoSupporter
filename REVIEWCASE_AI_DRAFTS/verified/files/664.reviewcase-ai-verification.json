@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 664,
+  "sourceFile": "45.L20S15-07 Report Test using Primer AS 8100  and lumix 840 Clean SMG and CMG date 13.10.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\664.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 664,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable test evidence but the changed-factor and measurement groupings are materially unreliable.",
+    "issues": [
+      "Changed factor conflates cleaning agents, joint types, and processes.",
+      "Normal baseline is not mapped per outcome or test round.",
+      "Second sheet shake-well condition is not preserved.",
+      "Decap and tension measurements are mis-extracted from headers.",
+      "Measurement citations point to headers instead of data rows."
+    ],
+    "requiredUserQuestions": [
+      "Is normal production the intended baseline for all outcomes?",
+      "Should alcohol be treated as a control condition or a tested cleaning agent?"
+    ],
+    "correctionPlan": [
+      "Define primary factor as cleaning condition: normal versus Primer AS8100, Lumix 840, and possibly alcohol.",
+      "Keep sheet/test round, date, line, process, and joint type as subgroup keys.",
+      "Rebuild vision and decap results from actual data rows by process and cleaning condition.",
+      "Rebuild tension results by type test rows, not sample columns.",
+      "Cite section rows plus each supporting data row used for every subresult."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient for final evidence because key measurement data rows are missing or miscited."
+  },
+  "usage": {
+    "input_tokens": 11223,
+    "output_tokens": 787,
+    "total_tokens": 12010
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 220,
+  "sourceFile": "10.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Primer date 6.9.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\220.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:28Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 220,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed factor and captures only one outcome from a multi-test validation report.",
+    "issues": [
+      "Changed factor should be Ruijin clean Primer vs normal clean alcohol, not SM VISION.",
+      "SM VISION is a test/process label, not the changed condition.",
+      "Separate glue NG result is omitted despite being the key failure.",
+      "Drop test and tension outcomes are omitted.",
+      "Evidence set misses or underuses decision and result rows for full outcome support."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to cleaning/primer condition comparison.",
+      "Set baseline as normal clean alcohol and changed condition as Ruijin clean Primer.",
+      "Keep vision, glue separation, drop test, and tension under one review case.",
+      "Add outcome rows for glue NG 4/8 50%, drop OK, tension OK, and vision OK.",
+      "Cite purpose/content rows plus result and decision rows for each outcome."
+    ],
+    "evidencePolicy": "Current citations exist but are insufficient and partly misgrouped for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3668,
+    "output_tokens": 560,
+    "total_tokens": 4228
+  }
+}

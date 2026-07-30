@@ -1,0 +1,805 @@
+{
+  "sourceFileId": 906,
+  "sourceFile": "79. TIU L5S3-01 R Data check UV dry AWF machine 2026.03.16_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\79. TIU L5S3-01 R Data check UV dry AWF machine 2026.03.16_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 122,
+    "sheetCellCount": 1315,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 16,
+    "measurementStatCount": 25
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] DATA CHECK UV DRY VP/COIL AWF MACHINE | | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | Date | 2026-03-17 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Make again Standard Speak/Total UV Dry AWF machine"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Take data check UV Dry in 5days"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| => Compare result check function"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | 1. Result check daily Line R (D3-4A)"
+    },
+    {
+      "rowId": "Test!15",
+      "sheetName": "Test",
+      "rowNumber": 15,
+      "rowText": "| | Line | Date | Machine | Peak | Total | Input | OK | NG BAKO | | | | | HEARING | | | | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | | | | | | | | FRF high | FRF Low | FRF+SPL | THD | No sound | Input | Touch | Noise | No sound"
+    },
+    {
+      "rowId": "Test!71",
+      "sheetName": "Test",
+      "rowNumber": 71,
+      "rowText": "| | 2. Result check daily Line R (D3-3A)"
+    },
+    {
+      "rowId": "Test!72",
+      "sheetName": "Test",
+      "rowNumber": 72,
+      "rowText": "| | Line | Date | Machine | Peak | Total | Input | OK | NG BAKO | | | | | HEARING | | | | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "Test!129",
+      "sheetName": "Test",
+      "rowNumber": 129,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-906-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] DATA CHECK UV DRY VP/COIL AWF MACHINE | | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Make again Standard Speak/Total UV Dry AWF machine / | II. Content. / | - Take data check UV Dry in 5days / | => Compare result check function",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs AWF #2, AWF #3, AWF #4, AWF #5, AWF #1, Line R D3-4A, Line L D3-3A",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "AWF #2, AWF #3, AWF #4, AWF #5, AWF #1, Line R D3-4A, Line L D3-3A",
+          "subgroupKeys": [
+            "AWF #1"
+          ],
+          "evidenceRows": [
+            "Test!126",
+            "Test!16",
+            "Test!17",
+            "Test!19",
+            "Test!2",
+            "Test!21",
+            "Test!23",
+            "Test!25",
+            "Test!27",
+            "Test!29",
+            "Test!31",
+            "Test!37",
+            "Test!38",
+            "Test!5",
+            "Test!69",
+            "Test!7",
+            "Test!73",
+            "Test!74",
+            "Test!76",
+            "Test!78",
+            "Test!80",
+            "Test!82",
+            "Test!84",
+            "Test!86",
+            "Test!88"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "1. Result check daily Line R (D3-4A)",
+          "comparisonRows": [
+            "Test!17",
+            "Test!19",
+            "Test!21",
+            "Test!23",
+            "Test!25",
+            "Test!27",
+            "Test!29",
+            "Test!31"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 24587,
+              "condition": "Line R D3-4A | AWF #1",
+              "input": 70.0,
+              "ok": 70.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "metricId": 24588,
+              "condition": "AWF #2",
+              "input": 70.0,
+              "ok": 69.0,
+              "ng": 1.0,
+              "ratePercent": 1.428571,
+              "evidenceRows": [
+                "Test!19"
+              ]
+            },
+            {
+              "metricId": 24589,
+              "condition": "AWF #3",
+              "input": 70.0,
+              "ok": 70.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!21"
+              ]
+            },
+            {
+              "metricId": 24590,
+              "condition": "AWF #4",
+              "input": 70.0,
+              "ok": 69.0,
+              "ng": 1.0,
+              "ratePercent": 1.428571,
+              "evidenceRows": [
+                "Test!23"
+              ]
+            },
+            {
+              "metricId": 24591,
+              "condition": "AWF #5",
+              "input": 70.0,
+              "ok": 70.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!25"
+              ]
+            },
+            {
+              "metricId": 24592,
+              "condition": "AWF #1",
+              "input": 70.0,
+              "ok": 69.0,
+              "ng": 1.0,
+              "ratePercent": 1.428571,
+              "evidenceRows": [
+                "Test!27"
+              ]
+            },
+            {
+              "metricId": 24593,
+              "condition": "AWF #2",
+              "input": 70.0,
+              "ok": 67.0,
+              "ng": 3.0,
+              "ratePercent": 4.2857140000000005,
+              "evidenceRows": [
+                "Test!29"
+              ]
+            },
+            {
+              "metricId": 24594,
+              "condition": "AWF #3",
+              "input": 70.0,
+              "ok": 70.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!31"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "metric-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "2. Result check daily Line R (D3-3A)",
+          "comparisonRows": [
+            "Test!74",
+            "Test!76",
+            "Test!78",
+            "Test!80",
+            "Test!82",
+            "Test!84",
+            "Test!86",
+            "Test!88"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 24595,
+              "condition": "Line L D3-3A | AWF #1",
+              "input": 70.0,
+              "ok": 69.0,
+              "ng": 1.0,
+              "ratePercent": 1.428571,
+              "evidenceRows": [
+                "Test!74"
+              ]
+            },
+            {
+              "metricId": 24596,
+              "condition": "AWF #2",
+              "input": 70.0,
+              "ok": 68.0,
+              "ng": 2.0,
+              "ratePercent": 2.8571429999999998,
+              "evidenceRows": [
+                "Test!76"
+              ]
+            },
+            {
+              "metricId": 24597,
+              "condition": "AWF #3",
+              "input": 70.0,
+              "ok": 70.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!78"
+              ]
+            },
+            {
+              "metricId": 24598,
+              "condition": "AWF #4",
+              "input": 70.0,
+              "ok": 69.0,
+              "ng": 1.0,
+              "ratePercent": 1.428571,
+              "evidenceRows": [
+                "Test!80"
+              ]
+            },
+            {
+              "metricId": 24599,
+              "condition": "AWF #5",
+              "input": 70.0,
+              "ok": 69.0,
+              "ng": 1.0,
+              "ratePercent": 1.428571,
+              "evidenceRows": [
+                "Test!82"
+              ]
+            },
+            {
+              "metricId": 24600,
+              "condition": "AWF #1",
+              "input": 70.0,
+              "ok": 69.0,
+              "ng": 1.0,
+              "ratePercent": 1.428571,
+              "evidenceRows": [
+                "Test!84"
+              ]
+            },
+            {
+              "metricId": 24601,
+              "condition": "AWF #2",
+              "input": 70.0,
+              "ok": 69.0,
+              "ng": 1.0,
+              "ratePercent": 1.428571,
+              "evidenceRows": [
+                "Test!86"
+              ]
+            },
+            {
+              "metricId": 24602,
+              "condition": "AWF #3",
+              "input": 70.0,
+              "ok": 69.0,
+              "ng": 1.0,
+              "ratePercent": 1.428571,
+              "evidenceRows": [
+                "Test!88"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Test!126",
+            "Test!37",
+            "Test!38",
+            "Test!69"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65035,
+              "condition": "AWF #5 2",
+              "spec": "",
+              "min": 58.0,
+              "max": 358.0,
+              "avg": 177.32,
+              "sampleCount": 19,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!69"
+              ]
+            },
+            {
+              "statId": 65036,
+              "condition": "AWF #5 3",
+              "spec": "",
+              "min": 342.0,
+              "max": 1751.0,
+              "avg": 1007.0,
+              "sampleCount": 19,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!69"
+              ]
+            },
+            {
+              "statId": 65037,
+              "condition": "AWF #5 2",
+              "spec": "",
+              "min": 56.0,
+              "max": 492.0,
+              "avg": 183.92,
+              "sampleCount": 19,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!126"
+              ]
+            },
+            {
+              "statId": 65038,
+              "condition": "AWF #5 3",
+              "spec": "",
+              "min": 313.0,
+              "max": 2847.0,
+              "avg": 1008.92,
+              "sampleCount": 19,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!126"
+              ]
+            },
+            {
+              "statId": 65047,
+              "condition": "AWF #5 / AWF #1",
+              "spec": "",
+              "min": 1.0,
+              "max": 5.0,
+              "avg": 3.142857142857143,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!37"
+              ]
+            },
+            {
+              "statId": 65048,
+              "condition": "#DIV/0!",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.04166667,
+              "avg": 0.006644800714285714,
+              "sampleCount": 14,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!37"
+              ]
+            },
+            {
+              "statId": 65049,
+              "condition": "#DIV/0!",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.10973639464285713,
+              "sampleCount": 28,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!38"
+              ]
+            },
+            {
+              "statId": 65050,
+              "condition": "#DIV/0!",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.036443148571428566,
+              "sampleCount": 28,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!38"
+              ]
+            },
+            {
+              "statId": 65051,
+              "condition": "#DIV/0!",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 28,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!38"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Line | Date | Machine | Peak | Total | Input | OK | NG BAKO | HEARING | Total NG | Total NG rate",
+          "comparisonRows": [
+            "Test!16",
+            "Test!73"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65039,
+              "condition": "NG BAKO / FRF high",
+              "spec": "",
+              "min": 0.0,
+              "max": 3.0,
+              "avg": 0.18316666639999998,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 65040,
+              "condition": "NG BAKO / FRF Low",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.0204081632,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 65041,
+              "condition": "NG BAKO / FRF+SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.0202857142,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 65042,
+              "condition": "NG BAKO / THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 65043,
+              "condition": "NG BAKO / No sound",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 65044,
+              "condition": "HEARING / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 65045,
+              "condition": "HEARING / Noise",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 65046,
+              "condition": "HEARING / No sound",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 65052,
+              "condition": "NG BAKO / FRF high",
+              "spec": "",
+              "min": 0.0,
+              "max": 2.0,
+              "avg": 0.3245714273999999,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!73"
+              ]
+            },
+            {
+              "statId": 65053,
+              "condition": "NG BAKO / FRF Low",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.10142857100000001,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!73"
+              ]
+            },
+            {
+              "statId": 65054,
+              "condition": "NG BAKO / FRF+SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!73"
+              ]
+            },
+            {
+              "statId": 65055,
+              "condition": "NG BAKO / THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!73"
+              ]
+            },
+            {
+              "statId": 65056,
+              "condition": "NG BAKO / No sound",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!73"
+              ]
+            },
+            {
+              "statId": 65057,
+              "condition": "HEARING / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!73"
+              ]
+            },
+            {
+              "statId": 65058,
+              "condition": "HEARING / Noise",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!73"
+              ]
+            },
+            {
+              "statId": 65059,
+              "condition": "HEARING / No sound",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 50,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!73"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!126",
+        "Test!16",
+        "Test!17",
+        "Test!19",
+        "Test!2",
+        "Test!21",
+        "Test!23",
+        "Test!25",
+        "Test!27",
+        "Test!29",
+        "Test!31",
+        "Test!37",
+        "Test!38",
+        "Test!5",
+        "Test!69",
+        "Test!7",
+        "Test!73",
+        "Test!74",
+        "Test!76",
+        "Test!78",
+        "Test!80",
+        "Test!82",
+        "Test!84",
+        "Test!86",
+        "Test!88"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!126",
+      "Test!16",
+      "Test!17",
+      "Test!19",
+      "Test!2",
+      "Test!21",
+      "Test!23",
+      "Test!25",
+      "Test!27",
+      "Test!29",
+      "Test!31",
+      "Test!37",
+      "Test!38",
+      "Test!5",
+      "Test!69",
+      "Test!7",
+      "Test!73",
+      "Test!74",
+      "Test!76",
+      "Test!78",
+      "Test!80",
+      "Test!82",
+      "Test!84",
+      "Test!86",
+      "Test!88"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

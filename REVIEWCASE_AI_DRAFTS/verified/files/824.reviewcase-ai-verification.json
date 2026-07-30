@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 824,
+  "sourceFile": "65.MSU-L20S15-07  Report test material ring plate difference colour level 3 from Myungjin vender_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\824.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:07Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 824,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misgroups drop-test types as changed factors and misstates some outcome judgements.",
+    "issues": [
+      "Changed factor should be material plate ring color level 3 from Myungjin vs Normal, not drop-test modes.",
+      "Function result is source-judged same/OK, not improved.",
+      "Manual drop comparison cites the wrong Normal row and omits its true control row.",
+      "Decision and post-AOI adjustment rows are missing from final evidence.",
+      "Change domain overstates process condition unless AOI setting is separately modeled."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Revise changedFactor to Normal vs Myungjin plate ring color level 3 material only.",
+      "Move auto/manual drop labels to reliability subgroups, not changedCondition.",
+      "Set function judgement to no_change or OK-equivalent with source limitation.",
+      "Fix manual drop evidence to use rows 37 and 38, and include row 38 in comparisonRows.",
+      "Add decision/AOI adjustment rows 52-60 or model pre-setting AOI as a limitation."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are incomplete until decision and correct drop rows are added."
+  },
+  "usage": {
+    "input_tokens": 5231,
+    "output_tokens": 642,
+    "total_tokens": 5873
+  }
+}

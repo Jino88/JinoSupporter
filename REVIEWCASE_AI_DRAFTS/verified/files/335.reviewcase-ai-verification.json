@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 335,
+  "sourceFile": "17.2 BRS 161016 Report check dimension compare CD vendor Ralon and GES 2024.02.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\335.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:49Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 335,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures a Ralon vs GES dimension comparison but is not reliable as final evidence.",
+    "issues": [
+      "Evidence includes rows beyond reported sheet length.",
+      "Changed factor uses filename instead of vendor comparison.",
+      "Baseline/test roles are left ambiguous.",
+      "Merged vendor labels are not propagated to samples.",
+      "Outcomes mix CD, detected-table, and position data without clear grouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Recheck source row extraction and remove invalid row citations.",
+      "Set changed factor to vendor: Ralon vs GES.",
+      "Treat dimension/CD and positions as outcomes, not changed factors.",
+      "Fill down vendor labels for all sample rows before computing stats.",
+      "Separate or justify multiple measurement tables under one report context."
+    ],
+    "evidencePolicy": "Row citations are insufficient until invalid and header-only citations are replaced with citeable vendor/sample data rows."
+  },
+  "usage": {
+    "input_tokens": 6971,
+    "output_tokens": 704,
+    "total_tokens": 7675
+  }
+}

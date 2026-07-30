@@ -1,0 +1,200 @@
+{
+  "sourceFileId": 778,
+  "sourceFile": "6. MSU-L20S15-07DT Report test Check exactly reason process have trouble  ( Test in C2,E2)  date  8.5.2025_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\6. MSU-L20S15-07DT Report test Check exactly reason process have trouble  ( Test in C2,E2)  date  8.5.2025_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "201507",
+    "sheetRowCount": 14,
+    "sheetCellCount": 47,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "201507!2",
+      "sheetName": "201507",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST CHECK EXCATLY REASON PROCESS HAVE TROUBLE OR NOT S-MG MSU-L20S15-07 | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "201507!3",
+      "sheetName": "201507",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | Date | 2025-05-08 00:00:00"
+    },
+    {
+      "rowId": "201507!4",
+      "sheetName": "201507",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | Marker | Le"
+    },
+    {
+      "rowId": "201507!5",
+      "sheetName": "201507",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "201507!6",
+      "sheetName": "201507",
+      "rowNumber": 6,
+      "rowText": "| - Check excatly reason process have trouble or not"
+    },
+    {
+      "rowId": "201507!7",
+      "sheetName": "201507",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "201507!8",
+      "sheetName": "201507",
+      "rowNumber": 8,
+      "rowText": "| ++ Sample OK of lot CD NG separate => Clean => Use CD move E2=> Plasma => Make sample Vp/CD => Check NG separate"
+    },
+    {
+      "rowId": "201507!9",
+      "sheetName": "201507",
+      "rowNumber": 9,
+      "rowText": "| ++Sample NG separate of lot CD separate => Marking position NG => Clean => Use CD move E2=> Plasma => Make sample VP/CD => Check NG Separate"
+    },
+    {
+      "rowId": "201507!21",
+      "sheetName": "201507",
+      "rowNumber": 21,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "201507!23",
+      "sheetName": "201507",
+      "rowNumber": 23,
+      "rowText": "| | 1. RESULT TEST"
+    },
+    {
+      "rowId": "201507!24",
+      "sheetName": "201507",
+      "rowNumber": 24,
+      "rowText": "| | No | Line | Type | | Clean | Test | Conten | Input | OK | Separate VP/CD | Total NG | NG Rate"
+    },
+    {
+      "rowId": "201507!26",
+      "sheetName": "201507",
+      "rowNumber": 26,
+      "rowText": "| | 1 | E2 | Same Lot Same Box | VP/CD OK | Separate VP/CD Use again CD move C2 | C2 Marking Plasma | VP/CD OK | 30 | 30 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "201507!31",
+      "sheetName": "201507",
+      "rowNumber": 31,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-778-rc-1",
+      "reviewTitle": "| REPORT TEST CHECK EXCATLY REASON PROCESS HAVE TROUBLE OR NOT S-MG MSU-L20S15-07 | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Check excatly reason process have trouble or not / | II. Content. / | ++ Sample OK of lot CD NG separate => Clean => Use CD move E2=> Plasma => Make sample Vp/CD => Check NG separate / | ++Sample NG separate of lot CD separate => Marking position NG => Clean => Use CD move E2=> Plasma => Make sample VP/CD => Check NG Separate",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Same Lot Same Box, Separate VP/CD",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Same Lot Same Box, Separate VP/CD",
+          "subgroupKeys": [
+            "VP/CD OK",
+            "Separate VP/CD Use again CD move C2",
+            "C2 Marking Plasma",
+            "Separate VP/CD"
+          ],
+          "evidenceRows": [
+            "201507!2",
+            "201507!23",
+            "201507!24",
+            "201507!26",
+            "201507!28",
+            "201507!5",
+            "201507!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "1. RESULT TEST",
+          "comparisonRows": [
+            "201507!26",
+            "201507!28"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 23740,
+              "condition": "Same Lot Same Box | VP/CD OK | Separate VP/CD Use again CD move C2 | C2 Marking Plasma | VP/CD OK",
+              "input": 30.0,
+              "ok": 30.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "201507!26"
+              ]
+            },
+            {
+              "metricId": 23741,
+              "condition": "Separate VP/CD | Separate VP/CD",
+              "input": 30.0,
+              "ok": 30.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "201507!28"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "201507!2",
+        "201507!23",
+        "201507!24",
+        "201507!26",
+        "201507!28",
+        "201507!5",
+        "201507!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "201507!2",
+      "201507!23",
+      "201507!24",
+      "201507!26",
+      "201507!28",
+      "201507!5",
+      "201507!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

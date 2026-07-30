@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 980,
+  "sourceFile": "94.BRS-201506 Report checking and test problem Coil+suspension over glue date 21.10.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\980.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 980,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because the primary changed factor is the filename instead of the clean-material condition and outcomes cite mostly headers.",
+    "issues": [
+      "Changed factor is incorrect; source indicates four clean-material types.",
+      "Baseline and test conditions are not established.",
+      "Outcome statistics cite header rows rather than data rows.",
+      "Sheet2 grouping is unclear and may be unrelated or summary-only.",
+      "Function/tension results are referenced but not properly captured."
+    ],
+    "requiredUserQuestions": [
+      "Is No Clean the baseline against Primer, Ethanol, and Plasma?",
+      "Should Sheet2 be included as part of this same validation report?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to clean-material type with four conditions from the testing content.",
+      "Define baseline and changed conditions, using user input if needed.",
+      "Rebuild outcomes from actual result data rows, not table headers.",
+      "Preserve process/result sections as subgroups such as over-glue, function, and tension.",
+      "Remove filename-derived factor and unsupported Sheet2 metrics if not comparable."
+    ],
+    "evidencePolicy": "Current row citations prove source existence but are insufficient for final evidence because key results lack data-row citations."
+  },
+  "usage": {
+    "input_tokens": 3636,
+    "output_tokens": 748,
+    "total_tokens": 4384
+  }
+}

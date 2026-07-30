@@ -1,0 +1,35 @@
+{
+  "sourceFileId": 895,
+  "sourceFile": "77. TIU L5S3-01 R Report check NG sub ass'y -  date 2026.03.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\895.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 895,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "This is a descriptive NG defect-rate report with no citeable changed condition or comparison.",
+    "issues": [
+      "No baseline versus test condition is present.",
+      "No primary changed factor can be identified.",
+      "Outcome rows list NG rates only, not validation evidence.",
+      "Draft left status as needs_review instead of exclusion."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set ReviewCase status to excluded.",
+      "Use no Ask AI evidence from this file.",
+      "Record exclusion reason as no changed-condition comparison.",
+      "Do not infer a change factor from NG type labels."
+    ],
+    "evidencePolicy": "Rows are sufficient to justify exclusion, not sufficient as final comparative evidence."
+  },
+  "usage": {
+    "input_tokens": 1618,
+    "output_tokens": 398,
+    "total_tokens": 2016
+  }
+}

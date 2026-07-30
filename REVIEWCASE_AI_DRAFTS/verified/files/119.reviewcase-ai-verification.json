@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 119,
+  "sourceFile": "05-1. BRS-161014 Report test Surge auto machine 01.12.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\119.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 119,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misstates the primary comparison and subgroup structure.",
+    "issues": [
+      "Primary change should be manual check vs auto machine, not unclear baseline vs sample types.",
+      "Sample OK and Sample NG are subgroup conditions, not changed factors.",
+      "Auto machine subresults lose inherited sample status from merged cells.",
+      "Decision row supporting final judgement is not cited.",
+      "Outcome domain should identify detection/classification result, not unknown."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to surge test method/equipment: manual baseline vs auto machine.",
+      "Use Sample OK and Sample NG as subgroup keys.",
+      "Label auto rows as Sample OK | Auto machine and Sample NG | Auto machine.",
+      "Add decision row 40 to case evidence and judgement support.",
+      "Set outcome to OK/NG detection agreement with manual reference."
+    ],
+    "evidencePolicy": "Row citations are sufficient for data, but decision evidence is missing and grouping needs correction."
+  },
+  "usage": {
+    "input_tokens": 2988,
+    "output_tokens": 690,
+    "total_tokens": 3678
+  }
+}

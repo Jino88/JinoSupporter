@@ -1,0 +1,243 @@
+{
+  "sourceFileId": 211,
+  "sourceFile": "10. MSU-L20S15-07 DT Report test Plasma suspension A,B to improve NG solder weak - 2025.5.14_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\10. MSU-L20S15-07 DT Report test Plasma suspension A,B to improve NG solder weak - 2025.5.14_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "14.3",
+    "sheetRowCount": 17,
+    "sheetCellCount": 61,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "14.3!2",
+      "sheetName": "14.3",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | MSU-L20S15-07 REPORT TEST PLASMA SUSPENSION A,B TO CHECK SPOT WELDING | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "14.3!3",
+      "sheetName": "14.3",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | Date | 2025-05-14 00:00:00"
+    },
+    {
+      "rowId": "14.3!4",
+      "sheetName": "14.3",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | Marker | Le"
+    },
+    {
+      "rowId": "14.3!5",
+      "sheetName": "14.3",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "14.3!6",
+      "sheetName": "14.3",
+      "rowNumber": 6,
+      "rowText": "| - Plasma suspension A,B to check spot welding OK more than normal or not?"
+    },
+    {
+      "rowId": "14.3!7",
+      "sheetName": "14.3",
+      "rowNumber": 7,
+      "rowText": "| => Improve NG solder weak"
+    },
+    {
+      "rowId": "14.3!10",
+      "sheetName": "14.3",
+      "rowNumber": 10,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "14.3!11",
+      "sheetName": "14.3",
+      "rowNumber": 11,
+      "rowText": "| - Plasma suspension at C1-F-PCB => Move line make sample and check spot welding"
+    },
+    {
+      "rowId": "14.3!13",
+      "sheetName": "14.3",
+      "rowNumber": 13,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "14.3!14",
+      "sheetName": "14.3",
+      "rowNumber": 14,
+      "rowText": "| | 1. RESULT TEST SUSPENSION USE PLASMA"
+    },
+    {
+      "rowId": "14.3!15",
+      "sheetName": "14.3",
+      "rowNumber": 15,
+      "rowText": "| | No | Date | Content | Type | Input | OK | Vision Spot Welding | | Total NG | NG Rate"
+    },
+    {
+      "rowId": "14.3!16",
+      "sheetName": "14.3",
+      "rowNumber": 16,
+      "rowText": "| | | | | | | | Weak solder | Offset"
+    },
+    {
+      "rowId": "14.3!21",
+      "sheetName": "14.3",
+      "rowNumber": 21,
+      "rowText": "| | 2 | | Normal | SUS A | 2230 | 2213 | 17 | 0 | 17 | 0.00762332"
+    },
+    {
+      "rowId": "14.3!23",
+      "sheetName": "14.3",
+      "rowNumber": 23,
+      "rowText": "| | | | Normal ( Use bonding solder pad) Bond G05-0001 | SUS B | 2230 | 2228 | 2 | 0 | 2 | 0.00089686"
+    },
+    {
+      "rowId": "14.3!27",
+      "sheetName": "14.3",
+      "rowNumber": 27,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-211-rc-1",
+      "reviewTitle": "| MSU-L20S15-07 REPORT TEST PLASMA SUSPENSION A,B TO CHECK SPOT WELDING | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Plasma suspension A,B to check spot welding OK more than normal or not? / | => Improve NG solder weak / | II. Content. / | - Plasma suspension at C1-F-PCB => Move line make sample and check spot welding",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal, Normal ( Use bonding solder pad) Bond G05-0001 vs SUS plasma, SUS B",
+          "baselineCondition": "Normal, Normal ( Use bonding solder pad) Bond G05-0001",
+          "changedCondition": "SUS plasma, SUS B",
+          "subgroupKeys": [
+            "SUS A",
+            "SUS B"
+          ],
+          "evidenceRows": [
+            "14.3!10",
+            "14.3!14",
+            "14.3!15",
+            "14.3!17",
+            "14.3!19",
+            "14.3!2",
+            "14.3!21",
+            "14.3!23",
+            "14.3!5",
+            "14.3!6"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "1. RESULT TEST SUSPENSION USE PLASMA",
+          "comparisonRows": [
+            "14.3!17",
+            "14.3!19",
+            "14.3!21",
+            "14.3!23"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 18753,
+              "condition": "SUS plasma | SUS A",
+              "input": 569.0,
+              "ok": 568.0,
+              "ng": 1.0,
+              "ratePercent": 0.175747,
+              "evidenceRows": [
+                "14.3!17"
+              ]
+            },
+            {
+              "metricId": 18754,
+              "condition": "SUS B",
+              "input": 569.0,
+              "ok": 463.0,
+              "ng": 106.0,
+              "ratePercent": 18.629174000000003,
+              "evidenceRows": [
+                "14.3!19"
+              ]
+            },
+            {
+              "metricId": 18755,
+              "condition": "Normal | SUS A",
+              "input": 2230.0,
+              "ok": 2213.0,
+              "ng": 17.0,
+              "ratePercent": 0.762332,
+              "evidenceRows": [
+                "14.3!21"
+              ]
+            },
+            {
+              "metricId": 18756,
+              "condition": "Normal ( Use bonding solder pad) Bond G05-0001 | SUS B",
+              "input": 2230.0,
+              "ok": 2228.0,
+              "ng": 2.0,
+              "ratePercent": 0.089686,
+              "evidenceRows": [
+                "14.3!23"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "14.3!10",
+        "14.3!14",
+        "14.3!15",
+        "14.3!17",
+        "14.3!19",
+        "14.3!2",
+        "14.3!21",
+        "14.3!23",
+        "14.3!5",
+        "14.3!6"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "14.3!10",
+      "14.3!14",
+      "14.3!15",
+      "14.3!17",
+      "14.3!19",
+      "14.3!2",
+      "14.3!21",
+      "14.3!23",
+      "14.3!5",
+      "14.3!6"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

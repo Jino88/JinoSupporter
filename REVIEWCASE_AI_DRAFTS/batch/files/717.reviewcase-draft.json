@@ -1,0 +1,346 @@
+{
+  "sourceFileId": 717,
+  "sourceFile": "51. TIU L5S3-01 R Report test compare dry 12h semi sub 3 and dry 12h final sample  -  date 2026.01.06_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\51. TIU L5S3-01 R Report test compare dry 12h semi sub 3 and dry 12h final sample  -  date 2026.01.06_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 23,
+    "sheetCellCount": 111,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 3,
+    "measurementStatCount": 8
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] REPORT TEST COMPARE DRY 12H SEMI SUB 3 AND DRY 12H FINAL SAMPLE | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Date | 2026-01-06 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Improve NG function"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| 1. Using 1 lot semi sub 3 (Using sub 3 JIG repair)"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| | - 300pcs dry 12h"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| | - 600pcs move main line make final sample: | | | + 300pcs check function"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| | | | | + 300pcs dry 12h"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| => Compare result check function"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | Result check function"
+    },
+    {
+      "rowId": "Test!19",
+      "sheetName": "Test",
+      "rowNumber": 19,
+      "rowText": "| | 2 | | | Final sample dry 12h | | 250 | 247 | 0 | 3 | 0 | 0 | 0 | 247 | 0 | 0 | 0 | 3 | 0.012"
+    },
+    {
+      "rowId": "Test!24",
+      "sheetName": "Test",
+      "rowNumber": 24,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "Test!25",
+      "sheetName": "Test",
+      "rowNumber": 25,
+      "rowText": "| - After Dry final sample => NG reduce"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-717-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] REPORT TEST COMPARE DRY 12H SEMI SUB 3 AND DRY 12H FINAL SAMPLE | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Improve NG function / | II. Content. / | 1. Using 1 lot semi sub 3 (Using sub 3 JIG repair) / | | - 300pcs dry 12h",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Line R, Final sample dry 12h, Semi sub 3 dry 12h",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Line R, Final sample dry 12h, Semi sub 3 dry 12h",
+          "subgroupKeys": [
+            "Not dry 12h"
+          ],
+          "evidenceRows": [
+            "Test!16",
+            "Test!17",
+            "Test!19",
+            "Test!2",
+            "Test!21",
+            "Test!5",
+            "Test!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "Result check function",
+          "comparisonRows": [
+            "Test!17",
+            "Test!19",
+            "Test!21"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 23121,
+              "condition": "Line R | Not dry 12h",
+              "input": 250.0,
+              "ok": 241.0,
+              "ng": 9.0,
+              "ratePercent": 3.5999999999999996,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "metricId": 23122,
+              "condition": "Final sample dry 12h",
+              "input": 250.0,
+              "ok": 247.0,
+              "ng": 3.0,
+              "ratePercent": 1.2,
+              "evidenceRows": [
+                "Test!19"
+              ]
+            },
+            {
+              "metricId": 23123,
+              "condition": "Semi sub 3 dry 12h",
+              "input": 184.0,
+              "ok": 181.0,
+              "ng": 3.0,
+              "ratePercent": 1.6304349999999999,
+              "evidenceRows": [
+                "Test!21"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No | Date | Line | Type | Input | OK | Bako | HEARING | Total NG | Total NG rate",
+          "comparisonRows": [
+            "Test!16"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 60288,
+              "condition": "Bako / FRF high",
+              "spec": "",
+              "min": 0.0,
+              "max": 5.0,
+              "avg": 1.00423913,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 60289,
+              "condition": "Bako / FRF Low",
+              "spec": "",
+              "min": 0.01086957,
+              "max": 4.0,
+              "avg": 1.5064782616666665,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 60290,
+              "condition": "Bako / FRF+SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 60291,
+              "condition": "Bako / SPL+THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 60292,
+              "condition": "Bako / No sound",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 60293,
+              "condition": "HEARING / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 60294,
+              "condition": "HEARING / Noise",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 60295,
+              "condition": "HEARING / No sound",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!16",
+        "Test!17",
+        "Test!19",
+        "Test!2",
+        "Test!21",
+        "Test!5",
+        "Test!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!16",
+      "Test!17",
+      "Test!19",
+      "Test!2",
+      "Test!21",
+      "Test!5",
+      "Test!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

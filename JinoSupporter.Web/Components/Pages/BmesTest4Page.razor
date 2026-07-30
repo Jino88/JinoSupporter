@@ -1,0 +1,819 @@
+@page "/bmes/test4"
+@rendermode InteractiveServer
+@using System.Globalization
+@using JinoSupporter.Web.Services
+@inject ProcessMaterialNgService MaterialNg
+@inject NgRateService NgRate
+@inject BmesFcostActualService FCostActual
+@inject AppPathsService AppPaths
+@inject WebRepository Repo
+@inject AppActivityLogger Activity
+
+<PageTitle>Test 4</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span class="fw-semibold" style="font-size:18px;">T4</span>
+    <h5 class="mb-0 fw-semibold">Test 4</h5>
+</div>
+
+<div class="test4-toolbar mb-3">
+    <input class="form-control form-control-sm test4-model" placeholder="Model" @bind="_modelFilter" @bind:event="oninput" />
+    <button class="btn btn-primary btn-sm" @onclick="GenerateCachedAsync" disabled="@_isBusy">Report</button>
+    <button class="btn btn-outline-primary btn-sm" @onclick="FetchAndGenerateAsync" disabled="@_isBusy">Fetch + Report</button>
+    @if (_report is not null && _report.WeekColumns.Count > 0)
+    {
+        <select class="form-select form-select-sm test4-week"
+                value="@SelectedWeekKey"
+                @onchange="OnSelectedWeekChanged"
+                disabled="@(_isBusy || _fcostBusy)">
+            @foreach (var week in _report.WeekColumns)
+            {
+                <option value="@week.Key">@week.Header</option>
+            }
+        </select>
+    }
+</div>
+
+@if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <div class="alert alert-danger py-2 small mb-3">@_errorMessage</div>
+}
+
+@if (_isBusy)
+{
+    <div class="alert alert-info py-2 small mb-3 d-flex align-items-center gap-2">
+        <span class="spinner-border spinner-border-sm" role="status"></span>
+        <span>@_statusMessage</span>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(_statusMessage))
+{
+    <div class="alert alert-success py-2 small mb-3">@_statusMessage</div>
+}
+@if (_fcostBusy)
+{
+    <div class="alert alert-info py-2 small mb-3 d-flex align-items-center gap-2">
+        <span class="spinner-border spinner-border-sm" role="status"></span>
+        <span>Loading Report-F-COST comparison...</span>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(_fcostError))
+{
+    <div class="alert alert-warning py-2 small mb-3">@_fcostError</div>
+}
+
+@if (_report is not null)
+{
+    <div class="test4-kpis mb-3">
+        <div>
+            <span>Process NG</span>
+            <strong>@FormatQty(SelectedProcessNgQty)</strong>
+        </div>
+        <div>
+            <span>Material NG</span>
+            <strong>@FormatQty(SelectedMaterialNgQty)</strong>
+        </div>
+        <div>
+            <span>Mapped</span>
+            <strong>@SelectedMappedProcessCount.ToString("N0", CultureInfo.InvariantCulture)</strong>
+        </div>
+        <div>
+            <span>Unmapped</span>
+            <strong>@SelectedUnmappedProcessCount.ToString("N0", CultureInfo.InvariantCulture)</strong>
+        </div>
+        <div>
+            <span>Rows</span>
+            <strong>@_report.SourceRowCount.ToString("N0", CultureInfo.InvariantCulture)</strong>
+        </div>
+    </div>
+
+    <section class="test4-section">
+        <div class="test4-section-title">
+            <h6>Process Material NG @SelectedWeekHeader</h6>
+            <span>@SelectedProcessMaterialRows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
+        </div>
+        <div class="test4-table-scroll">
+            <table class="test4-table">
+                <thead>
+                    <tr>
+                        <th style="width:72px;">No</th>
+                        <th style="min-width:160px;">Model</th>
+                        <th style="min-width:110px;">Process Code</th>
+                        <th style="min-width:230px;">Process Name</th>
+                        <th class="text-end" style="min-width:100px;">Process NG</th>
+                        <th style="min-width:150px;">Material Code</th>
+                        <th style="min-width:230px;">Material Name</th>
+                        <th class="text-end" style="min-width:100px;">Material NG</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (SelectedProcessMaterialRows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="@MaterialColSpan" class="text-center text-muted py-4 small">No rows.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in SelectedProcessMaterialRows)
+                        {
+                            <tr>
+                                <td class="font-monospace">@row.ProcessNo</td>
+                                <td>@row.ModelName</td>
+                                <td class="font-monospace">@row.ProcessCode</td>
+                                <td>@row.ProcessName</td>
+                                <td class="text-end">@FormatQty(GetWeekQty(row.NgByWeek, SelectedWeekKey))</td>
+                                <td class="font-monospace">@row.RawMaterialCode</td>
+                                <td>@row.RawMaterialName</td>
+                                <td class="text-end fw-semibold">@FormatQty(GetWeekQty(row.NgByWeek, SelectedWeekKey))</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="test4-section">
+        <div class="test4-section-title">
+            <h6>Material Summary @SelectedWeekHeader</h6>
+            <span>@SelectedMaterialSummaryRows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
+        </div>
+        <div class="test4-table-scroll">
+            <table class="test4-table">
+                <thead>
+                    <tr>
+                        <th style="min-width:150px;">Material Code</th>
+                        <th style="min-width:260px;">Material Name</th>
+                        <th class="text-end" style="width:90px;">Process</th>
+                        <th class="text-end" style="width:120px;">Material NG</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (SelectedMaterialSummaryRows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="@SummaryColSpan" class="text-center text-muted py-4 small">No rows.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in SelectedMaterialSummaryRows)
+                        {
+                            <tr>
+                                <td class="font-monospace">@row.RawMaterialCode</td>
+                                <td>@row.RawMaterialName</td>
+                                <td class="text-end">@row.ProcessCount.ToString("N0", CultureInfo.InvariantCulture)</td>
+                                <td class="text-end fw-semibold">@FormatQty(row.MaterialNgQty)</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="test4-section">
+        <div class="test4-section-title">
+            <h6>Report-F-COST Compare @SelectedWeekHeader</h6>
+            <span>@_fcostComparisonRows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
+        </div>
+        <div class="test4-table-scroll">
+            <table class="test4-table">
+                <thead>
+                    <tr>
+                        <th style="min-width:150px;">Material Code</th>
+                        <th style="min-width:260px;">Material Name</th>
+                        <th class="text-end" style="min-width:120px;">Expected NG</th>
+                        <th class="text-end" style="min-width:120px;">F-COST Qty</th>
+                        <th class="text-end" style="min-width:120px;">Diff</th>
+                        <th class="text-end" style="min-width:90px;">Diff %</th>
+                        <th class="text-end" style="min-width:90px;">Source</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_fcostComparisonRows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4 small">No comparison rows.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in _fcostComparisonRows)
+                        {
+                            <tr>
+                                <td class="font-monospace">@row.MaterialCode</td>
+                                <td>@row.MaterialName</td>
+                                <td class="text-end">@FormatDecimalQty(row.ExpectedQty)</td>
+                                <td class="text-end">@FormatDecimalQty(row.FCostQty)</td>
+                                <td class="text-end fw-semibold">@FormatSignedDecimalQty(row.DiffQty)</td>
+                                <td class="text-end">@FormatDiffPercent(row.DiffPercent)</td>
+                                <td class="text-end">@row.SourceRows.ToString("N0", CultureInfo.InvariantCulture)</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+
+@if (_logs.Count > 0)
+{
+    <details class="test4-logs mt-3">
+        <summary>Log</summary>
+        @foreach (string log in _logs.Take(80))
+        {
+            <div>@log</div>
+        }
+    </details>
+}
+
+<style>
+    .test4-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .test4-model {
+        width: min(260px, 100%);
+    }
+
+    .test4-week {
+        width: 120px;
+    }
+
+    .test4-kpis {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(120px, 1fr));
+        gap: 8px;
+    }
+
+    .test4-kpis > div {
+        border: 1px solid #dbe4f0;
+        background: #fff;
+        border-radius: 6px;
+        padding: 8px 10px;
+        min-height: 54px;
+    }
+
+    .test4-kpis span {
+        display: block;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .test4-kpis strong {
+        color: #0f172a;
+        font-size: 18px;
+    }
+
+    .test4-section {
+        margin-top: 14px;
+        border-top: 1px solid #dbe4f0;
+        padding-top: 10px;
+    }
+
+    .test4-section-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+
+    .test4-section-title h6 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 800;
+        color: #10233f;
+    }
+
+    .test4-section-title span {
+        border-radius: 999px;
+        background: #64748b;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1;
+        padding: 4px 7px;
+    }
+
+    .test4-table-scroll {
+        overflow: auto;
+        max-height: 360px;
+        border: 1px solid #dbe4f0;
+        background: #fff;
+    }
+
+    .test4-table {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .test4-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #edf3f9;
+        color: #193653;
+        border-bottom: 1px solid #cbd5e1;
+        padding: 7px 8px;
+        font-size: 11px;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .test4-table td {
+        border-bottom: 1px solid #e6edf5;
+        padding: 6px 8px;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .test4-table tr:hover td {
+        background: #f8fafc;
+    }
+
+    .test4-unmapped-row td {
+        background: #fff7ed;
+    }
+
+    .test4-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        max-width: 260px;
+        border: 1px solid #bdd0e7;
+        background: #f8fbff;
+        color: #10233f;
+        border-radius: 4px;
+        padding: 3px 6px;
+        margin: 2px 4px 2px 0;
+        font-size: 11px;
+    }
+
+    .test4-chip span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .test4-chip.muted {
+        color: #64748b;
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+
+    .test4-logs {
+        font-size: 11px;
+        color: #475569;
+    }
+
+    @@media (max-width: 900px) {
+        .test4-kpis {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .test4-model,
+        .test4-week {
+            width: 100%;
+        }
+    }
+</style>
+
+@code {
+    private string _modelFilter = "L5S3-01";
+    private DateTime _startDate = DateTime.Today.AddDays(-84);
+    private DateTime _endDate = DateTime.Today;
+    private ProcessMaterialNgReport? _report;
+    private string _selectedWeekKey = string.Empty;
+    private bool _isBusy;
+    private bool _fcostBusy;
+    private string _statusMessage = string.Empty;
+    private string _errorMessage = string.Empty;
+    private string _fcostError = string.Empty;
+    private List<Test4FcostCompareRow> _fcostComparisonRows = [];
+    private readonly List<string> _logs = [];
+
+    private int MaterialColSpan => 8;
+    private int SummaryColSpan => 4;
+
+    private string SelectedWeekKey
+        => _report?.WeekColumns.FirstOrDefault(w => string.Equals(w.Key, _selectedWeekKey, StringComparison.Ordinal))?.Key ??
+           _report?.WeekColumns.FirstOrDefault()?.Key ??
+           string.Empty;
+
+    private string SelectedWeekHeader
+        => _report?.WeekColumns.FirstOrDefault(w => string.Equals(w.Key, SelectedWeekKey, StringComparison.Ordinal))?.Header ?? string.Empty;
+
+    private List<ProcessMaterialNgProcessMaterialRow> SelectedProcessMaterialRows =>
+        _report is null || string.IsNullOrWhiteSpace(SelectedWeekKey)
+            ? []
+            : _report.ProcessMaterialRows
+                .Where(r => GetWeekQty(r.NgByWeek, SelectedWeekKey) > 0)
+                .ToList();
+
+    private List<Test4MaterialSummaryRow> SelectedMaterialSummaryRows =>
+        SelectedProcessMaterialRows
+            .GroupBy(r => BuildMaterialGroupKey(r.RawMaterialCode, r.RawMaterialName), StringComparer.OrdinalIgnoreCase)
+            .Select(g =>
+            {
+                var first = g.First();
+                return new Test4MaterialSummaryRow(
+                    first.RawMaterialCode,
+                    first.RawMaterialName,
+                    g.Select(BuildProcessGroupKey).Distinct(StringComparer.OrdinalIgnoreCase).Count(),
+                    g.Sum(r => GetWeekQty(r.NgByWeek, SelectedWeekKey)));
+            })
+            .Where(r => r.MaterialNgQty > 0)
+            .OrderByDescending(r => r.MaterialNgQty)
+            .ThenBy(r => r.RawMaterialName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(r => r.RawMaterialCode, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private double SelectedProcessNgQty =>
+        _report is null ? 0 : _report.ProcessRows.Sum(r => GetWeekQty(r.NgByWeek, SelectedWeekKey));
+
+    private double SelectedMaterialNgQty =>
+        SelectedMaterialSummaryRows.Sum(r => r.MaterialNgQty);
+
+    private int SelectedMappedProcessCount =>
+        _report is null ? 0 : _report.ProcessRows.Count(r => r.Materials.Count > 0 && GetWeekQty(r.NgByWeek, SelectedWeekKey) > 0);
+
+    private int SelectedUnmappedProcessCount =>
+        _report is null ? 0 : _report.ProcessRows.Count(r => r.Materials.Count == 0 && GetWeekQty(r.NgByWeek, SelectedWeekKey) > 0);
+
+    private async Task GenerateCachedAsync()
+    {
+        string? dbPath = MaterialNg.FindMostRecentDb();
+        if (string.IsNullOrWhiteSpace(dbPath))
+        {
+            _errorMessage = "NG Rate DB was not found.";
+            _statusMessage = string.Empty;
+            return;
+        }
+
+        await GenerateWithDbAsync(dbPath, fetchFirst: false);
+    }
+
+    private async Task FetchAndGenerateAsync()
+    {
+        if (_isBusy) return;
+        if (_endDate < _startDate)
+        {
+            _errorMessage = "End date must be on or after start date.";
+            return;
+        }
+
+        _isBusy = true;
+        _errorMessage = string.Empty;
+        _statusMessage = "Fetching NG data...";
+        _logs.Clear();
+        Activity.Log("Test 4", $"Fetch + Report {_modelFilter} {_startDate:yyyy-MM-dd} ~ {_endDate:yyyy-MM-dd}");
+        StateHasChanged();
+
+        IProgress<string> progress = new Progress<string>(AddLog);
+        try
+        {
+            string? dbPath = await NgRate.GetOrFetchAsync(_startDate, _endDate, progress);
+            if (string.IsNullOrWhiteSpace(dbPath))
+            {
+                _errorMessage = "Data fetch or save failed.";
+                return;
+            }
+
+            await GenerateWithDbCoreAsync(dbPath, progress);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isBusy = false;
+            if (!string.IsNullOrWhiteSpace(_errorMessage))
+                _statusMessage = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GenerateWithDbAsync(string dbPath, bool fetchFirst)
+    {
+        if (_isBusy) return;
+        if (_endDate < _startDate)
+        {
+            _errorMessage = "End date must be on or after start date.";
+            return;
+        }
+
+        _isBusy = true;
+        _errorMessage = string.Empty;
+        _statusMessage = fetchFirst ? "Generating report..." : "Generating report from cached DB...";
+        _logs.Clear();
+        Activity.Log("Test 4", $"Report {_modelFilter} {_startDate:yyyy-MM-dd} ~ {_endDate:yyyy-MM-dd}");
+        StateHasChanged();
+
+        IProgress<string> progress = new Progress<string>(AddLog);
+        try
+        {
+            await GenerateWithDbCoreAsync(dbPath, progress);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isBusy = false;
+            if (!string.IsNullOrWhiteSpace(_errorMessage))
+                _statusMessage = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GenerateWithDbCoreAsync(string dbPath, IProgress<string> progress)
+    {
+        _statusMessage = "Calculating material NG...";
+        _fcostComparisonRows = [];
+        _fcostError = string.Empty;
+        _report = await MaterialNg.GenerateAsync(dbPath, _modelFilter, progress);
+        EnsureSelectedWeek();
+        await LoadFcostComparisonAsync(progress);
+        _statusMessage = $"Report generated: {Path.GetFileName(dbPath)}";
+    }
+
+    private void EnsureSelectedWeek()
+    {
+        if (_report is null || _report.WeekColumns.Count == 0)
+        {
+            _selectedWeekKey = string.Empty;
+            return;
+        }
+
+        if (!_report.WeekColumns.Any(w => string.Equals(w.Key, _selectedWeekKey, StringComparison.Ordinal)))
+            _selectedWeekKey = _report.WeekColumns[0].Key;
+    }
+
+    private async Task OnSelectedWeekChanged(ChangeEventArgs e)
+    {
+        _selectedWeekKey = e.Value?.ToString() ?? string.Empty;
+        await LoadFcostComparisonAsync();
+    }
+
+    private async Task LoadFcostComparisonAsync(IProgress<string>? progress = null)
+    {
+        _fcostComparisonRows = [];
+        _fcostError = string.Empty;
+
+        if (_report is null || string.IsNullOrWhiteSpace(SelectedWeekKey))
+            return;
+
+        if (!TryBuildFcostPeriod(SelectedWeekKey, out var period))
+        {
+            _fcostError = "Selected week could not be converted to an F-COST period.";
+            return;
+        }
+
+        var lineShifts = BuildFcostLineShiftsForModel();
+        if (lineShifts.Count == 0)
+        {
+            _fcostError = "No Model Group LineShift found for F-COST comparison.";
+            return;
+        }
+
+        var connection = BuildNetworkDbConnection();
+        if (string.IsNullOrWhiteSpace(connection.Server) || string.IsNullOrWhiteSpace(connection.UserId))
+        {
+            _fcostError = "Network DB connection is not configured for Report-F-COST comparison.";
+            return;
+        }
+
+        _fcostBusy = true;
+        StateHasChanged();
+
+        try
+        {
+            progress?.Report($"Loading Report-F-COST comparison: {period.Header}");
+            var result = await FCostActual.FetchRawBreakdownAsync(new BmesFcostRawBreakdownQuery
+            {
+                Connection = connection,
+                Fact = "GN",
+                Plant = "3200",
+                Periods = [period],
+                LineShifts = lineShifts,
+            });
+            _fcostComparisonRows = BuildFcostComparisonRows(result, period.Key);
+            progress?.Report($"Report-F-COST comparison rows={_fcostComparisonRows.Count:N0}");
+        }
+        catch (Exception ex)
+        {
+            _fcostError = "Report-F-COST comparison failed: " + ex.Message;
+            _fcostComparisonRows = [];
+        }
+        finally
+        {
+            _fcostBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private List<Test4FcostCompareRow> BuildFcostComparisonRows(
+        BmesFcostRawBreakdownResult fcost,
+        string periodKey)
+    {
+        var expected = SelectedMaterialSummaryRows
+            .GroupBy(r => BuildCompareMaterialKey(r.RawMaterialCode, r.RawMaterialName), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    var first = g.First();
+                    return (
+                        Code: first.RawMaterialCode,
+                        Name: first.RawMaterialName,
+                        Qty: g.Sum(r => (decimal)r.MaterialNgQty));
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        var actual = fcost.Rows
+            .GroupBy(r => BuildCompareMaterialKey(r.MaterialCode, r.MaterialName), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    var first = g.First();
+                    return (
+                        Code: first.MaterialCode,
+                        Name: first.MaterialName,
+                        Qty: g.Sum(r => r.EquivalentQtyByPeriod.GetValueOrDefault(periodKey)),
+                        SourceRows: g.Sum(r => r.SourceRows));
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        return expected.Keys
+            .Concat(actual.Keys)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(key =>
+            {
+                expected.TryGetValue(key, out var e);
+                actual.TryGetValue(key, out var a);
+                string code = FirstNonBlank(e.Code, a.Code);
+                string name = FirstNonBlank(e.Name, a.Name);
+                decimal diff = a.Qty - e.Qty;
+                decimal? pct = e.Qty > 0 ? diff / e.Qty * 100m : null;
+                return new Test4FcostCompareRow(code, name, e.Qty, a.Qty, diff, pct, a.SourceRows);
+            })
+            .Where(r => r.ExpectedQty > 0 || r.FCostQty > 0)
+            .OrderByDescending(r => Math.Abs(r.DiffQty))
+            .ThenBy(r => r.MaterialName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(r => r.MaterialCode, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private List<BmesFcostRawBreakdownLineShift> BuildFcostLineShiftsForModel()
+    {
+        string query = _modelFilter.Trim();
+        var result = new List<BmesFcostRawBreakdownLineShift>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var group in Repo.GetModelGroups())
+        {
+            bool groupMatch = string.IsNullOrWhiteSpace(query) || Contains(group.Name, query);
+            string groupName = string.IsNullOrWhiteSpace(group.Name) ? "-" : group.Name.Trim();
+            foreach (var mid in group.MidGroups)
+            {
+                bool midMatch = groupMatch ||
+                                Contains(mid.Material, query) ||
+                                mid.LineShifts.Any(ls => Contains(ls, query));
+                if (!midMatch) continue;
+
+                string modelName = string.IsNullOrWhiteSpace(mid.Material) ? groupName : mid.Material.Trim();
+                foreach (string rawLineShift in mid.LineShifts)
+                {
+                    string lineShift = rawLineShift.Trim();
+                    if (lineShift.Length == 0 || !seen.Add(lineShift))
+                        continue;
+
+                    result.Add(new BmesFcostRawBreakdownLineShift(groupName, modelName, lineShift));
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private BmesFcostDbConnection BuildNetworkDbConnection()
+    {
+        var c = AppPaths.Current;
+        return new BmesFcostDbConnection
+        {
+            Server = c.AdminDbQueryServer,
+            Port = c.AdminDbQueryPort > 0 ? c.AdminDbQueryPort : 1430,
+            Database = string.IsNullOrWhiteSpace(c.AdminDbQueryDatabase) ||
+                       string.Equals(c.AdminDbQueryDatabase, "master", StringComparison.OrdinalIgnoreCase)
+                ? "BMES_LIV"
+                : c.AdminDbQueryDatabase,
+            UserId = c.AdminDbQueryUserId,
+            Password = c.AdminDbQueryPassword,
+            TimeoutSeconds = Math.Clamp(Math.Max(c.AdminDbQueryTimeoutSeconds, 300), 1, 600),
+            Encrypt = c.AdminDbQueryEncrypt,
+            TrustServerCertificate = c.AdminDbQueryTrustServerCertificate,
+        };
+    }
+
+    private static bool TryBuildFcostPeriod(string weekKey, out BmesFcostRawBreakdownPeriod period)
+    {
+        period = new BmesFcostRawBreakdownPeriod(0, string.Empty, string.Empty, string.Empty, DateTime.MinValue, DateTime.MinValue);
+        string raw = weekKey.StartsWith("W:", StringComparison.Ordinal) ? weekKey[2..] : weekKey;
+        if (raw.Length < 6 ||
+            !int.TryParse(raw[..4], NumberStyles.Integer, CultureInfo.InvariantCulture, out int year) ||
+            !int.TryParse(raw[4..6], NumberStyles.Integer, CultureInfo.InvariantCulture, out int week) ||
+            week < 1 ||
+            week > ISOWeek.GetWeeksInYear(year))
+        {
+            return false;
+        }
+
+        DateTime start = ISOWeek.ToDateTime(year, week, DayOfWeek.Monday).Date;
+        string key = $"{year:0000}-{week:00}";
+        string header = $"{year % 100:00}-W{week:00}";
+        period = new BmesFcostRawBreakdownPeriod(0, key, header, "Week", start, start.AddDays(7));
+        return true;
+    }
+
+    private void AddLog(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message)) return;
+        _logs.Insert(0, DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture) + " " + message);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private static double GetWeekQty(IReadOnlyDictionary<string, double> values, string weekKey)
+        => values.TryGetValue(weekKey, out double qty) ? qty : 0;
+
+    private static string FormatQty(double value)
+        => value <= 0 ? "-" : Math.Round(value).ToString("N0", CultureInfo.InvariantCulture);
+
+    private static string FormatDecimalQty(decimal value)
+        => value <= 0 ? "-" : value.ToString("#,0.######", CultureInfo.InvariantCulture);
+
+    private static string FormatSignedDecimalQty(decimal value)
+    {
+        if (value == 0) return "-";
+        string prefix = value > 0 ? "+" : "-";
+        return prefix + Math.Abs(value).ToString("#,0.######", CultureInfo.InvariantCulture);
+    }
+
+    private static string FormatDiffPercent(decimal? value)
+    {
+        if (value is null || value == 0) return "-";
+        string prefix = value > 0 ? "+" : "-";
+        return prefix + Math.Abs(value.Value).ToString("0.##", CultureInfo.InvariantCulture) + "%";
+    }
+
+    private static string BuildMaterialTitle(string code, string name)
+        => string.IsNullOrWhiteSpace(name) ? code : $"{code} / {name}";
+
+    private static string BuildMaterialGroupKey(string code, string name)
+        => NormalizeKey(code) + "\t" + NormalizeKey(name);
+
+    private static string BuildCompareMaterialKey(string code, string name)
+    {
+        string codeKey = NormalizeKey(code);
+        return codeKey.Length > 0 ? "C:" + codeKey : "N:" + NormalizeKey(name);
+    }
+
+    private static string BuildProcessGroupKey(ProcessMaterialNgProcessMaterialRow row)
+        => NormalizeKey(row.ModelName) + "\t" + NormalizeKey(row.ProcessCode) + "\t" + NormalizeKey(row.ProcessName);
+
+    private static string NormalizeKey(string? value)
+        => (value ?? string.Empty).Trim().ToUpperInvariant();
+
+    private static bool Contains(string? value, string query)
+        => string.IsNullOrWhiteSpace(query) ||
+           (value ?? string.Empty).Contains(query.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    private static string FirstNonBlank(params string[] values)
+        => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim() ?? string.Empty;
+
+    private sealed record Test4MaterialSummaryRow(
+        string RawMaterialCode,
+        string RawMaterialName,
+        int ProcessCount,
+        double MaterialNgQty);
+
+    private sealed record Test4FcostCompareRow(
+        string MaterialCode,
+        string MaterialName,
+        decimal ExpectedQty,
+        decimal FCostQty,
+        decimal DiffQty,
+        decimal? DiffPercent,
+        long SourceRows);
+}

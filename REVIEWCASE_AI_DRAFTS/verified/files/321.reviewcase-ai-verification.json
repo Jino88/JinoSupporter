@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 321,
+  "sourceFile": "16.3 BRS-161016 GMI Report test  suspension - D used SUS-ARRAY of new vender CSY Tech Vina first lot 3 test again date 2024.12.16_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\321.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 321,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable validation report, but changed-factor labeling and some outcome extraction need correction before Ask AI use.",
+    "issues": [
+      "Primary changed factor is new vendor CSY Tech Vina suspension-D first lot, not generic Test/Lot test labels.",
+      "Changed condition incorrectly merges Test and Lot test row types across different dates/tests.",
+      "Vision spot outcome uses zero defect column instead of total NG/rate, understating improvement.",
+      "Decision and narrative result rows are not cited, including final use approval.",
+      "Tension outcome left unjudged despite PASS rows and OK narrative."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to CSY Tech Vina new vendor SUS-ARRAY suspension-D first lot 3 vs normal condition.",
+      "Keep Test and Lot test as subgroup/test-stage labels, not separate primary changed conditions.",
+      "Recalculate vision spot using total NG and NG rate values from both rows.",
+      "Add result narrative and final decision rows to evidence citations.",
+      "Judge tension as pass/no issue with limitation that numeric spec is blank."
+    ],
+    "evidencePolicy": "Row citations exist but are incomplete; add headers, narrative results, and final decision rows."
+  },
+  "usage": {
+    "input_tokens": 5111,
+    "output_tokens": 784,
+    "total_tokens": 5895
+  }
+}

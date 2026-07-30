@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 950,
+  "sourceFile": "85.BRS-2015 Report Test position dry UV led at sub1 date 29.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\950.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:51Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 950,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft is not usable as final evidence because it extracted no ReviewCase despite citeable rows showing a 4-position dry UV LED comparison.",
+    "issues": [
+      "No ReviewCase was generated.",
+      "Changed factor should be dry UV LED position 1-4.",
+      "Baseline/test role is not defined.",
+      "Function result detail rows are missing from context.",
+      "Decision row is present but not linked to outcomes."
+    ],
+    "requiredUserQuestions": [
+      "Is there a control/baseline position, or are positions 1-4 peer test conditions?"
+    ],
+    "correctionPlan": [
+      "Create one ReviewCase for model 2015 sub1 dated 2024-08-29.",
+      "Set primary changed factor to dry UV LED position.",
+      "Capture positions 1-4 with Peak and Total values.",
+      "Add available function-result and NG-reason rows as outcomes.",
+      "Link conclusion to increased test quantity decision."
+    ],
+    "evidencePolicy": "Citations support purpose, positions, UV metrics, NG reasons, and decision; final function outcomes need more row evidence."
+  },
+  "usage": {
+    "input_tokens": 1832,
+    "output_tokens": 615,
+    "total_tokens": 2447
+  }
+}

@@ -1,0 +1,232 @@
+{
+  "sourceFileId": 904,
+  "sourceFile": "79. BRS-161014 Report check reason NG solder weak Date 7.12.2023_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\79. BRS-161014 Report check reason NG solder weak Date 7.12.2023_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report",
+    "sheetRowCount": 19,
+    "sheetCellCount": 57,
+    "comparisonPairCount": 2,
+    "metricCandidateCount": 3,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report!2",
+      "sheetName": "Report",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST CHECK REASON NG SOLDER WEAK OF PROCESS SPOT WELDING BRS - 161014 | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report!3",
+      "sheetName": "Report",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | Date | 2023-12-07 00:00:00"
+    },
+    {
+      "rowId": "Report!4",
+      "sheetName": "Report",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | Marker | Trung"
+    },
+    {
+      "rowId": "Report!5",
+      "sheetName": "Report",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report!6",
+      "sheetName": "Report",
+      "rowNumber": 6,
+      "rowText": "| - Find reason NG solder weak"
+    },
+    {
+      "rowId": "Report!14",
+      "sheetName": "Report",
+      "rowNumber": 14,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report!15",
+      "sheetName": "Report",
+      "rowNumber": 15,
+      "rowText": "| - test change reduce temperature 630°C and 610"
+    },
+    {
+      "rowId": "Report!17",
+      "sheetName": "Report",
+      "rowNumber": 17,
+      "rowText": "| III.Result"
+    },
+    {
+      "rowId": "Report!18",
+      "sheetName": "Report",
+      "rowNumber": 18,
+      "rowText": "| | RESULT NG SPOT WELDING"
+    },
+    {
+      "rowId": "Report!19",
+      "sheetName": "Report",
+      "rowNumber": 19,
+      "rowText": "| | No | Date | Type | Input | OK | NG spot welding | | Total NG | NG Rate"
+    },
+    {
+      "rowId": "Report!20",
+      "sheetName": "Report",
+      "rowNumber": 20,
+      "rowText": "| | | | | | | Solder weak | Burn"
+    },
+    {
+      "rowId": "Report!21",
+      "sheetName": "Report",
+      "rowNumber": 21,
+      "rowText": "| | 1 | 2023-12-07 00:00:00 | Test 630°C | 100 | 94 | 6 | 0 | 6 | 0.06"
+    },
+    {
+      "rowId": "Report!23",
+      "sheetName": "Report",
+      "rowNumber": 23,
+      "rowText": "| | 2 | | Test 610°C | 100 | 93 | 7 | 0 | 7 | 0.07"
+    },
+    {
+      "rowId": "Report!25",
+      "sheetName": "Report",
+      "rowNumber": 25,
+      "rowText": "| | 3 | | Normal 650°C | 100 | 93 | 7 | 0 | 7 | 0.07"
+    },
+    {
+      "rowId": "Report!28",
+      "sheetName": "Report",
+      "rowNumber": 28,
+      "rowText": "| 4. Decision"
+    },
+    {
+      "rowId": "Report!29",
+      "sheetName": "Report",
+      "rowNumber": 29,
+      "rowText": "| - When reduce temperature NG same normal. Need check other reason."
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-904-rc-1",
+      "reviewTitle": "REPORT TEST CHECK REASON NG SOLDER WEAK OF PROCESS SPOT WELDING BRS - 161014 | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Find reason NG solder weak / | II. Content. / | - test change reduce temperature 630°C and 610 / | III.Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: Normal 650°C vs Test 630°C, Test 610°C",
+          "baselineCondition": "Normal 650°C",
+          "changedCondition": "Test 630°C, Test 610°C",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Report!14",
+            "Report!15",
+            "Report!2",
+            "Report!21",
+            "Report!23",
+            "Report!25",
+            "Report!5"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "RESULT NG SPOT WELDING",
+          "comparisonRows": [
+            "Report!21",
+            "Report!23",
+            "Report!25"
+          ],
+          "judgement": "mixed",
+          "subResults": [
+            {
+              "pairId": 4880,
+              "controlCondition": "Normal 650°C",
+              "testCondition": "Test 630°C",
+              "control": {
+                "input": 100.0,
+                "ng": 7.0,
+                "ratePercent": 7.000000000000001
+              },
+              "test": {
+                "input": 100.0,
+                "ng": 6.0,
+                "ratePercent": 6.0
+              },
+              "deltaRatePercentPoint": -1.0000000000000009,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Report!21",
+                "Report!25"
+              ]
+            },
+            {
+              "pairId": 4881,
+              "controlCondition": "Normal 650°C",
+              "testCondition": "Test 610°C",
+              "control": {
+                "input": 100.0,
+                "ng": 7.0,
+                "ratePercent": 7.000000000000001
+              },
+              "test": {
+                "input": 100.0,
+                "ng": 7.0,
+                "ratePercent": 7.000000000000001
+              },
+              "deltaRatePercentPoint": 0.0,
+              "effectDirection": "NO_CHANGE",
+              "evidenceRows": [
+                "Report!23",
+                "Report!25"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Report!14",
+        "Report!15",
+        "Report!2",
+        "Report!21",
+        "Report!23",
+        "Report!25",
+        "Report!5"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report!14",
+      "Report!15",
+      "Report!2",
+      "Report!21",
+      "Report!23",
+      "Report!25",
+      "Report!5"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

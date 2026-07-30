@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 339,
+  "sourceFile": "18 . BRS-161014 GMI  Report test YK new vender Doojin date 04.11.2024 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\339.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 339,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the primary change and reduces a full Doojin Test YK validation report to drop-test method data.",
+    "issues": [
+      "Changed factor incorrectly includes Method Manual instead of new vendor Doojin/Test YK material.",
+      "Method Auto/Manual are outcome conditions, not the primary comparison factor.",
+      "Major outcomes are omitted: visual, decap, tension, function, and decision.",
+      "Baseline/test grouping should be Normal YK vs Test YK under one validation context.",
+      "Evidence set is too narrow and includes row 59 without context here."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal YK vs Test YK 161014 new vendor Doojin.",
+      "Use Auto/Manual only within drop-test outcome details.",
+      "Add outcomes for sub-line visual, decap MG-S-A/B, decap Yoke, tension, function, and drop tests.",
+      "Cite rows 2,6,21-27,28-40,41-49,50-63,65-66 as applicable.",
+      "Judge overall result from report decision: material can be used if all outcomes support it."
+    ],
+    "evidencePolicy": "Current citations are insufficient; each outcome needs direct row citations plus title, purpose, and decision rows."
+  },
+  "usage": {
+    "input_tokens": 4600,
+    "output_tokens": 637,
+    "total_tokens": 5237
+  }
+}

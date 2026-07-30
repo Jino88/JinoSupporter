@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 54,
+  "sourceFile": "02.MSU-20S15-07 Result test  SP NG small damage on the SP pad_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\54.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 54,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable Test SP vs Normal case is valid, but outcome parsing and judgement need correction before use.",
+    "issues": [
+      "Function result is overstated as improved and may double-count Normal NG.",
+      "Sport welding inspection outcome is omitted despite cited rows.",
+      "Tension Tip B rows lose merged parent conditions.",
+      "Tension spec is omitted from measurement subresults.",
+      "Final decision supports OK/same normal, not improvement."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Reparse function table with header context and correct NG totals/rates.",
+      "Change function judgement to same/no worse or needs_review if headers remain unclear.",
+      "Add sport welding outcome for rows 25-26 with both conditions at 0 NG.",
+      "Attach Test SP/Normal parent labels to Tip B tension rows.",
+      "Populate 0.03 kgf tension spec and judge pass versus spec."
+    ],
+    "evidencePolicy": "Citations are mostly sufficient, but need header and merged-row context for function and tension."
+  },
+  "usage": {
+    "input_tokens": 3674,
+    "output_tokens": 1266,
+    "total_tokens": 4940
+  }
+}

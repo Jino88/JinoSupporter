@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 681,
+  "sourceFile": "48. BRS-161016 Report test before and after laser cutting 2024.07.03_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\681.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:28Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 681,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies condition labels but lacks comparable outcome evidence needed for a verified ReviewCase.",
+    "issues": [
+      "No comparison pairs or metrics were extracted",
+      "Rows show multiple factors: VP version, bending state, and laser timing",
+      "No sample measurement values are present in extracted rows",
+      "Baseline/test grouping cannot be verified from labels alone"
+    ],
+    "requiredUserQuestions": [
+      "Are measurement values present elsewhere in the workbook or source images?"
+    ],
+    "correctionPlan": [
+      "Reinspect the original file for hidden columns, merged cells, images, or omitted sample values",
+      "Extract all sample measurements tied to each condition row",
+      "Define comparisons within the same VP version and bending state for before vs after laser cutting",
+      "Preserve VP version and bending state as subgroup keys unless evidence shows they are the primary factor",
+      "Create ReviewCase only after citeable outcome rows are available"
+    ],
+    "evidencePolicy": "Current citations support condition context only; they are insufficient as final outcome evidence."
+  },
+  "usage": {
+    "input_tokens": 1396,
+    "output_tokens": 566,
+    "total_tokens": 1962
+  }
+}

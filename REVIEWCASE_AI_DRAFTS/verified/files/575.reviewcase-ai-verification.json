@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 575,
+  "sourceFile": "36. BRS-161014 Report TEST new Coil of DAIKOKU 2023.09.25_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\575.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 575,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Comparable test-vs-normal function results exist, but the changed factor and Sheet1 measurement grouping need correction.",
+    "issues": [
+      "Changed factor is misclassified as equipment; evidence indicates new Daikoku wire/material condition.",
+      "Sheet1 table is process/setup context, not a comparable outcome against Normal RCW KTP 18.",
+      "Sheet1 measurement evidence cites only the header, not the value rows.",
+      "Primary evidence supports function defect rate comparison only, with no final decision row content cited."
+    ],
+    "requiredUserQuestions": [
+      "Should Sheet1 AWF settings be retained only as test setup context?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to Normal RCW KTP 18 vs Test DHT 3DS-FH7 Daikoku new wire.",
+      "Set changeDomain to material/supplier rather than equipment.",
+      "Remove the Sheet1 measurement outcome or convert it to secondary setup context.",
+      "If retaining Sheet1 context, cite rows Sheet1!6-Sheet1!9 with the header.",
+      "Keep Report rows 14 and 16 as the function result comparison evidence."
+    ],
+    "evidencePolicy": "Function comparison citations are sufficient; Sheet1 outcome citations are insufficient."
+  },
+  "usage": {
+    "input_tokens": 3533,
+    "output_tokens": 787,
+    "total_tokens": 4320
+  }
+}

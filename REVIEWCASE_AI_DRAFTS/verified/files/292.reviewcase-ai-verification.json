@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 292,
+  "sourceFile": "15. BRS-161014 DT Report test VP mold #7,9 add 0.05mm  date 3.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\292.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:31Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 292,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid source context but misgroups baseline/test conditions and gives incorrect function judgement.",
+    "issues": [
+      "Changed factor conflates normal, test #7/#9, total, and bent-sample subgroup.",
+      "Vision VP/CD compares test #7/#9 to bent samples instead of Normal.",
+      "Function outcome wrongly judged worse; report decision says test #7/#9 same as normal.",
+      "Measurement outcomes are header-derived artifacts, not real measurements.",
+      "Evidence includes rows not shown in context and weak header-only citations."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary change to VP mold #7/#9 with +0.05mm center versus Normal VP mold.",
+      "Treat bent #7 and total #7 as subgroup/aggregate context, not baseline.",
+      "Recompute outcomes against Normal rows for vision VP, VP/CD, and function.",
+      "Change function judgement to no_change or comparable-to-normal per decision row.",
+      "Remove artifact measurement outcomes unless citeable numeric measurement rows exist."
+    ],
+    "evidencePolicy": "Citations are sufficient for report purpose and result rows, but not for artifact measurement claims."
+  },
+  "usage": {
+    "input_tokens": 6350,
+    "output_tokens": 713,
+    "total_tokens": 7063
+  }
+}

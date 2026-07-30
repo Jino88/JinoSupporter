@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 62,
+  "sourceFile": "025.MSU-20S15-07 Result check NTI test coil 0.096_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\62.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 62,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparison evidence but misgroups outcomes and misextracts key function and FO results.",
+    "issues": [
+      "Function judgement ignores hearing defect rates and is not supported as no_change.",
+      "FO measurement stats are parsed from sample labels, not FO values.",
+      "Measurement evidence cites mostly header rows, not underlying data rows.",
+      "Changed factor is ambiguous between frame condition and bonding VP+CD lot change.",
+      "Review title is a data row, not a case description."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary changed factor test frame test vs test frame normal, or bonding VP+CD lot change?"
+    ],
+    "correctionPlan": [
+      "Retitle case as NTI coil 0.096 result check for Test1, Test2, Normal, and ST conditions.",
+      "Rebuild changed factor from Function title and Test1/Test2 condition rows only after confirming primary factor.",
+      "Recalculate function outcomes using all defect-rate columns, especially hearing rates.",
+      "Reextract FO using numeric FO values and averages, not label indices.",
+      "Cite actual measurement data rows for SPL, THD, IMP, and FO, not only headers."
+    ],
+    "evidencePolicy": "Row existence is sufficient, but citations are not sufficient for final evidence because key data rows and parsed values are unreliable."
+  },
+  "usage": {
+    "input_tokens": 7463,
+    "output_tokens": 806,
+    "total_tokens": 8269
+  }
+}

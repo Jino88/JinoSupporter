@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 154,
+  "sourceFile": "07. MSU-L20S15-07 DT  Report  New bond 3852-V28 and improve NG separate VP+CD Date  14.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\154.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 154,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures the likely new-bond comparison but has unresolved condition grouping and evidence completeness issues.",
+    "issues": [
+      "Changed condition incorrectly includes the old bond.",
+      "Baseline/test evidence relies on row 21 content not shown in context.",
+      "Outcome uses only VP/CD results while purpose also mentions LED UV and tension.",
+      "Subgroup keys mix bond amount and press time without clear grouping labels.",
+      "Test input is 4 despite stated 50-piece check, needing reconciliation."
+    ],
+    "requiredUserQuestions": [
+      "Does row 21 confirm the Old bond SJ4765 baseline values?",
+      "Should LED UV and tension results be included or marked unavailable?"
+    ],
+    "correctionPlan": [
+      "Add or verify row 21 content before final use.",
+      "Set changed factor to Old bond SJ4765 vs Test bond 3852-V28.",
+      "Keep bond amount and press time as subgroup/context fields only.",
+      "Clarify VP/CD sample-size discrepancy between plan and result.",
+      "Add limitations for missing LED UV or tension outcome data if not present."
+    ],
+    "evidencePolicy": "Citations are not yet sufficient because a key comparison row is not visible and grouping needs correction."
+  },
+  "usage": {
+    "input_tokens": 2601,
+    "output_tokens": 778,
+    "total_tokens": 3379
+  }
+}

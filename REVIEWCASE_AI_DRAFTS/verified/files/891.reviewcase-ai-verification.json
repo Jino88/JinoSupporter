@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 891,
+  "sourceFile": "76.1 TIU L5S3-01 R Result compare SPL Graph - 2026.03.12_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\891.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:18Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 891,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not ready because the primary comparison should be STD versus Z-84 sample variants, not the workbook filename.",
+    "issues": [
+      "Changed factor is the filename, not a cited manufacturing condition.",
+      "Baseline and test conditions are left explicit as unknown despite STD and Z-84 labels.",
+      "Outcome grouping mixes graph summaries with raw numeric rows and malformed condition labels.",
+      "Review title is a header fragment and not a meaningful case title.",
+      "Spec and violation calculations appear unreliable due mixed upper/spec/data values."
+    ],
+    "requiredUserQuestions": [
+      "Are Z-84.26, Z-84.24, Z-84.22, and Z-84.20 the intended test conditions compared with STD?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to sample/version condition: STD vs Z-84 variants.",
+      "Use GRAPH rows 8-12 as summary comparison evidence for SPL, Fo, and THD.",
+      "Use RAW DATA rows 2-7 as condition/sample-name evidence.",
+      "Remove raw numeric subresults with condition labels that are just measurements.",
+      "Rebuild outcome metrics around SPL bands, Fo, and THD frequencies with specs from GRAPH rows 2-7."
+    ],
+    "evidencePolicy": "Current row citations exist but are not sufficient; final evidence must cite condition labels and summary metric rows together."
+  },
+  "usage": {
+    "input_tokens": 8103,
+    "output_tokens": 784,
+    "total_tokens": 8887
+  }
+}

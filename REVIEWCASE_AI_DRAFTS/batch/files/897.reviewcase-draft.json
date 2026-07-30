@@ -1,0 +1,250 @@
+{
+  "sourceFileId": 897,
+  "sourceFile": "77.BRS-201506 Report checking problem SUB2 process MG+PT over glue date 20.8.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\77.BRS-201506 Report checking problem SUB2 process MG+PT over glue date 20.8.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "15.8",
+    "sheetRowCount": 23,
+    "sheetCellCount": 67,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 3,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "15.8!2",
+      "sheetName": "15.8",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT CHECKING PROBLEM SUB2 PROCESS MG+PT ASS'Y HAPPEN OVER GLUE OF MODEL BRS-201506 | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "15.8!3",
+      "sheetName": "15.8",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | Date | 2024-08-15 00:00:00"
+    },
+    {
+      "rowId": "15.8!4",
+      "sheetName": "15.8",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | Maker | Thao"
+    },
+    {
+      "rowId": "15.8!5",
+      "sheetName": "15.8",
+      "rowNumber": 5,
+      "rowText": "| 1. Purpose test"
+    },
+    {
+      "rowId": "15.8!6",
+      "sheetName": "15.8",
+      "rowNumber": 6,
+      "rowText": "| - Improve NG MG+PT over glue"
+    },
+    {
+      "rowId": "15.8!8",
+      "sheetName": "15.8",
+      "rowNumber": 8,
+      "rowText": "| 2. Content of testing"
+    },
+    {
+      "rowId": "15.8!9",
+      "sheetName": "15.8",
+      "rowNumber": 9,
+      "rowText": "| - Test old bonding line checking NG rate"
+    },
+    {
+      "rowId": "15.8!10",
+      "sheetName": "15.8",
+      "rowNumber": 10,
+      "rowText": "| - Change new bonding line"
+    },
+    {
+      "rowId": "15.8!11",
+      "sheetName": "15.8",
+      "rowNumber": 11,
+      "rowText": "| - New bonding line move inside 0.2"
+    },
+    {
+      "rowId": "15.8!12",
+      "sheetName": "15.8",
+      "rowNumber": 12,
+      "rowText": "| - Q'ty test : 200pcs"
+    },
+    {
+      "rowId": "15.8!13",
+      "sheetName": "15.8",
+      "rowNumber": 13,
+      "rowText": "| => Checking NG rate over glue and decap bond"
+    },
+    {
+      "rowId": "15.8!14",
+      "sheetName": "15.8",
+      "rowNumber": 14,
+      "rowText": "| 3.Result test"
+    },
+    {
+      "rowId": "15.8!16",
+      "sheetName": "15.8",
+      "rowNumber": 16,
+      "rowText": "| | 1. RESULT CHECKING PROBLEM MG + PT OVER GLUE"
+    },
+    {
+      "rowId": "15.8!22",
+      "sheetName": "15.8",
+      "rowNumber": 22,
+      "rowText": "| | 2. RESULT CHECKING OVER GLUE AFTER CHANGE BONDING LINE"
+    },
+    {
+      "rowId": "15.8!23",
+      "sheetName": "15.8",
+      "rowNumber": 23,
+      "rowText": "| | Date | Line | Type | Input | OK | NG Over Glue | NG rate | Note"
+    },
+    {
+      "rowId": "15.8!26",
+      "sheetName": "15.8",
+      "rowNumber": 26,
+      "rowText": "| | | | After change new Bonding Line | 200 | 195 | 5 | 0.025"
+    },
+    {
+      "rowId": "15.8!33",
+      "sheetName": "15.8",
+      "rowNumber": 33,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-897-rc-1",
+      "reviewTitle": "REPORT CHECKING PROBLEM SUB2 PROCESS MG+PT ASS'Y HAPPEN OVER GLUE OF MODEL BRS-201506 | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| 1. Purpose test / | - Improve NG MG+PT over glue / | 2. Content of testing / | - Test old bonding line checking NG rate / | - Change new bonding line",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Old bonding Line vs After change new Bonding Line, 2024-08-19 00:00:00, Old bonding Line",
+          "baselineCondition": "Old bonding Line",
+          "changedCondition": "After change new Bonding Line, 2024-08-19 00:00:00, Old bonding Line",
+          "subgroupKeys": [
+            "E2-4A"
+          ],
+          "evidenceRows": [
+            "15.8!12",
+            "15.8!14",
+            "15.8!19",
+            "15.8!2",
+            "15.8!25",
+            "15.8!26",
+            "15.8!5",
+            "15.8!8",
+            "15.8!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "2. RESULT CHECKING OVER GLUE AFTER CHANGE BONDING LINE",
+          "comparisonRows": [
+            "15.8!25",
+            "15.8!26"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 4855,
+              "controlCondition": "Old bonding Line",
+              "testCondition": "After change new Bonding Line",
+              "control": {
+                "input": 200.0,
+                "ng": 85.0,
+                "ratePercent": 42.5
+              },
+              "test": {
+                "input": 200.0,
+                "ng": 5.0,
+                "ratePercent": 2.5
+              },
+              "deltaRatePercentPoint": -40.0,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "15.8!25",
+                "15.8!26"
+              ]
+            }
+          ],
+          "limitations": []
+        },
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "1. RESULT CHECKING PROBLEM MG + PT OVER GLUE",
+          "comparisonRows": [
+            "15.8!19"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 24542,
+              "condition": "2024-08-19 00:00:00 | E2-4A",
+              "input": 200.0,
+              "ok": 122.0,
+              "ng": 78.0,
+              "ratePercent": 39.0,
+              "evidenceRows": [
+                "15.8!19"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "15.8!12",
+        "15.8!14",
+        "15.8!19",
+        "15.8!2",
+        "15.8!25",
+        "15.8!26",
+        "15.8!5",
+        "15.8!8",
+        "15.8!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "15.8!12",
+      "15.8!14",
+      "15.8!19",
+      "15.8!2",
+      "15.8!25",
+      "15.8!26",
+      "15.8!5",
+      "15.8!8",
+      "15.8!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

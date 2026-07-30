@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 451,
+  "sourceFile": "25. TIU C11-20  Report test UV Led 3rd date 27.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\451.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:09Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 451,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft identifies the UV LED 3rd test context but has unresolved condition grouping and erroneous measurement extraction.",
+    "issues": [
+      "Changed factor combines reduced and increased UV settings, but outcomes only substantiate part of that comparison.",
+      "Baseline/test row pairing is unclear because multiple Normal and UV-setting rows are cited without subgroup keys.",
+      "Tension sample counts appear wrong; rows contain multiple sample values but draft reports sampleCount 1.",
+      "Measurement-2 misclassifies function-table columns as measurement statistics.",
+      "Some key cited rows are not shown in context, limiting verification of row-level evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Inspect rows 15-24 and map each row to Normal, reduced UV, or increased UV conditions.",
+      "Create separate subresults for reduced vs Normal and increased vs Normal only where row pairing is supported.",
+      "Preserve row keys such as No/date/type and any sample or lot identifiers.",
+      "Recalculate tension sample counts from actual measured values and keep min/max/avg citations.",
+      "Remove Measurement-2 or convert it into valid function defect metrics rather than measurement stats."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient until hidden cited rows and grouping are verified."
+  },
+  "usage": {
+    "input_tokens": 4066,
+    "output_tokens": 795,
+    "total_tokens": 4861
+  }
+}

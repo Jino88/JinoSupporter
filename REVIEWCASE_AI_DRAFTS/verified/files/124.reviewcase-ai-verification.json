@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 124,
+  "sourceFile": "05. BRS-161016 Report check VP+CD waiting long time to Led UV afer bonding_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\124.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:21Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 124,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misidentifies the primary factor and includes several misparsed outcomes.",
+    "issues": [
+      "Primary factor should be waiting time to LED UV after bonding, not vague Normal vs test.",
+      "Baseline/test conditions are ambiguous; Normal may be a reference row, not the changed factor.",
+      "Several measurement outcomes are parsing artifacts from mixed rows or pictures.",
+      "Bonding amount appears to be setup/control data, not a comparison outcome.",
+      "VP deformation status section is not properly captured as an outcome."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to VP+CD waiting time before LED UV with each wait time as condition.",
+      "Use Normal only as baseline/reference if supported by table headers and rows.",
+      "Keep valid outcomes for vision status, tension test, and VP deformation under the same factor.",
+      "Remove or recalculate misparsed picture and bonding-amount measurement outcomes.",
+      "Cite header rows plus all relevant data rows for each outcome table."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient because grouping and parsed metrics are unreliable."
+  },
+  "usage": {
+    "input_tokens": 5341,
+    "output_tokens": 685,
+    "total_tokens": 6026
+  }
+}

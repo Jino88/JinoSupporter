@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 30,
+  "sourceFile": "010.MSU-20S15-07 Result Test Voltage  S-MG  - Date 2025.02.12_1778470991_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\30.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:45:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 30,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft identifies a comparable voltage-level test but is not verified because the changed factor, baseline/test conditions, evidence citations, and sample/count interpretation need correction.",
+    "issues": [
+      "Changed factor is incorrectly set to the filename instead of the tested voltage condition levels for S-MG.",
+      "Baseline and changed conditions are left as not explicit even though row Sheet1!26 labels 2000 V as Normal, suggesting it may be the baseline against 1800 V and 1600 V.",
+      "Change domain 'dimension/spec' is unsupported by the cited evidence; this appears to be a process/test-condition voltage comparison with gauss measurement outcomes.",
+      "Key context/header rows Sheet1!17 and Sheet1!18 are not included in the review-case evidenceRows, reducing citation clarity for the outcome metric and columns.",
+      "Rows Sheet1!21 and Sheet1!22 appear to contain continuation sample values for the 1600 V condition but are not cited; similar continuation rows may exist for 1800 V and 2000 V outside the provided context.",
+      "SubResult sampleCount values of 1 are misleading because the report states Q'ty check 50 and shows multiple sample measurements per condition."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename the changed factor to the tested S-MG voltage level comparison, e.g. 'Voltage S-MG level: 2000 V Normal vs 1800 V vs 1600 V'.",
+      "Set 2000 V(Normal) as the baseline condition if no contradictory source context exists, and set 1600 V and 1800 V as changed/test conditions.",
+      "Change the domain to a more appropriate process/test-condition category rather than dimension/spec.",
+      "Add Sheet1!17 and Sheet1!18 to evidenceRows for the outcome title and column definitions.",
+      "Include continuation sample rows for each voltage condition where present, or limit the cited evidence explicitly to summary rows containing average/max/min.",
+      "Correct or remove misleading sampleCount values unless the true per-condition sample count can be validated from the workbook."
+    ],
+    "evidencePolicy": "Current citations prove the existence of the voltage summary rows but are insufficient for final evidence because header/context rows and continuation sample rows are incomplete."
+  },
+  "usage": {
+    "input_tokens": 2445,
+    "output_tokens": 990,
+    "total_tokens": 3435
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "sourceFileId": 171,
+  "sourceFile": "09. BRS-161014 Report test tension weak solder  19.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\171.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:51Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 171,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "passed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook is a single weak-solder tension check with no changed-factor comparison suitable for a ReviewCase.",
+    "issues": [
+      "No baseline versus changed condition is evidenced.",
+      "No comparison pairs or metric candidates were extracted.",
+      "Rows support only a 5-piece pass/fail tension result."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Mark the file excluded as non-comparable.",
+      "Do not create a changed-factor ReviewCase from this source.",
+      "If retained for reference, summarize only the spec, five results, and NG count."
+    ],
+    "evidencePolicy": "Rows 5-10 and 30-33 are sufficient to support exclusion and the limited result summary."
+  },
+  "usage": {
+    "input_tokens": 1749,
+    "output_tokens": 689,
+    "total_tokens": 2438
+  }
+}

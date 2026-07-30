@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 165,
+  "sourceFile": "08. MSU-L20S15-07DT  Report Test Supension B changing plating thichness from 9-18umto 13-18um  date 15.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\165.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:36Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 165,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but the changed-factor and baseline/test grouping are ambiguous and partly reversed.",
+    "issues": [
+      "Changed factor improperly merges plating change, bonding solder adjustment, and normal condition.",
+      "Baseline and changedCondition both include test conditions, causing an invalid comparison frame.",
+      "Vision outcome row23 vs row25 is labelled worse only under a reversed control/test setup.",
+      "Normal row27 is cited but not coherently used in outcomes.",
+      "Tension spec from row30 is omitted from measurement interpretation."
+    ],
+    "requiredUserQuestions": [
+      "Should the primary comparison be plating 9-18µm vs 13-18µm, or adding bonding solder PAD B after the plating change?"
+    ],
+    "correctionPlan": [
+      "Rewrite review title and purpose from the report context, not the department row.",
+      "Define one clear primary changed factor and keep bonding/solder as subgroup or separate factor if supported.",
+      "Align baseline/test labels with row evidence before judging direction.",
+      "Use row27 only if forming a valid normal-versus-test comparison.",
+      "Include row30 spec 0.03kgf and pass notes in tension outcome evidence."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficiently grouped for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3621,
+    "output_tokens": 795,
+    "total_tokens": 4416
+  }
+}

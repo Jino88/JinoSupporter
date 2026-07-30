@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 402,
+  "sourceFile": "21. BRS-2015 DT Report test Suspension 201506 - B  new vender WorldTop  Hanoi Vina- First lot 3-2025.01.16_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\402.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:08Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 402,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source rows but misstates the changed factor and omits key outcome domains from the validation report.",
+    "issues": [
+      "Changed factor is a filename, not the tested condition.",
+      "Baseline and test conditions are marked unclear despite explicit Test vs Normal rows.",
+      "Only tension is modeled; ass'y NG, spot welding, function, and decision outcomes are omitted.",
+      "Sheet1 Suspension A/B tension rows are mixed into the B review without clear grouping.",
+      "Some cited Sheet1 rows are not shown in supplied context."
+    ],
+    "requiredUserQuestions": [
+      "Should Sheet1 Suspension A/B tension be included in this B lot review or separated?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to new vendor WorldTop Hanoi Vina Suspension 201506-B first lot versus Normal.",
+      "Populate baselineCondition as Normal and changedCondition as Test Suspension-B.",
+      "Add outcomes for ass'y/frame NG, spot welding, function, tension, and final decision.",
+      "Preserve subgroup keys: date, line, type, suspension A/B, and test area.",
+      "Remove or separately group Sheet1 Suspension A rows unless source context proves inclusion."
+    ],
+    "evidencePolicy": "Row citations are sufficient for existence, but not sufficient for final evidence until grouping and missing outcomes are corrected."
+  },
+  "usage": {
+    "input_tokens": 4756,
+    "output_tokens": 758,
+    "total_tokens": 5514
+  }
+}

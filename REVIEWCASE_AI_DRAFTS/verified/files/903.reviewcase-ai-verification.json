@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 903,
+  "sourceFile": "79. BRS-161014 Report  Test Move Dry UV frame VP- CD ( improve VP-CD separate) Date 12.11.2024 line 3 - Copy_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\903.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:36Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 903,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable UV LED move test evidence exists, but grouping and outcome interpretation need correction before final use.",
+    "issues": [
+      "Line 3A and Line 3B are subgroup contexts but subgroupKeys are empty.",
+      "Changed factor wording is generic and should name the UV LED dry frame+VP/CD move before laser cutting.",
+      "Evidence misses some key total, normal-total, header, and decision rows.",
+      "Daily pairs overemphasize repeated single-day normal baselines; totals by line should drive the main result.",
+      "Judgement marked mixed despite both line totals improving, with one daily outlier needing limitation."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedFactor to the UV LED dry frame+VP/CD move before laser cutting, baseline Normal, test more UV LED.",
+      "Add subgroupKeys for production line or sheet: Line 3A and Line 3B.",
+      "Cite headers, all normal/test daily rows, total rows including Line 3B normal total, and decision row Line 3A!38.",
+      "Summarize primary outcomes by line totals for input, NG, NG rate, VP/CD separate, and decap checks.",
+      "Mark overall effect as improved or non-worse with limitation for the Line 3B daily outlier."
+    ],
+    "evidencePolicy": "Citations are citeable but incomplete; add missing subgroup, total, header, and decision rows before approval."
+  },
+  "usage": {
+    "input_tokens": 9710,
+    "output_tokens": 836,
+    "total_tokens": 10546
+  }
+}

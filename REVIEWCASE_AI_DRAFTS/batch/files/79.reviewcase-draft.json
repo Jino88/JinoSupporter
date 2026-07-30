@@ -1,0 +1,243 @@
+{
+  "sourceFileId": 79,
+  "sourceFile": "03. TIU C11-20  Report test tension center Dome improve VP+Coil separate date 20.12.2025_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\03. TIU C11-20  Report test tension center Dome improve VP+Coil separate date 20.12.2025_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 19,
+    "sheetCellCount": 91,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 3
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST IMPROVE VP+COIL SEPARATE TIU-C11-20 | | | | | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | Date | 2025-12-20 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Improve VP+Coil separate"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Test Normal CD Pen 50u + Forming temp 230°C ( Clean Ethanol )"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| - Test CD Pen 50u + Forming temp 230°C ( Don't Clean )"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| - Test CD Pen 50u rubber type 4 +Forming temp 230°C ( Don't Clean )"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| Make sample and test tension"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| Compare with normal lot"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!15",
+      "sheetName": "Test",
+      "rowNumber": 15,
+      "rowText": "| | 1 RESULT CHECKING TENSION"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | No | Date | Type | | | Spec | Result | No sample | | | | | | | | | | | | Min | Max | AVG"
+    },
+    {
+      "rowId": "Test!18",
+      "sheetName": "Test",
+      "rowNumber": 18,
+      "rowText": "| | 1 | 2025-12-12 00:00:00 | VP+COIL | Normal CD Pen 50u + Forming temp 230°C ( Clean Ethanol ) | | 0.4 | Pass | 0.618 | 0.876 | 0.788 | 0.746 | 0.873 | 0.577 | 0.688 | 0.752 | | | | | 0.577 | 0.876 | 0.73975"
+    },
+    {
+      "rowId": "Test!22",
+      "sheetName": "Test",
+      "rowNumber": 22,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-79-rc-1",
+      "reviewTitle": "| REPORT TEST IMPROVE VP+COIL SEPARATE TIU-C11-20 | | | | | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Improve VP+Coil separate / | II. Content. / | - Test Normal CD Pen 50u + Forming temp 230°C ( Clean Ethanol ) / | - Test CD Pen 50u + Forming temp 230°C ( Don't Clean )",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "dimension/spec"
+          ],
+          "changedFactor": "03. TIU C11-20 Report test tension center Dome improve VP+Coil separate date 20.12.2025",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!10",
+            "Test!11",
+            "Test!12",
+            "Test!18",
+            "Test!19",
+            "Test!2",
+            "Test!20",
+            "Test!5",
+            "Test!7",
+            "Test!8",
+            "Test!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "1 RESULT CHECKING TENSION",
+          "comparisonRows": [
+            "Test!18",
+            "Test!19",
+            "Test!20"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 47511,
+              "condition": "VP+COIL | Normal CD Pen 50u + Forming temp 230°C ( Clean Ethanol ) | Pass",
+              "spec": "",
+              "min": 0.577,
+              "max": 0.876,
+              "avg": 0.73975,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!18"
+              ]
+            },
+            {
+              "statId": 47512,
+              "condition": "CD Pen 50u + Forming temp 230°C ( Don't Clean ) | Pass",
+              "spec": "",
+              "min": 0.622,
+              "max": 0.825,
+              "avg": 0.72233333,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!19"
+              ]
+            },
+            {
+              "statId": 47513,
+              "condition": "CD Pen 50u rubber type 4 +Forming temp 230°C ( Don't Clean ) | Pass",
+              "spec": "",
+              "min": 0.677,
+              "max": 0.861,
+              "avg": 0.7992,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!20"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!10",
+        "Test!11",
+        "Test!12",
+        "Test!18",
+        "Test!19",
+        "Test!2",
+        "Test!20",
+        "Test!5",
+        "Test!7",
+        "Test!8",
+        "Test!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!10",
+      "Test!11",
+      "Test!12",
+      "Test!18",
+      "Test!19",
+      "Test!2",
+      "Test!20",
+      "Test!5",
+      "Test!7",
+      "Test!8",
+      "Test!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 439,
+  "sourceFile": "24. MSU-L20S15-07GMI  Report Test film 85A improve NG function SPK and module - 2025.06.23_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\439.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 439,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The 85A vs 70A comparison is valid, but outcome pairing and grouping errors block final use.",
+    "issues": [
+      "Function result mispairs June 28 test with June 24 normal instead of same-date normal row.",
+      "Summary outcome is overbroad and judges only Sub1-forming while other domains differ.",
+      "June and July sheets are separate rounds and need explicit date/round subgrouping.",
+      "Tension statistics undercount samples and omit the stated 1.2 kgf spec.",
+      "Test!40 is cited but its row text is not provided for verification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Film 85A test versus Normal Film 70A baseline.",
+      "Repair function comparisons, including Test!45 versus Test!47 for the June 28 round.",
+      "Split or relabel Sum outcomes by domain and mark overall summary as mixed if retained.",
+      "Add date/sheet/test-round subgroup keys to all subresults.",
+      "Recompute tension sample counts and include the 1.2 kgf pass criterion."
+    ],
+    "evidencePolicy": "Most citations exist, but final evidence is insufficient until mispaired and uncited rows are corrected."
+  },
+  "usage": {
+    "input_tokens": 9541,
+    "output_tokens": 1310,
+    "total_tokens": 10851
+  }
+}

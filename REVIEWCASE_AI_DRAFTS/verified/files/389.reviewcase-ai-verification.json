@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 389,
+  "sourceFile": "20. BRS-161014 Report test DOE Laser cutting main 2_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\389.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 389,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft uses citeable DOE rows but misgroups changed factors and includes invalid extracted measurements.",
+    "issues": [
+      "Laser parameter DOE and jig improvement are merged into one changed factor.",
+      "Baseline combines Normal and Normal Jig incorrectly.",
+      "Change domain is inaccurate for laser cutting process settings.",
+      "Outcome metrics and measurement stats include header-derived artifacts.",
+      "Evidence is overbroad and omits clear section-level grouping logic."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split changed factors into laser cutting parameter DOE and jig improvement, or justify one context with subgroups.",
+      "Define baseline and test conditions per DOE round using date/round/type/setting keys.",
+      "Use process/laser settings as the change domain and NG/FS damage/NG rate as outcomes.",
+      "Remove bogus measurement/spec summaries parsed from headers.",
+      "Cite header rows plus exact data rows for each comparison and include decision rows if present."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are too broad and not sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 8126,
+    "output_tokens": 753,
+    "total_tokens": 8879
+  }
+}

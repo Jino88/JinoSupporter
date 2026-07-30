@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 440,
+  "sourceFile": "24. TIU C11-20  Report Test  NEW grill 2026.2.14_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\440.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 440,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid row citations but misgroups sample types as changed conditions and lacks an explicit baseline for new grill improvement.",
+    "issues": [
+      "Changed factor should center on new grill, not 250Hz/OK sample grouping.",
+      "Baseline or normal condition is not evidenced in cited rows.",
+      "10Hz, 250Hz, and OK sample are outcome/sample subgroups, not primary changes.",
+      "Decision row is important evidence but not cited in the draft case.",
+      "Improvement claim cannot be verified from listed results alone."
+    ],
+    "requiredUserQuestions": [
+      "Is this report intended as before/after new grill validation or post-change sample screening?",
+      "What baseline NG rate should be compared against the new grill result?"
+    ],
+    "correctionPlan": [
+      "Rewrite changed factor as new grill change for TIU C11-20 function NG improvement.",
+      "Set baseline as unavailable unless a cited pre-change row exists.",
+      "Move 10Hz, 250Hz, and OK sample into subgroup/result conditions.",
+      "Add Test!22 as decision evidence and mark improvement as source-claimed only.",
+      "Keep judgement not_judged or needs_more_data until baseline evidence is supplied."
+    ],
+    "evidencePolicy": "Citations exist, but they are insufficient for baseline comparison; add decision row and avoid unsupported improvement evidence."
+  },
+  "usage": {
+    "input_tokens": 2643,
+    "output_tokens": 781,
+    "total_tokens": 3424
+  }
+}

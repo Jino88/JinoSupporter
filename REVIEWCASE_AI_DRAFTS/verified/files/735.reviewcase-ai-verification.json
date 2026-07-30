@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 735,
+  "sourceFile": "54. BRS-161016 Report Check reason NG OQC 8.6.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\735.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 735,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because the workbook contains separate OQC NG investigations, not a supported changed-condition comparison.",
+    "issues": [
+      "No explicit baseline or test changed factor is evidenced.",
+      "Sample numbers and dates are misclassified as changed conditions.",
+      "Two different BRS issue sheets are incorrectly merged into one case.",
+      "VP/CD separate and coil deform outcomes belong to separate investigations.",
+      "Root-cause notes do not provide before/after validation evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Exclude this draft from Ask AI final evidence.",
+      "Do not treat No. or Date fields as changed conditions.",
+      "Keep sheets 161016 and 181389 separate if summarized elsewhere.",
+      "Require explicit condition-change evidence before creating a ReviewCase.",
+      "Use root-cause rows only as non-comparative investigation context."
+    ],
+    "evidencePolicy": "Row citations exist, but they do not support a valid changed-factor comparison."
+  },
+  "usage": {
+    "input_tokens": 3520,
+    "output_tokens": 1020,
+    "total_tokens": 4540
+  }
+}

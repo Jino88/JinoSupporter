@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 480,
+  "sourceFile": "28. MSU-L20S15-07 Report test use Lot CD separate C2 &E2  date 29.4.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\480.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 480,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the primary comparison; source supports C2 vs E2 under shared lot/plasma context, not Normal vs Test.",
+    "issues": [
+      "Primary changed factor is wrong: evidence title/purpose centers C2 vs E2.",
+      "Normal/Test rows are secondary content within tension, not the workbook-level comparison.",
+      "Line grouping is lost for tension measurements and defect outcomes.",
+      "Function result C2 vs E2 is left unjudged despite comparable NG rates.",
+      "LED UV/bonding rows appear header-derived and are not validated as comparable outcomes."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factor as C2 vs E2 with lot CD and plasma C2 as context/subgroup as supported.",
+      "Preserve line/date/content grouping for each outcome.",
+      "Pair C2 and E2 rows separately for separate check, tension check, tension assay, and function.",
+      "Judge comparable NG-rate outcomes and tension averages within the C2/E2 comparison.",
+      "Remove or quarantine header-only LED UV/bonding measurement candidates unless data rows are cited."
+    ],
+    "evidencePolicy": "Citations exist but do not sufficiently support the drafted Normal vs Test grouping."
+  },
+  "usage": {
+    "input_tokens": 6143,
+    "output_tokens": 788,
+    "total_tokens": 6931
+  }
+}

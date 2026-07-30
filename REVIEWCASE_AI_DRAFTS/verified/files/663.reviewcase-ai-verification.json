@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 663,
+  "sourceFile": "45.BRS-2015 Report Test suspension pad offset date 17.5.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\663.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 663,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it invents a baseline comparison and misgroups a single suspension pad offset validation report.",
+    "issues": [
+      "Changed factor is incorrectly modeled as baseline vs Spot vision.",
+      "Changed condition has a typo and is a process check, not the tested factor.",
+      "Outcome counts appear inconsistent with 30 pcs and listed OK/G2 results.",
+      "Separate glue and decision evidence are not fully captured.",
+      "Key cited row 201506!19 is not shown in provided context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Recast changed factor as single-condition suspension pad offset standard/test validation.",
+      "Use Spot vision/checking as outcome context, not changed condition.",
+      "Add all relevant result sections and final decision rows.",
+      "Recalculate OK/NG/G2 counts only from cited source rows.",
+      "Verify row 201506!19 text or replace with visible citeable rows."
+    ],
+    "evidencePolicy": "Current citations are insufficient because grouping relies on an unseen row and omits visible result/decision rows."
+  },
+  "usage": {
+    "input_tokens": 2527,
+    "output_tokens": 757,
+    "total_tokens": 3284
+  }
+}

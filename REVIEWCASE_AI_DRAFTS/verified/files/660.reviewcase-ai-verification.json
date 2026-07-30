@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 660,
+  "sourceFile": "45. TIU C11-20  Report Test VP 190-2kg. 2026.1.27_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\660.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:52Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 660,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed factor and cannot be verified from the supplied row context.",
+    "issues": [
+      "Changed factor treats shift/model text as the test condition.",
+      "Baseline/test condition is ambiguous without the full Test!14 row.",
+      "Cited changed-condition evidence is not shown in contextRows.",
+      "Review title and domain are generic or malformed.",
+      "Decision says NG did not reduce but judgement is not captured."
+    ],
+    "requiredUserQuestions": [
+      "What is the actual test condition compared with Normal?",
+      "Is Day only a shift subgroup, not a changed factor?"
+    ],
+    "correctionPlan": [
+      "Add full row text for Test!14 and any adjacent merged-condition rows.",
+      "Rebuild changed factor from the Type/test-condition column or report content.",
+      "Keep shift, model, and type as separate grouping keys.",
+      "Set outcome judgement using NG rate and decision statement.",
+      "Replace malformed title/domain with concise report context."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient for semantic verification because the key comparison row text is missing."
+  },
+  "usage": {
+    "input_tokens": 2301,
+    "output_tokens": 757,
+    "total_tokens": 3058
+  }
+}

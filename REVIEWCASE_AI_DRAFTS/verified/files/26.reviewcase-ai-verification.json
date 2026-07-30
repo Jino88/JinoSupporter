@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 26,
+  "sourceFile": "01.2.. BRS-161016DT  Report NEW machine Bond Ass'y VP-CD  improve NG separate VP+CD ( after improve base) Date  26.6.2025_1778470977_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\26.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:45:38Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 26,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook is a comparable new-machine VP/CD adhesion validation, but the draft has incorrect title/factor evidence and ambiguous outcome grouping that must be corrected before use.",
+    "issues": [
+      "Review title is taken from a Decap NG analysis sheet instead of the primary Test sheet validation title.",
+      "Changed-factor evidence does not cite the strongest rows proving the primary comparison, especially Test!2, Test!6, and Test!9.",
+      "Changed condition incorrectly mixes the aggregate label 'Total' with the actual test condition; 'Total' should be treated as an aggregate/subresult, not part of the changed factor.",
+      "Several measurement outcomes appear to be auto-extracted numeric tables with questionable grouping, including rows where defect-count tables are duplicated as measurements.",
+      "Decap NG daily sheets appear to be related follow-up NG analysis but are not clearly integrated as outcomes or explicitly excluded, creating incomplete outcome grouping.",
+      "Some evidence rows cited by the draft are not shown in the supplied contextRows, so row existence alone is insufficient to verify semantic accuracy."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set the review title to the Test sheet title: report test new machine VP/CD adhesion DT after improve base of machine BRS-161016.",
+      "Define the primary changed factor as Normal sample vs Test new machine VP/CD adhesion DT after improved machine base, with 'Total' used only for aggregate result rows.",
+      "Add Test!2, Test!6, and Test!9 as changed-factor/purpose evidence rows and remove Decap NG title row from changed-factor evidence unless used only as related NG-analysis context.",
+      "Recheck Test!77-Test!106 table structure so vision defects, function defects, and tension test are separated correctly and not duplicated as generic measurement statistics.",
+      "Review Test!18, Test!34, Test!61-Test!70 as UV/LED process-condition measurements and retain only if they are relevant to the same validation context with clear row-level grouping.",
+      "Decide whether Decap NG 27.6 through 5.7 sheets should be added as related post-test NG-analysis outcomes under the same validation report or excluded from this ReviewCase with a limitation."
+    ],
+    "evidencePolicy": "Evidence row IDs appear to exist, but citations are not semantically sufficient because key primary-purpose rows are missing and several cited rows need table-structure verification."
+  },
+  "usage": {
+    "input_tokens": 13576,
+    "output_tokens": 1015,
+    "total_tokens": 14591
+  }
+}

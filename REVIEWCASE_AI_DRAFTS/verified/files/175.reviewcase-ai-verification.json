@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 175,
+  "sourceFile": "09. MSU-L20S15-07DT  Report Test Supension B changing plating thichness from 9-18umto 25-30um  date 16.5.2025 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\175.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 175,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook has citeable evidence for a plating-thickness comparison, but the draft contains no usable review case.",
+    "issues": [
+      "No reviewCases were generated.",
+      "Changed factor should be plating thickness 9-18µm to 25-30µm versus normal.",
+      "Vision NG and tension results are present but not structured.",
+      "Baseline/test rows must remain linked within one validation report."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Create one review case for Suspension B plating thickness change.",
+      "Use normal lot as baseline and 25-30µm plating as test condition.",
+      "Capture vision spot welding NG outcome and tension pass outcome together.",
+      "Cite title, test rows, normal rows, and result conclusion rows.",
+      "Re-run verification after structured case creation."
+    ],
+    "evidencePolicy": "Citations are available in rows 2, 27, 29, 36, 40, and 44, but current draft cites none."
+  },
+  "usage": {
+    "input_tokens": 2243,
+    "output_tokens": 586,
+    "total_tokens": 2829
+  }
+}

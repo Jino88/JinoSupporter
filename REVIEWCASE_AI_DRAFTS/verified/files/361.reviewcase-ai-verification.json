@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 361,
+  "sourceFile": "19. TIU C11-20  Report test Frame mold #2 -#3 each by cavty 2026.1.24.. RAW_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\361.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:31Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 361,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but overmixes normal, mold, cavity, side, and raw acoustic data into one unclear changed-factor case.",
+    "issues": [
+      "Changed factor is overbroad and not evidence-clean.",
+      "Baseline versus test conditions are ambiguous.",
+      "Sheet2 LEFT data is not tied to the report title context.",
+      "Measurement outcomes include extraction artifacts and header-derived stats.",
+      "Function defects and SPL raw tables are not cleanly grouped."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison Normal vs frame mold #2/#3 by cavity?",
+      "Should Sheet2 LEFT results be included in this case?",
+      "Should acoustic SPL data be retained as an outcome?"
+    ],
+    "correctionPlan": [
+      "Define one primary changed factor from report purpose.",
+      "Separate mold-level and cavity-level subgroup keys.",
+      "Validate Normal, #2, #3, and cavity rows against table headers.",
+      "Remove artifact measurements from RAW DATA and headers.",
+      "Keep only outcomes with comparable conditions and clear row support."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 17297,
+    "output_tokens": 567,
+    "total_tokens": 17864
+  }
+}

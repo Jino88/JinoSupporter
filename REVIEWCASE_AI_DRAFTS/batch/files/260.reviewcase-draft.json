@@ -1,0 +1,455 @@
+{
+  "sourceFileId": 260,
+  "sourceFile": "13. BRS-161014  Report check PT measure coplanarty 2023.11.22_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\13. BRS-161014  Report check PT measure coplanarty 2023.11.22_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "Report; Sheet1",
+    "sheetRowCount": 51,
+    "sheetCellCount": 395,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 15
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report!2",
+      "sheetName": "Report",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT CHECK PT MEASUARE COPLANARTY AT SUB 2 | | | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report!3",
+      "sheetName": "Report",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | Date | 2023-11-22 00:00:00"
+    },
+    {
+      "rowId": "Report!4",
+      "sheetName": "Report",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | Marker | Trang"
+    },
+    {
+      "rowId": "Report!5",
+      "sheetName": "Report",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report!6",
+      "sheetName": "Report",
+      "rowNumber": 6,
+      "rowText": "| - Improve Spread glue not good"
+    },
+    {
+      "rowId": "Report!7",
+      "sheetName": "Report",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report!8",
+      "sheetName": "Report",
+      "rowNumber": 8,
+      "rowText": "| TEST: | Check measure coplanarty separate 2 type"
+    },
+    {
+      "rowId": "Report!9",
+      "sheetName": "Report",
+      "rowNumber": 9,
+      "rowText": "| - Type 1 | Under 0.01 mm"
+    },
+    {
+      "rowId": "Report!10",
+      "sheetName": "Report",
+      "rowNumber": 10,
+      "rowText": "| - Type 2 | 0.01~0.02 mm"
+    },
+    {
+      "rowId": "Report!11",
+      "sheetName": "Report",
+      "rowNumber": 11,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "Report!12",
+      "sheetName": "Report",
+      "rowNumber": 12,
+      "rowText": "| Result test check measure coplanarty PT"
+    },
+    {
+      "rowId": "Report!13",
+      "sheetName": "Report",
+      "rowNumber": 13,
+      "rowText": "| | Dimension | TYPE 1 ( <0.01mm) | | | | | MIN | MAX | AVG | | Dimension | TYPE 2 (0.01~0.02 mm) | | | | | MIN | MAX | AVG"
+    },
+    {
+      "rowId": "Report!14",
+      "sheetName": "Report",
+      "rowNumber": 14,
+      "rowText": "| | Sample NO | 1 | 2 | 3 | 4 | 5 | | | | | Sample NO | 1 | 2 | 3 | 4 | 5"
+    },
+    {
+      "rowId": "Report!25",
+      "sheetName": "Report",
+      "rowNumber": 25,
+      "rowText": "| - Result test check decap bond CMG+CP"
+    },
+    {
+      "rowId": "Report!26",
+      "sheetName": "Report",
+      "rowNumber": 26,
+      "rowText": "| | No | Date | Type | | | Input | OK | NG Spread glue | NG rate | Note"
+    },
+    {
+      "rowId": "Report!50",
+      "sheetName": "Report",
+      "rowNumber": 50,
+      "rowText": "| 4. Decision"
+    },
+    {
+      "rowId": "Sheet1!12",
+      "sheetName": "Sheet1",
+      "rowNumber": 12,
+      "rowText": "| | | Sample NO | | 1 | 2 | 3 | 4 | 5 | | Sample NO | | 1 | 2 | 3 | 4 | 5"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-260-rc-1",
+      "reviewTitle": "REPORT CHECK PT MEASUARE COPLANARTY AT SUB 2 | | | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Improve Spread glue not good / | II. Content. / | TEST: | Check measure coplanarty separate 2 type / | - Type 1 | Under 0.01 mm",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "supplier",
+            "dimension/spec"
+          ],
+          "changedFactor": "13. BRS-161014 Report check PT measure coplanarty 2023.11.22",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Report!12",
+            "Report!14",
+            "Report!2",
+            "Report!5",
+            "Report!7",
+            "Report!8",
+            "Sheet1!10",
+            "Sheet1!11",
+            "Sheet1!12",
+            "Sheet1!6",
+            "Sheet1!7",
+            "Sheet1!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Result test check measure coplanarty PT",
+          "comparisonRows": [
+            "Report!14"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 50772,
+              "condition": "Dimension / Sample NO",
+              "spec": "<0.01mm",
+              "min": 1.0,
+              "max": 10.0,
+              "avg": 5.5,
+              "sampleCount": 10,
+              "violationCount": 10,
+              "evidenceRows": [
+                "Report!14"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Low | 0 | Low | 0",
+          "comparisonRows": [
+            "Sheet1!10",
+            "Sheet1!11",
+            "Sheet1!12",
+            "Sheet1!9"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 50773,
+              "condition": "Platness",
+              "spec": "<0.01mm",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 1,
+              "violationCount": 1,
+              "evidenceRows": [
+                "Sheet1!11"
+              ]
+            },
+            {
+              "statId": 50774,
+              "condition": "Low 6",
+              "spec": "<0.01mm",
+              "min": 0.0,
+              "max": 0.006,
+              "avg": 0.0017,
+              "sampleCount": 2,
+              "violationCount": 1,
+              "evidenceRows": [
+                "Sheet1!11"
+              ]
+            },
+            {
+              "statId": 50775,
+              "condition": "Low 6",
+              "spec": "<0.01mm",
+              "min": -0.002,
+              "max": 0.019,
+              "avg": 0.0082,
+              "sampleCount": 2,
+              "violationCount": 1,
+              "evidenceRows": [
+                "Sheet1!11"
+              ]
+            },
+            {
+              "statId": 50782,
+              "condition": "Tolerance / Max",
+              "spec": "<0.01mm",
+              "min": 1.0,
+              "max": 10.0,
+              "avg": 5.5,
+              "sampleCount": 10,
+              "violationCount": 10,
+              "evidenceRows": [
+                "Sheet1!9"
+              ]
+            },
+            {
+              "statId": 50783,
+              "condition": "Low / Max",
+              "spec": "<0.01mm",
+              "min": 1.0,
+              "max": 10.0,
+              "avg": 5.5,
+              "sampleCount": 10,
+              "violationCount": 10,
+              "evidenceRows": [
+                "Sheet1!9"
+              ]
+            },
+            {
+              "statId": 50784,
+              "condition": "Max / Min",
+              "spec": "<0.01mm",
+              "min": 1.0,
+              "max": 10.0,
+              "avg": 5.5,
+              "sampleCount": 10,
+              "violationCount": 10,
+              "evidenceRows": [
+                "Sheet1!10"
+              ]
+            },
+            {
+              "statId": 50785,
+              "condition": "Min / Average",
+              "spec": "<0.01mm",
+              "min": 1.0,
+              "max": 10.0,
+              "avg": 5.5,
+              "sampleCount": 10,
+              "violationCount": 10,
+              "evidenceRows": [
+                "Sheet1!11"
+              ]
+            },
+            {
+              "statId": 50786,
+              "condition": "Average / Sample NO",
+              "spec": "<0.01mm",
+              "min": 1.0,
+              "max": 10.0,
+              "avg": 5.5,
+              "sampleCount": 10,
+              "violationCount": 10,
+              "evidenceRows": [
+                "Sheet1!12"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Sheet1!6"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 50776,
+              "condition": "Dimension",
+              "spec": "<0.01mm",
+              "min": 1.0,
+              "max": 10.0,
+              "avg": 5.5,
+              "sampleCount": 10,
+              "violationCount": 10,
+              "evidenceRows": [
+                "Sheet1!6"
+              ]
+            },
+            {
+              "statId": 50777,
+              "condition": "TYPE 1 ( <0.01mm)",
+              "spec": "<0.01mm",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.09090909090909091,
+              "sampleCount": 11,
+              "violationCount": 1,
+              "evidenceRows": [
+                "Sheet1!6"
+              ]
+            },
+            {
+              "statId": 50778,
+              "condition": "TYPE 2 (0.01~0.02 mm)",
+              "spec": "<0.01mm",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.09090909090909091,
+              "sampleCount": 11,
+              "violationCount": 1,
+              "evidenceRows": [
+                "Sheet1!6"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-4",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Dimension | TYPE 1 ( <0.01mm) | Dimension | TYPE 2 (0.01~0.02 mm)",
+          "comparisonRows": [
+            "Sheet1!7"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 50779,
+              "condition": "Dimension / Tolerance",
+              "spec": "<0.01mm",
+              "min": 1.0,
+              "max": 10.0,
+              "avg": 5.5,
+              "sampleCount": 10,
+              "violationCount": 10,
+              "evidenceRows": [
+                "Sheet1!7"
+              ]
+            },
+            {
+              "statId": 50780,
+              "condition": "TYPE 1 ( <0.01mm) / Platness",
+              "spec": "<0.01mm",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.09090909090909091,
+              "sampleCount": 11,
+              "violationCount": 1,
+              "evidenceRows": [
+                "Sheet1!7"
+              ]
+            },
+            {
+              "statId": 50781,
+              "condition": "TYPE 2 (0.01~0.02 mm) / Platness",
+              "spec": "<0.01mm",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.09090909090909091,
+              "sampleCount": 11,
+              "violationCount": 1,
+              "evidenceRows": [
+                "Sheet1!7"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report!12",
+        "Report!14",
+        "Report!2",
+        "Report!5",
+        "Report!7",
+        "Report!8",
+        "Sheet1!10",
+        "Sheet1!11",
+        "Sheet1!12",
+        "Sheet1!6",
+        "Sheet1!7",
+        "Sheet1!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report!12",
+      "Report!14",
+      "Report!2",
+      "Report!5",
+      "Report!7",
+      "Report!8",
+      "Sheet1!10",
+      "Sheet1!11",
+      "Sheet1!12",
+      "Sheet1!6",
+      "Sheet1!7",
+      "Sheet1!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

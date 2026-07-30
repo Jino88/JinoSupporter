@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 164,
+  "sourceFile": "08. L20S15-07 Report test CD lot IR 250410013  ( Size 490 ) box 1.4.7_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\164.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 164,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but changed-factor and metric grouping need correction before use.",
+    "issues": [
+      "Changed factor is wrongly narrowed to Box 4 instead of test CD lot boxes 1/4/7 vs Normal.",
+      "Box 1 is misused as subgroup while boxes 1/4/7 should be subgroup levels.",
+      "Function result parsing mixes tension input 10 with function input 50 and NG rate.",
+      "Condition labels are inconsistent or malformed, including missing lot context and duplicated CD text.",
+      "Tension spec is present in source title but left blank in extracted stats."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to Normal vs CD lot IR250410013, size 490K, boxes 1/4/7.",
+      "Use box number as subgroup key for all test-lot outcomes.",
+      "Split or clearly map dyne, tension, separation, and function metrics to their correct columns.",
+      "Correct function subresults to use input 50, OK 49/50 as applicable, total NG, and rate values.",
+      "Populate tension spec as 1.2 kgf and normalize condition labels."
+    ],
+    "evidencePolicy": "Row citations exist, but current cited evidence does not support the draft grouping as written."
+  },
+  "usage": {
+    "input_tokens": 3826,
+    "output_tokens": 805,
+    "total_tokens": 4631
+  }
+}

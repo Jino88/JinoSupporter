@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 774,
+  "sourceFile": "6. BRS-161016(DT) Sunmary Report TEST new JIG improve after repair use new dry machine 2024.05.9_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\774.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 774,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable validation evidence but misstates the changed factor and outcome grouping.",
+    "issues": [
+      "Changed factor is nonsensical and built from totals/row labels.",
+      "No explicit normal/baseline condition is cited.",
+      "Primary context is new dry machine with improved JIG; height/time/date are subgroups.",
+      "Outcome mixes summary totals with trial-round rows without preserved grouping.",
+      "Header-derived measurement outcome appears spurious."
+    ],
+    "requiredUserQuestions": [
+      "Should this be treated as validation of the new dry machine with improved JIG, not a baseline comparison?"
+    ],
+    "correctionPlan": [
+      "Set changed condition to new dry machine plus improved JIG for BRS-161016.",
+      "Remove uncited baseline or mark baseline as not provided.",
+      "Use height, time, temperature, date, and test round as subgroup keys.",
+      "Keep NG glue not dry, separation NG, OK, input, and NG rate under one result outcome.",
+      "Delete spurious header/stat measurement outcome and cite purpose, content, header, result, and summary rows."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping support is insufficient until corrected."
+  },
+  "usage": {
+    "input_tokens": 9849,
+    "output_tokens": 779,
+    "total_tokens": 10628
+  }
+}

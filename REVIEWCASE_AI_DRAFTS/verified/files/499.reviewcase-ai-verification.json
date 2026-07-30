@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 499,
+  "sourceFile": "3. BRS-161014 Report check problem Sub 2 K3 2023.08.03_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\499.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 499,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because it merges many unrelated DOE and repair comparisons into one malformed changed-factor case.",
+    "issues": [
+      "Primary changed factor is over-aggregated across unrelated tests and sheets.",
+      "Baseline and test conditions mix material, repair, bonding, temperature, supplier, and process settings.",
+      "Several outcomes are unjudged or use invalid metrics such as section headers and bogus specs.",
+      "Subgroup key is meaningless and row grouping keys are not preserved.",
+      "Some cited rows are absent from provided context or lack supporting header/data linkage."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split cases by coherent validation context and primary changed factor.",
+      "Define clear baseline and test conditions per date, sheet, test, supplier, SM type, and process setting.",
+      "Remove generic measurement candidates, header-derived metrics, and invalid >80 specs.",
+      "Recompute visual NG and tension outcomes only from valid paired rows.",
+      "Cite header, condition, result, and decision rows for each corrected comparison."
+    ],
+    "evidencePolicy": "Current citations are insufficient; citeable rows exist, but grouping and row support must be rebuilt."
+  },
+  "usage": {
+    "input_tokens": 25734,
+    "output_tokens": 660,
+    "total_tokens": 26394
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 132,
+  "sourceFile": "05. TIU L5S3-01 R Result Coil Offset_251115_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\132.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 132,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft finds a coil/VP offset test report but does not verify the primary changed factor or usable outcome grouping.",
+    "issues": [
+      "Changed factor is the filename, not a tested condition.",
+      "Baseline and test conditions are not comparable or explicit.",
+      "Outcome metrics are auto-extracted and poorly grouped.",
+      "SPL evidence lacks visible header/spec/judgement context.",
+      "Decision/result conclusion is not captured."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary factor the normal AWF jig test frame or the coil/VP offset condition?"
+    ],
+    "correctionPlan": [
+      "Replace filename factor with the actual tested condition from source rows.",
+      "Define baseline and test condition only if supported by rows.",
+      "Rebuild outcomes by preserving table headers and OK/NG grouping.",
+      "Add citations for SPL headers, data rows, specs, and decision rows.",
+      "Leave judgement as not verified unless conclusion rows support it."
+    ],
+    "evidencePolicy": "Current row citations exist but are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 5212,
+    "output_tokens": 745,
+    "total_tokens": 5957
+  }
+}

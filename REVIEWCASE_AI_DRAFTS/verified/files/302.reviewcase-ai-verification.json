@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 302,
+  "sourceFile": "15. TIU C11-20 Result test Frame change design improve Real line RA 338 2026.01.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\302.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:51Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 302,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies a real frame-design validation but misgroups the primary comparison and includes invalid measurement outcomes.",
+    "issues": [
+      "Primary changed factor should be Normal lot vs Test Frame change design, not model names.",
+      "L/R and TIU C11-20L/R should be subgroup context, not changed conditions.",
+      "Header-derived measurement outcomes from Test!16 and Test!30 are invalid evidence.",
+      "Sheet1 pickup summary is relevant but not cleanly tied to the same comparison.",
+      "Review title and domains are raw headers and need normalization."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to frame design change: Normal lot baseline vs Test Frame change design.",
+      "Preserve model/side L and R as subgroup keys.",
+      "Keep array frame and function results under one validation case.",
+      "Remove bogus measurement-stat outcomes based on header rows.",
+      "Add or normalize Sheet1 pickup tray/loading outcomes with proper L-TEST/L-Normal/R-TEST/R-Normal citations."
+    ],
+    "evidencePolicy": "Row citations exist, but some are misused; final evidence needs data-row citations only, not header/stat artifacts."
+  },
+  "usage": {
+    "input_tokens": 5436,
+    "output_tokens": 681,
+    "total_tokens": 6117
+  }
+}

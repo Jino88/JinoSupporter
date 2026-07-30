@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 192,
+  "sourceFile": "1. BRS-201506 DT Report test JIG Frame Array A improve   date 6.12.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\192.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 192,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but incorrectly merges distinct reports and changed factors into one review case.",
+    "issues": [
+      "Distinct sheets represent different validations, not one clean changed-factor comparison.",
+      "Changed factor mixes new version, material SUS, new line, old/new JIG, settings, and numbers.",
+      "Baseline/test conditions are ambiguous and sometimes reused across unrelated rows.",
+      "Measurement outcome is invalid; specs and defect columns are misinterpreted.",
+      "Some cited 10.9 rows are not included in provided context for verification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split into separate review cases or stages by report title and purpose.",
+      "Define one primary changed factor per case, preserving line/date/type/settings as subgroups.",
+      "Rebuild outcomes only from matching baseline/test rows within the same result table.",
+      "Remove or recalculate the measurement-stat section from actual numeric rows and correct specs.",
+      "Keep concise evidence citations to title, purpose, header, compared rows, and decision/result rows."
+    ],
+    "evidencePolicy": "Row citations exist for many comparisons, but grouping citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 8587,
+    "output_tokens": 566,
+    "total_tokens": 9153
+  }
+}

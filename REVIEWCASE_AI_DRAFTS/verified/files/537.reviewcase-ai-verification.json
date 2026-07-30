@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 537,
+  "sourceFile": "31.1 TIU C11-20  Report Test new press Jig ( Frame+ VP) 2026.1.5. - RAW soundcheck_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\537.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 537,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the primary changed factor and several comparisons are misgrouped.",
+    "issues": [
+      "Primary change is new VP press jig vs Normal, not Day/Night/TOTAL.",
+      "Date, shift, model, and TOTAL are subgroup or aggregation keys, not changed conditions.",
+      "Several pairs use mismatched Normal baselines instead of adjacent subgroup rows or totals.",
+      "Function totals and row-level results are mixed inconsistently.",
+      "RAW DATA SPL/UV measurements are not clearly tied to the press-jig comparison."
+    ],
+    "requiredUserQuestions": [
+      "Are RAW DATA soundcheck UV/SPL results part of this new VP press-jig validation?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to Normal vs Test use new VP press Jig.",
+      "Move date, shift, model, and process variant into subgroupKeys.",
+      "Rebuild Frame+VP, VP separate, and function pairs using matched adjacent rows and separate totals.",
+      "Remove or separate RAW DATA measurement outcomes unless linked by source context.",
+      "Replace graph-derived title with the Test sheet report title and purpose."
+    ],
+    "evidencePolicy": "Test-sheet row citations are sufficient; RAW DATA citations need clearer changed-condition linkage."
+  },
+  "usage": {
+    "input_tokens": 11994,
+    "output_tokens": 785,
+    "total_tokens": 12779
+  }
+}

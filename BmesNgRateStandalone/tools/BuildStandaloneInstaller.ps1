@@ -1,6 +1,9 @@
 param(
     [string]$Version = "",
-    [string]$IsccPath = ""
+    [string]$IsccPath = "",
+    # Set by PublishStandaloneUpdate.ps1, which has already published this exact version —
+    # re-publishing would just repeat a ~90 s self-contained build.
+    [switch]$SkipPublish
 )
 
 $ErrorActionPreference = 'Stop'
@@ -29,10 +32,15 @@ while ($versionParts.Count -lt 4) {
 }
 $assemblyVersion = ($versionParts[0..3] -join '.')
 
-dotnet publish $projectPath -c Release -r win-x64 --self-contained true -o $publishDir `
-    "-p:Version=$Version" `
-    "-p:AssemblyVersion=$assemblyVersion" `
-    "-p:FileVersion=$assemblyVersion"
+if (-not $SkipPublish) {
+    dotnet publish $projectPath -c Release -r win-x64 --self-contained true -o $publishDir `
+        "-p:Version=$Version" `
+        "-p:AssemblyVersion=$assemblyVersion" `
+        "-p:FileVersion=$assemblyVersion"
+}
+elseif (-not (Test-Path -LiteralPath $publishDir)) {
+    throw "-SkipPublish was set but no publish output exists at $publishDir."
+}
 
 if ([string]::IsNullOrWhiteSpace($IsccPath)) {
     $command = Get-Command ISCC.exe -ErrorAction SilentlyContinue
@@ -64,7 +72,8 @@ if ([string]::IsNullOrWhiteSpace($IsccPath) -or -not (Test-Path -LiteralPath $Is
 
 Push-Location $standaloneRoot
 try {
-    $setupPath = Join-Path $standaloneRoot 'dist\BmesNgRateStandalone_Setup.exe'
+    # Versioned name: several releases sit side by side in the web standalone-updates folder.
+    $setupPath = Join-Path $standaloneRoot ('dist\BmesNgRateStandalone_Setup-{0}.exe' -f $Version)
     if (Test-Path -LiteralPath $setupPath) {
         Remove-Item -LiteralPath $setupPath -Force
     }

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 342,
+  "sourceFile": "18. BRS-161014 Report check reason NG solder weak Date 7.12.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\342.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 342,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but incorrectly collapses several distinct investigation tests into one ambiguous changed factor.",
+    "issues": [
+      "Changed factor mixes machine repair, vendor, suspension lot, cleaning, drying, and plasma tests.",
+      "Baseline/test conditions are unclear and sometimes parsed as row numbers or MC IDs.",
+      "Later relevant result rows and conclusion rows are omitted from the case.",
+      "Some cited rows lack supplied row text, limiting verification of extracted metrics.",
+      "Outcome grouping covers only part of the validation report."
+    ],
+    "requiredUserQuestions": [
+      "Should this report be modeled as one root-cause investigation with multiple test factors?",
+      "What baseline should be used for each test factor if not explicit?"
+    ],
+    "correctionPlan": [
+      "Split or structure changed factors by tested condition: MC repair, vendor/laser, suspension lot, cleaning, drying, plasma.",
+      "Preserve subgroup keys such as date, MC number, lot, supplier, and process condition.",
+      "Include all relevant result rows through the final Nanosys/plasma comparison and conclusion rows.",
+      "Remove numeric row artifacts from changed-condition labels.",
+      "Recheck metric extraction and rates against each cited result row."
+    ],
+    "evidencePolicy": "Row citations exist, but coverage and row-text support are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4009,
+    "output_tokens": 666,
+    "total_tokens": 4675
+  }
+}

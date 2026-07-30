@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 222,
+  "sourceFile": "11. BRS-161014 Report  Repair and check damage  Date 24.4.2025 line 6_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\222.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:38Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 222,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures repair-check outcomes but invents an unsupported baseline comparison and includes invalid/partial metric grouping.",
+    "issues": [
+      "No explicit normal or baseline condition is evidenced.",
+      "Changed-factor domain and label are overbroad and include unsupported Total condition.",
+      "Header-derived measurement outcomes are not valid evidence metrics.",
+      "Outcome rows are incomplete and totals are inconsistently mixed with daily rows.",
+      "Evidence includes context/header rows that do not support condition comparison."
+    ],
+    "requiredUserQuestions": [
+      "Should this be treated as post-repair validation with no baseline comparison?"
+    ],
+    "correctionPlan": [
+      "Relabel changed factor as Repair Frame+Coil post-repair check process only.",
+      "Remove baseline/normal wording and unsupported domains unless separately evidenced.",
+      "Keep dates and lot dates as subgroup keys for row-level results.",
+      "Remove header-only measurement outcomes and use inspection result tables only.",
+      "Include all valid populated rows or separate daily rows from total summaries consistently."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient for baseline comparison and include weak header-only evidence."
+  },
+  "usage": {
+    "input_tokens": 11323,
+    "output_tokens": 759,
+    "total_tokens": 12082
+  }
+}

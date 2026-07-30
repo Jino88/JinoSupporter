@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 977,
+  "sourceFile": "92. BRS-161014 Report test Jig CM+CP NG after check by Jig master Yoke 01.09.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\977.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 977,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Core jig NG versus normal comparison is plausible, but the draft includes a likely spurious measurement outcome and omits key decision evidence.",
+    "issues": [
+      "Measurement outcome appears derived from header/count columns, not true measurements.",
+      "Decision row supporting usability is not cited in the case.",
+      "Changed factor should be jig condition only, not material.",
+      "Important context on 14/45 sorted NG jigs is omitted.",
+      "Outcome judgement ignores stated conclusion that hearing NG was not yoke-offset related."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove the measurement-1 outcome unless actual measurement rows exist.",
+      "Set changed factor to Normal jig versus Test Jig NG Type 1 and Type 2.",
+      "Add rows 11 and 33 as evidence for context and conclusion.",
+      "Keep function test subresults with rows 15, 17, and 19.",
+      "Add limitation that sample sizes differ and NG cause attribution comes from decision text."
+    ],
+    "evidencePolicy": "Citations support table comparisons, but conclusion and measurement citations are insufficient."
+  },
+  "usage": {
+    "input_tokens": 3588,
+    "output_tokens": 761,
+    "total_tokens": 4349
+  }
+}

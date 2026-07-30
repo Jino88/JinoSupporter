@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 478,
+  "sourceFile": "28. BRS-161016 Report check problem particle glue 4.4.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\478.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:12Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 478,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is incomplete because citeable rows show a before-vs-after laser cutting VP particle check, but no review case was generated.",
+    "issues": [
+      "No reviewCases were created.",
+      "Extracted comparison and metrics are missing despite clear table evidence.",
+      "Before/after rows must preserve date and line grouping.",
+      "Outcome metrics should include checked qty, OK, NG particle, and NG rate."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Create one review case for before vs after laser cutting VP.",
+      "Use rows 17-18 for test purpose and sampling context.",
+      "Use rows 22-34 for grouped results by date and line.",
+      "Record NG particle and NG rate outcomes for each before/after pair.",
+      "Keep image-caption rows 45 and 56 as secondary context only if needed."
+    ],
+    "evidencePolicy": "Rows 17-18 and 22-34 are sufficient citations; current draft lacks cited final evidence."
+  },
+  "usage": {
+    "input_tokens": 2412,
+    "output_tokens": 437,
+    "total_tokens": 2849
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 925,
+  "sourceFile": "8.1. BRS-161014  DT Report test VP new mold #11, #12 date 21.9.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\925.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:29Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 925,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable new-mold validation exists, but the draft has blocking rate and measurement grouping errors.",
+    "issues": [
+      "Sub-1 NG rates appear miscomputed versus input, NG, and total rate fields.",
+      "FO outcomes are misparsed; mold numbers are treated as measurements instead of FO values.",
+      "NTI measurement outcome cites headers only, not data/spec rows.",
+      "Review title uses a data row instead of the report title.",
+      "Several cited NG rows are not shown in context for rate verification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set title from the report title and keep changed factor as Normal VP #10 vs Test VP molds #11 and #12.",
+      "Recompute NG outcomes from total NG and total rate columns, preserving process section grouping.",
+      "Keep function result, citing rows confirming VP#11 high NG and VP#12 lower NG.",
+      "Replace FO outcomes with proper FO values and AVG row, or remove if not needed.",
+      "Remove or rebuild NTI measurements using actual data/spec rows, not header-only citations."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient until misparsed measurements and NG rate rows are corrected."
+  },
+  "usage": {
+    "input_tokens": 9497,
+    "output_tokens": 1150,
+    "total_tokens": 10647
+  }
+}

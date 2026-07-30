@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 231,
+  "sourceFile": "11. MSU-L20S15-07 Report Check again Lot SPK  Block 50K    Date 15.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\231.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:52Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 231,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable single-lot function results, but the baseline-vs-Lot Block changed factor is not supported.",
+    "issues": [
+      "No explicit baseline or normal condition is cited.",
+      "Single result row does not prove a condition comparison.",
+      "Changed factor should not be framed as baseline vs test without evidence.",
+      "Decap NG sheet context is not integrated or excluded with rationale."
+    ],
+    "requiredUserQuestions": [
+      "Should this be treated as single-lot validation rather than a comparison?",
+      "Is there an external baseline or prior lot intended for comparison?"
+    ],
+    "correctionPlan": [
+      "Remove unsupported baseline wording.",
+      "Define the case as single-condition lot recheck if allowed.",
+      "Keep Lot Block VP/CD as the tested lot condition.",
+      "Cite protocol and result rows for purpose, method, and outcome.",
+      "Decide whether Decap NG belongs to the same case or is supplemental analysis."
+    ],
+    "evidencePolicy": "Citations exist for tested lot, protocol, and result, but not for a baseline comparison."
+  },
+  "usage": {
+    "input_tokens": 2833,
+    "output_tokens": 754,
+    "total_tokens": 3587
+  }
+}

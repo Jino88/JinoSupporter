@@ -1,0 +1,1188 @@
+{
+  "sourceFileId": 363,
+  "sourceFile": "19.1. BRS-161014 DT Report test C-PT ( KR send) improve coner R ( Check NTI )  date 16.11.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\19.1. BRS-161014 DT Report test C-PT ( KR send) improve coner R ( Check NTI )  date 16.11.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 5,
+    "sheetNames": "NTI_종합; SPL DATA_(NTI; THD DATA_(NTI); IMP  DATA_(NTI; FO DATA",
+    "sheetRowCount": 294,
+    "sheetCellCount": 6590,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 82
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "FO DATA!3",
+      "sheetName": "FO DATA",
+      "rowNumber": 3,
+      "rowText": "| RESULT CHECKING FO"
+    },
+    {
+      "rowId": "FO DATA!5",
+      "sheetName": "FO DATA",
+      "rowNumber": 5,
+      "rowText": "| Test yoke #1 | 903.51939 | Normal #1 | 910.17218 | ST #1 | 860.24668"
+    },
+    {
+      "rowId": "FO DATA!6",
+      "sheetName": "FO DATA",
+      "rowNumber": 6,
+      "rowText": "| Test yoke #2 | 865.97752 | Normal #2 | 902.06335"
+    },
+    {
+      "rowId": "FO DATA!7",
+      "sheetName": "FO DATA",
+      "rowNumber": 7,
+      "rowText": "| Test yoke #3 | 896.70535 | Normal #3 | 917.47688"
+    },
+    {
+      "rowId": "FO DATA!8",
+      "sheetName": "FO DATA",
+      "rowNumber": 8,
+      "rowText": "| Test yoke #4 | 872.32957 | Normal #4 | 908.42346"
+    },
+    {
+      "rowId": "FO DATA!9",
+      "sheetName": "FO DATA",
+      "rowNumber": 9,
+      "rowText": "| Test yoke #5 | 903.11434 | Normal #5 | 919.73238"
+    },
+    {
+      "rowId": "FO DATA!10",
+      "sheetName": "FO DATA",
+      "rowNumber": 10,
+      "rowText": "| Test yoke #6 | 913.1758 | Normal #6 | 877.37254"
+    },
+    {
+      "rowId": "FO DATA!11",
+      "sheetName": "FO DATA",
+      "rowNumber": 11,
+      "rowText": "| Test yoke #7 | 903.45538 | Normal #7 | 897.82406"
+    },
+    {
+      "rowId": "FO DATA!12",
+      "sheetName": "FO DATA",
+      "rowNumber": 12,
+      "rowText": "| Test yoke #8 | 916.00002 | Normal #8 | 894.40836"
+    },
+    {
+      "rowId": "FO DATA!13",
+      "sheetName": "FO DATA",
+      "rowNumber": 13,
+      "rowText": "| Test yoke #9 | 911.61 | Normal #9 | 890.3786"
+    },
+    {
+      "rowId": "FO DATA!14",
+      "sheetName": "FO DATA",
+      "rowNumber": 14,
+      "rowText": "| Test yoke #10 | 888.33395 | Normal #10 | 915.3635"
+    },
+    {
+      "rowId": "FO DATA!15",
+      "sheetName": "FO DATA",
+      "rowNumber": 15,
+      "rowText": "| AVG | 897.422132 | AVG | 903.321531 | AVG | 860.24668"
+    },
+    {
+      "rowId": "IMP  DATA_(NTI!2",
+      "sheetName": "IMP  DATA_(NTI",
+      "rowNumber": 2,
+      "rowText": "HZ | ST | | Test #1 | Test #2 | Test #3 | Test #4 | Test #5 | Test #6 | Test #7 | Test #8 | Test #9 | Test #10 | Test AVG | | Normal #1 | Normal #2 | Normal #3 | Normal #4 | Normal #5 | Normal #6 | Normal #7 | Normal #8 | Normal #9 | Normal #10 | Normal AVG"
+    },
+    {
+      "rowId": "SPL DATA_(NTI!2",
+      "sheetName": "SPL DATA_(NTI",
+      "rowNumber": 2,
+      "rowText": "| MASK 1 | MASK 2 | ST | | Test #1 | Test #2 | Test #3 | Test #4 | Test #5 | Test #6 | Test #7 | Test #8 | Test #9 | Test #10 | Test AVG | | Normal #1 | Normal #2 | Normal #3 | Normal #4 | Normal #5 | Normal #6 | Normal #7 | Normal #8 | Normal #9 | Normal #10 | Normal AVG"
+    },
+    {
+      "rowId": "THD DATA_(NTI)!2",
+      "sheetName": "THD DATA_(NTI)",
+      "rowNumber": 2,
+      "rowText": "| ST | | Test #1 | Test #2 | Test #3 | Test #4 | Test #5 | Test #6 | Test #7 | Test #8 | Test #9 | Test #10 | Test AVG | | | Normal #1 | Normal #2 | Normal #3 | Normal #4 | Normal #5 | Normal #6 | Normal #7 | Normal #8 | Normal #9 | Normal #10 | Normal AVG"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-363-rc-1",
+      "reviewTitle": "| Test yoke #1 | 903.51939 | Normal #1 | 910.17218 | ST #1 | 860.24668",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material"
+          ],
+          "changedFactor": "19.1. BRS-161014 DT Report test C-PT ( KR send) improve coner R ( Check NTI ) date 16.11.2024",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "FO DATA!10",
+            "FO DATA!11",
+            "FO DATA!12",
+            "FO DATA!13",
+            "FO DATA!14",
+            "FO DATA!5",
+            "FO DATA!6",
+            "FO DATA!7",
+            "FO DATA!8",
+            "FO DATA!9",
+            "IMP  DATA_(NTI!2",
+            "SPL DATA_(NTI!2"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "IMP  DATA_(NTI!2",
+            "SPL DATA_(NTI!2",
+            "THD DATA_(NTI)!2"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 52187,
+              "condition": "MASK 1",
+              "spec": "",
+              "min": 74.90038,
+              "max": 118.98138,
+              "avg": 103.5656906666667,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52188,
+              "condition": "MASK 2",
+              "spec": "",
+              "min": 68.90038,
+              "max": 114.98138,
+              "avg": 97.999024,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52189,
+              "condition": "ST",
+              "spec": "",
+              "min": 71.90038,
+              "max": 116.98138,
+              "avg": 100.78235733333335,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52190,
+              "condition": "Test #1",
+              "spec": "",
+              "min": 71.46958,
+              "max": 117.64692,
+              "avg": 100.58683916666665,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52191,
+              "condition": "Test #2",
+              "spec": "",
+              "min": 71.93796,
+              "max": 117.29331,
+              "avg": 100.69727216666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52192,
+              "condition": "Test #3",
+              "spec": "",
+              "min": 71.49877,
+              "max": 117.31769,
+              "avg": 100.50862483333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52193,
+              "condition": "Test #4",
+              "spec": "",
+              "min": 71.8892,
+              "max": 117.2446,
+              "avg": 100.68607566666668,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52194,
+              "condition": "Test #5",
+              "spec": "",
+              "min": 71.21765,
+              "max": 117.55575,
+              "avg": 100.41018783333335,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52195,
+              "condition": "Test #6",
+              "spec": "",
+              "min": 71.09814,
+              "max": 117.55257,
+              "avg": 100.26076416666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52196,
+              "condition": "Test #7",
+              "spec": "",
+              "min": 71.32029,
+              "max": 117.40199,
+              "avg": 100.4015698333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52197,
+              "condition": "Test #8",
+              "spec": "",
+              "min": 71.47838,
+              "max": 117.78857,
+              "avg": 100.59498166666665,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52198,
+              "condition": "Test #9",
+              "spec": "",
+              "min": 71.18707,
+              "max": 117.61607,
+              "avg": 100.32286566666667,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52199,
+              "condition": "Test #10",
+              "spec": "",
+              "min": 71.54693,
+              "max": 117.43943,
+              "avg": 100.51288866666664,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52200,
+              "condition": "Test AVG",
+              "spec": "",
+              "min": 71.464397,
+              "max": 117.480413,
+              "avg": 100.49820696666667,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52201,
+              "condition": "Normal #1",
+              "spec": "",
+              "min": 71.18564,
+              "max": 117.33146,
+              "avg": 100.292562,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52202,
+              "condition": "Normal #2",
+              "spec": "",
+              "min": 71.41272,
+              "max": 117.54774,
+              "avg": 100.56041316666668,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52203,
+              "condition": "Normal #3",
+              "spec": "",
+              "min": 71.27061,
+              "max": 117.43374,
+              "avg": 100.33081516666668,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52204,
+              "condition": "Normal #4",
+              "spec": "",
+              "min": 71.36281,
+              "max": 117.67706,
+              "avg": 100.4681045,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52205,
+              "condition": "Normal #5",
+              "spec": "",
+              "min": 70.979,
+              "max": 117.44732,
+              "avg": 100.17891383333337,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52206,
+              "condition": "Normal #6",
+              "spec": "",
+              "min": 71.71664,
+              "max": 117.19812,
+              "avg": 100.66968216666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52207,
+              "condition": "Normal #7",
+              "spec": "",
+              "min": 71.77966,
+              "max": 117.58439,
+              "avg": 100.78825499999996,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52208,
+              "condition": "Normal #8",
+              "spec": "",
+              "min": 71.50704,
+              "max": 117.33549,
+              "avg": 100.55447366666668,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52209,
+              "condition": "Normal #9",
+              "spec": "",
+              "min": 71.47579,
+              "max": 117.34095,
+              "avg": 100.492576,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52210,
+              "condition": "Normal #10",
+              "spec": "",
+              "min": 71.59307,
+              "max": 117.58756,
+              "avg": 100.29813433333331,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52211,
+              "condition": "Normal AVG",
+              "spec": "",
+              "min": 71.428298,
+              "max": 117.443563,
+              "avg": 100.46339298333332,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52212,
+              "condition": "ST",
+              "spec": "",
+              "min": 0.59252,
+              "max": 14.38016,
+              "avg": 7.358137833333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52213,
+              "condition": "Test #1",
+              "spec": "",
+              "min": 0.55015,
+              "max": 13.77771,
+              "avg": 6.784084333333332,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52214,
+              "condition": "Test #2",
+              "spec": "",
+              "min": 0.61471,
+              "max": 13.4124,
+              "avg": 6.518830666666665,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52215,
+              "condition": "Test #3",
+              "spec": "",
+              "min": 0.39977,
+              "max": 13.8139,
+              "avg": 7.334664166666669,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52216,
+              "condition": "Test #4",
+              "spec": "",
+              "min": 0.55113,
+              "max": 12.78,
+              "avg": 6.278154833333335,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52217,
+              "condition": "Test #5",
+              "spec": "",
+              "min": 0.43619,
+              "max": 12.77425,
+              "avg": 6.556523000000001,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52218,
+              "condition": "Test #6",
+              "spec": "",
+              "min": 0.51196,
+              "max": 12.56984,
+              "avg": 6.211942166666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52219,
+              "condition": "Test #7",
+              "spec": "",
+              "min": 0.43336,
+              "max": 12.49346,
+              "avg": 6.841609833333332,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52220,
+              "condition": "Test #8",
+              "spec": "",
+              "min": 0.50683,
+              "max": 15.70223,
+              "avg": 8.312909833333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52221,
+              "condition": "Test #9",
+              "spec": "",
+              "min": 0.57337,
+              "max": 13.50934,
+              "avg": 6.5685633333333335,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52222,
+              "condition": "Test #10",
+              "spec": "",
+              "min": 0.6027,
+              "max": 13.50137,
+              "avg": 6.536604499999999,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52223,
+              "condition": "Test AVG",
+              "spec": "",
+              "min": 0.530003,
+              "max": 13.234719,
+              "avg": 6.794388666666667,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52224,
+              "condition": "Normal #1",
+              "spec": "",
+              "min": 0.42597,
+              "max": 13.16077,
+              "avg": 6.502306333333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52225,
+              "condition": "Normal #2",
+              "spec": "",
+              "min": 0.5043,
+              "max": 13.67522,
+              "avg": 6.763731999999998,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52226,
+              "condition": "Normal #3",
+              "spec": "",
+              "min": 0.52795,
+              "max": 11.98373,
+              "avg": 6.3060759999999965,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52227,
+              "condition": "Normal #4",
+              "spec": "",
+              "min": 0.50429,
+              "max": 13.54888,
+              "avg": 7.533720333333335,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52228,
+              "condition": "Normal #5",
+              "spec": "",
+              "min": 0.48107,
+              "max": 12.53539,
+              "avg": 6.6393935000000015,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52229,
+              "condition": "Normal #6",
+              "spec": "",
+              "min": 0.47116,
+              "max": 13.63354,
+              "avg": 7.173577166666665,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52230,
+              "condition": "Normal #7",
+              "spec": "",
+              "min": 0.29492,
+              "max": 18.70334,
+              "avg": 9.965784166666669,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52231,
+              "condition": "Normal #8",
+              "spec": "",
+              "min": 0.42932,
+              "max": 13.20965,
+              "avg": 7.129852333333336,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52232,
+              "condition": "Normal #9",
+              "spec": "",
+              "min": 0.50694,
+              "max": 12.33655,
+              "avg": 6.909403833333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52233,
+              "condition": "Normal #10",
+              "spec": "",
+              "min": 0.5297,
+              "max": 12.92234,
+              "avg": 7.068993333333332,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52234,
+              "condition": "Normal AVG",
+              "spec": "",
+              "min": 0.489132,
+              "max": 13.323311,
+              "avg": 7.199283899999998,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI)!2"
+              ]
+            },
+            {
+              "statId": 52235,
+              "condition": "HZ",
+              "spec": "",
+              "min": 100.0,
+              "max": 3000.0,
+              "avg": 862.1666666666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP  DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52236,
+              "condition": "ST",
+              "spec": "",
+              "min": 6.35599,
+              "max": 8.83486,
+              "avg": 7.240761333333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP  DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52237,
+              "condition": "Test #1",
+              "spec": "",
+              "min": 5.99246,
+              "max": 8.56671,
+              "avg": 6.949679333333336,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP  DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52238,
+              "condition": "Test #2",
+              "spec": "",
+              "min": 5.95458,
+              "max": 8.4317,
+              "avg": 6.8894313333333335,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP  DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52239,
+              "condition": "Test #3",
+              "spec": "",
+              "min": 5.95567,
+              "max": 8.36944,
+              "avg": 6.8764655,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP  DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52240,
+              "condition": "Test #4",
+              "spec": "",
+              "min": 6.02744,
+              "max": 8.52332,
+              "avg": 6.963969666666668,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP  DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52241,
+              "condition": "Test #5",
+              "spec": "",
+              "min": 5.96734,
+              "max": 8.46434,
+              "avg": 6.896446666666668,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP  DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52242,
+              "condition": "Test #6",
+              "spec": "",
+              "min": 6.02303,
+              "max": 8.48473,
+              "avg": 6.956374999999999,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP  DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52243,
+              "condition": "Test #7",
+              "spec": "",
+              "min": 6.0155,
+              "max": 8.42746,
+              "avg": 6.930270833333332,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP  DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52244,
+              "condition": "Test #8",
+              "spec": "",
+              "min": 5.97999,
+              "max": 8.59155,
+              "avg": 6.9395935,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP  DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52245,
+              "condition": "Test #9",
+              "spec": "",
+              "min": 6.04581,
+              "max": 8.58164,
+              "avg": 6.988957,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP  DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 52246,
+              "condition": "Test #10",
+              "spec": "",
+              "min": 6.09921,
+              "max": 8.66888,
+              "avg": 7.036530833333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP  DATA_(NTI!2"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT CHECKING FO",
+          "comparisonRows": [
+            "FO DATA!5"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 52259,
+              "condition": "RESULT CHECKING FO / Test yoke #1",
+              "spec": "",
+              "min": 2.0,
+              "max": 10.0,
+              "avg": 6.0,
+              "sampleCount": 9,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!5"
+              ]
+            },
+            {
+              "statId": 52260,
+              "condition": "RESULT CHECKING FO / Normal #1",
+              "spec": "",
+              "min": 2.0,
+              "max": 10.0,
+              "avg": 6.0,
+              "sampleCount": 9,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!5"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Test yoke #1 | 903.51939 | Normal #1 | 910.17218 | ST #1 | 860.24668",
+          "comparisonRows": [
+            "FO DATA!6"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 52261,
+              "condition": "Test yoke #1 / Test yoke #2",
+              "spec": "",
+              "min": 3.0,
+              "max": 10.0,
+              "avg": 6.5,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!6"
+              ]
+            },
+            {
+              "statId": 52262,
+              "condition": "Normal #1 / Normal #2",
+              "spec": "",
+              "min": 3.0,
+              "max": 10.0,
+              "avg": 6.5,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!6"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-4",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Test yoke #2 | 865.97752 | Normal #2 | 902.06335",
+          "comparisonRows": [
+            "FO DATA!7"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 52263,
+              "condition": "Test yoke #2 / Test yoke #3",
+              "spec": "",
+              "min": 4.0,
+              "max": 10.0,
+              "avg": 7.0,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!7"
+              ]
+            },
+            {
+              "statId": 52264,
+              "condition": "Normal #2 / Normal #3",
+              "spec": "",
+              "min": 4.0,
+              "max": 10.0,
+              "avg": 7.0,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!7"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-5",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Test yoke #3 | 896.70535 | Normal #3 | 917.47688",
+          "comparisonRows": [
+            "FO DATA!8"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 52265,
+              "condition": "Test yoke #3 / Test yoke #4",
+              "spec": "",
+              "min": 5.0,
+              "max": 10.0,
+              "avg": 7.5,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!8"
+              ]
+            },
+            {
+              "statId": 52266,
+              "condition": "Normal #3 / Normal #4",
+              "spec": "",
+              "min": 5.0,
+              "max": 10.0,
+              "avg": 7.5,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!8"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-6",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Test yoke #4 | 872.32957 | Normal #4 | 908.42346",
+          "comparisonRows": [
+            "FO DATA!9"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 52267,
+              "condition": "Test yoke #4 / Test yoke #5",
+              "spec": "",
+              "min": 6.0,
+              "max": 10.0,
+              "avg": 8.0,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!9"
+              ]
+            },
+            {
+              "statId": 52268,
+              "condition": "Normal #4 / Normal #5",
+              "spec": "",
+              "min": 6.0,
+              "max": 10.0,
+              "avg": 8.0,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!9"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "FO DATA!10",
+        "FO DATA!11",
+        "FO DATA!12",
+        "FO DATA!13",
+        "FO DATA!14",
+        "FO DATA!5",
+        "FO DATA!6",
+        "FO DATA!7",
+        "FO DATA!8",
+        "FO DATA!9",
+        "IMP  DATA_(NTI!2",
+        "SPL DATA_(NTI!2",
+        "THD DATA_(NTI)!2"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "FO DATA!10",
+      "FO DATA!11",
+      "FO DATA!12",
+      "FO DATA!13",
+      "FO DATA!14",
+      "FO DATA!5",
+      "FO DATA!6",
+      "FO DATA!7",
+      "FO DATA!8",
+      "FO DATA!9",
+      "IMP  DATA_(NTI!2",
+      "SPL DATA_(NTI!2",
+      "THD DATA_(NTI)!2"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

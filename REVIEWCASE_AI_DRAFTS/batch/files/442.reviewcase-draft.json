@@ -1,0 +1,214 @@
+{
+  "sourceFileId": 442,
+  "sourceFile": "24. TIU L5S3-01 R Report test reduce bonding amount insualtion improve NG function Bako  11.12.2025 -_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\24. TIU L5S3-01 R Report test reduce bonding amount insualtion improve NG function Bako  11.12.2025 -_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 19,
+    "sheetCellCount": 61,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] REPORT TEST REDUCE BONDING AMOUNT INSULATION IMPROVE NG FUNCTION | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | Date | 2025-12-11 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - NG function Bako very high, rate30~40% => Test improve and find reason NG"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Test reduce bonding amount insulation"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| => Check function"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| 1. Result test reduce bonding amount check Function"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | Result check function"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | No | Date | Type | | | Input | OK | NG BAKO | | | | Total NG | NG rate | Note"
+    },
+    {
+      "rowId": "Test!15",
+      "sheetName": "Test",
+      "rowNumber": 15,
+      "rowText": "| | 1 | 2025-12-11 00:00:00 | Test reduce bonding insulation min Spec ( 0.32-0.35mg ) | | | 409 | 365 | 12 | 32 | 0 | 0 | 44 | 0.10757946 | NG reduce"
+    },
+    {
+      "rowId": "Test!17",
+      "sheetName": "Test",
+      "rowNumber": 17,
+      "rowText": "| | 2 | | Normal ( Bond amount 0.48-0.52mg ) | | | 348 | 213 | 19 | 116 | 0 | 0 | 135 | 0.38793103"
+    },
+    {
+      "rowId": "Test!30",
+      "sheetName": "Test",
+      "rowNumber": 30,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "Test!31",
+      "sheetName": "Test",
+      "rowNumber": 31,
+      "rowText": "| - Lot test Reduce bond amount => NG function Bako reduce"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-442-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] REPORT TEST REDUCE BONDING AMOUNT INSULATION IMPROVE NG FUNCTION | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - NG function Bako very high, rate30~40% => Test improve and find reason NG / | II. Content. / | - Test reduce bonding amount insulation / | => Check function",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition",
+            "dimension/spec"
+          ],
+          "changedFactor": "Condition comparison: Normal ( Bond amount 0.48-0.52mg ) vs Test reduce bonding insulation min Spec ( 0.32-0.35mg )",
+          "baselineCondition": "Normal ( Bond amount 0.48-0.52mg )",
+          "changedCondition": "Test reduce bonding insulation min Spec ( 0.32-0.35mg )",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!11",
+            "Test!15",
+            "Test!17",
+            "Test!2",
+            "Test!5",
+            "Test!6",
+            "Test!7",
+            "Test!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "Result check function",
+          "comparisonRows": [
+            "Test!15",
+            "Test!17"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 4041,
+              "controlCondition": "Normal ( Bond amount 0.48-0.52mg )",
+              "testCondition": "Test reduce bonding insulation min Spec ( 0.32-0.35mg )",
+              "control": {
+                "input": 348.0,
+                "ng": 135.0,
+                "ratePercent": 38.793103
+              },
+              "test": {
+                "input": 409.0,
+                "ng": 44.0,
+                "ratePercent": 10.757946
+              },
+              "deltaRatePercentPoint": -28.035156999999998,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Test!15",
+                "Test!17"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Test!11",
+        "Test!15",
+        "Test!17",
+        "Test!2",
+        "Test!5",
+        "Test!6",
+        "Test!7",
+        "Test!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!11",
+      "Test!15",
+      "Test!17",
+      "Test!2",
+      "Test!5",
+      "Test!6",
+      "Test!7",
+      "Test!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

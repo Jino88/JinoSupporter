@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 913,
+  "sourceFile": "8. BRS-161014 Report Test change nozzle VZ05 - VZ06 MC bonding +Ass'y VP-CD  2023.11.11_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\913.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 913,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the nozzle comparison but misstates the baseline/test grouping and omits key conclusion evidence.",
+    "issues": [
+      "Changed factor incorrectly treats VZ05 and VZ06 as both changed conditions.",
+      "Baseline should be Nozzle VZ05 and test condition should be Nozzle VZ06.",
+      "Conclusion row supporting NG reduction is not cited in the review case.",
+      "Outcome domain is too vague for VP/CD NG rate results.",
+      "Row Test!30 is cited but not shown in supplied context rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to nozzle change VZ05 to VZ06.",
+      "Set baselineCondition to Nozzle VZ05 and changedCondition to Nozzle VZ06.",
+      "Add Test!32 as evidence for the stated reduction and change decision.",
+      "Classify outcome as vision/quality inspection NG rate.",
+      "Verify Test!30 content is the VZ06 result row before approval."
+    ],
+    "evidencePolicy": "Citations are partly sufficient; final evidence needs the VZ06 data row and conclusion row cited."
+  },
+  "usage": {
+    "input_tokens": 2341,
+    "output_tokens": 591,
+    "total_tokens": 2932
+  }
+}

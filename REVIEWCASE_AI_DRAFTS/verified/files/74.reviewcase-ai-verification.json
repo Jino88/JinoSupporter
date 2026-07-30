@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 74,
+  "sourceFile": "03. BRS-161016 DT Report test  suspension used SUS-D cutting 40% 50% 60% date 19.1.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\74.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 74,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable SUS-D cutting 40/50/60 vs Normal evidence exists, but several outcome groupings are incomplete or spurious.",
+    "issues": [
+      "Assy coil/sus compares only Normal and omits test rows.",
+      "Cutting laser outcome omits test rows and lacks judgement.",
+      "Header-derived measurement outcomes are spurious statistics.",
+      "Subgroup context such as result section and date is not preserved.",
+      "Change domain includes unsupported coating label."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Keep one changed factor: Normal vs SUS-D cutting 40/50/60.",
+      "Add test rows 30,32,34 to assy coil/sus and judge no change.",
+      "Add rows 41,43,45,47 to cutting laser and judge each test condition.",
+      "Remove header-only measurement outcomes 2-5 or convert to defect categories with data rows.",
+      "Add section/date subgroup keys and remove unsupported coating domain."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient where only header rows or incomplete comparison rows are cited."
+  },
+  "usage": {
+    "input_tokens": 7896,
+    "output_tokens": 764,
+    "total_tokens": 8660
+  }
+}

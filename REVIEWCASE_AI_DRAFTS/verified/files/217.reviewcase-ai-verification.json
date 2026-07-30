@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 217,
+  "sourceFile": "10.BRS-161016GMI- Report test 3 Type new bond PW1470SX-N1 & AC026 & A-3424B Ass'y VP+CD- 2025.07.07_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\217.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 217,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparable evidence but misidentifies the main condition and contains unreliable parsed outcomes.",
+    "issues": [
+      "PW 1470SX-N1 is repeatedly mistranscribed as PW 1470AX-N1.",
+      "Changed factor wrongly includes Total as a condition.",
+      "Primary factor should be new bond type versus Normal, not vague process/dimension change.",
+      "Several outcomes are header/spec artifacts or mixed units, not valid measurements.",
+      "Row grouping by test round/date and type is not preserved."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename the factor as Normal bond EA6116 versus PW 1470SX-N1, AC026, and A-3424B.",
+      "Remove Total from changedCondition and treat totals as summary rows.",
+      "Rebuild NG-rate outcomes from Test rows 35-46 and Decap rows 6-12 with round/date context.",
+      "Rebuild tension outcomes from Test rows 57-64, preserving type and round.",
+      "Drop header-derived measurement artifacts from rows 23,25,30,33,51 unless full table context validates them."
+    ],
+    "evidencePolicy": "Citations exist, but many are header or misparsed rows and are not sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 9381,
+    "output_tokens": 626,
+    "total_tokens": 10007
+  }
+}

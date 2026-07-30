@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 435,
+  "sourceFile": "24. BRS-161014 DT Report test VP mold #7,9 add 0.05mm  date 5.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\435.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 435,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Citeable evidence exists, but the draft misgroups baseline/test conditions and outcomes, so it is not ready for Ask AI.",
+    "issues": [
+      "Changed factor wrongly includes Total as a test condition.",
+      "Pairs compare across different dates, lines, and sheets without preserving grouping keys.",
+      "Baseline should be normal VP molds, while test should be VP mold #7/#9 add 0.05 mm.",
+      "Several relevant total and E2 rows are omitted or inconsistently used.",
+      "Measurement outcomes are header-derived and not meaningful evidence."
+    ],
+    "requiredUserQuestions": [
+      "Should sheets 5.3 and 7.3 (2) be treated as separate rounds or one combined report?"
+    ],
+    "correctionPlan": [
+      "Rewrite changed factor as test VP mold #7/#9 add 0.05 mm versus normal VP molds.",
+      "Rebuild comparisons within matching date, line, sheet, and process section, or use explicit total rows.",
+      "Remove Total from changedCondition and use it only as aggregation context.",
+      "Keep vision laze cutting, vision VP/CD, and function as outcomes under the same changed factor.",
+      "Drop or relabel measurement candidates unless real measured values and specs are present."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 14186,
+    "output_tokens": 808,
+    "total_tokens": 14994
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 790,
+  "sourceFile": "61. BRS-161014 Report  Test  VP NG bending ( IR 240814027)   Date 19.8.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\790.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:16Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 790,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft needs review because it conflates VP bending status, normal/OK baselines, mold identifiers, and header-derived measurements.",
+    "issues": [
+      "Changed factor mixes primary conditions with mold/test subgroups.",
+      "Baseline and test conditions are ambiguous across Normal, Normal VP#10, VP OK, and VP NG Bending.",
+      "Measurement outcomes appear derived from header/category rows, not true measurement data.",
+      "Section 1 Normal row parsing may misalign NG and rate columns.",
+      "Evidence rows exist but do not yet prove the proposed grouping."
+    ],
+    "requiredUserQuestions": [
+      "Should the primary comparison be VP NG Bending/Test VP versus VP OK/Normal, with mold #2/#3 as subgroups?"
+    ],
+    "correctionPlan": [
+      "Redefine the primary changed factor from the report purpose and content.",
+      "Preserve date, line, mold number, and VP status as subgroup keys where applicable.",
+      "Reparse each result section using its own headers and data rows only.",
+      "Remove or recast header-derived measurement statistics as defect categories if appropriate.",
+      "Validate Normal row NG/rate alignment before final metrics."
+    ],
+    "evidencePolicy": "Row citations are present, but semantic support is insufficient until grouping and parsing are corrected."
+  },
+  "usage": {
+    "input_tokens": 5169,
+    "output_tokens": 1313,
+    "total_tokens": 6482
+  }
+}

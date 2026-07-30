@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 374,
+  "sourceFile": "2. BRS-2015 Report test Frame happen PT NG dimension date 3.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\374.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:12Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 374,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable Frame test vs Normal review is present, but several outcome groupings and dimension stats need correction before use.",
+    "issues": [
+      "SUB3 comparison omits the Normal row and is left unjudged despite available evidence.",
+      "Dimension width uses the length spec and falsely reports all samples as violations.",
+      "Dimension measurement evidence cites only the header, not value or summary rows.",
+      "Review title and changed-factor evidence include noisy or low-value rows.",
+      "Change domain should separate process condition from dimension outcomes."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add row 18 to SUB3 comparison and calculate Frame test vs Normal result.",
+      "Correct width spec to 14.9~15.15 and set violations consistent with all OK summary.",
+      "Cite dimension data rows or summary/decision rows 56 and 63 for final dimension outcome.",
+      "Clean title, purpose, and changed-factor evidence to concise relevant rows.",
+      "Keep one changed factor: Normal vs Frame test, with SUB3, function, and dimension outcomes under it."
+    ],
+    "evidencePolicy": "Current citations exist but are not sufficient for final evidence because key comparator and dimension support rows are missing."
+  },
+  "usage": {
+    "input_tokens": 3930,
+    "output_tokens": 785,
+    "total_tokens": 4715
+  }
+}

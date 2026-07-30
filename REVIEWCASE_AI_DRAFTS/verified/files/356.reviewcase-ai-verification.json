@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 356,
+  "sourceFile": "19. BRS-161014  Report test VP mold 7, mold 9  add 0.05T in middle position 21.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\356.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:34Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 356,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable validation evidence exists, but the draft misgroups factors and includes unsupported derived measurement outcomes.",
+    "issues": [
+      "Changed factor lists outcome states as conditions instead of mold change.",
+      "VP bending rows are cited but not modeled as an outcome.",
+      "Generated measurement outcomes from header rows are unsupported.",
+      "Function outcome omits total normal mold row 58.",
+      "Subgroup context such as E2/Sub1/Main2 is not preserved."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set factor to VP mold #7/#9 with 0.05T middle vs normal VP mold #6.",
+      "Add VP bending outcome using rows 19 and 21-23.",
+      "Keep vision VP+CD outcome using rows 26-37 with Sub1 context.",
+      "Keep function outcome using rows 39-58 and add total normal row 58.",
+      "Remove header-only measurement outcomes unless real measurement rows exist."
+    ],
+    "evidencePolicy": "Row citations exist, but some are header-only and key total evidence is missing."
+  },
+  "usage": {
+    "input_tokens": 7004,
+    "output_tokens": 756,
+    "total_tokens": 7760
+  }
+}

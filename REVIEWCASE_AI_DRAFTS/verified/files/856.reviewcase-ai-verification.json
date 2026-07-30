@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 856,
+  "sourceFile": "7. MSU-L20S15-07 DT Report test Check iussue Decap bond MG+PT not dry  date 2025.03.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\856.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:09Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 856,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misidentifies the primary change as dates/lines instead of dry temperature increase.",
+    "issues": [
+      "Primary changed factor is wrong; source states dry temperature 80/85°C to 120°C.",
+      "Supplier and lot are subgroup context, not proven primary factors.",
+      "Baseline and changed conditions are incorrectly built from dates and lines.",
+      "Invalid measurement outcomes are parser artifacts and should be removed.",
+      "Troubleshooting rows need separation from final 6-day follow-up result."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to dry oven MG/PT temperature increase from 80/85±5°C to 120±5°C.",
+      "Use baseline before-change results and after-change total/follow-up rows as main comparison.",
+      "Keep date, line, temperature, dry time, supplier, lot, and shift as subgroup context.",
+      "Retain process defect outcomes: decap NG and MG/PT separate NG rates.",
+      "Remove parser-generated measurement/spec artifacts and irrelevant condition groupings."
+    ],
+    "evidencePolicy": "Row citations exist, but evidence grouping is not sufficient until corrected."
+  },
+  "usage": {
+    "input_tokens": 12508,
+    "output_tokens": 662,
+    "total_tokens": 13170
+  }
+}

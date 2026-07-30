@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 354,
+  "sourceFile": "19. 1- BRS-161014  Report test verify VP mold 7, mold 9  add 0.05T in middle position 04.03.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\354.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 354,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Core comparison is valid, but several extracted NG values and one measurement outcome are not supported by the cited rows.",
+    "issues": [
+      "VP bending NG counts are wrong for all three conditions.",
+      "Measurement outcome from row 31 is unsupported and appears to be a header/stat artifact.",
+      "Changed factor should state add 0.05T middle-position test molds versus normal mold, not only mold IDs.",
+      "Factory line E2 should be preserved as subgroup context.",
+      "Function conclusion row 38 is not used in judgement."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Correct VP bending NG counts to 49, 48, and 0 with rates 4.9%, 4.8%, and 0%.",
+      "Remove the measurement-1 outcome unless real measurement data rows exist.",
+      "Revise changed factor to include the 0.05T middle-position modification and test molds #7/#9 versus normal #5.",
+      "Add subgroup key for factory line E2 where applicable.",
+      "Use row 38 as cited qualitative judgement for function NG rate if outcome judgement is recorded."
+    ],
+    "evidencePolicy": "Core condition/result citations are sufficient; row 31 measurement citation is not sufficient."
+  },
+  "usage": {
+    "input_tokens": 4706,
+    "output_tokens": 726,
+    "total_tokens": 5432
+  }
+}

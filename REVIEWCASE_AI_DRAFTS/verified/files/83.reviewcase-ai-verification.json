@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 83,
+  "sourceFile": "03.1. BRS-161016  Report checking NTI test new bond SJ4774 and VE 562850_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\83.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 83,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because changed-factor grouping and several extracted FO statistics are incorrect or unsupported.",
+    "issues": [
+      "Changed factor is a filename, not the bond-material comparison.",
+      "Baseline/test roles are ambiguous between Old bond, ST, SJ4774, and VE562850.",
+      "FO values are mis-extracted from bond codes instead of measurement cells.",
+      "SPL/THD evidence cites only row 2, insufficient for metrics and conditions.",
+      "Outcome grouping lacks clear SPL, THD, IMP, and FO metric separation."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended baseline Old bond, ST, or both?",
+      "Should SJ4774 and VE562850 be separate test bonds or one combined new-bond group?"
+    ],
+    "correctionPlan": [
+      "Redefine changed factor as bond material/type comparison.",
+      "Set explicit baseline and test conditions from report headers.",
+      "Recompute FO from actual measured values and include AVG rows.",
+      "Add citeable condition/header and data rows for SPL, THD, IMP, and FO.",
+      "Separate outcomes by validated metric while preserving bond replicate keys."
+    ],
+    "evidencePolicy": "Current row citations exist but are not sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 5938,
+    "output_tokens": 757,
+    "total_tokens": 6695
+  }
+}

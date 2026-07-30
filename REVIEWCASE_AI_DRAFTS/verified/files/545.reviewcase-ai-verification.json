@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 545,
+  "sourceFile": "32. TIU C11-20  Report Test  SPL JIG improve stuck sample date 13.1.2026_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\545.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 545,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook is citeable, but the draft misidentifies the changed factor and includes unreliable extracted measurement statistics.",
+    "issues": [
+      "Changed factor should be Normal vs new SPL TEST JIG, not Day shift vs Day shift/TOTAL TEST.",
+      "Primary outcome should emphasize Stuck JIG NG improvement, including total 0/8945 vs Normal 5/2724.",
+      "Daily SPL rows should not be treated as separate baseline comparisons against one Normal row without noting date mismatch.",
+      "Measurement outcome is invalid because stats are derived from header/mixed defect columns, not measurements.",
+      "Decision text partly conflicts with computed Normal total NG rate and needs cautious wording."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rewrite changed factor as jig condition: Normal vs new SPL TEST JIG for TIU C11-20L day shift.",
+      "Create a Stuck JIG defect outcome using rows Test!17-18, Test!27, Test!29, and decision Test!33.",
+      "Keep overall function NG rate as a secondary outcome using total SPL row and Normal row, with date/context limitation.",
+      "Remove the bogus measurement-stat outcome or recast defect-category counts only.",
+      "Cite title, purpose/content, headers, SPL total, Normal row, and decision rows."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient until regrouped around the actual jig-condition evidence."
+  },
+  "usage": {
+    "input_tokens": 4567,
+    "output_tokens": 831,
+    "total_tokens": 5398
+  }
+}

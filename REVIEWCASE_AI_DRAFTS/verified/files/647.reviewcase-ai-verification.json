@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 647,
+  "sourceFile": "43.1 TIU C11-20  Report Test Keep sample and hearing again 2026.1.26_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\647.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 647,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source context but misgroups the changed factor and incomplete or invalid outcome extraction.",
+    "issues": [
+      "Changed factor should center on Mold KR MAKE, not hearing/audiobus test times.",
+      "Baseline condition is not explicit in the cited sheet.",
+      "Later repeated result blocks are omitted from outcomes.",
+      "Measurement outcomes appear derived from headers/mixed columns, not valid measurements.",
+      "Decision content is not cited or captured."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended comparison the KR MAKE mold change versus a prior mold/baseline?",
+      "Should hearing/audiobus retest rounds be treated as subgroups rather than changed factors?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to Mold KR MAKE from the content row.",
+      "Mark baseline as not shown unless an external baseline is supplied.",
+      "Regroup Audiobus/Hearing time 1 and 2 as test-round subresults.",
+      "Extract all result rows across the full table, including later blocks.",
+      "Remove invalid measurement-stat outcomes and cite the decision row if populated."
+    ],
+    "evidencePolicy": "Row citations exist, but semantic evidence is insufficient for final use until regrouped."
+  },
+  "usage": {
+    "input_tokens": 4660,
+    "output_tokens": 776,
+    "total_tokens": 5436
+  }
+}

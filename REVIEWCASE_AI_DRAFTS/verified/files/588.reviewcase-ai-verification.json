@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 588,
+  "sourceFile": "37. TIU L5S3-01 R Report test yoke NG damage small -  2025.12.25_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\588.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:33Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 588,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is usable but needs correction because the changed-factor grouping and evidence citations are incomplete.",
+    "issues": [
+      "After-1-day check is a timepoint subgroup, not a changed condition.",
+      "Key purpose/content rows for NG yoke damage and main-line final sample are not cited.",
+      "Height outcome lacks Normal baseline and should not be grouped as Normal vs Test comparison.",
+      "Decision row is omitted from evidence despite supporting final judgement.",
+      "Change domain and factor wording are too broad for the cited source."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to Normal vs Test final sample using NG/small yoke context.",
+      "Move After 1 day check again under height timepoint subgroup.",
+      "Keep function as Normal vs Test with sample-size limitation.",
+      "Treat height as test-only pass/stability result with 0 NG, not comparative improvement.",
+      "Add citations for rows Test!6, Test!8-Test!10, Test!13, Test!17, and Test!33."
+    ],
+    "evidencePolicy": "Insufficient until key condition, section, and decision rows are cited."
+  },
+  "usage": {
+    "input_tokens": 2871,
+    "output_tokens": 1264,
+    "total_tokens": 4135
+  }
+}

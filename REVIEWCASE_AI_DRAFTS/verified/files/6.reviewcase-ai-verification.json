@@ -1,0 +1,35 @@
+{
+  "sourceFileId": 6,
+  "sourceFile": "003.MSU - L20S15-07 REPORT CHECK IUSUE SM SHORT OFSET date 2025.01.10_1778470524_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\6.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:44:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 6,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The draft correctly identifies the comparable JIG TEST vs JIG Normal condition and improvement direction, but needs citation cleanup before final Ask AI use.",
+    "issues": [
+      "Outcome metric labels are not fully supported by cited evidence because the VP+CD corner separate heading row 201507!23 and function heading row 201507!28 are present in context but not included in the reviewCase/outcome evidence rows.",
+      "The changed factor is directionally valid as JIG Normal vs JIG TEST, but the report does not clearly define what physical/process difference makes the JIG TEST different from normal beyond the condition labels.",
+      "The VP+CD table row values appear internally odd because Input 151, OK 151, and NG 16 do not reconcile, although the NG rate matches 16/151 and the improvement judgement remains supported."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add 201507!23 to the evidence for the VP+CD corner separate outcome.",
+      "Add 201507!28 to the evidence for the function outcome.",
+      "Optionally add row 201507!24 as the VP+CD table header citation if retaining Input/OK/NG/NG Rate field interpretation.",
+      "Keep the changed factor as JIG Normal baseline vs JIG TEST changed condition unless additional source rows define the exact jig modification.",
+      "Add a limitation noting that the exact technical difference between JIG TEST and JIG Normal is not specified in the cited rows."
+    ],
+    "evidencePolicy": "Data-row citations support the condition comparison and rates, but metric-heading/header citations should be added before approval."
+  },
+  "usage": {
+    "input_tokens": 2661,
+    "output_tokens": 867,
+    "total_tokens": 3528
+  }
+}

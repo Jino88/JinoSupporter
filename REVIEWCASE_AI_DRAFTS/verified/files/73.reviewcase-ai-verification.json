@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 73,
+  "sourceFile": "03. BRS-161014 Report check NG VP+CD separate 11.01.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\73.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 73,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft captures a relevant NG-rate table but misgroups the changed conditions and lacks explicit baseline/test framing.",
+    "issues": [
+      "Changed factor incorrectly framed as baseline vs mixed changed list.",
+      "Rows with CD of GES appear to lose Mold VP grouping, likely due blanks or merged cells.",
+      "Primary comparison may be mold VP, vendor CD, or their combination; not resolved.",
+      "Header row 18 is not included in case-level evidence.",
+      "Decision row is cited in context but not used or interpreted."
+    ],
+    "requiredUserQuestions": [
+      "Should this case compare VP molds, CD vendors, or VP mold plus CD vendor combinations?"
+    ],
+    "correctionPlan": [
+      "Use table columns Date, Mold VP, Vender CD, Input, OK, NG, NG rate as the outcome structure.",
+      "Carry forward or recover Mold VP values for rows where merged cells are blank, if supported by source layout.",
+      "Reframe changed factor as stratified VP mold and CD vendor conditions unless a true baseline is shown.",
+      "Add header row 18 and all result rows 19-26 as evidence.",
+      "Review any decision text after row 34 before final judgement."
+    ],
+    "evidencePolicy": "Data row citations exist, but grouping evidence is incomplete without header and merged-cell context."
+  },
+  "usage": {
+    "input_tokens": 3048,
+    "output_tokens": 730,
+    "total_tokens": 3778
+  }
+}

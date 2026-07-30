@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 626,
+  "sourceFile": "40.BRS-2015 Report Test New Bond G06-0003 Date 3.5.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\626.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 626,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the bond change but has blocking outcome-pairing and evidence-grouping errors.",
+    "issues": [
+      "Changed condition wrongly includes SM/YOKE vision as bond conditions.",
+      "YOKE vision compares new row to SM normal instead of YOKE normal.",
+      "One vision subresult mixes vision with separate-glue rows.",
+      "Measurement outcomes are auto-detected from headers and not reliable evidence.",
+      "Function result should be framed as roughly same, not clear improvement."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to Normal Bond G06-0002 vs New Bond G06-0003.",
+      "Use SM VISION and YOKE VISION as subgroup outcome keys only.",
+      "Rebuild vision comparisons using matching inspection item rows.",
+      "Remove invalid header-derived measurement outcomes or recode as decap, tension, drop OK results.",
+      "Cite result and decision rows for function, separate glue, tension, and drop conclusions."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient because several comparisons cite mismatched or header-only rows."
+  },
+  "usage": {
+    "input_tokens": 6982,
+    "output_tokens": 762,
+    "total_tokens": 7744
+  }
+}

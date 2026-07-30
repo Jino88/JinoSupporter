@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 776,
+  "sourceFile": "6. BRS-201506 Report test material VP change cooling 40 do date 5.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\776.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 776,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The comparisons are citeable, but the primary changed factor is misframed and evidence citations omit key section/header rows.",
+    "issues": [
+      "Changed factor should be VP cooling temperature 40°C vs normal cooling 140°C, not just VP Test vs Normal labels.",
+      "Baseline is split as VP normal and Normal though row 8 defines one normal cooling baseline.",
+      "Change domain as material is uncertain; source mainly states VP cooling/process condition.",
+      "Outcome headers/section rows are not cited in the review case evidence.",
+      "Review title uses a department row rather than the report title/purpose."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rewrite changedFactor as VP cooling changed to 40°C versus normal cooling 140°C.",
+      "Set baselineCondition to Normal cooling 140°C and changedCondition to VP cooling 40°C.",
+      "Keep VP vision and function outcomes under the same changed-factor context.",
+      "Add section/header citations for VP vision and function results.",
+      "Replace the review title with a concise purpose-based title."
+    ],
+    "evidencePolicy": "Data-row citations exist, but final evidence should also cite purpose/content and result header rows."
+  },
+  "usage": {
+    "input_tokens": 2998,
+    "output_tokens": 781,
+    "total_tokens": 3779
+  }
+}

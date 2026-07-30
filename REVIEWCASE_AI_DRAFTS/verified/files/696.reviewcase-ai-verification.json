@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 696,
+  "sourceFile": "5. BRS-161016  Report separate mold check NG VP-CD separate  date 23.3.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\696.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:57Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 696,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable result rows but misidentifies the changed factor and treats subgroup fields as test conditions.",
+    "issues": [
+      "Changed factor is ambiguous and incorrectly built from dates, lines, molds, and lots.",
+      "Baseline condition is not evidenced in the cited rows.",
+      "Mold, date, line, IR lot, and mold number should be subgroup keys, not one changed condition.",
+      "Outcome grouping is usable but depends on corrected condition context.",
+      "Decision row is cited in context but no decision content is captured."
+    ],
+    "requiredUserQuestions": [
+      "Is VP/CD separate the tested process change versus the normal vision process?",
+      "Should this report be treated as a single validation of VP/CD separate by mold subgroups?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to the evidenced VP/CD separate check/process if confirmed.",
+      "Keep date, line, IR lot, and mold number as subgroup keys for each result row.",
+      "Do not claim a baseline unless a normal or prior condition row is present.",
+      "Retain NG count and NG rate as process-defect outcomes under one validation context.",
+      "Add decision/conclusion rows if available before final use."
+    ],
+    "evidencePolicy": "Row citations exist, but they support results more than the current changed-factor claim."
+  },
+  "usage": {
+    "input_tokens": 4133,
+    "output_tokens": 770,
+    "total_tokens": 4903
+  }
+}

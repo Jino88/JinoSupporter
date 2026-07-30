@@ -1,0 +1,229 @@
+# 근거 기반 답변
+
+관련 검토 자료는 2건 검색되었지만, 검증된 대조군·비교군 효과가 없어 관계의 크기나 방향을 수치로 판단할 수 없습니다.
+
+## 비교 미확인 서술 자료
+
+- `DATA-0ADC21566B72`
+  - New Bond G06-0003 / Function Total NG Rate: 43778 ppm (검토 필요 자료) [DATA-0ADC21566B72 / EVD-999449110ECE / EVD-E7022FCC8E4B]
+  - Normal Bond G06-0002 / Function Total NG Rate: 44675 ppm (검토 필요 자료) [DATA-0ADC21566B72 / EVD-999449110ECE / EVD-E7022FCC8E4B]
+- `DATA-EF7A58846A92`
+  - Upper #1-1; Lower #2-1 / Input: 60 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-529125BE55EF / EVD-C125496D7B95]
+  - Upper #1-2; Lower #2-2 / Input: 60 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-4E3A146E9909 / EVD-C125496D7B95]
+  - Normal / Input: 500 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-374830F6305E / EVD-C125496D7B95]
+  - Upper #1-1; Lower #2-1 / OK: 56 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-1C90446806A3 / EVD-3298768D9F47 / EVD-ED87E84E65AB]
+  - Upper #1-2; Lower #2-2 / OK: 54 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-3298768D9F47 / EVD-96724EC31242 / EVD-9E181EB17A7D]
+  - Normal / OK: 443 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-3298768D9F47 / EVD-632844139C0E / EVD-F51A03BCE145]
+  - Upper #1-1; Lower #2-1 / Gauss: 0 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-4721BD1D830B / EVD-6096DA2DD85F / EVD-96A7C85A4C08]
+  - Upper #1-2; Lower #2-2 / Gauss: 0 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-82DA17C59669 / EVD-96A7C85A4C08 / EVD-B1870756C17F]
+  - Normal / Gauss: 0 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-4E870E3A06A3 / EVD-96A7C85A4C08 / EVD-BDA1FBE5F105]
+  - Upper #1-1; Lower #2-1 / Gauss rate: 0.00% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-0E6939192951 / EVD-531789121046 / EVD-91229BDE4E8B / EVD-C61933998570]
+  - Upper #1-2; Lower #2-2 / Gauss rate: 0.00% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-1D46E8020894 / EVD-96A50CA0DFAB / EVD-B55B9A3EC7D0 / EVD-C61933998570]
+  - Normal / Gauss rate: 0.00% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-26BAFD0E2BAA / EVD-32865CC2DFD8 / EVD-91682417EAEE / EVD-C61933998570]
+  - Upper #1-1; Lower #2-1 / Airleak: 0 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-03BBFF688BD1 / EVD-59482062274F / EVD-E31425D98340]
+  - Upper #1-2; Lower #2-2 / Airleak: 0 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-137CBEDCD525 / EVD-E31425D98340 / EVD-F7B7C4BBD476]
+  - Normal / Airleak: 2 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-9FF044983292 / EVD-DE3A80245AC0 / EVD-E31425D98340]
+  - Upper #1-1; Lower #2-1 / Airleak rate: 0.00% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-00187B35A74B / EVD-803FD7247E93 / EVD-B24914ABB84B / EVD-BF7976E5E51E]
+  - Upper #1-2; Lower #2-2 / Airleak rate: 0.00% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-55450AFCB7B7 / EVD-A0E9A67114B5 / EVD-B24914ABB84B / EVD-D8776FF79D34]
+  - Normal / Airleak rate: 0.40% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-836937BED8A8 / EVD-B24914ABB84B / EVD-D2260163B1D8 / EVD-EF178A0EF690]
+  - Upper #1-1; Lower #2-1 / Frequency: 0 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-40A6C90B8E4A / EVD-728C42ABD484 / EVD-9F989AADEEB2]
+  - Upper #1-2; Lower #2-2 / Frequency: 0 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-592F6EE46BBB / EVD-728C42ABD484 / EVD-CEF2C8D2F702]
+  - Normal / Frequency: 0 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-6831CAF02B25 / EVD-728C42ABD484 / EVD-ABA66E0CF305]
+  - Upper #1-1; Lower #2-1 / Frequency rate: 0.00% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-2AFC1767548E / EVD-679D38D58ECD / EVD-A5E83F3B3A07 / EVD-E76C3050A139]
+  - Upper #1-2; Lower #2-2 / Frequency rate: 0.00% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-9BB1F11471B7 / EVD-A5E83F3B3A07 / EVD-BE1AC2CAD306 / EVD-EA1508C6041A]
+  - Normal / Frequency rate: 0.00% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-2AF736DFBC50 / EVD-3BB16F514F87 / EVD-9A3B243F7C2B / EVD-A5E83F3B3A07]
+  - Upper #1-1; Lower #2-1 / Bako: 0 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-7B5E81EB7ED6 / EVD-9B2B3653E846 / EVD-A2E17225C81B]
+  - Upper #1-2; Lower #2-2 / Bako: 3 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-7B5E81EB7ED6 / EVD-D82E8645D759 / EVD-E36A4A9B30D4]
+  - Normal / Bako: 16 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-0AF97C36892F / EVD-48450CD1D09B / EVD-7B5E81EB7ED6]
+  - Upper #1-1; Lower #2-1 / Bako rate: 0.00% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-477FD0C8B409 / EVD-7E2CA2B1A436 / EVD-7FA840826B40 / EVD-F13A687BF8C1]
+  - Upper #1-2; Lower #2-2 / Bako rate: 5.00% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-2DCE3C50A8DB / EVD-477FD0C8B409 / EVD-9266F805C4AB / EVD-9DDED3DBC4DC]
+  - Normal / Bako rate: 3.20% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-0A01ED2D690D / EVD-38A61DF2A171 / EVD-477FD0C8B409 / EVD-7F1D3F483083]
+  - Upper #1-1; Lower #2-1 / Hearing: 4 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-22B009594A4C / EVD-66BFAEC83704 / EVD-8AAECFCFD11D]
+  - Upper #1-2; Lower #2-2 / Hearing: 3 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-66BFAEC83704 / EVD-6E0AF77196BE / EVD-DAE91FDCC41F]
+  - Normal / Hearing: 39 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-1C7566C270AC / EVD-61D1580C73BD / EVD-66BFAEC83704]
+  - Upper #1-1; Lower #2-1 / Hearing rate: 6.67% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-1308C3DF02C5 / EVD-559521FC2D94 / EVD-A9BE595D2532 / EVD-AB8C9E334A4F]
+  - Upper #1-2; Lower #2-2 / Hearing rate: 5.00% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-1308C3DF02C5 / EVD-2672EC143E08 / EVD-AB2CE265012A / EVD-EB4F27AE3746]
+  - Normal / Hearing rate: 7.80% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-1308C3DF02C5 / EVD-3555DFCBDCE0 / EVD-D7E3A8BC4CA1 / EVD-F88963C2E103]
+  - Upper #1-1; Lower #2-1 / Hearing 130%: 1 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-02601E915A2A / EVD-BC9CB774D4AB / EVD-EAD5201D7504]
+  - Upper #1-2; Lower #2-2 / Hearing 130%: 1 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-7C58332280E6 / EVD-BC9CB774D4AB / EVD-BED045E2FEF6]
+  - Normal / Hearing 130%: 21 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-2CD837903C1D / EVD-37222035E9D5 / EVD-BC9CB774D4AB]
+  - Upper #1-1; Lower #2-1 / Hearing 130% rate: 1.67% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-1DDF43EE1536 / EVD-5CE65CC537A1 / EVD-5FB9EC80A790 / EVD-C23B8DB92FEB]
+  - Upper #1-2; Lower #2-2 / Hearing 130% rate: 1.67% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-4CF89E576036 / EVD-5FB9EC80A790 / EVD-6BBD8D312681 / EVD-D01FFB295247]
+  - Normal / Hearing 130% rate: 4.20% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-5FB9EC80A790 / EVD-774AF058C7AB / EVD-98885F4BB51F / EVD-9D471ADD4585]
+  - Upper #1-1; Lower #2-1 / Total NG voltage normal - Total NG: 4 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-DC2AE9DADE60 / EVD-E501BFC9EB86 / EVD-EDD073199E36]
+  - Upper #1-2; Lower #2-2 / Total NG voltage normal - Total NG: 6 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-75F36B1B18AC / EVD-DC2AE9DADE60 / EVD-F3EE2BCA65DC]
+  - Normal / Total NG voltage normal - Total NG: 57 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-02E4EE7E03AE / EVD-771B3C82B8BD / EVD-DC2AE9DADE60]
+  - Upper #1-1; Lower #2-1 / Total NG voltage normal - NG rate: 6.67% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-06662ED68084 / EVD-4EA3A3E967C0 / EVD-741E9767B61F / EVD-C44552DE8EB5]
+  - Upper #1-2; Lower #2-2 / Total NG voltage normal - NG rate: 10.00% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-06662ED68084 / EVD-AEFA0789E0CA / EVD-CCB4C5788110 / EVD-EBB650B3E5D3]
+  - Normal / Total NG voltage normal - NG rate: 11.40% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-06662ED68084 / EVD-B8363AE3119A / EVD-E5FD4D3A9BAB / EVD-FB9A02856FE2]
+  - Upper #1-1; Lower #2-1 / Total NG voltage 130% - Total NG: 1 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-93DA70E3CF80 / EVD-9ABBF9BF61B4 / EVD-B5EE721D2646]
+  - Upper #1-2; Lower #2-2 / Total NG voltage 130% - Total NG: 4 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-03DDE513B3F0 / EVD-90977A507F67 / EVD-93DA70E3CF80]
+  - Normal / Total NG voltage 130% - Total NG: 39 (검토 필요 자료) [DATA-EF7A58846A92 / EVD-61BD8D3B052F / EVD-9364BBAF53B8 / EVD-93DA70E3CF80]
+  - Upper #1-1; Lower #2-1 / Total NG voltage 130% - NG rate: 1.67% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-43C5470FEF9A / EVD-89BAD8F6BE77 / EVD-A0C53597D467 / EVD-B6B2D38877EC]
+  - Upper #1-2; Lower #2-2 / Total NG voltage 130% - NG rate: 6.67% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-2927AA49B29D / EVD-744AB7EB8D22 / EVD-89BAD8F6BE77 / EVD-CF0E5FF78979]
+  - Normal / Total NG voltage 130% - NG rate: 7.80% (검토 필요 자료) [DATA-EF7A58846A92 / EVD-7BE8D7D0D8C9 / EVD-84DE6D07C03D / EVD-89BAD8F6BE77 / EVD-A863F0AA1E11]
+
+## 정량 결론에서 제외된 기록
+
+- [DATA-0ADC21566B72 / CMP-E8E3758D4FB3 / EFF-1D76A2EF5A99] COMPARISON_NEEDS_REVIEW, COMPARISON_NOT_AGGREGATION_ELIGIBLE, COMPARISON_UNASSESSED, EFFECT_NEEDS_REVIEW, EFFECT_NOT_AGGREGATION_ELIGIBLE, NO_EFFECT_EVIDENCE, NO_VERIFIED_EFFECT_EVIDENCE, SOURCE_NOT_CURRENT, STUDY_COMPARABILITY_UNASSESSED, STUDY_CONFOUNDING_UNASSESSED
+- [DATA-0ADC21566B72 / CMP-E8E3758D4FB3 / EFF-24489689A235] COMPARISON_NEEDS_REVIEW, COMPARISON_NOT_AGGREGATION_ELIGIBLE, COMPARISON_UNASSESSED, EFFECT_NEEDS_REVIEW, EFFECT_NOT_AGGREGATION_ELIGIBLE, NO_EFFECT_EVIDENCE, NO_VERIFIED_EFFECT_EVIDENCE, SOURCE_NOT_CURRENT, STUDY_COMPARABILITY_UNASSESSED, STUDY_CONFOUNDING_UNASSESSED
+- [DATA-EF7A58846A92 / CMP-EEDAC66CA704] ANALYSIS_NEEDS_REVIEW, COMPARISON_NEEDS_REVIEW, COMPARISON_NOT_AGGREGATION_ELIGIBLE, COMPARISON_UNASSESSED, NO_EFFECT_RECORD, STUDY_COMPARABILITY_UNASSESSED, STUDY_CONFOUNDING_UNASSESSED, STUDY_NEEDS_REVIEW
+- [DATA-EF7A58846A92 / CMP-FFBA34602513] ANALYSIS_NEEDS_REVIEW, COMPARISON_NEEDS_REVIEW, COMPARISON_NOT_AGGREGATION_ELIGIBLE, COMPARISON_UNASSESSED, NO_EFFECT_RECORD, STUDY_COMPARABILITY_UNASSESSED, STUDY_CONFOUNDING_UNASSESSED, STUDY_NEEDS_REVIEW
+
+## 원본 근거
+
+- `EVD-00187B35A74B` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-02601E915A2A` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!N15`
+- `EVD-02E4EE7E03AE` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!O19`
+- `EVD-03BBFF688BD1` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!J15`
+- `EVD-03DDE513B3F0` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!Q17`
+- `EVD-06662ED68084` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!O13:P14`
+- `EVD-0A01ED2D690D` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!L20`
+- `EVD-0AF97C36892F` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!L19`
+- `EVD-0E6939192951` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!I16`
+- `EVD-1308C3DF02C5` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!M14`
+- `EVD-137CBEDCD525` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!J17`
+- `EVD-1C7566C270AC` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-1C90446806A3` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-1D46E8020894` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!I17`
+- `EVD-1DDF43EE1536` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!N16`
+- `EVD-22B009594A4C` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!M15`
+- `EVD-2672EC143E08` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!M18`
+- `EVD-26BAFD0E2BAA` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!I20`
+- `EVD-2927AA49B29D` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!Q17`
+- `EVD-2AF736DFBC50` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!H19`
+- `EVD-2AFC1767548E` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!K16`
+- `EVD-2CD837903C1D` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!N19`
+- `EVD-2DCE3C50A8DB` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!L17`
+- `EVD-32865CC2DFD8` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!I19`
+- `EVD-3298768D9F47` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!H13`
+- `EVD-3555DFCBDCE0` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!M19`
+- `EVD-37222035E9D5` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-374830F6305E` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-38A61DF2A171` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-3BB16F514F87` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!K20`
+- `EVD-40A6C90B8E4A` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!K15`
+- `EVD-43C5470FEF9A` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!R15`
+- `EVD-4721BD1D830B` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-477FD0C8B409` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!L14`
+- `EVD-48450CD1D09B` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-4CF89E576036` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-4E3A146E9909` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-4E870E3A06A3` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!I19`
+- `EVD-4EA3A3E967C0` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!O15`
+- `EVD-529125BE55EF` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-531789121046` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-55450AFCB7B7` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!J17`
+- `EVD-559521FC2D94` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!M15`
+- `EVD-592F6EE46BBB` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!K17`
+- `EVD-59482062274F` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-5CE65CC537A1` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-5FB9EC80A790` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!N14`
+- `EVD-6096DA2DD85F` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!I15`
+- `EVD-61BD8D3B052F` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-61D1580C73BD` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!M19`
+- `EVD-632844139C0E` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!H19`
+- `EVD-66BFAEC83704` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!M14`
+- `EVD-679D38D58ECD` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!K15`
+- `EVD-6831CAF02B25` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!K19`
+- `EVD-6BBD8D312681` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!N17`
+- `EVD-6E0AF77196BE` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!M17`
+- `EVD-728C42ABD484` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!K14`
+- `EVD-741E9767B61F` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!P15`
+- `EVD-744AB7EB8D22` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-75F36B1B18AC` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-771B3C82B8BD` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-774AF058C7AB` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-7B5E81EB7ED6` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!L14`
+- `EVD-7BE8D7D0D8C9` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!Q19`
+- `EVD-7C58332280E6` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-7E2CA2B1A436` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-7F1D3F483083` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!L19`
+- `EVD-7FA840826B40` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!L16`
+- `EVD-803FD7247E93` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!J16`
+- `EVD-82DA17C59669` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-836937BED8A8` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!J20`
+- `EVD-84DE6D07C03D` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-89BAD8F6BE77` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!Q13:R14`
+- `EVD-8AAECFCFD11D` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-90977A507F67` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-91229BDE4E8B` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!I15`
+- `EVD-91682417EAEE` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-9266F805C4AB` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-9364BBAF53B8` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!Q19`
+- `EVD-93DA70E3CF80` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!Q13:Q14`
+- `EVD-96724EC31242` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-96A50CA0DFAB` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-96A7C85A4C08` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!I14`
+- `EVD-98885F4BB51F` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!N20`
+- `EVD-999449110ECE` — `D:\000. MyWorks\test\result\InputDataFinish\1. BRS-2015 Report Test New Bond G06-0003 Date 3.5.2024_clean.xlsx` / `201506!D76:N78`
+- `EVD-9A3B243F7C2B` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!K19`
+- `EVD-9ABBF9BF61B4` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-9B2B3653E846` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!L15`
+- `EVD-9BB1F11471B7` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!K17`
+- `EVD-9D471ADD4585` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!N19`
+- `EVD-9DDED3DBC4DC` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!L18`
+- `EVD-9E181EB17A7D` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!H17`
+- `EVD-9F989AADEEB2` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-9FF044983292` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!J19`
+- `EVD-A0C53597D467` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-A0E9A67114B5` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-A2E17225C81B` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-A5E83F3B3A07` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!K14`
+- `EVD-A863F0AA1E11` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!R19`
+- `EVD-A9BE595D2532` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!M16`
+- `EVD-AB2CE265012A` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-AB8C9E334A4F` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-ABA66E0CF305` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-AEFA0789E0CA` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-B1870756C17F` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!I17`
+- `EVD-B24914ABB84B` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!J14`
+- `EVD-B55B9A3EC7D0` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!I18`
+- `EVD-B5EE721D2646` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!Q15`
+- `EVD-B6B2D38877EC` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!Q15`
+- `EVD-B8363AE3119A` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!P19`
+- `EVD-BC9CB774D4AB` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!N14`
+- `EVD-BDA1FBE5F105` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-BE1AC2CAD306` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!H17`
+- `EVD-BED045E2FEF6` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!N17`
+- `EVD-BF7976E5E51E` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!J15`
+- `EVD-C125496D7B95` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G13`
+- `EVD-C23B8DB92FEB` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!N15`
+- `EVD-C44552DE8EB5` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-C61933998570` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!I14`
+- `EVD-CCB4C5788110` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!O17`
+- `EVD-CEF2C8D2F702` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-CF0E5FF78979` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!R17`
+- `EVD-D01FFB295247` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!N18`
+- `EVD-D2260163B1D8` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!J19`
+- `EVD-D7E3A8BC4CA1` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-D82E8645D759` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!L17`
+- `EVD-D8776FF79D34` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!J18`
+- `EVD-DAE91FDCC41F` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-DC2AE9DADE60` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!O13:O14`
+- `EVD-DE3A80245AC0` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-E31425D98340` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!J14`
+- `EVD-E36A4A9B30D4` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-E501BFC9EB86` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!O15`
+- `EVD-E5FD4D3A9BAB` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-E7022FCC8E4B` — `D:\000. MyWorks\test\result\InputDataFinish\1. BRS-2015 Report Test New Bond G06-0003 Date 3.5.2024_clean.xlsx` / `201506!D76:N78`
+- `EVD-E76C3050A139` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!H15`
+- `EVD-EA1508C6041A` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!K18`
+- `EVD-EAD5201D7504` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-EB4F27AE3746` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!M17`
+- `EVD-EBB650B3E5D3` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!P17`
+- `EVD-ED87E84E65AB` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!H15`
+- `EVD-EDD073199E36` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G15`
+- `EVD-EF178A0EF690` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-F13A687BF8C1` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!L15`
+- `EVD-F3EE2BCA65DC` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!O17`
+- `EVD-F51A03BCE145` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G19`
+- `EVD-F7B7C4BBD476` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!G17`
+- `EVD-F88963C2E103` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!M20`
+- `EVD-FB9A02856FE2` — `D:\000. MyWorks\002. DB\InferenceDataAIService\universal-grid\ExcelFileArchive\2. MSM-X526BOTTOM Report test SPK lower #2 date 2025.03.14 .xlsx` / `526!O19`
+
+## 제한 사항
+
+- `NO_VALID_COMPARISON`: 검증된 대조군·비교군 효과가 없어 관계의 크기나 방향을 수치로 판단하지 않았습니다.
+- `EXCLUDED_RECORDS_PRESENT`: 검토 필요·교란·무효·비교 없음 자료는 정량 결론에서 제외했습니다.
+- `DESCRIPTIVE_ONLY`: 비교가 없는 자료의 관측값은 그대로 제시하되 조건 간 차이를 새로 계산하지 않았습니다.

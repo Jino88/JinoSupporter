@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 567,
+  "sourceFile": "35. BRS-161016 Report test  compare Fr-SP +Coil not burr and Fr-SP+Coil normal  2024.5.10_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\567.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 567,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The main comparison is clear, but citations and grouping need cleanup before final use.",
+    "issues": [
+      "Missing table header citations for outcome metrics.",
+      "Line/date grouping keys are not preserved.",
+      "Change domain is left as unknown despite clear condition comparison.",
+      "Baseline/test direction is inferred, not explicit."
+    ],
+    "requiredUserQuestions": [
+      "Should Normal be treated as the baseline condition?"
+    ],
+    "correctionPlan": [
+      "Add rows 23-25 to outcome and case evidence citations.",
+      "Record subgroup keys: line C2-3A and date 2024-05-10.",
+      "Set change domain to product/process condition rather than unknown.",
+      "Keep factor phrased as FR/SP+Coil not burr vs normal unless baseline is confirmed.",
+      "Retain both data rows as the paired functional defect comparison."
+    ],
+    "evidencePolicy": "Current data-row citations exist, but header and grouping citations are insufficient."
+  },
+  "usage": {
+    "input_tokens": 2476,
+    "output_tokens": 731,
+    "total_tokens": 3207
+  }
+}

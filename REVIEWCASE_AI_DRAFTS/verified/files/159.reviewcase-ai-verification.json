@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 159,
+  "sourceFile": "07.1 BRS-161016DT Report Check NTI  test Bond SJ4765 improve separate VP-CD   date 3.6.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\159.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:24Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 159,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable Normal vs Test Bond SJ4765 evidence but grouping and parsed outcomes are unreliable.",
+    "issues": [
+      "Changed factor incorrectly taken from filename.",
+      "Baseline and test conditions are explicit but not captured.",
+      "Change domain should be process/material adhesive test, not dimension/spec.",
+      "Outcomes include many misparsed numeric headers as metrics.",
+      "Several cited rows are weak or not shown in provided context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal vs Test Bond SJ4765 bond adhesive condition.",
+      "Use Normal as baseline and Test Bond SJ4765 as changed condition; keep STD as reference only.",
+      "Group SPL, Fo, and THD results under one validation report context.",
+      "Remove misparsed raw numeric/header subresults and retain only real summary metrics/averages.",
+      "Cite GRAPH summary rows plus RAW DATA sample-name/header/average rows for each retained metric."
+    ],
+    "evidencePolicy": "Current citations prove conditions but are insufficient for final outcome evidence until regrouped."
+  },
+  "usage": {
+    "input_tokens": 20226,
+    "output_tokens": 509,
+    "total_tokens": 20735
+  }
+}

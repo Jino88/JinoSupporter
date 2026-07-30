@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 427,
+  "sourceFile": "23. BRS-2015  Report test  Material MG 10.9-2.33-8.83-1.1-0.73 N55H Date 4.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\427.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 427,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable normal-vs-test defect data exists, but changed-condition naming and Gauss measurement grouping need correction before final use.",
+    "issues": [
+      "Changed factor should be reduced S-MG dimension/material, not just condition labels.",
+      "SMG TEST and SM Test are treated as one test condition without proof they are identical.",
+      "Gauss measurement outcomes cite headers or summary rows, not the underlying data rows.",
+      "Measurement stats appear duplicated or misgrouped across NORMAL and SM TEST columns.",
+      "Row NG rate!40 is used but not shown in context, limiting auditability."
+    ],
+    "requiredUserQuestions": [
+      "Are SMG TEST and SM Test the same reduced-dimension test condition?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to S-MG reduced-dimension material test versus SM Normal.",
+      "Keep process and function defect outcomes under one validation only if test labels are confirmed equivalent.",
+      "Rebuild Gauss outcomes from actual data rows with headers, specs, and condition columns preserved.",
+      "Remove duplicate or column-number measurement candidates that cannot be traced to data rows.",
+      "Add citeable rows for NG rate!40 and any raw Gauss rows used."
+    ],
+    "evidencePolicy": "Defect row citations are sufficient; measurement evidence citations are not yet sufficient."
+  },
+  "usage": {
+    "input_tokens": 5134,
+    "output_tokens": 801,
+    "total_tokens": 5935
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 834,
+  "sourceFile": "67. TIU C11-20 Report Test AWF JIG new improve 2026.3.2_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\834.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 834,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not approvable because it misidentifies the changed factor and mismatches Normal versus Test AWF JIG comparisons.",
+    "issues": [
+      "Changed factor should be Test/New AWF JIG vs Normal, not shift or TOTAL.",
+      "Date and shift subgroup pairing is not preserved.",
+      "Per-row comparisons incorrectly use the total Normal row as control.",
+      "Rows 48 and 50 are omitted from detailed comparisons.",
+      "Measurement outcome is spurious; these are defect-count categories."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to new/Test AWF JIG, baseline Normal.",
+      "Use date and line/shift as subgroup keys; keep TOTAL as aggregate only.",
+      "Pair rows 36/38, 40/42, 44/46, and 48/50 for detailed results.",
+      "Keep rows 32/34 as aggregate total comparison.",
+      "Remove measurement outcome or recast defect categories under process defect outcome."
+    ],
+    "evidencePolicy": "Source rows are citeable, but current citations and grouping are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4469,
+    "output_tokens": 767,
+    "total_tokens": 5236
+  }
+}

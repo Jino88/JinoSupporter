@@ -1,0 +1,31 @@
+<div class="d-flex align-items-center gap-2 mb-3">
+    <h5 class="mb-0 fw-semibold">NG Rate</h5>
+    <div class="ms-3 btn-group btn-group-sm" role="group" aria-label="View mode">
+        @foreach (var view in Views)
+        {
+            if (string.Equals(CurrentView, view.Key, StringComparison.Ordinal))
+            {
+                <button type="button" class="btn btn-primary" disabled title="@($"Current view: {view.Title}")">
+                    @view.Label
+                </button>
+            }
+            else
+            {
+                <a href="@view.Href" class="btn btn-outline-secondary" title="@($"Switch to {view.Title}")">
+                    @view.Label
+                </a>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string CurrentView { get; set; } = string.Empty;
+
+    private static readonly (string Key, string Label, string Href, string Title)[] Views =
+    [
+        ("by-model", "By Model", "/ng-rate", "By Model view - show full Summary/Detail/Chart per model, one at a time"),
+        ("by-section", "By Section", "/ng-rate-all", "By Section view - multiple models stacked vertically by Summary/Process/NG/Reason sections"),
+        ("by-group", "By Group", "/ng-rate-by-group", "By Group view"),
+    ];
+}

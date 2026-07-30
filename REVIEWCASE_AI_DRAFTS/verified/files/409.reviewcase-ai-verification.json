@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 409,
+  "sourceFile": "22-1. BRS-201506 Report checking NTI test coil wire RCW KTP 18-0.093mm date 1.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\409.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 409,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable Normal/Test 1 acoustic comparisons but the changed factor and outcome grouping are not verified.",
+    "issues": [
+      "Changed factor is the filename, not an evidenced condition.",
+      "Baseline and test meanings are ambiguous beyond sample labels.",
+      "Outcomes contain raw auto-stats, masks, frequencies, and errors as results.",
+      "Standard/Normal/Test 1 roles are not consistently separated.",
+      "Several cited rows are not shown in review context."
+    ],
+    "requiredUserQuestions": [
+      "What physical condition does Normal represent?",
+      "What physical change does Test 1 represent?",
+      "Is Standard a reference only or part of the comparison?"
+    ],
+    "correctionPlan": [
+      "Replace filename changed factor with the confirmed condition contrast.",
+      "Define baseline/test roles using sample-name rows and report title context.",
+      "Regroup outcomes as SPL, F0, THD, and IMP under one validation context.",
+      "Remove #DIV/0, mask, frequency-axis, and per-column auto-stat artifacts.",
+      "Use concise citations to GRAPH summary rows and RAW DATA headers/sample-name rows."
+    ],
+    "evidencePolicy": "Row citations prove labels and metrics exist but are insufficient for final changed-factor evidence."
+  },
+  "usage": {
+    "input_tokens": 24739,
+    "output_tokens": 782,
+    "total_tokens": 25521
+  }
+}

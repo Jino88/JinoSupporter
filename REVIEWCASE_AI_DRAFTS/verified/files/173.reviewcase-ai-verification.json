@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 173,
+  "sourceFile": "09. BRS-161016 GMI Report  TF improve NG -05.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\173.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:47Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 173,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it merges unrelated workbook tests under a nonsensical changed-factor comparison.",
+    "issues": [
+      "Changed factor mixes bonding, dates, frame, tray, yoke, and ED mold contexts.",
+      "Review title and purpose do not match the selected outcomes.",
+      "Multiple independent tests are forced into one review case.",
+      "Baseline and test conditions are ambiguous or unsupported for many outcomes.",
+      "Several measurement groupings misread IDs, molds, and headers as statistics."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild review cases by explicit worksheet section and test purpose.",
+      "Define one changed-factor context per comparable test table.",
+      "Keep date, line, mold, jig, machine, lot, and type as subgroup keys.",
+      "Remove derived measurement stats that are header or identifier artifacts.",
+      "Cite header, condition, result, and decision rows for each case."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations do not sufficiently support the draft grouping or changed factor."
+  },
+  "usage": {
+    "input_tokens": 18179,
+    "output_tokens": 674,
+    "total_tokens": 18853
+  }
+}

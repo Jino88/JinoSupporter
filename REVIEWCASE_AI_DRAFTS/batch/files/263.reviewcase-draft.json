@@ -1,0 +1,178 @@
+{
+  "sourceFileId": 263,
+  "sourceFile": "13. BRS-161014 TEST AOI Check OK, NG_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\13. BRS-161014 TEST AOI Check OK, NG_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Sheet1",
+    "sheetRowCount": 10,
+    "sheetCellCount": 38,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet1!1",
+      "sheetName": "Sheet1",
+      "rowNumber": 1,
+      "rowText": "| 1.161014 - RESULT CHECK AOI BONDING FRAME+VP OUT SIDE"
+    },
+    {
+      "rowId": "Sheet1!2",
+      "sheetName": "Sheet1",
+      "rowNumber": 2,
+      "rowText": "| No | Input | OK | Type"
+    },
+    {
+      "rowId": "Sheet1!4",
+      "sheetName": "Sheet1",
+      "rowNumber": 4,
+      "rowText": "| 1 | 300 | 298 | 1 | 1"
+    },
+    {
+      "rowId": "Sheet1!5",
+      "sheetName": "Sheet1",
+      "rowNumber": 5,
+      "rowText": "| 2 | Rate | 0.99333333 | 0.00333333 | 0.00333333"
+    },
+    {
+      "rowId": "Sheet1!9",
+      "sheetName": "Sheet1",
+      "rowNumber": 9,
+      "rowText": "| Sample #1: alittle not enough glue | | Sample #2 | | | | Sample #1 | | Sample #2"
+    },
+    {
+      "rowId": "Sheet1!22",
+      "sheetName": "Sheet1",
+      "rowNumber": 22,
+      "rowText": "| 2.161014 - RESULT CHECK AOI LASER CUTTING VP AT MAIN 2"
+    },
+    {
+      "rowId": "Sheet1!23",
+      "sheetName": "Sheet1",
+      "rowNumber": 23,
+      "rowText": "| No | Input | OK | Type"
+    },
+    {
+      "rowId": "Sheet1!25",
+      "sheetName": "Sheet1",
+      "rowNumber": 25,
+      "rowText": "| 1 | 300 | 297 | 2 | 1"
+    },
+    {
+      "rowId": "Sheet1!26",
+      "sheetName": "Sheet1",
+      "rowNumber": 26,
+      "rowText": "| 2 | Rate | 0.99 | 0.00666667 | 0.00333333"
+    },
+    {
+      "rowId": "Sheet1!30",
+      "sheetName": "Sheet1",
+      "rowNumber": 30,
+      "rowText": "| Sample #1: cutting offset | | Sample #2: cutting offset | | | | Sample #1 | | Sample #2"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-263-rc-1",
+      "reviewTitle": "| 1.161014 - RESULT CHECK AOI BONDING FRAME+VP OUT SIDE",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "coating",
+            "process condition",
+            "dimension/spec"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs 1",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "1",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Sheet1!25",
+            "Sheet1!4"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "1.161014 - RESULT CHECK AOI BONDING FRAME+VP OUT SIDE",
+          "comparisonRows": [
+            "Sheet1!4"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 19111,
+              "condition": "1",
+              "input": 300.0,
+              "ok": 298.0,
+              "ng": 1.0,
+              "ratePercent": 0.33333333333333337,
+              "evidenceRows": [
+                "Sheet1!4"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "metric-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "2.161014 - RESULT CHECK AOI LASER CUTTING VP AT MAIN 2",
+          "comparisonRows": [
+            "Sheet1!25"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 19112,
+              "condition": "1",
+              "input": 300.0,
+              "ok": 297.0,
+              "ng": 2.0,
+              "ratePercent": 0.6666666666666667,
+              "evidenceRows": [
+                "Sheet1!25"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Sheet1!25",
+        "Sheet1!4"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet1!25",
+      "Sheet1!4"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

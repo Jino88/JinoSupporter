@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 604,
+  "sourceFile": "39. TIU L5S3-01 R Report  test SEMI SUB 3 -A2 to find reason NG bako 2025.12.26_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\604.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 604,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Results support lower NG rate for Test Semi Sub3 A2 versus Normal D3, but changed-factor evidence is incomplete.",
+    "issues": [
+      "Changed factor omits that A2 Sub3 semi samples were moved to D3 line.",
+      "Key content row supporting the test setup is not cited.",
+      "Decision row confirming lower NG is not cited.",
+      "Change domain remains unknown despite process/line transfer context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Revise changed factor to include A2 Sub3 semi sample tested on D3 line versus Normal D3.",
+      "Add Test!8 as changed-condition evidence.",
+      "Add Test!23 as decision/outcome evidence.",
+      "Set change domain to process/line or equivalent.",
+      "Keep outcome as improved with 20.0% versus 44.21% NG rate."
+    ],
+    "evidencePolicy": "Current result citations exist, but setup and decision citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 2486,
+    "output_tokens": 740,
+    "total_tokens": 3226
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 436,
+  "sourceFile": "24. BRS-161014 Report test Frame+SP ass'y OK and offset_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\436.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 436,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft identifies the likely OK-vs-offset comparison but needs correction and fuller cited evidence before final use.",
+    "issues": [
+      "Changed factor wrongly frames an unspecified baseline instead of direct Frame+SP OK vs offset.",
+      "Critical function rows 29 and 31 are cited but their row text is not provided for audit.",
+      "Outcome grouping may omit SUB4 inspection results or offset counterpart rows.",
+      "Source metadata is inconsistent: row count conflicts with cited row numbers."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Load full worksheet text for rows 26-34, especially 29 and 31.",
+      "Revise changed factor to Frame+SP ass'y OK vs Frame+SP ass'y offset.",
+      "Verify function metrics and rates directly from cited rows.",
+      "Decide whether SUB4 inspection results belong in the same case or are incomplete.",
+      "Fix extraction metadata or explain row count inconsistency."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient because key cited rows are not visible."
+  },
+  "usage": {
+    "input_tokens": 2405,
+    "output_tokens": 751,
+    "total_tokens": 3156
+  }
+}

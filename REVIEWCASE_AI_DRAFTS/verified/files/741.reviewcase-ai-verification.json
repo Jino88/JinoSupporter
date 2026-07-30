@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 741,
+  "sourceFile": "54.BRS-161014 Report test new Frame improvement type C_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\741.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:38Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 741,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but changed-factor grouping and several outcome extractions are not reliable enough for final use.",
+    "issues": [
+      "Primary change should likely be Normal Frame vs Type C improved frame, not mixed TEST plus cavities.",
+      "Cavities A-G are subgroup keys, not changed conditions.",
+      "Function outcome omits Normal baseline row 73, so comparison is incomplete.",
+      "Drop-test pairing uses wrong normal row for the 2023-10-28 test and omits row 83.",
+      "Measurement outcomes include header/summary rows as numeric stats, producing nonsensical values."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Redefine changed factor as Type C improved frame versus Normal Frame, with cavity as subgroup.",
+      "Separate TEST label in drop test as the improved-frame condition only if supported by context.",
+      "Add Normal function baseline row 73 and compare against Type C total and/or cavity subgroups.",
+      "Fix drop-test pairs to 80-81 and 82-83 by date.",
+      "Remove bogus measurement stats from header rows and rebuild height results from actual data rows."
+    ],
+    "evidencePolicy": "Row citations exist, but they are semantically insufficient until missing baseline and incorrect table citations are corrected."
+  },
+  "usage": {
+    "input_tokens": 7769,
+    "output_tokens": 681,
+    "total_tokens": 8450
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 791,
+  "sourceFile": "61. BRS-201506 Report checking Gauss SPK date 12.7.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\791.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 791,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable Gauss evidence but the primary changed factor and outcome grouping are not verified.",
+    "issues": [
+      "Changed factor is filename, not an evidence-based condition.",
+      "Baseline/test conditions are marked non-explicit despite OK vs NG headers.",
+      "Outcomes are duplicated and split by detected columns instead of one report context.",
+      "Some stats cite header rows rather than full data rows.",
+      "Spec compliance is unreliable where values appear outside stated Grill spec."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factor from source headers, likely OK hearing-voltage-up vs NG voltage-standard if supported.",
+      "Use sheet/date/type/sample grouping keys from full data rows.",
+      "Merge Gauss final SPK, Yoke, Grill, and GAP results under one validation report context.",
+      "Cite actual measurement rows plus header/spec rows, not headers alone.",
+      "Recalculate spec violations against stated Yoke and Grill limits."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for final evidence until data rows and grouping are cited."
+  },
+  "usage": {
+    "input_tokens": 5389,
+    "output_tokens": 682,
+    "total_tokens": 6071
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 932,
+  "sourceFile": "81. TIU L5S3-01 R Report Check Dry  F-pcb sub3 - L  2026.04.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\932.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 932,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but mis-groups baseline and cross-line drying comparisons.",
+    "issues": [
+      "Changed factor mixes line, normal settings, and transfer directions into one unclear comparison.",
+      "Baseline cites Line R with 305℃/11'40s, but that condition appears under Line L context.",
+      "Row 39 is compared to Line R normal though it likely belongs with Line L normal baseline.",
+      "Outcome direction for Line L to Line R may be wrong if compared against Line L normal results.",
+      "Dry time and temperature conditions are not preserved as primary grouping keys."
+    ],
+    "requiredUserQuestions": [
+      "Should transfer samples be compared to source-line normal or destination-line normal?",
+      "Which Line L normal condition is the intended baseline: 305℃/10'32s or 305℃/11'40s?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor as normal drying versus cross-line drying by transfer direction.",
+      "Preserve line, dry temperature, dry time, and transfer direction as grouping keys.",
+      "Use Line R normal 300℃/9'20s only for the R-to-L transfer comparison if justified.",
+      "Compare L-to-R transfer against the correct Line L normal baseline.",
+      "Recalculate judgement and deltas after regrouping."
+    ],
+    "evidencePolicy": "Row citations exist and cover context/results, but are insufficient until grouping is corrected."
+  },
+  "usage": {
+    "input_tokens": 3035,
+    "output_tokens": 823,
+    "total_tokens": 3858
+  }
+}

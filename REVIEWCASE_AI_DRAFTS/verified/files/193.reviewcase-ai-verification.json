@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 193,
+  "sourceFile": "1. BRS-201506 Report test material VP using die punch cutting inside (V1 ) date 27.7.2024 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\193.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 193,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but changed-factor grouping, sheet mixing, and extracted metrics need correction before use.",
+    "issues": [
+      "Changed factor is overbroad and treats shift/round/subsets as changed conditions.",
+      "Baseline/test grouping should center on VP die punch V1/new machine versus VP normal/Normal.",
+      "Rows from multiple sheets appear mixed without preserving report version, date, shift, and round keys.",
+      "Several bonding NG counts are misread from source rows.",
+      "Measurement outcomes cite header rows only and are not final evidence."
+    ],
+    "requiredUserQuestions": [
+      "Should New V1 Machine, Report, and Report (2) be treated as separate report versions or one combined validation?"
+    ],
+    "correctionPlan": [
+      "Rewrite changed factor as VP die punch cutting inside V1/new machine vs VP normal/Normal.",
+      "Keep date, shift, test round, and sheet/report as subgroup keys, not primary factors.",
+      "Recalculate bonding, vision, and function metrics directly from each cited data row.",
+      "Remove or recast header-only measurement summaries unless data rows are cited.",
+      "Add decision rows as outcome context and separate non-comparable totals/subsets."
+    ],
+    "evidencePolicy": "Row citations exist, but some cite headers or mixed contexts, so sufficiency is not met."
+  },
+  "usage": {
+    "input_tokens": 18986,
+    "output_tokens": 806,
+    "total_tokens": 19792
+  }
+}

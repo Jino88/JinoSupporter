@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 66,
+  "sourceFile": "027. MSU-20S15-07 Result check Height dimension C-MG, S-MG - Date 2025.02.28_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\66.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:12Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 66,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but the changed factor and comparison grouping are not sufficiently defined.",
+    "issues": [
+      "Changed factor is filename-derived, not source-derived.",
+      "Baseline and test conditions are marked not explicit despite condition rows.",
+      "Type rows show multiple C-MG/S-MG condition combinations not modeled.",
+      "Measurement evidence cites mostly headers, not data rows.",
+      "Outcome metric label is malformed and grouping is ambiguous."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison Test vs Normal, or Type 1-4 C-MG/S-MG settings?",
+      "Should S-MG New JIG 0.03 be treated as the changed factor context?"
+    ],
+    "correctionPlan": [
+      "Define changed factor from condition rows, not filename.",
+      "Set explicit baseline and changed condition using source headers and type rows.",
+      "Preserve Type/STT and C-MG/S-MG subgroup structure.",
+      "Cite result spec/header plus actual measurement rows for each statistic.",
+      "Rebuild outcome metric as height dimension against 0.66-0.70 mm spec."
+    ],
+    "evidencePolicy": "Current row citations prove row existence but are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 2828,
+    "output_tokens": 780,
+    "total_tokens": 3608
+  }
+}

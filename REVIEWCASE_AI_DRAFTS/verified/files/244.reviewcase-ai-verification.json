@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 244,
+  "sourceFile": "12. BRS-161014 DT Report test VP improverment bending date 26.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\244.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:17Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 244,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft captures the Test VP versus Normal VP improvement study but has blocking grouping, pairing, and artifact-outcome errors.",
+    "issues": [
+      "Function E2-3A test is paired to the wrong normal row; row 51 is omitted from that comparison.",
+      "Line, mold, and date subgroup keys are not preserved, causing confounded vision comparisons.",
+      "Header and picture rows are treated as measurement outcomes without real data.",
+      "Tension spec/result context is incomplete; spec 0.5 and OK status are not carried through.",
+      "Judgement 'worse' conflicts with source conclusion that function NG rate is same normal and usable."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Pair function rows by line: C2-3A row45 vs row47 and E2-3A row49 vs row51.",
+      "Add subgroup keys for line, date, VP mold, and test/normal type across all outcomes.",
+      "Remove picture-only and header-only measurement outcomes from final evidence.",
+      "Restore tension spec 0.5, row55 header context, row56-59 OK results, and compare Test vs Normal by line.",
+      "Set outcome judgements to reflect small numeric differences plus source conclusions, not unsupported worsening."
+    ],
+    "evidencePolicy": "Core table citations are mostly sufficient, but final evidence must cite the corrected paired rows and exclude header/picture artifacts."
+  },
+  "usage": {
+    "input_tokens": 6397,
+    "output_tokens": 829,
+    "total_tokens": 7226
+  }
+}

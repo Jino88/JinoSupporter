@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 114,
+  "sourceFile": "044.MSU-20S15-07 Result test cutting process improve PHI_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\114.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:08Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 114,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misgroups the process change and misextracts key function and process outcomes.",
+    "issues": [
+      "Changed factor should center on cutting/removal process improvement, not coating or dimension/spec.",
+      "Function NG values are parsed incorrectly; rows show total NG/rates around 36-39, not zero.",
+      "Vision/frame outcome rows 30-31 and 37 are omitted despite being core results.",
+      "Process before/after measurement uses only header evidence and questionable generated stats.",
+      "Final decision row 49 is omitted from evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Revise changeDomain to process condition only.",
+      "Define baseline/test conditions across normal, after cutting, and after array-by-hand change with row context.",
+      "Reparse function table using total NG and NG rate columns from rows 42-44.",
+      "Add separate outcomes for vision after cutting and frame after array using rows 28-31 and 35-37.",
+      "Cite decision row 49 and remove unsupported measurement statistics unless row-level data is available."
+    ],
+    "evidencePolicy": "Citations exist, but current evidence is incomplete and some cited rows do not support extracted values."
+  },
+  "usage": {
+    "input_tokens": 4103,
+    "output_tokens": 790,
+    "total_tokens": 4893
+  }
+}

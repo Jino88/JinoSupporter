@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 519,
+  "sourceFile": "30. TIU C11-20  Report test find reason NG NG function high 2026.01.02_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\519.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:16Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 519,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the changed-factor and outcome grouping are not reliable for final evidence.",
+    "issues": [
+      "One changed factor incorrectly combines many unrelated tests and dates.",
+      "Baselines are pooled across different sections instead of matched per experiment.",
+      "Some cited rows are headers or context, not condition evidence.",
+      "Measurement outcomes are artifacts from defect tables and specs are misapplied.",
+      "Several valid test rows, including totals and second rounds, are incompletely grouped."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split cases by report section or distinct experiment context.",
+      "Create separate changed factors for dry time, UV, bond amount, VP A2, forming position, tray stock, rubber cleaning, heat temperature, and open-test use.",
+      "Match each test only to the normal row in the same table/date/round context.",
+      "Remove artifact measurement stats from defect count tables unless a true measurement table is used.",
+      "Keep only evidence rows that directly support each condition and result."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient because grouping and relevance are not verified."
+  },
+  "usage": {
+    "input_tokens": 13676,
+    "output_tokens": 526,
+    "total_tokens": 14202
+  }
+}

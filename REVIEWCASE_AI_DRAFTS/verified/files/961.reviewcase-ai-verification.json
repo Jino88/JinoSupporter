@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 961,
+  "sourceFile": "9. BRS-161014 DT Report check reason NG assy Frame+ suspension offset- date 2024.01.20_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\961.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:22:07Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 961,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The source has citeable test-result evidence, but the draft contains no usable review case and the changed-factor grouping is unresolved.",
+    "issues": [
+      "No reviewCases were generated for the available test table.",
+      "Extractor missed input, NG count, and rate metrics in rows 22-48.",
+      "Multiple candidate factors are mixed: machine, side, suspension lot, jig cleaning, vision step, swap, lot pairing, and assembly method.",
+      "Baseline versus test condition is not consistently defined.",
+      "No evidence citations are attached to any final claim."
+    ],
+    "requiredUserQuestions": [
+      "Should this be one root-cause investigation case or split by test item?",
+      "Which factor should be treated as the primary change if only one case is allowed?"
+    ],
+    "correctionPlan": [
+      "Create review case evidence from the result table rows 22-48.",
+      "Preserve row grouping by date, test item, machine or lot condition, input, NG, and rate.",
+      "Do not infer a single root cause unless supported by selected grouped rows.",
+      "Separate or clearly nest distinct test conditions under the same investigation context.",
+      "Attach row citations for every condition and outcome metric."
+    ],
+    "evidencePolicy": "Rows 22-48 are sufficient for citations, but the current draft provides none."
+  },
+  "usage": {
+    "input_tokens": 2717,
+    "output_tokens": 749,
+    "total_tokens": 3466
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 235,
+  "sourceFile": "11. TIU L5S3-01 L - Report test material Frame happen NG Magnet side diffrence colour 100% - date 2026.05.08_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\235.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 235,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable Normal vs Test evidence but the changed condition and outcome coverage are too incomplete for final use.",
+    "issues": [
+      "Changed factor is too generic; Test should describe the abnormal Baotou frame/magnet color condition.",
+      "Process result appears to include multiple NG metrics, but only one is extracted.",
+      "Function and final visual result sections are omitted despite same validation context.",
+      "Metric headers are not fully cited, making row values hard to interpret.",
+      "No decision content is captured after the decision heading."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to Normal vs abnormal Baotou frame/magnet side color lot, if supported by rows.",
+      "Add cited process outcomes for each NG-rate column shown in the result table.",
+      "Add function and final visual outcomes with Test vs Normal rows and zero-NG judgement where supported.",
+      "Cite the relevant section and header rows for each outcome table.",
+      "Check whether any decision text exists below the captured rows and include it if present."
+    ],
+    "evidencePolicy": "Current row citations exist but are insufficient for complete metric interpretation and outcome coverage."
+  },
+  "usage": {
+    "input_tokens": 2819,
+    "output_tokens": 775,
+    "total_tokens": 3594
+  }
+}

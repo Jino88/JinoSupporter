@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 747,
+  "sourceFile": "55.BRS-2015 Report Test suspension A NG dimension date 17.6.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\747.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:49Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 747,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparative evidence but mislabels the changed condition and overstates the function result.",
+    "issues": [
+      "Changed factor incorrectly includes Spot vision as a condition.",
+      "Primary comparison should be Normal vs Suspension A Test/NG dimension.",
+      "Function judgement 'improved' conflicts with report conclusion of similar NG rate.",
+      "Decision evidence row 201506!36 is missing from case evidence.",
+      "Subgroup key duplicates the changed condition rather than preserving process/date context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to Normal vs Suspension A Test with NG dimension context.",
+      "Move Spot vision to outcome/process context, not changed condition.",
+      "Set vision outcome to no_change/all OK.",
+      "Set function outcome to no meaningful change or not suspension-caused, not improved.",
+      "Add decision rows 201506!34-201506!36 as conclusion evidence."
+    ],
+    "evidencePolicy": "Row citations are mostly sufficient but need decision rows and corrected grouping before use."
+  },
+  "usage": {
+    "input_tokens": 3128,
+    "output_tokens": 588,
+    "total_tokens": 3716
+  }
+}

@@ -1,0 +1,329 @@
+{
+  "sourceFileId": 668,
+  "sourceFile": "46. BRS-201506 Report checking dimension Frame and Ring Plate date 20.5.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\46. BRS-201506 Report checking dimension Frame and Ring Plate date 20.5.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "Report (4); Sheet5",
+    "sheetRowCount": 21,
+    "sheetCellCount": 98,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 10
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report (4)!2",
+      "sheetName": "Report (4)",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT CHECKING DIEMSION FRAME AND PLATE OF MODEL BRS-201506 | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report (4)!3",
+      "sheetName": "Report (4)",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Date | 2024-05-20 00:00:00"
+    },
+    {
+      "rowId": "Report (4)!4",
+      "sheetName": "Report (4)",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "Report (4)!5",
+      "sheetName": "Report (4)",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report (4)!6",
+      "sheetName": "Report (4)",
+      "rowNumber": 6,
+      "rowText": "| - Find reason NG Function"
+    },
+    {
+      "rowId": "Report (4)!7",
+      "sheetName": "Report (4)",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report (4)!8",
+      "sheetName": "Report (4)",
+      "rowNumber": 8,
+      "rowText": "| - Checking dimesion Frame and Ring Plate"
+    },
+    {
+      "rowId": "Report (4)!9",
+      "sheetName": "Report (4)",
+      "rowNumber": 9,
+      "rowText": "| - Q'ty : 5pcs"
+    },
+    {
+      "rowId": "Report (4)!10",
+      "sheetName": "Report (4)",
+      "rowNumber": 10,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "Report (4)!11",
+      "sheetName": "Report (4)",
+      "rowNumber": 11,
+      "rowText": "| | RESULT CHECKING DIMENSION FRAME AND RING PLATE"
+    },
+    {
+      "rowId": "Report (4)!12",
+      "sheetName": "Report (4)",
+      "rowNumber": 12,
+      "rowText": "| | Date | Type | No | RESULT CHECKING DIMENSION FRAME | | | | Type | No | RESULT CHECKING DIMENSION RING PLATE"
+    },
+    {
+      "rowId": "Report (4)!13",
+      "sheetName": "Report (4)",
+      "rowNumber": 13,
+      "rowText": "| | | | | Length 18.00 ~ 18.02 | | Width 10.73 ~ 10.76 | | | | Length 13.97 ~ 14.03 | | Width 9.81 ~ 9.87"
+    },
+    {
+      "rowId": "Report (4)!23",
+      "sheetName": "Report (4)",
+      "rowNumber": 23,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-668-rc-1",
+      "reviewTitle": "| REPORT CHECKING DIEMSION FRAME AND PLATE OF MODEL BRS-201506 | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Find reason NG Function / | II. Content. / | - Checking dimesion Frame and Ring Plate / | - Q'ty : 5pcs",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "dimension/spec"
+          ],
+          "changedFactor": "46. BRS-201506 Report checking dimension Frame and Ring Plate date 20.5.2024",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Report (4)!12",
+            "Report (4)!13",
+            "Report (4)!2",
+            "Report (4)!21",
+            "Report (4)!5",
+            "Report (4)!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Report (4)!21"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 59638,
+              "condition": "Length 18.00 ~ 18.02",
+              "spec": "",
+              "min": 18.02,
+              "max": 18.04,
+              "avg": 18.026,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (4)!21"
+              ]
+            },
+            {
+              "statId": 59639,
+              "condition": "Width 10.73 ~ 10.76",
+              "spec": "",
+              "min": 10.75,
+              "max": 10.77,
+              "avg": 10.762,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (4)!21"
+              ]
+            },
+            {
+              "statId": 59640,
+              "condition": "Length 13.97 ~ 14.03",
+              "spec": "",
+              "min": 14.0,
+              "max": 14.04,
+              "avg": 14.017,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (4)!21"
+              ]
+            },
+            {
+              "statId": 59641,
+              "condition": "Width 9.81 ~ 9.87",
+              "spec": "",
+              "min": 9.83,
+              "max": 9.87,
+              "avg": 9.845,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (4)!21"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT CHECKING DIMENSION FRAME AND RING PLATE",
+          "comparisonRows": [
+            "Report (4)!12"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 59642,
+              "condition": "RESULT CHECKING DIMENSION FRAME AND RING PLATE / RESULT CHECKING DIMENSION FRAME",
+              "spec": "",
+              "min": 18.0,
+              "max": 18.03,
+              "avg": 18.01833333333333,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (4)!12"
+              ]
+            },
+            {
+              "statId": 59643,
+              "condition": "RESULT CHECKING DIMENSION FRAME AND RING PLATE / RESULT CHECKING DIMENSION RING PLATE",
+              "spec": "",
+              "min": 13.97,
+              "max": 14.04,
+              "avg": 14.01,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (4)!12"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Type | No | RESULT CHECKING DIMENSION FRAME | Type | No | RESULT CHECKING DIMENSION RING PLATE",
+          "comparisonRows": [
+            "Report (4)!13"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 59644,
+              "condition": "RESULT CHECKING DIMENSION FRAME / Length 18.00 ~ 18.02",
+              "spec": "",
+              "min": 18.02,
+              "max": 18.03,
+              "avg": 18.022,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (4)!13"
+              ]
+            },
+            {
+              "statId": 59645,
+              "condition": "RESULT CHECKING DIMENSION FRAME / Width 10.73 ~ 10.76",
+              "spec": "",
+              "min": 10.75,
+              "max": 10.77,
+              "avg": 10.76,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (4)!13"
+              ]
+            },
+            {
+              "statId": 59646,
+              "condition": "RESULT CHECKING DIMENSION RING PLATE / Length 13.97 ~ 14.03",
+              "spec": "",
+              "min": 14.0,
+              "max": 14.04,
+              "avg": 14.018,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (4)!13"
+              ]
+            },
+            {
+              "statId": 59647,
+              "condition": "RESULT CHECKING DIMENSION RING PLATE / Width 9.81 ~ 9.87",
+              "spec": "",
+              "min": 9.83,
+              "max": 9.87,
+              "avg": 9.85,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (4)!13"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report (4)!12",
+        "Report (4)!13",
+        "Report (4)!2",
+        "Report (4)!21",
+        "Report (4)!5",
+        "Report (4)!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report (4)!12",
+      "Report (4)!13",
+      "Report (4)!2",
+      "Report (4)!21",
+      "Report (4)!5",
+      "Report (4)!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

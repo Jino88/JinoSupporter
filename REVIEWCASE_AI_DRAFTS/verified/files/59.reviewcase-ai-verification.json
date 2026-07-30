@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 59,
+  "sourceFile": "024-1. MSU-L20S15-07_Frame V2 0.096 Coil NTI DATA_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\59.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 59,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but the changed-factor and outcome grouping are not reliable for final evidence.",
+    "issues": [
+      "Changed factor is the filename, not the tested condition.",
+      "Baseline and changed conditions are left explicit as unknown.",
+      "Key sample groups are ambiguous: STD, Normal 0.097, Frame V1 0.096, Frame Normal 0.096, Frame V2 0.097.",
+      "Outcome tables include nonsensical numeric conditions and error-derived rows.",
+      "Key summary rows for Frame V1 and Frame V2 are missing from factor evidence."
+    ],
+    "requiredUserQuestions": [
+      "Which sample group is the intended baseline and which is the intended test condition?"
+    ],
+    "correctionPlan": [
+      "Rebuild the changed factor from source labels, not the filename.",
+      "Use GRAPH rows 8-12 and RAW DATA sample-name/header rows as primary grouping evidence.",
+      "Separate or clearly group sample variants and coil thickness context.",
+      "Keep valid acoustic metrics only: SPL bands, Fo, impedance, and THD frequencies.",
+      "Remove error-row and arbitrary numeric-condition subresults."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for grouping; final evidence needs direct sample-label and summary-row citations."
+  },
+  "usage": {
+    "input_tokens": 20308,
+    "output_tokens": 793,
+    "total_tokens": 21101
+  }
+}

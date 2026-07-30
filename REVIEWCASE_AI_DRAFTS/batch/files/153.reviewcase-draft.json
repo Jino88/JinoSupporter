@@ -1,0 +1,223 @@
+{
+  "sourceFileId": 153,
+  "sourceFile": "07. MSU-20S15-07 Report TEST use IR Dry machine test for SUB1 2025.01.22_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\07. MSU-20S15-07 Report TEST use IR Dry machine test for SUB1 2025.01.22_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Sheet1",
+    "sheetRowCount": 13,
+    "sheetCellCount": 128,
+    "comparisonPairCount": 2,
+    "metricCandidateCount": 3,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet1!2",
+      "sheetName": "Sheet1",
+      "rowNumber": 2,
+      "rowText": "| REPORT TEST USE DRY IR TEST FOR SUB 1 VP/CD"
+    },
+    {
+      "rowId": "Sheet1!4",
+      "sheetName": "Sheet1",
+      "rowNumber": 4,
+      "rowText": "| Result tension TEST"
+    },
+    {
+      "rowId": "Sheet1!5",
+      "sheetName": "Sheet1",
+      "rowNumber": 5,
+      "rowText": "| No | Date | Type | | | MIN | MAX | AVG | Tension test"
+    },
+    {
+      "rowId": "Sheet1!6",
+      "sheetName": "Sheet1",
+      "rowNumber": 6,
+      "rowText": "| | | Type | Time dry | Temp | | | | #1 | #2 | #3 | #4 | #5 | #6 | #7 | #8 | #9 | #10"
+    },
+    {
+      "rowId": "Sheet1!7",
+      "sheetName": "Sheet1",
+      "rowNumber": 7,
+      "rowText": "| 1 | 2025-01-22 00:00:00 | TEST | 30S | 120do | 1.73 | 2.152 | 1.941 | 2.145 | 1.877 | 2.082 | 1.73 | 1.845 | 2.012 | 2.034 | 2.122 | 1.859 | 2.152"
+    },
+    {
+      "rowId": "Sheet1!8",
+      "sheetName": "Sheet1",
+      "rowNumber": 8,
+      "rowText": "| 2 | | TEST | 1min | 120do | 1.841 | 2.75 | 2.2955 | 1.866 | 1.94 | 2.04 | 1.841 | 2.202 | 2.387 | 2.124 | 2.75 | 1.98 | 2.11"
+    },
+    {
+      "rowId": "Sheet1!9",
+      "sheetName": "Sheet1",
+      "rowNumber": 9,
+      "rowText": "| 3 | | Normal | 5min | 120do(Dry box) | 1.979 | 2.355 | 2.167 | 2.355 | 2.103 | 2.077 | 2.212 | 2.034 | 2.075 | 1.979 | 2.143 | 2.144 | 2.078"
+    },
+    {
+      "rowId": "Sheet1!11",
+      "sheetName": "Sheet1",
+      "rowNumber": 11,
+      "rowText": "| Result check Function"
+    },
+    {
+      "rowId": "Sheet1!12",
+      "sheetName": "Sheet1",
+      "rowNumber": 12,
+      "rowText": "| No | Date | Type | | | Input | OK | NG sigma | | NG Hearing | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Sheet1!13",
+      "sheetName": "Sheet1",
+      "rowNumber": 13,
+      "rowText": "| | | Type | Time dry | Temp | | | THD | SPL+THD | Noise | Touch"
+    },
+    {
+      "rowId": "Sheet1!14",
+      "sheetName": "Sheet1",
+      "rowNumber": 14,
+      "rowText": "| 1 | 2025-01-21 00:00:00 | TEST | 30S | 120do | 38 | 36 | 0 | 0 | 1 | 1 | 2 | 0.05263158"
+    },
+    {
+      "rowId": "Sheet1!15",
+      "sheetName": "Sheet1",
+      "rowNumber": 15,
+      "rowText": "| 2 | | TEST | 1min | 120do | 40 | 36 | 0 | 0 | 2 | 2 | 4 | 0.1"
+    },
+    {
+      "rowId": "Sheet1!16",
+      "sheetName": "Sheet1",
+      "rowNumber": 16,
+      "rowText": "| 3 | | Normal | 5min | 120do(Dry box) | 40 | 35 | 0 | 0 | 2 | 3 | 5 | 0.125"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-153-rc-1",
+      "reviewTitle": "| REPORT TEST USE DRY IR TEST FOR SUB 1 VP/CD",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal vs TEST",
+          "baselineCondition": "Normal",
+          "changedCondition": "TEST",
+          "subgroupKeys": [
+            "120do(Dry box)"
+          ],
+          "evidenceRows": [
+            "Sheet1!14",
+            "Sheet1!15",
+            "Sheet1!16",
+            "Sheet1!2",
+            "Sheet1!4",
+            "Sheet1!5",
+            "Sheet1!7",
+            "Sheet1!8",
+            "Sheet1!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "Result check Function",
+          "comparisonRows": [
+            "Sheet1!14",
+            "Sheet1!15",
+            "Sheet1!16"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 3636,
+              "controlCondition": "Normal | 120do(Dry box)",
+              "testCondition": "TEST",
+              "control": {
+                "input": 40.0,
+                "ng": 5.0,
+                "ratePercent": 12.5
+              },
+              "test": {
+                "input": 38.0,
+                "ng": 2.0,
+                "ratePercent": 5.263158
+              },
+              "deltaRatePercentPoint": -7.236842,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Sheet1!14",
+                "Sheet1!16"
+              ]
+            },
+            {
+              "pairId": 3637,
+              "controlCondition": "Normal | 120do(Dry box)",
+              "testCondition": "TEST",
+              "control": {
+                "input": 40.0,
+                "ng": 5.0,
+                "ratePercent": 12.5
+              },
+              "test": {
+                "input": 40.0,
+                "ng": 4.0,
+                "ratePercent": 10.0
+              },
+              "deltaRatePercentPoint": -2.4999999999999996,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Sheet1!15",
+                "Sheet1!16"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Sheet1!14",
+        "Sheet1!15",
+        "Sheet1!16",
+        "Sheet1!2",
+        "Sheet1!4",
+        "Sheet1!5",
+        "Sheet1!7",
+        "Sheet1!8",
+        "Sheet1!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet1!14",
+      "Sheet1!15",
+      "Sheet1!16",
+      "Sheet1!2",
+      "Sheet1!4",
+      "Sheet1!5",
+      "Sheet1!7",
+      "Sheet1!8",
+      "Sheet1!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

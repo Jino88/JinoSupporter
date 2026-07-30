@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 714,
+  "sourceFile": "51. BRS-161016  Report test VP 150, 1Hour improve NG bending 10.7.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\714.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 714,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable defect data but the changed-factor framing and some evidence coverage are not reliable enough for final use.",
+    "issues": [
+      "Primary comparison is ambiguous: VP mold screening vs improvement/baseline test.",
+      "Baseline condition is not evidenced; total rows are treated as conditions.",
+      "Change domains are overbroad and not supported by cited rows.",
+      "VP #8 tray section is mixed into the same factor without clear subgroup handling.",
+      "Evidence rows 38-41 conflict with reported sheet row count 37."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended comparison among VP mold numbers, or before/after improvement?",
+      "Should the VP #8 separate tray test be a subgroup or separate review case?"
+    ],
+    "correctionPlan": [
+      "Define the changed factor as VP mold number, tray position, or improvement condition based on source context.",
+      "Remove unsupported domains and avoid calling aggregate totals changed conditions.",
+      "Preserve date, line, lot, VP mold, tray, and recheck stage as grouping keys.",
+      "Separate or explicitly subgroup the VP #8 tray-only section.",
+      "Reconcile row-count mismatch and cite header/section rows for each outcome block."
+    ],
+    "evidencePolicy": "Citations are partly sufficient for metrics, but grouping headers and row existence need correction."
+  },
+  "usage": {
+    "input_tokens": 5563,
+    "output_tokens": 784,
+    "total_tokens": 6347
+  }
+}

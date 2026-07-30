@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 125,
+  "sourceFile": "05. L20S15-07 Report test CD lot IR 250410013  ( Size 490 Tu update ) box 1.4.7_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\125.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:29Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 125,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not safe because changed-factor grouping and several outcomes are materially misparsed.",
+    "issues": [
+      "Changed factor wrongly narrows test lot to Box 4 and conflicts with Box 1 subgroup.",
+      "Boxes 1/4/7 and line C2/E2 should be preserved as subgroup keys, not primary factors.",
+      "Report title row is incorrectly treated as a measurement outcome.",
+      "Function, separate VP/CD, dyne, and tension results are mixed under unclear metrics.",
+      "Tension spec is available but not carried into parsed measurements."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factor as Normal vs test CD lot IR250410013 size 490k, with boxes and lines as subgroups.",
+      "Remove the bogus title-derived measurement outcome.",
+      "Separate outcome domains for dyne, tension, VP/CD separation, and function while keeping one validation context.",
+      "Reparse Report result rows with correct input, OK, NG, total NG, and NG-rate columns.",
+      "Carry tension spec 1.2 kgf and cite the tension header plus each measurement row."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient because grouping and metric interpretation are incorrect."
+  },
+  "usage": {
+    "input_tokens": 5238,
+    "output_tokens": 791,
+    "total_tokens": 6029
+  }
+}

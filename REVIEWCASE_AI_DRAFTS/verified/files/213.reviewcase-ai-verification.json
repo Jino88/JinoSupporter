@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 213,
+  "sourceFile": "10. TIU L5S3-01 - Report test material C-MG difference color - date 2026.05.05_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\213.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 213,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Needs review because the changed-factor grouping and condition labels are inconsistent with the cited report context.",
+    "issues": [
+      "Primary change likely C-MG NG color lot/vendor versus normal, not only listed magnet/vendor levels.",
+      "Changed condition omits Lv3 Maglong despite cited tension result.",
+      "Ruijin appears in outcomes but not in visible quantity/purpose rows, so its role is unclear.",
+      "Baseline normal is cited but no normal result row is identified.",
+      "Defect NG rate values appear inconsistent with input and NG counts."
+    ],
+    "requiredUserQuestions": [
+      "Should Ruijin be treated as a tested subgroup or the normal baseline?"
+    ],
+    "correctionPlan": [
+      "Inspect full rows 16-21 and 31-33 with headers.",
+      "Redefine the primary changed factor from source purpose and decision rows.",
+      "Keep Lv1/Lv2/Lv3 and supplier names as subgroup keys if applicable.",
+      "Identify any normal baseline result rows or mark baseline results unavailable.",
+      "Recalculate or relabel NG rates from the source table."
+    ],
+    "evidencePolicy": "Citations exist, but key cited result rows need visible text and corrected grouping before final use."
+  },
+  "usage": {
+    "input_tokens": 2927,
+    "output_tokens": 781,
+    "total_tokens": 3708
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 196,
+  "sourceFile": "1. MSU-L20S15-07DT Report test Find reason NG  LOT DOME 3-17  date 28.4.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\196.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:55Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 196,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites valid outcome rows but misstates the primary comparison as implicit baseline versus both test conditions.",
+    "issues": [
+      "Changed factor should compare Laser marking CD+Plasma against Use Primer clean CD+Plasma, not implicit baseline vs both.",
+      "Lot/date appears shared context, not proven changed factor.",
+      "Dimension/spec domain is not a changed factor; tension is an outcome.",
+      "Referenced result rows 23, 30, 38, and 45 are not shown in context excerpt for independent review."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baseline/test conditions to the two actual process routes.",
+      "Keep CD lot date 2025-03-17 and test date 2025-04-28 as subgroup/context keys.",
+      "Remove lot and dimension/spec from changed-factor domain unless source proves they changed.",
+      "Attach visible evidence for all paired result rows, including rows 23, 30, 38, and 45.",
+      "Retain separate VP/CD, tension, assembly tension, and function as outcomes under one process-route comparison."
+    ],
+    "evidencePolicy": "Citations are row-level and mostly sufficient, but hidden paired rows must be exposed before approval."
+  },
+  "usage": {
+    "input_tokens": 4166,
+    "output_tokens": 641,
+    "total_tokens": 4807
+  }
+}

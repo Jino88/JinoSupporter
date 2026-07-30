@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 875,
+  "sourceFile": "73. TIU C11-20 Report test adjust press force of Fr+VP assembly machine to standard condition ( 0.03 ~ 0.1kg)   2026.3.29_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\875.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:52Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 875,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites valid rows but mislabels the changed condition and omits a related press-force measurement result table.",
+    "issues": [
+      "Changed condition is press-force adjustment, not line TIU C11-20 L.",
+      "Line/date should be subgroup context, not the primary factor.",
+      "Press-force measurement rows 21-24 are omitted from outcomes/evidence.",
+      "Unit text is inconsistent across cited rows and needs normalized handling."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to Normal vs adjusted Frame+VP press force to standard condition.",
+      "Set baseline as Normal and changed condition as test setting press force to standard.",
+      "Move TIU C11-20 L, date, and line L into subgroup keys.",
+      "Add the auto-measuring press-force table as a related outcome or limitation.",
+      "Cite rows 21,22,24 for measurement/spec context and keep rows 14,16 for function results."
+    ],
+    "evidencePolicy": "Current citations support defect comparison only; add measurement rows before final evidence use."
+  },
+  "usage": {
+    "input_tokens": 2937,
+    "output_tokens": 761,
+    "total_tokens": 3698
+  }
+}

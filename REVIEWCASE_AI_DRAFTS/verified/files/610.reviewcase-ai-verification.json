@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 610,
+  "sourceFile": "4. BRS-161014 Report test change  semi VP+CD of C2-E2 line  Date 17.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\610.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:16Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 610,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid source context but misgroups line-specific normal/test comparisons and adds an unsupported measurement outcome.",
+    "issues": [
+      "E2 test is paired with C2 normal instead of E2 normal.",
+      "Line is a required subgroup key for both comparisons.",
+      "Overall judgement conflicts with report conclusion of same as normal.",
+      "Measurement outcome is an artifact, not a separate validated metric.",
+      "Conclusion rows are not used as outcome evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split subresults by line: C2 test vs C2 normal and E2 test vs E2 normal.",
+      "Set subgroupKeys to Line and swapped VP/CD source line.",
+      "Recalculate E2 delta using Report!31 vs Report!33.",
+      "Revise judgement to same/no meaningful change unless applying independent statistical criteria.",
+      "Remove bogus measurement outcome and cite conclusion rows 35-36."
+    ],
+    "evidencePolicy": "Core rows exist, but outcome citations are insufficient until pairings and conclusion evidence are corrected."
+  },
+  "usage": {
+    "input_tokens": 3469,
+    "output_tokens": 750,
+    "total_tokens": 4219
+  }
+}

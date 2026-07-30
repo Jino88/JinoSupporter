@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 187,
+  "sourceFile": "1. BRS-161016 GMI Report test new material clean LUMIX 840 date 17.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\187.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 187,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is comparable but misgroups the changed factor and includes unreliable extracted measurements.",
+    "issues": [
+      "Changed factor incorrectly mixes cleaning methods with bond interfaces.",
+      "Baseline/test conditions are ambiguous and overbroad.",
+      "Tension results and conclusion evidence are omitted.",
+      "Several measurement stats appear spurious from headers or merged data.",
+      "Subgroups such as SMG+Yoke and CMG+PT+Yoke are not preserved."
+    ],
+    "requiredUserQuestions": [
+      "Is the conclusion's Lumix 804 a typo for Lumix 840?"
+    ],
+    "correctionPlan": [
+      "Redefine changed factor as Sub Yoke cleaning method/material.",
+      "Group conditions as Lumix 840, Primer, Ethanol, and no-clean by date/test round.",
+      "Separate bond-interface and assembly types as subgroup keys.",
+      "Remove spurious measurement-stat outcomes from chart/header extraction.",
+      "Add cited outcomes for drop, decap bond, tension, and final conclusions."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until regrouped and expanded."
+  },
+  "usage": {
+    "input_tokens": 8165,
+    "output_tokens": 756,
+    "total_tokens": 8921
+  }
+}

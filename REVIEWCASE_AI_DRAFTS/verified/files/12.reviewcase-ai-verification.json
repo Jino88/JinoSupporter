@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 12,
+  "sourceFile": "009.MSU-L20S15-07 Report test change bonding amount VP+CD, Coil+CD_1778470550_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\12.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:12Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 12,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the changed-factor grouping and some outcome values are ambiguous or inconsistent.",
+    "issues": [
+      "Changed factor combines normal line, 1.5mg, max/min spec, reduce amount, nozzle, and plasma without clear row support.",
+      "Baseline/test condition is inconsistent between Sheet1 function rows and Sheet2 pair rows.",
+      "Measurement outcomes cite header or incomplete rows rather than full data rows.",
+      "Sheet2 normal-line NG rate appears inconsistent with the drafted 0% result.",
+      "Several key evidence rows are not shown in context, limiting verification of extracted conditions."
+    ],
+    "requiredUserQuestions": [
+      "Which test condition is primary: 1.5mg/normal, max/min spec, or reduced 2.0~2.2mg?",
+      "Which sheet is authoritative for the function NG table if Sheet1 and Sheet2 differ?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor from explicit content/result rows only.",
+      "Separate or subgroup distinct bonding amount settings instead of merging all conditions.",
+      "Verify baseline and test direction for each function NG comparison.",
+      "Recalculate NG counts and rates from the cited table rows.",
+      "Replace header-only measurement citations with full data-row citations."
+    ],
+    "evidencePolicy": "Row citations exist, but they are not sufficient for final evidence until grouping and numeric values are verified."
+  },
+  "usage": {
+    "input_tokens": 4248,
+    "output_tokens": 1034,
+    "total_tokens": 5282
+  }
+}

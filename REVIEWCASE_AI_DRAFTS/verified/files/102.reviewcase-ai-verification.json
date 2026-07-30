@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 102,
+  "sourceFile": "04. BRS-161016 Report check NG separate VP DOME Sub 1 TF Line - 2025.04.25_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\102.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 102,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid main repair evidence but incorrectly merges distinct Test-sheet conditions into one changed factor.",
+    "issues": [
+      "Changed factor conflates repair with waiting-time tests.",
+      "Tension test conditions are not tied to repair comparison.",
+      "Test-sheet rows 5 and 11-13 lack visible row text here.",
+      "Primary factor should likely be before vs after repair only.",
+      "Outcome grouping across sheets is ambiguous."
+    ],
+    "requiredUserQuestions": [
+      "Are Test-sheet waiting-time and tension sections part of the same repair validation?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to before repair vs after repair.",
+      "Keep vision and function outcomes under the repair factor.",
+      "Split waiting-time press UC into a separate changed factor or remove it.",
+      "Attach tension test only if its baseline/test conditions are clear.",
+      "Add cited row text for all retained Test-sheet evidence."
+    ],
+    "evidencePolicy": "Citations are sufficient for 25.04 repair rows, but Test-sheet evidence needs clearer cited context before approval."
+  },
+  "usage": {
+    "input_tokens": 4152,
+    "output_tokens": 670,
+    "total_tokens": 4822
+  }
+}

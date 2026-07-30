@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 559,
+  "sourceFile": "34. BRS-161016Report test material YOKE change dimension (Supplier change for reduce cost) 2024.5.4_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\559.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 559,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the main YK dimension change context but has blocking grouping and comparison errors.",
+    "issues": [
+      "Changed condition incorrectly includes TOTAL and MG-S-A/B/C as primary factors.",
+      "Function sub-results compare date subgroups to TOTAL Normal instead of matching subgroup Normal rows.",
+      "Function comparison rows omit needed Normal subgroup rows 4.5!54, 4.5!58, and 4.5!62.",
+      "Unverified measurement candidates from header-like rows should not be final evidence.",
+      "Tension.Gauss rows need grouping by matching spec and Normal/Test before judgement."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal vs Test YK change dimension for material YK supplier/dimension change.",
+      "Keep TOTAL, dates, line, and MG-S-A/B/C as subgroup or outcome context only.",
+      "Repair function outcome pairs as TOTAL 48/50 and date subgroup pairs 52/54, 56/58, 60/62.",
+      "Remove or quarantine extracted measurement stats based only on headers or mixed numeric rows.",
+      "Group Tension.Gauss by spec and condition, especially TEST vs Normal, before adding judged outcomes."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient until row grouping and matched-pair evidence are corrected."
+  },
+  "usage": {
+    "input_tokens": 8538,
+    "output_tokens": 814,
+    "total_tokens": 9352
+  }
+}

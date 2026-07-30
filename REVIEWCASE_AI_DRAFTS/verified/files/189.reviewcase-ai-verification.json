@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 189,
+  "sourceFile": "1. BRS-161016 Report test Yoke  class 1~ 3 Date 16.4.2026_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\189.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:13Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 189,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable report context but misidentifies the changed factor and lacks clear baseline/test grouping.",
+    "issues": [
+      "Changed factor is filename, not the tested yoke class or jig condition.",
+      "Baseline and changed conditions are marked unclear despite class and normal/class-jig cues.",
+      "Outcome statistics cite mostly header rows, not the data rows supporting values.",
+      "Function outcome includes #DIV/0-derived zero metrics that may be invalid.",
+      "Subgroup keys such as date, line, class, and jig/normal condition are not preserved."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison Yoke Class 1 vs Class 2 vs Class 3?",
+      "For function check, is Normal the baseline and Class jig the test condition?"
+    ],
+    "correctionPlan": [
+      "Replace filename factor with the actual tested factor from source rows.",
+      "Define baseline/test or multi-condition class comparison explicitly.",
+      "Attach each outcome to supporting data rows, not headers only.",
+      "Separate yoke class rate results from function NG results under the same validation context.",
+      "Exclude or flag #DIV/0 metrics as invalid rather than normal zero results."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for final evidence because key values and conditions need data-row support."
+  },
+  "usage": {
+    "input_tokens": 3791,
+    "output_tokens": 622,
+    "total_tokens": 4413
+  }
+}

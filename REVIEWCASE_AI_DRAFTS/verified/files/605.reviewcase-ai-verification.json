@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 605,
+  "sourceFile": "39.BRS-161014 Report test change bonding line VP+Coil move inside 0.1_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\605.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 605,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable validation evidence exists, but outcome coverage and tension-test grouping need correction before final use.",
+    "issues": [
+      "Visual inspection outcome row is omitted.",
+      "Core change evidence should include content row 8.",
+      "Tension rows mix secondary conditions and bonding amounts under one unjudged measurement group.",
+      "Normal tension baselines are repeated without clear pairing by date or condition.",
+      "Row 34 tension statistics appear internally inconsistent."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add visual inspection outcome using row 17.",
+      "Add row 8 to changed-factor evidence.",
+      "Separate tension subgroups by date and secondary condition or mark pairing limitations clearly.",
+      "Do not compare bonding-amount tension rows to unrelated normal rows without matching context.",
+      "Flag row 34 statistic inconsistency as a data limitation."
+    ],
+    "evidencePolicy": "Citations exist, but key rows and subgroup-specific evidence are insufficient for final approval."
+  },
+  "usage": {
+    "input_tokens": 4742,
+    "output_tokens": 510,
+    "total_tokens": 5252
+  }
+}

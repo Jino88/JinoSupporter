@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 836,
+  "sourceFile": "67.BRS-161014 Report test new bond PT 8137 Date 11.11.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\836.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 836,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misidentifies the primary change and mixes subgroup labels with bond conditions.",
+    "issues": [
+      "Primary change should be PT-8137 new bond vs Normal EX-0930, not Normal vs Sub 3/Sub 4/date.",
+      "Sub 3 and Sub 4 are process/subgroup contexts, not changed conditions.",
+      "Tension rows 35-38 are incompletely labeled; bond type/date context is not preserved.",
+      "Evidence omits key purpose/content and conclusion rows supporting PT-8137 and over-glue finding.",
+      "Function and measurement outcomes are under the right report context but need regrouping by bond condition."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedFactor to bond type: Normal EX-0930 vs new bond PT-8137.",
+      "Keep Sub 3, Sub 4, Suspension C/D, date, and process section as subgroup keys.",
+      "Relabel each outcome row with its actual bond condition and subgroup.",
+      "Add supporting rows 8, 24, and decision row content if available.",
+      "Recheck comparisons so each PT-8137 result is paired only with the matching normal baseline context."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until key condition and conclusion rows are added."
+  },
+  "usage": {
+    "input_tokens": 4449,
+    "output_tokens": 704,
+    "total_tokens": 5153
+  }
+}

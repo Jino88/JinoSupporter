@@ -32,9 +32,7 @@ public sealed class ClaudeUsageScraper
 
     public ClaudeUsageScraper()
     {
-        _profileDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "JinoSupporter", "ai-usages-profile");
+        _profileDir = AppStoragePaths.Combine("JinoSupporter", "ai-usages-profile");
         Directory.CreateDirectory(_profileDir);
     }
 
@@ -175,11 +173,9 @@ public sealed class ClaudeUsageScraper
             EnsurePlaywright();
             using IPlaywright pw = await Playwright.CreateAsync();
 
-            // NOTE: Cloudflare blocks headless browsers on claude.ai ("보안 확인 수행 중").
-            // Running non-headless (with the real profile) reliably passes the challenge,
-            // usually without any user interaction. A small browser window flashes during
-            // refresh — acceptable for a local admin tool.
-            IBrowserContext ctx = await LaunchContextAsync(pw, headless: false);
+            // Try hidden refresh first. If Cloudflare/auth blocks it, the page handles
+            // opening a visible login browser only for manual refresh.
+            IBrowserContext ctx = await LaunchContextAsync(pw, headless: true);
 
             string? billingErr = null, usageErr = null;
             string  apiBalance = "";

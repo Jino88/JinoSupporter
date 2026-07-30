@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 674,
+  "sourceFile": "47. MSU-L20S15-07 GMI Report Test suspension L20S15-07 improve weak solder pad of vender CSY Tech vina date 19.10.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\674.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 674,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid source context but changed-factor and outcome grouping are materially incorrect.",
+    "issues": [
+      "Primary factor mixes normal, treatments, and coating status.",
+      "Bonding/no-bonding is crossed condition, not preserved correctly.",
+      "Spot welding result covers only one pair and misses report conclusion.",
+      "Function and tension outcomes are incomplete or mis-extracted.",
+      "Header-derived measurement rows are invalid evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define factors as treatment type crossed with coating status versus normal where applicable.",
+      "Preserve coating status as subgroup or separate factor consistently.",
+      "Rebuild spot welding comparisons for all listed treatment/coating rows.",
+      "Rebuild function and tension outcomes from real data rows only.",
+      "Remove header-based measurement artifacts and cite decision rows."
+    ],
+    "evidencePolicy": "Citations exist but are overbroad and include invalid header-derived rows; not sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 10348,
+    "output_tokens": 732,
+    "total_tokens": 11080
+  }
+}

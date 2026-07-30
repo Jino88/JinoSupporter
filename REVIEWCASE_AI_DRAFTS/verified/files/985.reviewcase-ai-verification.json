@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 985,
+  "sourceFile": "BRS-201506  Report Test improve NG rate_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\985.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:52Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 985,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft mixes the NG VP separate report with the Frame+Yoke guide validation, though the metric comparison itself is usable.",
+    "issues": [
+      "Review title and purpose cite the wrong sheet.",
+      "Changed factor evidence includes unrelated NG VP separate rows.",
+      "Missing direct change-context rows for new Frame+Yoke guide setup.",
+      "Missing decision row stating the new guide did not improve offset.",
+      "Change domain should be process/equipment, not material."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Base the case on Test Frame+Yoke ass'y guide only.",
+      "Set title and purpose from that sheet's report rows.",
+      "Cite rows 16-17 for changed condition context.",
+      "Keep rows 23 and 25 for Normal vs Test results.",
+      "Add row 49 as conclusion evidence and remove NG VP separate citations."
+    ],
+    "evidencePolicy": "Row citations exist for the comparison, but current evidence is insufficient due to cross-sheet mixing."
+  },
+  "usage": {
+    "input_tokens": 3546,
+    "output_tokens": 570,
+    "total_tokens": 4116
+  }
+}

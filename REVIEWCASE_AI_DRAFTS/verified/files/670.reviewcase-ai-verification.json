@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 670,
+  "sourceFile": "46.BRS-161014 Report test machine ass'y Frame+Coil improvement_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\670.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 670,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the air-pressure trial but misframes the comparison and includes unverified/likely spurious measurement groupings.",
+    "issues": [
+      "Changed factor should be four air-pressure levels, not explicit baseline vs test.",
+      "Key change-purpose rows are missing from changed-factor citations.",
+      "Row 22 stats appear to be index/date counts, not height measurements.",
+      "Detected table/Column 5 outcome lacks interpretable condition labels.",
+      "Decision/result same is not integrated into outcome judgement."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Recast changed factor as clamp air pressure levels 0.14, 0.24, 0.34, and 0.40 MPa.",
+      "Cite purpose/content/check rows including the pressure-change and check-method rows.",
+      "Remove row 22 and unlabeled detected-table stats unless headers prove they are measurements.",
+      "Regroup height dimensions by pressure level using verified header rows and actual dimension rows.",
+      "Add visual frame deform and final decision evidence if supported by result rows."
+    ],
+    "evidencePolicy": "Citations exist but are insufficiently targeted and include ambiguous rows."
+  },
+  "usage": {
+    "input_tokens": 4687,
+    "output_tokens": 775,
+    "total_tokens": 5462
+  }
+}

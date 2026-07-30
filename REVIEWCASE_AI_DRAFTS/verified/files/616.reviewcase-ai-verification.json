@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 616,
+  "sourceFile": "4.1 BRS-161016(DT)Summary + Detail report TEST new JIG improve use new dry machine 2024.04.09_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\616.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:29Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 616,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable validation evidence but misidentifies the changed factor and includes many spurious extracted outcomes.",
+    "issues": [
+      "Changed factor is a noisy list of row labels rather than the tested new dry machine/improved jig condition.",
+      "Baseline or comparator condition is not explicit, so baseline vs test framing is unsupported.",
+      "Dry time, date, test round, morning/afternoon, and sheet dates are mixed instead of preserved as subgroup keys.",
+      "Many outcomes are header/temperature/time extraction artifacts, not real performance results.",
+      "Some numeric subresults appear internally inconsistent or duplicated from summary/detail rows."
+    ],
+    "requiredUserQuestions": [
+      "Should the primary factor be new dry machine, improved jig after repair, dry time setting, or a combined validation condition?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor from purpose/content rows as a concise tested condition with no invented baseline.",
+      "Use date/sheet, dry time, trial round, and morning/afternoon only as subgroup context.",
+      "Keep only real outcome domains: jig press glue-not-dry NG, main-line suspension separation NG, and tension force if in report scope.",
+      "Remove header-derived statistical measurements and duplicate summary/detail artifacts.",
+      "Recheck all input/OK/NG/rate values against cited result rows before approval."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient because grouping and metric citations are misaligned."
+  },
+  "usage": {
+    "input_tokens": 23848,
+    "output_tokens": 686,
+    "total_tokens": 24534
+  }
+}

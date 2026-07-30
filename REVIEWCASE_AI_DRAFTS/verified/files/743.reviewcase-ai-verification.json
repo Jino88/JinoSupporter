@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 743,
+  "sourceFile": "55. BRS-161016 Report test using SUB BAFFLE JIG BAKO V1, RUBER GASKET, GS 0.65T, YS 10.0-7.5-0.4T improve 9.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\743.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 743,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misgroups separate YS thickness/test contexts and contains an incorrect E2 baseline comparison.",
+    "issues": [
+      "Combines 0.4T and 0.45T sheets under one changed factor without subgroup separation.",
+      "Changed factor is the full condition bundle, not only Normal vs Test new JIG.",
+      "E2 test row is compared to C2 normal row; should use E2 normal row.",
+      "Outcome judgement is distorted by the wrong E2 pairing.",
+      "Measurement outcome appears unsupported by cited table header/stat extraction."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split or explicitly subgroup by sheet, YS thickness, date, line, and test scope.",
+      "Rename changed factor to the tested condition bundle versus normal process.",
+      "Recalculate E2 using its matching normal row and update effect direction.",
+      "Keep C2 0.45T, E2 0.45T, and 0.4T C2 results as separate subresults.",
+      "Remove unsupported measurement statistics or recast them as function defect category counts only."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient because key comparison grouping is wrong."
+  },
+  "usage": {
+    "input_tokens": 6101,
+    "output_tokens": 790,
+    "total_tokens": 6891
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 310,
+  "sourceFile": "16. BRS-161014 Report test MTR VP OK-G2-G3 2023.09.07_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\310.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 310,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable VP OK/G2/G3 test evidence but the changed-factor and outcome grouping are not yet reliable.",
+    "issues": [
+      "Changed factor incorrectly mixes baseline, test labels, and row number value 4.",
+      "Baseline/test relationship is ambiguous; OK may be comparator rather than unstated baseline.",
+      "Content says VP OK/G2/NG while title and outcomes use OK/G2/G3.",
+      "Measurement outcome from Report!37 appears to be a header/stat artifact, not a separate measured result.",
+      "Some cited result rows are not shown in context, limiting verification of parsed values."
+    ],
+    "requiredUserQuestions": [
+      "Should VP OK be treated as the baseline/comparator for VP G2 and VP G3?",
+      "Is the intended third material grade G3 or NG?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to VP material condition OK vs G2 vs G3/NG based on source rows.",
+      "Remove row-number artifact 4 from changedCondition and subgroup keys.",
+      "Keep laser cutting and function checking as outcomes under the same VP material validation only if rows align by type.",
+      "Drop or rebuild the Report!37 measurement outcome using actual data rows, not header-derived stats.",
+      "Ensure all result-row citations include the rows containing each condition and numeric result."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until grouping and parsed-result evidence are corrected."
+  },
+  "usage": {
+    "input_tokens": 3397,
+    "output_tokens": 537,
+    "total_tokens": 3934
+  }
+}

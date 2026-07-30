@@ -1,0 +1,131 @@
+{
+  "sourceFileId": 721,
+  "draftStatus": "user_confirmed_primary_change_factor",
+  "sourceFile": "52. BRS-161016 Report test material YK change Supplier (Producft of press line - Glonics - Coating MJ , Doojin VN ) 2024.7.13_clean.xlsx",
+  "reviewTitle": "BRS-161016 - REPORT TEST MATERIAL YK CHANGE SUPPLIER (PRODUCT OF PRESS LINE - GLONICS / COATING MJ, DOOJIN VN)",
+  "reviewPurpose": "Check material YK change dimension can use or not?",
+  "reviewType": "material supplier/coating validation",
+  "changedFactors": [
+    {
+      "changeKey": "material_yk_supplier_coating",
+      "changeDomain": ["material", "supplier", "coating"],
+      "changedFactor": "Material YK test condition comparison: Normal vs Test YK MJ vs Test YK Doojin",
+      "beforeCondition": "Normal",
+      "afterConditions": [
+        "Test YK MJ (Coating VN)",
+        "Test YK MJ (Coating Korea) for Drop Test rows",
+        "Test YK Doojin (Coating VN)"
+      ],
+      "subgroupDimensions": [
+        "date/test round",
+        "test section: Decap bond, Drop, Tension",
+        "magnet type MG-S-A/MG-S-B/MG-S-C where present",
+        "Baotou/Boutou supplier wording where present as subgroup context"
+      ],
+      "evidenceRows": ["13.7!2", "13.7!5", "13.7!6", "13.7!8", "13.7!9", "13.7!10", "13.7!11", "13.7!12"]
+    }
+  ],
+  "outcomes": [
+    {
+      "outcomeKey": "decap_bond_mg_s_a_b_yk_smg",
+      "outcomeDomain": "process defect",
+      "outcomeMetric": "Decap check bond MG-S-A/MG-S-B (YK+SMG), NG Bond Spread not good / Total NG Rate",
+      "resultSummary": "Test YK MJ, Test YK Doojin, and Normal all show 0 NG / 0% in extracted rows. Source summary says all OK.",
+      "sourceJudgement": "OK",
+      "evidenceRows": ["13.7!19", "13.7!20", "13.7!21", "13.7!22", "13.7!23", "13.7!24", "13.7!25", "13.7!26", "13.7!27", "13.7!28", "13.7!29"],
+      "notes": [
+        "Rows include 2024-07-13 and 2024-07-16 extracted comparison data.",
+        "Source text row 29 mentions Date 13-16-17/7 all OK, but extracted table rows shown for this section are 13/7 and 16/7."
+      ]
+    },
+    {
+      "outcomeKey": "decap_bond_yoke_yk_mg_pt",
+      "outcomeDomain": "process defect",
+      "outcomeMetric": "Decap check bond YOKE (YK+MG/PT), OK/NG Bond Spread not good / Total NG Rate",
+      "resultSummary": "Test YK MJ, Test YK Doojin, and Normal all show 0 NG / 0% across extracted 2024-07-13, 2024-07-16, and 2024-07-17 rows. Source summary says all OK.",
+      "sourceJudgement": "OK",
+      "evidenceRows": ["13.7!31", "13.7!32", "13.7!33", "13.7!34", "13.7!35", "13.7!36", "13.7!37", "13.7!38", "13.7!39", "13.7!40", "13.7!41", "13.7!42", "13.7!43"],
+      "notes": [
+        "Row 34 includes Supplier CMG = Baotou; preserve this as subgroup context, not necessarily as the primary YK changed factor."
+      ]
+    },
+    {
+      "outcomeKey": "drop_test",
+      "outcomeDomain": "reliability",
+      "outcomeMetric": "Drop Test NG Rate",
+      "resultSummary": "Test YK MJ, Test YK Doojin, and Normal all show 0 NG / 0% across extracted 2024-07-13, 2024-07-16, and 2024-07-17 rows. Source summary says all OK.",
+      "sourceJudgement": "OK",
+      "evidenceRows": ["13.7!45", "13.7!46", "13.7!47", "13.7!48", "13.7!49", "13.7!50", "13.7!51", "13.7!52", "13.7!53", "13.7!54", "13.7!55", "13.7!56"],
+      "notes": [
+        "Rows label Test YK MJ as Coating Korea in the Drop Test section, while other sections mainly show Coating VN. Keep this as section-specific condition text."
+      ]
+    },
+    {
+      "outcomeKey": "tension_ng_summary",
+      "outcomeDomain": "process defect",
+      "outcomeMetric": "Tension Test OK/NG count and NG Rate by test round and magnet type",
+      "resultSummary": "Tension process summary is mixed: some Test YK MJ and Test YK Doojin subgroups pass, but MG-S-B/MG-S-C failures appear in the 1st test and Doojin failures appear again in the 3rd test. Source row 92 says the 2 YK types cannot be used and need improvement.",
+      "sourceJudgement": "NG / cannot use",
+      "evidenceRows": [
+        "13.7!57", "13.7!58",
+        "13.7!59", "13.7!60", "13.7!61", "13.7!62", "13.7!63", "13.7!64", "13.7!65", "13.7!66", "13.7!67",
+        "13.7!68", "13.7!69", "13.7!70", "13.7!71", "13.7!72", "13.7!73",
+        "13.7!74", "13.7!75", "13.7!76", "13.7!77", "13.7!78", "13.7!79", "13.7!80", "13.7!81",
+        "13.7!82", "13.7!85", "13.7!87", "13.7!88", "13.7!89", "13.7!90", "13.7!92"
+      ],
+      "subResults": [
+        {
+          "date": "2024-07-15",
+          "testRound": "Test 1st",
+          "rows": ["13.7!59", "13.7!60", "13.7!61", "13.7!62", "13.7!63", "13.7!64", "13.7!65", "13.7!66", "13.7!67"],
+          "summary": "MJ: MG-S-A 0/8 NG, MG-S-B 1/8 NG, MG-S-C 0/8 NG. Doojin: MG-S-A 0/8 NG, MG-S-B 4/8 NG, MG-S-C 1/7 NG. Normal: MG-S-A/B/C 0/8 NG."
+        },
+        {
+          "date": "2024-07-16",
+          "testRound": "Test 2nd",
+          "rows": ["13.7!68", "13.7!69", "13.7!70", "13.7!71", "13.7!72", "13.7!73"],
+          "summary": "MJ and Doojin rows show 0 NG for MG-S-A/B/C. No Normal rows are present in this extracted section."
+        },
+        {
+          "date": "2024-07-17",
+          "testRound": "Test 3rd",
+          "rows": ["13.7!74", "13.7!75", "13.7!76", "13.7!77", "13.7!78", "13.7!79", "13.7!80", "13.7!81"],
+          "summary": "MJ rows show 0 NG for MG-S-A/B/C. Doojin shows MG-S-A 1/8 NG and MG-S-C 1/8 NG. Normal rows are present for MG-S-A/B only."
+        }
+      ]
+    },
+    {
+      "outcomeKey": "tension_measurement_table",
+      "outcomeDomain": "measurement",
+      "outcomeMetric": "Tension strength Min/Max/AVG/Result by test round and magnet type",
+      "resultSummary": "Tension measurement table confirms the tension issue by row-level Result values: 1st test has NG for MG-S-B MJ, MG-S-B Doojin, and MG-S-C Doojin; 2nd test rows shown are OK; 3rd test has NG for MG-S-A Doojin and MG-S-C Doojin.",
+      "sourceJudgement": "mixed, final source decision cannot use",
+      "evidenceRows": [
+        "Tension!3", "Tension!4",
+        "Tension!5", "Tension!6", "Tension!7", "Tension!8", "Tension!9", "Tension!10", "Tension!11", "Tension!12", "Tension!13",
+        "Tension!14", "Tension!15", "Tension!16", "Tension!17", "Tension!18", "Tension!19",
+        "Tension!20", "Tension!21", "Tension!22", "Tension!23", "Tension!24", "Tension!25", "Tension!26", "Tension!27"
+      ],
+      "notes": [
+        "The measurement_stats table captured Tension rows through Tension!23 only, but sheet_rows contains Tension!24 through Tension!27. AI must use sheetRows/cells as authority when measurement candidates are incomplete.",
+        "Keep MG-S-A, MG-S-B, and MG-S-C as separate measurement subgroups."
+      ]
+    }
+  ],
+  "finalSourceDecision": {
+    "text": "Can not use 2 type YK MJ , Doojin ( Coating VN) need improve more",
+    "evidenceRows": ["13.7!92"],
+    "interpretation": "The report's own decision rejects the two tested YK types in the current condition; this is source wording, not an inferred judgement."
+  },
+  "verification": {
+    "evidenceRowsCheckedInExtractedSheetRows": true,
+    "candidateHintsUsedOnlyAsHints": true,
+      "requiresUserConfirmation": false,
+      "userConfirmedPrimaryChangeFactor": "Use Normal vs Test YK MJ vs Test YK Doojin as the primary changed factor. Keep Baotou/Boutou as subgroup context only.",
+    "limitations": [
+      "Normal baseline rows are missing for Test 2nd tension summary and for some Test 3rd subgroups.",
+      "Coating wording differs by section: Drop Test uses Test YK MJ (Coating Korea), while most other sections use Test YK MJ (Coating VN).",
+      "Baotou/Boutou appears as supplier context for magnet/CMG rows; user should confirm whether it is a subgroup only or part of the primary changed factor."
+    ]
+  }
+}

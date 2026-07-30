@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 805,
+  "sourceFile": "63. BRS-161016  Report test VP mold #2, #3, #4, #5 #7, #9, #10 IR240823013 improve VP bending date 27.08.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\805.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:45Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 805,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook is citeable, but the draft overstates the baseline comparison and includes unsupported measurement outcomes.",
+    "issues": [
+      "Normal baseline is cited only in function results, not laser, bending, or VP/CD sections.",
+      "Changed factor mixes all test molds against one normal mold without proving comparability.",
+      "Unsupported domains include coating and dimension/spec.",
+      "Header-derived measurement outcomes are misclassified and not supported by data-row citations.",
+      "Date, line, process step, and mold number subgroup keys are not preserved enough."
+    ],
+    "requiredUserQuestions": [
+      "Should Normal VP mold #2 be used as baseline for all test molds or only function results?",
+      "Are mold numbers #2,#3,#4,#5,#7,#9,#10 comparable test subgroups under one improvement?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to VP mold improvement/test lot IR240823013 only if supported.",
+      "Use mold number, date, line, and process step as subgroup keys.",
+      "Limit baseline comparison to rows where Normal VP mold #2 is cited or mark no baseline.",
+      "Remove pseudo-measurement outcomes or rebuild them as defect subtype counts from data rows.",
+      "Revise evidence to cite section headers plus all relevant test and baseline data rows."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are insufficient for the current grouping; header-only citations cannot support outcome stats."
+  },
+  "usage": {
+    "input_tokens": 10315,
+    "output_tokens": 1093,
+    "total_tokens": 11408
+  }
+}

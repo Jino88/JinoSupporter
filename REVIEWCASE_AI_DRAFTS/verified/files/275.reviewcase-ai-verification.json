@@ -1,0 +1,35 @@
+{
+  "sourceFileId": 275,
+  "sourceFile": "13.BRS-201506 Report  test bonding PAD improve quaility more good  date 19.1.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\275.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:08Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 275,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The Normal vs Test bonding pad comparison is plausible, but citations and omitted result context need cleanup before final use.",
+    "issues": [
+      "Outcome evidence omits the table header needed to define Input, OK, NG, and rate columns.",
+      "Result/decision sections after the function table appear only partly represented.",
+      "Judgement is based on a small rate increase despite unequal sample sizes and should be qualified."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add Test!17 and Test!18 to outcome and case evidence rows.",
+      "Check rows under decap NG hearing and decision for relevant results or conclusions.",
+      "Keep changed factor as Normal vs Test bonding pad if no other changed condition is shown.",
+      "State the function NG rate comparison as 5.00% vs 4.64%, slightly worse.",
+      "Add limitation that sample sizes differ between conditions."
+    ],
+    "evidencePolicy": "Current row citations are partly sufficient but need header and final-result context."
+  },
+  "usage": {
+    "input_tokens": 2438,
+    "output_tokens": 745,
+    "total_tokens": 3183
+  }
+}

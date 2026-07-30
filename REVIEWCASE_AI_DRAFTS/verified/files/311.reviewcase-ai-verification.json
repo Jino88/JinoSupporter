@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 311,
+  "sourceFile": "16. BRS-161016 GMI Report test  suspension used SUS-ARRAY of new vender CSY Tech Vina first lot 2,3 date 25.10.2024 copy_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\311.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:09Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 311,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the main Normal vs CSY Tech Vina test-lot comparison but contains incorrect vision-spot metrics and invalid measurement groupings.",
+    "issues": [
+      "Vision spot NG and rates are misparsed for Normal and both test lots.",
+      "Tension D rows lose parent type; C/D side grouping is not preserved.",
+      "Header-derived measurement outcomes are artifacts and should not be final evidence.",
+      "Changed factor is too narrow as lot; it should reflect new vendor SUS-array with lots 2 and 3 as subgroups.",
+      "Decision rows are omitted from final evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Recalculate vision-spot outcomes from rows 31, 33, and 35 using Total NG and NG Rate.",
+      "Regroup tension results by type and side C/D, inheriting merged type values for D rows.",
+      "Remove header-only measurement outcomes or convert valid defect columns into process-defect subresults.",
+      "Revise changed factor to CSY Tech Vina new vendor SUS-array vs Normal, with lot 2 and lot 3 as test subgroups.",
+      "Add decision rows 55-58 to evidence and align judgements with the report conclusion."
+    ],
+    "evidencePolicy": "Row citations exist, but cited evidence is insufficient until corrected metrics, grouping, and decision rows are included."
+  },
+  "usage": {
+    "input_tokens": 7111,
+    "output_tokens": 817,
+    "total_tokens": 7928
+  }
+}

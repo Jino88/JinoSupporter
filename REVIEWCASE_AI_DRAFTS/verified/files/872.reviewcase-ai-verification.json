@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 872,
+  "sourceFile": "72.BRS-161014 Report test change bond PT-8310 sub3 2023.11.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\872.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 872,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Core EX-0930 vs PT-8310M5S/M9S comparison is supported, but some outcome extraction and grouping need correction.",
+    "issues": [
+      "Changed factor should be adhesive/bond model, not generic process condition.",
+      "Function header row was extracted as a fake measurement outcome.",
+      "Tension Suspension D rows lose their parent bond type grouping.",
+      "Some cited evidence rows are not shown in context and need visible row text or removal.",
+      "Sheet1 appears ancillary and needs explicit exclusion or separate handling."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to bond adhesive/model change EX-0930 to PT-8310M5S/PT-8310M9S.",
+      "Remove measurement-2 based on the function header row.",
+      "Group tension C and D rows under each correct bond type using merged-cell context.",
+      "Include citeable text for rows 37,39,41,44 or drop invalid citations.",
+      "State Sheet1 is excluded as non-comparable ancillary trials unless treated separately."
+    ],
+    "evidencePolicy": "Core comparison citations are sufficient; invalid header-derived and hidden merged-row citations must be fixed."
+  },
+  "usage": {
+    "input_tokens": 6831,
+    "output_tokens": 783,
+    "total_tokens": 7614
+  }
+}

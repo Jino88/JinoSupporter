@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 450,
+  "sourceFile": "25. TIU C11-20  Report test Plate supplier Yousteel NG difference with standard 100% 2026.02.24_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\450.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:13Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 450,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparative evidence but misgroups test methods as changed conditions and includes weak derived measurement evidence.",
+    "issues": [
+      "Changed factor conflates Test PT with decap and drop test methods.",
+      "Supplier/standard factor from title is not clearly represented.",
+      "Decap and drop results lack baseline comparison and should be non-comparative outcomes.",
+      "Measurement outcome from header/derived row is not valid final evidence.",
+      "Key cited rows Test!18 and Test!26 are not shown in context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Yousteel NG-difference/Test PT plate versus Normal standard 100%.",
+      "Keep decap bonding and drop test as outcome/test-method results under the same validation context.",
+      "Remove or downgrade the derived measurement outcome unless raw measurement rows are cited.",
+      "Cite actual header and result rows for Test!18 and Test!26 or remove them.",
+      "Use decision rows Test!39-Test!40 to support final judgement and limitations."
+    ],
+    "evidencePolicy": "Citations are partly sufficient for NG process, but missing/derived rows prevent final evidence approval."
+  },
+  "usage": {
+    "input_tokens": 3335,
+    "output_tokens": 778,
+    "total_tokens": 4113
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 291,
+  "sourceFile": "15. BRS-161014  Report test CMG-CPT reduce dimension 07.02.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\291.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 291,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the NG-rate comparison but under-specifies the actual CMG/CPT dimension and jig change evidence.",
+    "issues": [
+      "Changed factor is too generic as Normal vs Test Yoke.",
+      "Key gap-change evidence row is omitted.",
+      "Jig design change is not represented in the factor.",
+      "Tension-test content may be missing as an outcome area.",
+      "Decision/comment row supporting improvement is not cited."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add NG rate!10 to changed-factor evidence.",
+      "Revise factor to CMG/CPT reduced dimension, gap 0.1 to 0.12, with changed jig design.",
+      "Keep Normal as baseline and Test Yoke as test condition for NG-rate outcome.",
+      "Check Sheet1 for citeable tension-test results or note unavailable.",
+      "Add NG rate!20 as supporting judgement evidence if used."
+    ],
+    "evidencePolicy": "Result citations are sufficient; changed-factor citations are incomplete without the gap-change row."
+  },
+  "usage": {
+    "input_tokens": 2663,
+    "output_tokens": 692,
+    "total_tokens": 3355
+  }
+}

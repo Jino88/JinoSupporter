@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 432,
+  "sourceFile": "23.BRS-161016  Result checking final SPK lot NG gap Coil+CD_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\432.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:29Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 432,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook is a single lot recheck/NG-sample analysis, not a valid baseline-versus-changed-condition review case.",
+    "issues": [
+      "Dates and totals were incorrectly treated as changed conditions.",
+      "Line IDs are subgroup context, not primary factors.",
+      "Measurement summaries appear derived from table headers, not real measurement rows.",
+      "Function and NG-sample tables were conflated under one false comparison.",
+      "No citeable baseline or changed-condition evidence is present."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Exclude from Ask AI comparative evidence.",
+      "If retained as reference, recast as single-lot inspection summary only.",
+      "Keep dates, line, and total rows as subgroup/result context.",
+      "Separate final function results from NG-sample gap Coil+CD findings.",
+      "Remove derived measurement stats based only on headers."
+    ],
+    "evidencePolicy": "Row citations exist, but they do not support a changed-condition comparison."
+  },
+  "usage": {
+    "input_tokens": 4887,
+    "output_tokens": 735,
+    "total_tokens": 5622
+  }
+}

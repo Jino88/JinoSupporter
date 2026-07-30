@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 210,
+  "sourceFile": "10. L20S15-07 Report test CD IR25050828 ( Size 130k ) and lot replace ( Size 140K )Ng dyne pen_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\210.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 210,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed conditions and omits key result and decision evidence for the lot comparison.",
+    "issues": [
+      "Changed factor is not explicit despite rows naming Lot CD, Lot replace, and Normal.",
+      "Functional NG outcome omits test-lot rows and only includes Normal.",
+      "Decision row showing both test lots cannot be used is not cited.",
+      "Title/purpose size conflict 130k vs 300k is unresolved.",
+      "Tension spec row says 1.2kgf but spec field is blank."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal vs Lot CD IR25050828 vs Lot replace, preserving lot size labels as cited.",
+      "Add Report result rows for Lot CD, Lot replace, and Normal to the functional NG outcome.",
+      "Add decision row as judgement evidence and mark test lots NG/cannot use for separation failures.",
+      "Keep tension as a separate outcome under the same lot-comparison context with spec 1.2kgf and Pass notes.",
+      "Flag the 130k/300k inconsistency as a limitation rather than resolving it silently."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient because critical result and decision rows are missing."
+  },
+  "usage": {
+    "input_tokens": 4040,
+    "output_tokens": 469,
+    "total_tokens": 4509
+  }
+}

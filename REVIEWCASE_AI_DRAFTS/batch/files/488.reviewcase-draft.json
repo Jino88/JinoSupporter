@@ -1,0 +1,201 @@
+{
+  "sourceFileId": 488,
+  "sourceFile": "29. BRS-161014 Report TEST sample over glue reinforcement_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\29. BRS-161014 Report TEST sample over glue reinforcement_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report (2)",
+    "sheetRowCount": 17,
+    "sheetCellCount": 70,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report (2)!2",
+      "sheetName": "Report (2)",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST SAMPLE OVER GLUE REINFORCEMENT -161014 | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report (2)!3",
+      "sheetName": "Report (2)",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | Date | 2023-09-15 00:00:00"
+    },
+    {
+      "rowId": "Report (2)!4",
+      "sheetName": "Report (2)",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | Marker | Thao/Thuy"
+    },
+    {
+      "rowId": "Report (2)!5",
+      "sheetName": "Report (2)",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report (2)!6",
+      "sheetName": "Report (2)",
+      "rowNumber": 6,
+      "rowText": "| - To check over glue reinforcement can or can not use"
+    },
+    {
+      "rowId": "Report (2)!7",
+      "sheetName": "Report (2)",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report (2)!8",
+      "sheetName": "Report (2)",
+      "rowNumber": 8,
+      "rowText": "| - To separarte over glue sample -> make final and compare NG rate of funtion with normal sample"
+    },
+    {
+      "rowId": "Report (2)!17",
+      "sheetName": "Report (2)",
+      "rowNumber": 17,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "Report (2)!18",
+      "sheetName": "Report (2)",
+      "rowNumber": 18,
+      "rowText": "| | RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "Report (2)!19",
+      "sheetName": "Report (2)",
+      "rowNumber": 19,
+      "rowText": "| | Date | Type | Input | OK | Sigma | | | | Hearing | | HOHD | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "Report (2)!20",
+      "sheetName": "Report (2)",
+      "rowNumber": 20,
+      "rowText": "| | | | | | SPL | THD | SPL+THD | SPL+THD+F0 | Noise | Touch"
+    },
+    {
+      "rowId": "Report (2)!21",
+      "sheetName": "Report (2)",
+      "rowNumber": 21,
+      "rowText": "| | 2023-09-15 00:00:00 | Test | 98 | 35 | 0 | 0 | 0 | 0 | 45 | 18 | 0 | 63 | 0.64285714"
+    },
+    {
+      "rowId": "Report (2)!23",
+      "sheetName": "Report (2)",
+      "rowNumber": 23,
+      "rowText": "| | | Normal | 794 | 457 | 1 | 1 | 0 | 0 | 256 | 79 | 0 | 337 | 0.42443325"
+    },
+    {
+      "rowId": "Report (2)!25",
+      "sheetName": "Report (2)",
+      "rowNumber": 25,
+      "rowText": "| | => NG rate of test lot is higher normal lot"
+    },
+    {
+      "rowId": "Report (2)!27",
+      "sheetName": "Report (2)",
+      "rowNumber": 27,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-488-rc-1",
+      "reviewTitle": "REPORT TEST SAMPLE OVER GLUE REINFORCEMENT -161014 | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To check over glue reinforcement can or can not use / | II. Content. / | - To separarte over glue sample -> make final and compare NG rate of funtion with normal sample / | 3.Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Test",
+          "baselineCondition": "Normal",
+          "changedCondition": "Test",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Report (2)!2",
+            "Report (2)!21",
+            "Report (2)!23",
+            "Report (2)!5",
+            "Report (2)!7",
+            "Report (2)!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "Report (2)!21",
+            "Report (2)!23"
+          ],
+          "judgement": "worse",
+          "subResults": [
+            {
+              "pairId": 4128,
+              "controlCondition": "Normal",
+              "testCondition": "Test",
+              "control": {
+                "input": 794.0,
+                "ng": 337.0,
+                "ratePercent": 42.443325
+              },
+              "test": {
+                "input": 98.0,
+                "ng": 63.0,
+                "ratePercent": 64.285714
+              },
+              "deltaRatePercentPoint": 21.842389000000008,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Report (2)!21",
+                "Report (2)!23"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Report (2)!2",
+        "Report (2)!21",
+        "Report (2)!23",
+        "Report (2)!5",
+        "Report (2)!7",
+        "Report (2)!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report (2)!2",
+      "Report (2)!21",
+      "Report (2)!23",
+      "Report (2)!5",
+      "Report (2)!7",
+      "Report (2)!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

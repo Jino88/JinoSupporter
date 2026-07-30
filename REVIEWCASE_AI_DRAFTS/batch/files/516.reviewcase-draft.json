@@ -1,0 +1,426 @@
+{
+  "sourceFileId": 516,
+  "sourceFile": "30. BRS-201506 Result TEST Sub2 improve drop test NG 2024.03.14_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\30. BRS-201506 Result TEST Sub2 improve drop test NG 2024.03.14_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Sheet2",
+    "sheetRowCount": 28,
+    "sheetCellCount": 286,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 11
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet2!5",
+      "sheetName": "Sheet2",
+      "rowNumber": 5,
+      "rowText": "| TEST modul | No | Type | | Drop | | | Tension"
+    },
+    {
+      "rowId": "Sheet2!6",
+      "sheetName": "Sheet2",
+      "rowNumber": 6,
+      "rowText": "| | | | | Q'ty | NG | NG rate | Q'ty | NG | NG rate"
+    },
+    {
+      "rowId": "Sheet2!7",
+      "sheetName": "Sheet2",
+      "rowNumber": 7,
+      "rowText": "| O | 1 | Clean CMG , BPT by Ethanol | | 8 | 0 | 0 | 12 | 0 | 0"
+    },
+    {
+      "rowId": "Sheet2!8",
+      "sheetName": "Sheet2",
+      "rowNumber": 8,
+      "rowText": "| O | 2 | Clean CMG , BPT by Primer | | 8 | 0 | 0 | 12 | 0 | 0"
+    },
+    {
+      "rowId": "Sheet2!9",
+      "sheetName": "Sheet2",
+      "rowNumber": 9,
+      "rowText": "| X | 3 | Glue G06-003 | | 8 | 0 | 0 | 6 | 0 | 0"
+    },
+    {
+      "rowId": "Sheet2!10",
+      "sheetName": "Sheet2",
+      "rowNumber": 10,
+      "rowText": "| X | 4 | Temperature: 130do | | 8 | 0 | 0 | 12 | 0 | 0"
+    },
+    {
+      "rowId": "Sheet2!11",
+      "sheetName": "Sheet2",
+      "rowNumber": 11,
+      "rowText": "| X | 5 | Temperature: 150do | | 8 | 0 | 0 | 12 | 0 | 0"
+    },
+    {
+      "rowId": "Sheet2!12",
+      "sheetName": "Sheet2",
+      "rowNumber": 12,
+      "rowText": "| X | 6 | Normal 110do | | 8 | 0 | 0 | 12 | 0 | 0"
+    },
+    {
+      "rowId": "Sheet2!14",
+      "sheetName": "Sheet2",
+      "rowNumber": 14,
+      "rowText": "| RESULT TENSION TEST"
+    },
+    {
+      "rowId": "Sheet2!15",
+      "sheetName": "Sheet2",
+      "rowNumber": 15,
+      "rowText": "| No | Type | | GAP TEST-NORMAL | | | MIN | MAX | AVG | Sample (SPEC ≥ 70Kgf)"
+    },
+    {
+      "rowId": "Sheet2!16",
+      "sheetName": "Sheet2",
+      "rowNumber": 16,
+      "rowText": "| | | | Min | Max | AVG | | | | #1 | #2 | #3 | #4 | #5 | #6 | #7 | #8 | #9 | #10 | #11 | #12"
+    },
+    {
+      "rowId": "Sheet2!17",
+      "sheetName": "Sheet2",
+      "rowNumber": 17,
+      "rowText": "| 1 | Clean CMG , BPT by Ethanol | | -12.3 | -2.3 | -7.3 | 102 | 145.6 | 123.8 | 129.6 | 125.2 | 133.9 | 141.5 | 139.4 | 123.9 | 130.2 | 131.1 | 139.2 | 102 | 145.6 | 119.2"
+    },
+    {
+      "rowId": "Sheet2!22",
+      "sheetName": "Sheet2",
+      "rowNumber": 22,
+      "rowText": "| 6 | Normal 110do | | | | | 114.3 | 147.9 | 131.1 | 131.7 | 136.2 | 114.3 | 130.2 | 137.1 | 121.8 | 141 | 121 | 134.1 | 140 | 147.9 | 133.2"
+    },
+    {
+      "rowId": "Sheet2!24",
+      "sheetName": "Sheet2",
+      "rowNumber": 24,
+      "rowText": "| RESULT CHECKING FUNCTION"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-516-rc-1",
+      "reviewTitle": "| TEST modul | No | Type | | Drop | | | Tension",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "supplier"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Clean CMG, BPT by Ethanol, Clean CMG, BPT by Primer, Temperature: 130do, Temperature: 150do",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Clean CMG, BPT by Ethanol, Clean CMG, BPT by Primer, Temperature: 130do, Temperature: 150do",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Sheet2!12",
+            "Sheet2!14",
+            "Sheet2!15",
+            "Sheet2!17",
+            "Sheet2!21",
+            "Sheet2!26",
+            "Sheet2!27",
+            "Sheet2!29",
+            "Sheet2!31",
+            "Sheet2!33",
+            "Sheet2!5"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "Sheet2!27",
+            "Sheet2!29",
+            "Sheet2!31",
+            "Sheet2!33"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 21457,
+              "condition": "Clean CMG, BPT by Ethanol",
+              "input": 492.0,
+              "ok": 477.0,
+              "ng": 15.0,
+              "ratePercent": 3.04878,
+              "evidenceRows": [
+                "Sheet2!27"
+              ]
+            },
+            {
+              "metricId": 21458,
+              "condition": "Clean CMG, BPT by Primer",
+              "input": 491.0,
+              "ok": 473.0,
+              "ng": 18.0,
+              "ratePercent": 3.665988,
+              "evidenceRows": [
+                "Sheet2!29"
+              ]
+            },
+            {
+              "metricId": 21459,
+              "condition": "Temperature: 130do",
+              "input": 665.0,
+              "ok": 635.0,
+              "ng": 30.0,
+              "ratePercent": 4.511278,
+              "evidenceRows": [
+                "Sheet2!31"
+              ]
+            },
+            {
+              "metricId": 21460,
+              "condition": "Temperature: 150do",
+              "input": 90.0,
+              "ok": 88.0,
+              "ng": 2.0,
+              "ratePercent": 2.222222,
+              "evidenceRows": [
+                "Sheet2!33"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT TENSION TEST",
+          "comparisonRows": [
+            "Sheet2!17",
+            "Sheet2!21"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 55605,
+              "condition": "Clean CMG , BPT by Ethanol",
+              "spec": "",
+              "min": -12.3,
+              "max": -2.3,
+              "avg": -7.3,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!17"
+              ]
+            },
+            {
+              "statId": 55606,
+              "condition": "Temperature: 150do",
+              "spec": "",
+              "min": -8.3,
+              "max": 16.1,
+              "avg": 3.9,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!21"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Sheet2!5"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 55607,
+              "condition": "TEST modul",
+              "spec": "",
+              "min": 1.0,
+              "max": 6.0,
+              "avg": 3.5,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!5"
+              ]
+            },
+            {
+              "statId": 55608,
+              "condition": "Drop",
+              "spec": "",
+              "min": 8.0,
+              "max": 8.0,
+              "avg": 8.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!5"
+              ]
+            },
+            {
+              "statId": 55609,
+              "condition": "Tension",
+              "spec": "",
+              "min": 6.0,
+              "max": 12.0,
+              "avg": 11.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!5"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No | Type | Input | OK | Sigma | Hearing | Total NG | Total NG rate",
+          "comparisonRows": [
+            "Sheet2!26"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 55610,
+              "condition": "Sigma / SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!26"
+              ]
+            },
+            {
+              "statId": 55611,
+              "condition": "Sigma / THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!26"
+              ]
+            },
+            {
+              "statId": 55612,
+              "condition": "Sigma / SPL+THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!26"
+              ]
+            },
+            {
+              "statId": 55613,
+              "condition": "Sigma / SPL+THD+F0",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!26"
+              ]
+            },
+            {
+              "statId": 55614,
+              "condition": "Hearing / Noise",
+              "spec": "",
+              "min": 0.27777778,
+              "max": 15.0,
+              "avg": 3.45138888875,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!26"
+              ]
+            },
+            {
+              "statId": 55615,
+              "condition": "Hearing / Touch",
+              "spec": "",
+              "min": 0.5,
+              "max": 15.0,
+              "avg": 5.17361111125,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!26"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Sheet2!12",
+        "Sheet2!14",
+        "Sheet2!15",
+        "Sheet2!17",
+        "Sheet2!21",
+        "Sheet2!26",
+        "Sheet2!27",
+        "Sheet2!29",
+        "Sheet2!31",
+        "Sheet2!33",
+        "Sheet2!5"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet2!12",
+      "Sheet2!14",
+      "Sheet2!15",
+      "Sheet2!17",
+      "Sheet2!21",
+      "Sheet2!26",
+      "Sheet2!27",
+      "Sheet2!29",
+      "Sheet2!31",
+      "Sheet2!33",
+      "Sheet2!5"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 705,
+  "sourceFile": "50. BRS-161016 Report test using SUB BAFFLE JIG BAKO V1, RUBER GASKET, GS 0.65T, YS 10.0-7.5-0.4T improve 2024.07.19_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\705.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:17Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 705,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparative evidence but misgroups the E2 baseline and includes unsupported measurement statistics.",
+    "issues": [
+      "E2 test is compared to C2 normal instead of E2 normal.",
+      "Changed factor is too narrow; condition includes jig plus gasket, GS, and YS stack.",
+      "Condition rows 23-26 and decision rows 54-56 are missing from key evidence.",
+      "Measurement outcome appears derived from table headers or mixed counts, not valid measurements.",
+      "Outcome does not preserve C2/E2 line/date grouping consistently."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Compare C2 row 38 only with row 40 and E2 row 44 only with row 46.",
+      "Rename changed factor as normal condition versus Option 2 improved condition.",
+      "Add evidence rows 23-26 and 54-56; remove weak row 37 citation if not substantive.",
+      "Remove measurement-stat outcome or recast table data as function defect counts by Sigma and Hearing.",
+      "Preserve line, date, and test round subgroup keys for each subresult."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient for final evidence until corrected and expanded."
+  },
+  "usage": {
+    "input_tokens": 4710,
+    "output_tokens": 788,
+    "total_tokens": 5498
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 962,
+  "sourceFile": "9. BRS-161014 DT Report test new bond UV-89176T ( Improve VP-CD separate ) process bonding ass'y VP-CD date 2.3.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\962.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:17Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 962,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The primary bond comparison is supported, but several measurement outcomes are misgrouped or numerically invalid.",
+    "issues": [
+      "Invalid measurement stats parse bond names/specs as values.",
+      "UV dry and glue weight are merged under wrong specs and rows.",
+      "Tension results lack date and UV-condition subgrouping.",
+      "Changed domain overstates dimension/spec change.",
+      "Evidence rows for some measurements cite headers or single rows only."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Keep primary factor as EA6116 normal bond vs UV-89176T bond test.",
+      "Remove bogus stats 66102-66108 unless re-extracted from valid numeric cells.",
+      "Regroup tension by date and UV condition using rows 68-73 and Sheet1 only as context.",
+      "Split UV dry and glue weight into separate outcomes using rows 35-38 with correct specs.",
+      "Add subgroup keys for date, line, process, UV condition, and nozzle where applicable."
+    ],
+    "evidencePolicy": "Citations are sufficient for defect pairs and tension rows, but insufficient for UV/glue measurements."
+  },
+  "usage": {
+    "input_tokens": 8074,
+    "output_tokens": 768,
+    "total_tokens": 8842
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 587,
+  "sourceFile": "37. BRS-201506  Checking and Test  YOKE ASS'Y ADHESION  JIG improve date 16.04.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\587.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 587,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft has usable source evidence but misgroups the jig validation conditions and omits key result rows.",
+    "issues": [
+      "Changed factor may be new guide/yoke adhesion jig validation, not only Normal line vs JIG TEST.",
+      "JIG GAP condition and final 5/200 result are omitted.",
+      "Cross-date comparison of Normal line to 2024-04-17 JIG TEST is not clearly valid.",
+      "Measurement outcome from row 15 appears artificial and not supported by visible context.",
+      "Header/evidence citations are incomplete or weak."
+    ],
+    "requiredUserQuestions": [
+      "Is Normal line the baseline for both JIG TEST dates?",
+      "Should JIG GAP be a separate changed condition in this same validation?"
+    ],
+    "correctionPlan": [
+      "Redefine changed factor around the new BP+SM guide/yoke adhesion jig test context.",
+      "Preserve date and type as subgroup keys when comparing rows.",
+      "Add JIG GAP row 20 and final conclusion row 21 to outcomes or limitations.",
+      "Remove unsupported measurement-stat outcome unless source row 15 is verified as valid data.",
+      "Use table headers from rows 13 and 16 plus all relevant data rows as evidence."
+    ],
+    "evidencePolicy": "Current row citations prove source existence but are not sufficient for final evidence grouping."
+  },
+  "usage": {
+    "input_tokens": 3485,
+    "output_tokens": 768,
+    "total_tokens": 4253
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 462,
+  "sourceFile": "26. TIU C11-20  Report check damage FS after Plasma 2025.12.27_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\462.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:24Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 462,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable FS damage results but invents a baseline/test comparison from shift and time rows.",
+    "issues": [
+      "Changed factor is fabricated; no explicit baseline condition is shown.",
+      "Shift, time, side, and total rows are misused as changed conditions.",
+      "Outcome grouping loses row-level hierarchy for model side, shift, time, and totals.",
+      "Evidence covers only the first result block and omits later rows and decision context.",
+      "Change domain includes material without supporting evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Replace the changed factor with the explicit after-plasma inspection condition or mark baseline not applicable.",
+      "Treat date, shift, model side, time slot, and total as subgroup keys, not changed conditions.",
+      "Regroup outcomes as NG FS damage/input/OK/NG rate under the same report context.",
+      "Review rows beyond 28, including the decision section, for missing results or conclusions.",
+      "Remove unsupported material-domain labeling."
+    ],
+    "evidencePolicy": "Row citations exist, but cited rows are insufficient for the drafted comparison and may be incomplete."
+  },
+  "usage": {
+    "input_tokens": 3703,
+    "output_tokens": 769,
+    "total_tokens": 4472
+  }
+}

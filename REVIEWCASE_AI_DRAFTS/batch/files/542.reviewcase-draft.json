@@ -1,0 +1,450 @@
+{
+  "sourceFileId": 542,
+  "sourceFile": "32. BRS-161016 Report test increase bonding VP+CD  21.4.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\32. BRS-161016 Report test increase bonding VP+CD  21.4.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "5.3",
+    "sheetRowCount": 28,
+    "sheetCellCount": 136,
+    "comparisonPairCount": 3,
+    "metricCandidateCount": 5,
+    "measurementStatCount": 10
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "5.3!2",
+      "sheetName": "5.3",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST INCREASE BONDING VP+CD BRS-161016 | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "5.3!3",
+      "sheetName": "5.3",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | Date | 2024-04-21 00:00:00"
+    },
+    {
+      "rowId": "5.3!4",
+      "sheetName": "5.3",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | Maker | Thuy"
+    },
+    {
+      "rowId": "5.3!5",
+      "sheetName": "5.3",
+      "rowNumber": 5,
+      "rowText": "| 1. Purpose test"
+    },
+    {
+      "rowId": "5.3!6",
+      "sheetName": "5.3",
+      "rowNumber": 6,
+      "rowText": "| - To improve NG hearing of SPK and Modul line"
+    },
+    {
+      "rowId": "5.3!8",
+      "sheetName": "5.3",
+      "rowNumber": 8,
+      "rowText": "| 2. Content of testing"
+    },
+    {
+      "rowId": "5.3!9",
+      "sheetName": "5.3",
+      "rowNumber": 9,
+      "rowText": "| - To increase bond at 4 corner VP+CD by reduce speed bonding corner from 30 to 20 => make sample and checking function SPK => move Modul line test"
+    },
+    {
+      "rowId": "5.3!10",
+      "sheetName": "5.3",
+      "rowNumber": 10,
+      "rowText": "| | Type | Bonding speed | | | | VP+CD ass'y | | | | Bonding amount"
+    },
+    {
+      "rowId": "5.3!11",
+      "sheetName": "5.3",
+      "rowNumber": 11,
+      "rowText": "| | | | | | | | | | | Dispenser 1 | Dispenser 2"
+    },
+    {
+      "rowId": "5.3!12",
+      "sheetName": "5.3",
+      "rowNumber": 12,
+      "rowText": "| | Normal Speed 30 | | | | | | | | | 1.594mg | 1.588mg"
+    },
+    {
+      "rowId": "5.3!20",
+      "sheetName": "5.3",
+      "rowNumber": 20,
+      "rowText": "| | Increase bond corner Speed 20 | | | | | | | | | 1.886mg | 1.848mg"
+    },
+    {
+      "rowId": "5.3!28",
+      "sheetName": "5.3",
+      "rowNumber": 28,
+      "rowText": "| | Increase bond corner Speed 25 | | | | | | | | | 1.594mg | 1.508mg"
+    },
+    {
+      "rowId": "5.3!46",
+      "sheetName": "5.3",
+      "rowNumber": 46,
+      "rowText": "| 3.Result test"
+    },
+    {
+      "rowId": "5.3!47",
+      "sheetName": "5.3",
+      "rowNumber": 47,
+      "rowText": "| | RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "5.3!54",
+      "sheetName": "5.3",
+      "rowNumber": 54,
+      "rowText": "| | | | Normal( Speed 30) | 796 | 773 | 0 | 0 | 1 | 0 | 22 | 0 | 23 | 0.02889447"
+    },
+    {
+      "rowId": "5.3!58",
+      "sheetName": "5.3",
+      "rowNumber": 58,
+      "rowText": "| | | | Normal( Speed 70) | 560 | 542 | 0 | 0 | 0 | 0 | 18 | 0 | 18 | 0.03214286"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-542-rc-1",
+      "reviewTitle": "| REPORT TEST INCREASE BONDING VP+CD BRS-161016 | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| 1. Purpose test / | - To improve NG hearing of SPK and Modul line / | 2. Content of testing / | - To increase bond at 4 corner VP+CD by reduce speed bonding corner from 30 to 20 => make sample and checking function SPK => move Modul line test / | | Type | Bonding speed | | | | VP+CD ass'y | | | | Bonding amount",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal( Speed 30), Normal( Speed 70) vs Reduce bond corner( speed 35), Reduce bond corner( speed 40), Reduce bond corner( speed 55)",
+          "baselineCondition": "Normal( Speed 30), Normal( Speed 70)",
+          "changedCondition": "Reduce bond corner( speed 35), Reduce bond corner( speed 40), Reduce bond corner( speed 55)",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "5.3!10",
+            "5.3!12",
+            "5.3!2",
+            "5.3!36",
+            "5.3!46",
+            "5.3!49",
+            "5.3!5",
+            "5.3!50",
+            "5.3!52",
+            "5.3!54",
+            "5.3!56",
+            "5.3!58",
+            "5.3!8",
+            "5.3!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "5.3!50",
+            "5.3!52",
+            "5.3!54",
+            "5.3!56"
+          ],
+          "judgement": "worse",
+          "subResults": [
+            {
+              "pairId": 4255,
+              "controlCondition": "Normal( Speed 30)",
+              "testCondition": "Reduce bond corner( speed 35)",
+              "control": {
+                "input": 796.0,
+                "ng": 23.0,
+                "ratePercent": 2.8894469999999997
+              },
+              "test": {
+                "input": 225.0,
+                "ng": 11.0,
+                "ratePercent": 4.888889
+              },
+              "deltaRatePercentPoint": 1.999442,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "5.3!50",
+                "5.3!54"
+              ]
+            },
+            {
+              "pairId": 4256,
+              "controlCondition": "Normal( Speed 30)",
+              "testCondition": "Reduce bond corner( speed 40)",
+              "control": {
+                "input": 796.0,
+                "ng": 23.0,
+                "ratePercent": 2.8894469999999997
+              },
+              "test": {
+                "input": 212.0,
+                "ng": 7.0,
+                "ratePercent": 3.301887
+              },
+              "deltaRatePercentPoint": 0.41244000000000003,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "5.3!52",
+                "5.3!54"
+              ]
+            },
+            {
+              "pairId": 4257,
+              "controlCondition": "Normal( Speed 30)",
+              "testCondition": "Reduce bond corner( speed 55)",
+              "control": {
+                "input": 796.0,
+                "ng": 23.0,
+                "ratePercent": 2.8894469999999997
+              },
+              "test": {
+                "input": 560.0,
+                "ng": 24.0,
+                "ratePercent": 4.2857140000000005
+              },
+              "deltaRatePercentPoint": 1.3962670000000004,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "5.3!54",
+                "5.3!56"
+              ]
+            }
+          ],
+          "limitations": []
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "- To increase bond at 4 corner VP+CD by reduce speed bonding corner from 30 to 20 => make sample and checking function SPK => move Modul line test",
+          "comparisonRows": [
+            "5.3!10"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 56495,
+              "condition": "- To increase bond at 4 corner VP+CD by reduce speed bonding corner from 30 to 2... / VP+CD ass'y",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "5.3!10"
+              ]
+            },
+            {
+              "statId": 56496,
+              "condition": "- To increase bond at 4 corner VP+CD by reduce speed bonding corner from 30 to 2... / Bonding amount",
+              "spec": "",
+              "min": 1.0,
+              "max": 1.886,
+              "avg": 1.5348000000000002,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "5.3!10"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Increase bond corner Speed 25 | 1.594mg | 1.508mg",
+          "comparisonRows": [
+            "5.3!36"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 56497,
+              "condition": "1.60mg",
+              "spec": "",
+              "min": 0.02763819,
+              "max": 24.0,
+              "avg": 8.11801015,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "5.3!36"
+              ]
+            },
+            {
+              "statId": 56498,
+              "condition": "1.56mg",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "5.3!36"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Line | Type | Input | OK | NG Sigma | NG Hearing | Total NG | Total NG rate",
+          "comparisonRows": [
+            "5.3!49"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 56499,
+              "condition": "NG Sigma / SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "5.3!49"
+              ]
+            },
+            {
+              "statId": 56500,
+              "condition": "NG Sigma / THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.10044444400000001,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "5.3!49"
+              ]
+            },
+            {
+              "statId": 56501,
+              "condition": "NG Sigma / SPL+THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.100125628,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "5.3!49"
+              ]
+            },
+            {
+              "statId": 56502,
+              "condition": "NG Sigma / SPL+THD+F0",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "5.3!49"
+              ]
+            },
+            {
+              "statId": 56503,
+              "condition": "NG Hearing / Noise",
+              "spec": "",
+              "min": 0.02763819,
+              "max": 24.0,
+              "avg": 8.11801015,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "5.3!49"
+              ]
+            },
+            {
+              "statId": 56504,
+              "condition": "NG Hearing / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "5.3!49"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "5.3!10",
+        "5.3!12",
+        "5.3!2",
+        "5.3!36",
+        "5.3!46",
+        "5.3!49",
+        "5.3!5",
+        "5.3!50",
+        "5.3!52",
+        "5.3!54",
+        "5.3!56",
+        "5.3!58",
+        "5.3!8",
+        "5.3!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "5.3!10",
+      "5.3!12",
+      "5.3!2",
+      "5.3!36",
+      "5.3!46",
+      "5.3!49",
+      "5.3!5",
+      "5.3!50",
+      "5.3!52",
+      "5.3!54",
+      "5.3!56",
+      "5.3!58",
+      "5.3!8",
+      "5.3!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

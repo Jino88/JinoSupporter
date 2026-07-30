@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 527,
+  "sourceFile": "30.3 BRS-161016  Report test 3rd  VP mold #7 add 0.3mm  date 13.5.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\527.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:29Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 527,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable validation report is present, but outcome judgements and factor cleanup are needed before final use.",
+    "issues": [
+      "Changed factor domain includes unsupported coating.",
+      "Three comparable outcomes are left not_judged despite clear normal vs test rows.",
+      "Decision row is not cited in case evidence.",
+      "Review title and purpose retain noisy table artifacts."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to VP mold #7 with added 0.3 mm thickness vs normal VP mold #2.",
+      "Remove unsupported coating domain; keep mold and dimension/spec.",
+      "Judge laser cutting and bending as worse, VP/CD as worse, and function as better for test condition.",
+      "Add decision row 13.5!61 as evidence and limitation/context.",
+      "Clean title and purpose text while preserving cited rows."
+    ],
+    "evidencePolicy": "Row citations support the comparison data, but final evidence should also cite the decision row."
+  },
+  "usage": {
+    "input_tokens": 4385,
+    "output_tokens": 450,
+    "total_tokens": 4835
+  }
+}

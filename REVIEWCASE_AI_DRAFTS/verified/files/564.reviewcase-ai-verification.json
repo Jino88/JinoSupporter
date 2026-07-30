@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 564,
+  "sourceFile": "34.BRS-161014 Result check dimension YK from KR 2024.04.26_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\564.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:45Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 564,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cannot be verified because it turns a single lot dimensional inspection into an unsupported changed-factor comparison.",
+    "issues": [
+      "No explicit baseline or changed condition is cited.",
+      "Changed factor is the filename, not a source-supported factor.",
+      "Outcome grouping mixes drawing/header/table detections with measurements.",
+      "Measurement citations point mainly to header rows, not actual sample rows.",
+      "Final OK row is not used as outcome evidence."
+    ],
+    "requiredUserQuestions": [
+      "Should this file be treated as a non-comparative lot inspection rather than a review case?"
+    ],
+    "correctionPlan": [
+      "Redefine context as supplier KOREA YK 161014 sample dimensional inspection if retained.",
+      "Remove baseline/test comparison language unless source rows prove it.",
+      "Cite raw material, lot, sample status, specs, sample data rows, and final result.",
+      "Group dimensions by numbered spec columns and sample rows.",
+      "Exclude from Ask AI if a changed-factor review case is required."
+    ],
+    "evidencePolicy": "Row existence passes, but citations are insufficient for changed-factor and measurement evidence."
+  },
+  "usage": {
+    "input_tokens": 6378,
+    "output_tokens": 763,
+    "total_tokens": 7141
+  }
+}

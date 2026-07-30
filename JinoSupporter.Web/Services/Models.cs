@@ -156,7 +156,7 @@ public sealed class NormalizeResult
     [JsonPropertyName("recommendedAction")]   public string RecommendedAction   { get; set; } = "";
 }
 
-// ── AI_EXCEL_PROC.md schema read DTOs (Batch CLI v6 output) ───────────────────
+// ── AI_EXCEL_PROC schema read DTOs (Batch CLI v6 output) ───────────────────
 // Used by DataInferenceDbPage when the row was processed by the new CLI flow
 // (writes AiDocuments / AiConclusions / AiTroubleshootingHints + ko/en/vi
 // translations). Old DatasetSummary card is rendered for legacy rows.
@@ -171,6 +171,9 @@ public sealed class AiDocBundle
     public string ReportType        { get; set; } = "";
     public string ReportDate        { get; set; } = "";
     public double Confidence        { get; set; }
+    public string SchemaVersion     { get; set; } = "";
+    public string RawJson           { get; set; } = "";
+    public string AnalysisHtml      { get; set; } = "";
     public string GeneratedReportMarkdown { get; set; } = "";
     public string DecisionRationale { get; set; } = "";   // from AiExtractionLogs
 
@@ -257,6 +260,7 @@ public sealed record ModelAnalysisReportRecord(
     string ReportDate,
     string DocumentId,
     string Title,
+    string Purpose,
     string ReportType,
     string PrimaryDefect,
     string GeneratedReportMarkdown,
@@ -267,6 +271,11 @@ public sealed record ModelAnalysisReportRecord(
     public bool HasAiReport => !string.IsNullOrWhiteSpace(DocumentId)
                                && !string.IsNullOrWhiteSpace(GeneratedReportMarkdown);
 }
+
+public sealed record CurrentProblemDbStatus(
+    int RawReportCount,
+    int FirstPassIndexCount,
+    int DetailedAiDocumentCount);
 
 public sealed record AiModelAnalysisRecord(
     long Id,
@@ -371,6 +380,186 @@ public sealed record RawFileInfo(
     long   FileSize,
     string CreatedAt);
 
+public sealed record InputDataBatchDbWorkbook(
+    long   FileId,
+    string DatasetName,
+    string FileName,
+    string MediaType,
+    long   FileSize,
+    string ProductType,
+    string ReportDate,
+    string CreatedAt,
+    bool   BatchExcluded,
+    string LatestAiUpdatedAt,
+    string AiResultKind,
+    string AiSchemaVersion);
+
+public sealed record InputDataComSheetSave(
+    int    SheetIndex,
+    string SheetName,
+    int    UsedTop,
+    int    UsedLeft,
+    int    UsedBottom,
+    int    UsedRight,
+    int    RowCount,
+    int    ColumnCount,
+    int    NonEmptyCells,
+    int    MergeCount);
+
+public sealed record InputDataComCellSave(
+    string SheetName,
+    int    RowNumber,
+    int    ColNumber,
+    string ColLabel,
+    string CellAddress,
+    string CellValue,
+    string RawValue,
+    string MergeRole,
+    string MergeAddress,
+    int?   MergeAnchorRow,
+    int?   MergeAnchorCol);
+
+public sealed record InputDataComMergeSave(
+    string SheetName,
+    string Address,
+    int    TopRow,
+    int    LeftCol,
+    int    BottomRow,
+    int    RightCol,
+    int    RowSpan,
+    int    ColumnSpan,
+    string AnchorValue);
+
+public sealed record InputDataReviewCandidateSave(
+    string              CandidateKind,
+    string              SheetName,
+    int                 RowNumber,
+    string              Label,
+    string              Confidence,
+    IReadOnlyList<string> EvidenceCells,
+    string              RawText);
+
+public sealed record InputDataComExtractionSave(
+    string DatasetName,
+    string SourcePath,
+    string SourceFileName,
+    long   FileSize,
+    long   MtimeNs,
+    string Fingerprint,
+    string Status,
+    string Error,
+    int    SheetCount,
+    int    TotalRows,
+    int    TotalCells,
+    int    NonEmptyCells,
+    int    MergeCount,
+    string RawJsonPath,
+    string ExtractedAt,
+    IReadOnlyList<InputDataComSheetSave> Sheets,
+    IReadOnlyList<InputDataComCellSave> Cells,
+    IReadOnlyList<InputDataComMergeSave> Merges,
+    IReadOnlyList<InputDataReviewCandidateSave> Candidates);
+
+public sealed record InputDataComExtractionStoreResult(
+    long WorkbookId,
+    string DatasetName,
+    string SourceFileName,
+    int SheetCount,
+    int TotalRows,
+    int TotalCells,
+    int NonEmptyCells,
+    int MergeCount,
+    int CandidateCount);
+
+public sealed record InputDataComCellPreview(
+    int    ColNumber,
+    string ColLabel,
+    string CellAddress,
+    string CellValue,
+    string MergeRole,
+    string MergeAddress);
+
+public sealed record InputDataComRowPreview(
+    string SheetName,
+    int    RowNumber,
+    IReadOnlyList<InputDataComCellPreview> Cells)
+{
+    public string RowRef => $"{SheetName}!{RowNumber}";
+}
+
+public sealed record InputDataReviewCaseSave(
+    long   WorkbookId,
+    string ReviewCaseId,
+    string Status,
+    bool   ApprovedForAskAi,
+    string GenerationJson,
+    string VerificationJson,
+    string CreatedAt,
+    string VerifiedAt);
+
+public sealed record InputDataReviewCaseRecord(
+    long   Id,
+    long   WorkbookId,
+    string ReviewCaseId,
+    string Status,
+    bool   ApprovedForAskAi,
+    string GenerationJson,
+    string VerificationJson,
+    string UserAnswerJson,
+    string CreatedAt,
+    string VerifiedAt,
+    string UserReviewedAt);
+
+public sealed record InputDataReviewCaseListRecord(
+    long   Id,
+    long   WorkbookId,
+    string DatasetName,
+    string SourceFileName,
+    string SourcePath,
+    string ReviewCaseId,
+    string Status,
+    bool   ApprovedForAskAi,
+    string CreatedAt,
+    string UserReviewedAt);
+
+public sealed record InputDataReviewCaseUserReviewSave(
+    long   ReviewCaseDbId,
+    string UserAnswerJson,
+    bool   ApprovedForAskAi,
+    string ReviewedAt);
+
+public sealed record InputDataComPipelineFileResult(
+    string SourcePath,
+    string SourceFileName,
+    bool   Success,
+    string Error,
+    long   WorkbookId,
+    int    SheetCount,
+    int    TotalRows,
+    int    TotalCells,
+    int    NonEmptyCells,
+    int    MergeCount,
+    int    CandidateCount,
+    bool   AiAttempted,
+    bool   AiSaved,
+    string ReviewCaseStatus);
+
+public sealed record InputDataComPipelineResult(
+    string DatasetName,
+    int    FileCount,
+    int    SuccessCount,
+    int    FailedCount,
+    int    SheetCount,
+    int    TotalRows,
+    int    TotalCells,
+    int    NonEmptyCells,
+    int    MergeCount,
+    int    CandidateCount,
+    int    ReviewCaseCount,
+    string StartedAt,
+    string FinishedAt,
+    IReadOnlyList<InputDataComPipelineFileResult> Files);
+
 public sealed record AskAiHistoryRecord(
     long   Id,
     string Question,
@@ -378,6 +567,30 @@ public sealed record AskAiHistoryRecord(
     string Overall,
     string PerDatasetJson,
     string TranslationsJson,
+    string CreatedAt);
+
+public sealed record DailyTestDataItemRecord(
+    long   Id,
+    string Name,
+    string DataText,
+    string PromptText,
+    string ParametersJson,
+    string AnalysisMarkdown,
+    string AnalysisHtml,
+    string CreatedAt,
+    string UpdatedAt,
+    string AnalyzedAt,
+    string HtmlGeneratedAt);
+
+public sealed record DailyTestDataHistoryRecord(
+    long   Id,
+    long   ItemId,
+    string ItemName,
+    string DataText,
+    string PromptText,
+    string ParametersJson,
+    string AnalysisMarkdown,
+    string AnalysisHtml,
     string CreatedAt);
 
 public sealed record RawReportInfo(
@@ -389,7 +602,9 @@ public sealed record RawReportInfo(
     int    MeasurementCount,
     string CreatedAt,
     bool   BatchExcluded,
-    string BatchedAt = "");
+    string BatchedAt = "",
+    string AiResultKind = "",
+    string AiSchemaVersion = "");
 
 public sealed record ImprovementRow(
     string  DatasetName,
@@ -414,6 +629,20 @@ public sealed class ModelGroupRecord
     public string               ProductGroup { get; set; } = "ETC";          // SPK / UNIT / MODULE / TWS / ETC
     public int                  SortOrder    { get; set; }
     public List<MidGroupRecord> MidGroups    { get; set; } = new();
+}
+
+public sealed class WeeklyReportFormSettingRecord
+{
+    public string  RowKey          { get; set; } = string.Empty;
+    public bool    IsVisible       { get; set; } = true;
+    public string  DisplayMode     { get; set; } = "B-GROUP";
+    public string  ProductName     { get; set; } = string.Empty;
+    public double? BaselineDec2025 { get; set; }
+    public double? BaselineApr2026 { get; set; }
+    public double? Target          { get; set; }
+    public string  Action          { get; set; } = string.Empty;
+    public int     SortOrder       { get; set; } = -1;
+    public string  UpdatedAt       { get; set; } = string.Empty;
 }
 
 public sealed class MidGroupRecord

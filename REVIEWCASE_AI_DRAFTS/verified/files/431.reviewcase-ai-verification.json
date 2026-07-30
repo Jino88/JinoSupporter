@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 431,
+  "sourceFile": "23. TIU L5S3-01 R Report test separate machine AWF improve NG function Bako  09.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\431.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 431,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The main AWF machine comparison is supported, but the draft includes a bogus measurement outcome and weak table-header citation.",
+    "issues": [
+      "Spurious measurement outcome is derived from a header row, not real measurements.",
+      "Test!14 is cited but not shown in context, while visible header is Test!13.",
+      "Function outcome should clearly use total NG and NG rate by machine condition.",
+      "Secondary NG category columns are not labeled in the outcome.",
+      "Date grouping is implicit and should be retained as context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove the measurement-1 outcome and its statistical subresults.",
+      "Use the actual table header row citation, likely Test!13, or provide Test!14 text if valid.",
+      "Keep one function-defect outcome comparing AWF #1, AWF #2, and Normal.",
+      "State metrics as Input, OK, Total NG, and NG rate; optionally include NG BAKO categories.",
+      "Retain report date and AWF machine condition as evidence context."
+    ],
+    "evidencePolicy": "Row citations are mostly sufficient for the main comparison, but header citation must be corrected before approval."
+  },
+  "usage": {
+    "input_tokens": 3110,
+    "output_tokens": 782,
+    "total_tokens": 3892
+  }
+}

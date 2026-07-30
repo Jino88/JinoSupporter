@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 584,
+  "sourceFile": "37. BRS-161014 Report test new base improvement of Laser cutting VP_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\584.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:21Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 584,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is comparable but needs correction of changed-factor grouping, domains, and outcome evidence before use.",
+    "issues": [
+      "Change domain is wrong; this is tooling/process recipe, not coating or dimension/spec.",
+      "Changed factor should be new base plus laser cutting settings, not only condition names.",
+      "Bundled test conditions and subgroup key X obscure 2nd-cutting and date grouping.",
+      "Measurement outcome is a process-setting summary and cites only a header row.",
+      "Evidence omits the key content row and the frame-float caveat row."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to new base with increased laser power/cutting recipe settings.",
+      "Use Normal as baseline and keep each Test 1-4 row as separate subresult with date/no/type.",
+      "Replace subgroup X with meaningful keys such as 2nd cutting status and date.",
+      "Limit outcomes to Cutting NG, FS damage, Total NG, and NG rate; remove header-only measurement stats.",
+      "Add citations for rows 13, 17-25 and note the frame-float caveat for 2023-09-28 Test 4."
+    ],
+    "evidencePolicy": "Row citations exist, but are incomplete and one outcome is header-only; add content, header, data, and caveat rows."
+  },
+  "usage": {
+    "input_tokens": 4134,
+    "output_tokens": 813,
+    "total_tokens": 4947
+  }
+}

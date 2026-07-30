@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 602,
+  "sourceFile": "39. BRS-201506 Report Test Coil change Spec width dimension date 23.4.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\602.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 602,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable coil-width-change evidence but grouping and measurement extraction need correction before use.",
+    "issues": [
+      "Changed factor should be coil width spec change, not TOTAL as a condition.",
+      "Date-level function comparisons use total Normal instead of matching Normal rows.",
+      "Decision evidence row is omitted from outcome support.",
+      "Measurement outcomes include header/position parsing artifacts.",
+      "FO/NTI outcomes are unjudged and overbroad for final evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename factor to Normal coil vs changed width-spec test coil.",
+      "Use total rows only for total comparison and pair dated rows separately.",
+      "Add decision row and purpose/content rows as core evidence.",
+      "Remove malformed header-derived measurement stats or cite actual data rows.",
+      "Keep FO/NTI only as secondary outcomes if grouped by Coil Normal vs Coil Test."
+    ],
+    "evidencePolicy": "Row citations exist, but many are header-only and insufficient without data and decision rows."
+  },
+  "usage": {
+    "input_tokens": 12955,
+    "output_tokens": 745,
+    "total_tokens": 13700
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 72,
+  "sourceFile": "03.  BRS-161016DT  Report Check reason NG VP-CD separate   Date  19.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\72.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:13Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 72,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable before/after repair evidence but misgroups the changed factor and includes unsupported measurement outcomes.",
+    "issues": [
+      "Changed factor mixes baseline/test with machine and base-side subgroup keys.",
+      "Primary comparison should be before repair vs after repair, under VP/CD separate repair context.",
+      "M/C and Base left/right must remain subgroup keys, not changed conditions.",
+      "Measurement outcomes are header-derived aggregates, not true measurement results.",
+      "Outcome coverage omits available right-side and M/C2 before/after context handling."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedFactor to repair/separation condition: before repair vs after repair.",
+      "Use line, date, machine, and base side as subgroup keys.",
+      "Keep vision VP/CD and checking-function outcomes under the same repair context.",
+      "Remove header-only measurement outcomes or recast as defect-category counts with data rows.",
+      "Rebuild comparisons using matched machine/base-side rows and note unmatched M/C2 after-repair absence if applicable."
+    ],
+    "evidencePolicy": "Row citations exist and are sufficient for rework, but current grouping citations are not sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4771,
+    "output_tokens": 469,
+    "total_tokens": 5240
+  }
+}

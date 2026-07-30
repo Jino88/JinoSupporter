@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 821,
+  "sourceFile": "65. TIU C11-20  Report Test  NEW grill 2026.2.14_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\821.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 821,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable result evidence but misgroups the changed factor and lacks a clear baseline for improvement.",
+    "issues": [
+      "Primary changed factor should be new grill change, not sample/shift conditions.",
+      "Baseline condition is not explicit or cited.",
+      "Sample frequency, OK/NG sample, and shift appear to be subgroups, not changed factors.",
+      "Improvement claim is unsupported without pre-change comparison rows.",
+      "Rows Test!20, Test!22, and Test!24 are cited but not shown in context text."
+    ],
+    "requiredUserQuestions": [
+      "Is there any pre-new-grill baseline evidence in the workbook?",
+      "Should all sample types and shifts be treated as subgroups under the new grill test?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to use/change to new grill for TIU C11-20.",
+      "Mark baseline as not cited unless pre-change rows exist.",
+      "Move frequency, sample status, and shift into subgroup keys.",
+      "Keep one function-defect outcome with all result rows cited.",
+      "Use decision row only as conclusion, not proof of baseline improvement."
+    ],
+    "evidencePolicy": "Citations are row-level but insufficient until missing cited row text and baseline evidence are verified."
+  },
+  "usage": {
+    "input_tokens": 3013,
+    "output_tokens": 790,
+    "total_tokens": 3803
+  }
+}

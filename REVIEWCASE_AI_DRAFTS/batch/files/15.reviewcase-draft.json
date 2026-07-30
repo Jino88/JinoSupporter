@@ -1,0 +1,349 @@
+{
+  "sourceFileId": 15,
+  "sourceFile": "01. BRS-161014-201507  Report check Gauss VALUE BP+SM-CM+CP -2025.05.09_1778470587_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\01. BRS-161014-201507  Report check Gauss VALUE BP+SM-CM+CP -2025.05.09_1778470587_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "NG rate; Sheet1",
+    "sheetRowCount": 28,
+    "sheetCellCount": 162,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 12
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "NG rate!2",
+      "sheetName": "NG rate",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | BRS-161014/MSU-2015-07 REPORT CHECK GAUSS VALUE | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "NG rate!3",
+      "sheetName": "NG rate",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | Date | 2025-05-09 00:00:00"
+    },
+    {
+      "rowId": "NG rate!4",
+      "sheetName": "NG rate",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "NG rate!5",
+      "sheetName": "NG rate",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "NG rate!6",
+      "sheetName": "NG rate",
+      "rowNumber": 6,
+      "rowText": "| - Check gauss value"
+    },
+    {
+      "rowId": "NG rate!7",
+      "sheetName": "NG rate",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "NG rate!8",
+      "sheetName": "NG rate",
+      "rowNumber": 8,
+      "rowText": "| - Check gauss value BP+SM/CM+CP each type 10pcs"
+    },
+    {
+      "rowId": "NG rate!9",
+      "sheetName": "NG rate",
+      "rowNumber": 9,
+      "rowText": "| - Method of PQC check gauss"
+    },
+    {
+      "rowId": "NG rate!10",
+      "sheetName": "NG rate",
+      "rowNumber": 10,
+      "rowText": "| - Move sample Auto team"
+    },
+    {
+      "rowId": "NG rate!11",
+      "sheetName": "NG rate",
+      "rowNumber": 11,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "NG rate!12",
+      "sheetName": "NG rate",
+      "rowNumber": 12,
+      "rowText": "| | RESULT CHECK GAUSS VALUE"
+    },
+    {
+      "rowId": "NG rate!13",
+      "sheetName": "NG rate",
+      "rowNumber": 13,
+      "rowText": "| | Date | No | 161016 | | | | | 201507 | | | | | Note"
+    },
+    {
+      "rowId": "NG rate!14",
+      "sheetName": "NG rate",
+      "rowNumber": 14,
+      "rowText": "| | | | SM Short Spec: S>700G | | SM Long Spec: S>1000G | | CM+CP Spec: S>1100G | SM Short Spec: S - 900G~1350G | | SM Long Spec: S - 900G~1350G | | CM+CP Spec: N 400~750G"
+    },
+    {
+      "rowId": "NG rate!15",
+      "sheetName": "NG rate",
+      "rowNumber": 15,
+      "rowText": "| | 2025-05-09 00:00:00 | 1 | 850 | 833 | 1083 | 1103 | 1215 | 1065 | 1103 | 1141 | 1098 | 479 | - Check by JIG using plate 1mm - Take max gauss value"
+    },
+    {
+      "rowId": "NG rate!36",
+      "sheetName": "NG rate",
+      "rowNumber": 36,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-15-rc-1",
+      "reviewTitle": "| BRS-161014/MSU-2015-07 REPORT CHECK GAUSS VALUE | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Check gauss value / | II. Content. / | - Check gauss value BP+SM/CM+CP each type 10pcs / | - Method of PQC check gauss",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "dimension/spec"
+          ],
+          "changedFactor": "01. BRS-161014-201507 Report check Gauss VALUE BP+SM-CM+CP -2025.05.09_1778470587",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "NG rate!14",
+            "NG rate!2",
+            "NG rate!27",
+            "NG rate!5",
+            "NG rate!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "NG rate!27"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 45354,
+              "condition": "Column 5",
+              "spec": "",
+              "min": 813.0,
+              "max": 867.0,
+              "avg": 845.85,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!27"
+              ]
+            },
+            {
+              "statId": 45355,
+              "condition": "Column 7",
+              "spec": "",
+              "min": 1032.0,
+              "max": 1106.0,
+              "avg": 1077.95,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!27"
+              ]
+            },
+            {
+              "statId": 45356,
+              "condition": "Column 9",
+              "spec": "",
+              "min": 1170.0,
+              "max": 1246.0,
+              "avg": 1214.1,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!27"
+              ]
+            },
+            {
+              "statId": 45357,
+              "condition": "Column 10",
+              "spec": "",
+              "min": 994.0,
+              "max": 1129.0,
+              "avg": 1061.7,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!27"
+              ]
+            },
+            {
+              "statId": 45358,
+              "condition": "Column 12",
+              "spec": "",
+              "min": 1068.0,
+              "max": 1151.0,
+              "avg": 1114.35,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!27"
+              ]
+            },
+            {
+              "statId": 45359,
+              "condition": "Column 14",
+              "spec": "",
+              "min": 463.0,
+              "max": 485.0,
+              "avg": 478.3,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!27"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | No | 161016 | 201507 | Note",
+          "comparisonRows": [
+            "NG rate!14"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 45360,
+              "condition": "RESULT CHECK GAUSS VALUE / SM Short Spec: S>700G",
+              "spec": ">700G",
+              "min": 833.0,
+              "max": 867.0,
+              "avg": 854.3,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!14"
+              ]
+            },
+            {
+              "statId": 45361,
+              "condition": "RESULT CHECK GAUSS VALUE / SM Long Spec: S>1000G",
+              "spec": ">700G",
+              "min": 1032.0,
+              "max": 1104.0,
+              "avg": 1070.4,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!14"
+              ]
+            },
+            {
+              "statId": 45362,
+              "condition": "RESULT CHECK GAUSS VALUE / CM+CP Spec: S>1100G",
+              "spec": ">700G",
+              "min": 1170.0,
+              "max": 1246.0,
+              "avg": 1214.1,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!14"
+              ]
+            },
+            {
+              "statId": 45363,
+              "condition": "RESULT CHECK GAUSS VALUE / SM Short Spec: S - 900G~1350G",
+              "spec": ">700G",
+              "min": 994.0,
+              "max": 1129.0,
+              "avg": 1045.2,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!14"
+              ]
+            },
+            {
+              "statId": 45364,
+              "condition": "RESULT CHECK GAUSS VALUE / SM Long Spec: S - 900G~1350G",
+              "spec": ">700G",
+              "min": 1072.0,
+              "max": 1146.0,
+              "avg": 1110.3,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!14"
+              ]
+            },
+            {
+              "statId": 45365,
+              "condition": "RESULT CHECK GAUSS VALUE / CM+CP Spec: N 400~750G",
+              "spec": ">700G",
+              "min": 463.0,
+              "max": 485.0,
+              "avg": 478.3,
+              "sampleCount": 10,
+              "violationCount": 10,
+              "evidenceRows": [
+                "NG rate!14"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "NG rate!14",
+        "NG rate!2",
+        "NG rate!27",
+        "NG rate!5",
+        "NG rate!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "NG rate!14",
+      "NG rate!2",
+      "NG rate!27",
+      "NG rate!5",
+      "NG rate!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

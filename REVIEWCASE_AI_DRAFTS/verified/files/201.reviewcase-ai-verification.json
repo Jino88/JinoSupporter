@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 201,
+  "sourceFile": "10. BRS-161014  DT Report test YK happen different color  date 7.10.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\201.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:57Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 201,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft is usable source-wise but misgroups the primary YK color comparison and tension subgroups.",
+    "issues": [
+      "Primary factor should be YK color condition, not magnet type or supplier.",
+      "MG-S-B/C and Beijing/Boutou are subgroup keys, not changed conditions.",
+      "Merged-cell carry-down is wrong in tension rows, causing duplicate unlabeled conditions.",
+      "NG rate and Boc keo appear duplicative and should not be double-counted.",
+      "Tension is represented twice as pass/fail and measurement outcomes."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal vs YK Clean Color vs YK Not Clean Color.",
+      "Move magnet type, supplier, and spec into subgroup keys per row.",
+      "Fix carried labels and typo such as TeYK Clean Color.",
+      "Deduplicate repeated NG rate/Boc keo evidence or mark as duplicate sheet context.",
+      "Keep one tension outcome with measurement stats and pass/fail result context."
+    ],
+    "evidencePolicy": "Row citations exist, but corrected grouping must cite header plus each data row."
+  },
+  "usage": {
+    "input_tokens": 11565,
+    "output_tokens": 701,
+    "total_tokens": 12266
+  }
+}

@@ -1,0 +1,254 @@
+{
+  "sourceFileId": 558,
+  "sourceFile": "34. BRS-161014 Report check NG rate sensor NG and not bonding + Ass'y VP+CD 2023.09.21_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\34. BRS-161014 Report check NG rate sensor NG and not bonding + Ass'y VP+CD 2023.09.21_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report (2)",
+    "sheetRowCount": 20,
+    "sheetCellCount": 58,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report (2)!2",
+      "sheetName": "Report (2)",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT CHECK NG RATE SENSOR NG => NOT BONDING ASS'Y VP/CD_SUB1 | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report (2)!3",
+      "sheetName": "Report (2)",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | Date | 2023-09-21 00:00:00"
+    },
+    {
+      "rowId": "Report (2)!4",
+      "sheetName": "Report (2)",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | Marker | Tu"
+    },
+    {
+      "rowId": "Report (2)!5",
+      "sheetName": "Report (2)",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report (2)!6",
+      "sheetName": "Report (2)",
+      "rowNumber": 6,
+      "rowText": "| Check NG rate CD sensor NG => Not bonding VP/CD"
+    },
+    {
+      "rowId": "Report (2)!7",
+      "sheetName": "Report (2)",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report (2)!8",
+      "sheetName": "Report (2)",
+      "rowNumber": 8,
+      "rowText": "| Check NG rate, reason NG"
+    },
+    {
+      "rowId": "Report (2)!9",
+      "sheetName": "Report (2)",
+      "rowNumber": 9,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "Report (2)!10",
+      "sheetName": "Report (2)",
+      "rowNumber": 10,
+      "rowText": "| Result check"
+    },
+    {
+      "rowId": "Report (2)!11",
+      "sheetName": "Report (2)",
+      "rowNumber": 11,
+      "rowText": "| | No | Date | Input | OK | NG sensor | NG rate"
+    },
+    {
+      "rowId": "Report (2)!12",
+      "sheetName": "Report (2)",
+      "rowNumber": 12,
+      "rowText": "| | 1 | 2023-09-21 00:00:00 | 4366 | 4128 | 238 | 0.05451214"
+    },
+    {
+      "rowId": "Report (2)!13",
+      "sheetName": "Report (2)",
+      "rowNumber": 13,
+      "rowText": "| | 2 | 2023-09-28 00:00:00 | 1486 | 1431 | 55 | 0.03701211"
+    },
+    {
+      "rowId": "Report (2)!14",
+      "sheetName": "Report (2)",
+      "rowNumber": 14,
+      "rowText": "| - Check reason"
+    },
+    {
+      "rowId": "Report (2)!16",
+      "sheetName": "Report (2)",
+      "rowNumber": 16,
+      "rowText": "| | | | | Machine | JIG paricle | CD reverse"
+    },
+    {
+      "rowId": "Report (2)!32",
+      "sheetName": "Report (2)",
+      "rowNumber": 32,
+      "rowText": "| 4. Decision"
+    },
+    {
+      "rowId": "Report (2)!33",
+      "sheetName": "Report (2)",
+      "rowNumber": 33,
+      "rowText": "| - Need improve machine"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-558-rc-1",
+      "reviewTitle": "REPORT CHECK NG RATE SENSOR NG => NOT BONDING ASS'Y VP/CD_SUB1 | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | Check NG rate CD sensor NG => Not bonding VP/CD / | II. Content. / | Check NG rate, reason NG / | 3.Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs 1, 2",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "1, 2",
+          "subgroupKeys": [
+            "2023-09-21 00:00:00",
+            "2023-09-28 00:00:00"
+          ],
+          "evidenceRows": [
+            "Report (2)!12",
+            "Report (2)!13",
+            "Report (2)!17",
+            "Report (2)!18",
+            "Report (2)!2",
+            "Report (2)!5",
+            "Report (2)!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "Result check",
+          "comparisonRows": [
+            "Report (2)!12",
+            "Report (2)!13"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 21812,
+              "condition": "1 | 2023-09-21 00:00:00",
+              "input": 4366.0,
+              "ok": 4128.0,
+              "ng": 238.0,
+              "ratePercent": 5.451214,
+              "evidenceRows": [
+                "Report (2)!12"
+              ]
+            },
+            {
+              "metricId": 21813,
+              "condition": "2 | 2023-09-28 00:00:00",
+              "input": 1486.0,
+              "ok": 1431.0,
+              "ng": 55.0,
+              "ratePercent": 3.7012110000000003,
+              "evidenceRows": [
+                "Report (2)!13"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "metric-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "- Check reason",
+          "comparisonRows": [
+            "Report (2)!17",
+            "Report (2)!18"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 21814,
+              "condition": "1 | 2023-09-21 00:00:00",
+              "input": 238.0,
+              "ok": null,
+              "ng": 232.0,
+              "ratePercent": 97.47899159663865,
+              "evidenceRows": [
+                "Report (2)!17"
+              ]
+            },
+            {
+              "metricId": 21815,
+              "condition": "2 | 2023-09-28 00:00:00",
+              "input": 55.0,
+              "ok": null,
+              "ng": 54.0,
+              "ratePercent": 98.18181818181819,
+              "evidenceRows": [
+                "Report (2)!18"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report (2)!12",
+        "Report (2)!13",
+        "Report (2)!17",
+        "Report (2)!18",
+        "Report (2)!2",
+        "Report (2)!5",
+        "Report (2)!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report (2)!12",
+      "Report (2)!13",
+      "Report (2)!17",
+      "Report (2)!18",
+      "Report (2)!2",
+      "Report (2)!5",
+      "Report (2)!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

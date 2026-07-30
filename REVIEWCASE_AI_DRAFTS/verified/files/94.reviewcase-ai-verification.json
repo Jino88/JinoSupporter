@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 94,
+  "sourceFile": "036.MSU - L20S15-07 REPORT TEST MATERIAL YOKE MAX-MIN DIMENSION, PLATE MAX-MIN DIMENSION_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\94.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 94,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable test context but changed-factor and outcome grouping are materially unreliable.",
+    "issues": [
+      "Baseline is invented; evidence shows Test Yoke Max vs Min, not normal vs test.",
+      "Yoke Gauss spec is treated as a changed condition instead of a measurement header.",
+      "Header row 29 is misused as numeric function result evidence.",
+      "Grill spec is assigned as 390~590 instead of 230~370, creating false violations.",
+      "Row 32 data is cited but not shown in context, limiting verification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Test Yoke dimension Max vs Test Yoke dimension Min.",
+      "Keep Yoke and Grill as Gauss measurement locations/subgroups.",
+      "Remove header-derived function subresult from row 29.",
+      "Apply correct specs: Yoke 390~590G and Grill 230~370G.",
+      "Cite actual Gauss data rows, including row 32 text or full data range."
+    ],
+    "evidencePolicy": "Current citations prove context but not enough reliable row-level evidence for final use."
+  },
+  "usage": {
+    "input_tokens": 3907,
+    "output_tokens": 687,
+    "total_tokens": 4594
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "corpus-benchmark-selection-v1",
+  "generatedAt": "2026-07-18",
+  "sourceRoot": "D:\\000. MyWorks\\test\\result\\InputDataFinish",
+  "purpose": "Retry five v24 fail-closed workbooks and five source-audit quarantines under prompt v25 plus the inverse source-content coverage gate.",
+  "imagePolicy": {
+    "extractImages": false,
+    "analyzeImages": false
+  },
+  "selection": {
+    "journalStatus": "FAILED_OR_QUARANTINED",
+    "count": 10,
+    "order": "original benchmark order",
+    "executionGate": "Run only after staged-draft v2 and the shared workflow regression suite pass."
+  },
+  "workbooks": [
+    {
+      "id": "B04",
+      "relativePath": "008.MSU-20S15-07 Test MC check Height dimension 1 2025.01.25_1778470549_clean.xlsx",
+      "reason": "v24 fail-closed: unsafe numeric-text repair"
+    },
+    {
+      "id": "B06",
+      "relativePath": "01. TIU C11-20  Report test VP new film 2-2 roll high function NG rate ( A2 rate 42% ) recheck low air pressure NG rate date 17.12.2025 - Copy_1778470674_clean.xlsx",
+      "reason": "v24 fail-closed: compound ordinal token treated as quantity"
+    },
+    {
+      "id": "B07",
+      "relativePath": "01. TIU L5S3-01 R Report test VP mold Korea - Forming D3  12.12.2025_1778470786_clean.xlsx",
+      "reason": "v24 fail-closed: mixed ST/Normal reference semantics"
+    },
+    {
+      "id": "B08",
+      "relativePath": "01.MSU-20S15-07 Result test  frame new mold_1778470978_clean.xlsx",
+      "reason": "source-audit quarantine: seven quantitative cells and B26 source conclusion omitted"
+    },
+    {
+      "id": "B09",
+      "relativePath": "010.MSU-20S15-07 Result check Height dimension C-MG, S-MG - Date 2025.02.10_1778470980_clean.xlsx",
+      "reason": "source-audit quarantine: quantitative panels omitted"
+    },
+    {
+      "id": "B13",
+      "relativePath": "016.MSU-20S15-07 Result check Gauss Semi Yoke  - Date 2025.02.15_clean.xlsx",
+      "reason": "source-audit quarantine: 50-cell raw Gauss panel reduced to scalar summary"
+    },
+    {
+      "id": "B14",
+      "relativePath": "018.MSU-20S15-07 Result test improve NG function 1_clean.xlsx",
+      "reason": "source-audit quarantine: partial 22-sheet manifest marked contentComplete"
+    },
+    {
+      "id": "B15",
+      "relativePath": "019.MSU-20S15-07 Result check NTI test change bonding  VP+CD_clean.xlsx",
+      "reason": "v24 fail-closed: synthetic Normal arm label"
+    },
+    {
+      "id": "B16",
+      "relativePath": "02.  BRS-161016DT  Report Check reason NG hearing  Date  17.5.2025_clean.xlsx",
+      "reason": "v24 fail-closed: unsupported rate-pair repair changed structure"
+    },
+    {
+      "id": "B22",
+      "relativePath": "021.MSU-20S15-07 Result check NTI COIL 0.096 ( 1 )_clean.xlsx",
+      "reason": "source-audit quarantine: populated SPL/THD/IMP ranges omitted"
+    }
+  ]
+}

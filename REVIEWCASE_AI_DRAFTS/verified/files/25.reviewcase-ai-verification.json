@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 25,
+  "sourceFile": "01.1.. BRS-161016DT  Report NEW machine Bond Ass'y VP-CD  improve NG separate VP+CD ( after improve base) Date  2.06.2025_1778470943_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\25.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:46:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 25,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The draft identifies a plausible Normal vs Test New machine VP/CD validation context, but outcome grouping and measurement extraction are too noisy for final Ask AI evidence.",
+    "issues": [
+      "Changed factor is plausible from the report purpose, but the changed condition is inconsistently labeled as both 'Test New machine VP/CD' and 'Total | Test New machine VP/CD'.",
+      "Row-level grouping keys such as date, line, type, and possible total-versus-individual rows are not preserved in the defect comparisons.",
+      "Several measurement outcomes are extraction artifacts or non-comparative table summaries, especially LED UV rows, detected-table rows, and spec/line values treated as measurements.",
+      "Tension-test measurements are listed as separate stats without a clear paired Normal vs Test grouping or overall judgement.",
+      "Function and vision defect outcomes may mix aggregate total rows with individual test rows without explaining whether totals or subgroups are intended.",
+      "Many cited Test-sheet rows are not included in the visible contextRows, so the verifier cannot fully confirm row text, labels, and numeric alignment from the provided prompt alone."
+    ],
+    "requiredUserQuestions": [
+      "Should Ask AI use only Normal vs total Test New machine VP/CD rows, or also individual date/line test rows?"
+    ],
+    "correctionPlan": [
+      "Normalize the changed factor to 'Normal vs Test New machine VP/CD after improved base' and remove 'Total' from the changed condition unless the cited row is explicitly an aggregate total row.",
+      "Split or annotate outcomes by preserved row keys such as date, line, type, and total/subtotal status.",
+      "Keep the main outcome domains under one review case: vision VP/CD defects, function defects, and tension test, but remove unrelated or artifact measurement outcomes.",
+      "For tension test, group Normal and Test New machine VP/CD measurements into comparable paired sets and calculate or state the direction only if supported by rows.",
+      "Remove measurement outcomes that are only headers, specs, LED UV machine settings, line identifiers, or detected-table artifacts unless they are explicitly part of the validation evidence.",
+      "Ensure each retained outcome cites the exact header row plus the exact baseline and test data rows needed to interpret the comparison."
+    ],
+    "evidencePolicy": "Row IDs appear to exist, but citations are not yet sufficient because several are overbroad or artifact-derived and the key Test-sheet row text is not visible for verification."
+  },
+  "usage": {
+    "input_tokens": 15992,
+    "output_tokens": 1011,
+    "total_tokens": 17003
+  }
+}

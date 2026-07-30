@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 676,
+  "sourceFile": "47. TIU L5S3-01 R Report test F-PCB PRESS JIG cutting 0.1mm to improve NG Frame deform -  date 2026.01.02_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\676.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 676,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not verified because it misidentifies the changed factor and mispairs the Line L normal control.",
+    "issues": [
+      "Changed factor should be JIG cutting/test versus Normal, not Normal versus Line R/Line L.",
+      "Line R and Line L are subgroup keys, not changed conditions.",
+      "Line L function comparison uses the Line R Normal row instead of the Line L Normal row.",
+      "Measurement outcome from the header row is invalid and should be removed or rebuilt from data rows.",
+      "Result test rows are post-change validation only and lack a Normal baseline."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baselineCondition to Normal and changedCondition to JIG Cutting 0.1mm or JIG Test.",
+      "Move Line R and Line L into subgroup keys and preserve separate line comparisons.",
+      "Pair Line R JIG Test with its Normal row and Line L JIG Test with its Normal row.",
+      "Remove the header-only measurement outcome unless actual data rows support it.",
+      "Classify rows 16-17 as non-comparative post-change frame deform/F-PCB separate results."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient because key grouping and row pairing are wrong."
+  },
+  "usage": {
+    "input_tokens": 4227,
+    "output_tokens": 792,
+    "total_tokens": 5019
+  }
+}

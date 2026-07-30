@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 643,
+  "sourceFile": "43. BRS-161016 Report test material YK change dimension (Producft of press line - Glonics - Coating Korea, MyungJin VN ) 2024.6.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\643.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:16Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 643,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but changed-factor and tension/decap grouping errors block final use.",
+    "issues": [
+      "Changed factor mixes YK supplier/coating tests with magnet subgroups as changed conditions.",
+      "Decap YOKE pairs do not preserve date and CMG supplier grouping, using wrong normal row for BeiJing.",
+      "Tension summary says no change, but detailed MG-S-C rows show all test types NG versus Normal OK.",
+      "Measurement tension stats are not judged and list zero violations despite NG rows below spec.",
+      "Some subgroup keys and condition names are duplicated or inconsistent."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary factor as Normal vs three Test YK supplier/coating conditions.",
+      "Keep Boutou/BeiJing and MG-S-A/B/C as subgroup context, not changed factors.",
+      "Rebuild Decap YOKE comparisons separately for 2024-06-17 Boutou and 2024-06-18 BeiJing using matching Normal rows.",
+      "Replace tension outcome with MG-S-A/B OK no-change and MG-S-C worsened test NG versus Normal OK.",
+      "Set tension measurement judgements and violation counts from result/spec rows."
+    ],
+    "evidencePolicy": "Row citations are adequate, but current grouping and interpretation are not."
+  },
+  "usage": {
+    "input_tokens": 11840,
+    "output_tokens": 769,
+    "total_tokens": 12609
+  }
+}

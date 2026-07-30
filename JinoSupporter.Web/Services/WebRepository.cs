@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 
@@ -14,64 +14,52 @@ public sealed class UserRecord
     public string CreatedAt    { get; init; } = string.Empty;
 }
 
-public sealed record ScheduleItem(
-    long         Id,
-    string       Title,
-    string       Description,
-    DateOnly     StartDate,
-    DateOnly     EndDate,
-    TimeOnly?    StartTime,
-    TimeOnly?    EndTime,
-    string       Color,
-    List<string> Tags,
-    string       CreatedAt)
-{
-    public bool   IsAllDay   => StartTime is null;
-    public bool   IsMultiDay => EndDate > StartDate;
-    public string TimeDisplay => IsAllDay
-        ? "All day"
-        : EndTime.HasValue
-            ? $"{StartTime!.Value:HH\\:mm}-{EndTime.Value:HH\\:mm}"
-            : StartTime!.Value.ToString("HH:mm");
-}
-
 public sealed class WebRepository
 {
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
     private readonly string _dbPath;
-    private readonly string _scheduleDbPath;
 
     public WebRepository(IConfiguration config)
     {
         // Priority 1: appsettings.json ??Database:Path (explicit override)
         // Priority 2: WPF app settings file (DataInference.DatabasePath)
-        // Priority 3: default path (%LOCALAPPDATA%\JinoWorkHost\process-review.db)
+        // Priority 3: default path under AppStoragePaths.RootDirectory.
         string? configured = config["Database:Path"];
         _dbPath = !string.IsNullOrWhiteSpace(configured)
             ? configured
             : WpfSettingsReader.TryGetDatabasePath()
-              ?? Path.Combine(
-                  Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                  "JinoWorkHost", "process-review.db");
-
-        // Schedule DB: shared with WPF app (schedule.db)
-        // Priority 1: appsettings.json ??Schedule:Path
-        // Priority 2: WPF app settings file (Schedule.DatabasePath)
-        // Priority 3: default %LOCALAPPDATA%\JinoWorkHost\schedule.db
-        string? schedulePath = config["Schedule:Path"];
-        _scheduleDbPath = !string.IsNullOrWhiteSpace(schedulePath)
-            ? schedulePath
-            : WpfSettingsReader.TryGetScheduleDatabasePath()
-              ?? Path.Combine(
-                  Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                  "JinoWorkHost", "schedule.db");
+              ?? AppStoragePaths.Combine("process-review.db");
 
         EnsureDatabase();
-        EnsureScheduleDatabase();
     }
 
     public string GetDbPath() => _dbPath;
+
+    public CurrentProblemDbStatus GetCurrentProblemDbStatus()
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT
+                (SELECT COUNT(*)
+                   FROM RawReports
+                  WHERE COALESCE(BatchExcluded, 0) = 0),
+                (SELECT COUNT(*)
+                   FROM DatasetSummary
+                  WHERE ReportType = 'first_pass_index'),
+                (SELECT COUNT(*)
+                   FROM AiDocuments);
+            """;
+
+        using SqliteDataReader r = cmd.ExecuteReader();
+        if (!r.Read()) return new CurrentProblemDbStatus(0, 0, 0);
+
+        return new CurrentProblemDbStatus(
+            Convert.ToInt32(r.GetValue(0)),
+            Convert.ToInt32(r.GetValue(1)),
+            Convert.ToInt32(r.GetValue(2)));
+    }
 
     // ?? Connection ????????????????????????????????????????????????????????????
 
@@ -80,52 +68,6 @@ public sealed class WebRepository
         var conn = new SqliteConnection($"Data Source={_dbPath}");
         conn.Open();
         return conn;
-    }
-
-    private SqliteConnection OpenScheduleConnection()
-    {
-        string? dir = Path.GetDirectoryName(_scheduleDbPath);
-        if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
-        var conn = new SqliteConnection($"Data Source={_scheduleDbPath}");
-        conn.Open();
-        return conn;
-    }
-
-    private void EnsureScheduleDatabase()
-    {
-        using SqliteConnection conn = OpenScheduleConnection();
-        using SqliteCommand cmd = conn.CreateCommand();
-        cmd.CommandText = """
-            CREATE TABLE IF NOT EXISTS Schedules (
-                Id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                Title       TEXT    NOT NULL DEFAULT '',
-                Description TEXT    NOT NULL DEFAULT '',
-                StartDate   TEXT    NOT NULL,
-                EndDate     TEXT    NOT NULL,
-                Color       TEXT    NOT NULL DEFAULT '#4A90D9',
-                Tags        TEXT    NOT NULL DEFAULT '[]',
-                CreatedAt   TEXT    NOT NULL,
-                StartTime   TEXT    NULL,
-                EndTime     TEXT    NULL
-            );
-            CREATE INDEX IF NOT EXISTS idx_sched_start ON Schedules(StartDate);
-            CREATE INDEX IF NOT EXISTS idx_sched_end   ON Schedules(EndDate);
-            """;
-        cmd.ExecuteNonQuery();
-
-        // Migrate: ensure StartTime/EndTime columns exist (legacy DBs may not have them)
-        using SqliteCommand check = conn.CreateCommand();
-        check.CommandText = "PRAGMA table_info(Schedules);";
-        bool hasStartTime = false, hasEndTime = false;
-        using (SqliteDataReader r = check.ExecuteReader())
-            while (r.Read())
-            {
-                string col = r.GetString(1);
-                if (col.Equals("StartTime", StringComparison.OrdinalIgnoreCase)) hasStartTime = true;
-                if (col.Equals("EndTime",   StringComparison.OrdinalIgnoreCase)) hasEndTime   = true;
-            }
-        if (!hasStartTime) { using SqliteCommand a = conn.CreateCommand(); a.CommandText = "ALTER TABLE Schedules ADD COLUMN StartTime TEXT NULL;"; a.ExecuteNonQuery(); }
-        if (!hasEndTime)   { using SqliteCommand a = conn.CreateCommand(); a.CommandText = "ALTER TABLE Schedules ADD COLUMN EndTime TEXT NULL;";   a.ExecuteNonQuery(); }
     }
 
     private void EnsureDatabase()
@@ -197,6 +139,14 @@ public sealed class WebRepository
                 CreatedAt   TEXT    NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_di_dataset ON DatasetImages(DatasetName);
+
+            CREATE TABLE IF NOT EXISTS BmesLpaImages (
+                Path      TEXT NOT NULL,
+                Kind      TEXT NOT NULL,
+                ImageData BLOB NOT NULL,
+                CreatedAt TEXT NOT NULL,
+                PRIMARY KEY (Path, Kind)
+            );
 
             CREATE TABLE IF NOT EXISTS RawReports (
                 Id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -304,6 +254,108 @@ public sealed class WebRepository
                 PRIMARY KEY (DatasetName, Kind)
             );
 
+            CREATE TABLE IF NOT EXISTS InputDataComWorkbooks (
+                Id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                DatasetName    TEXT NOT NULL,
+                SourcePath     TEXT NOT NULL,
+                SourceFileName TEXT NOT NULL DEFAULT '',
+                FileSize       INTEGER NOT NULL DEFAULT 0,
+                MtimeNs        INTEGER NOT NULL DEFAULT 0,
+                Fingerprint    TEXT NOT NULL DEFAULT '',
+                Status         TEXT NOT NULL DEFAULT 'OK',
+                Error          TEXT NOT NULL DEFAULT '',
+                SheetCount     INTEGER NOT NULL DEFAULT 0,
+                TotalRows      INTEGER NOT NULL DEFAULT 0,
+                TotalCells     INTEGER NOT NULL DEFAULT 0,
+                NonEmptyCells  INTEGER NOT NULL DEFAULT 0,
+                MergeCount     INTEGER NOT NULL DEFAULT 0,
+                RawJsonPath    TEXT NOT NULL DEFAULT '',
+                ExtractedAt    TEXT NOT NULL,
+                CreatedAt      TEXT NOT NULL,
+                UNIQUE(DatasetName, SourcePath)
+            );
+            CREATE INDEX IF NOT EXISTS idx_idcw_dataset ON InputDataComWorkbooks(DatasetName);
+            CREATE INDEX IF NOT EXISTS idx_idcw_created ON InputDataComWorkbooks(CreatedAt DESC);
+
+            CREATE TABLE IF NOT EXISTS InputDataComSheets (
+                Id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                WorkbookId     INTEGER NOT NULL REFERENCES InputDataComWorkbooks(Id) ON DELETE CASCADE,
+                SheetIndex     INTEGER NOT NULL DEFAULT 0,
+                SheetName      TEXT NOT NULL DEFAULT '',
+                UsedTop        INTEGER NOT NULL DEFAULT 0,
+                UsedLeft       INTEGER NOT NULL DEFAULT 0,
+                UsedBottom     INTEGER NOT NULL DEFAULT 0,
+                UsedRight      INTEGER NOT NULL DEFAULT 0,
+                RowCount       INTEGER NOT NULL DEFAULT 0,
+                ColumnCount    INTEGER NOT NULL DEFAULT 0,
+                NonEmptyCells  INTEGER NOT NULL DEFAULT 0,
+                MergeCount     INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS idx_idcs_workbook ON InputDataComSheets(WorkbookId);
+
+            CREATE TABLE IF NOT EXISTS InputDataComCells (
+                WorkbookId     INTEGER NOT NULL REFERENCES InputDataComWorkbooks(Id) ON DELETE CASCADE,
+                SheetName      TEXT NOT NULL,
+                RowNumber      INTEGER NOT NULL,
+                ColNumber      INTEGER NOT NULL,
+                ColLabel       TEXT NOT NULL DEFAULT '',
+                CellAddress    TEXT NOT NULL DEFAULT '',
+                CellValue      TEXT NOT NULL DEFAULT '',
+                RawValue       TEXT NOT NULL DEFAULT '',
+                MergeRole      TEXT NOT NULL DEFAULT 'none',
+                MergeAddress   TEXT NOT NULL DEFAULT '',
+                MergeAnchorRow INTEGER,
+                MergeAnchorCol INTEGER,
+                PRIMARY KEY(WorkbookId, SheetName, RowNumber, ColNumber)
+            );
+            CREATE INDEX IF NOT EXISTS idx_idcc_lookup ON InputDataComCells(WorkbookId, SheetName, RowNumber);
+
+            CREATE TABLE IF NOT EXISTS InputDataComMerges (
+                Id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                WorkbookId     INTEGER NOT NULL REFERENCES InputDataComWorkbooks(Id) ON DELETE CASCADE,
+                SheetName      TEXT NOT NULL DEFAULT '',
+                Address        TEXT NOT NULL DEFAULT '',
+                TopRow         INTEGER NOT NULL DEFAULT 0,
+                LeftCol        INTEGER NOT NULL DEFAULT 0,
+                BottomRow      INTEGER NOT NULL DEFAULT 0,
+                RightCol       INTEGER NOT NULL DEFAULT 0,
+                RowSpan        INTEGER NOT NULL DEFAULT 0,
+                ColumnSpan     INTEGER NOT NULL DEFAULT 0,
+                AnchorValue    TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS idx_idcm_workbook ON InputDataComMerges(WorkbookId);
+
+            CREATE TABLE IF NOT EXISTS InputDataReviewCandidates (
+                Id                INTEGER PRIMARY KEY AUTOINCREMENT,
+                WorkbookId        INTEGER NOT NULL REFERENCES InputDataComWorkbooks(Id) ON DELETE CASCADE,
+                CandidateKind     TEXT NOT NULL DEFAULT '',
+                SheetName         TEXT NOT NULL DEFAULT '',
+                RowNumber         INTEGER NOT NULL DEFAULT 0,
+                Label             TEXT NOT NULL DEFAULT '',
+                Confidence        TEXT NOT NULL DEFAULT '',
+                EvidenceCellsJson TEXT NOT NULL DEFAULT '[]',
+                RawText           TEXT NOT NULL DEFAULT '',
+                CreatedAt         TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_idrc_workbook ON InputDataReviewCandidates(WorkbookId);
+            CREATE INDEX IF NOT EXISTS idx_idrc_kind ON InputDataReviewCandidates(CandidateKind);
+
+            CREATE TABLE IF NOT EXISTS InputDataReviewCases (
+                Id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                WorkbookId       INTEGER NOT NULL REFERENCES InputDataComWorkbooks(Id) ON DELETE CASCADE,
+                ReviewCaseId     TEXT NOT NULL DEFAULT '',
+                Status           TEXT NOT NULL DEFAULT '',
+                ApprovedForAskAi INTEGER NOT NULL DEFAULT 0,
+                GenerationJson   TEXT NOT NULL DEFAULT '{}',
+                VerificationJson TEXT NOT NULL DEFAULT '{}',
+                UserAnswerJson   TEXT NOT NULL DEFAULT '{}',
+                CreatedAt        TEXT NOT NULL,
+                VerifiedAt       TEXT NOT NULL DEFAULT '',
+                UserReviewedAt   TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS idx_idrv_workbook ON InputDataReviewCases(WorkbookId);
+            CREATE INDEX IF NOT EXISTS idx_idrv_status ON InputDataReviewCases(Status);
+
             CREATE TABLE IF NOT EXISTS AskAiHistory (
                 Id                 INTEGER PRIMARY KEY AUTOINCREMENT,
                 Question           TEXT    NOT NULL,
@@ -328,6 +380,34 @@ public sealed class WebRepository
                 CreatedAt            TEXT    NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_aimodel_product_created ON AiModelAnalyses(ProductType, CreatedAt DESC);
+
+            CREATE TABLE IF NOT EXISTS DailyTestDataItems (
+                Id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                Name             TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+                DataText         TEXT    NOT NULL DEFAULT '',
+                PromptText       TEXT    NOT NULL DEFAULT '',
+                ParametersJson   TEXT    NOT NULL DEFAULT '{}',
+                AnalysisMarkdown TEXT    NOT NULL DEFAULT '',
+                AnalysisHtml     TEXT    NOT NULL DEFAULT '',
+                CreatedAt        TEXT    NOT NULL,
+                UpdatedAt        TEXT    NOT NULL,
+                AnalyzedAt       TEXT    NOT NULL DEFAULT '',
+                HtmlGeneratedAt  TEXT    NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS idx_dailytest_updated ON DailyTestDataItems(UpdatedAt DESC);
+
+            CREATE TABLE IF NOT EXISTS DailyTestDataHistory (
+                Id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                ItemId           INTEGER NOT NULL,
+                ItemName         TEXT    NOT NULL DEFAULT '',
+                DataText         TEXT    NOT NULL DEFAULT '',
+                PromptText       TEXT    NOT NULL DEFAULT '',
+                ParametersJson   TEXT    NOT NULL DEFAULT '{}',
+                AnalysisMarkdown TEXT    NOT NULL DEFAULT '',
+                AnalysisHtml     TEXT    NOT NULL DEFAULT '',
+                CreatedAt        TEXT    NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_dailytest_history_item_created ON DailyTestDataHistory(ItemId, CreatedAt DESC);
 
             -- Maps an arbitrary filename token (e.g. "BRS-161014", "BRS-2015")
             -- to a Mid-group Material name (e.g. "BRS-161016S08ZZ"). Used by
@@ -370,6 +450,19 @@ public sealed class WebRepository
             );
             CREATE INDEX IF NOT EXISTS idx_mgi_group ON ModelGroupItems(GroupId);
 
+            CREATE TABLE IF NOT EXISTS WeeklyReportFormSettings (
+                RowKey          TEXT    PRIMARY KEY NOT NULL,
+                IsVisible       INTEGER NOT NULL DEFAULT 1,
+                DisplayMode     TEXT    NOT NULL DEFAULT 'B-GROUP',
+                ProductName     TEXT    NOT NULL DEFAULT '',
+                BaselineDec2025 REAL    NULL,
+                BaselineApr2026 REAL    NULL,
+                Target          REAL    NULL,
+                Action          TEXT    NOT NULL DEFAULT '',
+                SortOrder       INTEGER NOT NULL DEFAULT -1,
+                UpdatedAt       TEXT    NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS BmesMaterials (
                 Matnr     TEXT PRIMARY KEY,
                 Maktx     TEXT NOT NULL DEFAULT '',
@@ -396,7 +489,7 @@ public sealed class WebRepository
                 FetchedAt TEXT NOT NULL
             );
 
-            -- ?? AI_EXCEL_PROC.md schema (Batch AI inference output) ?????????????
+            -- ?? AI_EXCEL_PROC schema (Batch AI inference output) ?????????????
             -- One row per normalized Excel report. RawJson preserves the full
             -- agent output for re-ingestion / debugging. Source_dataset links
             -- back to RawReports.DatasetName so the row can be located in the
@@ -619,6 +712,25 @@ public sealed class WebRepository
 
     private static void MigrateSchema(SqliteConnection conn)
     {
+        var inputReviewCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using (SqliteCommand ck = conn.CreateCommand())
+        {
+            ck.CommandText = "PRAGMA table_info(InputDataReviewCases);";
+            using SqliteDataReader r = ck.ExecuteReader();
+            while (r.Read()) inputReviewCols.Add(r.GetString(1));
+        }
+        if (!inputReviewCols.Contains("UserAnswerJson"))
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE InputDataReviewCases ADD COLUMN UserAnswerJson TEXT NOT NULL DEFAULT '{}';";
+            alter.ExecuteNonQuery();
+        }
+        if (!inputReviewCols.Contains("UserReviewedAt"))
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE InputDataReviewCases ADD COLUMN UserReviewedAt TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
         // ModelGroupItems.Material (for 以묎렇猷?Material)
         bool hasMaterial = false;
         using (SqliteCommand ck = conn.CreateCommand())
@@ -723,6 +835,44 @@ public sealed class WebRepository
         {
             using SqliteCommand alter = conn.CreateCommand();
             alter.CommandText = "ALTER TABLE AskAiHistory ADD COLUMN TranslationsJson TEXT NOT NULL DEFAULT '{}';";
+            alter.ExecuteNonQuery();
+        }
+
+        var dailyCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using (SqliteCommand ck = conn.CreateCommand())
+        {
+            ck.CommandText = "PRAGMA table_info(DailyTestDataItems);";
+            using SqliteDataReader r = ck.ExecuteReader();
+            while (r.Read()) dailyCols.Add(r.GetString(1));
+        }
+        if (!dailyCols.Contains("ParametersJson"))
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE DailyTestDataItems ADD COLUMN ParametersJson TEXT NOT NULL DEFAULT '{}';";
+            alter.ExecuteNonQuery();
+        }
+        if (!dailyCols.Contains("AnalysisMarkdown"))
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE DailyTestDataItems ADD COLUMN AnalysisMarkdown TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+        if (!dailyCols.Contains("AnalysisHtml"))
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE DailyTestDataItems ADD COLUMN AnalysisHtml TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+        if (!dailyCols.Contains("AnalyzedAt"))
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE DailyTestDataItems ADD COLUMN AnalyzedAt TEXT NOT NULL DEFAULT '';";
+            alter.ExecuteNonQuery();
+        }
+        if (!dailyCols.Contains("HtmlGeneratedAt"))
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE DailyTestDataItems ADD COLUMN HtmlGeneratedAt TEXT NOT NULL DEFAULT '';";
             alter.ExecuteNonQuery();
         }
 
@@ -1360,12 +1510,59 @@ public sealed class WebRepository
         tx.Commit();
     }
 
+    // ── BMES LPA result photos ────────────────────────────────────────────────────
+    // The LPA viewer no longer bakes photos into its HTML; each <img> points at
+    // /bmes/lpa/img, which downscales the BMES original once and stores the two sizes it
+    // needs here — so a photo is fetched from BMES exactly once and reused across every
+    // view, search and restart afterwards. Kind is 't' (thumbnail) or 'v' (popup view).
+
+    public byte[]? GetLpaImage(string path, bool view)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT ImageData FROM BmesLpaImages WHERE Path=@p AND Kind=@k;";
+        cmd.Parameters.AddWithValue("@p", path);
+        cmd.Parameters.AddWithValue("@k", view ? "v" : "t");
+        using SqliteDataReader r = cmd.ExecuteReader();
+        if (!r.Read()) return null;
+        long len = r.GetBytes(0, 0, null, 0, 0);
+        var buf = new byte[len];
+        r.GetBytes(0, 0, buf, 0, (int)len);
+        return buf;
+    }
+
+    public void SaveLpaImagePair(string path, byte[] thumb, byte[] view)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteTransaction tx = conn.BeginTransaction();
+
+        void Insert(string kind, byte[] data)
+        {
+            using SqliteCommand cmd = conn.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.CommandText = """
+                INSERT INTO BmesLpaImages (Path, Kind, ImageData, CreatedAt)
+                VALUES (@p, @k, @d, @at)
+                ON CONFLICT(Path, Kind) DO UPDATE SET ImageData=@d, CreatedAt=@at;
+                """;
+            cmd.Parameters.AddWithValue("@p",  path);
+            cmd.Parameters.AddWithValue("@k",  kind);
+            cmd.Parameters.AddWithValue("@d",  data);
+            cmd.Parameters.AddWithValue("@at", DateTime.UtcNow.ToString("O"));
+            cmd.ExecuteNonQuery();
+        }
+
+        Insert("t", thumb);
+        Insert("v", view);
+        tx.Commit();
+    }
+
     public List<RawReportInfo> GetAllRawReports()
     {
         using SqliteConnection conn = OpenConnection();
         using SqliteCommand cmd = conn.CreateCommand();
         // BatchedAt is a derived value. Prefer the newest of:
-        //   AiDocuments.UpdatedAt   (AI_EXCEL_PROC.md schema ??new CLI flow)
+        //   AiDocuments.UpdatedAt   (AI_EXCEL_PROC schema ??new CLI flow)
         //   DatasetSummary.CreatedAt (legacy v2 narrative card)
         //   NormalizedMeasurements.MAX(CreatedAt) (oldest fallback)
         // Without including AiDocuments here, rows processed by the new CLI
@@ -1386,7 +1583,50 @@ public sealed class WebRepository
                      (SELECT CreatedAt      FROM DatasetSummary   WHERE DatasetName  =r.DatasetName),
                      (SELECT MAX(CreatedAt) FROM NormalizedMeasurements WHERE DatasetName=r.DatasetName),
                      ''
-                   ) AS BatchedAt
+                   ) AS BatchedAt,
+                   COALESCE(
+                     (SELECT CASE
+                               WHEN d.SchemaVersion='input-data-test-batch-v1'
+                                 OR d.RawJson LIKE '%INPUT_DATA_BATCH_FROM_INPUT_DATA_TEST%'
+                               THEN 'new'
+                               ELSE 'old'
+                             END
+                        FROM AiDocuments d
+                       WHERE d.SourceDataset=r.DatasetName
+                         AND LOWER(COALESCE(d.PrimaryDefect,'')) NOT LIKE '%auto-extracted%'
+                         AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%_batch_auto.py%'
+                         AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%see workbook title/purpose%'
+                         AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%workbook stored but extraction surfaced narrative only%'
+                       ORDER BY d.UpdatedAt DESC LIMIT 1),
+                     CASE
+                       WHEN EXISTS(SELECT 1 FROM DatasetSummary s
+                                    WHERE s.DatasetName=r.DatasetName
+                                      AND s.ReportType='first_pass_index') THEN 'index'
+                     END,
+                     CASE
+                       WHEN EXISTS(SELECT 1 FROM DatasetSummary s WHERE s.DatasetName=r.DatasetName) THEN 'old'
+                       ELSE 'none'
+                     END
+                   ) AS AiResultKind,
+                   COALESCE(
+                     (SELECT d.SchemaVersion
+                        FROM AiDocuments d
+                       WHERE d.SourceDataset=r.DatasetName
+                         AND LOWER(COALESCE(d.PrimaryDefect,'')) NOT LIKE '%auto-extracted%'
+                         AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%_batch_auto.py%'
+                         AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%see workbook title/purpose%'
+                         AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%workbook stored but extraction surfaced narrative only%'
+                       ORDER BY d.UpdatedAt DESC LIMIT 1),
+                     CASE
+                       WHEN EXISTS(SELECT 1 FROM DatasetSummary s
+                                    WHERE s.DatasetName=r.DatasetName
+                                      AND s.ReportType='first_pass_index') THEN 'first-pass-index-v1'
+                     END,
+                     CASE
+                       WHEN EXISTS(SELECT 1 FROM DatasetSummary s WHERE s.DatasetName=r.DatasetName) THEN 'dataset-summary'
+                       ELSE ''
+                     END
+                   ) AS AiSchemaVersion
             FROM RawReports r
             ORDER BY r.CreatedAt DESC;
             """;
@@ -1396,7 +1636,9 @@ public sealed class WebRepository
             list.Add(new RawReportInfo(r.GetInt64(0), r.GetString(1), r.GetString(2),
                                        r.GetString(3), r.GetInt32(5), r.GetInt32(6),
                                        r.GetString(4), r.GetInt32(7) != 0,
-                                       r.IsDBNull(8) ? "" : r.GetString(8)));
+                                       r.IsDBNull(8) ? "" : r.GetString(8),
+                                       r.IsDBNull(9) ? "none" : r.GetString(9),
+                                       r.IsDBNull(10) ? "" : r.GetString(10)));
         return list;
     }
 
@@ -1574,6 +1816,135 @@ public sealed class WebRepository
             r.ReportType, doeJson, trendJson);
     }
 
+    public CurrentProblemApplyResult ApplyCurrentProblemFirstPassRows(IReadOnlyList<CurrentProblemFirstPassRow> rows)
+    {
+        if (rows.Count == 0)
+            return new CurrentProblemApplyResult(0, 0, 0, 0, 0, 0);
+
+        string now = DateTime.UtcNow.ToString("O");
+        int matched = 0;
+        int summaryRows = 0;
+        int productTypesFilled = 0;
+        int reportDatesFilled = 0;
+        int missing = 0;
+
+        using SqliteConnection conn = OpenConnection();
+        using SqliteTransaction tx = conn.BeginTransaction();
+
+        foreach (CurrentProblemFirstPassRow row in rows)
+        {
+            string dataset = (row.DatasetName ?? "").Trim();
+            if (dataset.Length == 0)
+                continue;
+
+            string existingProduct = "";
+            string existingDate = "";
+            using (SqliteCommand find = conn.CreateCommand())
+            {
+                find.Transaction = tx;
+                find.CommandText = "SELECT COALESCE(ProductType,''), COALESCE(ReportDate,'') FROM RawReports WHERE DatasetName=@n;";
+                find.Parameters.AddWithValue("@n", dataset);
+                using SqliteDataReader rd = find.ExecuteReader();
+                if (!rd.Read())
+                {
+                    missing++;
+                    continue;
+                }
+
+                existingProduct = rd.GetString(0);
+                existingDate = rd.GetString(1);
+            }
+
+            matched++;
+
+            string productType = FirstNonEmpty(row.Model, row.DbProductType, row.AiModel);
+            string reportDate = FirstDateToken(row.Date);
+            if (string.IsNullOrWhiteSpace(reportDate))
+                reportDate = FirstDateToken(row.DbReportDate);
+
+            if (string.IsNullOrWhiteSpace(existingProduct) && !string.IsNullOrWhiteSpace(productType))
+            {
+                using SqliteCommand update = conn.CreateCommand();
+                update.Transaction = tx;
+                update.CommandText = "UPDATE RawReports SET ProductType=@p WHERE DatasetName=@n;";
+                update.Parameters.AddWithValue("@p", productType);
+                update.Parameters.AddWithValue("@n", dataset);
+                productTypesFilled += update.ExecuteNonQuery();
+            }
+
+            if (string.IsNullOrWhiteSpace(existingDate) && !string.IsNullOrWhiteSpace(reportDate))
+            {
+                using SqliteCommand update = conn.CreateCommand();
+                update.Transaction = tx;
+                update.CommandText = "UPDATE RawReports SET ReportDate=@d WHERE DatasetName=@n;";
+                update.Parameters.AddWithValue("@d", reportDate);
+                update.Parameters.AddWithValue("@n", dataset);
+                reportDatesFilled += update.ExecuteNonQuery();
+            }
+
+            string summary = FirstNonEmpty(row.ReviewPurpose, row.Purpose, row.EvidenceSummary);
+            string keyFindings = BuildFirstPassKeyFindings(row);
+            string tagsJson = JsonSerializer.Serialize(FirstPassTags(row), JsonOpts);
+            string purpose = row.Purpose ?? "";
+            string testConditions = BuildFirstPassConditions(row, productType, reportDate);
+            string rootCause = JoinNonEmpty(row.TargetDefects);
+            string decision = row.Uncertainty ?? "";
+            string recommendedAction = row.NeedsDetailedAnalysis
+                ? "Use this as a first-pass index and run detailed current-problem analysis before process action."
+                : "Use this as a first-pass index and verify the source workbook before process action.";
+
+            using SqliteCommand upsert = conn.CreateCommand();
+            upsert.Transaction = tx;
+            upsert.CommandText = """
+                INSERT INTO DatasetSummary
+                    (DatasetName, ProductType, Summary, KeyFindings, Tags, CreatedAt,
+                     Purpose, TestConditions, RootCause, Decision, RecommendedAction,
+                     Verdict, Headline, EvidenceJson, ActionsJson, ContextJson,
+                     ReportType, DoeGridJson, TrendJson)
+                VALUES
+                    (@n, @p, @s, @k, @t, @at,
+                     @pu, @tc, @rc, @de, @ra,
+                     '', '', '', '', '',
+                     'first_pass_index', '', '')
+                ON CONFLICT(DatasetName) DO UPDATE SET
+                    ProductType=@p,
+                    Summary=@s,
+                    KeyFindings=@k,
+                    Tags=@t,
+                    CreatedAt=@at,
+                    Purpose=@pu,
+                    TestConditions=@tc,
+                    RootCause=@rc,
+                    Decision=@de,
+                    RecommendedAction=@ra,
+                    Verdict='',
+                    Headline='',
+                    EvidenceJson='',
+                    ActionsJson='',
+                    ContextJson='',
+                    ReportType='first_pass_index',
+                    DoeGridJson='',
+                    TrendJson='';
+                """;
+            upsert.Parameters.AddWithValue("@n", dataset);
+            upsert.Parameters.AddWithValue("@p", productType);
+            upsert.Parameters.AddWithValue("@s", TruncateForDb(summary, 2000));
+            upsert.Parameters.AddWithValue("@k", TruncateForDb(keyFindings, 4000));
+            upsert.Parameters.AddWithValue("@t", tagsJson);
+            upsert.Parameters.AddWithValue("@at", now);
+            upsert.Parameters.AddWithValue("@pu", TruncateForDb(purpose, 2000));
+            upsert.Parameters.AddWithValue("@tc", TruncateForDb(testConditions, 2000));
+            upsert.Parameters.AddWithValue("@rc", TruncateForDb(rootCause, 1500));
+            upsert.Parameters.AddWithValue("@de", TruncateForDb(decision, 2000));
+            upsert.Parameters.AddWithValue("@ra", recommendedAction);
+            upsert.ExecuteNonQuery();
+            summaryRows++;
+        }
+
+        tx.Commit();
+        return new CurrentProblemApplyResult(rows.Count, matched, summaryRows, productTypesFilled, reportDatesFilled, missing);
+    }
+
     public void SaveDatasetSummaryRecord(string name, string productType, string summary, string keyFindings, string tagsJson = "",
         string purpose = "", string testConditions = "", string rootCause = "",
         string decision = "", string recommendedAction = "",
@@ -1617,6 +1988,461 @@ public sealed class WebRepository
         cmd.Parameters.AddWithValue("@dg", doeGridJson  ?? "");
         cmd.Parameters.AddWithValue("@tr", trendJson    ?? "");
         cmd.ExecuteNonQuery();
+    }
+
+    public InputDataComExtractionStoreResult SaveInputDataComExtraction(InputDataComExtractionSave save)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteTransaction tx = conn.BeginTransaction();
+
+        DeleteInputDataComWorkbookNoCommit(conn, tx, save.DatasetName, save.SourcePath);
+
+        string createdAt = DateTime.UtcNow.ToString("O");
+        long workbookId;
+        using (SqliteCommand cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = """
+                INSERT INTO InputDataComWorkbooks
+                    (DatasetName, SourcePath, SourceFileName, FileSize, MtimeNs, Fingerprint,
+                     Status, Error, SheetCount, TotalRows, TotalCells, NonEmptyCells,
+                     MergeCount, RawJsonPath, ExtractedAt, CreatedAt)
+                VALUES
+                    (@dataset, @path, @file, @size, @mtime, @fingerprint,
+                     @status, @error, @sheetCount, @rows, @cells, @nonEmpty,
+                     @merges, @rawJsonPath, @extractedAt, @createdAt);
+                SELECT last_insert_rowid();
+                """;
+            cmd.Parameters.AddWithValue("@dataset", save.DatasetName);
+            cmd.Parameters.AddWithValue("@path", save.SourcePath);
+            cmd.Parameters.AddWithValue("@file", save.SourceFileName);
+            cmd.Parameters.AddWithValue("@size", save.FileSize);
+            cmd.Parameters.AddWithValue("@mtime", save.MtimeNs);
+            cmd.Parameters.AddWithValue("@fingerprint", save.Fingerprint);
+            cmd.Parameters.AddWithValue("@status", save.Status);
+            cmd.Parameters.AddWithValue("@error", save.Error);
+            cmd.Parameters.AddWithValue("@sheetCount", save.SheetCount);
+            cmd.Parameters.AddWithValue("@rows", save.TotalRows);
+            cmd.Parameters.AddWithValue("@cells", save.TotalCells);
+            cmd.Parameters.AddWithValue("@nonEmpty", save.NonEmptyCells);
+            cmd.Parameters.AddWithValue("@merges", save.MergeCount);
+            cmd.Parameters.AddWithValue("@rawJsonPath", save.RawJsonPath);
+            cmd.Parameters.AddWithValue("@extractedAt", save.ExtractedAt);
+            cmd.Parameters.AddWithValue("@createdAt", createdAt);
+            workbookId = Convert.ToInt64(cmd.ExecuteScalar());
+        }
+
+        using (SqliteCommand cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = """
+                INSERT INTO InputDataComSheets
+                    (WorkbookId, SheetIndex, SheetName, UsedTop, UsedLeft, UsedBottom, UsedRight,
+                     RowCount, ColumnCount, NonEmptyCells, MergeCount)
+                VALUES
+                    (@workbookId, @sheetIndex, @sheetName, @top, @left, @bottom, @right,
+                     @rowCount, @colCount, @nonEmpty, @mergeCount);
+                """;
+            AddCommonParameter(cmd, "@workbookId", workbookId);
+            SqliteParameter pSheetIndex = cmd.Parameters.Add("@sheetIndex", SqliteType.Integer);
+            SqliteParameter pSheetName  = cmd.Parameters.Add("@sheetName", SqliteType.Text);
+            SqliteParameter pTop        = cmd.Parameters.Add("@top", SqliteType.Integer);
+            SqliteParameter pLeft       = cmd.Parameters.Add("@left", SqliteType.Integer);
+            SqliteParameter pBottom     = cmd.Parameters.Add("@bottom", SqliteType.Integer);
+            SqliteParameter pRight      = cmd.Parameters.Add("@right", SqliteType.Integer);
+            SqliteParameter pRowCount   = cmd.Parameters.Add("@rowCount", SqliteType.Integer);
+            SqliteParameter pColCount   = cmd.Parameters.Add("@colCount", SqliteType.Integer);
+            SqliteParameter pNonEmpty   = cmd.Parameters.Add("@nonEmpty", SqliteType.Integer);
+            SqliteParameter pMergeCount = cmd.Parameters.Add("@mergeCount", SqliteType.Integer);
+
+            foreach (InputDataComSheetSave sheet in save.Sheets)
+            {
+                pSheetIndex.Value = sheet.SheetIndex;
+                pSheetName.Value = sheet.SheetName;
+                pTop.Value = sheet.UsedTop;
+                pLeft.Value = sheet.UsedLeft;
+                pBottom.Value = sheet.UsedBottom;
+                pRight.Value = sheet.UsedRight;
+                pRowCount.Value = sheet.RowCount;
+                pColCount.Value = sheet.ColumnCount;
+                pNonEmpty.Value = sheet.NonEmptyCells;
+                pMergeCount.Value = sheet.MergeCount;
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        using (SqliteCommand cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = """
+                INSERT INTO InputDataComMerges
+                    (WorkbookId, SheetName, Address, TopRow, LeftCol, BottomRow, RightCol,
+                     RowSpan, ColumnSpan, AnchorValue)
+                VALUES
+                    (@workbookId, @sheetName, @address, @top, @left, @bottom, @right,
+                     @rowSpan, @colSpan, @anchorValue);
+                """;
+            AddCommonParameter(cmd, "@workbookId", workbookId);
+            SqliteParameter pSheetName = cmd.Parameters.Add("@sheetName", SqliteType.Text);
+            SqliteParameter pAddress   = cmd.Parameters.Add("@address", SqliteType.Text);
+            SqliteParameter pTop       = cmd.Parameters.Add("@top", SqliteType.Integer);
+            SqliteParameter pLeft      = cmd.Parameters.Add("@left", SqliteType.Integer);
+            SqliteParameter pBottom    = cmd.Parameters.Add("@bottom", SqliteType.Integer);
+            SqliteParameter pRight     = cmd.Parameters.Add("@right", SqliteType.Integer);
+            SqliteParameter pRowSpan   = cmd.Parameters.Add("@rowSpan", SqliteType.Integer);
+            SqliteParameter pColSpan   = cmd.Parameters.Add("@colSpan", SqliteType.Integer);
+            SqliteParameter pAnchor    = cmd.Parameters.Add("@anchorValue", SqliteType.Text);
+
+            foreach (InputDataComMergeSave merge in save.Merges)
+            {
+                pSheetName.Value = merge.SheetName;
+                pAddress.Value = merge.Address;
+                pTop.Value = merge.TopRow;
+                pLeft.Value = merge.LeftCol;
+                pBottom.Value = merge.BottomRow;
+                pRight.Value = merge.RightCol;
+                pRowSpan.Value = merge.RowSpan;
+                pColSpan.Value = merge.ColumnSpan;
+                pAnchor.Value = merge.AnchorValue;
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        using (SqliteCommand cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = """
+                INSERT INTO InputDataComCells
+                    (WorkbookId, SheetName, RowNumber, ColNumber, ColLabel, CellAddress,
+                     CellValue, RawValue, MergeRole, MergeAddress, MergeAnchorRow, MergeAnchorCol)
+                VALUES
+                    (@workbookId, @sheetName, @rowNumber, @colNumber, @colLabel, @cellAddress,
+                     @cellValue, @rawValue, @mergeRole, @mergeAddress, @anchorRow, @anchorCol);
+                """;
+            AddCommonParameter(cmd, "@workbookId", workbookId);
+            SqliteParameter pSheetName    = cmd.Parameters.Add("@sheetName", SqliteType.Text);
+            SqliteParameter pRowNumber    = cmd.Parameters.Add("@rowNumber", SqliteType.Integer);
+            SqliteParameter pColNumber    = cmd.Parameters.Add("@colNumber", SqliteType.Integer);
+            SqliteParameter pColLabel     = cmd.Parameters.Add("@colLabel", SqliteType.Text);
+            SqliteParameter pCellAddress  = cmd.Parameters.Add("@cellAddress", SqliteType.Text);
+            SqliteParameter pCellValue    = cmd.Parameters.Add("@cellValue", SqliteType.Text);
+            SqliteParameter pRawValue     = cmd.Parameters.Add("@rawValue", SqliteType.Text);
+            SqliteParameter pMergeRole    = cmd.Parameters.Add("@mergeRole", SqliteType.Text);
+            SqliteParameter pMergeAddress = cmd.Parameters.Add("@mergeAddress", SqliteType.Text);
+            SqliteParameter pAnchorRow    = cmd.Parameters.Add("@anchorRow", SqliteType.Integer);
+            SqliteParameter pAnchorCol    = cmd.Parameters.Add("@anchorCol", SqliteType.Integer);
+
+            foreach (InputDataComCellSave cell in save.Cells)
+            {
+                pSheetName.Value = cell.SheetName;
+                pRowNumber.Value = cell.RowNumber;
+                pColNumber.Value = cell.ColNumber;
+                pColLabel.Value = cell.ColLabel;
+                pCellAddress.Value = cell.CellAddress;
+                pCellValue.Value = cell.CellValue;
+                pRawValue.Value = cell.RawValue;
+                pMergeRole.Value = cell.MergeRole;
+                pMergeAddress.Value = cell.MergeAddress;
+                pAnchorRow.Value = cell.MergeAnchorRow.HasValue ? cell.MergeAnchorRow.Value : DBNull.Value;
+                pAnchorCol.Value = cell.MergeAnchorCol.HasValue ? cell.MergeAnchorCol.Value : DBNull.Value;
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        using (SqliteCommand cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = """
+                INSERT INTO InputDataReviewCandidates
+                    (WorkbookId, CandidateKind, SheetName, RowNumber, Label, Confidence,
+                     EvidenceCellsJson, RawText, CreatedAt)
+                VALUES
+                    (@workbookId, @kind, @sheetName, @rowNumber, @label, @confidence,
+                     @evidence, @rawText, @createdAt);
+                """;
+            AddCommonParameter(cmd, "@workbookId", workbookId);
+            SqliteParameter pKind       = cmd.Parameters.Add("@kind", SqliteType.Text);
+            SqliteParameter pSheetName  = cmd.Parameters.Add("@sheetName", SqliteType.Text);
+            SqliteParameter pRowNumber  = cmd.Parameters.Add("@rowNumber", SqliteType.Integer);
+            SqliteParameter pLabel      = cmd.Parameters.Add("@label", SqliteType.Text);
+            SqliteParameter pConfidence = cmd.Parameters.Add("@confidence", SqliteType.Text);
+            SqliteParameter pEvidence   = cmd.Parameters.Add("@evidence", SqliteType.Text);
+            SqliteParameter pRawText    = cmd.Parameters.Add("@rawText", SqliteType.Text);
+            SqliteParameter pCreatedAt  = cmd.Parameters.Add("@createdAt", SqliteType.Text);
+
+            foreach (InputDataReviewCandidateSave candidate in save.Candidates)
+            {
+                pKind.Value = candidate.CandidateKind;
+                pSheetName.Value = candidate.SheetName;
+                pRowNumber.Value = candidate.RowNumber;
+                pLabel.Value = TruncateForDb(candidate.Label, 500);
+                pConfidence.Value = candidate.Confidence;
+                pEvidence.Value = JsonSerializer.Serialize(candidate.EvidenceCells, JsonOpts);
+                pRawText.Value = TruncateForDb(candidate.RawText, 2000);
+                pCreatedAt.Value = createdAt;
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        tx.Commit();
+
+        return new InputDataComExtractionStoreResult(
+            workbookId,
+            save.DatasetName,
+            save.SourceFileName,
+            save.SheetCount,
+            save.TotalRows,
+            save.TotalCells,
+            save.NonEmptyCells,
+            save.MergeCount,
+            save.Candidates.Count);
+    }
+
+    public void SaveInputDataReviewCase(InputDataReviewCaseSave save)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO InputDataReviewCases
+                (WorkbookId, ReviewCaseId, Status, ApprovedForAskAi,
+                 GenerationJson, VerificationJson, CreatedAt, VerifiedAt)
+            VALUES
+                (@workbookId, @reviewCaseId, @status, @approved,
+                 @generation, @verification, @createdAt, @verifiedAt);
+            """;
+        cmd.Parameters.AddWithValue("@workbookId", save.WorkbookId);
+        cmd.Parameters.AddWithValue("@reviewCaseId", save.ReviewCaseId);
+        cmd.Parameters.AddWithValue("@status", save.Status);
+        cmd.Parameters.AddWithValue("@approved", save.ApprovedForAskAi ? 1 : 0);
+        cmd.Parameters.AddWithValue("@generation", save.GenerationJson);
+        cmd.Parameters.AddWithValue("@verification", save.VerificationJson);
+        cmd.Parameters.AddWithValue("@createdAt", save.CreatedAt);
+        cmd.Parameters.AddWithValue("@verifiedAt", save.VerifiedAt);
+        cmd.ExecuteNonQuery();
+    }
+
+    public List<InputDataReviewCaseRecord> GetInputDataReviewCases(long workbookId)
+    {
+        var rows = new List<InputDataReviewCaseRecord>();
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT Id, WorkbookId, ReviewCaseId, Status, ApprovedForAskAi,
+                   GenerationJson, VerificationJson, UserAnswerJson, CreatedAt, VerifiedAt, UserReviewedAt
+              FROM InputDataReviewCases
+             WHERE WorkbookId=@workbookId
+             ORDER BY Id DESC;
+            """;
+        cmd.Parameters.AddWithValue("@workbookId", workbookId);
+
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            rows.Add(new InputDataReviewCaseRecord(
+                r.GetInt64(0),
+                r.GetInt64(1),
+                r.IsDBNull(2) ? "" : r.GetString(2),
+                r.IsDBNull(3) ? "" : r.GetString(3),
+                !r.IsDBNull(4) && r.GetInt32(4) != 0,
+                r.IsDBNull(5) ? "{}" : r.GetString(5),
+                r.IsDBNull(6) ? "{}" : r.GetString(6),
+                r.IsDBNull(7) ? "{}" : r.GetString(7),
+                r.IsDBNull(8) ? "" : r.GetString(8),
+                r.IsDBNull(9) ? "" : r.GetString(9),
+                r.IsDBNull(10) ? "" : r.GetString(10)));
+        }
+
+        return rows;
+    }
+
+    public List<InputDataComRowPreview> GetInputDataComRows(long workbookId, IReadOnlyList<string> rowRefs)
+    {
+        var parsedRefs = rowRefs
+            .Select(TryParseInputDataRowRef)
+            .Where(x => x.HasValue)
+            .Select(x => x!.Value)
+            .Distinct()
+            .ToList();
+        if (parsedRefs.Count == 0) return [];
+
+        var order = parsedRefs
+            .Select((row, index) => (row, index))
+            .ToDictionary(x => x.row, x => x.index);
+        var cellsByRow = new Dictionary<(string SheetName, int RowNumber), List<InputDataComCellPreview>>();
+
+        using SqliteConnection conn = OpenConnection();
+        foreach (IGrouping<string, (string SheetName, int RowNumber)> group in parsedRefs.GroupBy(x => x.SheetName))
+        {
+            List<int> rowNumbers = group.Select(x => x.RowNumber).Distinct().OrderBy(x => x).ToList();
+            if (rowNumbers.Count == 0) continue;
+
+            using SqliteCommand cmd = conn.CreateCommand();
+            cmd.Parameters.AddWithValue("@workbookId", workbookId);
+            cmd.Parameters.AddWithValue("@sheet", group.Key);
+
+            var rowParams = new List<string>();
+            for (int i = 0; i < rowNumbers.Count; i++)
+            {
+                string name = "@r" + i.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                rowParams.Add(name);
+                cmd.Parameters.AddWithValue(name, rowNumbers[i]);
+            }
+
+            cmd.CommandText = $"""
+                SELECT SheetName, RowNumber, ColNumber, ColLabel, CellAddress,
+                       CellValue, MergeRole, MergeAddress
+                  FROM InputDataComCells
+                 WHERE WorkbookId=@workbookId
+                   AND SheetName=@sheet
+                   AND RowNumber IN ({string.Join(",", rowParams)})
+                 ORDER BY RowNumber, ColNumber;
+                """;
+
+            using SqliteDataReader r = cmd.ExecuteReader();
+            while (r.Read())
+            {
+                string sheetName = r.IsDBNull(0) ? "" : r.GetString(0);
+                int rowNumber = r.GetInt32(1);
+                var key = (sheetName, rowNumber);
+                if (!cellsByRow.TryGetValue(key, out List<InputDataComCellPreview>? cells))
+                {
+                    cells = [];
+                    cellsByRow[key] = cells;
+                }
+
+                cells.Add(new InputDataComCellPreview(
+                    r.GetInt32(2),
+                    r.IsDBNull(3) ? "" : r.GetString(3),
+                    r.IsDBNull(4) ? "" : r.GetString(4),
+                    r.IsDBNull(5) ? "" : r.GetString(5),
+                    r.IsDBNull(6) ? "" : r.GetString(6),
+                    r.IsDBNull(7) ? "" : r.GetString(7)));
+            }
+        }
+
+        return cellsByRow
+            .Select(pair => new InputDataComRowPreview(pair.Key.SheetName, pair.Key.RowNumber, pair.Value))
+            .OrderBy(row => order.TryGetValue((row.SheetName, row.RowNumber), out int index) ? index : int.MaxValue)
+            .ThenBy(row => row.SheetName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(row => row.RowNumber)
+            .ToList();
+    }
+
+    public void SaveInputDataReviewCaseUserReview(InputDataReviewCaseUserReviewSave save)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            UPDATE InputDataReviewCases
+               SET UserAnswerJson=@answers,
+                   UserReviewedAt=@reviewedAt,
+                   ApprovedForAskAi=@approved,
+                   Status=CASE WHEN @approved = 1 THEN 'user_verified' ELSE 'needs_review' END
+             WHERE Id=@id;
+            """;
+        cmd.Parameters.AddWithValue("@answers", save.UserAnswerJson);
+        cmd.Parameters.AddWithValue("@reviewedAt", save.ReviewedAt);
+        cmd.Parameters.AddWithValue("@approved", save.ApprovedForAskAi ? 1 : 0);
+        cmd.Parameters.AddWithValue("@id", save.ReviewCaseDbId);
+        cmd.ExecuteNonQuery();
+    }
+
+    private static (string SheetName, int RowNumber)? TryParseInputDataRowRef(string rowRef)
+    {
+        string text = (rowRef ?? "").Trim();
+        int bang = text.LastIndexOf('!');
+        if (bang <= 0 || bang >= text.Length - 1) return null;
+
+        string sheetName = text[..bang].Trim();
+        string rowText = text[(bang + 1)..].Trim();
+        return int.TryParse(rowText, out int rowNumber) && rowNumber > 0 && !string.IsNullOrWhiteSpace(sheetName)
+            ? (sheetName, rowNumber)
+            : null;
+    }
+
+    public bool DeleteInputDataReviewCase(long reviewCaseDbId)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM InputDataReviewCases WHERE Id=@id;";
+        cmd.Parameters.AddWithValue("@id", reviewCaseDbId);
+        return cmd.ExecuteNonQuery() > 0;
+    }
+
+    public List<InputDataReviewCaseListRecord> GetRecentInputDataReviewCases(string datasetName, int limit = 20)
+    {
+        var rows = new List<InputDataReviewCaseListRecord>();
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT rv.Id, rv.WorkbookId, wb.DatasetName, wb.SourceFileName, wb.SourcePath,
+                   rv.ReviewCaseId, rv.Status, rv.ApprovedForAskAi, rv.CreatedAt, rv.UserReviewedAt
+              FROM InputDataReviewCases rv
+              JOIN InputDataComWorkbooks wb ON wb.Id = rv.WorkbookId
+             WHERE (@dataset = '' OR wb.DatasetName = @dataset)
+             ORDER BY rv.Id DESC
+             LIMIT @limit;
+            """;
+        cmd.Parameters.AddWithValue("@dataset", datasetName.Trim());
+        cmd.Parameters.AddWithValue("@limit", Math.Clamp(limit, 1, 100));
+
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            rows.Add(new InputDataReviewCaseListRecord(
+                r.GetInt64(0),
+                r.GetInt64(1),
+                r.IsDBNull(2) ? "" : r.GetString(2),
+                r.IsDBNull(3) ? "" : r.GetString(3),
+                r.IsDBNull(4) ? "" : r.GetString(4),
+                r.IsDBNull(5) ? "" : r.GetString(5),
+                r.IsDBNull(6) ? "" : r.GetString(6),
+                !r.IsDBNull(7) && r.GetInt32(7) != 0,
+                r.IsDBNull(8) ? "" : r.GetString(8),
+                r.IsDBNull(9) ? "" : r.GetString(9)));
+        }
+
+        return rows;
+    }
+
+    private static void DeleteInputDataComWorkbookNoCommit(SqliteConnection conn, SqliteTransaction tx, string datasetName, string sourcePath)
+    {
+        var ids = new List<long>();
+        using (SqliteCommand find = conn.CreateCommand())
+        {
+            find.Transaction = tx;
+            find.CommandText = "SELECT Id FROM InputDataComWorkbooks WHERE DatasetName=@dataset AND SourcePath=@path;";
+            find.Parameters.AddWithValue("@dataset", datasetName);
+            find.Parameters.AddWithValue("@path", sourcePath);
+            using SqliteDataReader r = find.ExecuteReader();
+            while (r.Read()) ids.Add(r.GetInt64(0));
+        }
+
+        foreach (long id in ids)
+        {
+            foreach (string table in new[]
+                     {
+                         "InputDataReviewCases",
+                         "InputDataReviewCandidates",
+                         "InputDataComMerges",
+                         "InputDataComCells",
+                         "InputDataComSheets",
+                         "InputDataComWorkbooks"
+                     })
+            {
+                using SqliteCommand del = conn.CreateCommand();
+                del.Transaction = tx;
+                del.CommandText = $"DELETE FROM {table} WHERE {(table == "InputDataComWorkbooks" ? "Id" : "WorkbookId")}=@id;";
+                del.Parameters.AddWithValue("@id", id);
+                del.ExecuteNonQuery();
+            }
+        }
+    }
+
+    private static void AddCommonParameter(SqliteCommand cmd, string name, object value)
+    {
+        SqliteParameter parameter = cmd.Parameters.Add(name, SqliteType.Integer);
+        parameter.Value = value;
     }
 
     // ?? Raw attached files (any type ??Excel, PDF, etc.) ?????????????????????
@@ -1670,6 +2496,73 @@ public sealed class WebRepository
         return list;
     }
 
+    public List<InputDataBatchDbWorkbook> GetInputDataBatchWorkbookFiles(bool includeExcluded = false)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT f.Id,
+                   f.DatasetName,
+                   f.FileName,
+                   f.MediaType,
+                   f.FileSize,
+                   COALESCE(r.ProductType, '') AS ProductType,
+                   COALESCE(r.ReportDate, '') AS ReportDate,
+                   f.CreatedAt,
+                   COALESCE(r.BatchExcluded, 0) AS BatchExcluded,
+                   COALESCE((SELECT MAX(d.UpdatedAt)
+                               FROM AiDocuments d
+                              WHERE d.SourceDataset=f.DatasetName), '') AS LatestAiUpdatedAt,
+                   COALESCE((SELECT CASE
+                                       WHEN d.SchemaVersion='input-data-test-batch-v1'
+                                         OR d.RawJson LIKE '%INPUT_DATA_BATCH_FROM_INPUT_DATA_TEST%'
+                                       THEN 'new'
+                                       ELSE 'old'
+                                     END
+                               FROM AiDocuments d
+                              WHERE d.SourceDataset=f.DatasetName
+                              ORDER BY d.UpdatedAt DESC
+                              LIMIT 1), 'none') AS AiResultKind,
+                   COALESCE((SELECT d.SchemaVersion
+                               FROM AiDocuments d
+                              WHERE d.SourceDataset=f.DatasetName
+                              ORDER BY d.UpdatedAt DESC
+                              LIMIT 1), '') AS AiSchemaVersion
+            FROM RawReportFiles f
+            LEFT JOIN RawReports r ON r.DatasetName=f.DatasetName
+            WHERE (
+                    LOWER(f.FileName) LIKE '%.xlsx'
+                 OR LOWER(f.FileName) LIKE '%.xlsm'
+                 OR LOWER(f.FileName) LIKE '%.xlsb'
+                 OR LOWER(f.FileName) LIKE '%.xls'
+                 OR f.MediaType LIKE '%spreadsheet%'
+                  )
+              AND (@includeExcluded = 1 OR COALESCE(r.BatchExcluded, 0) = 0)
+            ORDER BY f.DatasetName COLLATE NOCASE, f.Id;
+            """;
+        cmd.Parameters.AddWithValue("@includeExcluded", includeExcluded ? 1 : 0);
+
+        var list = new List<InputDataBatchDbWorkbook>();
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            list.Add(new InputDataBatchDbWorkbook(
+                r.GetInt64(0),
+                r.GetString(1),
+                r.GetString(2),
+                r.GetString(3),
+                r.GetInt64(4),
+                r.IsDBNull(5) ? "" : r.GetString(5),
+                r.IsDBNull(6) ? "" : r.GetString(6),
+                r.GetString(7),
+                r.GetInt32(8) != 0,
+                r.IsDBNull(9) ? "" : r.GetString(9),
+                r.IsDBNull(10) ? "none" : r.GetString(10),
+                r.IsDBNull(11) ? "" : r.GetString(11)));
+        }
+        return list;
+    }
+
     public (string FileName, string MediaType, byte[] Data)? GetRawReportFile(long fileId)
     {
         using SqliteConnection conn = OpenConnection();
@@ -1685,6 +2578,613 @@ public sealed class WebRepository
         using var stream = r.GetStream(2);
         stream.CopyTo(ms);
         return (fn, mt, ms.ToArray());
+    }
+
+    public int DeleteAiAnalysisForDataset(string datasetName)
+    {
+        string dataset = (datasetName ?? "").Trim();
+        if (dataset.Length == 0) return 0;
+
+        using SqliteConnection conn = OpenConnection();
+        using SqliteTransaction tx = conn.BeginTransaction();
+
+        using SqliteCommand count = conn.CreateCommand();
+        count.Transaction = tx;
+        count.CommandText = "SELECT COUNT(*) FROM AiDocuments WHERE SourceDataset=@dataset;";
+        count.Parameters.AddWithValue("@dataset", dataset);
+        int deletedDocuments = Convert.ToInt32(count.ExecuteScalar() ?? 0);
+
+        DeleteAiAnalysisForDataset(conn, tx, dataset);
+        tx.Commit();
+        return deletedDocuments;
+    }
+
+    public void SaveInputDataBatchAnalysisOverwrite(
+        string datasetName,
+        string sourceFile,
+        string productType,
+        string reportDate,
+        string analysisText,
+        string analysisHtml,
+        InputDataTestAnalysisParameters? parameters,
+        string sessionPath)
+    {
+        if (string.IsNullOrWhiteSpace(datasetName))
+            throw new ArgumentException("Dataset name is required.", nameof(datasetName));
+
+        string now = DateTime.UtcNow.ToString("O");
+        string docId = "input-data-test-" + Guid.NewGuid().ToString("N");
+        InputDataTestAnalysisParameters p = parameters ?? InputDataTestAnalysisParameters.Empty;
+        string title = FirstMarkdownHeading(analysisText);
+        if (string.IsNullOrWhiteSpace(title))
+            title = string.IsNullOrWhiteSpace(sourceFile) ? datasetName : Path.GetFileNameWithoutExtension(sourceFile);
+
+        string purpose = FirstNonEmpty(p.ReviewPurpose, p.Purpose);
+        if (!string.IsNullOrWhiteSpace(p.Purpose) && !purpose.Contains(p.Purpose, StringComparison.OrdinalIgnoreCase))
+            purpose = string.IsNullOrWhiteSpace(purpose) ? p.Purpose : $"{purpose} / {p.Purpose}";
+        purpose = TruncateForDb(CleanInputDataAnalysisLine(purpose), 1200);
+        if (string.IsNullOrWhiteSpace(purpose))
+            purpose = ExtractInputDataAnalysisPurpose(analysisText, analysisHtml, title);
+        if (string.IsNullOrWhiteSpace(purpose))
+            purpose = CleanInputDataAnalysisLine(FirstMeaningfulLine(analysisText, title));
+        List<string> aiTargetDefects = ExtractInputDataAnalysisList(
+            analysisText,
+            analysisHtml,
+            "대상불량",
+            "대상 불량",
+            "Target defect",
+            "Target defects");
+        List<string> aiReviewItems = ExtractInputDataAnalysisList(
+            analysisText,
+            analysisHtml,
+            "검토사항",
+            "검토 사항",
+            "검토 항목",
+            "확인 항목",
+            "Review item",
+            "Review items",
+            "Check item",
+            "Check items");
+        List<string> parameterTargetDefects = CleanInputDataParameterList(p.TargetDefects);
+        if (parameterTargetDefects.Count > 0)
+            aiTargetDefects = parameterTargetDefects;
+
+        List<string> parameterReviewItems = CleanInputDataParameterList(p.ReviewItems);
+        if (parameterReviewItems.Count > 0)
+            aiReviewItems = parameterReviewItems;
+
+        string model = FirstNonEmpty(p.Model, productType);
+        string date = FirstNonEmpty(p.Date, reportDate);
+        double confidence = p.Confidence is >= 0 and <= 1 ? p.Confidence.Value : 0.90;
+
+        string primaryDefect = aiTargetDefects.FirstOrDefault() ?? "";
+        string primaryDefectJson = string.IsNullOrWhiteSpace(primaryDefect)
+            ? "{}"
+            : JsonSerializer.Serialize(new { canonical_name = primaryDefect, aliases_in_document = Array.Empty<string>() }, JsonOpts);
+        string relatedDefectsJson = JsonSerializer.Serialize(aiTargetDefects, JsonOpts);
+        string processesJson = JsonSerializer.Serialize(aiReviewItems, JsonOpts);
+        string markdown = string.IsNullOrWhiteSpace(analysisText)
+            ? "Analysis HTML was generated. See RawJson.analysisHtml."
+            : analysisText.Trim();
+        string rawJson = JsonSerializer.Serialize(new
+        {
+            pipeline = "INPUT_DATA_BATCH_FROM_INPUT_DATA_TEST",
+            source = "INPUT DATA(BATCH)",
+            sessionPath,
+            parameters = InputDataParametersPayload(p),
+            analysisText = analysisText ?? "",
+            analysisHtml = analysisHtml ?? ""
+        }, JsonOpts);
+        string contentJson = JsonSerializer.Serialize(SplitAnalysisContent(markdown), JsonOpts);
+        string logId = docId + "-log";
+        string conclusionId = docId + "-conclusion-1";
+
+        using SqliteConnection conn = OpenConnection();
+        using SqliteTransaction tx = conn.BeginTransaction();
+
+        DeleteAiAnalysisForDataset(conn, tx, datasetName);
+        if (!string.IsNullOrWhiteSpace(productType))
+        {
+            using SqliteCommand delModel = conn.CreateCommand();
+            delModel.Transaction = tx;
+            delModel.CommandText = "DELETE FROM AiModelAnalyses WHERE ProductType=@p;";
+            delModel.Parameters.AddWithValue("@p", productType);
+            delModel.ExecuteNonQuery();
+        }
+
+        using (SqliteCommand ins = conn.CreateCommand())
+        {
+            ins.Transaction = tx;
+            ins.CommandText = """
+                INSERT INTO AiDocuments
+                    (DocumentId, SourceDataset, SourceFile, Title, Model, ReportDate,
+                     Department, Marker, Line, ReportType, PrimaryDefect,
+                     PrimaryDefectJson, RelatedDefectsJson, PartsJson, ProcessesJson,
+                     Purpose, ContentJson, GeneratedReportMarkdown, SourceCellsJson,
+                     Confidence, SchemaVersion, RawJson, CreatedAt, UpdatedAt)
+                VALUES
+                    (@id, @dataset, @file, @title, @model, @date,
+                     '', '', '', @type, @primaryDefect,
+                     @primaryDefectJson, @relatedDefects, '[]', @processes,
+                     @purpose, @content, @markdown, '{}',
+                     @confidence, @schema, @raw, @created, @updated);
+                """;
+            ins.Parameters.AddWithValue("@id", docId);
+            ins.Parameters.AddWithValue("@dataset", datasetName);
+            ins.Parameters.AddWithValue("@file", sourceFile ?? "");
+            ins.Parameters.AddWithValue("@title", title);
+            ins.Parameters.AddWithValue("@model", model);
+            ins.Parameters.AddWithValue("@date", date);
+            ins.Parameters.AddWithValue("@type", "input_data_test_analysis");
+            ins.Parameters.AddWithValue("@primaryDefect", primaryDefect);
+            ins.Parameters.AddWithValue("@primaryDefectJson", primaryDefectJson);
+            ins.Parameters.AddWithValue("@relatedDefects", relatedDefectsJson);
+            ins.Parameters.AddWithValue("@processes", processesJson);
+            ins.Parameters.AddWithValue("@purpose", purpose);
+            ins.Parameters.AddWithValue("@content", contentJson);
+            ins.Parameters.AddWithValue("@markdown", markdown);
+            ins.Parameters.AddWithValue("@confidence", confidence);
+            ins.Parameters.AddWithValue("@schema", "input-data-test-batch-v1");
+            ins.Parameters.AddWithValue("@raw", rawJson);
+            ins.Parameters.AddWithValue("@created", now);
+            ins.Parameters.AddWithValue("@updated", now);
+            ins.ExecuteNonQuery();
+        }
+
+        using (SqliteCommand concl = conn.CreateCommand())
+        {
+            concl.Transaction = tx;
+            concl.CommandText = """
+                INSERT INTO AiConclusions
+                    (ConclusionId, DocumentId, Topic, StatementFromReport,
+                     NormalizedInterpretation, SourceFile, SheetName, SourceCellsJson)
+                VALUES
+                    (@id, @doc, @topic, @statement, @interp, @file, '', '{}');
+                """;
+            concl.Parameters.AddWithValue("@id", conclusionId);
+            concl.Parameters.AddWithValue("@doc", docId);
+            concl.Parameters.AddWithValue("@topic", "INPUT DATA(TEST) analysis");
+            concl.Parameters.AddWithValue("@statement", TruncateForDb(CleanInputDataAnalysisLine(FirstMeaningfulLine(markdown, "")), 1200));
+            concl.Parameters.AddWithValue("@interp", TruncateForDb(markdown, 3000));
+            concl.Parameters.AddWithValue("@file", sourceFile ?? "");
+            concl.ExecuteNonQuery();
+        }
+
+        using (SqliteCommand log = conn.CreateCommand())
+        {
+            log.Transaction = tx;
+            log.CommandText = """
+                INSERT INTO AiExtractionLogs
+                    (LogId, DocumentId, Confidence, AssumptionsJson, WarningsJson,
+                     DecisionRationale, CreatedAt)
+                VALUES
+                    (@id, @doc, @confidence, '[]', '[]', @rationale, @created);
+                """;
+            log.Parameters.AddWithValue("@id", logId);
+            log.Parameters.AddWithValue("@doc", docId);
+            log.Parameters.AddWithValue("@confidence", confidence);
+            log.Parameters.AddWithValue("@rationale", "Generated by INPUT DATA(BATCH) using INPUT DATA(TEST) Extract + Analysis flow.");
+            log.Parameters.AddWithValue("@created", now);
+            log.ExecuteNonQuery();
+        }
+
+        tx.Commit();
+    }
+
+    private static object InputDataParametersPayload(InputDataTestAnalysisParameters p)
+        => new
+        {
+            reviewPurpose = p.ReviewPurpose,
+            tags = p.Tags,
+            purpose = p.Purpose,
+            purposeCode = p.PurposeCode,
+            targetDefects = p.TargetDefects,
+            reviewItems = p.ReviewItems,
+            model = p.Model,
+            date = p.Date,
+            confidence = p.Confidence
+        };
+
+    private static List<string> CleanInputDataParameterList(IEnumerable<string> values)
+        => values
+            .Select(CleanInputDataAnalysisLine)
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Where(v => !v.Equals("unknown", StringComparison.OrdinalIgnoreCase))
+            .Where(v => !v.Equals("n/a", StringComparison.OrdinalIgnoreCase))
+            .Where(v => !LooksLikeInputDataSourceFile(v))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(10)
+            .Select(v => TruncateForDb(v, 180))
+            .ToList();
+
+    private static string BuildFirstPassKeyFindings(CurrentProblemFirstPassRow row)
+    {
+        var lines = new List<string>();
+        if (!string.IsNullOrWhiteSpace(row.EvidenceSummary))
+            lines.Add("- Evidence: " + row.EvidenceSummary.Trim());
+        if (row.TargetDefects.Count > 0)
+            lines.Add("- Target defects: " + JoinNonEmpty(row.TargetDefects));
+        if (row.ReviewItems.Count > 0)
+            lines.Add("- Review items: " + JoinNonEmpty(row.ReviewItems));
+        if (row.Tags.Count > 0)
+            lines.Add("- Tags: " + JoinNonEmpty(row.Tags));
+        if (row.EvidenceCells.Count > 0)
+            lines.Add("- Evidence cells: " + JoinNonEmpty(row.EvidenceCells.Take(20)));
+        if (!string.IsNullOrWhiteSpace(row.Uncertainty))
+            lines.Add("- Uncertainty: " + row.Uncertainty.Trim());
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string BuildFirstPassConditions(CurrentProblemFirstPassRow row, string productType, string reportDate)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(productType)) parts.Add("Model: " + productType.Trim());
+        if (!string.IsNullOrWhiteSpace(reportDate)) parts.Add("Date: " + reportDate.Trim());
+        if (!string.IsNullOrWhiteSpace(row.AiModel)) parts.Add("AI model: " + row.AiModel.Trim());
+        if (!string.IsNullOrWhiteSpace(row.ModelMappingSource)) parts.Add("Model mapping source: " + row.ModelMappingSource.Trim());
+        if (!string.IsNullOrWhiteSpace(row.PurposeCode)) parts.Add("Purpose code: " + row.PurposeCode.Trim());
+        if (!string.IsNullOrWhiteSpace(row.FileNames)) parts.Add("Source file: " + row.FileNames.Trim());
+        parts.Add("Confidence: " + Math.Clamp(row.Confidence, 0, 1).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
+        return string.Join(Environment.NewLine, parts);
+    }
+
+    private static List<string> FirstPassTags(CurrentProblemFirstPassRow row)
+    {
+        return row.Tags
+            .Concat(row.TargetDefects)
+            .Concat(row.ReviewItems)
+            .Select(CleanInputDataAnalysisLine)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(24)
+            .ToList();
+    }
+
+    private static string JoinNonEmpty(IEnumerable<string> values)
+        => string.Join(", ", values
+            .Select(x => (x ?? "").Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase));
+
+    private static string FirstDateToken(string? value)
+    {
+        string text = (value ?? "").Trim();
+        if (text.Length == 0) return "";
+
+        var match = System.Text.RegularExpressions.Regex.Match(text, @"\b\d{4}-\d{2}-\d{2}\b");
+        if (match.Success)
+            return match.Value;
+
+        string first = text.Split(';', ',', '|').Select(x => x.Trim()).FirstOrDefault(x => x.Length > 0) ?? text;
+        return DateTime.TryParse(first, null, System.Globalization.DateTimeStyles.AssumeLocal, out DateTime dt)
+            ? dt.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)
+            : "";
+    }
+
+    private static string FirstNonEmpty(params string?[] values)
+    {
+        foreach (string? value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                return value.Trim();
+        }
+        return "";
+    }
+
+    private static void DeleteAiAnalysisForDataset(SqliteConnection conn, SqliteTransaction tx, string datasetName)
+    {
+        string docIds = "SELECT DocumentId FROM AiDocuments WHERE SourceDataset=@dataset";
+        string[] statements =
+        [
+            $"DELETE FROM AiNgBreakdowns WHERE ResultId IN (SELECT ResultId FROM AiResults WHERE DocumentId IN ({docIds}));",
+            $"DELETE FROM AiResults WHERE DocumentId IN ({docIds});",
+            $"DELETE FROM AiTestConditions WHERE DocumentId IN ({docIds});",
+            $"DELETE FROM AiConclusionTranslations WHERE ConclusionId IN (SELECT ConclusionId FROM AiConclusions WHERE DocumentId IN ({docIds}));",
+            $"DELETE FROM AiConclusions WHERE DocumentId IN ({docIds});",
+            $"DELETE FROM AiHintTranslations WHERE HintId IN (SELECT HintId FROM AiTroubleshootingHints WHERE DocumentId IN ({docIds}));",
+            $"DELETE FROM AiTroubleshootingHints WHERE DocumentId IN ({docIds});",
+            $"DELETE FROM AiLogTranslations WHERE LogId IN (SELECT LogId FROM AiExtractionLogs WHERE DocumentId IN ({docIds}));",
+            $"DELETE FROM AiExtractionLogs WHERE DocumentId IN ({docIds});",
+            $"DELETE FROM AiDocumentTranslations WHERE DocumentId IN ({docIds});",
+            $"DELETE FROM AiDocuments WHERE SourceDataset=@dataset;"
+        ];
+
+        foreach (string sql in statements)
+        {
+            using SqliteCommand cmd = conn.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.CommandText = sql;
+            cmd.Parameters.AddWithValue("@dataset", datasetName);
+            cmd.ExecuteNonQuery();
+        }
+    }
+
+    private static List<string> SplitAnalysisContent(string markdown)
+    {
+        var lines = new List<string>();
+        foreach (string rawLine in (markdown ?? "").Replace("\r\n", "\n").Split('\n'))
+        {
+            string line = rawLine.Trim();
+            if (line.Length == 0) continue;
+            line = line.TrimStart('#').Trim();
+            line = line.TrimStart('-', '*').Trim();
+            if (line.Length == 0) continue;
+            lines.Add(TruncateForDb(line, 700));
+            if (lines.Count >= 12) break;
+        }
+        return lines;
+    }
+
+    private static string FirstMarkdownHeading(string? markdown)
+    {
+        foreach (string rawLine in (markdown ?? "").Replace("\r\n", "\n").Split('\n'))
+        {
+            string line = rawLine.Trim();
+            if (line.StartsWith("#", StringComparison.Ordinal))
+                return TruncateForDb(line.TrimStart('#').Trim(), 180);
+        }
+        return "";
+    }
+
+    private static string FirstMeaningfulLine(string? markdown, string skip)
+    {
+        foreach (string rawLine in (markdown ?? "").Replace("\r\n", "\n").Split('\n'))
+        {
+            string line = rawLine.Trim();
+            if (line.Length == 0) continue;
+            line = line.TrimStart('#').Trim();
+            line = line.TrimStart('-', '*').Trim();
+            if (line.Length == 0) continue;
+            if (!string.IsNullOrWhiteSpace(skip) && line.Equals(skip, StringComparison.OrdinalIgnoreCase)) continue;
+            return TruncateForDb(line, 1200);
+        }
+        return "";
+    }
+
+    private static string ExtractInputDataAnalysisPurpose(string? analysisText, string? analysisHtml, string title)
+    {
+        string htmlText = StripHtmlForAnalysisText(analysisHtml);
+        string combined = (analysisText ?? "") + "\n" + htmlText;
+        foreach (string label in new[]
+                 {
+                     "검토 목적", "목적", "시험 의도",
+                     "Review purpose", "Purpose", "Test intent", "Goal"
+                 })
+        {
+            string? value = ExtractLabeledLineValue(combined, label);
+            if (string.IsNullOrWhiteSpace(value)) continue;
+            if (!string.IsNullOrWhiteSpace(title)
+                && value.Equals(title, StringComparison.OrdinalIgnoreCase)) continue;
+            if (LooksLikeInputDataSourceFile(value)) continue;
+            return TruncateForDb(CleanInputDataAnalysisLine(value), 1200);
+        }
+
+        string? malformedValue = ExtractMalformedInputDataLabelValue(combined, 3)
+            ?? ExtractMalformedInputDataLabelValue(combined, 1);
+        if (!string.IsNullOrWhiteSpace(malformedValue)
+            && !malformedValue.Equals(title, StringComparison.OrdinalIgnoreCase)
+            && !LooksLikeInputDataSourceFile(malformedValue))
+        {
+            return TruncateForDb(malformedValue, 1200);
+        }
+        return "";
+    }
+
+    private static List<string> ExtractInputDataAnalysisList(string? analysisText, string? analysisHtml, params string[] labels)
+    {
+        string htmlText = StripHtmlForAnalysisText(analysisHtml);
+        string combined = (analysisText ?? "") + "\n" + htmlText;
+        foreach (string label in labels)
+        {
+            string? value = ExtractLabeledLineValue(combined, label);
+            if (string.IsNullOrWhiteSpace(value)) continue;
+
+            return SplitInputDataAnalysisList(value)
+                .Take(10)
+                .ToList();
+        }
+
+        int malformedOrdinal = MalformedInputDataOrdinalForLabels(labels);
+        if (malformedOrdinal > 0)
+        {
+            string? value = ExtractMalformedInputDataLabelValue(combined, malformedOrdinal);
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return SplitInputDataAnalysisList(value)
+                    .Take(10)
+                    .ToList();
+            }
+        }
+        return [];
+    }
+
+    private static IEnumerable<string> SplitInputDataAnalysisList(string value)
+    {
+        foreach (string item in System.Text.RegularExpressions.Regex.Split(value ?? "", @"[,\n;|、，]+"))
+        {
+            string clean = System.Text.RegularExpressions.Regex.Replace(item, @"\s+", " ")
+                .Trim(' ', '-', '*', '·', ':', '：');
+            clean = CleanInputDataAnalysisLine(clean);
+            if (clean.Length < 2) continue;
+            if (clean.Equals("확인 필요", StringComparison.OrdinalIgnoreCase)) continue;
+            if (clean.Equals("unknown", StringComparison.OrdinalIgnoreCase)) continue;
+            if (clean.Equals("n/a", StringComparison.OrdinalIgnoreCase)) continue;
+            if (LooksLikeInputDataSourceFile(clean)) continue;
+
+            yield return TruncateForDb(clean, 180);
+        }
+    }
+
+    private static string? ExtractLabeledLineValue(string text, string label)
+    {
+        string[] lines = (text ?? "").Replace("\r\n", "\n").Split('\n');
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string line = System.Text.RegularExpressions.Regex.Replace(lines[i], @"\s+", " ").Trim();
+            if (line.Length == 0) continue;
+
+            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(
+                line,
+                @"^\s*" + System.Text.RegularExpressions.Regex.Escape(label) + @"\s*[:：]\s*(.{2,220})$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (!match.Success) continue;
+
+            string value = match.Groups[1].Value.Trim(' ', '-', '*', '·', ':', '：');
+            return value.Length == 0 ? null : value;
+        }
+
+        for (int i = 0; i < lines.Length - 1; i++)
+        {
+            string line = System.Text.RegularExpressions.Regex.Replace(lines[i], @"\s+", " ").Trim(' ', '#', '-', '*', '·', ':', '：');
+            if (!line.Equals(label, StringComparison.OrdinalIgnoreCase)) continue;
+
+            for (int j = i + 1; j < lines.Length && j <= i + 3; j++)
+            {
+                string value = System.Text.RegularExpressions.Regex.Replace(lines[j], @"\s+", " ").Trim(' ', '-', '*', '·', ':', '：');
+                if (value.Length >= 2) return value;
+            }
+        }
+        return null;
+    }
+
+    private static string CleanInputDataAnalysisLine(string? value)
+    {
+        string text = System.Text.RegularExpressions.Regex.Replace(value ?? "", @"\s+", " ").Trim(' ', '-', '*', '·', ':', '：');
+        if (TrySplitMalformedInputDataLabelRow(text, out _, out string rowValue))
+            return rowValue;
+
+        int colon = FirstInputDataColonIndex(text);
+        if (colon <= 0 || colon > 40) return text;
+
+        string prefix = text[..colon].Trim();
+        string remainder = text[(colon + 1)..].Trim(' ', '-', '*', '·', ':', '：');
+        if (remainder.Length < 2) return text;
+        return LooksLikeMalformedInputDataLabel(prefix) ? remainder : text;
+    }
+
+    private static string? ExtractMalformedInputDataLabelValue(string text, int ordinal)
+    {
+        int index = 0;
+        foreach (string rawLine in (text ?? "").Replace("\r\n", "\n").Split('\n').Take(10))
+        {
+            string line = System.Text.RegularExpressions.Regex.Replace(rawLine, @"\s+", " ").Trim(' ', '-', '*', '·');
+            if (!TryGetMalformedInputDataLabelValue(line, out string value)) continue;
+            index++;
+            if (index != ordinal) continue;
+            if (value.Length >= 2 && value.Length <= 240)
+                return value;
+        }
+        return null;
+    }
+
+    private static int MalformedInputDataOrdinalForLabels(string[] labels)
+    {
+        if (labels.Any(l => l.Contains("대상", StringComparison.OrdinalIgnoreCase)
+                            || l.Contains("target", StringComparison.OrdinalIgnoreCase)))
+            return 4;
+        if (labels.Any(l => l.Contains("검토", StringComparison.OrdinalIgnoreCase)
+                            || l.Contains("확인", StringComparison.OrdinalIgnoreCase)
+                            || l.Contains("review", StringComparison.OrdinalIgnoreCase)
+                            || l.Contains("check", StringComparison.OrdinalIgnoreCase)))
+            return 5;
+        return 0;
+    }
+
+    private static bool TryGetMalformedInputDataLabelValue(string line, out string value)
+    {
+        value = "";
+        string text = System.Text.RegularExpressions.Regex.Replace(line ?? "", @"\s+", " ").Trim(' ', '-', '*', '·');
+        if (TrySplitMalformedInputDataLabelRow(text, out _, out value))
+            return true;
+
+        int colon = FirstInputDataColonIndex(text);
+        if (colon <= 0 || colon > 40) return false;
+        if (!LooksLikeMalformedInputDataLabel(text[..colon])) return false;
+
+        value = text[(colon + 1)..].Trim(' ', '-', '*', '·', ':', '：');
+        return value.Length >= 2;
+    }
+
+    private static bool TrySplitMalformedInputDataLabelRow(string line, out string label, out string value)
+    {
+        label = "";
+        value = "";
+        string text = System.Text.RegularExpressions.Regex.Replace(line ?? "", @"\s+", " ").Trim(' ', '-', '*', '·');
+        if (text.Length == 0) return false;
+
+        System.Text.RegularExpressions.Match m = System.Text.RegularExpressions.Regex.Match(text, @"^(\S{2,40})\s+(.{2,240})$");
+        if (!m.Success) return false;
+        string first = m.Groups[1].Value.Trim();
+        if (!LooksLikeMalformedInputDataLabel(first)) return false;
+
+        label = first;
+        value = m.Groups[2].Value.Trim(' ', '-', '*', '·', ':', '：');
+        return value.Length >= 2;
+    }
+
+    private static int FirstInputDataColonIndex(string text)
+    {
+        int ascii = (text ?? "").IndexOf(':');
+        int wide = (text ?? "").IndexOf('：');
+        if (ascii < 0) return wide;
+        if (wide < 0) return ascii;
+        return Math.Min(ascii, wide);
+    }
+
+    private static bool LooksLikeMalformedInputDataLabel(string value)
+    {
+        string text = System.Text.RegularExpressions.Regex.Replace(value ?? "", @"\s+", "");
+        if (text.Length == 0 || text.Length > 40) return false;
+        if (text.Contains('?') || text.Contains('\uFFFD')) return true;
+
+        foreach (char ch in text)
+        {
+            if (char.IsControl(ch)) return true;
+            if (ch is >= '\u0080' and <= '\u009F') return true;
+            if (ch is >= '\u4E00' and <= '\u9FFF') return true;
+            if (ch is >= '\uF900' and <= '\uFAFF') return true;
+        }
+        return false;
+    }
+
+    private static string StripHtmlForAnalysisText(string? html)
+    {
+        if (string.IsNullOrWhiteSpace(html)) return "";
+        string text = System.Text.RegularExpressions.Regex.Replace(
+            html,
+            @"<\s*(br|p|div|li|tr|h[1-6])\b[^>]*>",
+            "\n",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        text = System.Text.RegularExpressions.Regex.Replace(
+            text,
+            "<[^>]+>",
+            " ",
+            System.Text.RegularExpressions.RegexOptions.Singleline);
+        return System.Net.WebUtility.HtmlDecode(text);
+    }
+
+    private static bool LooksLikeInputDataSourceFile(string value)
+    {
+        string s = (value ?? "").Trim();
+        if (s.Contains(".xlsx", StringComparison.OrdinalIgnoreCase)
+            || s.Contains(".xlsm", StringComparison.OrdinalIgnoreCase)
+            || s.Contains("_clean_textonly", StringComparison.OrdinalIgnoreCase)
+            || s.Contains("_textonly", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (System.Text.RegularExpressions.Regex.IsMatch(s, @"^[0-9a-f]{12,16}[_-]", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            return true;
+
+        return s.Length > 45
+               && System.Text.RegularExpressions.Regex.IsMatch(s, @"\b(report|result|test|summary)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+               && System.Text.RegularExpressions.Regex.IsMatch(s, @"\b(clean|textonly|copy|date|\d{4}[.-]\d{1,2}[.-]\d{1,2})\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    }
+
+    private static string TruncateForDb(string? value, int maxLength)
+    {
+        string text = (value ?? "").Trim();
+        if (text.Length <= maxLength) return text;
+        return text[..maxLength].TrimEnd();
     }
 
     public void DeleteRawReportFile(long fileId)
@@ -1865,9 +3365,9 @@ public sealed class WebRepository
         return rec;
     }
 
-    // ?? AI_EXCEL_PROC.md schema read path ?????????????????????????????????????
+    // ?? AI_EXCEL_PROC schema read path ?????????????????????????????????????
     // Used by DataInferenceDbPage to render the new-CLI bundle when a row was
-    // processed via AI_EXCEL_PROC.md (writes AiDocuments + children). Returns
+    // processed via the AI_EXCEL_PROC schema (writes AiDocuments + children). Returns
     // null when the dataset has no AiDocuments row ??the page falls back to
     // the old DatasetSummary card in that case.
     public AiDocBundle? GetAiDocBundle(string sourceDataset)
@@ -1881,7 +3381,7 @@ public sealed class WebRepository
         {
             cmd.CommandText = """
                 SELECT DocumentId, SourceDataset, SourceFile, Title, Purpose, PrimaryDefect,
-                       ReportType, ReportDate, Confidence,
+                       ReportType, ReportDate, Confidence, SchemaVersion, RawJson,
                        ContentJson, GeneratedReportMarkdown, RelatedDefectsJson, PartsJson, ProcessesJson
                 FROM AiDocuments
                 WHERE SourceDataset=@n
@@ -1905,12 +3405,15 @@ public sealed class WebRepository
                 ReportType    = rd.GetString(6),
                 ReportDate    = rd.GetString(7),
                 Confidence    = rd.IsDBNull(8) ? 0 : rd.GetDouble(8),
-                Content        = ReadJsonStringList(rd.IsDBNull(9)  ? "" : rd.GetString(9)),
-                GeneratedReportMarkdown = rd.IsDBNull(10) ? "" : rd.GetString(10),
-                RelatedDefects = ReadJsonStringList(rd.IsDBNull(11) ? "" : rd.GetString(11)),
-                Parts          = ReadJsonStringList(rd.IsDBNull(12) ? "" : rd.GetString(12)),
-                Processes      = ReadJsonStringList(rd.IsDBNull(13) ? "" : rd.GetString(13)),
+                SchemaVersion  = rd.IsDBNull(9) ? "" : rd.GetString(9),
+                RawJson        = rd.IsDBNull(10) ? "" : rd.GetString(10),
+                Content        = ReadJsonStringList(rd.IsDBNull(11) ? "" : rd.GetString(11)),
+                GeneratedReportMarkdown = rd.IsDBNull(12) ? "" : rd.GetString(12),
+                RelatedDefects = ReadJsonStringList(rd.IsDBNull(13) ? "" : rd.GetString(13)),
+                Parts          = ReadJsonStringList(rd.IsDBNull(14) ? "" : rd.GetString(14)),
+                Processes      = ReadJsonStringList(rd.IsDBNull(15) ? "" : rd.GetString(15)),
             };
+            bundle.AnalysisHtml = JsonStringFromRaw(bundle.RawJson, "analysisHtml");
         }
         string docId = bundle.DocumentId;
 
@@ -2166,6 +3669,22 @@ public sealed class WebRepository
         catch { return []; }
     }
 
+    private static string JsonStringFromRaw(string? json, string propertyName)
+    {
+        if (string.IsNullOrWhiteSpace(json) || string.IsNullOrWhiteSpace(propertyName)) return "";
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty(propertyName, out JsonElement value)
+                && value.ValueKind == JsonValueKind.String)
+            {
+                return value.GetString() ?? "";
+            }
+        }
+        catch { }
+        return "";
+    }
+
     // ?? Dataset summary translations (multi-language) ?????????????????????????
 
     public void SaveDatasetSummaryTranslation(
@@ -2357,6 +3876,258 @@ public sealed class WebRepository
         cmd.ExecuteNonQuery();
     }
 
+    // Daily Test Data projects
+
+    public List<DailyTestDataItemRecord> GetDailyTestDataItems()
+    {
+        var list = new List<DailyTestDataItemRecord>();
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT Id, Name, DataText, PromptText, ParametersJson, AnalysisMarkdown, AnalysisHtml, CreatedAt, UpdatedAt, AnalyzedAt, HtmlGeneratedAt
+            FROM DailyTestDataItems
+            ORDER BY UpdatedAt DESC, Id DESC;
+            """;
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read()) list.Add(ReadDailyTestDataItem(r));
+        return list;
+    }
+
+    public DailyTestDataItemRecord? GetDailyTestDataItem(long id)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT Id, Name, DataText, PromptText, ParametersJson, AnalysisMarkdown, AnalysisHtml, CreatedAt, UpdatedAt, AnalyzedAt, HtmlGeneratedAt
+            FROM DailyTestDataItems
+            WHERE Id=@id;
+            """;
+        cmd.Parameters.AddWithValue("@id", id);
+        using SqliteDataReader r = cmd.ExecuteReader();
+        return r.Read() ? ReadDailyTestDataItem(r) : null;
+    }
+
+    public long CreateDailyTestDataItem(string name)
+    {
+        string now = DateTime.UtcNow.ToString("o");
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO DailyTestDataItems (Name, CreatedAt, UpdatedAt)
+            VALUES (@n, @c, @u);
+            SELECT last_insert_rowid();
+            """;
+        cmd.Parameters.AddWithValue("@n", name?.Trim() ?? "");
+        cmd.Parameters.AddWithValue("@c", now);
+        cmd.Parameters.AddWithValue("@u", now);
+        return (long)(cmd.ExecuteScalar() ?? 0L);
+    }
+
+    public void UpdateDailyTestDataItem(long id, string name, string dataText, string promptText)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            UPDATE DailyTestDataItems
+            SET Name=@n, DataText=@d, PromptText=@p, UpdatedAt=@u
+            WHERE Id=@id;
+            """;
+        cmd.Parameters.AddWithValue("@n", name?.Trim() ?? "");
+        cmd.Parameters.AddWithValue("@d", dataText ?? "");
+        cmd.Parameters.AddWithValue("@p", promptText ?? "");
+        cmd.Parameters.AddWithValue("@u", DateTime.UtcNow.ToString("o"));
+        cmd.Parameters.AddWithValue("@id", id);
+        cmd.ExecuteNonQuery();
+    }
+
+    public void StartDailyTestDataNewInput(long id, string name)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            UPDATE DailyTestDataItems
+            SET Name=@n,
+                DataText='',
+                UpdatedAt=@u
+            WHERE Id=@id;
+            """;
+        cmd.Parameters.AddWithValue("@n", name?.Trim() ?? "");
+        cmd.Parameters.AddWithValue("@u", DateTime.UtcNow.ToString("o"));
+        cmd.Parameters.AddWithValue("@id", id);
+        cmd.ExecuteNonQuery();
+    }
+
+    public void SaveDailyTestDataAnalysis(
+        long id,
+        string dataText,
+        string promptText,
+        string parametersJson,
+        string analysisMarkdown)
+    {
+        string now = DateTime.UtcNow.ToString("o");
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            UPDATE DailyTestDataItems
+            SET DataText=@d,
+                PromptText=@p,
+                ParametersJson=@j,
+                AnalysisMarkdown=@a,
+                AnalysisHtml='',
+                UpdatedAt=@u,
+                AnalyzedAt=@u,
+                HtmlGeneratedAt=''
+            WHERE Id=@id;
+            """;
+        cmd.Parameters.AddWithValue("@d", dataText ?? "");
+        cmd.Parameters.AddWithValue("@p", promptText ?? "");
+        cmd.Parameters.AddWithValue("@j", string.IsNullOrWhiteSpace(parametersJson) ? "{}" : parametersJson);
+        cmd.Parameters.AddWithValue("@a", analysisMarkdown ?? "");
+        cmd.Parameters.AddWithValue("@u", now);
+        cmd.Parameters.AddWithValue("@id", id);
+        cmd.ExecuteNonQuery();
+    }
+
+    public void SaveDailyTestDataAnalysisHtml(long id, string analysisHtml)
+    {
+        string now = DateTime.UtcNow.ToString("o");
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            UPDATE DailyTestDataItems
+            SET AnalysisHtml=@h,
+                UpdatedAt=@u,
+                HtmlGeneratedAt=@u
+            WHERE Id=@id;
+            """;
+        cmd.Parameters.AddWithValue("@h", analysisHtml ?? "");
+        cmd.Parameters.AddWithValue("@u", now);
+        cmd.Parameters.AddWithValue("@id", id);
+        cmd.ExecuteNonQuery();
+    }
+
+    public void SaveDailyTestDataAnalysisResult(
+        long id,
+        string dataText,
+        string promptText,
+        string parametersJson,
+        string analysisMarkdown,
+        string analysisHtml)
+    {
+        string now = DateTime.UtcNow.ToString("o");
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            UPDATE DailyTestDataItems
+            SET DataText=@d,
+                PromptText=@p,
+                ParametersJson=@j,
+                AnalysisMarkdown=@a,
+                AnalysisHtml=@h,
+                UpdatedAt=@u,
+                AnalyzedAt=@u,
+                HtmlGeneratedAt=@u
+            WHERE Id=@id;
+            """;
+        cmd.Parameters.AddWithValue("@d", dataText ?? "");
+        cmd.Parameters.AddWithValue("@p", promptText ?? "");
+        cmd.Parameters.AddWithValue("@j", string.IsNullOrWhiteSpace(parametersJson) ? "{}" : parametersJson);
+        cmd.Parameters.AddWithValue("@a", analysisMarkdown ?? "");
+        cmd.Parameters.AddWithValue("@h", analysisHtml ?? "");
+        cmd.Parameters.AddWithValue("@u", now);
+        cmd.Parameters.AddWithValue("@id", id);
+        cmd.ExecuteNonQuery();
+    }
+
+    public List<DailyTestDataHistoryRecord> GetDailyTestDataHistory(long itemId)
+    {
+        var list = new List<DailyTestDataHistoryRecord>();
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT Id, ItemId, ItemName, DataText, PromptText, ParametersJson, AnalysisMarkdown, AnalysisHtml, CreatedAt
+            FROM DailyTestDataHistory
+            WHERE ItemId=@id
+            ORDER BY CreatedAt DESC, Id DESC;
+            """;
+        cmd.Parameters.AddWithValue("@id", itemId);
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read()) list.Add(ReadDailyTestDataHistory(r));
+        return list;
+    }
+
+    public long SaveDailyTestDataHistory(
+        long itemId,
+        string itemName,
+        string dataText,
+        string promptText,
+        string parametersJson,
+        string analysisMarkdown,
+        string analysisHtml,
+        string createdAt)
+    {
+        string at = string.IsNullOrWhiteSpace(createdAt) ? DateTime.UtcNow.ToString("o") : createdAt;
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO DailyTestDataHistory
+                (ItemId, ItemName, DataText, PromptText, ParametersJson, AnalysisMarkdown, AnalysisHtml, CreatedAt)
+            VALUES
+                (@item, @name, @data, @prompt, @params, @md, @html, @created);
+            SELECT last_insert_rowid();
+            """;
+        cmd.Parameters.AddWithValue("@item", itemId);
+        cmd.Parameters.AddWithValue("@name", itemName ?? "");
+        cmd.Parameters.AddWithValue("@data", dataText ?? "");
+        cmd.Parameters.AddWithValue("@prompt", promptText ?? "");
+        cmd.Parameters.AddWithValue("@params", string.IsNullOrWhiteSpace(parametersJson) ? "{}" : parametersJson);
+        cmd.Parameters.AddWithValue("@md", analysisMarkdown ?? "");
+        cmd.Parameters.AddWithValue("@html", analysisHtml ?? "");
+        cmd.Parameters.AddWithValue("@created", at);
+        return (long)(cmd.ExecuteScalar() ?? 0L);
+    }
+
+    public void DeleteDailyTestDataItem(long id)
+    {
+        using SqliteConnection conn = OpenConnection();
+        using (SqliteCommand hist = conn.CreateCommand())
+        {
+            hist.CommandText = "DELETE FROM DailyTestDataHistory WHERE ItemId=@id;";
+            hist.Parameters.AddWithValue("@id", id);
+            hist.ExecuteNonQuery();
+        }
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM DailyTestDataItems WHERE Id=@id;";
+        cmd.Parameters.AddWithValue("@id", id);
+        cmd.ExecuteNonQuery();
+    }
+
+    private static DailyTestDataItemRecord ReadDailyTestDataItem(SqliteDataReader r)
+        => new(
+            r.GetInt64(0),
+            r.GetString(1),
+            r.GetString(2),
+            r.GetString(3),
+            r.GetString(4),
+            r.GetString(5),
+            r.GetString(6),
+            r.GetString(7),
+            r.GetString(8),
+            r.GetString(9),
+            r.GetString(10));
+
+    private static DailyTestDataHistoryRecord ReadDailyTestDataHistory(SqliteDataReader r)
+        => new(
+            r.GetInt64(0),
+            r.GetInt64(1),
+            r.GetString(2),
+            r.GetString(3),
+            r.GetString(4),
+            r.GetString(5),
+            r.GetString(6),
+            r.GetString(7),
+            r.GetString(8));
+
     public List<ModelAnalysisReportRecord> GetAskAiReviewRecords(string productTypeFilter = "", int limit = 300)
     {
         var list = new List<ModelAnalysisReportRecord>();
@@ -2366,6 +4137,7 @@ public sealed class WebRepository
             SELECT r.DatasetName, r.ProductType, r.ReportDate,
                    COALESCE(d.DocumentId, '') AS DocumentId,
                    COALESCE(d.Title, '') AS Title,
+                   COALESCE(d.Purpose, '') AS Purpose,
                    COALESCE(d.ReportType, '') AS ReportType,
                    COALESCE(d.PrimaryDefect, '') AS PrimaryDefect,
                    COALESCE(d.GeneratedReportMarkdown, '') AS GeneratedReportMarkdown,
@@ -2407,8 +4179,9 @@ public sealed class WebRepository
                 r.GetString(6),
                 r.GetString(7),
                 r.GetString(8),
-                Convert.ToInt32(r.GetValue(9)),
-                Convert.ToInt32(r.GetValue(10))));
+                r.GetString(9),
+                Convert.ToInt32(r.GetValue(10)),
+                Convert.ToInt32(r.GetValue(11))));
         }
         return list;
     }
@@ -2433,11 +4206,17 @@ public sealed class WebRepository
                               WHERE a.ProductType = r.ProductType), '') AS LatestAnalysisAt
             FROM RawReports r
             LEFT JOIN AiDocuments d
-              ON d.SourceDataset = r.DatasetName
-             AND LOWER(COALESCE(d.PrimaryDefect,'')) NOT LIKE '%auto-extracted%'
-             AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%_batch_auto.py%'
-             AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%see workbook title/purpose%'
-             AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%workbook stored but extraction surfaced narrative only%'
+              ON d.DocumentId = (
+                    SELECT d2.DocumentId
+                    FROM AiDocuments d2
+                    WHERE d2.SourceDataset = r.DatasetName
+                      AND LOWER(COALESCE(d2.PrimaryDefect,'')) NOT LIKE '%auto-extracted%'
+                      AND LOWER(COALESCE(d2.RawJson,'')) NOT LIKE '%_batch_auto.py%'
+                      AND LOWER(COALESCE(d2.RawJson,'')) NOT LIKE '%see workbook title/purpose%'
+                      AND LOWER(COALESCE(d2.RawJson,'')) NOT LIKE '%workbook stored but extraction surfaced narrative only%'
+                    ORDER BY d2.UpdatedAt DESC
+                    LIMIT 1
+              )
             WHERE r.BatchExcluded = 0
               AND LENGTH(TRIM(COALESCE(r.ProductType,''))) > 0
             GROUP BY r.ProductType
@@ -2467,6 +4246,7 @@ public sealed class WebRepository
             SELECT r.DatasetName, r.ProductType, r.ReportDate,
                    COALESCE(d.DocumentId, '') AS DocumentId,
                    COALESCE(d.Title, '') AS Title,
+                   COALESCE(d.Purpose, '') AS Purpose,
                    COALESCE(d.ReportType, '') AS ReportType,
                    COALESCE(d.PrimaryDefect, '') AS PrimaryDefect,
                    COALESCE(d.GeneratedReportMarkdown, '') AS GeneratedReportMarkdown,
@@ -2475,11 +4255,17 @@ public sealed class WebRepository
                    COALESCE((SELECT COUNT(*) FROM AiConclusions ac WHERE ac.DocumentId=d.DocumentId), 0) AS ConclusionCount
             FROM RawReports r
             LEFT JOIN AiDocuments d
-              ON d.SourceDataset = r.DatasetName
-             AND LOWER(COALESCE(d.PrimaryDefect,'')) NOT LIKE '%auto-extracted%'
-             AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%_batch_auto.py%'
-             AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%see workbook title/purpose%'
-             AND LOWER(COALESCE(d.RawJson,'')) NOT LIKE '%workbook stored but extraction surfaced narrative only%'
+              ON d.DocumentId = (
+                    SELECT d2.DocumentId
+                    FROM AiDocuments d2
+                    WHERE d2.SourceDataset = r.DatasetName
+                      AND LOWER(COALESCE(d2.PrimaryDefect,'')) NOT LIKE '%auto-extracted%'
+                      AND LOWER(COALESCE(d2.RawJson,'')) NOT LIKE '%_batch_auto.py%'
+                      AND LOWER(COALESCE(d2.RawJson,'')) NOT LIKE '%see workbook title/purpose%'
+                      AND LOWER(COALESCE(d2.RawJson,'')) NOT LIKE '%workbook stored but extraction surfaced narrative only%'
+                    ORDER BY d2.UpdatedAt DESC
+                    LIMIT 1
+              )
             WHERE r.BatchExcluded = 0
               AND r.ProductType = @p
             ORDER BY r.ReportDate DESC, r.DatasetName COLLATE NOCASE;
@@ -2499,8 +4285,9 @@ public sealed class WebRepository
                 r.GetString(6),
                 r.GetString(7),
                 r.GetString(8),
-                Convert.ToInt32(r.GetValue(9)),
-                Convert.ToInt32(r.GetValue(10))));
+                r.GetString(9),
+                Convert.ToInt32(r.GetValue(10)),
+                Convert.ToInt32(r.GetValue(11))));
         }
         return list;
     }
@@ -3184,6 +4971,140 @@ public sealed class WebRepository
         grantModelAnalysis.Parameters.AddWithValue("@askMenu", AppMenus.DiAsk);
         grantModelAnalysis.ExecuteNonQuery();
 
+        using SqliteCommand grantCurrentProblem = conn.CreateCommand();
+        grantCurrentProblem.Transaction = tx;
+        grantCurrentProblem.CommandText = """
+            INSERT OR IGNORE INTO MenuPermissions (Role, MenuId)
+            SELECT DISTINCT Role, @newMenu
+            FROM MenuPermissions
+            WHERE MenuId IN (@dbMenu, @modelMenu, @askMenu);
+            """;
+        grantCurrentProblem.Parameters.AddWithValue("@newMenu", AppMenus.DiCurrentProblem);
+        grantCurrentProblem.Parameters.AddWithValue("@dbMenu", AppMenus.DiDb);
+        grantCurrentProblem.Parameters.AddWithValue("@modelMenu", AppMenus.DiModelAnalysis);
+        grantCurrentProblem.Parameters.AddWithValue("@askMenu", AppMenus.DiAsk);
+        grantCurrentProblem.ExecuteNonQuery();
+
+        using SqliteCommand grantInputBatch = conn.CreateCommand();
+        grantInputBatch.Transaction = tx;
+        grantInputBatch.CommandText = """
+            INSERT OR IGNORE INTO MenuPermissions (Role, MenuId)
+            SELECT DISTINCT Role, @newMenu
+            FROM MenuPermissions
+            WHERE MenuId = @inputMenu;
+            """;
+        grantInputBatch.Parameters.AddWithValue("@newMenu", AppMenus.DiInputBatch);
+        grantInputBatch.Parameters.AddWithValue("@inputMenu", AppMenus.DiInputTest);
+        grantInputBatch.ExecuteNonQuery();
+
+        using SqliteCommand grantAiPrompt = conn.CreateCommand();
+        grantAiPrompt.Transaction = tx;
+        grantAiPrompt.CommandText = """
+            INSERT OR IGNORE INTO MenuPermissions (Role, MenuId)
+            SELECT DISTINCT Role, @newMenu
+            FROM MenuPermissions
+            WHERE MenuId = @inputBatchMenu;
+            """;
+        grantAiPrompt.Parameters.AddWithValue("@newMenu", AppMenus.DiAiPrompt);
+        grantAiPrompt.Parameters.AddWithValue("@inputBatchMenu", AppMenus.DiInputBatch);
+        grantAiPrompt.ExecuteNonQuery();
+
+        using SqliteCommand grantDailyTest = conn.CreateCommand();
+        grantDailyTest.Transaction = tx;
+        grantDailyTest.CommandText = """
+            INSERT OR IGNORE INTO MenuPermissions (Role, MenuId)
+            SELECT DISTINCT Role, @newMenu
+            FROM MenuPermissions
+            WHERE MenuId IN (@inputMenu, @inputBatchMenu, @dbMenu, @askMenu, @modelMenu);
+            """;
+        grantDailyTest.Parameters.AddWithValue("@newMenu", AppMenus.DailyTestInput);
+        grantDailyTest.Parameters.AddWithValue("@inputMenu", AppMenus.DiInputTest);
+        grantDailyTest.Parameters.AddWithValue("@inputBatchMenu", AppMenus.DiInputBatch);
+        grantDailyTest.Parameters.AddWithValue("@dbMenu", AppMenus.DiDb);
+        grantDailyTest.Parameters.AddWithValue("@askMenu", AppMenus.DiAsk);
+        grantDailyTest.Parameters.AddWithValue("@modelMenu", AppMenus.DiModelAnalysis);
+        grantDailyTest.ExecuteNonQuery();
+
+        using SqliteCommand grantBmesTest3 = conn.CreateCommand();
+        grantBmesTest3.Transaction = tx;
+        grantBmesTest3.CommandText = """
+            INSERT OR IGNORE INTO MenuPermissions (Role, MenuId)
+            SELECT DISTINCT Role, @newMenu
+            FROM MenuPermissions
+            WHERE MenuId IN (@modelGroupMenu, @fcostMenu, @routingMenu);
+            """;
+        grantBmesTest3.Parameters.AddWithValue("@newMenu", AppMenus.BmesTest3);
+        grantBmesTest3.Parameters.AddWithValue("@modelGroupMenu", AppMenus.BmesMakeModelGroup);
+        grantBmesTest3.Parameters.AddWithValue("@fcostMenu", AppMenus.BmesFCost);
+        grantBmesTest3.Parameters.AddWithValue("@routingMenu", AppMenus.BmesRoutingTable);
+        grantBmesTest3.ExecuteNonQuery();
+
+        using SqliteCommand grantBmesTest4 = conn.CreateCommand();
+        grantBmesTest4.Transaction = tx;
+        grantBmesTest4.CommandText = """
+            INSERT OR IGNORE INTO MenuPermissions (Role, MenuId)
+            SELECT DISTINCT Role, @newMenu
+            FROM MenuPermissions
+            WHERE MenuId IN (@test3Menu, @ngRateMenu, @fcostMenu);
+            """;
+        grantBmesTest4.Parameters.AddWithValue("@newMenu", AppMenus.BmesTest4);
+        grantBmesTest4.Parameters.AddWithValue("@test3Menu", AppMenus.BmesTest3);
+        grantBmesTest4.Parameters.AddWithValue("@ngRateMenu", AppMenus.NgRate);
+        grantBmesTest4.Parameters.AddWithValue("@fcostMenu", AppMenus.BmesFCost);
+        grantBmesTest4.ExecuteNonQuery();
+
+        using SqliteCommand grantBmesTest5 = conn.CreateCommand();
+        grantBmesTest5.Transaction = tx;
+        grantBmesTest5.CommandText = """
+            INSERT OR IGNORE INTO MenuPermissions (Role, MenuId)
+            SELECT DISTINCT Role, @newMenu
+            FROM MenuPermissions
+            WHERE MenuId IN (@test3Menu, @test4Menu, @modelGroupMenu);
+            """;
+        grantBmesTest5.Parameters.AddWithValue("@newMenu", AppMenus.BmesTest5);
+        grantBmesTest5.Parameters.AddWithValue("@test3Menu", AppMenus.BmesTest3);
+        grantBmesTest5.Parameters.AddWithValue("@test4Menu", AppMenus.BmesTest4);
+        grantBmesTest5.Parameters.AddWithValue("@modelGroupMenu", AppMenus.BmesMakeModelGroup);
+        grantBmesTest5.ExecuteNonQuery();
+
+        using SqliteCommand grantQrBakoData = conn.CreateCommand();
+        grantQrBakoData.Transaction = tx;
+        grantQrBakoData.CommandText = "INSERT OR IGNORE INTO MenuPermissions (Role, MenuId) VALUES (@role, @menu);";
+        grantQrBakoData.Parameters.AddWithValue("@menu", AppMenus.QrBakoData);
+        var qrRole = grantQrBakoData.Parameters.Add("@role", SqliteType.Text);
+        foreach (string role in AppRoles.All)
+        {
+            qrRole.Value = role;
+            grantQrBakoData.ExecuteNonQuery();
+        }
+
+        // DAILY REPORT doubles as the post-login landing page, so every role needs it
+        // — otherwise "/" would dead-end for anyone whose permissions were customised
+        // before this menu existed.
+        using SqliteCommand grantDailyReport = conn.CreateCommand();
+        grantDailyReport.Transaction = tx;
+        grantDailyReport.CommandText = "INSERT OR IGNORE INTO MenuPermissions (Role, MenuId) VALUES (@role, @menu);";
+        grantDailyReport.Parameters.AddWithValue("@menu", AppMenus.BmesDailyReport);
+        var dailyReportRole = grantDailyReport.Parameters.Add("@role", SqliteType.Text);
+        foreach (string role in AppRoles.All)
+        {
+            dailyReportRole.Value = role;
+            grantDailyReport.ExecuteNonQuery();
+        }
+
+        // PC Download only hands out the standalone desktop installer, so every role gets it
+        // — including roles whose permissions were customised before this menu existed.
+        using SqliteCommand grantPcDownload = conn.CreateCommand();
+        grantPcDownload.Transaction = tx;
+        grantPcDownload.CommandText = "INSERT OR IGNORE INTO MenuPermissions (Role, MenuId) VALUES (@role, @menu);";
+        grantPcDownload.Parameters.AddWithValue("@menu", AppMenus.PcDownload);
+        var pcDownloadRole = grantPcDownload.Parameters.Add("@role", SqliteType.Text);
+        foreach (string role in AppRoles.All)
+        {
+            pcDownloadRole.Value = role;
+            grantPcDownload.ExecuteNonQuery();
+        }
+
         tx.Commit();
     }
 
@@ -3269,126 +5190,6 @@ public sealed class WebRepository
             result.Add((fileName, mediaType, Convert.ToBase64String(buf)));
         }
         return result;
-    }
-
-    // ?? Schedule ??????????????????????????????????????????????????????????????
-
-    private static ScheduleItem ReadScheduleItem(SqliteDataReader r)
-    {
-        string? stStr = r.IsDBNull(5) ? null : r.GetString(5);
-        string? etStr = r.IsDBNull(6) ? null : r.GetString(6);
-        TimeOnly? st = stStr is not null && TimeOnly.TryParse(stStr, out var tp) ? tp : null;
-        TimeOnly? et = etStr is not null && TimeOnly.TryParse(etStr, out var tp2) ? tp2 : null;
-        List<string> tags;
-        try { tags = JsonSerializer.Deserialize<List<string>>(r.GetString(8), JsonOpts) ?? []; }
-        catch { tags = []; }
-        return new ScheduleItem(
-            r.GetInt64(0),
-            r.GetString(1),
-            r.GetString(2),
-            DateOnly.Parse(r.GetString(3)),
-            DateOnly.Parse(r.GetString(4)),
-            st, et,
-            r.GetString(7),
-            tags,
-            r.GetString(9));
-    }
-
-    public List<ScheduleItem> GetSchedulesInRange(DateOnly from, DateOnly to, List<string>? filterTags = null)
-    {
-        using SqliteConnection conn = OpenScheduleConnection();
-        using SqliteCommand cmd = conn.CreateCommand();
-        cmd.CommandText = """
-            SELECT Id, Title, Description, StartDate, EndDate, StartTime, EndTime, Color, Tags, CreatedAt
-            FROM Schedules
-            WHERE EndDate >= @from AND StartDate <= @to
-            ORDER BY StartDate, StartTime, EndDate;
-            """;
-        cmd.Parameters.AddWithValue("@from", from.ToString("yyyy-MM-dd"));
-        cmd.Parameters.AddWithValue("@to",   to.ToString("yyyy-MM-dd"));
-
-        var items = new List<ScheduleItem>();
-        using SqliteDataReader r = cmd.ExecuteReader();
-        while (r.Read()) items.Add(ReadScheduleItem(r));
-
-        if (filterTags is { Count: > 0 })
-            items = items.Where(s => s.Tags.Any(t =>
-                filterTags.Contains(t, StringComparer.OrdinalIgnoreCase))).ToList();
-        return items;
-    }
-
-    public List<string> GetAllScheduleTags()
-    {
-        using SqliteConnection conn = OpenScheduleConnection();
-        using SqliteCommand cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT Tags FROM Schedules;";
-        var set = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-        using SqliteDataReader r = cmd.ExecuteReader();
-        while (r.Read())
-        {
-            try
-            {
-                var tags = JsonSerializer.Deserialize<List<string>>(r.GetString(0), JsonOpts) ?? [];
-                foreach (string t in tags) set.Add(t.Trim());
-            }
-            catch { }
-        }
-        return [.. set];
-    }
-
-    public long AddSchedule(string title, string description,
-        DateOnly start, DateOnly end, string color, List<string> tags,
-        TimeOnly? startTime = null, TimeOnly? endTime = null)
-    {
-        using SqliteConnection conn = OpenScheduleConnection();
-        using SqliteCommand cmd = conn.CreateCommand();
-        cmd.CommandText = """
-            INSERT INTO Schedules (Title, Description, StartDate, EndDate, StartTime, EndTime, Color, Tags, CreatedAt)
-            VALUES (@t, @d, @sd, @ed, @st, @et, @c, @tg, @at);
-            SELECT last_insert_rowid();
-            """;
-        cmd.Parameters.AddWithValue("@t",  title);
-        cmd.Parameters.AddWithValue("@d",  description);
-        cmd.Parameters.AddWithValue("@sd", start.ToString("yyyy-MM-dd"));
-        cmd.Parameters.AddWithValue("@ed", end.ToString("yyyy-MM-dd"));
-        cmd.Parameters.AddWithValue("@st", startTime.HasValue ? (object)startTime.Value.ToString("HH:mm") : DBNull.Value);
-        cmd.Parameters.AddWithValue("@et", endTime.HasValue   ? (object)endTime.Value.ToString("HH:mm")   : DBNull.Value);
-        cmd.Parameters.AddWithValue("@c",  color);
-        cmd.Parameters.AddWithValue("@tg", JsonSerializer.Serialize(tags));
-        cmd.Parameters.AddWithValue("@at", DateTime.UtcNow.ToString("o"));
-        return Convert.ToInt64(cmd.ExecuteScalar());
-    }
-
-    public void UpdateSchedule(long id, string title, string description,
-        DateOnly start, DateOnly end, string color, List<string> tags,
-        TimeOnly? startTime = null, TimeOnly? endTime = null)
-    {
-        using SqliteConnection conn = OpenScheduleConnection();
-        using SqliteCommand cmd = conn.CreateCommand();
-        cmd.CommandText = """
-            UPDATE Schedules SET Title=@t, Description=@d, StartDate=@sd, EndDate=@ed,
-                StartTime=@st, EndTime=@et, Color=@c, Tags=@tg
-            WHERE Id=@id;
-            """;
-        cmd.Parameters.AddWithValue("@t",  title);
-        cmd.Parameters.AddWithValue("@d",  description);
-        cmd.Parameters.AddWithValue("@sd", start.ToString("yyyy-MM-dd"));
-        cmd.Parameters.AddWithValue("@ed", end.ToString("yyyy-MM-dd"));
-        cmd.Parameters.AddWithValue("@st", startTime.HasValue ? (object)startTime.Value.ToString("HH:mm") : DBNull.Value);
-        cmd.Parameters.AddWithValue("@et", endTime.HasValue   ? (object)endTime.Value.ToString("HH:mm")   : DBNull.Value);
-        cmd.Parameters.AddWithValue("@c",  color);
-        cmd.Parameters.AddWithValue("@tg", JsonSerializer.Serialize(tags));
-        cmd.Parameters.AddWithValue("@id", id);
-        cmd.ExecuteNonQuery();
-    }
-
-    public void DeleteSchedule(long id)
-    {
-        using SqliteConnection conn = OpenScheduleConnection();
-        using SqliteCommand cmd = conn.CreateCommand();
-        cmd.CommandText = "DELETE FROM Schedules WHERE Id=@id;";
-        cmd.Parameters.AddWithValue("@id", id);
-        cmd.ExecuteNonQuery();
     }
 
     // ?? BMES Materials ???????????????????????????????????????????????????????
@@ -3504,7 +5305,50 @@ public sealed class WebRepository
         return o is null ? 0 : Convert.ToInt32(o);
     }
 
+    public List<BmesMaterial> GetBmesMaterials()
+    {
+        var list = new List<BmesMaterial>();
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT *
+            FROM BmesMaterials
+            ORDER BY Maktx, Mtype, Matnr;
+            """;
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+            list.Add(ReadBmesMaterial(r));
+        return list;
+    }
+
     // ?? Mtype ??Category name map ????????????????????????????????????????????
+
+    public Dictionary<string, string> GetBmesMaterialNames(IEnumerable<string> matnrs)
+    {
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var keys = matnrs
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (keys.Count == 0)
+            return names;
+
+        using SqliteConnection conn = OpenConnection();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Maktx FROM BmesMaterials WHERE Matnr = @matnr LIMIT 1;";
+        SqliteParameter pMatnr = cmd.Parameters.Add("@matnr", SqliteType.Text);
+
+        foreach (string key in keys)
+        {
+            pMatnr.Value = key;
+            object? value = cmd.ExecuteScalar();
+            if (value is string name && !string.IsNullOrWhiteSpace(name))
+                names[key] = name.Trim();
+        }
+
+        return names;
+    }
 
     public Dictionary<string, string> GetMtypeCategoryMap()
     {
@@ -3560,6 +5404,149 @@ public sealed class WebRepository
         cmd.CommandText = "DELETE FROM DataInputAliases WHERE Token=@t;";
         cmd.Parameters.AddWithValue("@t", token);
         cmd.ExecuteNonQuery();
+    }
+
+    private static void EnsureWeeklyReportFormSettingsTable(SqliteConnection conn)
+    {
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            CREATE TABLE IF NOT EXISTS WeeklyReportFormSettings (
+                RowKey          TEXT    PRIMARY KEY NOT NULL,
+                IsVisible       INTEGER NOT NULL DEFAULT 1,
+                DisplayMode     TEXT    NOT NULL DEFAULT 'B-GROUP',
+                ProductName     TEXT    NOT NULL DEFAULT '',
+                BaselineDec2025 REAL    NULL,
+                BaselineApr2026 REAL    NULL,
+                Target          REAL    NULL,
+                Action          TEXT    NOT NULL DEFAULT '',
+                SortOrder       INTEGER NOT NULL DEFAULT -1,
+                UpdatedAt       TEXT    NOT NULL
+            );
+            """;
+        cmd.ExecuteNonQuery();
+
+        using SqliteCommand check = conn.CreateCommand();
+        check.CommandText = "PRAGMA table_info(WeeklyReportFormSettings);";
+        var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using (SqliteDataReader r = check.ExecuteReader())
+        {
+            while (r.Read())
+            {
+                string col = r.IsDBNull(1) ? string.Empty : r.GetString(1);
+                if (!string.IsNullOrEmpty(col))
+                    columns.Add(col);
+            }
+        }
+
+        if (!columns.Contains("SortOrder"))
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE WeeklyReportFormSettings ADD COLUMN SortOrder INTEGER NOT NULL DEFAULT -1;";
+            alter.ExecuteNonQuery();
+        }
+
+        if (!columns.Contains("DisplayMode"))
+        {
+            using SqliteCommand alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE WeeklyReportFormSettings ADD COLUMN DisplayMode TEXT NOT NULL DEFAULT 'B-GROUP';";
+            alter.ExecuteNonQuery();
+        }
+    }
+
+    private static string NormalizeWeeklyReportDisplayMode(string? value)
+    {
+        string mode = (value ?? string.Empty).Trim();
+        return mode.Equals("Group", StringComparison.OrdinalIgnoreCase)
+            ? "Group"
+            : "B-GROUP";
+    }
+
+    public Dictionary<string, WeeklyReportFormSettingRecord> GetWeeklyReportFormSettings()
+    {
+        var map = new Dictionary<string, WeeklyReportFormSettingRecord>(StringComparer.Ordinal);
+        using SqliteConnection conn = OpenConnection();
+        EnsureWeeklyReportFormSettingsTable(conn);
+
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT RowKey, IsVisible, DisplayMode, ProductName, BaselineDec2025, BaselineApr2026, Target, Action, SortOrder, UpdatedAt
+            FROM WeeklyReportFormSettings;
+            """;
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            string rowKey = r.IsDBNull(0) ? string.Empty : r.GetString(0);
+            if (rowKey.Length == 0) continue;
+
+            map[rowKey] = new WeeklyReportFormSettingRecord
+            {
+                RowKey          = rowKey,
+                IsVisible       = !r.IsDBNull(1) && r.GetInt64(1) != 0,
+                DisplayMode     = NormalizeWeeklyReportDisplayMode(r.IsDBNull(2) ? string.Empty : r.GetString(2)),
+                ProductName     = r.IsDBNull(3) ? string.Empty : r.GetString(3),
+                BaselineDec2025 = r.IsDBNull(4) ? null : r.GetDouble(4),
+                BaselineApr2026 = r.IsDBNull(5) ? null : r.GetDouble(5),
+                Target          = r.IsDBNull(6) ? null : r.GetDouble(6),
+                Action          = r.IsDBNull(7) ? string.Empty : r.GetString(7),
+                SortOrder       = r.IsDBNull(8) ? -1 : r.GetInt32(8),
+                UpdatedAt       = r.IsDBNull(9) ? string.Empty : r.GetString(9),
+            };
+        }
+        return map;
+    }
+
+    public void SaveWeeklyReportFormSettings(IReadOnlyList<WeeklyReportFormSettingRecord> settings)
+    {
+        using SqliteConnection conn = OpenConnection();
+        EnsureWeeklyReportFormSettingsTable(conn);
+        using SqliteTransaction tx = conn.BeginTransaction();
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = """
+            INSERT INTO WeeklyReportFormSettings
+                (RowKey, IsVisible, DisplayMode, ProductName, BaselineDec2025, BaselineApr2026, Target, Action, SortOrder, UpdatedAt)
+            VALUES
+                (@key, @visible, @displayMode, @name, @dec, @apr, @target, @action, @sort, @updated)
+            ON CONFLICT(RowKey) DO UPDATE SET
+                IsVisible       = excluded.IsVisible,
+                DisplayMode     = excluded.DisplayMode,
+                ProductName     = excluded.ProductName,
+                BaselineDec2025 = excluded.BaselineDec2025,
+                BaselineApr2026 = excluded.BaselineApr2026,
+                Target          = excluded.Target,
+                Action          = excluded.Action,
+                SortOrder       = excluded.SortOrder,
+                UpdatedAt       = excluded.UpdatedAt;
+            """;
+        SqliteParameter pKey     = cmd.Parameters.Add("@key",     SqliteType.Text);
+        SqliteParameter pVisible = cmd.Parameters.Add("@visible", SqliteType.Integer);
+        SqliteParameter pMode    = cmd.Parameters.Add("@displayMode", SqliteType.Text);
+        SqliteParameter pName    = cmd.Parameters.Add("@name",    SqliteType.Text);
+        SqliteParameter pDec     = cmd.Parameters.Add("@dec",     SqliteType.Real);
+        SqliteParameter pApr     = cmd.Parameters.Add("@apr",     SqliteType.Real);
+        SqliteParameter pTarget  = cmd.Parameters.Add("@target",  SqliteType.Real);
+        SqliteParameter pAction  = cmd.Parameters.Add("@action",  SqliteType.Text);
+        SqliteParameter pSort    = cmd.Parameters.Add("@sort",    SqliteType.Integer);
+        SqliteParameter pUpdated = cmd.Parameters.Add("@updated", SqliteType.Text);
+
+        string now = DateTime.UtcNow.ToString("O");
+        foreach (var setting in settings)
+        {
+            if (string.IsNullOrWhiteSpace(setting.RowKey)) continue;
+
+            pKey.Value     = setting.RowKey;
+            pVisible.Value = setting.IsVisible ? 1 : 0;
+            pMode.Value    = NormalizeWeeklyReportDisplayMode(setting.DisplayMode);
+            pName.Value    = setting.ProductName?.Trim() ?? string.Empty;
+            pDec.Value     = setting.BaselineDec2025.HasValue ? (object)setting.BaselineDec2025.Value : DBNull.Value;
+            pApr.Value     = setting.BaselineApr2026.HasValue ? (object)setting.BaselineApr2026.Value : DBNull.Value;
+            pTarget.Value  = setting.Target.HasValue ? (object)setting.Target.Value : DBNull.Value;
+            pAction.Value  = setting.Action?.Trim() ?? string.Empty;
+            pSort.Value    = setting.SortOrder;
+            pUpdated.Value = now;
+            cmd.ExecuteNonQuery();
+        }
+        tx.Commit();
     }
 
     public List<ModelGroupRecord> GetModelGroups()

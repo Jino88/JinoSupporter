@@ -1,0 +1,32 @@
+{
+  "sourceFileId": 854,
+  "sourceFile": "7. BRS-201506 DT Report checking and test Frame Press JIG after cutting 0.08mm date 18.12.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\854.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 854,
+    "aiReviewCaseStatus": "verified",
+    "verificationStatus": "passed",
+    "approvedForAskAi": true,
+    "confidence": "medium",
+    "summary": "Draft correctly compares normal VP array jig against frame press jig cut 0.08 mm and shows worse process and function NG rates.",
+    "issues": [
+      "Non-blocking: changeDomain includes unsupported coating.",
+      "Metric/header citation is thin for result sections."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove coating from changeDomain.",
+      "Add result section/header rows 15.8!26, 15.8!28 and 15.8!35 to evidence if available.",
+      "Keep both outcome domains under the same jig cutting changed factor."
+    ],
+    "evidencePolicy": "Condition and comparison rows are sufficient; header citations should be strengthened."
+  },
+  "usage": {
+    "input_tokens": 3105,
+    "output_tokens": 1203,
+    "total_tokens": 4308
+  }
+}

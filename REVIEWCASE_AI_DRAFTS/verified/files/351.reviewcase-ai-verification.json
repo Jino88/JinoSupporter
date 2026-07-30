@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 351,
+  "sourceFile": "18. TIU L5S3-01 R Report test Frame improve separate S-MG  date 2025.12.02_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\351.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 351,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is citeable but misgroups the primary change as process checkpoints instead of the improved/new-mold frame validation.",
+    "issues": [
+      "Changed factor is incorrectly defined as inspection/process steps.",
+      "Baseline should use prior frame separation rates from purpose, not merely unspecified.",
+      "Process steps belong as outcome checkpoints or subresults.",
+      "Judgement misses the final OK/can-use decision.",
+      "Decision row is not included in case evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to improved/new-mold frame for S-MG separation.",
+      "Use prior frame L/R separation rates as baseline context.",
+      "Keep Visual MTR through Eject as checkpoint subresults under one outcome.",
+      "Add decision evidence row 25 and relevant result rows.",
+      "Set outcome judgement to passed/acceptable based on zero NG and can-use decision."
+    ],
+    "evidencePolicy": "Row citations are sufficient for source existence, but grouping and decision evidence need correction before Ask AI use."
+  },
+  "usage": {
+    "input_tokens": 2935,
+    "output_tokens": 747,
+    "total_tokens": 3682
+  }
+}

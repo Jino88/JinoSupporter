@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 965,
+  "sourceFile": "9. BRS-201506 DT Report test increase voltage hearing 10%   date 21.12.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\965.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 965,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Comparable normal vs +10% hearing-voltage test is present, but the draft misstates the factor and includes invalid measurement outcomes.",
+    "issues": [
+      "Baseline is explicit normal condition, not unknown.",
+      "Changed condition should be +10% output voltage, not Hearing itself.",
+      "Measurement outcomes are header-derived and not valid results.",
+      "Voltage setting rows 14-16 should support the factor but are omitted.",
+      "Functional comparison cites row 28, not shown in provided context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename factor to normal hearing voltage spec vs +10% increased voltage spec.",
+      "Use Hearing as test context or item, not the changed factor.",
+      "Remove bogus measurement outcome stats from rows 12-13.",
+      "Cite rows 14-16 for E0-E2 normal and +10% voltage settings.",
+      "Verify row 28 text before keeping the functional comparison."
+    ],
+    "evidencePolicy": "Citations are partly sufficient for intent, but incomplete for voltage settings and row 28 validation."
+  },
+  "usage": {
+    "input_tokens": 3397,
+    "output_tokens": 758,
+    "total_tokens": 4155
+  }
+}

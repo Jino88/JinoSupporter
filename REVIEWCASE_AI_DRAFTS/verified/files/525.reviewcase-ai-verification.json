@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 525,
+  "sourceFile": "30.2 BRS-161016  Report test 2nd  VP mold #7 add 0.3mm  date 25.4.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\525.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:33Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 525,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Main VP mold #7 add-0.3mm comparison is citeable, but draft needs cleanup before final evidence use.",
+    "issues": [
+      "Changed factor names conditions instead of the actual add-0.3mm VP mold change.",
+      "Change domain includes unsupported coating.",
+      "Most comparable defect outcomes are left not_judged despite paired normal/test rows.",
+      "Measurement outcome uses header-only raw-data rows and lacks citeable grouped results.",
+      "Baseline/test comparison is partly confounded by mold #7 versus mold #8 context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to VP mold #7 thickness increased by 0.3mm on both sides.",
+      "Remove unsupported coating domain; keep mold and dimension/spec.",
+      "Judge laser cutting, bending, VP/CD, and function outcomes from paired rows.",
+      "Remove or separately verify THD/Imp-Fo measurement outcome with real value rows and metric context.",
+      "Note mold-number confounding as a limitation of the normal #8 baseline."
+    ],
+    "evidencePolicy": "Main report row citations are sufficient; raw measurement citations are not sufficient."
+  },
+  "usage": {
+    "input_tokens": 6908,
+    "output_tokens": 660,
+    "total_tokens": 7568
+  }
+}

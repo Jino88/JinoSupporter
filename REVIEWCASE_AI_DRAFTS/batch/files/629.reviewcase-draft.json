@@ -1,0 +1,315 @@
+{
+  "sourceFileId": 629,
+  "sourceFile": "41. BRS-201506 Report test process UV Led Press CD+COIL date 3.5.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\41. BRS-201506 Report test process UV Led Press CD+COIL date 3.5.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 24,
+    "sheetCellCount": 95,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 3,
+    "measurementStatCount": 6
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!1",
+      "sheetName": "Test",
+      "rowNumber": 1,
+      "rowText": "| TITLE | | BRS - 201506 REPORT TEST PROCESS VP+COIL UV LED PRESS DOWN | | | | | | | | | | | | Dept: | ME"
+    },
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| | | | | | | | | | | | | | | Date: | 2024-05-04 00:00:00"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | Marker: | Thao"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| - Checking and Find reason NG Function"
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| - Improve NG CD+Coil happen Gap"
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - UV Led Machine change down 17 turn => 18 Turn"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| - Make sample checking function"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| - Q'ty test : 1000pcs"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| III. Result."
+    },
+    {
+      "rowId": "Test!21",
+      "sheetName": "Test",
+      "rowNumber": 21,
+      "rowText": "| | RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "Test!26",
+      "sheetName": "Test",
+      "rowNumber": 26,
+      "rowText": "| | | Normal ( 17 Turn ) | 1710 | 1628 | 0 | 0 | 1 | 0 | 25 | 56 | 0 | 82 | 0.04795322"
+    },
+    {
+      "rowId": "Test!31",
+      "sheetName": "Test",
+      "rowNumber": 31,
+      "rowText": "| IV. Decision."
+    },
+    {
+      "rowId": "Test!32",
+      "sheetName": "Test",
+      "rowNumber": 32,
+      "rowText": "| => Result test UV LED Press Down ( Machine 17 Turn => 18 Turn ) Function NG 28/1088pcs rate 2.6% is Better normal NG 82/1710pcs rate 4.8%"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-629-rc-1",
+      "reviewTitle": "| BRS - 201506 REPORT TEST PROCESS VP+COIL UV LED PRESS DOWN | | | | | | | | | | | | Dept: | ME",
+      "reviewPurpose": "| I. Purpose. / | - Checking and Find reason NG Function / | II. Content. / | - Improve NG CD+Coil happen Gap / | - UV Led Machine change down 17 turn => 18 Turn",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal ( 17 Turn ) vs UV LED PRESS DOWN ( 18 Turn )",
+          "baselineCondition": "Normal ( 17 Turn )",
+          "changedCondition": "UV LED PRESS DOWN ( 18 Turn )",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!1",
+            "Test!10",
+            "Test!23",
+            "Test!24",
+            "Test!26",
+            "Test!28",
+            "Test!4",
+            "Test!6"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "Test!24",
+            "Test!26",
+            "Test!28"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 22399,
+              "condition": "UV LED PRESS DOWN ( 18 Turn )",
+              "input": 1088.0,
+              "ok": 1060.0,
+              "ng": 28.0,
+              "ratePercent": 2.573529,
+              "evidenceRows": [
+                "Test!24"
+              ]
+            },
+            {
+              "metricId": 22400,
+              "condition": "Normal ( 17 Turn )",
+              "input": 1710.0,
+              "ok": 1628.0,
+              "ng": 82.0,
+              "ratePercent": 4.795322,
+              "evidenceRows": [
+                "Test!26"
+              ]
+            },
+            {
+              "metricId": 22401,
+              "condition": "UV LED PRESS DOWN ( 18 Turn )",
+              "input": 12499.0,
+              "ok": 12035.0,
+              "ng": 464.0,
+              "ratePercent": 3.712297,
+              "evidenceRows": [
+                "Test!28"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Type | Input | OK | Sigma | Hearing | HOHD | Total NG | Total NG rate",
+          "comparisonRows": [
+            "Test!23"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 58342,
+              "condition": "Sigma / SPL",
+              "spec": "> 18",
+              "min": 0.0,
+              "max": 4.0,
+              "avg": 0.8407224966666665,
+              "sampleCount": 6,
+              "violationCount": 6,
+              "evidenceRows": [
+                "Test!23"
+              ]
+            },
+            {
+              "statId": 58343,
+              "condition": "Sigma / THD",
+              "spec": "> 18",
+              "min": 0.0,
+              "max": 4.0,
+              "avg": 0.6681034483333333,
+              "sampleCount": 6,
+              "violationCount": 6,
+              "evidenceRows": [
+                "Test!23"
+              ]
+            },
+            {
+              "statId": 58344,
+              "condition": "Sigma / SPL+THD",
+              "spec": "> 18",
+              "min": 0.00215517,
+              "max": 1.0,
+              "avg": 0.5083440966666667,
+              "sampleCount": 6,
+              "violationCount": 6,
+              "evidenceRows": [
+                "Test!23"
+              ]
+            },
+            {
+              "statId": 58345,
+              "condition": "Sigma / SPL+THD+F0",
+              "spec": "> 18",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 6,
+              "evidenceRows": [
+                "Test!23"
+              ]
+            },
+            {
+              "statId": 58346,
+              "condition": "Hearing / Noise",
+              "spec": "> 18",
+              "min": 0.30487805,
+              "max": 160.0,
+              "avg": 32.667808083333334,
+              "sampleCount": 6,
+              "violationCount": 4,
+              "evidenceRows": [
+                "Test!23"
+              ]
+            },
+            {
+              "statId": 58347,
+              "condition": "Hearing / Touch",
+              "spec": "> 18",
+              "min": 0.57142857,
+              "max": 295.0,
+              "avg": 61.48168854333334,
+              "sampleCount": 6,
+              "violationCount": 4,
+              "evidenceRows": [
+                "Test!23"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!1",
+        "Test!10",
+        "Test!23",
+        "Test!24",
+        "Test!26",
+        "Test!28",
+        "Test!4",
+        "Test!6"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!1",
+      "Test!10",
+      "Test!23",
+      "Test!24",
+      "Test!26",
+      "Test!28",
+      "Test!4",
+      "Test!6"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 571,
+  "sourceFile": "35. TIU C11-20 Report  find reason function high 2026.01.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\571.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 571,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the changed-factor and outcome grouping is too mixed for final evidence.",
+    "issues": [
+      "One changed factor mixes many unrelated trials and sheets.",
+      "Baseline and changed conditions include lines, shifts, normals, and tests inconsistently.",
+      "Several comparisons appear to reuse controls from unrelated sections or dates.",
+      "Unknown and measurement outcomes are table/defect-column artifacts.",
+      "Not-judged candidate metrics remain in the evidence set."
+    ],
+    "requiredUserQuestions": [
+      "Should each numbered test section be a separate changed-factor context?"
+    ],
+    "correctionPlan": [
+      "Split results by sheet section/table and preserve date, line, shift, and type keys.",
+      "Define one primary changed factor per corrected group from the section content.",
+      "Pair each test only with the matching normal/control row in the same context.",
+      "Recompute NG rate deltas and revise judgements per corrected pair.",
+      "Remove artifact measurement/unknown outcomes or reclassify as defect counts."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient until grouping and control pairing are corrected."
+  },
+  "usage": {
+    "input_tokens": 17354,
+    "output_tokens": 763,
+    "total_tokens": 18117
+  }
+}

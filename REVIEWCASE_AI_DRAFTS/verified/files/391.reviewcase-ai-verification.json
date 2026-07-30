@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 391,
+  "sourceFile": "20. BRS-2015 DT Report test Suspension 201506 -A and B  new vender WorldTop  Hanoi Vina- First lot 2-2025.01.14_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\391.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:44Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 391,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable Normal vs test Suspension A/B evidence exists, but the draft grouping and outcomes are incomplete.",
+    "issues": [
+      "Changed factor is filename-like and leaves baseline/test explicit conditions unset.",
+      "Most result domains are omitted: assy/frame NG, spot welding, and function.",
+      "Tension outcome grouping does not clearly separate A/B and normal/test rows.",
+      "Subgroup keys such as date, line, process, and suspension type are missing.",
+      "Decision and result-note rows are not fully used."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal vs Test Suspension 201506-A/B from new vendor WorldTop Hanoi Vina first lot.",
+      "Set baseline as Normal and changed condition as Test Suspension A/B, with A and B as subgroup/type context.",
+      "Add outcomes for assy/frame NG, spot welding before/after repair, function NG, and tension.",
+      "Preserve subgroup keys including date, line, check type, process section, and suspension A/B.",
+      "Add supporting result and decision citations from rows 30, 39, 46, and 49-53."
+    ],
+    "evidencePolicy": "Row citations are citeable but insufficient for final evidence until missing outcome and decision rows are added."
+  },
+  "usage": {
+    "input_tokens": 4174,
+    "output_tokens": 684,
+    "total_tokens": 4858
+  }
+}

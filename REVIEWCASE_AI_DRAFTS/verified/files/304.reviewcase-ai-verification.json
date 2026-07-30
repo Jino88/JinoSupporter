@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 304,
+  "sourceFile": "15.1 BRS-161016DT  Summary data laser cutting coil  22.9.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\304.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 304,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The source is citeable, but the draft misgroups the changed factor and mixes diagnostics, departments, lines, and jig conditions.",
+    "issues": [
+      "Changed factor is a noisy mix of departments, lines, jig versions, and tests.",
+      "Baseline/test framing should center on cutting-coil improvement using Laser Cap JIG V1 and proper setting.",
+      "AWF jig, AWF machine, axis reset, V0, V1, before/after, and offset tests need separate subgroup context.",
+      "Outcome domains and conditions contain extraction artifacts such as line/no values and numeric offsets as primary labels.",
+      "Cited rows Test (3)!38-42 are not shown in contextRows, reducing auditability."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rewrite changed factor as Laser Cap JIG use/version/setting versus before improve, V0, and offset conditions.",
+      "Keep department, date, line, test number, and machine position as subgroup keys only.",
+      "Regroup outcomes into before/after NG rate, jig version validation, AWF/machine checks, and offset-setting trouble tests.",
+      "Remove irrelevant change domains and extraction artifacts from changedCondition and subgroupKeys.",
+      "Add displayed context text for all cited evidence rows, especially Test (3)!38-42."
+    ],
+    "evidencePolicy": "Row citations mostly exist and are relevant, but final evidence needs cleaner grouping and full cited-row context."
+  },
+  "usage": {
+    "input_tokens": 9214,
+    "output_tokens": 834,
+    "total_tokens": 10048
+  }
+}

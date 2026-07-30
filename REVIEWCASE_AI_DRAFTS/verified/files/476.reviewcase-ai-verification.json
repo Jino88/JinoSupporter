@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 476,
+  "sourceFile": "28. BRS-161014 DT Report test VP mold #2,3,4,5,8,10  check the actual VP bending with the supplier    date 20.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\476.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 476,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but materially misgroups separate reports and mismatches comparison keys.",
+    "issues": [
+      "Combines two distinct sheet reports into one changed factor.",
+      "Changed factor overbroad: supplier/material/coating/jig not proven.",
+      "Baseline/test grouping mixes normal molds with unrelated test molds.",
+      "Subresults ignore date, line, and side/group keys.",
+      "Generated measurement stats appear spurious from headers/tables."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split sheet 5.3 and sheet 7.3 into separate review cases or factors.",
+      "For 5.3, define change as VP mold #7/#9 add 0.05mm vs normal molds.",
+      "Compare only within same date, line, and section, or use cited total rows.",
+      "For 7.3, treat molds #2/#3/#4/#5/#8/#10 as test mold candidates without normal baseline.",
+      "Remove unsupported domains and spurious measurement outcomes."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are not sufficient until regrouped by report and row keys."
+  },
+  "usage": {
+    "input_tokens": 16537,
+    "output_tokens": 665,
+    "total_tokens": 17202
+  }
+}

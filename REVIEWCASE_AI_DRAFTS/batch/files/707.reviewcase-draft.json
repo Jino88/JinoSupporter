@@ -1,0 +1,251 @@
+{
+  "sourceFileId": 707,
+  "sourceFile": "50. BRS-201506 Report test material VP happen forming NG date 3.6.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\50. BRS-201506 Report test material VP happen forming NG date 3.6.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test VP",
+    "sheetRowCount": 22,
+    "sheetCellCount": 79,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test VP!1",
+      "sheetName": "Test VP",
+      "rowNumber": 1,
+      "rowText": "| TITLE | | BRS - 201506 REPORT TEST MATERIAL VP FORMING NG | | | | | | | | | | | | | | | | | | | | | | Dept: | ME"
+    },
+    {
+      "rowId": "Test VP!2",
+      "sheetName": "Test VP",
+      "rowNumber": 2,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | | | Date: | 2024-06-03 00:00:00"
+    },
+    {
+      "rowId": "Test VP!3",
+      "sheetName": "Test VP",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | | | Marker: | Thao"
+    },
+    {
+      "rowId": "Test VP!4",
+      "sheetName": "Test VP",
+      "rowNumber": 4,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test VP!5",
+      "sheetName": "Test VP",
+      "rowNumber": 5,
+      "rowText": "| - Checking and test VP forming happen NG"
+    },
+    {
+      "rowId": "Test VP!6",
+      "sheetName": "Test VP",
+      "rowNumber": 6,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test VP!7",
+      "sheetName": "Test VP",
+      "rowNumber": 7,
+      "rowText": "| - Checking NG Process"
+    },
+    {
+      "rowId": "Test VP!8",
+      "sheetName": "Test VP",
+      "rowNumber": 8,
+      "rowText": "| - Checking NG at Sub4"
+    },
+    {
+      "rowId": "Test VP!9",
+      "sheetName": "Test VP",
+      "rowNumber": 9,
+      "rowText": "| - Make sample checking function"
+    },
+    {
+      "rowId": "Test VP!10",
+      "sheetName": "Test VP",
+      "rowNumber": 10,
+      "rowText": "| - Q'ty test : 40pcs"
+    },
+    {
+      "rowId": "Test VP!12",
+      "sheetName": "Test VP",
+      "rowNumber": 12,
+      "rowText": "| III. Result."
+    },
+    {
+      "rowId": "Test VP!13",
+      "sheetName": "Test VP",
+      "rowNumber": 13,
+      "rowText": "| | RESULT CHECKING PROCESS AIR LEAK"
+    },
+    {
+      "rowId": "Test VP!21",
+      "sheetName": "Test VP",
+      "rowNumber": 21,
+      "rowText": "| | RESULT CHECKING VP VISION"
+    },
+    {
+      "rowId": "Test VP!22",
+      "sheetName": "Test VP",
+      "rowNumber": 22,
+      "rowText": "| | Date | Type | Input | OK | NG Vision | | | | | | | Total NG | NG Rate"
+    },
+    {
+      "rowId": "Test VP!31",
+      "sheetName": "Test VP",
+      "rowNumber": 31,
+      "rowText": "| IV. Decision."
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-707-rc-1",
+      "reviewTitle": "| BRS - 201506 REPORT TEST MATERIAL VP FORMING NG | | | | | | | | | | | | | | | | | | | | | | Dept: | ME",
+      "reviewPurpose": "| I. Purpose. / | - Checking and test VP forming happen NG / | II. Content. / | - Checking NG Process / | - Checking NG at Sub4",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs VP Forming NG, VP Forming OK",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "VP Forming NG, VP Forming OK",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test VP!1",
+            "Test VP!10",
+            "Test VP!16",
+            "Test VP!17",
+            "Test VP!24",
+            "Test VP!25",
+            "Test VP!4",
+            "Test VP!5",
+            "Test VP!6"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "RESULT CHECKING PROCESS AIR LEAK",
+          "comparisonRows": [
+            "Test VP!16",
+            "Test VP!17"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 23034,
+              "condition": "VP Forming NG",
+              "input": 43.0,
+              "ok": 43.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test VP!16"
+              ]
+            },
+            {
+              "metricId": 23035,
+              "condition": "VP Forming OK",
+              "input": 44.0,
+              "ok": 44.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test VP!17"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "metric-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "RESULT CHECKING VP VISION",
+          "comparisonRows": [
+            "Test VP!24",
+            "Test VP!25"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 23036,
+              "condition": "VP Forming NG",
+              "input": 43.0,
+              "ok": 35.0,
+              "ng": 8.0,
+              "ratePercent": 18.604651,
+              "evidenceRows": [
+                "Test VP!24"
+              ]
+            },
+            {
+              "metricId": 23037,
+              "condition": "VP Forming OK",
+              "input": 44.0,
+              "ok": 44.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test VP!25"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test VP!1",
+        "Test VP!10",
+        "Test VP!16",
+        "Test VP!17",
+        "Test VP!24",
+        "Test VP!25",
+        "Test VP!4",
+        "Test VP!5",
+        "Test VP!6"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test VP!1",
+      "Test VP!10",
+      "Test VP!16",
+      "Test VP!17",
+      "Test VP!24",
+      "Test VP!25",
+      "Test VP!4",
+      "Test VP!5",
+      "Test VP!6"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

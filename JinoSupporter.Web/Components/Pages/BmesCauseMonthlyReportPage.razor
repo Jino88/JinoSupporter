@@ -1,0 +1,791 @@
+@using JinoSupporter.Web.Services
+
+<div class="cause-report-shell">
+    <div class="cause-report-main">
+        <div class="cause-report-header">
+            <div>
+                <div class="cause-report-title">원인 비중</div>
+                <div class="cause-report-subtitle">MODEL / Type / Process / NG NAME / 해당월 불량률 / 원인 / 비중</div>
+            </div>
+            <div class="cause-report-count">@CauseRows.Count row(s)</div>
+        </div>
+
+        <div class="cause-table-wrap">
+            <table class="cause-table">
+                <thead>
+                    <tr>
+                        <th style="width:170px;">MODEL</th>
+                        <th style="width:86px;">Type</th>
+                        <th style="width:230px;">Process</th>
+                        <th style="width:180px;">NG NAME</th>
+                        @foreach (var col in MonthColumns)
+                        {
+                            <th style="width:96px;">@FormatCauseMonthHeader(col)</th>
+                        }
+                        <th style="width:54px;">No</th>
+                        <th style="width:170px;">원인</th>
+                        <th style="width:70px;">비중</th>
+                        @foreach (var col in MonthColumns)
+                        {
+                            <th style="width:112px;">@FormatWeightedMonthHeader(col)</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < CauseRows.Count; i++)
+                    {
+                        var row = CauseRows[i];
+                        if (row.IsSubtotal)
+                        {
+                            <tr class="cause-subtotal-row">
+                                <td>@row.Model</td>
+                                <td></td>
+                                <td>SUB TOTAL</td>
+                                <td></td>
+                                @foreach (var col in MonthColumns)
+                                {
+                                    double ppm = RowMonthPpm(row, i, col.Key);
+                                    <td class="@MonthRateClass(ppm)">@FormatPpm(ppm)</td>
+                                }
+                                <td></td>
+                                <td></td>
+                                <td>100%</td>
+                                @foreach (var col in MonthColumns)
+                                {
+                                    double ppm = WeightedMonthPpm(row, i, col.Key);
+                                    <td class="@MonthRateClass(ppm)">@FormatPpm(ppm)</td>
+                                }
+                            </tr>
+                        }
+                        else
+                        {
+                            <tr class="@CauseRowClass(row)">
+                                <td class="cause-model-cell">@row.Model</td>
+                                <td>@row.Type</td>
+                                <td>@row.Process</td>
+                                <td>@row.NgName</td>
+                                @foreach (var col in MonthColumns)
+                                {
+                                    double ppm = RowMonthPpm(row, i, col.Key);
+                                    <td class="@MonthRateClass(ppm)">@FormatPpm(ppm)</td>
+                                }
+                                <td class="cause-center">@row.No</td>
+                                <td>@row.Cause</td>
+                                <td class="cause-share">@row.Share</td>
+                                @foreach (var col in MonthColumns)
+                                {
+                                    double ppm = WeightedMonthPpm(row, i, col.Key);
+                                    <td class="@MonthRateClass(ppm)">@FormatPpm(ppm)</td>
+                                }
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <aside class="cause-monthly-panel">
+        <div class="cause-report-header cause-monthly-header">
+            <div>
+                <div class="cause-report-title">월별 불량률</div>
+                <div class="cause-report-subtitle">선택 모델 기준 PPM</div>
+            </div>
+            @if (_startDate is not null && _endDate is not null)
+            {
+                <div class="cause-report-count">@_startDate.Value.ToString("yyyy-MM-dd") ~ @_endDate.Value.ToString("yyyy-MM-dd")</div>
+            }
+        </div>
+
+        @if (_hierarchy?.ByMid is null)
+        {
+            <div class="cause-empty">
+                상단에서 기간과 Sub Group을 선택한 뒤 Generate Report를 실행하면 월별 불량률이 표시됩니다.
+            </div>
+        }
+        else if (MonthColumns.Count == 0)
+        {
+            <div class="cause-empty">선택 기간에 표시할 월별 데이터가 없습니다.</div>
+        }
+        else
+        {
+            <div class="cause-monthly-wrap">
+                <table class="cause-monthly-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:150px;">MODEL</th>
+                            @foreach (var col in MonthColumns)
+                            {
+                                <th>@FormatCauseMonthHeader(col)</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (string model in Models)
+                        {
+                            <tr>
+                                <td class="cause-month-model">@model</td>
+                                @foreach (var col in MonthColumns)
+                                {
+                                    double ppm = ModelMonthPpm(model, col.Key);
+                                    <td class="@PpmClass(ppm)">
+                                        @FormatPpm(ppm)
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </aside>
+</div>
+
+<style>
+    .cause-report-shell {
+        display: grid;
+        grid-template-columns: minmax(720px, 1fr) minmax(360px, 460px);
+        gap: 16px;
+        align-items: start;
+        padding: 0 12px 18px;
+    }
+
+    .cause-report-main,
+    .cause-monthly-panel {
+        min-width: 0;
+        border: 1px solid #d7dee8;
+        background: #fff;
+    }
+
+    .cause-report-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+
+    .cause-report-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .cause-report-subtitle,
+    .cause-report-count {
+        font-size: 11px;
+        color: #64748b;
+        white-space: nowrap;
+    }
+
+    .cause-table-wrap,
+    .cause-monthly-wrap {
+        overflow: auto;
+        max-height: calc(100vh - 285px);
+    }
+
+    .cause-table,
+    .cause-monthly-table {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .cause-table th,
+    .cause-monthly-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #eaf1f8;
+        color: #334155;
+        border-bottom: 1px solid #cbd5e1;
+        padding: 7px 9px;
+        font-size: 11px;
+        font-weight: 700;
+        text-align: left;
+    }
+
+    .cause-table td,
+    .cause-monthly-table td {
+        border-bottom: 1px solid #eef2f7;
+        padding: 6px 9px;
+        color: #1e293b;
+        vertical-align: middle;
+    }
+
+    .cause-row-empty td {
+        color: #64748b;
+    }
+
+    .cause-model-cell,
+    .cause-month-model {
+        font-weight: 600;
+        color: #0f172a;
+    }
+
+    .cause-center,
+    .cause-month-rate,
+    .cause-share,
+    .cause-monthly-table td:not(.cause-month-model) {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .cause-subtotal-row td {
+        background: #f1f5f9;
+        border-top: 1px solid #cbd5e1;
+        border-bottom: 1px solid #cbd5e1;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .cause-subtotal-row td:nth-child(3) {
+        text-align: center;
+        letter-spacing: .2px;
+    }
+
+    .cause-share {
+        font-weight: 700;
+    }
+
+    .cause-month-rate {
+        color: #0f172a !important;
+        font-weight: 700;
+    }
+
+    .cause-monthly-header {
+        min-height: 58px;
+    }
+
+    .cause-empty {
+        padding: 28px 20px;
+        color: #64748b;
+        font-size: 12px;
+        text-align: center;
+    }
+
+    .cause-ppm-zero {
+        color: #cbd5e1 !important;
+    }
+
+    .cause-ppm-value {
+        color: #0f172a !important;
+        font-weight: 700;
+    }
+
+    @@media (max-width: 1200px) {
+        .cause-report-shell {
+            grid-template-columns: 1fr;
+        }
+
+        .cause-table-wrap,
+        .cause-monthly-wrap {
+            max-height: none;
+        }
+    }
+</style>
+
+@code {
+    private DateTime? _startDate;
+    private DateTime? _endDate;
+    private HierReports? _hierarchy;
+    private List<ModelGroupRecord> _selectedGroups = [];
+
+    // ── Static-HTML export mode ────────────────────────────────────────────────
+    // Fed the shared Daily hierarchy (no DB access of its own) via HtmlRenderer.
+    [Parameter] public bool ExportMode { get; set; }
+    [Parameter] public DateTime? ExportStart { get; set; }
+    [Parameter] public DateTime? ExportEnd { get; set; }
+    [Parameter] public IReadOnlyList<ModelGroupRecord>? ExportGroups { get; set; }
+    [Parameter] public HierReports? ExportSharedHierarchy { get; set; }
+    private bool _exportGenerated;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ExportMode && !_exportGenerated
+            && ExportStart is { } start && ExportEnd is { } end
+            && ExportGroups is { Count: > 0 } groups && ExportSharedHierarchy is { } hierarchy)
+        {
+            _exportGenerated = true;
+            await UseSharedHierarchyReportAsync(start, end, groups, hierarchy);
+        }
+    }
+
+    private IReadOnlyList<NgRateReportService.PeriodColumn> MonthColumns =>
+        _hierarchy?.ByMid?.MonthCols ?? [];
+
+    private static IReadOnlyList<string> Models =>
+        CauseRows.Select(r => r.Model)
+            .Where(m => !string.IsNullOrWhiteSpace(m))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+    public Task UseSharedHierarchyReportAsync(
+        DateTime startDate,
+        DateTime endDate,
+        IReadOnlyList<ModelGroupRecord> selectedGroups,
+        HierReports sharedHierarchy,
+        IProgress<string>? progress = null)
+    {
+        _startDate = startDate.Date;
+        _endDate = endDate.Date;
+        _selectedGroups = selectedGroups.ToList();
+        _hierarchy = sharedHierarchy;
+        progress?.Report("Using Daily report data.");
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private double RowMonthPpm(CauseRow row, int rowIndex, string colKey)
+    {
+        if (string.IsNullOrWhiteSpace(row.Model) || string.IsNullOrWhiteSpace(colKey)) return 0;
+
+        if (row.IsSubtotal)
+            return SubtotalMonthPpm(rowIndex, colKey);
+
+        return DetailMonthPpm(row, colKey);
+    }
+
+    private double SubtotalMonthPpm(int subtotalIndex, string colKey)
+    {
+        if (subtotalIndex < 0 || subtotalIndex >= CauseRows.Count) return 0;
+
+        string model = CauseRows[subtotalIndex].Model;
+        double total = 0;
+        for (int i = subtotalIndex + 1; i < CauseRows.Count; i++)
+        {
+            var child = CauseRows[i];
+            if (child.IsSubtotal) break;
+            if (!string.Equals(child.Model, model, StringComparison.Ordinal)) break;
+
+            total += DetailMonthPpm(child, colKey);
+        }
+
+        return total;
+    }
+
+    private double DetailMonthPpm(CauseRow row, string colKey)
+    {
+        if (string.IsNullOrWhiteSpace(row.Process) || string.IsNullOrWhiteSpace(row.NgName))
+            return 0;
+
+        return ProcessNgMonthPpm(row, colKey);
+    }
+
+    private double WeightedMonthPpm(CauseRow row, int rowIndex, string colKey)
+    {
+        double share = ParseShare(row.Share);
+        if (share <= 0) return 0;
+
+        int subtotalIndex = row.IsSubtotal ? rowIndex : ParentSubtotalIndex(rowIndex);
+        if (subtotalIndex < 0) return 0;
+
+        return SubtotalMonthPpm(subtotalIndex, colKey) * share;
+    }
+
+    private static double ParseShare(string share)
+    {
+        string text = (share ?? string.Empty).Trim().TrimEnd('%').Trim();
+        if (!double.TryParse(
+                text,
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out double value))
+        {
+            return 0;
+        }
+
+        return value > 1 ? value / 100d : value;
+    }
+
+    private static int ParentSubtotalIndex(int rowIndex)
+    {
+        if (rowIndex < 0 || rowIndex >= CauseRows.Count) return -1;
+
+        string model = CauseRows[rowIndex].Model;
+        for (int i = rowIndex - 1; i >= 0; i--)
+        {
+            var row = CauseRows[i];
+            if (!string.Equals(row.Model, model, StringComparison.Ordinal)) break;
+            if (row.IsSubtotal) return i;
+        }
+
+        return -1;
+    }
+
+    private double ProcessNgMonthPpm(CauseRow row, string colKey)
+    {
+        var report = _hierarchy?.ByMid;
+        if (report is null) return 0;
+
+        var keys = FindModelKeys(row.Model).ToHashSet(StringComparer.Ordinal);
+        if (keys.Count == 0) return 0;
+
+        double rawSum = 0;
+        int rawCount = 0;
+        foreach (var item in report.GroupRawIn)
+        {
+            var key = item.Key;
+            if (!keys.Contains(key.Group)) continue;
+            if (!string.Equals(key.PeriodKey, colKey, StringComparison.Ordinal)) continue;
+            if (!LooseTextMatches(key.PN, row.Process)) continue;
+            if (!LooseTextMatches(key.NG, row.NgName)) continue;
+            if (!string.IsNullOrWhiteSpace(row.Type) && !LooseTextMatches(key.PT, row.Type)) continue;
+
+            double ppm = ToPpm(item.Value.I, item.Value.N);
+            if (ppm <= 0) continue;
+
+            rawSum += ppm;
+            rawCount++;
+        }
+
+        if (rawCount > 0)
+            return rawSum / rawCount;
+
+        double sum = 0;
+        int count = 0;
+        foreach (var reasonRow in report.ReasonRows.Where(r => !r.IsTotal))
+        {
+            if (!LooseTextMatches(reasonRow.ProcessName, row.Process)) continue;
+            if (!LooseTextMatches(reasonRow.NgName, row.NgName)) continue;
+            if (!string.IsNullOrWhiteSpace(row.Type) &&
+                !LooseTextMatches(reasonRow.ProcessType, row.Type))
+            {
+                continue;
+            }
+
+            foreach (var group in reasonRow.Groups)
+            {
+                if (!keys.Contains(group.GroupName)) continue;
+
+                double value = group.Ppm.GetValueOrDefault(colKey);
+                if (value <= 0) continue;
+
+                sum += value;
+                count++;
+            }
+        }
+
+        return count == 0 ? 0 : sum / count;
+    }
+
+    private static double ToPpm(double input, double ng)
+        => input > 0 ? Math.Round((ng / input) * 1_000_000, 0) : 0;
+
+    private double ModelMonthPpm(string model, string colKey)
+    {
+        if (_hierarchy?.ByMid is null) return 0;
+
+        var keys = FindModelKeys(model).ToList();
+        if (keys.Count == 0) return 0;
+
+        double sum = 0;
+        int count = 0;
+        foreach (string key in keys)
+        {
+            var rows = _hierarchy.ByMid.GroupSummary.GetValueOrDefault(key);
+            double value = rows?.FirstOrDefault(r => r.IsTotal)?.Ppm.GetValueOrDefault(colKey) ?? 0;
+            if (value <= 0) continue;
+
+            sum += value;
+            count++;
+        }
+
+        return count == 0 ? 0 : sum / count;
+    }
+
+    private IEnumerable<string> FindModelKeys(string model)
+    {
+        if (_hierarchy?.ByMid is null) yield break;
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var group in _selectedGroups)
+        {
+            foreach (var mid in group.MidGroups)
+            {
+                if (ModelMatches(mid.Material, model))
+                {
+                    string key = NgRateModeSupport.ModelKey(group.Name, mid.Material);
+                    if (seen.Add(key))
+                        yield return key;
+                }
+            }
+        }
+
+        foreach (string key in _hierarchy.ByMid.GroupSummary.Keys)
+        {
+            string material = MaterialNameFromKey(key);
+            if (ModelMatches(material, model) && seen.Add(key))
+                yield return key;
+        }
+    }
+
+    private static bool ModelMatches(string material, string requestedModel)
+    {
+        string materialKey = NormalizeModel(material);
+        if (materialKey.Length == 0) return false;
+
+        foreach (string alias in ModelAliases(requestedModel))
+        {
+            string aliasKey = NormalizeModel(alias);
+            if (aliasKey.Length == 0) continue;
+            if (string.Equals(materialKey, aliasKey, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (materialKey.Contains(aliasKey, StringComparison.OrdinalIgnoreCase) ||
+                aliasKey.Contains(materialKey, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static IEnumerable<string> ModelAliases(string model)
+    {
+        yield return model;
+
+        string[] parts = model.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length <= 1) yield break;
+
+        string prefix = string.Empty;
+        int dash = parts[0].LastIndexOf("-", StringComparison.Ordinal);
+        if (dash >= 0)
+            prefix = parts[0][..(dash + 1)];
+
+        foreach (string part in parts)
+        {
+            yield return part;
+            if (!string.IsNullOrEmpty(prefix) && !part.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                yield return prefix + part;
+        }
+    }
+
+    private static string MaterialNameFromKey(string key)
+    {
+        int idx = key.IndexOf("::", StringComparison.Ordinal);
+        return idx >= 0 && idx + 2 < key.Length ? key[(idx + 2)..] : key;
+    }
+
+    private static string NormalizeModel(string value)
+        => new((value ?? string.Empty)
+            .ToUpperInvariant()
+            .Where(char.IsLetterOrDigit)
+            .ToArray());
+
+    private static string FormatPpm(double ppm)
+        => ppm <= 0 ? string.Empty : ((long)Math.Round(ppm)).ToString("N0");
+
+    private static string PpmClass(double ppm)
+        => ppm <= 0 ? "cause-ppm-zero" : "cause-ppm-value";
+
+    private static string MonthRateClass(double ppm)
+        => ppm <= 0
+            ? "cause-month-rate cause-ppm-zero"
+            : "cause-month-rate cause-ppm-value";
+
+    private static string FormatCauseMonthHeader(NgRateReportService.PeriodColumn col)
+        => FormatMonthLabel(col.Key, col.Header);
+
+    private static string FormatWeightedMonthHeader(NgRateReportService.PeriodColumn col)
+        => FormatMonthLabel(col.Key, col.Header) + " NG Rate";
+
+    private static string FormatMonthLabel(string key, string fallback)
+    {
+        string raw = key.StartsWith("M:", StringComparison.Ordinal) ? key[2..] : key;
+        return raw.Length >= 6 &&
+               int.TryParse(raw[4..], out int month)
+            ? month.ToString(System.Globalization.CultureInfo.InvariantCulture) + "월"
+            : fallback;
+    }
+
+    private static string CauseRowClass(CauseRow row)
+        => string.IsNullOrWhiteSpace(row.Cause) && string.IsNullOrWhiteSpace(row.Share)
+            ? "cause-row-empty"
+            : string.Empty;
+
+    private static bool LooseTextMatches(string left, string right)
+    {
+        string leftKey = NormalizeTextKey(left);
+        string rightKey = NormalizeTextKey(right);
+        if (leftKey.Length == 0 || rightKey.Length == 0) return false;
+        return string.Equals(leftKey, rightKey, StringComparison.OrdinalIgnoreCase) ||
+               leftKey.Contains(rightKey, StringComparison.OrdinalIgnoreCase) ||
+               rightKey.Contains(leftKey, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeTextKey(string value)
+        => new((value ?? string.Empty)
+            .ToUpperInvariant()
+            .Where(char.IsLetterOrDigit)
+            .ToArray());
+
+    private static CauseRow Subtotal(string model) => new(model, "", "", "", "", "", "", true);
+
+    private static CauseRow Row(
+        string model,
+        string type,
+        string process,
+        string ngName,
+        string no = "",
+        string cause = "",
+        string share = "")
+        => new(model, type, process, ngName, no, cause, share, false);
+
+    private sealed record CauseRow(
+        string Model,
+        string Type,
+        string Process,
+        string NgName,
+        string No,
+        string Cause,
+        string Share,
+        bool IsSubtotal);
+
+    private static readonly IReadOnlyList<CauseRow> CauseRows =
+    [
+        Subtotal("BRS-161016S08ZZ"),
+        Row("BRS-161016S08ZZ", "FUNCTION", "Hearing Test", "Noise Defect", "1", "AWF", "40%"),
+        Row("BRS-161016S08ZZ", "FUNCTION", "Hearing Test", "Touch Defect", "2", "조립 설비 트러블", "20%"),
+        Row("BRS-161016S08ZZ", "FUNCTION", "SIGMA TEST", "THD", "3", "원자재", "40%"),
+        Row("BRS-161016S08ZZ", "FUNCTION", "SIGMA TEST", "SPL THD F0"),
+        Row("BRS-161016S08ZZ", "FUNCTION", "SIGMA TEST", "SPL R&B"),
+        Row("BRS-161016S08ZZ", "FUNCTION", "SIGMA TEST", "SPL THD"),
+        Row("BRS-161016S08ZZ", "FUNCTION", "SIGMA TEST", "SPL"),
+        Row("BRS-161016S08ZZ", "FUNCTION", "SIGMA TEST", "SPL R&B F0"),
+        Row("BRS-161016S08ZZ", "FUNCTION", "SIGMA TEST", "R&B"),
+        Subtotal("BRS-161016S08ZZ"),
+        Row("BRS-161016S08ZZ", "SUB", "VP CD VISION INSPECTION", "VP CD separate", "1", "조립 설비 트러블", "50%"),
+        Row("BRS-161016S08ZZ", "SUB", "VP CD VISION INSPECTION", "Offset", "2", "본드 선정 부적합", "50%"),
+        Subtotal("BRS-161016S08ZZ"),
+        Row("BRS-161016S08ZZ", "SUB", "YOKE VISION INSPECTION", "Separate Short SMG", "1", "조립 설비 트러블", "50%"),
+        Row("BRS-161016S08ZZ", "SUB", "YOKE VISION INSPECTION 2", "Separated SMG Short", "2", "본드 선정 부적합", "50%"),
+        Subtotal("BRS-161016S08ZZ"),
+        Row("BRS-161016S08ZZ", "MAIN", "LONG EDGE V/P VISUAL INSPECTION", "Separate VP", "1", "공법 부적합", "70%"),
+        Row("BRS-161016S08ZZ", "MAIN", "SHORT EDGE V/P VISUAL INSPECTION", "Separate VP", "2", "본딩 설비 트러블", "30%"),
+        Row("BRS-161016S08ZZ", "MAIN", "SPK SEMI ARRAY", "VP saparate"),
+        Subtotal("BRS-161016S08ZZ"),
+        Row("BRS-161016S08ZZ", "MAIN", "S/P COIL ASS Y", "Other", "1", "조립 설비 트러블", "100%"),
+
+        Subtotal("MSU-L20S15-07"),
+        Row("MSU-L20S15-07", "FUNCTION", "Hearing Test", "Noise Defect", "1", "AWF", "65%"),
+        Row("MSU-L20S15-07", "FUNCTION", "Hearing Test", "Touch Defect", "2", "조립 설비 트러블", "30%"),
+        Row("MSU-L20S15-07", "FUNCTION", "SIGMA TEST", "SPL"),
+        Row("MSU-L20S15-07", "FUNCTION", "SIGMA TEST", "SPL THD"),
+        Row("MSU-L20S15-07", "FUNCTION", "SIGMA TEST", "THD"),
+        Subtotal("MSU-L20S15-07"),
+        Row("MSU-L20S15-07", "MAIN", "AWF", "NG Coil", "1", "AWF", "100%"),
+        Row("MSU-L20S15-07", "MAIN", "Wire Array & Vision Inspection", "Over turn"),
+        Row("MSU-L20S15-07", "MAIN", "Wire Array & Vision Inspection", "Don t cut wire"),
+        Row("MSU-L20S15-07", "MAIN", "Wire Array & Vision Inspection", "Drop coil"),
+
+        Subtotal("MSM-X526/X626B"),
+        Row("MSM-X526/X626B", "FUNCTION", "BAKO TEST", "R&B NG", "1", "개발 ISSUE 미 종결", "80%"),
+        Row("MSM-X526/X626B", "FUNCTION", "Hearing Test", "Noise Defect", "2", "AWF", "20%"),
+        Subtotal("MSM-X526/X626B"),
+        Row("MSM-X526/X626B", "FUNCTION", "AIR LEAK TEST", "High", "1", "JIG 마모", "50%"),
+        Row("MSM-X526/X626B", "", "", "", "2", "조립 설비 트러블", "50%"),
+        Subtotal("MSM-X526/X626B"),
+        Row("MSM-X526/X626B", "VISUAL", "Visual Inspection", "Upper damage"),
+        Row("MSM-X526/X626B", "VISUAL", "Visual Inspection", "Lower damage"),
+        Row("MSM-X526/X626B", "VISUAL", "Visual Inspection", "Dome Damage"),
+
+        Subtotal("MSM-S931B"),
+        Row("MSM-S931B", "FUNCTION", "BAKO TEST", "R&B NG", "1", "원자재", "80%"),
+        Row("MSM-S931B", "FUNCTION", "BAKO TEST", "Other", "2", "본딩 설비 트러블", "20%"),
+        Row("MSM-S931B", "FUNCTION", "Hearing Test", "Noise Defect"),
+        Subtotal("MSM-S931B"),
+        Row("MSM-S931B", "FUNCTION", "AIR LEAK TEST 2", "High", "1", "원자재", "100%"),
+        Row("MSM-S931B", "FUNCTION", "AIR LEAK TEST 2", "Other"),
+        Row("MSM-S931B", "FUNCTION", "AIR LEAK TEST 2", "Lower"),
+        Row("MSM-S931B", "FUNCTION", "AIR LEAK TEST 2", "NG airleak test"),
+
+        Subtotal("TIU-C11-20"),
+        Row("TIU-C11-20", "MAIN", "Fame Coil Inspection AI", "Froming NG", "1", "AWF", "95%"),
+        Row("TIU-C11-20", "MAIN", "Fame Coil Inspection AI", "wire separated", "2", "원자재", "5%"),
+        Row("TIU-C11-20", "MAIN", "Fame Coil Inspection AI", "Offset"),
+        Row("TIU-C11-20", "MAIN", "Fame Coil Inspection AI", "Coil damage"),
+        Row("TIU-C11-20", "MAIN", "Spot Welding Inspection AI", "Wire offset"),
+        Row("TIU-C11-20", "MAIN", "Grill Ass y Inspection AI", "Coil damage"),
+        Subtotal("TIU-C11-20"),
+        Row("TIU-C11-20", "MAIN", "Laser Cutting VP Inspection AI", "No Cuting", "1", "조립 설비 트러블", "70%"),
+        Row("TIU-C11-20", "MAIN", "Laser Cutting VP Inspection AI", "Offset", "2", "공법 부적합", "30%"),
+        Subtotal("TIU-C11-20"),
+        Row("TIU-C11-20", "MAIN", "Frame Gluing Inspection AI", "Offset bonding", "1", "본딩 설비 트러블", "50%"),
+        Row("TIU-C11-20", "MAIN", "Frame Gluing Inspection AI", "Over glue FS", "2", "공법 부적합", "50%"),
+        Subtotal("TIU-C11-20"),
+        Row("TIU-C11-20", "SUB", "VP Dome Vision Inspection", "NG over bond", "1", "본딩 설비 트러블", "40%"),
+        Row("TIU-C11-20", "SUB", "VP Dome Vision Inspection", "NG short bond,", "2", "조립 설비 트러블", "40%"),
+        Row("TIU-C11-20", "SUB", "Vision Inspection Ass y YOKE", "offset", "3", "원자재", "10%"),
+        Row("TIU-C11-20", "SUB", "V/P Dome Inspection AI", "over glue", "4", "공법 부적합", "10%"),
+        Row("TIU-C11-20", "SUB", "V/P Dome Inspection AI", "Offset"),
+        Row("TIU-C11-20", "SUB", "V/P Gluing Inspection AI", "Over glue"),
+        Row("TIU-C11-20", "SUB", "V/P Gluing Inspection AI", "VP damage"),
+        Row("TIU-C11-20", "SUB", "V/P Gluing Inspection AI", "Leak glue"),
+        Row("TIU-C11-20", "SUB", "V/P Gluing Inspection AI", "Offset"),
+        Subtotal("TIU-C11-20"),
+        Row("TIU-C11-20", "FUNCTION", "Hearing Test", "Noise", "1", "이물", "70%"),
+        Row("TIU-C11-20", "FUNCTION", "Hearing Test", "Touch", "2", "AWF", "25%"),
+        Row("TIU-C11-20", "FUNCTION", "Hearing Test", "Low sound", "3", "작업자 터치", "5%"),
+        Row("TIU-C11-20", "FUNCTION", "Audio Bus Test", "SPL"),
+
+        Subtotal("TIU-L5S3-01"),
+        Row("TIU-L5S3-01", "FUNCTION", "FR(FREQUENCY RESPONSE) TEST", "High frequency", "1", "공법 부적합", "30%"),
+        Row("TIU-L5S3-01", "FUNCTION", "FR(FREQUENCY RESPONSE) TEST", "Low frequency", "2", "조립 설비 트러블", "30%"),
+        Row("TIU-L5S3-01", "FUNCTION", "Hearing Test", "Low sound", "3", "본딩 설비 트러블", "30%"),
+        Row("TIU-L5S3-01", "", "", "", "4", "JIG 마모", "10%"),
+        Subtotal("TIU-L5S3-01"),
+        Row("TIU-L5S3-01", "SUB", "Semi Frame Vision Inspection", "Separated F-PCB", "1", "조립 설비 트러블", "100%"),
+        Row("TIU-L5S3-01", "SUB", "Semi Frame Vision Inspection", "Offset F-PCB"),
+        Row("TIU-L5S3-01", "SUB", "Frame F-PCB Inspection AI", "Separated F-PCB"),
+        Row("TIU-L5S3-01", "SUB", "Frame F-PCB Inspection AI", "Offset F-PCB"),
+        Subtotal("TIU-L5S3-01"),
+        Row("TIU-L5S3-01", "SUB", "Semi Frame Vision Inspection", "Damage", "1", "조립 설비 트러블", "100%"),
+        Row("TIU-L5S3-01", "SUB", "Frame F-PCB Inspection AI", "Damage"),
+        Row("TIU-L5S3-01", "MAIN", "V/P Gluing Inspection AI", "Frame damages"),
+        Subtotal("TIU-L5S3-01"),
+        Row("TIU-L5S3-01", "SUB", "Semi Yoke Vision Inspection", "offset yoke", "1", "조립 설비 트러블", "100%"),
+        Row("TIU-L5S3-01", "SUB", "Semi Yoke Vision Inspection", "Damages"),
+        Row("TIU-L5S3-01", "SUB", "AI Yoke Inspection", "Damage"),
+        Row("TIU-L5S3-01", "SUB", "AI Yoke Inspection", "Offset Yoke"),
+        Subtotal("TIU-L5S3-01"),
+        Row("TIU-L5S3-01", "SUB", "Frame Gluing Inspection AI", "Offset bonding", "1", "본딩 설비 트러블", "100%"),
+        Row("TIU-L5S3-01", "SUB", "Frame Gluing Inspection AI", "Over glue"),
+        Row("TIU-L5S3-01", "SUB", "Frame Gluing Inspection AI", "Leak glue"),
+        Row("TIU-L5S3-01", "SUB", "Frame Gluing Inspection AI 2", "Over glue"),
+        Row("TIU-L5S3-01", "SUB", "Frame Gluing Inspection AI 2", "Offset glue"),
+        Row("TIU-L5S3-01", "SUB", "Frame Gluing Inspection AI 2", "Leak glue"),
+        Row("TIU-L5S3-01", "VISUAL", "Visual Inspection", "Leak glue"),
+        Row("TIU-L5S3-01", "VISUAL", "Visual Inspection", "Over glue"),
+        Subtotal("TIU-L5S3-01"),
+        Row("TIU-L5S3-01", "MAIN", "Wire Pattern Inspection AI", "Offset", "1", "AWF", "100%"),
+        Row("TIU-L5S3-01", "MAIN", "Wire Pattern Inspection AI", "Coil Separated"),
+        Row("TIU-L5S3-01", "MAIN", "Wire Pattern Inspection AI", "Coil damage"),
+        Row("TIU-L5S3-01", "MAIN", "Wire Pattern Inspection AI", "Coil shortage"),
+        Row("TIU-L5S3-01", "MAIN", "Spot Welding Inspection AI", "Wire offset"),
+        Subtotal("TIU-L5S3-01"),
+        Row("TIU-L5S3-01", "MAIN", "V/P Gluing Inspection AI", "Leak glue", "1", "본딩 설비 트러블", "100%"),
+        Row("TIU-L5S3-01", "MAIN", "V/P Gluing Inspection AI", "Offset"),
+        Row("TIU-L5S3-01", "MAIN", "V/P Gluing Inspection AI", "Over glue"),
+
+        Subtotal("ASSY 338 RA1"),
+        Row("ASSY 338 RA1", "VISUAL", "VISUAL INSPECTION 3", "Scratch Rear", "1", "원자재", "40%"),
+        Row("ASSY 338 RA1", "VISUAL", "VISUAL INSPECTION 3", "Damage Rear", "2", "공법 부적합", "60%"),
+        Row("ASSY 338 RA1", "VISUAL", "VISUAL INSPECTION 3", "Lumpy face Rear"),
+        Row("ASSY 338 RA1", "VISUAL", "EDGE Surface Vision Check", "Damage Rear"),
+        Row("ASSY 338 RA1", "MAIN", "MIC TWITER Ass y Vision Check", "Damage Rear"),
+        Subtotal("ASSY 338 RA1"),
+        Row("ASSY 338 RA1", "SUB4", "Hook Base BRK Inner Spring Ass y Vis", "Damage Bracket", "1", "공법 부적합", "50%"),
+        Row("ASSY 338 RA1", "SUB4", "Hook Base BRK Inner Spring Ass y Vis", "Offset pin", "2", "JIG 마모", "50%"),
+        Row("ASSY 338 RA1", "SUB4", "VISUAL INSPECTION", "Offset assembly Spring"),
+        Row("ASSY 338 RA1", "SUB4", "VISUAL INSPECTION", "Damage Bracket"),
+        Row("ASSY 338 RA1", "MAIN", "BRACKET INNER Ass y Vision Check", "Damage Bracket"),
+        Row("ASSY 338 RA1", "VISUAL", "VISUAL INSPECTION 3", "Damage BRK"),
+        Subtotal("ASSY 338 RA1"),
+        Row("ASSY 338 RA1", "VISUAL", "VISUAL INSPECTION 3", "Deform Main port", "1", "조립 설비 트러블", "100%"),
+        Row("ASSY 338 RA1", "VISUAL", "VISUAL INSPECTION 3", "Damage Main port"),
+        Subtotal("ASSY 338 RA1"),
+        Row("ASSY 338 RA1", "FUNCTION", "SOUND QUALITY TEST", "Noise", "1"),
+    ];
+}

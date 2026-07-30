@@ -1,0 +1,43 @@
+{
+  "sourceFileId": 13,
+  "sourceFile": "01. BRS-161014  GMI Report test VP bending level 1 and 2 check by master jig 11_1778470567_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\13.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:44:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 13,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook appears to contain a valid comparison of Normal VP versus VP bending level 1/2, but the draft mislabels the changed factor, includes erroneous aggregate/header-derived outcomes, and omits key reliability and decision evidence.",
+    "issues": [
+      "Changed factor is incorrectly categorized as jig; evidence indicates the primary changed condition is VP bending level 1 and level 2 versus Normal VP, with master jig as screening/context.",
+      "Changed condition incorrectly includes 'Total' as if it were a test condition.",
+      "Subgroup keys are incomplete and biased toward only VP bending level 1 despite both level 1 and level 2 being tested.",
+      "Several outcomes are misclassified as measurement outcomes even though they are defect/NG-rate tables or header-derived aggregates.",
+      "Header-only rows such as NG rate!26, NG rate!27, and NG rate!48 are used as measurement evidence, producing invalid statistical subResults.",
+      "Row-level grouping by result section, line/date/test repetition appears insufficiently preserved; repeated Normal VP and bending rows should not be collapsed without context.",
+      "Reliability result at A1 and final decision rows are important evidence but are not represented as outcomes or decision evidence.",
+      "Review title and purpose retain pipe-delimited extraction artifacts and should be cleaned before final use."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename the changed factor to 'VP bending level: Normal VP vs VP bending level 1 and VP bending level 2'.",
+      "Set baselineCondition to 'Normal VP' and changedCondition to 'VP bending level 1; VP bending level 2'; remove 'Total' from changedCondition.",
+      "Change changeDomain from 'jig' to a more appropriate product/condition domain, while keeping master jig only as inspection/separation context.",
+      "Rebuild outcomes into valid domains: SUB 1 NG-rate comparison, function checking NG-rate comparison, dimensional/measurement comparison, reliability at A1 result, and final decision.",
+      "Remove header-derived measurement outcomes and any subResults generated only from header rows.",
+      "Preserve row grouping by section and repeated test/date/line context when listing subResults.",
+      "Add evidence citations for reliability and decision rows, especially NG rate!74 and NG rate!87.",
+      "Clean extracted titles and purpose text for readability while retaining source-row citations."
+    ],
+    "evidencePolicy": "Evidence row citations exist, but they are not sufficient as final evidence because some citations are header-only or misgrouped; final evidence must cite the actual condition/result rows plus reliability and decision rows."
+  },
+  "usage": {
+    "input_tokens": 7598,
+    "output_tokens": 892,
+    "total_tokens": 8490
+  }
+}

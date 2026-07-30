@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 459,
+  "sourceFile": "26. BRS-201506 Report checking and test  sample VP damage date 5.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\459.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:34Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 459,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misgroups checkpoints and parameter data as the main changed factor.",
+    "issues": [
+      "Primary changed factor is ambiguous; process steps are treated as changed conditions.",
+      "Baseline/test framing for VP damage before/after function checks is not established.",
+      "Sheet1 AWF settings may be unrelated or subgroup context, not proven outcome evidence.",
+      "Measurement outcomes appear header-derived and not supported by value-row citations.",
+      "Process defect sections may be separate checks and should not be merged blindly."
+    ],
+    "requiredUserQuestions": [
+      "Is Sheet1 part of this VP damage validation report or a separate AWF settings note?",
+      "Should the main comparison be OK sample before vs after making VP damage?"
+    ],
+    "correctionPlan": [
+      "Redefine the changed factor from report context, likely VP damage creation/recheck, not process-step names.",
+      "Separate process checkpoint defect results from before/after function or vision checks.",
+      "Remove Sheet1 outcomes unless source context proves they belong to this validation.",
+      "Cite actual data rows for every extracted metric, not only header rows.",
+      "Keep judgement not_judged until baseline and test conditions are explicit."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient for final evidence because grouping and value-row support are weak."
+  },
+  "usage": {
+    "input_tokens": 4778,
+    "output_tokens": 804,
+    "total_tokens": 5582
+  }
+}

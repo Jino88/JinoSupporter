@@ -1,0 +1,186 @@
+{
+  "sourceFileId": 88,
+  "sourceFile": "032.MSU - L20S15-07 REPORT CHECK VOLTAGE HEARING GOOD FOR PRODUCT_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\032.MSU - L20S15-07 REPORT CHECK VOLTAGE HEARING GOOD FOR PRODUCT_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "201507",
+    "sheetRowCount": 17,
+    "sheetCellCount": 54,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 1,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "201507!2",
+      "sheetName": "201507",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT CHECK VOLTAGE HEARING GOOD FOR PRODUCT MSU-L20S15-07 | | | | | | | | | | | | | Dept: | ME"
+    },
+    {
+      "rowId": "201507!3",
+      "sheetName": "201507",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date: | 2025-03-21 00:00:00"
+    },
+    {
+      "rowId": "201507!4",
+      "sheetName": "201507",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker: | Thuy"
+    },
+    {
+      "rowId": "201507!5",
+      "sheetName": "201507",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "201507!6",
+      "sheetName": "201507",
+      "rowNumber": 6,
+      "rowText": "| - To reduce voltage hearing( improve Coil deform)"
+    },
+    {
+      "rowId": "201507!15",
+      "sheetName": "201507",
+      "rowNumber": 15,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "201507!16",
+      "sheetName": "201507",
+      "rowNumber": 16,
+      "rowText": "| - TEST only hearing with 7V(Not check 8V)"
+    },
+    {
+      "rowId": "201507!17",
+      "sheetName": "201507",
+      "rowNumber": 17,
+      "rowText": "| -Q'ty :2000 pcs =>Use wire 0.096 =>Move Modul each model 500 pcs (526TOP/526BOTTOM/626TOP/626BOTTOM)"
+    },
+    {
+      "rowId": "201507!18",
+      "sheetName": "201507",
+      "rowNumber": 18,
+      "rowText": "| - Compare with normal line"
+    },
+    {
+      "rowId": "201507!19",
+      "sheetName": "201507",
+      "rowNumber": 19,
+      "rowText": "| III. Result."
+    },
+    {
+      "rowId": "201507!20",
+      "sheetName": "201507",
+      "rowNumber": 20,
+      "rowText": "| | RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "201507!21",
+      "sheetName": "201507",
+      "rowNumber": 21,
+      "rowText": "| | Date | Type | Input | OK | Sigma | | | | | | Hearing voltage (7V )"
+    },
+    {
+      "rowId": "201507!23",
+      "sheetName": "201507",
+      "rowNumber": 23,
+      "rowText": "| | 2025-03-21 00:00:00 | Test Only hearing voltage (7V) | 2400 | 2369 | 0 | 2 | 1 | 0 | 3 | 0.00125 | 20 | 11 | 31 | 0.01291667"
+    },
+    {
+      "rowId": "201507!28",
+      "sheetName": "201507",
+      "rowNumber": 28,
+      "rowText": "| IV. Decision."
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-88-rc-1",
+      "reviewTitle": "| REPORT CHECK VOLTAGE HEARING GOOD FOR PRODUCT MSU-L20S15-07 | | | | | | | | | | | | | Dept: | ME",
+      "reviewPurpose": "| I. Purpose. / | - To reduce voltage hearing( improve Coil deform) / | II. Content. / | - TEST only hearing with 7V(Not check 8V) / | -Q'ty :2000 pcs =>Use wire 0.096 =>Move Modul each model 500 pcs (526TOP/526BOTTOM/626TOP/626BOTTOM)",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Test Only hearing voltage (7V)",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Test Only hearing voltage (7V)",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "201507!15",
+            "201507!16",
+            "201507!18",
+            "201507!2",
+            "201507!23",
+            "201507!5"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "201507!23"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 17891,
+              "condition": "Test Only hearing voltage (7V)",
+              "input": 2400.0,
+              "ok": 2369.0,
+              "ng": 7.0,
+              "ratePercent": 0.2916666666666667,
+              "evidenceRows": [
+                "201507!23"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "201507!15",
+        "201507!16",
+        "201507!18",
+        "201507!2",
+        "201507!23",
+        "201507!5"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "201507!15",
+      "201507!16",
+      "201507!18",
+      "201507!2",
+      "201507!23",
+      "201507!5"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

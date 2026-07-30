@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 960,
+  "sourceFile": "9. BRS-161014  Report test change time dry VP+CD (1st) 2023.11.06_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\960.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 960,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the report but misgroups conditions and includes invalid measurement evidence.",
+    "issues": [
+      "Primary change should be dry time/speed 44.8 to 38/3.8, not UV peak/total values.",
+      "Rows 18-24 second and third rounds are omitted from comparable outcomes.",
+      "Measurement outcome is spurious; counts were treated as spec statistics using only header evidence.",
+      "Baseline/test labels need round-level preservation due inconsistent 38 vs 3.8 wording.",
+      "Conclusion rows are not cited for first-round vs later-round interpretation."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define one changed factor as dry time/speed reduction from normal 44.8 to test 38 or 3.8.",
+      "Create separate subresults for 1st, 2nd, and 3rd round comparisons using paired rows 14/16, 18/20, and 22/24.",
+      "Treat peak/total energy as subgroup or secondary condition, not the primary changed factor.",
+      "Remove the invalid measurement/spec outcome and keep defect categories as outcome components if needed.",
+      "Cite purpose/content, header, all paired result rows, and conclusion rows 26-27."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient and partly misused; corrected round-level result citations are required."
+  },
+  "usage": {
+    "input_tokens": 3756,
+    "output_tokens": 821,
+    "total_tokens": 4577
+  }
+}

@@ -1,0 +1,333 @@
+{
+  "sourceFileId": 965,
+  "sourceFile": "9. BRS-201506 DT Report test increase voltage hearing 10%   date 21.12.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\9. BRS-201506 DT Report test increase voltage hearing 10%   date 21.12.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "21.12",
+    "sheetRowCount": 23,
+    "sheetCellCount": 87,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 6
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "21.12!2",
+      "sheetName": "21.12",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT CHECK INCREASE VOLTAGE HEARING +10% BRS-201506 | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "21.12!3",
+      "sheetName": "21.12",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | Date | 2024-12-21 00:00:00"
+    },
+    {
+      "rowId": "21.12!4",
+      "sheetName": "21.12",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | Maker | Le"
+    },
+    {
+      "rowId": "21.12!5",
+      "sheetName": "21.12",
+      "rowNumber": 5,
+      "rowText": "| 1. Purpose test"
+    },
+    {
+      "rowId": "21.12!6",
+      "sheetName": "21.12",
+      "rowNumber": 6,
+      "rowText": "| - Test increase voltage hearing +10%"
+    },
+    {
+      "rowId": "21.12!8",
+      "sheetName": "21.12",
+      "rowNumber": 8,
+      "rowText": "| 2. Content of testing"
+    },
+    {
+      "rowId": "21.12!9",
+      "sheetName": "21.12",
+      "rowNumber": 9,
+      "rowText": "| -++ Hearing check voltage increase 10% compare hearing condition normal"
+    },
+    {
+      "rowId": "21.12!12",
+      "sheetName": "21.12",
+      "rowNumber": 12,
+      "rowText": "| | | Spec normal | | Spec increase voltage 10%"
+    },
+    {
+      "rowId": "21.12!13",
+      "sheetName": "21.12",
+      "rowNumber": 13,
+      "rowText": "| | | E02 | Output voltage | E02 | Output voltage"
+    },
+    {
+      "rowId": "21.12!14",
+      "sheetName": "21.12",
+      "rowNumber": 14,
+      "rowText": "| | | E0 | 6.8 | E0 | 7.48"
+    },
+    {
+      "rowId": "21.12!15",
+      "sheetName": "21.12",
+      "rowNumber": 15,
+      "rowText": "| | | E1 | 6.2 | E1 | 6.82"
+    },
+    {
+      "rowId": "21.12!16",
+      "sheetName": "21.12",
+      "rowNumber": 16,
+      "rowText": "| | | E2 | 3.6 | E2 | 3.96"
+    },
+    {
+      "rowId": "21.12!21",
+      "sheetName": "21.12",
+      "rowNumber": 21,
+      "rowText": "| 3.Result test"
+    },
+    {
+      "rowId": "21.12!23",
+      "sheetName": "21.12",
+      "rowNumber": 23,
+      "rowText": "| | 1.RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "21.12!26",
+      "sheetName": "21.12",
+      "rowNumber": 26,
+      "rowText": "| | 2024-12-21 00:00:00 | Hearing | Normal | 200 | 183 | 0 | 0 | 0 | 7 | 10 | 17 | 0.085"
+    },
+    {
+      "rowId": "21.12!31",
+      "sheetName": "21.12",
+      "rowNumber": 31,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-965-rc-1",
+      "reviewTitle": "REPORT CHECK INCREASE VOLTAGE HEARING +10% BRS-201506 | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| 1. Purpose test / | - Test increase voltage hearing +10% / | 2. Content of testing / | -++ Hearing check voltage increase 10% compare hearing condition normal / | | | Spec normal | | Spec increase voltage 10%",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition",
+            "dimension/spec"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Hearing, Increase voltage +10%",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Hearing, Increase voltage +10%",
+          "subgroupKeys": [
+            "Normal"
+          ],
+          "evidenceRows": [
+            "21.12!12",
+            "21.12!13",
+            "21.12!2",
+            "21.12!21",
+            "21.12!26",
+            "21.12!28",
+            "21.12!5",
+            "21.12!6",
+            "21.12!8",
+            "21.12!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "1.RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "21.12!26",
+            "21.12!28"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 25213,
+              "condition": "Hearing | Normal",
+              "input": 200.0,
+              "ok": 183.0,
+              "ng": 17.0,
+              "ratePercent": 8.5,
+              "evidenceRows": [
+                "21.12!26"
+              ]
+            },
+            {
+              "metricId": 25214,
+              "condition": "Increase voltage +10%",
+              "input": 200.0,
+              "ok": 177.0,
+              "ng": 23.0,
+              "ratePercent": 11.5,
+              "evidenceRows": [
+                "21.12!28"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "-++ Hearing check voltage increase 10% compare hearing condition normal",
+          "comparisonRows": [
+            "21.12!12"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 66131,
+              "condition": "-++ Hearing check voltage increase 10% compare hearing condition normal / Spec normal",
+              "spec": "",
+              "min": 0.0,
+              "max": 4.0,
+              "avg": 2.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "21.12!12"
+              ]
+            },
+            {
+              "statId": 66132,
+              "condition": "-++ Hearing check voltage increase 10% compare hearing condition normal / Spec increase voltage 10%",
+              "spec": "",
+              "min": 0.0,
+              "max": 4.0,
+              "avg": 2.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "21.12!12"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Spec normal | Spec increase voltage 10%",
+          "comparisonRows": [
+            "21.12!13"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 66133,
+              "condition": "Spec normal / E02",
+              "spec": "",
+              "min": 0.0,
+              "max": 4.0,
+              "avg": 2.0,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "21.12!13"
+              ]
+            },
+            {
+              "statId": 66134,
+              "condition": "Spec normal / Output voltage",
+              "spec": "",
+              "min": 3.6,
+              "max": 6.8,
+              "avg": 5.1000000000000005,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "21.12!13"
+              ]
+            },
+            {
+              "statId": 66135,
+              "condition": "Spec increase voltage 10% / E02",
+              "spec": "",
+              "min": 0.0,
+              "max": 4.0,
+              "avg": 2.0,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "21.12!13"
+              ]
+            },
+            {
+              "statId": 66136,
+              "condition": "Spec increase voltage 10% / Output voltage",
+              "spec": "",
+              "min": 3.96,
+              "max": 7.48,
+              "avg": 5.610000000000001,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "21.12!13"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "21.12!12",
+        "21.12!13",
+        "21.12!2",
+        "21.12!21",
+        "21.12!26",
+        "21.12!28",
+        "21.12!5",
+        "21.12!6",
+        "21.12!8",
+        "21.12!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "21.12!12",
+      "21.12!13",
+      "21.12!2",
+      "21.12!21",
+      "21.12!26",
+      "21.12!28",
+      "21.12!5",
+      "21.12!6",
+      "21.12!8",
+      "21.12!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

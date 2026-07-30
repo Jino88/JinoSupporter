@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 379,
+  "sourceFile": "2. MSU-L20S15-07DT Report test use Lot CD separate C2 &E2  date 29.4.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\379.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 379,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not verified because the primary changed factor is misgrouped as Normal vs Test instead of the report's C2 vs E2 comparison under one CD lot with plasma context.",
+    "issues": [
+      "Primary changed factor contradicts title and purpose: report compares C2 and E2.",
+      "Normal/Test appears as within-line condition for tension, not the overall comparison.",
+      "C2 and E2 outcome rows are incorrectly attached to a Normal vs Test factor.",
+      "Tension pairs are mispaired across lines and do not preserve C2-2A/E2-4B subgroup keys.",
+      "LED UV/bonding outcomes rely on header-like rows and need validation against actual data rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Change primary factor to C2 vs E2 with CD lot and plasma C2 as context unless source proves otherwise.",
+      "Preserve subgroup keys: line, date, content, CD lot date, IV type, and Normal/Test condition.",
+      "Regroup separate VP/CD and function results as C2 vs E2 comparisons.",
+      "Regroup tension assay as within-line Test vs Normal subresults under C2 and E2, not cross-line pairs.",
+      "Remove or revalidate LED UV/bonding metrics using actual measurement rows."
+    ],
+    "evidencePolicy": "Row citations exist, but they do not sufficiently support the current changed-factor grouping."
+  },
+  "usage": {
+    "input_tokens": 6145,
+    "output_tokens": 757,
+    "total_tokens": 6902
+  }
+}

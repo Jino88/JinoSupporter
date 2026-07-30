@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 684,
+  "sourceFile": "48. TIU L5S3-01 R Report test Dry normal F-pcb sub3 - R  2026.01.02. -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\684.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 684,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because the changed factor and function comparisons are mis-grouped despite citeable source context.",
+    "issues": [
+      "Changed factor incorrectly mixes lines, test durations, and an unexplained condition 3.",
+      "Line L function comparison uses the Line R normal row instead of the Line L normal row.",
+      "Function comparison rows omit the Line L normal evidence row.",
+      "Measurement outcome is an invalid aggregation of defect columns, not a measurement result.",
+      "Evidence includes rows not shown in provided context, limiting verification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to dry oven 105±5°C versus normal IR dry 300±5°C/10min.",
+      "Keep Line R and Line L as subgroup keys for function results.",
+      "Recalculate Line L against its own normal row and include that citation.",
+      "Treat F-PCB separate as a process-defect duration check, not a normal-versus-test comparison unless a baseline exists.",
+      "Remove the measurement outcome unless real measurement/spec rows are provided."
+    ],
+    "evidencePolicy": "Citations are partly sufficient, but missing/incorrect key rows prevent final evidence use."
+  },
+  "usage": {
+    "input_tokens": 4362,
+    "output_tokens": 780,
+    "total_tokens": 5142
+  }
+}

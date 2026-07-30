@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 501,
+  "sourceFile": "3. BRS-161016 (DT) Report  test new machine dry date 2024.04.02_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\501.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:45Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 501,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because it merges distinct process sheets and misidentifies the changed-factor and outcomes.",
+    "issues": [
+      "Changed factor mixes machine, jig, dates, temperatures, times, and processes.",
+      "SMG, CMG/Yoke, and Frame+SUS contexts are combined without clear grouping.",
+      "Baseline/test logic is inconsistent; Sub 3 has no Normal comparator.",
+      "Several outcomes are parser artifacts or header-derived measurements.",
+      "Decision evidence is incomplete, especially final use/no-use conclusions."
+    ],
+    "requiredUserQuestions": [
+      "Should the three process sheets be separate review cases or one validation case?"
+    ],
+    "correctionPlan": [
+      "Define primary factor as new dry machine/process dry condition versus normal where supported.",
+      "Preserve sheet/process as subgroup or split into cases based on report intent.",
+      "Rebuild outcomes from real data rows, excluding header-derived statistics.",
+      "Pair Normal and Test only within the same process, date/line/type context.",
+      "Cite title, purpose, condition, result, and decision rows for each corrected case."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are misgrouped and insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 16429,
+    "output_tokens": 779,
+    "total_tokens": 17208
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 397,
+  "sourceFile": "21. BRS 161016 PQC DATA checking Gauss Yoke_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\397.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 397,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the comparison and parses metadata as measurements, so it cannot be used as final evidence.",
+    "issues": [
+      "Changed factor is filename, not Normal OK vs low Gauss groups.",
+      "Baseline and test conditions are explicit in source but omitted.",
+      "Key condition evidence from Test Gauss and average sheets is not used.",
+      "Many subResults treat model, line, shift, and labels as numeric metrics.",
+      "Outcome grouping omits SPL, impedance, THD, and NG status context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal OK vs Low Gauss 419-459G vs Gauss 460-477G.",
+      "Use Test Gauss!5-7 as primary condition and status evidence.",
+      "Use SPL, impedance, and THD average headers/rows for measurement outcomes.",
+      "Remove metadata-derived numeric stats for model, line, shift, and labels.",
+      "Preserve date, line, model, shift, and gauss range as subgroup keys."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient and misgrouped; cite rows naming each condition and metric."
+  },
+  "usage": {
+    "input_tokens": 9883,
+    "output_tokens": 579,
+    "total_tokens": 10462
+  }
+}

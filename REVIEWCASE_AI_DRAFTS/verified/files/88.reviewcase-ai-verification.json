@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 88,
+  "sourceFile": "032.MSU - L20S15-07 REPORT CHECK VOLTAGE HEARING GOOD FOR PRODUCT_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\88.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 88,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but the changed factor, baseline, and outcome metrics are not verified enough for final use.",
+    "issues": [
+      "Baseline normal line is mentioned but no normal result row is cited.",
+      "Changed condition may include 7V test, wire 0.096, module moves, and coil deformation context.",
+      "Metric extraction likely omits hearing-voltage counts and may misstate NG total.",
+      "Header row for result metrics is not cited in the outcome.",
+      "Row 17 condition details are missing from changed-factor evidence."
+    ],
+    "requiredUserQuestions": [
+      "What is the primary changed factor: 7V hearing check, wire 0.096, module move, or coil deformation improvement?",
+      "Should normal line be treated as baseline even without a normal-result row?"
+    ],
+    "correctionPlan": [
+      "Revise changed factor to reflect all source-supported condition changes or mark as ambiguous.",
+      "Add row 17 and row 21 to evidence for conditions and metric labels.",
+      "Separate function-check and hearing-voltage outcomes if both are reported.",
+      "Recalculate NG/rates from the labeled columns only.",
+      "State that no normal-line measurement is available for comparison."
+    ],
+    "evidencePolicy": "Citations exist, but they are insufficient for final comparison until headers and missing condition rows are added."
+  },
+  "usage": {
+    "input_tokens": 2324,
+    "output_tokens": 1142,
+    "total_tokens": 3466
+  }
+}

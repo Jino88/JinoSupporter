@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 348,
+  "sourceFile": "18. MSU-201507 DT Report test improve NG function  date 5.4.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\348.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:17Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 348,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft has citeable NG/function data but the primary changed factor and baseline/test grouping are ambiguous.",
+    "issues": [
+      "Changed factor lists multiple conditions versus an unspecified test condition.",
+      "Baseline omits or mishandles the VP old condition in the vision result.",
+      "Header rows are incorrectly converted into measurement outcomes.",
+      "Evidence cites NG rate!27, which is not provided in contextRows.",
+      "Outcome domain for vision VP/CD is marked unknown."
+    ],
+    "requiredUserQuestions": [
+      "Which condition is the intended baseline/control?",
+      "Is the primary change dome lot/date, VP old vs normal, plasma height, or a combined condition?"
+    ],
+    "correctionPlan": [
+      "Define one evidence-backed changed-factor context from the condition rows and note text.",
+      "Set baseline and test conditions explicitly or mark as multi-condition screening if no baseline exists.",
+      "Remove header-derived measurement outcomes and keep defect-category counts within NG metrics.",
+      "Add or replace the missing NG rate!27 citation with available source rows.",
+      "Label outcomes as vision VP/CD defect rate and function defect rate."
+    ],
+    "evidencePolicy": "Row citations are partly sufficient for data rows, but missing/header-only citations prevent final use."
+  },
+  "usage": {
+    "input_tokens": 5574,
+    "output_tokens": 737,
+    "total_tokens": 6311
+  }
+}

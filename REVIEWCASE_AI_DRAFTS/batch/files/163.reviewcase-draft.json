@@ -1,0 +1,149 @@
+{
+  "sourceFileId": 163,
+  "sourceFile": "08. BRS-161016GMI Report check JIG Sub 1 Ass'y find reason VP damage make NG air leak_2025.07.12_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\08. BRS-161016GMI Report check JIG Sub 1 Ass'y find reason VP damage make NG air leak_2025.07.12_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "12.07; Sheet1",
+    "sheetRowCount": 8,
+    "sheetCellCount": 52,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "12.07!2",
+      "sheetName": "12.07",
+      "rowNumber": 2,
+      "rowText": "| STATUS CHECK SUB 1 ASS'Y JIG BRS-161016"
+    },
+    {
+      "rowId": "12.07!4",
+      "sheetName": "12.07",
+      "rowNumber": 4,
+      "rowText": "| Date | Line | Input | NG | NG rate | Picture JIG NG"
+    },
+    {
+      "rowId": "12.07!5",
+      "sheetName": "12.07",
+      "rowNumber": 5,
+      "rowText": "| 2025-07-12 00:00:00 | E2-3A"
+    },
+    {
+      "rowId": "Sheet1!4",
+      "sheetName": "Sheet1",
+      "rowNumber": 4,
+      "rowText": "| | RESULT CHECK FUNCTION COMPARE NEW JIG AWF AND OLD JIG AWF"
+    },
+    {
+      "rowId": "Sheet1!5",
+      "sheetName": "Sheet1",
+      "rowNumber": 5,
+      "rowText": "| | Date | Line | Type | | Input | OK | Air leak | NG Sigma | | | | NG Hearing | | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "Sheet1!6",
+      "sheetName": "Sheet1",
+      "rowNumber": 6,
+      "rowText": "| | | | | | | | | SPL | THD | SPL+THD | SPL+THD+F0 | Noise | Touch"
+    },
+    {
+      "rowId": "Sheet1!7",
+      "sheetName": "Sheet1",
+      "rowNumber": 7,
+      "rowText": "| | 2025-06-04 00:00:00 | E2-3B | New JIG | | 397 | 388 | 0 | 0 | 4 | 0 | 0 | 4 | 1 | 9 | 0.02267003"
+    },
+    {
+      "rowId": "Sheet1!8",
+      "sheetName": "Sheet1",
+      "rowNumber": 8,
+      "rowText": "| | | | Old JIG | | 769 | 746 | 0 | 0 | 3 | 0 | 0 | 16 | 4 | 23 | 0.02990897"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-163-rc-1",
+      "reviewTitle": "| STATUS CHECK SUB 1 ASS'Y JIG BRS-161016",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment",
+            "jig",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Old JIG vs New JIG, Old JIG",
+          "baselineCondition": "Old JIG",
+          "changedCondition": "New JIG, Old JIG",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Sheet1!7",
+            "Sheet1!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT CHECK FUNCTION COMPARE NEW JIG AWF AND OLD JIG AWF",
+          "comparisonRows": [
+            "Sheet1!7",
+            "Sheet1!8"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 3644,
+              "controlCondition": "Old JIG",
+              "testCondition": "New JIG",
+              "control": {
+                "input": 769.0,
+                "ng": 23.0,
+                "ratePercent": 2.990897
+              },
+              "test": {
+                "input": 397.0,
+                "ng": 9.0,
+                "ratePercent": 2.267003
+              },
+              "deltaRatePercentPoint": -0.7238939999999999,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Sheet1!7",
+                "Sheet1!8"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Sheet1!7",
+        "Sheet1!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet1!7",
+      "Sheet1!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

@@ -1,0 +1,42 @@
+{
+  "sourceFileId": 4,
+  "sourceFile": "0012.MSU - 20S15-07 REPORT CHECK COIL NG DEFORM ( Coil touch frame )_1778470503_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\4.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:43:44Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 4,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft is not usable as final evidence because it does not identify the actual changed factor or valid baseline/test grouping.",
+    "issues": [
+      "Blocking: changedFactor is the filename instead of a manufacturing change such as before vs after MC AWF setting or coil-frame offset vs OK sample separation.",
+      "Blocking: baselineCondition and changedCondition are marked not explicit even though row 1!14 shows Before setting MC AWF and row 1!16 shows After setting MC AWF.",
+      "Blocking: key comparison rows 1!14 and 1!16 are present in context but are not cited in the changed-factor evidence.",
+      "Blocking: measurement outcomes appear auto-extracted from header or summary rows and contain implausible statistics, mixed dimensions, and unclear conditions.",
+      "Blocking: the draft mixes functional NG-rate investigation, coil offset/gap checks, and dimension-after-process data without a verified single comparison structure.",
+      "Non-blocking: cited rows such as Check dimension!9, Check dimension!16, Sheet1!6, and Sheet1!9 may exist per row-existence verification, but their content is not shown in context enough to validate the extracted statistics."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended primary comparison before vs after MC AWF setting?",
+      "Should coil-frame offset samples and coil-frame OK samples be treated as separate comparison groups?"
+    ],
+    "correctionPlan": [
+      "Replace the filename-based changedFactor with the actual process/sample comparison supported by workbook rows.",
+      "Use row 1!14 as baseline evidence for Before setting MC AWF and row 1!16 as changed-condition evidence for After setting MC AWF if that is the intended comparison.",
+      "Review rows following 1!28 to determine whether function results compare coil-frame offset samples versus coil-frame OK samples and cite those rows directly.",
+      "Separate or clearly subordinate dimension-after-process measurements from the functional NG-rate/coil-deform investigation unless the workbook proves they belong to the same validation context.",
+      "Rebuild measurement outcomes using real condition rows and headers, preserving process step keys such as After AWF, After UV led SP + Coil, and After dry oven 5min.",
+      "Remove implausible auto-statistics derived from headers, gaps, or mixed A/B dimensions unless they can be traced to valid numeric measurement tables."
+    ],
+    "evidencePolicy": "Evidence row citations are insufficient for final use because the changed-condition rows are not properly cited and several measurement citations point to unverified header or summary rows."
+  },
+  "usage": {
+    "input_tokens": 6442,
+    "output_tokens": 1095,
+    "total_tokens": 7537
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 167,
+  "sourceFile": "08. TIU C11-20 Result test VP press JIG  2025.12.12_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\167.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 167,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites valid rows but misidentifies the primary change as date instead of VP press jig test versus normal.",
+    "issues": [
+      "Changed factor is incorrectly date-based.",
+      "Baseline/test conditions are reversed or unclear.",
+      "Outcome metric label is too generic.",
+      "Date subgroup is not preserved cleanly.",
+      "Small sample limitation is missing."
+    ],
+    "requiredUserQuestions": [
+      "Is the 12/1/2025 JIG TEST row intended to compare with the 12/10/2025 Normal row?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to VP press jig or cut guide jig use.",
+      "Use Normal as baseline and JIG TEST as changed condition.",
+      "Keep date as subgroup context for each result row.",
+      "Set outcome metric to Total NG rate and frame bonding NG.",
+      "Add limitation for small inputs and cross-date comparison."
+    ],
+    "evidencePolicy": "Row citations exist and are sufficient after corrected grouping."
+  },
+  "usage": {
+    "input_tokens": 2546,
+    "output_tokens": 601,
+    "total_tokens": 3147
+  }
+}

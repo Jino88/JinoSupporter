@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 885,
+  "sourceFile": "75. TIU L5S3-01 R Report  test find reason NG bako high 2026.03.03_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\885.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:08Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 885,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures the NG reduction study but grouping and measurement evidence are not reliable enough for final use.",
+    "issues": [
+      "Changed factor mixes screening conditions, head subgroups, and final machine adjustment.",
+      "Head 1-4 appear subgroup/test positions, not separate primary changed factors.",
+      "Measurement outcome uses header-only evidence and likely fabricated aggregate stats.",
+      "Outcome metric label is a section title, not the actual NG rate/NG count metric.",
+      "Decision row supports machine repair effect but is not linked cleanly to the final condition."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary conclusion the Z-axis machine repair, or the full condition-screening comparison?"
+    ],
+    "correctionPlan": [
+      "Separate baseline Normal from each tested condition with preserved type/head context.",
+      "Treat Head 1-4 as subgroup keys under separate head ass'y yoke testing.",
+      "Remove header-only measurement aggregates unless data rows support them.",
+      "Use Total NG rate, Total NG, and NG BAKO categories as explicit outcomes.",
+      "Cite purpose, table headers, each compared data row, and decision row."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are insufficient for unsupported aggregates and final-factor grouping."
+  },
+  "usage": {
+    "input_tokens": 4007,
+    "output_tokens": 788,
+    "total_tokens": 4795
+  }
+}

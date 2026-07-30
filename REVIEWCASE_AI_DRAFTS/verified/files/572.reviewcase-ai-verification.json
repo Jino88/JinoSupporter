@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 572,
+  "sourceFile": "35. TIU L5S3-01 R Report test change Bonding line FR+VP to improve NG BAKO 2025.12.23_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\572.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:05Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 572,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed factor and creates invalid comparisons across Type and day conditions.",
+    "issues": [
+      "Changed factor should center on bonding line FR+VP/Sub 3, not Type 1 vs days.",
+      "Type and aging/check timing are mixed as changed conditions.",
+      "Type 1 rows are compared to Type 2 rows without preserving subgroup keys.",
+      "Measurement outcome is a header-derived artifact, not a valid separate measurement result.",
+      "Decision supports Type 1 stability but draft judgement says mixed/worsened."
+    ],
+    "requiredUserQuestions": [
+      "Are Type 1 and Type 2 bonding line variants or sample groups?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to bonding line FR+VP change at Sub 3 versus normal context.",
+      "Preserve Type 1 and Type 2 as grouping keys unless confirmed as the main comparison.",
+      "Compare Normal check, After 1 day, and After 2 days within each Type separately.",
+      "Remove the artificial measurement outcome based only on header row.",
+      "Align judgement with row results and decision, noting Type 1 OK/stable and Type 2 higher NG if retained."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient because grouping and outcome use are incorrect."
+  },
+  "usage": {
+    "input_tokens": 3898,
+    "output_tokens": 797,
+    "total_tokens": 4695
+  }
+}

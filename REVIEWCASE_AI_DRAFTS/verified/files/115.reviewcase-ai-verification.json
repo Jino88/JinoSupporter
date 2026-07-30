@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 115,
+  "sourceFile": "045. L20S15-07 Report test use laser machine for improve NG separate 2025.04.25_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\115.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:34Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 115,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has no review case despite citeable rows showing a possible Plasma/Laser CD type comparison with NG outcomes.",
+    "issues": [
+      "No reviewCases were generated.",
+      "Changed factor and baseline/test grouping are not defined.",
+      "Outcome rows include ambiguous merged or partial entries.",
+      "Laser=>Plasma row has zero input and invalid rate.",
+      "Purpose/content text is mostly missing."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison Plasma vs Laser CD type for lot 2025-03-17?",
+      "Should Laser=>Plasma be treated as a separate condition or excluded?"
+    ],
+    "correctionPlan": [
+      "Create a review case only if Plasma/Laser CD type is confirmed.",
+      "Group evidence by lot date and CD type.",
+      "Cite title, result headers, and each condition row.",
+      "Exclude or explain zero-input Laser=>Plasma row.",
+      "Summarize NG rate, input, OK, and total NG consistently."
+    ],
+    "evidencePolicy": "Rows are citeable but currently insufficiently grouped for final evidence."
+  },
+  "usage": {
+    "input_tokens": 1772,
+    "output_tokens": 514,
+    "total_tokens": 2286
+  }
+}

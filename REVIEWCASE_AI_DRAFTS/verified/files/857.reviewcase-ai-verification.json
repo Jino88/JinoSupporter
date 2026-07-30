@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 857,
+  "sourceFile": "70. BRS 201506 Ring plate IQC checking result 2024.08.05_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\857.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 857,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft lacks a citeable changed-condition comparison and only shows IQC inspection records by product/lot.",
+    "issues": [
+      "Changed factor is the filename, not a process or material change.",
+      "Baseline and test conditions are explicit as unknown.",
+      "Mixed magnet and PT 201506-S sheets are grouped together without evidence.",
+      "Lot size/date appear to be subgroup context, not proven change factors.",
+      "Outcome tables are generic detections and not valid comparisons."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Exclude this draft from Ask AI final evidence.",
+      "Do not treat file title as a changed factor.",
+      "Do not merge magnet and ring plate records unless source proves one validation context.",
+      "If a lot comparison is intended, rebuild using lot/date/spec/supplier as grouping keys.",
+      "Require rows proving the actual changed condition before creating a review case."
+    ],
+    "evidencePolicy": "Citations show inspection context but not sufficient changed-condition evidence."
+  },
+  "usage": {
+    "input_tokens": 10797,
+    "output_tokens": 738,
+    "total_tokens": 11535
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 855,
+  "sourceFile": "7. BRS-201506 Report checking and Test dimension VP cutting inner side  date 05.9.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\855.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:12Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 855,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source evidence but grouping, pairings, and measurement extraction are not reliable enough for Ask AI.",
+    "issues": [
+      "Changed factor is overbroad and includes totals as conditions.",
+      "Baseline/test pairings mix dates and totals incorrectly.",
+      "Measurement outcomes cite headers and misapply specs.",
+      "Bonding result contains inconsistent NG values.",
+      "Change domain includes unsupported coating context."
+    ],
+    "requiredUserQuestions": [
+      "Should the final primary change be the approved Die Punch V2 new VP spec versus normal V1?"
+    ],
+    "correctionPlan": [
+      "Define one VP inner-side dimension/spec change context with variants as subgroups.",
+      "Separate real conditions from total rows and do not compare totals to single-date normal rows.",
+      "Rebuild outcomes by date/type for bonding, vision, function, and dimension.",
+      "Correct measurement specs for long and short dimensions using data rows, not header rows alone.",
+      "Use decision rows to summarize approved spec and rejected high-NG variants."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient because key cited rows are headers or misgrouped totals."
+  },
+  "usage": {
+    "input_tokens": 18677,
+    "output_tokens": 766,
+    "total_tokens": 19443
+  }
+}

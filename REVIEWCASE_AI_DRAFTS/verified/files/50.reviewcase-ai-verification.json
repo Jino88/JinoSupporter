@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 50,
+  "sourceFile": "02. TIU L5S3 Result Test Frame (PV1 Frame, MP T2 Frame)_251112_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\50.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 50,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable frame conditions are cited, but no citeable outcome data was extracted for final evidence.",
+    "issues": [
+      "No quantitative or NG-rate result rows extracted.",
+      "Outcome evidence appears limited to sample/image sections.",
+      "Changed factor likely Normal Frame vs Test Frame T2/T3, but result linkage is missing.",
+      "No review case was generated despite comparison context."
+    ],
+    "requiredUserQuestions": [
+      "Are the missing results embedded in images or hidden rows?"
+    ],
+    "correctionPlan": [
+      "Extract or OCR result data for Normal, T2 Mold, and T3 Mold frames.",
+      "Preserve sample numbers and any test-condition grouping.",
+      "Cite rows for purpose, compared conditions, and actual outcomes.",
+      "Create a review case only after outcome evidence is citeable.",
+      "Exclude only if outcomes are image-only and cannot be read."
+    ],
+    "evidencePolicy": "Condition citations are present; outcome citations are insufficient."
+  },
+  "usage": {
+    "input_tokens": 1830,
+    "output_tokens": 629,
+    "total_tokens": 2459
+  }
+}

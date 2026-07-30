@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 45,
+  "sourceFile": "02. L20S15-07DT Report test  Material CD date 3.17 (Lot 510k)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\45.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:46:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 45,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook contains a valid comparable review of Lot CD 3.17 size 510k versus Normal, but the draft misstates the changed condition and omits key test-result rows from the main outcome grouping.",
+    "issues": [
+      "Changed factor is incorrectly labeled as 'test/changed condition not explicit' even though the source identifies the changed condition as Lot CD test / CD 3.17 size 510k.",
+      "Primary outcome metric only includes Normal rows Report!23 and Report!27, omitting the corresponding Lot CD test rows Report!21 and Report!25.",
+      "Line-level subgroup context C2 and E2 should be preserved because results are reported separately by line before being summarized.",
+      "Outcome grouping should include separate VP/CD NG and function NG results from Report!21, Report!25, Report!41, and Report!42, not just dyne/tension inputs.",
+      "Tension outcome is generally comparable, but the spec from Tension!4 is not carried into the extracted measurement result.",
+      "Evidence rows for the changed factor should include Report!21 and Report!25 in addition to Normal and Tension rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedFactor to 'Normal vs Lot CD test CD 3.17 size 510k' or equivalent.",
+      "Set baselineCondition to 'Normal' and changedCondition to 'Lot CD test / CD 3.17 size 510k'.",
+      "Add subgroupKeys for line, at minimum C2 and E2, because test and normal results are reported by line.",
+      "Revise the main result outcome to compare Report!21 against Report!23 for C2 and Report!25 against Report!27 for E2.",
+      "Include summarized result rows Report!39 through Report!42 as conclusion evidence for dyne, tension, VP/CD separation NG, and function NG.",
+      "For the tension outcome, retain Tension!8 versus Tension!10 and cite Tension!4 for the 1.2 kgf spec.",
+      "Keep all outcome domains under one review case because the workbook is one validation report for the same Lot CD 3.17 test condition."
+    ],
+    "evidencePolicy": "Existing citations prove row existence, but final evidence is not sufficient until the omitted Lot CD test rows and summary result rows are added."
+  },
+  "usage": {
+    "input_tokens": 3676,
+    "output_tokens": 807,
+    "total_tokens": 4483
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 662,
+  "sourceFile": "45.BRS-161014 Report test Frame improvement cavity A, B, C_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\662.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 662,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The source appears comparable, but the draft has blocking changed-factor and outcome extraction errors.",
+    "issues": [
+      "Changed condition incorrectly includes TOTAL and unordered frame types.",
+      "Subgroup keys omit required type/cavity and date or round context.",
+      "Height measurements include row indexes, headers, and synthetic Column/MAX stats.",
+      "Function results mix likely separate groups without preserving row-level context.",
+      "Several outcomes are duplicated or mislabeled as measurements."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal versus improved Frame A/B/C.",
+      "Remove TOTAL unless source proves it is a real condition.",
+      "Regroup outcomes into height dimension and function NG results under the same frame-change context.",
+      "Rebuild subresults only from valid data rows with type/cavity and date/round preserved.",
+      "Drop header/index-derived and zero-only synthetic measurement stats."
+    ],
+    "evidencePolicy": "Row citations exist, but they are not sufficient until grouping and valid data-row citations are corrected."
+  },
+  "usage": {
+    "input_tokens": 7927,
+    "output_tokens": 747,
+    "total_tokens": 8674
+  }
+}

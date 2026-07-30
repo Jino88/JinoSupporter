@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 707,
+  "sourceFile": "50. BRS-201506 Report test material VP happen forming NG date 3.6.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\707.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:21Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 707,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Comparable VP Forming NG vs OK results are present, but the changed-factor framing is not verified enough for final use.",
+    "issues": [
+      "Change domain as material is not supported by cited rows.",
+      "Baseline/test framing is unclear; OK likely control and NG likely suspect group.",
+      "Changed condition incorrectly combines NG and OK as one test condition.",
+      "Metric header/context rows for detailed result tables are incomplete."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to VP forming condition/type: OK vs NG.",
+      "Use VP Forming OK as baseline/control if row labels confirm it.",
+      "Use VP Forming NG as changed/suspect condition.",
+      "Change domain from material to process/sample condition unless material evidence exists.",
+      "Add table header/result title rows around rows 16-17 and 24-25 as evidence."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for final evidence until factor framing is corrected."
+  },
+  "usage": {
+    "input_tokens": 2668,
+    "output_tokens": 741,
+    "total_tokens": 3409
+  }
+}

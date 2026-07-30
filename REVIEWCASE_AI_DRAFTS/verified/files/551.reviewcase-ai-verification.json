@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 551,
+  "sourceFile": "33. BRS-161014 Report TEST VP NG burr, deform 20.9.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\551.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 551,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable VP burr/deform vs normal function evidence exists, but the draft has material grouping and bogus measurement extraction issues.",
+    "issues": [
+      "Changed domain mislabeled as jig/process instead of VP material defect condition.",
+      "Sub 1 outcome lacks normal baseline and should be treated as burr vs deform usability result.",
+      "Measurement outcome is a misparsed function header, not valid measurement evidence.",
+      "Evidence set omits visible decision row supporting final use judgement.",
+      "Judgements remain not_judged despite clear report conclusions."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to VP condition: normal vs VP NG burr vs VP NG deform.",
+      "Set domain to component/material defect condition.",
+      "Keep Sub 1 and function as separate outcomes under the same changed factor.",
+      "Remove the measurement outcome and derived stats from row 36.",
+      "Add decision/conclusion rows and assign outcome judgements from report conclusions."
+    ],
+    "evidencePolicy": "Row citations are mostly sufficient, but final evidence must cite actual data rows plus conclusion rows after removing invalid measurement citations."
+  },
+  "usage": {
+    "input_tokens": 3756,
+    "output_tokens": 649,
+    "total_tokens": 4405
+  }
+}

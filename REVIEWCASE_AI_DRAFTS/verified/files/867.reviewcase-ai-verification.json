@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 867,
+  "sourceFile": "71. TIU C11-20 Report Compare lot Film Dry 24h and no Dry 2026.3.12_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\867.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:33Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 867,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but misidentifies the changed factor and mismatches subgroup comparisons.",
+    "issues": [
+      "Primary change should be dry 24h vs not dry, not line/shift labels.",
+      "Line and shift subgroup rows are compared to total normal instead of matching normal subgroup rows.",
+      "R night shift pair is omitted.",
+      "Measurement outcome is a false extraction from defect-count columns.",
+      "Decision mentions new Jig AWF, conflicting with dry/no-dry title and data."
+    ],
+    "requiredUserQuestions": [
+      "Is the true changed factor film dry condition or new Jig AWF method?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to TEST NOT DRY 24H vs Normal FILM DRY 24H.",
+      "Use total pair rows 14 vs 16.",
+      "Use subgroup pairs 18 vs 20, 22 vs 24, 26 vs 28, and 30 vs 32.",
+      "Remove bogus measurement-stat outcome and keep defect NG metrics only.",
+      "Add decision/context rows 35-36 and note the new-jig wording conflict."
+    ],
+    "evidencePolicy": "Rows exist, but citations are insufficient because grouping and comparison evidence are mispaired."
+  },
+  "usage": {
+    "input_tokens": 4642,
+    "output_tokens": 718,
+    "total_tokens": 5360
+  }
+}

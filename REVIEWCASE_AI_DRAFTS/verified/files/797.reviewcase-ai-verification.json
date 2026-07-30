@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 797,
+  "sourceFile": "62. BRS-161016 Report test use die punch cutting VP for new DT line Date 20.08.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\797.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 797,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the report theme but has ambiguous condition grouping and invalid measurement outcomes.",
+    "issues": [
+      "Changed factor mixes die punch with VP cutting offset.",
+      "Test round/sample-size pairings are not preserved as subgroup context.",
+      "Generated measurement outcomes are derived from defect-count tables.",
+      "Final decision text is not cited, so acceptance judgement is unsupported."
+    ],
+    "requiredUserQuestions": [
+      "Is VP cutting offset a separate test condition or only a defect/context note?"
+    ],
+    "correctionPlan": [
+      "Define primary comparison as die punch VP cutting versus normal laser VP.",
+      "Keep 200 pcs and 1200 pcs rounds as subgroup keys in each outcome.",
+      "Treat VP cutting offset rows separately only if source supports comparability.",
+      "Remove measurement-1 and measurement-2 as false measurement statistics.",
+      "Add any available decision/conclusion rows or keep judgement not judged."
+    ],
+    "evidencePolicy": "Row citations exist, but cited evidence is insufficient until grouping and false metrics are corrected."
+  },
+  "usage": {
+    "input_tokens": 5542,
+    "output_tokens": 743,
+    "total_tokens": 6285
+  }
+}

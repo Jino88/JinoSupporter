@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 507,
+  "sourceFile": "3. C11-20-R (Đo cho ME 12.1.2026)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\507.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 507,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Workbook appears to compare HÀNG TEST vs HÀNG THƯỜNG across SPL, IMP, and THD, but the draft misstates the changed factor and has unreliable measurement stats.",
+    "issues": [
+      "Changed factor is filename instead of test vs normal condition.",
+      "Baseline and changed conditions are left unclear despite header evidence.",
+      "Measurement stats appear contaminated by sample/index labels, shown by min value 1.0.",
+      "Outcome metric is generic and does not preserve SPL, IMP, THD as separate metrics.",
+      "Numeric outcomes cite only header rows, not measurement data rows."
+    ],
+    "requiredUserQuestions": [
+      "What actual product/process/material difference does HÀNG TEST represent?",
+      "Should HÀNG THƯỜNG be treated as the baseline condition?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to HÀNG TEST vs HÀNG THƯỜNG with HÀNG THƯỜNG as baseline if confirmed.",
+      "Use SPL, IMP, and THD as separate outcome metrics under one comparison context.",
+      "Recompute stats excluding Standard and sample-number header cells.",
+      "Cite representative data rows for each metric, not only condition headers.",
+      "Replace raw row title with a concise comparison title."
+    ],
+    "evidencePolicy": "Condition header citations are sufficient for grouping, but outcome evidence citations and computed stats are not sufficient."
+  },
+  "usage": {
+    "input_tokens": 3793,
+    "output_tokens": 688,
+    "total_tokens": 4481
+  }
+}

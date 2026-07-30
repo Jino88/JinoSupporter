@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 352,
+  "sourceFile": "18.1. BRS-161014 DT Report test VP mold #7,9 add 0.05mm decap NG   date 16.2.2024 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\352.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:13Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 352,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft cannot be verified because no comparable changed-factor review case is supported by cited source rows.",
+    "issues": [
+      "No review case was generated.",
+      "Changed factor is ambiguous between mold #7/#9 and add 0.05mm.",
+      "No cited row proves the changed condition or baseline/test setup.",
+      "Only NG outcome summaries are cited.",
+      "Evidence is insufficient for Ask AI final use."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended comparison mold #7 vs mold #9 or add 0.05mm vs prior condition?"
+    ],
+    "correctionPlan": [
+      "Inspect source rows around decision and any hidden/context rows for condition details.",
+      "Cite rows proving the changed condition and grouping keys.",
+      "Create one review case only if a valid comparison is evidenced.",
+      "Keep NG counts/rates by sheet as outcome evidence.",
+      "Exclude if no citeable changed-condition evidence exists."
+    ],
+    "evidencePolicy": "Citations support NG outcomes, but not the changed condition."
+  },
+  "usage": {
+    "input_tokens": 2731,
+    "output_tokens": 663,
+    "total_tokens": 3394
+  }
+}

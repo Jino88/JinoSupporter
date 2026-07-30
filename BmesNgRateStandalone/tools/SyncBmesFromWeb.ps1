@@ -19,7 +19,14 @@ function Convert-Text([string] $text) {
     $text = $text -replace '@using\s+JinoSupporter\.Web\.Services\.GraphMaker', '@using BmesNgRateStandalone.Services.GraphMaker'
     $text = $text -replace '@attribute\s+\[Authorize\]\r?\n', ''
     $text = $text -replace '@rendermode\s+InteractiveServer\r?\n', ''
+    $text = [regex]::Replace($text, '<AuthorizeView Roles="Admin">\s*<Authorized>\s*', '')
+    $text = [regex]::Replace($text, '\s*</Authorized>\s*</AuthorizeView>', '')
     $text = $text -replace 'JinoSupporter\.Web process restarts', 'the standalone app restarts'
+    $text = $text -replace 'href="/admin/settings"', 'href="/bmes/setting"'
+    $text = [regex]::Replace(
+        $text,
+        '<a href="/bmes/setting" class="small text-primary">[^<]*Admin Settings</a>',
+        '<a href="/bmes/setting" class="small text-primary">BMES Setting</a>')
     return $text
 }
 
@@ -44,16 +51,24 @@ $serviceFiles = @(
     'Services\AppMenus.cs',
     'Services\AppPathsService.cs',
     'Services\AppRoles.cs',
+    'Services\AppStoragePaths.cs',
+    'Services\AiProviderSettingsService.cs',
+    'Services\BrowserDownload.cs',
+    'Services\BmesFcostActualService.cs',
     'Services\BmesMaterialService.cs',
     'Services\BmesRoutingScrapeService.cs',
     'Services\BmesSettingsSyncService.cs',
     'Services\FCostModels.cs',
+    'Services\FCostRawBreakdownExcelExporter.cs',
     'Services\FCostReportService.cs',
     'Services\FCostService.cs',
     'Services\HierReportSupport.cs',
     'Services\ModelGroupPickerHelpers.cs',
     'Services\Models.cs',
+    'Services\CsvExportUtility.cs',
+    'Services\NgRateCsvExporter.cs',
     'Services\NgRateExcelExporter.cs',
+    'Services\NgRateModeSupport.cs',
     'Services\NgRateReportService.cs',
     'Services\NgRateService.cs',
     'Services\NgRateSettingsService.cs',
@@ -66,16 +81,19 @@ $serviceFiles = @(
 
 $componentFiles = @(
     'Components\Shared\HierSubRows.razor',
+    'Components\Shared\NgRateModelGroupPicker.razor',
+    'Components\Shared\NgRateReportStyles.razor',
+    'Components\Shared\NgRateSetupPanel.razor',
+    'Components\Shared\NgRateSimpleGroupPicker.razor',
+    'Components\Shared\NgRateViewNav.razor',
     'Components\Pages\GraphMakerPage.razor',
     'Components\Pages\AdminPathsPage.razor',
     'Components\Pages\BmesFCostPage.razor',
     'Components\Pages\BmesMakeModelGroupPage.razor',
     'Components\Pages\BmesReasonTablePage.razor',
     'Components\Pages\BmesRoutingTablePage.razor',
-    'Components\Pages\BmesSettingPage.razor',
     'Components\Pages\NgRateAllPage.razor',
     'Components\Pages\NgRateByGroupPage.razor',
-    'Components\Pages\NgRateForWeeklyReportPage.razor',
     'Components\Pages\NgRatePage.razor',
     'Components\Pages\SubGroupNode.razor',
     'Components\Pages\WorkerStatusPage.razor'

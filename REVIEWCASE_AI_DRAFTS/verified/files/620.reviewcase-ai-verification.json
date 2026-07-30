@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 620,
+  "sourceFile": "4.Main- BRS-201506 Report TEST improve NG not enough glue 14.13.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\620.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 620,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misidentifies the changed-factor grouping and includes likely unrelated tension data.",
+    "issues": [
+      "Changed factor incorrectly set as JIG Normal vs Repair JIG with row number 2 as a condition.",
+      "Evidence points to UV LED normal vs increased spec, with JIG repair/normal as context or confounder.",
+      "Row 31 likely inherits Repair JIG/JIG repair from row 30, not condition 2.",
+      "Tension sheet dates and Test/Normal labels are not linked to the 2024 UV/JIG validation.",
+      "Judgement and baseline/test definitions are ambiguous."
+    ],
+    "requiredUserQuestions": [
+      "Should the primary comparison be UV LED normal spec vs increased spec?",
+      "Is the 2023 Tension sheet part of this 2024 glue/UV validation?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor around UV LED spec/total energy normal vs increased, preserving JIG status as subgroup/context.",
+      "Treat row 31 merged blanks as inherited from row 30 only if workbook structure supports it.",
+      "Remove or separate Tension outcomes unless linked by source context.",
+      "Recompute defect subresults with clear conditions for rows 30 to 32.",
+      "Set outcome judgement only after corrected grouping is confirmed."
+    ],
+    "evidencePolicy": "Row citations exist, but they do not sufficiently support the draft grouping."
+  },
+  "usage": {
+    "input_tokens": 3638,
+    "output_tokens": 823,
+    "total_tokens": 4461
+  }
+}

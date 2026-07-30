@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 755,
+  "sourceFile": "57. TIU C11-20 Report test jig press ( Frame+ VP ) 2026.2.07_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\755.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:07Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 755,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but misidentifies changed factor and mispairs several baseline/test rows.",
+    "issues": [
+      "Primary change should be jig type, not line or shift.",
+      "Line, side, date, and shift must remain subgroup keys.",
+      "Function L pair uses wrong Normal row; should use same-line Normal.",
+      "RA L pair uses wrong Normal row and omits its evidence row.",
+      "Header-derived measurement outcome is invalid evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baseline to Normal and changed condition to Test Jig press Frame +VP.",
+      "Move TIU C11-20 R/L, date, and shift into subgroup context.",
+      "Rebuild function pairs by adjacent matching line/shift; exclude zero-input comparator.",
+      "Rebuild RA pairs using Test!26/28 and Test!30/32.",
+      "Remove bogus measurement outcome based only on headers."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until corrected pairs cite all matched data rows."
+  },
+  "usage": {
+    "input_tokens": 6091,
+    "output_tokens": 750,
+    "total_tokens": 6841
+  }
+}

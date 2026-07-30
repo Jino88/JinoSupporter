@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 329,
+  "sourceFile": "17. MSU-L20S15-07 Report check VP Froming machine - 2025.04.05_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\329.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:38Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 329,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft misidentifies the changed factor and uses invalid mixed measurement statistics, so it cannot be final evidence.",
+    "issues": [
+      "Changed factor is a filename, not a source-supported condition.",
+      "Baseline/test condition is not explicit; source is a machine abnormality check.",
+      "Measurement stats mix different metrics and units into meaningless averages.",
+      "Actual result rows are not cited for the generated stats.",
+      "Decision row is omitted from outcome evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Reframe as VP forming machine condition check tied to high NG hearing, or exclude if changed-condition evidence is required.",
+      "Separate outcomes by metric: temperature, cooling temperature, pressure and any other source rows.",
+      "Cite each actual measurement/spec row used, not only the header row.",
+      "Use spec compliance per metric instead of cross-metric min/max/avg.",
+      "Add the decision row supporting no abnormality found."
+    ],
+    "evidencePolicy": "Current citations are insufficient; header and context rows do not support the numeric outcomes."
+  },
+  "usage": {
+    "input_tokens": 3532,
+    "output_tokens": 755,
+    "total_tokens": 4287
+  }
+}

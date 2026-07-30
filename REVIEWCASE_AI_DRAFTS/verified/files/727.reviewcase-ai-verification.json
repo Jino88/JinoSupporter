@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 727,
+  "sourceFile": "52.BRS-161014 Report test new Sub 1 jig V10_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\727.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 727,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid source context but changed-factor grouping, date pairing, and measurement outcomes need correction before use.",
+    "issues": [
+      "Changed condition incorrectly includes baseline Old Sub 1 jig V9.",
+      "Function comparison crosses dates, pairing 10/21 old with 10/26 new.",
+      "Row-level date grouping is not preserved for all function results.",
+      "Measurement outcome is unsupported header-derived data and should be removed.",
+      "Evidence cites row 16.10!23, which is not provided in context rows."
+    ],
+    "requiredUserQuestions": [
+      "Treat 'Sub 1 Jig repair V9 up V10' as a separate condition or as V10 repair implementation?",
+      "Should VP guide jig V12 repair V14 vs new V14 be recorded as secondary subgroup context?"
+    ],
+    "correctionPlan": [
+      "Set primary factor to Sub 1 jig V9 versus V10 with pin Aluminum to Inox and guide 0.18 to 0.4 mm.",
+      "Keep 2023-10-21 and 2023-10-26 as separate subgroup keys when comparing NG rates.",
+      "Compare same-date Old V9 to New V10 or clearly mark cross-date comparisons invalid.",
+      "Remove unsupported measurement-stat outcome from header row only.",
+      "Replace or verify missing row 16.10!23 and cite rows covering purpose, function table, conclusion, and decision."
+    ],
+    "evidencePolicy": "Citations are partly sufficient for the report context, but missing row and unsupported header-derived evidence block approval."
+  },
+  "usage": {
+    "input_tokens": 4261,
+    "output_tokens": 851,
+    "total_tokens": 5112
+  }
+}

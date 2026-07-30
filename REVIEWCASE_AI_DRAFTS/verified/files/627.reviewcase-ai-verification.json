@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 627,
+  "sourceFile": "40.MSU-20S15-07 Result checking VP+CD separate center Dome date 27.8.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\627.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:49Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 627,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because changed-factor grouping and outcome extraction mix vendor, process, totals, and headers.",
+    "issues": [
+      "Primary factor should be new GES TRADING center dome vendor vs Normal/Ralon, not a broad condition list.",
+      "Clean/no-clean and laser/no-laser conditions are subgroup or secondary context, not separate primary factors.",
+      "Totals are compared against individual normal rows, causing invalid function judgement.",
+      "Tension, VP+CD separate, recheck, and decap outcomes are incomplete or misgrouped.",
+      "Bogus measurement outcome is derived from function header/defect columns, with row 23.8!29 not shown."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to center dome vendor: Normal/Ralon baseline vs GES TRADING test.",
+      "Preserve clean/no-clean, laser/no-laser, date, line, and process stage as subgroup keys.",
+      "Rebuild outcomes by report section: initial VP+CD separate, tension, function, recheck hearing, decap sample.",
+      "Compare like-for-like subgroup rows and keep total-vs-total only where both totals exist.",
+      "Remove header-derived measurement stats and add missing cited rows for tension and decap data."
+    ],
+    "evidencePolicy": "Citations are not sufficient; they include missing/header rows and omit key outcome rows."
+  },
+  "usage": {
+    "input_tokens": 6666,
+    "output_tokens": 728,
+    "total_tokens": 7394
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 974,
+  "sourceFile": "90.BRS-2015 Result check MC cutting laser after change base locate_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\974.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:22:09Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 974,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is incomplete because citeable change and post-change NG results exist but no review case was created.",
+    "issues": [
+      "Review case list is empty despite citeable change evidence.",
+      "Changed factor should be base locate jig and balance at laser cutting.",
+      "Outcome rows are post-change NG checks by date/round on line E2-3B.",
+      "No pre-change baseline is shown, so comparison scope is limited.",
+      "Evidence grouping by date and check round must be preserved."
+    ],
+    "requiredUserQuestions": [
+      "Should this be treated as post-change validation only without a baseline?"
+    ],
+    "correctionPlan": [
+      "Create one review case for laser cutting base locate jig and balance change.",
+      "Use Sheet1 row 4 as changed-condition evidence.",
+      "Use Sheet1 row 7 and 161016 LAI rows 12-22 as NG outcome evidence.",
+      "Summarize results by date and round, including totals and NG rates.",
+      "State that no before-change baseline is present."
+    ],
+    "evidencePolicy": "Citations are sufficient for change and outcomes, but not for before-after comparison."
+  },
+  "usage": {
+    "input_tokens": 1826,
+    "output_tokens": 767,
+    "total_tokens": 2593
+  }
+}

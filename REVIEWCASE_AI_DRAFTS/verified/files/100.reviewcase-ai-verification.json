@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 100,
+  "sourceFile": "04. BRS-161016 GMI Report  check Iussue NG hearing increase over 5% -2025.05.17_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\100.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:45Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 100,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but invalidly merges several unrelated investigations into one changed factor.",
+    "issues": [
+      "Changed factor combines yoke class, head height, jig repair, mold, and C2/E2 assembly tests.",
+      "Baseline and test conditions are incoherent and include dates, heads, classes, and process changes as peers.",
+      "Review title and purpose/content come from different sections.",
+      "Outcomes include unjudged artifact metrics and Sheet3 context with unclear condition evidence.",
+      "Comparisons do not preserve key grouping such as date, line, head, class, lot, and test section."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split into separate review cases by test section or supported primary change.",
+      "Define one baseline and one changed-condition family per case.",
+      "Rebuild comparisons only within the same table and compatible grouping keys.",
+      "Remove metrics or measurements not tied to a clear changed condition.",
+      "Cite each retained case with its header, condition rows, and paired result rows."
+    ],
+    "evidencePolicy": "Row citations exist, but they are not sufficient for final evidence because grouping context is invalid."
+  },
+  "usage": {
+    "input_tokens": 10807,
+    "output_tokens": 775,
+    "total_tokens": 11582
+  }
+}

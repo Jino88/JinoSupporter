@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 133,
+  "sourceFile": "06. (E2) BRS-161016 GMI Report test VP recently happened NG Function high rate - 2025.06.02_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\133.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 133,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook is citeable and comparable, but the draft contains malformed grouping and invalid extracted measurement outcomes.",
+    "issues": [
+      "Changed factor overstates domains; evidence supports normal vs test VP mold conditions.",
+      "IR/lot and mold baselines are lumped without subgroup keys.",
+      "Several measurement outcomes are header-derived or nonsensical stats.",
+      "Tension test sample counts and extra stats are parsed incorrectly.",
+      "Decision rows are not integrated into outcomes or evidence."
+    ],
+    "requiredUserQuestions": [
+      "Should IR/lot be treated as a subgroup or separate comparison context?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to normal VP mold vs test VP mold condition.",
+      "Add subgroup keys for IR, mold number, process section, and test round if present.",
+      "Keep the four real outcome sections only: laser cutting, VP/CD vision, function, tension.",
+      "Remove header-derived and nonsensical measurement outcomes/stat rows.",
+      "Add decision rows as cited conclusion evidence without replacing row metrics."
+    ],
+    "evidencePolicy": "Main row citations exist, but current citations are insufficient because many support invalid extracted outcomes."
+  },
+  "usage": {
+    "input_tokens": 16078,
+    "output_tokens": 769,
+    "total_tokens": 16847
+  }
+}

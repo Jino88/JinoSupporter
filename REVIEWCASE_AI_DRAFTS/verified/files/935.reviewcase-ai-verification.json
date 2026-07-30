@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 935,
+  "sourceFile": "82. BRS-161016(DT)  Report TEST  reduce time  oven dry improve capa  21.11.2024 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\935.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 935,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the primary change and cannot be used as final evidence without regrouping.",
+    "issues": [
+      "Changed factor is oven dry time reduction versus normal 20 minutes, not magnetic status.",
+      "Frame+SP and SMG conditions are mixed without subgroup structure.",
+      "Separate results omit key reduced-time, normal, and conclusion rows.",
+      "Capa outcome uses header-only evidence and unreliable statistics.",
+      "Tension rows lack full grouping context and baseline/test linkage."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factor as reduced oven dry time versus normal 20 minutes.",
+      "Use Frame+SP and SMG as subgroups under the same validation context.",
+      "Group outcomes as separate defect, capa, and tension within each subgroup.",
+      "Cite actual data rows plus headers and conclusion/decision rows for each outcome.",
+      "Remove header-only capa stats and recalculate from cited data rows."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are insufficient and partly misgrouped."
+  },
+  "usage": {
+    "input_tokens": 7195,
+    "output_tokens": 752,
+    "total_tokens": 7947
+  }
+}

@@ -45,6 +45,23 @@
       "problemMatcher": "$msCompile"
     },
     {
+      "label": "build-standalone-debug",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/BmesNgRateStandalone/BmesNgRateStandalone.csproj",
+        "-c",
+        "Debug"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "build-standalone-release",
       "type": "process",
       "command": "dotnet",
@@ -79,6 +96,27 @@
       }
     },
     {
+      "label": "deploy-standalone-update",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/BmesNgRateStandalone/tools/PublishStandaloneUpdate.ps1",
+        "-Version",
+        "${input:standaloneUpdateVersion}",
+        "-Notes",
+        "${input:standaloneUpdateNotes}"
+      ],
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "build-standalone-installer",
       "type": "shell",
       "command": "powershell",
@@ -94,6 +132,20 @@
         "reveal": "always",
         "panel": "shared"
       }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "standaloneUpdateVersion",
+      "type": "promptString",
+      "description": "Standalone update version, for example 1.0.10",
+      "default": "1.0.10"
+    },
+    {
+      "id": "standaloneUpdateNotes",
+      "type": "promptString",
+      "description": "Release notes shown in the Standalone update prompt",
+      "default": ""
     }
   ]
 }

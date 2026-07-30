@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 406,
+  "sourceFile": "21. TIU C11-20  Report Test change film D25-10-25 2026.1.29. - RAW soundcheck_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\406.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 406,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid row references but misgroups the primary change and includes noisy measurement outcomes.",
+    "issues": [
+      "Primary changed factor is film stack change, not Normal vs Day shift/model.",
+      "Baseline/test conditions are mislabeled; side, date, shift, and model should be subgroup context.",
+      "Review title is taken from a graph header instead of the report title.",
+      "Several measurement outcomes are header/mask/frequency parses, not clear comparison results.",
+      "Critical changed-factor evidence should include the content row stating the film change."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedFactor to Normal D25+5+D25 vs changed Film D25+10+D25.",
+      "Move TIU C11-20L/R, dates, and shift into subgroup keys only.",
+      "Use the Test sheet report title and purpose/content rows for review metadata.",
+      "Keep function NG-rate rows and valid SPL/THD comparisons; remove header/mask-only stats.",
+      "Add Test!8 and relevant result rows as changed-factor evidence."
+    ],
+    "evidencePolicy": "Row citations exist, but citations are insufficient until grouping and noisy outcomes are corrected."
+  },
+  "usage": {
+    "input_tokens": 8288,
+    "output_tokens": 780,
+    "total_tokens": 9068
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 3,
+  "sourceFile": "001.MSU - 20S15-07 REPORT CHECK NG  COIL SP AFTER DRY UV LED  _1778470492_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\3.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:42:52Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 3,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft is not acceptable because it uses the filename as the changed factor, misses the actual UV/bonding/holder test conditions, and incorrectly groups unrelated tension data as the main outcome.",
+    "issues": [
+      "Blocking: changedFactor is the source filename rather than the actual process changes tested.",
+      "Blocking: baselineCondition and changedCondition are marked not explicit even though rows identify follow-spec, reduced bond, increased bond/UV spec, AWF jig cutting, and new holder conditions.",
+      "Blocking: the primary outcome should be dry bonding/NG not dry results after UV LED, not Sheet1 tension measurements.",
+      "Blocking: Sheet1 tension data appears to be a separate or secondary measurement set and is not clearly tied to the main UV LED bonding-not-dry investigation.",
+      "Blocking: key cited evidence omits or underuses rows showing actual results and conclusions, especially rows 24-26, 29, 42, 44, 46, 51-52, 65-66, 80, and 83.",
+      "Non-blocking: several evidence rows are broad section headers rather than direct condition/result evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Replace the changed factor with the actual tested process interventions: bond amount/UV LED spec changes, AWF jig cutting to open UV light area, and holder MC UC change.",
+      "Use follow-spec W/M or current holder condition as baseline where supported by cited rows, and preserve test phases as subgroup context.",
+      "Create outcomes for dry bonding/NG not dry with Q'Ty check, NG not dry, NG rate, and note from rows 24-26 and 42, plus final holder-change result/conclusion from rows 65-66, 80, and 83.",
+      "Do not use Sheet1 tension results as the primary outcome unless additional evidence proves they belong to the same validation; otherwise split or exclude them from this ReviewCase.",
+      "Add direct evidence row citations for each condition and result rather than relying mainly on title/header rows."
+    ],
+    "evidencePolicy": "Evidence row citations exist, but they are insufficient and partly misassigned; final evidence must cite direct condition/result/conclusion rows for the actual changed factors."
+  },
+  "usage": {
+    "input_tokens": 4705,
+    "output_tokens": 1006,
+    "total_tokens": 5711
+  }
+}

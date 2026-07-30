@@ -1,0 +1,35 @@
+{
+  "sourceFileId": 221,
+  "sourceFile": "11. BRS-161014  Report summary NG of DCR DT line 2023.11.21_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\221.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:29Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 221,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook is a defect summary by date, not a valid baseline-versus-changed-condition review case.",
+    "issues": [
+      "No explicit changed factor or baseline condition is cited.",
+      "Dates were incorrectly treated as changed conditions.",
+      "Outcome data are trend/summary rows, not comparative validation evidence.",
+      "Draft evidence includes title/purpose rows as factor evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Exclude this source from Ask AI review-case evidence.",
+      "Do not model dates as changed factors without source support.",
+      "Retain rows only as non-comparative defect summary if needed elsewhere.",
+      "Remove invented baseline and condition comparison language."
+    ],
+    "evidencePolicy": "Row citations exist for metrics, but not for any changed-condition comparison."
+  },
+  "usage": {
+    "input_tokens": 3094,
+    "output_tokens": 352,
+    "total_tokens": 3446
+  }
+}

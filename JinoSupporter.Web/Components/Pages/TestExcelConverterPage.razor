@@ -29,11 +29,41 @@
     </div>
 }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-header small fw-semibold">⚙ Settings</div>
+<div class="card shadow-sm mb-3 tec-settings-card">
+    <div class="card-header small fw-semibold">Files</div>
     <div class="card-body">
         <div class="mb-3">
-            <label class="form-label small mb-1">Source folder (recursive scan)</label>
+            <label class="form-label small mb-1">Input files</label>
+            <div class="tec-drop-zone @(_isBusy ? "disabled" : "")">
+                <InputFile class="tec-drop-input"
+                           OnChange="OnFilesSelected"
+                           multiple
+                           accept=".xlsx,.xlsm,.xlsb,.xls"
+                           disabled="@_isBusy" />
+                <div class="tec-drop-content">
+                    <div class="tec-drop-title">Drag Excel files here or click to select</div>
+                    <div class="tec-drop-sub">Multiple .xlsx / .xlsm / .xlsb / .xls files are supported.</div>
+                </div>
+            </div>
+            @if (_selectedFiles.Count > 0)
+            {
+                <div class="tec-file-list mt-2">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small fw-semibold">@_selectedFiles.Count file(s) selected</span>
+                        <button class="btn btn-link btn-sm p-0" @onclick="() => ClearSelectedFiles()" disabled="@_isBusy">Clear</button>
+                    </div>
+                    @foreach (var file in _selectedFiles)
+                    {
+                        <div class="tec-file-row">
+                            <span class="text-truncate" title="@file.OriginalName">@file.OriginalName</span>
+                            <span class="text-muted">@FormatSize(file.Size)</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        <div class="mb-3">
+            <label class="form-label small mb-1">Input files</label>
             <div class="input-group input-group-sm">
                 <input class="form-control font-monospace"
                        @bind="_sourceDir" @bind:after="SaveSettings"
@@ -46,6 +76,7 @@
         </div>
         <div class="mb-3">
             <label class="form-label small mb-1">Destination folder</label>
+            <small class="text-muted d-block mb-1">Output files are written directly inside this folder as <code>&lt;original&gt;_clean.xlsx</code>.</small>
             <div class="input-group input-group-sm">
                 <input class="form-control font-monospace"
                        @bind="_destDir" @bind:after="SaveSettings"
@@ -54,7 +85,7 @@
                         @onclick="PickDestAsync" disabled="@(_isBusy || !Helper.FolderPickerExists)"
                         title="Browse for destination folder">📁 Browse</button>
             </div>
-            <small class="text-muted">결과: <code>&lt;Destination&gt;/drm_clean/&lt;원본이름&gt;_clean.xlsx</code></small>
+            <small class="text-muted">Output files are written directly inside this folder as <code>&lt;original&gt;_clean.xlsx</code>.</small>
         </div>
         <div class="form-check form-check-inline mb-2">
             <input class="form-check-input" type="checkbox"
@@ -67,12 +98,12 @@
         <div class="d-flex gap-2 align-items-center">
             <button class="btn btn-primary btn-sm" @onclick="ConvertAsync"
                     disabled="@(_isBusy || !Helper.ConverterExists
-                              || string.IsNullOrWhiteSpace(_sourceDir)
+                              || _selectedFiles.Count == 0
                               || string.IsNullOrWhiteSpace(_destDir))">
                 @if (_isBusy)
                 { <span class="spinner-border spinner-border-sm me-1"></span><span>Converting…</span> }
                 else
-                { <span>▶ Scan &amp; Convert</span> }
+                { <span>Convert Selected Files</span> }
             </button>
             @if (_isBusy)
             {
@@ -147,6 +178,74 @@
 </div>
 
 <style>
+    .tec-settings-card > .card-body > .mb-3:nth-of-type(2) {
+        display: none;
+    }
+    .tec-settings-card > .card-body > .mb-3:nth-of-type(3) > small:last-child {
+        display: none;
+    }
+    .tec-drop-zone {
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-height: 138px;
+        border: 2px dashed #93c5fd;
+        border-radius: 8px;
+        background: #f8fbff;
+        color: #0f172a;
+        cursor: pointer;
+        transition: border-color .15s ease, background .15s ease;
+    }
+    .tec-drop-zone:hover {
+        border-color: #2563eb;
+        background: #eff6ff;
+    }
+    .tec-drop-zone.disabled {
+        opacity: .6;
+        cursor: not-allowed;
+    }
+    .tec-drop-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+    .tec-drop-zone.disabled .tec-drop-input {
+        cursor: not-allowed;
+    }
+    .tec-drop-content {
+        pointer-events: none;
+        text-align: center;
+        padding: 18px;
+    }
+    .tec-drop-title {
+        font-weight: 700;
+        font-size: 14px;
+    }
+    .tec-drop-sub {
+        color: #64748b;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+    .tec-file-list {
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 8px;
+        background: #fff;
+    }
+    .tec-file-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 4px 0;
+        font-size: 12px;
+        border-top: 1px solid #f1f5f9;
+    }
+    .tec-file-row:first-of-type {
+        border-top: 0;
+    }
     .log-info  { color: #94a3b8; }
     .log-ok    { color: #4ade80; }
     .log-warn  { color: #fbbf24; }
@@ -161,11 +260,16 @@
     private bool   _isBusy;
     private bool   _verbose;
     private CancellationTokenSource? _cts;
+    private string _uploadDir = string.Empty;
 
     private sealed record LogEntry(string Kind, string Text);
+    private sealed record SelectedExcelFile(string OriginalName, string StoredPath, long Size);
 
     private readonly List<LogEntry>  _log = new();
+    private readonly List<SelectedExcelFile> _selectedFiles = new();
     private (int Ok, int Fail)?      _lastSummary;
+    private const int MaxSelectedFiles = 200;
+    private const long MaxExcelUploadBytes = 1024L * 1024L * 1024L;
 
     // Progress state — populated by helper "scan" + "progress" events.
     private int _progTotal;
@@ -201,8 +305,8 @@
         var cur = Paths.Current;
         Paths.Save(new AppPathsConfig
         {
+            DbRootDirectory           = cur.DbRootDirectory,
             MainDbPath                = cur.MainDbPath,
-            ScheduleDbPath            = cur.ScheduleDbPath,
             NgRateDbSaveDirectory     = cur.NgRateDbSaveDirectory,
             NgRateRoutingFilePath     = cur.NgRateRoutingFilePath,
             NgRateReasonFilePath      = cur.NgRateReasonFilePath,
@@ -211,6 +315,124 @@
             TestExcelConverterSourceDir = (_sourceDir ?? string.Empty).Trim(),
             TestExcelConverterDestDir   = (_destDir   ?? string.Empty).Trim(),
         });
+    }
+
+    private async Task OnFilesSelected(InputFileChangeEventArgs e)
+    {
+        if (_isBusy) return;
+
+        _error = string.Empty;
+        ClearSelectedFiles(deleteOnly: true);
+
+        string uploadDir = Path.Combine(Path.GetTempPath(), "jinosupp-test-excel-converter", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(uploadDir);
+        _uploadDir = uploadDir;
+
+        try
+        {
+            foreach (var file in e.GetMultipleFiles(MaxSelectedFiles))
+            {
+                if (!IsAllowedExcelFile(file.Name))
+                {
+                    AddLog($"[skip] Unsupported file type: {file.Name}", "warn");
+                    continue;
+                }
+
+                string storedName = UniqueStagedFileName(uploadDir, SafeFileName(file.Name));
+                string storedPath = Path.Combine(uploadDir, storedName);
+
+                await using (var src = file.OpenReadStream(MaxExcelUploadBytes))
+                await using (var dst = File.Create(storedPath))
+                {
+                    await src.CopyToAsync(dst);
+                }
+
+                _selectedFiles.Add(new SelectedExcelFile(file.Name, storedPath, file.Size));
+            }
+
+            if (_selectedFiles.Count == 0)
+            {
+                ClearSelectedFiles(deleteOnly: true);
+                _error = "Select one or more Excel files.";
+            }
+            else
+            {
+                AddLog($"[files] {_selectedFiles.Count} file(s) ready.", "ok");
+            }
+        }
+        catch (Exception ex)
+        {
+            ClearSelectedFiles(deleteOnly: true);
+            _error = $"File load failed: {ex.Message}";
+            AddLog($"[files] {ex.Message}", "err");
+        }
+    }
+
+    private void ClearSelectedFiles(bool deleteOnly = false)
+    {
+        _selectedFiles.Clear();
+        if (!string.IsNullOrWhiteSpace(_uploadDir))
+        {
+            try
+            {
+                if (Directory.Exists(_uploadDir)) Directory.Delete(_uploadDir, recursive: true);
+            }
+            catch { }
+            _uploadDir = string.Empty;
+        }
+
+        if (!deleteOnly)
+        {
+            _error = string.Empty;
+            _progTotal = 0;
+            _progCurrent = 0;
+            _progFile = "";
+            _lastSummary = null;
+        }
+    }
+
+    private static bool IsAllowedExcelFile(string name)
+    {
+        string ext = Path.GetExtension(name);
+        return ext.Equals(".xlsx", StringComparison.OrdinalIgnoreCase)
+               || ext.Equals(".xlsm", StringComparison.OrdinalIgnoreCase)
+               || ext.Equals(".xlsb", StringComparison.OrdinalIgnoreCase)
+               || ext.Equals(".xls", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string SafeFileName(string name)
+    {
+        string safe = Path.GetFileName(name);
+        foreach (char c in Path.GetInvalidFileNameChars())
+            safe = safe.Replace(c, '_');
+        return string.IsNullOrWhiteSpace(safe) ? "workbook.xlsx" : safe;
+    }
+
+    private static string UniqueStagedFileName(string folder, string fileName)
+    {
+        string stem = Path.GetFileNameWithoutExtension(fileName);
+        string ext = Path.GetExtension(fileName);
+        if (string.IsNullOrWhiteSpace(stem)) stem = "workbook";
+        if (string.IsNullOrWhiteSpace(ext)) ext = ".xlsx";
+
+        string candidate = $"{stem}{ext}";
+        int index = 2;
+        while (File.Exists(Path.Combine(folder, candidate)))
+            candidate = $"{stem}_{index++}{ext}";
+        return candidate;
+    }
+
+    private static string FormatSize(long bytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB"];
+        double size = bytes;
+        int unit = 0;
+        while (size >= 1024 && unit < units.Length - 1)
+        {
+            size /= 1024;
+            unit++;
+        }
+        return $"{size:0.#} {units[unit]}";
     }
 
     private async Task PickSourceAsync()
@@ -260,17 +482,11 @@
     private async Task ConvertAsync()
     {
         if (_isBusy || !Helper.ConverterExists) return;
-        if (string.IsNullOrWhiteSpace(_sourceDir) || string.IsNullOrWhiteSpace(_destDir))
+        if (_selectedFiles.Count == 0 || string.IsNullOrWhiteSpace(_destDir))
         {
-            _error = "Source / Destination 모두 지정해주세요.";
+            _error = "Select Excel files and a destination folder.";
             return;
         }
-        if (!Directory.Exists(_sourceDir))
-        {
-            _error = $"Source folder not found: {_sourceDir}";
-            return;
-        }
-
         _cts?.Dispose();
         _cts = new CancellationTokenSource();
 
@@ -278,12 +494,13 @@
         _error  = string.Empty;
         _lastSummary = null;
         _progTotal = 0; _progCurrent = 0; _progFile = "";
-        AddLog($"[start] {_sourceDir} → {_destDir}", "step");
+        AddLog($"[start] {_selectedFiles.Count} selected file(s) -> {_destDir}", "step");
         StateHasChanged();
 
         try
         {
-            await foreach (var evt in Helper.CleanAsync(_sourceDir, _destDir, verbose: _verbose, ct: _cts.Token))
+            var files = _selectedFiles.Select(x => x.StoredPath).ToList();
+            await foreach (var evt in Helper.CleanFilesToDestinationRootAsync(files, _destDir, verbose: _verbose, ct: _cts.Token))
             {
                 HandleHelperEvent(evt);
                 await InvokeAsync(StateHasChanged);
@@ -322,6 +539,7 @@
         // leaves the page rather than holding it open until shutdown.
         try { _cts?.Cancel(); } catch { }
         _cts?.Dispose();
+        ClearSelectedFiles(deleteOnly: true);
     }
 
     private void HandleHelperEvent(ExcelHelperRunner.HelperEvent evt)

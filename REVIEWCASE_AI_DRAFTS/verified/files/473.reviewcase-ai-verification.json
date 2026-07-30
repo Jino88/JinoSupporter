@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 473,
+  "sourceFile": "27. TIU C11-20  Report Test Frame damage mesh 2026.03.28. - RAW soundcheck_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\473.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:51Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 473,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misgroups model/type baselines and includes unreliable RAW measurement statistics.",
+    "issues": [
+      "Changed factor mixes shift, model side, and frame types as one test condition.",
+      "L-side Type 2/4 are compared to R-side Normal instead of L-side Normal.",
+      "Type 4 defect delta ignores L Normal NG rate.",
+      "RAW SPL/THD measurement extraction includes headers, frequencies, and IDs as values.",
+      "Review title and purpose are raw-row fragments, not a usable case summary."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary factor as frame mesh test type versus Normal, preserving R/L model side.",
+      "Create separate subgroup comparisons: R Type 1/3 vs R Normal and L Type 2/4 vs L Normal.",
+      "Recalculate function NG rates and deltas using Test rows 16,18,20,22,24,26.",
+      "Either remove RAW measurement outcomes or rebuild them by frequency and sample columns with valid SPL/THD units.",
+      "Rewrite title, purpose, changed factor, and limitations from the Test sheet context."
+    ],
+    "evidencePolicy": "Row citations exist, but several are misapplied; citations are not sufficient until grouping and RAW extraction are corrected."
+  },
+  "usage": {
+    "input_tokens": 9770,
+    "output_tokens": 675,
+    "total_tokens": 10445
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 138,
+  "sourceFile": "06. MSU-L20S15-07DT  Report Check reason NG weak solder  date 12.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\138.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 138,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable evidence but the changed-factor and baseline grouping are too ambiguous for final use.",
+    "issues": [
+      "Distinct test conditions are bundled into one changed factor.",
+      "Normal baseline is inconsistent; row 31 is omitted despite high NG.",
+      "Semi-frame move trials may be separate follow-up tests, not same factor as new lot material.",
+      "Tension outcome lacks spec value and clear A/B grouping.",
+      "Header-only measurement-2 duplicates defect data and is not a valid measurement outcome."
+    ],
+    "requiredUserQuestions": [
+      "Should row 25 or row 31 be the valid normal baseline for vision NG comparison?",
+      "Are the semi-frame E2/C2 move trials separate experiments or part of the same new-lot material review?"
+    ],
+    "correctionPlan": [
+      "Split or clearly label new lot material, semi-frame E2 to C2, and C2 to E2 conditions.",
+      "Include row 31 in baseline/test interpretation or justify exclusion.",
+      "Rebuild vision comparisons only against the correct normal baseline.",
+      "Add 0.03 kgf spec to tension results and group Suspension A/B by carried-down Type.",
+      "Remove measurement-2 or convert it into defect-count subresults with data-row citations."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until baseline and condition mapping are corrected."
+  },
+  "usage": {
+    "input_tokens": 4911,
+    "output_tokens": 815,
+    "total_tokens": 5726
+  }
+}

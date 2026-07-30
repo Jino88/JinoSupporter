@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 617,
+  "sourceFile": "4.1 MSU-L20S15-07DT  Report checking  gauss yoke date 4.5.2025 and 28.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\617.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 617,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not safe because it merges distinct voltage and drying studies and mislabels specs/conditions.",
+    "issues": [
+      "Changed factor mixes 4.5 increase/dry tests with 28.5 reduce-voltage tests.",
+      "Baseline is explicit in source rows but drafted as not explicit.",
+      "Voltage conditions are mislabeled as G and omit 800V context.",
+      "Specs are misapplied to MG+PT, Final SPK, and gap results, invalidating violations.",
+      "Dry before/after outcomes appear duplicated and grouped under the wrong factor."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split review cases or factors by date/report section: 4.5 increase 2000V vs 2400V, 4.5 before/after dry, and 28.5 reduce-voltage tests.",
+      "Set baselines from headers, especially normal or 2000V comparator where shown.",
+      "Rename changed conditions in volts and include 1400V, 1700V, and 800V only where supported.",
+      "Recalculate each measurement using its own column spec, not a carried-over spec.",
+      "Cite section header, condition header, and data/stat rows for each outcome."
+    ],
+    "evidencePolicy": "Row existence is insufficient; citations must support condition, spec, and result grouping."
+  },
+  "usage": {
+    "input_tokens": 8161,
+    "output_tokens": 755,
+    "total_tokens": 8916
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 766,
+  "sourceFile": "59.BRS-161014 Report test VP Drop_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\766.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 766,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not acceptable because it conflates multiple 4M causes and creates invalid VP drop comparisons.",
+    "issues": [
+      "Changed factor mixes M/C repair, mold number, reused NG samples, 12h storage, and dimensions.",
+      "Baseline/test conditions are misassigned; several comparisons cross different molds or test contexts.",
+      "Sheet2!14 is VP mold 6 after repair, not comparable to Sheet2!4 as a simple reused-sample test.",
+      "Measurement-2 is a parsed table artifact, not a dimension outcome.",
+      "Evidence includes rows not shown in context and measurement grouping is not substantiated."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Create separate changed factors for M/C repair before vs after and method right-now vs after 12h.",
+      "Use date, VP mold, repair state, round, and reused-sample status as subgroup keys.",
+      "Limit valid M/C repair comparison to comparable before/after rows such as mold 7 rows 4 and 8.",
+      "Do not compare VP mold 6 row 14 or 12h row 18 directly against before-repair mold 7 unless framed as separate context.",
+      "Remove table-artifact measurement outcome and only retain dimension evidence if actual dimension rows are cited and grouped."
+    ],
+    "evidencePolicy": "Row citations are partly present but insufficient until regrouped with comparable row-level evidence."
+  },
+  "usage": {
+    "input_tokens": 5189,
+    "output_tokens": 826,
+    "total_tokens": 6015
+  }
+}

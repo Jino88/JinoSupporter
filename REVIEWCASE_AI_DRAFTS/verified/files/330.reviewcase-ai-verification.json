@@ -1,0 +1,34 @@
+{
+  "sourceFileId": 330,
+  "sourceFile": "17. MSU-L20S15-07DT  Report Test Supension B test sample from CSY Tech Vina  ( Type of sample ; No cleaning after laser cutting )   date 30.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\330.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 330,
+    "aiReviewCaseStatus": "verified",
+    "verificationStatus": "passed",
+    "approvedForAskAi": true,
+    "confidence": "medium",
+    "summary": "The draft correctly captures one comparison where no-cleaning test samples worsen vision spot-weld NG rate while function remains unchanged.",
+    "issues": [
+      "Change domain labels are overbroad and partly unsupported.",
+      "Function header row is not cited in top-level evidence.",
+      "Primary factor should be phrased as sample/process condition, not generic condition comparison."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Narrow changeDomain to process condition/sample preparation.",
+      "Rewrite changedFactor as no cleaning after laser cutting vs normal lot condition.",
+      "Add function result header/title rows to evidence citations if available.",
+      "Keep both vision spot-weld and function outcomes under the same comparison context."
+    ],
+    "evidencePolicy": "Citations are sufficient for conditions and numeric results; adding function header rows would improve traceability."
+  },
+  "usage": {
+    "input_tokens": 3303,
+    "output_tokens": 711,
+    "total_tokens": 4014
+  }
+}

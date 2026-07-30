@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 739,
+  "sourceFile": "54.1. BRS-161014  Report checking NTI of test Frame improvement type C date 24.10.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\739.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:36Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 739,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft detects a Normal vs Test NTI frame-improvement comparison but its changed factor and outcome grouping are not reliable.",
+    "issues": [
+      "Changed factor is copied from filename instead of defined as Normal vs Test frame improvement type C.",
+      "Baseline and changed conditions are marked not explicit despite Normal/Test evidence.",
+      "FO outcome stats are misparsed from row indices rather than FO values.",
+      "SPL/THD/IMP outcomes are not grouped into valid Normal/Test/ST comparisons.",
+      "Evidence relies on headers and partial FO rows, not sufficient metric data rows."
+    ],
+    "requiredUserQuestions": [
+      "Confirm whether Normal is baseline and Test is frame improvement type C.",
+      "Confirm whether ST is only a reference condition or part of the comparison."
+    ],
+    "correctionPlan": [
+      "Set changed factor to Normal frame vs Test frame improvement type C.",
+      "Define Normal as baseline and Test as changed condition; keep ST as reference if confirmed.",
+      "Re-extract FO using actual TEST, NORMAL, and ST values by sample number.",
+      "Group SPL, THD, IMP, and FO under one validation report with proper metric rows.",
+      "Cite header plus representative data or summary rows for each metric domain."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are semantically insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 6841,
+    "output_tokens": 689,
+    "total_tokens": 7530
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 658,
+  "sourceFile": "45. BRS 161016  Test từ(10.6.2024)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\658.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:45Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 658,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but the changed-factor grouping and metric/spec extraction are not reliable.",
+    "issues": [
+      "Changed factor is filename, not the tested condition.",
+      "Baseline/test conditions are left undefined despite supplier and line context.",
+      "Supplier, line/machine, C2/E2, and old-data contexts are mixed.",
+      "Specs are misassigned, causing false violation counts.",
+      "Some cited outcome rows lack enough header/context linkage."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison supplier, line/machine, C2 vs E2, or combined?",
+      "Should old/SMG old sheets be historical baseline or reference only?"
+    ],
+    "correctionPlan": [
+      "Set changed factor from source context, likely supplier and/or line-machine comparison.",
+      "Preserve subgroup keys: date, line, machine, supplier, lot, and magnet type.",
+      "Rebuild outcomes by metric: SMG short, SMG long, CMG, Yoke Semi.",
+      "Apply correct specs: SMG short >800, SMG long >1000, CMG >1100, Yoke Semi >480.",
+      "Separate current test sheets from old/reference sheets unless baseline is proven."
+    ],
+    "evidencePolicy": "Row citations exist, but citations are insufficient until headers and grouping rows are correctly paired."
+  },
+  "usage": {
+    "input_tokens": 13627,
+    "output_tokens": 806,
+    "total_tokens": 14433
+  }
+}

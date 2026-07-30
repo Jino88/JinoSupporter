@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 127,
+  "sourceFile": "05. L20S15-07 Report test new lot CD .SIZE 490K ( Ivn   IR250410013 ) and lot CD size  210K (Ivn  IR250412022 ) Use new CD load tray_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\127.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:29Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 127,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source evidence but misgroups the primary changed factor and several outcome conditions.",
+    "issues": [
+      "Primary factor is not a normal-vs-test comparison; it is qualification of new CD lots with new load tray.",
+      "Lot numbers are mixed into changedCondition as separate conditions instead of subgroup keys.",
+      "Outcome extraction is misaligned; dyne, tension, separation, function NG, and decision results are conflated.",
+      "Tension spec is omitted from subresults, limiting pass/fail interpretation.",
+      "Decision rows approving/rejecting specific lots are not cited in the case evidence."
+    ],
+    "requiredUserQuestions": [
+      "Should this case be framed as lot qualification only, with no baseline comparison?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to new CD lots 490K and 210K using new CD load tray.",
+      "Use CD size/invoice as condition and lot numbers as subgroup keys.",
+      "Separate dyne, tension, VP/CD separation, function NG, and final decision outcomes under one case.",
+      "Add tension spec 1.2 kgf and preserve lot-level pass notes.",
+      "Cite purpose, result headers, lot result rows, tension rows, and decision rows 54-56."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until decision rows and corrected lot-level grouping are cited."
+  },
+  "usage": {
+    "input_tokens": 7191,
+    "output_tokens": 726,
+    "total_tokens": 7917
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 847,
+  "sourceFile": "7. BRS-161014  Report checking NTI Compare C2 and E2  20.01.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\847.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:47Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 847,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable C2/E2 comparison evidence but the changed factor, baseline, and FO statistics are not verified.",
+    "issues": [
+      "Changed factor is filename, not the C2 vs E2 comparison shown by evidence.",
+      "Baseline and changed condition are left ambiguous.",
+      "FO outcome stats appear parsed from labels, not numeric FO values.",
+      "SPL/THD/IMP evidence cites header rows only, not enough context.",
+      "Outcome grouping may mix SPL, THD, IMP, FO without clear metric labels."
+    ],
+    "requiredUserQuestions": [
+      "Which condition is baseline/control: C2, E2, or ST?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to NTI C2 vs E2 comparison if supported by workbook rows.",
+      "Define baseline and changed conditions or mark both as comparison arms if no baseline exists.",
+      "Recompute FO values from FO DATA rows 5-15 using numeric columns and averages.",
+      "Add metric-specific evidence rows for SPL, THD, and IMP headers/data beyond row 2.",
+      "Keep SPL, THD, IMP, FO as outcomes under one C2/E2 validation case."
+    ],
+    "evidencePolicy": "Row citations exist, but header-only and misparsed rows are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 5921,
+    "output_tokens": 495,
+    "total_tokens": 6416
+  }
+}

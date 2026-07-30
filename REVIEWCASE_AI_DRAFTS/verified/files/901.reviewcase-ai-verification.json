@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 901,
+  "sourceFile": "78. TIU C11-20 Report test improve NG bonding VP at SUB1 2026.04.22_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\901.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:31Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 901,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the NG reduction trend but needs corrected changed-factor wording and stronger citations before final use.",
+    "issues": [
+      "Changed factor conflates diagnostic height check with the actual post-sorting bonding condition.",
+      "Key purpose, content, result heading, and decision rows are not cited in the review case evidence.",
+      "Table headers for the two result tables are missing from evidence citations.",
+      "Change domain includes unsupported coating and dimension/spec labels; jig/process/equipment are enough.",
+      "Initial jig-height sorting metric should be supporting context, not part of the changed test condition."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to Normal bonding VP vs bonding after sorting/removing NG-height VP jigs at SUB1.",
+      "Set baselineCondition to Normal and changedCondition to After sorting jig NG for bonding VP.",
+      "Keep the jig-height check as a supporting outcome or precursor metric tied to rows 23-26.",
+      "Add citations for rows 6, 8-9, 23-24, 30, and 37 or 41-42 as applicable.",
+      "Remove unsupported change-domain labels and retain only evidence-backed domains."
+    ],
+    "evidencePolicy": "Current cited rows exist but are insufficient for final evidence because headers and explanatory rows are missing."
+  },
+  "usage": {
+    "input_tokens": 2969,
+    "output_tokens": 804,
+    "total_tokens": 3773
+  }
+}

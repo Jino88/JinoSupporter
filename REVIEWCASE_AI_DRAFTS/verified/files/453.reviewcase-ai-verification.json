@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 453,
+  "sourceFile": "25.1 MSU-L20S15-07 Result check NTI lot test New Bond SJ4774 and VE562850- 2025.06.17_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\453.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:09Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 453,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it misses the Normal vs SJ4774/VE562850 lot comparison and includes noisy metric groupings.",
+    "issues": [
+      "Changed factor is filename-based, not source-based.",
+      "Baseline and changed conditions are marked not explicit despite clear Normal/SJ4774/VE562850 rows.",
+      "Outcome metrics include many parsed numeric row artifacts.",
+      "Some cited rows are not shown in review context or do not support grouping.",
+      "STD role is not separated from Normal baseline context."
+    ],
+    "requiredUserQuestions": [
+      "Should SJ4774 and VE562850 be treated as separate test lots against Normal?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to NTI/New Bond lot comparison.",
+      "Use Normal as baseline and SJ4774, VE562850 as changed conditions.",
+      "Keep STD as reference context only unless proven baseline.",
+      "Limit outcomes to SPL, Fo, and THD summary metrics plus valid raw spectra if needed.",
+      "Remove numeric artifact subresults and unsupported row citations."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient for final evidence until regrouped around source-supported condition rows."
+  },
+  "usage": {
+    "input_tokens": 14108,
+    "output_tokens": 773,
+    "total_tokens": 14881
+  }
+}

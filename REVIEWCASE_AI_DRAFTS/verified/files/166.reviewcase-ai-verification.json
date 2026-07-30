@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 166,
+  "sourceFile": "08. TIU C11-20  Report test VP cutting Dry 6hr -12hr -24hr from Sub1 check Function  2025.12.29_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\166.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 166,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable evidence exists, but the draft misgroups the changed factor and includes invalid header-derived measurements.",
+    "issues": [
+      "Changed condition incorrectly treats Day Shift as a process condition and omits 6h from changed conditions.",
+      "Model and 6h condition are misplaced as subgroup keys.",
+      "Tension outcome only supports 6h test vs normal, not 12h or 24h.",
+      "Measurement-2 is derived from a header row and should not be a measurement outcome.",
+      "Evidence row Test!21 is cited but not provided in context text."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Redefine factor as VP cut dry 6h, 12h, 24h at SMT/forming versus normal dry 24h at VP line.",
+      "Keep date, shift, model, and joint type as context or subgroup keys only.",
+      "Limit function outcome to rows 22, 24, 26, and 28 with three test comparisons versus normal.",
+      "Limit tension outcome to 6h test versus normal, grouped by VP+COIL and FRAME+VP.",
+      "Remove Measurement-2 or convert defect-category details only if source rows support them."
+    ],
+    "evidencePolicy": "Main row citations are sufficient for function and tension, but header-only derived evidence is insufficient."
+  },
+  "usage": {
+    "input_tokens": 5112,
+    "output_tokens": 814,
+    "total_tokens": 5926
+  }
+}

@@ -1,6 +1,4 @@
-@page "/ng-rate-for-weekly-report"
-@rendermode InteractiveServer
-@* NG Rate For Weekly Report — same data shape as By Group, but with all DATE
+@* NG Rate For Weekly Report - same data shape as By Group, but with all DATE
    columns hidden in tables and charts. Only Week + Month periods are shown. *@
 @using JinoSupporter.Web.Services
 @inject NgRateService         NgRate
@@ -11,150 +9,52 @@
 @inject AppActivityLogger     Activity
 @implements IAsyncDisposable
 
-<PageTitle>NG Rate — For Weekly Report</PageTitle>
+<NgRateReportStyles />
+@ExportPeriodMeta()
 
-<div class="d-flex align-items-center gap-2 mb-3">
-    <span style="font-size:20px;">📉</span>
-    <h5 class="mb-0 fw-semibold">NG Rate</h5>
-    <div class="ms-3 btn-group btn-group-sm" role="group" aria-label="View mode">
-        <a href="/ng-rate" class="btn btn-outline-secondary"
-           title="Switch to By Model view">
-            🎯 By Model
-        </a>
-        <a href="/ng-rate-all" class="btn btn-outline-secondary"
-           title="Switch to By Section view">
-            📑 By Section
-        </a>
-        <a href="/ng-rate-by-group" class="btn btn-outline-secondary"
-           title="Switch to By Group view">
-            🧩 By Group
-        </a>
-        <button type="button" class="btn btn-primary" disabled
-                title="Current view: For Weekly Report">
-            📅 For Weekly Report
-        </button>
+@if (ShowTitle)
+{
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <h5 class="mb-0 fw-semibold">Report - NG Rate Weekly</h5>
     </div>
-</div>
+}
 
-<div class="row g-3">
+@if (ShowSetup)
+{
+    <NgRateSetupPanel LayoutClass="ngrate-flow"
+                      DataCellClass="ngrate-flow-data"
+                      ProgressCellClass="ngrate-flow-progress"
+                      StartDate="@_startDate"
+                      StartDateChanged="@((DateTime d) => _startDate = d)"
+                      EndDate="@_endDate"
+                      EndDateChanged="@((DateTime d) => _endDate = d)"
+                      IsBusy="@_isBusy"
+                      IsReportBusy="@_isReportBusy"
+                      IsCredentialsConfigured="@NgRateSettings.IsCredentialsConfigured"
+                      LoginId="@NgRateSettings.LoginId"
+                      SavedDbPath="@_savedDbPath"
+                      ErrorMessage="@_errorMessage"
+                      ShowClearResult="false"
+                      LogElementId="@LogElementId"
+                      Logs="@_logs"
+                      HasSuccessfulResult="@(_report is not null)"
+                      OnSetToday="SetToday"
+                      OnClearLogs="@(() => _logs.Clear())">
+        <GroupPicker>
+            <NgRateSimpleGroupPicker Groups="@_groups"
+                                     SelectedGroupNames="@_selectedGroupNames"
+                                     IsBusy="@_isBusy"
+                                     IsReportBusy="@_isReportBusy"
+                                     IsCredentialsConfigured="@NgRateSettings.IsCredentialsConfigured"
+                                     OnReload="ReloadGroups"
+                                     OnSelectAll="SelectAllGroups"
+                                     OnClearSelection="ClearSelectedGroups"
+                                     OnToggleGroup="ToggleGroup"
+                                     OnGetReport="GetReportAsync" />
+        </GroupPicker>
+    </NgRateSetupPanel>
+}
 
-    <!-- ══ Get Data ══════════════════════════════════════════════════════════ -->
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header small fw-semibold">Get Data</div>
-            <div class="card-body d-flex flex-column gap-3">
-                <div>
-                    <div class="form-label small fw-semibold mb-1">Period</div>
-                    <div class="d-flex gap-2 align-items-center flex-wrap">
-                        <input type="date" class="form-control form-control-sm"
-                               style="width:auto; flex:1; min-width:110px;"
-                               @bind="_startDate" @bind:format="yyyy-MM-dd" />
-                        <span class="small text-muted">–</span>
-                        <input type="date" class="form-control form-control-sm"
-                               style="width:auto; flex:1; min-width:110px;"
-                               @bind="_endDate" @bind:format="yyyy-MM-dd" />
-                        <button class="btn btn-outline-secondary btn-sm" @onclick="SetToday">Today</button>
-                    </div>
-                </div>
-
-                <div class="d-flex align-items-center gap-2">
-                    <span class="small text-muted">BMES:</span>
-                    @if (NgRateSettings.IsCredentialsConfigured)
-                    {
-                        <span class="badge bg-success">Credentials OK</span>
-                        <span class="small text-muted font-monospace">@NgRateSettings.LoginId</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-warning text-dark">Not configured</span>
-                        <a href="/admin/settings" class="small text-primary">→ Admin Settings</a>
-                    }
-                </div>
-
-                <button class="btn btn-primary"
-                        @onclick="GetDataAsync"
-                        disabled="@(_isBusy || !NgRateSettings.IsCredentialsConfigured)">
-                    @if (_isBusy)
-                    { <span class="spinner-border spinner-border-sm me-1"></span><span>Processing…</span> }
-                    else { <span>Get Data</span> }
-                </button>
-
-                @if (!string.IsNullOrEmpty(_savedDbPath))
-                {
-                    <div class="alert alert-success py-2 small mb-0">
-                        <div class="fw-semibold mb-1">
-                            <span class="badge bg-success me-1">Done</span> Saved DB
-                        </div>
-                        <div class="font-monospace text-break" style="font-size:11px;">@_savedDbPath</div>
-                    </div>
-                }
-                @if (!string.IsNullOrEmpty(_errorMessage))
-                {
-                    <div class="alert alert-danger py-2 small mb-0">
-                        <span class="badge bg-danger me-1">Error</span> @_errorMessage
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-
-    <!-- ══ Groups (from ModelGroups DB) ══════════════════════════════════════ -->
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-                <span>🧱 Model Groups</span>
-                <span class="badge bg-secondary" style="font-size:10px;">@_groups.Count</span>
-                <button class="btn btn-outline-secondary btn-sm ms-auto" @onclick="ReloadGroups">↻</button>
-                <a class="btn btn-outline-secondary btn-sm" href="/bmes/make-model-group" target="_blank"
-                   title="Edit groups">Edit</a>
-            </div>
-            <div class="card-body d-flex flex-column gap-2">
-                @if (_groups.Count == 0)
-                {
-                    <div class="text-muted small">
-                        No saved groups. Please create a group first at <a href="/bmes/make-model-group" target="_blank">Model Group</a>.
-                    </div>
-                }
-                else
-                {
-                    <div class="d-flex gap-2 small">
-                        <button class="btn btn-link btn-sm p-0" @onclick="SelectAllGroups">All</button>
-                        <span class="text-muted">|</span>
-                        <button class="btn btn-link btn-sm p-0" @onclick="ClearSelectedGroups">None</button>
-                        <span class="text-muted ms-auto">@_selectedGroupNames.Count selected</span>
-                    </div>
-                    <div style="max-height:220px; overflow:auto;">
-                        @foreach (var g in _groups)
-                        {
-                            <label class="grp-chk">
-                                <input type="checkbox"
-                                       checked="@_selectedGroupNames.Contains(g.Name)"
-                                       @onchange="e => ToggleGroup(g.Name, (bool)e.Value!)" />
-                                <span class="grp-name">@g.Name</span>
-                                <span class="grp-count text-muted">@(g.MidGroups.Count) / @g.MidGroups.Sum(m => m.LineShifts.Count)</span>
-                            </label>
-                        }
-                    </div>
-                }
-
-                <button class="btn btn-success mt-1"
-                        @onclick="GetReportAsync"
-                        disabled="@(_isReportBusy || _selectedGroupNames.Count == 0 || !HasUsableDb)">
-                    @if (_isReportBusy)
-                    { <span class="spinner-border spinner-border-sm me-1"></span><span>Generating…</span> }
-                    else { <span>▶ Generate Report</span> }
-                </button>
-                @if (!HasUsableDb)
-                {
-                    <div class="small text-muted">Please run Get Data first to fetch the NG Rate DB.</div>
-                }
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<!-- ══ Weekly Report Summary (Sub Group level — top-of-page snapshot) ═══════ -->
 @if (_report is not null && _reportByModel is not null && _selectedGroupNames.Count > 0)
 {
     var wrWeeks  = WeeklyReportWeekCols;
@@ -163,24 +63,76 @@
 
     <div class="card shadow-sm mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-            <span>📋 Weekly Report Summary — Model / Line-Group × baseline / target / recent W &amp; M</span>
             <span class="text-muted" style="font-size:11px;">@wrRows.Count row(s)</span>
+            <div class="d-flex align-items-center gap-2 ms-auto">
+                @if (!string.IsNullOrWhiteSpace(_weeklyFormSettingsStatus))
+                {
+                    <span class="text-muted" style="font-size:11px;">@_weeklyFormSettingsStatus</span>
+                }
+                <button type="button"
+                        class="btn btn-outline-secondary btn-sm"
+                        @onclick="ToggleWeeklyFormSettings">
+                    @(_showWeeklyFormSettings ? "Hide Settings" : "Row Settings")
+                </button>
+                <button type="button"
+                        class="btn btn-primary btn-sm"
+                        @onclick="SaveWeeklyFormSettings">
+                    Save
+                </button>
+            </div>
         </div>
+        @if (_showWeeklyFormSettings)
+        {
+            var settingRows = WeeklyDisplaySettingRows;
+            <div class="weekly-form-settings">
+                <div class="weekly-form-settings-wrap">
+                    <table class="table table-sm mb-0 weekly-form-settings-table">
+                        <thead>
+                            <tr>
+                                <th style="width:180px;">Group</th>
+                                <th>Item</th>
+                                <th style="width:90px;">Line</th>
+                                <th style="width:90px;">Sub Groups</th>
+                                <th style="width:140px;">Display</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var settingRow in settingRows)
+                            {
+                                <tr>
+                                    <td>@settingRow.GroupName</td>
+                                    <td class="wrf-setting-node">@settingRow.Material</td>
+                                    <td class="text-end">@settingRow.LineShiftCount</td>
+                                    <td class="text-end">@settingRow.BGroupCount</td>
+                                    <td>
+                                        <select class="form-select form-select-sm"
+                                                value="@settingRow.DisplayMode"
+                                                @onchange="e => SetWeeklyDisplayMode(settingRow.GroupName, settingRow.Material, e.Value?.ToString())">
+                                            <option value="@WeeklyDisplayModeGroup">Group</option>
+                                            <option value="@WeeklyDisplayModeBGroup">Sub Group</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
         <div class="card-body p-0">
             @if (wrRows.Count == 0)
             {
                 <div class="text-muted small p-4 text-center">
-                    No sub-groups found in the selected groups.
+                    No rows found in the selected groups.
                 </div>
             }
             else
             {
                 <div style="overflow-x:auto;">
-                    <table class="pivot-table">
+                    <table class="pivot-table text-fit-table">
                         <thead>
                             <tr>
-                                <th class="label-th" rowspan="2" style="width:200px;">제품명</th>
-                                <th rowspan="2" style="width:110px;">25.12 기준<br/>불량률</th>
+                                <th class="label-th" rowspan="2" style="width:200px;">Product</th>
                                 @if (wrWeeks.Count > 0)
                                 {
                                     <th class="blk-week"  colspan="@wrWeeks.Count">Week</th>
@@ -214,7 +166,7 @@
                                                     1 => "wr-sub1-row",
                                                     _ => "wr-sub2-row"
                                                 };
-                                bool   expanded = _expandedRowsWr.Contains(row.RowId);
+                                bool   expanded = IsSectionExpanded(_expandedRowsWr, row.RowId);
                                 bool   canExp   = hasChildren.Contains(row.RowId);
                                 string capturedId = row.RowId;
                                 <tr class="@rowCls @(canExp ? "wr-row-expandable" : "")"
@@ -222,28 +174,24 @@
                                     <td class="label-td" style="padding-left: @(padPx)px;">
                                         @if (canExp)
                                         {
-                                            <span class="wr-tog">@(expanded ? "▼" : "▶")</span>
+                                            <span class="wr-tog">@(expanded ? "v" : ">")</span>
                                         }
                                         else
                                         {
                                             <span class="wr-tog wr-tog-blank"></span>
                                         }
-                                        <span class="hier-level-badge">@WeeklyLevelLabel(row, hasChildren)</span>
                                         <span class="ms-1">@row.Display</span>
-                                    </td>
-                                    <td class="@(row.Baseline.HasValue ? "ppm-val" : "ppm-zero")">
-                                        @(row.Baseline.HasValue ? FormatPpm(row.Baseline.Value) : "—")
                                     </td>
                                     @foreach (var col in wrWeeks)
                                     {
                                         double v = row.WeekPpm.GetValueOrDefault(col.Key);
-                                        <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                        <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                                     }
                                     @if (wrWeeks.Count > 0) { <td class="sep-td"></td> }
                                     @foreach (var col in wrMonths)
                                     {
                                         double v = row.MonthPpm.GetValueOrDefault(col.Key);
-                                        <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                        <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                                     }
                                 </tr>
                             }
@@ -255,36 +203,44 @@
     </div>
 }
 
-<!-- ══ Summary (per group × per date) ════════════════════════════════════════ -->
+<!-- ?먥븧 Summary (per group 횞 per date) ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧 -->
 <div class="card shadow-sm mt-3">
     <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-        <span>📊 Summary — group × Date / Week / Month (PPM)</span>
+        <span>Summary - group x Date / Week / Month (PPM)</span>
         @if (_report is not null)
         {
             <span class="text-muted" style="font-size:11px;">
-                W @VisibleWeekCols.Count/@_report.WeekCols.Count · M @VisibleMonthCols.Count/@_report.MonthCols.Count · @_report.TotalRows rows
+                W @VisibleWeekCols.Count/@_report.WeekCols.Count - M @VisibleMonthCols.Count/@_report.MonthCols.Count - @_report.TotalRows rows
             </span>
             <div class="btn-group btn-group-sm ms-auto">
-                @* Date toggle hidden — For Weekly Report view never shows date columns. *@
+                @* Date toggle hidden ??For Weekly Report view never shows date columns. *@
                 @if (HiddenWeekCount > 0 || _weekExpanded)
                 {
                     <button class="btn btn-outline-success"
                             @onclick="() => _weekExpanded = !_weekExpanded">
-                        @(_weekExpanded ? $"◂ Week ({_report.WeekCols.Count - DefaultWeekCap} hide)" : $"▸ Week (+{HiddenWeekCount})")
+                        @(_weekExpanded ? $"Week ({_report.WeekCols.Count - DefaultWeekCap} hide)" : $"Week (+{HiddenWeekCount})")
                     </button>
                 }
                 @if (HiddenMonthCount > 0 || _monthExpanded)
                 {
                     <button class="btn btn-outline-warning"
                             @onclick="() => _monthExpanded = !_monthExpanded">
-                        @(_monthExpanded ? $"◂ Month ({_report.MonthCols.Count - DefaultMonthCap} hide)" : $"▸ Month (+{HiddenMonthCount})")
+                        @(_monthExpanded ? $"Month ({_report.MonthCols.Count - DefaultMonthCap} hide)" : $"Month (+{HiddenMonthCount})")
                     </button>
                 }
             </div>
             <button class="btn btn-outline-success btn-sm"
-                    @onclick="ExportExcelAsync"
+                    @onclick="ExportCsvAsync"
                     disabled="@_isExporting">
-                @(_isExporting ? "Exporting..." : "Export Excel")
+                @if (_isExporting)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    <span>Exporting...</span>
+                }
+                else
+                {
+                    <span>Export CSV</span>
+                }
             </button>
         }
     </div>
@@ -306,7 +262,7 @@
         else
         {
             <div style="overflow-x:auto;">
-                <table class="pivot-table">
+                <table class="pivot-table text-fit-table">
                     <thead>
                         <tr>
                             <th class="label-th" style="width:220px;" rowspan="2">Group</th>
@@ -339,48 +295,48 @@
                             @foreach (var col in VisibleDateCols)
                             {
                                 double v = MeanOfGroups(col.Key);
-                                <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                             }
                             @if (VisibleDateCols.Count > 0) { <td class="sep-td"></td> }
                             @foreach (var col in VisibleWeekCols)
                             {
                                 double v = MeanOfGroups(col.Key);
-                                <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                             }
                             @if (VisibleWeekCols.Count > 0) { <td class="sep-td"></td> }
                             @foreach (var col in VisibleMonthCols)
                             {
                                 double v = MeanOfGroups(col.Key);
-                                <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                             }
                         </tr>
                         @foreach (var gName in _selectedGroupNames)
                         {
                             var rows  = _report.GroupSummary.GetValueOrDefault(gName);
                             var total = rows?.FirstOrDefault(r => r.IsTotal);
-                            bool expanded = _expandedGroups.Contains(gName);
+                            bool expanded = IsSectionExpanded(_expandedGroups, gName);
 
                             <tr class="grp-total-row" @onclick="() => ToggleExpand(gName)">
                                 <td class="label-td">
-                                    <span class="tog-icon">@(expanded ? "▼" : "▶")</span>
-                                    <strong>@gName</strong>
+                                    <span class="tog-icon">@(expanded ? "v" : ">")</span>
+                                    <strong>@ReportGroupDisplayName(gName)</strong>
                                 </td>
                                 @foreach (var col in VisibleDateCols)
                                 {
                                     double v = MeanOfMembers(gName, col.Key, null);
-                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                                 }
                                 @if (VisibleDateCols.Count > 0) { <td class="sep-td"></td> }
                                 @foreach (var col in VisibleWeekCols)
                                 {
                                     double v = MeanOfMembers(gName, col.Key, null);
-                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                                 }
                                 @if (VisibleWeekCols.Count > 0) { <td class="sep-td"></td> }
                                 @foreach (var col in VisibleMonthCols)
                                 {
                                     double v = MeanOfMembers(gName, col.Key, null);
-                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                                 }
                             </tr>
 
@@ -395,19 +351,19 @@
                                         @foreach (var col in VisibleDateCols)
                                         {
                                             double v = MeanOfMembers(gName, col.Key, r.ProcessType);
-                                            <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                            <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                                         }
                                         @if (VisibleDateCols.Count > 0) { <td class="sep-td"></td> }
                                         @foreach (var col in VisibleWeekCols)
                                         {
                                             double v = MeanOfMembers(gName, col.Key, r.ProcessType);
-                                            <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                            <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                                         }
                                         @if (VisibleWeekCols.Count > 0) { <td class="sep-td"></td> }
                                         @foreach (var col in VisibleMonthCols)
                                         {
                                             double v = MeanOfMembers(gName, col.Key, r.ProcessType);
-                                            <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                            <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                                         }
                                     </tr>
                                 }
@@ -420,26 +376,46 @@
     </div>
 </div>
 
-<!-- ══ Chart (per-group PPM trend over dates) ════════════════════════════════ -->
+<!-- ?먥븧 Chart (per-group PPM trend over dates) ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧 -->
 @if (_report is not null && TotalColCount > 0 && _selectedGroupNames.Count > 0)
 {
     <div class="card shadow-sm mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-            <span>📈 Group trend — PPM (Date / Week / Month)</span>
+            <span>Group trend - PPM (Date / Week / Month)</span>
         </div>
         <div class="card-body" style="height:320px;">
             <canvas id="ngrateByGroupCanvas"></canvas>
+            @ExportChartPayload(CanvasId)
         </div>
     </div>
 }
 
-<!-- ══ Summary 2 (per group × per model) ═════════════════════════════════════ -->
+<!-- ?먥븧 Summary 2 (per group 횞 per model) ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??-->
 <div class="card shadow-sm mt-3">
     <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-        <span>📊 Summary — Group → Model Name × Week / Month (PPM)</span>
+        <span>Summary - Group - Model Name x Week / Month (PPM)</span>
         @if (_reportByMid is not null)
         {
             <span class="text-muted" style="font-size:11px;">Model Name PPM = same combo-merged as per-model</span>
+            <div class="d-flex align-items-center gap-2 ms-auto">
+                <label class="form-check form-check-inline d-flex align-items-center gap-1 m-0" style="font-size:11px;">
+                    <input type="checkbox" class="form-check-input m-0" @bind="_showWeeklyModelSummaryDelta" />
+                    <span>증감률</span>
+                </label>
+                <button class="btn btn-outline-success btn-sm"
+                        @onclick="ExportWeeklyModelSummaryCsvAsync"
+                        disabled="@_isExporting">
+                    @if (_isExporting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        <span>Exporting...</span>
+                    }
+                    else
+                    {
+                        <span>Export CSV</span>
+                    }
+                </button>
+            </div>
         }
     </div>
     <div class="card-body p-0">
@@ -456,7 +432,7 @@
         else
         {
             <div style="overflow-x:auto;">
-                <table class="pivot-table">
+                <table class="pivot-table text-fit-table">
                     <thead>
                         <tr>
                             <th class="label-th" style="width:260px;" rowspan="2">Group / Model</th>
@@ -489,7 +465,7 @@
                             @foreach (var col in VisibleDateCols)
                             {
                                 double v = MeanOfGroups(col.Key);
-                                <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                             }
                             @if (VisibleDateCols.Count > 0) { <td class="sep-td"></td> }
                             @{ var totWeekCols2 = VisibleWeekCols; }
@@ -497,8 +473,8 @@
                             {
                                 var col   = totWeekCols2[wi];
                                 double v  = MeanOfGroups(col.Key);
-                                double? p = wi + 1 < totWeekCols2.Count ? MeanOfGroups(totWeekCols2[wi + 1].Key) : (double?)null;
-                                <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmWithDelta(v, p)</td>
+                                double? p = PreviousNonZeroPpm(totWeekCols2, wi, c => MeanOfGroups(c.Key));
+                                <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatModelSummaryPpm(v, p)</td>
                             }
                             @if (VisibleWeekCols.Count > 0) { <td class="sep-td"></td> }
                             @{ var totMonthCols2 = VisibleMonthCols; }
@@ -506,26 +482,27 @@
                             {
                                 var col   = totMonthCols2[mi2];
                                 double v  = MeanOfGroups(col.Key);
-                                double? p = mi2 + 1 < totMonthCols2.Count ? MeanOfGroups(totMonthCols2[mi2 + 1].Key) : (double?)null;
-                                <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmWithDelta(v, p)</td>
+                                double? p = PreviousNonZeroPpm(totMonthCols2, mi2, c => MeanOfGroups(c.Key));
+                                <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatModelSummaryPpm(v, p)</td>
                             }
                         </tr>
                         @foreach (var gName in _selectedGroupNames)
                         {
-                            bool exp     = _expandedGroupsModel.Contains(gName);
+                            bool exp     = IsSectionExpanded(_expandedGroupsModel, gName);
                             var  grpVm   = _groups.FirstOrDefault(g => g.Name == gName);
-                            var  midList = grpVm?.MidGroups ?? new List<MidGroupRecord>();
+                            var  midList = (grpVm?.MidGroups ?? new List<MidGroupRecord>())
+                                .Where(mid => MidHasVisibleData(gName, mid))
+                                .ToList();
 
                             <tr class="grp-total-row" @onclick="() => ToggleExpandModel(gName)">
                                 <td class="label-td">
-                                    <span class="tog-icon">@(exp ? "▼" : "▶")</span>
-                                    <strong>@gName</strong>
-                                    <span class="text-muted ms-1" style="font-size:10px;">@midList.Count models</span>
+                                    <span class="tog-icon">@(exp ? "v" : ">")</span>
+                                    <strong>@ReportGroupDisplayName(gName)</strong>
                                 </td>
                                 @foreach (var col in VisibleDateCols)
                                 {
                                     double v = MeanOfMembers(gName, col.Key, null);
-                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                                 }
                                 @if (VisibleDateCols.Count > 0) { <td class="sep-td"></td> }
                                 @{ var grpWeekCols = VisibleWeekCols; }
@@ -533,10 +510,8 @@
                                 {
                                     var col   = grpWeekCols[wi3];
                                     double v  = MeanOfMembers(gName, col.Key, null);
-                                    double? p = wi3 + 1 < grpWeekCols.Count
-                                        ? MeanOfMembers(gName, grpWeekCols[wi3 + 1].Key, null)
-                                        : (double?)null;
-                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmWithDelta(v, p)</td>
+                                    double? p = PreviousNonZeroPpm(grpWeekCols, wi3, c => MeanOfMembers(gName, c.Key, null));
+                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatModelSummaryPpm(v, p)</td>
                                 }
                                 @if (VisibleWeekCols.Count > 0) { <td class="sep-td"></td> }
                                 @{ var grpMonthCols = VisibleMonthCols; }
@@ -544,10 +519,8 @@
                                 {
                                     var col   = grpMonthCols[mi3];
                                     double v  = MeanOfMembers(gName, col.Key, null);
-                                    double? p = mi3 + 1 < grpMonthCols.Count
-                                        ? MeanOfMembers(gName, grpMonthCols[mi3 + 1].Key, null)
-                                        : (double?)null;
-                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmWithDelta(v, p)</td>
+                                    double? p = PreviousNonZeroPpm(grpMonthCols, mi3, c => MeanOfMembers(gName, c.Key, null));
+                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatModelSummaryPpm(v, p)</td>
                                 }
                             </tr>
 
@@ -556,18 +529,17 @@
                                 @foreach (var mid in midList)
                                 {
                                     string midKey = $"{gName}::{mid.Material}";
-                                    bool midExp   = _expandedMids.Contains(midKey);
+                                    bool midExp   = IsSectionExpanded(_expandedMids, midKey);
                                     <tr class="grp-sub-row grp-mid-row" @onclick="() => ToggleExpandMid(midKey)">
                                         <td class="label-td ps-4" style="font-size:11px;">
-                                            <span class="tog-icon">@(midExp ? "▼" : "▶")</span>
-                                            <span class="mid-badge">Model Name</span>
+                                            <span class="tog-icon">@(midExp ? "v" : ">")</span>
                                             <span class="ms-1">@mid.Material</span>
                                             <span class="text-muted ms-1" style="font-size:10px;">@mid.LineShifts.Count</span>
                                         </td>
                                         @foreach (var col in VisibleDateCols)
                                         {
                                             double v = MidPpmAvgOfSubs(gName, mid, col.Key);
-                                            <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                            <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                                         }
                                         @if (VisibleDateCols.Count > 0) { <td class="sep-td"></td> }
                                         @{ var weekCols = VisibleWeekCols; }
@@ -575,10 +547,8 @@
                                         {
                                             var col   = weekCols[wi];
                                             double v  = MidPpmAvgOfSubs(gName, mid, col.Key);
-                                            double? p = wi + 1 < weekCols.Count
-                                                ? MidPpmAvgOfSubs(gName, mid, weekCols[wi + 1].Key)
-                                                : (double?)null;
-                                            <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmWithDelta(v, p)</td>
+                                            double? p = PreviousNonZeroPpm(weekCols, wi, c => MidPpmAvgOfSubs(gName, mid, c.Key));
+                                            <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatModelSummaryPpm(v, p)</td>
                                         }
                                         @if (VisibleWeekCols.Count > 0) { <td class="sep-td"></td> }
                                         @{ var monthCols = VisibleMonthCols; }
@@ -586,10 +556,8 @@
                                         {
                                             var col   = monthCols[mi2];
                                             double v  = MidPpmAvgOfSubs(gName, mid, col.Key);
-                                            double? p = mi2 + 1 < monthCols.Count
-                                                ? MidPpmAvgOfSubs(gName, mid, monthCols[mi2 + 1].Key)
-                                                : (double?)null;
-                                            <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmWithDelta(v, p)</td>
+                                            double? p = PreviousNonZeroPpm(monthCols, mi2, c => MidPpmAvgOfSubs(gName, mid, c.Key));
+                                            <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatModelSummaryPpm(v, p)</td>
                                         }
                                     </tr>
 
@@ -601,25 +569,25 @@
                                             var mTot  = mRows?.FirstOrDefault(r => r.IsTotal);
                                             <tr class="grp-ls-row">
                                                 <td class="label-td ps-5 font-monospace" style="font-size:11px;">
-                                                    <span class="ls-badge">Shift-Group</span>
+                                                    <span class="ls-badge">Shift Group</span>
                                                     <span class="ms-1">@ls</span>
                                                 </td>
                                                 @foreach (var col in VisibleDateCols)
                                                 {
                                                     double v = mTot?.Ppm.GetValueOrDefault(col.Key) ?? 0;
-                                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                                                 }
                                                 @if (VisibleDateCols.Count > 0) { <td class="sep-td"></td> }
                                                 @foreach (var col in VisibleWeekCols)
                                                 {
                                                     double v = mTot?.Ppm.GetValueOrDefault(col.Key) ?? 0;
-                                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                                                 }
                                                 @if (VisibleWeekCols.Count > 0) { <td class="sep-td"></td> }
                                                 @foreach (var col in VisibleMonthCols)
                                                 {
                                                     double v = mTot?.Ppm.GetValueOrDefault(col.Key) ?? 0;
-                                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                                    <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                                                 }
                                             </tr>
                                         }
@@ -634,26 +602,27 @@
     </div>
 </div>
 
-<!-- ══ Chart 2 (per-model PPM trend) ═════════════════════════════════════════ -->
+<!-- ?먥븧 Chart 2 (per-model PPM trend) ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??-->
 @if (_reportByModel is not null && TotalColCount > 0 && _selectedGroupNames.Count > 0)
 {
     <div class="card shadow-sm mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-            <span>📈 Group trend — PPM (Date / Week / Month)</span>
+            <span>Group trend - PPM (Date / Week / Month)</span>
         </div>
         <div class="card-body" style="height:320px;">
             <canvas id="ngrateByGroupModelCanvas"></canvas>
+            @ExportChartPayload(CanvasIdModel)
         </div>
     </div>
 }
 
-<!-- ══ Top-10 per group (Mid Group × Process × NG) ══════════════════════════════ -->
+<!-- ?먥븧 Top-10 per group (Mid Group 횞 Process 횞 NG) ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧 -->
 @if (_midNgReport is not null && _selectedGroupNames.Count > 0)
 {
     var (_refKey, _refBucket) = SortRefKey();
     <div class="card shadow-sm mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-            <span>🥇 Top 10 per group — Model Name × Process × NG</span>
+            <span>Top 10 per group - Model Name x Process x NG</span>
             <span class="text-muted" style="font-size:11px;">
                 @if (!string.IsNullOrEmpty(_refKey))
                 { <text>Sorted: previous-week PPM, descending (ref = @_refBucket @ShiftedRefLabel(_refKey, _refBucket))</text> }
@@ -663,7 +632,7 @@
         <div class="card-body p-0">
             @foreach (var gName in _selectedGroupNames)
             {
-                // 중그룹 키는 "대그룹::Material" 형태. 현재 대그룹에 해당하는 키만 필터.
+                // 以묎렇猷??ㅻ뒗 "?洹몃９::Material" ?뺥깭. ?꾩옱 ?洹몃９???대떦?섎뒗 ?ㅻ쭔 ?꾪꽣.
                 string prefix = gName + "::";
                 var top = _midNgReport.Details
                     .Where(d => d.LineShift.StartsWith(prefix, StringComparison.Ordinal))
@@ -679,7 +648,7 @@
                     .ToList();
 
                 <div class="px-3 py-2 top10-group-head">
-                    <strong class="me-2">@gName</strong>
+                    <strong class="me-2">@ReportGroupDisplayName(gName)</strong>
                     <span class="text-muted small">@top.Count rows</span>
                 </div>
                 @if (top.Count == 0)
@@ -691,10 +660,10 @@
                     <div style="overflow-x:auto;">
                         <table class="pivot-table top10-table">
                             <colgroup>
-                                <col style="width:32px;" />
-                                <col style="width:210px;" />
-                                <col style="width:220px;" />
-                                <col style="width:160px;" />
+                                <col style="width:48px;" />
+                                <col style="width:190px;" />
+                                <col style="width:360px;" />
+                                <col style="width:190px;" />
                                 @foreach (var _ in Top10DateCols)  { <col style="width:70px;" /> }
                                 @if (Top10DateCols.Count > 0)   { <col style="width:8px;" /> }
                                 @foreach (var _ in Top10WeekCols)  { <col style="width:70px;" /> }
@@ -705,8 +674,8 @@
                                 <tr>
                                     <th class="label-th" rowspan="2">#</th>
                                     <th class="label-th" rowspan="2">Model Name</th>
-                                    <th class="label-th" rowspan="2">Process</th>
-                                    <th class="label-th" rowspan="2">NG Name</th>
+                                    <th class="label-th process-name-col" rowspan="2">Process</th>
+                                    <th class="label-th ng-name-col" rowspan="2">NG Name</th>
                                     @if (Top10DateCols.Count > 0)
                                     {
                                         <th class="blk-date"  colspan="@Top10DateCols.Count">Date</th>
@@ -737,15 +706,17 @@
                                     <tr>
                                         <td class="label-td n text-muted">@rank</td>
                                         <td class="label-td font-monospace" style="font-size:11px;">@x.Material</td>
-                                        <td class="label-td" style="font-size:11px;">
-                                            <span class="pt-badge">@d.ProcessType</span>
-                                            <span class="ms-1">@d.ProcessName</span>
+                                        <td class="label-td process-name-col" style="font-size:11px;">
+                                            <span class="process-cell">
+                                                <span class="pt-badge">@d.ProcessType</span>
+                                                <span class="process-label">@d.ProcessName</span>
+                                            </span>
                                         </td>
-                                        <td class="label-td" style="font-size:11px;">@d.NgName</td>
+                                        <td class="label-td ng-name-col" style="font-size:11px;">@d.NgName</td>
                                         @foreach (var col in Top10DateCols)
                                         {
                                             double v = d.DatePpm.GetValueOrDefault(col.Key);
-                                            <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpm(v)</td>
+                                            <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmOrBlank(v)</td>
                                         }
                                         @if (Top10DateCols.Count > 0) { <td class="sep-td"></td> }
                                         @{ var t10WeekCols = Top10WeekCols; }
@@ -753,9 +724,7 @@
                                         {
                                             var col   = t10WeekCols[wi4];
                                             double v  = d.WeekPpm.GetValueOrDefault(col.Key);
-                                            double? p = wi4 + 1 < t10WeekCols.Count
-                                                ? d.WeekPpm.GetValueOrDefault(t10WeekCols[wi4 + 1].Key)
-                                                : (double?)null;
+                                            double? p = PreviousNonZeroPpm(t10WeekCols, wi4, c => d.WeekPpm.GetValueOrDefault(c.Key));
                                             <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmWithDelta(v, p)</td>
                                         }
                                         @if (Top10WeekCols.Count > 0) { <td class="sep-td"></td> }
@@ -764,9 +733,7 @@
                                         {
                                             var col   = t10MonthCols[mi4];
                                             double v  = d.MonthPpm.GetValueOrDefault(col.Key);
-                                            double? p = mi4 + 1 < t10MonthCols.Count
-                                                ? d.MonthPpm.GetValueOrDefault(t10MonthCols[mi4 + 1].Key)
-                                                : (double?)null;
+                                            double? p = PreviousNonZeroPpm(t10MonthCols, mi4, c => d.MonthPpm.GetValueOrDefault(c.Key));
                                             <td class="@(v == 0 ? "ppm-zero" : "ppm-val")">@FormatPpmWithDelta(v, p)</td>
                                         }
                                     </tr>
@@ -780,99 +747,45 @@
     </div>
 }
 
-<style>
-    .grp-chk {
-        display: flex; align-items: center; gap: 8px;
-        padding: 3px 6px; font-size: 13px; cursor: pointer; border-radius: 4px;
-    }
-    .grp-chk:hover { background: #f8fafc; }
-    .grp-chk .grp-name { flex: 1; }
-    .grp-chk .grp-count { font-size: 10px; font-family: monospace; }
-
-    .pivot-table { font-size: 12px; white-space: nowrap; border-collapse: collapse; width: 100%; }
-    .pivot-table th {
-        background: #f1f5f9; font-weight: 700; font-size: 10px; color: #64748b;
-        text-transform: uppercase; letter-spacing: .4px;
-        padding: 5px 10px; text-align: right; border-bottom: 1px solid #e2e8f0;
-        position: sticky; top: 0; z-index: 1;
-    }
-    .pivot-table th.label-th { text-align: left; }
-    .pivot-table td {
-        padding: 4px 10px; border-bottom: 1px solid #f1f5f9;
-        text-align: right; font-family: monospace;
-    }
-    .pivot-table td.label-td {
-        text-align: left; font-family: inherit;
-    }
-    .pivot-table td.ppm-zero { color: #cbd5e1; }
-    .pivot-table td.ppm-val  { color: #1e293b; font-weight: 600; }
-    .grp-overall-row td {
-        background: #fef3c7; color: #78350f; font-weight: 700;
-        border-top: 2px solid #fbbf24; border-bottom: 2px solid #fbbf24;
-    }
-    .grp-total-row    { cursor: pointer; }
-    .grp-total-row td { background: #eff6ff; border-bottom: 1px solid #c7d2fe; }
-    .grp-total-row:hover td { background: #e0e7ff; }
-    .grp-sub-row td {
-        background: #fff; color: #475569;
-    }
-    .tog-icon { color: #6366f1; font-size: 10px; margin-right: 4px; }
-    .pt-badge {
-        display: inline-block; font-size: 10px; font-weight: 700;
-        padding: 1px 7px; border: 1px solid #cbd5e1; border-radius: 3px;
-        background: #f8fafc; color: #475569;
-    }
-    .mid-badge {
-        display: inline-block; font-size: 9px; font-weight: 700;
-        padding: 1px 5px; border-radius: 3px; background: #14b8a6; color: #fff;
-    }
-    .ls-badge {
-        display: inline-block; font-size: 9px; font-weight: 700;
-        padding: 1px 5px; border-radius: 3px; background: #64748b; color: #fff;
-    }
-    .grp-mid-row { cursor: pointer; }
-    .grp-ls-row td {
-        background: #fff; color: #64748b; font-size: 11px;
-    }
-    .top10-table {
-        table-layout: fixed;
-    }
-    .top10-table td.label-td,
-    .top10-table th.label-th {
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .top10-group-head {
-        background: #f1f5f9; border-top: 1px solid #e2e8f0;
-        border-bottom: 1px solid #e2e8f0; font-size: 13px;
-    }
-    .pivot-table th.sep-th,
-    .pivot-table td.sep-td { background: #e2e8f0; width: 8px; padding: 0; border: none; }
-    .pivot-table th.blk-date  { background: #dbeafe; color: #1e40af; text-align: center; }
-    .pivot-table th.blk-week  { background: #dcfce7; color: #166534; text-align: center; }
-    .pivot-table th.blk-month { background: #fef3c7; color: #92400e; text-align: center; }
-
-    /* Weekly Report Summary — Mid / Sub1 / Sub2 expand/collapse hierarchy */
-    .wr-mid-row td       { background: #fef3c7; color: #78350f; font-weight: 700;
-                           border-top: 2px solid #fbbf24; }
-    .wr-sub1-row td      { background: #eef2ff; color: #1e293b; font-weight: 600; font-size: 11.5px; }
-    .wr-sub2-row td      { background: #fff;    color: #475569; font-weight: 500;  font-size: 11px;   }
-    .wr-ls-row td        { background: #fafafa; color: #94a3b8; font-size: 10.5px;
-                           font-style: italic; font-family: monospace;
-                           border-top: 1px dashed #f1f5f9; }
-    .wr-row-expandable   { cursor: pointer; }
-    .wr-row-expandable:hover td { filter: brightness(0.97); }
-    .wr-tog        { display: inline-block; width: 14px; color: #6366f1; font-size: 10px; margin-right: 4px; }
-    .wr-tog-blank  { width: 14px; }
-</style>
 
 @code {
+    [Parameter] public bool ShowTitle { get; set; } = true;
+    [Parameter] public bool ShowSetup { get; set; } = true;
+
+    // ── Static-HTML export mode ────────────────────────────────────────────────
+    // Rendered by BmesReportHtmlExportService through the standalone HtmlRenderer. The
+    // Daily tab already scraped BMES, so this reuses that hierarchy instead of fetching
+    // again, and emits every period column (a static snapshot cannot expand).
+    [Parameter] public bool ExportMode { get; set; }
+    [Parameter] public DateTime? ExportStart { get; set; }
+    [Parameter] public DateTime? ExportEnd { get; set; }
+    [Parameter] public IReadOnlyList<ModelGroupRecord>? ExportGroups { get; set; }
+    [Parameter] public HierReports? ExportSharedHierarchy { get; set; }
+    [Parameter] public IProgress<string>? ExportProgress { get; set; }
+    private bool _exportGenerated;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ExportMode && !_exportGenerated
+            && ExportStart is { } start && ExportEnd is { } end
+            && ExportGroups is { Count: > 0 } groups)
+        {
+            _exportGenerated = true;
+            await GenerateReportAsync(start, end, groups, ExportProgress, ExportSharedHierarchy);
+        }
+    }
+
     private DateTime _startDate = DateTime.Today;
     private DateTime _endDate   = DateTime.Today;
     private bool     _isBusy;
     private string?  _savedDbPath;
     private string   _errorMessage = string.Empty;
+    private List<string> _logs = new();
+    private const string LogElementId = "ngRateLogWeekly";
+    private IProgress<string>? _externalProgress;
 
     private List<ModelGroupRecord> _groups             = new();
+    private IReadOnlyList<ModelGroupRecord>? _groupOverride;
     private HashSet<string>        _selectedGroupNames = new(StringComparer.Ordinal);
 
     private NgRateReportService.NgRateReport?       _report;
@@ -882,21 +795,29 @@
     private NgRateReportService.NgRateReport?       _reportBySubLeaf;    // every named leaf Sub (Sub2+) with its own bucket
     private NgRateReportService.LineShiftNgReport?  _lsNgReport;
     private NgRateReportService.LineShiftNgReport?  _midNgReport;
+    private HierPpmLookup                           _hierLookup = new();
     private HashSet<string>                         _expandedMids = new(StringComparer.Ordinal);
     private bool           _isReportBusy;
     private bool           _isExporting;
+    private bool           _showWeeklyModelSummaryDelta = true;
     private string         _reportError = string.Empty;
     private HashSet<string> _expandedGroups      = new(StringComparer.Ordinal);
     private HashSet<string> _expandedGroupsModel = new(StringComparer.Ordinal);
+    private Dictionary<string, WeeklyReportFormSettingRecord> _weeklyFormSettings = new(StringComparer.Ordinal);
+    private bool           _showWeeklyFormSettings;
+    private string         _weeklyFormSettingsStatus = string.Empty;
     private bool           _pendingChartRender;
     private const string   CanvasId      = "ngrateByGroupCanvas";
     private const string   CanvasIdModel = "ngrateByGroupModelCanvas";
+    private const string   WeeklyDisplayModeGroup = "Group";
+    private const string   WeeklyDisplayModeBGroup = "B-GROUP";
+    private const string   WeeklyRowKindLineGroup = "Sub Group";
+    private const string   WeeklyRowKindShiftGroup = "Shift Group";
 
     // Period collapse defaults / state
     private const int DefaultDateCap  = 10;
     private const int DefaultWeekCap  = 4;
     private const int DefaultMonthCap = 3;
-    private bool _dateExpanded;
     private bool _weekExpanded;
     private bool _monthExpanded;
 
@@ -907,18 +828,18 @@
         Array.Empty<NgRateReportService.PeriodColumn>();
     private IReadOnlyList<NgRateReportService.PeriodColumn> VisibleWeekCols =>
         _report is null ? Array.Empty<NgRateReportService.PeriodColumn>()
-        : _weekExpanded ? _report.WeekCols
+        : ExportMode || _weekExpanded ? _report.WeekCols
         : _report.WeekCols.Take(DefaultWeekCap).ToList();
     private IReadOnlyList<NgRateReportService.PeriodColumn> VisibleMonthCols =>
         _report is null ? Array.Empty<NgRateReportService.PeriodColumn>()
-        : _monthExpanded ? _report.MonthCols
+        : ExportMode || _monthExpanded ? _report.MonthCols
         : _report.MonthCols.Take(DefaultMonthCap).ToList();
 
     private int HiddenDateCount  => _report is null ? 0 : Math.Max(0, _report.DateCols.Count  - VisibleDateCols.Count);
     private int HiddenWeekCount  => _report is null ? 0 : Math.Max(0, _report.WeekCols.Count  - VisibleWeekCols.Count);
     private int HiddenMonthCount => _report is null ? 0 : Math.Max(0, _report.MonthCols.Count - VisibleMonthCols.Count);
 
-    // Top-10 카드 전용 고정 cap (상단 접기와 무관)
+    // Top-10 移대뱶 ?꾩슜 怨좎젙 cap (?곷떒 ?묎린? 臾닿?)
     private const int Top10DateCap  = 10;
     private const int Top10WeekCap  = 4;
     private const int Top10MonthCap = 3;
@@ -935,12 +856,11 @@
         _report is null ? 0
         : VisibleDateCols.Count + VisibleWeekCols.Count + VisibleMonthCols.Count;
 
-    // ── Weekly Report Summary (top-of-page table) ─────────────────────────────────
-    // Independent of the user's expand/collapse state — always shows the latest 4 weeks
+    // Independent of the user's expand/collapse state ??always shows the latest 4 weeks
     // and latest 3 months so the snapshot matches what the user copies into Excel.
     private const int WeeklyReportWeekCount  = 4;
     private const int WeeklyReportMonthCount = 3;
-    private const string BaselineMonthKey    = "202512"; // 2025년 12월 기준 (matches GetMonthKey format)
+    private const string BaselineMonthKey    = "202512"; // 2025??12??湲곗? (matches GetMonthKey format)
 
     private IReadOnlyList<NgRateReportService.PeriodColumn> WeeklyReportWeekCols =>
         _report is null ? Array.Empty<NgRateReportService.PeriodColumn>()
@@ -950,10 +870,10 @@
         _report is null ? Array.Empty<NgRateReportService.PeriodColumn>()
         : _report.MonthCols.Take(WeeklyReportMonthCount).ToList();
 
-    /// <summary>One row per node in the Mid → Sub1 → Sub2 hierarchy.
-    ///   Depth 0 = Mid           — read from _reportByMid (full subtree aggregate)
-    ///   Depth 1 = top-level Sub — read from _reportBySubGroup (subtree aggregate)
-    ///   Depth 2+ = nested Sub   — read from _reportBySubLeaf (this node's own
+    /// <summary>One row per node in the Mid ??Sub1 ??Sub2 hierarchy.
+    ///   Depth 0 = Mid           ??read from _reportByMid (full subtree aggregate)
+    ///   Depth 1 = top-level Sub ??read from _reportBySubGroup (subtree aggregate)
+    ///   Depth 2+ = nested Sub   ??read from _reportBySubLeaf (this node's own
     ///                              direct LineShifts only).
     /// <see cref="ParentId"/> ties each row to its immediate parent so the render
     /// layer can hide subtrees whose ancestor isn't expanded. Default ("") sub-groups
@@ -962,6 +882,7 @@
         string                     RowId,
         string?                    ParentId,
         string                     Display,
+        string                     RowKind,
         int                        Depth,
         bool                       IsLineShift,
         double?                    Baseline,
@@ -970,17 +891,17 @@
         Dictionary<string, double> WeekPpm,
         Dictionary<string, double> MonthPpm);
 
+    private sealed record WeeklyDisplaySettingRow(
+        string RowKey,
+        string GroupName,
+        string Material,
+        int    LineShiftCount,
+        int    BGroupCount,
+        string DisplayMode);
+
     /// <summary>RowIds of Mid / Sub rows the user has clicked open. Children of
     /// non-expanded rows are filtered out at render time.</summary>
     private HashSet<string> _expandedRowsWr = new(StringComparer.Ordinal);
-
-    private static string WeeklyLevelLabel(WeeklyReportRow row, IReadOnlySet<string> rowsWithChildren)
-    {
-        if (row.IsLineShift) return "Shift-Group";
-        if (row.Depth == 0) return "Model Name";
-        if (row.Depth == 1 && rowsWithChildren.Contains(row.RowId)) return "Building-Group";
-        return "Line-Group";
-    }
 
     private List<WeeklyReportRow> WeeklyReportRows
     {
@@ -995,6 +916,18 @@
                 {
                     int totalLs = mid.LineShifts.Count;
                     if (totalLs == 0 || string.IsNullOrEmpty(mid.Material)) continue;
+                    if (!MidHasVisibleData(grp.Name, mid)) continue;
+
+                    string displayMode = WeeklyDisplayModeOf(grp.Name, mid.Material);
+                    bool useBGroup = displayMode == WeeklyDisplayModeBGroup && MidHasNamedBGroups(mid);
+                    if (useBGroup)
+                    {
+                        foreach (var sub in mid.SubGroups)
+                            EmitSubRows(grp.Name, mid.Material, sub,
+                                        parentPath: string.Empty, depth: 0,
+                                        parentRowId: null, rows);
+                        continue;
+                    }
 
                     string midKey   = $"{grp.Name}::{mid.Material}";
                     string midRowId = "M::" + midKey;
@@ -1011,28 +944,105 @@
                         RowId: midRowId,
                         ParentId: null,
                         Display: mid.Material,
+                        RowKind: WeeklyDisplayModeGroup,
                         Depth: 0,
                         IsLineShift: false,
                         Baseline: midBaselineVal > 0 ? midBaselineVal : (double?)null,
                         Target: null, AchievementPct: null,
                         WeekPpm: midWeekPpm, MonthPpm: midMonthPpm));
-
-                    foreach (var sub in mid.SubGroups)
-                        EmitSubRows(grp.Name, mid.Material, sub,
-                                    parentPath: string.Empty, depth: 1,
-                                    parentRowId: midRowId, rows);
                 }
             }
             return rows;
         }
     }
 
-    /// <summary>Recursive walker — emits one row per named SubGroup with the immediate
+    private List<WeeklyDisplaySettingRow> WeeklyDisplaySettingRows =>
+        _groups
+            .Where(g => _selectedGroupNames.Contains(g.Name))
+            .SelectMany(g => g.MidGroups
+                .Where(mid => !string.IsNullOrEmpty(mid.Material) && mid.LineShifts.Count > 0)
+                .Select(mid => new WeeklyDisplaySettingRow(
+                    RowKey: WeeklyModelRowKey(g.Name, mid.Material),
+                    GroupName: g.Name,
+                    Material: mid.Material,
+                    LineShiftCount: mid.LineShifts.Count,
+                    BGroupCount: mid.SubGroups.Count(s => !string.IsNullOrWhiteSpace(s.Name) && s.AllLineShifts.Any()),
+                    DisplayMode: WeeklyDisplayModeOf(g.Name, mid.Material))))
+            .ToList();
+
+    private static string WeeklyModelRowKey(string groupName, string material)
+        => "weekly:model:" + NgRateModeSupport.ModelKey(groupName, material);
+
+    private WeeklyReportFormSettingRecord WeeklyModelSetting(string groupName, string material)
+    {
+        string rowKey = WeeklyModelRowKey(groupName, material);
+        if (_weeklyFormSettings.TryGetValue(rowKey, out var setting))
+            return setting;
+
+        setting = new WeeklyReportFormSettingRecord
+        {
+            RowKey = rowKey,
+            DisplayMode = WeeklyDisplayModeBGroup,
+        };
+        _weeklyFormSettings[rowKey] = setting;
+        return setting;
+    }
+
+    private static string NormalizeWeeklyDisplayMode(string? value)
+    {
+        string mode = (value ?? string.Empty).Trim();
+        return mode.Equals(WeeklyDisplayModeGroup, StringComparison.OrdinalIgnoreCase)
+            ? WeeklyDisplayModeGroup
+            : WeeklyDisplayModeBGroup;
+    }
+
+    private string WeeklyDisplayModeOf(string groupName, string material)
+        => NormalizeWeeklyDisplayMode(WeeklyModelSetting(groupName, material).DisplayMode);
+
+    private void SetWeeklyDisplayMode(string groupName, string material, string? displayMode)
+    {
+        WeeklyModelSetting(groupName, material).DisplayMode = NormalizeWeeklyDisplayMode(displayMode);
+        _weeklyFormSettingsStatus = string.Empty;
+    }
+
+    private void ToggleWeeklyFormSettings()
+    {
+        _showWeeklyFormSettings = !_showWeeklyFormSettings;
+        _weeklyFormSettingsStatus = string.Empty;
+    }
+
+    private void LoadWeeklyFormSettings()
+    {
+        _weeklyFormSettings = Repo.GetWeeklyReportFormSettings();
+        _weeklyFormSettingsStatus = string.Empty;
+    }
+
+    private void SaveWeeklyFormSettings()
+    {
+        var settings = WeeklyDisplaySettingRows
+            .Select(row => WeeklyModelSetting(row.GroupName, row.Material))
+            .ToList();
+
+        if (settings.Count == 0)
+        {
+            _weeklyFormSettingsStatus = "No rows";
+            return;
+        }
+
+        Repo.SaveWeeklyReportFormSettings(settings);
+        LoadWeeklyFormSettings();
+        _weeklyFormSettingsStatus = "Saved";
+    }
+
+    private static bool MidHasNamedBGroups(MidGroupRecord mid)
+        => mid.SubGroups.Any(s => !string.IsNullOrWhiteSpace(s.Name) && s.AllLineShifts.Any());
+
+    /// <summary>Recursive walker ??emits one row per named SubGroup with the immediate
     /// parent RowId so the renderer can fold the subtree. Top-level subs (depth=1)
     /// pull PPM from <c>_reportBySubGroup</c>; nested subs use <c>_reportBySubLeaf</c>.
     /// Empty-named subs don't emit a row but recurse at the parent's depth.</summary>
     private void EmitSubRows(string groupName, string material, SubGroupRecord sub,
-                             string parentPath, int depth, string parentRowId,
+                             string parentPath, int depth, string? parentRowId,
                              List<WeeklyReportRow> rows)
     {
         string nodeName = sub.Name ?? string.Empty;
@@ -1040,7 +1050,7 @@
             ? parentPath
             : (string.IsNullOrEmpty(parentPath) ? nodeName : parentPath + "::" + nodeName);
 
-        string thisRowId = parentRowId;
+        string? thisRowId = parentRowId;
         bool emit = !string.IsNullOrEmpty(nodeName) && sub.AllLineShifts.Count() > 0;
         if (emit)
         {
@@ -1048,11 +1058,13 @@
             var monthPpm = new Dictionary<string, double>();
             string ownRowId;
             double bv;
+            string rowKind;
 
-            if (depth == 1)
+            if (depth <= 1)
             {
-                string sub1Key = SubGroupKeyOf(groupName, material, sub);
+                string sub1Key = ModelGroupPickerHelpers.SubGroupKeyOf(groupName, material, sub);
                 ownRowId = "S1::" + sub1Key;
+                rowKind = WeeklyDisplayModeBGroup;
                 foreach (var col in WeeklyReportWeekCols)
                     weekPpm[col.Key] = SubGroupTotalPpm(sub1Key, col.Key);
                 foreach (var col in WeeklyReportMonthCols)
@@ -1061,8 +1073,9 @@
             }
             else
             {
-                string leafKey = SubLeafKeyOf(groupName, material, path);
+                string leafKey = ModelGroupPickerHelpers.SubLeafKeyOf(groupName, material, path);
                 ownRowId = "S" + depth + "::" + leafKey;
+                rowKind = WeeklyRowKindLineGroup;
                 foreach (var col in WeeklyReportWeekCols)
                     weekPpm[col.Key] = SubLeafTotalPpm(leafKey, col.Key);
                 foreach (var col in WeeklyReportMonthCols)
@@ -1074,6 +1087,7 @@
                 RowId: ownRowId,
                 ParentId: parentRowId,
                 Display: nodeName,
+                RowKind: rowKind,
                 Depth: depth,
                 IsLineShift: false,
                 Baseline: bv > 0 ? bv : (double?)null,
@@ -1100,6 +1114,7 @@
                         RowId: "LS::" + ownRowId + "::" + ls,
                         ParentId: ownRowId,
                         Display: ls,
+                        RowKind: WeeklyRowKindShiftGroup,
                         Depth: lsDepth,
                         IsLineShift: true,
                         Baseline: lsBv > 0 ? lsBv : (double?)null,
@@ -1116,22 +1131,26 @@
 
     /// <summary>PPM for a single LineShift, read from <c>_reportByModel</c>.</summary>
     private double LsTotalPpm(string lineShift, string colKey)
-    {
-        if (_reportByModel is null) return 0;
-        var rows = _reportByModel.GroupSummary.GetValueOrDefault(lineShift);
-        var tot  = rows?.FirstOrDefault(r => r.IsTotal);
-        return tot?.Ppm.GetValueOrDefault(colKey) ?? 0;
-    }
+        => _hierLookup.Ls(lineShift, colKey);
 
     private void ToggleWrRow(string rowId)
     {
         if (!_expandedRowsWr.Remove(rowId)) _expandedRowsWr.Add(rowId);
     }
 
+    /// <summary>
+    /// Whether a collapsible section counts as opened. The static export has no toggle
+    /// to click, so everything is opened there — a collapsed row would be unreachable.
+    /// </summary>
+    private bool IsSectionExpanded(HashSet<string> expandedKeys, string key)
+        => ExportMode || expandedKeys.Contains(key);
+
     /// <summary>True iff every ancestor of <paramref name="row"/> is expanded.
     /// Mid rows (no parent) are always visible.</summary>
     private bool IsWrRowVisible(WeeklyReportRow row, IReadOnlyDictionary<string, WeeklyReportRow> byId)
     {
+        if (ExportMode) return true;
+
         string? pid = row.ParentId;
         while (pid is not null)
         {
@@ -1141,72 +1160,18 @@
         return true;
     }
 
-    /// <summary>SubGroup namespace key — same scheme as midKey ("대그룹::Material") but with the
-    /// SubGroup name appended. Empty SubGroup names get a stable placeholder so default buckets
-    /// don't collide across MidGroups.</summary>
-    private static string SubGroupKeyOf(string groupName, string material, SubGroupRecord sub)
-    {
-        string subSegment = string.IsNullOrEmpty(sub.Name) ? "<default>" : sub.Name;
-        return $"{groupName}::{material}::{subSegment}";
-    }
-
-    /// <summary>Leaf-path namespace key — uses the full sub path joined by "::" so a
-    /// leaf like `_D3 → L` becomes "Group::Material::_D3::L". Distinguishes a Sub1's
-    /// own direct LineShifts from each Sub2 leaf inside the same Sub1.</summary>
-    private static string SubLeafKeyOf(string groupName, string material, string path)
-        => $"{groupName}::{material}::{path}";
-
-    /// <summary>Walk the SubGroup tree and build a (LineShift → leaf-path key) mapping.
-    /// Every named node that holds direct LineShifts becomes its own bucket — so a
-    /// container Sub1 like `_D3` is NOT a bucket here (it has no direct LineShifts;
-    /// its row reads from <c>_reportBySubGroup</c> instead), while every leaf Sub2
-    /// (`_D3_L`, `_D3_R`, …) maps its own LSes to its own key. Empty-named placeholder
-    /// subs are walked through but don't take a path segment.</summary>
-    private static void BuildSubLeafMapping(
-        string groupName, string material, SubGroupRecord sub,
-        string parentPath,
-        Dictionary<string, string> mapping, List<string> list)
-    {
-        string nodeName = sub.Name ?? string.Empty;
-        string path = string.IsNullOrEmpty(nodeName)
-            ? parentPath
-            : (string.IsNullOrEmpty(parentPath) ? nodeName : parentPath + "::" + nodeName);
-
-        if (!string.IsNullOrEmpty(nodeName) && sub.LineShifts.Count > 0)
-        {
-            string leafKey = SubLeafKeyOf(groupName, material, path);
-            if (!list.Contains(leafKey)) list.Add(leafKey);
-            foreach (var ls in sub.LineShifts)
-                if (!string.IsNullOrEmpty(ls))
-                    mapping[ls] = leafKey;
-        }
-
-        foreach (var child in sub.SubGroups)
-            BuildSubLeafMapping(groupName, material, child, path, mapping, list);
-    }
-
-    /// <summary>Total PPM for a top-level Sub at the given period — read from
+    /// <summary>Total PPM for a top-level Sub at the given period ??read from
     /// <c>_reportBySubGroup</c>, which uses the same NG/Input weighted aggregation
     /// the By Model report uses, just bucketed at SubGroup granularity.</summary>
     private double SubGroupTotalPpm(string subKey, string colKey)
-    {
-        if (_reportBySubGroup is null) return 0;
-        var rows = _reportBySubGroup.GroupSummary.GetValueOrDefault(subKey);
-        var tot  = rows?.FirstOrDefault(r => r.IsTotal);
-        return tot?.Ppm.GetValueOrDefault(colKey) ?? 0;
-    }
+        => _hierLookup.Sub1(subKey, colKey);
 
-    /// <summary>Total PPM for a single nested leaf Sub at the given period — read from
+    /// <summary>Total PPM for a single nested leaf Sub at the given period ??read from
     /// <c>_reportBySubLeaf</c>, mapped per leaf path.</summary>
     private double SubLeafTotalPpm(string leafKey, string colKey)
-    {
-        if (_reportBySubLeaf is null) return 0;
-        var rows = _reportBySubLeaf.GroupSummary.GetValueOrDefault(leafKey);
-        var tot  = rows?.FirstOrDefault(r => r.IsTotal);
-        return tot?.Ppm.GetValueOrDefault(colKey) ?? 0;
-    }
+        => _hierLookup.Sub2(leafKey, colKey);
 
-    /// <summary>선택된 그룹들의 MeanOfMembers 값을 다시 평균 — 전체 TOTAL 행에 사용.</summary>
+    /// <summary>?좏깮??洹몃９?ㅼ쓽 MeanOfMembers 媛믪쓣 ?ㅼ떆 ?됯퇏 ???꾩껜 TOTAL ?됱뿉 ?ъ슜.</summary>
     private double MeanOfGroups(string colKey)
     {
         double sum = 0;
@@ -1221,7 +1186,7 @@
         return cnt == 0 ? 0 : sum / cnt;
     }
 
-    /// <summary>정렬 기준 키: 이전 주차(Week[1]) → Week[0] → Date[0] 순 fallback.</summary>
+    /// <summary>?뺣젹 湲곗? ?? ?댁쟾 二쇱감(Week[1]) ??Week[0] ??Date[0] ??fallback.</summary>
     private (string Key, string Bucket) SortRefKey()
     {
         if (VisibleWeekCols.Count >= 2) return (VisibleWeekCols[1].Key, "week");
@@ -1231,7 +1196,7 @@
     }
 
     // Display-only label for the sort-reference period: shifts week -1 and date -2 days.
-    // Does NOT affect sort logic — `SortRefKey` still returns the real column key.
+    // Does NOT affect sort logic ??`SortRefKey` still returns the real column key.
     private static string ShiftedRefLabel(string key, string bucket)
     {
         if (string.IsNullOrEmpty(key)) return "";
@@ -1250,8 +1215,8 @@
     }
 
     // Display-only header shifts for the Top-10 table columns:
-    //   date column header → -2 days (format MM/dd to match FormatDateHeader)
-    //   week column header → -1 week ("W" + shifted week number)
+    //   date column header ??-2 days (format MM/dd to match FormatDateHeader)
+    //   week column header ??-1 week ("W" + shifted week number)
     // Underlying `col.Key` (data binding) is unchanged.
     private static string ShiftedDateHeader(NgRateReportService.PeriodColumn col)
     {
@@ -1277,9 +1242,25 @@
     {
         var (k, b) = SortRefKey();
         if (string.IsNullOrEmpty(k)) return 0;
+        if (b == "week")
+        {
+            IReadOnlyList<NgRateReportService.PeriodColumn> cols = _midNgReport is null
+                ? Array.Empty<NgRateReportService.PeriodColumn>()
+                : _midNgReport.WeekCols;
+            int start = cols.ToList().FindIndex(c => c.Key == k);
+            if (start < 0) return d.WeekPpm.GetValueOrDefault(k);
+
+            for (int i = start; i < cols.Count; i++)
+            {
+                double value = d.WeekPpm.GetValueOrDefault(cols[i].Key);
+                if (value > 0) return value;
+            }
+
+            return 0;
+        }
+
         return b switch
         {
-            "week" => d.WeekPpm.GetValueOrDefault(k),
             "date" => d.DatePpm.GetValueOrDefault(k),
             _      => 0,
         };
@@ -1298,9 +1279,18 @@
         return false;
     }
 
+    private bool MidHasVisibleData(string groupName, MidGroupRecord mid)
+    {
+        if (mid.LineShifts.Count == 0 || string.IsNullOrEmpty(mid.Material)) return false;
+        foreach (var col in VisibleDateCols)  if (MidPpmAvgOfSubs(groupName, mid, col.Key) > 0) return true;
+        foreach (var col in VisibleWeekCols)  if (MidPpmAvgOfSubs(groupName, mid, col.Key) > 0) return true;
+        foreach (var col in VisibleMonthCols) if (MidPpmAvgOfSubs(groupName, mid, col.Key) > 0) return true;
+        return false;
+    }
+
     /// <summary>
-    /// 중그룹 PPM — per-model과 동일하게 서비스의 combo-merged 결과 사용.
-    /// processType=null 이면 Total, 아니면 해당 ProcessType row의 PPM.
+    /// 以묎렇猷?PPM ??per-model怨??숈씪?섍쾶 ?쒕퉬?ㅼ쓽 combo-merged 寃곌낵 ?ъ슜.
+    /// processType=null ?대㈃ Total, ?꾨땲硫??대떦 ProcessType row??PPM.
     /// </summary>
     private double MidGroupPpm(string groupName, string material, string colKey, string? processType = null)
     {
@@ -1318,26 +1308,14 @@
     /// <summary>Mid PPM rendered as the simple average of its Sub1 PPMs (skipping
     /// zero ones) to avoid the combo-sum aggregation inflating Mid above any of
     /// its children. Falls back to <see cref="MidGroupPpm"/> when no named Sub1
-    /// has data. Total-only — no per-ProcessType variant since the Weekly Summary
+    /// has data. Total-only ??no per-ProcessType variant since the Weekly Summary
     /// table doesn't break down by PT here.</summary>
     private double MidPpmAvgOfSubs(string groupName, MidGroupRecord mid, string colKey)
-    {
-        double sum = 0; int cnt = 0;
-        foreach (var sub in mid.SubGroups)
-        {
-            if (string.IsNullOrEmpty(sub.Name)) continue;
-            if (sub.AllLineShifts.Count() == 0) continue;
-            string sub1Key = SubGroupKeyOf(groupName, mid.Material, sub);
-            double v = SubGroupTotalPpm(sub1Key, colKey);
-            if (v <= 0) continue;
-            sum += v; cnt++;
-        }
-        return cnt == 0 ? MidGroupPpm(groupName, mid.Material, colKey) : sum / cnt;
-    }
+        => MidGroupPpm(groupName, mid.Material, colKey);
 
-    /// <summary>대그룹 PPM — 멤버 중그룹들의 PPM 평균 (값>0만).
-    /// Total(processType=null)일 때는 Mid 값을 Sub1-평균으로 가져와서 combo-sum
-    /// 누적 부풀림을 막고, ProcessType 분해는 기존대로 _reportByMid 의 PT 행을 평균.</summary>
+    /// <summary>?洹몃９ PPM ??硫ㅻ쾭 以묎렇猷밸뱾??PPM ?됯퇏 (媛?0留?.
+    /// Total(processType=null)???뚮뒗 Mid 媛믪쓣 Sub1-?됯퇏?쇰줈 媛?몄???combo-sum
+    /// ?꾩쟻 遺?由쇱쓣 留됯퀬, ProcessType 遺꾪빐??湲곗〈?濡?_reportByMid ??PT ?됱쓣 ?됯퇏.</summary>
     private double MeanOfMembers(string groupName, string colKey, string? processType)
     {
         var grp = _groups.FirstOrDefault(g => g.Name == groupName);
@@ -1368,8 +1346,9 @@
 
     private void ReloadGroups()
     {
-        _groups = Repo.GetModelGroups();
+        _groups = _groupOverride?.ToList() ?? Repo.GetModelGroups();
         _selectedGroupNames.RemoveWhere(n => !_groups.Any(g => g.Name == n));
+        LoadWeeklyFormSettings();
     }
 
     private void SelectAllGroups()
@@ -1385,10 +1364,127 @@
         else     _selectedGroupNames.Remove(name);
     }
 
+    private void ToggleGroup((string Name, bool Selected) args)
+        => ToggleGroup(args.Name, args.Selected);
+
     private void SetToday()
     {
         _startDate = DateTime.Today;
         _endDate   = DateTime.Today;
+    }
+
+    public async Task GenerateReportAsync(
+        DateTime startDate,
+        DateTime endDate,
+        IReadOnlyList<ModelGroupRecord> selectedGroups,
+        IProgress<string>? progress = null,
+        HierReports? sharedHierarchy = null)
+    {
+        _groupOverride = selectedGroups.ToList();
+        await GenerateReportAsync(
+            startDate,
+            endDate,
+            selectedGroups.Select(g => g.Name).Distinct(StringComparer.Ordinal).ToList(),
+            progress,
+            sharedHierarchy);
+    }
+
+    public async Task GenerateReportAsync(
+        DateTime startDate,
+        DateTime endDate,
+        IReadOnlyCollection<string> selectedGroupNames,
+        IProgress<string>? progress = null,
+        HierReports? sharedHierarchy = null)
+    {
+        _startDate = startDate.Date;
+        _endDate = endDate.Date;
+        ReloadGroups();
+        _selectedGroupNames = selectedGroupNames
+            .Where(name => _groups.Any(g => string.Equals(g.Name, name, StringComparison.Ordinal)))
+            .ToHashSet(StringComparer.Ordinal);
+
+        _externalProgress = progress;
+        try
+        {
+            if (sharedHierarchy?.ByGroup is not null)
+                await UseSharedHierarchyReportAsync(sharedHierarchy, progress);
+            else
+                await GetReportAsync();
+            if (_report is null)
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(_reportError)
+                    ? "Weekly report did not produce results."
+                    : _reportError);
+        }
+        finally
+        {
+            _externalProgress = null;
+        }
+    }
+
+    private async Task UseSharedHierarchyReportAsync(
+        HierReports sharedHierarchy,
+        IProgress<string>? progress)
+    {
+        if (_isReportBusy || _isBusy || _selectedGroupNames.Count == 0) return;
+
+        _isReportBusy     = true;
+        _isBusy           = true;
+        _reportError      = string.Empty;
+        _errorMessage     = string.Empty;
+        _savedDbPath      = null;
+        _report           = null;
+        _reportByMid      = null;
+        _reportByModel    = null;
+        _reportBySubGroup = null;
+        _reportBySubLeaf  = null;
+        _lsNgReport       = null;
+        _midNgReport      = null;
+        _hierLookup       = new();
+        _logs.Clear();
+        StateHasChanged();
+
+        try
+        {
+            string dbPath = sharedHierarchy.ByGroup?.DbPath ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(dbPath) || !File.Exists(dbPath))
+            {
+                _reportError = "Shared NG Rate DB was not found.";
+                return;
+            }
+
+            progress?.Report($"Reusing Daily hierarchy report: {Path.GetFileName(dbPath)}");
+            _savedDbPath      = dbPath;
+            _report           = sharedHierarchy.ByGroup;
+            _reportByMid      = sharedHierarchy.ByMid;
+            _reportByModel    = sharedHierarchy.ByLs;
+            _reportBySubGroup = sharedHierarchy.BySub1;
+            _reportBySubLeaf  = sharedHierarchy.BySub2;
+            _hierLookup       = HierPpmLookup.From(sharedHierarchy);
+
+            var selectedGroups = NgRateModeSupport.SelectGroupsByName(_groups, _selectedGroupNames);
+            var mappings = NgRateModeSupport.BuildGroupMappings(selectedGroups);
+            if (!mappings.HasData)
+            {
+                _reportError = "No LineShift found in the selected groups.";
+                return;
+            }
+
+            _lsNgReport = await NgRateReportSvc.ComputeLineShiftNgDetailsAsync(
+                dbPath, mappings.LineShiftList, progress, _startDate, _endDate);
+            _midNgReport = await NgRateReportSvc.ComputeGroupedNgDetailsAsync(
+                dbPath, mappings.MidMapping, progress, _startDate, _endDate);
+            _pendingChartRender = true;
+        }
+        catch (Exception ex)
+        {
+            _reportError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isBusy = false;
+            _isReportBusy = false;
+            StateHasChanged();
+        }
     }
 
     private async Task GetDataAsync()
@@ -1400,19 +1496,23 @@
         }
         _errorMessage = string.Empty;
         _savedDbPath  = null;
+        _logs.Clear();
         _isBusy       = true;
         Activity.Log("NG Rate Weekly", $"Get Data {_startDate:yyyy-MM-dd} ~ {_endDate:yyyy-MM-dd}");
         StateHasChanged();
 
-        var progress = new Progress<string>(_ => { });
+        IProgress<string> progress = new Progress<string>(AddLog);
 
         try
         {
             string? dbPath = await NgRate.FetchAndSaveAsync(_startDate, _endDate, progress);
             if (string.IsNullOrEmpty(dbPath))
-                _errorMessage = "Fetch failed — check credentials / logs.";
+                _errorMessage = "Fetch failed ??check credentials / logs.";
             else
+            {
                 _savedDbPath = dbPath;
+                AddLog($"Saved DB: {Path.GetFileName(dbPath)}");
+            }
         }
         catch (Exception ex)
         {
@@ -1427,9 +1527,23 @@
 
     private async Task GetReportAsync()
     {
-        if (_isReportBusy || _selectedGroupNames.Count == 0) return;
+        if (_isReportBusy || _isBusy || _selectedGroupNames.Count == 0) return;
+        if (_endDate < _startDate)
+        {
+            _reportError = "End date must be on or after start date.";
+            return;
+        }
+        if (!NgRateSettings.IsCredentialsConfigured)
+        {
+            _reportError = "BMES credentials are not configured.";
+            return;
+        }
+
         _isReportBusy     = true;
+        _isBusy           = true;
         _reportError      = string.Empty;
+        _errorMessage     = string.Empty;
+        _savedDbPath      = null;
         _report           = null;
         _reportByMid      = null;
         _reportByModel    = null;
@@ -1437,42 +1551,66 @@
         _reportBySubLeaf  = null;
         _lsNgReport       = null;
         _midNgReport      = null;
-        Activity.Log("NG Rate Weekly", $"Generate Report selectedGroups={_selectedGroupNames.Count:N0}");
+        _hierLookup       = new();
+        _logs.Clear();
+        Activity.Log("NG Rate Weekly", $"Get Data {_startDate:yyyy-MM-dd} ~ {_endDate:yyyy-MM-dd}");
         StateHasChanged();
+
+        IProgress<string> progress = new Progress<string>(AddLog);
 
         try
         {
-            string? dbPath = _savedDbPath ?? NgRateReportSvc.FindMostRecentDb();
-            if (string.IsNullOrEmpty(dbPath) || !File.Exists(dbPath))
+            progress.Report($"Fetching data: {_startDate:yyyy-MM-dd} ~ {_endDate:yyyy-MM-dd}");
+            string? dbPath = await NgRate.GetOrFetchAsync(_startDate, _endDate, progress);
+            _isBusy = false;
+
+            if (string.IsNullOrEmpty(dbPath))
             {
-                _reportError = "No .db file found. Run Get Data first.";
+                _errorMessage = "Data fetch or save failed - check the log.";
+                _reportError  = _errorMessage;
                 return;
             }
 
-            var mapping        = new Dictionary<string, string>(StringComparer.Ordinal); // LS → 대그룹
-            var midMapping     = new Dictionary<string, string>(StringComparer.Ordinal); // LS → 중그룹 (Material)
-            var subMapping     = new Dictionary<string, string>(StringComparer.Ordinal); // LS → top-level SubGroup (Sub1) — subtree aggregate
-            var subLeafMapping = new Dictionary<string, string>(StringComparer.Ordinal); // LS → leaf SubGroup path  — Sub2+ per-node bucket
-            var modelMapping   = new Dictionary<string, string>(StringComparer.Ordinal); // LS → LS (per-LS pseudo-group)
+            _savedDbPath = dbPath;
+            ReloadGroups();
+            Activity.Log("NG Rate Weekly", $"Generate Report selectedGroups={_selectedGroupNames.Count:N0}");
+            progress.Report($"Using DB: {Path.GetFileName(dbPath)}");
+
+            var mapping        = new Dictionary<string, string>(StringComparer.Ordinal); // LS ???洹몃９
+            var midMapping     = new Dictionary<string, string>(StringComparer.Ordinal); // LS ??以묎렇猷?(Material)
+            var subMapping     = new Dictionary<string, string>(StringComparer.Ordinal); // LS ??top-level SubGroup (Sub1) ??subtree aggregate
+            var subLeafMapping = new Dictionary<string, string>(StringComparer.Ordinal); // LS ??leaf SubGroup path  ??Sub2+ per-node bucket
+            var modelMapping   = new Dictionary<string, string>(StringComparer.Ordinal); // LS ??LS (per-LS pseudo-group)
             var groupList    = new List<string>();
             var midList      = new List<string>();
             var subList      = new List<string>();
             var subLeafList  = new List<string>();
             var modelList    = new List<string>();
-            foreach (var g in _groups.Where(g => _selectedGroupNames.Contains(g.Name)))
+            var selectedGroups = NgRateModeSupport.SelectGroupsByName(_groups, _selectedGroupNames);
+            var commonMappings = NgRateModeSupport.BuildGroupMappings(selectedGroups);
+            mapping        = commonMappings.GroupMapping;
+            midMapping     = commonMappings.MidMapping;
+            subMapping     = commonMappings.Sub1Mapping;
+            subLeafMapping = commonMappings.Sub2Mapping;
+            modelMapping   = commonMappings.LineShiftMapping;
+            groupList      = commonMappings.GroupList;
+            midList        = commonMappings.MidList;
+            subList        = commonMappings.Sub1List;
+            subLeafList    = commonMappings.Sub2List;
+            modelList      = commonMappings.LineShiftList;
+            foreach (var g in selectedGroups)
             {
                 groupList.Add(g.Name);
                 foreach (var mid in g.MidGroups)
                 {
-                    string matKey = $"{g.Name}::{mid.Material}"; // namespace by 대그룹 to avoid clashes
+                    string matKey = $"{g.Name}::{mid.Material}"; // namespace by ?洹몃９ to avoid clashes
                     if (!midList.Contains(matKey)) midList.Add(matKey);
 
                     // For each top-level SubGroup, collect every descendant LineShift under one
                     // sub-key (Sub1 row). Then walk the tree recursively to build per-leaf-path
-                    // buckets that drive Sub2+ rows in the Weekly Report Summary table.
                     foreach (var sub in mid.SubGroups)
                     {
-                        string subKey = SubGroupKeyOf(g.Name, mid.Material, sub);
+                        string subKey = ModelGroupPickerHelpers.SubGroupKeyOf(g.Name, mid.Material, sub);
                         if (!subList.Contains(subKey)) subList.Add(subKey);
                         foreach (var ls in sub.AllLineShifts)
                         {
@@ -1480,8 +1618,9 @@
                             subMapping[ls] = subKey;
                         }
 
-                        BuildSubLeafMapping(g.Name, mid.Material, sub, parentPath: string.Empty,
-                                            subLeafMapping, subLeafList);
+                        ModelGroupPickerHelpers.BuildSubLeafMapping(
+                            g.Name, mid.Material, sub, parentPath: string.Empty,
+                            subLeafMapping, subLeafList);
                     }
 
                     foreach (var ls in mid.LineShifts)
@@ -1494,6 +1633,16 @@
                     }
                 }
             }
+            mapping        = commonMappings.GroupMapping;
+            midMapping     = commonMappings.MidMapping;
+            subMapping     = commonMappings.Sub1Mapping;
+            subLeafMapping = commonMappings.Sub2Mapping;
+            modelMapping   = commonMappings.LineShiftMapping;
+            groupList      = commonMappings.GroupList;
+            midList        = commonMappings.MidList;
+            subList        = commonMappings.Sub1List;
+            subLeafList    = commonMappings.Sub2List;
+            modelList      = commonMappings.LineShiftList;
 
             if (mapping.Count == 0)
             {
@@ -1501,18 +1650,25 @@
                 return;
             }
 
-            var progress = new Progress<string>(_ => { });
-            _report           = await NgRateReportSvc.GenerateReportAsync(dbPath, mapping,      groupList, progress);
-            _reportByMid      = await NgRateReportSvc.GenerateReportAsync(dbPath, midMapping,   midList,   progress);
-            _reportByModel    = await NgRateReportSvc.GenerateReportAsync(dbPath, modelMapping, modelList, progress);
+            _report           = await NgRateReportSvc.GenerateReportAsync(dbPath, mapping,      groupList, progress, _startDate, _endDate);
+            _reportByMid      = await NgRateReportSvc.GenerateSummaryReportAsync(dbPath, midMapping,   midList,   progress, _startDate, _endDate, weightedGroupSummary: true);
+            _reportByModel    = await NgRateReportSvc.GenerateSummaryReportAsync(dbPath, modelMapping, modelList, progress, _startDate, _endDate, weightedGroupSummary: true);
             _reportBySubGroup = subList.Count > 0
-                ? await NgRateReportSvc.GenerateReportAsync(dbPath, subMapping, subList, progress)
+                ? await NgRateReportSvc.GenerateSummaryReportAsync(dbPath, subMapping, subList, progress, _startDate, _endDate, weightedGroupSummary: true)
                 : null;
             _reportBySubLeaf = subLeafList.Count > 0
-                ? await NgRateReportSvc.GenerateReportAsync(dbPath, subLeafMapping, subLeafList, progress)
+                ? await NgRateReportSvc.GenerateSummaryReportAsync(dbPath, subLeafMapping, subLeafList, progress, _startDate, _endDate, weightedGroupSummary: true)
                 : null;
-            _lsNgReport    = await NgRateReportSvc.ComputeLineShiftNgDetailsAsync(dbPath, modelList, progress);
-            _midNgReport   = await NgRateReportSvc.ComputeGroupedNgDetailsAsync(dbPath, midMapping, progress);
+            _lsNgReport    = await NgRateReportSvc.ComputeLineShiftNgDetailsAsync(dbPath, modelList, progress, _startDate, _endDate);
+            _midNgReport   = await NgRateReportSvc.ComputeGroupedNgDetailsAsync(dbPath, midMapping, progress, _startDate, _endDate);
+            _hierLookup = new HierPpmLookup
+            {
+                ByGroup = _report,
+                ByMid = _reportByMid,
+                BySub1 = _reportBySubGroup,
+                BySub2 = _reportBySubLeaf,
+                ByLs = _reportByModel,
+            };
             _pendingChartRender = true;
         }
         catch (Exception ex)
@@ -1521,26 +1677,35 @@
         }
         finally
         {
+            _isBusy = false;
             _isReportBusy = false;
             StateHasChanged();
         }
     }
 
-    private async Task ExportExcelAsync()
+    private async Task ExportCsvAsync()
     {
-        var reports = BuildExcelReports();
-        if (reports.Count == 0 || _isExporting) return;
+        if (_isExporting) return;
 
         _isExporting = true;
-        Activity.Log("NG Rate Weekly", $"Export Excel reports={reports.Count:N0}");
+        _reportError = string.Empty;
+        await InvokeAsync(StateHasChanged);
+        await Task.Yield();
+
         try
         {
+            var reports = BuildExcelReports();
+            if (reports.Count == 0) return;
+
+            Activity.Log("NG Rate Weekly", $"Export CSV reports={reports.Count:N0}");
             var details = BuildExcelDetailReports();
-            byte[] bytes = await Task.Run(() => NgRateExcelExporter.Export(reports, details, includeDateColumns: false));
-            string b64 = Convert.ToBase64String(bytes);
-            string name = $"NgRate_WeeklyReport_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-            await JS.InvokeVoidAsync("downloadBase64File", name, b64,
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            byte[] bytes = await Task.Run(() => NgRateCsvExporter.ExportReports(reports, details, includeDateColumns: false));
+            string name = $"NgRate_WeeklyReport_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            await BrowserDownload.DownloadBytesAsync(JS, name, bytes, CsvExportUtility.ContentType);
+        }
+        catch (Exception ex)
+        {
+            _reportError = $"Export failed: {ex.Message}";
         }
         finally
         {
@@ -1549,14 +1714,155 @@
         }
     }
 
+    private async Task ExportWeeklyModelSummaryCsvAsync()
+    {
+        if (_isExporting) return;
+
+        _isExporting = true;
+        _reportError = string.Empty;
+        await InvokeAsync(StateHasChanged);
+        await Task.Yield();
+
+        try
+        {
+            var export = BuildWeeklyModelSummaryExport();
+            if (export is null || export.Rows.Count == 0) return;
+
+            Activity.Log("NG Rate Weekly", $"Export weekly Sub Group summary CSV rows={export.Rows.Count:N0}");
+            byte[] bytes = await Task.Run(() => NgRateCsvExporter.ExportWeeklyModelSummary(export));
+            string name = $"NgRate_WeeklyBGrSummary_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            await BrowserDownload.DownloadBytesAsync(JS, name, bytes, CsvExportUtility.ContentType);
+        }
+        catch (Exception ex)
+        {
+            _reportError = $"Export failed: {ex.Message}";
+        }
+        finally
+        {
+            _isExporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private NgRateExcelExporter.WeeklyModelSummaryExport? BuildWeeklyModelSummaryExport()
+    {
+        if (_report is null || _reportByMid is null || _selectedGroupNames.Count == 0)
+            return null;
+
+        var weekCols = _report.WeekCols.ToList();
+        var monthCols = _report.MonthCols.ToList();
+        if (weekCols.Count == 0 && monthCols.Count == 0)
+            return null;
+
+        var rows = new List<NgRateExcelExporter.WeeklyModelSummaryRow>();
+
+        Dictionary<string, double> Values(
+            IReadOnlyList<NgRateReportService.PeriodColumn> cols,
+            Func<string, double> getter)
+            => cols.ToDictionary(c => c.Key, c => getter(c.Key), StringComparer.Ordinal);
+
+        rows.Add(new NgRateExcelExporter.WeeklyModelSummaryRow(
+            Label: "TOTAL",
+            Level: "Total",
+            Depth: 0,
+            IsTotal: true,
+            WeekPpm: Values(weekCols, MeanOfGroups),
+            MonthPpm: Values(monthCols, MeanOfGroups)));
+
+        foreach (var gName in _selectedGroupNames)
+        {
+            var grpVm = _groups.FirstOrDefault(g => g.Name == gName);
+            if (grpVm is null) continue;
+
+            rows.Add(new NgRateExcelExporter.WeeklyModelSummaryRow(
+                Label: gName,
+                Level: "Group",
+                Depth: 0,
+                IsTotal: false,
+                WeekPpm: Values(weekCols, key => MeanOfMembers(gName, key, null)),
+                MonthPpm: Values(monthCols, key => MeanOfMembers(gName, key, null))));
+
+            foreach (var mid in grpVm.MidGroups.Where(mid =>
+                         !string.IsNullOrEmpty(mid.Material) && mid.LineShifts.Count > 0))
+            {
+                string displayMode = WeeklyDisplayModeOf(gName, mid.Material);
+                bool useBGroup = displayMode == WeeklyDisplayModeBGroup
+                    && _reportBySubGroup is not null
+                    && MidHasNamedBGroups(mid);
+
+                if (!useBGroup)
+                {
+                    if (!MidHasWeeklyModelSummaryData(gName, mid, weekCols, monthCols))
+                        continue;
+
+                    rows.Add(new NgRateExcelExporter.WeeklyModelSummaryRow(
+                        Label: mid.Material,
+                        Level: "Group",
+                        Depth: 1,
+                        IsTotal: false,
+                        WeekPpm: Values(weekCols, key => MidPpmAvgOfSubs(gName, mid, key)),
+                        MonthPpm: Values(monthCols, key => MidPpmAvgOfSubs(gName, mid, key))));
+                    continue;
+                }
+
+                foreach (var sub in mid.SubGroups)
+                {
+                    if (string.IsNullOrWhiteSpace(sub.Name) || !sub.AllLineShifts.Any())
+                        continue;
+
+                    string subKey = ModelGroupPickerHelpers.SubGroupKeyOf(gName, mid.Material, sub);
+                    if (!BGrHasWeeklyModelSummaryData(subKey, weekCols, monthCols))
+                        continue;
+
+                    rows.Add(new NgRateExcelExporter.WeeklyModelSummaryRow(
+                        Label: sub.Name,
+                        Level: "Sub Group",
+                        Depth: 1,
+                        IsTotal: false,
+                        WeekPpm: Values(weekCols, key => SubGroupTotalPpm(subKey, key)),
+                        MonthPpm: Values(monthCols, key => SubGroupTotalPpm(subKey, key))));
+                }
+            }
+        }
+
+        return new NgRateExcelExporter.WeeklyModelSummaryExport(
+            Title: "Summary - Group / Sub Group x Week / Month (PPM)",
+            WeekColumns: weekCols,
+            MonthColumns: monthCols,
+            Rows: rows,
+            IncludeDelta: _showWeeklyModelSummaryDelta);
+    }
+
+    private bool BGrHasWeeklyModelSummaryData(
+        string bGrKey,
+        IReadOnlyList<NgRateReportService.PeriodColumn> weekCols,
+        IReadOnlyList<NgRateReportService.PeriodColumn> monthCols)
+    {
+        foreach (var col in weekCols) if (SubGroupTotalPpm(bGrKey, col.Key) > 0) return true;
+        foreach (var col in monthCols) if (SubGroupTotalPpm(bGrKey, col.Key) > 0) return true;
+        return false;
+    }
+
+    private bool MidHasWeeklyModelSummaryData(
+        string groupName,
+        MidGroupRecord mid,
+        IReadOnlyList<NgRateReportService.PeriodColumn> weekCols,
+        IReadOnlyList<NgRateReportService.PeriodColumn> monthCols)
+    {
+        if (mid.LineShifts.Count == 0 || string.IsNullOrEmpty(mid.Material)) return false;
+        foreach (var col in weekCols) if (MidPpmAvgOfSubs(groupName, mid, col.Key) > 0) return true;
+        foreach (var col in monthCols) if (MidPpmAvgOfSubs(groupName, mid, col.Key) > 0) return true;
+        return false;
+    }
+
     private List<(string Label, NgRateReportService.NgRateReport Report)> BuildExcelReports()
     {
         var reports = new List<(string Label, NgRateReportService.NgRateReport Report)>();
         if (_report is not null)           reports.Add(("Weekly - Group", _report));
         if (_reportByMid is not null)      reports.Add(("Weekly - Model", _reportByMid));
         if (_reportByModel is not null)    reports.Add(("Weekly - Shift", _reportByModel));
-        if (_reportBySubGroup is not null) reports.Add(("Weekly - B-GR", _reportBySubGroup));
-        if (_reportBySubLeaf is not null)  reports.Add(("Weekly - S-GR", _reportBySubLeaf));
+        if (_reportBySubGroup is not null) reports.Add(("Weekly - Sub Group", _reportBySubGroup));
+        if (_reportBySubLeaf is not null)  reports.Add(("Weekly - Shift Group", _reportBySubLeaf));
         return reports;
     }
 
@@ -1568,48 +1874,96 @@
         return reports;
     }
 
+    /// <summary>
+    /// Labels and per-group series for the two group-trend charts, or null when there is
+    /// nothing to plot. Shared by the interactive path (JS interop after render) and the
+    /// static-export path (an inert JSON payload the exported page reads on tab open).
+    /// </summary>
+    private (string[] Labels, object[] Series)? BuildGroupTrendChartData()
+    {
+        if (_report is null || _reportByModel is null || _selectedGroupNames.Count == 0)
+            return null;
+
+        // Build combined period list — keep service's DESC order (newest → oldest) per block.
+        // Each entry: (label, keyOrNull). Null key = separator position.
+        var periodCells = new List<(string Label, string? Key)>();
+        if (VisibleDateCols.Count > 0)
+            periodCells.AddRange(VisibleDateCols.Select(c => (c.Header, (string?)c.Key)));
+        if (VisibleWeekCols.Count > 0)
+        {
+            if (periodCells.Count > 0) periodCells.Add(("", null));
+            periodCells.AddRange(VisibleWeekCols.Select(c => (c.Header, (string?)c.Key)));
+        }
+        if (VisibleMonthCols.Count > 0)
+        {
+            if (periodCells.Count > 0) periodCells.Add(("", null));
+            periodCells.AddRange(VisibleMonthCols.Select(c => (c.Header, (string?)c.Key)));
+        }
+
+        if (periodCells.Count == 0) return null;
+
+        var labels = periodCells.Select(p => p.Label).ToArray();
+        var series = _selectedGroupNames.Select(object (g) => new
+        {
+            name   = ReportGroupDisplayName(g),
+            values = periodCells.Select(p =>
+            {
+                if (p.Key is null) return (double?)null; // separator
+                double v = MeanOfMembers(g, p.Key, null);
+                return v > 0 ? (double?)v : null;
+            }).ToArray(),
+        }).ToArray();
+
+        return (labels, series);
+    }
+
+    /// <summary>
+    /// Period block sizes for the static export's viewer toolbar. Every table here lays its
+    /// period columns out as date → week → month at the right edge of each row, so the
+    /// viewer locates them by counting back from the end once it knows these counts.
+    /// </summary>
+    private MarkupString ExportPeriodMeta()
+    {
+        if (!ExportMode) return default;
+        string json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            date  = VisibleDateCols.Count,
+            week  = VisibleWeekCols.Count,
+            month = VisibleMonthCols.Count,
+        });
+        return new MarkupString($"<script type=\"application/json\" data-periods>{json}</script>");
+    }
+
+    /// <summary>
+    /// Inert chart payload for the static export: the exported page has no Blazor circuit,
+    /// so its tab-switch script reads these on tab open and calls
+    /// <c>ngRateGroupChart.render</c> itself. Nothing is emitted outside export mode, or
+    /// when there is no chart to draw.
+    ///
+    /// Written as raw markup because a <c>&lt;script&gt;</c> body is raw text — HTML-encoded
+    /// quotes would never be decoded and <c>JSON.parse</c> would fail. That is safe here:
+    /// System.Text.Json's default encoder escapes <c>&lt;</c> and <c>&gt;</c>, so no group
+    /// name can close the script tag early.
+    /// </summary>
+    private MarkupString ExportChartPayload(string canvasId)
+    {
+        if (!ExportMode || BuildGroupTrendChartData() is not { } data)
+            return default;
+
+        string json = System.Text.Json.JsonSerializer.Serialize(
+            new { canvasId, labels = data.Labels, series = data.Series });
+        return new MarkupString($"<script type=\"application/json\" data-chart>{json}</script>");
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_pendingChartRender && _report is not null && _reportByModel is not null
-            && _selectedGroupNames.Count > 0)
+        if (_pendingChartRender && BuildGroupTrendChartData() is { } data)
         {
             _pendingChartRender = false;
-
-            // Build combined period list — keep service's DESC order (newest → oldest) per block.
-            // Each entry: (label, keyOrNull). Null key = separator position.
-            var periodCells = new List<(string Label, string? Key)>();
-            if (VisibleDateCols.Count > 0)
-                periodCells.AddRange(VisibleDateCols.Select(c => (c.Header, (string?)c.Key)));
-            if (VisibleWeekCols.Count > 0)
-            {
-                if (periodCells.Count > 0) periodCells.Add(("", null));
-                periodCells.AddRange(VisibleWeekCols.Select(c => (c.Header, (string?)c.Key)));
-            }
-            if (VisibleMonthCols.Count > 0)
-            {
-                if (periodCells.Count > 0) periodCells.Add(("", null));
-                periodCells.AddRange(VisibleMonthCols.Select(c => (c.Header, (string?)c.Key)));
-            }
-
-            if (periodCells.Count == 0) return;
-
-            var labels = periodCells.Select(p => p.Label).ToArray();
-
-            var grpSeries = _selectedGroupNames.Select(g => new
-            {
-                name   = g,
-                values = periodCells.Select(p =>
-                {
-                    if (p.Key is null) return (double?)null; // separator
-                    double v = MeanOfMembers(g, p.Key, null);
-                    return v > 0 ? (double?)v : null;
-                }).ToArray(),
-            }).ToArray();
-
             try
             {
-                await JS.InvokeVoidAsync("ngRateGroupChart.render", CanvasId,      labels, grpSeries);
-                await JS.InvokeVoidAsync("ngRateGroupChart.render", CanvasIdModel, labels, grpSeries);
+                await JS.InvokeVoidAsync("ngRateGroupChart.render", CanvasId,      data.Labels, data.Series);
+                await JS.InvokeVoidAsync("ngRateGroupChart.render", CanvasIdModel, data.Labels, data.Series);
             }
             catch { }
         }
@@ -1637,18 +1991,59 @@
     }
 
     private static string FormatPpm(double v)
-        => v == 0 ? "-" : ((long)Math.Round(v)).ToString("N0");
+        => NgRateModeSupport.FormatPpm(v);
+
+    private static string FormatPpmOrBlank(double v)
+        => v <= 0 ? string.Empty : FormatPpm(v);
+
+    private static string ReportGroupDisplayName(string groupName)
+    {
+        if (string.IsNullOrWhiteSpace(groupName)) return string.Empty;
+
+        int idx = groupName.IndexOf('_', StringComparison.Ordinal);
+        return idx >= 0 && idx + 1 < groupName.Length
+            ? groupName[(idx + 1)..]
+            : groupName;
+    }
+
+    private MarkupString FormatModelSummaryPpm(double current, double? prev)
+        => _showWeeklyModelSummaryDelta
+            ? FormatPpmWithDelta(current, prev)
+            : new MarkupString(System.Net.WebUtility.HtmlEncode(FormatPpmOrBlank(current)));
+
+    private static double? PreviousNonZeroPpm(
+        IReadOnlyList<NgRateReportService.PeriodColumn> columns,
+        int currentIndex,
+        Func<NgRateReportService.PeriodColumn, double> valueOf)
+    {
+        for (int i = currentIndex + 1; i < columns.Count; i++)
+        {
+            double value = valueOf(columns[i]);
+            if (value > 0) return value;
+        }
+        return null;
+    }
+
+    private void AddLog(string message)
+    {
+        _logs.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
+        _externalProgress?.Report(message);
+        _ = InvokeAsync(StateHasChanged);
+    }
 
     /// <summary>
-    /// Renders a PPM cell content with a "(±delta)" tail vs the previous period.
+    /// Renders a PPM cell content with a "+/-delta" tail vs the previous period.
     /// Red for positive (worse), blue for negative (better). Skipped when prev is
     /// null (oldest period) or both values are zero. Used on Mid-Group rows in the
     /// For Weekly Report view.
     /// </summary>
     private static MarkupString FormatPpmWithDelta(double current, double? prev)
     {
+        if (current <= 0)
+            return new MarkupString(string.Empty);
+
         string main = FormatPpm(current);
-        if (!prev.HasValue || (current == 0 && prev.Value == 0))
+        if (!prev.HasValue || prev.Value <= 0)
             return new MarkupString(System.Net.WebUtility.HtmlEncode(main));
 
         double delta = current - prev.Value;
@@ -1656,7 +2051,7 @@
             return new MarkupString(System.Net.WebUtility.HtmlEncode(main));
 
         long absRounded = (long)Math.Round(Math.Abs(delta));
-        string sign     = delta > 0 ? "+" : "−";   // Unicode minus reads cleaner
+        string sign     = delta > 0 ? "+" : "-";
         string color    = delta > 0 ? "#dc2626" : "#2563eb";   // red / blue
         string deltaStr = $" ({sign}{absRounded:N0})";
 
@@ -1667,12 +2062,6 @@
             "</span>");
     }
 
-    private static int ProcessTypeRank(string pt) => pt switch
-    {
-        "SUB"      => 1,
-        "MAIN"     => 2,
-        "FUNCTION" => 3,
-        "VISUAL"   => 4,
-        _          => pt.StartsWith("SUB") ? 1 : 5,
-    };
+    private static int ProcessTypeRank(string pt)
+        => NgRateModeSupport.ProcessTypeRank(pt);
 }

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 319,
+  "sourceFile": "16.1 BRS-161016 DT Report test  suspension used SUS-ARRAY of new vender CSY Tech Vina first lot 2 test again date 25.10.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\319.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 319,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is comparable but needs correction for changed-factor scope, a vision-spot calculation error, and tension subgroup grouping.",
+    "issues": [
+      "Changed factor is too narrow as lot only; evidence frames new vendor SUS-ARRAY first lot test.",
+      "Vision spot NG counts and rates are incorrect for both test and normal rows.",
+      "Tension rows 48 and 50 are cited but not shown in context, and D side loses inherited condition.",
+      "Decision rows say same normal/can use, but draft judgments emphasize worse without noting report conclusion.",
+      "Review purpose omits later content items despite included outcomes."
+    ],
+    "requiredUserQuestions": [
+      "Should the primary changed factor be new vendor SUS-ARRAY first lot 2 test again versus Normal?"
+    ],
+    "correctionPlan": [
+      "Revise changedFactor changeDomain to supplier/material/lot as supported by title and purpose.",
+      "Correct vision spot to test 3/1900 = 0.157895% and normal 2/1950 = 0.102564%.",
+      "Group tension C and D sides under Test Sus and Normal with inherited labels and cite rows 47-50.",
+      "Add limitation or summary noting report conclusion says comparable/can use despite small NG-rate differences.",
+      "Expand purpose/content summary to include function, tension, drop, and load checks if retained as outcomes."
+    ],
+    "evidencePolicy": "Row citations are mostly sufficient, but rows 48 and 50 need visible context for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4748,
+    "output_tokens": 842,
+    "total_tokens": 5590
+  }
+}

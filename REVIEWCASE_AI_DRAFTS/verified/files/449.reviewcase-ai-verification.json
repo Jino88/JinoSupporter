@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 449,
+  "sourceFile": "25. MSU-L20S15-07 Report test check lot separate VP+CD date 15.4.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\449.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:10Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 449,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but the changed-factor and outcome grouping are not reliable enough for final use.",
+    "issues": [
+      "Changed factor mixes test type, lot date, and extracted row numbers as conditions.",
+      "Baseline is marked implicit despite VP+CD OK appearing as a likely baseline/control.",
+      "Primary evidence for VP+CD OK vs VP+CD separate omits key content rows 10-11.",
+      "Measurement outcomes appear generated from headers or mixed count tables, not valid measurement comparisons.",
+      "CD lot date rows may be subgroup/test-lot context rather than the primary changed factor."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended primary comparison VP+CD OK versus VP+CD separate, with CD lot dates as subgroups?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor from source purpose and content rows, preserving test type and lot-date keys separately.",
+      "Set VP+CD OK as baseline if supported, and separate VP+CD/CD lot dates as test conditions only where evidenced.",
+      "Add condition evidence rows 10-11 and relevant lot rows 13-17 plus result rows used for each condition.",
+      "Remove or reclassify header-derived measurement statistics as count/defect outcomes unless raw measurements are present.",
+      "Group function-check and NG-separate results under one validation context with clear subresults."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient for condition definition and some outcome statistics."
+  },
+  "usage": {
+    "input_tokens": 4328,
+    "output_tokens": 781,
+    "total_tokens": 5109
+  }
+}

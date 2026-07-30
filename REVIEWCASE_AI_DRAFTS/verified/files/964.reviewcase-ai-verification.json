@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 964,
+  "sourceFile": "9. BRS-161016(GMI) Report TEST  new dry machine 15.10.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\964.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 964,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source evidence but the changed-factor and outcome grouping are too mixed for final Ask AI use.",
+    "issues": [
+      "Primary changed factor mixes machine validation, jig material, dry time, temperature, and assembly type.",
+      "Old Jig baseline is only a narrow 22.10 context and is not valid for all cited conditions.",
+      "No-change judgement ignores differing temperature, dry time, and repeated test conditions.",
+      "Measurement outcomes cite headers or summary-like rows rather than the raw supporting rows.",
+      "Sheet1 Normal vs test measurements are not integrated with the dry/glue outcome context."
+    ],
+    "requiredUserQuestions": [
+      "Should the case be framed as new dry machine validation or jig material optimization?",
+      "Which condition is the intended baseline: normal machine, old jig, or prior dry process?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor around one primary context and keep date/jig/temp/time as subgroup keys.",
+      "Separate 22.10 old-vs-new jig comparisons from earlier FR/material trials unless justified by source context.",
+      "Recalculate outcomes only for rows sharing comparable temperature, dry time, type, and date context.",
+      "Replace header-only evidence with cited result rows supporting each metric or measurement.",
+      "Review Sheet1 context before including dimensional measurements in the same case."
+    ],
+    "evidencePolicy": "Row citations exist, but many are insufficient or misgrouped for final evidence."
+  },
+  "usage": {
+    "input_tokens": 9537,
+    "output_tokens": 827,
+    "total_tokens": 10364
+  }
+}

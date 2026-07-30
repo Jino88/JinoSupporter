@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 398,
+  "sourceFile": "21. BRS-161014  Report test VP mold 7, mold 9  add 0.05T in middle position 21.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\398.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 398,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid comparable source evidence but grouping, metrics, and numeric extraction are not reliable enough for Ask AI.",
+    "issues": [
+      "Changed factor is garbled; should be normal mold #6 versus test molds #7/#9 with 0.05T added.",
+      "VP bending total NG values are incorrect; rows 27-29 show 16, 6, and 7 bending counts.",
+      "Vision and function outcomes omit key total rows and lose C2/E2 grouping context.",
+      "Header-only measurement outcomes are invalid statistical artifacts.",
+      "Decision row 99 is omitted despite directly summarizing result."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rewrite changed factor as VP mold #7/#9 with 0.05T middle position versus normal VP mold #6.",
+      "Rebuild VP bending outcome from rows 21-29, preserving C2, E2, and Total groups.",
+      "Rebuild vision outcome from rows 34-53, using OK/bending as subconditions and total rows for comparison.",
+      "Rebuild function outcome from rows 58-94, preserving C2-Total, E2-Total, and overall Total groups.",
+      "Remove header-derived measurement outcomes and cite decision row 99 as conclusion evidence."
+    ],
+    "evidencePolicy": "Citations exist, but current cited rows are incomplete and some support invalid derived metrics."
+  },
+  "usage": {
+    "input_tokens": 10158,
+    "output_tokens": 772,
+    "total_tokens": 10930
+  }
+}

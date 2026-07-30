@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 745,
+  "sourceFile": "55. TIU C11-20 Report test jig press VPCD sub1 2026.2.5_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\745.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 745,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but combines distinct test contexts and uses an incorrect normal baseline for one comparison.",
+    "issues": [
+      "Changed factor merges separate position-holder, VP date, and VP/CD sub1 jig-press tests.",
+      "VP date comparison uses Normal row from another section instead of same-section Normal row.",
+      "Measurement outcome is misclassified from defect-count headers, not real measurement data.",
+      "Changed condition includes unsupported or overbroad items from candidate rows.",
+      "Evidence list includes rows not explained by the drafted outcomes."
+    ],
+    "requiredUserQuestions": [
+      "Should Test (2) be a follow-up case to Test or a separate review case?"
+    ],
+    "correctionPlan": [
+      "Split changed factors by report section or sheet context.",
+      "Rebuild VP date comparison using Test!42 versus Test!44.",
+      "Keep Test (2)!24 versus Test (2)!26 as the VP/CD sub1 jig-press comparison.",
+      "Remove or recast the measurement outcome as defect category breakdown only.",
+      "Limit evidence rows to titles, purpose, condition rows, headers, and matched comparison rows."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping and matched-baseline citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4536,
+    "output_tokens": 788,
+    "total_tokens": 5324
+  }
+}

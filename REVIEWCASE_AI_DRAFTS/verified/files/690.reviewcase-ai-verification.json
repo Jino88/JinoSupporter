@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 690,
+  "sourceFile": "49. TIU L5S3-01 R Report test AWF machine compare A2+D3 to check reason NG function D3 -  date 2026.01.03_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\690.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:47Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 690,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but the changed-factor and outcome grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor incorrectly mixes machines, line, total, and date as one test condition.",
+      "Baseline/test conditions for A2 vs D3 are not clearly represented.",
+      "Total and after-1-day rows are treated like peer machine conditions.",
+      "Spurious measurement outcomes were generated from title/header rows.",
+      "Header/context rows for key result tables are under-cited in the case evidence."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison D3 coils moved to A2 versus D3 line, or AWF machine-to-machine?",
+      "Should the after-1-day recheck be a separate subgroup rather than a main condition?"
+    ],
+    "correctionPlan": [
+      "Redefine the primary changed factor from the purpose/content rows.",
+      "Separate subgroup keys by line, AWF machine, date/recheck round, and total rows.",
+      "Keep AWF NG rate and function results as outcomes under the same validated comparison if applicable.",
+      "Remove title/header-derived measurement outcomes.",
+      "Cite table headers plus each retained data row used for comparisons."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping and header support are insufficient for Ask AI final evidence."
+  },
+  "usage": {
+    "input_tokens": 4995,
+    "output_tokens": 802,
+    "total_tokens": 5797
+  }
+}

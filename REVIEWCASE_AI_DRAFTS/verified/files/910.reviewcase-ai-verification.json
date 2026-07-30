@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 910,
+  "sourceFile": "8. BRS-161014  GMI Report test VP new mold #11, #12 date 21.9.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\910.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 910,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the mold #11/#12 validation context but has incorrect NG-rate calculations and invalid measurement grouping.",
+    "issues": [
+      "Sub 1 NG rate uses wrong control rate and likely wrong total-rate field.",
+      "Function outcome calls mold #12 worse despite near-equal rate and source decision allowing #12.",
+      "FO measurements are misparsed from mold numbers instead of measured values.",
+      "Measurement outcomes are fragmented by rows instead of grouped tables and averages.",
+      "Review title is a data row, not the report topic."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factor as normal VP baseline versus test VP mold #11 and #12.",
+      "Recalculate NG rates from the total NG and total rate columns for each section.",
+      "Align judgements with source conclusion: #12 usable, #11 needs improvement.",
+      "Regroup SPL, THD, IMP, and FO as measurement tables with proper condition columns and averages.",
+      "Replace title/purpose with report title and purpose rows."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient because parsed values and grouping are wrong."
+  },
+  "usage": {
+    "input_tokens": 9066,
+    "output_tokens": 770,
+    "total_tokens": 9836
+  }
+}

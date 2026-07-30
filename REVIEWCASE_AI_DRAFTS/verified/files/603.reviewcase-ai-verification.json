@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 603,
+  "sourceFile": "39. TIU C11-20R   Đo cho Trung ME 23.1.2026.  RAW soundcheck_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\603.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:59Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 603,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites real rows but the changed-factor and outcome grouping are too ambiguous for final evidence.",
+    "issues": [
+      "Changed factor is filename, not an evidence-based condition.",
+      "Baseline/test conditions are marked unknown despite Before/After and Normal/Pos headers.",
+      "SPL Before/After INK is mixed with IMP Normal/Pos data under one vague factor.",
+      "Only header rows are cited for several statistics; numeric evidence is weak.",
+      "Review title and metric are generic extraction artifacts."
+    ],
+    "requiredUserQuestions": [
+      "Is the main comparison Before vs After INK for SPL?",
+      "Should Normal vs Pos # conditions be a separate position test?",
+      "Should QM and Glonics sheets be included or excluded?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor from cited condition headers, not filename.",
+      "Separate or justify SPL, IMP, and THD outcome groups under the correct validation context.",
+      "Define baseline and changed conditions for each comparison.",
+      "Add representative numeric row citations for each measured domain.",
+      "Remove Standard/average columns as test conditions unless source context supports them."
+    ],
+    "evidencePolicy": "Row citations exist, but header-only citations are insufficient for verified final evidence."
+  },
+  "usage": {
+    "input_tokens": 6812,
+    "output_tokens": 587,
+    "total_tokens": 7399
+  }
+}

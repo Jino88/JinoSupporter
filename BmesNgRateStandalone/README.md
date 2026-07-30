@@ -36,10 +36,14 @@ The script publishes the app as a self-contained win-x64 build to
 `bin/Release/net8.0-windows/win-x64/publish` and creates:
 
 ```txt
-BmesNgRateStandalone/dist/BmesNgRateStandalone_Setup.exe
+BmesNgRateStandalone/dist/BmesNgRateStandalone_Setup-<version>.exe
 ```
 
 The same flow is available from VS Code task `build-standalone-installer`.
+
+`PublishStandaloneUpdate.ps1` calls this script with `-SkipPublish` and copies the installer
+into `JinoSupporter.Web/standalone-updates/`, where the web app's **Tools > PC Download** page
+serves it. If Inno Setup is missing the publish still succeeds and the page offers the zip only.
 
 ## Auto Update
 

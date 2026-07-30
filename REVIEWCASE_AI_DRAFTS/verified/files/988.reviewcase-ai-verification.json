@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 988,
+  "sourceFile": "Copy of 161016 and 201506 TEST REPAIR NG FUNCTION_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\988.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 988,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable context but its changed-factor and outcome grouping are too mixed for final evidence.",
+    "issues": [
+      "Changed factor conflates repair method, voltage levels, module tests, dates, and lines.",
+      "Baseline and test conditions are ambiguous across normal, spec normal, and voltage normal.",
+      "Outcomes mix SPK repair validation, S921 module function, voltage hearing checks, and E2 process defects.",
+      "Several measurement outcomes are derived from headers or incompatible numeric fields.",
+      "Subgroup keys are nonsensical and omit needed model, sheet, date, line, and test-stage grouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary factor as NG hearing repair method with voltage-level variants only where supported.",
+      "Separate or clearly subgroup SPK repair validation, voltage-up hearing test, and S921 module confirmation.",
+      "Remove unrelated date/line process-defect series unless tied to the same repair validation.",
+      "Rebuild outcomes using paired rows with matching model, date, line, voltage condition, and test stage.",
+      "Drop header-only measurement statistics and keep only citeable row-level metrics."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations do not sufficiently support the draft grouping."
+  },
+  "usage": {
+    "input_tokens": 14036,
+    "output_tokens": 794,
+    "total_tokens": 14830
+  }
+}

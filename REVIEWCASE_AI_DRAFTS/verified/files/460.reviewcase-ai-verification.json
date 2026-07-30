@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 460,
+  "sourceFile": "26. L20S15-07 Report test JIG CD load tray repair  date   2025.04.19_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\460.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 460,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft cites existing rows but does not reliably define the repair-versus-normal comparison or include key result outcomes.",
+    "issues": [
+      "Changed factor is filename-like, not the source-supported repair vs normal/lot comparison.",
+      "Baseline and test conditions are left explicit as unknown despite repair and normal rows.",
+      "Report result rows with dyne, function, NG, and NG rate are mostly omitted from outcomes.",
+      "Material lot/date and repair status are confounded and need preserved as grouping context.",
+      "Tension spec is not captured in subresults."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary factor JIG CD Load Tray Repair vs Normal, or CD lot/date 3/17 vs other lots?",
+      "Should Report row 28 be treated as aggregate repair production data?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to the source-supported comparison, preserving lot/date context.",
+      "Set baseline/test conditions from Report and Tension repair/normal rows.",
+      "Add outcome group for Report result metrics including dyne, tension input/OK, VP-CD separation, NG counts, and NG rates.",
+      "Cite the actual data rows Report!24, Report!26, Report!28, Report!30 and Tension!4.",
+      "Populate tension spec as 1.2 kgf and keep each material/type/date as subgroup keys."
+    ],
+    "evidencePolicy": "Citations exist, but row coverage and grouping are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3809,
+    "output_tokens": 808,
+    "total_tokens": 4617
+  }
+}

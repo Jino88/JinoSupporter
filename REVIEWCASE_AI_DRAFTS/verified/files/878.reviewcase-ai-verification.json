@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 878,
+  "sourceFile": "73.BRS-2015 Report checking NTI  sample reduce coil 58 turn to 57 turn date 13.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\878.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 878,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable Normal vs Coil Test data exists, but the draft misstates the changed factor and uses weak outcome evidence grouping.",
+    "issues": [
+      "Changed factor is the filename, not the actual coil-turn change.",
+      "Baseline and test conditions are marked unknown despite Normal and Coil Test columns.",
+      "Rows do not directly prove 58-turn vs 57-turn unless source title metadata is accepted.",
+      "Outcome grouping mixes headers and stats without citing data rows.",
+      "Fo Coil Test evidence is incomplete for all 10 samples."
+    ],
+    "requiredUserQuestions": [
+      "May the file title be used as evidence that Coil Test is the 57-turn reduced coil?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to coil turns reduced from 58 to 57 if title metadata is allowed.",
+      "Set baseline as Normal/58-turn and changed condition as Coil Test/57-turn, or limit to Normal vs Coil Test.",
+      "Group SPL, THD, IMP, and Fo as outcomes under one validation context.",
+      "Cite header rows plus representative data or average rows for each outcome.",
+      "Include all relevant Fo Normal and Coil Test rows or averages."
+    ],
+    "evidencePolicy": "Row citations prove Normal vs Coil Test headers, but not the 58-to-57 turn meaning without title metadata."
+  },
+  "usage": {
+    "input_tokens": 5348,
+    "output_tokens": 802,
+    "total_tokens": 6150
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 504,
+  "sourceFile": "3. BRS-2015 Report test material Frame using PT Dimension 0.20 - 0.22 date 28.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\504.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 504,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures the main PT 0.20–0.22 frame test comparison but needs outcome and metric corrections before final use.",
+    "issues": [
+      "Changed factor should name PT dimension 0.20–0.22 test frame vs normal frame, not generic Frame test.",
+      "Function outcome uses the higher normal total NG rate while the decision cites the lower normal rate.",
+      "Module line outcome cited in the decision is missing from outcomes.",
+      "Dimension outcome cites only a header row, not the measurement data rows.",
+      "Unjudged detected-table outcome is poorly grouped and may duplicate dimension/final sample context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to reflect PT dimension 0.20–0.22 test material frame versus normal frame.",
+      "Recalculate or split function outcome to match the decision basis and row columns.",
+      "Add module line comparison outcome with cited rows if extractable, or state it as a limitation.",
+      "Replace dimension evidence with actual sample/value rows and judge test vs normal if supported.",
+      "Remove or relabel the generic detected-table outcome after grouping verification."
+    ],
+    "evidencePolicy": "Row citations exist, but some are incomplete or insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 5477,
+    "output_tokens": 793,
+    "total_tokens": 6270
+  }
+}

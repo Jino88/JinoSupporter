@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 481,
+  "sourceFile": "28. MSU-L20S15-07GMI - Report test 2 Type new bond PW1470SX-N1 & A-3424B Ass'y VP+CD- 2025.07.07_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\481.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 481,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because the main bond-type comparison is mislabeled and several outcomes are misparsed.",
+    "issues": [
+      "PW 1470SX-N1 is repeatedly mislabeled as PW 1470AX-N1.",
+      "Changed factor incorrectly includes Total as a test condition.",
+      "Baseline/test grouping should be Normal/SJ4765 vs PW 1470SX-N1 and A-3424B new bonds.",
+      "Several measurement outcomes are header-derived or numerically nonsensical.",
+      "Key decap comparison rows are omitted while some cited rows lack visible support here."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename all PW 1470AX-N1 references to PW 1470SX-N1 if source rows confirm.",
+      "Define one changed factor as bond type comparison against Normal/SJ4765.",
+      "Remove Total from changedCondition and treat it only as an aggregate subgroup.",
+      "Rebuild outcomes from valid NG rate, tension, UV, and bond amount rows only.",
+      "Add direct evidence rows for PW 1470SX-N1, A-3424B, Normal, and decap NG summaries."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient because key condition evidence is omitted and several cited rows are misparsed."
+  },
+  "usage": {
+    "input_tokens": 7454,
+    "output_tokens": 804,
+    "total_tokens": 8258
+  }
+}

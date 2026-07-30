@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 860,
+  "sourceFile": "70. BRS-161016  Report checking NG Touch sample date 12.10.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\860.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 860,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft invents a baseline/test material change for a non-comparative NG touch inspection report.",
+    "issues": [
+      "No explicit baseline or changed condition is evidenced.",
+      "Ink marking is a checking method, not a changed factor.",
+      "Sheet2 measurement outcomes lack tied context to the report.",
+      "Cited row 201506!27 is not shown in context for verification.",
+      "Outcome domains are grouped under an unsupported change factor."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove the invented baseline versus Marking Ink Coil factor.",
+      "Do not approve this as comparative change evidence.",
+      "Exclude Sheet2 metrics unless source context ties them to this report.",
+      "Keep only a non-comparative inspection summary if needed.",
+      "Require visible row-level evidence for any future metric use."
+    ],
+    "evidencePolicy": "Citations exist but do not support a changed-condition comparison."
+  },
+  "usage": {
+    "input_tokens": 2957,
+    "output_tokens": 725,
+    "total_tokens": 3682
+  }
+}

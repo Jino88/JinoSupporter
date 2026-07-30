@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 191,
+  "sourceFile": "1. BRS-2015 Report Test New Bond G06-0003 Date 3.5.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\191.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:18Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 191,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the main bond comparison but has incorrect grouping and outcome calculations.",
+    "issues": [
+      "SM/YOKE vision are outcome subgroups, not changed conditions.",
+      "Vision YOKE comparison uses wrong normal baseline row.",
+      "Vision NG counts/rates use defect columns inconsistently.",
+      "Separate glue/drop/tension rows are mixed into vision or raw measurement outcomes.",
+      "Function result should be treated as comparable/similar, not simply improved."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to New Bond G06-0003 vs Normal Bond G06-0002 only.",
+      "Rebuild vision outcomes by SM and YOKE with matched normal/test rows.",
+      "Use total NG and displayed rates consistently for each row.",
+      "Represent separate glue, tension, and drop as OK/pass outcomes with proper rows.",
+      "Revise function judgement to similar or no material difference using rows 76,78,85."
+    ],
+    "evidencePolicy": "Citations exist but are insufficiently grouped and some cited rows are misused."
+  },
+  "usage": {
+    "input_tokens": 6275,
+    "output_tokens": 756,
+    "total_tokens": 7031
+  }
+}

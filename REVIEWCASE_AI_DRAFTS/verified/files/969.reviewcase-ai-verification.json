@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 969,
+  "sourceFile": "9.1 MSU-L20S15-07 Report test change temperature dry CMG+CPT improve NG not dry glue_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\969.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:31Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 969,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the primary change; source supports dry temperature 80/85±5°C to 120±5°C with defect improvement.",
+    "issues": [
+      "Primary changed factor is dry temperature, not supplier/lot/line/date.",
+      "Baseline and changed conditions are wrongly stated.",
+      "Critical before/after total rows are omitted from outcomes.",
+      "Measurement outcomes contain parser artifacts and bogus specs.",
+      "Supplier and lot details should be subgroup context only."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to dry temperature change from 80/85±5°C to 120±5°C.",
+      "Use daily rows as follow-up subgroups by date,line,temp,time,lot.",
+      "Use rows 36-37 as main before/after comparison evidence.",
+      "Remove invalid measurement-stat outcomes and bogus spec violations.",
+      "Summarize outcomes as decap NG and MG/PT separate NG rates before vs after."
+    ],
+    "evidencePolicy": "Row citations exist, but key comparison citations are missing and current citations are misgrouped."
+  },
+  "usage": {
+    "input_tokens": 9870,
+    "output_tokens": 534,
+    "total_tokens": 10404
+  }
+}

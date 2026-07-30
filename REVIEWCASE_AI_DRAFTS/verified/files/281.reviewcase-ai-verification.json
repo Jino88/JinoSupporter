@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 281,
+  "sourceFile": "14. BRS-161014 Report test tracking process main 2 2023.09.06_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\281.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 281,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is incomplete because citeable process-level outcome evidence exists but no ReviewCase was generated.",
+    "issues": [
+      "No reviewCases were created despite comparable process rows.",
+      "Changed factor should likely be process step, but baseline/test framing is not defined.",
+      "Outcome grouping should include VP separation and glue NG under the same tracking context.",
+      "Date is only explicit on first result row and must be carried across grouped rows."
+    ],
+    "requiredUserQuestions": [
+      "Should the process steps be compared as alternate conditions in one tracking case?"
+    ],
+    "correctionPlan": [
+      "Create one ReviewCase for process tracking at Main 2.",
+      "Use process step as the primary changed factor.",
+      "Carry the 2023-09-06 date across all result rows.",
+      "Capture quantities, OK, Long/Short VP separation, glue NG, total NG, and NG rate.",
+      "Cite purpose/content rows and the result header/data rows."
+    ],
+    "evidencePolicy": "Rows 6, 8, and 12-15 are sufficient citations if grouped carefully."
+  },
+  "usage": {
+    "input_tokens": 1700,
+    "output_tokens": 536,
+    "total_tokens": 2236
+  }
+}

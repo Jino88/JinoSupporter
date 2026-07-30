@@ -1,0 +1,252 @@
+{
+  "sourceFileId": 688,
+  "sourceFile": "49. BRS-201506 Report Checking problem Frame + VP offset date 28.5.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\49. BRS-201506 Report Checking problem Frame + VP offset date 28.5.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 20,
+    "sheetCellCount": 57,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 6,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!1",
+      "sheetName": "Test",
+      "rowNumber": 1,
+      "rowText": "| TITLE | | BRS - 201506 REPORT CHECKING AND TEST PROBLEM FRAME + VP ASS'Y OFFSET | | | | | | | | | | | | | Dept: | ME"
+    },
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| | | | | | | | | | | | | | | | Date: | 2024-05-28 00:00:00"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Marker: | Thao"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| - Checking and Find NG Function"
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| - Checking problem Frame + VP ass'y offset"
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Checking NG rate"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| - Q'ty test : 500pcs"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| III. Result."
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | RESULT CHECKING PROCESS FRAME + VP ASS'Y OFFSET"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | Date | Position | Input | OK | NG Offset | NG Rate | Note"
+    },
+    {
+      "rowId": "Test!27",
+      "sheetName": "Test",
+      "rowNumber": 27,
+      "rowText": "| IV. Decision."
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-688-rc-1",
+      "reviewTitle": "| BRS - 201506 REPORT CHECKING AND TEST PROBLEM FRAME + VP ASS'Y OFFSET | | | | | | | | | | | | | Dept: | ME",
+      "reviewPurpose": "| I. Purpose. / | - Checking and Find NG Function / | II. Content. / | - Checking problem Frame + VP ass'y offset / | - Checking NG rate",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Clamp #1, Clamp #2, Total",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Clamp #1, Clamp #2, Total",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!1",
+            "Test!16",
+            "Test!17",
+            "Test!18",
+            "Test!19",
+            "Test!20",
+            "Test!21",
+            "Test!4",
+            "Test!6",
+            "Test!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "RESULT CHECKING PROCESS FRAME + VP ASS'Y OFFSET",
+          "comparisonRows": [
+            "Test!16",
+            "Test!17",
+            "Test!18",
+            "Test!19",
+            "Test!20",
+            "Test!21"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 22897,
+              "condition": "Clamp #1",
+              "input": 500.0,
+              "ok": 496.0,
+              "ng": 4.0,
+              "ratePercent": 0.8,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "metricId": 22898,
+              "condition": "Clamp #2",
+              "input": 500.0,
+              "ok": 500.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "metricId": 22899,
+              "condition": "Total",
+              "input": 1000.0,
+              "ok": 996.0,
+              "ng": 4.0,
+              "ratePercent": 0.4,
+              "evidenceRows": [
+                "Test!18"
+              ]
+            },
+            {
+              "metricId": 22900,
+              "condition": "Clamp #1",
+              "input": 300.0,
+              "ok": 299.0,
+              "ng": 1.0,
+              "ratePercent": 0.333333,
+              "evidenceRows": [
+                "Test!19"
+              ]
+            },
+            {
+              "metricId": 22901,
+              "condition": "Clamp #2",
+              "input": 300.0,
+              "ok": 300.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!20"
+              ]
+            },
+            {
+              "metricId": 22902,
+              "condition": "Total",
+              "input": 600.0,
+              "ok": 599.0,
+              "ng": 1.0,
+              "ratePercent": 0.166667,
+              "evidenceRows": [
+                "Test!21"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!1",
+        "Test!16",
+        "Test!17",
+        "Test!18",
+        "Test!19",
+        "Test!20",
+        "Test!21",
+        "Test!4",
+        "Test!6",
+        "Test!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!1",
+      "Test!16",
+      "Test!17",
+      "Test!18",
+      "Test!19",
+      "Test!20",
+      "Test!21",
+      "Test!4",
+      "Test!6",
+      "Test!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

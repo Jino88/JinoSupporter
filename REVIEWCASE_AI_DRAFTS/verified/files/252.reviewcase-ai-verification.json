@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 252,
+  "sourceFile": "12. TIU C11-20  Report test VPnew mold V3.3 2026.1.10_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\252.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 252,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Citeable comparison exists, but the draft misidentifies the changed condition and loses key tension subgroup context.",
+    "issues": [
+      "Changed factor should be Normal V3 vs Test VP new mold V3.3, not Normal V3 vs TIU C11-20R.",
+      "TIU C11-20R appears to be model context, not the changed condition.",
+      "Tension Normal V3 rows need inherited Frame+VP and Coil+VP subgroup pairing.",
+      "Tension spec/sample fields appear misparsed or incomplete.",
+      "Function and tension outcomes are valid domains under one report but need regrouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baselineCondition to Normal V3 and changedCondition to Test VP new mold V3.3.",
+      "Move TIU C11-20R to model/subgroup context.",
+      "Pair tension rows 31-32 as Frame+VP and rows 33-34 as Coil+VP.",
+      "Capture spec 0.4 where applicable and avoid unsupported sampleCount 1 if samples are listed.",
+      "Keep function and tension outcomes in the same review case with row citations."
+    ],
+    "evidencePolicy": "Rows cited are sufficient, but citations must support corrected condition and subgroup grouping."
+  },
+  "usage": {
+    "input_tokens": 3700,
+    "output_tokens": 602,
+    "total_tokens": 4302
+  }
+}

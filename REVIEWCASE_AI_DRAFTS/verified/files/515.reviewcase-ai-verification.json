@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 515,
+  "sourceFile": "30. BRS-161016 Report check reason particle glue 11.4.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\515.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 515,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cannot be verified because it contains no review case despite citeable evidence of NG particle checks and cleaning/improvement interventions.",
+    "issues": [
+      "No reviewCases were generated.",
+      "Changed-factor grouping is unresolved across multiple dated interventions.",
+      "Baseline/test conditions are not structured from result rows.",
+      "Metrics were not extracted despite NG count and rate tables.",
+      "Evidence rows are present but unused."
+    ],
+    "requiredUserQuestions": [
+      "Should 4.12, 4.13, and 4.15 be one improvement campaign or separate cases?"
+    ],
+    "correctionPlan": [
+      "Create review case(s) for NG particle reduction validation.",
+      "Define primary changed factor by intervention/date.",
+      "Map baseline and test rows with process, date, line, qty, NG count, and NG rate.",
+      "Preserve process subgroup keys such as before/after laser cutting and VP/Suspension.",
+      "Cite purpose, test content, and result rows for each case."
+    ],
+    "evidencePolicy": "Source rows are citeable, but citations are not yet assigned to any case."
+  },
+  "usage": {
+    "input_tokens": 4752,
+    "output_tokens": 588,
+    "total_tokens": 5340
+  }
+}

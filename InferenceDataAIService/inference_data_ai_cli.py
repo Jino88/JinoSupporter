@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import datetime as dt
 import hashlib
 import json
@@ -8,9 +9,134 @@ import re
 import sqlite3
 import subprocess
 import sys
+import time
+from collections import Counter, deque
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterable, Iterator
+
+try:
+    from inference_data_ai_schema import (
+        ensure_knowledge_schema,
+        knowledge_counts,
+        migrate_all_legacy_analyses,
+        sync_legacy_analysis_report,
+        validate_knowledge_integrity,
+    )
+except ModuleNotFoundError:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from inference_data_ai_schema import (
+        ensure_knowledge_schema,
+        knowledge_counts,
+        migrate_all_legacy_analyses,
+        sync_legacy_analysis_report,
+        validate_knowledge_integrity,
+    )
+
+from inference_data_ai_source_ingest import (
+    bridge_capture_to_canonical_source,
+    capture_json_bytes,
+    ensure_capture_v2_schema,
+    extract_workbook as extract_openxml_workbook,
+    import_capture as import_openxml_capture,
+    verify_capture_database,
+)
+from inference_data_ai_study_import import import_study_manifest
+from inference_data_ai_semantic_ai import (
+    run_codex_locator,
+    run_codex_locator_batch,
+    run_codex_study_draft,
+    validate_ai_study_draft,
+    validate_locator_result,
+)
+from inference_data_ai_semantic_packets import (
+    build_semantic_source_packets_from_db,
+    packet_json_bytes as semantic_packet_json_bytes,
+)
+from inference_data_ai_table_first import (
+    ANALYSIS_SCHEMA_VERSION as TABLE_FIRST_ANALYSIS_SCHEMA_VERSION,
+    BUILDER_VERSION as TABLE_FIRST_BUILDER_VERSION,
+    PROMPT_VERSION as TABLE_FIRST_PROMPT_VERSION,
+    REQUEST_SCHEMA_VERSION as TABLE_FIRST_REQUEST_SCHEMA_VERSION,
+    build_table_first_request,
+    normalize_table_first_analysis,
+    project_table_first_analysis,
+    run_codex_table_first_analysis,
+    table_first_prompt_stats,
+    table_first_json_bytes,
+    validate_table_first_analysis,
+)
+from inference_data_ai_table_first_html import build_table_first_html_report
+from inference_data_ai_table_first_history import (
+    build_history_answer,
+    build_history_detail,
+    build_history_index,
+    build_history_pack,
+    history_json_bytes,
+    render_history_answer_markdown,
+    run_history_acceptance,
+    validate_history_answer,
+)
+from inference_data_ai_contextual_query import (
+    build_contextual_query_request,
+    contextual_json_bytes,
+    render_contextual_answer_markdown,
+    run_codex_contextual_query,
+)
+from inference_data_ai_relevance_query import (
+    build_relevance_query_request,
+    relevance_json_bytes,
+    render_relevance_result_markdown,
+    run_codex_relevance_query,
+)
+from inference_data_ai_study_contract import validate_study_manifest
+from inference_data_ai_query import build_evidence_pack_from_db
+from inference_data_ai_answer import (
+    answer_json_bytes,
+    build_evidence_answer,
+    render_answer_markdown,
+    validate_evidence_answer,
+)
+from inference_data_ai_evidence_detail import build_evidence_detail_from_db
+from inference_data_ai_related import (
+    build_related_studies_from_db,
+    related_studies_json_bytes,
+)
+from inference_data_ai_concept_curation import (
+    ConceptCurationError,
+    list_canonical_concepts,
+    list_schema_candidates,
+    resolve_schema_candidate,
+    upsert_human_concept_alias,
+)
+from inference_data_ai_review import (
+    ReviewGateError,
+    decide_comparison,
+    get_review_detail,
+    list_review_queue,
+)
+from inference_data_ai_acceptance import run_golden_question_acceptance
+from inference_data_ai_workflow import ingest_workbook
+from inference_data_ai_corpus_workflow import run_corpus_ingest
+from inference_data_ai_form_preflight import run_form_preflight
+from inference_data_ai_form_registry import (
+    analyze_form_family,
+    decide_form_family,
+    reclassify_form_preflight_report,
+    write_form_group_review,
+)
+from inference_data_ai_form_pipeline import run_form_pipeline_complete
+from inference_data_ai_study_import import (
+    AnalysisQuarantineError,
+    make_database_evidence_checker,
+    quarantine_canonical_analysis,
+    resolve_manifest_revision,
+    validate_comparison_representation_alignment,
+    validate_conclusion_evidence,
+    validate_factor_and_arm_evidence,
+    validate_numeric_observation_evidence,
+)
 
 
 try:
@@ -29,6 +155,11 @@ QUICK_INDEX_DIR = OUTPUT_DIR / "quick-index"
 UNIVERSAL_GRID_DIR = OUTPUT_DIR / "universal-grid"
 PACKET_DIR = OUTPUT_DIR / "packets"
 LOG_DIR = OUTPUT_DIR / "logs"
+CAPTURE_V2_DIR = OUTPUT_DIR / "capture-v2"
+SEMANTIC_PACKET_DIR = OUTPUT_DIR / "semantic-source-packets"
+SEMANTIC_LOCATOR_DIR = OUTPUT_DIR / "semantic-locators"
+SEMANTIC_STUDY_DIR = OUTPUT_DIR / "semantic-study-drafts"
+TABLE_FIRST_DIR = OUTPUT_DIR / "table-first"
 MICROSPEAKER_INDEXER = REPO_ROOT / "MicroSpeaker_ProductTech_DB" / "tools" / "incremental_dataset_indexer.py"
 COM_EXTRACTOR = REPO_ROOT / "JinoSupporter" / "JinoSupporter.Web" / "tools" / "input_data_excel_com_extract.py"
 EXCEL_EXTENSIONS = {".xlsx", ".xlsm", ".xlsb", ".xls", ".xltx", ".xltm"}
@@ -69,6 +200,25 @@ CONTEXT_TERMS = (
     "repair",
 )
 
+# These words only decide which source rows are most useful to include when a
+# workbook is larger than the analysis-packet budget.  They never create a
+# conclusion or replace the coordinate-based source evidence.
+PACKET_PRIORITY_TERMS = CONTEXT_TERMS + (
+    "결론",
+    "판정",
+    "결과",
+    "목적",
+    "조건",
+    "기준",
+    "사양",
+    "비고",
+    "정상",
+    "불량",
+    "개선",
+    "시험",
+    "검증",
+)
+
 
 def now_iso() -> str:
     return dt.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
@@ -95,6 +245,56 @@ def service_output_path(value: str | None, default_path: Path) -> Path:
     path = path.resolve()
     ensure_output_parent(path)
     return path
+
+
+def output_path_under_root(
+    value: str | None,
+    default_path: Path,
+    allowed_root: str | Path,
+) -> Path:
+    root = Path(allowed_root).expanduser().resolve()
+    path = Path(value) if value else default_path
+    if not path.is_absolute():
+        path = root / path
+    resolved = path.expanduser().resolve()
+    try:
+        resolved.relative_to(root)
+    except ValueError as exc:
+        raise SystemExit(
+            f"Output path must stay under {root}: {resolved}"
+        ) from exc
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    return resolved
+
+
+def database_scoped_output_path(
+    value: str | None,
+    default_path: Path,
+    database_path: str | Path,
+) -> Path:
+    """Keep DB query artifacts beside the configured DB output tree."""
+
+    if value is None or not Path(value).expanduser().is_absolute():
+        return service_output_path(value, default_path)
+    database = Path(database_path).expanduser().resolve()
+    database_parent = database.parent
+    if database_parent.name.casefold() in {
+        "universal-grid",
+        "table-first-history",
+    }:
+        allowed_root = database_parent.parent
+    else:
+        allowed_root = database_parent
+    resolved = Path(value).expanduser().resolve()
+    try:
+        resolved.relative_to(SERVICE_DIR.resolve())
+    except ValueError:
+        return output_path_under_root(
+            str(resolved),
+            default_path,
+            allowed_root,
+        )
+    return service_output_path(str(resolved), default_path)
 
 
 def service_output_dir(value: str | None, default_dir: Path) -> Path:
@@ -529,6 +729,7 @@ def ensure_universal_schema(conn: sqlite3.Connection) -> None:
         "INSERT OR IGNORE INTO schema_migrations(migration_name, applied_at) VALUES (?, ?)",
         ("universal-analysis-layer-v1", now_iso()),
     )
+    ensure_knowledge_schema(conn, now_iso)
 
 
 def init_universal_db(db_path: Path, dataset: str) -> dict[str, Any]:
@@ -1337,6 +1538,2978 @@ def cmd_init_db(args: argparse.Namespace) -> int:
     )
     result = init_universal_db(db_path, dataset)
     print_json(result)
+    return 0
+
+
+def _capture_v2_files(args: argparse.Namespace) -> list[Path]:
+    if args.pilot_manifest:
+        manifest_path = Path(args.pilot_manifest).resolve()
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        source_root = Path(args.input or manifest.get("sourceRoot") or DEFAULT_INPUT_DIR).resolve()
+        files = [
+            (source_root / str(item["relativePath"])).resolve()
+            for item in manifest.get("workbooks", [])
+        ]
+        missing = [str(path) for path in files if not path.is_file()]
+        if missing:
+            raise SystemExit("Pilot manifest contains missing files:\n" + "\n".join(missing))
+    else:
+        files = [
+            path
+            for path in collect_excel_files(Path(args.input or DEFAULT_INPUT_DIR).resolve())
+            if path.suffix.lower() == ".xlsx"
+        ]
+    offset = max(0, int(args.offset or 0))
+    files = files[offset:]
+    if args.limit > 0:
+        files = files[: args.limit]
+    return files
+
+
+def _ordered_capture_v2_extractions(
+    files: list[Path],
+    *,
+    workers: int,
+) -> Iterator[tuple[Path, dict[str, Any] | None, Exception | None]]:
+    """Extract a bounded number of workbooks concurrently in source order."""
+
+    if workers < 1:
+        raise ValueError("Capture workers must be positive.")
+
+    def extract_one(
+        source: Path,
+    ) -> tuple[dict[str, Any] | None, Exception | None]:
+        try:
+            return extract_openxml_workbook(source), None
+        except Exception as exc:
+            return None, exc
+
+    if workers == 1:
+        for source in files:
+            payload, error = extract_one(source)
+            yield source, payload, error
+        return
+
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        pending = deque(
+            (
+                source,
+                executor.submit(extract_one, source),
+            )
+            for source in files[:workers]
+        )
+        next_index = len(pending)
+        while pending:
+            source, future = pending.popleft()
+            payload, error = future.result()
+            yield source, payload, error
+            if next_index < len(files):
+                next_source = files[next_index]
+                pending.append(
+                    (
+                        next_source,
+                        executor.submit(extract_one, next_source),
+                    )
+                )
+                next_index += 1
+
+
+def cmd_openxml_index(args: argparse.Namespace) -> int:
+    files = _capture_v2_files(args)
+    workers = int(args.workers or 1)
+    if workers < 1:
+        raise SystemExit("--workers must be positive.")
+    db_path = service_output_path(
+        args.db,
+        UNIVERSAL_GRID_DIR / f"{safe_name(args.dataset)}.sqlite",
+    )
+    raw_dir = service_output_dir(args.raw_dir, CAPTURE_V2_DIR / "raw-json" / safe_name(args.dataset)) if args.raw_dir else None
+    started_at = now_iso()
+    with connect_rw(db_path) as conn:
+        ensure_universal_schema(conn)
+        ensure_capture_v2_schema(conn)
+        conn.execute(
+            """
+            UPDATE capture_v2_runs
+            SET finished_at=?, failed=CASE WHEN failed=0 THEN total_files ELSE failed END
+            WHERE finished_at=''
+            """,
+            (started_at,),
+        )
+        cursor = conn.execute(
+            """
+            INSERT INTO capture_v2_runs(
+                dataset, input_path, started_at, total_files, options_json
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                args.dataset,
+                str(Path(args.input or DEFAULT_INPUT_DIR).resolve()),
+                started_at,
+                len(files),
+                json.dumps(
+                    {
+                        "offset": args.offset,
+                        "limit": args.limit,
+                        "pilotManifest": str(Path(args.pilot_manifest).resolve()) if args.pilot_manifest else "",
+                        "retainRawJson": raw_dir is not None,
+                        "imageHandling": "IGNORED",
+                        "workers": workers,
+                    },
+                    ensure_ascii=False,
+                ),
+            ),
+        )
+        run_id = int(cursor.lastrowid)
+        conn.commit()
+        succeeded = failed = skipped = reactivated = 0
+        items: list[dict[str, Any]] = []
+        for source, payload, extraction_error in _ordered_capture_v2_extractions(
+            files,
+            workers=workers,
+        ):
+            item_started = now_iso()
+            action = "FAILED"
+            message = ""
+            content_sha256 = ""
+            capture_revision_id: int | None = None
+            canonical_revision_id: int | None = None
+            conn.execute("SAVEPOINT capture_v2_cli_item")
+            try:
+                if extraction_error is not None:
+                    raise extraction_error
+                if payload is None:
+                    raise RuntimeError(
+                        "OpenXML extraction returned no workbook payload."
+                    )
+                content_sha256 = str(payload["source"]["contentSha256"])
+                capture_result = import_openxml_capture(conn, payload, captured_at=item_started)
+                capture_revision_id = int(capture_result["revisionId"])
+                bridge = bridge_capture_to_canonical_source(
+                    conn,
+                    dataset=args.dataset,
+                    payload=payload,
+                    capture_result=capture_result,
+                    captured_at=item_started,
+                )
+                canonical_revision_id = int(bridge["revisionId"])
+                action = str(capture_result["action"])
+                if raw_dir is not None:
+                    path_key = hashlib.sha256(str(source).casefold().encode("utf-8")).hexdigest()[:12]
+                    raw_path = raw_dir / f"{safe_name(source.stem)[:80]}_{path_key}.capture-v2.json"
+                    raw_path.write_bytes(capture_json_bytes(payload))
+                if action == "SKIPPED":
+                    skipped += 1
+                elif action == "REACTIVATED":
+                    reactivated += 1
+                    succeeded += 1
+                else:
+                    succeeded += 1
+                conn.execute("RELEASE SAVEPOINT capture_v2_cli_item")
+            except Exception as exc:
+                conn.execute("ROLLBACK TO SAVEPOINT capture_v2_cli_item")
+                conn.execute("RELEASE SAVEPOINT capture_v2_cli_item")
+                failed += 1
+                message = f"{type(exc).__name__}: {exc}"
+            conn.execute(
+                """
+                INSERT INTO capture_v2_ingest_items(
+                    run_id, source_path, content_sha256, action,
+                    capture_revision_id, canonical_revision_id, message,
+                    started_at, finished_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    run_id,
+                    str(source),
+                    content_sha256,
+                    action,
+                    capture_revision_id,
+                    canonical_revision_id,
+                    message,
+                    item_started,
+                    now_iso(),
+                ),
+            )
+            conn.commit()
+            items.append(
+                {
+                    "sourcePath": str(source),
+                    "action": action,
+                    "message": message,
+                    "captureRevisionId": capture_revision_id,
+                    "canonicalRevisionId": canonical_revision_id,
+                }
+            )
+        conn.execute(
+            """
+            UPDATE capture_v2_runs
+            SET finished_at=?, succeeded=?, failed=?, skipped=?, reactivated=?
+            WHERE run_id=?
+            """,
+            (now_iso(), succeeded, failed, skipped, reactivated, run_id),
+        )
+        conn.commit()
+    result = {
+        "status": "ok" if failed == 0 else "partial",
+        "runId": run_id,
+        "dataset": args.dataset,
+        "db": str(db_path),
+        "selected": len(files),
+        "succeeded": succeeded,
+        "failed": failed,
+        "skipped": skipped,
+        "reactivated": reactivated,
+        "imageHandling": "IGNORED",
+        "items": items,
+    }
+    print_json(result)
+    return 0 if failed == 0 else 1
+
+
+def cmd_verify_capture_v2(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).resolve()
+    with connect_ro(db_path) as conn:
+        if not table_exists(conn, "capture_v2_revisions"):
+            raise SystemExit("capture-v2-verify requires a DB with Capture v2 tables.")
+        result = verify_capture_database(
+            conn,
+            current_only=not args.all_revisions,
+            verify_source_sha256=args.source_sha256,
+        )
+    print_json({"db": str(db_path), **result})
+    return 0 if result["ok"] else 1
+
+
+def _semantic_source(packet_set: dict[str, Any], dataset: str) -> dict[str, Any]:
+    revision = packet_set["inventory"]["sourceRevision"]
+    return {
+        "dataset": dataset,
+        "sourcePath": str(revision["sourcePath"]),
+        "revisionUid": str(revision["revisionUid"]),
+        "contentSha256": str(revision["contentSha256"]),
+    }
+
+
+def _semantic_workbook_summary(packet_set: dict[str, Any]) -> dict[str, Any]:
+    inventory = packet_set["inventory"]
+    return {
+        **inventory["workbook"],
+        "semanticCellCoverageComplete": bool(
+            inventory.get("semanticCellCoverageComplete")
+        ),
+        "contentCompleteForManifest": bool(
+            inventory.get("contentCompleteForManifest")
+        ),
+        "coverage": inventory["coverage"],
+        "sheets": [
+            {
+                "sheetIndex": sheet["sheetIndex"],
+                "title": sheet["title"],
+                "sheetState": sheet["sheetState"],
+                "status": sheet["status"],
+                "hasTabularEvidence": sheet["hasTabularEvidence"],
+                "nonEmptyCellCount": sheet["nonEmptyCellCount"],
+                "formulaCellCount": sheet["formulaCellCount"],
+                "mergeCount": sheet["mergeCount"],
+                "contentBounds": sheet["contentBounds"],
+                "sections": sheet["sections"],
+            }
+            for sheet in inventory["sheets"]
+        ],
+    }
+
+
+def cmd_build_semantic_packets(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).resolve()
+    packet_set = build_semantic_source_packets_from_db(
+        db_path,
+        revision_id=args.revision_id,
+        source_path=args.source_path,
+        max_cells=args.max_cells,
+        max_rows=args.max_rows,
+        empty_row_gap=args.empty_row_gap,
+    )
+    revision = packet_set["inventory"]["sourceRevision"]
+    default_out = SEMANTIC_PACKET_DIR / f"{safe_name(revision['revisionUid'])}.json"
+    output_path = service_output_path(args.out, default_out)
+    output_path.write_bytes(semantic_packet_json_bytes(packet_set))
+    print_json(
+        {
+            "status": "ok",
+            "db": str(db_path),
+            "packet": str(output_path),
+            "revisionUid": revision["revisionUid"],
+            "workbookStatus": packet_set["inventory"]["workbook"]["status"],
+            "chunks": len(packet_set["chunks"]),
+            "terminalPackets": len(packet_set["terminalPackets"]),
+            "coverage": packet_set["inventory"]["coverage"],
+        }
+    )
+    return 0
+
+
+def cmd_build_semantic_packets_batch(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).resolve()
+    with connect_ro(db_path) as conn:
+        revision_ids = [
+            int(row[0])
+            for row in conn.execute(
+                """
+                SELECT revision_id
+                FROM capture_v2_revisions
+                WHERE is_current=1
+                ORDER BY revision_id
+                """
+            )
+        ]
+    if args.offset:
+        revision_ids = revision_ids[args.offset :]
+    if args.limit > 0:
+        revision_ids = revision_ids[: args.limit]
+    output_dir = service_output_dir(
+        args.out_dir,
+        SEMANTIC_PACKET_DIR,
+    )
+
+    def build_one(revision_id: int) -> dict[str, Any]:
+        packet_set = build_semantic_source_packets_from_db(
+            db_path,
+            revision_id=revision_id,
+            max_cells=args.max_cells,
+            max_rows=args.max_rows,
+            empty_row_gap=args.empty_row_gap,
+        )
+        revision = packet_set["inventory"]["sourceRevision"]
+        output_path = output_dir / f"{safe_name(revision['revisionUid'])}.json"
+        if output_path.is_file() and not args.force:
+            existing = _load_semantic_packet(output_path)
+            if (
+                existing["inventory"]["sourceRevision"]["contentSha256"]
+                == revision["contentSha256"]
+                and existing["inventory"]["limits"]
+                == packet_set["inventory"]["limits"]
+            ):
+                return {
+                    "revisionId": revision_id,
+                    "revisionUid": revision["revisionUid"],
+                    "action": "SKIPPED",
+                    "packet": str(output_path),
+                    "chunks": len(existing["chunks"]),
+                    "cells": existing["inventory"]["coverage"][
+                        "packetCellCount"
+                    ],
+                }
+        output_path.write_bytes(semantic_packet_json_bytes(packet_set))
+        return {
+            "revisionId": revision_id,
+            "revisionUid": revision["revisionUid"],
+            "action": "BUILT",
+            "packet": str(output_path),
+            "chunks": len(packet_set["chunks"]),
+            "cells": packet_set["inventory"]["coverage"]["packetCellCount"],
+        }
+
+    items: list[dict[str, Any]] = []
+    failures: list[dict[str, Any]] = []
+    with ThreadPoolExecutor(max_workers=max(1, args.workers)) as executor:
+        futures = {
+            executor.submit(build_one, revision_id): revision_id
+            for revision_id in revision_ids
+        }
+        for future in as_completed(futures):
+            revision_id = futures[future]
+            try:
+                items.append(future.result())
+            except Exception as exc:
+                failures.append(
+                    {
+                        "revisionId": revision_id,
+                        "error": str(exc),
+                    }
+                )
+    items.sort(key=lambda item: int(item["revisionId"]))
+    print_json(
+        {
+            "status": "ok" if not failures else "partial",
+            "db": str(db_path),
+            "outputDir": str(output_dir),
+            "selected": len(revision_ids),
+            "built": sum(item["action"] == "BUILT" for item in items),
+            "skipped": sum(item["action"] == "SKIPPED" for item in items),
+            "failed": len(failures),
+            "chunks": sum(int(item["chunks"]) for item in items),
+            "cells": sum(int(item["cells"]) for item in items),
+            "items": items,
+            "failures": failures,
+        }
+    )
+    return 0 if not failures else 1
+
+
+def _load_semantic_packet(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        raise SystemExit(f"Semantic source packet not found: {path}")
+    packet_set = json.loads(path.read_text(encoding="utf-8"))
+    if packet_set.get("schemaVersion") != "semantic-source-packet-v1":
+        raise SystemExit("Expected a semantic-source-packet-v1 packet set.")
+    if packet_set.get("inventory", {}).get("coverage", {}).get("status") != "COMPLETE":
+        raise SystemExit("Semantic packet coverage is not complete.")
+    return packet_set
+
+
+def _partition_semantic_locator_jobs(
+    jobs: list[tuple[dict[str, Any], Path]],
+    *,
+    batch_size: int,
+    batch_max_bytes: int,
+) -> list[list[tuple[dict[str, Any], Path]]]:
+    """Group source chunks without dropping a single oversized source chunk."""
+
+    if batch_size < 1:
+        raise ValueError("semantic locator batch size must be at least 1")
+    if batch_max_bytes < 1:
+        raise ValueError("semantic locator batch byte budget must be at least 1")
+    batches: list[list[tuple[dict[str, Any], Path]]] = []
+    current: list[tuple[dict[str, Any], Path]] = []
+    current_bytes = 0
+    for job in jobs:
+        estimated_bytes = len(
+            json.dumps(
+                job[0],
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        )
+        if current and (
+            len(current) >= batch_size
+            or current_bytes + estimated_bytes > batch_max_bytes
+        ):
+            batches.append(current)
+            current = []
+            current_bytes = 0
+        current.append(job)
+        current_bytes += estimated_bytes
+    if current:
+        batches.append(current)
+    return batches
+
+
+def cmd_semantic_locate(args: argparse.Namespace) -> int:
+    packet_path = Path(args.packet).resolve()
+    packet_set = _load_semantic_packet(packet_path)
+    source = _semantic_source(packet_set, args.dataset)
+    workbook = _semantic_workbook_summary(packet_set)
+    chunks = list(packet_set["chunks"])
+    requested_ids = set(args.chunk_id or [])
+    if requested_ids:
+        known_ids = {str(chunk["chunkId"]) for chunk in chunks}
+        unknown = sorted(requested_ids - known_ids)
+        if unknown:
+            raise SystemExit("Unknown semantic chunk id(s): " + ", ".join(unknown))
+        chunks = [chunk for chunk in chunks if str(chunk["chunkId"]) in requested_ids]
+    if args.offset:
+        chunks = chunks[args.offset :]
+    if args.limit > 0:
+        chunks = chunks[: args.limit]
+    output_dir = service_output_dir(
+        args.out_dir,
+        SEMANTIC_LOCATOR_DIR / safe_name(source["revisionUid"]),
+    )
+
+    jobs: list[tuple[dict[str, Any], Path]] = []
+    skipped = 0
+    deterministic = 0
+
+    def has_primary_text(chunk: dict[str, Any]) -> bool:
+        return any(
+            isinstance(
+                cell.get("displayValue")
+                if cell.get("displayValue") is not None
+                else cell.get("rawValue"),
+                str,
+            )
+            and str(
+                cell.get("displayValue")
+                if cell.get("displayValue") is not None
+                else cell.get("rawValue")
+            ).strip()
+            for cell in chunk.get("cells", [])
+        )
+
+    for chunk in chunks:
+        output_path = output_dir / f"{safe_name(chunk['chunkId'])}.locator.json"
+        if output_path.is_file() and not args.force:
+            try:
+                existing = json.loads(output_path.read_text(encoding="utf-8"))
+                validate_locator_result(
+                    existing,
+                    revision_uid=source["revisionUid"],
+                    content_sha256=source["contentSha256"],
+                    chunk=chunk,
+                )
+                skipped += 1
+                continue
+            except (OSError, json.JSONDecodeError, RuntimeError, ValueError):
+                pass
+        if not args.all_chunks_ai and not has_primary_text(chunk):
+            result = {
+                "schemaVersion": "semantic-locator-v1",
+                "promptVersion": "semantic-locator-prompt-v1",
+                "revisionUid": source["revisionUid"],
+                "contentSha256": source["contentSha256"],
+                "chunkId": str(chunk["chunkId"]),
+                "status": "NO_CANDIDATE",
+                "candidates": [],
+                "notes": [
+                    "Deterministic numeric/formula continuation: retained in Capture v2 "
+                    "and the lossless packet for on-demand evidence retrieval."
+                ],
+            }
+            validate_locator_result(
+                result,
+                revision_uid=source["revisionUid"],
+                content_sha256=source["contentSha256"],
+                chunk=chunk,
+            )
+            write_json(output_path, result)
+            deterministic += 1
+            continue
+        jobs.append((chunk, output_path))
+
+    batches = _partition_semantic_locator_jobs(
+        jobs,
+        batch_size=args.batch_size,
+        batch_max_bytes=args.batch_max_bytes,
+    )
+    succeeded = 0
+    failures: list[dict[str, str]] = []
+
+    def run_batch(
+        batch: list[tuple[dict[str, Any], Path]],
+    ) -> list[str]:
+        if len(batch) == 1:
+            chunk, output_path = batch[0]
+            run_codex_locator(
+                source=source,
+                workbook=workbook,
+                chunk=chunk,
+                output_path=output_path,
+                model=args.model or None,
+                reasoning_effort=args.reasoning_effort or None,
+                timeout_seconds=args.timeout,
+            )
+            return [str(chunk["chunkId"])]
+        chunks_in_batch = [chunk for chunk, _ in batch]
+        output_paths = {
+            str(chunk["chunkId"]): output_path
+            for chunk, output_path in batch
+        }
+        run_codex_locator_batch(
+            source=source,
+            workbook=workbook,
+            chunks=chunks_in_batch,
+            output_paths=output_paths,
+            model=args.model or None,
+            reasoning_effort=args.reasoning_effort or None,
+            timeout_seconds=args.timeout,
+        )
+        return [str(chunk["chunkId"]) for chunk in chunks_in_batch]
+
+    with ThreadPoolExecutor(max_workers=max(1, args.workers)) as executor:
+        futures = {
+            executor.submit(run_batch, batch): (batch_index, batch)
+            for batch_index, batch in enumerate(batches, start=1)
+        }
+        for future in as_completed(futures):
+            batch_index, batch = futures[future]
+            try:
+                succeeded += len(future.result())
+            except Exception as exc:
+                for chunk, output_path in batch:
+                    failures.append(
+                        {
+                            "chunkId": str(chunk["chunkId"]),
+                            "output": str(output_path),
+                            "batch": str(batch_index),
+                            "error": str(exc),
+                        }
+                    )
+    result = {
+        "status": "ok" if not failures else "partial",
+        "packet": str(packet_path),
+        "outputDir": str(output_dir),
+        "selected": len(chunks),
+        "succeeded": succeeded,
+        "aiSubmitted": len(jobs),
+        "aiCalls": len(batches),
+        "batchSize": args.batch_size,
+        "batchMaxBytes": args.batch_max_bytes,
+        "deterministicNoCandidate": deterministic,
+        "skipped": skipped,
+        "failed": len(failures),
+        "failures": failures,
+    }
+    print_json(result)
+    return 0 if not failures else 1
+
+
+def _terminal_study_manifest(
+    packet_set: dict[str, Any],
+    dataset: str,
+) -> dict[str, Any]:
+    source = _semantic_source(packet_set, dataset)
+    revision = packet_set["inventory"]["sourceRevision"]
+    status = str(packet_set["inventory"]["workbook"]["status"])
+    return validate_study_manifest(
+        {
+            "schemaVersion": "canonical-study-manifest-v1",
+            "source": {
+                **source,
+                "contentComplete": False,
+            },
+            "workbookAnalysis": {
+                "key": f"tabular-evidence-{safe_name(revision['revisionUid']).lower()}",
+                "title": str(revision["fileName"]),
+                "summary": (
+                    "No reviewable tabular evidence was captured. Embedded visual "
+                    "content is outside the configured scope and was not assessed."
+                ),
+                "status": status,
+                "verificationStatus": "EXCLUDED",
+                "limitations": [
+                    f"Capture v2 workbook status: {status}.",
+                    "Only tabular cell evidence is in scope.",
+                ],
+                "evidence": [],
+            },
+            "studies": [],
+        }
+    )
+
+
+def cmd_semantic_draft(args: argparse.Namespace) -> int:
+    packet_path = Path(args.packet).resolve()
+    packet_set = _load_semantic_packet(packet_path)
+    source = _semantic_source(packet_set, args.dataset)
+    revision = packet_set["inventory"]["sourceRevision"]
+    default_out = (
+        SEMANTIC_STUDY_DIR
+        / f"{safe_name(revision['revisionUid'])}.study-draft.json"
+    )
+    output_path = service_output_path(args.out, default_out)
+    workbook_status = str(packet_set["inventory"]["workbook"]["status"])
+    if workbook_status in {"EMPTY_WORKBOOK", "NO_TABULAR_EVIDENCE"}:
+        manifest = _terminal_study_manifest(packet_set, args.dataset)
+        write_json(output_path, manifest)
+        print_json(
+            {
+                "status": "excluded",
+                "packet": str(packet_path),
+                "manifest": str(output_path),
+                "workbookStatus": workbook_status,
+                "studies": 0,
+                "aiExecuted": False,
+            }
+        )
+        return 0
+
+    locator_dir = Path(args.locator_dir).resolve()
+    chunks_by_id = {
+        str(chunk["chunkId"]): chunk for chunk in packet_set["chunks"]
+    }
+    locator_results: list[dict[str, Any]] = []
+    missing: list[str] = []
+    for chunk_id, chunk in chunks_by_id.items():
+        locator_path = locator_dir / f"{safe_name(chunk_id)}.locator.json"
+        if not locator_path.is_file():
+            missing.append(chunk_id)
+            continue
+        result = json.loads(locator_path.read_text(encoding="utf-8"))
+        locator_results.append(
+            validate_locator_result(
+                result,
+                revision_uid=source["revisionUid"],
+                content_sha256=source["contentSha256"],
+                chunk=chunk,
+            )
+        )
+    if missing:
+        raise SystemExit(
+            f"Semantic draft requires every locator result; missing {len(missing)} chunk(s)."
+        )
+    candidate_ids = {
+        str(result["chunkId"])
+        for result in locator_results
+        if result["status"] in {"CANDIDATES", "NEEDS_REVIEW"}
+        and result["candidates"]
+    }
+    if not candidate_ids:
+        manifest = _terminal_study_manifest(packet_set, args.dataset)
+        manifest["workbookAnalysis"]["status"] = "NO_SEMANTIC_CANDIDATE"
+        manifest["workbookAnalysis"]["limitations"].append(
+            "Every source chunk completed the locator pass without a study candidate."
+        )
+        write_json(output_path, manifest)
+        print_json(
+            {
+                "status": "excluded",
+                "packet": str(packet_path),
+                "manifest": str(output_path),
+                "workbookStatus": workbook_status,
+                "studies": 0,
+                "aiExecuted": False,
+            }
+        )
+        return 0
+    focused_chunks = [
+        chunks_by_id[chunk_id] for chunk_id in sorted(candidate_ids)
+    ]
+    content_complete = bool(
+        packet_set["inventory"].get("contentCompleteForManifest")
+    )
+    db_path = Path(args.db).resolve()
+    with connect_ro(db_path) as conn:
+        canonical_revision = resolve_manifest_revision(conn, source)
+        checker = make_database_evidence_checker(conn, canonical_revision)
+
+        def source_claim_validator(draft: dict[str, Any]) -> None:
+            validate_numeric_observation_evidence(
+                conn,
+                canonical_revision,
+                draft,
+            )
+            validate_factor_and_arm_evidence(
+                conn,
+                canonical_revision,
+                draft,
+            )
+            validate_comparison_representation_alignment(
+                conn,
+                canonical_revision,
+                draft,
+            )
+            validate_conclusion_evidence(
+                conn,
+                canonical_revision,
+                draft,
+            )
+
+        manifest = run_codex_study_draft(
+            source=source,
+            workbook=_semantic_workbook_summary(packet_set),
+            locator_results=locator_results,
+            focused_chunks=focused_chunks,
+            content_complete=content_complete,
+            output_path=output_path,
+            evidence_checker=checker,
+            additional_validator=source_claim_validator,
+            model=args.model or None,
+            reasoning_effort=args.reasoning_effort or None,
+            timeout_seconds=args.timeout,
+        )
+    print_json(
+        {
+            "status": "ok",
+            "packet": str(packet_path),
+            "manifest": str(output_path),
+            "locatorResults": len(locator_results),
+            "focusedChunks": len(focused_chunks),
+            "studies": len(manifest["studies"]),
+            "verificationStatus": manifest["workbookAnalysis"]["verificationStatus"],
+        }
+    )
+    return 0
+
+
+def _load_table_first_request(path: Path) -> dict[str, Any]:
+    try:
+        request = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"Invalid table-first request JSON: {path}") from exc
+    if not isinstance(request, dict) or request.get(
+        "schemaVersion"
+    ) != TABLE_FIRST_REQUEST_SCHEMA_VERSION:
+        raise SystemExit("Expected a table-first-request-v1 request.")
+    if request.get("builderVersion") != TABLE_FIRST_BUILDER_VERSION:
+        raise SystemExit(
+            "Table-first request is stale; rebuild it with table-first-request."
+        )
+    return request
+
+
+def cmd_table_first_request(args: argparse.Namespace) -> int:
+    packet_path = Path(args.packet).expanduser().resolve()
+    packet_set = _load_semantic_packet(packet_path)
+    request = build_table_first_request(
+        packet_set,
+        max_preview_rows=args.max_preview_rows,
+        max_preview_columns=args.max_preview_columns,
+        max_value_samples=args.max_value_samples,
+        term_dictionary_path=args.term_dictionary,
+    )
+    output_path = service_output_path(
+        args.out,
+        TABLE_FIRST_DIR / "requests" / f"{safe_name(request['requestId'])}.json",
+    )
+    output_path.write_bytes(table_first_json_bytes(request))
+    packet_bytes = packet_path.stat().st_size
+    request_bytes = output_path.stat().st_size
+    prompt_stats = table_first_prompt_stats(request)
+    print_json(
+        {
+            "status": "ok",
+            "packet": str(packet_path),
+            "request": str(output_path),
+            "requestId": request["requestId"],
+            "tables": len(request["tables"]),
+            "textBlocks": len(request["textBlocks"]),
+            "rawFrequencyResponseExclusions": len(
+                (request.get("codeOwnedExclusions") or {}).get(
+                    "rawFrequencyResponseTables"
+                )
+                or []
+            ),
+            "termDictionary": {
+                "status": (request.get("codeOwnedTermDictionary") or {}).get(
+                    "status"
+                ),
+                "definedTerms": (
+                    request.get("codeOwnedTermDictionary") or {}
+                ).get("definedTermCount"),
+                "ignoreTerms": (
+                    request.get("codeOwnedTermDictionary") or {}
+                ).get("ignoreTermCount"),
+                "aliasGroups": (
+                    request.get("codeOwnedTermDictionary") or {}
+                ).get("aliasGroupCount"),
+            },
+            "capturedPrimaryCells": request["workbook"][
+                "capturedPrimaryCellCount"
+            ],
+            "packetBytes": packet_bytes,
+            "requestBytes": request_bytes,
+            **prompt_stats,
+            "compressionRatio": (
+                round(request_bytes / packet_bytes, 4) if packet_bytes else None
+            ),
+            "plannedAiCalls": 1 if request["tables"] else 0,
+        }
+    )
+    return 0
+
+
+def _nearest_rank_percentile(values: list[int], percentile: int) -> int:
+    if not values:
+        return 0
+    ordered = sorted(values)
+    rank = max(1, (len(ordered) * percentile + 99) // 100)
+    return ordered[min(rank - 1, len(ordered) - 1)]
+
+
+def _table_first_request_batch_report(
+    *,
+    packet_dir: Path,
+    output_dir: Path,
+    selected: int,
+    workers: int,
+    oversized_request_bytes: int,
+    started_at: str,
+    elapsed_seconds: float,
+    items: list[dict[str, Any]],
+    failures: list[dict[str, Any]],
+    completed: bool,
+) -> dict[str, Any]:
+    ordered_items = sorted(items, key=lambda item: int(item["index"]))
+    ordered_failures = sorted(failures, key=lambda item: int(item["index"]))
+    request_sizes = [int(item["requestBytes"]) for item in ordered_items]
+    prompt_sizes = [int(item["promptBytes"]) for item in ordered_items]
+    formula_status_counts: Counter[str] = Counter(
+        str(item.get("formulaStatus") or "UNKNOWN") for item in ordered_items
+    )
+    term_dictionary_status_counts: Counter[str] = Counter(
+        str(item.get("termDictionaryStatus") or "UNKNOWN")
+        for item in ordered_items
+    )
+    aggregate_status_counts: Counter[str] = Counter()
+    for item in ordered_items:
+        aggregate_status_counts.update(item.get("aggregateCheckCounts") or {})
+    outliers = [
+        {
+            "index": item["index"],
+            "fileName": item["fileName"],
+            "request": item["request"],
+            "requestBytes": item["requestBytes"],
+            "promptBytes": item["promptBytes"],
+            "promptTableCount": item["promptTableCount"],
+            "tableCount": item["tableCount"],
+            "textBlockCount": item["textBlockCount"],
+            "reasons": item["outlierReasons"],
+        }
+        for item in ordered_items
+        if item.get("outlierReasons")
+    ]
+    largest_requests = [
+        {
+            "index": item["index"],
+            "fileName": item["fileName"],
+            "request": item["request"],
+            "requestBytes": item["requestBytes"],
+            "tableCount": item["tableCount"],
+            "capturedPrimaryCells": item["capturedPrimaryCells"],
+        }
+        for item in sorted(
+            ordered_items,
+            key=lambda item: int(item["requestBytes"]),
+            reverse=True,
+        )[:20]
+    ]
+    largest_prompts = [
+        {
+            "index": item["index"],
+            "fileName": item["fileName"],
+            "request": item["request"],
+            "promptBytes": item["promptBytes"],
+            "sourceTableCount": item["tableCount"],
+            "promptTableCount": item["promptTableCount"],
+            "repeatedOccurrenceCount": item["repeatedOccurrenceCount"],
+        }
+        for item in sorted(
+            ordered_items,
+            key=lambda item: int(item["promptBytes"]),
+            reverse=True,
+        )[:20]
+    ]
+    succeeded = len(ordered_items)
+    return {
+        "schemaVersion": "table-first-request-batch-report-v1",
+        "status": (
+            "running"
+            if not completed
+            else ("ok" if not ordered_failures else "partial")
+        ),
+        "builderVersion": TABLE_FIRST_BUILDER_VERSION,
+        "promptVersion": TABLE_FIRST_PROMPT_VERSION,
+        "packetDir": str(packet_dir),
+        "outputDir": str(output_dir),
+        "startedAt": started_at,
+        "completedAt": now_iso() if completed else None,
+        "elapsedSeconds": round(elapsed_seconds, 3),
+        "workers": workers,
+        "selected": selected,
+        "completed": succeeded + len(ordered_failures),
+        "succeeded": succeeded,
+        "failed": len(ordered_failures),
+        "prepared": sum(item["action"] == "PREPARED" for item in ordered_items),
+        "reused": sum(item["action"] == "REUSED" for item in ordered_items),
+        "aiCalls": 0,
+        "plannedAiCalls": sum(bool(item["tableCount"]) for item in ordered_items),
+        "noTables": sum(not item["tableCount"] for item in ordered_items),
+        "tables": sum(int(item["tableCount"]) for item in ordered_items),
+        "textBlocks": sum(int(item["textBlockCount"]) for item in ordered_items),
+        "capturedPrimaryCells": sum(
+            int(item["capturedPrimaryCells"]) for item in ordered_items
+        ),
+        "rawFrequencyResponseExclusions": sum(
+            int(item["rawFrequencyResponseExclusionCount"])
+            for item in ordered_items
+        ),
+        "rawFrequencyResponseExcludedCells": sum(
+            int(item["rawFrequencyResponseExcludedCellCount"])
+            for item in ordered_items
+        ),
+        "workbooksWithRawFrequencyResponseExclusions": sum(
+            bool(item["rawFrequencyResponseExclusionCount"])
+            for item in ordered_items
+        ),
+        "workbooksExcludedFromLearning": sum(
+            bool(item.get("workbookLearningExcluded"))
+            for item in ordered_items
+        ),
+        "workbookLearningExcludedCells": sum(
+            int(item.get("workbookLearningExcludedCellCount") or 0)
+            for item in ordered_items
+        ),
+        "requestBytes": {
+            "total": sum(request_sizes),
+            "average": (
+                round(sum(request_sizes) / len(request_sizes), 1)
+                if request_sizes
+                else 0
+            ),
+            "median": _nearest_rank_percentile(request_sizes, 50),
+            "p95": _nearest_rank_percentile(request_sizes, 95),
+            "p99": _nearest_rank_percentile(request_sizes, 99),
+            "maximum": max(request_sizes, default=0),
+            "oversizedThreshold": oversized_request_bytes,
+            "oversizedCount": sum(
+                size > oversized_request_bytes for size in request_sizes
+            ),
+        },
+        "promptBytes": {
+            "total": sum(prompt_sizes),
+            "average": (
+                round(sum(prompt_sizes) / len(prompt_sizes), 1)
+                if prompt_sizes
+                else 0
+            ),
+            "median": _nearest_rank_percentile(prompt_sizes, 50),
+            "p95": _nearest_rank_percentile(prompt_sizes, 95),
+            "p99": _nearest_rank_percentile(prompt_sizes, 99),
+            "maximum": max(prompt_sizes, default=0),
+            "oversizedThreshold": oversized_request_bytes,
+            "oversizedCount": sum(
+                size > oversized_request_bytes for size in prompt_sizes
+            ),
+        },
+        "aggregateCheckCounts": dict(sorted(aggregate_status_counts.items())),
+        "formulaStatusCounts": dict(sorted(formula_status_counts.items())),
+        "formulaCount": sum(int(item["formulaCount"]) for item in ordered_items),
+        "formulaNonNumericCount": sum(
+            int(item["formulaNonNumericCount"]) for item in ordered_items
+        ),
+        "formulaErrorCount": sum(
+            int(item["formulaErrorCount"]) for item in ordered_items
+        ),
+        "termDictionaryStatusCounts": dict(
+            sorted(term_dictionary_status_counts.items())
+        ),
+        "outlierCount": len(outliers),
+        "outliers": outliers,
+        "largestRequests": largest_requests,
+        "largestPrompts": largest_prompts,
+        "items": ordered_items,
+        "failures": ordered_failures,
+    }
+
+
+def cmd_table_first_request_batch(args: argparse.Namespace) -> int:
+    """Build and audit table-first requests without invoking any AI analysis."""
+
+    packet_dir = Path(args.packet_dir).expanduser().resolve()
+    if not packet_dir.is_dir():
+        raise SystemExit(f"Semantic packet directory not found: {packet_dir}")
+    packet_paths = sorted(
+        path for path in packet_dir.glob("*.json") if path.is_file()
+    )
+    if args.offset:
+        packet_paths = packet_paths[max(0, args.offset) :]
+    if args.limit > 0:
+        packet_paths = packet_paths[: args.limit]
+    output_dir = service_output_dir(
+        args.out_dir,
+        TABLE_FIRST_DIR / "request-batch",
+    )
+    request_dir = service_output_dir(None, output_dir / "requests")
+    report_path = output_dir / "request-batch-report.json"
+    workers = max(1, args.workers)
+    oversized_request_bytes = max(1, args.oversized_request_bytes)
+    checkpoint_every = max(1, args.checkpoint_every)
+    started_at = now_iso()
+    started = time.perf_counter()
+
+    def process_one(index: int, packet_path: Path) -> dict[str, Any]:
+        item_started = time.perf_counter()
+        packet_set = _load_semantic_packet(packet_path)
+        request = build_table_first_request(
+            packet_set,
+            max_preview_rows=args.max_preview_rows,
+            max_preview_columns=args.max_preview_columns,
+            max_value_samples=args.max_value_samples,
+            term_dictionary_path=args.term_dictionary,
+        )
+        request_bytes = table_first_json_bytes(request)
+        prompt_stats = table_first_prompt_stats(request)
+        request_path = request_dir / f"{safe_name(request['requestId'])}.json"
+        action = "PREPARED"
+        if request_path.is_file():
+            try:
+                if request_path.read_bytes() == request_bytes:
+                    action = "REUSED"
+            except OSError:
+                pass
+        if action == "PREPARED":
+            request_path.write_bytes(request_bytes)
+
+        raw_frequency_exclusions = (
+            (request.get("codeOwnedExclusions") or {}).get(
+                "rawFrequencyResponseTables"
+            )
+            or []
+        )
+        workbook_learning_exclusion = (
+            (request.get("codeOwnedExclusions") or {}).get(
+                "workbookLearningExclusion"
+            )
+            or {}
+        )
+        formula = request.get("formulaDerivation") or {}
+        aggregate_status_counts: Counter[str] = Counter()
+        for table in request.get("tables") or []:
+            for check in table.get("aggregateChecks") or []:
+                aggregate_status_counts[str(check.get("status") or "UNKNOWN")] += 1
+        outlier_reasons: list[str] = []
+        if not request.get("tables"):
+            outlier_reasons.append(
+                "WORKBOOK_EXCLUDED_RAW_FREQUENCY_RESPONSE"
+                if workbook_learning_exclusion.get("excluded") is True
+                else "NO_TABLES"
+            )
+        if prompt_stats["promptBytes"] > oversized_request_bytes:
+            outlier_reasons.append("OVERSIZED_PROMPT")
+        if int(formula.get("errorCount") or 0):
+            outlier_reasons.append("FORMULA_ERRORS")
+        if aggregate_status_counts["MISMATCH"]:
+            outlier_reasons.append("AGGREGATE_MISMATCH")
+        return {
+            "index": index,
+            "packet": str(packet_path),
+            "fileName": request["source"]["fileName"],
+            "requestId": request["requestId"],
+            "request": str(request_path),
+            "action": action,
+            "elapsedSeconds": round(time.perf_counter() - item_started, 3),
+            "packetBytes": packet_path.stat().st_size,
+            "requestBytes": len(request_bytes),
+            **prompt_stats,
+            "capturedPrimaryCells": int(
+                request["workbook"]["capturedPrimaryCellCount"]
+            ),
+            "tableCount": len(request["tables"]),
+            "textBlockCount": len(request["textBlocks"]),
+            "rawFrequencyResponseExclusionCount": len(
+                raw_frequency_exclusions
+            ),
+            "rawFrequencyResponseExcludedCellCount": sum(
+                int(exclusion.get("sourceCellCount") or 0)
+                for exclusion in raw_frequency_exclusions
+            ),
+            "workbookLearningExcluded": (
+                workbook_learning_exclusion.get("excluded") is True
+            ),
+            "workbookLearningExclusionReason": str(
+                workbook_learning_exclusion.get("reason") or ""
+            ),
+            "workbookLearningExcludedCellCount": int(
+                workbook_learning_exclusion.get(
+                    "excludedCapturedPrimaryCellCount"
+                )
+                or 0
+            ),
+            "aggregateCheckCounts": dict(sorted(aggregate_status_counts.items())),
+            "formulaStatus": str(formula.get("status") or "UNKNOWN"),
+            "formulaCount": int(formula.get("formulaCount") or 0),
+            "formulaNonNumericCount": int(
+                formula.get("nonNumericCount") or 0
+            ),
+            "formulaErrorCount": int(formula.get("errorCount") or 0),
+            "formulaErrorSamples": list(formula.get("errorSamples") or []),
+            "termDictionaryStatus": str(
+                (request.get("codeOwnedTermDictionary") or {}).get("status")
+                or "UNKNOWN"
+            ),
+            "termDictionaryContentSha256": str(
+                (request.get("codeOwnedTermDictionary") or {}).get(
+                    "contentSha256"
+                )
+                or ""
+            ),
+            "outlierReasons": outlier_reasons,
+        }
+
+    items: list[dict[str, Any]] = []
+    failures: list[dict[str, Any]] = []
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {
+            executor.submit(process_one, index, packet_path): (index, packet_path)
+            for index, packet_path in enumerate(packet_paths, start=1)
+        }
+        for future in as_completed(futures):
+            index, packet_path = futures[future]
+            try:
+                item = future.result()
+            except Exception as exc:
+                failures.append(
+                    {
+                        "index": index,
+                        "packet": str(packet_path),
+                        "error": str(exc),
+                    }
+                )
+                progress_action = "FAILED"
+            else:
+                items.append(item)
+                progress_action = str(item["action"])
+            completed_count = len(items) + len(failures)
+            if completed_count % checkpoint_every == 0:
+                report = _table_first_request_batch_report(
+                    packet_dir=packet_dir,
+                    output_dir=output_dir,
+                    selected=len(packet_paths),
+                    workers=workers,
+                    oversized_request_bytes=oversized_request_bytes,
+                    started_at=started_at,
+                    elapsed_seconds=time.perf_counter() - started,
+                    items=items,
+                    failures=failures,
+                    completed=False,
+                )
+                write_json(report_path, report)
+                print(
+                    f"[{completed_count}/{len(packet_paths)}] "
+                    f"{packet_path.name}: {progress_action}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+
+    report = _table_first_request_batch_report(
+        packet_dir=packet_dir,
+        output_dir=output_dir,
+        selected=len(packet_paths),
+        workers=workers,
+        oversized_request_bytes=oversized_request_bytes,
+        started_at=started_at,
+        elapsed_seconds=time.perf_counter() - started,
+        items=items,
+        failures=failures,
+        completed=True,
+    )
+    write_json(report_path, report)
+    print_json(
+        {
+            key: value
+            for key, value in report.items()
+            if key
+            not in {"items", "outliers", "largestRequests", "failures"}
+        }
+        | {
+            "report": str(report_path),
+            "failureCount": len(report["failures"]),
+        }
+    )
+    return 0 if not failures else 1
+
+
+def _no_table_first_analysis(request: dict[str, Any]) -> dict[str, Any]:
+    exclusions = (
+        (request.get("codeOwnedExclusions") or {}).get(
+            "rawFrequencyResponseTables"
+        )
+        or []
+    )
+    return validate_table_first_analysis(
+        {
+            "schemaVersion": TABLE_FIRST_ANALYSIS_SCHEMA_VERSION,
+            "promptVersion": TABLE_FIRST_PROMPT_VERSION,
+            "requestId": request["requestId"],
+            "revisionUid": request["source"]["revisionUid"],
+            "status": "NO_TABLES",
+            "workbookSummary": (
+                "No AI-analyzable table remains after deterministic raw "
+                "frequency-response exclusion."
+                if exclusions
+                else "No table candidate was found."
+            ),
+            "tables": [],
+            "notes": [],
+        },
+        request=request,
+    )
+
+
+def _adapt_reusable_table_first_analysis(
+    existing: dict[str, Any],
+    *,
+    request: dict[str, Any],
+    previous_request: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Adapt a stored analysis when builder-v4 only removed raw tables."""
+
+    exclusions = (
+        (request.get("codeOwnedExclusions") or {}).get(
+            "rawFrequencyResponseTables"
+        )
+        or []
+    )
+    if existing.get("requestId") == request.get("requestId"):
+        return existing
+    if (
+        existing.get("schemaVersion") != TABLE_FIRST_ANALYSIS_SCHEMA_VERSION
+        or existing.get("promptVersion") != TABLE_FIRST_PROMPT_VERSION
+        or existing.get("revisionUid")
+        != (request.get("source") or {}).get("revisionUid")
+    ):
+        return existing
+
+    existing_tables = existing.get("tables")
+    if not isinstance(existing_tables, list) or any(
+        not isinstance(table, dict) for table in existing_tables
+    ):
+        return existing
+    by_id = {
+        str(table.get("tableId") or ""): table for table in existing_tables
+    }
+    if len(by_id) != len(existing_tables):
+        return existing
+    expected_ids = [
+        str(table["tableId"]) for table in request.get("tables") or []
+    ]
+    if any(table_id not in by_id for table_id in expected_ids):
+        return existing
+
+    safe_builder_upgrade = False
+    if isinstance(previous_request, dict):
+        previous_tables = {
+            str(table.get("tableId") or ""): table
+            for table in previous_request.get("tables") or []
+            if isinstance(table, dict)
+        }
+        safe_builder_upgrade = bool(
+            previous_request.get("schemaVersion")
+            == TABLE_FIRST_REQUEST_SCHEMA_VERSION
+            and previous_request.get("builderVersion")
+            in {"table-first-builder-v3", "table-first-builder-v4"}
+            and previous_request.get("requestId") == existing.get("requestId")
+            and previous_request.get("source") == request.get("source")
+            and previous_request.get("textBlocks") == request.get("textBlocks")
+            and all(
+                previous_tables.get(table_id) == table
+                for table_id, table in zip(
+                    expected_ids,
+                    request.get("tables") or [],
+                    strict=True,
+                )
+            )
+        )
+    if not safe_builder_upgrade and not exclusions:
+        return existing
+
+    adapted = copy.deepcopy(existing)
+    adapted["requestId"] = request["requestId"]
+    adapted["tables"] = [by_id[table_id] for table_id in expected_ids]
+    allowed_table_ids = set(expected_ids)
+    allowed_text_ids = {
+        str(block["textId"]) for block in request.get("textBlocks") or []
+    }
+    for table in adapted["tables"]:
+        table["relatedTableIds"] = [
+            table_id
+            for table_id in table.get("relatedTableIds") or []
+            if str(table_id) in allowed_table_ids
+            and str(table_id) != str(table.get("tableId") or "")
+        ]
+        table["textLinks"] = [
+            text_id
+            for text_id in table.get("textLinks") or []
+            if str(text_id) in allowed_text_ids
+        ]
+    if not expected_ids:
+        adapted["status"] = "NO_TABLES"
+        adapted["workbookSummary"] = (
+            "No AI-analyzable table remains after deterministic raw "
+            "frequency-response exclusion."
+        )
+    return adapted
+
+
+def cmd_table_first_analyze(args: argparse.Namespace) -> int:
+    request_path = Path(args.request).expanduser().resolve()
+    request = _load_table_first_request(request_path)
+    output_path = service_output_path(
+        args.out,
+        TABLE_FIRST_DIR
+        / "analyses"
+        / f"{safe_name(request['requestId'])}.json",
+    )
+    ai_calls = 0
+    if request.get("tables"):
+        analysis = run_codex_table_first_analysis(
+            request=request,
+            output_path=output_path,
+            model=args.model,
+            reasoning_effort=args.reasoning_effort,
+            timeout_seconds=args.timeout,
+        )
+        ai_calls = 1
+    else:
+        analysis = _no_table_first_analysis(request)
+        output_path.write_bytes(table_first_json_bytes(analysis))
+    projection = project_table_first_analysis(request, analysis)
+    projection_path = service_output_path(
+        args.projection_out,
+        TABLE_FIRST_DIR
+        / "projections"
+        / f"{safe_name(request['requestId'])}.json",
+    )
+    projection_path.write_bytes(table_first_json_bytes(projection))
+    print_json(
+        {
+            "status": "ok",
+            "request": str(request_path),
+            "analysis": str(output_path),
+            "projection": str(projection_path),
+            "aiCalls": ai_calls,
+            "tables": len(analysis["tables"]),
+            "studies": len(projection["studies"]),
+            "verificationStatus": projection["verificationStatus"],
+            "queryEligibility": projection["queryEligibility"],
+        }
+    )
+    return 0
+
+
+def _table_first_item_audit(
+    request: dict[str, Any],
+    analysis: dict[str, Any],
+) -> dict[str, Any]:
+    confidence_counts: Counter[str] = Counter()
+    table_type_counts: Counter[str] = Counter()
+    aggregate_status_counts: Counter[str] = Counter()
+    identity_group_count = 0
+    duplicate_group_label_count = 0
+    aggregate_metric_count = 0
+    metric_count = 0
+    relation_count = 0
+    source_tables = {
+        str(table["tableId"]): table for table in request.get("tables") or []
+    }
+    low_confidence_tables: list[dict[str, Any]] = []
+    identity_pattern = re.compile(
+        r"(?:#?\d+(?:\.\d+)?|"
+        r"(?:position|posistion|pos|nozzle|sample|specimen|replicate)"
+        r"\s*#?\d+)",
+        flags=re.IGNORECASE,
+    )
+    aggregate_metric_pattern = re.compile(
+        r"(?:min|minimum|max|maximum|avg|average|mean)",
+        flags=re.IGNORECASE,
+    )
+    for table in analysis.get("tables") or []:
+        confidence_counts[str(table.get("confidence") or "UNKNOWN")] += 1
+        table_type_counts[str(table.get("type") or "UNKNOWN")] += 1
+        labels = [
+            str(group.get("label") or "").strip()
+            for group in table.get("groups") or []
+            if isinstance(group, dict)
+        ]
+        duplicate_group_label_count += len(labels) - len(set(labels))
+        identity_group_count += sum(
+            bool(identity_pattern.fullmatch(label)) for label in labels
+        )
+        metrics = [
+            metric
+            for metric in table.get("metrics") or []
+            if isinstance(metric, dict)
+        ]
+        metric_count += len(metrics)
+        aggregate_metric_count += sum(
+            bool(
+                aggregate_metric_pattern.fullmatch(
+                    str(metric.get("name") or "").strip()
+                )
+            )
+            for metric in metrics
+        )
+        relation_count += len(table.get("comparisonRelations") or [])
+        if table.get("confidence") == "LOW":
+            source_table = source_tables.get(str(table.get("tableId") or ""), {})
+            low_confidence_tables.append(
+                {
+                    "tableId": table.get("tableId"),
+                    "title": table.get("title"),
+                    "type": table.get("type"),
+                    "sheet": source_table.get("sheet"),
+                    "range": source_table.get("range"),
+                    "limitations": list(table.get("limitations") or []),
+                }
+            )
+    for table in request.get("tables") or []:
+        for check in table.get("aggregateChecks") or []:
+            aggregate_status_counts[str(check.get("status") or "UNKNOWN")] += 1
+
+    formula = request.get("formulaDerivation") or {}
+    formula_status = str(formula.get("status") or "UNKNOWN")
+    review_reasons: list[str] = []
+    if confidence_counts["LOW"]:
+        review_reasons.append("LOW_CONFIDENCE")
+    if aggregate_status_counts["MISMATCH"]:
+        review_reasons.append("AGGREGATE_MISMATCH")
+    if identity_group_count:
+        review_reasons.append("IDENTITY_AXIS_AS_GROUP")
+    if duplicate_group_label_count:
+        review_reasons.append("DUPLICATE_GROUP_LABEL")
+    if aggregate_metric_count:
+        review_reasons.append("AGGREGATE_LABEL_AS_METRIC")
+
+    return {
+        "analysisStatus": analysis["status"],
+        "confidenceCounts": dict(sorted(confidence_counts.items())),
+        "tableTypeCounts": dict(sorted(table_type_counts.items())),
+        "metricCount": metric_count,
+        "comparisonRelationCount": relation_count,
+        "aggregateCheckCounts": dict(sorted(aggregate_status_counts.items())),
+        "formulaStatus": formula_status,
+        "formulaCount": int(formula.get("formulaCount") or 0),
+        "derivedFormulaCount": int(formula.get("numericCount") or 0),
+        "nonNumericFormulaCount": int(
+            formula.get("nonNumericCount") or 0
+        ),
+        "appliedFormulaCount": int(
+            formula.get(
+                "appliedNumericCount",
+                formula.get("numericCount") or 0,
+            )
+        ),
+        "formulaErrorCount": int(formula.get("errorCount") or 0),
+        "formulaErrorSamples": list(formula.get("errorSamples") or []),
+        "identityGroupCount": identity_group_count,
+        "duplicateGroupLabelCount": duplicate_group_label_count,
+        "aggregateMetricCount": aggregate_metric_count,
+        "reviewRecommended": bool(review_reasons),
+        "reviewReasons": review_reasons,
+        "lowConfidenceTables": low_confidence_tables,
+    }
+
+
+def _table_first_batch_report(
+    *,
+    packet_dir: Path,
+    output_dir: Path,
+    selected: int,
+    workers: int,
+    started_at: str,
+    elapsed_seconds: float,
+    items: list[dict[str, Any]],
+    failures: list[dict[str, Any]],
+    completed: bool,
+) -> dict[str, Any]:
+    confidence_counts: Counter[str] = Counter()
+    table_type_counts: Counter[str] = Counter()
+    aggregate_status_counts: Counter[str] = Counter()
+    formula_status_counts: Counter[str] = Counter()
+    term_dictionary_status_counts: Counter[str] = Counter()
+    request_sizes: list[int] = []
+    for item in items:
+        confidence_counts.update(item.get("confidenceCounts") or {})
+        table_type_counts.update(item.get("tableTypeCounts") or {})
+        aggregate_status_counts.update(item.get("aggregateCheckCounts") or {})
+        formula_status_counts[str(item.get("formulaStatus") or "UNKNOWN")] += 1
+        term_dictionary_status_counts[
+            str(item.get("termDictionaryStatus") or "UNKNOWN")
+        ] += 1
+        request_sizes.append(int(item.get("requestBytes") or 0))
+    ordered_items = sorted(items, key=lambda item: int(item["index"]))
+    ordered_failures = sorted(failures, key=lambda item: int(item["index"]))
+    outliers = [
+        {
+            "index": item["index"],
+            "fileName": item["fileName"],
+            "analysis": item["analysis"],
+            "reasons": item["reviewReasons"],
+            "lowConfidenceTables": item["lowConfidenceTables"],
+            "formula": {
+                "status": item["formulaStatus"],
+                "formulaCount": item["formulaCount"],
+                "appliedFormulaCount": item["appliedFormulaCount"],
+                "nonNumericFormulaCount": item[
+                    "nonNumericFormulaCount"
+                ],
+                "errorCount": item["formulaErrorCount"],
+                "errorSamples": item["formulaErrorSamples"],
+            },
+        }
+        for item in ordered_items
+        if item.get("reviewRecommended")
+    ]
+    succeeded = len(ordered_items)
+    return {
+        "schemaVersion": "table-first-batch-report-v1",
+        "status": (
+            "running"
+            if not completed
+            else ("ok" if not ordered_failures else "partial")
+        ),
+        "builderVersion": TABLE_FIRST_BUILDER_VERSION,
+        "promptVersion": TABLE_FIRST_PROMPT_VERSION,
+        "packetDir": str(packet_dir),
+        "outputDir": str(output_dir),
+        "startedAt": started_at,
+        "completedAt": now_iso() if completed else None,
+        "elapsedSeconds": round(elapsed_seconds, 3),
+        "workers": workers,
+        "selected": selected,
+        "completed": succeeded + len(ordered_failures),
+        "succeeded": succeeded,
+        "failed": len(ordered_failures),
+        "newAnalyses": sum(item["action"] == "ANALYZED" for item in ordered_items),
+        "reused": sum(item["action"] == "REUSED" for item in ordered_items),
+        "noTables": sum(
+            item["analysisStatus"] == "NO_TABLES" for item in ordered_items
+        ),
+        "aiCalls": sum(int(item["aiCalls"]) for item in ordered_items),
+        "tables": sum(int(item["tableCount"]) for item in ordered_items),
+        "textBlocks": sum(int(item["textBlockCount"]) for item in ordered_items),
+        "rawFrequencyResponseExclusions": sum(
+            int(item.get("rawFrequencyResponseExclusionCount") or 0)
+            for item in ordered_items
+        ),
+        "workbooksWithRawFrequencyResponseExclusions": sum(
+            bool(item.get("rawFrequencyResponseExclusionCount"))
+            for item in ordered_items
+        ),
+        "workbooksExcludedFromLearning": sum(
+            bool(item.get("workbookLearningExcluded"))
+            for item in ordered_items
+        ),
+        "workbookLearningExcludedCells": sum(
+            int(item.get("workbookLearningExcludedCellCount") or 0)
+            for item in ordered_items
+        ),
+        "requestBytes": {
+            "total": sum(request_sizes),
+            "average": (
+                round(sum(request_sizes) / len(request_sizes), 1)
+                if request_sizes
+                else 0
+            ),
+            "maximum": max(request_sizes, default=0),
+        },
+        "confidenceCounts": dict(sorted(confidence_counts.items())),
+        "tableTypeCounts": dict(sorted(table_type_counts.items())),
+        "aggregateCheckCounts": dict(sorted(aggregate_status_counts.items())),
+        "formulaStatusCounts": dict(sorted(formula_status_counts.items())),
+        "termDictionaryStatusCounts": dict(
+            sorted(term_dictionary_status_counts.items())
+        ),
+        "formulaCount": sum(
+            int(item.get("formulaCount") or 0) for item in ordered_items
+        ),
+        "derivedFormulaCount": sum(
+            int(item.get("derivedFormulaCount") or 0)
+            for item in ordered_items
+        ),
+        "appliedFormulaCount": sum(
+            int(item.get("appliedFormulaCount") or 0)
+            for item in ordered_items
+        ),
+        "nonNumericFormulaCount": sum(
+            int(item.get("nonNumericFormulaCount") or 0)
+            for item in ordered_items
+        ),
+        "formulaErrorCount": sum(
+            int(item.get("formulaErrorCount") or 0)
+            for item in ordered_items
+        ),
+        "reviewRecommended": len(outliers),
+        "outliers": outliers,
+        "items": ordered_items,
+        "failures": ordered_failures,
+    }
+
+
+def cmd_table_first_batch(args: argparse.Namespace) -> int:
+    packet_dir = Path(args.packet_dir).expanduser().resolve()
+    if not packet_dir.is_dir():
+        raise SystemExit(f"Semantic packet directory not found: {packet_dir}")
+    packet_paths = sorted(
+        path for path in packet_dir.glob("*.json") if path.is_file()
+    )
+    if args.offset:
+        packet_paths = packet_paths[max(0, args.offset) :]
+    if args.limit > 0:
+        packet_paths = packet_paths[: args.limit]
+    output_dir = service_output_dir(
+        args.out_dir,
+        TABLE_FIRST_DIR / "batch",
+    )
+    request_dir = service_output_dir(None, output_dir / "requests")
+    analysis_dir = service_output_dir(None, output_dir / "analyses")
+    projection_dir = service_output_dir(None, output_dir / "projections")
+    report_path = output_dir / "batch-report.json"
+    workers = max(1, args.workers)
+    started_at = now_iso()
+    started = time.perf_counter()
+
+    def process_one(index: int, packet_path: Path) -> dict[str, Any]:
+        item_started = time.perf_counter()
+        packet_set = _load_semantic_packet(packet_path)
+        request = build_table_first_request(
+            packet_set,
+            max_preview_rows=args.max_preview_rows,
+            max_preview_columns=args.max_preview_columns,
+            max_value_samples=args.max_value_samples,
+            term_dictionary_path=args.term_dictionary,
+        )
+        stem = safe_name(packet_path.stem)
+        request_path = request_dir / f"{stem}.json"
+        analysis_path = analysis_dir / f"{stem}.json"
+        projection_path = projection_dir / f"{stem}.json"
+        previous_request: dict[str, Any] | None = None
+        if request_path.is_file():
+            try:
+                loaded_previous_request = json.loads(
+                    request_path.read_text(encoding="utf-8")
+                )
+            except (OSError, json.JSONDecodeError):
+                pass
+            else:
+                if isinstance(loaded_previous_request, dict):
+                    previous_request = loaded_previous_request
+        request_bytes = table_first_json_bytes(request)
+        request_path.write_bytes(request_bytes)
+
+        analysis: dict[str, Any] | None = None
+        action = "ANALYZED"
+        ai_calls = 0
+        if analysis_path.is_file() and not args.force:
+            try:
+                existing = json.loads(analysis_path.read_text(encoding="utf-8"))
+                reusable_existing = _adapt_reusable_table_first_analysis(
+                    existing,
+                    request=request,
+                    previous_request=previous_request,
+                )
+                normalized_existing = normalize_table_first_analysis(
+                    reusable_existing,
+                    request=request,
+                )
+                analysis = validate_table_first_analysis(
+                    normalized_existing,
+                    request=request,
+                )
+            except (OSError, json.JSONDecodeError, RuntimeError, ValueError):
+                analysis = None
+            else:
+                action = "REUSED"
+                if normalized_existing != existing:
+                    analysis_path.write_bytes(table_first_json_bytes(analysis))
+        if analysis is None:
+            if request.get("tables"):
+                analysis = run_codex_table_first_analysis(
+                    request=request,
+                    output_path=analysis_path,
+                    model=args.model or None,
+                    reasoning_effort=args.reasoning_effort or None,
+                    timeout_seconds=args.timeout,
+                )
+                ai_calls = 1
+            else:
+                analysis = _no_table_first_analysis(request)
+                analysis_path.write_bytes(table_first_json_bytes(analysis))
+                action = "NO_TABLES"
+        projection = project_table_first_analysis(request, analysis)
+        projection_path.write_bytes(table_first_json_bytes(projection))
+        audit = _table_first_item_audit(request, analysis)
+        raw_frequency_exclusions = (
+            (request.get("codeOwnedExclusions") or {}).get(
+                "rawFrequencyResponseTables"
+            )
+            or []
+        )
+        workbook_learning_exclusion = (
+            (request.get("codeOwnedExclusions") or {}).get(
+                "workbookLearningExclusion"
+            )
+            or {}
+        )
+        return {
+            "index": index,
+            "packet": str(packet_path),
+            "fileName": request["source"]["fileName"],
+            "requestId": request["requestId"],
+            "request": str(request_path),
+            "analysis": str(analysis_path),
+            "projection": str(projection_path),
+            "action": action,
+            "aiCalls": ai_calls,
+            "elapsedSeconds": round(time.perf_counter() - item_started, 3),
+            "requestBytes": len(request_bytes),
+            "capturedPrimaryCells": int(
+                request["workbook"]["capturedPrimaryCellCount"]
+            ),
+            "tableCount": len(request["tables"]),
+            "textBlockCount": len(request["textBlocks"]),
+            "rawFrequencyResponseExclusionCount": len(
+                raw_frequency_exclusions
+            ),
+            "rawFrequencyResponseExcludedCellCount": sum(
+                int(exclusion.get("sourceCellCount") or 0)
+                for exclusion in raw_frequency_exclusions
+            ),
+            "workbookLearningExcluded": (
+                workbook_learning_exclusion.get("excluded") is True
+            ),
+            "workbookLearningExclusionReason": str(
+                workbook_learning_exclusion.get("reason") or ""
+            ),
+            "workbookLearningExcludedCellCount": int(
+                workbook_learning_exclusion.get(
+                    "excludedCapturedPrimaryCellCount"
+                )
+                or 0
+            ),
+            "termDictionaryStatus": str(
+                (request.get("codeOwnedTermDictionary") or {}).get("status")
+                or "UNKNOWN"
+            ),
+            "termDictionaryContentSha256": str(
+                (request.get("codeOwnedTermDictionary") or {}).get(
+                    "contentSha256"
+                )
+                or ""
+            ),
+            "studyCount": len(projection["studies"]),
+            **audit,
+        }
+
+    items: list[dict[str, Any]] = []
+    failures: list[dict[str, Any]] = []
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {
+            executor.submit(process_one, index, packet_path): (
+                index,
+                packet_path,
+            )
+            for index, packet_path in enumerate(packet_paths, start=1)
+        }
+        for future in as_completed(futures):
+            index, packet_path = futures[future]
+            try:
+                item = future.result()
+            except Exception as exc:
+                failures.append(
+                    {
+                        "index": index,
+                        "packet": str(packet_path),
+                        "error": str(exc),
+                    }
+                )
+                progress_action = "FAILED"
+            else:
+                items.append(item)
+                progress_action = str(item["action"])
+            report = _table_first_batch_report(
+                packet_dir=packet_dir,
+                output_dir=output_dir,
+                selected=len(packet_paths),
+                workers=workers,
+                started_at=started_at,
+                elapsed_seconds=time.perf_counter() - started,
+                items=items,
+                failures=failures,
+                completed=False,
+            )
+            write_json(report_path, report)
+            print(
+                f"[{report['completed']}/{report['selected']}] "
+                f"{packet_path.name}: {progress_action}",
+                file=sys.stderr,
+                flush=True,
+            )
+
+    report = _table_first_batch_report(
+        packet_dir=packet_dir,
+        output_dir=output_dir,
+        selected=len(packet_paths),
+        workers=workers,
+        started_at=started_at,
+        elapsed_seconds=time.perf_counter() - started,
+        items=items,
+        failures=failures,
+        completed=True,
+    )
+    write_json(report_path, report)
+    print_json(
+        {
+            key: value
+            for key, value in report.items()
+            if key not in {"items", "outliers", "failures"}
+        }
+        | {
+            "report": str(report_path),
+            "reviewRecommended": report["reviewRecommended"],
+            "failureCount": len(report["failures"]),
+        }
+    )
+    return 0 if not failures else 1
+
+
+def cmd_table_first_html(args: argparse.Namespace) -> int:
+    batch_dir = Path(args.batch_dir).expanduser().resolve()
+    if not batch_dir.is_dir():
+        raise SystemExit(f"Table-first batch directory not found: {batch_dir}")
+    output_dir = (
+        Path(args.out_dir).expanduser().resolve()
+        if args.out_dir
+        else batch_dir / "html-report"
+    )
+    result = build_table_first_html_report(
+        batch_dir=batch_dir,
+        output_dir=output_dir,
+    )
+    print_json(result)
+    return 0
+
+
+def cmd_semantic_validate_draft(args: argparse.Namespace) -> int:
+    input_path = Path(args.input).resolve()
+    if not input_path.is_file():
+        raise SystemExit(f"Semantic Study draft not found: {input_path}")
+    packet_set = _load_semantic_packet(Path(args.packet).resolve())
+    source = _semantic_source(packet_set, args.dataset)
+    content_complete = bool(
+        packet_set["inventory"].get("contentCompleteForManifest")
+    )
+    draft = json.loads(input_path.read_text(encoding="utf-8"))
+    db_path = Path(args.db).resolve()
+    with connect_ro(db_path) as conn:
+        canonical_revision = resolve_manifest_revision(conn, source)
+        normalized = validate_ai_study_draft(
+            draft,
+            source=source,
+            content_complete=content_complete,
+            evidence_checker=make_database_evidence_checker(
+                conn,
+                canonical_revision,
+            ),
+        )
+        validate_numeric_observation_evidence(
+            conn,
+            canonical_revision,
+            normalized,
+        )
+        validate_factor_and_arm_evidence(
+            conn,
+            canonical_revision,
+            normalized,
+        )
+        validate_comparison_representation_alignment(
+            conn,
+            canonical_revision,
+            normalized,
+        )
+        validate_conclusion_evidence(
+            conn,
+            canonical_revision,
+            normalized,
+        )
+    output_path = service_output_path(
+        args.out,
+        SEMANTIC_STUDY_DIR
+        / f"{safe_name(source['revisionUid'])}.study-draft.json",
+    )
+    write_json(output_path, normalized)
+    print_json(
+        {
+            "status": "ok",
+            "input": str(input_path),
+            "manifest": str(output_path),
+            "studies": len(normalized["studies"]),
+            "verificationStatus": normalized["workbookAnalysis"][
+                "verificationStatus"
+            ],
+        }
+    )
+    return 0
+
+
+def cmd_evidence_query(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).resolve()
+    evidence_pack = build_evidence_pack_from_db(db_path, args.question)
+    if args.out:
+        output_path = database_scoped_output_path(
+            args.out,
+            OUTPUT_DIR / "evidence-packs" / "query.json",
+            db_path,
+        )
+        output_path.write_text(
+            json.dumps(evidence_pack, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        print_json(
+            {
+                "status": "ok",
+                "db": str(db_path),
+                "evidencePack": str(output_path),
+                **evidence_pack["summary"],
+            }
+        )
+    else:
+        print_json(evidence_pack)
+    return 0
+
+
+def cmd_evidence_detail(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).resolve()
+    detail = build_evidence_detail_from_db(
+        db_path,
+        args.evidence_id,
+    )
+    if args.out:
+        output_path = database_scoped_output_path(
+            args.out,
+            OUTPUT_DIR / "evidence-details" / f"{safe_name(args.evidence_id)}.json",
+            db_path,
+        )
+        write_json(output_path, detail)
+        print_json(
+            {
+                "status": "ok",
+                "db": str(db_path),
+                "publicEvidenceId": detail["publicEvidenceId"],
+                "evidenceDetail": str(output_path),
+                "trustStatus": detail["trust"]["status"],
+                "capturedCellCountInRange": detail["preview"][
+                    "capturedCellCountInRange"
+                ],
+            }
+        )
+    else:
+        print_json(detail)
+    return 0
+
+
+def cmd_related_studies(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).resolve()
+    report = build_related_studies_from_db(
+        db_path,
+        args.target,
+        limit=args.limit,
+    )
+    if args.out:
+        output_path = database_scoped_output_path(
+            args.out,
+            OUTPUT_DIR
+            / "related-studies"
+            / f"{safe_name(report['targetIdentifier'])}.json",
+            db_path,
+        )
+        output_path.write_bytes(related_studies_json_bytes(report))
+        print_json(
+            {
+                "status": "ok",
+                "db": str(db_path),
+                "relatedStudies": str(output_path),
+                **report["summary"],
+                "imagesAnalyzed": False,
+            }
+        )
+    else:
+        print_json(report)
+    return 0
+
+
+def cmd_table_first_history_index(args: argparse.Namespace) -> int:
+    report = build_history_index(
+        Path(args.batch_dir).expanduser().resolve(),
+        Path(args.db).expanduser().resolve(),
+        require_complete=not args.allow_running,
+    )
+    print_json(report)
+    return 0
+
+
+def cmd_table_first_history_query(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).expanduser().resolve()
+    pack = build_history_pack(
+        db_path,
+        args.question,
+        limit=args.limit,
+    )
+    answer = build_history_answer(pack)
+    question_hash = hashlib.sha256(args.question.encode("utf-8")).hexdigest()[:16]
+    pack_path = service_output_path(
+        args.out_pack,
+        OUTPUT_DIR / "table-first-history-answers" / f"{question_hash}.pack.json",
+    )
+    answer_path = service_output_path(
+        args.out_json,
+        OUTPUT_DIR / "table-first-history-answers" / f"{question_hash}.answer.json",
+    )
+    markdown_path = service_output_path(
+        args.out_markdown,
+        OUTPUT_DIR / "table-first-history-answers" / f"{question_hash}.answer.md",
+    )
+    pack_path.write_bytes(history_json_bytes(pack))
+    answer_path.write_bytes(history_json_bytes(answer))
+    markdown_path.write_text(
+        render_history_answer_markdown(answer),
+        encoding="utf-8",
+    )
+    print_json(
+        {
+            "status": "ok",
+            "database": str(db_path),
+            "answerStatus": answer["answerStatus"],
+            "evidencePack": str(pack_path),
+            "answerJson": str(answer_path),
+            "answerMarkdown": str(markdown_path),
+            **answer["coverage"],
+        }
+    )
+    return 0
+
+
+def cmd_table_first_contextual_query(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).expanduser().resolve()
+    request = build_contextual_query_request(
+        db_path,
+        args.question,
+        candidate_limit=args.candidate_limit,
+        detail_candidate_limit=args.detail_candidate_limit,
+        max_fact_count=args.max_fact_count,
+    )
+    question_hash = hashlib.sha256(args.question.encode("utf-8")).hexdigest()[:16]
+    request_path = service_output_path(
+        args.out_request,
+        OUTPUT_DIR
+        / "table-first-contextual-answers"
+        / f"{question_hash}.request.json",
+    )
+    answer_path = service_output_path(
+        args.out_json,
+        OUTPUT_DIR
+        / "table-first-contextual-answers"
+        / f"{question_hash}.answer.json",
+    )
+    markdown_path = service_output_path(
+        args.out_markdown,
+        OUTPUT_DIR
+        / "table-first-contextual-answers"
+        / f"{question_hash}.answer.md",
+    )
+    request_path.write_bytes(contextual_json_bytes(request))
+    answer = run_codex_contextual_query(
+        request=request,
+        output_path=answer_path,
+        model=args.model,
+        reasoning_effort=args.reasoning_effort,
+        timeout_seconds=args.timeout_seconds,
+    )
+    markdown_path.write_text(
+        render_contextual_answer_markdown(answer),
+        encoding="utf-8",
+    )
+    print_json(
+        {
+            "status": "ok",
+            "database": str(db_path),
+            "answerStatus": answer["answerStatus"],
+            "contextRequest": str(request_path),
+            "answerJson": str(answer_path),
+            "answerMarkdown": str(markdown_path),
+            **answer["coverage"],
+        }
+    )
+    return 0
+
+
+def cmd_table_first_relevance_query(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).expanduser().resolve()
+    request = build_relevance_query_request(
+        db_path,
+        args.question,
+        candidate_limit=args.candidate_limit,
+    )
+    question_hash = hashlib.sha256(args.question.encode("utf-8")).hexdigest()[:16]
+    request_path = service_output_path(
+        args.out_request,
+        OUTPUT_DIR
+        / "table-first-relevance-answers"
+        / f"{question_hash}.request.json",
+    )
+    answer_path = service_output_path(
+        args.out_json,
+        OUTPUT_DIR
+        / "table-first-relevance-answers"
+        / f"{question_hash}.answer.json",
+    )
+    markdown_path = service_output_path(
+        args.out_markdown,
+        OUTPUT_DIR
+        / "table-first-relevance-answers"
+        / f"{question_hash}.answer.md",
+    )
+    request_path.write_bytes(relevance_json_bytes(request))
+    result = run_codex_relevance_query(
+        request=request,
+        output_path=answer_path,
+        model=args.model,
+        reasoning_effort=args.reasoning_effort,
+        timeout_seconds=args.timeout_seconds,
+    )
+    markdown_path.write_text(
+        render_relevance_result_markdown(result),
+        encoding="utf-8",
+    )
+    print_json(
+        {
+            "status": "ok",
+            "database": str(db_path),
+            "answerStatus": result["answerStatus"],
+            "relevanceRequest": str(request_path),
+            "answerJson": str(answer_path),
+            "answerMarkdown": str(markdown_path),
+            **result["coverage"],
+        }
+    )
+    return 0
+
+
+def cmd_table_first_history_detail(args: argparse.Namespace) -> int:
+    detail = build_history_detail(
+        Path(args.db).expanduser().resolve(),
+        args.evidence_id,
+    )
+    if args.out:
+        output_path = service_output_path(
+            args.out,
+            OUTPUT_DIR
+            / "table-first-history-details"
+            / f"{safe_name(args.evidence_id)}.json",
+        )
+        output_path.write_bytes(history_json_bytes(detail))
+        print_json(
+            {
+                "status": "ok",
+                "database": str(Path(args.db).expanduser().resolve()),
+                "publicEvidenceId": detail["publicEvidenceId"],
+                "evidenceDetail": str(output_path),
+                "trustStatus": detail["trust"]["status"],
+            }
+        )
+    else:
+        print_json(detail)
+    return 0
+
+
+def cmd_validate_table_first_history_answer(args: argparse.Namespace) -> int:
+    pack = _load_json_object(args.pack, label="Table-first history pack")
+    answer = _load_json_object(args.answer, label="Table-first history answer")
+    validate_history_answer(answer, pack)
+    print_json(
+        {
+            "status": "ok",
+            "pack": str(Path(args.pack).expanduser().resolve()),
+            "answer": str(Path(args.answer).expanduser().resolve()),
+            "answerStatus": answer["answerStatus"],
+            "evidencePackSha256": answer["evidencePackSha256"],
+        }
+    )
+    return 0
+
+
+def cmd_table_first_history_acceptance(args: argparse.Namespace) -> int:
+    report = run_history_acceptance(
+        Path(args.db).expanduser().resolve(),
+        Path(args.manifest).expanduser().resolve(),
+        query_limit=args.limit,
+    )
+    output_path = service_output_path(
+        args.out,
+        OUTPUT_DIR
+        / "table-first-history"
+        / "history-acceptance-report.json",
+    )
+    output_path.write_bytes(history_json_bytes(report))
+    print_json(
+        {
+            "status": report["status"],
+            "database": report["database"],
+            "acceptanceReport": str(output_path),
+            **report["summary"],
+        }
+    )
+    return 0 if report["status"] == "PASS" else 1
+
+
+def cmd_concept_candidates(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).expanduser().resolve()
+    try:
+        with connect_ro(db_path) as connection:
+            result = list_schema_candidates(
+                connection,
+                status=args.status,
+                candidate_kind=args.kind,
+                query=args.query,
+                limit=args.limit,
+            )
+    except ConceptCurationError as exc:
+        raise SystemExit(f"Concept curation unavailable: {exc}") from exc
+    print_json(result)
+    return 0
+
+
+def cmd_concept_list(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).expanduser().resolve()
+    try:
+        with connect_ro(db_path) as connection:
+            result = list_canonical_concepts(
+                connection,
+                concept_kind=args.kind,
+                lifecycle_status=args.status,
+                query=args.query,
+                limit=args.limit,
+            )
+    except ConceptCurationError as exc:
+        raise SystemExit(f"Concept curation unavailable: {exc}") from exc
+    print_json(result)
+    return 0
+
+
+def cmd_concept_resolve(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).expanduser().resolve()
+    if not db_path.is_file():
+        raise SystemExit(f"Canonical DB not found: {db_path}")
+    try:
+        with connect_rw(db_path) as connection:
+            result = resolve_schema_candidate(
+                connection,
+                candidate_uid=args.candidate_uid,
+                action=args.action,
+                reviewer=args.reviewer,
+                note=args.note,
+                now_iso=now_iso,
+                canonical_name=args.canonical_name,
+                concept_uid=args.concept_uid,
+                alias=args.alias,
+            )
+            connection.commit()
+    except ConceptCurationError as exc:
+        raise SystemExit(f"Concept resolution rejected: {exc}") from exc
+    print_json(result)
+    return 0
+
+
+def cmd_concept_alias_upsert(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).expanduser().resolve()
+    if not db_path.is_file():
+        raise SystemExit(f"Canonical DB not found: {db_path}")
+    try:
+        with connect_rw(db_path) as connection:
+            result = upsert_human_concept_alias(
+                connection,
+                concept_uid=args.concept_uid,
+                alias=args.alias,
+                reviewer=args.reviewer,
+                note=args.note,
+                now_iso=now_iso,
+            )
+            connection.commit()
+    except ConceptCurationError as exc:
+        raise SystemExit(f"Concept alias rejected: {exc}") from exc
+    print_json(result)
+    return 0
+
+
+def cmd_review_queue(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).expanduser().resolve()
+    with connect_ro(db_path) as connection:
+        queue = list_review_queue(connection, limit=args.limit)
+    if args.out:
+        output_path = service_output_path(
+            args.out,
+            OUTPUT_DIR / "human-review" / "queue.json",
+        )
+        write_json(output_path, queue)
+        print_json(
+            {
+                "status": "ok",
+                "db": str(db_path),
+                "reviewQueue": str(output_path),
+                "count": queue["count"],
+                "imagesAnalyzed": False,
+            }
+        )
+    else:
+        print_json(queue)
+    return 0
+
+
+def cmd_review_detail(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).expanduser().resolve()
+    with connect_ro(db_path) as connection:
+        detail = get_review_detail(connection, args.comparison_id)
+    if args.out:
+        output_path = service_output_path(
+            args.out,
+            OUTPUT_DIR
+            / "human-review"
+            / f"{safe_name(args.comparison_id)}.json",
+        )
+        write_json(output_path, detail)
+        print_json(
+            {
+                "status": "ok",
+                "db": str(db_path),
+                "reviewDetail": str(output_path),
+                "publicComparisonId": detail["publicComparisonId"],
+                "approvalReady": detail["approvalReadiness"]["ready"],
+                "imagesAnalyzed": False,
+            }
+        )
+    else:
+        print_json(detail)
+    return 0
+
+
+def cmd_review_decide(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).expanduser().resolve()
+    try:
+        with connect_rw(db_path) as connection:
+            connection.execute("PRAGMA foreign_keys=ON")
+            result = decide_comparison(
+                connection,
+                args.comparison_id,
+                decision=args.decision,
+                reviewer=args.reviewer,
+                reason=args.reason,
+                study_comparability_status=args.study_comparability,
+                study_confounding_status=args.study_confounding,
+                comparison_validity_status=args.comparison_validity,
+                comparison_confounding_status=args.comparison_confounding,
+                matching_basis=args.matching_basis,
+            )
+            connection.commit()
+    except ReviewGateError as exc:
+        raise SystemExit(f"Review decision rejected: {exc}") from exc
+    print_json(result)
+    return 0
+
+
+def cmd_golden_acceptance(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).expanduser().resolve()
+    manifest_path = Path(args.manifest).expanduser().resolve()
+    output_directory = service_output_dir(
+        args.out_dir,
+        OUTPUT_DIR / "golden-acceptance" / "current",
+    )
+    report = run_golden_question_acceptance(
+        db_path,
+        manifest_path,
+        output_directory,
+    )
+    print_json(
+        {
+            "status": "ok",
+            "db": str(db_path),
+            "manifest": str(manifest_path),
+            "acceptanceReport": str(
+                output_directory / "acceptance-report.json"
+            ),
+            "overallStatus": report["overallStatus"],
+            **report["summary"],
+            "imagesAnalyzed": False,
+        }
+    )
+    return 0
+
+
+def _load_json_object(path: str | Path, *, label: str) -> dict[str, Any]:
+    input_path = Path(path).expanduser().resolve()
+    try:
+        value = json.loads(input_path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise SystemExit(f"{label} does not exist: {input_path}") from exc
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"{label} is not valid JSON: {input_path}") from exc
+    if not isinstance(value, dict):
+        raise SystemExit(f"{label} must contain one JSON object: {input_path}")
+    return value
+
+
+def cmd_evidence_answer(args: argparse.Namespace) -> int:
+    database_path: Path | None = None
+    if args.pack:
+        if args.question:
+            raise SystemExit("--question cannot be combined with --pack.")
+        evidence_pack = _load_json_object(args.pack, label="Evidence pack")
+        source_label = str(Path(args.pack).expanduser().resolve())
+    else:
+        if not args.db or not args.question:
+            raise SystemExit(
+                "Use either --pack, or both --db and --question."
+            )
+        database_path = Path(args.db).expanduser().resolve()
+        evidence_pack = build_evidence_pack_from_db(
+            database_path,
+            args.question,
+        )
+        source_label = str(database_path)
+
+    answer = build_evidence_answer(evidence_pack)
+    validate_evidence_answer(answer, evidence_pack)
+    question_hash = hashlib.sha256(
+        str(evidence_pack["question"]).encode("utf-8")
+    ).hexdigest()[:16]
+    default_json_path = (
+        OUTPUT_DIR / "evidence-answers" / f"{question_hash}.answer.json"
+    )
+    default_markdown_path = (
+        OUTPUT_DIR / "evidence-answers" / f"{question_hash}.answer.md"
+    )
+    if database_path is None:
+        json_path = service_output_path(args.out_json, default_json_path)
+        markdown_path = service_output_path(
+            args.out_markdown,
+            default_markdown_path,
+        )
+    else:
+        json_path = database_scoped_output_path(
+            args.out_json,
+            default_json_path,
+            database_path,
+        )
+        markdown_path = database_scoped_output_path(
+            args.out_markdown,
+            default_markdown_path,
+            database_path,
+        )
+    json_path.write_bytes(answer_json_bytes(answer))
+    markdown_path.write_text(
+        render_answer_markdown(answer),
+        encoding="utf-8",
+    )
+    print_json(
+        {
+            "status": "ok",
+            "source": source_label,
+            "answerStatus": answer["answerStatus"],
+            "answerJson": str(json_path),
+            "answerMarkdown": str(markdown_path),
+            **answer["coverage"],
+        }
+    )
+    return 0
+
+
+def cmd_validate_evidence_answer(args: argparse.Namespace) -> int:
+    evidence_pack = _load_json_object(args.pack, label="Evidence pack")
+    answer_path = Path(args.answer).expanduser().resolve()
+    answer = _load_json_object(answer_path, label="Evidence answer")
+    validate_evidence_answer(answer, evidence_pack)
+    print_json(
+        {
+            "status": "ok",
+            "answer": str(answer_path),
+            "answerStatus": answer["answerStatus"],
+            "evidencePackSha256": answer["evidencePackSha256"],
+        }
+    )
+    return 0
+
+
+def _print_ingest_progress(event: dict[str, Any]) -> None:
+    print(
+        "PROGRESS_JSON "
+        + json.dumps(
+            event,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ),
+        file=sys.stderr,
+        flush=True,
+    )
+
+
+def cmd_form_preflight(args: argparse.Namespace) -> int:
+    output_root = (
+        Path(args.output_root).expanduser().resolve()
+        if args.output_root
+        else SERVICE_DIR.resolve()
+    )
+    output_path = output_path_under_root(
+        args.out,
+        output_root / "form-preflight" / "latest.json",
+        output_root,
+    )
+    cancel_path = (
+        output_path_under_root(
+            args.cancel_file,
+            output_root / "form-preflight" / "cancel.request",
+            output_root,
+        )
+        if args.cancel_file
+        else None
+    )
+    result = run_form_preflight(
+        database_path=Path(args.db).expanduser().resolve(),
+        source_root=Path(args.input).expanduser().resolve(),
+        output_path=output_path,
+        dataset=args.dataset,
+        com_timeout_seconds=args.com_timeout_seconds,
+        progress_callback=_print_ingest_progress,
+        inspect_auth_dialog=args.inspect_auth_dialog,
+        dismiss_auth_dialog=args.dismiss_auth_dialog,
+        auth_dialog_title=args.auth_dialog_title,
+        auth_dialog_class=args.auth_dialog_class,
+        auth_dialog_button=args.auth_dialog_button,
+        cancel_file=cancel_path,
+        retry_failed_captures=args.retry_failed_captures,
+    )
+    print_json(
+        {
+            "status": result["status"],
+            "report": str(output_path),
+            "manifest": result["knownFormManifestPath"],
+            **result["summary"],
+        }
+    )
+    return 0
+
+
+def _form_registry_paths(
+    args: argparse.Namespace,
+) -> tuple[Path, Path, Path]:
+    output_root = (
+        Path(args.output_root).expanduser().resolve()
+        if args.output_root
+        else SERVICE_DIR.resolve()
+    )
+    report_path = output_path_under_root(
+        args.report,
+        output_root / "form-preflight" / "latest.json",
+        output_root,
+    )
+    review_path = output_path_under_root(
+        getattr(args, "review_out", None),
+        output_root / "form-preflight" / "group-review.latest.json",
+        output_root,
+    )
+    return output_root, report_path, review_path
+
+
+def cmd_form_group_review(args: argparse.Namespace) -> int:
+    _, report_path, review_path = _form_registry_paths(args)
+    if not report_path.is_file():
+        raise SystemExit(
+            "Form preflight report does not exist: "
+            + str(report_path)
+        )
+    review = write_form_group_review(
+        database_path=Path(args.db).expanduser().resolve(),
+        report_path=report_path,
+        output_path=review_path,
+    )
+    print_json(
+        {
+            "status": "COMPLETED",
+            "review": str(review_path),
+            **review["summary"],
+        }
+    )
+    return 0
+
+
+def cmd_form_family_analyze(args: argparse.Namespace) -> int:
+    output_root, report_path, review_path = _form_registry_paths(args)
+    if not report_path.is_file():
+        raise SystemExit(
+            "Form preflight report does not exist: "
+            + str(report_path)
+        )
+    safe_family = re.sub(
+        r"[^A-Za-z0-9._-]+",
+        "_",
+        args.family_id,
+    ).strip("._")
+    if not safe_family:
+        raise SystemExit("family-id must contain a safe identifier.")
+    contract_path = output_path_under_root(
+        args.out,
+        (
+            output_root
+            / "form-preflight"
+            / "contracts"
+            / f"{safe_family}.json"
+        ),
+        output_root,
+    )
+    result = analyze_form_family(
+        database_path=Path(args.db).expanduser().resolve(),
+        report_path=report_path,
+        family_id=args.family_id,
+        output_path=contract_path,
+        codex_executable=args.codex,
+        reasoning_effort=args.reasoning_effort,
+        timeout_seconds=args.timeout,
+    )
+    write_form_group_review(
+        database_path=Path(args.db).expanduser().resolve(),
+        report_path=report_path,
+        output_path=review_path,
+    )
+    print_json(
+        {
+            **result,
+            "review": str(review_path),
+        }
+    )
+    return 0
+
+
+def cmd_form_family_decide(args: argparse.Namespace) -> int:
+    _, report_path, review_path = _form_registry_paths(args)
+    if not report_path.is_file():
+        raise SystemExit(
+            "Form preflight report does not exist: "
+            + str(report_path)
+        )
+    result = decide_form_family(
+        database_path=Path(args.db).expanduser().resolve(),
+        report_path=report_path,
+        family_id=args.family_id,
+        decision=args.decision,
+        reviewer=args.reviewer,
+        display_name=args.display_name,
+        linked_form_signature_id=args.linked_form_signature_id,
+        notes=args.notes,
+    )
+    report = reclassify_form_preflight_report(
+        database_path=Path(args.db).expanduser().resolve(),
+        report_path=report_path,
+    )
+    review = write_form_group_review(
+        database_path=Path(args.db).expanduser().resolve(),
+        report_path=report_path,
+        output_path=review_path,
+    )
+    print_json(
+        {
+            **result,
+            "report": str(report_path),
+            "manifest": report["knownFormManifestPath"],
+            "review": str(review_path),
+            "knownForms": report["summary"]["knownForms"],
+            "pendingGroups": review["summary"]["pendingCount"],
+        }
+    )
+    return 0
+
+
+def cmd_form_pipeline_complete(args: argparse.Namespace) -> int:
+    output_root = (
+        Path(args.output_root).expanduser().resolve()
+        if args.output_root
+        else SERVICE_DIR.resolve()
+    )
+    result = run_form_pipeline_complete(
+        database_path=Path(args.db).expanduser().resolve(),
+        source_root=Path(args.input).expanduser().resolve(),
+        output_root=output_root,
+        reviewer=args.reviewer,
+        dataset=args.dataset,
+        analysis_workers=args.analysis_workers,
+        reasoning_effort=args.reasoning_effort,
+        analysis_timeout_seconds=args.analysis_timeout,
+        com_timeout_seconds=args.com_timeout_seconds,
+        codex_executable=args.codex,
+        exclude_on_analysis_error=args.exclude_on_analysis_error,
+        run_corpus=not args.skip_corpus,
+        max_families=args.max_families,
+        draft_monolithic_max_bytes=(
+            args.draft_monolithic_max_bytes
+        ),
+        progress_callback=_print_ingest_progress,
+    )
+    print_json(
+        {
+            "status": result["status"],
+            "result": result["resultPath"],
+            "report": result["reportPath"],
+            "review": result["reviewPath"],
+            "manifest": result["manifestPath"],
+            "preflight": result["preflightSummary"],
+            "formGroups": result["reviewSummary"],
+            "analysisErrors": len(result["errors"]),
+            "corpus": (
+                result["corpus"]["summary"]
+                if isinstance(result.get("corpus"), dict)
+                else None
+            ),
+        }
+    )
+    return 0
+
+
+def cmd_ingest_workbook(args: argparse.Namespace) -> int:
+    result = ingest_workbook(
+        database_path=Path(args.db).expanduser().resolve(),
+        source_path=Path(args.input).expanduser().resolve(),
+        artifact_root=service_output_dir(
+            args.artifact_root,
+            OUTPUT_DIR / "incremental-ingest",
+        ),
+        dataset=args.dataset,
+        resume=not args.no_resume,
+        max_cells=args.max_cells,
+        max_rows=args.max_rows,
+        empty_row_gap=args.empty_row_gap,
+        locator_workers=args.workers,
+        locator_batch_size=args.batch_size,
+        locator_batch_max_bytes=args.batch_max_bytes,
+        draft_monolithic_max_bytes=args.draft_monolithic_max_bytes,
+        draft_fragment_max_chunks=args.draft_fragment_max_chunks,
+        draft_fragment_max_cells=args.draft_fragment_max_cells,
+        draft_fragment_max_bytes=args.draft_fragment_max_bytes,
+        draft_fragment_workers=args.draft_fragment_workers,
+        derive_formula_values=args.derive_formula_values,
+        repair_rejected_draft=args.repair_rejected_draft,
+        repair_unselected_source=args.repair_unselected_source,
+        model=args.model,
+        reasoning_effort=args.reasoning_effort,
+        locator_timeout_seconds=args.locator_timeout,
+        draft_timeout_seconds=args.draft_timeout,
+        capture_backend=args.capture_backend,
+        covered_cell_mode=args.covered_cell_mode,
+        include_hidden_sheets=args.include_hidden_sheets,
+        inspect_auth_dialog=args.inspect_auth_dialog,
+        dismiss_auth_dialog=args.dismiss_auth_dialog,
+        auth_dialog_title=args.auth_dialog_title,
+        auth_dialog_class=args.auth_dialog_class,
+        auth_dialog_button=args.auth_dialog_button,
+        auth_dialog_timeout_seconds=args.auth_dialog_timeout,
+        progress_callback=_print_ingest_progress,
+    )
+    print_json(result)
+    return 0
+
+
+def cmd_ingest_corpus(args: argparse.Namespace) -> int:
+    artifact_root = service_output_dir(
+        args.artifact_root,
+        OUTPUT_DIR / "corpus-ingest",
+    )
+    journal_path = (
+        service_output_path(
+            args.journal,
+            artifact_root / "corpus-journal.json",
+        )
+        if args.journal
+        else artifact_root / "corpus-journal.json"
+    )
+    include_relative_paths = None
+    if args.source_manifest:
+        manifest = _load_json_object(
+            args.source_manifest,
+            label="Corpus source manifest",
+        )
+        workbooks = manifest.get("workbooks")
+        if not isinstance(workbooks, list):
+            raise SystemExit(
+                "Corpus source manifest must contain a workbooks array."
+            )
+        include_relative_paths = []
+        source_root = Path(args.input).expanduser().resolve()
+        for index, workbook in enumerate(workbooks):
+            if not isinstance(workbook, dict) or not str(
+                workbook.get("relativePath") or ""
+            ).strip():
+                raise SystemExit(
+                    "Corpus source manifest workbooks"
+                    f"[{index}].relativePath is required."
+                )
+            relative_path = str(workbook["relativePath"]).strip()
+            include_relative_paths.append(relative_path)
+            expected_sha256 = str(
+                workbook.get("contentSha256") or ""
+            ).strip().lower()
+            if expected_sha256:
+                source_path = (
+                    source_root / Path(relative_path)
+                ).resolve()
+                try:
+                    source_path.relative_to(source_root)
+                except ValueError as exc:
+                    raise SystemExit(
+                        "Corpus source manifest path escapes the input root: "
+                        + relative_path
+                    ) from exc
+                if not source_path.is_file():
+                    raise SystemExit(
+                        "Corpus source manifest file is missing: "
+                        + str(source_path)
+                    )
+                digest = hashlib.sha256()
+                with source_path.open("rb") as stream:
+                    for chunk in iter(
+                        lambda: stream.read(1024 * 1024),
+                        b"",
+                    ):
+                        digest.update(chunk)
+                if digest.hexdigest() != expected_sha256:
+                    raise SystemExit(
+                        "Corpus source changed after form preflight: "
+                        + relative_path
+                    )
+    result = run_corpus_ingest(
+        database_path=Path(args.db).expanduser().resolve(),
+        source_root=Path(args.input).expanduser().resolve(),
+        artifact_root=artifact_root,
+        journal_path=journal_path,
+        dataset=args.dataset,
+        resume=not args.no_resume,
+        retry_failed=args.retry_failed,
+        inventory_only=args.inventory_only,
+        include_relative_paths=include_relative_paths,
+        offset=args.offset,
+        limit=args.limit,
+        workbook_workers=args.workbook_workers,
+        com_workers=args.com_workers,
+        packet_workers=args.packet_workers,
+        ai_workers=args.ai_workers,
+        db_workers=args.db_workers,
+        ingest_options={
+            "max_cells": args.max_cells,
+            "max_rows": args.max_rows,
+            "empty_row_gap": args.empty_row_gap,
+            "locator_workers": args.locator_workers,
+            "locator_batch_size": args.batch_size,
+            "locator_batch_max_bytes": args.batch_max_bytes,
+            "draft_monolithic_max_bytes": (
+                args.draft_monolithic_max_bytes
+            ),
+            "draft_fragment_max_chunks": (
+                args.draft_fragment_max_chunks
+            ),
+            "draft_fragment_max_cells": args.draft_fragment_max_cells,
+            "draft_fragment_max_bytes": args.draft_fragment_max_bytes,
+            "draft_fragment_workers": args.draft_fragment_workers,
+            "derive_formula_values": args.derive_formula_values,
+            "repair_rejected_draft": args.repair_rejected_draft,
+            "repair_unselected_source": args.repair_unselected_source,
+            "model": args.model,
+            "reasoning_effort": args.reasoning_effort,
+            "locator_timeout_seconds": args.locator_timeout,
+            "draft_timeout_seconds": args.draft_timeout,
+            "capture_backend": args.capture_backend,
+            "covered_cell_mode": args.covered_cell_mode,
+            "include_hidden_sheets": args.include_hidden_sheets,
+            "inspect_auth_dialog": args.inspect_auth_dialog,
+            "dismiss_auth_dialog": args.dismiss_auth_dialog,
+            "auth_dialog_title": args.auth_dialog_title,
+            "auth_dialog_class": args.auth_dialog_class,
+            "auth_dialog_button": args.auth_dialog_button,
+            "auth_dialog_timeout_seconds": args.auth_dialog_timeout,
+            "progress_callback": _print_ingest_progress,
+        },
+    )
+    result_path = service_output_path(
+        args.out,
+        artifact_root / f"{safe_name(result['runId'])}.result.json",
+    )
+    write_json(result_path, result)
+    print_json(
+        {
+            "status": result["status"],
+            "sourceRoot": result["sourceRoot"],
+            "journal": result["journalPath"],
+            "result": str(result_path),
+            "imagesAnalyzed": False,
+            **result["summary"],
+        }
+    )
     return 0
 
 
@@ -2264,6 +5437,7 @@ def import_analysis_manifest(
         verification = verify_analysis_report(conn, analysis_report_id)
         if not verification["ok"]:
             raise ValueError("Post-import analysis verification failed: " + "; ".join(verification["errors"]))
+        canonical = sync_legacy_analysis_report(conn, analysis_report_id, now_iso)
     except Exception:
         conn.execute("ROLLBACK TO SAVEPOINT universal_analysis_import")
         conn.execute("RELEASE SAVEPOINT universal_analysis_import")
@@ -2285,6 +5459,7 @@ def import_analysis_manifest(
         "conclusions": conclusion_count,
         "evidence": evidence_count,
         "verification": verification,
+        "canonical": canonical,
     }
 
 
@@ -2829,6 +6004,105 @@ def cmd_export_analysis(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_migrate_knowledge(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).resolve()
+    with connect_rw(db_path) as conn:
+        ensure_universal_schema(conn)
+        migrated = migrate_all_legacy_analyses(conn, now_iso)
+        integrity = validate_knowledge_integrity(conn)
+        if integrity["ok"]:
+            conn.commit()
+        else:
+            conn.rollback()
+    print_json({"status": "ok" if integrity["ok"] else "invalid", "db": str(db_path), "migrated": migrated, "integrity": integrity})
+    return 0 if integrity["ok"] else 1
+
+
+def cmd_inspect_knowledge(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).resolve()
+    with connect_ro(db_path) as conn:
+        if not table_exists(conn, "knowledge_studies"):
+            raise SystemExit("knowledge-inspect requires a DB initialized with the canonical knowledge schema.")
+        integrity = validate_knowledge_integrity(conn)
+        result = {"db": str(db_path), "counts": knowledge_counts(conn), "integrity": integrity}
+    print_json(result)
+    return 0 if integrity["ok"] else 1
+
+
+def cmd_import_study(args: argparse.Namespace) -> int:
+    manifest_path = Path(args.input).resolve()
+    if not manifest_path.is_file():
+        raise SystemExit(f"Canonical study manifest not found: {manifest_path}")
+    data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    db_path = Path(args.db).resolve()
+    with connect_rw(db_path) as conn:
+        ensure_universal_schema(conn)
+        ensure_capture_v2_schema(conn)
+        imported = import_study_manifest(conn, data, now_iso=now_iso)
+        integrity = validate_knowledge_integrity(conn)
+        if not integrity["ok"]:
+            conn.rollback()
+            print_json({"status": "invalid", "db": str(db_path), "manifest": str(manifest_path), "integrity": integrity})
+            return 1
+        conn.commit()
+    print_json(
+        {
+            "status": "ok",
+            "db": str(db_path),
+            "manifest": str(manifest_path),
+            "imported": imported,
+            "integrity": integrity,
+        }
+    )
+    return 0
+
+
+def cmd_quarantine_analysis(args: argparse.Namespace) -> int:
+    db_path = Path(args.db).resolve()
+    with connect_rw(db_path) as conn:
+        if not table_exists(conn, "workbook_analyses"):
+            raise SystemExit(
+                "analysis-quarantine requires a DB initialized with the "
+                "canonical knowledge schema."
+            )
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            quarantined = quarantine_canonical_analysis(
+                conn,
+                public_analysis_id=args.public_analysis_id,
+                reason=args.reason,
+                now_iso=now_iso,
+            )
+            integrity = validate_knowledge_integrity(conn)
+            if not integrity["ok"]:
+                conn.rollback()
+                print_json(
+                    {
+                        "status": "invalid",
+                        "db": str(db_path),
+                        "quarantine": quarantined,
+                        "integrity": integrity,
+                    }
+                )
+                return 1
+            conn.commit()
+        except AnalysisQuarantineError as exc:
+            conn.rollback()
+            raise SystemExit(str(exc)) from exc
+        except Exception:
+            conn.rollback()
+            raise
+    print_json(
+        {
+            "status": "ok",
+            "db": str(db_path),
+            "quarantine": quarantined,
+            "integrity": integrity,
+        }
+    )
+    return 0
+
+
 def cmd_inspect_db(args: argparse.Namespace) -> int:
     db_path = Path(args.db).resolve()
     with connect_ro(db_path) as conn:
@@ -2956,6 +6230,7 @@ def reviewcase_contract() -> dict[str, Any]:
     return {
         "instruction": "Generate zero, one, or more source-backed ReviewCases. Candidate rows are hints only; sheet rows/cells are source authority.",
         "requiredEvidenceRule": "Every changedFactor, outcome, condition, and numeric claim must cite row/cell evidence from this packet.",
+        "packetCompletenessRule": "When packetSelection.dataTruncated is true, do not issue VERIFIED, CAN_USE, or a causal conclusion from omitted rows/cells. Use NEEDS_REVIEW and name the packet limit.",
         "reviewCaseFields": [
             "reviewCaseId",
             "sourceWorkbook",
@@ -2966,6 +6241,181 @@ def reviewcase_contract() -> dict[str, Any]:
         ],
         "verificationStatuses": ["verified", "needs_review", "excluded"],
     }
+
+
+def packet_cell_has_source_value(cell: dict[str, Any]) -> bool:
+    """Keep meaningful cells (including numeric zero) in compact AI packets."""
+    value = cell.get("value")
+    if value is not None and str(value).strip() != "":
+        return True
+    return str(cell.get("mergeRole") or cell.get("merge_role") or "").lower() == "anchor"
+
+
+def compact_packet_cells(cells: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Remove empty grid padding without changing values or source coordinates."""
+    return [
+        {
+            "address": cell.get("address") or "",
+            "column": cell.get("column", cell.get("col_number")),
+            "colLabel": cell.get("colLabel", cell.get("col_label", "")),
+            "value": cell.get("value", cell.get("value_text", "")),
+            "rawValue": cell.get("rawValue", cell.get("raw_value_text", "")),
+            "mergeRole": cell.get("mergeRole", cell.get("merge_role", "none")),
+            "mergeAddress": cell.get("mergeAddress", cell.get("merge_address", "")),
+        }
+        for cell in cells
+        if packet_cell_has_source_value(cell)
+    ]
+
+
+def packet_priority_where_sql() -> tuple[str, list[str]]:
+    clauses = ["LOWER(row_text) LIKE ?" for _ in PACKET_PRIORITY_TERMS]
+    return "(" + " OR ".join(clauses) + ")", [f"%{term.lower()}%" for term in PACKET_PRIORITY_TERMS]
+
+
+def compact_universal_packet_rows(
+    conn: sqlite3.Connection,
+    workbook_id: int,
+    sheets: list[dict[str, Any]],
+    row_limit: int,
+    cell_limit: int,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Return a bounded, stratified, non-empty representation of the source grid.
+
+    The old packet placed a full row grid *and* a flat-cell copy in the JSON.
+    Large sheets could therefore exceed the intended cell budget before Codex
+    started reading.  This selection keeps header, context and final rows from
+    each sheet and emits each retained value once with its original address.
+    """
+    source_row_count = int(
+        conn.execute(
+            "SELECT COUNT(*) FROM grid_sheet_rows WHERE workbook_id=? AND non_empty_count > 0",
+            (workbook_id,),
+        ).fetchone()[0]
+    )
+    source_cell_count = int(
+        conn.execute(
+            "SELECT COUNT(*) FROM grid_sheet_cells WHERE workbook_id=? AND (value_text <> '' OR merge_role='anchor')",
+            (workbook_id,),
+        ).fetchone()[0]
+    )
+    source_merge_count = int(
+        conn.execute("SELECT COUNT(*) FROM merge_ranges WHERE workbook_id=?", (workbook_id,)).fetchone()[0]
+    )
+    row_limit = max(1, row_limit)
+    cell_limit = max(1, cell_limit)
+    active_sheets = [sheet for sheet in sheets if int(sheet.get("non_empty_cells") or 0) > 0]
+    selected: dict[tuple[int, int], dict[str, Any]] = {}
+    priority_where, priority_params = packet_priority_where_sql()
+
+    def add_rows(rows: list[dict[str, Any]], budget: int) -> None:
+        for row in rows:
+            if len(selected) >= row_limit or budget <= 0:
+                return
+            key = (int(row["sheet_index"]), int(row["row_number"]))
+            if key not in selected:
+                selected[key] = row
+                budget -= 1
+
+    remaining_global = row_limit
+    for sheet_position, sheet in enumerate(active_sheets):
+        sheets_left = len(active_sheets) - sheet_position
+        sheet_budget = max(1, remaining_global // max(1, sheets_left))
+        sheet_index = int(sheet["sheet_index"])
+        base_sql = """
+            SELECT sheet_index, sheet_name, row_number, non_empty_count, row_text, cells_json
+            FROM grid_sheet_rows
+            WHERE workbook_id=? AND sheet_index=? AND non_empty_count > 0
+        """
+        head_limit = min(8, max(1, sheet_budget // 4))
+        head_rows = dict_rows(conn, base_sql + " ORDER BY row_number LIMIT ?", (workbook_id, sheet_index, head_limit))
+        before = len(selected); add_rows(head_rows, sheet_budget); sheet_budget -= len(selected) - before
+
+        tail_limit = min(8, max(0, sheet_budget // 3))
+        if tail_limit:
+            tail_rows = dict_rows(conn, base_sql + " ORDER BY row_number DESC LIMIT ?", (workbook_id, sheet_index, tail_limit))
+            before = len(selected); add_rows(list(reversed(tail_rows)), sheet_budget); sheet_budget -= len(selected) - before
+
+        if sheet_budget:
+            priority_rows = dict_rows(
+                conn,
+                base_sql + f" AND {priority_where} ORDER BY row_number LIMIT ?",
+                (workbook_id, sheet_index, *priority_params, sheet_budget),
+            )
+            before = len(selected); add_rows(priority_rows, sheet_budget); sheet_budget -= len(selected) - before
+
+        # Use evenly spaced non-empty rows to keep tables represented even
+        # where they contain neither an English nor a Korean context keyword.
+        if sheet_budget:
+            row_count = max(1, int(sheet.get("row_count") or 1))
+            step = max(1, row_count // max(1, sheet_budget))
+            sampled_rows = dict_rows(
+                conn,
+                base_sql + " AND ((row_number - ?) % ?) = 0 ORDER BY row_number LIMIT ?",
+                (workbook_id, sheet_index, int(sheet.get("used_top") or 1), step, sheet_budget * 2),
+            )
+            before = len(selected); add_rows(sampled_rows, sheet_budget); sheet_budget -= len(selected) - before
+
+        # A short sheet can still have fewer rows than the sampling interval.
+        if sheet_budget:
+            fallback_rows = dict_rows(conn, base_sql + " ORDER BY row_number LIMIT ?", (workbook_id, sheet_index, sheet_budget * 2))
+            before = len(selected); add_rows(fallback_rows, sheet_budget); sheet_budget -= len(selected) - before
+        remaining_global = row_limit - len(selected)
+        if remaining_global <= 0:
+            break
+
+    rows = [selected[key] for key in sorted(selected)]
+    decoded_rows: list[dict[str, Any]] = []
+    for row in rows:
+        try:
+            original_cells = json.loads(row.pop("cells_json") or "[]")
+        except json.JSONDecodeError:
+            original_cells = []
+        compact_cells = compact_packet_cells(original_cells)
+        row["rowId"] = row_ref(row["sheet_name"], row["row_number"])
+        row["sourceNonEmptyCount"] = int(row.get("non_empty_count") or 0)
+        row["cells"] = compact_cells
+        decoded_rows.append(row)
+
+    full_cells_by_row = {str(row["rowId"]): list(row["cells"]) for row in decoded_rows}
+    available_selected_cells = sum(len(cells) for cells in full_cells_by_row.values())
+    # Reserve a fair first slice for every selected row before consuming the
+    # remaining budget. A final-result row therefore is not erased by a wide
+    # header table earlier in the workbook.
+    per_row_limit = max(1, cell_limit // max(1, len(decoded_rows)))
+    remaining_cells = cell_limit
+    for row in decoded_rows:
+        full_cells = full_cells_by_row[str(row["rowId"])]
+        keep = min(len(full_cells), per_row_limit, remaining_cells)
+        row["cells"] = full_cells[:keep]
+        row["includedCellCount"] = keep
+        remaining_cells -= keep
+    for row in decoded_rows:
+        if remaining_cells <= 0:
+            break
+        full_cells = full_cells_by_row[str(row["rowId"])]
+        current_count = len(row["cells"])
+        extra = min(max(0, len(full_cells) - current_count), remaining_cells)
+        if extra:
+            row["cells"].extend(full_cells[current_count : current_count + extra])
+            row["includedCellCount"] = len(row["cells"])
+            remaining_cells -= extra
+
+    included_cells = sum(len(row["cells"]) for row in decoded_rows)
+    selection = {
+        "mode": "compact-stratified-v1",
+        "rowLimit": row_limit,
+        "cellLimit": cell_limit,
+        "availableNonEmptyRows": source_row_count,
+        "availableNonEmptyCells": source_cell_count,
+        "availableMergeRanges": source_merge_count,
+        "selectedRows": len(decoded_rows),
+        "includedCells": included_cells,
+        "rowTruncated": len(decoded_rows) < source_row_count,
+        "cellTruncated": included_cells < available_selected_cells,
+    }
+    selection["dataTruncated"] = bool(selection["rowTruncated"] or selection["cellTruncated"])
+    return decoded_rows, selection
 
 
 def build_quick_packet(conn: sqlite3.Connection, file_id: int, row_limit: int, cell_limit: int, candidate_limit: int) -> dict[str, Any]:
@@ -3125,36 +6575,7 @@ def build_universal_packet(conn: sqlite3.Connection, workbook_id: int, row_limit
     if not workbook:
         raise SystemExit(f"workbook_id not found: {workbook_id}")
     sheets = dict_rows(conn, "SELECT * FROM worksheets WHERE workbook_id=? ORDER BY sheet_index", (workbook_id,))
-    rows = dict_rows(
-        conn,
-        """
-        SELECT sheet_index, sheet_name, row_number, non_empty_count, row_text, cells_json
-        FROM grid_sheet_rows
-        WHERE workbook_id=?
-        ORDER BY sheet_index, row_number
-        LIMIT ?
-        """,
-        (workbook_id, row_limit),
-    )
-    for row in rows:
-        row["rowId"] = row_ref(row["sheet_name"], row["row_number"])
-        try:
-            row["cells"] = json.loads(row.pop("cells_json") or "[]")
-        except json.JSONDecodeError:
-            row["cells"] = []
-
-    cells = dict_rows(
-        conn,
-        """
-        SELECT sheet_index, sheet_name, row_number, col_number, col_label, address,
-               value_text, raw_value_text, merge_role, merge_address, anchor_row, anchor_col
-        FROM grid_sheet_cells
-        WHERE workbook_id=?
-        ORDER BY sheet_index, row_number, col_number
-        LIMIT ?
-        """,
-        (workbook_id, cell_limit),
-    )
+    rows, selection = compact_universal_packet_rows(conn, workbook_id, sheets, row_limit, cell_limit)
     merges = dict_rows(
         conn,
         """
@@ -3171,23 +6592,30 @@ def build_universal_packet(conn: sqlite3.Connection, workbook_id: int, row_limit
         "This packet came from the universal-grid DB.",
         "No business meaning is assumed at this layer.",
         "Use row/cell coordinates and merge ranges as source authority.",
+        "sheetRows retain non-empty source values once; empty grid padding and the duplicate flat cell array are intentionally omitted.",
     ]
-    if len(rows) >= row_limit:
-        notes.append("sheetRows were truncated by rowLimit. Increase rowLimit before final generation.")
-    if len(cells) >= cell_limit:
-        notes.append("sheetCells were truncated by cellLimit.")
+    if selection["dataTruncated"]:
+        notes.append(
+            "Packet is incomplete because row/cell limits were reached. Do not approve or infer a causal conclusion from omitted data; use NEEDS_REVIEW and state the limit."
+        )
+    if len(merges) < selection["availableMergeRanges"]:
+        notes.append("mergeRanges were truncated at 500 entries; omitted merge metadata must not be assumed absent.")
+        selection["mergeTruncated"] = True
+        selection["dataTruncated"] = True
+    else:
+        selection["mergeTruncated"] = False
 
     return {
-        "schemaVersion": "inference-data-ai-reviewcase-packet-v1",
+        "schemaVersion": "inference-data-ai-reviewcase-packet-v2",
         "createdAt": now_iso(),
         "sourceDbType": "universal-grid",
         "notes": notes,
         "reviewCaseContract": reviewcase_contract(),
         "workbook": workbook,
         "sheets": sheets,
+        "packetSelection": selection,
         "contextRows": context_rows_from_rows(rows),
         "sheetRows": rows,
-        "sheetCells": cells,
         "mergeRanges": merges,
         "candidateHints": [],
     }
@@ -3253,6 +6681,1015 @@ def build_parser() -> argparse.ArgumentParser:
     com.add_argument("--covered-cell-mode", choices=["blank", "anchor", "raw"], default="blank")
     com.set_defaults(func=cmd_com_index)
 
+    openxml = sub.add_parser(
+        "openxml-index",
+        help="Capture DRM-free XLSX sources with SHA-256, formulas, styles, dimensions, and merges; images are ignored.",
+    )
+    openxml.add_argument("--input", help="XLSX file or folder. A pilot manifest sourceRoot is used when omitted.")
+    openxml.add_argument("--dataset", default=DEFAULT_DATASET)
+    openxml.add_argument("--db", help="Output SQLite path. Must stay under this service folder.")
+    openxml.add_argument("--pilot-manifest", help="Optional representative-pilot JSON containing relativePath entries.")
+    openxml.add_argument("--offset", type=int, default=0)
+    openxml.add_argument("--limit", type=int, default=0)
+    openxml.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help=(
+            "Parallel OpenXML readers; DB imports remain serialized in "
+            "deterministic source order."
+        ),
+    )
+    openxml.add_argument("--raw-dir", help="Optional retained Capture v2 JSON directory under the service folder.")
+    openxml.set_defaults(func=cmd_openxml_index)
+
+    capture_verify = sub.add_parser(
+        "capture-v2-verify",
+        help="Verify Capture v2 stored counts, canonical bridges, and optionally current source SHA-256.",
+    )
+    capture_verify.add_argument("--db", required=True)
+    capture_verify.add_argument("--all-revisions", action="store_true")
+    capture_verify.add_argument("--source-sha256", action="store_true")
+    capture_verify.set_defaults(func=cmd_verify_capture_v2)
+
+    semantic_packets = sub.add_parser(
+        "semantic-packets",
+        help="Build lossless, domain-neutral AI source chunks from one Capture v2 revision.",
+    )
+    semantic_packets.add_argument("--db", required=True)
+    semantic_source = semantic_packets.add_mutually_exclusive_group(required=True)
+    semantic_source.add_argument("--revision-id", type=int)
+    semantic_source.add_argument("--source-path")
+    semantic_packets.add_argument("--max-cells", type=int, default=400)
+    semantic_packets.add_argument("--max-rows", type=int, default=50)
+    semantic_packets.add_argument("--empty-row-gap", type=int, default=3)
+    semantic_packets.add_argument("--out")
+    semantic_packets.set_defaults(func=cmd_build_semantic_packets)
+
+    semantic_packet_batch = sub.add_parser(
+        "semantic-packets-batch",
+        help="Build resumable semantic source packets for current Capture v2 revisions in parallel.",
+    )
+    semantic_packet_batch.add_argument("--db", required=True)
+    semantic_packet_batch.add_argument("--offset", type=int, default=0)
+    semantic_packet_batch.add_argument("--limit", type=int, default=0)
+    semantic_packet_batch.add_argument("--workers", type=int, default=3)
+    semantic_packet_batch.add_argument("--max-cells", type=int, default=400)
+    semantic_packet_batch.add_argument("--max-rows", type=int, default=50)
+    semantic_packet_batch.add_argument("--empty-row-gap", type=int, default=3)
+    semantic_packet_batch.add_argument("--out-dir")
+    semantic_packet_batch.add_argument("--force", action="store_true")
+    semantic_packet_batch.set_defaults(func=cmd_build_semantic_packets_batch)
+
+    table_first_request = sub.add_parser(
+        "table-first-request",
+        help=(
+            "Build one compact table/text inventory from a lossless semantic "
+            "source packet without calling AI."
+        ),
+    )
+    table_first_request.add_argument("--packet", required=True)
+    table_first_request.add_argument("--out")
+    table_first_request.add_argument("--max-preview-rows", type=int, default=12)
+    table_first_request.add_argument(
+        "--max-preview-columns",
+        type=int,
+        default=16,
+    )
+    table_first_request.add_argument("--max-value-samples", type=int, default=3)
+    table_first_request.add_argument("--term-dictionary")
+    table_first_request.set_defaults(func=cmd_table_first_request)
+
+    table_first_request_batch = sub.add_parser(
+        "table-first-request-batch",
+        help=(
+            "Build and audit table-first requests for a packet directory "
+            "without calling AI."
+        ),
+    )
+    table_first_request_batch.add_argument("--packet-dir", required=True)
+    table_first_request_batch.add_argument("--out-dir")
+    table_first_request_batch.add_argument("--offset", type=int, default=0)
+    table_first_request_batch.add_argument("--limit", type=int, default=0)
+    table_first_request_batch.add_argument("--workers", type=int, default=3)
+    table_first_request_batch.add_argument(
+        "--max-preview-rows", type=int, default=12
+    )
+    table_first_request_batch.add_argument(
+        "--max-preview-columns",
+        type=int,
+        default=16,
+    )
+    table_first_request_batch.add_argument(
+        "--max-value-samples", type=int, default=3
+    )
+    table_first_request_batch.add_argument("--term-dictionary")
+    table_first_request_batch.add_argument(
+        "--oversized-request-bytes",
+        type=int,
+        default=240000,
+        help="Flag requests larger than this many UTF-8 JSON bytes.",
+    )
+    table_first_request_batch.add_argument(
+        "--checkpoint-every",
+        type=int,
+        default=25,
+        help="Rewrite the resumable audit report after this many completions.",
+    )
+    table_first_request_batch.set_defaults(func=cmd_table_first_request_batch)
+
+    table_first_analyze = sub.add_parser(
+        "table-first-analyze",
+        help=(
+            "Classify one compact workbook request in one AI call and write a "
+            "non-approved deterministic study/evidence projection."
+        ),
+    )
+    table_first_analyze.add_argument("--request", required=True)
+    table_first_analyze.add_argument("--out")
+    table_first_analyze.add_argument("--projection-out")
+    table_first_analyze.add_argument("--model")
+    table_first_analyze.add_argument(
+        "--reasoning-effort",
+        choices=["low", "medium", "high", "xhigh"],
+        default="low",
+    )
+    table_first_analyze.add_argument("--timeout", type=int, default=600)
+    table_first_analyze.set_defaults(func=cmd_table_first_analyze)
+
+    table_first_batch = sub.add_parser(
+        "table-first-batch",
+        help=(
+            "Build, analyze, project, and audit a resumable directory of "
+            "semantic workbook packets with one AI call per workbook."
+        ),
+    )
+    table_first_batch.add_argument("--packet-dir", required=True)
+    table_first_batch.add_argument("--out-dir")
+    table_first_batch.add_argument("--offset", type=int, default=0)
+    table_first_batch.add_argument("--limit", type=int, default=0)
+    table_first_batch.add_argument("--workers", type=int, default=3)
+    table_first_batch.add_argument("--max-preview-rows", type=int, default=12)
+    table_first_batch.add_argument(
+        "--max-preview-columns",
+        type=int,
+        default=16,
+    )
+    table_first_batch.add_argument("--max-value-samples", type=int, default=3)
+    table_first_batch.add_argument("--term-dictionary")
+    table_first_batch.add_argument("--model")
+    table_first_batch.add_argument(
+        "--reasoning-effort",
+        choices=["low", "medium", "high", "xhigh"],
+        default="low",
+    )
+    table_first_batch.add_argument("--timeout", type=int, default=600)
+    table_first_batch.add_argument("--force", action="store_true")
+    table_first_batch.set_defaults(func=cmd_table_first_batch)
+
+    table_first_html = sub.add_parser(
+        "table-first-html",
+        help=(
+            "Render a static index and per-workbook HTML report from a "
+            "completed table-first analysis batch without calling AI."
+        ),
+    )
+    table_first_html.add_argument("--batch-dir", required=True)
+    table_first_html.add_argument("--out-dir")
+    table_first_html.set_defaults(func=cmd_table_first_html)
+
+    table_first_history_index = sub.add_parser(
+        "table-first-history-index",
+        help=(
+            "Build one searchable SQLite history index from completed "
+            "table-first projections without calling AI or rendering HTML."
+        ),
+    )
+    table_first_history_index.add_argument("--batch-dir", required=True)
+    table_first_history_index.add_argument("--db", required=True)
+    table_first_history_index.add_argument(
+        "--allow-running",
+        action="store_true",
+        help="Index only artifacts already present in a running batch.",
+    )
+    table_first_history_index.set_defaults(func=cmd_table_first_history_index)
+
+    table_first_history_query = sub.add_parser(
+        "table-first-history-query",
+        help=(
+            "Search table-first Study histories and create a deterministic "
+            "Korean evidence answer without another AI call."
+        ),
+    )
+    table_first_history_query.add_argument("--db", required=True)
+    table_first_history_query.add_argument("--question", required=True)
+    table_first_history_query.add_argument("--limit", type=int, default=30)
+    table_first_history_query.add_argument("--out-pack")
+    table_first_history_query.add_argument("--out-json")
+    table_first_history_query.add_argument("--out-markdown")
+    table_first_history_query.set_defaults(func=cmd_table_first_history_query)
+
+    table_first_contextual_query = sub.add_parser(
+        "table-first-contextual-query",
+        help=(
+            "Retrieve broad table-first candidates, ask AI to understand the "
+            "question context and direct evidence relation, and create a "
+            "concise citation-bound Korean answer."
+        ),
+    )
+    table_first_contextual_query.add_argument("--db", required=True)
+    table_first_contextual_query.add_argument("--question", required=True)
+    table_first_contextual_query.add_argument(
+        "--candidate-limit", type=int, default=40
+    )
+    table_first_contextual_query.add_argument(
+        "--detail-candidate-limit", type=int, default=18
+    )
+    table_first_contextual_query.add_argument(
+        "--max-fact-count", type=int, default=240
+    )
+    table_first_contextual_query.add_argument("--model")
+    table_first_contextual_query.add_argument(
+        "--reasoning-effort",
+        choices=("minimal", "low", "medium", "high", "xhigh"),
+        default="medium",
+    )
+    table_first_contextual_query.add_argument(
+        "--timeout-seconds", type=int, default=600
+    )
+    table_first_contextual_query.add_argument("--out-request")
+    table_first_contextual_query.add_argument("--out-json")
+    table_first_contextual_query.add_argument("--out-markdown")
+    table_first_contextual_query.set_defaults(
+        func=cmd_table_first_contextual_query
+    )
+
+    table_first_relevance_query = sub.add_parser(
+        "table-first-relevance-query",
+        help=(
+            "Retrieve broad table-first candidates and ask AI only whether "
+            "each Study is needed for the question, without interpreting results."
+        ),
+    )
+    table_first_relevance_query.add_argument("--db", required=True)
+    table_first_relevance_query.add_argument("--question", required=True)
+    table_first_relevance_query.add_argument(
+        "--candidate-limit", type=int, default=200
+    )
+    table_first_relevance_query.add_argument("--model")
+    table_first_relevance_query.add_argument(
+        "--reasoning-effort",
+        choices=("minimal", "low", "medium", "high", "xhigh"),
+        default="medium",
+    )
+    table_first_relevance_query.add_argument(
+        "--timeout-seconds", type=int, default=600
+    )
+    table_first_relevance_query.add_argument("--out-request")
+    table_first_relevance_query.add_argument("--out-json")
+    table_first_relevance_query.add_argument("--out-markdown")
+    table_first_relevance_query.set_defaults(
+        func=cmd_table_first_relevance_query
+    )
+
+    table_first_history_detail = sub.add_parser(
+        "table-first-history-detail",
+        help="Resolve one TF-EVD citation to its source and saved request preview.",
+    )
+    table_first_history_detail.add_argument("--db", required=True)
+    table_first_history_detail.add_argument("--evidence-id", required=True)
+    table_first_history_detail.add_argument("--out")
+    table_first_history_detail.set_defaults(func=cmd_table_first_history_detail)
+
+    table_first_history_validate = sub.add_parser(
+        "table-first-history-answer-validate",
+        help="Validate deterministic wording and the exact TF-EVD citation set.",
+    )
+    table_first_history_validate.add_argument("--pack", required=True)
+    table_first_history_validate.add_argument("--answer", required=True)
+    table_first_history_validate.set_defaults(
+        func=cmd_validate_table_first_history_answer
+    )
+
+    table_first_history_acceptance = sub.add_parser(
+        "table-first-history-acceptance",
+        help=(
+            "Run the representative golden-question acceptance suite against "
+            "a completed table-first history index without calling AI."
+        ),
+    )
+    table_first_history_acceptance.add_argument("--db", required=True)
+    table_first_history_acceptance.add_argument(
+        "--manifest",
+        default=str(SERVICE_DIR / "pilot" / "representative-pilot-v1.json"),
+    )
+    table_first_history_acceptance.add_argument("--limit", type=int, default=30)
+    table_first_history_acceptance.add_argument("--out")
+    table_first_history_acceptance.set_defaults(
+        func=cmd_table_first_history_acceptance
+    )
+
+    semantic_locate = sub.add_parser(
+        "semantic-locate",
+        help="Run resumable, parallel, read-only AI locator passes for semantic source chunks.",
+    )
+    semantic_locate.add_argument("--packet", required=True)
+    semantic_locate.add_argument("--dataset", default=DEFAULT_DATASET)
+    semantic_locate.add_argument("--chunk-id", action="append")
+    semantic_locate.add_argument("--offset", type=int, default=0)
+    semantic_locate.add_argument("--limit", type=int, default=0)
+    semantic_locate.add_argument("--workers", type=int, default=3)
+    semantic_locate.add_argument(
+        "--batch-size",
+        type=int,
+        default=6,
+        help="Maximum independent source chunks per AI call.",
+    )
+    semantic_locate.add_argument(
+        "--batch-max-bytes",
+        type=int,
+        default=240000,
+        help="Maximum estimated serialized source bytes per AI call; a single oversized chunk is retained.",
+    )
+    semantic_locate.add_argument("--model")
+    semantic_locate.add_argument(
+        "--reasoning-effort",
+        choices=["low", "medium", "high", "xhigh"],
+        default="medium",
+    )
+    semantic_locate.add_argument("--timeout", type=int, default=900)
+    semantic_locate.add_argument("--out-dir")
+    semantic_locate.add_argument("--force", action="store_true")
+    semantic_locate.add_argument(
+        "--all-chunks-ai",
+        action="store_true",
+        help="Send numeric-only continuation chunks to AI too; normally they remain available for on-demand evidence retrieval.",
+    )
+    semantic_locate.set_defaults(func=cmd_semantic_locate)
+
+    semantic_draft = sub.add_parser(
+        "semantic-draft",
+        help="Consolidate complete locator results into a source-validated, non-self-approved Study draft.",
+    )
+    semantic_draft.add_argument("--packet", required=True)
+    semantic_draft.add_argument("--locator-dir", required=True)
+    semantic_draft.add_argument("--db", required=True)
+    semantic_draft.add_argument("--dataset", default=DEFAULT_DATASET)
+    semantic_draft.add_argument("--model")
+    semantic_draft.add_argument(
+        "--reasoning-effort",
+        choices=["low", "medium", "high", "xhigh"],
+        default="medium",
+    )
+    semantic_draft.add_argument("--timeout", type=int, default=1800)
+    semantic_draft.add_argument("--out")
+    semantic_draft.set_defaults(func=cmd_semantic_draft)
+
+    semantic_validate = sub.add_parser(
+        "semantic-validate-draft",
+        help="Normalize a saved AI draft and verify its source identity, ranges, and numeric evidence.",
+    )
+    semantic_validate.add_argument("--input", required=True)
+    semantic_validate.add_argument("--packet", required=True)
+    semantic_validate.add_argument("--db", required=True)
+    semantic_validate.add_argument("--dataset", default=DEFAULT_DATASET)
+    semantic_validate.add_argument("--out")
+    semantic_validate.set_defaults(func=cmd_semantic_validate_draft)
+
+    evidence_query = sub.add_parser(
+        "evidence-query",
+        help="Build a domain-neutral evidence pack and separate answer-eligible effects from excluded candidates.",
+    )
+    evidence_query.add_argument("--db", required=True)
+    evidence_query.add_argument("--question", required=True)
+    evidence_query.add_argument("--out")
+    evidence_query.set_defaults(func=cmd_evidence_query)
+
+    evidence_detail = sub.add_parser(
+        "evidence-detail",
+        help="Read one stable EVD ID from its exact current Capture v2 revision for source-table preview.",
+    )
+    evidence_detail.add_argument("--db", required=True)
+    evidence_detail.add_argument("--evidence-id", required=True)
+    evidence_detail.add_argument("--out")
+    evidence_detail.set_defaults(func=cmd_evidence_detail)
+
+    related_studies = sub.add_parser(
+        "related-studies",
+        help="Find exact-content duplicates and lexically related current Studies for one DATA ID or revision UID.",
+    )
+    related_studies.add_argument("--db", required=True)
+    related_studies.add_argument("--target", required=True)
+    related_studies.add_argument("--limit", type=int, default=25)
+    related_studies.add_argument("--out")
+    related_studies.set_defaults(func=cmd_related_studies)
+
+    concept_candidates = sub.add_parser(
+        "concept-candidates",
+        help=(
+            "List and filter immutable schema-candidate identities for "
+            "explicit human concept curation."
+        ),
+    )
+    concept_candidates.add_argument("--db", required=True)
+    concept_candidates.add_argument(
+        "--status",
+        choices=["OPEN", "APPROVED", "MERGED", "REJECTED", "ALL"],
+        default="OPEN",
+    )
+    concept_candidates.add_argument("--kind")
+    concept_candidates.add_argument("--query")
+    concept_candidates.add_argument("--limit", type=int, default=500)
+    concept_candidates.set_defaults(func=cmd_concept_candidates)
+
+    concept_list = sub.add_parser(
+        "concept-list",
+        help=(
+            "List canonical concepts and the human/seed aliases consumed "
+            "by evidence retrieval."
+        ),
+    )
+    concept_list.add_argument("--db", required=True)
+    concept_list.add_argument(
+        "--status",
+        choices=["ACTIVE", "DEPRECATED", "ALL"],
+        default="ACTIVE",
+    )
+    concept_list.add_argument("--kind")
+    concept_list.add_argument("--query")
+    concept_list.add_argument("--limit", type=int, default=500)
+    concept_list.set_defaults(func=cmd_concept_list)
+
+    concept_resolve = sub.add_parser(
+        "concept-resolve",
+        help=(
+            "Atomically CREATE, MERGE, or REJECT one OPEN CONCEPT:* "
+            "candidate with immutable human provenance."
+        ),
+    )
+    concept_resolve.add_argument("--db", required=True)
+    concept_resolve.add_argument("--candidate-uid", required=True)
+    concept_resolve.add_argument(
+        "--action",
+        required=True,
+        choices=["CREATE", "MERGE", "REJECT"],
+    )
+    concept_resolve.add_argument("--canonical-name", default="")
+    concept_resolve.add_argument("--concept-uid", default="")
+    concept_resolve.add_argument("--alias", default="")
+    concept_resolve.add_argument("--reviewer", required=True)
+    concept_resolve.add_argument("--note", required=True)
+    concept_resolve.set_defaults(func=cmd_concept_resolve)
+
+    concept_alias = sub.add_parser(
+        "concept-alias-upsert",
+        help=(
+            "Upsert one stable HUMAN_APPROVED alias on an ACTIVE concept "
+            "with immutable approval history."
+        ),
+    )
+    concept_alias.add_argument("--db", required=True)
+    concept_alias.add_argument("--concept-uid", required=True)
+    concept_alias.add_argument("--alias", required=True)
+    concept_alias.add_argument("--reviewer", required=True)
+    concept_alias.add_argument("--note", required=True)
+    concept_alias.set_defaults(func=cmd_concept_alias_upsert)
+
+    review_queue = sub.add_parser(
+        "review-queue",
+        help="List current fail-closed comparison drafts that require an explicit human decision.",
+    )
+    review_queue.add_argument("--db", required=True)
+    review_queue.add_argument("--limit", type=int, default=500)
+    review_queue.add_argument("--out")
+    review_queue.set_defaults(func=cmd_review_queue)
+
+    review_detail = sub.add_parser(
+        "review-detail",
+        help="Show one CMP draft, paired values, direct EVD ranges, and approval blockers without changing the DB.",
+    )
+    review_detail.add_argument("--db", required=True)
+    review_detail.add_argument("--comparison-id", required=True)
+    review_detail.add_argument("--out")
+    review_detail.set_defaults(func=cmd_review_detail)
+
+    review_decide = sub.add_parser(
+        "review-decide",
+        help="Record an explicit human CMP decision; approval recalculates effects only from verified current-revision evidence.",
+    )
+    review_decide.add_argument("--db", required=True)
+    review_decide.add_argument("--comparison-id", required=True)
+    review_decide.add_argument(
+        "--decision",
+        required=True,
+        choices=["APPROVE", "REJECT", "EXCLUDE", "RETURN_TO_REVIEW"],
+    )
+    review_decide.add_argument("--reviewer", required=True)
+    review_decide.add_argument("--reason", required=True)
+    review_decide.add_argument(
+        "--study-comparability",
+        choices=["VALID", "PARTIAL", "INVALID", "UNASSESSED"],
+    )
+    review_decide.add_argument(
+        "--study-confounding",
+        choices=["NONE", "POSSIBLE", "CONFOUNDED", "UNASSESSED"],
+    )
+    review_decide.add_argument(
+        "--comparison-validity",
+        choices=["VALID", "NEEDS_REVIEW", "INVALID", "EXCLUDED"],
+    )
+    review_decide.add_argument(
+        "--comparison-confounding",
+        choices=["NONE", "POSSIBLE", "CONFOUNDED", "UNASSESSED"],
+    )
+    review_decide.add_argument("--matching-basis")
+    review_decide.set_defaults(func=cmd_review_decide)
+
+    golden_acceptance = sub.add_parser(
+        "golden-acceptance",
+        help="Run every representative pilot question and distinguish pending ingestion from retrieval failures.",
+    )
+    golden_acceptance.add_argument("--db", required=True)
+    golden_acceptance.add_argument(
+        "--manifest",
+        default=str(SERVICE_DIR / "pilot" / "representative-pilot-v1.json"),
+    )
+    golden_acceptance.add_argument("--out-dir")
+    golden_acceptance.set_defaults(func=cmd_golden_acceptance)
+
+    evidence_answer = sub.add_parser(
+        "evidence-answer",
+        help="Create a deterministic Korean answer from a canonical evidence pack; only answer-eligible effects can produce quantitative claims.",
+    )
+    evidence_answer_source = evidence_answer.add_mutually_exclusive_group(
+        required=True
+    )
+    evidence_answer_source.add_argument(
+        "--pack",
+        help="Existing canonical evidence-pack JSON.",
+    )
+    evidence_answer_source.add_argument(
+        "--db",
+        help="Canonical SQLite DB; requires --question.",
+    )
+    evidence_answer.add_argument(
+        "--question",
+        help="Domain-neutral natural-language question used with --db.",
+    )
+    evidence_answer.add_argument("--out-json")
+    evidence_answer.add_argument("--out-markdown")
+    evidence_answer.set_defaults(func=cmd_evidence_answer)
+
+    evidence_answer_validate = sub.add_parser(
+        "evidence-answer-validate",
+        help="Reject any answer whose values, IDs, citations, or deterministic wording differ from its evidence pack.",
+    )
+    evidence_answer_validate.add_argument("--pack", required=True)
+    evidence_answer_validate.add_argument("--answer", required=True)
+    evidence_answer_validate.set_defaults(func=cmd_validate_evidence_answer)
+
+    form_group_review = sub.add_parser(
+        "form-group-review",
+        help=(
+            "Group captured new/similar Excel layouts into stable review "
+            "families and write the current human-decision state."
+        ),
+    )
+    form_group_review.add_argument("--db", required=True)
+    form_group_review.add_argument("--report", required=True)
+    form_group_review.add_argument(
+        "--out",
+        dest="review_out",
+    )
+    form_group_review.add_argument("--output-root")
+    form_group_review.set_defaults(func=cmd_form_group_review)
+
+    form_family_analyze = sub.add_parser(
+        "form-family-analyze",
+        help=(
+            "Analyze one form-family representative and validation samples "
+            "with AI, then hold the extraction contract for human approval."
+        ),
+    )
+    form_family_analyze.add_argument("--db", required=True)
+    form_family_analyze.add_argument("--report", required=True)
+    form_family_analyze.add_argument("--family-id", required=True)
+    form_family_analyze.add_argument("--out")
+    form_family_analyze.add_argument("--review-out")
+    form_family_analyze.add_argument("--output-root")
+    form_family_analyze.add_argument("--codex")
+    form_family_analyze.add_argument(
+        "--reasoning-effort",
+        choices=["low", "medium", "high", "xhigh"],
+        default="medium",
+    )
+    form_family_analyze.add_argument(
+        "--timeout",
+        type=int,
+        default=900,
+    )
+    form_family_analyze.set_defaults(func=cmd_form_family_analyze)
+
+    form_family_decide = sub.add_parser(
+        "form-family-decide",
+        help=(
+            "Record a human form-family decision and immediately rebuild "
+            "the preflight report and full-processing manifest."
+        ),
+    )
+    form_family_decide.add_argument("--db", required=True)
+    form_family_decide.add_argument("--report", required=True)
+    form_family_decide.add_argument("--family-id", required=True)
+    form_family_decide.add_argument(
+        "--decision",
+        choices=["REGISTER_NEW", "LINK_EXISTING", "EXCLUDE"],
+        required=True,
+    )
+    form_family_decide.add_argument("--reviewer", required=True)
+    form_family_decide.add_argument("--display-name", default="")
+    form_family_decide.add_argument(
+        "--linked-form-signature-id",
+        default="",
+    )
+    form_family_decide.add_argument("--notes", default="")
+    form_family_decide.add_argument("--review-out")
+    form_family_decide.add_argument("--output-root")
+    form_family_decide.set_defaults(func=cmd_form_family_decide)
+
+    form_pipeline_complete = sub.add_parser(
+        "form-pipeline-complete",
+        help=(
+            "Resume COM preflight, analyze and auto-decide every pending "
+            "form family with checkpoints, rebuild the manifest, and run "
+            "the selected COM corpus through completion."
+        ),
+    )
+    form_pipeline_complete.add_argument("--db", required=True)
+    form_pipeline_complete.add_argument("--input", required=True)
+    form_pipeline_complete.add_argument("--output-root", required=True)
+    form_pipeline_complete.add_argument("--reviewer", required=True)
+    form_pipeline_complete.add_argument(
+        "--dataset",
+        default=DEFAULT_DATASET,
+    )
+    form_pipeline_complete.add_argument(
+        "--analysis-workers",
+        type=int,
+        default=2,
+    )
+    form_pipeline_complete.add_argument(
+        "--reasoning-effort",
+        choices=["low", "medium", "high", "xhigh"],
+        default="low",
+    )
+    form_pipeline_complete.add_argument(
+        "--analysis-timeout",
+        type=int,
+        default=900,
+    )
+    form_pipeline_complete.add_argument(
+        "--com-timeout-seconds",
+        type=float,
+        default=300.0,
+    )
+    form_pipeline_complete.add_argument("--codex")
+    form_pipeline_complete.add_argument(
+        "--exclude-on-analysis-error",
+        action="store_true",
+        help=(
+            "Fail closed by marking a family excluded after its AI call "
+            "fails; source files and captures are preserved."
+        ),
+    )
+    form_pipeline_complete.add_argument(
+        "--skip-corpus",
+        action="store_true",
+        help="Stop after preflight, family decisions, and manifest rebuild.",
+    )
+    form_pipeline_complete.add_argument(
+        "--max-families",
+        type=int,
+        default=0,
+        help=(
+            "Process at most this many pending families for a bounded "
+            "verification run; zero means all and is required for corpus."
+        ),
+    )
+    form_pipeline_complete.add_argument(
+        "--draft-monolithic-max-bytes",
+        type=int,
+        default=400_000,
+        help=(
+            "Use staged source-complete drafting when the exact one-call "
+            "prompt exceeds this byte limit."
+        ),
+    )
+    form_pipeline_complete.set_defaults(
+        func=cmd_form_pipeline_complete
+    )
+
+    form_preflight = sub.add_parser(
+        "form-preflight",
+        help=(
+            "Capture a local Excel archive through read-only COM, compare "
+            "form structure with analyzed workbooks, and stop before AI."
+        ),
+    )
+    form_preflight.add_argument("--db", required=True)
+    form_preflight.add_argument("--input", required=True)
+    form_preflight.add_argument("--out")
+    form_preflight.add_argument(
+        "--output-root",
+        help=(
+            "Explicit allowed root for --out. WPF supplies its configured "
+            "output root; defaults to the service directory."
+        ),
+    )
+    form_preflight.add_argument("--dataset", default=DEFAULT_DATASET)
+    form_preflight.add_argument(
+        "--cancel-file",
+        help=(
+            "Stop cooperatively when this marker file exists; the current "
+            "dedicated COM worker is terminated and partial results remain."
+        ),
+    )
+    form_preflight.add_argument(
+        "--com-timeout-seconds",
+        type=float,
+        default=300.0,
+        help=(
+            "Maximum seconds allowed for one isolated Excel COM workbook; "
+            "a timeout is recorded as one failed item and the run continues."
+        ),
+    )
+    form_preflight.add_argument(
+        "--retry-failed-captures",
+        action="store_true",
+        help=(
+            "Retry unchanged files whose previous preflight result was "
+            "CAPTURE_FAILED; default reuses the failure without reopening "
+            "Excel."
+        ),
+    )
+    form_preflight.add_argument(
+        "--inspect-auth-dialog",
+        action="store_true",
+    )
+    form_preflight.add_argument(
+        "--dismiss-auth-dialog",
+        action="store_true",
+    )
+    form_preflight.add_argument("--auth-dialog-title", default="")
+    form_preflight.add_argument("--auth-dialog-class", default="")
+    form_preflight.add_argument("--auth-dialog-button", default="")
+    form_preflight.set_defaults(func=cmd_form_preflight)
+
+    ingest_xlsx = sub.add_parser(
+        "ingest-workbook",
+        help="Durably capture and analyze one Excel workbook into the review-gated canonical DB; COM is available for DRM sources and images are ignored.",
+    )
+    ingest_xlsx.add_argument("--db", required=True)
+    ingest_xlsx.add_argument("--input", required=True)
+    ingest_xlsx.add_argument("--artifact-root")
+    ingest_xlsx.add_argument("--dataset", default=DEFAULT_DATASET)
+    ingest_xlsx.add_argument(
+        "--capture-backend",
+        choices=["openxml", "com"],
+        default="openxml",
+        help=(
+            "Use Excel COM for DRM/policy-protected files or OpenXML for "
+            "existing decrypted XLSX files."
+        ),
+    )
+    ingest_xlsx.add_argument(
+        "--covered-cell-mode",
+        choices=["blank", "anchor", "raw"],
+        default="blank",
+    )
+    ingest_xlsx.add_argument(
+        "--exclude-hidden-sheets",
+        dest="include_hidden_sheets",
+        action="store_false",
+        default=True,
+    )
+    ingest_xlsx.add_argument(
+        "--inspect-auth-dialog",
+        action="store_true",
+        help="Report Excel-owned dialog metadata without closing it.",
+    )
+    ingest_xlsx.add_argument(
+        "--dismiss-auth-dialog",
+        action="store_true",
+        help=(
+            "Click only the exact Excel-owned dialog button identified by "
+            "the three auth-dialog match arguments."
+        ),
+    )
+    ingest_xlsx.add_argument("--auth-dialog-title", default="")
+    ingest_xlsx.add_argument("--auth-dialog-class", default="")
+    ingest_xlsx.add_argument("--auth-dialog-button", default="")
+    ingest_xlsx.add_argument(
+        "--auth-dialog-timeout",
+        type=float,
+        default=30.0,
+    )
+    ingest_xlsx.add_argument("--no-resume", action="store_true")
+    ingest_xlsx.add_argument("--max-cells", type=int, default=400)
+    ingest_xlsx.add_argument("--max-rows", type=int, default=50)
+    ingest_xlsx.add_argument("--empty-row-gap", type=int, default=3)
+    ingest_xlsx.add_argument("--workers", type=int, default=3)
+    ingest_xlsx.add_argument("--batch-size", type=int, default=6)
+    ingest_xlsx.add_argument("--batch-max-bytes", type=int, default=240000)
+    ingest_xlsx.add_argument(
+        "--draft-monolithic-max-bytes",
+        type=int,
+        default=400000,
+    )
+    ingest_xlsx.add_argument(
+        "--draft-fragment-max-chunks",
+        type=int,
+        default=8,
+    )
+    ingest_xlsx.add_argument(
+        "--draft-fragment-max-cells",
+        type=int,
+        default=2000,
+    )
+    ingest_xlsx.add_argument(
+        "--draft-fragment-max-bytes",
+        type=int,
+        default=400000,
+    )
+    ingest_xlsx.add_argument(
+        "--draft-fragment-workers",
+        type=int,
+        default=3,
+    )
+    ingest_xlsx.add_argument(
+        "--derive-formula-values",
+        action="store_true",
+        help=(
+            "Evaluate only the restricted same-sheet A1 formula grammar "
+            "into a checksum-validated derived overlay; Capture v2 remains "
+            "unchanged."
+        ),
+    )
+    ingest_xlsx.add_argument(
+        "--repair-rejected-draft",
+        action="store_true",
+        help=(
+            "On resume only, run one source-backed AI repair from the "
+            "current rejected manifest instead of repeating the original "
+            "exact draft request."
+        ),
+    )
+    ingest_xlsx.add_argument(
+        "--repair-unselected-source",
+        action="store_true",
+        help=(
+            "Promote exact required source cells missed by the locator to "
+            "NEEDS_REVIEW candidate sections instead of failing selection."
+        ),
+    )
+    ingest_xlsx.add_argument("--model")
+    ingest_xlsx.add_argument(
+        "--reasoning-effort",
+        choices=["low", "medium", "high", "xhigh"],
+        default="medium",
+    )
+    ingest_xlsx.add_argument("--locator-timeout", type=int, default=900)
+    ingest_xlsx.add_argument("--draft-timeout", type=int, default=1800)
+    ingest_xlsx.set_defaults(func=cmd_ingest_workbook)
+
+    ingest_corpus = sub.add_parser(
+        "ingest-corpus",
+        help="Durably account for and ingest a deterministic Excel corpus slice through the same review-gated workflow.",
+    )
+    ingest_corpus.add_argument("--db", required=True)
+    ingest_corpus.add_argument("--input", required=True)
+    ingest_corpus.add_argument("--artifact-root")
+    ingest_corpus.add_argument(
+        "--source-manifest",
+        help="Optional JSON workbooks[].relativePath selection, such as the representative pilot manifest.",
+    )
+    ingest_corpus.add_argument("--journal")
+    ingest_corpus.add_argument("--out")
+    ingest_corpus.add_argument("--dataset", default=DEFAULT_DATASET)
+    ingest_corpus.add_argument(
+        "--capture-backend",
+        choices=["openxml", "com"],
+        default="openxml",
+    )
+    ingest_corpus.add_argument(
+        "--covered-cell-mode",
+        choices=["blank", "anchor", "raw"],
+        default="blank",
+    )
+    ingest_corpus.add_argument(
+        "--exclude-hidden-sheets",
+        dest="include_hidden_sheets",
+        action="store_false",
+        default=True,
+    )
+    ingest_corpus.add_argument(
+        "--inspect-auth-dialog",
+        action="store_true",
+    )
+    ingest_corpus.add_argument(
+        "--dismiss-auth-dialog",
+        action="store_true",
+    )
+    ingest_corpus.add_argument("--auth-dialog-title", default="")
+    ingest_corpus.add_argument("--auth-dialog-class", default="")
+    ingest_corpus.add_argument("--auth-dialog-button", default="")
+    ingest_corpus.add_argument(
+        "--auth-dialog-timeout",
+        type=float,
+        default=30.0,
+    )
+    ingest_corpus.add_argument("--offset", type=int, default=0)
+    ingest_corpus.add_argument("--limit", type=int, default=0)
+    ingest_corpus.add_argument("--workbook-workers", type=int, default=1)
+    ingest_corpus.add_argument("--com-workers", type=int, default=1)
+    ingest_corpus.add_argument("--packet-workers", type=int, default=3)
+    ingest_corpus.add_argument("--ai-workers", type=int, default=3)
+    ingest_corpus.add_argument("--db-workers", type=int, default=1)
+    ingest_corpus.add_argument("--locator-workers", type=int, default=3)
+    ingest_corpus.add_argument("--retry-failed", action="store_true")
+    ingest_corpus.add_argument(
+        "--inventory-only",
+        action="store_true",
+        help="Hash and journal the complete deterministic inventory without ingesting any workbook.",
+    )
+    ingest_corpus.add_argument("--no-resume", action="store_true")
+    ingest_corpus.add_argument("--max-cells", type=int, default=400)
+    ingest_corpus.add_argument("--max-rows", type=int, default=50)
+    ingest_corpus.add_argument("--empty-row-gap", type=int, default=3)
+    ingest_corpus.add_argument("--batch-size", type=int, default=6)
+    ingest_corpus.add_argument(
+        "--batch-max-bytes",
+        type=int,
+        default=240000,
+    )
+    ingest_corpus.add_argument(
+        "--draft-monolithic-max-bytes",
+        type=int,
+        default=400000,
+    )
+    ingest_corpus.add_argument(
+        "--draft-fragment-max-chunks",
+        type=int,
+        default=8,
+    )
+    ingest_corpus.add_argument(
+        "--draft-fragment-max-cells",
+        type=int,
+        default=2000,
+    )
+    ingest_corpus.add_argument(
+        "--draft-fragment-max-bytes",
+        type=int,
+        default=400000,
+    )
+    ingest_corpus.add_argument(
+        "--draft-fragment-workers",
+        type=int,
+        default=3,
+    )
+    ingest_corpus.add_argument(
+        "--derive-formula-values",
+        action="store_true",
+        help=(
+            "Opt in every selected workbook to restricted deterministic "
+            "formula overlays; any unsupported formula fails closed."
+        ),
+    )
+    ingest_corpus.add_argument(
+        "--repair-rejected-draft",
+        action="store_true",
+        help=(
+            "On retry only, repair each current rejected manifest from its "
+            "validator error; initial PENDING workbooks remain exact."
+        ),
+    )
+    ingest_corpus.add_argument(
+        "--repair-unselected-source",
+        action="store_true",
+        help=(
+            "On retry, promote exact required source cells missed by the "
+            "locator to deterministic NEEDS_REVIEW candidate sections."
+        ),
+    )
+    ingest_corpus.add_argument("--model")
+    ingest_corpus.add_argument(
+        "--reasoning-effort",
+        choices=["low", "medium", "high", "xhigh"],
+        default="medium",
+    )
+    ingest_corpus.add_argument("--locator-timeout", type=int, default=900)
+    ingest_corpus.add_argument("--draft-timeout", type=int, default=1800)
+    ingest_corpus.set_defaults(func=cmd_ingest_corpus)
+
     inspect = sub.add_parser("inspect-db", help="Inspect quick-index or universal-grid SQLite counts.")
     inspect.add_argument("--db", required=True)
     inspect.set_defaults(func=cmd_inspect_db)
@@ -3298,6 +7735,43 @@ def build_parser() -> argparse.ArgumentParser:
     analysis_export.add_argument("--report-id", required=True, type=int)
     analysis_export.add_argument("--out", help="Output JSON path. Must stay under this service folder.")
     analysis_export.set_defaults(func=cmd_export_analysis)
+
+    knowledge_migrate = sub.add_parser(
+        "knowledge-migrate",
+        help="Project legacy analysis reports into the canonical Study/Comparison/Evidence schema.",
+    )
+    knowledge_migrate.add_argument("--db", required=True)
+    knowledge_migrate.set_defaults(func=cmd_migrate_knowledge)
+
+    knowledge_inspect = sub.add_parser(
+        "knowledge-inspect",
+        help="Inspect canonical knowledge counts and integrity constraints.",
+    )
+    knowledge_inspect.add_argument("--db", required=True)
+    knowledge_inspect.set_defaults(func=cmd_inspect_knowledge)
+
+    study_import = sub.add_parser(
+        "study-import",
+        help="Validate and import a canonical, source-backed, domain-neutral Study manifest.",
+    )
+    study_import.add_argument("--input", required=True)
+    study_import.add_argument("--db", required=True)
+    study_import.set_defaults(func=cmd_import_study)
+
+    analysis_quarantine = sub.add_parser(
+        "analysis-quarantine",
+        help=(
+            "Atomically hide one current unverified canonical analysis from "
+            "queries while preserving its data and evidence for audit."
+        ),
+    )
+    analysis_quarantine.add_argument("--db", required=True)
+    analysis_quarantine.add_argument(
+        "--public-analysis-id",
+        required=True,
+    )
+    analysis_quarantine.add_argument("--reason", required=True)
+    analysis_quarantine.set_defaults(func=cmd_quarantine_analysis)
 
     search = sub.add_parser("search", help="Search quick-index or universal-grid DB.")
     search.add_argument("--db", required=True)

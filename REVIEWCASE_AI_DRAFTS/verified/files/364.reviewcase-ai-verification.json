@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 364,
+  "sourceFile": "19.BRS-161014 Report checking and test process solder date 7.12.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\364.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:49Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 364,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it mixes dates, machines, lines, totals, decisions, and a clean test under one invalid changed factor.",
+    "issues": [
+      "Changed factor is a merged list of subgroup labels, dates, and totals, not a real condition change.",
+      "Baseline and test conditions are unsupported for most solder vision rows.",
+      "Daily solder vision data and 8.12 clean test are incorrectly grouped together.",
+      "Decision rows are treated as a metric without clear outcome meaning.",
+      "Row citations exist but do not prove the proposed comparison logic."
+    ],
+    "requiredUserQuestions": [
+      "Should the 8.12 clean-by-ethanol test be a separate review case from daily solder vision checks?"
+    ],
+    "correctionPlan": [
+      "Redefine changed factors from source context, e.g. machine/line/date monitoring or clean by ethanol vs normal.",
+      "Keep date, line, MC AWF, machine side, and note as subgroup keys, not changed conditions.",
+      "Separate solder vision results from solder pad clean test unless evidence shows one validation scope.",
+      "Remove or reinterpret Decision rows only if their headers and meaning are citeable.",
+      "Rebuild outcome summaries with cited headers plus representative data rows for each comparison."
+    ],
+    "evidencePolicy": "Citations pass existence checks but are insufficient for final evidence until grouping and condition support are fixed."
+  },
+  "usage": {
+    "input_tokens": 11231,
+    "output_tokens": 814,
+    "total_tokens": 12045
+  }
+}

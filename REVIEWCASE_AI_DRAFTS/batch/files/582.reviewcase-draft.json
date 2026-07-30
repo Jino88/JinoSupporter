@@ -1,0 +1,344 @@
+{
+  "sourceFileId": 582,
+  "sourceFile": "36. TIU C11-20 Report check gauss find reason NG high 2025.1.18_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\36. TIU C11-20 Report check gauss find reason NG high 2025.1.18_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 21,
+    "sheetCellCount": 107,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 6
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST FIND REASON NG FUNCTION HIGH TIU-C11-20 | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Date | 2026-01-18 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Find reason Ng function high"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| Result separate Gauss"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| 'Compare with normal lot"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| | 1. RESULT CHECKING FUNC TION"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | No | Date | Line | Type | | Input | OK | NG AUDIOBUS | | | | NG HEARING | | Total NG | NG rate | Note"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | | | | | | | | SPL | SPL+RB | RB | No sound | Noise | Touch"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | 1 | 2026-01-18 00:00:00 | TIU C11-20 R | Gauss < 550G ( Spec >460G ) | | 31 | 29 | 0 | 0 | 3 | 0 | 2 | 0 | 2 | 0.06451613"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | 2 | | | Gauss 550G ~569G ( Spec >460G ) | | 135 | 119 | 0 | 0 | 18 | 0 | 16 | 0 | 16 | 0.11851852"
+    },
+    {
+      "rowId": "Test!18",
+      "sheetName": "Test",
+      "rowNumber": 18,
+      "rowText": "| | 3 | | | Gauss >570G ( Spec > 460G ) | | 19 | 16 | 0 | 0 | 3 | 0 | 3 | 0 | 3 | 0.15789474"
+    },
+    {
+      "rowId": "Test!20",
+      "sheetName": "Test",
+      "rowNumber": 20,
+      "rowText": "| | 4 | | | Normal | | 150 | 129 | 1 | 0 | 23 | 0 | 20 | 0 | 21 | 0.14"
+    },
+    {
+      "rowId": "Test!23",
+      "sheetName": "Test",
+      "rowNumber": 23,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-582-rc-1",
+      "reviewTitle": "| REPORT TEST FIND REASON NG FUNCTION HIGH TIU-C11-20 | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Find reason Ng function high / | II. Content. / | Result separate Gauss / | 'Compare with normal lot",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "dimension/spec"
+          ],
+          "changedFactor": "Condition comparison: Normal vs TIU C11-20 R, Gauss 550G ~569G ( Spec >460G ), Gauss >570G ( Spec > 460G )",
+          "baselineCondition": "Normal",
+          "changedCondition": "TIU C11-20 R, Gauss 550G ~569G ( Spec >460G ), Gauss >570G ( Spec > 460G )",
+          "subgroupKeys": [
+            "Gauss < 550G ( Spec >460G )"
+          ],
+          "evidenceRows": [
+            "Test!13",
+            "Test!14",
+            "Test!16",
+            "Test!18",
+            "Test!2",
+            "Test!20",
+            "Test!5",
+            "Test!7",
+            "Test!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "1. RESULT CHECKING FUNC TION",
+          "comparisonRows": [
+            "Test!14",
+            "Test!16",
+            "Test!18",
+            "Test!20"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 22010,
+              "condition": "TIU C11-20 R | Gauss < 550G ( Spec >460G )",
+              "input": 31.0,
+              "ok": 29.0,
+              "ng": 2.0,
+              "ratePercent": 6.451613,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "metricId": 22011,
+              "condition": "Gauss 550G ~569G ( Spec >460G )",
+              "input": 135.0,
+              "ok": 119.0,
+              "ng": 16.0,
+              "ratePercent": 11.851852000000001,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "metricId": 22012,
+              "condition": "Gauss >570G ( Spec > 460G )",
+              "input": 19.0,
+              "ok": 16.0,
+              "ng": 3.0,
+              "ratePercent": 15.789474,
+              "evidenceRows": [
+                "Test!18"
+              ]
+            },
+            {
+              "metricId": 22013,
+              "condition": "Normal",
+              "input": 150.0,
+              "ok": 129.0,
+              "ng": 21.0,
+              "ratePercent": 14.000000000000002,
+              "evidenceRows": [
+                "Test!20"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No | Date | Line | Type | Input | OK | NG AUDIOBUS | NG HEARING | Total NG | NG rate | Note",
+          "comparisonRows": [
+            "Test!13"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 57279,
+              "condition": "NG AUDIOBUS / SPL",
+              "spec": "< 550G",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.12583333375,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!13"
+              ]
+            },
+            {
+              "statId": 57280,
+              "condition": "NG AUDIOBUS / SPL+RB",
+              "spec": "< 550G",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!13"
+              ]
+            },
+            {
+              "statId": 57281,
+              "condition": "NG AUDIOBUS / RB",
+              "spec": "< 550G",
+              "min": 0.09677419,
+              "max": 23.0,
+              "avg": 5.94266694875,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!13"
+              ]
+            },
+            {
+              "statId": 57282,
+              "condition": "NG AUDIOBUS / No sound",
+              "spec": "< 550G",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!13"
+              ]
+            },
+            {
+              "statId": 57283,
+              "condition": "NG HEARING / Noise",
+              "spec": "< 550G",
+              "min": 0.06451613,
+              "max": 20.0,
+              "avg": 5.18428284,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!13"
+              ]
+            },
+            {
+              "statId": 57284,
+              "condition": "NG HEARING / Touch",
+              "spec": "< 550G",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!13"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!13",
+        "Test!14",
+        "Test!16",
+        "Test!18",
+        "Test!2",
+        "Test!20",
+        "Test!5",
+        "Test!7",
+        "Test!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!13",
+      "Test!14",
+      "Test!16",
+      "Test!18",
+      "Test!2",
+      "Test!20",
+      "Test!5",
+      "Test!7",
+      "Test!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 250,
+  "sourceFile": "12. MSU-L20S15-07 GMI Report Test   improve NG solder weak - 2025.5.19-_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\250.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:29Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 250,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but mis-groups primary process conditions, SUS types, and AWF machine checks.",
+    "issues": [
+      "Changed factor incorrectly lumps SUS B and machine IDs as test conditions.",
+      "SUS A/B should be subgroup/type context, not baseline/test split.",
+      "AWF machine check likely needs separate grouping or clear secondary context.",
+      "Decision and content rows supporting final conclusion are omitted from evidence.",
+      "Outcome metrics use section titles instead of NG/OK/spot-welding measures."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to solder-pad treatment/process: bonding G05-0001 vs clean alcohol vs dry/semi/normal as supported.",
+      "Keep SUS A and SUS B as subgroup keys for suspension results.",
+      "Separate or clearly label AWF machine check by machine/spot-welding equipment context.",
+      "Add content rows 11-15 and decision row 59 as evidence.",
+      "Define outcomes as input, OK, vision spot-welding NG, total NG, and NG rate."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until corrected."
+  },
+  "usage": {
+    "input_tokens": 4266,
+    "output_tokens": 776,
+    "total_tokens": 5042
+  }
+}

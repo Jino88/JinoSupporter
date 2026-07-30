@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 750,
+  "sourceFile": "56. TIU L5S3-01 R Report  test reduce time dry UV and pusher on to increase capa AWF machine  2026.01.09_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\750.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:51Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 750,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed factor and incorrectly pairs all machines against AWF #1 baseline.",
+    "issues": [
+      "Changed factor should be process time reduction, not AWF machine comparison.",
+      "Baseline/test are Before vs After, with AWF #1-#5 as subgroups.",
+      "SubResults incorrectly reuse AWF #1 Before for other machines.",
+      "Key rows for change settings, comparison instruction, headers, and decision are omitted.",
+      "Outcome metric title is vague; should reflect NG rate and defect types."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to UV dry 7s to 6s and pusher time 2s to 1s.",
+      "Set baselineCondition to Before and changedCondition to After.",
+      "Create per-machine subgroup comparisons using each AWF row pair.",
+      "Summarize NG rate, total NG, coil offset, and coil/VP assy NG outcomes.",
+      "Add evidence rows for settings, compare instruction, table header, all result rows, and decision."
+    ],
+    "evidencePolicy": "Rows are citeable, but current citations do not support the draft grouping or pairings."
+  },
+  "usage": {
+    "input_tokens": 3928,
+    "output_tokens": 513,
+    "total_tokens": 4441
+  }
+}

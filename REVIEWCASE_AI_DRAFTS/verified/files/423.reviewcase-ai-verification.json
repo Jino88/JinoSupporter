@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 423,
+  "sourceFile": "23- BRS-161014  Report test verify Dome of Ralon vender date 09.03.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\423.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 423,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misidentifies the primary comparison and overuses subgroup/header rows as outcomes.",
+    "issues": [
+      "Primary changed factor should be Dome vendor/type Ralon vs GES, not mold/process.",
+      "VP mold #4/#8 should be subgroup keys, with totals treated as aggregates.",
+      "Sub 1 outcome is incomplete and biased toward GES rows while Ralon rows are needed.",
+      "Header-only rows were converted into invalid measurement outcomes.",
+      "Some key cited rows lack visible row text in the review packet."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Test Dome Ralon vs Normal Dome GES.",
+      "Move VP mold #4 and #8 to subgroup keys for each comparable row.",
+      "Rebuild Sub 1 and Function outcomes using matched Ralon and GES rows plus totals only as aggregates.",
+      "Remove header-derived measurement outcomes unless real measurement data rows exist.",
+      "Include row text for all cited evidence rows before final Ask AI use."
+    ],
+    "evidencePolicy": "Citations exist, but final evidence is insufficient until grouping is corrected and cited data rows are fully shown."
+  },
+  "usage": {
+    "input_tokens": 4339,
+    "output_tokens": 711,
+    "total_tokens": 5050
+  }
+}

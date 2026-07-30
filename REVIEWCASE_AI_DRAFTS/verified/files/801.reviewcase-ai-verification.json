@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 801,
+  "sourceFile": "62.MSU-L20S15-07  Report test material Suspesnion happen NG creasy, deform after recutting laser_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\801.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 801,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the main Normal vs test suspension comparison but needs outcome, grouping, and citation corrections before use.",
+    "issues": [
+      "Function result is judged improved though source conclusion says same as normal.",
+      "Tension outcome mixes Frame+Suspension and Solder without clear subgroup separation.",
+      "Suspension A and B are not preserved as subgroup keys.",
+      "Spec values for tension rows are omitted despite being shown in headers/rows.",
+      "Load test is concluded but has no cited result rows or outcome handling."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Change function judgement to equivalent/same or not_judged, not improved.",
+      "Add subgroup keys for Suspension A/B and test type Frame+Suspension vs Solder.",
+      "Capture specs 0.3 kgf and 0.03 kgf and verify violations against them.",
+      "Add decision rows 55-59 as conclusion evidence.",
+      "Either cite load test data rows if available or limit load test to cited decision context."
+    ],
+    "evidencePolicy": "Existing row citations support main comparison, but decision and load-test evidence are incomplete."
+  },
+  "usage": {
+    "input_tokens": 4895,
+    "output_tokens": 761,
+    "total_tokens": 5656
+  }
+}

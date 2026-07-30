@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 956,
+  "sourceFile": "88. BRS-161014 Report test Jig CM+CP NG after check by Jig master 12.18.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\956.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:07Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 956,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Comparable Normal vs Test jig function results are present, but the changed factor and outcome scope need tightening.",
+    "issues": [
+      "Changed factor is too generic; evidence indicates suspected NG jig use, not material change.",
+      "Outcome domain should be function/yoke NG, not unknown.",
+      "Decision row tying Test jig to yoke offset NG is omitted.",
+      "TEST YOKE analysis may be related and is not assessed for inclusion."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to suspected NG/test jig versus normal jig.",
+      "Remove unsupported material domain unless separate evidence proves it.",
+      "Set outcome domain to function test or yoke offset NG.",
+      "Add header and decision evidence rows, especially Report (2)!13 and Report (2)!31.",
+      "Review TEST YOKE rows for additional same-report NG analysis outcomes."
+    ],
+    "evidencePolicy": "Citations exist for the pair, but final evidence needs header, decision, and any related analysis rows."
+  },
+  "usage": {
+    "input_tokens": 3255,
+    "output_tokens": 745,
+    "total_tokens": 4000
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 382,
+  "sourceFile": "2.3. BRS-161014 Report test Compress JIG improve Sub 2 CM+CP 2023.08.07_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\382.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 382,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misidentifies the changed factor and mixes jig, material, and oven temperature into one comparison.",
+    "issues": [
+      "Primary factor should be Compress JIG cutting/normal/no press, not CMG shiny or temperature.",
+      "Material, date, and oven temperature are subgroup context, not baseline/test conditions.",
+      "Baseline and changedCondition are reversed or incoherent.",
+      "Outcome domains are marked unknown despite spread-glue and dry-glue results.",
+      "Evidence omits some context/decision rows and includes header-only rows as factor evidence."
+    ],
+    "requiredUserQuestions": [
+      "Should 07.08 and 08.08 be treated as one validation report with date/material subgroups?"
+    ],
+    "correctionPlan": [
+      "Redefine changed factor as press/compress jig method comparison.",
+      "Move CMG shiny/not shiny, oven temperature, date, and lot note to subgroup keys.",
+      "Keep spread-glue and not-dry-glue as two outcomes under the same factor.",
+      "Preserve row-level groups by sheet/date, temperature, material, and jig type.",
+      "Add purpose, test content, headers, all result rows, and decision row citations."
+    ],
+    "evidencePolicy": "Row citations exist and are traceable, but are not sufficient until factor grouping is corrected."
+  },
+  "usage": {
+    "input_tokens": 9449,
+    "output_tokens": 807,
+    "total_tokens": 10256
+  }
+}

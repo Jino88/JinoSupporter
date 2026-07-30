@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 212,
+  "sourceFile": "10. TIU C11-20 Result test AWF JIG change small size and corner(filler)  2025.12.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\212.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:12Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 212,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies a jig change but incompletely groups the Normal, Type 1, and Type 2 comparison and outcomes.",
+    "issues": [
+      "Baseline is marked not explicit despite Normal JIG evidence.",
+      "Type 2 condition is omitted from the changed-factor comparison.",
+      "Result table grouping is incomplete and cites only Type 1.",
+      "Outcome domain and judgement are too vague for final evidence.",
+      "Decision and hand-insert observations are not linked to outcomes."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to AWF test JIG design: Normal vs Type 1 vs Type 2.",
+      "Use Type 1 and Type 2 definitions as condition evidence.",
+      "Include header and all result rows for Type 1, Type 2, and Normal.",
+      "Add qualitative coil insertion and decision rows as related outcomes.",
+      "Recompute/verify NG rates and judgement from cited rows."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient; add all condition, result, and decision rows."
+  },
+  "usage": {
+    "input_tokens": 2597,
+    "output_tokens": 577,
+    "total_tokens": 3174
+  }
+}

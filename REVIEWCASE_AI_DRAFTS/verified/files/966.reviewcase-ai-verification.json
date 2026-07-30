@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 966,
+  "sourceFile": "9. BRS-201506 Report test change Frame+VP outside bonding line date 20.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\966.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:26Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 966,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misgroups VP vision baselines and overstates improvement despite source conclusions showing higher NG for some tests.",
+    "issues": [
+      "VP vision compares test rows to wrong Normal row; same-table Normal appears at row 27.",
+      "Row 28 contradicts improved judgement for inside 0.05 VP vision.",
+      "Overall judgement ignores row 40 note that outside 0.1 has higher bonding NG and needs retest.",
+      "Measurement outcome is bogus; row 31 is a table header, not measurement data.",
+      "Changed condition list may mix inside/outside 0.05/0.1 variants without clear subgroup grouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild VP vision comparisons using the Normal row from each result table, especially row 27 for rows 24-26.",
+      "Change VP vision judgement to mixed or worsened where source conclusion indicates higher NG.",
+      "Use row 40 to qualify outside 0.1 as function acceptable but bonding/AOI NG unresolved.",
+      "Remove the measurement outcome derived only from header row 31.",
+      "Separate or clearly subgroup each move direction and offset value before final evidence use."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient because key comparisons use mismatched rows and a header-only measurement."
+  },
+  "usage": {
+    "input_tokens": 4947,
+    "output_tokens": 806,
+    "total_tokens": 5753
+  }
+}

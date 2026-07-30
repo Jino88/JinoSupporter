@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 933,
+  "sourceFile": "81.1 BRS-201506 Report check dimension of sample Ng hearing 26.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\933.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 933,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed factor and uses header-only evidence for a sample NG hearing versus OK dimension comparison.",
+    "issues": [
+      "Changed factor is filename, not the compared conditions.",
+      "Baseline/test conditions should be Sample NG noise/touch versus OK.",
+      "Outcome stats include Type check as a measurement.",
+      "Evidence rows cite mostly headers and omit numeric result rows.",
+      "Judgement cannot be derived from current grouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to sample condition: NG hearing/noise/touch compared with OK.",
+      "Use coil offset and dome VP offset as outcome metrics under one validation context.",
+      "Preserve date, line, type check, and sample category subgroup keys.",
+      "Rebuild measurements from actual data rows, excluding Type check labels.",
+      "Cite header plus representative numeric rows for each outcome table."
+    ],
+    "evidencePolicy": "Current row citations prove table presence but are insufficient as final numeric evidence."
+  },
+  "usage": {
+    "input_tokens": 2993,
+    "output_tokens": 392,
+    "total_tokens": 3385
+  }
+}

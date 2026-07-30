@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 207,
+  "sourceFile": "10. BRS-161014 Report test Reduce glue bonding VP out side 2nd   Date 23.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\207.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:17Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 207,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Core comparison is supported, but the draft needs citation and labeling fixes before final use.",
+    "issues": [
+      "Review title uses Decap NG sheet instead of main test report title.",
+      "Changed factor should specify reduced bonding amount, not only condition names.",
+      "Change domain includes material without support.",
+      "Changed-factor evidence omits key content rows defining 1.8-1.9mg vs spec.",
+      "Decap NG rows are related context but not needed as primary evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set title from Report!2.",
+      "Define factor as VP outside 2nd bonding amount reduction versus normal/spec.",
+      "Limit domain to process condition.",
+      "Add Report!8 and Report!9 to changed-factor evidence.",
+      "Keep outcome comparisons from Report!26/28 and Report!34/36."
+    ],
+    "evidencePolicy": "Outcome row citations are sufficient; changed-factor citations need Report content rows."
+  },
+  "usage": {
+    "input_tokens": 3854,
+    "output_tokens": 738,
+    "total_tokens": 4592
+  }
+}

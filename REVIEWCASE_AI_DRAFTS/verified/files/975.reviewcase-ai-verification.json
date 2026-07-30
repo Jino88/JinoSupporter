@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 975,
+  "sourceFile": "91. BRS-161014 Report  Upper attach tape magnetic jig 30.12.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\975.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 975,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable validation exists, but the draft misstates the changed factor and has unreliable Gauss outcome grouping.",
+    "issues": [
+      "Changed factor is generic; primary change is adding tape to upper magnetic jig.",
+      "Baseline/test conditions should be before vs after attach/improve.",
+      "Gauss outcomes are duplicated and labeled with opaque column names.",
+      "Important Gauss citations are not sufficiently exposed in provided context.",
+      "Judgements remain unset despite source decision indicating NG reduction and Gauss in spec."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to added upper jig tape for magnetic SMG separation.",
+      "Use before improve/attach tape as baseline and after improve/attach tape as test.",
+      "Keep NG separate and Gauss under the same changed-factor context.",
+      "Rebuild Gauss results with clear long/short SMG subgrouping and specs.",
+      "Cite complete Gauss table and decision rows, removing duplicate opaque measurement outcome."
+    ],
+    "evidencePolicy": "Citations support comparability for NG rows, but Gauss evidence needs complete row citations before approval."
+  },
+  "usage": {
+    "input_tokens": 4555,
+    "output_tokens": 765,
+    "total_tokens": 5320
+  }
+}

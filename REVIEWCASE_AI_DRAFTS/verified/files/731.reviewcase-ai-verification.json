@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 731,
+  "sourceFile": "53. TIU C11-20 Report  find reason function high 2026.02.3_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\731.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 731,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but invalidly conflates distinct tests and uses at least one wrong normal comparator.",
+    "issues": [
+      "Changed factor merges unrelated test types, lines, dates, positions, and process changes.",
+      "VP date 1/2 test is compared to a normal row from a different section instead of its local normal row.",
+      "Machine/line values are treated as changed conditions without proof they are the causal factor.",
+      "Measurement outcome is a parsed defect-count table, not a true measurement study.",
+      "Subgroup keys and evidence rows include uncited or unclear rows not shown in context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split changed factors by report section/test condition: holder-position YOKE, VP date 1/2, drying-time increase, clean/remake.",
+      "For each test, pair only with the adjacent/local Normal row in the same table and preserve date, line, and section keys.",
+      "Recompute NG rate deltas using the correct paired rows, including Test!42 versus Test!44.",
+      "Remove the measurement outcome unless actual measurement/spec rows exist.",
+      "Limit evidence to title/purpose/content rows plus each table header and paired test/normal result rows."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping and comparator citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 5256,
+    "output_tokens": 763,
+    "total_tokens": 6019
+  }
+}

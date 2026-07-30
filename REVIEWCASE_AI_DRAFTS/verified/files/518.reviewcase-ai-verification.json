@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 518,
+  "sourceFile": "30. MSU-L20S15-07 Report TEST after Coil stretching happen deform or not_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\518.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 518,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable test context but changed-factor and outcome grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor is the filename, not the actual test condition.",
+      "Baseline versus post-stretch/timepoint conditions are ambiguous.",
+      "Outcome stats mix dimensions, gaps, cooling time, and position incorrectly.",
+      "Spec and final decision are not incorporated.",
+      "Evidence is mostly headers and omits key data/decision rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define the factor as coil post-stretch condition/timepoint and related Test1/Test2 process checks.",
+      "Preserve subgroup keys: test number, AWF, cooling time, position, day/check stage.",
+      "Separate Test1 dimension/gap results from Test2 AI/hearing check results.",
+      "Cite full data rows, gap rows, spec row, and decision row if populated.",
+      "Apply the stated length/width specs and avoid treating setup fields as measurements."
+    ],
+    "evidencePolicy": "Current citations prove report context only; final evidence needs specific result and decision rows."
+  },
+  "usage": {
+    "input_tokens": 3427,
+    "output_tokens": 733,
+    "total_tokens": 4160
+  }
+}

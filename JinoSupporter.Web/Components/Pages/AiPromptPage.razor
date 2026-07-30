@@ -1,0 +1,410 @@
+@page "/data-inference/ai-prompts"
+@rendermode InteractiveServer
+
+<PageTitle>AI PROMPT</PageTitle>
+
+<div class="aip-root">
+    <header class="aip-header">
+        <div>
+            <div class="aip-kicker">TEST DATA ANALYSIS</div>
+            <h1>AI PROMPT</h1>
+        </div>
+        <div class="aip-stats">
+            <span>@PromptItems.Length prompt</span>
+            <span>@GroupedPrompts.Count group</span>
+        </div>
+    </header>
+
+    <section class="aip-summary">
+        @foreach (var group in GroupedPrompts)
+        {
+            <button class="aip-summary-card"
+                    type="button"
+                    @onclick="() => SelectPrompt(group.Items[0])">
+                <strong>@group.Category</strong>
+                <span>@group.Items.Count prompt file(s)</span>
+            </button>
+        }
+    </section>
+
+    <section class="aip-layout">
+        <aside class="aip-list">
+            @foreach (var group in GroupedPrompts)
+            {
+                <div class="aip-group">
+                    <div class="aip-group-title">@group.Category</div>
+                    @foreach (PromptItem item in group.Items)
+                    {
+                        <button class="aip-item @(IsSelected(item) ? "active" : "")"
+                                type="button"
+                                @onclick="() => SelectPrompt(item)">
+                            <span class="aip-item-title">@item.Title</span>
+                            <span class="aip-item-path">@item.Path</span>
+                            <span class="aip-item-used">@item.UsedBy</span>
+                        </button>
+                    }
+                </div>
+            }
+        </aside>
+
+        <main class="aip-preview">
+            @if (_selected is null)
+            {
+                <div class="aip-empty">Select a prompt.</div>
+            }
+            else
+            {
+                <div class="aip-preview-head">
+                    <div>
+                        <div class="aip-path">@_selected.Path</div>
+                        <h2>@_selected.Title</h2>
+                        <p>@_selected.UsedBy</p>
+                    </div>
+                    <span class="aip-status @(SelectedExists ? "ok" : "missing")">
+                        @(SelectedExists ? "used" : "missing")
+                    </span>
+                </div>
+
+                <div class="aip-meta">
+                    <span>Category: @_selected.Category</span>
+                    <span>Lines: @SelectedLineCount</span>
+                    <span>Chars: @SelectedText.Length.ToString("N0")</span>
+                </div>
+
+                @if (!SelectedExists)
+                {
+                    <div class="aip-error">Prompt file was referenced but not found under AI_PROMPTS.</div>
+                }
+                else
+                {
+                    <pre class="aip-code">@SelectedText</pre>
+                }
+            }
+        </main>
+    </section>
+</div>
+
+<style>
+    .aip-root {
+        min-height: calc(100vh - 24px);
+        padding: 18px;
+        background: #f7f8fb;
+        color: #0f172a;
+    }
+
+    .aip-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 14px;
+    }
+
+    .aip-kicker {
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .aip-header h1 {
+        margin: 2px 0 0;
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: 0;
+    }
+
+    .aip-stats {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .aip-stats span {
+        min-width: 74px;
+        padding: 7px 10px;
+        border: 1px solid #d8e0ec;
+        border-radius: 6px;
+        background: #fff;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 800;
+        text-align: center;
+    }
+
+    .aip-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .aip-summary-card {
+        padding: 12px;
+        border: 1px solid #d8e0ec;
+        border-radius: 8px;
+        background: #fff;
+        text-align: left;
+    }
+
+    .aip-summary-card strong {
+        display: block;
+        color: #1e293b;
+        font-size: 13px;
+    }
+
+    .aip-summary-card span {
+        color: #64748b;
+        font-size: 12px;
+    }
+
+    .aip-layout {
+        display: grid;
+        grid-template-columns: minmax(280px, 34%) minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+    }
+
+    .aip-list,
+    .aip-preview {
+        border: 1px solid #d8e0ec;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    .aip-list {
+        max-height: calc(100vh - 180px);
+        overflow: auto;
+        padding: 10px;
+    }
+
+    .aip-group + .aip-group {
+        margin-top: 14px;
+    }
+
+    .aip-group-title {
+        padding: 4px 6px;
+        color: #475569;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .aip-item {
+        width: 100%;
+        display: grid;
+        gap: 2px;
+        margin-top: 4px;
+        padding: 9px;
+        border: 1px solid #e2e8f0;
+        border-radius: 7px;
+        background: #fff;
+        text-align: left;
+    }
+
+    .aip-item:hover,
+    .aip-item.active {
+        border-color: #93c5fd;
+        background: #eff6ff;
+    }
+
+    .aip-item-title {
+        color: #0f172a;
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+    .aip-item-path,
+    .aip-item-used {
+        overflow: hidden;
+        color: #64748b;
+        font-size: 11px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .aip-preview {
+        min-height: calc(100vh - 180px);
+        overflow: hidden;
+    }
+
+    .aip-preview-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 18px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .aip-preview-head h2 {
+        margin: 2px 0 5px;
+        font-size: 20px;
+        letter-spacing: 0;
+    }
+
+    .aip-preview-head p,
+    .aip-path {
+        margin: 0;
+        color: #64748b;
+        font-size: 12px;
+    }
+
+    .aip-status {
+        align-self: start;
+        border-radius: 999px;
+        padding: 3px 9px;
+        font-size: 11px;
+        font-weight: 900;
+    }
+
+    .aip-status.ok {
+        color: #166534;
+        border: 1px solid #bbf7d0;
+        background: #f0fdf4;
+    }
+
+    .aip-status.missing {
+        color: #991b1b;
+        border: 1px solid #fecaca;
+        background: #fef2f2;
+    }
+
+    .aip-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 9px 18px;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+
+    .aip-meta span {
+        color: #475569;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .aip-code {
+        max-height: calc(100vh - 310px);
+        margin: 0;
+        padding: 18px;
+        overflow: auto;
+        white-space: pre-wrap;
+        color: #0f172a;
+        background: #fff;
+        font-family: Consolas, "Cascadia Mono", monospace;
+        font-size: 12px;
+        line-height: 1.55;
+    }
+
+    .aip-empty,
+    .aip-error {
+        padding: 18px;
+        color: #64748b;
+    }
+
+    .aip-error {
+        color: #991b1b;
+        background: #fef2f2;
+    }
+
+    @@media (max-width: 900px) {
+        .aip-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .aip-list,
+        .aip-preview {
+            max-height: none;
+            min-height: 0;
+        }
+    }
+</style>
+
+@code {
+    private PromptItem? _selected;
+    private string SelectedText => _selected is null ? "" : ReadPrompt(_selected.Path);
+    private bool SelectedExists => _selected is not null && File.Exists(AiPromptRegistry.ResolvePath(_selected.Path));
+    private int SelectedLineCount => string.IsNullOrEmpty(SelectedText)
+        ? 0
+        : SelectedText.Replace("\r\n", "\n").Split('\n').Length;
+
+    private List<PromptGroup> GroupedPrompts => PromptItems
+        .GroupBy(p => p.Category)
+        .Select(g => new PromptGroup(g.Key, g.ToList()))
+        .ToList();
+
+    protected override void OnInitialized()
+        => _selected = PromptItems.FirstOrDefault();
+
+    private bool IsSelected(PromptItem item)
+        => _selected?.Path.Equals(item.Path, StringComparison.OrdinalIgnoreCase) == true;
+
+    private void SelectPrompt(PromptItem item)
+        => _selected = item;
+
+    private static string ReadPrompt(string path)
+    {
+        try
+        {
+            return AiPromptRegistry.Read(path);
+        }
+        catch (Exception ex)
+        {
+            return ex.Message;
+        }
+    }
+
+    private static readonly PromptItem[] PromptItems =
+    [
+        new("INPUT DATA (BATCH)", "input-data/analysis-runner.md", "Codex analysis runner", "InputDataTestAnalysisSupport -> BatchExtractor"),
+        new("INPUT DATA (BATCH)", "input-data/ai-pre-analysis.md", "AI pre-analysis", "InputDataTestAnalysisSupport"),
+        new("INPUT DATA (BATCH)", "input-data/default-analysis.md", "Default analysis", "InputDataTestAnalysisSupport"),
+        new("INPUT DATA (BATCH)", "input-data/visualization-selection.md", "Visualization selection", "InputDataTestAnalysisSupport"),
+        new("INPUT DATA (BATCH)", "input-data/review-index.md", "Review index", "InputDataTestAnalysisSupport"),
+        new("INPUT DATA (BATCH)", "input-data/workbook-evidence.md", "Workbook evidence rules", "InputDataTestAnalysisSupport"),
+        new("INPUT DATA (BATCH)", "input-data/analysis-output.md", "Analysis output contract", "InputDataTestAnalysisSupport"),
+
+        new("Data Inference CLI", "data-inference/ai-batch-cli.md", "AI Batch CLI launcher", "DataInferenceBatchPage"),
+        new("Data Inference CLI", "data-inference/ai-excel-proc.md", "AI Batch core spec", "Referenced by ai-batch-cli and auto prompt sections"),
+        new("Data Inference CLI", "data-inference/ask-ai-cli.md", "Ask AI CLI launcher", "DataInferenceAskPage"),
+        new("Data Inference CLI", "data-inference/cli-ask-ai.md", "Ask AI core spec", "Referenced by ask-ai-cli"),
+        new("Data Inference CLI", "data-inference/model-analysis-cli.md", "Each Model Analysis CLI", "DataInferenceModelAnalysisPage"),
+
+        new("Daily Test Data", "daily-test-data/current-input-analysis.md", "Current input analysis", "DailyTestDataInputPage"),
+        new("Daily Test Data", "daily-test-data/cumulative-analysis.md", "Cumulative analysis", "DailyTestDataInputPage"),
+        new("Daily Test Data", "daily-test-data/cli-runner.md", "Daily Test CLI runner", "DailyTestDataInputPage"),
+        new("Daily Test Data", "daily-test-data/default-current-input-request.md", "Default current request", "DailyTestDataInputPage"),
+        new("Daily Test Data", "daily-test-data/default-cumulative-request.md", "Default cumulative request", "DailyTestDataInputPage"),
+        new("Daily Test Data", "daily-test-data/cumulative-prompt-only-reanalysis.md", "Prompt-only reanalysis", "DailyTestDataInputPage"),
+        new("Daily Test Data", "daily-test-data/cumulative-update-no-current-addition.md", "No-current-data update", "DailyTestDataInputPage"),
+        new("Daily Test Data", "daily-test-data/cumulative-update-with-current-addition.md", "Current addition update", "DailyTestDataInputPage"),
+
+        new("Claude API", "claude/text-table-parser.md", "Text table parser", "ClaudeService"),
+        new("Claude API", "claude/image-table-parser.md", "Image table parser", "ClaudeService"),
+        new("Claude API", "claude/html-report.md", "HTML report", "ClaudeService"),
+        new("Claude API", "claude/structured-transcript.md", "Structured transcript", "ClaudeService"),
+        new("Claude API", "claude/structured-transcript-raw-excel-block.md", "Structured transcript raw block", "ClaudeService"),
+        new("Claude API", "claude/normalize-from-text.md", "Normalize from text", "ClaudeService"),
+        new("Claude API", "claude/normalize-from-images.md", "Normalize from images", "ClaudeService"),
+        new("Claude API", "claude/normalize-raw-text-block.md", "Normalize raw text block", "ClaudeService"),
+        new("Claude API", "claude/extract-tags.md", "Extract tags", "ClaudeService"),
+        new("Claude API", "claude/extract-purpose-tags.md", "Extract purpose tags", "ClaudeService"),
+        new("Claude API", "claude/ask-ai.md", "Ask AI", "ClaudeService"),
+        new("Claude API", "claude/translate-ask-ai-result.md", "Translate Ask AI result", "ClaudeService"),
+        new("Claude API", "claude/translate-analysis.md", "Translate analysis", "ClaudeService"),
+        new("Claude API", "claude/translate-text-only.md", "Translate text only", "ClaudeService"),
+        new("Claude API", "claude/translate-image-only.md", "Translate image only", "ClaudeService"),
+        new("Claude API", "claude/translate-text-and-image.md", "Translate text and image", "ClaudeService"),
+        new("Claude API", "claude/output-script-rules.md", "Output script rules", "ClaudeService"),
+
+        new("Translation", "translation/codex-ocr-translation.md", "Codex CLI OCR translation", "TranslatePage"),
+        new("Translation", "translation/openai-ocr-translation.md", "OpenAI OCR translation", "CodexApiService"),
+    ];
+
+    private sealed record PromptItem(string Category, string Path, string Title, string UsedBy);
+    private sealed record PromptGroup(string Category, List<PromptItem> Items);
+}

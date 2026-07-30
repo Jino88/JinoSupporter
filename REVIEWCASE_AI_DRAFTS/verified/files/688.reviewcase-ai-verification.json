@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 688,
+  "sourceFile": "49. BRS-201506 Report Checking problem Frame + VP offset date 28.5.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\688.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 688,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The source is an NG-rate checking report, not a supported baseline-versus-changed-condition review case.",
+    "issues": [
+      "No explicit baseline or test changed condition is cited.",
+      "Clamp #1, Clamp #2, and Total are result groupings, not proven changed factors.",
+      "Two result blocks are not separated by date or position grouping.",
+      "Header row for result fields is omitted from case evidence.",
+      "Judgement and changed-factor framing are unsupported."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Do not use clamp labels as changed conditions.",
+      "Preserve date and position as subgroup keys if extracting results.",
+      "Cite the result header with each metric block.",
+      "Reclassify as non-comparable inspection data unless a true changed condition is found.",
+      "Create a new review case only if source rows identify a baseline and test factor."
+    ],
+    "evidencePolicy": "Citations exist but do not substantiate a changed-condition comparison."
+  },
+  "usage": {
+    "input_tokens": 2577,
+    "output_tokens": 739,
+    "total_tokens": 3316
+  }
+}

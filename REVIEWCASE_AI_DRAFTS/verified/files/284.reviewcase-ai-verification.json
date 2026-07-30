@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 284,
+  "sourceFile": "14. BRS-201506 Report checking Yoke ass'y guide JIG date 7.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\284.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:18Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 284,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because the source is a jig inspection report without a citeable baseline-versus-changed condition.",
+    "issues": [
+      "Changed factor is the filename, not a proven process change.",
+      "Baseline and test conditions are not explicit in cited rows.",
+      "Outcome uses Sheet1 setup data while ignoring the actual jig result row.",
+      "Measurement stats cite only the header, not data rows.",
+      "Change domains are overbroad and unsupported."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Exclude from Ask AI change-review evidence unless a true comparison is identified.",
+      "If retained as inspection context, recast as jig NG check, not a change case.",
+      "Cite purpose, content, quantity, result header, and result data rows.",
+      "Remove unsupported measurement statistics from Sheet1.",
+      "Do not use the filename as the changed factor."
+    ],
+    "evidencePolicy": "Current citations exist but are insufficient; they omit key result data and do not support a changed condition."
+  },
+  "usage": {
+    "input_tokens": 2943,
+    "output_tokens": 745,
+    "total_tokens": 3688
+  }
+}

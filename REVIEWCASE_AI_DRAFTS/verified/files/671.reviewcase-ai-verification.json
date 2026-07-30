@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 671,
+  "sourceFile": "46.L20S15-07 Report Test using Primer AS 8100  and chemicals E100b-006 Date 18.10.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\671.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:13Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 671,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable test evidence but the changed-factor and outcome grouping are not reliable enough for Ask AI.",
+    "issues": [
+      "Primary factor is ambiguous; baseline is not explicit.",
+      "Drop Test Manual/Auto are test modes, not material changes.",
+      "Cleaning conditions are mixed into one broad changed condition.",
+      "Several measurement outcomes appear derived from headers, not data rows.",
+      "Evidence includes broad/header rows and omits visible support for key stats."
+    ],
+    "requiredUserQuestions": [
+      "Is this report comparing Primer, E100B-006, and Ethanol cleaning, or validating one combined process?"
+    ],
+    "correctionPlan": [
+      "Define changed factor as cleaning/chemical treatment only.",
+      "Keep Manual/Auto, bond type, test section, date, and model as subgroup context.",
+      "Rebuild outcomes from actual data rows for decap, tension, function, and drop tests.",
+      "Remove header-derived measurement statistics unless data rows support them.",
+      "Use concise citations to purpose, condition rows, result rows, and decision rows."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficiently targeted for final evidence."
+  },
+  "usage": {
+    "input_tokens": 6929,
+    "output_tokens": 771,
+    "total_tokens": 7700
+  }
+}

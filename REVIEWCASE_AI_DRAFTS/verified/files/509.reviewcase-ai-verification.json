@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 509,
+  "sourceFile": "3. MSU-201507 DT Report test Check reason NG not dry glue  VP-CD  date 11.3.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\509.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 509,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but incorrectly merges several distinct report sheets and changed factors.",
+    "issues": [
+      "Changed factor combines unrelated tests: method change, magnet reduction, insert tape, and controller error.",
+      "Review title/purpose focus on insert tape while outcomes mostly use other sheets.",
+      "Insert tape comparison omits the key test row and conclusion from outcomes.",
+      "NG rate VP deform sheet has a separate controller-error comparison but is not properly modeled.",
+      "Measurement outcomes are auto-extracted headers/statistics, not verified comparable outcomes."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split into separate review cases or changed factors by sheet/report purpose.",
+      "Model Change method as normal dry UC press versus changed method, with vision, function, and tension outcomes.",
+      "Model reduce magnet as normal versus 1-magnet CD press JIG, preserving date totals and function checks.",
+      "Model insert tape as insert tape versus normal, including its NG-increase decision.",
+      "Model VP deform controller error as a separate cause check or exclude if not a validation comparison."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient because grouping is wrong and key comparison rows are missing."
+  },
+  "usage": {
+    "input_tokens": 15657,
+    "output_tokens": 762,
+    "total_tokens": 16419
+  }
+}

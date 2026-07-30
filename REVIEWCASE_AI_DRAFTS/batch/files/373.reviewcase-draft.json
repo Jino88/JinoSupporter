@@ -1,0 +1,221 @@
+{
+  "sourceFileId": 373,
+  "sourceFile": "2. BRS-161016 GMI  Report test new Locate 4 pin - 2025.06.17_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\2. BRS-161016 GMI  Report test new Locate 4 pin - 2025.06.17_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Sheet1",
+    "sheetRowCount": 16,
+    "sheetCellCount": 66,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet1!2",
+      "sheetName": "Sheet1",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | BRS-161016 REPORT TEST NEW DESIGN OF LOCATE CHANGE FROM 2 PIN TO 4 PIN | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Sheet1!3",
+      "sheetName": "Sheet1",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | Date | 2025-06-17 00:00:00"
+    },
+    {
+      "rowId": "Sheet1!4",
+      "sheetName": "Sheet1",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Sheet1!5",
+      "sheetName": "Sheet1",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Sheet1!6",
+      "sheetName": "Sheet1",
+      "rowNumber": 6,
+      "rowText": "| - To improve NG main line"
+    },
+    {
+      "rowId": "Sheet1!7",
+      "sheetName": "Sheet1",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Sheet1!8",
+      "sheetName": "Sheet1",
+      "rowNumber": 8,
+      "rowText": "| - Check status at process reverse Frame+coil 2"
+    },
+    {
+      "rowId": "Sheet1!9",
+      "sheetName": "Sheet1",
+      "rowNumber": 9,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Sheet1!10",
+      "sheetName": "Sheet1",
+      "rowNumber": 10,
+      "rowText": "| | RESULT CHECK STATUS AT PROCESS REVERSE FRAME+COIL 2"
+    },
+    {
+      "rowId": "Sheet1!11",
+      "sheetName": "Sheet1",
+      "rowNumber": 11,
+      "rowText": "| | Date | Line | Input | OK | NG | | | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Sheet1!12",
+      "sheetName": "Sheet1",
+      "rowNumber": 12,
+      "rowText": "| | | | | | Clamp offset | Coil damage | Frame damage | Coil+frame float in Jig"
+    },
+    {
+      "rowId": "Sheet1!13",
+      "sheetName": "Sheet1",
+      "rowNumber": 13,
+      "rowText": "| | 2025-06-17 00:00:00 | E2-3A | 500 | 500 | 0 | 0 | 0 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "Sheet1!23",
+      "sheetName": "Sheet1",
+      "rowNumber": 23,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-373-rc-1",
+      "reviewTitle": "| BRS-161016 REPORT TEST NEW DESIGN OF LOCATE CHANGE FROM 2 PIN TO 4 PIN | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To improve NG main line / | II. Content. / | - Check status at process reverse Frame+coil 2 / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs 2025-06-17 00:00:00, 2025-06-18 00:00:00, 2025-06-19 00:00:00, 2025-06-20 00:00:00",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "2025-06-17 00:00:00, 2025-06-18 00:00:00, 2025-06-19 00:00:00, 2025-06-20 00:00:00",
+          "subgroupKeys": [
+            "E2-3A"
+          ],
+          "evidenceRows": [
+            "Sheet1!13",
+            "Sheet1!14",
+            "Sheet1!15",
+            "Sheet1!16",
+            "Sheet1!2",
+            "Sheet1!5",
+            "Sheet1!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "RESULT CHECK STATUS AT PROCESS REVERSE FRAME+COIL 2",
+          "comparisonRows": [
+            "Sheet1!13",
+            "Sheet1!14",
+            "Sheet1!15",
+            "Sheet1!16"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 20154,
+              "condition": "2025-06-17 00:00:00 | E2-3A",
+              "input": 500.0,
+              "ok": 500.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Sheet1!13"
+              ]
+            },
+            {
+              "metricId": 20155,
+              "condition": "2025-06-18 00:00:00 | E2-3A",
+              "input": 500.0,
+              "ok": 500.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Sheet1!14"
+              ]
+            },
+            {
+              "metricId": 20156,
+              "condition": "2025-06-19 00:00:00 | E2-3A",
+              "input": 500.0,
+              "ok": 500.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Sheet1!15"
+              ]
+            },
+            {
+              "metricId": 20157,
+              "condition": "2025-06-20 00:00:00 | E2-3A",
+              "input": 500.0,
+              "ok": 500.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Sheet1!16"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Sheet1!13",
+        "Sheet1!14",
+        "Sheet1!15",
+        "Sheet1!16",
+        "Sheet1!2",
+        "Sheet1!5",
+        "Sheet1!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet1!13",
+      "Sheet1!14",
+      "Sheet1!15",
+      "Sheet1!16",
+      "Sheet1!2",
+      "Sheet1!5",
+      "Sheet1!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

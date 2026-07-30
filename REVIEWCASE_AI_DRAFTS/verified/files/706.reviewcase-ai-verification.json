@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 706,
+  "sourceFile": "50. BRS-161016 Report test using SUB BAFFLE JIG BAKO V1, RUBER GASKET, GS 0.65T, YS 10.0-7.5-0.4T improve 2024.07.7_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\706.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:21Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 706,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has comparable normal/test function data but changed-factor and outcome grouping need correction before use.",
+    "issues": [
+      "Changed factor is narrowed to jig only despite source defining a multi-part Option 2 condition.",
+      "Test 2nd is compared to an earlier Normal row, so date/test-round grouping is not preserved.",
+      "Measurement outcome is invalid; it appears derived from table/header fields, not a real measurement comparison.",
+      "Recheck NG using old JIG rows are omitted or not classified, though they affect interpretation.",
+      "Evidence cites row 10.7!38 without visible support in provided context."
+    ],
+    "requiredUserQuestions": [
+      "Does \"Test new JIG\" mean the full Option 2 condition or only the jig change?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor as Normal vs Option 2/full test condition unless user confirms jig-only.",
+      "Separate subresults by date and test round; do not compare Test 2nd to prior Normal without justification.",
+      "Remove the measurement outcome unless actual measurement/spec rows exist.",
+      "Add or explicitly exclude old-JIG recheck rows as secondary recheck context.",
+      "Ensure all cited evidence rows are present and support the exact claims."
+    ],
+    "evidencePolicy": "Current citations prove source existence but are insufficient for final evidence because key grouping and metric support are unclear."
+  },
+  "usage": {
+    "input_tokens": 4269,
+    "output_tokens": 812,
+    "total_tokens": 5081
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "sourceFileId": 293,
+  "sourceFile": "15. BRS-161014 Report check Dome abnormal Date 24.11.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\293.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:33Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 293,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The comparison and function metrics are citeable, but the changed-factor domain is misclassified.",
+    "issues": [
+      "changeDomain is incorrectly set to equipment; evidence indicates a dome material/part condition.",
+      "Decision section is not cited beyond its header, so no final OK/NG judgement is supported."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Change changeDomain to material or component condition.",
+      "Keep changed factor as Dome Normal vs Dome abnormal thick gap.",
+      "Keep baseline as Dome Normal and changed condition as Dome abnormal thick gap.",
+      "Do not infer a final decision unless decision text is available and cited.",
+      "Optionally cite row 23 if defect subcategory columns are used."
+    ],
+    "evidencePolicy": "Rows 24 and 26 support the comparison metrics; cited evidence is sufficient after domain correction."
+  },
+  "usage": {
+    "input_tokens": 2431,
+    "output_tokens": 697,
+    "total_tokens": 3128
+  }
+}

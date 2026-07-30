@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 147,
+  "sourceFile": "07. BRS-161016 Checking New JIG AWF_2025.05.31_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\147.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 147,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The source supports a New JIG vs Old JIG AWF comparison, but the draft has malformed factor labeling and duplicate outcome evidence.",
+    "issues": [
+      "Changed condition incorrectly includes Old JIG.",
+      "Sheet1 appears to duplicate AWF results, causing duplicate subresults.",
+      "Outcome citations omit nearby header/title rows needed to define columns.",
+      "Review title is a status row, not the comparison purpose."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to AWF jig condition: Old JIG baseline vs New JIG test.",
+      "Remove duplicate Sheet1 subresult or mark it as duplicate backup evidence.",
+      "Use one comparison outcome with total NG rate and defect counts.",
+      "Add AWF!9-AWF!13 as primary evidence citations.",
+      "Retitle review as function result comparison of New vs Old AWF JIG."
+    ],
+    "evidencePolicy": "Data rows exist, but final evidence should include header/title rows and avoid duplicate-sheet overcounting."
+  },
+  "usage": {
+    "input_tokens": 2726,
+    "output_tokens": 478,
+    "total_tokens": 3204
+  }
+}

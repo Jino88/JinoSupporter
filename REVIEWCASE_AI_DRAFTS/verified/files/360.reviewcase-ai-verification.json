@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 360,
+  "sourceFile": "19. MSU-L20S15-07DT  Report Test film 85A improve NG function SPK and module   date 30.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\360.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:34Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 360,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The source supports a film 85A vs normal film 70A validation, but the draft mispairs test rounds and includes a bogus measurement outcome.",
+    "issues": [
+      "Changed factor wrongly includes Total in changed condition.",
+      "Several outcomes compare different dates/test rounds instead of matched normal rows.",
+      "Function total compares test total to a single normal row instead of normal total.",
+      "Measurement-2 is a parsed header/defect table artifact, not a real measurement.",
+      "Some comparisonRows omit needed baseline rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to new film 85A versus normal film 70A.",
+      "Pair VP Sub1 rows 27/29 and 31/33 by round/date.",
+      "Pair VP/CD rows 50/52 and 54/56 by round/date.",
+      "Pair function rows 75/77, 79/81, and totals 83/84.",
+      "Remove measurement-2 and keep tension as pass/spec measurement with rows 59,63,65,67,69."
+    ],
+    "evidencePolicy": "Citations are sufficient for source context but not for current pairing accuracy."
+  },
+  "usage": {
+    "input_tokens": 7494,
+    "output_tokens": 783,
+    "total_tokens": 8277
+  }
+}

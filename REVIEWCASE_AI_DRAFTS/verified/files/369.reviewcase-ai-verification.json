@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 369,
+  "sourceFile": "2. BRS-161014 Report  Test FRAME ARRAY A JIG improve and NEW BASE machine laser Cutting SUS Date 15.2.2025 line 6_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\369.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:05Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 369,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but grouping and extracted outcomes are materially unreliable.",
+    "issues": [
+      "Changed factor conflates real changes with totals, row numbers, dates, and conditions.",
+      "Vision frame+coil pairs compare mismatched dates instead of same-date or total groups.",
+      "SUS-after-laser rows are misparsed; numeric row labels become conditions and mixed rows are included.",
+      "Function section lacks a valid baseline/test grouping and uses incomplete context.",
+      "Measurement outcomes are header-derived artifacts, not valid measurements."
+    ],
+    "requiredUserQuestions": [
+      "Should this be treated as one combined validation of new base, improved laser support, and Frame Array A jig?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor as the combined validated change, with Normal only where directly cited as baseline.",
+      "Re-pair vision frame+coil by date and total rows, preserving blank-date carry-forward.",
+      "Re-parse SUS-after-laser table with merged/blank condition context before judging outcomes.",
+      "Reassess function results only with cited headers and comparable conditions, or mark descriptive.",
+      "Remove header-based measurement stats and cite actual data rows only."
+    ],
+    "evidencePolicy": "Row citations exist, but they are not sufficient because several cited rows are misgrouped or used as headers/artifacts."
+  },
+  "usage": {
+    "input_tokens": 10275,
+    "output_tokens": 1239,
+    "total_tokens": 11514
+  }
+}

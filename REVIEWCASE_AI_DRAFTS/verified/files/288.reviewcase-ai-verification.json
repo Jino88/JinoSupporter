@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 288,
+  "sourceFile": "14. TIU L5S3-01 R Result test New spot tip - date 2025.12.01_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\288.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 288,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misgroups a three spot-tip NG-rate test as a single unclear baseline-vs-Test 1 comparison.",
+    "issues": [
+      "Baseline/changed factor is not supported by source rows.",
+      "Test 2 and Test 3 results are omitted from outcomes.",
+      "Outcome metric is mislabeled as Picture sample instead of NG rate.",
+      "Changed-condition grouping should reflect three spot tip tests.",
+      "Decision row is cited but its content is unavailable."
+    ],
+    "requiredUserQuestions": [
+      "Do Test 1, Test 2, and Test 3 represent the three spot tip types?",
+      "Is any test the baseline/current tip, or are all three alternative tips?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to spot tip type/test condition.",
+      "Include Test 1, Test 2, and Test 3 under one validation context.",
+      "Use input, OK, NG, total NG, and NG rate as outcomes.",
+      "Avoid claiming a baseline unless confirmed by evidence or user.",
+      "Add decision content only if row 33 has citeable text."
+    ],
+    "evidencePolicy": "Row citations are sufficient for purpose and results but insufficient for baseline and final decision."
+  },
+  "usage": {
+    "input_tokens": 2393,
+    "output_tokens": 460,
+    "total_tokens": 2853
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 230,
+  "sourceFile": "11. L20S15-07GMI  Report test CD IR25050828 ( Size 130k ) and lot replace ( Size 140K )Ng dyne pen Tét again_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\230.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 230,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not approved because it misidentifies the changed factor and collapses lot groups into a single lot-number condition.",
+    "issues": [
+      "Changed factor incorrectly states baseline vs 5 instead of test CD and replacement lots with Normal comparator context.",
+      "Lot grouping is wrong; lots 1-6, 7-9, and Normal must be preserved.",
+      "Functional/dyne outcome uses only one cited row and misses key result rows and decision.",
+      "Tension outcome has malformed condition labels for several lots.",
+      "Size is inconsistent across title/purpose/result and must be normalized or flagged."
+    ],
+    "requiredUserQuestions": [
+      "Should Normal be treated as the baseline comparator for acceptance?",
+      "Should size be recorded as 130k or 300k for CD IR25050828?"
+    ],
+    "correctionPlan": [
+      "Redefine changed factor as lot/material condition: CD IR25050828, replacement lot, and Normal comparator.",
+      "Regroup results by lot series and lot number using report rows 20-38.",
+      "Add separate outcomes for dyne, tension, VP/CD separation, Sigma, Hearing, total NG, NG rate, and final decision.",
+      "Clean condition labels in tension rows and retain spec 1.2 kgf.",
+      "Cite purpose, quantity, result header, representative result rows, Normal row, tension rows, and decision row."
+    ],
+    "evidencePolicy": "Citations exist but are incomplete and misgrouped; final evidence needs corrected row coverage."
+  },
+  "usage": {
+    "input_tokens": 5379,
+    "output_tokens": 845,
+    "total_tokens": 6224
+  }
+}

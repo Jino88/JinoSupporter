@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 487,
+  "sourceFile": "29. _ BRS-161016 Report test material from New supplier Zhongke  28.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\487.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 487,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparison evidence but changed-factor grouping and gauss interpretation need correction before use.",
+    "issues": [
+      "Changed factor should center on new supplier Zhongke versus normal line, with material or magnet type as subgroups.",
+      "Gauss SMG result misses spec, sample basis, low-gauss NG, and final cannot-use decision.",
+      "Tension rows need inherited Test/Normal labels and material subgroup pairing by MG-S-A/B/C.",
+      "CMG/CPT gauss uses Zhongke versus Baotou while both appear as test samples, so baseline is ambiguous.",
+      "Summary and detail tension results may duplicate the same outcome and should be reconciled."
+    ],
+    "requiredUserQuestions": [
+      "Should Baotou in CMG/CPT gauss be treated as normal baseline or only supplier subgroup context?"
+    ],
+    "correctionPlan": [
+      "Revise changedFactor to new supplier Zhongke material versus normal line.",
+      "Add subgroup keys for material, magnet type, supplier, test area, date, and sheet/source table.",
+      "Re-extract gauss specs, counts, min/max/avg, NG counts, and decision text.",
+      "Pair tension Test versus Normal separately for MG-S-A, MG-S-B, and MG-S-C using merged-cell context.",
+      "Merge or clearly separate summary-sheet and Tension-sheet tension outcomes."
+    ],
+    "evidencePolicy": "Row citations exist and are mostly sufficient, but corrected grouping needs citations to headers, data rows, and decision rows."
+  },
+  "usage": {
+    "input_tokens": 7123,
+    "output_tokens": 843,
+    "total_tokens": 7966
+  }
+}

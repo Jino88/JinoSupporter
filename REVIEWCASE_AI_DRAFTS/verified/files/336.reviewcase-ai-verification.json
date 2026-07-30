@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 336,
+  "sourceFile": "17.3 BRS-161014 Summary data TEST compare MTR Ralon and Ges Vendor 19.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\336.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 336,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the comparison; source supports CD supplier Ralon vs normal CD supplier GES NG-rate comparison, not mixed dome/vendor conditions.",
+    "issues": [
+      "Changed factor mixes dome, semi VP, vendor, and CD supplier conditions.",
+      "Baseline is wrong; normal GES CD rows should anchor the main comparison.",
+      "Outcome uses mismatched rows 14 and 28 instead of paired/summary Ralon vs GES rows.",
+      "Key evidence rows 30, 32, 34, 36, 38, 40, 42, 44, 46 and Sheet1 are omitted.",
+      "Measurement outcomes are spurious header/table statistics and should be removed."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to CD supplier/material: Ralon test vs GES normal.",
+      "Use line/date subgroup keys for C2, E2, total C2+E2, and all-time summary.",
+      "Build NG-rate outcomes from paired rows 28/30, 32/34, 36/38, 40/42, and 44/46.",
+      "Use Sheet1 rows 2-3 only as summary corroboration.",
+      "Remove bogus measurement/#DIV/0 outcomes and header-only statistics."
+    ],
+    "evidencePolicy": "Current citations are insufficient; cite paired condition rows and summary rows directly."
+  },
+  "usage": {
+    "input_tokens": 4876,
+    "output_tokens": 641,
+    "total_tokens": 5517
+  }
+}

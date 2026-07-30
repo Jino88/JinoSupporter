@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 645,
+  "sourceFile": "43. TIU C11-20  Report Test Keep sample and hearing again 2026.1.26_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\645.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 645,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft needs revision because it misgroups the changed factor and includes a spurious measurement outcome.",
+    "issues": [
+      "Direct changed-factor row is omitted from evidence.",
+      "Changed condition mixes model, time, and retest labels.",
+      "Baseline is not explicit and should not be invented.",
+      "Header-derived measurement statistics are not valid outcomes.",
+      "Rows 14 and 20 need visible context for final grouping."
+    ],
+    "requiredUserQuestions": [
+      "Is Mold KR MAKE the intended changed factor with no explicit baseline?"
+    ],
+    "correctionPlan": [
+      "Add Test!8 as primary changed-factor evidence.",
+      "Revise changed factor to Mold KR MAKE/change mold KR make.",
+      "Treat time/type/model as subgroup context only.",
+      "Keep only function defect results from rows 14,16,18,20.",
+      "Remove the measurement outcome built from header/stat artifacts."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient because key change evidence is missing and header rows are overused."
+  },
+  "usage": {
+    "input_tokens": 2951,
+    "output_tokens": 742,
+    "total_tokens": 3693
+  }
+}

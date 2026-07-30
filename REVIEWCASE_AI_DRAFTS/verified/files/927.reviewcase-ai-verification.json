@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 927,
+  "sourceFile": "80. TIU L5S3-01 R Report test NG VP damage sub 3 to make again standard - 2026.03.20_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\927.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:17Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 927,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has comparable evidence but misidentifies the primary changed factor and mismatches line-specific Normal controls.",
+    "issues": [
+      "Primary factor should be Test NG VP damage vs Normal, not Normal vs lines.",
+      "Line is subgroup context, but draft treats lines as changed conditions.",
+      "Line L comparisons use Line R Normal rows instead of Line L Normal rows.",
+      "Header-only measurement outcomes are spurious and not final evidence.",
+      "Tension and reliability outcomes are missing or weakly cited."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baselineCondition to Normal and changedCondition to Test NG VP damage from Forming.",
+      "Move Line R D3-4A and Line L D3-3A into subgroupKeys.",
+      "Pair Line R Test with row 20 and Line L Test with row 24 for bonding.",
+      "Pair Line R Test with row 31 and Line L Test with row 35 for function.",
+      "Add tension rows 41-44 and cite actual reliability rows if available; remove header-only stats."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient because key pairings and outcome evidence are incorrect."
+  },
+  "usage": {
+    "input_tokens": 5965,
+    "output_tokens": 646,
+    "total_tokens": 6611
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 197,
+  "sourceFile": "1.1 BRS-201506 Report test material VP using die punch cutting inside ( V0 ) Date 28.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\197.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 197,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparable evidence but the changed-factor and measurement grouping are not reliable enough for final use.",
+    "issues": [
+      "Changed factor is overbroad and includes artifact value '1'.",
+      "VP+CD GAP and Dome deform are mixed as changed conditions instead of likely subgroup/defect contexts.",
+      "Several measurement outcomes are header-derived artifacts, not valid measurements.",
+      "Tension comparison is incomplete and misparsed from limited rows.",
+      "Evidence set is overbroad and includes uncited context not shown in draft rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to VP normal/Normal versus VP TEST Die punch V0 using die punch cutting inside V0.",
+      "Keep VP+CD GAP and Dome deform as subgroup or defect context unless proven primary conditions.",
+      "Remove bogus measurement/header-stat outcomes and rebuild only real metrics.",
+      "Rebuild tension outcome using paired VP TEST and VP normal rows by date and line.",
+      "Retain vision, air leak, and function outcomes under one validation report with precise row citations."
+    ],
+    "evidencePolicy": "Row citations mostly exist, but grouping citations are overbroad and some needed header/detail rows are missing."
+  },
+  "usage": {
+    "input_tokens": 10805,
+    "output_tokens": 771,
+    "total_tokens": 11576
+  }
+}

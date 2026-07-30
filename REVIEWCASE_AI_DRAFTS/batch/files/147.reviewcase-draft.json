@@ -1,0 +1,213 @@
+{
+  "sourceFileId": 147,
+  "sourceFile": "07. BRS-161016 Checking New JIG AWF_2025.05.31_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\07. BRS-161016 Checking New JIG AWF_2025.05.31_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "AWF; Sheet1",
+    "sheetRowCount": 15,
+    "sheetCellCount": 127,
+    "comparisonPairCount": 2,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "AWF!2",
+      "sheetName": "AWF",
+      "rowNumber": 2,
+      "rowText": "| STATUS CHECKING NEW JIG AWF BRS-161016"
+    },
+    {
+      "rowId": "AWF!3",
+      "sheetName": "AWF",
+      "rowNumber": 3,
+      "rowText": "| JIG | Cuốn dây tự động | Chinh dây & kiểm tra Vision | Xếp FRAME +SUSPENSION | Bôi keo tổ hợp SP+COIL | Tổ hợp S/P+Coil | Đèn LED UV2 (phần dưới)(1) | Lật FR+COIL và đặt (1) | Kiểm tra vị trí định hình | SPOT WELDING | Kiểm tra AI SPOT WELDING | Bôi keo cố định | Bôi keo cố định (2) | Đèn LED UV3 (phần trên)(1) | Lật FR+COIL và đặt (2) | Laser Cutting SP | Kiểm tra LASER CUTTING | Kiểm tra D.C.R | Lật FR+COIL và..."
+    },
+    {
+      "rowId": "AWF!4",
+      "sheetName": "AWF",
+      "rowNumber": 4,
+      "rowText": "| AWF JIG-Y"
+    },
+    {
+      "rowId": "AWF!5",
+      "sheetName": "AWF",
+      "rowNumber": 5,
+      "rowText": "| Result check | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK"
+    },
+    {
+      "rowId": "AWF!6",
+      "sheetName": "AWF",
+      "rowNumber": 6,
+      "rowText": "| After repair"
+    },
+    {
+      "rowId": "AWF!9",
+      "sheetName": "AWF",
+      "rowNumber": 9,
+      "rowText": "| RESULT CHECK FUNCTION COMPARE NEW JIG AWF AND OLD JIG AWF"
+    },
+    {
+      "rowId": "AWF!10",
+      "sheetName": "AWF",
+      "rowNumber": 10,
+      "rowText": "| Date | Line | Type | | Input | OK | Air leak | NG Sigma | | | | NG Hearing | | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "AWF!11",
+      "sheetName": "AWF",
+      "rowNumber": 11,
+      "rowText": "| | | | | | | | SPL | THD | SPL+THD | SPL+THD+F0 | Noise | Touch"
+    },
+    {
+      "rowId": "AWF!12",
+      "sheetName": "AWF",
+      "rowNumber": 12,
+      "rowText": "| 2025-06-04 00:00:00 | E2-3B | New JIG | | 397 | 388 | 0 | 0 | 4 | 0 | 0 | 4 | 1 | 9 | 0.02267003"
+    },
+    {
+      "rowId": "AWF!13",
+      "sheetName": "AWF",
+      "rowNumber": 13,
+      "rowText": "| | | Old JIG | | 769 | 746 | 0 | 0 | 3 | 0 | 0 | 16 | 4 | 23 | 0.02990897"
+    },
+    {
+      "rowId": "Sheet1!4",
+      "sheetName": "Sheet1",
+      "rowNumber": 4,
+      "rowText": "| | RESULT CHECK FUNCTION COMPARE NEW JIG AWF AND OLD JIG AWF"
+    },
+    {
+      "rowId": "Sheet1!5",
+      "sheetName": "Sheet1",
+      "rowNumber": 5,
+      "rowText": "| | Date | Line | Type | | Input | OK | Air leak | NG Sigma | | | | NG Hearing | | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "Sheet1!7",
+      "sheetName": "Sheet1",
+      "rowNumber": 7,
+      "rowText": "| | 2025-06-04 00:00:00 | E2-3B | New JIG | | 397 | 388 | 0 | 0 | 4 | 0 | 0 | 4 | 1 | 9 | 0.02267003"
+    },
+    {
+      "rowId": "Sheet1!8",
+      "sheetName": "Sheet1",
+      "rowNumber": 8,
+      "rowText": "| | | | Old JIG | | 769 | 746 | 0 | 0 | 3 | 0 | 0 | 16 | 4 | 23 | 0.02990897"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-147-rc-1",
+      "reviewTitle": "| STATUS CHECKING NEW JIG AWF BRS-161016",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment",
+            "jig"
+          ],
+          "changedFactor": "Condition comparison: Old JIG vs New JIG, Old JIG",
+          "baselineCondition": "Old JIG",
+          "changedCondition": "New JIG, Old JIG",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "AWF!12",
+            "AWF!13",
+            "Sheet1!7",
+            "Sheet1!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT CHECK FUNCTION COMPARE NEW JIG AWF AND OLD JIG AWF",
+          "comparisonRows": [
+            "AWF!12",
+            "AWF!13",
+            "Sheet1!7",
+            "Sheet1!8"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 3630,
+              "controlCondition": "Old JIG",
+              "testCondition": "New JIG",
+              "control": {
+                "input": 769.0,
+                "ng": 23.0,
+                "ratePercent": 2.990897
+              },
+              "test": {
+                "input": 397.0,
+                "ng": 9.0,
+                "ratePercent": 2.267003
+              },
+              "deltaRatePercentPoint": -0.7238939999999999,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "AWF!12",
+                "AWF!13"
+              ]
+            },
+            {
+              "pairId": 3631,
+              "controlCondition": "Old JIG",
+              "testCondition": "New JIG",
+              "control": {
+                "input": 769.0,
+                "ng": 23.0,
+                "ratePercent": 2.990897
+              },
+              "test": {
+                "input": 397.0,
+                "ng": 9.0,
+                "ratePercent": 2.267003
+              },
+              "deltaRatePercentPoint": -0.7238939999999999,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Sheet1!7",
+                "Sheet1!8"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "AWF!12",
+        "AWF!13",
+        "Sheet1!7",
+        "Sheet1!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "AWF!12",
+      "AWF!13",
+      "Sheet1!7",
+      "Sheet1!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

@@ -1,0 +1,210 @@
+{
+  "sourceFileId": 522,
+  "sourceFile": "30.1 MSU-L20S15-07  Report checking  gauss yoke date 10.6.2025_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\30.1 MSU-L20S15-07  Report checking  gauss yoke date 10.6.2025_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "17.1",
+    "sheetRowCount": 18,
+    "sheetCellCount": 73,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 3
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "17.1!1",
+      "sheetName": "17.1",
+      "rowNumber": 1,
+      "rowText": "| | 1"
+    },
+    {
+      "rowId": "17.1!2",
+      "sheetName": "17.1",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT CHECK GAUSS GAUSS YOKE MSU-L20S15-07 | | | | | | | | | | | | | | | | | | | | Dept: | ME"
+    },
+    {
+      "rowId": "17.1!3",
+      "sheetName": "17.1",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | Date: | 2025-06-10 00:00:00"
+    },
+    {
+      "rowId": "17.1!4",
+      "sheetName": "17.1",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | Marker: | Le"
+    },
+    {
+      "rowId": "17.1!5",
+      "sheetName": "17.1",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "17.1!6",
+      "sheetName": "17.1",
+      "rowNumber": 6,
+      "rowText": "| - Check gauss Yoke"
+    },
+    {
+      "rowId": "17.1!7",
+      "sheetName": "17.1",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "17.1!8",
+      "sheetName": "17.1",
+      "rowNumber": 8,
+      "rowText": "| 1. Make sample low gauss"
+    },
+    {
+      "rowId": "17.1!10",
+      "sheetName": "17.1",
+      "rowNumber": 10,
+      "rowText": "| III. Result."
+    },
+    {
+      "rowId": "17.1!11",
+      "sheetName": "17.1",
+      "rowNumber": 11,
+      "rowText": "| | 1. Result check SMG increase voltage"
+    },
+    {
+      "rowId": "17.1!13",
+      "sheetName": "17.1",
+      "rowNumber": 13,
+      "rowText": "| | MSU-l20S15-07 - GAUSS CHECKING RESULT"
+    },
+    {
+      "rowId": "17.1!14",
+      "sheetName": "17.1",
+      "rowNumber": 14,
+      "rowText": "| | Date | Line | Shift | Model | No | SMG | | | | CMG/PT | Final SPK | Function"
+    },
+    {
+      "rowId": "17.1!15",
+      "sheetName": "17.1",
+      "rowNumber": 15,
+      "rowText": "| | | | | | | SMG Short Spec: :900-1350G (Pole : S) | | SMG Long Spec: 900~1350G (Pole : S) | | MG+PT Spec: :400-570G (Pole : N) | Spec :390~590G (Pole : S) | Sigma | Hearing"
+    },
+    {
+      "rowId": "17.1!24",
+      "sheetName": "17.1",
+      "rowNumber": 24,
+      "rowText": "| IV. Decision."
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-522-rc-1",
+      "reviewTitle": "| REPORT CHECK GAUSS GAUSS YOKE MSU-L20S15-07 | | | | | | | | | | | | | | | | | | | | Dept: | ME",
+      "reviewPurpose": "| I. Purpose. / | - Check gauss Yoke / | II. Content. / | 1. Make sample low gauss / | III. Result.",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "supplier",
+            "material",
+            "dimension/spec"
+          ],
+          "changedFactor": "30.1 MSU-L20S15-07 Report checking gauss yoke date 10.6.2025",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "17.1!14",
+            "17.1!2",
+            "17.1!5",
+            "17.1!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "MSU-l20S15-07 - GAUSS CHECKING RESULT",
+          "comparisonRows": [
+            "17.1!14"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 55763,
+              "condition": "MSU-l20S15-07 - GAUSS CHECKING RESULT / SMG",
+              "spec": "900~1350G",
+              "min": 492.0,
+              "max": 1221.0,
+              "avg": 943.8,
+              "sampleCount": 5,
+              "violationCount": 1,
+              "evidenceRows": [
+                "17.1!14"
+              ]
+            },
+            {
+              "statId": 55764,
+              "condition": "MSU-l20S15-07 - GAUSS CHECKING RESULT / CMG/PT",
+              "spec": "900~1350G",
+              "min": 304.0,
+              "max": 492.0,
+              "avg": 393.4,
+              "sampleCount": 5,
+              "violationCount": 5,
+              "evidenceRows": [
+                "17.1!14"
+              ]
+            },
+            {
+              "statId": 55765,
+              "condition": "MSU-l20S15-07 - GAUSS CHECKING RESULT / Final SPK",
+              "spec": "900~1350G",
+              "min": 169.0,
+              "max": 390.0,
+              "avg": 276.4,
+              "sampleCount": 5,
+              "violationCount": 5,
+              "evidenceRows": [
+                "17.1!14"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "17.1!14",
+        "17.1!2",
+        "17.1!5",
+        "17.1!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "17.1!14",
+      "17.1!2",
+      "17.1!5",
+      "17.1!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

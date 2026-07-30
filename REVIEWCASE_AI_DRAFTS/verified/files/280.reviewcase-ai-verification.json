@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 280,
+  "sourceFile": "14. BRS-161014 Report test sample separate VP Frame_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\280.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:07Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 280,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Source supports a single VP+Frame separate sample function check, but not a verified baseline-versus-test comparison.",
+    "issues": [
+      "No explicit baseline or normal condition is cited.",
+      "Changed factor is framed as a comparison not proven by source rows.",
+      "Outcome is single-condition pass/NG data, not comparative evidence.",
+      "Decision content is not available beyond the heading."
+    ],
+    "requiredUserQuestions": [
+      "Should this be treated as a single-sample validation rather than a comparison?"
+    ],
+    "correctionPlan": [
+      "Remove the unsupported baseline condition.",
+      "Define changed factor as VP+Frame separate sample test condition only.",
+      "Keep result as 10 input, 10 OK, 0 NG, 0% NG.",
+      "Set judgement to not_judged or pass only if decision evidence is provided.",
+      "Add decision row evidence if available."
+    ],
+    "evidencePolicy": "Citations support title, purpose, condition, and result, but not a baseline comparison or final decision."
+  },
+  "usage": {
+    "input_tokens": 2285,
+    "output_tokens": 513,
+    "total_tokens": 2798
+  }
+}

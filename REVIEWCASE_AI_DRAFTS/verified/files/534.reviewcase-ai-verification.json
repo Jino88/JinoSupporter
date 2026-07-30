@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 534,
+  "sourceFile": "31. TIU C11-20  Report Test Frame improve damage mesh 2026.04.11. - RAW soundcheck_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\534.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 534,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misidentifies the primary comparison and over-groups noisy RAW DATA measurements.",
+    "issues": [
+      "Changed factor uses shift as test condition instead of test item/type context.",
+      "Baseline/test labels are ambiguous between Normal and Frame Test.",
+      "RAW DATA SPL/THD stats are unverified and not clearly tied to the function-defect result.",
+      "Review title is an extracted RAW DATA row, not the report subject.",
+      "Measurement subresults include header/spec artifacts as numeric stats."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended comparison Normal vs TIU C11-20L Frame Test?",
+      "Should RAW DATA SPL/THD soundcheck results be included in this same review case?"
+    ],
+    "correctionPlan": [
+      "Rename title from Test sheet report title.",
+      "Set changed factor to the validated frame/function condition, with date and shift as subgroup keys.",
+      "Keep Test!15 and Test!17 as the function-defect comparison evidence.",
+      "Remove or separately regroup RAW DATA measurement outcomes unless tied to the same validation.",
+      "Rebuild measurement stats using proper headers, frequency rows, samples, and masks."
+    ],
+    "evidencePolicy": "Row citations exist, but cited rows are insufficient for final evidence until grouping is corrected."
+  },
+  "usage": {
+    "input_tokens": 7338,
+    "output_tokens": 752,
+    "total_tokens": 8090
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 243,
+  "sourceFile": "12. BRS-161014  Report test suspension D  offset coverlay - pad solder problem   2023.11.22_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\243.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 243,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparisons but misstates the primary changed factor and overstates functional worsening despite source decisions of same-as-normal/no problem.",
+    "issues": [
+      "Primary factor should be suspension D pad/coverlay offset test vs normal, not generic SP label.",
+      "Test rounds and dates are not preserved as subgroup context.",
+      "First round was declared not matching request and needing retest but is treated as valid evidence.",
+      "Function outcome marked worse from tiny deltas while decisions say same normal/no problem.",
+      "Decision and actual-offset rows are missing from main evidence."
+    ],
+    "requiredUserQuestions": [
+      "Should the first test round be excluded as an invalid sample or retained as retest context?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to pad/coverlay offset test condition versus normal.",
+      "Add subgroup keys for test round/date and line where applicable.",
+      "Cite actual offset rows and both decision rows.",
+      "Separate or flag the first round as invalid/retest context.",
+      "Revise functional judgement to no_change/equivalent unless a worsening criterion is defined."
+    ],
+    "evidencePolicy": "Row citations exist, but key decision/setup rows must be added before final evidence use."
+  },
+  "usage": {
+    "input_tokens": 5149,
+    "output_tokens": 615,
+    "total_tokens": 5764
+  }
+}

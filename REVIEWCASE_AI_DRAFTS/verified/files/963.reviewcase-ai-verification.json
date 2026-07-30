@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 963,
+  "sourceFile": "9. BRS-161016 Report test Heating Press_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\963.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 963,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable process-test evidence but the changed-factor and outcome grouping are too mixed for final use.",
+    "issues": [
+      "Changed factor merges temperature, time, height, dry-oven setting, and use flags into one unclear comparison.",
+      "Baseline/test conditions vary by date and are not consistently preserved as row-level groups.",
+      "Some domains are misclassified as material/coating/dimension despite process-condition evidence.",
+      "O: use and measurement aggregates appear misparsed or unsupported as outcomes.",
+      "Several outcomes cite only headers or uncited data rows, weakening traceability."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factors as process-condition changes by sheet/date/test round.",
+      "Keep heating temperature, press time, height setting, dry-oven setting/actual, and use flag as subgroup keys.",
+      "Separate defect outcomes from header-derived measurement summaries and drop unsupported O: use metrics.",
+      "Cite each compared data row, not only section titles or headers.",
+      "Rejudge each comparison within the same sheet/date context before approval."
+    ],
+    "evidencePolicy": "Source-row IDs exist, but citations are not sufficient for all claims because key outcomes rely on headers or ambiguous rows."
+  },
+  "usage": {
+    "input_tokens": 7721,
+    "output_tokens": 789,
+    "total_tokens": 8510
+  }
+}

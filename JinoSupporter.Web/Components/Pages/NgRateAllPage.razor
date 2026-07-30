@@ -1,6 +1,6 @@
 @page "/ng-rate-all"
 @rendermode InteractiveServer
-@* TODO: NG Rate All — copy of NgRatePage.razor, to be customised later. Admin-only. *@
+@* TODO: NG Rate All - copy of NgRatePage.razor, to be customised later. Admin-only. *@
 @using JinoSupporter.Web.Services
 @inject NgRateService         NgRate
 @inject NgRateSettingsService NgRateSettings
@@ -12,449 +12,43 @@
 
 <PageTitle>NG Rate</PageTitle>
 
-<style>
-    .ngrate-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto auto;
-        gap: 16px;
-    }
-    .ngrate-cell-tl { grid-column: 1; grid-row: 1; }
-    .ngrate-cell-tr { grid-column: 2; grid-row: 1; }
-    .ngrate-cell-bl { grid-column: 1; grid-row: 2; }
-    .ngrate-cell-br { grid-column: 2; grid-row: 2; }
-    @@media (max-width: 700px) {
-        .ngrate-grid { grid-template-columns: 1fr; }
-        .ngrate-cell-tl, .ngrate-cell-tr,
-        .ngrate-cell-bl, .ngrate-cell-br { grid-column: 1; grid-row: auto; }
-    }
-    .json-file-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 3px 6px;
-        border-radius: 4px;
-        font-size: 12px;
-        font-family: monospace;
-        color: #334155;
-        cursor: pointer;
-    }
-    .json-file-item:hover { background: #f1f5f9; }
-    .json-file-item .file-date { font-size: 10px; color: #94a3b8; margin-left: auto; }
-    .json-file-item input[type=checkbox] { cursor: pointer; flex-shrink: 0; }
-    .json-file-item.sub-row { padding-left: 22px; color: #64748b; font-size: 11px; }
-    .json-file-item.sub-row .file-date { color: #cbd5e1; }
-    /* Product group tabs in Model Files */
-    .pg-tab {
-        font-size: 10px; font-weight: 700; letter-spacing: .4px;
-        padding: 2px 9px; border-radius: 10px; border: 1.5px solid #cbd5e1;
-        background: #f8fafc; color: #64748b; cursor: pointer; white-space: nowrap;
-        transition: all .15s;
-    }
-    .pg-tab:hover { border-color: #6366f1; color: #6366f1; }
-    .pg-tab.active { background: #6366f1; border-color: #4f46e5; color: #fff; }
-    .pg-section-label {
-        font-size: 10px; font-weight: 700; letter-spacing: .4px;
-        padding: 1px 6px; border-radius: 4px; flex-shrink: 0;
-    }
-    .pg-SPK    { background:#fef9c3; color:#854d0e; }
-    .pg-UNIT   { background:#dcfce7; color:#166534; }
-    .pg-MODULE { background:#dbeafe; color:#1e40af; }
-    .pg-TWS    { background:#fce7f3; color:#9d174d; }
-    .pg-ETC    { background:#f1f5f9; color:#475569; }
+<NgRateReportStyles />
+<NgRateViewNav CurrentView="by-section" />
 
-    /* Delete-files confirm modal */
-    .ngrate-del-overlay {
-        position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 9500;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .ngrate-del-dialog {
-        background: #fff; border-radius: 10px; padding: 0;
-        box-shadow: 0 10px 40px rgba(0,0,0,.25);
-        min-width: 420px; max-width: 80vw; max-height: 80vh;
-        display: flex; flex-direction: column;
-    }
-    .ngrate-del-head {
-        padding: 12px 16px; border-bottom: 1px solid #e2e8f0;
-        font-size: 14px; font-weight: 700; color: #b91c1c;
-    }
-    .ngrate-del-body { flex: 1; overflow: auto; padding: 12px 16px; }
-    .ngrate-del-foot {
-        display: flex; gap: 8px; justify-content: flex-end;
-        padding: 10px 16px; border-top: 1px solid #e2e8f0;
-    }
+<NgRateSetupPanel StartDate="@_startDate"
+                  StartDateChanged="@((DateTime d) => _startDate = d)"
+                  EndDate="@_endDate"
+                  EndDateChanged="@((DateTime d) => _endDate = d)"
+                  IsBusy="@_isBusy"
+                  IsReportBusy="@_isReportBusy"
+                  IsCredentialsConfigured="@NgRateSettings.IsCredentialsConfigured"
+                  LoginId="@NgRateSettings.LoginId"
+                  SavedDbPath="@_savedDbPath"
+                  ErrorMessage="@_errorMessage"
+                  LogElementId="@LogElementId"
+                  Logs="@_logs"
+                  HasSuccessfulResult="@(_savedDbPath is not null || _reports.Count > 0)"
+                  OnSetToday="SetToday"
+                  OnClearResult="ClearResult"
+                  OnClearLogs="@(() => _logs.Clear())">
+    <GroupPicker>
+        <NgRateModelGroupPicker Groups="@_dbGroups"
+                                SelectedGroupIds="@_selectedGroupIds"
+                                SelectedSubEntries="@_selectedSubEntries"
+                                ActiveProductGroup="@_activePg"
+                                ActiveProductGroupChanged="@((string pg) => _activePg = pg)"
+                                ChildEntryProvider="@ModelGroupPickerHelpers.EnumerateMidEntries"
+                                IsBusy="@_isBusy"
+                                IsReportBusy="@_isReportBusy"
+                                IsCredentialsConfigured="@NgRateSettings.IsCredentialsConfigured"
+                                ReportError="@_reportError"
+                                OnRefresh="RefreshGroups"
+                                OnToggleGroup="ToggleGroup"
+                                OnToggleSubEntry="ToggleSubEntry"
+                                OnGetReport="GetReportAsync" />
+    </GroupPicker>
+</NgRateSetupPanel>
 
-    /* Pivot report tables */
-    .pivot-wrap { overflow-x: auto; }
-    .pivot-table { font-size: 11px; white-space: nowrap; border-collapse: collapse; }
-    .pivot-table th {
-        background: #f1f5f9; font-weight: 600; font-size: 10px;
-        padding: 3px 6px; text-align: right; border: 1px solid #e2e8f0;
-        position: sticky; top: 0; z-index: 1;
-    }
-    .pivot-table th.label-th { text-align: left; min-width: 100px; }
-    .pivot-table th.sep-th { background: #e2e8f0; width: 8px; padding: 0; border: none; }
-    .pivot-table td { padding: 2px 6px; border: 1px solid #e2e8f0; text-align: right; font-family: monospace; }
-    .pivot-table td.label-td { text-align: left; min-width: 100px; font-family: inherit; font-size: 11px; }
-    .pivot-table td.sep-td { background: #e2e8f0; width: 8px; padding: 0; border: none; }
-    .pivot-table td.ppm-zero { color: #cbd5e1; }
-    .pivot-table td.ppm-val { font-weight: 600; color: #1e293b; }
-    .pivot-table tr.total-row td { background: #eff6ff; font-weight: 700; }
-    .pivot-table tr.rank-row:nth-child(odd) td { background: #fafafa; }
-    .pivot-table tr.rank-row:hover td { background: #f0f9ff; }
-    .pivot-table tr.group-row td { background: #f8fafc; font-size: 10px; color: #64748b; }
-    .pivot-table tr.group-row:hover td { background: #f0f4ff; }
-    .group-name-td { padding-left: 18px !important; color: #6366f1 !important; font-size: 10px !important; }
-    .pt-badge {
-        display: inline-block; font-size: 9px; padding: 1px 4px;
-        border: 1px solid #cbd5e1; border-radius: 3px; background: #f8fafc;
-        color: #475569;
-    }
-    .toggle-cell {
-        cursor: pointer; text-align: center; color: #94a3b8; user-select: none;
-    }
-    .toggle-cell:hover { color: #6366f1; }
-    .toggle-icon { font-size: 9px; margin-right: 2px; }
-    .expand-btn {
-        font-size: 10px; padding: 0; border: none; background: none;
-        color: #94a3b8; cursor: pointer; text-decoration: none;
-    }
-    .expand-btn:hover { color: #6366f1; }
-    .group-chip {
-        display: inline-block; font-size: 10px; padding: 2px 7px;
-        border-radius: 12px; cursor: pointer; user-select: none;
-        border: 1px solid #6366f1; background: #eef2ff; color: #4f46e5;
-        transition: background .15s, color .15s;
-    }
-    .group-chip:hover { background: #e0e7ff; }
-    .group-chip.active { background: #6366f1; color: #fff; border-color: #4f46e5; }
-    /* Group detail modal overlay */
-    .grp-modal-overlay {
-        position: fixed; inset: 0; background: rgba(0,0,0,0.35);
-        z-index: 1050; display: flex; align-items: center; justify-content: center;
-    }
-    .grp-modal-box {
-        background: #fff; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-        max-width: 92vw; width: 960px; max-height: 80vh;
-        display: flex; flex-direction: column; overflow: hidden;
-    }
-    .grp-modal-header {
-        display: flex; align-items: center; gap: 8px;
-        padding: 10px 14px; border-bottom: 1px solid #e2e8f0;
-        font-weight: 600; font-size: 13px; flex-shrink: 0;
-    }
-    .grp-modal-body { overflow: auto; padding: 10px; flex: 1; }
-
-    /* Hierarchy summary — Group → Model Name → Building/Line → Shift-Group collapsible rows */
-    .pivot-table tr.hier-group-row    { cursor: pointer; }
-    .pivot-table tr.hier-group-row td { background: #fef3c7; color: #78350f; font-weight: 700;
-                                        border-top: 2px solid #fbbf24; }
-    .pivot-table tr.hier-group-row:hover td { background: #fde68a; }
-    .pivot-table tr.hier-mid-row    { cursor: pointer; }
-    .pivot-table tr.hier-mid-row td { background: #eff6ff; color: #1e40af; font-weight: 600; }
-    .pivot-table tr.hier-mid-row:hover td { background: #dbeafe; }
-    .pivot-table tr.hier-sub1-row td { background: #f5f3ff; color: #1e293b; font-weight: 600; }
-    .pivot-table tr.hier-sub2-row td { background: #fff;    color: #64748b; font-size: 11px;  }
-    .pivot-table tr.hier-ls-row   td { background: #fafafa; color: #94a3b8; font-size: 10.5px;
-                                       font-style: italic; border-top: 1px dashed #f1f5f9; }
-    .pivot-table tr.hier-sub-expandable { cursor: pointer; }
-    .pivot-table tr.hier-sub-expandable:hover td { filter: brightness(0.97); }
-    .tog-icon { color: #6366f1; font-size: 10px; margin-right: 4px; }
-</style>
-
-<div class="d-flex align-items-center gap-2 mb-3">
-    <span style="font-size:20px;">📉</span>
-    <h5 class="mb-0 fw-semibold">NG Rate</h5>
-    <div class="ms-3 btn-group btn-group-sm" role="group" aria-label="View mode">
-        <a href="/ng-rate" class="btn btn-outline-secondary"
-           title="Switch to By Model view — show full Summary/Detail/Chart per model, one at a time">
-            🎯 By Model
-        </a>
-        <button type="button" class="btn btn-primary" disabled
-                title="Current view: By Section — multiple models stacked vertically by Summary/Process/NG/Reason sections">
-            📑 By Section
-        </button>
-        <a href="/ng-rate-by-group" class="btn btn-outline-secondary"
-           title="Switch to By Group view">
-            🧩 By Group
-        </a>
-        <a href="/ng-rate-for-weekly-report" class="btn btn-outline-secondary"
-           title="Switch to For Weekly Report — same as By Group, with all Date columns hidden.">
-            📅 For Weekly Report
-        </a>
-    </div>
-</div>
-
-<div class="ngrate-grid">
-
-    <!-- ══ ROW 1, COL 1 — Get Data ══════════════════════════════════════════════ -->
-    <div class="ngrate-cell-tl">
-        <div class="card shadow-sm h-100">
-            <div class="card-header small fw-semibold">Get Data</div>
-            <div class="card-body d-flex flex-column gap-3">
-
-                <!-- Period -->
-                <div>
-                    <div class="form-label small fw-semibold mb-1">Period</div>
-                    <div class="d-flex gap-2 align-items-center flex-wrap">
-                        <input type="date" class="form-control form-control-sm"
-                               style="width:auto; flex:1; min-width:110px;"
-                               @bind="_startDate" @bind:format="yyyy-MM-dd" />
-                        <span class="small text-muted">–</span>
-                        <input type="date" class="form-control form-control-sm"
-                               style="width:auto; flex:1; min-width:110px;"
-                               @bind="_endDate" @bind:format="yyyy-MM-dd" />
-                        <button class="btn btn-outline-secondary btn-sm"
-                                @onclick="SetToday">Today</button>
-                    </div>
-                </div>
-
-                <!-- Credential status -->
-                <div class="d-flex align-items-center gap-2">
-                    <span class="small text-muted">BMES:</span>
-                    @if (NgRateSettings.IsCredentialsConfigured)
-                    {
-                        <span class="badge bg-success">Credentials OK</span>
-                        <span class="small text-muted font-monospace">@NgRateSettings.LoginId</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-warning text-dark">Not configured</span>
-                        <a href="/admin/settings" class="small text-primary">→ Admin Settings</a>
-                    }
-                </div>
-
-                <!-- Get Data button -->
-                <div>
-                    <button class="btn btn-primary w-100"
-                            @onclick="GetDataAsync"
-                            disabled="@(_isBusy || !NgRateSettings.IsCredentialsConfigured)">
-                        @if (_isBusy)
-                        {
-                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                            <span>Processing…</span>
-                        }
-                        else
-                        {
-                            <span>Get Data</span>
-                        }
-                    </button>
-                </div>
-
-                <!-- Inline result / error -->
-                @if (!string.IsNullOrEmpty(_savedDbPath))
-                {
-                    <div class="alert alert-success py-2 small mb-0">
-                        <div class="fw-semibold mb-1">
-                            <span class="badge bg-success me-1">Done</span> Saved DB
-                        </div>
-                        <div class="font-monospace text-break" style="font-size:11px;">
-                            @_savedDbPath
-                        </div>
-                        <button class="btn btn-link btn-sm p-0 mt-1 text-secondary"
-                                @onclick="ClearResult">Clear</button>
-                    </div>
-                }
-                @if (!string.IsNullOrEmpty(_errorMessage))
-                {
-                    <div class="alert alert-danger py-2 small mb-0">
-                        <span class="badge bg-danger me-1">Error</span> @_errorMessage
-                        <button class="btn btn-link btn-sm p-0 ms-1 text-secondary"
-                                @onclick="ClearResult">Clear</button>
-                    </div>
-                }
-
-            </div>
-        </div>
-    </div>
-
-    <!-- ══ ROW 1, COL 2 — Model Groups (from DB) ════════════════════════════════ -->
-    <div class="ngrate-cell-tr">
-        <div class="card shadow-sm h-100">
-            <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
-                <span>Model Groups</span>
-                <div class="d-flex align-items-center gap-2">
-                    @{ int totalSel = _selectedGroupIds.Count + _selectedSubEntries.Count; }
-                    @if (totalSel > 0)
-                    {
-                        <span class="badge bg-primary" style="font-size:10px;">
-                            @totalSel selected
-                        </span>
-                    }
-                    <span class="text-muted" style="font-size:11px;">
-                        @(_dbGroups.Count) group@(_dbGroups.Count == 1 ? "" : "s")
-                    </span>
-                    <button class="btn btn-link btn-sm p-0 text-secondary"
-                            @onclick="RefreshGroups" title="Refresh">⟳</button>
-                </div>
-            </div>
-            <div class="card-body p-0 d-flex flex-column">
-
-                @if (_dbGroups.Count == 0)
-                {
-                    <div class="text-muted small p-3 flex-grow-1">
-                        <span>No groups found. Define groups on the <a href="/bmes/make-model-group">Model Group</a> page.</span>
-                    </div>
-                }
-                else
-                {
-                    <!-- ── Step 1: Product Group tabs ───────────────────────── -->
-                    <div class="d-flex flex-wrap gap-1 px-2 py-2 border-bottom bg-light">
-                        @foreach (var pg in GroupProductGroups)
-                        {
-                            int pgCount = _dbGroups.Count(g => g.ProductGroup == pg);
-                            int pgSel   = _selectedGroupIds.Count(id => _dbGroups.Any(g => g.Id == id && g.ProductGroup == pg));
-                            <button class="pg-tab @(_activePg == pg ? "active" : "")"
-                                    @onclick="@(() => _activePg = pg)">
-                                @pg
-                                @if (pgSel > 0)
-                                {
-                                    <span class="ms-1" style="opacity:.85;">(@pgSel)</span>
-                                }
-                                else
-                                {
-                                    <span class="ms-1 opacity-50">@pgCount</span>
-                                }
-                            </button>
-                        }
-                    </div>
-
-                    <!-- ── Step 2: Groups for active ProductGroup ──────────── -->
-                    <div class="overflow-auto" style="max-height:240px; flex:1;">
-                        <div class="px-2 py-1">
-                            @foreach (var g in _dbGroups.Where(g => g.ProductGroup == _activePg))
-                            {
-                                bool isChecked = _selectedGroupIds.Contains(g.Id);
-                                int lsCount = g.MidGroups.Sum(m => m.LineShifts.Count);
-                                <label class="json-file-item" title="@g.Name">
-                                    <input type="checkbox"
-                                           class="form-check-input"
-                                           checked="@isChecked"
-                                           @onchange="@(_ => ToggleGroup(g.Id))" />
-                                    <span style="color:#6366f1; font-size:13px;">▣</span>
-                                    <span>@g.Name</span>
-                                    <span class="file-date">@lsCount LS</span>
-                                </label>
-                                @foreach (var entry in FirstLevelChildren(g))
-                                {
-                                    var cap = entry;
-                                    bool subChecked = _selectedSubEntries.Contains(cap.Key);
-                                    <label class="json-file-item sub-row" title="@cap.Label">
-                                        <input type="checkbox"
-                                               class="form-check-input"
-                                               checked="@subChecked"
-                                               @onchange="@(_ => ToggleSubEntry(cap.Key))" />
-                                        <span style="color:#94a3b8; font-size:11px;">↳</span>
-                                        <span>@cap.Label</span>
-                                        <span class="file-date">@cap.LsCount LS</span>
-                                    </label>
-                                }
-                            }
-                            @if (!_dbGroups.Any(g => g.ProductGroup == _activePg))
-                            {
-                                <div class="text-muted small py-2 text-center">
-                                    No groups in @_activePg
-                                </div>
-                            }
-                        </div>
-                    </div>
-                }
-
-                <!-- Get Report button -->
-                <div class="border-top p-2">
-                    <button class="btn btn-success w-100 btn-sm"
-                            @onclick="GetReportAsync"
-                            disabled="@(_isReportBusy || _isBusy)">
-                        @if (_isReportBusy)
-                        {
-                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                            <span>Generating…</span>
-                        }
-                        else
-                        {
-                            int btnSel = _selectedGroupIds.Count + _selectedSubEntries.Count;
-                            <span>Get Report</span>
-                            @if (btnSel > 0)
-                            {
-                                <span class="ms-1 opacity-75"
-                                      style="font-size:10px;">(@btnSel group@(btnSel == 1 ? "" : "s"))</span>
-                            }
-                        }
-                    </button>
-                    @if (!string.IsNullOrEmpty(_reportError))
-                    {
-                        <div class="text-danger small mt-1">@_reportError</div>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ══ ROW 2, COL 1 — Progress ══════════════════════════════════════════════ -->
-    <div class="ngrate-cell-bl">
-        <div class="card shadow-sm h-100">
-            <div class="card-header small fw-semibold">Progress</div>
-            <div class="card-body">
-                @if (_isBusy || _isReportBusy)
-                {
-                    <div class="progress mb-2" style="height:5px;">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated"
-                             style="width:100%;"></div>
-                    </div>
-                    <div class="small text-muted font-monospace">
-                        @(_logs.Count > 0 ? _logs[^1] : "Starting…")
-                    </div>
-                }
-                else if (_logs.Count > 0)
-                {
-                    <div class="progress mb-2" style="height:5px;">
-                        <div class="progress-bar @(_savedDbPath != null || _reports.Count > 0 ? "bg-success" : "bg-danger")"
-                             style="width:100%;"></div>
-                    </div>
-                    <div class="small text-muted font-monospace">@_logs[^1]</div>
-                }
-                else
-                {
-                    <div class="text-muted small">Waiting…</div>
-                }
-            </div>
-        </div>
-    </div>
-
-    <!-- ══ ROW 2, COL 2 — Log ════════════════════════════════════════════════════ -->
-    <div class="ngrate-cell-br">
-        <div class="card shadow-sm h-100">
-            <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
-                <span>Log</span>
-                @if (_logs.Count > 0)
-                {
-                    <button class="btn btn-link btn-sm p-0 text-secondary"
-                            @onclick="() => _logs.Clear()">Clear</button>
-                }
-            </div>
-            <div class="card-body p-0">
-                <div class="font-monospace p-2 overflow-auto"
-                     style="height:150px; background:#0f172a; color:#94a3b8;
-                            border-radius:0 0 .375rem .375rem; font-size:11px;">
-                    @if (_logs.Count == 0)
-                    {
-                        <span style="opacity:.4;">No log entries yet.</span>
-                    }
-                    else
-                    {
-                        @foreach (string line in _logs)
-                        {
-                            <div class="@GetLogClass(line)">@line</div>
-                        }
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<!-- ══ REPORT SECTION ══════════════════════════════════════════════════════════ -->
 @if (_reports.Count > 0)
 {
     <div class="mt-4">
@@ -484,19 +78,19 @@
                 @if (maxDateCols > DateVisibleLimit)
                 {
                     <button class="expand-btn" @onclick="ToggleDateCols">
-                        Date @(_dateExpanded ? "▼" : $"▶ +{maxDateCols - DateVisibleLimit}")
+                        Date @(_dateExpanded ? "Collapse" : $"+{maxDateCols - DateVisibleLimit}")
                     </button>
                 }
                 @if (maxWeekCols > WeekVisibleLimit)
                 {
                     <button class="expand-btn" @onclick="ToggleWeekCols">
-                        Week @(_weekExpanded ? "▼" : $"▶ +{maxWeekCols - WeekVisibleLimit}")
+                        Week @(_weekExpanded ? "Collapse" : $"+{maxWeekCols - WeekVisibleLimit}")
                     </button>
                 }
                 @if (maxMonthCols > MonthVisibleLimit)
                 {
                     <button class="expand-btn" @onclick="ToggleMonthCols">
-                        Month @(_monthExpanded ? "▼" : $"▶ +{maxMonthCols - MonthVisibleLimit}")
+                        Month @(_monthExpanded ? "Collapse" : $"+{maxMonthCols - MonthVisibleLimit}")
                     </button>
                 }
                 <button class="btn btn-outline-success btn-sm"
@@ -509,16 +103,16 @@
                     }
                     else
                     {
-                        <span>⬇ Export Excel</span>
+                        <span>Export Excel</span>
                     }
                 </button>
                 <button class="btn btn-link btn-sm p-0 text-secondary"
-                        @onclick="ClearReportAsync">✕ Clear</button>
+                        @onclick="ClearReportAsync">Clear</button>
             </div>
         </div>
         <div style="border-top:2px solid #e2e8f0; margin-bottom:12px;"></div>
 
-        <!-- ── Hierarchy Summary — Group → Mid → Sub1 → Sub2 → LineShift ─────── -->
+        <!-- Hierarchy Summary: Group -> Mid -> Sub1 -> Sub2 -> LineShift -->
         @if (_hier is not null && _hier.HasData && _reports.Count > 0)
         {
             var hierDateCols  = GetVisibleDateCols(_reports[0].Report).ToList();
@@ -526,14 +120,14 @@
             var hierMonthCols = GetVisibleMonthCols(_reports[0].Report).ToList();
             <div class="card mb-3 shadow-sm">
                 <div class="card-header small fw-semibold">
-                    📊 Group → Model Name → Building/Line → Shift-Group — TOTAL PPM (collapsible)
+                    Group -> Model -> Line -> Shift - TOTAL PPM (collapsible)
                 </div>
                 <div class="card-body p-0">
                     <div class="pivot-wrap">
-                        <table class="pivot-table">
+                        <table class="pivot-table text-fit-table">
                             <thead>
                                 <tr>
-                                    <th class="label-th" style="min-width:280px;" rowspan="2">Group / Model Name / Building-Group / Line-Group / Shift-Group</th>
+                                    <th class="label-th" style="min-width:280px;" rowspan="2">Group / Model / Line / Shift</th>
                                     @if (hierDateCols.Count > 0)
                                     {
                                         <th class="blk-date" colspan="@hierDateCols.Count">Date</th>
@@ -560,11 +154,14 @@
                                 {
                                     string gName = g.Name;
                                     bool gExp    = _hierExpandedGroups.Contains(gName);
+                                    var visibleMids = g.MidGroups
+                                        .Where(mid => HierMidHasVisibleData(gName, mid, hierDateCols, hierWeekCols, hierMonthCols))
+                                        .ToList();
                                     <tr class="hier-group-row" @onclick="() => HierToggleGroup(gName)">
                                         <td class="label-td">
-                                            <span class="tog-icon">@(gExp ? "▼" : "▶")</span>
+                                            <span class="tog-icon">@(gExp ? "v" : ">")</span>
                                             <strong>@gName</strong>
-                                            <span class="text-muted ms-1" style="font-size:10px;">@g.MidGroups.Count models</span>
+                                            <span class="text-muted ms-1" style="font-size:10px;">@visibleMids.Count models</span>
                                         </td>
                                         @foreach (var col in hierDateCols)
                                         {
@@ -586,15 +183,13 @@
                                     </tr>
                                     @if (gExp)
                                     {
-                                        @foreach (var mid in g.MidGroups)
+                                        @foreach (var mid in visibleMids)
                                         {
-                                            if (mid.LineShifts.Count == 0 || string.IsNullOrEmpty(mid.Material)) continue;
                                             string midKey = $"{gName}::{mid.Material}";
                                             bool midExp   = _hierExpandedMids.Contains(midKey);
                                             <tr class="hier-mid-row" @onclick="() => HierToggleMid(midKey)">
                                                 <td class="label-td" style="padding-left:32px; font-size:11.5px;">
-                                                    <span class="tog-icon">@(midExp ? "▼" : "▶")</span>
-                                                    <span class="hier-level-badge ms-1">Model Name</span>
+                                                    <span class="tog-icon">@(midExp ? "v" : ">")</span>
                                                     <span class="ms-1">@mid.Material</span>
                                                 </td>
                                                 @foreach (var col in hierDateCols)
@@ -635,7 +230,7 @@
             </div>
         }
 
-        <!-- ── Per-model sections (vertically stacked) ──────────────────────── -->
+        <!-- Per-model sections (vertically stacked) -->
         @for (int _mi = 0; _mi < _reports.Count; _mi++)
         {
             int mi      = _mi;
@@ -650,25 +245,28 @@
                 <span class="badge bg-secondary" style="font-size:11px;">@(mi + 1)</span>
                 <h6 class="mb-0 fw-semibold" style="color:#1e40af;">@lbl</h6>
                 <span class="small text-muted ms-1">
-                    @Path.GetFileName(rpt.DbPath) ·
-                    @rpt.TotalRows.ToString("N0") rows ·
+                    @Path.GetFileName(rpt.DbPath) |
+                    @rpt.TotalRows.ToString("N0") rows |
                     @rpt.GeneratedAt.ToString("HH:mm:ss")
                 </span>
             </div>
 
             @if (_activeSection == "summary")
             {
-                <!-- ── Summary ───────────────────────────────────────────── -->
+                <!-- Summary -->
                 <div class="card mb-3 shadow-sm">
                     <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <span>Summary — NG PPM by Process Type</span>
+                            <span>Summary - NG PPM by Process Type</span>
                             @if (rpt.GroupNames.Count > 0)
                             {
                                 <div class="d-flex flex-wrap gap-1 ms-1">
                                     @foreach (var grp in rpt.GroupNames)
                                     {
-                                        <span class="group-chip">@grp</span>
+                                        bool groupVisible = !IsSummaryGroupCollapsed(mi, grp);
+                                        <span class="group-chip @(groupVisible ? "active" : "")"
+                                              title="Toggle this group's rows in the summary table"
+                                              @onclick="@(() => ToggleSummaryGroup(mi, grp))">@grp</span>
                                     }
                                 </div>
                             }
@@ -684,7 +282,7 @@
                     </div>
                     <div class="card-body p-2">
                         <div class="pivot-wrap">
-                            <table class="pivot-table">
+                            <table class="pivot-table text-fit-table">
                                 <thead>
                                     <tr>
                                         <th class="label-th" style="min-width:20px; text-align:center;"></th>
@@ -707,7 +305,7 @@
                                             <td class="toggle-cell" @onclick="@(() => { if (summaryHasGroups) ToggleSummary(mi, sumPt); })">
                                                 @if (summaryHasGroups)
                                                 {
-                                                    <span class="toggle-icon">@(summaryExpanded ? "▼" : "▶")</span>
+                                                    <span class="toggle-icon">@(summaryExpanded ? "v" : ">")</span>
                                                 }
                                             </td>
                                             <td class="label-td">@sumRow.ProcessType</td>
@@ -733,14 +331,15 @@
                                         {
                                             @foreach (var grp in rpt.GroupNames)
                                             {
-                                                if (rpt.GroupSummary.TryGetValue(grp, out var grpRows))
+                                                if (!IsSummaryGroupCollapsed(mi, grp)
+                                                    && rpt.GroupSummary.TryGetValue(grp, out var grpRows))
                                                 {
                                                     var grpRow = grpRows.FirstOrDefault(sr => sr.ProcessType == sumPt);
                                                     if (grpRow is not null)
                                                     {
                                                         <tr class="group-row">
                                                             <td></td>
-                                                            <td class="label-td group-name-td">↳ @grp</td>
+                                                            <td class="label-td group-name-td">@grp</td>
                                                             @foreach (var col in dateCols)
                                                             {
                                                                 double v = grpRow.Ppm.GetValueOrDefault(col.Key);
@@ -775,10 +374,10 @@
             }
             else if (_activeSection == "process")
             {
-                <!-- ── Process 10 NG ─────────────────────────────────────── -->
+                <!-- Process 10 NG -->
                 <div class="card mb-3 shadow-sm">
                     <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
-                        <span>Process 10 NG — Top 10 Worst Processes by PPM</span>
+                        <span>Process 10 NG - Top 10 Worst Processes by PPM</span>
                         @if (rpt.Top10Process.Any(r => r.Groups.Count > 0))
                         {
                             <div class="d-flex gap-2">
@@ -790,12 +389,12 @@
                     </div>
                     <div class="card-body p-2">
                         <div class="pivot-wrap">
-                            <table class="pivot-table">
+                            <table class="pivot-table text-fit-table">
                                 <thead>
                                     <tr>
                                         <th class="label-th" style="min-width:28px; text-align:center;">#</th>
                                         <th class="label-th" style="min-width:72px;">Type</th>
-                                        <th class="label-th" style="min-width:150px;">Process Name</th>
+                                        <th class="label-th process-name-col" style="min-width:150px;">Process Name</th>
                                         @foreach (var col in dateCols)  { <th>@col.Header</th> }
                                         <th class="sep-th"></th>
                                         @foreach (var col in weekCols)  { <th>@col.Header</th> }
@@ -812,12 +411,12 @@
                                             <td class="toggle-cell" @onclick="@(() => ToggleProcess(mi, row.Rank))">
                                                 @if (row.Groups.Count > 0)
                                                 {
-                                                    <span class="toggle-icon">@(procExpanded ? "▼" : "▶")</span>
+                                                    <span class="toggle-icon">@(procExpanded ? "v" : ">")</span>
                                                 }
                                                 @row.Rank
                                             </td>
                                             <td class="label-td"><span class="pt-badge">@row.ProcessType</span></td>
-                                            <td class="label-td">@row.ProcessName</td>
+                                            <td class="label-td process-name-col">@row.ProcessName</td>
                                             @foreach (var col in dateCols)
                                             {
                                                 double v = row.Ppm.GetValueOrDefault(col.Key);
@@ -843,7 +442,7 @@
                                                 <tr class="group-row">
                                                     <td></td>
                                                     <td></td>
-                                                    <td class="label-td group-name-td">↳ @grp.GroupName</td>
+                                                    <td class="label-td group-name-td">@grp.GroupName</td>
                                                     @foreach (var col in dateCols)
                                                     {
                                                         double v = grp.Ppm.GetValueOrDefault(col.Key);
@@ -873,10 +472,10 @@
             }
             else if (_activeSection == "ng")
             {
-                <!-- ── Worst 10 NG ───────────────────────────────────────── -->
+                <!-- Worst 10 NG -->
                 <div class="card mb-3 shadow-sm">
                     <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
-                        <span>Worst 10 NG — Top 10 Worst NG Names by PPM</span>
+                        <span>Worst 10 NG - Top 10 Worst NG Names by PPM</span>
                         @if (rpt.Top10Ng.Any(r => r.Groups.Count > 0))
                         {
                             <div class="d-flex gap-2">
@@ -888,13 +487,13 @@
                     </div>
                     <div class="card-body p-2">
                         <div class="pivot-wrap">
-                            <table class="pivot-table">
+                            <table class="pivot-table text-fit-table">
                                 <thead>
                                     <tr>
                                         <th class="label-th" style="min-width:28px; text-align:center;">#</th>
                                         <th class="label-th" style="min-width:72px;">Type</th>
-                                        <th class="label-th" style="min-width:150px;">Process Name</th>
-                                        <th class="label-th" style="min-width:130px;">NG Name</th>
+                                        <th class="label-th process-name-col" style="min-width:150px;">Process Name</th>
+                                        <th class="label-th ng-name-col" style="min-width:130px;">NG Name</th>
                                         @foreach (var col in dateCols)  { <th>@col.Header</th> }
                                         <th class="sep-th"></th>
                                         @foreach (var col in weekCols)  { <th>@col.Header</th> }
@@ -911,13 +510,13 @@
                                             <td class="toggle-cell" @onclick="@(() => ToggleNg(mi, row.Rank))">
                                                 @if (row.Groups.Count > 0)
                                                 {
-                                                    <span class="toggle-icon">@(ngExpanded ? "▼" : "▶")</span>
+                                                    <span class="toggle-icon">@(ngExpanded ? "v" : ">")</span>
                                                 }
                                                 @row.Rank
                                             </td>
                                             <td class="label-td"><span class="pt-badge">@row.ProcessType</span></td>
-                                            <td class="label-td">@row.ProcessName</td>
-                                            <td class="label-td">@row.NgName</td>
+                                            <td class="label-td process-name-col">@row.ProcessName</td>
+                                            <td class="label-td ng-name-col">@row.NgName</td>
                                             @foreach (var col in dateCols)
                                             {
                                                 double v = row.Ppm.GetValueOrDefault(col.Key);
@@ -943,7 +542,7 @@
                                                 <tr class="group-row">
                                                     <td></td>
                                                     <td></td>
-                                                    <td class="label-td group-name-td">↳ @grp.GroupName</td>
+                                                    <td class="label-td group-name-td">@grp.GroupName</td>
                                                     <td></td>
                                                     @foreach (var col in dateCols)
                                                     {
@@ -974,12 +573,12 @@
             }
             else if (_activeSection == "reason")
             {
-                <!-- ── Reason ─────────────────────────────────────────────── -->
+                <!-- Reason -->
                 @if (rpt.ReasonRows.Count > 0)
                 {
                     <div class="card mb-3 shadow-sm">
                         <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
-                            <span>Reason — Defect Cause Classification</span>
+                            <span>Reason - Defect Cause Classification</span>
                             @if (rpt.ReasonRows.Any(r => !r.IsTotal && r.Groups.Count > 0))
                             {
                                 <div class="d-flex gap-2">
@@ -991,14 +590,14 @@
                         </div>
                         <div class="card-body p-2">
                             <div class="pivot-wrap">
-                                <table class="pivot-table">
+                                <table class="pivot-table text-fit-table">
                                     <thead>
                                         <tr>
                                             <th class="label-th" style="min-width:90px;">Reason</th>
                                             <th class="label-th" style="min-width:28px; text-align:center;">No</th>
                                             <th class="label-th" style="min-width:72px;">Type</th>
-                                            <th class="label-th" style="min-width:160px;">Process Name</th>
-                                            <th class="label-th" style="min-width:120px;">NG Name</th>
+                                            <th class="label-th process-name-col" style="min-width:160px;">Process Name</th>
+                                            <th class="label-th ng-name-col" style="min-width:120px;">NG Name</th>
                                             @foreach (var col in dateCols)  { <th>@col.Header</th> }
                                             <th class="sep-th"></th>
                                             @foreach (var col in weekCols)  { <th>@col.Header</th> }
@@ -1027,7 +626,7 @@
                                                 <tr class="total-row">
                                                     <td class="toggle-cell label-td fw-bold"
                                                         @onclick="@(() => ToggleReasonCategory(reasonCatKey))">
-                                                        <span class="toggle-icon">@(categoryCollapsed ? "▶" : "▼")</span>
+                                                        <span class="toggle-icon">@(categoryCollapsed ? "v" : ">")</span>
                                                         @row.Reason
                                                     </td>
                                                     <td></td>
@@ -1062,13 +661,13 @@
                                                     <td class="toggle-cell" @onclick="@(() => ToggleReason(reasonKey))">
                                                         @if (row.Groups.Count > 0)
                                                         {
-                                                            <span class="toggle-icon">@(reasonExpanded ? "▼" : "▶")</span>
+                                                            <span class="toggle-icon">@(reasonExpanded ? "v" : ">")</span>
                                                         }
                                                         @row.No
                                                     </td>
                                                     <td class="label-td"><span class="pt-badge">@row.ProcessType</span></td>
-                                                    <td class="label-td">@row.ProcessName</td>
-                                                    <td class="label-td">@row.NgName</td>
+                                                    <td class="label-td process-name-col">@row.ProcessName</td>
+                                                    <td class="label-td ng-name-col">@row.NgName</td>
                                                     @foreach (var col in dateCols)
                                                     {
                                                         double v = row.Ppm.GetValueOrDefault(col.Key);
@@ -1095,7 +694,7 @@
                                                             <td></td>
                                                             <td></td>
                                                             <td></td>
-                                                            <td class="label-td group-name-td">↳ @grp.GroupName</td>
+                                                            <td class="label-td group-name-td">@grp.GroupName</td>
                                                             <td></td>
                                                             @foreach (var col in dateCols)
                                                             {
@@ -1132,53 +731,28 @@
 }
 
 @code {
-    private static readonly string[] AllProductGroups = ["SPK", "UNIT", "MODULE", "TWS", "ETC"];
-
-    // ── Get Data state ────────────────────────────────────────────────────────────
+    // Get Data state
     private DateTime     _startDate    = DateTime.Today;
     private DateTime     _endDate      = DateTime.Today;
     private bool         _isBusy       = false;
     private string?      _savedDbPath  = null;
     private string?      _errorMessage = null;
     private List<string> _logs         = new();
+    private const string LogElementId  = "ngRateLogBySection";
+    private int          _lastLogScrollCount = -1;
 
-    // ── Model Groups state (from ModelGroups DB) ─────────────────────────────────
+    // Model Groups state (from ModelGroups DB)
     private List<ModelGroupRecord> _dbGroups           = new();
     private HashSet<long>          _selectedGroupIds   = new();
     private HashSet<string>        _selectedSubEntries = new(StringComparer.Ordinal);
     private string                 _activePg           = "ETC";
 
-    private IEnumerable<string> GroupProductGroups =>
-        AllProductGroups.Where(pg => _dbGroups.Any(g => g.ProductGroup == pg));
-
-    /// <summary>Indented first-level row — one per mid-group Material.</summary>
-    private sealed record ChildEntry(string Key, string Label, int LsCount);
-
-    private static IEnumerable<ChildEntry> FirstLevelChildren(ModelGroupRecord g)
-    {
-        bool skipMidWhenSingle = g.MidGroups.Count == 1
-            && string.Equals(g.MidGroups[0].Material, g.Name, StringComparison.Ordinal);
-
-        foreach (var mid in g.MidGroups)
-        {
-            int midLs = mid.LineShifts.Count;
-            if (midLs == 0) continue;
-            if (skipMidWhenSingle) continue;
-            if (string.IsNullOrEmpty(mid.Material)) continue;
-
-            yield return new ChildEntry(
-                Key:     $"{g.Id}|mid|{mid.Material}",
-                Label:   mid.Material,
-                LsCount: midLs);
-        }
-    }
-
-    // ── Report state ──────────────────────────────────────────────────────────────
+    // Report state
     private bool   _isReportBusy = false;
     private string _reportError  = string.Empty;
     private List<(string Label, NgRateReportService.NgRateReport Report)> _reports = new();
 
-    // ── Group → Mid → Sub1 → Sub2 → LineShift hierarchy (shared across sections) ──
+    // Group -> Mid -> Sub1 -> Sub2 -> LineShift hierarchy (shared across sections)
     // Bundled by HierReportBuilder; rendered through the <HierSubRows> component.
     private HierReports?    _hier;
     private HierPpmLookup   _hierLookup = new();
@@ -1188,6 +762,20 @@
 
     private void HierToggleGroup(string g) { if (!_hierExpandedGroups.Remove(g)) _hierExpandedGroups.Add(g); }
     private void HierToggleMid(string k)   { if (!_hierExpandedMids.Remove(k))   _hierExpandedMids.Add(k); }
+
+    private bool HierMidHasVisibleData(
+        string groupName,
+        MidGroupRecord mid,
+        IReadOnlyList<NgRateReportService.PeriodColumn> dateCols,
+        IReadOnlyList<NgRateReportService.PeriodColumn> weekCols,
+        IReadOnlyList<NgRateReportService.PeriodColumn> monthCols)
+    {
+        if (mid.LineShifts.Count == 0 || string.IsNullOrEmpty(mid.Material)) return false;
+        foreach (var col in dateCols)  if (_hierLookup.MidAvgOfSubs(groupName, mid, col.Key) > 0) return true;
+        foreach (var col in weekCols)  if (_hierLookup.MidAvgOfSubs(groupName, mid, col.Key) > 0) return true;
+        foreach (var col in monthCols) if (_hierLookup.MidAvgOfSubs(groupName, mid, col.Key) > 0) return true;
+        return false;
+    }
 
     private List<ModelGroupRecord> ResolveHierGroups()
     {
@@ -1212,20 +800,33 @@
     };
     private string _activeSection = "summary";
 
-    // ── Chart state ───────────────────────────────────────────────────────────────
+    // Chart state
     private bool _pendingChartRender = false;
 
-    // ── Export state ──────────────────────────────────────────────────────────────
+    // Export state
     private bool _isExporting = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        await ScrollLogToBottomIfNeededAsync();
+
         if (_pendingChartRender && _activeSection == "summary" && _reports.Count > 0)
         {
             _pendingChartRender = false;
             for (int i = 0; i < _reports.Count; i++)
                 await RenderSummaryChartAsync(i);
         }
+    }
+
+    private async Task ScrollLogToBottomIfNeededAsync()
+    {
+        if (_logs.Count == 0)
+        {
+            _lastLogScrollCount = 0;
+            return;
+        }
+        _lastLogScrollCount = _logs.Count;
+        try { await JS.InvokeVoidAsync("ngRateLog.scrollToBottom", LogElementId, LogElementId + "Bottom"); } catch { }
     }
 
     private async Task RenderSummaryChartAsync(int modelIdx)
@@ -1245,7 +846,7 @@
         if (hasWeek)  { labels.Add(""); labels.AddRange(weekCols.Select(c  => c.Header)); }
         if (hasMonth) { labels.Add(""); labels.AddRange(monthCols.Select(c => c.Header)); }
 
-        // Data array builder — insert null at separator positions
+        // Data array builder: insert null at separator positions
         double?[] BuildData(Dictionary<string, double> ppm)
         {
             var d = new List<double?>();
@@ -1261,11 +862,13 @@
         {
             label           = "TOTAL",
             data            = BuildData(totalRow.Ppm),
-            borderColor     = "#3b82f6",
-            backgroundColor = "rgba(59,130,246,0.08)",
+            borderColor     = "#4f46e5",
+            backgroundColor = "rgba(79,70,229,0.08)",
             borderWidth     = 2,
             pointRadius     = 3,
-            tension         = 0.1,
+            pointBackgroundColor = "#4f46e5",
+            pointBorderColor     = "#4f46e5",
+            tension         = 0.4,
             fill            = false,
             yAxisID         = "y1",
             order           = 0,
@@ -1323,17 +926,31 @@
         _expandedProcess.Clear();
         _expandedNg.Clear();
         _expandedReason.Clear();
+        _collapsedSummaryGroups.Clear();
         _collapsedReasonCategory.Clear();
     }
 
     public async ValueTask DisposeAsync() => await DestroyAllChartsAsync();
 
-    // ── Expand/Collapse state (keys are model-prefixed: "{mi}|...") ──────────────
+    // Expand/Collapse state (keys are model-prefixed: "{mi}|...")
     private HashSet<string> _expandedSummary = new();
     private HashSet<string> _expandedProcess = new();
     private HashSet<string> _expandedNg      = new();
     private HashSet<string> _expandedReason  = new();
+    private HashSet<string> _collapsedSummaryGroups = new(StringComparer.Ordinal);
     private HashSet<string> _collapsedReasonCategory = new();
+
+    private static string SummaryGroupKey(int mi, string groupName)
+        => $"{mi}|{groupName}";
+
+    private bool IsSummaryGroupCollapsed(int mi, string groupName)
+        => _collapsedSummaryGroups.Contains(SummaryGroupKey(mi, groupName));
+
+    private void ToggleSummaryGroup(int mi, string groupName)
+    {
+        string key = SummaryGroupKey(mi, groupName);
+        if (!_collapsedSummaryGroups.Remove(key)) _collapsedSummaryGroups.Add(key);
+    }
 
     private void ToggleSummary(int mi, string pt)
     {
@@ -1391,7 +1008,7 @@
     private void CollapseAllReasonFor(int mi)
         => _expandedReason.RemoveWhere(k => k.StartsWith($"{mi}|"));
 
-    // ── Column visibility ─────────────────────────────────────────────────────────
+    // Column visibility
     private const int DateVisibleLimit  = 14;
     private const int WeekVisibleLimit  = 4;
     private const int MonthVisibleLimit = 3;
@@ -1421,16 +1038,16 @@
 
     protected override void OnInitialized() => RefreshGroups();
 
-    // ── Model Groups helpers ─────────────────────────────────────────────────────
+    // Model Groups helpers
 
     private void RefreshGroups()
     {
         _dbGroups = Repo.GetModelGroups();
         _selectedGroupIds.RemoveWhere(id => !_dbGroups.Any(g => g.Id == id));
-        var live = _dbGroups.SelectMany(FirstLevelChildren).Select(c => c.Key).ToHashSet(StringComparer.Ordinal);
+        var live = _dbGroups.SelectMany(ModelGroupPickerHelpers.EnumerateMidEntries).Select(c => c.Key).ToHashSet(StringComparer.Ordinal);
         _selectedSubEntries.RemoveWhere(k => !live.Contains(k));
         if (!_dbGroups.Any(g => g.ProductGroup == _activePg))
-            _activePg = GroupProductGroups.FirstOrDefault() ?? "ETC";
+            _activePg = ModelGroupPickerHelpers.FirstProductGroupWithRows(_dbGroups);
     }
 
     private void ToggleGroup(long id)
@@ -1461,7 +1078,7 @@
         return (mapping, groups);
     }
 
-    /// <summary>Resolves a <see cref="ChildEntry.Key"/> into a flat mapping scoped to that
+    /// <summary>Resolves a <see cref="ModelGroupChildEntry.Key"/> into a flat mapping scoped to that
     /// mid-group only. One section is emitted per selected mid-group.</summary>
     private (string label, Dictionary<string, string> mapping, List<string> groupList)?
         BuildChildEntryMapping(string key)
@@ -1483,7 +1100,7 @@
         return (material, mapping, new List<string> { material });
     }
 
-    // ── Get Data ──────────────────────────────────────────────────────────────────
+    // Get Data
 
     private void SetToday()
     {
@@ -1507,8 +1124,7 @@
 
         var progress = new Progress<string>(msg =>
         {
-            _logs.Add($"[{DateTime.Now:HH:mm:ss}] {msg}");
-            InvokeAsync(StateHasChanged);
+            AddLog(msg);
         });
 
         try
@@ -1517,7 +1133,7 @@
                 _startDate, _endDate, progress);
 
             if (string.IsNullOrEmpty(dbPath))
-                _errorMessage = "Data fetch or save failed — check the log.";
+                _errorMessage = "Data fetch or save failed - check the log.";
             else
             {
                 _savedDbPath = dbPath;
@@ -1527,12 +1143,17 @@
         catch (Exception ex)
         {
             _errorMessage = $"Exception: {ex.Message}";
-            _logs.Add($"[{DateTime.Now:HH:mm:ss}] [ERROR] {ex}");
+            AddLog($"[ERROR] {ex}");
         }
         finally
         {
             _isBusy = false;
-            await InvokeAsync(StateHasChanged);
+            await InvokeAsync(async () =>
+            {
+                StateHasChanged();
+                await Task.Delay(20);
+                await ScrollLogToBottomIfNeededAsync();
+            });
         }
     }
 
@@ -1542,20 +1163,36 @@
         _errorMessage = null;
     }
 
-    // ── Get Report ────────────────────────────────────────────────────────────────
+    // Get Report
 
     private async Task GetReportAsync()
     {
+        if (_isReportBusy || _isBusy) return;
+        if (_endDate < _startDate)
+        {
+            _reportError = "End date must be on or after start date.";
+            return;
+        }
+        if (!NgRateSettings.IsCredentialsConfigured)
+        {
+            _reportError = "BMES credentials are not configured.";
+            return;
+        }
+
         _reportError     = string.Empty;
         await DestroyAllChartsAsync();
         _reports.Clear();
         _activeSection = "summary";
         _isReportBusy    = true;
+        _isBusy          = true;
+        _savedDbPath     = null;
+        _errorMessage    = null;
         _logs.Clear();
         _expandedSummary.Clear();
         _expandedProcess.Clear();
         _expandedNg.Clear();
         _expandedReason.Clear();
+        _collapsedSummaryGroups.Clear();
         _collapsedReasonCategory.Clear();
         _dateExpanded  = false;
         _weekExpanded  = false;
@@ -1565,36 +1202,44 @@
         _hierExpandedGroups.Clear();
         _hierExpandedMids.Clear();
         _hierExpandedSub1s.Clear();
-        Activity.Log("NG Rate By Section", $"Generate Report selectedGroups={_selectedGroupIds.Count:N0}, selectedEntries={_selectedSubEntries.Count:N0}");
+        Activity.Log("NG Rate By Section", $"Get Data {_startDate:yyyy-MM-dd} ~ {_endDate:yyyy-MM-dd}");
         await InvokeAsync(StateHasChanged);
 
         IProgress<string> progress = new Progress<string>(msg =>
         {
-            _logs.Add($"[{DateTime.Now:HH:mm:ss}] {msg}");
-            InvokeAsync(StateHasChanged);
+            AddLog(msg);
         });
 
         try
         {
-            string? dbPath = _savedDbPath ?? NgRateReport.FindMostRecentDb();
-            if (string.IsNullOrEmpty(dbPath) || !File.Exists(dbPath))
+            progress.Report($"Fetching data: {_startDate:yyyy-MM-dd} ~ {_endDate:yyyy-MM-dd}");
+            string? dbPath = await NgRate.GetOrFetchAsync(_startDate, _endDate, progress);
+            _isBusy = false;
+
+            if (string.IsNullOrEmpty(dbPath))
             {
-                _reportError = "No .db file found. Run Get Data first.";
+                _errorMessage = "Data fetch or save failed - check the log.";
+                _reportError  = _errorMessage;
                 return;
             }
 
+            _savedDbPath = dbPath;
+            RefreshGroups();
+            Activity.Log("NG Rate By Section", $"Generate Report selectedGroups={_selectedGroupIds.Count:N0}, selectedEntries={_selectedSubEntries.Count:N0}");
             progress.Report($"Using DB: {Path.GetFileName(dbPath)}");
 
             if (_selectedGroupIds.Count == 0 && _selectedSubEntries.Count == 0)
             {
-                // No selection → single "All" section across every group.
-                var (mapping, groupList) = BuildGroupMapping(_dbGroups);
+                // No selection: single "All" section across every group.
+                var flat = NgRateModeSupport.BuildFlatMapping(_dbGroups);
+                var mapping = flat.Mapping;
+                var groupList = flat.Groups;
                 if (mapping.Count == 0)
                 {
                     _reportError = "No LineShift found in the selected groups.";
                     return;
                 }
-                var r = await NgRateReport.GenerateReportAsync(dbPath, mapping, groupList, progress);
+                var r = await NgRateReport.GenerateReportAsync(dbPath, mapping, groupList, progress, _startDate, _endDate);
                 _reports.Add(("All", r));
             }
             else
@@ -1604,63 +1249,79 @@
                     .Where(g => _selectedGroupIds.Contains(g.Id))
                     .OrderBy(g => g.Name, StringComparer.Ordinal))
                 {
-                    progress.Report($"─── {g.Name}");
-                    var (mapping, groupList) = BuildGroupMapping(new[] { g });
+                    progress.Report($"--- {g.Name}");
+                    var flat = NgRateModeSupport.BuildFlatMapping(new[] { g });
+                    var mapping = flat.Mapping;
+                    var groupList = flat.Groups;
                     if (mapping.Count == 0)
                     {
                         progress.Report($"  (skipped: no LineShift)");
                         continue;
                     }
-                    var r = await NgRateReport.GenerateReportAsync(dbPath, mapping, groupList, progress);
+                    var r = await NgRateReport.GenerateReportAsync(dbPath, mapping, groupList, progress, _startDate, _endDate);
                     _reports.Add((g.Name, r));
                 }
 
                 // Mid-group selections: one section scoped to that Material only.
                 foreach (string key in _selectedSubEntries.OrderBy(k => k, StringComparer.Ordinal))
                 {
-                    var spec = BuildChildEntryMapping(key);
+                    var spec = NgRateModeSupport.BuildMidChildFlatReport(_dbGroups, key);
                     if (spec is null)
                     {
-                        progress.Report($"─── {key}  (skipped: not found)");
+                        progress.Report($"--- {key}  (skipped: not found)");
                         continue;
                     }
-                    progress.Report($"─── {spec.Value.label}");
+                    progress.Report($"--- {spec.Label}");
                     var r = await NgRateReport.GenerateReportAsync(
-                        dbPath, spec.Value.mapping, spec.Value.groupList, progress);
-                    _reports.Add((spec.Value.label, r));
+                        dbPath, spec.Mapping, spec.Groups, progress, _startDate, _endDate);
+                    _reports.Add((spec.Label, r));
                 }
             }
 
             _pendingChartRender = true;
 
-            // ── Hierarchy reports for the Group → Mid → Sub1 → Sub2 summary card ──
-            _hier       = await HierReportBuilder.BuildAsync(NgRateReport, dbPath, ResolveHierGroups(), progress);
+            // Hierarchy reports for the Group -> Mid -> Sub1 -> Sub2 summary card
+            _hier       = await HierReportBuilder.BuildAsync(NgRateReport, dbPath, ResolveHierGroups(), progress, _startDate, _endDate);
             _hierLookup = HierPpmLookup.From(_hier);
         }
         catch (Exception ex)
         {
             _reportError = $"Error: {ex.Message}";
-            _logs.Add($"[{DateTime.Now:HH:mm:ss}] [ERROR] {ex}");
+            AddLog($"[ERROR] {ex}");
         }
         finally
         {
+            _isBusy = false;
             _isReportBusy = false;
-            await InvokeAsync(StateHasChanged);
+            await InvokeAsync(async () =>
+            {
+                StateHasChanged();
+                await Task.Delay(20);
+                await ScrollLogToBottomIfNeededAsync();
+            });
         }
     }
 
     private async Task ExportExcelAsync()
     {
-        if (_reports.Count == 0 || _isExporting) return;
+        if (_isExporting) return;
         _isExporting = true;
-        Activity.Log("NG Rate By Section", $"Export Excel reports={_reports.Count:N0}");
+        _reportError = string.Empty;
+        await InvokeAsync(StateHasChanged);
+        await Task.Yield();
+
         try
         {
+            if (_reports.Count == 0) return;
+
+            Activity.Log("NG Rate By Section", $"Export Excel reports={_reports.Count:N0}");
             var bytes   = await Task.Run(() => NgRateExcelExporter.Export(_reports));
-            string b64  = Convert.ToBase64String(bytes);
             string name = $"NgRate_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-            await JS.InvokeVoidAsync("downloadBase64File", name, b64,
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            await BrowserDownload.DownloadBytesAsync(JS, name, bytes, BrowserDownload.XlsxContentType);
+        }
+        catch (Exception ex)
+        {
+            _reportError = $"Export failed: {ex.Message}";
         }
         finally
         {
@@ -1678,17 +1339,28 @@
             _pendingChartRender = true;
     }
 
-    // ── Utilities ─────────────────────────────────────────────────────────────────
+    // Utilities
 
     private static string GetLogClass(string line)
     {
         if (line.Contains("[ERROR]")) return "text-danger";
         if (line.Contains("[WARN]"))  return "text-warning";
-        if (line.Contains("───")) return "text-info fw-semibold";
+        if (line.Contains("---")) return "text-info fw-semibold";
         if (line.Contains("Done") || line.Contains("done") ||
             line.Contains("complete", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Report"))
             return "text-success";
         return string.Empty;
+    }
+
+    private void AddLog(string message)
+    {
+        _logs.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
+        _ = InvokeAsync(async () =>
+        {
+            StateHasChanged();
+            await Task.Delay(20);
+            await ScrollLogToBottomIfNeededAsync();
+        });
     }
 }

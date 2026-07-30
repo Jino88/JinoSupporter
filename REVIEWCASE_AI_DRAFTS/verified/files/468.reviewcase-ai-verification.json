@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 468,
+  "sourceFile": "27. BRS-161014 Report test MTR VP NG Bending 2023.12.30_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\468.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 468,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Comparable test-vs-normal process and function results exist, but factor naming and some outcome handling need correction.",
+    "issues": [
+      "Changed condition incorrectly includes Normal typo as test condition.",
+      "Process subresult uses subtype NG count instead of total NG while rate uses total NG.",
+      "Function outcome is comparable but left not judged.",
+      "Report!38 is cited but not shown in contextRows for verifier review."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Normalize Nomal to Normal and set changed factor as Test VP NG bending material versus Normal.",
+      "Keep process and function outcomes under the same validation context.",
+      "Use total NG counts for process comparison: Test 4 of 1010 versus Normal 1 of 1000.",
+      "Judge function comparison if Report!38 confirms Normal total 77 of 2188 versus Test 27 of 1006.",
+      "Include Report!38 text in evidence context or remove unsupported function normal values."
+    ],
+    "evidencePolicy": "Citations mostly sufficient, but cited Report!38 must be visible for final evidence."
+  },
+  "usage": {
+    "input_tokens": 2794,
+    "output_tokens": 763,
+    "total_tokens": 3557
+  }
+}

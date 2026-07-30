@@ -1,0 +1,201 @@
+{
+  "sourceFileId": 711,
+  "sourceFile": "50.BRS-161014 Report test sample VP dome clean by alcohol_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\50.BRS-161014 Report test sample VP dome clean by alcohol_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "16.10",
+    "sheetRowCount": 17,
+    "sheetCellCount": 65,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "16.10!2",
+      "sheetName": "16.10",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST VP DOME CLEAN BOND BY ALCOHOL -161014 | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "16.10!3",
+      "sheetName": "16.10",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | Date | 2023-10-16 00:00:00"
+    },
+    {
+      "rowId": "16.10!4",
+      "sheetName": "16.10",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | Marker | Thuy"
+    },
+    {
+      "rowId": "16.10!5",
+      "sheetName": "16.10",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "16.10!6",
+      "sheetName": "16.10",
+      "rowNumber": 6,
+      "rowText": "| - To find NG hearing reason high"
+    },
+    {
+      "rowId": "16.10!7",
+      "sheetName": "16.10",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "16.10!8",
+      "sheetName": "16.10",
+      "rowNumber": 8,
+      "rowText": "| - To separate VP dome clean bond ( NG bonding sample at bonding VP out side, inside) by alcohol -> make sample and checking function & compare normal"
+    },
+    {
+      "rowId": "16.10!10",
+      "sheetName": "16.10",
+      "rowNumber": 10,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "16.10!11",
+      "sheetName": "16.10",
+      "rowNumber": 11,
+      "rowText": "| | RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "16.10!12",
+      "sheetName": "16.10",
+      "rowNumber": 12,
+      "rowText": "| | Date | Type | Input | OK | Sigma | | | | Hearing | | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "16.10!13",
+      "sheetName": "16.10",
+      "rowNumber": 13,
+      "rowText": "| | | | | | SPL | THD | SPL+THD | SPL+THD+F0 | Noise | Touch"
+    },
+    {
+      "rowId": "16.10!14",
+      "sheetName": "16.10",
+      "rowNumber": 14,
+      "rowText": "| | 2023-10-16 00:00:00 | Test VP dome clean bond by alcohol | 66 | 60 | 0 | 1 | 0 | 0 | 5 | 0 | 6 | 0.09090909"
+    },
+    {
+      "rowId": "16.10!16",
+      "sheetName": "16.10",
+      "rowNumber": 16,
+      "rowText": "| | | Normal | 208 | 194 | 0 | 1 | 0 | 0 | 8 | 5 | 14 | 0.06730769"
+    },
+    {
+      "rowId": "16.10!18",
+      "sheetName": "16.10",
+      "rowNumber": 18,
+      "rowText": "| | => NG rate of function of VP clean bond is higher normal"
+    },
+    {
+      "rowId": "16.10!20",
+      "sheetName": "16.10",
+      "rowNumber": 20,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-711-rc-1",
+      "reviewTitle": "REPORT TEST VP DOME CLEAN BOND BY ALCOHOL -161014 | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To find NG hearing reason high / | II. Content. / | - To separate VP dome clean bond ( NG bonding sample at bonding VP out side, inside) by alcohol -> make sample and checking function & compare normal / | 3.Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Test VP dome clean bond by alcohol",
+          "baselineCondition": "Normal",
+          "changedCondition": "Test VP dome clean bond by alcohol",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "16.10!14",
+            "16.10!16",
+            "16.10!2",
+            "16.10!5",
+            "16.10!7",
+            "16.10!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "16.10!14",
+            "16.10!16"
+          ],
+          "judgement": "worse",
+          "subResults": [
+            {
+              "pairId": 4573,
+              "controlCondition": "Normal",
+              "testCondition": "Test VP dome clean bond by alcohol",
+              "control": {
+                "input": 208.0,
+                "ng": 14.0,
+                "ratePercent": 6.7307690000000004
+              },
+              "test": {
+                "input": 66.0,
+                "ng": 6.0,
+                "ratePercent": 9.090909
+              },
+              "deltaRatePercentPoint": 2.3601399999999995,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "16.10!14",
+                "16.10!16"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "16.10!14",
+        "16.10!16",
+        "16.10!2",
+        "16.10!5",
+        "16.10!7",
+        "16.10!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "16.10!14",
+      "16.10!16",
+      "16.10!2",
+      "16.10!5",
+      "16.10!7",
+      "16.10!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

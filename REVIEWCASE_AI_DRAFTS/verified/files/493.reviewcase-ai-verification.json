@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 493,
+  "sourceFile": "29. MSU-L20S15-07GMI - Report test 3 Type new bond SL-220LB, WE-4900, 5102S2 Ass'y frame+SP - Date 2025.07.17_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\493.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 493,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misgroups the bond-type comparison and has ambiguous outcome condition extraction.",
+    "issues": [
+      "Primary change should be normal bond PT8310M9S versus three new bond types, not date plus partial types.",
+      "SL-220LB is incorrectly treated as a subgroup instead of a test condition.",
+      "Tension rows lose Type/Sus context, making comparisons ambiguous.",
+      "Bond amount/dry oven result section is not represented as an outcome.",
+      "Evidence omits key rows listing the three tested bond types."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to bond type/material for Frame+Suspension assembly.",
+      "Model SL-220LB, WE-4900, and 5102S2 as changed conditions compared with Normal PT8310M9S.",
+      "Preserve date, line, suspension side, and sample context as subgroup keys only.",
+      "Re-extract NG rate and tension outcomes with full row labels and headers.",
+      "Add bond amount/dry oven outcome if comparable test rows exist."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until rows listing all bond types, headers, and all comparable data rows are included."
+  },
+  "usage": {
+    "input_tokens": 3820,
+    "output_tokens": 786,
+    "total_tokens": 4606
+  }
+}

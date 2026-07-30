@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 839,
+  "sourceFile": "68. TIU C11-20 Report test Change Dry IR  2026.3.3_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\839.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 839,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the Dry IR time change but misgroups several Normal/test comparisons and includes an invalid measurement outcome.",
+    "issues": [
+      "Rows 18 and 22 are compared to row 16 instead of their same-date Normal rows 20 and 24.",
+      "Frame/sticky rows 32 and 33 should be paired; draft compares row 32 to row 31.",
+      "3'62 frame result should be no worse/no NG, not improved versus the 2/9 Normal row.",
+      "Measurement outcome is derived from header-only row 13 and should be removed.",
+      "Changed factor should be Dry IR time reduction; line/model and actual times are subgroup context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to Dry IR spec/time changed from 4~5 min to 3~4 min.",
+      "Pair function results by date/trial: 14 vs 16, 18 vs 20, and 22 vs 24.",
+      "Pair frame/sticky results by date/trial: 30 vs 31 and 32 vs 33.",
+      "Revise judgements to reflect function improvement and 3'07 frame/sticky worsening with 3'62 acceptable.",
+      "Remove the header-based measurement outcome; keep tension only as summary if cited to row 47."
+    ],
+    "evidencePolicy": "Row citations exist, but cited comparison rows are not sufficient until same-date pairings are corrected."
+  },
+  "usage": {
+    "input_tokens": 5146,
+    "output_tokens": 776,
+    "total_tokens": 5922
+  }
+}

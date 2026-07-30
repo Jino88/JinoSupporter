@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 533,
+  "sourceFile": "31. BRS-201506 Report checking and test SUB1 JIG improve date 15.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\533.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:47Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 533,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the jig comparison but needs correction before final evidence use.",
+    "issues": [
+      "3/18 cutting tests should use the 3/18 normal baseline, not the 3/15 normal row.",
+      "Yoke class NG count for normal row is inconsistent with its NG rate.",
+      "Spurious measurement outcomes use formula/header-like rows and #DIV/0 values.",
+      "Outcome domain for yoke check is unknown and should be classified or limited.",
+      "Changed factor domain should be jig/process, not material."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Compare 3/15 JIG Test only with 3/15 JIG Normal.",
+      "Compare 3/18 cutting 0.1mm and 0.15mm with 3/18 JIG Normal.",
+      "Fix yoke class total NG values using defect columns and NG rate.",
+      "Remove or mark measurement-stat outcomes as extraction noise unless row context proves validity.",
+      "Revise changed factor to Sub1 improved/test jig condition with date as subgroup context."
+    ],
+    "evidencePolicy": "Core cited rows are sufficient, but invalid row grouping and noisy citations must be corrected."
+  },
+  "usage": {
+    "input_tokens": 5839,
+    "output_tokens": 782,
+    "total_tokens": 6621
+  }
+}

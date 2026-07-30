@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 107,
+  "sourceFile": "04. TIU C11-20  Report test Frame clean by Plasma machine date 25.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\107.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 107,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable plasma-clean versus ethanol-normal evidence exists, but generated outcomes and grouping need cleanup before final use.",
+    "issues": [
+      "Spurious measurement-2 is derived from a header/aggregate row and should not be an outcome.",
+      "Tension sample counts are incorrect; rows contain multiple readings, not one sample.",
+      "Spec value 0.4 is omitted from tension subresults despite being cited in source rows.",
+      "Date/test round/recheck context is not preserved as subgroup context.",
+      "Evidence includes Test!22, which is not shown in context and appears insufficient for final citation."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove measurement-2 and its derived header statistics.",
+      "Keep one review case with function defect and tension outcomes under the plasma vs ethanol clean comparison.",
+      "Add subgroup keys for date, run/recheck/2nd, and Fr+VP where applicable.",
+      "Correct tension spec and sample-count fields from the cited measurement rows.",
+      "Use only citeable result rows and section/title rows needed for context."
+    ],
+    "evidencePolicy": "Rows for purpose, comparison, function, and tension are sufficient; header-only or absent-context citations are not sufficient."
+  },
+  "usage": {
+    "input_tokens": 4800,
+    "output_tokens": 671,
+    "total_tokens": 5471
+  }
+}

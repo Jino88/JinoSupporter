@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 914,
+  "sourceFile": "8. BRS-161014 Report TEST new Yoke adhesion  JIG improve 2023.08.22_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\914.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:57Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 914,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but the changed-factor grouping and baseline/test conditions are incorrectly inferred.",
+    "issues": [
+      "Changed factor uses row numbers as conditions instead of jig improvement levels.",
+      "Normal baseline is explicit in tension data but marked not explicit.",
+      "1st and 2nd improvement contexts are mixed without clear round grouping.",
+      "Second visual cited rows are not shown in provided context.",
+      "Change domain overstates supplier/material beyond cited condition text."
+    ],
+    "requiredUserQuestions": [
+      "Should 1st and 2nd jig improvements be one validation case with rounds or separate cases?"
+    ],
+    "correctionPlan": [
+      "Define factor as yoke adhesion jig cutting improvement: Normal, 1st cut 0.1 mm, 2nd total cut 0.3 mm.",
+      "Use sheet/test round and date as subgroup keys, not input row numbers.",
+      "Add cited content rows for both improvement methods and all visual result rows.",
+      "Separate visual NG over-glue and tension outcomes under the same jig-improvement factor.",
+      "Limit domains to jig/process condition unless supplier change is explicitly evaluated."
+    ],
+    "evidencePolicy": "Row citations exist for many values but are insufficient for final use until grouping and missing context citations are corrected."
+  },
+  "usage": {
+    "input_tokens": 4223,
+    "output_tokens": 793,
+    "total_tokens": 5016
+  }
+}

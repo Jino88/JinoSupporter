@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 554,
+  "sourceFile": "33. MSU-L20S15-07GMI Report test Find reason NG frequency SPL increase high -  date 09.10.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\554.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 554,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not safe because it merges separate sheets and many process trials into one ambiguous changed factor with unreliable outcomes.",
+    "issues": [
+      "Changed factor is over-broad and mixes cushion, offset, UV, vendor, bond amount, and dry-time trials.",
+      "Baseline/test grouping is wrong; Ralon is treated as baseline though it appears as a tested condition.",
+      "Two sheets with different dates/purposes are combined without proving they are one comparable validation context.",
+      "Several measurement outcomes are parser artifacts from headers or mixed columns, producing nonsensical stats.",
+      "Improvement judgement is over-applied; some comparisons are not materially improved or lack a valid control."
+    ],
+    "requiredUserQuestions": [
+      "Are sheets Test and Test (2) intended as one validation report or separate reviews?",
+      "What is the intended baseline for the Test (2) function checks?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factors by actual tested condition and preserve sheet/date context.",
+      "Use Normal on Test!43 only as baseline for comparable Test-sheet trials.",
+      "Keep Test (2) trials separate or mark them not_judged if no baseline is confirmed.",
+      "Remove header-derived and mixed-column measurement statistics.",
+      "Cite only relevant section, condition, and data rows for each outcome."
+    ],
+    "evidencePolicy": "Row citations exist, but current grouping and header-derived citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 9320,
+    "output_tokens": 778,
+    "total_tokens": 10098
+  }
+}

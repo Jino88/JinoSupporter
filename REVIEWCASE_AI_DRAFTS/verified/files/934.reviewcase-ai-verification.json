@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 934,
+  "sourceFile": "82. BRS-161014 Report TEST VP From KR (10.03 NG dimension )  09.12.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\934.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 934,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has valid comparable VP test vs Normal evidence but needs factor/domain and laser-cutting judgement cleanup.",
+    "issues": [
+      "Changed factor should identify VP KR material, not generic VP test only.",
+      "Change domains overstate process and dimension/spec without direct changed-condition proof.",
+      "Laser-cutting result is labeled worse though source decision treats it as same as normal.",
+      "Function outcome lacks cited header detail for defect-category columns."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to Normal material vs VP KR material.",
+      "Limit changeDomain to material unless additional source proof supports other domains.",
+      "For laser-cutting/VP drop outcome, mark comparable/same or note only rate is slightly higher due smaller input.",
+      "Keep function NG-rate outcome as improved with rows 20 and 22.",
+      "Add any available header rows for the function table if present."
+    ],
+    "evidencePolicy": "Core row citations are sufficient for comparison, but missing/overbroad context rows should be corrected before use."
+  },
+  "usage": {
+    "input_tokens": 3025,
+    "output_tokens": 754,
+    "total_tokens": 3779
+  }
+}

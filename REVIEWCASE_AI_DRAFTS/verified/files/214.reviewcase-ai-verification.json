@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 214,
+  "sourceFile": "10. TIU L5S3-01 R Report test Check iussue MG+YOKE separate  date 2025.11.29_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\214.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:21Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 214,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable condition/result rows but the changed-factor grouping and baseline use are not reliable enough for final Ask AI evidence.",
+    "issues": [
+      "Changed factor improperly bundles many unrelated line checks into one comparison string.",
+      "Baseline row is reused inside changedCondition, creating self-comparison ambiguity.",
+      "Rows 13,20,21 are cited in factor evidence but not represented in outcomes.",
+      "Outcome metric should be NG rate/input/NG, not the section header.",
+      "Several cited comparison rows are not shown in context, limiting row-level verification."
+    ],
+    "requiredUserQuestions": [
+      "Is old material intended as the baseline for all condition checks?",
+      "Should cleaning-agent rows be separate comparisons or part of the same condition screen?"
+    ],
+    "correctionPlan": [
+      "Define the changed factor as a condition-screen for MG+YK separation, or split by material lot, oven condition, bond amount, and cleaning method.",
+      "Remove the baseline condition from changedCondition.",
+      "Create one subresult per result-table item with input, NG, NG rate, note, and exact row citation.",
+      "Include all cited result rows, especially rows 14,15,18,19, with row text available for verification.",
+      "Set judgement per subresult from NG rate versus the confirmed baseline and keep overall judgement nuanced."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficiently organized and partly unavailable for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3291,
+    "output_tokens": 827,
+    "total_tokens": 4118
+  }
+}

@@ -1,0 +1,2557 @@
+{
+  "sourceFileId": 242,
+  "sourceFile": "12. BRS-161014  Report checking problem sub1 TF line_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\12. BRS-161014  Report checking problem sub1 TF line_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 6,
+    "sheetNames": "Problem; NG rate function; NG Process TF Line; NG rate; 07.05; Sheet1",
+    "sheetRowCount": 269,
+    "sheetCellCount": 5098,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 49,
+    "measurementStatCount": 147
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "07.05!2",
+      "sheetName": "07.05",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | BRS-161016TF - REPORT CHECK NG PROCESS | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "07.05!3",
+      "sheetName": "07.05",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | Date | 2025-05-07 00:00:00"
+    },
+    {
+      "rowId": "07.05!4",
+      "sheetName": "07.05",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | Maker | Nhung"
+    },
+    {
+      "rowId": "07.05!5",
+      "sheetName": "07.05",
+      "rowNumber": 5,
+      "rowText": "| 1. Purpose test"
+    },
+    {
+      "rowId": "07.05!6",
+      "sheetName": "07.05",
+      "rowNumber": 6,
+      "rowText": "| - Check NG process in Sub 1 TF line"
+    },
+    {
+      "rowId": "07.05!7",
+      "sheetName": "07.05",
+      "rowNumber": 7,
+      "rowText": "| 2. Content of testing"
+    },
+    {
+      "rowId": "07.05!8",
+      "sheetName": "07.05",
+      "rowNumber": 8,
+      "rowText": "| - Check NG process"
+    },
+    {
+      "rowId": "07.05!9",
+      "sheetName": "07.05",
+      "rowNumber": 9,
+      "rowText": "| - Separate lot follow NG function"
+    },
+    {
+      "rowId": "07.05!10",
+      "sheetName": "07.05",
+      "rowNumber": 10,
+      "rowText": "| 3.Result test"
+    },
+    {
+      "rowId": "07.05!12",
+      "sheetName": "07.05",
+      "rowNumber": 12,
+      "rowText": "| | RESULT CHECK NG PROCESS"
+    },
+    {
+      "rowId": "07.05!13",
+      "sheetName": "07.05",
+      "rowNumber": 13,
+      "rowText": "| | Date | Iput | NG | | | | | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "07.05!14",
+      "sheetName": "07.05",
+      "rowNumber": 14,
+      "rowText": "| | | | Separate VP+CD | CD damage | Particle | Lack glue | Over Glue"
+    },
+    {
+      "rowId": "NG Process TF Line!1",
+      "sheetName": "NG Process TF Line",
+      "rowNumber": 1,
+      "rowText": "| Date | Factory | Shift | Line | Model Sản phẩm | Sub #1 ( VP ) | [SUB1. 1] VP ARRAY (VP LOAD TRAY) | | | | | | | [SUB1. 2] VP INSIDE LASER CUTTING | | | | [SUB1. 3] VP VISION INSPECTION | | | | | | | [SUB1. 4] CHECK AOI ED | | | | | | [SUB1. 5] VP ARRAY | | | [SUB1. 5] DOME ARRAY 2 + ION | | | | | | | [SUB1. 9] DOME+VP ASSY | | | [SUB1. 11] AOI ED +CD | | | | | | | | | | | | [SUB1. 12] TRAY - CHANGE JIG"
+    },
+    {
+      "rowId": "NG rate!2",
+      "sheetName": "NG rate",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT CHECKING FUNCTION OF VP+CD TF LINE BRS-161016 | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "NG rate!5",
+      "sheetName": "NG rate",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "NG rate!6",
+      "sheetName": "NG rate",
+      "rowNumber": 6,
+      "rowText": "| - To check NG rate of function when use VP+CD of TF line"
+    },
+    {
+      "rowId": "NG rate!7",
+      "sheetName": "NG rate",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "NG rate!8",
+      "sheetName": "NG rate",
+      "rowNumber": 8,
+      "rowText": "| - Everyday input VP +CD of TF line to main line and checking NG rate of function"
+    },
+    {
+      "rowId": "NG rate!10",
+      "sheetName": "NG rate",
+      "rowNumber": 10,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "NG rate!11",
+      "sheetName": "NG rate",
+      "rowNumber": 11,
+      "rowText": "| | 1. RESULT CHECKING FUNCTION OF SPK"
+    },
+    {
+      "rowId": "NG rate!14",
+      "sheetName": "NG rate",
+      "rowNumber": 14,
+      "rowText": "| | 2025-03-15 00:00:00 | E2-3A | Test VP+CD of TF line lot 1 | | 484 | 469 | 0 | 0 | 0 | 1 | 0 | 13 | 1 | 15 | 0.03099174"
+    },
+    {
+      "rowId": "NG rate!15",
+      "sheetName": "NG rate",
+      "rowNumber": 15,
+      "rowText": "| | | | Test VP+CD of TF line lot 2 | | 665 | 628 | 0 | 0 | 0 | 1 | 0 | 33 | 3 | 37 | 0.0556391"
+    },
+    {
+      "rowId": "NG rate!16",
+      "sheetName": "NG rate",
+      "rowNumber": 16,
+      "rowText": "| | | | Test VP+CD of TF line lot 3 | | 216 | 207 | 0 | 0 | 1 | 1 | 0 | 7 | 0 | 9 | 0.04166667"
+    },
+    {
+      "rowId": "NG rate!18",
+      "sheetName": "NG rate",
+      "rowNumber": 18,
+      "rowText": "| | 2025-03-17 00:00:00 | E2-3A | Test VP+CD of TF line lot 1 | | 1037 | 1018 | 0 | 0 | 1 | 0 | 0 | 12 | 6 | 19 | 0.01832208"
+    },
+    {
+      "rowId": "NG rate!20",
+      "sheetName": "NG rate",
+      "rowNumber": 20,
+      "rowText": "| | 2025-03-19 00:00:00 | E2-3A | Test VP+CD of TF line lot 1 | | 477 | 460 | 0 | 0 | 1 | 0 | 0 | 16 | 0 | 17 | 0.03563941"
+    },
+    {
+      "rowId": "NG rate!21",
+      "sheetName": "NG rate",
+      "rowNumber": 21,
+      "rowText": "| | | | Test VP+CD of TF line lot 2 | | 499 | 484 | 0 | 0 | 1 | 0 | 0 | 10 | 4 | 15 | 0.03006012"
+    },
+    {
+      "rowId": "NG rate!22",
+      "sheetName": "NG rate",
+      "rowNumber": 22,
+      "rowText": "| | | | Test VP+CD of TF line lot 3 | | 192 | 180 | 0 | 0 | 4 | 0 | 0 | 7 | 1 | 12 | 0.0625"
+    },
+    {
+      "rowId": "NG rate!24",
+      "sheetName": "NG rate",
+      "rowNumber": 24,
+      "rowText": "| | 2025-03-20 00:00:00 | E2-3A | Test VP+CD of TF line lot 1 | | 470 | 455 | 0 | 0 | 0 | 0 | 0 | 15 | 0 | 15 | 0.03191489"
+    },
+    {
+      "rowId": "NG rate!26",
+      "sheetName": "NG rate",
+      "rowNumber": 26,
+      "rowText": "| | 2025-03-21 00:00:00 | E2-3A | Test VP+CD of TF line lot 1 | | 797 | 773 | 0 | 0 | 1 | 0 | 0 | 17 | 6 | 24 | 0.03011292"
+    },
+    {
+      "rowId": "NG rate!27",
+      "sheetName": "NG rate",
+      "rowNumber": 27,
+      "rowText": "| | | | Test VP+CD of TF line lot 2 | | 729 | 703 | 0 | 0 | 1 | 1 | 0 | 24 | 0 | 26 | 0.03566529"
+    },
+    {
+      "rowId": "NG rate!28",
+      "sheetName": "NG rate",
+      "rowNumber": 28,
+      "rowText": "| | | | Test VP+CD of TF line lot 3 | | 507 | 491 | 0 | 0 | 1 | 0 | 0 | 7 | 8 | 16 | 0.03155819"
+    },
+    {
+      "rowId": "NG rate!30",
+      "sheetName": "NG rate",
+      "rowNumber": 30,
+      "rowText": "| | 2025-03-22 00:00:00 | E2-3A | Test VP+CD of TF line lot 1 | | 800 | 774 | 1 | 0 | 1 | 0 | 0 | 20 | 4 | 26 | 0.0325"
+    },
+    {
+      "rowId": "NG rate!31",
+      "sheetName": "NG rate",
+      "rowNumber": 31,
+      "rowText": "| | | | Test VP+CD of TF line lot 2 | | 975 | 942 | 2 | 0 | 1 | 1 | 0 | 29 | 0 | 33 | 0.03384615"
+    },
+    {
+      "rowId": "NG rate!32",
+      "sheetName": "NG rate",
+      "rowNumber": 32,
+      "rowText": "| | | | Test VP+CD of TF line lot 3 | | 188 | 180 | 0 | 0 | 0 | 0 | 0 | 8 | 0 | 8 | 0.04255319"
+    },
+    {
+      "rowId": "NG rate!34",
+      "sheetName": "NG rate",
+      "rowNumber": 34,
+      "rowText": "| | 2025-03-23 00:00:00 | E2-3A | Test VP+CD of TF line lot 2 | | 500 | 485 | 0 | 1 | 1 | 0 | 0 | 13 | 0 | 15 | 0.03"
+    },
+    {
+      "rowId": "NG rate!35",
+      "sheetName": "NG rate",
+      "rowNumber": 35,
+      "rowText": "| | | | Test VP+CD of TF line lot 3 | | 585 | 570 | 0 | 0 | 0 | 0 | 0 | 15 | 0 | 15 | 0.02564103"
+    },
+    {
+      "rowId": "NG rate!36",
+      "sheetName": "NG rate",
+      "rowNumber": 36,
+      "rowText": "| | | | Test VP+CD of TF line lot 4 | | 368 | 350 | 0 | 0 | 0 | 0 | 0 | 18 | 0 | 18 | 0.04891304"
+    },
+    {
+      "rowId": "NG rate!37",
+      "sheetName": "NG rate",
+      "rowNumber": 37,
+      "rowText": "| | | | Test VP+CD of TF line lot 5 | | 800 | 765 | 0 | 0 | 0 | 0 | 0 | 35 | 0 | 35 | 0.04375"
+    },
+    {
+      "rowId": "NG rate!38",
+      "sheetName": "NG rate",
+      "rowNumber": 38,
+      "rowText": "| | | | Test VP+CD of TF line lot 6 | | 948 | 913 | 0 | 0 | 0 | 1 | 0 | 34 | 0 | 35 | 0.03691983"
+    },
+    {
+      "rowId": "NG rate!39",
+      "sheetName": "NG rate",
+      "rowNumber": 39,
+      "rowText": "| | | | Test VP+CD of TF line lot 7 | | 400 | 385 | 0 | 0 | 1 | 0 | 0 | 10 | 4 | 15 | 0.0375"
+    },
+    {
+      "rowId": "NG rate!40",
+      "sheetName": "NG rate",
+      "rowNumber": 40,
+      "rowText": "| | | | Test VP+CD of TF line lot 8 | | 416 | 396 | 1 | 0 | 0 | 0 | 0 | 19 | 0 | 20 | 0.04807692"
+    },
+    {
+      "rowId": "NG rate!41",
+      "sheetName": "NG rate",
+      "rowNumber": 41,
+      "rowText": "| | | | Test VP+CD of TF line lot 9 | | 800 | 762 | 0 | 0 | 2 | 0 | 0 | 36 | 0 | 38 | 0.0475"
+    },
+    {
+      "rowId": "NG rate!42",
+      "sheetName": "NG rate",
+      "rowNumber": 42,
+      "rowText": "| | | | Test VP+CD of TF line lot 10 | | 975 | 942 | 2 | 0 | 1 | 1 | 0 | 29 | 0 | 33 | 0.03384615"
+    },
+    {
+      "rowId": "NG rate!44",
+      "sheetName": "NG rate",
+      "rowNumber": 44,
+      "rowText": "| | 2025-03-24 00:00:00 | E2-3A | Test VP+CD of TF line lot 1 | | 800 | 775 | 0 | 0 | 0 | 0 | 0 | 22 | 3 | 25 | 0.03125"
+    },
+    {
+      "rowId": "NG rate!45",
+      "sheetName": "NG rate",
+      "rowNumber": 45,
+      "rowText": "| | | | Test VP+CD of TF line lot 2 | | 800 | 770 | 0 | 0 | 1 | 1 | 0 | 21 | 7 | 30 | 0.0375"
+    },
+    {
+      "rowId": "NG rate!46",
+      "sheetName": "NG rate",
+      "rowNumber": 46,
+      "rowText": "| | | | Test VP+CD of TF line lot 3 | | 430 | 414 | 0 | 0 | 1 | 0 | 0 | 8 | 7 | 16 | 0.0372093"
+    },
+    {
+      "rowId": "NG rate!47",
+      "sheetName": "NG rate",
+      "rowNumber": 47,
+      "rowText": "| | | | Test VP+CD of TF line lot 4 | | 800 | 769 | 0 | 0 | 0 | 1 | 0 | 30 | 0 | 31 | 0.03875"
+    },
+    {
+      "rowId": "NG rate!48",
+      "sheetName": "NG rate",
+      "rowNumber": 48,
+      "rowText": "| | | | Test VP+CD of TF line lot 5 | | 800 | 757 | 0 | 0 | 1 | 0 | 0 | 42 | 0 | 43 | 0.05375"
+    },
+    {
+      "rowId": "NG rate!49",
+      "sheetName": "NG rate",
+      "rowNumber": 49,
+      "rowText": "| | | | Test VP+CD of TF line lot 6 | | 800 | 750 | 1 | 0 | 1 | 0 | 0 | 48 | 0 | 50 | 0.0625"
+    },
+    {
+      "rowId": "NG rate!50",
+      "sheetName": "NG rate",
+      "rowNumber": 50,
+      "rowText": "| | | | Test VP+CD of TF line lot 7 | | 800 | 766 | 0 | 0 | 1 | 0 | 0 | 33 | 0 | 34 | 0.0425"
+    },
+    {
+      "rowId": "NG rate!52",
+      "sheetName": "NG rate",
+      "rowNumber": 52,
+      "rowText": "| | 2025-03-25 00:00:00 | E2-3A | Test VP+CD of TF line lot 1 | | 800 | 764 | 0 | 0 | 1 | 0 | 0 | 35 | 0 | 36 | 0.045"
+    },
+    {
+      "rowId": "NG rate!53",
+      "sheetName": "NG rate",
+      "rowNumber": 53,
+      "rowText": "| | | | Test VP+CD of TF line lot 2 | | 172 | 167 | 0 | 0 | 0 | 0 | 0 | 5 | 0 | 5 | 0.02906977"
+    },
+    {
+      "rowId": "NG rate!54",
+      "sheetName": "NG rate",
+      "rowNumber": 54,
+      "rowText": "| | | | Test VP+CD of TF line lot 3 | | 800 | 766 | 0 | 1 | 0 | 0 | 0 | 28 | 5 | 34 | 0.0425"
+    },
+    {
+      "rowId": "NG rate!55",
+      "sheetName": "NG rate",
+      "rowNumber": 55,
+      "rowText": "| | | | Test VP+CD of TF line lot 4 | | 800 | 772 | 0 | 0 | 1 | 0 | 0 | 19 | 8 | 28 | 0.035"
+    },
+    {
+      "rowId": "NG rate!56",
+      "sheetName": "NG rate",
+      "rowNumber": 56,
+      "rowText": "| | | | Test VP+CD of TF line lot 5 | | 800 | 773 | 1 | 0 | 1 | 0 | 0 | 25 | 0 | 27 | 0.03375"
+    },
+    {
+      "rowId": "NG rate!57",
+      "sheetName": "NG rate",
+      "rowNumber": 57,
+      "rowText": "| | | | Test VP+CD of TF line lot 6 | | 480 | 452 | 1 | 0 | 1 | 1 | 0 | 25 | 0 | 28 | 0.05833333"
+    },
+    {
+      "rowId": "NG rate!58",
+      "sheetName": "NG rate",
+      "rowNumber": 58,
+      "rowText": "| | | | Test VP+CD of TF line lot 7 | | 800 | 767 | 0 | 0 | 0 | 0 | 0 | 33 | 0 | 33 | 0.04125"
+    },
+    {
+      "rowId": "NG rate!60",
+      "sheetName": "NG rate",
+      "rowNumber": 60,
+      "rowText": "| | 2025-03-26 00:00:00 | E2-3A | Test VP+CD of TF line lot 1 | | 800 | 759 | 0 | 0 | 1 | 1 | 0 | 39 | 0 | 41 | 0.05125"
+    },
+    {
+      "rowId": "NG rate!61",
+      "sheetName": "NG rate",
+      "rowNumber": 61,
+      "rowText": "| | | | Test VP+CD of TF UC press 1 | | 98 | 94 | 0 | 0 | 0 | 0 | 0 | 4 | 0 | 4 | 0.04081633"
+    },
+    {
+      "rowId": "NG rate!62",
+      "sheetName": "NG rate",
+      "rowNumber": 62,
+      "rowText": "| | | | Test VP+CD of TF UC press 2 | | 98 | 96 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 2 | 0.02040816"
+    },
+    {
+      "rowId": "NG rate!63",
+      "sheetName": "NG rate",
+      "rowNumber": 63,
+      "rowText": "| | | | Test VP+CD of TF UC press 3 | | 100 | 94 | 0 | 0 | 0 | 0 | 0 | 6 | 0 | 6 | 0.06"
+    },
+    {
+      "rowId": "NG rate!64",
+      "sheetName": "NG rate",
+      "rowNumber": 64,
+      "rowText": "| | | | Test VP+CD of TF UC press 4 | | 96 | 88 | 0 | 0 | 0 | 0 | 0 | 8 | 0 | 8 | 0.08333333"
+    },
+    {
+      "rowId": "NG rate!65",
+      "sheetName": "NG rate",
+      "rowNumber": 65,
+      "rowText": "| | | | Test VP+CD of TF line lot 3 | | 574 | 532 | 0 | 0 | 0 | 1 | 0 | 41 | 0 | 42 | 0.07317073"
+    },
+    {
+      "rowId": "NG rate!66",
+      "sheetName": "NG rate",
+      "rowNumber": 66,
+      "rowText": "| | | | Test VP+CD of TF line lot 4 | | 800 | 756 | 0 | 0 | 0 | 1 | 0 | 43 | 0 | 44 | 0.055"
+    },
+    {
+      "rowId": "NG rate!67",
+      "sheetName": "NG rate",
+      "rowNumber": 67,
+      "rowText": "| | | | Test VP+CD of TF line lot 5 | | 800 | 752 | 1 | 0 | 1 | 2 | 0 | 44 | 0 | 48 | 0.06"
+    },
+    {
+      "rowId": "NG rate!68",
+      "sheetName": "NG rate",
+      "rowNumber": 68,
+      "rowText": "| | | | Test VP+CD of TF line lot 6 | | 800 | 758 | 1 | 0 | 1 | 1 | 0 | 39 | 0 | 42 | 0.0525"
+    },
+    {
+      "rowId": "NG rate!70",
+      "sheetName": "NG rate",
+      "rowNumber": 70,
+      "rowText": "| | 2025-03-27 00:00:00 | E2-3A | Test UC press 1 | | 56 | 55 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 1 | 0.01785714"
+    },
+    {
+      "rowId": "NG rate!71",
+      "sheetName": "NG rate",
+      "rowNumber": 71,
+      "rowText": "| | | | Test UC press 2 | | 60 | 59 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 1 | 0.01666667"
+    },
+    {
+      "rowId": "NG rate!72",
+      "sheetName": "NG rate",
+      "rowNumber": 72,
+      "rowText": "| | | | Test UC press 3 | | 58 | 57 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 1 | 0.01724138"
+    },
+    {
+      "rowId": "NG rate!73",
+      "sheetName": "NG rate",
+      "rowNumber": 73,
+      "rowText": "| | | | Test UC press 4 | | 58 | 56 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 2 | 0.03448276"
+    },
+    {
+      "rowId": "NG rate!74",
+      "sheetName": "NG rate",
+      "rowNumber": 74,
+      "rowText": "| | | | Test UC press 3 ( After attach Tape at locate) | | 59 | 57 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 2 | 0.03389831"
+    },
+    {
+      "rowId": "NG rate!75",
+      "sheetName": "NG rate",
+      "rowNumber": 75,
+      "rowText": "| | | | Test UC press 4( After attach Tape at locate) | | 58 | 58 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "NG rate!76",
+      "sheetName": "NG rate",
+      "rowNumber": 76,
+      "rowText": "| | | | Test Press UC 1 jig | | 98 | 96 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 2 | 0.02040816"
+    },
+    {
+      "rowId": "NG rate!77",
+      "sheetName": "NG rate",
+      "rowNumber": 77,
+      "rowText": "| | | | Test VP+CD of TF line lot 1 | | 600 | 577 | 0 | 0 | 0 | 1 | 0 | 18 | 4 | 23 | 0.03833333"
+    },
+    {
+      "rowId": "NG rate!78",
+      "sheetName": "NG rate",
+      "rowNumber": 78,
+      "rowText": "| | | | Test VP+CD of TF line lot 2 | | 800 | 771 | 0 | 0 | 1 | 1 | 0 | 20 | 7 | 29 | 0.03625"
+    },
+    {
+      "rowId": "NG rate!79",
+      "sheetName": "NG rate",
+      "rowNumber": 79,
+      "rowText": "| | | | Test VP+CD of TF line lot 3 | | 800 | 769 | 1 | 0 | 1 | 1 | 0 | 25 | 3 | 31 | 0.03875"
+    },
+    {
+      "rowId": "NG rate!85",
+      "sheetName": "NG rate",
+      "rowNumber": 85,
+      "rowText": "| 4. Decision"
+    },
+    {
+      "rowId": "NG rate function!5",
+      "sheetName": "NG rate function",
+      "rowNumber": 5,
+      "rowText": "| | Normal line | | 7157 | 6899 | 8 | 0 | 2 | 1 | 0 | 247 | 0 | 258 | 0.03604862"
+    },
+    {
+      "rowId": "NG rate function!7",
+      "sheetName": "NG rate function",
+      "rowNumber": 7,
+      "rowText": "| | Normal line | | 7987 | 7697 | 8 | 0 | 3 | 3 | 0 | 276 | 0 | 290 | 0.036309"
+    },
+    {
+      "rowId": "NG rate function!9",
+      "sheetName": "NG rate function",
+      "rowNumber": 9,
+      "rowText": "| | Normal line | | 6838 | 6613 | 5 | 1 | 0 | 2 | 0 | 211 | 6 | 225 | 0.03290436"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-242-rc-1",
+      "reviewTitle": "| BRS-161016TF - REPORT CHECK NG PROCESS | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| 1. Purpose test / | - Check NG process in Sub 1 TF line / | 2. Content of testing / | - Check NG process / | - Separate lot follow NG function",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "coating",
+            "process condition",
+            "dimension/spec"
+          ],
+          "changedFactor": "Condition comparison: Normal line vs D, VP TF line, Test VP+CD of TF line lot 1, Total VP TF line, Test VP+CD of TF line lot 2, Test VP+CD of TF line lot 3, Total NG",
+          "baselineCondition": "Normal line",
+          "changedCondition": "D, VP TF line, Test VP+CD of TF line lot 1, Total VP TF line, Test VP+CD of TF line lot 2, Test VP+CD of TF line lot 3, Total NG",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "07.05!10",
+            "07.05!2",
+            "07.05!5",
+            "07.05!7",
+            "NG Process TF Line!1",
+            "NG Process TF Line!3",
+            "NG Process TF Line!4",
+            "NG Process TF Line!5",
+            "NG Process TF Line!6",
+            "NG rate function!10",
+            "NG rate function!11",
+            "NG rate function!12",
+            "NG rate function!13",
+            "NG rate function!14",
+            "NG rate function!15",
+            "NG rate function!16",
+            "NG rate function!17",
+            "NG rate function!18",
+            "NG rate function!19",
+            "NG rate function!3",
+            "NG rate function!4",
+            "NG rate function!5",
+            "NG rate function!6",
+            "NG rate function!7",
+            "NG rate function!8",
+            "NG rate function!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "NG rate function!10",
+            "NG rate function!11",
+            "NG rate function!12",
+            "NG rate function!13",
+            "NG rate function!14",
+            "NG rate function!15",
+            "NG rate function!16",
+            "NG rate function!17",
+            "NG rate function!18",
+            "NG rate function!19",
+            "NG rate function!4",
+            "NG rate function!5",
+            "NG rate function!6",
+            "NG rate function!7",
+            "NG rate function!8",
+            "NG rate function!9"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 18958,
+              "condition": "VP TF line",
+              "input": 3701.0,
+              "ok": 3288.0,
+              "ng": 413.0,
+              "ratePercent": 11.159146,
+              "evidenceRows": [
+                "NG rate function!4"
+              ]
+            },
+            {
+              "metricId": 18959,
+              "condition": "Normal line",
+              "input": 7157.0,
+              "ok": 6899.0,
+              "ng": 258.0,
+              "ratePercent": 3.6048620000000002,
+              "evidenceRows": [
+                "NG rate function!5"
+              ]
+            },
+            {
+              "metricId": 18960,
+              "condition": "VP TF line",
+              "input": 4150.0,
+              "ok": 3978.0,
+              "ng": 172.0,
+              "ratePercent": 4.144578,
+              "evidenceRows": [
+                "NG rate function!6"
+              ]
+            },
+            {
+              "metricId": 18961,
+              "condition": "Normal line",
+              "input": 7987.0,
+              "ok": 7697.0,
+              "ng": 290.0,
+              "ratePercent": 3.6309,
+              "evidenceRows": [
+                "NG rate function!7"
+              ]
+            },
+            {
+              "metricId": 18962,
+              "condition": "VP TF line",
+              "input": 4337.0,
+              "ok": 4114.0,
+              "ng": 223.0,
+              "ratePercent": 5.141803,
+              "evidenceRows": [
+                "NG rate function!8"
+              ]
+            },
+            {
+              "metricId": 18963,
+              "condition": "Normal line",
+              "input": 6838.0,
+              "ok": 6613.0,
+              "ng": 225.0,
+              "ratePercent": 3.290436,
+              "evidenceRows": [
+                "NG rate function!9"
+              ]
+            },
+            {
+              "metricId": 18964,
+              "condition": "VP TF line",
+              "input": 1049.0,
+              "ok": 1010.0,
+              "ng": 39.0,
+              "ratePercent": 3.7178269999999998,
+              "evidenceRows": [
+                "NG rate function!10"
+              ]
+            },
+            {
+              "metricId": 18965,
+              "condition": "Normal line",
+              "input": 10077.0,
+              "ok": 9711.0,
+              "ng": 366.0,
+              "ratePercent": 3.632033,
+              "evidenceRows": [
+                "NG rate function!11"
+              ]
+            },
+            {
+              "metricId": 18966,
+              "condition": "VP TF line",
+              "input": 1696.0,
+              "ok": 1625.0,
+              "ng": 71.0,
+              "ratePercent": 4.1863209999999995,
+              "evidenceRows": [
+                "NG rate function!12"
+              ]
+            },
+            {
+              "metricId": 18967,
+              "condition": "Normal line",
+              "input": 9354.0,
+              "ok": 9026.0,
+              "ng": 328.0,
+              "ratePercent": 3.5065209999999998,
+              "evidenceRows": [
+                "NG rate function!13"
+              ]
+            },
+            {
+              "metricId": 18968,
+              "condition": "VP TF line",
+              "input": 514.0,
+              "ok": 491.0,
+              "ng": 23.0,
+              "ratePercent": 4.474708000000001,
+              "evidenceRows": [
+                "NG rate function!14"
+              ]
+            },
+            {
+              "metricId": 18969,
+              "condition": "Normal line",
+              "input": 11061.0,
+              "ok": 10707.0,
+              "ng": 354.0,
+              "ratePercent": 3.200434,
+              "evidenceRows": [
+                "NG rate function!15"
+              ]
+            },
+            {
+              "metricId": 18970,
+              "condition": "VP TF line",
+              "input": 543.0,
+              "ok": 522.0,
+              "ng": 21.0,
+              "ratePercent": 3.867403,
+              "evidenceRows": [
+                "NG rate function!16"
+              ]
+            },
+            {
+              "metricId": 18971,
+              "condition": "Normal line",
+              "input": 10497.0,
+              "ok": 10137.0,
+              "ng": 360.0,
+              "ratePercent": 3.429551,
+              "evidenceRows": [
+                "NG rate function!17"
+              ]
+            },
+            {
+              "metricId": 18972,
+              "condition": "VP TF line",
+              "input": 1600.0,
+              "ok": 1535.0,
+              "ng": 65.0,
+              "ratePercent": 4.0625,
+              "evidenceRows": [
+                "NG rate function!18"
+              ]
+            },
+            {
+              "metricId": 18973,
+              "condition": "Normal line",
+              "input": 9727.0,
+              "ok": 9383.0,
+              "ng": 344.0,
+              "ratePercent": 3.536548,
+              "evidenceRows": [
+                "NG rate function!19"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "metric-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "Date | Factory | Shift | Line | Model Sản phẩm | Sub #1 ( VP ) | [SUB1. 1] VP ARRAY (VP LOAD TRAY) | [SUB1. 2] VP INSIDE LASER CUTTING | [SUB1. 3] VP VISION INSPECTION | [SUB1. 4] ...",
+          "comparisonRows": [
+            "NG Process TF Line!10",
+            "NG Process TF Line!11",
+            "NG Process TF Line!12",
+            "NG Process TF Line!13",
+            "NG Process TF Line!14",
+            "NG Process TF Line!15",
+            "NG Process TF Line!16",
+            "NG Process TF Line!17",
+            "NG Process TF Line!18",
+            "NG Process TF Line!19",
+            "NG Process TF Line!3",
+            "NG Process TF Line!4",
+            "NG Process TF Line!5",
+            "NG Process TF Line!6",
+            "NG Process TF Line!7",
+            "NG Process TF Line!8",
+            "NG Process TF Line!9"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 18974,
+              "condition": "Total NG",
+              "input": 103895.0,
+              "ok": null,
+              "ng": 3.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!3"
+              ]
+            },
+            {
+              "metricId": 18975,
+              "condition": "D",
+              "input": 6878.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!4"
+              ]
+            },
+            {
+              "metricId": 18976,
+              "condition": "D",
+              "input": 1036.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!5"
+              ]
+            },
+            {
+              "metricId": 18977,
+              "condition": "D",
+              "input": 1578.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!6"
+              ]
+            },
+            {
+              "metricId": 18978,
+              "condition": "D",
+              "input": 1098.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!7"
+              ]
+            },
+            {
+              "metricId": 18979,
+              "condition": "D",
+              "input": 1116.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!8"
+              ]
+            },
+            {
+              "metricId": 18980,
+              "condition": "D",
+              "input": 1066.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!9"
+              ]
+            },
+            {
+              "metricId": 18981,
+              "condition": "D",
+              "input": 2144.0,
+              "ok": null,
+              "ng": 3.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!10"
+              ]
+            },
+            {
+              "metricId": 18982,
+              "condition": "D",
+              "input": 4100.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!11"
+              ]
+            },
+            {
+              "metricId": 18983,
+              "condition": "D",
+              "input": 1163.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!12"
+              ]
+            },
+            {
+              "metricId": 18984,
+              "condition": "D",
+              "input": 1074.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!13"
+              ]
+            },
+            {
+              "metricId": 18985,
+              "condition": "D",
+              "input": 1216.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!14"
+              ]
+            },
+            {
+              "metricId": 18986,
+              "condition": "D",
+              "input": 1007.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!15"
+              ]
+            },
+            {
+              "metricId": 18987,
+              "condition": "D",
+              "input": 2071.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!16"
+              ]
+            },
+            {
+              "metricId": 18988,
+              "condition": "D",
+              "input": 2003.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!17"
+              ]
+            },
+            {
+              "metricId": 18989,
+              "condition": "D",
+              "input": 4719.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!18"
+              ]
+            },
+            {
+              "metricId": 18990,
+              "condition": "D",
+              "input": 2094.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG Process TF Line!19"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "metric-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "1. RESULT CHECKING FUNCTION OF SPK",
+          "comparisonRows": [
+            "NG rate!14",
+            "NG rate!15",
+            "NG rate!16",
+            "NG rate!17",
+            "NG rate!18",
+            "NG rate!19",
+            "NG rate!20",
+            "NG rate!21",
+            "NG rate!22",
+            "NG rate!23",
+            "NG rate!24",
+            "NG rate!25",
+            "NG rate!26",
+            "NG rate!27",
+            "NG rate!28",
+            "NG rate!29"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 18991,
+              "condition": "Test VP+CD of TF line lot 1",
+              "input": 484.0,
+              "ok": 469.0,
+              "ng": 15.0,
+              "ratePercent": 3.099174,
+              "evidenceRows": [
+                "NG rate!14"
+              ]
+            },
+            {
+              "metricId": 18992,
+              "condition": "Test VP+CD of TF line lot 2",
+              "input": 665.0,
+              "ok": 628.0,
+              "ng": 37.0,
+              "ratePercent": 5.56391,
+              "evidenceRows": [
+                "NG rate!15"
+              ]
+            },
+            {
+              "metricId": 18993,
+              "condition": "Test VP+CD of TF line lot 3",
+              "input": 216.0,
+              "ok": 207.0,
+              "ng": 9.0,
+              "ratePercent": 4.166667,
+              "evidenceRows": [
+                "NG rate!16"
+              ]
+            },
+            {
+              "metricId": 18994,
+              "condition": "Total VP TF line",
+              "input": 1365.0,
+              "ok": 1304.0,
+              "ng": 61.0,
+              "ratePercent": 4.468864,
+              "evidenceRows": [
+                "NG rate!17"
+              ]
+            },
+            {
+              "metricId": 18995,
+              "condition": "Test VP+CD of TF line lot 1",
+              "input": 1037.0,
+              "ok": 1018.0,
+              "ng": 19.0,
+              "ratePercent": 1.832208,
+              "evidenceRows": [
+                "NG rate!18"
+              ]
+            },
+            {
+              "metricId": 18996,
+              "condition": "Total VP TF line",
+              "input": 1037.0,
+              "ok": 1018.0,
+              "ng": 19.0,
+              "ratePercent": 1.832208,
+              "evidenceRows": [
+                "NG rate!19"
+              ]
+            },
+            {
+              "metricId": 18997,
+              "condition": "Test VP+CD of TF line lot 1",
+              "input": 477.0,
+              "ok": 460.0,
+              "ng": 17.0,
+              "ratePercent": 3.5639410000000002,
+              "evidenceRows": [
+                "NG rate!20"
+              ]
+            },
+            {
+              "metricId": 18998,
+              "condition": "Test VP+CD of TF line lot 2",
+              "input": 499.0,
+              "ok": 484.0,
+              "ng": 15.0,
+              "ratePercent": 3.006012,
+              "evidenceRows": [
+                "NG rate!21"
+              ]
+            },
+            {
+              "metricId": 18999,
+              "condition": "Test VP+CD of TF line lot 3",
+              "input": 192.0,
+              "ok": 180.0,
+              "ng": 12.0,
+              "ratePercent": 6.25,
+              "evidenceRows": [
+                "NG rate!22"
+              ]
+            },
+            {
+              "metricId": 19000,
+              "condition": "Total VP TF line",
+              "input": 1168.0,
+              "ok": 1124.0,
+              "ng": 44.0,
+              "ratePercent": 3.7671229999999998,
+              "evidenceRows": [
+                "NG rate!23"
+              ]
+            },
+            {
+              "metricId": 19001,
+              "condition": "Test VP+CD of TF line lot 1",
+              "input": 470.0,
+              "ok": 455.0,
+              "ng": 15.0,
+              "ratePercent": 3.1914890000000002,
+              "evidenceRows": [
+                "NG rate!24"
+              ]
+            },
+            {
+              "metricId": 19002,
+              "condition": "Total VP TF line",
+              "input": 470.0,
+              "ok": 455.0,
+              "ng": 15.0,
+              "ratePercent": 3.1914890000000002,
+              "evidenceRows": [
+                "NG rate!25"
+              ]
+            },
+            {
+              "metricId": 19003,
+              "condition": "Test VP+CD of TF line lot 1",
+              "input": 797.0,
+              "ok": 773.0,
+              "ng": 24.0,
+              "ratePercent": 3.011292,
+              "evidenceRows": [
+                "NG rate!26"
+              ]
+            },
+            {
+              "metricId": 19004,
+              "condition": "Test VP+CD of TF line lot 2",
+              "input": 729.0,
+              "ok": 703.0,
+              "ng": 26.0,
+              "ratePercent": 3.566529,
+              "evidenceRows": [
+                "NG rate!27"
+              ]
+            },
+            {
+              "metricId": 19005,
+              "condition": "Test VP+CD of TF line lot 3",
+              "input": 507.0,
+              "ok": 491.0,
+              "ng": 16.0,
+              "ratePercent": 3.155819,
+              "evidenceRows": [
+                "NG rate!28"
+              ]
+            },
+            {
+              "metricId": 19006,
+              "condition": "Total VP TF line",
+              "input": 2033.0,
+              "ok": 1967.0,
+              "ng": 66.0,
+              "ratePercent": 3.2464340000000003,
+              "evidenceRows": [
+                "NG rate!29"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Line | Type | Input | OK | Air leak | NG Sigma | NG Hearing | Total NG | Total NG rate",
+          "comparisonRows": [
+            "NG rate function!3",
+            "NG rate!13"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 50426,
+              "condition": "NG Sigma / SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 7.0,
+              "avg": 0.8166666666666667,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate function!3"
+              ]
+            },
+            {
+              "statId": 50427,
+              "condition": "NG Sigma / THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 20.0,
+              "avg": 3.8,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate function!3"
+              ]
+            },
+            {
+              "statId": 50428,
+              "condition": "NG Sigma / SPL+THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 14.0,
+              "avg": 2.9833333333333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate function!3"
+              ]
+            },
+            {
+              "statId": 50429,
+              "condition": "NG Sigma / SPL+THD+F0",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate function!3"
+              ]
+            },
+            {
+              "statId": 50430,
+              "condition": "NG Hearing / Noise",
+              "spec": "",
+              "min": 1.0,
+              "max": 401.0,
+              "avg": 129.65,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate function!3"
+              ]
+            },
+            {
+              "statId": 50431,
+              "condition": "NG Hearing / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 48.0,
+              "avg": 7.933333333333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate function!3"
+              ]
+            },
+            {
+              "statId": 50567,
+              "condition": "NG Sigma / SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.06666666666666667,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!13"
+              ]
+            },
+            {
+              "statId": 50568,
+              "condition": "NG Sigma / THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 6.0,
+              "avg": 1.0,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!13"
+              ]
+            },
+            {
+              "statId": 50569,
+              "condition": "NG Sigma / SPL+THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 6.0,
+              "avg": 0.5333333333333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!13"
+              ]
+            },
+            {
+              "statId": 50570,
+              "condition": "NG Sigma / SPL+THD+F0",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!13"
+              ]
+            },
+            {
+              "statId": 50571,
+              "condition": "NG Hearing / Noise",
+              "spec": "",
+              "min": 1.0,
+              "max": 226.0,
+              "avg": 34.31666666666667,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!13"
+              ]
+            },
+            {
+              "statId": 50572,
+              "condition": "NG Hearing / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 17.0,
+              "avg": 2.2333333333333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG rate!13"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "NG Process TF Line!1",
+            "NG Process TF Line!10",
+            "NG Process TF Line!11",
+            "NG Process TF Line!12",
+            "NG Process TF Line!13",
+            "NG Process TF Line!14",
+            "NG Process TF Line!15",
+            "NG Process TF Line!16",
+            "NG Process TF Line!17",
+            "NG Process TF Line!18",
+            "NG Process TF Line!19",
+            "NG Process TF Line!20",
+            "NG Process TF Line!21",
+            "NG Process TF Line!22",
+            "NG Process TF Line!23",
+            "NG Process TF Line!24",
+            "NG Process TF Line!25"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 50432,
+              "condition": "Factory",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 42,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!1"
+              ]
+            },
+            {
+              "statId": 50433,
+              "condition": "Line",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 48,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!1"
+              ]
+            },
+            {
+              "statId": 50434,
+              "condition": "Model Sản phẩm",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 48,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!1"
+              ]
+            },
+            {
+              "statId": 50435,
+              "condition": "Sub #1 ( VP )",
+              "spec": "",
+              "min": 0.0,
+              "max": 373134.32835821,
+              "avg": 42364.69897071633,
+              "sampleCount": 49,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!1"
+              ]
+            },
+            {
+              "statId": 50436,
+              "condition": "[SUB1. 1] VP ARRAY (VP LOAD TRAY)",
+              "spec": "",
+              "min": 134.0,
+              "max": 103895.0,
+              "avg": 4421.063829787234,
+              "sampleCount": 47,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!1"
+              ]
+            },
+            {
+              "statId": 50437,
+              "condition": "[SUB1. 2] VP INSIDE LASER CUTTING",
+              "spec": "",
+              "min": 0.0,
+              "max": 103895.0,
+              "avg": 4240.6122448979595,
+              "sampleCount": 49,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!1"
+              ]
+            },
+            {
+              "statId": 50438,
+              "condition": "[SUB1. 3] VP VISION INSPECTION",
+              "spec": "",
+              "min": 0.0,
+              "max": 103895.0,
+              "avg": 4240.6122448979595,
+              "sampleCount": 49,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!1"
+              ]
+            },
+            {
+              "statId": 50439,
+              "condition": "[SUB1. 4] CHECK AOI ED",
+              "spec": "",
+              "min": 0.0,
+              "max": 103893.0,
+              "avg": 4240.530612244898,
+              "sampleCount": 49,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!1"
+              ]
+            },
+            {
+              "statId": 50440,
+              "condition": "[SUB1. 5] DOME ARRAY 2 + ION",
+              "spec": "",
+              "min": 134.0,
+              "max": 103890.0,
+              "avg": 4420.851063829788,
+              "sampleCount": 47,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!1"
+              ]
+            },
+            {
+              "statId": 50441,
+              "condition": "[SUB1. 9] DOME+VP ASSY",
+              "spec": "",
+              "min": 1031.0,
+              "max": 84325.0,
+              "avg": 13865.142857142857,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!1"
+              ]
+            },
+            {
+              "statId": 50442,
+              "condition": "[SUB1. 11] AOI ED +CD",
+              "spec": "",
+              "min": 134.0,
+              "max": 113204.0,
+              "avg": 4921.913043478261,
+              "sampleCount": 46,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!1"
+              ]
+            },
+            {
+              "statId": 50443,
+              "condition": "[SUB1. 12] TRAY - CHANGE JIG",
+              "spec": "",
+              "min": 97.0,
+              "max": 99607.0,
+              "avg": 4238.595744680851,
+              "sampleCount": 47,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!1"
+              ]
+            },
+            {
+              "statId": 50462,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 35,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!10"
+              ]
+            },
+            {
+              "statId": 50463,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 41,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!10"
+              ]
+            },
+            {
+              "statId": 50464,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 41,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!10"
+              ]
+            },
+            {
+              "statId": 50465,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 34,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!11"
+              ]
+            },
+            {
+              "statId": 50466,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 40,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!11"
+              ]
+            },
+            {
+              "statId": 50467,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 40,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!11"
+              ]
+            },
+            {
+              "statId": 50468,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 33,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!12"
+              ]
+            },
+            {
+              "statId": 50469,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 39,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!12"
+              ]
+            },
+            {
+              "statId": 50470,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 39,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!12"
+              ]
+            },
+            {
+              "statId": 50471,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 32,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!13"
+              ]
+            },
+            {
+              "statId": 50472,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 38,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!13"
+              ]
+            },
+            {
+              "statId": 50473,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 38,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!13"
+              ]
+            },
+            {
+              "statId": 50474,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 31,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!14"
+              ]
+            },
+            {
+              "statId": 50475,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 37,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!14"
+              ]
+            },
+            {
+              "statId": 50476,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 37,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!14"
+              ]
+            },
+            {
+              "statId": 50477,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 30,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!15"
+              ]
+            },
+            {
+              "statId": 50478,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 36,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!15"
+              ]
+            },
+            {
+              "statId": 50479,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 36,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!15"
+              ]
+            },
+            {
+              "statId": 50480,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 29,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!16"
+              ]
+            },
+            {
+              "statId": 50481,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 35,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!16"
+              ]
+            },
+            {
+              "statId": 50482,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 35,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!16"
+              ]
+            },
+            {
+              "statId": 50483,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 28,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!17"
+              ]
+            },
+            {
+              "statId": 50484,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 34,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!17"
+              ]
+            },
+            {
+              "statId": 50485,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 34,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!17"
+              ]
+            },
+            {
+              "statId": 50486,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 27,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!18"
+              ]
+            },
+            {
+              "statId": 50487,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 33,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!18"
+              ]
+            },
+            {
+              "statId": 50488,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 33,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!18"
+              ]
+            },
+            {
+              "statId": 50489,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 26,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!19"
+              ]
+            },
+            {
+              "statId": 50490,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 32,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!19"
+              ]
+            },
+            {
+              "statId": 50491,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 32,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!19"
+              ]
+            },
+            {
+              "statId": 50492,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 25,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!20"
+              ]
+            },
+            {
+              "statId": 50493,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 31,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!20"
+              ]
+            },
+            {
+              "statId": 50494,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 31,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!20"
+              ]
+            },
+            {
+              "statId": 50495,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 24,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!21"
+              ]
+            },
+            {
+              "statId": 50496,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 30,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!21"
+              ]
+            },
+            {
+              "statId": 50497,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 30,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!21"
+              ]
+            },
+            {
+              "statId": 50498,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 23,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!22"
+              ]
+            },
+            {
+              "statId": 50499,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 29,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!22"
+              ]
+            },
+            {
+              "statId": 50500,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 29,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!22"
+              ]
+            },
+            {
+              "statId": 50501,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 22,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!23"
+              ]
+            },
+            {
+              "statId": 50502,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 28,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!23"
+              ]
+            },
+            {
+              "statId": 50503,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 28,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!23"
+              ]
+            },
+            {
+              "statId": 50504,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 21,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!24"
+              ]
+            },
+            {
+              "statId": 50505,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 27,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!24"
+              ]
+            },
+            {
+              "statId": 50506,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 27,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!24"
+              ]
+            },
+            {
+              "statId": 50507,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 20,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!25"
+              ]
+            },
+            {
+              "statId": 50508,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 26,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!25"
+              ]
+            },
+            {
+              "statId": 50509,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 26,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!25"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Input | Damage VP | VP burr | Offset VP | Dirty VP | Deform VP | NG rate (ppm) | Input | VP burr | Offset VP | NG rate (ppm) | Input | Cut offset VP | Parcial | Damage VP | Via VP ...",
+          "comparisonRows": [
+            "NG Process TF Line!4",
+            "NG Process TF Line!5",
+            "NG Process TF Line!6",
+            "NG Process TF Line!7",
+            "NG Process TF Line!8",
+            "NG Process TF Line!9"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 50444,
+              "condition": "Factory / E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 41,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!4"
+              ]
+            },
+            {
+              "statId": 50445,
+              "condition": "Line / E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 47,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!4"
+              ]
+            },
+            {
+              "statId": 50446,
+              "condition": "Total NG / BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 47,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!4"
+              ]
+            },
+            {
+              "statId": 50447,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 40,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!5"
+              ]
+            },
+            {
+              "statId": 50448,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 46,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!5"
+              ]
+            },
+            {
+              "statId": 50449,
+              "condition": "Total NG / BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 46,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!5"
+              ]
+            },
+            {
+              "statId": 50450,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 39,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!6"
+              ]
+            },
+            {
+              "statId": 50451,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 45,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!6"
+              ]
+            },
+            {
+              "statId": 50452,
+              "condition": "Total NG / BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 45,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!6"
+              ]
+            },
+            {
+              "statId": 50453,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 38,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!7"
+              ]
+            },
+            {
+              "statId": 50454,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 44,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!7"
+              ]
+            },
+            {
+              "statId": 50455,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 44,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!7"
+              ]
+            },
+            {
+              "statId": 50456,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 37,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!8"
+              ]
+            },
+            {
+              "statId": 50457,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 43,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!8"
+              ]
+            },
+            {
+              "statId": 50458,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 43,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!8"
+              ]
+            },
+            {
+              "statId": 50459,
+              "condition": "E2",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 36,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!9"
+              ]
+            },
+            {
+              "statId": 50460,
+              "condition": "E2-3A",
+              "spec": "",
+              "min": 2.0,
+              "max": 2.0,
+              "avg": 2.0,
+              "sampleCount": 42,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!9"
+              ]
+            },
+            {
+              "statId": 50461,
+              "condition": "BRS-161016S08ZZ",
+              "spec": "",
+              "min": -161016.0,
+              "max": -161016.0,
+              "avg": -161016.0,
+              "sampleCount": 42,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NG Process TF Line!9"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "07.05!10",
+        "07.05!2",
+        "07.05!5",
+        "07.05!7",
+        "NG Process TF Line!1",
+        "NG Process TF Line!10",
+        "NG Process TF Line!11",
+        "NG Process TF Line!12",
+        "NG Process TF Line!13",
+        "NG Process TF Line!14",
+        "NG Process TF Line!15",
+        "NG Process TF Line!16",
+        "NG Process TF Line!17",
+        "NG Process TF Line!18",
+        "NG Process TF Line!19",
+        "NG Process TF Line!20",
+        "NG Process TF Line!21",
+        "NG Process TF Line!22",
+        "NG Process TF Line!23",
+        "NG Process TF Line!24",
+        "NG Process TF Line!25",
+        "NG Process TF Line!3",
+        "NG Process TF Line!4",
+        "NG Process TF Line!5",
+        "NG Process TF Line!6",
+        "NG Process TF Line!7",
+        "NG Process TF Line!8",
+        "NG Process TF Line!9",
+        "NG rate function!10",
+        "NG rate function!11",
+        "NG rate function!12",
+        "NG rate function!13",
+        "NG rate function!14",
+        "NG rate function!15",
+        "NG rate function!16",
+        "NG rate function!17",
+        "NG rate function!18",
+        "NG rate function!19",
+        "NG rate function!3",
+        "NG rate function!4",
+        "NG rate function!5",
+        "NG rate function!6",
+        "NG rate function!7",
+        "NG rate function!8",
+        "NG rate function!9",
+        "NG rate!13",
+        "NG rate!14",
+        "NG rate!15",
+        "NG rate!16",
+        "NG rate!17",
+        "NG rate!18",
+        "NG rate!19",
+        "NG rate!20",
+        "NG rate!21",
+        "NG rate!22",
+        "NG rate!23",
+        "NG rate!24",
+        "NG rate!25",
+        "NG rate!26",
+        "NG rate!27",
+        "NG rate!28",
+        "NG rate!29"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "07.05!10",
+      "07.05!2",
+      "07.05!5",
+      "07.05!7",
+      "NG Process TF Line!1",
+      "NG Process TF Line!10",
+      "NG Process TF Line!11",
+      "NG Process TF Line!12",
+      "NG Process TF Line!13",
+      "NG Process TF Line!14",
+      "NG Process TF Line!15",
+      "NG Process TF Line!16",
+      "NG Process TF Line!17",
+      "NG Process TF Line!18",
+      "NG Process TF Line!19",
+      "NG Process TF Line!20",
+      "NG Process TF Line!21",
+      "NG Process TF Line!22",
+      "NG Process TF Line!23",
+      "NG Process TF Line!24",
+      "NG Process TF Line!25",
+      "NG Process TF Line!3",
+      "NG Process TF Line!4",
+      "NG Process TF Line!5",
+      "NG Process TF Line!6",
+      "NG Process TF Line!7",
+      "NG Process TF Line!8",
+      "NG Process TF Line!9",
+      "NG rate function!10",
+      "NG rate function!11",
+      "NG rate function!12",
+      "NG rate function!13",
+      "NG rate function!14",
+      "NG rate function!15",
+      "NG rate function!16",
+      "NG rate function!17",
+      "NG rate function!18",
+      "NG rate function!19",
+      "NG rate function!3",
+      "NG rate function!4",
+      "NG rate function!5",
+      "NG rate function!6",
+      "NG rate function!7",
+      "NG rate function!8",
+      "NG rate function!9",
+      "NG rate!13",
+      "NG rate!14",
+      "NG rate!15",
+      "NG rate!16",
+      "NG rate!17",
+      "NG rate!18",
+      "NG rate!19",
+      "NG rate!20",
+      "NG rate!21",
+      "NG rate!22",
+      "NG rate!23",
+      "NG rate!24",
+      "NG rate!25",
+      "NG rate!26",
+      "NG rate!27",
+      "NG rate!28",
+      "NG rate!29"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

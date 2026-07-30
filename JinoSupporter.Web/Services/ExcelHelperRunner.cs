@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace JinoSupporter.Web.Services;
 
 /// <summary>Out-of-process driver for Excel conversion and optional folder picking.
-/// Conversion is always delegated to the ExcelDuplicator Python CLI. The legacy
+/// Conversion is always delegated to the Excel DRM Python CLI. The legacy
 /// <c>JinoSupporter.ExcelHelper</c> exe is kept only for server-side folder dialogs.</summary>
 public sealed class ExcelHelperRunner
 {
@@ -23,15 +23,14 @@ public sealed class ExcelHelperRunner
         HelperExePath = Path.Combine(AppContext.BaseDirectory, "JinoSupporter.ExcelHelper.exe");
 
         ExcelDuplicatorRoot = ResolveExcelDuplicatorRoot(env.ContentRootPath);
-        PythonExePath = Environment.GetEnvironmentVariable("EXCEL_DRM_PYTHON")
-            ?? Path.Combine(ExcelDuplicatorRoot, ".venv", "Scripts", "python.exe");
         PythonScriptPath = Environment.GetEnvironmentVariable("EXCEL_DRM_CLI")
             ?? Path.Combine(ExcelDuplicatorRoot, "excel_drm_cli.py");
+        PythonExePath = ResolvePythonExePath(ExcelDuplicatorRoot);
     }
 
     public bool HelperExists => File.Exists(HelperExePath);
     public bool FolderPickerExists => HelperExists;
-    public bool ConverterExists => File.Exists(PythonExePath) && File.Exists(PythonScriptPath);
+    public bool ConverterExists => PythonCommandExists(PythonExePath) && File.Exists(PythonScriptPath);
 
     public string ConverterStatus =>
         ConverterExists
@@ -193,6 +192,134 @@ public sealed class ExcelHelperRunner
         yield return NewEvent("done", new { ok, fail });
     }
 
+    /// <summary>Convert an explicit list of Excel files and write outputs
+    /// directly into <paramref name="dest"/> without creating a drm_clean child
+    /// folder. This is used by the web drag/drop converter page.</summary>
+    public async IAsyncEnumerable<HelperEvent> CleanFilesToDestinationRootAsync(
+        IReadOnlyList<string> sourceFiles,
+        string dest,
+        bool verbose = false,
+        [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        if (!ConverterExists)
+        {
+            yield return NewEvent("fatal", new { message = ConverterStatus });
+            yield break;
+        }
+
+        List<string> files = [];
+        HelperEvent? setupFault = null;
+        try
+        {
+            files = sourceFiles
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Select(Path.GetFullPath)
+                .Where(path => File.Exists(path) && IsExcelFile(path))
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            setupFault = NewEvent("fatal", new { message = ex.Message });
+        }
+
+        if (setupFault is not null)
+        {
+            yield return setupFault;
+            yield break;
+        }
+
+        yield return NewEvent("scan", new
+        {
+            source = "selected files",
+            count = files.Count,
+            converter = PythonScriptPath,
+        });
+
+        try
+        {
+            Directory.CreateDirectory(dest);
+        }
+        catch (Exception ex)
+        {
+            setupFault = NewEvent("fatal", new { message = $"Output folder create failed: {ex.Message}" });
+        }
+
+        if (setupFault is not null)
+        {
+            yield return setupFault;
+            yield break;
+        }
+
+        var cleaner = new ExcelDrm.ExcelDrmCleaner(PythonExePath, PythonScriptPath)
+        {
+            DefaultMode = ExcelDrm.ConvertMode.Clipboard,
+        };
+
+        int ok = 0;
+        int fail = 0;
+        var usedOutputs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int i = 0; i < files.Count; i++)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            string input = files[i];
+            string output = BuildUniqueOutputPath(dest, input, usedOutputs);
+
+            yield return NewEvent("progress", new
+            {
+                current = i + 1,
+                total = files.Count,
+                file = Path.GetFileName(input),
+                source = input,
+                dest = output,
+            });
+
+            ExcelDrm.ConvertResult result;
+            try
+            {
+                result = await cleaner.ConvertAsync(input, output, ExcelDrm.ConvertMode.Clipboard, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                result = new ExcelDrm.ConvertResult
+                {
+                    Success = false,
+                    Input = input,
+                    Output = output,
+                    Error = ex.Message,
+                    ExitCode = -1,
+                };
+            }
+
+            foreach (string line in SplitLogLines(result.StdErr))
+            {
+                if (verbose || !result.Success)
+                    yield return NewEvent("log", new { message = line });
+            }
+
+            if (result.Success) ok++;
+            else fail++;
+
+            yield return NewEvent("result", new
+            {
+                success = result.Success,
+                source = result.Input,
+                dest = result.Output ?? output,
+                error = result.Error,
+                elapsed = result.ElapsedSeconds,
+                exitCode = result.ExitCode,
+                strategy = "python:excel_drm_cli.py:clipboard",
+            });
+        }
+
+        yield return NewEvent("done", new { ok, fail });
+    }
+
     /// <summary>Convenience: clean a single uploaded file. Writes to a temp
     /// folder, runs the Python converter, and returns the path of the cleaned output
     /// (<c>{tempDir}/drm_clean/{name}_clean.xlsx</c>) — or <c>null</c> if the
@@ -249,11 +376,38 @@ public sealed class ExcelHelperRunner
         if (!string.IsNullOrWhiteSpace(configured) && Directory.Exists(configured))
             return configured;
 
+        string bundled = Path.GetFullPath(Path.Combine(contentRootPath, "..", "External", "ExcelDrmCli"));
+        if (File.Exists(Path.Combine(bundled, "excel_drm_cli.py")))
+            return bundled;
+
         string sibling = Path.GetFullPath(Path.Combine(contentRootPath, "..", "..", "ExcelDuplicator"));
-        if (Directory.Exists(sibling))
+        if (File.Exists(Path.Combine(sibling, "excel_drm_cli.py")))
             return sibling;
 
-        return @"D:\000. MyWorks\005. Program\Repository\ExcelDuplicator";
+        return bundled;
+    }
+
+    private static string ResolvePythonExePath(string converterRoot)
+    {
+        string? configured = Environment.GetEnvironmentVariable("EXCEL_DRM_PYTHON");
+        if (!string.IsNullOrWhiteSpace(configured))
+            return configured;
+
+        string venvPython = Path.Combine(converterRoot, ".venv", "Scripts", "python.exe");
+        if (File.Exists(venvPython))
+            return venvPython;
+
+        return "python";
+    }
+
+    private static bool PythonCommandExists(string pythonExe)
+    {
+        if (File.Exists(pythonExe))
+            return true;
+
+        return !string.IsNullOrWhiteSpace(pythonExe)
+               && !pythonExe.Contains(Path.DirectorySeparatorChar)
+               && !pythonExe.Contains(Path.AltDirectorySeparatorChar);
     }
 
     private static List<string> ResolveExcelFiles(string source)
@@ -290,6 +444,25 @@ public sealed class ExcelHelperRunner
             stem = "workbook";
 
         return Path.Combine(cleanDir, $"{stem}_clean.xlsx");
+    }
+
+    private static string BuildUniqueOutputPath(string outputDir, string input, ISet<string> usedOutputs)
+    {
+        string output = BuildOutputPath(outputDir, input);
+        if (usedOutputs.Add(output)) return output;
+
+        string stem = Path.GetFileNameWithoutExtension(input);
+        if (string.IsNullOrWhiteSpace(stem))
+            stem = "workbook";
+
+        int index = 2;
+        do
+        {
+            output = Path.Combine(outputDir, $"{stem}_clean_{index++}.xlsx");
+        }
+        while (!usedOutputs.Add(output));
+
+        return output;
     }
 
     private static IEnumerable<string> SplitLogLines(string? text)

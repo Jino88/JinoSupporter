@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 257,
+  "sourceFile": "12.MSU-20S15-07 DT Result check Height dimension S-MG - Date 2025.03.28_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\257.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:59Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 257,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The file contains citeable S-MG height distribution data but the draft has no review case and the comparison intent is ambiguous.",
+    "issues": [
+      "No review case was generated.",
+      "No comparison pair or metric stats were extracted.",
+      "S-MG Short vs Long may be comparable types, but this is not established.",
+      "Outcome rows appear to mix counts and ratios without labeling."
+    ],
+    "requiredUserQuestions": [
+      "Should S-MG Short vs Long be treated as the primary comparison?"
+    ],
+    "correctionPlan": [
+      "Confirm the intended changed factor.",
+      "Create one review case if Short vs Long is comparable.",
+      "Preserve date, material, supplier, spec, type, and quantity context.",
+      "Capture height-bin counts and ratios as the outcome metrics.",
+      "Cite rows 4 and 6-10 for all claims."
+    ],
+    "evidencePolicy": "Rows 4 and 6-10 are sufficient for raw height data but not for an uncued final comparison."
+  },
+  "usage": {
+    "input_tokens": 1397,
+    "output_tokens": 565,
+    "total_tokens": 1962
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 557,
+  "sourceFile": "33. TIU L5S3-01 R Report test separate machine AWF improve NG function Bako.  19.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\557.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:33Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 557,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable comparative function data but includes a spurious measurement outcome and incomplete grouping for repeated AWF #1 testing.",
+    "issues": [
+      "Measurement outcome is header-derived and not a real measurement domain.",
+      "Repeated Machine AWF #1 rows need separate state/note grouping.",
+      "Date/merged-row context is not preserved for all data rows.",
+      "Evidence includes Test!14, but visible header context is Test!13.",
+      "Changed factor wording should focus on AWF machine function check versus Normal."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove the measurement-1 outcome and its stats.",
+      "Keep one function-defect outcome with Input, OK, NG BAKO, Total NG, NG rate.",
+      "Split Machine AWF #1 into initial and after-repair check subresults using notes.",
+      "Add date 2025-12-13 as subgroup context where applicable.",
+      "Replace or justify Test!14 with the actual header row citation Test!13."
+    ],
+    "evidencePolicy": "Data row citations are mostly sufficient, but the header citation must be corrected and non-real measurement evidence removed."
+  },
+  "usage": {
+    "input_tokens": 3429,
+    "output_tokens": 634,
+    "total_tokens": 4063
+  }
+}

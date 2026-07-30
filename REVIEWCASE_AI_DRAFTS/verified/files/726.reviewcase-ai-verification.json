@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 726,
+  "sourceFile": "52.1Tiu L5S3-01 L Mark 3db 2026.01.07  (1)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\726.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 726,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft detects a comparable STD vs Mark 3db acoustic test but misstates the changed factor and contains invalid outcome grouping.",
+    "issues": [
+      "Changed factor is taken from filename instead of STD vs Mark 3db rows.",
+      "Baseline and changed conditions are incorrectly marked not explicit.",
+      "Outcomes mix specs, raw samples, zeros, and formula errors as metrics.",
+      "Many subResults use numeric values or #DIV/0 as conditions.",
+      "Review title and change domain are not evidence-based."
+    ],
+    "requiredUserQuestions": [
+      "What physical change does Mark 3db represent, if it must be named beyond the label?"
+    ],
+    "correctionPlan": [
+      "Set primary comparison to STD baseline versus Mark 3db test.",
+      "Use GRAPH rows 2-9 and RAW DATA rows 2-6 as core citations.",
+      "Group outcomes by SPL bands, Fo, and THD metrics only.",
+      "Remove zero-filled, #DIV/0, and misparsed raw-data statistics.",
+      "Compare STD and Mark 3db averages with spec limits separately."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient because many cited rows do not support the drafted grouping or stats."
+  },
+  "usage": {
+    "input_tokens": 8860,
+    "output_tokens": 737,
+    "total_tokens": 9597
+  }
+}

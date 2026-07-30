@@ -1,0 +1,179 @@
+{
+  "sourceFileId": 701,
+  "sourceFile": "5. MSU-201507 Report Check Gauss SPK 13.3.2025_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\5. MSU-201507 Report Check Gauss SPK 13.3.2025_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "4.7",
+    "sheetRowCount": 22,
+    "sheetCellCount": 142,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 1
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "4.7!2",
+      "sheetName": "4.7",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | MSU-L20S15-07 - REPORT TEST CHECK GAUSS SPK | | | | | | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "4.7!3",
+      "sheetName": "4.7",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | | Date | 2025-03-13 00:00:00"
+    },
+    {
+      "rowId": "4.7!4",
+      "sheetName": "4.7",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | | Marker | Le"
+    },
+    {
+      "rowId": "4.7!5",
+      "sheetName": "4.7",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "4.7!6",
+      "sheetName": "4.7",
+      "rowNumber": 6,
+      "rowText": "| + Check gauss sample"
+    },
+    {
+      "rowId": "4.7!8",
+      "sheetName": "4.7",
+      "rowNumber": 8,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "4.7!9",
+      "sheetName": "4.7",
+      "rowNumber": 9,
+      "rowText": "| -Check gauss sample SPK"
+    },
+    {
+      "rowId": "4.7!10",
+      "sheetName": "4.7",
+      "rowNumber": 10,
+      "rowText": "| | + Check gauss"
+    },
+    {
+      "rowId": "4.7!12",
+      "sheetName": "4.7",
+      "rowNumber": 12,
+      "rowText": "| III.Result"
+    },
+    {
+      "rowId": "4.7!14",
+      "sheetName": "4.7",
+      "rowNumber": 14,
+      "rowText": "| | 1. RESULT CHECK VALUE GAUSS SAMPLE"
+    },
+    {
+      "rowId": "4.7!15",
+      "sheetName": "4.7",
+      "rowNumber": 15,
+      "rowText": "| | No | Date | Type JIG test | | | Spec | Q'ty check | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | Max | Min | AVG"
+    },
+    {
+      "rowId": "4.7!16",
+      "sheetName": "4.7",
+      "rowNumber": 16,
+      "rowText": "| | 1 | 2025-03-13 00:00:00 | Sample SPK | | | 390~590G (S) | 100 | 444 | 442 | 453 | 436 | 435 | 436 | 419 | 428 | 415 | 422 | 453 | 402 | 422.84"
+    },
+    {
+      "rowId": "4.7!28",
+      "sheetName": "4.7",
+      "rowNumber": 28,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-701-rc-1",
+      "reviewTitle": "| MSU-L20S15-07 - REPORT TEST CHECK GAUSS SPK | | | | | | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | + Check gauss sample / | II. Content. / | -Check gauss sample SPK / | | + Check gauss",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "dimension/spec"
+          ],
+          "changedFactor": "5. MSU-201507 Report Check Gauss SPK 13.3.2025",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "4.7!15",
+            "4.7!16",
+            "4.7!2",
+            "4.7!5",
+            "4.7!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "1. RESULT CHECK VALUE GAUSS SAMPLE",
+          "comparisonRows": [
+            "4.7!16"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 60067,
+              "condition": "Sample SPK | 390~590G (S)",
+              "spec": "",
+              "min": 402.0,
+              "max": 453.0,
+              "avg": 422.84,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "4.7!16"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "4.7!15",
+        "4.7!16",
+        "4.7!2",
+        "4.7!5",
+        "4.7!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "4.7!15",
+      "4.7!16",
+      "4.7!2",
+      "4.7!5",
+      "4.7!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

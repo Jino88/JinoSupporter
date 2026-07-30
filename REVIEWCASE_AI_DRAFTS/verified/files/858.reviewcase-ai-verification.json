@@ -1,0 +1,34 @@
+{
+  "sourceFileId": 858,
+  "sourceFile": "70. BRS-161014 Report TEST VP Hardness 56A 17.11.2023 ok_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\858.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:13Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 858,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Changed-factor grouping is supported, but outcome judgement conflicts with the report decision.",
+    "issues": [
+      "Function outcome is marked improved though report decision says same as normal.",
+      "Decision row is not cited in the case evidence.",
+      "Function table headers are not cited, making metric interpretation less clear."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add row 26 as decision evidence.",
+      "Change function judgement to same/equivalent or note only a slight numeric reduction.",
+      "Cite available function header rows if present in the workbook extraction.",
+      "Keep both outcome domains under the single 55A vs 56A hardness comparison."
+    ],
+    "evidencePolicy": "Condition and result rows are sufficient, but decision/header citations should be added."
+  },
+  "usage": {
+    "input_tokens": 3045,
+    "output_tokens": 585,
+    "total_tokens": 3630
+  }
+}

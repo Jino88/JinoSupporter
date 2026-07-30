@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 848,
+  "sourceFile": "7. BRS-161014  Report test machine ass'y CMG+CPT_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\848.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 848,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The workbook is citeable, but the draft conflates iterative holder/guide-jig conditions and misgroups several outcome rows.",
+    "issues": [
+      "Changed factor mixes holder versions, process labels, and outcome states as one condition.",
+      "Baseline/normal condition is not evidenced, so comparison framing is unsupported.",
+      "Assy trouble and CPT offset rows use different headers and need separate metric parsing.",
+      "Some metric values, especially 12.12 offset data, appear misparsed.",
+      "Evidence rows 12.5!5 and 12.5!8 are cited but not shown in provided context."
+    ],
+    "requiredUserQuestions": [
+      "Should 12.02, 12.05, and 12.12 be treated as iterative tests of the same holder improvement?",
+      "Is there an external normal/baseline condition, or only improved-holder test results?"
+    ],
+    "correctionPlan": [
+      "Define the primary changed factor as holder/guide-jig improvement only if supported by cited rows.",
+      "Remove supplier/material domains unless explicit evidence exists.",
+      "Separate Assy Process trouble results from CMG+CPT offset results.",
+      "Reparse each metric against its local header and preserve date/version/process keys.",
+      "Add or expose cited 12.5 evidence rows before final use."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficiently contextualized for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4139,
+    "output_tokens": 704,
+    "total_tokens": 4843
+  }
+}

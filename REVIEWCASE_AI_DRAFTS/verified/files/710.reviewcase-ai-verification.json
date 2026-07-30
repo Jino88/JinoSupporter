@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 710,
+  "sourceFile": "50.1.MSU-L20L15-07 Report test material Center Dome from vender Ralon NG Dyne pen date 18.11.2025 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\710.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 710,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the likely vendor/material comparison but has major outcome parsing and evidence completeness errors.",
+    "issues": [
+      "Tension outcome is misparsed with function-count values instead of kgf samples.",
+      "Changed factor wording mixes totals and test rounds as primary conditions.",
+      "Key cited rows for function results are absent from provided context text.",
+      "Separate-process and dyne-pen outcomes are not fully represented.",
+      "Change domain includes dimension/spec without supporting changed-spec evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary change to CD RALON center-dome material/vendor vs Normal GES TRADING.",
+      "Treat 1st, 2nd, and total rows as subgroup or rollup context, not changed factors.",
+      "Rebuild tension outcome from rows 25 and 26 with min, max, average kgf values.",
+      "Add dyne-pen and VP+CD separate OK/NG outcomes from rows 16-21.",
+      "Validate function rows 29-40 and cite all row texts used, including totals."
+    ],
+    "evidencePolicy": "Row citations exist but are not semantically sufficient until missing cited row text and corrected metric mappings are verified."
+  },
+  "usage": {
+    "input_tokens": 5856,
+    "output_tokens": 698,
+    "total_tokens": 6554
+  }
+}

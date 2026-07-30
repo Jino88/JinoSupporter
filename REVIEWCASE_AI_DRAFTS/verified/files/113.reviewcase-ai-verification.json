@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 113,
+  "sourceFile": "042.MSU-20S15-07  Report checking and test BP+SM and CM+CP magnetiz JIG improve NG Magnet broken date .2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\113.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 113,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is citeable but grouping and several extracted outcomes are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor is overbroad and misclassified as material/spec instead of magnetize jig/process.",
+      "Normal vs NEW JIG comparisons ignore date grouping; 9/15 uses the wrong Normal row and later dates lack same-date Normal control.",
+      "CM+CP, BP+SM, LONG SM, SHORT SM, and aggregated NEW JIG are mixed without subgroup keys.",
+      "Measurement-2 and measurement-3 are parser artifacts with invalid stats and header-only citations.",
+      "Gauss specs are present in source rows but not captured in subResults."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Redefine changed factor as magnetize jig condition: Normal vs new magnetize jig, with CM+CP and BP+SM as subgroups where applicable.",
+      "Preserve date as a grouping key; only compare rows with a valid same-date or clearly stated baseline.",
+      "Separate defect rate, magnet broken check, gauss, and function/NG outcomes under the same jig validation context.",
+      "Remove parser-artifact measurement outcomes based only on SMG!41 or SMG!47.",
+      "Populate gauss spec values from each row and cite the relevant data rows plus headers."
+    ],
+    "evidencePolicy": "Row citations exist, but several are insufficient or misused for the claimed comparisons."
+  },
+  "usage": {
+    "input_tokens": 8189,
+    "output_tokens": 832,
+    "total_tokens": 9021
+  }
+}

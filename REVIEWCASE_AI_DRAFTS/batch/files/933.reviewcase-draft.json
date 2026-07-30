@@ -1,0 +1,265 @@
+{
+  "sourceFileId": 933,
+  "sourceFile": "81.1 BRS-201506 Report check dimension of sample Ng hearing 26.8.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\81.1 BRS-201506 Report check dimension of sample Ng hearing 26.8.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "1; Sheet1",
+    "sheetRowCount": 45,
+    "sheetCellCount": 448,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 6
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "1!2",
+      "sheetName": "1",
+      "rowNumber": 2,
+      "rowText": "| TITLE | CHECK SAMPLE NG HEARING AND COMPARE SAMPLE OK | | | | | | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "1!3",
+      "sheetName": "1",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | Date | 2024-08-26 00:00:00"
+    },
+    {
+      "rowId": "1!4",
+      "sheetName": "1",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | | Maker | Huong"
+    },
+    {
+      "rowId": "1!5",
+      "sheetName": "1",
+      "rowNumber": 5,
+      "rowText": "| 1. Problem"
+    },
+    {
+      "rowId": "1!6",
+      "sheetName": "1",
+      "rowNumber": 6,
+      "rowText": "| - NG hearing"
+    },
+    {
+      "rowId": "1!7",
+      "sheetName": "1",
+      "rowNumber": 7,
+      "rowText": "| 2. Result NG and check"
+    },
+    {
+      "rowId": "1!8",
+      "sheetName": "1",
+      "rowNumber": 8,
+      "rowText": "| 2.1 Check coil offset :"
+    },
+    {
+      "rowId": "1!9",
+      "sheetName": "1",
+      "rowNumber": 9,
+      "rowText": "| | RESULT CHECK DIMENSION COIL OFFSET VP OF SAMPLE NG HARING"
+    },
+    {
+      "rowId": "1!10",
+      "sheetName": "1",
+      "rowNumber": 10,
+      "rowText": "| | Date | Line | Type check | Sample NG noise | | | | Sample NG touch | | | | OK"
+    },
+    {
+      "rowId": "1!11",
+      "sheetName": "1",
+      "rowNumber": 11,
+      "rowText": "| | | | | 1 | 2 | 3 | 4 | 1 | 2 | 3 | 4 | 1 | 2 | 3 | 4"
+    },
+    {
+      "rowId": "1!12",
+      "sheetName": "1",
+      "rowNumber": 12,
+      "rowText": "| | 2024-08-26 00:00:00 | E2-4A | 1 | 1.5303 | 1.6324 | 1.6111 | 1.4743 | 1.5408 | 1.527 | 1.6043 | 1.6364 | 1.5821 | 1.6245 | 1.6152 | 1.5744"
+    },
+    {
+      "rowId": "1!13",
+      "sheetName": "1",
+      "rowNumber": 13,
+      "rowText": "| | | | 2 | 1.5584 | 1.6982 | 1.6251 | 1.5372 | 1.5076 | 1.5892 | 1.6161 | 1.6528 | 1.5216 | 1.6384 | 1.61256 | 1.5466"
+    },
+    {
+      "rowId": "1!38",
+      "sheetName": "1",
+      "rowNumber": 38,
+      "rowText": "| | RESULT CHECK DOME VP OFFSET OF SAMPLE NG HEARING"
+    },
+    {
+      "rowId": "1!39",
+      "sheetName": "1",
+      "rowNumber": 39,
+      "rowText": "| | Date | Line | Type check | Sample NG noise | | | | Sample NG touch | | | | OK"
+    },
+    {
+      "rowId": "1!50",
+      "sheetName": "1",
+      "rowNumber": 50,
+      "rowText": "| 3. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-933-rc-1",
+      "reviewTitle": "CHECK SAMPLE NG HEARING AND COMPARE SAMPLE OK | | | | | | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "dimension/spec"
+          ],
+          "changedFactor": "81.1 BRS-201506 Report check dimension of sample Ng hearing 26.8.2024",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "1!10",
+            "1!2",
+            "1!39"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT CHECK DIMENSION COIL OFFSET VP OF SAMPLE NG HARING",
+          "comparisonRows": [
+            "1!10"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65678,
+              "condition": "RESULT CHECK DIMENSION COIL OFFSET VP OF SAMPLE NG HARING / Type check",
+              "spec": "",
+              "min": 1.0,
+              "max": 16.0,
+              "avg": 8.083333333333334,
+              "sampleCount": 24,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!10"
+              ]
+            },
+            {
+              "statId": 65679,
+              "condition": "RESULT CHECK DIMENSION COIL OFFSET VP OF SAMPLE NG HARING / Sample NG noise",
+              "spec": "",
+              "min": -0.1691,
+              "max": 2.0156,
+              "avg": 1.1003519999999998,
+              "sampleCount": 25,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!10"
+              ]
+            },
+            {
+              "statId": 65680,
+              "condition": "RESULT CHECK DIMENSION COIL OFFSET VP OF SAMPLE NG HARING / Sample NG touch",
+              "spec": "",
+              "min": -0.0836,
+              "max": 2.0874,
+              "avg": 1.0532560000000002,
+              "sampleCount": 25,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!10"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT CHECK DOME VP OFFSET OF SAMPLE NG HEARING",
+          "comparisonRows": [
+            "1!39"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65681,
+              "condition": "RESULT CHECK DOME VP OFFSET OF SAMPLE NG HEARING / Type check",
+              "spec": "",
+              "min": 1.0,
+              "max": 4.0,
+              "avg": 2.3333333333333335,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!39"
+              ]
+            },
+            {
+              "statId": 65682,
+              "condition": "RESULT CHECK DOME VP OFFSET OF SAMPLE NG HEARING / Sample NG noise",
+              "spec": "",
+              "min": -0.1063,
+              "max": 4.1353,
+              "avg": 2.2994,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!39"
+              ]
+            },
+            {
+              "statId": 65683,
+              "condition": "RESULT CHECK DOME VP OFFSET OF SAMPLE NG HEARING / Sample NG touch",
+              "spec": "",
+              "min": -0.6082,
+              "max": 4.1154,
+              "avg": 2.2896857142857145,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "1!39"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "1!10",
+        "1!2",
+        "1!39"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "1!10",
+      "1!2",
+      "1!39"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

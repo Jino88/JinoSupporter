@@ -1,0 +1,456 @@
+{
+  "sourceFileId": 975,
+  "sourceFile": "91. BRS-161014 Report  Upper attach tape magnetic jig 30.12.2023_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\91. BRS-161014 Report  Upper attach tape magnetic jig 30.12.2023_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report (2)",
+    "sheetRowCount": 29,
+    "sheetCellCount": 178,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 16
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report (2)!2",
+      "sheetName": "Report (2)",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST MAGNETIC UPPER ATTACH TAPE JIG SUB 2 - 161014 | | | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report (2)!3",
+      "sheetName": "Report (2)",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | Date | 2023-12-29 00:00:00"
+    },
+    {
+      "rowId": "Report (2)!4",
+      "sheetName": "Report (2)",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | Marker | ME"
+    },
+    {
+      "rowId": "Report (2)!5",
+      "sheetName": "Report (2)",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report (2)!6",
+      "sheetName": "Report (2)",
+      "rowNumber": 6,
+      "rowText": "| - To improve NG SMG separate"
+    },
+    {
+      "rowId": "Report (2)!7",
+      "sheetName": "Report (2)",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report (2)!8",
+      "sheetName": "Report (2)",
+      "rowNumber": 8,
+      "rowText": "| - attach more tape to upper jig and test"
+    },
+    {
+      "rowId": "Report (2)!9",
+      "sheetName": "Report (2)",
+      "rowNumber": 9,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Report (2)!18",
+      "sheetName": "Report (2)",
+      "rowNumber": 18,
+      "rowText": "| | | Result check NG SMG separate"
+    },
+    {
+      "rowId": "Report (2)!19",
+      "sheetName": "Report (2)",
+      "rowNumber": 19,
+      "rowText": "| | | Date | Type | | Input | OK | SM separate | NG rate"
+    },
+    {
+      "rowId": "Report (2)!20",
+      "sheetName": "Report (2)",
+      "rowNumber": 20,
+      "rowText": "| | | 2023-12-29 00:00:00 | Befor improve | | 2450 | 2426 | 24 | 0.00979592"
+    },
+    {
+      "rowId": "Report (2)!21",
+      "sheetName": "Report (2)",
+      "rowNumber": 21,
+      "rowText": "| | | | After improve | | 2150 | 2148 | 2 | 0.00093023"
+    },
+    {
+      "rowId": "Report (2)!23",
+      "sheetName": "Report (2)",
+      "rowNumber": 23,
+      "rowText": "| | | Result check Gauss ( Gauss spec :S: Min 1000G (Long S-MG) / Min 800G (Short S-MG) )"
+    },
+    {
+      "rowId": "Report (2)!25",
+      "sheetName": "Report (2)",
+      "rowNumber": 25,
+      "rowText": "| | | Before attach tape | | | 1 | 887 | 889 | 1075 | 1104 | | After attach tape | | | 1 | 856 | 813 | 1062 | 1075"
+    },
+    {
+      "rowId": "Report (2)!39",
+      "sheetName": "Report (2)",
+      "rowNumber": 39,
+      "rowText": "| 4. Decision"
+    },
+    {
+      "rowId": "Report (2)!40",
+      "sheetName": "Report (2)",
+      "rowNumber": 40,
+      "rowText": "| After attach tape NG reduce. Gauss in spec => can use method attach tape to upper jig magnetic SMG"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-975-rc-1",
+      "reviewTitle": "REPORT TEST MAGNETIC UPPER ATTACH TAPE JIG SUB 2 - 161014 | | | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To improve NG SMG separate / | II. Content. / | - attach more tape to upper jig and test / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material",
+            "jig",
+            "dimension/spec"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Befor improve, After improve",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Befor improve, After improve",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Report (2)!2",
+            "Report (2)!20",
+            "Report (2)!21",
+            "Report (2)!24",
+            "Report (2)!37",
+            "Report (2)!5",
+            "Report (2)!7",
+            "Report (2)!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "Result check NG SMG separate",
+          "comparisonRows": [
+            "Report (2)!20",
+            "Report (2)!21"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 25308,
+              "condition": "Befor improve",
+              "input": 2450.0,
+              "ok": 2426.0,
+              "ng": 24.0,
+              "ratePercent": 0.979592,
+              "evidenceRows": [
+                "Report (2)!20"
+              ]
+            },
+            {
+              "metricId": 25309,
+              "condition": "After improve",
+              "input": 2150.0,
+              "ok": 2148.0,
+              "ng": 2.0,
+              "ratePercent": 0.093023,
+              "evidenceRows": [
+                "Report (2)!21"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Report (2)!37"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 66193,
+              "condition": "Column 8",
+              "spec": "",
+              "min": 831.0,
+              "max": 899.0,
+              "avg": 871.3,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!37"
+              ]
+            },
+            {
+              "statId": 66194,
+              "condition": "Column 9",
+              "spec": "",
+              "min": 822.0,
+              "max": 891.0,
+              "avg": 860.6,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!37"
+              ]
+            },
+            {
+              "statId": 66195,
+              "condition": "Column 10",
+              "spec": "",
+              "min": 1036.0,
+              "max": 1101.0,
+              "avg": 1066.0,
+              "sampleCount": 12,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!37"
+              ]
+            },
+            {
+              "statId": 66196,
+              "condition": "Column 11",
+              "spec": "",
+              "min": 1047.0,
+              "max": 1106.0,
+              "avg": 1069.3,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!37"
+              ]
+            },
+            {
+              "statId": 66197,
+              "condition": "Column 17",
+              "spec": "",
+              "min": 824.0,
+              "max": 867.0,
+              "avg": 840.5,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!37"
+              ]
+            },
+            {
+              "statId": 66198,
+              "condition": "Column 18",
+              "spec": "",
+              "min": 813.0,
+              "max": 874.0,
+              "avg": 847.5,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!37"
+              ]
+            },
+            {
+              "statId": 66199,
+              "condition": "Column 19",
+              "spec": "",
+              "min": 1016.0,
+              "max": 1099.0,
+              "avg": 1073.9,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!37"
+              ]
+            },
+            {
+              "statId": 66200,
+              "condition": "Column 20",
+              "spec": "",
+              "min": 1017.0,
+              "max": 1092.0,
+              "avg": 1070.9,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!37"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Result check Gauss ( Gauss spec :S: Min 1000G (Long S-MG) / Min 800G (Short S-MG) )",
+          "comparisonRows": [
+            "Report (2)!24"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 66201,
+              "condition": "Result check Gauss ( Gauss spec :S: Min 1000G (Long S-MG) / Min 800G (Short S-MG... / Cạnh ngắn",
+              "spec": "",
+              "min": 831.0,
+              "max": 899.0,
+              "avg": 871.3,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!24"
+              ]
+            },
+            {
+              "statId": 66202,
+              "condition": "Result check Gauss ( Gauss spec :S: Min 1000G (Long S-MG) / Min 800G (Short S-MG... / Cạnh ngắn",
+              "spec": "",
+              "min": 822.0,
+              "max": 891.0,
+              "avg": 860.6,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!24"
+              ]
+            },
+            {
+              "statId": 66203,
+              "condition": "Result check Gauss ( Gauss spec :S: Min 1000G (Long S-MG) / Min 800G (Short S-MG... / Cạnh dài",
+              "spec": "",
+              "min": 1036.0,
+              "max": 1101.0,
+              "avg": 1066.0,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!24"
+              ]
+            },
+            {
+              "statId": 66204,
+              "condition": "Result check Gauss ( Gauss spec :S: Min 1000G (Long S-MG) / Min 800G (Short S-MG... / Cạnh dài",
+              "spec": "",
+              "min": 1047.0,
+              "max": 1106.0,
+              "avg": 1069.3,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!24"
+              ]
+            },
+            {
+              "statId": 66205,
+              "condition": "Result check Gauss ( Gauss spec :S: Min 1000G (Long S-MG) / Min 800G (Short S-MG... / Cạnh ngắn",
+              "spec": "",
+              "min": 824.0,
+              "max": 867.0,
+              "avg": 840.5,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!24"
+              ]
+            },
+            {
+              "statId": 66206,
+              "condition": "Result check Gauss ( Gauss spec :S: Min 1000G (Long S-MG) / Min 800G (Short S-MG... / Cạnh ngắn",
+              "spec": "",
+              "min": 813.0,
+              "max": 874.0,
+              "avg": 847.5,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!24"
+              ]
+            },
+            {
+              "statId": 66207,
+              "condition": "Result check Gauss ( Gauss spec :S: Min 1000G (Long S-MG) / Min 800G (Short S-MG... / Cạnh dài",
+              "spec": "",
+              "min": 1016.0,
+              "max": 1099.0,
+              "avg": 1073.9,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!24"
+              ]
+            },
+            {
+              "statId": 66208,
+              "condition": "Result check Gauss ( Gauss spec :S: Min 1000G (Long S-MG) / Min 800G (Short S-MG... / Cạnh dài",
+              "spec": "",
+              "min": 1017.0,
+              "max": 1092.0,
+              "avg": 1070.9,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report (2)!24"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report (2)!2",
+        "Report (2)!20",
+        "Report (2)!21",
+        "Report (2)!24",
+        "Report (2)!37",
+        "Report (2)!5",
+        "Report (2)!7",
+        "Report (2)!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report (2)!2",
+      "Report (2)!20",
+      "Report (2)!21",
+      "Report (2)!24",
+      "Report (2)!37",
+      "Report (2)!5",
+      "Report (2)!7",
+      "Report (2)!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

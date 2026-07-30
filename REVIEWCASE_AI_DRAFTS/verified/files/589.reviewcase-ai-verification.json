@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 589,
+  "sourceFile": "37.1 L20S15-07 Report test find reason NG hearing high 2024.04.08_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\589.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 589,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it misidentifies the comparison and extracts NG hearing results incorrectly.",
+    "issues": [
+      "Changed factor wrongly treats Normal as baseline instead of likely VP condition with CD lot/date comparison.",
+      "Line and total groupings are mixed; C2, E2, and Total rows are not preserved.",
+      "NG Hearing totals are undercounted by using Noise only and ignoring Touch/Total NG in several rows.",
+      "Relevant total rows 30, 32, 34, and 36 are omitted from outcomes and evidence.",
+      "Measurement outcomes from title/header rows are spurious."
+    ],
+    "requiredUserQuestions": [
+      "Should the primary comparison be CD lot/date while VP remains Normal?",
+      "Should NG Hearing use Total NG/NG Rate or separate Noise and Touch metrics?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor around CD lot/date or lot identifier with VP Normal as context.",
+      "Separate or subgroup results by Line C2, Line E2, and Total TEST E2+C2.",
+      "Use NG Hearing Noise, Touch, Total NG, and NG Rate columns correctly.",
+      "Include rows 14,16,18,20,22,24,26 and total rows 28,30,32,34,36 as applicable.",
+      "Remove bogus measurement outcomes derived from title/header rows."
+    ],
+    "evidencePolicy": "Citations exist but are incomplete and tied to incorrect grouping, so not sufficient."
+  },
+  "usage": {
+    "input_tokens": 4880,
+    "output_tokens": 832,
+    "total_tokens": 5712
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 742,
+  "sourceFile": "54.MSU-L20S15-07  Report test material center plate NG surface abnormal date 16.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\742.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 742,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is usable in source coverage but misstates the changed-factor grouping and SPK comparison logic.",
+    "issues": [
+      "Changed factor incorrectly mixes material condition with auto/manual test methods.",
+      "Primary change should be abnormal over-thick C-PT/center plate versus normal C-PT.",
+      "Final SPK auto/manual rows are test modes, not baseline/test conditions.",
+      "SPK outcome should be pass observation, not unresolved condition comparison.",
+      "Decision/conclusion rows are not cited in case-level evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Test C-PT abnormal center plate/plating versus Normal C-PT.",
+      "Keep auto/manual as reliability test subgroups or methods only.",
+      "Group decap, final yoke, function, and final SPK under one validation report.",
+      "Add rows 43-49 and relevant section headers to evidence citations.",
+      "Mark SPK auto/manual as both OK with no normal comparator limitation."
+    ],
+    "evidencePolicy": "Cited rows exist, but citations need conclusion rows and corrected grouping before final use."
+  },
+  "usage": {
+    "input_tokens": 5145,
+    "output_tokens": 767,
+    "total_tokens": 5912
+  }
+}

@@ -1,0 +1,842 @@
+{
+  "sourceFileId": 823,
+  "sourceFile": "65.BRS-2015 Report checking NTI  sample change bonding line VP+CD offset 0.1 date 23.7.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\65.BRS-2015 Report checking NTI  sample change bonding line VP+CD offset 0.1 date 23.7.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 5,
+    "sheetNames": "Graph; SPL; THD; IMP; Fo",
+    "sheetRowCount": 297,
+    "sheetCellCount": 4020,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 48
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Fo!3",
+      "sheetName": "Fo",
+      "rowNumber": 3,
+      "rowText": "| F0"
+    },
+    {
+      "rowId": "Fo!4",
+      "sheetName": "Fo",
+      "rowNumber": 4,
+      "rowText": "| ST | 632.16845 | AVG | GAP sample -ST | AVG Gap"
+    },
+    {
+      "rowId": "Fo!5",
+      "sheetName": "Fo",
+      "rowNumber": 5,
+      "rowText": "| Normal #1 | 629.87127 | 635.708228 | -2.29718 | 3.539778"
+    },
+    {
+      "rowId": "Fo!6",
+      "sheetName": "Fo",
+      "rowNumber": 6,
+      "rowText": "| Normal #2 | 631.44242 | | -0.72603"
+    },
+    {
+      "rowId": "Fo!7",
+      "sheetName": "Fo",
+      "rowNumber": 7,
+      "rowText": "| Normal #3 | 629.35447 | | -2.81398"
+    },
+    {
+      "rowId": "Fo!8",
+      "sheetName": "Fo",
+      "rowNumber": 8,
+      "rowText": "| Normal #4 | 651.49922 | | 19.33077"
+    },
+    {
+      "rowId": "Fo!9",
+      "sheetName": "Fo",
+      "rowNumber": 9,
+      "rowText": "| Normal #5 | 636.37376 | | 4.20531"
+    },
+    {
+      "rowId": "Fo!10",
+      "sheetName": "Fo",
+      "rowNumber": 10,
+      "rowText": "| Offset 0.1 #1 | 634.94616 | 643.200062 | 2.77771 | 11.031612"
+    },
+    {
+      "rowId": "Fo!11",
+      "sheetName": "Fo",
+      "rowNumber": 11,
+      "rowText": "| Offset 0.1 #2 | 651.52493 | | 19.35648"
+    },
+    {
+      "rowId": "Fo!12",
+      "sheetName": "Fo",
+      "rowNumber": 12,
+      "rowText": "| Offset 0.1 #3 | 640.15684 | | 7.98839"
+    },
+    {
+      "rowId": "Fo!13",
+      "sheetName": "Fo",
+      "rowNumber": 13,
+      "rowText": "| Offset 0.1 #4 | 646.00917 | | 13.84072"
+    },
+    {
+      "rowId": "Fo!14",
+      "sheetName": "Fo",
+      "rowNumber": 14,
+      "rowText": "| Offset 0.1 #5 | 643.36321 | | 11.19476"
+    },
+    {
+      "rowId": "IMP!3",
+      "sheetName": "IMP",
+      "rowNumber": 3,
+      "rowText": "| | ST | Normal #1 | Normal #2 | Normal #3 | Normal #4 | Normal #5 | AVG Normal | Offset 0.1#1 | Offset 0.1#2 | Offset 0.1#3 | Offset 0.1#4 | Offset 0.1#5 | AVG Offset 0.1"
+    },
+    {
+      "rowId": "SPL!2",
+      "sheetName": "SPL",
+      "rowNumber": 2,
+      "rowText": "| HZ | MASK | MASK | ST | Normal #1 | Normal #2 | Normal #3 | Normal #4 | Normal #5 | AVG Normal | Offset 0.1#1 | Offset 0.1#2 | Offset 0.1#3 | Offset 0.1#4 | Offset 0.1#5 | AVG Offset 0.1"
+    },
+    {
+      "rowId": "SPL!26",
+      "sheetName": "SPL",
+      "rowNumber": 26,
+      "rowText": "| 375 | 109.04454 | 103.04454 | 106.04454 | 105.84906 | 105.951 | 105.95192 | 105.71132 | 105.94548 | 105.881756 | 105.63084 | 105.15898 | 105.52118 | 105.53999 | 105.44431 | 105.45906 | | | Normal - ST | TEST - ST"
+    },
+    {
+      "rowId": "THD!2",
+      "sheetName": "THD",
+      "rowNumber": 2,
+      "rowText": "| | ST | Normal #1 | Normal #2 | Normal #3 | Normal #4 | Normal #5 | AVG Normal | Offset 0.1#1 | Offset 0.1#2 | Offset 0.1#3 | Offset 0.1#4 | Offset 0.1#5 | AVG Offset 0.1"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-823-rc-1",
+      "reviewTitle": "| ST | 632.16845 | AVG | GAP sample -ST | AVG Gap",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "65.BRS-2015 Report checking NTI sample change bonding line VP+CD offset 0.1 date 23.7.2024",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Fo!5",
+            "Fo!6",
+            "Fo!7",
+            "Fo!8",
+            "Fo!9",
+            "Graph!39",
+            "SPL!2",
+            "SPL!26"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "THD",
+          "comparisonRows": [
+            "Graph!39"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 63132,
+              "condition": "THD / HZ",
+              "spec": "",
+              "min": 100.0,
+              "max": 14000.0,
+              "avg": 2760.125,
+              "sampleCount": 16,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Graph!39"
+              ]
+            },
+            {
+              "statId": 63133,
+              "condition": "THD / MASK",
+              "spec": "",
+              "min": 6.0,
+              "max": 90.0,
+              "avg": 19.6875,
+              "sampleCount": 16,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Graph!39"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Fo!4",
+            "IMP!3",
+            "SPL!2",
+            "SPL!26",
+            "THD!2"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 63134,
+              "condition": "HZ",
+              "spec": "",
+              "min": 100.0,
+              "max": 3000.0,
+              "avg": 862.1666666666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63135,
+              "condition": "MASK",
+              "spec": "",
+              "min": 82.02256,
+              "max": 120.19791,
+              "avg": 108.5278475,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63136,
+              "condition": "MASK",
+              "spec": "",
+              "min": 76.02256,
+              "max": 115.27549,
+              "avg": 101.76118083333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63137,
+              "condition": "ST",
+              "spec": "",
+              "min": 79.02256,
+              "max": 117.27549,
+              "avg": 105.14451416666665,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63138,
+              "condition": "Normal #1",
+              "spec": "",
+              "min": 79.33038,
+              "max": 116.46813,
+              "avg": 104.71083183333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63139,
+              "condition": "Normal #2",
+              "spec": "",
+              "min": 79.52211,
+              "max": 116.63107,
+              "avg": 104.74579666666664,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63140,
+              "condition": "Normal #3",
+              "spec": "",
+              "min": 79.17353,
+              "max": 116.76107,
+              "avg": 104.8080218333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63141,
+              "condition": "Normal #4",
+              "spec": "",
+              "min": 78.77181,
+              "max": 116.87044,
+              "avg": 104.70542066666671,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63142,
+              "condition": "Normal #5",
+              "spec": "",
+              "min": 79.15965,
+              "max": 116.72188,
+              "avg": 104.88320483333335,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63143,
+              "condition": "AVG Normal",
+              "spec": "",
+              "min": 79.191496,
+              "max": 116.690518,
+              "avg": 104.77065516666669,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63144,
+              "condition": "Offset 0.1#1",
+              "spec": "",
+              "min": 78.68887,
+              "max": 116.65188,
+              "avg": 104.71012366666668,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63145,
+              "condition": "Offset 0.1#2",
+              "spec": "",
+              "min": 78.30003,
+              "max": 116.96081,
+              "avg": 104.47527033333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63146,
+              "condition": "Offset 0.1#3",
+              "spec": "",
+              "min": 78.93917,
+              "max": 116.8142,
+              "avg": 104.64186016666663,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63147,
+              "condition": "Offset 0.1#4",
+              "spec": "",
+              "min": 78.9282,
+              "max": 116.73864,
+              "avg": 104.64094983333331,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63148,
+              "condition": "Offset 0.1#5",
+              "spec": "",
+              "min": 78.92716,
+              "max": 116.78031,
+              "avg": 104.70498849999998,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63149,
+              "condition": "AVG Offset 0.1",
+              "spec": "",
+              "min": 78.756686,
+              "max": 116.789168,
+              "avg": 104.6346385,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!2"
+              ]
+            },
+            {
+              "statId": 63150,
+              "condition": "AVG 400~800 / Normal - ST",
+              "spec": "",
+              "min": -0.584972,
+              "max": -0.16797,
+              "avg": -0.4292152307692308,
+              "sampleCount": 13,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!26"
+              ]
+            },
+            {
+              "statId": 63151,
+              "condition": "AVG 400~800 / TEST - ST",
+              "spec": "",
+              "min": -0.634672,
+              "max": -0.486322,
+              "avg": -0.5732581538461539,
+              "sampleCount": 13,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL!26"
+              ]
+            },
+            {
+              "statId": 63152,
+              "condition": "ST",
+              "spec": "",
+              "min": 0.26243,
+              "max": 25.85172,
+              "avg": 10.541030666666664,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD!2"
+              ]
+            },
+            {
+              "statId": 63153,
+              "condition": "Normal #1",
+              "spec": "",
+              "min": 0.33936,
+              "max": 26.67995,
+              "avg": 11.651631499999997,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD!2"
+              ]
+            },
+            {
+              "statId": 63154,
+              "condition": "Normal #2",
+              "spec": "",
+              "min": 0.29098,
+              "max": 28.40419,
+              "avg": 11.897243666666663,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD!2"
+              ]
+            },
+            {
+              "statId": 63155,
+              "condition": "Normal #3",
+              "spec": "",
+              "min": 0.27338,
+              "max": 26.51031,
+              "avg": 11.392928333333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD!2"
+              ]
+            },
+            {
+              "statId": 63156,
+              "condition": "Normal #4",
+              "spec": "",
+              "min": 0.30048,
+              "max": 29.63548,
+              "avg": 12.322970166666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD!2"
+              ]
+            },
+            {
+              "statId": 63157,
+              "condition": "Normal #5",
+              "spec": "",
+              "min": 0.31926,
+              "max": 30.69808,
+              "avg": 12.408113166666663,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD!2"
+              ]
+            },
+            {
+              "statId": 63158,
+              "condition": "AVG Normal",
+              "spec": "",
+              "min": 0.304692,
+              "max": 27.797542,
+              "avg": 11.934577366666662,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD!2"
+              ]
+            },
+            {
+              "statId": 63159,
+              "condition": "Offset 0.1#1",
+              "spec": "",
+              "min": 0.32089,
+              "max": 31.71044,
+              "avg": 12.8199,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD!2"
+              ]
+            },
+            {
+              "statId": 63160,
+              "condition": "Offset 0.1#2",
+              "spec": "",
+              "min": 0.23533,
+              "max": 26.18796,
+              "avg": 11.220433666666667,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD!2"
+              ]
+            },
+            {
+              "statId": 63161,
+              "condition": "Offset 0.1#3",
+              "spec": "",
+              "min": 0.31179,
+              "max": 24.01359,
+              "avg": 10.720388499999995,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD!2"
+              ]
+            },
+            {
+              "statId": 63162,
+              "condition": "Offset 0.1#4",
+              "spec": "",
+              "min": 0.31883,
+              "max": 26.4668,
+              "avg": 12.042010500000004,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD!2"
+              ]
+            },
+            {
+              "statId": 63163,
+              "condition": "Offset 0.1#5",
+              "spec": "",
+              "min": 0.28325,
+              "max": 27.15871,
+              "avg": 11.972508499999996,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD!2"
+              ]
+            },
+            {
+              "statId": 63164,
+              "condition": "AVG Offset 0.1",
+              "spec": "",
+              "min": 0.294018,
+              "max": 26.393444,
+              "avg": 11.755048233333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD!2"
+              ]
+            },
+            {
+              "statId": 63165,
+              "condition": "ST",
+              "spec": "",
+              "min": 6.54164,
+              "max": 8.52818,
+              "avg": 7.321420333333332,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP!3"
+              ]
+            },
+            {
+              "statId": 63166,
+              "condition": "Normal #1",
+              "spec": "",
+              "min": 6.54025,
+              "max": 8.40232,
+              "avg": 7.3443715,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP!3"
+              ]
+            },
+            {
+              "statId": 63167,
+              "condition": "Normal #2",
+              "spec": "",
+              "min": 6.55823,
+              "max": 8.46832,
+              "avg": 7.3633706666666665,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP!3"
+              ]
+            },
+            {
+              "statId": 63168,
+              "condition": "Normal #3",
+              "spec": "",
+              "min": 6.6065,
+              "max": 8.54179,
+              "avg": 7.404110833333332,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP!3"
+              ]
+            },
+            {
+              "statId": 63169,
+              "condition": "Normal #4",
+              "spec": "",
+              "min": 6.56985,
+              "max": 8.46053,
+              "avg": 7.361159833333335,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP!3"
+              ]
+            },
+            {
+              "statId": 63170,
+              "condition": "Normal #5",
+              "spec": "",
+              "min": 6.55367,
+              "max": 8.44139,
+              "avg": 7.352237499999998,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP!3"
+              ]
+            },
+            {
+              "statId": 63171,
+              "condition": "AVG Normal",
+              "spec": "",
+              "min": 6.5657,
+              "max": 8.46287,
+              "avg": 7.365050066666669,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP!3"
+              ]
+            },
+            {
+              "statId": 63172,
+              "condition": "Offset 0.1#1",
+              "spec": "",
+              "min": 6.52908,
+              "max": 8.35599,
+              "avg": 7.313288666666668,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP!3"
+              ]
+            },
+            {
+              "statId": 63173,
+              "condition": "Offset 0.1#2",
+              "spec": "",
+              "min": 6.54004,
+              "max": 8.44588,
+              "avg": 7.340632000000002,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP!3"
+              ]
+            },
+            {
+              "statId": 63174,
+              "condition": "Offset 0.1#3",
+              "spec": "",
+              "min": 6.56665,
+              "max": 8.51252,
+              "avg": 7.38241033333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP!3"
+              ]
+            },
+            {
+              "statId": 63175,
+              "condition": "Offset 0.1#4",
+              "spec": "",
+              "min": 6.53205,
+              "max": 8.40067,
+              "avg": 7.33656583333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP!3"
+              ]
+            },
+            {
+              "statId": 63176,
+              "condition": "Offset 0.1#5",
+              "spec": "",
+              "min": 6.52382,
+              "max": 8.41537,
+              "avg": 7.332585666666668,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP!3"
+              ]
+            },
+            {
+              "statId": 63177,
+              "condition": "AVG Offset 0.1",
+              "spec": "",
+              "min": 6.538328,
+              "max": 8.42582,
+              "avg": 7.3410965,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "IMP!3"
+              ]
+            },
+            {
+              "statId": 63178,
+              "condition": "ST",
+              "spec": "",
+              "min": 0.1,
+              "max": 5.0,
+              "avg": 1.5499999999999998,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Fo!4"
+              ]
+            },
+            {
+              "statId": 63179,
+              "condition": "GAP sample -ST",
+              "spec": "",
+              "min": -2.81398,
+              "max": 19.35648,
+              "avg": 7.285695,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Fo!4"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Fo!4",
+        "Fo!5",
+        "Fo!6",
+        "Fo!7",
+        "Fo!8",
+        "Fo!9",
+        "Graph!39",
+        "IMP!3",
+        "SPL!2",
+        "SPL!26",
+        "THD!2"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Fo!4",
+      "Fo!5",
+      "Fo!6",
+      "Fo!7",
+      "Fo!8",
+      "Fo!9",
+      "Graph!39",
+      "IMP!3",
+      "SPL!2",
+      "SPL!26",
+      "THD!2"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

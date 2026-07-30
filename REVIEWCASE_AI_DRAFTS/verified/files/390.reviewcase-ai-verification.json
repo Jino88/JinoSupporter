@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 390,
+  "sourceFile": "20. BRS-161014 Result checking NG Hearing (COPY)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\390.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 390,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable NG-hearing evidence but overgroups many unrelated validation tests into one changed-factor case.",
+    "issues": [
+      "Changed factor conflates material, equipment, lot, LED power, press head, yoke class, and method tests.",
+      "Baseline/test logic is ambiguous; VP old lot is used as control for unrelated later conditions despite Normal rows.",
+      "Outcomes mix comparable function NG rates with header-derived measurements and non-comparable summaries.",
+      "Several cited rows are absent from provided context or appear to be headers/summary tables, not direct evidence.",
+      "Worse judgement is not reliable because row dates, test items, and subgroup keys are not preserved."
+    ],
+    "requiredUserQuestions": [
+      "Should this workbook be split into separate cases by test item/date rather than one combined case?"
+    ],
+    "correctionPlan": [
+      "Define separate changed-factor groups for each explicit test item or validation block.",
+      "Use Normal or same-date matching controls only where the source rows support that pairing.",
+      "Remove header-only and auto-stat measurement outcomes unless direct measured rows are cited.",
+      "Preserve row keys such as date, type, press head, VP mold, lot, yoke class, and LED condition.",
+      "Recompute judgements only for comparable input/NG/rate rows with paired evidence citations."
+    ],
+    "evidencePolicy": "Current citations are insufficient; final evidence must cite direct condition/result rows for each comparison."
+  },
+  "usage": {
+    "input_tokens": 23736,
+    "output_tokens": 623,
+    "total_tokens": 24359
+  }
+}

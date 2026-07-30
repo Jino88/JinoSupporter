@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 882,
+  "sourceFile": "75. BRS-161014 Report check reason NG solder weak Date 4.11.2024 line 3_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\882.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 882,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid rows but misgroups the change factor and omits key comparison and conclusion evidence.",
+    "issues": [
+      "Changed factor incorrectly treats Machine 1/2 as the main condition.",
+      "Primary comparison appears to be MC AWF #1 versus other AWF units, with machine as subgroup.",
+      "Rows for AWF #5 and the conclusion/repair result are missing from outcomes.",
+      "Baseline/test wording is not supported by the cited rows.",
+      "Judgement remains unverified despite clear NG concentration on AWF #1."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to MC AWF unit or AWF #1 heating set-point repair context.",
+      "Use Machine 1 and Machine 2 as subgroup keys, not changed conditions.",
+      "Add rows Report!39, Report!41, and Report!43 to evidence and outcomes.",
+      "Group all AWF #1 through #5 results under one process-defect outcome.",
+      "State limitation if after-repair data is only summarized in the conclusion row."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until missing AWF #5 and conclusion rows are added."
+  },
+  "usage": {
+    "input_tokens": 3603,
+    "output_tokens": 782,
+    "total_tokens": 4385
+  }
+}

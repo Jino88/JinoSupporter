@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 296,
+  "sourceFile": "15. BRS-161016DT  Report Check reason NG Coil damage date 9.9.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\296.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 296,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The workbook is citeable but the draft over-aggregates distinct machine, AWF jig, cap jig, X-axis offset, and V2 cap tests under one unclear changed factor.",
+    "issues": [
+      "Changed factor mixes several test contexts and dates.",
+      "Baseline versus test condition is not explicit.",
+      "AWF machine/jig checks appear subgroup or separate diagnostics, not the same factor as cap jig trials.",
+      "Some parsed NG/rate values may reflect multi-column defects, not a single outcome.",
+      "Decision/conclusion rows are not used to constrain grouping."
+    ],
+    "requiredUserQuestions": [
+      "Should the four sheets be treated as one chronological investigation or separate review cases?"
+    ],
+    "correctionPlan": [
+      "Rebuild grouping by sheet/date and test section.",
+      "Define primary changed factor as cap jig/X-axis setting only where supported.",
+      "Keep AWF number, machine, line, and date as subgroup keys.",
+      "Recheck metric columns against headers before calculating NG rates.",
+      "Cite header, data, and conclusion rows for each outcome."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations do not sufficiently justify the broad grouping."
+  },
+  "usage": {
+    "input_tokens": 8936,
+    "output_tokens": 740,
+    "total_tokens": 9676
+  }
+}

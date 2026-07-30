@@ -1,0 +1,345 @@
+@page "/data-inference/first-analysis"
+@page "/data-inference/current-problem"
+@rendermode InteractiveServer
+@inject CurrentProblemAnalysisService CurrentProblem
+
+<PageTitle>First Analysis View</PageTitle>
+
+<div class="fav-root">
+    <header class="fav-header">
+        <div>
+            <div class="fav-title">First Analysis View</div>
+            <div class="fav-subtitle">@_status.SampleDir</div>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" @onclick="Refresh">Refresh</button>
+    </header>
+
+    <main class="fav-main">
+        @{
+            List<CurrentProblemIndexRow> filteredRows = FilteredRows;
+            List<CurrentProblemIndexRow> visibleRows = filteredRows.Take(_visibleRowCount).ToList();
+        }
+        <div class="fav-toolbar">
+            <input class="form-control form-control-sm"
+                   value="@_filter"
+                   @oninput="OnFilterChanged"
+                   placeholder="Search dataset, model, purpose, defect, review item, tag" />
+            <span>@visibleRows.Count.ToString("N0") / @filteredRows.Count.ToString("N0") shown</span>
+        </div>
+
+        @if (_rows.Count == 0)
+        {
+            <div class="fav-empty">No first analysis index loaded.</div>
+        }
+        else
+        {
+            <div class="fav-table-wrap">
+                <table class="fav-table">
+                    <thead>
+                        <tr>
+                            <th class="num">No.</th>
+                            <th>Dataset</th>
+                            <th>Model</th>
+                            <th>Purpose</th>
+                            <th>Target Defects</th>
+                            <th>Review Items</th>
+                            <th>Tags</th>
+                            <th class="conf">Conf.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (CurrentProblemIndexRow row in visibleRows)
+                        {
+                            <tr>
+                                <td class="num">@row.No</td>
+                                <td><strong>@row.DatasetName</strong></td>
+                                <td><span class="fav-pill model">@row.Model</span></td>
+                                <td>
+                                    <div>@row.Purpose</div>
+                                    @if (!string.IsNullOrWhiteSpace(row.PurposeDetail) && row.PurposeDetail != row.Purpose)
+                                    {
+                                        <div class="fav-purpose-detail">@row.PurposeDetail</div>
+                                    }
+                                </td>
+                                <td>@Pills(row.TargetDefects)</td>
+                                <td>@Pills(row.ReviewItems)</td>
+                                <td>@Pills(row.Tags)</td>
+                                <td class="conf"><span>@row.Confidence.ToString("0.00")</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @if (visibleRows.Count < filteredRows.Count)
+                {
+                    <div class="fav-load-more">
+                        <button class="btn btn-outline-primary btn-sm" @onclick="LoadMore">
+                            Load more @Math.Min(RowBatchSize, filteredRows.Count - visibleRows.Count).ToString("N0")
+                        </button>
+                        <span>@(filteredRows.Count - visibleRows.Count).ToString("N0") remaining</span>
+                    </div>
+                }
+            </div>
+        }
+    </main>
+</div>
+
+@code {
+    private const int InitialRowCount = 120;
+    private const int RowBatchSize = 120;
+
+    private CurrentProblemStatus _status = EmptyStatus();
+    private IReadOnlyList<CurrentProblemIndexRow> _rows = [];
+    private string _filter = "";
+    private int _visibleRowCount = InitialRowCount;
+
+    private List<CurrentProblemIndexRow> FilteredRows
+    {
+        get
+        {
+            string filter = (_filter ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(filter))
+                return _rows.ToList();
+
+            return _rows.Where(row =>
+                Contains(row.DatasetName, filter) ||
+                Contains(row.Model, filter) ||
+                Contains(row.Purpose, filter) ||
+                Contains(row.PurposeDetail, filter) ||
+                row.TargetDefects.Any(x => Contains(x, filter)) ||
+                row.ReviewItems.Any(x => Contains(x, filter)) ||
+                row.Tags.Any(x => Contains(x, filter))).ToList();
+        }
+    }
+
+    protected override void OnInitialized()
+        => Refresh();
+
+    private void Refresh()
+    {
+        _status = CurrentProblem.GetStatus();
+        _rows = CurrentProblem.GetDemoIndexRows();
+        _visibleRowCount = InitialRowCount;
+    }
+
+    private void OnFilterChanged(ChangeEventArgs e)
+    {
+        _filter = e.Value?.ToString() ?? string.Empty;
+        _visibleRowCount = InitialRowCount;
+    }
+
+    private void LoadMore()
+    {
+        _visibleRowCount += RowBatchSize;
+    }
+
+    private static CurrentProblemStatus EmptyStatus()
+        => new("", "", false, 0, 0, 0, 0, 0, "", "", "", "", "", "", "");
+
+    private static bool Contains(string value, string filter)
+        => value.Contains(filter, StringComparison.OrdinalIgnoreCase);
+
+    private static RenderFragment Pills(IReadOnlyList<string> values) => builder =>
+    {
+        if (values.Count == 0)
+        {
+            builder.OpenElement(0, "span");
+            builder.AddAttribute(1, "class", "fav-muted");
+            builder.AddContent(2, "-");
+            builder.CloseElement();
+            return;
+        }
+
+        int seq = 0;
+        foreach (string value in values)
+        {
+            builder.OpenElement(seq++, "span");
+            builder.AddAttribute(seq++, "class", "fav-pill");
+            builder.AddContent(seq++, value);
+            builder.CloseElement();
+        }
+    };
+}
+
+<style>
+    .fav-root {
+        height: 100vh;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: #f5f7fb;
+        color: #172033;
+    }
+
+    .fav-header {
+        min-height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 14px;
+        border-bottom: 1px solid #d9e0e7;
+        background: #fff;
+        flex-shrink: 0;
+    }
+
+    .fav-title {
+        font-size: 16px;
+        font-weight: 850;
+        color: #17202a;
+    }
+
+    .fav-subtitle {
+        margin-top: 2px;
+        color: #64748b;
+        font-size: 11px;
+        overflow-wrap: anywhere;
+    }
+
+    .fav-main {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .fav-toolbar {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-bottom: 1px solid #d9e0e7;
+        background: #f8fafc;
+    }
+
+    .fav-toolbar input {
+        max-width: 720px;
+        font-size: 12px;
+    }
+
+    .fav-toolbar span {
+        margin-left: auto;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .fav-empty {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #94a3b8;
+        font-size: 13px;
+    }
+
+    .fav-table-wrap {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+    }
+
+    .fav-load-more {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 12px;
+        border-top: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+
+    .fav-load-more span {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 750;
+    }
+
+    .fav-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .fav-table th,
+    .fav-table td {
+        border-bottom: 1px solid #e2e8f0;
+        padding: 7px 8px;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .fav-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #eef3f8;
+        color: #475569;
+        font-weight: 850;
+    }
+
+    .fav-table tr:hover td {
+        background: #f8fafc;
+    }
+
+    .fav-table .num {
+        width: 54px;
+        text-align: right;
+        color: #64748b;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .fav-table .conf {
+        width: 70px;
+        text-align: center;
+    }
+
+    .fav-table .conf span {
+        display: inline-flex;
+        min-width: 46px;
+        justify-content: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: #ecfdf5;
+        color: #047857;
+        border: 1px solid #86efac;
+        font-weight: 850;
+    }
+
+    .fav-purpose-detail {
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 11px;
+    }
+
+    .fav-pill {
+        display: inline-flex;
+        max-width: 260px;
+        margin: 0 4px 4px 0;
+        padding: 2px 7px;
+        border: 1px solid #cbd5e1;
+        border-radius: 999px;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 11px;
+        font-weight: 750;
+        line-height: 1.35;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .fav-pill.model {
+        background: #dbeafe;
+        border-color: #93c5fd;
+        color: #1d4ed8;
+    }
+
+    .fav-muted {
+        color: #94a3b8;
+    }
+</style>

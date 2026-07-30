@@ -1,0 +1,253 @@
+{
+  "sourceFileId": 700,
+  "sourceFile": "5. BRS-201506 Report test VP, Frame Dimension_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\5. BRS-201506 Report test VP, Frame Dimension_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Sheet1",
+    "sheetRowCount": 22,
+    "sheetCellCount": 123,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 8
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet1!2",
+      "sheetName": "Sheet1",
+      "rowNumber": 2,
+      "rowText": "| ++ Problem"
+    },
+    {
+      "rowId": "Sheet1!3",
+      "sheetName": "Sheet1",
+      "rowNumber": 3,
+      "rowText": "| -. Not enough bond"
+    },
+    {
+      "rowId": "Sheet1!11",
+      "sheetName": "Sheet1",
+      "rowNumber": 11,
+      "rowText": "| ++ Reason"
+    },
+    {
+      "rowId": "Sheet1!12",
+      "sheetName": "Sheet1",
+      "rowNumber": 12,
+      "rowText": "| -. VP dimension is smaller than Frame : Bond can not move outside"
+    },
+    {
+      "rowId": "Sheet1!23",
+      "sheetName": "Sheet1",
+      "rowNumber": 23,
+      "rowText": "| | Frame | | VP"
+    },
+    {
+      "rowId": "Sheet1!24",
+      "sheetName": "Sheet1",
+      "rowNumber": 24,
+      "rowText": "| | | | No.1 Cooling 140do | | No.2 Cooling 40do | | No.3 Heating 2min + Cooling 40do"
+    },
+    {
+      "rowId": "Sheet1!25",
+      "sheetName": "Sheet1",
+      "rowNumber": 25,
+      "rowText": "| Standard | 14.84 | 19.84 | 14.86 | 19.86 | 14.86 | 19.86 | 14.86 | 19.86"
+    },
+    {
+      "rowId": "Sheet1!26",
+      "sheetName": "Sheet1",
+      "rowNumber": 26,
+      "rowText": "| Upper | +0.02 | +0.02 | +0.03 | +0.03 | +0.03 | +0.03 | +0.03 | +0.03"
+    },
+    {
+      "rowId": "Sheet1!27",
+      "sheetName": "Sheet1",
+      "rowNumber": 27,
+      "rowText": "| Lower | -0.01 | -0.01 | -0.03 | -0.03 | -0.03 | -0.03 | -0.03 | -0.03"
+    },
+    {
+      "rowId": "Sheet1!28",
+      "sheetName": "Sheet1",
+      "rowNumber": 28,
+      "rowText": "| Min | 14.82 | 19.82 | 14.811 | 19.79 | 14.846 | 19.807 | 14.735 | 19.737"
+    },
+    {
+      "rowId": "Sheet1!29",
+      "sheetName": "Sheet1",
+      "rowNumber": 29,
+      "rowText": "| Max | 14.84 | 19.84 | 14.895 | 19.828 | 14.89 | 19.839 | 14.888 | 19.82"
+    },
+    {
+      "rowId": "Sheet1!30",
+      "sheetName": "Sheet1",
+      "rowNumber": 30,
+      "rowText": "| Avg | 14.831 | 19.83 | 14.8642 | 19.8076 | 14.8696 | 19.8258 | 14.8118 | 19.7762"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-700-rc-1",
+      "reviewTitle": "| -. VP dimension is smaller than Frame : Bond can not move outside",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "coating",
+            "dimension/spec"
+          ],
+          "changedFactor": "5. BRS-201506 Report test VP, Frame Dimension",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Sheet1!30"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No.1 Cooling 140do | No.2 Cooling 40do | No.3 Heating 2min + Cooling 40do",
+          "comparisonRows": [
+            "Sheet1!30"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 60059,
+              "condition": "Frame",
+              "spec": "",
+              "min": 14.82,
+              "max": 14.84,
+              "avg": 14.831,
+              "sampleCount": 3,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!30"
+              ]
+            },
+            {
+              "statId": 60060,
+              "condition": "Lower 3",
+              "spec": "",
+              "min": 19.82,
+              "max": 19.84,
+              "avg": 19.83,
+              "sampleCount": 3,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!30"
+              ]
+            },
+            {
+              "statId": 60061,
+              "condition": "No.1 Cooling 140do",
+              "spec": "",
+              "min": 14.811,
+              "max": 14.895,
+              "avg": 14.8642,
+              "sampleCount": 4,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!30"
+              ]
+            },
+            {
+              "statId": 60062,
+              "condition": "Lower 5",
+              "spec": "",
+              "min": 19.79,
+              "max": 19.828,
+              "avg": 19.8076,
+              "sampleCount": 3,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!30"
+              ]
+            },
+            {
+              "statId": 60063,
+              "condition": "No.2 Cooling 40do",
+              "spec": "",
+              "min": 14.846,
+              "max": 14.89,
+              "avg": 14.8696,
+              "sampleCount": 4,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!30"
+              ]
+            },
+            {
+              "statId": 60064,
+              "condition": "Lower 7",
+              "spec": "",
+              "min": 19.807,
+              "max": 19.839,
+              "avg": 19.8258,
+              "sampleCount": 3,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!30"
+              ]
+            },
+            {
+              "statId": 60065,
+              "condition": "No.3 Heating 2min + Cooling 40do",
+              "spec": "",
+              "min": 14.735,
+              "max": 14.888,
+              "avg": 14.8118,
+              "sampleCount": 4,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!30"
+              ]
+            },
+            {
+              "statId": 60066,
+              "condition": "Lower 9",
+              "spec": "",
+              "min": 19.737,
+              "max": 19.82,
+              "avg": 19.7762,
+              "sampleCount": 3,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!30"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Sheet1!30"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet1!30"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

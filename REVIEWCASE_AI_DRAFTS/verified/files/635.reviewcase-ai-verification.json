@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 635,
+  "sourceFile": "42. BRS-161016  Report test VP mold #4 NG over dimension lot size 21,600PC date 11.6.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\635.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 635,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the report but needs grouping and citation fixes before use as final evidence.",
+    "issues": [
+      "Line-specific pairings are flattened across E2-3B and C2-3A.",
+      "Subgroup keys omit line, date, normal lots, and process stage context.",
+      "Change domain includes unsupported coating category.",
+      "Decision rows are not cited despite acceptance and bending note.",
+      "Lot size differs between title/purpose and table rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split or label comparisons by line: E2-3B vs mold #2 and C2-3A vs mold #8.",
+      "Add date, line, VP mold, lot, and stage as subgroup/context keys.",
+      "Remove unsupported coating domain.",
+      "Include decision rows 13.5!73-74 as outcome or conclusion evidence.",
+      "Note lot size inconsistency as a limitation."
+    ],
+    "evidencePolicy": "Row citations exist and support metrics, but grouping and decision citations are incomplete."
+  },
+  "usage": {
+    "input_tokens": 6494,
+    "output_tokens": 593,
+    "total_tokens": 7087
+  }
+}

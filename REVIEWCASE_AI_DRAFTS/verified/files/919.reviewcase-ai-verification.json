@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 919,
+  "sourceFile": "8. BRS-201506 DT Report checking and test improve NG Function date 18.12.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\919.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 919,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not verified because it merges many distinct process/JIG/voltage tests into one ambiguous changed-factor case.",
+    "issues": [
+      "Changed factor overgroups unrelated tests across many sheets.",
+      "Baseline and test conditions are mixed and sometimes reversed.",
+      "Subgroup keys include primary conditions instead of row-level context only.",
+      "Unknown Sheet1 and decap analysis are included without comparable change evidence.",
+      "Most outcomes are unjudged metric dumps, not verified comparisons."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split review cases by actual test context and sheet purpose.",
+      "Define one primary changed factor per case from content rows.",
+      "Pair baseline/test rows only within the same date/test/process context.",
+      "Remove non-comparable Sheet1 and decap-only analysis from evidence or make separate excluded/reference items.",
+      "Keep only cited rows that support each changed condition and outcome judgement."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until grouping and comparable-pair evidence are corrected."
+  },
+  "usage": {
+    "input_tokens": 23174,
+    "output_tokens": 532,
+    "total_tokens": 23706
+  }
+}

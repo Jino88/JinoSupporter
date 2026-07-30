@@ -1,0 +1,229 @@
+{
+  "sourceFileId": 458,
+  "sourceFile": "26. BRS-161014 Report test check Gauss 14.9.2023_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\26. BRS-161014 Report test check Gauss 14.9.2023_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "Sheet2; Sheet3",
+    "sheetRowCount": 35,
+    "sheetCellCount": 240,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 6
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet2!2",
+      "sheetName": "Sheet2",
+      "rowNumber": 2,
+      "rowText": "| No | Voltage: 881V | | | Voltage: 430V"
+    },
+    {
+      "rowId": "Sheet2!3",
+      "sheetName": "Sheet2",
+      "rowNumber": 3,
+      "rowText": "| | CMG material | CMG+CP | CMG+CP magnetic again | CMG material | CMG+CP | CMG+CP magnetic again"
+    },
+    {
+      "rowId": "Sheet2!4",
+      "sheetName": "Sheet2",
+      "rowNumber": 4,
+      "rowText": "| 1 | 1048 | 1241 | 1314 | 848 | 1076 | 1101"
+    },
+    {
+      "rowId": "Sheet2!5",
+      "sheetName": "Sheet2",
+      "rowNumber": 5,
+      "rowText": "| 2 | 1099 | 1337 | 1337 | 800 | 1005 | 1050"
+    },
+    {
+      "rowId": "Sheet2!6",
+      "sheetName": "Sheet2",
+      "rowNumber": 6,
+      "rowText": "| 3 | 1079 | 1330 | 1344 | 817 | 1089 | 1084"
+    },
+    {
+      "rowId": "Sheet2!7",
+      "sheetName": "Sheet2",
+      "rowNumber": 7,
+      "rowText": "| 4 | 1037 | 1300 | 1320 | 804 | 1035 | 1065"
+    },
+    {
+      "rowId": "Sheet2!8",
+      "sheetName": "Sheet2",
+      "rowNumber": 8,
+      "rowText": "| 5 | 1053 | 1307 | 1318 | 828 | 1050 | 1100"
+    },
+    {
+      "rowId": "Sheet2!9",
+      "sheetName": "Sheet2",
+      "rowNumber": 9,
+      "rowText": "| 6 | 1074 | 1320 | 1333 | 811 | 1087 | 1104"
+    },
+    {
+      "rowId": "Sheet2!10",
+      "sheetName": "Sheet2",
+      "rowNumber": 10,
+      "rowText": "| 7 | 1058 | 1297 | 1313 | 766 | 976 | 1013"
+    },
+    {
+      "rowId": "Sheet2!11",
+      "sheetName": "Sheet2",
+      "rowNumber": 11,
+      "rowText": "| 8 | 1089 | 1303 | 1309 | 801 | 1091 | 1036"
+    },
+    {
+      "rowId": "Sheet2!12",
+      "sheetName": "Sheet2",
+      "rowNumber": 12,
+      "rowText": "| 9 | 1089 | 1306 | 1327 | 807 | 1020 | 1018"
+    },
+    {
+      "rowId": "Sheet2!13",
+      "sheetName": "Sheet2",
+      "rowNumber": 13,
+      "rowText": "| 10 | 1078 | 1309 | 1328 | 780 | 1032 | 1045"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-458-rc-1",
+      "reviewTitle": "| No | Voltage: 881V | | | Voltage: 430V",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "supplier"
+          ],
+          "changedFactor": "26. BRS-161014 Report test check Gauss 14.9.2023",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Sheet2!3",
+            "Sheet2!36"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Sheet2!36"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 54376,
+              "condition": "Column 3",
+              "spec": "",
+              "min": 1037.0,
+              "max": 1112.0,
+              "avg": 1074.8,
+              "sampleCount": 31,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!36"
+              ]
+            },
+            {
+              "statId": 54377,
+              "condition": "Column 4",
+              "spec": "",
+              "min": 1208.0,
+              "max": 1337.0,
+              "avg": 1297.4,
+              "sampleCount": 30,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!36"
+              ]
+            },
+            {
+              "statId": 54378,
+              "condition": "Column 5",
+              "spec": "",
+              "min": 1245.0,
+              "max": 1345.0,
+              "avg": 1324.4,
+              "sampleCount": 30,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!36"
+              ]
+            },
+            {
+              "statId": 54379,
+              "condition": "Column 6",
+              "spec": "",
+              "min": 734.0,
+              "max": 870.0,
+              "avg": 816.06666667,
+              "sampleCount": 31,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!36"
+              ]
+            },
+            {
+              "statId": 54380,
+              "condition": "Column 7",
+              "spec": "",
+              "min": 903.0,
+              "max": 1146.0,
+              "avg": 1034.53333333,
+              "sampleCount": 30,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!36"
+              ]
+            },
+            {
+              "statId": 54381,
+              "condition": "Column 8",
+              "spec": "",
+              "min": 927.0,
+              "max": 1142.0,
+              "avg": 1058.63333333,
+              "sampleCount": 30,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet2!36"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Sheet2!3",
+        "Sheet2!36"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet2!3",
+      "Sheet2!36"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

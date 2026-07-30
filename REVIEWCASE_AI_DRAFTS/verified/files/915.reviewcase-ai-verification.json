@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 915,
+  "sourceFile": "8. BRS-161014 Report test Yoke recyle  Date 20.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\915.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 915,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but changed-factor and outcome grouping are not reliable enough for Ask AI.",
+    "issues": [
+      "Changed factor is polluted with totals, dates, row numbers, and class labels.",
+      "Function comparisons mix aggregate Normal with individual test rows and omit later cited rows.",
+      "Process and class-yoke sections are outcomes under recycled-yoke validation, not changed conditions.",
+      "Measurement outcomes are extraction artifacts from headers and should not be evidence.",
+      "Key evidence rows for Jan 21-22 and Normal subrows are omitted from function grouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to Normal yoke vs recycled/test yoke use.",
+      "Keep date/test round as subgroup keys, not changed conditions.",
+      "Use aggregate rows for main function comparison and separate per-round rows consistently.",
+      "Retain process vision and class-yoke results as descriptive outcomes only if row evidence supports them.",
+      "Remove header-derived measurement outcomes and add missing relevant function rows."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are incomplete and misgrouped."
+  },
+  "usage": {
+    "input_tokens": 6920,
+    "output_tokens": 990,
+    "total_tokens": 7910
+  }
+}

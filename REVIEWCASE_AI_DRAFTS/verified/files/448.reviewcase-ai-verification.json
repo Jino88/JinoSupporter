@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 448,
+  "sourceFile": "25. BRS-161016 Report test new machine vision VP+CD at Sub 1 22.03.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\448.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:07Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 448,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparison evidence but changed-factor grouping and outcome coverage need correction before use.",
+    "issues": [
+      "Changed factor mixes MC repair, pusher changes, AOI adjustment, and capacity improvement.",
+      "Includes Use/Don’t Use pusher without visible supporting comparison context.",
+      "CAPA and AOI qualitative results are omitted from outcomes.",
+      "Some cited rows are not shown in context, limiting verification of conditions.",
+      "Before rows across dates are grouped without preserving date context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary changed context as new machine vision VP+CD validation with dated improvement stages.",
+      "Separate subgroup keys by date, test stage, and result section.",
+      "Remove unsupported Use/Don’t Use pusher terms unless rows 18-19 prove them.",
+      "Add CAPA outcome using before and after improve MC rows.",
+      "Add qualitative AOI/NG-sample detection outcome with adjustment rows."
+    ],
+    "evidencePolicy": "Citations support some defect pairs but are incomplete for final evidence."
+  },
+  "usage": {
+    "input_tokens": 5514,
+    "output_tokens": 756,
+    "total_tokens": 6270
+  }
+}

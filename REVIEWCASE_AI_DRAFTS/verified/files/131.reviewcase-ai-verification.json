@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 131,
+  "sourceFile": "05. TIU L5S3-01 - Report test material Yoke difference color - date 2026.04.09_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\131.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 131,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Changed factor is plausible, but outcome extraction contains misgrouped and spurious measurement evidence.",
+    "issues": [
+      "Tension measurement includes function-table rows Test!49 and Test!50.",
+      "Tension sample counts appear parsed as 1 despite 8 listed values per condition.",
+      "Measurement-2 is a spurious stats outcome from a function header row.",
+      "Function outcome and measurement-2 duplicate the same result area inconsistently.",
+      "Several key cited data rows are not shown in context, limiting full value validation."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Keep one changed factor: Normal vs Type 1 and Type 2 yoke color-difference material lots.",
+      "Remove Test!49 and Test!50 from the tension measurement outcome.",
+      "Set tension rows to only Test!35, Test!36, and Test!37 and verify n, min, max, avg, pass/fail.",
+      "Delete measurement-2; retain function check as defect-rate outcome using result rows only.",
+      "Recheck all cited Type 1, Type 2, and Normal rows against the source table before final approval."
+    ],
+    "evidencePolicy": "Citations support the main comparison, but misgrouped/header citations are not sufficient for final Ask AI evidence."
+  },
+  "usage": {
+    "input_tokens": 5616,
+    "output_tokens": 805,
+    "total_tokens": 6421
+  }
+}

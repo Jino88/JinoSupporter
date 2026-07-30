@@ -1,0 +1,29 @@
+{
+  "sourceFileId": 721,
+  "sourceFile": "52. BRS-161016 Report test material YK change Supplier (Producft of press line - Glonics - Coating MJ , Doojin VN ) 2024.7.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\721.reviewcase-draft.json",
+  "manualDraftUsed": true,
+  "verifiedAt": "2026-07-06T12:40:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 721,
+    "aiReviewCaseStatus": "verified",
+    "verificationStatus": "passed",
+    "approvedForAskAi": true,
+    "confidence": "high",
+    "summary": "Draft is verified: it correctly treats Normal vs Test YK MJ vs Test YK Doojin as the primary changed-factor comparison, preserves Baotou/Boutou as subgroup context, and supports the final cannot-use decision with cited outcome rows.",
+    "issues": [
+      "Non-blocking: the verification limitations still say the user should confirm whether Baotou/Boutou is subgroup-only, but the calibration already confirms this policy."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove or revise the obsolete Baotou/Boutou user-confirmation limitation so it states that Baotou/Boutou remains subgroup context only."
+    ],
+    "evidencePolicy": "Evidence row citations are sufficient and cover changed-condition setup, section-level outcomes, tension measurement support, and the final source decision row."
+  },
+  "usage": {
+    "input_tokens": 3189,
+    "output_tokens": 710,
+    "total_tokens": 3899
+  }
+}

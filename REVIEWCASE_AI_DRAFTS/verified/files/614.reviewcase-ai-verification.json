@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 614,
+  "sourceFile": "4. MSU-201507 DT Report test improve NG function  date 12.3.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\614.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 614,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The normal-vs-abnormal context is supported, but the function outcomes are misparsed and cannot be used as final evidence.",
+    "issues": [
+      "Function table columns are incorrectly mapped, causing NG counts and rates to be wrong.",
+      "Measurement outcome is fabricated from a header row and is not a valid measurement comparison.",
+      "Vision classification result is not modeled as a separate outcome from function defects.",
+      "Date/type grouping is incomplete for paired rows across 2025-03-11 and 2025-03-12.",
+      "Evidence cites a header row not provided in context, limiting verification of column meanings."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Reparse function table using its full header rows before assigning counts and rates.",
+      "Create subresults by date and VP/CD type with correct input, OK, defect category counts, totals, and rates.",
+      "Remove the measurement outcome unless real measurement data rows exist.",
+      "Add the vision VP/CD normal/abnormal count outcome separately from function test results.",
+      "Cite both header and data rows for each outcome."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until headers and corrected data rows support each metric."
+  },
+  "usage": {
+    "input_tokens": 3891,
+    "output_tokens": 786,
+    "total_tokens": 4677
+  }
+}

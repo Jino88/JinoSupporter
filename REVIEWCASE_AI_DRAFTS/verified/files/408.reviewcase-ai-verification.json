@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 408,
+  "sourceFile": "21.BRS161016 GMI Report checking and test process UC VP+COIL date 25.11.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\408.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:24Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 408,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but incorrect grouping and baseline pairing, so it is not ready for Ask AI evidence.",
+    "issues": [
+      "Changed factor merges separate UC VP+Coil and reverse/frame process contexts.",
+      "Normal baseline is applied to UC VP+Coil rows without supporting paired Normal evidence.",
+      "Several Test sheet pairs use the wrong Normal row for date-specific comparisons.",
+      "Head, date, line, and 3B/final process details are not preserved as subgroup keys.",
+      "Measurement and UV LED outcomes are header-derived and overgrouped with function defects."
+    ],
+    "requiredUserQuestions": [
+      "Should UC VP+Coil and reverse/frame process tests be separate review cases?",
+      "For Dec 19 and Dec 20 rows, which Normal row is the intended control?"
+    ],
+    "correctionPlan": [
+      "Split review cases or changed factors by report/test context.",
+      "Rebuild Test sheet comparisons using the nearest same-date Normal control rows.",
+      "Do not compare UC VP+Coil function rows to Normal unless a cited Normal baseline exists.",
+      "Move head, line, date, and process stage into subgroup keys.",
+      "Remove or separately validate UV LED and header-derived measurement outcomes."
+    ],
+    "evidencePolicy": "Row citations exist, but they do not sufficiently support the current grouping or comparisons."
+  },
+  "usage": {
+    "input_tokens": 9942,
+    "output_tokens": 807,
+    "total_tokens": 10749
+  }
+}

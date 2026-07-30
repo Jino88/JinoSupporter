@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 255,
+  "sourceFile": "12.BRS-161014 Report checking bonding process SP+COIL date 1.9.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\255.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 255,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft invents a baseline comparison; source only supports a single SP+COIL bonding check with 10/10 OK and 0 NG.",
+    "issues": [
+      "No explicit baseline or changed-condition comparison is cited.",
+      "Changed factor is misframed as baseline versus Bonding.",
+      "Outcome is valid only as single-condition bonding check.",
+      "Decision section is cited in context but not used; final decision text is absent."
+    ],
+    "requiredUserQuestions": [
+      "Should this file be retained as a single-condition validation rather than a comparison case?"
+    ],
+    "correctionPlan": [
+      "Remove invented baseline/normal condition.",
+      "Reframe factor as SP+COIL bonding process check if single-condition cases are allowed.",
+      "Set baselineCondition to not applicable or unknown, not a comparison.",
+      "Keep result metric as Input 10, OK 10, NG 0, NG rate 0%.",
+      "Add any available decision-row evidence or note decision not captured."
+    ],
+    "evidencePolicy": "Row citations support title, purpose, quantity, and result, but not a changed-condition comparison."
+  },
+  "usage": {
+    "input_tokens": 2157,
+    "output_tokens": 764,
+    "total_tokens": 2921
+  }
+}

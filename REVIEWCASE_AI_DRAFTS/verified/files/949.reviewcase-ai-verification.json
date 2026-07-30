@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 949,
+  "sourceFile": "85.1. TIU L5S3-01 LR REPORT DATA SPL lot test bonding VP by nozzle- 2026.05.07_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\949.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:01Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 949,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because the real comparison is Nozzle vs Normal for SPL bonding VP, but grouping and outcomes are misidentified.",
+    "issues": [
+      "Changed factor is filename, not process condition",
+      "Baseline and changed conditions left unresolved despite clear Nozzle/Normal rows",
+      "STD reference is mixed with comparable conditions",
+      "Outcome metrics contain generic or row-parsed noise",
+      "Spec and violation conclusions are unsupported"
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to bonding VP nozzle condition",
+      "Set baseline Normal and test Nozzle; keep STD as reference only",
+      "Use GRAPH summary rows for SPL, Fo, and THD outcomes",
+      "Rebuild raw-data outcomes by frequency with Nozzle_AVG vs Normal_AVG",
+      "Remove numeric pseudo-conditions and unsupported violation counts"
+    ],
+    "evidencePolicy": "Row citations exist but are insufficiently aligned to the claimed grouping and metrics."
+  },
+  "usage": {
+    "input_tokens": 11647,
+    "output_tokens": 733,
+    "total_tokens": 12380
+  }
+}

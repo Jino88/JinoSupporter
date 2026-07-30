@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 386,
+  "sourceFile": "20. BRS-161014  Report test  clean material by ethanol and primer at Sub 2 date 22.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\386.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:38Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 386,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable test context but changed-factor and outcome grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Baseline is not explicit; report appears to compare Ethanol vs Primer cleaning, not normal vs test.",
+      "Short/Long SMG, date/type, and SUB K3/SUB manual grouping keys are not preserved.",
+      "Repeated Ethanol/Primer subresults lack context showing which column group each value came from.",
+      "Metric label merges headers and may mix input, NG, NG rate, and total columns."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factor as cleaning agent: Ethanol vs Primer, unless source rows prove another baseline.",
+      "Extract rows 14-19 with full header alignment from rows 12-13.",
+      "Add subgroup keys for SMG type, date/type, and SUB K3 versus SUB manual or total.",
+      "Assign each numeric value to the exact defect metric column, including short and long separation where present.",
+      "Keep one review case for the validation report after regrouping outcomes."
+    ],
+    "evidencePolicy": "Citations exist, but row-level citations are insufficient until header alignment and grouping are corrected."
+  },
+  "usage": {
+    "input_tokens": 2763,
+    "output_tokens": 1113,
+    "total_tokens": 3876
+  }
+}

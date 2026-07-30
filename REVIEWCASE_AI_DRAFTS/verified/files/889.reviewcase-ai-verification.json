@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 889,
+  "sourceFile": "76. TIU C11-20 Report  find reason NG frequency high 2026.04.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\889.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:16Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 889,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the NG-rate comparison but misgroups the changed factor and includes invalid measurement statistics.",
+    "issues": [
+      "Changed factor should be frame date/lot 14/4 versus 13/4 and 15/4, not line/day-shift versus type.",
+      "Baseline/test wording is confusing; row 29 identifies Frame date 14/4 as the problem condition.",
+      "SubgroupKeys incorrectly stores Frame date 13/4 instead of true grouping context such as line/date.",
+      "Measurement outcome is invalid; header-only row stats mix counts and rates.",
+      "Key context and conclusion rows are missing from cited evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rewrite changed factor as frame make/product date lot comparison.",
+      "Set problem/baseline condition to Frame date 14/4 and comparison conditions to Frame dates 13/4 and 15/4.",
+      "Use NG rate, total NG, and NG function categories as process-defect outcomes only.",
+      "Remove the generated measurement-stat outcome.",
+      "Add evidence rows for purpose, content, table headers, all three data rows, and conclusion."
+    ],
+    "evidencePolicy": "Current citations prove rows exist but are insufficient for final evidence until corrected and conclusion/context rows are added."
+  },
+  "usage": {
+    "input_tokens": 3366,
+    "output_tokens": 696,
+    "total_tokens": 4062
+  }
+}

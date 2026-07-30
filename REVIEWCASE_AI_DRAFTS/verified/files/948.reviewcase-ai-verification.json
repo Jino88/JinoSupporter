@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 948,
+  "sourceFile": "85. TIU L5S3-01 R Report  test bonding VP by nozzle VZ05T2 improve NG bonding -  2026.05.05_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\948.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 948,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Primary nozzle change is clear, but outcome coverage and metric parsing need correction before final use.",
+    "issues": [
+      "Bond amount section is cited but not modeled as an outcome.",
+      "Tension section appears present but is not handled or excluded.",
+      "Decision row is not included for final judgement context.",
+      "Some defect rates appear converted while source values look fractional.",
+      "Function result fields may be column-misaligned."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add comparable bond amount outcome if both condition rows exist.",
+      "Mark tension as no usable comparison if only zero/divide-by-zero data exists.",
+      "Include decision/conclusion row citation and summarize it if meaningful.",
+      "Normalize rate units and labels consistently.",
+      "Recheck function and visual columns against headers before finalizing."
+    ],
+    "evidencePolicy": "Row citations prove existence, but final evidence coverage is incomplete."
+  },
+  "usage": {
+    "input_tokens": 4002,
+    "output_tokens": 1242,
+    "total_tokens": 5244
+  }
+}

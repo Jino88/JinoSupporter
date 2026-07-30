@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 51,
+  "sourceFile": "02. TIU L5S3-01 R Report  test F-PCB Improve Solder Pad of vendor CSY TECH VINA -Date 2026.02.04_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\51.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:47:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 51,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable cited comparison evidence, but the changed-factor grouping and Line L function comparison are incorrect and a spurious measurement outcome should be removed.",
+    "issues": [
+      "Changed factor is misstated as supplier/Normal vs Test, Line R, Line L; evidence indicates the primary tested condition is improved F-PCB solder pad for vendor CSY TECH VINA compared with normal, while Line R and Line L are subgroup keys.",
+      "Function outcome incorrectly compares Line L Test row Test!26 against Line R Normal row Test!24; Line L should compare Test!26 with Line L Normal row Test!28.",
+      "Function outcome comparisonRows omit Test!28 even though it is required for the Line L normal baseline.",
+      "Overall judgement 'improved' conflicts with source conclusion row Test!30 stating the test lot function result is same as normal; numeric rates are lower, but the report conclusion should be preserved or noted.",
+      "Measurement outcome based on Test!21 is an artifact from header/defect columns and should not be treated as a separate measurement domain.",
+      "Evidence includes Test!21, which is not shown in contextRows supplied to this verifier, reducing transparency even if row-existence verification passed."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Revise changedFactor to 'Improved F-PCB solder pad of vendor CSY TECH VINA test lot vs normal' or equivalent.",
+      "Set baselineCondition to 'Normal' and changedCondition to 'Test'; move 'Line R' and 'Line L' to subgroupKeys for the function outcome.",
+      "Correct function subResults to compare Line R Test Test!22 vs Line R Normal Test!24, and Line L Test Test!26 vs Line L Normal Test!28.",
+      "Add Test!28 to the function outcome comparisonRows and evidenceRows where needed.",
+      "Remove the spurious measurement-1 outcome derived from Test!21 unless actual measurement/spec data is present.",
+      "Reflect row Test!30 in limitations or judgement, e.g. 'same as normal' despite lower observed NG rates."
+    ],
+    "evidencePolicy": "Row citations are mostly sufficient for spot welding and function comparisons, but the current draft misuses some cited rows and must include the correct Line L normal row before approval."
+  },
+  "usage": {
+    "input_tokens": 4102,
+    "output_tokens": 995,
+    "total_tokens": 5097
+  }
+}

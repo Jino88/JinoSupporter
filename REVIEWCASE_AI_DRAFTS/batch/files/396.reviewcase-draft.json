@@ -1,0 +1,288 @@
+{
+  "sourceFileId": 396,
+  "sourceFile": "20. TIU L5S3-01 R Report test MG, Side MG happen NG Plating bloat from vendor Ruijin-  date 2025.12.05_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\20. TIU L5S3-01 R Report test MG, Side MG happen NG Plating bloat from vendor Ruijin-  date 2025.12.05_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 22,
+    "sheetCellCount": 79,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 5,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] REPORT TEST MAGNET L5S4-01 CENTER/SIDE HAPPEN PLATING BLOAD | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date | 2025-12-05 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Verify material MG center/Side happen Plating bloat can use or not"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Make sub 2 => Check NG process,decap check bond separate, tension, drop test (Auto+manual) => Make final sample => Check function"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| - Compare with normal"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| 1. Result check NG rate sub 2"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | No | Date | Item | | Input | NG | | | Total NG | NG rate | Note"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | | | | | | MG separate | MG offset | Damage"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | 3 | | Normal | | 100 | 0 | 0 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "Test!17",
+      "sheetName": "Test",
+      "rowNumber": 17,
+      "rowText": "| 2. Result decap check bond spread"
+    },
+    {
+      "rowId": "Test!18",
+      "sheetName": "Test",
+      "rowNumber": 18,
+      "rowText": "| | No | Date | Item | | Input | NG | NG rate | Note"
+    },
+    {
+      "rowId": "Test!21",
+      "sheetName": "Test",
+      "rowNumber": 21,
+      "rowText": "| | 3 | | Normal | | 8 | 0 | 0"
+    },
+    {
+      "rowId": "Test!28",
+      "sheetName": "Test",
+      "rowNumber": 28,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "Test!29",
+      "sheetName": "Test",
+      "rowNumber": 29,
+      "rowText": "| - Lot test happen NG separate plating => Can not use"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-396-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] REPORT TEST MAGNET L5S4-01 CENTER/SIDE HAPPEN PLATING BLOAD | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Verify material MG center/Side happen Plating bloat can use or not / | II. Content. / | - Make sub 2 => Check NG process,decap check bond separate, tension, drop test (Auto+manual) => Make final sample => Check function / | - Compare with normal",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "supplier",
+            "coating"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Magnet Small bloat, Magnet big bloat",
+          "baselineCondition": "Normal",
+          "changedCondition": "Magnet Small bloat, Magnet big bloat",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!14",
+            "Test!16",
+            "Test!19",
+            "Test!2",
+            "Test!20",
+            "Test!21",
+            "Test!5",
+            "Test!6",
+            "Test!7",
+            "Test!8",
+            "Test!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "1. Result check NG rate sub 2",
+          "comparisonRows": [
+            "Test!14",
+            "Test!16"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 20399,
+              "condition": "Magnet Small bloat",
+              "input": 100.0,
+              "ok": null,
+              "ng": 2.0,
+              "ratePercent": 3.0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "metricId": 20400,
+              "condition": "Normal",
+              "input": 100.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "metric-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "2. Result decap check bond spread",
+          "comparisonRows": [
+            "Test!19",
+            "Test!20",
+            "Test!21"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 20401,
+              "condition": "Magnet Small bloat",
+              "input": 8.0,
+              "ok": null,
+              "ng": 1.0,
+              "ratePercent": 12.5,
+              "evidenceRows": [
+                "Test!19"
+              ]
+            },
+            {
+              "metricId": 20402,
+              "condition": "Magnet big bloat",
+              "input": 8.0,
+              "ok": null,
+              "ng": 1.0,
+              "ratePercent": 12.5,
+              "evidenceRows": [
+                "Test!20"
+              ]
+            },
+            {
+              "metricId": 20403,
+              "condition": "Normal",
+              "input": 8.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!21"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!14",
+        "Test!16",
+        "Test!19",
+        "Test!2",
+        "Test!20",
+        "Test!21",
+        "Test!5",
+        "Test!6",
+        "Test!7",
+        "Test!8",
+        "Test!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!14",
+      "Test!16",
+      "Test!19",
+      "Test!2",
+      "Test!20",
+      "Test!21",
+      "Test!5",
+      "Test!6",
+      "Test!7",
+      "Test!8",
+      "Test!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 560,
+  "sourceFile": "34. BRS-201506 Report checking Hearing date 25.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\560.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 560,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies a daily same-sample hearing check as an equipment baseline/test comparison and uses weak measurement evidence.",
+    "issues": [
+      "Changed factor is wrong; no explicit baseline versus test condition is shown.",
+      "Daily row numbers were treated as changed conditions.",
+      "Sheet1 measurement outcome is based mainly on a header row and appears to be process-setting context.",
+      "OK G1 values are not captured despite table header showing OK counts.",
+      "Conclusion row is not used as outcome evidence."
+    ],
+    "requiredUserQuestions": [
+      "Should this file be modeled as a time-based same-sample hearing stability check rather than a manufacturing change comparison?"
+    ],
+    "correctionPlan": [
+      "Replace changed factor with same-SPK daily hearing check over one week, or exclude if a changed factor is required.",
+      "Use dates as subgroup/timepoints, not changed conditions.",
+      "Keep Sheet1 AWF/JIG/cooler/tension data as setup context only unless data rows prove an outcome.",
+      "Capture OK G1, NG, NG rate for each date from result rows.",
+      "Cite the result and conclusion rows supporting all samples OK."
+    ],
+    "evidencePolicy": "Citations exist for key rows, but Sheet1 header-only evidence and missing conclusion linkage are insufficient."
+  },
+  "usage": {
+    "input_tokens": 3805,
+    "output_tokens": 796,
+    "total_tokens": 4601
+  }
+}

@@ -1,11 +1,13 @@
 ; BMES NG Rate Standalone — Inno Setup script
-; Build with:  ISCC.exe installer.iss
-; Produces:    dist\BmesNgRateStandalone_Setup.exe
+; Build with:  ISCC.exe /DMyAppVersion=1.0.23 installer.iss
+; Produces:    dist\BmesNgRateStandalone_Setup-<version>.exe
+; Normally invoked by tools\PublishStandaloneUpdate.ps1, which passes the csproj version
+; and copies the result into JinoSupporter.Web\standalone-updates\ for the PC Download page.
 
 #define MyAppName        "BMES NG Rate"
 #define MyAppExeName     "BmesNgRateStandalone.exe"
 #ifndef MyAppVersion
-#define MyAppVersion     "1.0.9"
+#define MyAppVersion     "1.0.22"
 #endif
 #define MyAppPublisher   "Personal"
 #define PublishDir       "bin\Release\net8.0-windows\win-x64\publish"
@@ -22,7 +24,7 @@ DisableProgramGroupPage=yes
 DisableDirPage=no
 UninstallDisplayIcon={app}\{#MyAppExeName}
 OutputDir={#DistDir}
-OutputBaseFilename=BmesNgRateStandalone_Setup
+OutputBaseFilename=BmesNgRateStandalone_Setup-{#MyAppVersion}
 Compression=lzma2/ultra64
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible

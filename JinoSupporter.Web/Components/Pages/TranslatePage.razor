@@ -1,18 +1,28 @@
 @page "/translate"
 @rendermode InteractiveServer
 @implements IAsyncDisposable
-@inject ClaudeService  Claude
-@inject IJSRuntime     JS
+@inject AiProviderSettingsService AiProviders
+@inject CodexApiService CodexApi
+@inject WebRepository Repo
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IJSRuntime JS
 
 <PageTitle>Translate</PageTitle>
 
 <h4 class="mb-3 fw-semibold">Translate</h4>
 
-@if (!Claude.IsConfigured)
+@if (!CodexApi.IsConfigured && !AiProviders.CodexCliEnabled)
 {
     <div class="alert alert-warning">
-        <strong>Claude API key not configured.</strong>
-        Open <code>appsettings.json</code> and set <code>Claude:ApiKey</code>.
+        <strong>No translate provider is configured.</strong>
+        Save a Codex API key in Settings or enable Codex CLI.
+    </div>
+}
+else if (!CodexApi.IsConfigured)
+{
+    <div class="alert alert-warning">
+        <strong>Codex API is not configured.</strong>
+        Translate will fall back to Codex CLI.
     </div>
 }
 
@@ -68,12 +78,12 @@
                         <option value="Vietnamese">Vietnamese</option>
                     </select>
                     <button class="btn btn-primary text-nowrap" @onclick="TranslateAsync"
-                            disabled="@(_isLoading || !Claude.IsConfigured || !HasInput)">
+                            disabled="@(_isLoading || !HasTranslateProvider || !HasInput)">
                         @if (_isLoading)
                         {
                             <span class="spinner-border spinner-border-sm me-1" />
                         }
-                        Translate
+                        @TranslateButtonLabel
                     </button>
                 </div>
 
@@ -112,6 +122,17 @@
                 }
                 else if (!string.IsNullOrEmpty(_outputText))
                 {
+                    @if (!string.IsNullOrWhiteSpace(_recognizedSourceText))
+                    {
+                        <div class="mb-3">
+                            <div class="small fw-semibold text-muted mb-1">AI OCR source text</div>
+                            <pre class="translate-source mb-0">@_recognizedSourceText</pre>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_tokenUsageText))
+                    {
+                        <div class="translate-usage mb-3">@_tokenUsageText</div>
+                    }
                     <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit; font-size: 14px; line-height: 1.6;">@_outputText</pre>
                 }
                 else
@@ -152,6 +173,28 @@
         color: #64748b; cursor: pointer;
     }
     .img-clear:hover { border-color: #ef4444; color: #ef4444; }
+    .translate-source {
+        white-space: pre-wrap;
+        font-family: inherit;
+        font-size: 13px;
+        line-height: 1.55;
+        padding: 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: #f8fafc;
+        color: #334155;
+    }
+    .translate-usage {
+        display: inline-flex;
+        max-width: 100%;
+        font-size: 12px;
+        line-height: 1.4;
+        padding: 6px 10px;
+        border: 1px solid #dbeafe;
+        border-radius: 6px;
+        background: #eff6ff;
+        color: #1e40af;
+    }
 </style>
 
 @code {
@@ -160,14 +203,35 @@
     private string _inputText      = string.Empty;
     private string _targetLanguage = "Korean";
     private string _outputText     = string.Empty;
+    private string _recognizedSourceText = string.Empty;
+    private string _tokenUsageText = string.Empty;
     private bool   _isLoading;
     private string _error          = string.Empty;
     private readonly List<PastedImage> _images = new();
+    private CancellationTokenSource? _translateCts;
 
     private DotNetObjectReference<TranslatePage>? _dotnetRef;
     private bool _jsInitialized;
+    private string _currentUser = "unknown";
+    private string _clientIp = "unknown";
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
+    private sealed record TranslationResult(
+        string SourceText,
+        string Translation,
+        CodexTokenUsage? Usage,
+        string Provider,
+        string Model);
 
     private bool HasInput => !string.IsNullOrWhiteSpace(_inputText) || _images.Count > 0;
+    private bool HasTranslateProvider => CodexApi.IsConfigured || AiProviders.CodexCliEnabled;
+    private string TranslateButtonLabel => CodexApi.IsConfigured
+        ? $"Translate ({CodexApi.Model})"
+        : "Translate (Codex CLI)";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshActorAsync();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -219,27 +283,339 @@
             _error = "Enter text or paste an image first.";
             return;
         }
+        if (!HasTranslateProvider)
+        {
+            _error = "Codex API is not configured and Codex CLI is disabled.";
+            return;
+        }
 
+        _translateCts?.Dispose();
+        _translateCts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
         _isLoading  = true;
         _error      = string.Empty;
         _outputText = string.Empty;
+        _recognizedSourceText = string.Empty;
+        _tokenUsageText = string.Empty;
         StateHasChanged();
 
         try
         {
-            var imgList = _images.Count > 0
-                ? _images.Select(i => (i.MediaType, i.Base64)).ToList()
-                : null;
-            _outputText = await Claude.TranslateAsync(_inputText, _targetLanguage, imgList);
+            await RefreshActorAsync();
+            string actor = ActorLog();
+            LogTranslate($"request target={_targetLanguage}, textChars={_inputText.Length:N0}, images={_images.Count}", actor);
+            TranslationResult result;
+            if (CodexApi.IsConfigured)
+            {
+                LogTranslate($"using Codex API model={CodexApi.Model}", actor);
+                var images = _images.Select(img => (img.MediaType, img.Base64)).ToList();
+                CodexTranslationResult apiResult = await CodexApi.TranslateAsync(
+                    _inputText,
+                    _targetLanguage,
+                    images,
+                    _translateCts.Token);
+                SaveCodexApiUsage(apiResult.Usage);
+                result = new TranslationResult(
+                    apiResult.SourceText,
+                    apiResult.Translation,
+                    apiResult.Usage,
+                    "Codex API",
+                    CodexApi.Model);
+            }
+            else
+            {
+                LogTranslate("Codex API not configured; falling back to Codex CLI", actor);
+                result = await TranslateWithCodexCliAsync(_inputText, _targetLanguage, _images, actor, _translateCts.Token);
+            }
+            _recognizedSourceText = _images.Count > 0 ? result.SourceText : string.Empty;
+            _outputText = result.Translation;
+            _tokenUsageText = FormatUsage(result);
+            LogTranslate($"completed provider={result.Provider}, model={result.Model}, target={_targetLanguage}, sourceChars={result.SourceText.Length:N0}, outputChars={_outputText.Length:N0}, usage={_tokenUsageText}", actor);
+        }
+        catch (OperationCanceledException)
+        {
+            _error = "Translation cancelled or timed out.";
+            LogTranslate("cancelled or timed out", ActorLog());
         }
         catch (Exception ex)
         {
             _error = $"Translation error: {ex.Message}";
+            LogTranslate($"error {ex}", ActorLog());
         }
         finally
         {
             _isLoading = false;
+            _translateCts?.Dispose();
+            _translateCts = null;
         }
+    }
+
+    private static async Task<TranslationResult> TranslateWithCodexCliAsync(
+        string text,
+        string targetLanguage,
+        IReadOnlyList<PastedImage> images,
+        string actor,
+        CancellationToken ct)
+    {
+        string workDir = FindRepoRoot();
+        string tmpDir = Path.Combine(workDir, "tmp", "translate-codex", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tmpDir);
+
+        string promptPath = Path.Combine(tmpDir, "prompt.txt");
+        string scriptPath = Path.Combine(tmpDir, "run_codex_translate.ps1");
+        var imageFiles = new List<string>();
+
+        try
+        {
+            LogTranslate($"prepare tmp={tmpDir}", actor);
+            for (int i = 0; i < images.Count; i++)
+            {
+                string ext = ExtensionFromMediaType(images[i].MediaType);
+                string imagePath = Path.Combine(tmpDir, $"image_{i + 1:00}{ext}");
+                byte[] bytes = Convert.FromBase64String(images[i].Base64);
+                await File.WriteAllBytesAsync(imagePath, bytes, ct);
+                imageFiles.Add(imagePath);
+                LogTranslate($"wrote image {i + 1}/{images.Count}: {Path.GetFileName(imagePath)}, bytes={bytes.Length:N0}", actor);
+            }
+
+            string prompt = BuildCodexTranslatePrompt(text, targetLanguage, imageFiles);
+            await File.WriteAllTextAsync(promptPath, prompt, new System.Text.UTF8Encoding(false), ct);
+            await File.WriteAllTextAsync(scriptPath, BuildCodexTranslateScript(workDir, promptPath), new System.Text.UTF8Encoding(false), ct);
+            LogTranslate($"prompt ready chars={prompt.Length:N0}, images={imageFiles.Count}, script={scriptPath}", actor);
+
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                WorkingDirectory = workDir,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+                StandardOutputEncoding = System.Text.Encoding.UTF8,
+                StandardErrorEncoding = System.Text.Encoding.UTF8,
+            };
+            psi.ArgumentList.Add("-NoProfile");
+            psi.ArgumentList.Add("-ExecutionPolicy");
+            psi.ArgumentList.Add("Bypass");
+            psi.ArgumentList.Add("-File");
+            psi.ArgumentList.Add(scriptPath);
+
+            using var proc = new System.Diagnostics.Process { StartInfo = psi };
+            LogTranslate("starting Codex CLI process", actor);
+            proc.Start();
+            ChildProcessJob.Assign(proc);
+            LogTranslate($"started pid={proc.Id}", actor);
+
+            Task<string> stdoutTask = proc.StandardOutput.ReadToEndAsync(ct);
+            Task<string> stderrTask = proc.StandardError.ReadToEndAsync(ct);
+
+            using var killReg = ct.Register(() =>
+            {
+                try { if (!proc.HasExited) proc.Kill(entireProcessTree: true); }
+                catch { }
+            });
+
+            await proc.WaitForExitAsync(ct);
+            string stdout = await stdoutTask;
+            string stderr = await stderrTask;
+            LogTranslate($"process exited code={proc.ExitCode}, stdoutChars={stdout.Length:N0}, stderrChars={stderr.Length:N0}", actor);
+            if (!string.IsNullOrWhiteSpace(stderr))
+                LogTranslate($"stderr: {TrimForLog(stderr)}", actor);
+
+            if (proc.ExitCode != 0)
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(stderr)
+                    ? $"Codex CLI exited with code {proc.ExitCode}."
+                    : $"Codex CLI exited with code {proc.ExitCode}: {stderr.Trim()}");
+
+            TranslationResult result = ParseCodexTranslationResult(stdout);
+            if (string.IsNullOrWhiteSpace(result.Translation))
+                throw new InvalidOperationException("Codex CLI returned an empty translation.");
+
+            return result;
+        }
+        finally
+        {
+            try { if (Directory.Exists(tmpDir)) Directory.Delete(tmpDir, recursive: true); } catch { }
+            LogTranslate($"cleanup tmp={tmpDir}", actor);
+        }
+    }
+
+    private static void LogTranslate(string message, string actor)
+        => Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Translate] [{actor}] {message}");
+
+    private static string FormatUsage(TranslationResult result)
+    {
+        if (result.Usage is null)
+            return $"{result.Provider} {result.Model}: token usage unavailable";
+
+        return $"{result.Provider} {result.Model}: input {FormatToken(result.Usage.InputTokens)}, output {FormatToken(result.Usage.OutputTokens)}, total {FormatToken(result.Usage.TotalTokens)} tokens";
+    }
+
+    private static string FormatToken(int? tokens)
+        => tokens.HasValue ? tokens.Value.ToString("N0") : "-";
+
+    private void SaveCodexApiUsage(CodexTokenUsage? usage)
+    {
+        if (usage is null) return;
+
+        long input = ReadLongSetting("AiUsages:CodexApiInputTokens") + (usage.InputTokens ?? 0);
+        long output = ReadLongSetting("AiUsages:CodexApiOutputTokens") + (usage.OutputTokens ?? 0);
+        long total = ReadLongSetting("AiUsages:CodexApiTotalTokens") + (usage.TotalTokens ?? ((usage.InputTokens ?? 0) + (usage.OutputTokens ?? 0)));
+        string ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+        Repo.SetSetting("AiUsages:CodexApiInputTokens", input.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        Repo.SetSetting("AiUsages:CodexApiOutputTokens", output.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        Repo.SetSetting("AiUsages:CodexApiTotalTokens", total.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        Repo.SetSetting("AiUsages:CodexApiLastRequestAt", ts);
+    }
+
+    private long ReadLongSetting(string key)
+    {
+        string value = Repo.GetSetting(key) ?? "";
+        value = value.Replace(",", "").Trim();
+        return long.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long result)
+            ? result
+            : 0L;
+    }
+
+    private static string TrimForLog(string text)
+    {
+        text = (text ?? "").Trim();
+        const int Max = 4000;
+        return text.Length <= Max ? text : text[..Max] + "...";
+    }
+
+    private async Task RefreshActorAsync()
+    {
+        try
+        {
+            var auth = await AuthState;
+            string? name = auth.User.Identity?.Name;
+            if (!string.IsNullOrWhiteSpace(name))
+                _currentUser = name.Trim();
+        }
+        catch { }
+
+        string? ip = ResolveClientIp();
+        if (!string.IsNullOrWhiteSpace(ip))
+            _clientIp = ip;
+    }
+
+    private string ActorLog()
+        => $"user={_currentUser}; ip={_clientIp}";
+
+    private string? ResolveClientIp()
+    {
+        var ctx = HttpContextAccessor.HttpContext;
+        if (ctx is null) return null;
+
+        string forwarded = ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault() ?? "";
+        if (!string.IsNullOrWhiteSpace(forwarded))
+            return forwarded.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+
+        string realIp = ctx.Request.Headers["X-Real-IP"].FirstOrDefault() ?? "";
+        if (!string.IsNullOrWhiteSpace(realIp))
+            return realIp.Trim();
+
+        return ctx.Connection.RemoteIpAddress?.ToString();
+    }
+
+    private static string BuildCodexTranslatePrompt(string text, string targetLanguage, IReadOnlyList<string> imageFiles)
+    {
+        string images = imageFiles.Count == 0
+            ? "(none)"
+            : string.Join(Environment.NewLine, imageFiles.Select((path, i) => $"{i + 1}. {path}"));
+
+        return AiPromptRegistry.Render(
+            "translation/codex-ocr-translation.md",
+            ("targetLanguage", targetLanguage),
+            ("imageFiles", images),
+            ("sourceText", string.IsNullOrWhiteSpace(text) ? "(none)" : text.Trim()));
+    }
+
+    private static string BuildCodexTranslateScript(string workDir, string promptPath)
+    {
+        static string Q(string value) => "'" + (value ?? "").Replace("'", "''") + "'";
+        return string.Join(Environment.NewLine, new[]
+        {
+            "$ErrorActionPreference = 'Stop'",
+            "$utf8NoBom = New-Object System.Text.UTF8Encoding -ArgumentList $false",
+            "[Console]::InputEncoding = $utf8NoBom",
+            "[Console]::OutputEncoding = $utf8NoBom",
+            "$OutputEncoding = $utf8NoBom",
+            "try { chcp 65001 | Out-Null } catch {}",
+            $"Set-Location -LiteralPath {Q(workDir)}",
+            $"$prompt = Get-Content -LiteralPath {Q(promptPath)} -Raw -Encoding UTF8",
+            $"$prompt | & codex exec -c 'model_reasoning_effort=\"high\"' --cd {Q(workDir)} --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check -"
+        });
+    }
+
+    private static string CleanCodexOutput(string output)
+    {
+        string text = (output ?? "").Trim();
+        if (text.StartsWith("```", StringComparison.Ordinal))
+        {
+            int firstNewline = text.IndexOf('\n');
+            if (firstNewline >= 0) text = text[(firstNewline + 1)..];
+            int fence = text.LastIndexOf("```", StringComparison.Ordinal);
+            if (fence >= 0) text = text[..fence];
+        }
+        return text.Trim();
+    }
+
+    private static TranslationResult ParseCodexTranslationResult(string output)
+    {
+        string text = CleanCodexOutput(output);
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(text);
+            var root = doc.RootElement;
+            string source = root.TryGetProperty("sourceText", out var s)
+                ? s.GetString() ?? ""
+                : "";
+            string translation = root.TryGetProperty("translation", out var t)
+                ? t.GetString() ?? ""
+                : "";
+            return new TranslationResult(source.Trim(), translation.Trim(), null, "Codex CLI", "codex-cli");
+        }
+        catch
+        {
+            return new TranslationResult("", text, null, "Codex CLI", "codex-cli");
+        }
+    }
+
+    private static string ExtensionFromMediaType(string mediaType)
+        => mediaType.ToLowerInvariant() switch
+        {
+            "image/jpeg" => ".jpg",
+            "image/jpg" => ".jpg",
+            "image/webp" => ".webp",
+            "image/gif" => ".gif",
+            "image/bmp" => ".bmp",
+            _ => ".png",
+        };
+
+    private static string FindRepoRoot()
+    {
+        string dir = AppContext.BaseDirectory;
+        for (int i = 0; i < 8; i++)
+        {
+            if (File.Exists(Path.Combine(dir, "JinoSupporter.sln"))) return dir;
+            string? parent = Path.GetDirectoryName(dir.TrimEnd('\\', '/'));
+            if (string.IsNullOrEmpty(parent) || parent == dir) break;
+            dir = parent;
+        }
+
+        string current = Directory.GetCurrentDirectory();
+        dir = current;
+        for (int i = 0; i < 8; i++)
+        {
+            if (File.Exists(Path.Combine(dir, "JinoSupporter.sln"))) return dir;
+            string? parent = Path.GetDirectoryName(dir.TrimEnd('\\', '/'));
+            if (string.IsNullOrEmpty(parent) || parent == dir) break;
+            dir = parent;
+        }
+
+        return current;
     }
 
     private async Task CopyResult()
@@ -256,6 +632,10 @@
 
     public async ValueTask DisposeAsync()
     {
+        try { _translateCts?.Cancel(); } catch { }
+        _translateCts?.Dispose();
+        _translateCts = null;
+
         if (_jsInitialized)
         {
             try { await JS.InvokeVoidAsync("pasteImageHandler.cancelPasteCapture"); } catch { }

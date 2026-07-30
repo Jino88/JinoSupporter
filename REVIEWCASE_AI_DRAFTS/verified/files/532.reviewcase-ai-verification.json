@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 532,
+  "sourceFile": "31. BRS-161016 Report TEST compare hearing C2 and E2 2024.04.22_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\532.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:44Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 532,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it misstates the comparison and captures only a partial C2 result instead of the C2 versus E2 hearing validation.",
+    "issues": [
+      "Primary changed factor should be C2 Hearing vs E2 Hearing, not unspecified baseline vs C2.",
+      "Outcome metric is mislabeled as sample size text rather than hearing NG/OK/NG-rate results.",
+      "Only one C2 data row is captured; E2 comparison data and other result sections are missing.",
+      "Subgroup key appears taken from one worker/machine row and is not a valid case-level grouping.",
+      "Evidence omits key table headers and likely data rows needed to support the comparison."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factor as C2 Hearing versus E2 Hearing using rows that define the test comparison.",
+      "Extract paired C2 and E2 OK, NG touch, NG noise, total NG, and NG-rate results by row.",
+      "Preserve row-level keys such as date, worker name, machine code, sample type, and recheck group.",
+      "Include GE recheck as same validation context or separate outcome only if it compares the same NG samples.",
+      "Cite table headers and each supporting data row for every reported metric."
+    ],
+    "evidencePolicy": "Current citations prove source existence but are insufficient for final comparative evidence."
+  },
+  "usage": {
+    "input_tokens": 2720,
+    "output_tokens": 627,
+    "total_tokens": 3347
+  }
+}

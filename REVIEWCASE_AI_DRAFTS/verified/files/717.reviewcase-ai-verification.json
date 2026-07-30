@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 717,
+  "sourceFile": "51. TIU L5S3-01 R Report test compare dry 12h semi sub 3 and dry 12h final sample  -  date 2026.01.06_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\717.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 717,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable rows but the changed-factor and outcome grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Primary comparison is ambiguous between dry vs not dry and final sample vs semi sub 3.",
+      "Baseline and test conditions are mixed into one changedCondition.",
+      "Not dry 12h is treated as subgroup but appears to be a comparison condition.",
+      "Measurement outcome is likely a misclassified defect-category header/stat extraction.",
+      "Decision row supports NG reduction after final dry, but judgement is not incorporated."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison dry 12h final sample vs not dry 12h, or dry 12h final sample vs dry 12h semi sub 3?"
+    ],
+    "correctionPlan": [
+      "Define one primary changed factor from title, content, result rows, and decision.",
+      "Set Not dry 12h as baseline only if used as the control condition.",
+      "Keep Final sample dry 12h and Semi sub 3 dry 12h as separate compared conditions, not one combined test condition.",
+      "Remove the measurement outcome unless source rows prove real measurement statistics.",
+      "Use result rows 17, 19, 21 plus decision row 25 as evidence for function NG comparison."
+    ],
+    "evidencePolicy": "Row citations exist, but cited grouping is insufficient until condition roles are corrected."
+  },
+  "usage": {
+    "input_tokens": 3436,
+    "output_tokens": 818,
+    "total_tokens": 4254
+  }
+}

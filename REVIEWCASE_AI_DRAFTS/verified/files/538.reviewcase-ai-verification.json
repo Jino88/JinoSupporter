@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 538,
+  "sourceFile": "31.MSU-20S15-07 Result checking Problem VP+CD separate date 25.9.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\538.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 538,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but the changed-factor and outcome grouping are too mixed for final evidence.",
+    "issues": [
+      "Changed factor combines unrelated dates, settings, plasma changes, and numeric noise.",
+      "Baseline/test comparison is only valid for 3.10 normal vs test laser machine, not all cited sheets.",
+      "23.8 contains several separate laser power/speed and plasma conditions needing separate subgrouping.",
+      "Measurement outcomes appear misparsed from defect/function tables and Sheet1 context is not shown.",
+      "Some cited 15.10 and Sheet1 rows lack visible source context for semantic verification."
+    ],
+    "requiredUserQuestions": [
+      "Should sheets 23.8, 3.10, and 15.10 be treated as one validation report or separate test rounds?",
+      "Is the primary comparison laser machine change, laser power/speed setting, plasma Z-axis setting, or combined process change?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factors by row-level condition, date, line, machine, and test round.",
+      "Separate 3.10 normal vs test laser machine from 23.8 power/speed/plasma trials.",
+      "Keep VP+CD separation, tension, and function results under matched condition groups only.",
+      "Remove misparsed measurement stats from function defect rows unless true measurement tables support them.",
+      "Add missing source context for all Sheet1 and 15.10 cited data rows before approval."
+    ],
+    "evidencePolicy": "Row citations exist, but semantic citations are insufficient until grouping and missing context are fixed."
+  },
+  "usage": {
+    "input_tokens": 9819,
+    "output_tokens": 853,
+    "total_tokens": 10672
+  }
+}

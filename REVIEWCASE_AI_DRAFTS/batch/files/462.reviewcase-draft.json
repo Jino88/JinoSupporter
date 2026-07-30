@@ -1,0 +1,402 @@
+{
+  "sourceFileId": 462,
+  "sourceFile": "26. TIU C11-20  Report check damage FS after Plasma 2025.12.27_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\26. TIU C11-20  Report check damage FS after Plasma 2025.12.27_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 118,
+    "sheetCellCount": 821,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 16,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT CHECK FS DAMAGE AT PLASMA TIU-C11-20 | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | Date | 2025-12-27 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| -Check rate NG Fs damage"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| Check NG FS after plasma 50pcs/1 hour"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| '1. Result check NG damage FS Frame Plasma"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| | No | Date | Shift | Model | Time | Input | Ok | NG FS damage | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | | | | | | | | MTR | After plasma"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | 1 | 2025-12-27 00:00:00 | Day Shift | TIU C11-20 R | 14H-15H | 64 | 64 | 0 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "Test!119",
+      "sheetName": "Test",
+      "rowNumber": 119,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-462-rc-1",
+      "reviewTitle": "| REPORT CHECK FS DAMAGE AT PLASMA TIU-C11-20 | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | -Check rate NG Fs damage / | II. Content. / | Check NG FS after plasma 50pcs/1 hour / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Total, Day Shift, 15H-16H, 16H-17H, 17H-18H, 18H-19H, TIU C11-20 L, 15H-17H",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Total, Day Shift, 15H-16H, 16H-17H, 17H-18H, 18H-19H, TIU C11-20 L, 15H-17H",
+          "subgroupKeys": [
+            "TIU C11-20 R"
+          ],
+          "evidenceRows": [
+            "Test!13",
+            "Test!14",
+            "Test!15",
+            "Test!16",
+            "Test!17",
+            "Test!18",
+            "Test!19",
+            "Test!2",
+            "Test!20",
+            "Test!21",
+            "Test!22",
+            "Test!23",
+            "Test!24",
+            "Test!25",
+            "Test!26",
+            "Test!27",
+            "Test!28",
+            "Test!5",
+            "Test!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "'1. Result check NG damage FS Frame Plasma",
+          "comparisonRows": [
+            "Test!13",
+            "Test!14",
+            "Test!15",
+            "Test!16",
+            "Test!17",
+            "Test!18",
+            "Test!19",
+            "Test!20",
+            "Test!21",
+            "Test!22",
+            "Test!23",
+            "Test!24",
+            "Test!25",
+            "Test!26",
+            "Test!27",
+            "Test!28"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 20948,
+              "condition": "Day Shift | TIU C11-20 R",
+              "input": 64.0,
+              "ok": 64.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!13"
+              ]
+            },
+            {
+              "metricId": 20949,
+              "condition": "15H-16H",
+              "input": 64.0,
+              "ok": 64.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "metricId": 20950,
+              "condition": "16H-17H",
+              "input": 64.0,
+              "ok": 63.0,
+              "ng": 1.0,
+              "ratePercent": 1.5625,
+              "evidenceRows": [
+                "Test!15"
+              ]
+            },
+            {
+              "metricId": 20951,
+              "condition": "17H-18H",
+              "input": 64.0,
+              "ok": 64.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "metricId": 20952,
+              "condition": "18H-19H",
+              "input": 64.0,
+              "ok": 64.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "metricId": 20953,
+              "condition": "Total",
+              "input": 320.0,
+              "ok": 319.0,
+              "ng": 1.0,
+              "ratePercent": 0.3125,
+              "evidenceRows": [
+                "Test!18"
+              ]
+            },
+            {
+              "metricId": 20954,
+              "condition": "TIU C11-20 L",
+              "input": 64.0,
+              "ok": 64.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!19"
+              ]
+            },
+            {
+              "metricId": 20955,
+              "condition": "15H-17H",
+              "input": 64.0,
+              "ok": 64.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!20"
+              ]
+            },
+            {
+              "metricId": 20956,
+              "condition": "17H-19H",
+              "input": 64.0,
+              "ok": 64.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!21"
+              ]
+            },
+            {
+              "metricId": 20957,
+              "condition": "Total",
+              "input": 192.0,
+              "ok": 192.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!22"
+              ]
+            },
+            {
+              "metricId": 20958,
+              "condition": "Night Shift | TIU C11-20 R",
+              "input": 64.0,
+              "ok": 64.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!23"
+              ]
+            },
+            {
+              "metricId": 20959,
+              "condition": "22H-24H",
+              "input": 64.0,
+              "ok": 64.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!24"
+              ]
+            },
+            {
+              "metricId": 20960,
+              "condition": "1H-3H",
+              "input": 64.0,
+              "ok": 64.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!25"
+              ]
+            },
+            {
+              "metricId": 20961,
+              "condition": "3H-5H",
+              "input": 64.0,
+              "ok": 64.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!26"
+              ]
+            },
+            {
+              "metricId": 20962,
+              "condition": "5H-7H",
+              "input": 64.0,
+              "ok": 64.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!27"
+              ]
+            },
+            {
+              "metricId": 20963,
+              "condition": "Total",
+              "input": 320.0,
+              "ok": 320.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!28"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!13",
+        "Test!14",
+        "Test!15",
+        "Test!16",
+        "Test!17",
+        "Test!18",
+        "Test!19",
+        "Test!2",
+        "Test!20",
+        "Test!21",
+        "Test!22",
+        "Test!23",
+        "Test!24",
+        "Test!25",
+        "Test!26",
+        "Test!27",
+        "Test!28",
+        "Test!5",
+        "Test!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!13",
+      "Test!14",
+      "Test!15",
+      "Test!16",
+      "Test!17",
+      "Test!18",
+      "Test!19",
+      "Test!2",
+      "Test!20",
+      "Test!21",
+      "Test!22",
+      "Test!23",
+      "Test!24",
+      "Test!25",
+      "Test!26",
+      "Test!27",
+      "Test!28",
+      "Test!5",
+      "Test!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

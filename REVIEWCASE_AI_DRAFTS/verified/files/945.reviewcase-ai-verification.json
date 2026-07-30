@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 945,
+  "sourceFile": "84.BRS-2015 Report check function of vP after separate type VP 28.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\945.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 945,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source context but misidentifies the changed factor and cites headers instead of result rows.",
+    "issues": [
+      "Changed factor is filename, not the tested VP NG/OK type condition.",
+      "Baseline and test conditions are left explicit as unknown despite table type-check groups.",
+      "Outcome evidence cites only header rows, not result rows 15,17,18,19 or decision row 24.",
+      "Outcome grouping duplicates the same result table and splits subheaders incorrectly.",
+      "Row-level keys such as date, line, sample number, and type check are not preserved."
+    ],
+    "requiredUserQuestions": [
+      "Should OK(good) be treated as the reference condition and VP NG type checks as test conditions?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to VP type/check condition after separate VP NG/OK screening.",
+      "Define baseline/test groups from Type check rows or mark grouping ambiguous if not confirmed.",
+      "Attach result evidence to rows 15,17,18,19 and decision evidence to row 24.",
+      "Combine sigma and hearing submetrics under one function-check outcome table.",
+      "Preserve date, line, No, Type check, quantity, NG counts, NG rate, and note as subgroup/result fields."
+    ],
+    "evidencePolicy": "Current row citations are insufficient; cite data and decision rows, not only headers."
+  },
+  "usage": {
+    "input_tokens": 3407,
+    "output_tokens": 742,
+    "total_tokens": 4149
+  }
+}

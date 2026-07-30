@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 233,
+  "sourceFile": "11. TIU C11-20  Report check VP damage and VP separate 2025.12.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\233.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 233,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The file contains a single-condition VP separate/damage check with metrics, but no clear baseline-test comparison or changed-factor grouping.",
+    "issues": [
+      "No extracted comparison pairs or measurement stats.",
+      "Only one result row is visible, noted as Old Grill.",
+      "Changed factor is ambiguous between new check method and grill condition.",
+      "No decision content is provided after the Decision header."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended baseline and test condition?",
+      "Is Old Grill the condition being evaluated or only a note?"
+    ],
+    "correctionPlan": [
+      "Extract the result table metrics from Test!11-Test!13.",
+      "Define the primary changed factor from source context.",
+      "Add baseline/test grouping only if supported by rows or user input.",
+      "Capture the Decision section if additional rows exist.",
+      "Keep VP separate and VP damage outcomes under one report context."
+    ],
+    "evidencePolicy": "Rows support report purpose, method, and one result row; citations are insufficient for a final comparison conclusion."
+  },
+  "usage": {
+    "input_tokens": 1638,
+    "output_tokens": 631,
+    "total_tokens": 2269
+  }
+}

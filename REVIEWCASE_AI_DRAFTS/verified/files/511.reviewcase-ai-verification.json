@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 511,
+  "sourceFile": "3.1 MSU-L20S15-07 Report test change method Dry VP+CD for improve NG not dry glue_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\511.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:07Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 511,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the main method-change context but has material outcome extraction and grouping errors.",
+    "issues": [
+      "Changed condition wrongly includes Total as part of the factor.",
+      "Function outcome appears miscomputed as zero NG despite cited normal row showing defect totals.",
+      "Tension spec violations are missed; rows with min below 1.9 are marked violationCount 0.",
+      "Tension row grouping is malformed for rows with merged process/type fields.",
+      "Header-only measurement outcomes from rows 14 and 41 are not valid standalone evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to normal dry UC press VP/CD vs change method UC press VP/CD; keep Total only as aggregate subgroup.",
+      "Re-extract Function table using its full header and all NG total/rate columns.",
+      "Recompute tension pass/fail against ≥1.9 Kgf and preserve date/type grouping.",
+      "Remove header-only measurement outcomes unless supported by data rows.",
+      "Cite section headers plus exact compared data and total rows for each outcome."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficiently specific and include invalid header-only evidence."
+  },
+  "usage": {
+    "input_tokens": 8998,
+    "output_tokens": 779,
+    "total_tokens": 9777
+  }
+}

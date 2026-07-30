@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 852,
+  "sourceFile": "7. BRS-161016 DT Report test vision material VP before ass'y VP+CD  date 28.3.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\852.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:36Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 852,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable as final evidence because it contains no review cases despite citeable VP normal/abnormal result rows.",
+    "issues": [
+      "No reviewCases were generated.",
+      "No metrics or measurement stats were extracted.",
+      "Changed-factor framing is undefined.",
+      "Result table needs aggregation across dated runs."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Create a review case for VP material check before assembly.",
+      "Use VP normal versus VP abnormal as the observed condition split unless source context proves another factor.",
+      "Extract input, VP normal, and VP abnormal counts by date/run.",
+      "Aggregate totals and note abnormal count is zero across listed runs.",
+      "Cite purpose, content, header, and result rows."
+    ],
+    "evidencePolicy": "Citations are currently absent; rows 5-14 and dated result rows provide sufficient citeable evidence after extraction."
+  },
+  "usage": {
+    "input_tokens": 2211,
+    "output_tokens": 626,
+    "total_tokens": 2837
+  }
+}

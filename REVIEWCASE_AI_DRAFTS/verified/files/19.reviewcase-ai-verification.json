@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 19,
+  "sourceFile": "01. MSU-L20S15-07 Report test New Dry UV Machine 395nm ( Normal 365nm) date 2.05.2025 - Copy_1778470633_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\19.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:08Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 19,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is based on a valid comparable 395nm vs 365nm dry UV test but the changed factor and LED outcome grouping are not reliable.",
+    "issues": [
+      "Changed factor is a filename instead of 395nm new dry UV versus normal 365nm.",
+      "Baseline and changed conditions are marked not explicit despite clear source rows.",
+      "LED UV outcomes use header/aggregate rows and produce invalid stats/spec violations.",
+      "Two sheets have different titles/specs and need product or sheet subgroup handling.",
+      "Some cited rows are not present in the supplied contextRows."
+    ],
+    "requiredUserQuestions": [
+      "Should sheets 161016 and 201507 be separate cases or subgroups under one validation?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to new dry UV 395nm vs normal dry UV 365nm.",
+      "Set baseline as 365nm normal and changed condition as 395nm test using process rows.",
+      "Use sheet/product, date, test round, film use, and spec as subgroup keys.",
+      "Rebuild LED UV outcomes from actual test/normal data rows, not header rows.",
+      "Keep tension outcomes with correct spec, averages, pass notes, and decision rows."
+    ],
+    "evidencePolicy": "Citations are partially sufficient; final evidence must cite purpose/process, paired test-normal result rows, and decisions."
+  },
+  "usage": {
+    "input_tokens": 7366,
+    "output_tokens": 813,
+    "total_tokens": 8179
+  }
+}

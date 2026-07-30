@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 259,
+  "sourceFile": "13. BRS-161014  DT Report test VP bending date 15.10.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\259.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 259,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Comparable VP bending evidence exists, but changed-factor grouping and outcomes need cleanup before use.",
+    "issues": [
+      "Primary factor mixes VP bending with VP mold numbers and Total.",
+      "VP #4/#6/#9 likely subgroup molds, not separate changed conditions.",
+      "Spurious measurement outcomes are derived from headers or picture rows.",
+      "Referenced core comparison rows lack visible row text in the draft context.",
+      "Model/file identifier mismatch may need confirmation."
+    ],
+    "requiredUserQuestions": [
+      "Are VP #3/#4/#6/#9 mold subgroups under VP bending?",
+      "Should BRS-161014 filename or BRS-161016 report title be authoritative?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to VP bending versus VP OK normal.",
+      "Move VP mold numbers to subgroup keys only.",
+      "Keep SUB 1 and function NG outcomes under the same factor.",
+      "Remove header/picture-derived measurement outcomes.",
+      "Add full cited row text for all comparison rows."
+    ],
+    "evidencePolicy": "Row IDs exist, but final evidence needs full table-row citations for the compared conditions."
+  },
+  "usage": {
+    "input_tokens": 8130,
+    "output_tokens": 763,
+    "total_tokens": 8893
+  }
+}

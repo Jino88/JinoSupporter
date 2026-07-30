@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 795,
+  "sourceFile": "61.MSU-L20S15-07  Report test material ring plate difference colour level 1 and level 2 from Myungjin vender_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\795.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:13Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 795,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft uses valid rows but misgroups the changed factor by mixing material levels with drop-test methods.",
+    "issues": [
+      "Changed factor incorrectly includes auto and manual drop tests as changed conditions.",
+      "Drop-test rows lack preserved test-method grouping for level 2 rows.",
+      "Decision rows approving use of levels 1 and 2 are omitted from evidence.",
+      "Baseline Normal applies only to function check, not drop-test results.",
+      "SubgroupKeys are incomplete and biased to level 1 only."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to plate ring colour/material level 1 and level 2 from Myungjin versus Normal where available.",
+      "Treat auto and manual drop as outcome/test-method subgroups, not changed factors.",
+      "Carry merged date, line, and drop-test method context onto rows 29 and 31.",
+      "Add decision and result-summary rows 32-40 to cited evidence.",
+      "Separate function comparison with Normal from drop-test pass results without Normal baseline."
+    ],
+    "evidencePolicy": "Cited rows exist, but final evidence is incomplete until decision rows and corrected grouping citations are added."
+  },
+  "usage": {
+    "input_tokens": 4431,
+    "output_tokens": 644,
+    "total_tokens": 5075
+  }
+}

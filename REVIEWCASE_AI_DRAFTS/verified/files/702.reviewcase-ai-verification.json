@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 702,
+  "sourceFile": "5. MSU-L20S15-07DT Report test use GO-NO check dimension material C-MG and S-MG date 5.05.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\702.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:10Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 702,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not ready because the primary changed factor and outcome metrics are ambiguous and several stats are built from headers or totals rather than comparable evidence.",
+    "issues": [
+      "Changed factor is a filename, not an evidence-based condition.",
+      "Baseline and test condition are not established from cited rows.",
+      "C-MG and S-MG may be subgroup/material contexts, not proven changed factors.",
+      "Outcome stats appear to mix headers, counts, NG totals, and specs.",
+      "Key result and decision rows are missing or not cited."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended comparison C-MG vs S-MG, or Go/No jig validation only?",
+      "Is there a prior or normal inspection method to use as baseline?"
+    ],
+    "correctionPlan": [
+      "Inspect full result rows for C-MG and S-MG data and totals.",
+      "Define the changed factor only from purpose/content evidence.",
+      "Preserve material, supplier, line, box, and date as grouping keys.",
+      "Rebuild outcomes around qty checked, min/max NG, total NG, and NG rate.",
+      "Cite actual data, total, spec, and decision rows, not only headers."
+    ],
+    "evidencePolicy": "Current row citations prove report context but are insufficient for final evidence because data and decision rows are incomplete."
+  },
+  "usage": {
+    "input_tokens": 3474,
+    "output_tokens": 807,
+    "total_tokens": 4281
+  }
+}

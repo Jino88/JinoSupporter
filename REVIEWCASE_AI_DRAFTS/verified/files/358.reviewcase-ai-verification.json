@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 358,
+  "sourceFile": "19. BRS-201506 Report checking and test problem NG function high date 24.2.2024 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\358.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:36Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 358,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the changed-factor and outcome grouping are overmerged and not reliable for final evidence.",
+    "issues": [
+      "Changed factor concatenates unrelated tests and dates.",
+      "Baseline and test conditions are ambiguous or mixed.",
+      "Multiple reports and domains are merged into one case.",
+      "Measurement parsing includes non-metric values and corrupt stats.",
+      "Several outcomes are unjudged yet tied to one factor."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split by report or clear validation objective.",
+      "Create separate factors for UV block, coil change, VP KR, mold/cavity, and dimensions.",
+      "Keep date, lot, cavity, machine, and test round as subgroup keys.",
+      "Rebuild comparisons only from adjacent table rows with shared headers.",
+      "Remove corrupt measurement stats and unjudged unrelated outcomes."
+    ],
+    "evidencePolicy": "Row citations exist but do not sufficiently support the current grouping."
+  },
+  "usage": {
+    "input_tokens": 16661,
+    "output_tokens": 733,
+    "total_tokens": 17394
+  }
+}

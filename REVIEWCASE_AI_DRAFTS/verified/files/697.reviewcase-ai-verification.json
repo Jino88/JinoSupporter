@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 697,
+  "sourceFile": "5. BRS-161016 DT Report test material MG-C have abnormal surface of Baotou supplier date 05.09.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\697.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 697,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable evidence exists, but the draft misgroups the changed factor and corrupts key measurement outcomes.",
+    "issues": [
+      "Changed factor is polluted with metrics and headers instead of abnormal Baotou Test MG-C vs Normal MG-C.",
+      "Baseline supplier context is inconsistently captured, especially Ruijin normal in Gauss section.",
+      "Measurement extraction is unreliable, mixing tension, Gauss, specs, dates, and sample numbers.",
+      "Gauss semi-yoke NG result and final can-not-use conclusion are not properly represented.",
+      "Several outcome domains and metrics are generic or mislabeled."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to abnormal-surface Baotou Test MG-C versus Normal MG-C, with supplier context where cited.",
+      "Rebuild decap, tension, Gauss, and function as outcomes under the same validation report.",
+      "Reparse measurement tables using correct headers, specs, units, and paired Test/Normal rows.",
+      "Add cited final judgement rows and align outcome judgements with report conclusions.",
+      "Remove header/sample-number artifacts from subgroup keys and measurement stats."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient until corrected rows support each grouped factor and outcome."
+  },
+  "usage": {
+    "input_tokens": 10477,
+    "output_tokens": 792,
+    "total_tokens": 11269
+  }
+}

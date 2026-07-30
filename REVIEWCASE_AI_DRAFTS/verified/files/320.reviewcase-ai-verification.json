@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 320,
+  "sourceFile": "16.2 BRS-161016Report test  SPC used SUS-ARRAY of new vender CSY Tech Vina first lot 3 test again_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\320.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:21Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 320,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable normal-vs-new-vendor lot validation is supported, but several defect totals are parsed from the wrong columns.",
+    "issues": [
+      "Vision spot uses first defect count instead of total NG.",
+      "Module line uses first defect count instead of total NG.",
+      "Some subResult NG counts conflict with cited NG rates.",
+      "Metric header rows are not cited for several outcome sections.",
+      "Tension result is PASS but left not judged."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Recalculate vision spot using Total NG and sheet NG Rate.",
+      "Recalculate module line using Total NG and sheet NG Rate.",
+      "Keep all defect rates consistent with cited total NG values.",
+      "Add cited header/title rows for each outcome section.",
+      "Mark tension as pass/acceptable or explain no spec limitation."
+    ],
+    "evidencePolicy": "Row citations exist, but section headers and corrected total-NG rows are needed before final use."
+  },
+  "usage": {
+    "input_tokens": 5887,
+    "output_tokens": 734,
+    "total_tokens": 6621
+  }
+}

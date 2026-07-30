@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 638,
+  "sourceFile": "42.1.BRS-2015 Report Test MG of new vender Qing Dao improve date 6.6.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\638.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 638,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable QingDao vs RuiJin vendor evidence exists, but the draft misgroups the changed factor and measurement outcomes.",
+    "issues": [
+      "Changed factor incorrectly includes SM VISION as a test condition.",
+      "Change domain includes coating/dimension without clear cited support.",
+      "Gauss measurement groupings and specs are misassigned.",
+      "Some cited metric rows are headers or absent from provided context.",
+      "Several OK decision domains are not cleanly represented."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to new/improved QingDao MG versus normal RuiJin MG.",
+      "Treat SM VISION, BPT+SM, final sample, Grill/Yoke, and function as outcome/subgroup context.",
+      "Rebuild Gauss semi and final sample metrics with correct specs per item.",
+      "Cite actual data rows plus relevant headers for each outcome.",
+      "Add limitations for unequal sample sizes and any uncited row gaps."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficiently aligned to the claimed groupings."
+  },
+  "usage": {
+    "input_tokens": 7488,
+    "output_tokens": 645,
+    "total_tokens": 8133
+  }
+}

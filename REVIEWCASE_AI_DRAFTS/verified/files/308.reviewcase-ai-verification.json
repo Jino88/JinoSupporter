@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 308,
+  "sourceFile": "16. BRS-161014 DT Report test CD supplier Ralon  change packing method improve CD bending   date 6.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\308.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 308,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures the main Ralon vs GES comparisons but needs correction before final evidence use.",
+    "issues": [
+      "Primary change is under-specified; packing method improvement is omitted from the factor label.",
+      "Review title cites the decap sheet instead of the main test report title.",
+      "Decision rows supporting final judgement are not cited.",
+      "Decap/unknown-reason NG result is referenced in source but not modeled as an outcome.",
+      "Changed-factor evidence includes an unrelated decap title row."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Retitle the case from the main Test report title.",
+      "Revise changed factor to reflect test Ralon CD with changed packing method versus normal GES CD.",
+      "Add decision evidence rows for material, function, and decap conclusions.",
+      "Add or explicitly limit the decap unknown-reason NG outcome using available cited rows.",
+      "Remove unrelated Decap NG title evidence unless used for a decap outcome."
+    ],
+    "evidencePolicy": "Core comparison rows exist, but citations are incomplete for final conclusions and decap evidence."
+  },
+  "usage": {
+    "input_tokens": 4466,
+    "output_tokens": 764,
+    "total_tokens": 5230
+  }
+}

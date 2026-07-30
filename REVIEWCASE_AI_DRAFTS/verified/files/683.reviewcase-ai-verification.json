@@ -1,0 +1,33 @@
+{
+  "sourceFileId": 683,
+  "sourceFile": "48. TIU C11-20  Report Test  find reson NG   VP deform 2026.1.28_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\683.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 683,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "passed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "File contains a defect-check report with process inspection headers but no comparable changed-condition evidence or usable outcome data.",
+    "issues": [
+      "No baseline/test changed factor is cited.",
+      "No extracted measurements or result rows support comparison.",
+      "Picture sections are not usable as final evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Mark the file excluded for no citeable changed-condition evidence.",
+      "Do not create a ReviewCase from picture-only/sample sections.",
+      "If hidden result data exists, re-extract rows with model, input, NG counts, and rates."
+    ],
+    "evidencePolicy": "Rows 2, 6, 8, 12-16 support exclusion; citations are insufficient for any comparative evidence claim."
+  },
+  "usage": {
+    "input_tokens": 2055,
+    "output_tokens": 697,
+    "total_tokens": 2752
+  }
+}

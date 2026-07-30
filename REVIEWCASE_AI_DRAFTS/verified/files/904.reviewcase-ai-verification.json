@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 904,
+  "sourceFile": "79. BRS-161014 Report check reason NG solder weak Date 7.12.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\904.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 904,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable temperature-reduction test is identified, but the draft outcome judgement should align with the report decision that NG stayed effectively the same.",
+    "issues": [
+      "Judgement 'mixed' conflicts with source decision of no effective change.",
+      "Outcome metric is too broad; table measures solder weak NG rate and total NG.",
+      "Change domain should be temperature/process parameter, not unknown.",
+      "Title and purpose contain extracted pipe noise."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to soldering/spot-welding temperature reduction from normal 650°C to 630°C and 610°C.",
+      "Revise overall judgement to no effective improvement or no change per decision row.",
+      "Keep subresults numeric, noting 630°C is 6% vs normal 7% but conclusion says same.",
+      "Rename metric to NG solder weak/NG spot-welding rate.",
+      "Clean title and purpose text."
+    ],
+    "evidencePolicy": "Row citations are sufficient and include purpose, change, results, and decision."
+  },
+  "usage": {
+    "input_tokens": 2575,
+    "output_tokens": 605,
+    "total_tokens": 3180
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "sourceFileId": 38,
+  "sourceFile": "017.MSU-20S15-07 Result test sample waitting 2 day and check function_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\017.MSU-20S15-07 Result test sample waitting 2 day and check function_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Function",
+    "sheetRowCount": 7,
+    "sheetCellCount": 67,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Function!3",
+      "sheetName": "Function",
+      "rowNumber": 3,
+      "rowText": "| RESULT CHECK FUNCTION OF LOT TEST WAITING 2DAY"
+    },
+    {
+      "rowId": "Function!4",
+      "sheetName": "Function",
+      "rowNumber": 4,
+      "rowText": "| Date | Type | Input | OK | Sigma | | | | Hearing ( + 1V ) | | | | Hearing ( + 0V )"
+    },
+    {
+      "rowId": "Function!5",
+      "sheetName": "Function",
+      "rowNumber": 5,
+      "rowText": "| | | | | SPL | THD | SPL+THD | SPL+THD+F0 | Noise | Touch | Total NG | NG Rate | Noise | Touch | Total NG | NG Rate"
+    },
+    {
+      "rowId": "Function!6",
+      "sheetName": "Function",
+      "rowNumber": 6,
+      "rowText": "| 2025-02-13 00:00:00 | Lot test waiting 2 day | 299 | 233 | 0 | 0 | 0 | 0 | 20 | 46 | 66 | 0.22073579 | 7 | 3 | 10 | 0.03344482"
+    },
+    {
+      "rowId": "Function!7",
+      "sheetName": "Function",
+      "rowNumber": 7,
+      "rowText": "| | | | | 0 | 0 | 0 | 0 | 0.3030303 | 0.6969697 | | | 0.7 | 0.3"
+    },
+    {
+      "rowId": "Function!8",
+      "sheetName": "Function",
+      "rowNumber": 8,
+      "rowText": "| | Normal | 920 | 684 | 0 | 1 | 0 | 0 | 69 | 166 | 236 | 0.25652174 | 19 | 18 | 37 | 0.04021739"
+    },
+    {
+      "rowId": "Function!9",
+      "sheetName": "Function",
+      "rowNumber": 9,
+      "rowText": "| | | | | 0 | 0.00423729 | 0 | 0 | 0.29237288 | 0.70338983 | | | 0.51351351 | 0.48648649"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-38-rc-1",
+      "reviewTitle": "| RESULT CHECK FUNCTION OF LOT TEST WAITING 2DAY",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "coating",
+            "lot"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Lot test waiting 2 day",
+          "baselineCondition": "Normal",
+          "changedCondition": "Lot test waiting 2 day",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Function!3",
+            "Function!6",
+            "Function!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT CHECK FUNCTION OF LOT TEST WAITING 2DAY",
+          "comparisonRows": [
+            "Function!6",
+            "Function!8"
+          ],
+          "judgement": "worse",
+          "subResults": [
+            {
+              "pairId": 3491,
+              "controlCondition": "Normal",
+              "testCondition": "Lot test waiting 2 day",
+              "control": {
+                "input": 920.0,
+                "ng": 0.0,
+                "ratePercent": 0.0
+              },
+              "test": {
+                "input": 299.0,
+                "ng": 2.0,
+                "ratePercent": 0.6688963210702341
+              },
+              "deltaRatePercentPoint": 0.6688963210702341,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Function!6",
+                "Function!8"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Function!3",
+        "Function!6",
+        "Function!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Function!3",
+      "Function!6",
+      "Function!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

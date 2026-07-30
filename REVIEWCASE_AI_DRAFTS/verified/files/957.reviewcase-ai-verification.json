@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 957,
+  "sourceFile": "88.BRS-2015 Report check NG over glue SMG 26.9.2015_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\957.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:22:08Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 957,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cannot be verified because it produced no review case despite citeable over-glue NG comparison evidence.",
+    "issues": [
+      "No reviewCases were generated.",
+      "No evidence rows are attached to any final claim.",
+      "Primary changed factor is ambiguous across clean, press MC, auto/manual, and DT/base checks.",
+      "Some referenced sections appear incomplete in extracted context.",
+      "Filename/date context may be inconsistent."
+    ],
+    "requiredUserQuestions": [
+      "Which comparison is the primary changed factor for this report?",
+      "Should press MC, auto/manual, and DT/base checks be one case or separate cases?"
+    ],
+    "correctionPlan": [
+      "Create at least one review case using cited row IDs.",
+      "Define baseline and test conditions from section headers and table rows.",
+      "Preserve date, line, type check, quantity, NG count, NG rate, and notes.",
+      "Do not infer missing after-clean or manual results without cited rows.",
+      "Mark incomplete comparisons as needs_review if source rows are unavailable."
+    ],
+    "evidencePolicy": "Current citations are insufficient; final evidence needs row-level citations for each condition and metric."
+  },
+  "usage": {
+    "input_tokens": 2402,
+    "output_tokens": 766,
+    "total_tokens": 3168
+  }
+}

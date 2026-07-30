@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 58,
+  "sourceFile": "022.MSU - L20S15-07 REPORT TEST NEW BP+SM ASS'Y GUIDE JIG  date 2025.02.21_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\58.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:46Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 58,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the TEST vs NORMAL jig/process comparison but mispairs date groups and includes a spurious measurement outcome.",
+    "issues": [
+      "Date-level TEST/NORMAL pairs are not preserved.",
+      "Rows 21 and 25 are omitted from outcome comparison.",
+      "Pairs 3526 and 3527 use the wrong NORMAL baseline row.",
+      "Measurement outcome is derived from headers/zeros, not real measurements.",
+      "Changed factor should focus on new BP+SM guide jig/process, not material."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define changed factor as new BP+SM assembly guide jig/process: TEST vs NORMAL.",
+      "Pair 2025-02-21 rows 15 and 17, 2025-02-22 rows 19 and 21, and 2025-02-23 rows 23 and 25.",
+      "Include rows 13 and 14 as table headers and all paired data rows as evidence.",
+      "Remove the measurement outcome; keep sub-yoke defect/NG-rate outcome only.",
+      "Optionally note function-check rows 30 and 32 as unusable because inputs are absent."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until corrected pair rows and headers are cited."
+  },
+  "usage": {
+    "input_tokens": 4224,
+    "output_tokens": 700,
+    "total_tokens": 4924
+  }
+}

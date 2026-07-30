@@ -1,0 +1,333 @@
+{
+  "sourceFileId": 417,
+  "sourceFile": "22. TIU C11-20  Report Test VP stock date 6.1 check function 2026.1.29_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\22. TIU C11-20  Report Test VP stock date 6.1 check function 2026.1.29_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 21,
+    "sheetCellCount": 109,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 6
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST VP STOCK DATE 6/1 TIU-C11-20 | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | Date | 2026-01-29 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Tes improve NG Function"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| Test VP date 6/1 make sample check function comparae normal"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| 1. Result VP date 6/1 make sample check function"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| | Result check function"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | No | Date | Shift | Model | Type | | Input | OK | NG AUDIOBUS | | | | NG HEARING | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | | | | | | | | | SPL | SPL+RB | RB | No sound | Noise | Touch"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | 2 | | | | Normal ( Date 29/1 ) | | 450 | 427 | 1 | 0 | 23 | 0 | 22 | 0 | 23 | 0.05111111"
+    },
+    {
+      "rowId": "Test!20",
+      "sheetName": "Test",
+      "rowNumber": 20,
+      "rowText": "| | 4 | | | | Normal ( Date 29/1 ) | | 450 | 407 | 4 | 4 | 63 | 0 | 35 | 0 | 43 | 0.09555556"
+    },
+    {
+      "rowId": "Test!24",
+      "sheetName": "Test",
+      "rowNumber": 24,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-417-rc-1",
+      "reviewTitle": "| REPORT TEST VP STOCK DATE 6/1 TIU-C11-20 | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Tes improve NG Function / | II. Content. / | Test VP date 6/1 make sample check function comparae normal / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: Normal ( Date 29/1 ) vs Day shift, TIU C11-20R",
+          "baselineCondition": "Normal ( Date 29/1 )",
+          "changedCondition": "Day shift, TIU C11-20R",
+          "subgroupKeys": [
+            "VP date 6/1",
+            "TIU C11-20L"
+          ],
+          "evidenceRows": [
+            "Test!13",
+            "Test!14",
+            "Test!16",
+            "Test!18",
+            "Test!2",
+            "Test!20",
+            "Test!5",
+            "Test!7",
+            "Test!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "Result check function",
+          "comparisonRows": [
+            "Test!14",
+            "Test!16",
+            "Test!18",
+            "Test!20"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 20584,
+              "condition": "Day shift | TIU C11-20L | VP date 6/1",
+              "input": 448.0,
+              "ok": 434.0,
+              "ng": 14.0,
+              "ratePercent": 3.125,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "metricId": 20585,
+              "condition": "Normal ( Date 29/1 )",
+              "input": 450.0,
+              "ok": 427.0,
+              "ng": 23.0,
+              "ratePercent": 5.111111,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "metricId": 20586,
+              "condition": "TIU C11-20R | VP date 6/1",
+              "input": 444.0,
+              "ok": 422.0,
+              "ng": 22.0,
+              "ratePercent": 4.954955,
+              "evidenceRows": [
+                "Test!18"
+              ]
+            },
+            {
+              "metricId": 20587,
+              "condition": "Normal ( Date 29/1 )",
+              "input": 450.0,
+              "ok": 407.0,
+              "ng": 43.0,
+              "ratePercent": 9.555556,
+              "evidenceRows": [
+                "Test!20"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No | Date | Shift | Model | Type | Input | OK | NG AUDIOBUS | NG HEARING | Total NG | NG rate",
+          "comparisonRows": [
+            "Test!13"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 53834,
+              "condition": "NG AUDIOBUS / SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 4.0,
+              "avg": 0.62638888875,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!13"
+              ]
+            },
+            {
+              "statId": 53835,
+              "condition": "NG AUDIOBUS / SPL+RB",
+              "spec": "",
+              "min": 0.0,
+              "max": 4.0,
+              "avg": 1.2527952737499999,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!13"
+              ]
+            },
+            {
+              "statId": 53836,
+              "condition": "NG AUDIOBUS / RB",
+              "spec": "",
+              "min": 0.02678571,
+              "max": 63.0,
+              "avg": 16.160964579999998,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!13"
+              ]
+            },
+            {
+              "statId": 53837,
+              "condition": "NG AUDIOBUS / No sound",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!13"
+              ]
+            },
+            {
+              "statId": 53838,
+              "condition": "NG HEARING / Noise",
+              "spec": "",
+              "min": 0.02678571,
+              "max": 35.0,
+              "avg": 10.899249115000002,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!13"
+              ]
+            },
+            {
+              "statId": 53839,
+              "condition": "NG HEARING / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!13"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!13",
+        "Test!14",
+        "Test!16",
+        "Test!18",
+        "Test!2",
+        "Test!20",
+        "Test!5",
+        "Test!7",
+        "Test!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!13",
+      "Test!14",
+      "Test!16",
+      "Test!18",
+      "Test!2",
+      "Test!20",
+      "Test!5",
+      "Test!7",
+      "Test!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

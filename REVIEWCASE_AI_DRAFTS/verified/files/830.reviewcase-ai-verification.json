@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 830,
+  "sourceFile": "66.2 BRS-161014  Report test improve NG separate VP+CD ( Plasma ) 2024.10.15_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\830.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 830,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable plasma-clean VP vs Normal evidence exists, but the draft has invalid grouping and outcome extraction.",
+    "issues": [
+      "Changed condition incorrectly includes TOTAL.",
+      "Daily pairs compare to aggregate or first Normal row.",
+      "Date, line, and VP note subgroup keys are not preserved.",
+      "Several measurement outcomes are header/junk extractions.",
+      "Evidence includes non-outcome header/purpose rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename factor to Normal vs VP test (Plasma) for plasma cleaning VP material.",
+      "Use adjacent same-date Normal rows for daily vision and function comparisons.",
+      "Use TOTAL rows only for aggregate vision and function results.",
+      "Keep tension test as paired VP/Normal measurement rows by date.",
+      "Remove header-derived and malformed measurement outcomes."
+    ],
+    "evidencePolicy": "Row citations exist, but must be narrowed to valid condition and result rows."
+  },
+  "usage": {
+    "input_tokens": 18734,
+    "output_tokens": 726,
+    "total_tokens": 19460
+  }
+}

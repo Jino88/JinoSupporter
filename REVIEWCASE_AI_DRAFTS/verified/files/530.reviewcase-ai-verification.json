@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 530,
+  "sourceFile": "31. BRS-161014 Report TEST new Main 2 Jig V10 & V11_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\530.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:46Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 530,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid source rows but needs regrouping before use because function comparisons mix dates/machines and omit the proper 9/19 baseline.",
+    "issues": [
+      "9/19 function pairs use 9/18 normal row instead of 9/19 normal row.",
+      "Subgroup keys date, machine, jig version, and guide jig are not preserved.",
+      "V10 and V11 effects are merged too broadly under one changed factor.",
+      "Measurement outcome appears to be parsed from defect columns, not true dimensions.",
+      "Change domain includes unsupported categories such as coating."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild function comparisons by same date and machine note.",
+      "Use 18.9!37 as the 9/19 normal baseline for 18.9!33 and 18.9!35.",
+      "Split or clearly subgroup V10, V11, and V10 with VP guide V13 conditions.",
+      "Remove the spurious measurement outcome unless dimension rows contain comparable data.",
+      "Limit change domain to jig/equipment/process condition supported by cited rows."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient because grouping and baseline pairing are wrong."
+  },
+  "usage": {
+    "input_tokens": 6819,
+    "output_tokens": 790,
+    "total_tokens": 7609
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 495,
+  "sourceFile": "29. TIU C11-20  Report test Yoke difference collor from myunjin vendor 2026.04.09_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\495.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 495,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Comparable evidence exists, but the draft needs regrouping before it can be final Ask AI evidence.",
+    "issues": [
+      "Changed factor is underspecified; title/purpose indicate yoke color, not only generic test levels.",
+      "Drop test results and final decision rows are omitted from outcomes/evidence.",
+      "Measurement outcomes from header rows are not valid standalone evidence.",
+      "Change domain includes supplier/process without clear comparative proof.",
+      "Outcome evidence lacks purpose-to-decision linkage."
+    ],
+    "requiredUserQuestions": [
+      "What do Test level 1 and Test level 2 represent for yoke color?",
+      "Should drop auto/manual results be included in this same validation case?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to yoke color difference with Normal as baseline and Test levels as variants if confirmed.",
+      "Add drop test outcome using rows 62-71 and cite summary row 71.",
+      "Add decision outcome/evidence rows 84-86.",
+      "Remove header-only measurement outcomes or convert them into the visual/function defect outcomes.",
+      "Trim changeDomain to only supported factors."
+    ],
+    "evidencePolicy": "Row citations are mostly citeable, but incomplete and include invalid header-only evidence."
+  },
+  "usage": {
+    "input_tokens": 6307,
+    "output_tokens": 782,
+    "total_tokens": 7089
+  }
+}

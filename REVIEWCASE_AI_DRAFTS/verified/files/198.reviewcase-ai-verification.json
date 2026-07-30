@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 198,
+  "sourceFile": "1.BRS-161014  REPORT TEST  new JIG coil array and JIG frame array date 29.06.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\198.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 198,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The report is usable but the draft misidentifies the changed factor and has unreliable outcome grouping.",
+    "issues": [
+      "Changed factor 'baseline vs 1' is an extraction artifact, not a supported condition.",
+      "Baseline/test comparison is not explicit; V0 vs V1/V2 role is unresolved.",
+      "Measurement stats mix dimensions with positions and apply specs inconsistently.",
+      "Outcome rows V0!26, V0!57, and V0!76 are not readable in the provided context.",
+      "Decision indicates jig dimension issue, but draft leaves judgement ungrouped."
+    ],
+    "requiredUserQuestions": [
+      "Should V0 and V1/V2 be treated as jig revision iterations?",
+      "What is the intended changed factor: new jig coil array, jig frame array, or both?"
+    ],
+    "correctionPlan": [
+      "Replace changed factor with the supported jig validation context.",
+      "Preserve sheet/version, date, jig, position, and sample grouping keys.",
+      "Re-extract assembly NG results with full table headers and row text.",
+      "Separate frame dimension and 2D jig frame array measurements with correct specs.",
+      "Link decision rows to the corrected outcomes before final approval."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are insufficient for final evidence until key result rows are readable and correctly grouped."
+  },
+  "usage": {
+    "input_tokens": 3669,
+    "output_tokens": 787,
+    "total_tokens": 4456
+  }
+}

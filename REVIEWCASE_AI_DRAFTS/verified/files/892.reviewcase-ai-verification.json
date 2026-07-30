@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 892,
+  "sourceFile": "77. BRS-161014 Report  Test VP- CD have GAP and VP-CD OK  Date 5.11.2024 line 3_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\892.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 892,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft finds the right VP/CD GAP vs OK test context but misgroups the comparison and omits key evidence rows.",
+    "issues": [
+      "Baseline/changed condition is ambiguous and incorrectly includes both test states as changed.",
+      "VP/CD OK content row is not cited in changed-factor evidence.",
+      "Conclusion row indicating no NG-rate problem is omitted from outcome evidence.",
+      "Normal baseline is mentioned without clear supporting test row.",
+      "Outcome judgement remains not_judged despite apparent equal NG results."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define comparison as VP/CD have GAP versus VP/CD OK.",
+      "Use VP/CD OK as baseline/control unless another cited baseline exists.",
+      "Add Report!18 and Report!27 to relevant evidence.",
+      "Remove normal-baseline wording unless supported by cited rows.",
+      "Update outcome judgement after confirming rows 23 and 25 values."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient for final evidence until missing condition and conclusion rows are added."
+  },
+  "usage": {
+    "input_tokens": 2264,
+    "output_tokens": 747,
+    "total_tokens": 3011
+  }
+}

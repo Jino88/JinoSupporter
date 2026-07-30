@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 424,
+  "sourceFile": "23. BRS-161014 Report improve NG hearing   Date 12.12.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\424.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:13Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 424,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The function comparison is supported, but the changed factor and machine-check outcome are misgrouped.",
+    "issues": [
+      "Changed condition incorrectly includes side value Right.",
+      "Machine-check rows are diagnostic subgroup data, not Normal vs Afterrepair comparison.",
+      "Machine-check outcome compares Right rows without preserving machine/date grouping.",
+      "Key conclusion rows supporting repair effect are omitted from evidence.",
+      "Row 28 is cited but not shown in context for verification."
+    ],
+    "requiredUserQuestions": [
+      "Should machine-check rows be retained only as diagnostic context?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to Normal vs Afterrepair M/C Ass'y VP/Dome.",
+      "Remove Right from changedCondition and use side only as subgroup if needed.",
+      "Keep function NG-rate outcome using rows 34 and 36 as the judged comparison.",
+      "Move machine Ass'y VP/Dome rows to separate diagnostic context or exclude from judged outcomes.",
+      "Add conclusion/support rows 29 and 40, and include row 28 text if cited."
+    ],
+    "evidencePolicy": "Citations are partly sufficient for function results but insufficient for current grouping."
+  },
+  "usage": {
+    "input_tokens": 2910,
+    "output_tokens": 768,
+    "total_tokens": 3678
+  }
+}

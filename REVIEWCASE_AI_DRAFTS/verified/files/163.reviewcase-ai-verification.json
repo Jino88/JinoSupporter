@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 163,
+  "sourceFile": "08. BRS-161016GMI Report check JIG Sub 1 Ass'y find reason VP damage make NG air leak_2025.07.12_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\163.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 163,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable new vs old JIG evidence exists, but the draft has factor labeling and citation defects.",
+    "issues": [
+      "Changed factor text duplicates Old JIG and sets changed condition as both conditions.",
+      "Date and line grouping from the comparison rows are not preserved.",
+      "Outcome metric needs column-header context for Total NG rate and defect categories.",
+      "Review title is taken from a different status sheet, not the cited comparison table."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baselineCondition to Old JIG and changedCondition to New JIG only.",
+      "Use changedFactor as New JIG AWF vs Old JIG AWF.",
+      "Add subgroup keys: date 2025-06-04 and line E2-3B.",
+      "Cite Sheet1 header rows 4-6 with rows 7-8 for metric context.",
+      "Retitle the case to the new vs old JIG AWF function comparison."
+    ],
+    "evidencePolicy": "Rows 7-8 support values, but header rows 4-6 are needed for sufficient final evidence."
+  },
+  "usage": {
+    "input_tokens": 1999,
+    "output_tokens": 767,
+    "total_tokens": 2766
+  }
+}

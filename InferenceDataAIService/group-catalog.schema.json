@@ -1,0 +1,31 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "rendererKey": { "type": "string" },
+          "memberSelectionRule": { "type": "string" },
+          "componentRecipe": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "representativeFiles": { "type": "array", "items": { "type": "string" } },
+          "importantData": { "type": "array", "items": { "type": "string" } },
+          "extractionRule": { "type": "string" },
+          "htmlRule": { "type": "string" },
+          "openQuestions": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["id", "name", "rendererKey", "memberSelectionRule", "componentRecipe", "representativeFiles", "importantData", "extractionRule", "htmlRule", "openQuestions"],
+        "additionalProperties": false
+      }
+    },
+    "fileAssignments": { "type": "array", "items": { "type": "object", "properties": { "relativePath": { "type": "string" }, "layoutClusterId": { "type": "string" }, "semanticCategory": { "type": "string" }, "topLevelCategory": { "type": "string" }, "routingState": { "type": "string" }, "groupId": { "type": "string" } }, "required": ["relativePath", "layoutClusterId", "semanticCategory", "topLevelCategory", "routingState", "groupId"], "additionalProperties": false } },
+    "unclassifiedFiles": { "type": "array", "items": { "type": "string" } },
+    "provenance": { "type": "object" }
+  },
+  "required": ["schemaVersion", "groups", "fileAssignments", "unclassifiedFiles"],
+  "additionalProperties": false
+}

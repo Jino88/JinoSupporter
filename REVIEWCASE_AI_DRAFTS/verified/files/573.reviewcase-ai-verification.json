@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 573,
+  "sourceFile": "35.1 MSU -L 201507 RESULT CHECK GAUSS S-MG and C-MG_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\573.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 573,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies a comparable supplier/dimension Gauss check but the changed factor, conditions, metrics, and citations are not verification-ready.",
+    "issues": [
+      "Changed factor is a filename, not the supplier and S-MG dimension comparison shown in the sheet.",
+      "Baseline and changed conditions are left unknown despite two explicit side-by-side conditions.",
+      "Gauss metrics are grouped under an overlong title and include Sample check as a measurement.",
+      "Stat evidence cites only the header row, not measured data rows.",
+      "Sheet2 hearing/xray context is not assessed for inclusion or separation."
+    ],
+    "requiredUserQuestions": [
+      "Which side, if any, is baseline: Boutou or Ruijin?",
+      "Should Sheet2 hearing/xray be included in this same review case?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to Boutou vs Ruijin supplier with S-MG dimension difference; note C-MG dimension is same.",
+      "Use neutral condition labels if baseline/test is not confirmed.",
+      "Set outcomes to S-MG long, S-MG short, and C-MG Gauss measurements only.",
+      "Cite header rows plus all relevant Sheet1 data rows supporting each statistic.",
+      "Review Sheet2 and either add a supported hearing/xray outcome or exclude it with rationale."
+    ],
+    "evidencePolicy": "Current citations prove headers only; final evidence needs condition header and data-row citations."
+  },
+  "usage": {
+    "input_tokens": 3394,
+    "output_tokens": 824,
+    "total_tokens": 4218
+  }
+}

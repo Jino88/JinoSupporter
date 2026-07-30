@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 57,
+  "sourceFile": "021.MSU-20S15-07 Result check NTI COIL 0.096 ( 1 )_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\57.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:47:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 57,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft has citeable source rows but misidentifies the changed-factor comparison, uses insufficient measurement evidence, and misextracts the NG/function outcome.",
+    "issues": [
+      "Blocking: baseline/normal condition is not evidenced; the source only clearly cites one condition, Bonding amount 1.8~2.0mg with AWF MC #3 (Coil 0.096) and Frame normal.",
+      "Blocking: changedFactor incorrectly frames the case as a baseline vs changed-condition comparison without a cited baseline row.",
+      "Blocking: function defect subResult is incorrect because NG function!6 shows Input 57, OK 48, Touch/Total NG 9 and NG Rate 0.15789474 under Hearing +1V, not ng 0 and rate 0.",
+      "Blocking: measurement outcome cites only header rows for SPL/THD/IMP tables, which is not sufficient evidence for the reported min/max/avg/sampleCount statistics.",
+      "Non-blocking: reviewTitle is an FO data row rather than a meaningful report title or changed-factor summary.",
+      "Non-blocking: FO DATA rows appear to compare Test #1-#10 average against ST, but their relationship to the bonding amount condition is not established by the cited rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild the changed factor as a single validated condition unless additional rows prove an explicit baseline/test comparison.",
+      "Use NG function!3, NG function!5, and NG function!6 together to support the process-condition context and function outcome.",
+      "Correct the function defect outcome to preserve the Hearing +1V and Hearing +0V column groupings, including Total NG 9 and NG Rate 15.789% for +1V.",
+      "Add actual data rows, not only header rows, for SPL, THD, IMP, and FO statistics, or remove unsupported measurement statistics.",
+      "Rename the review case/title to reflect the report context: NTI coil 0.096, new frame/change bonding amount Coil+CD, bonding amount 1.8~2.0mg, AWF MC #3, Frame normal."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient for final evidence because key title/header rows are omitted for NG interpretation and measurement statistics cite only table headers."
+  },
+  "usage": {
+    "input_tokens": 4882,
+    "output_tokens": 1007,
+    "total_tokens": 5889
+  }
+}

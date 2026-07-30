@@ -12,7 +12,9 @@ public sealed class BmesMaterialService(
     NgRateSettingsService settings,
     WebRepository repo)
 {
-    private const string BaseUrl = "http://bmes.bujeon.com";
+    // HTTPS, matching BmesLpaScrapeService: over plain http the anti-forgery cookie does not
+    // survive the redirect to https and the login POST fails validation.
+    private const string BaseUrl = "https://bmes.bujeon.com";
 
     /// <summary>
     /// Fetches all materials from MES020010/SearchList and upserts them.
@@ -47,7 +49,7 @@ public sealed class BmesMaterialService(
         progress?.Report("Logging in…");
         if (!await LoginAsync(client, token, loginId, password))
         {
-            progress?.Report("[ERROR] Login failed — check credentials in BMES Setting.");
+            progress?.Report("[ERROR] Login failed — check credentials in Setting.");
             return -1;
         }
 

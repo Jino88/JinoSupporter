@@ -1,0 +1,167 @@
+{
+  "schemaVersion": "incremental-xlsx-ingest-v1",
+  "runId": "ingest-run_6c784cbfc63c8656c6946e51",
+  "attempt": 1,
+  "dataset": "Fixture",
+  "databasePath": "D:\\000. MyWorks\\005. Program\\Repository\\JinoSupporter\\InferenceDataAIService\\tmp6wnq4m2_\\k.sqlite",
+  "artifactDirectory": "D:\\000. MyWorks\\005. Program\\Repository\\JinoSupporter\\InferenceDataAIService\\tmp6wnq4m2_\\art\\ingest-run_6c784cbfc63c8656c6946e51",
+  "source": {
+    "sourcePath": "D:\\000. MyWorks\\005. Program\\Repository\\JinoSupporter\\InferenceDataAIService\\tmp6wnq4m2_\\x.xlsx",
+    "fileName": "x.xlsx",
+    "contentSha256": "d83c893b8627cc03dc15e709900c3b8155560e96b61acf85f94661cf460d6964",
+    "imagesAnalyzed": false
+  },
+  "semanticContracts": {
+    "locatorPromptVersion": "semantic-locator-prompt-v1",
+    "batchLocatorPromptVersion": "semantic-locator-batch-prompt-v1",
+    "studyDraftPromptVersion": "canonical-study-draft-prompt-v25"
+  },
+  "status": "EXCLUDED",
+  "currentStage": "",
+  "stages": {
+    "CAPTURE": {
+      "status": "COMPLETED",
+      "startedAt": "2026-07-18T10:11:15.252932+00:00",
+      "finishedAt": "2026-07-18T10:11:15.303795+00:00",
+      "result": {
+        "action": "IMPORTED",
+        "captureRevisionId": 1,
+        "canonicalRevisionId": 1,
+        "revisionUid": "capture_revision_1bb471b0f93493e103f3e704",
+        "workbookStatus": "NO_TABULAR_EVIDENCE",
+        "verified": true
+      }
+    },
+    "PACKET": {
+      "status": "COMPLETED",
+      "startedAt": "2026-07-18T10:11:15.304793+00:00",
+      "finishedAt": "2026-07-18T10:11:15.308782+00:00",
+      "result": {
+        "packetPath": "D:\\000. MyWorks\\005. Program\\Repository\\JinoSupporter\\InferenceDataAIService\\tmp6wnq4m2_\\art\\ingest-run_6c784cbfc63c8656c6946e51\\semantic-source-packet.json",
+        "workbookStatus": "NO_TABULAR_EVIDENCE",
+        "chunks": 2,
+        "terminalPackets": 1,
+        "coverage": {
+          "status": "COMPLETE",
+          "expectedCellCount": 3,
+          "packetCellCount": 3,
+          "uniquePacketCellCount": 3,
+          "duplicateCellKeys": [],
+          "missingCellKeys": [],
+          "unexpectedCellKeys": []
+        }
+      }
+    },
+    "LOCATOR": {
+      "status": "COMPLETED",
+      "startedAt": "2026-07-18T10:11:15.308782+00:00",
+      "finishedAt": "2026-07-18T10:11:15.309779+00:00",
+      "result": {
+        "locatorDirectory": "D:\\000. MyWorks\\005. Program\\Repository\\JinoSupporter\\InferenceDataAIService\\tmp6wnq4m2_\\art\\ingest-run_6c784cbfc63c8656c6946e51\\locators",
+        "results": 0,
+        "aiCalls": 0,
+        "aiSubmitted": 0,
+        "deterministicNoCandidate": 0,
+        "skipped": 0
+      }
+    },
+    "DRAFT": {
+      "status": "COMPLETED",
+      "startedAt": "2026-07-18T10:11:15.310776+00:00",
+      "finishedAt": "2026-07-18T10:11:15.311774+00:00",
+      "result": {
+        "manifestPath": "D:\\000. MyWorks\\005. Program\\Repository\\JinoSupporter\\InferenceDataAIService\\tmp6wnq4m2_\\art\\ingest-run_6c784cbfc63c8656c6946e51\\canonical-study-manifest.json",
+        "verificationStatus": "EXCLUDED",
+        "studies": 0,
+        "aiExecuted": false,
+        "artifactReused": false,
+        "staged": false,
+        "mode": "",
+        "requestPromptBytes": 0,
+        "requestPromptSha256": "",
+        "partCount": 0,
+        "partsExecuted": 0,
+        "partsReused": 0,
+        "planPath": "",
+        "registryPath": "",
+        "studyDraftPromptVersion": "",
+        "provenancePath": ""
+      }
+    },
+    "IMPORT": {
+      "status": "COMPLETED",
+      "startedAt": "2026-07-18T10:11:15.312771+00:00",
+      "finishedAt": "2026-07-18T10:11:15.317757+00:00",
+      "result": {
+        "analysisUid": "analysis_7515e671854644fd4eda3501",
+        "publicAnalysisId": "ANALYSIS-443489B76BC1",
+        "workbookAnalysisId": 1,
+        "studies": 0,
+        "contexts": 0,
+        "factors": 0,
+        "arms": 0,
+        "outcomes": 0,
+        "observations": 0,
+        "measurementSeries": 0,
+        "measurementPoints": 0,
+        "comparisons": 0,
+        "effects": 0,
+        "claims": 0,
+        "evidence": 0,
+        "supersededAnalyses": 0,
+        "preservedStaleAnalyses": 0
+      }
+    },
+    "VERIFY": {
+      "status": "COMPLETED",
+      "startedAt": "2026-07-18T10:11:15.318755+00:00",
+      "finishedAt": "2026-07-18T10:11:15.323744+00:00",
+      "result": {
+        "ok": true,
+        "foreignKeyErrors": [],
+        "invalidAggregationEffects": 0,
+        "orphanEvidenceLinks": 0,
+        "counts": {
+          "source_documents": 1,
+          "source_revisions": 1,
+          "workbook_analyses": 1,
+          "knowledge_studies": 0,
+          "knowledge_study_contexts": 0,
+          "knowledge_schema_candidates": 0,
+          "knowledge_factors": 0,
+          "knowledge_arms": 0,
+          "knowledge_outcomes": 0,
+          "knowledge_observations": 0,
+          "knowledge_measurement_series": 0,
+          "knowledge_measurement_points": 0,
+          "knowledge_comparisons": 0,
+          "knowledge_effects": 0,
+          "knowledge_claims": 0,
+          "evidence_items": 0,
+          "entity_evidence_links": 0,
+          "validation_issues": 1,
+          "review_decisions": 0
+        }
+      }
+    }
+  },
+  "createdAt": "2026-07-18T10:11:15.251936+00:00",
+  "updatedAt": "2026-07-18T10:11:15.324740+00:00",
+  "finishedAt": "2026-07-18T10:11:15.324740+00:00",
+  "result": {
+    "schemaVersion": "incremental-xlsx-ingest-v1",
+    "runId": "ingest-run_6c784cbfc63c8656c6946e51",
+    "status": "EXCLUDED",
+    "sourcePath": "D:\\000. MyWorks\\005. Program\\Repository\\JinoSupporter\\InferenceDataAIService\\tmp6wnq4m2_\\x.xlsx",
+    "contentSha256": "d83c893b8627cc03dc15e709900c3b8155560e96b61acf85f94661cf460d6964",
+    "workbookStatus": "NO_TABULAR_EVIDENCE",
+    "revisionUid": "capture_revision_1bb471b0f93493e103f3e704",
+    "publicAnalysisId": "ANALYSIS-443489B76BC1",
+    "studies": 0,
+    "manifestPath": "D:\\000. MyWorks\\005. Program\\Repository\\JinoSupporter\\InferenceDataAIService\\tmp6wnq4m2_\\art\\ingest-run_6c784cbfc63c8656c6946e51\\canonical-study-manifest.json",
+    "journalPath": "D:\\000. MyWorks\\005. Program\\Repository\\JinoSupporter\\InferenceDataAIService\\tmp6wnq4m2_\\art\\ingest-run_6c784cbfc63c8656c6946e51\\journal.json",
+    "artifactDirectory": "D:\\000. MyWorks\\005. Program\\Repository\\JinoSupporter\\InferenceDataAIService\\tmp6wnq4m2_\\art\\ingest-run_6c784cbfc63c8656c6946e51",
+    "imagesAnalyzed": false,
+    "integrityOk": true
+  }
+}

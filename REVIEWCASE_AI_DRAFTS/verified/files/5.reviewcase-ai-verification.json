@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 5,
+  "sourceFile": "002.MSU - 20S15-07 RESULT CHECK TENSION VP . CD USE PLASMA_1778470509_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\5.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:43:38Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 5,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not approved because it uses the filename as the changed factor, merges two distinct comparisons, and contains incorrect sample/violation statistics.",
+    "issues": [
+      "Changed factor is incorrectly set to the source filename instead of the actual compared conditions.",
+      "Baseline and changed conditions are incorrectly marked as not explicit even though rows show CD use plasma vs CD not use plasma and lab VP dome vs E2 VP dome conditions.",
+      "Two distinct comparison contexts are merged under one changed factor: CD plasma use comparison in rows Sheet1!15-Sheet1!16 and lab vs E2 VP dome comparison in rows Sheet1!49-Sheet1!50.",
+      "Outcome statistics show sampleCount=1 even though each row contains ten sample measurements (#1-#10).",
+      "Violation counts are incorrect for rows Sheet1!15 and Sheet1!16 because both have minimum values below the > 1.530kgf specification.",
+      "Changed factor domain includes dimension/spec, but the cited evidence supports process/source condition comparisons rather than a changed dimensional specification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Replace the filename-based changed factor with evidence-based changed factors.",
+      "Create separate changed factors or separate review cases for: CD use plasma vs CD not use plasma, and lab VP dome sample assembly/source vs E2 VP dome sample assembly/source.",
+      "Set baseline/changed conditions directly from cited rows, preserving model MSU - L20S15-07, date 2025-01-07, test type Tension V/P + CD (Dyne 40), and spec > 1.530kgf as context.",
+      "Correct sampleCount to 10 for each measurement row.",
+      "Recalculate violation counts against > 1.530kgf: Sheet1!15 has at least one violation, Sheet1!16 has multiple violations, Sheet1!49 and Sheet1!50 have none.",
+      "Remove dimension/spec from the changedFactor changeDomain unless additional evidence proves a specification or dimensional change."
+    ],
+    "evidencePolicy": "Cited rows are sufficient to support the two comparisons and measurement outcomes, but the current grouping and derived statistics are not sufficient for final Ask AI evidence."
+  },
+  "usage": {
+    "input_tokens": 2701,
+    "output_tokens": 877,
+    "total_tokens": 3578
+  }
+}

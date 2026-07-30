@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 577,
+  "sourceFile": "36. BRS-161016 Report test new bond UV PT-8310M9SP_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\577.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:24Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 577,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The source has comparable new UV bond versus normal bond evidence, but the draft contains no usable ReviewCase.",
+    "issues": [
+      "No reviewCases were generated.",
+      "Comparison pair was missed despite clear new vs normal bond rows.",
+      "Metrics and outcome domains are not structured.",
+      "Source stats conflict with cited row numbers."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Create one validation ReviewCase for new Bond UV PT-8310M9SP vs normal bond PT-8310M9S.",
+      "Cite purpose and content rows for changed-factor context.",
+      "Group tension, SUB3, function, and visual checks under the same changed-factor context.",
+      "Preserve dates, product/type, sample counts, NG counts, and specs as row-level context.",
+      "Add metric summaries or mark rows as raw measurements when stats are incomplete."
+    ],
+    "evidencePolicy": "Citations are sufficient in context rows, but final evidence needs assembled row-cited claims."
+  },
+  "usage": {
+    "input_tokens": 2605,
+    "output_tokens": 744,
+    "total_tokens": 3349
+  }
+}

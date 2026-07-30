@@ -1,0 +1,198 @@
+{
+  "sourceFileId": 200,
+  "sourceFile": "10 . MSU - L20S15-07 REPORT TEST NEW MOLD FRAME G4 24.3.2025 -_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\10 . MSU - L20S15-07 REPORT TEST NEW MOLD FRAME G4 24.3.2025 -_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "201507",
+    "sheetRowCount": 17,
+    "sheetCellCount": 91,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "201507!2",
+      "sheetName": "201507",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST NEW MOLD FRAME G4 MSU-L20S15-07 | | | | | | | | | | | | | | | | | | | Dept: | ME"
+    },
+    {
+      "rowId": "201507!3",
+      "sheetName": "201507",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | Date: | 2025-03-24 00:00:00"
+    },
+    {
+      "rowId": "201507!4",
+      "sheetName": "201507",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | Marker: | Le"
+    },
+    {
+      "rowId": "201507!5",
+      "sheetName": "201507",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "201507!6",
+      "sheetName": "201507",
+      "rowNumber": 6,
+      "rowText": "| -Test new mold frmae G4 OK or Not ?"
+    },
+    {
+      "rowId": "201507!8",
+      "sheetName": "201507",
+      "rowNumber": 8,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "201507!9",
+      "sheetName": "201507",
+      "rowNumber": 9,
+      "rowText": "| - Make sample and check function"
+    },
+    {
+      "rowId": "201507!12",
+      "sheetName": "201507",
+      "rowNumber": 12,
+      "rowText": "| III. Result."
+    },
+    {
+      "rowId": "201507!13",
+      "sheetName": "201507",
+      "rowNumber": 13,
+      "rowText": "| | 1.RESULT CHECK FUNCTION"
+    },
+    {
+      "rowId": "201507!14",
+      "sheetName": "201507",
+      "rowNumber": 14,
+      "rowText": "| | No | Date | Type | Input | OK | Sigma | | | | | | Hearing ( + 1V ) | | | | Hearing ( + 0V )"
+    },
+    {
+      "rowId": "201507!15",
+      "sheetName": "201507",
+      "rowNumber": 15,
+      "rowText": "| | | | | | | SPL | THD | SPL+THD | SPL+THD+F0 | Total NG | NG rate | Noise | Touch | Total NG | NG Rate | Noise | Touch | Total NG | NG Rate"
+    },
+    {
+      "rowId": "201507!16",
+      "sheetName": "201507",
+      "rowNumber": 16,
+      "rowText": "| | 1 | 2025-03-24 00:00:00 | Fame G4 | 3801 | 3709 | 0 | 1 | 2 | 0 | 3 | 0.00078927 | 50 | 39 | 89 | 0.02341489 | 15 | 14 | 29 | 0.00762957"
+    },
+    {
+      "rowId": "201507!18",
+      "sheetName": "201507",
+      "rowNumber": 18,
+      "rowText": "| | 2 | | Normal | 2260 | 2210 | 0 | 2 | 0 | 0 | 2 | 0.00088496 | 33 | 15 | 48 | 0.02123894 | 13 | 1 | 14 | 0.00619469"
+    },
+    {
+      "rowId": "201507!21",
+      "sheetName": "201507",
+      "rowNumber": 21,
+      "rowText": "| IV. Decision."
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-200-rc-1",
+      "reviewTitle": "| REPORT TEST NEW MOLD FRAME G4 MSU-L20S15-07 | | | | | | | | | | | | | | | | | | | Dept: | ME",
+      "reviewPurpose": "| I. Purpose. / | -Test new mold frmae G4 OK or Not ? / | II. Content. / | - Make sample and check function / | III. Result.",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "mold"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Fame G4",
+          "baselineCondition": "Normal",
+          "changedCondition": "Fame G4",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "201507!16",
+            "201507!18",
+            "201507!2",
+            "201507!5",
+            "201507!6",
+            "201507!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "1.RESULT CHECK FUNCTION",
+          "comparisonRows": [
+            "201507!16",
+            "201507!18"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 18684,
+              "condition": "Fame G4",
+              "input": 3801.0,
+              "ok": 3709.0,
+              "ng": 4.0,
+              "ratePercent": 0.10523546435148645,
+              "evidenceRows": [
+                "201507!16"
+              ]
+            },
+            {
+              "metricId": 18685,
+              "condition": "Normal",
+              "input": 2260.0,
+              "ok": 2210.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "201507!18"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "201507!16",
+        "201507!18",
+        "201507!2",
+        "201507!5",
+        "201507!6",
+        "201507!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "201507!16",
+      "201507!18",
+      "201507!2",
+      "201507!5",
+      "201507!6",
+      "201507!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

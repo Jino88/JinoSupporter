@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 596,
+  "sourceFile": "38. MSU-L20S1507 DOE Air preasure-air leak_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\596.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:49Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 596,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable pressure evidence but changed-factor scope and several outcome tables are not reliable enough for final use.",
+    "issues": [
+      "Changed condition omits 300kPa despite acoustic sheets using it.",
+      "Baseline is unresolved; REF and 18kPa roles are mixed.",
+      "SPL/THD/IMP stats appear extracted from header/table rows, not clean metric rows.",
+      "Review title is a raw header, not a case title.",
+      "Air leak repeats after pressure reduction are not separated as subgroup context."
+    ],
+    "requiredUserQuestions": [
+      "Should 300kPa acoustic results be included in the same pressure DOE case?"
+    ],
+    "correctionPlan": [
+      "Rename case around DOE air pressure effect on air leak and acoustic performance.",
+      "Set changed factor to air pressure level and define baseline from report context or mark none.",
+      "Separate air-leak conditions from repeated pressure-reduction rows with subgroup labels.",
+      "Rebuild SPL, THD, and IMP outcomes from valid metric rows, not table headers.",
+      "Cite Report purpose/content/result rows plus exact Raw data and metric table rows."
+    ],
+    "evidencePolicy": "Evidence row IDs exist, but citations are semantically insufficient for final Ask AI evidence."
+  },
+  "usage": {
+    "input_tokens": 8326,
+    "output_tokens": 733,
+    "total_tokens": 9059
+  }
+}

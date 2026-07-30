@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 438,
+  "sourceFile": "24. L20S15-07 Report test New lot CD 4-14 Dtae 14.4.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\438.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 438,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because the changed factor and outcome grouping do not match the report context.",
+    "issues": [
+      "Changed factor is the filename, not an evidenced condition.",
+      "Baseline/test conditions are left unresolved despite CD lot dates and process settings being shown.",
+      "Outcome tables mix CD lot, dyne NG, function, and tension without preserving row group keys.",
+      "Tension spec/pass-fail evidence is ignored; failed rows show zero violations.",
+      "Some cited rows are not enough to support the drafted labels."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison CD lot date 2025-03-17 vs 2025-03-23, with process settings as subgroups?"
+    ],
+    "correctionPlan": [
+      "Replace filename factor with evidenced CD lot/process-condition comparison.",
+      "Define baseline and changed conditions from source rows, preserving lot date and test item.",
+      "Regroup outcomes into material clean NG rates, process-condition NG rates, and tension results.",
+      "Apply 1.2 kgf tension spec and row pass/fail status correctly.",
+      "Cite only rows that directly support each factor and metric."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient for the current grouping or judgments."
+  },
+  "usage": {
+    "input_tokens": 11978,
+    "output_tokens": 732,
+    "total_tokens": 12710
+  }
+}

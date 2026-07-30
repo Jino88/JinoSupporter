@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 562,
+  "sourceFile": "34. TIU C11-20 Report test  new Coil 2026.05.04. - RAW soundcheck_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\562.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:42Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 562,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable process evidence but changed-factor and measurement grouping are not reliable enough for final Ask AI evidence.",
+    "issues": [
+      "Changed factor incorrectly merges two test coil types into one condition.",
+      "30% DCCA is treated as subgroup though evidence shows it is a primary test condition.",
+      "Model TIU C11-20R is mixed into condition naming instead of kept as context.",
+      "RAW measurement outcomes are noisy header-derived stats and not verified comparisons.",
+      "Some cited header rows are not shown in the review packet, limiting citation audit."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary factor as coil type/spec: Normal vs 30% DCCA and Normal vs DCCA.",
+      "Keep TIU C11-20R, date, and test categories as subgroup/context keys.",
+      "Retain spot welding, open test, and function as outcomes under the coil comparison context.",
+      "Remove or separately verify RAW SPL/THD measurement tables before inclusion.",
+      "Use only cited rows that show both headers and condition/result rows for each outcome."
+    ],
+    "evidencePolicy": "Process result row citations are mostly sufficient; RAW measurement citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 12142,
+    "output_tokens": 785,
+    "total_tokens": 12927
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 343,
+  "sourceFile": "18. BRS-161014 Report test NEW GUIDE BASE AIR LEAK MACHINE 2023.09.07_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\343.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:00Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 343,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites valid rows but misstates the primary comparison and omits key decision evidence.",
+    "issues": [
+      "Changed factor should be Guide cap jig type 1 vs type 2, not implicit baseline vs tests.",
+      "Test round/sheet should be preserved as subgroup context.",
+      "Decision rows supporting type 2 are omitted from evidence.",
+      "Metric header rows are needed to support outcome labels."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Revise changedFactor to compare Guide cap test/type 1 with Guide cap test/type 2.",
+      "Set baselineCondition to type 1 and changedCondition to type 2 if using type 2 as selected change.",
+      "Add subgroupKeys for 1st vs 2nd test or sheet/date context.",
+      "Add rows 9.7!21 and 9.8!21 for metric definitions.",
+      "Add rows 9.8!30 and 9.8!32 as judgement/decision evidence."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for final evidence until grouping and decision citations are corrected."
+  },
+  "usage": {
+    "input_tokens": 3333,
+    "output_tokens": 491,
+    "total_tokens": 3824
+  }
+}

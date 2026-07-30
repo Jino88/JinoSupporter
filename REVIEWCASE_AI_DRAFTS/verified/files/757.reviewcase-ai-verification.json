@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 757,
+  "sourceFile": "58. BRS-201506 Report checking dimension Frame date 3.7.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\757.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 757,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The workbook appears to be a single Mold G2 frame dimension inspection, not a valid baseline-versus-test review case.",
+    "issues": [
+      "No explicit changed factor is cited.",
+      "Date was incorrectly used as a changed condition.",
+      "Baseline or normal condition is absent.",
+      "Outcomes are duplicated across overlapping table extracts.",
+      "Evidence rows support inspection results, not a condition comparison."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Do not approve this as comparative evidence.",
+      "Remove the fabricated baseline-versus-date changed factor.",
+      "If retained, classify only as a non-comparative dimension inspection record.",
+      "Deduplicate overlapping measurement outcomes.",
+      "Require explicit changed-condition evidence before creating a review case."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient for changed-factor evidence."
+  },
+  "usage": {
+    "input_tokens": 3608,
+    "output_tokens": 709,
+    "total_tokens": 4317
+  }
+}

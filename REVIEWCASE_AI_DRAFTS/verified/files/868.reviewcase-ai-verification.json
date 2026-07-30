@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 868,
+  "sourceFile": "71.(Audit fake) TIU L5S3-01 R Report test bond HI-POXY 9490BM the storage temperature dose not meet the standard -  date 2026.02.12_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\868.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 868,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the comparison but has a blocking error in the sub-3 process NG outcome.",
+    "issues": [
+      "Changed factor is too generic; it should describe nonstandard HI-POXY storage temperature test vs normal.",
+      "Sub-3 process result is misread: total NG is 4/500 test vs 3/500 normal, not improved.",
+      "Process outcome should be worse or at least not aligned with the draft calculation.",
+      "Evidence omits the process header row and includes unrelated planning rows.",
+      "Workbook decision says can use despite mixed outcomes, which should be captured separately."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to nonstandard storage-temperature HI-POXY 9490BM test vs normal.",
+      "Recalculate sub-3 process bonding/F-PCB total NG as 0.8% test vs 0.6% normal.",
+      "Change process judgement to worse and cite rows Test!17, Test!19, and Test!20.",
+      "Keep function as comparable/similar or slight improved, citing Test!24, Test!26, and Test!28.",
+      "Keep drop reliability as no change/OK and include final decision row Test!35."
+    ],
+    "evidencePolicy": "Row citations exist, but final evidence needs tighter header/result/decision citations."
+  },
+  "usage": {
+    "input_tokens": 3871,
+    "output_tokens": 807,
+    "total_tokens": 4678
+  }
+}

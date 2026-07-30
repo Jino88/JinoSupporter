@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 631,
+  "sourceFile": "41. TIU L5S3-01 R Report tracking test find reason Frame deform -  date 2025.12.27_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\631.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:57Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 631,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook is usable, but the draft grouping is too ambiguous for final evidence.",
+    "issues": [
+      "Changed factor is a merged list, not a verified primary condition.",
+      "Baseline and test conditions are not clearly defined.",
+      "Process checkpoints, line side, dry settings, and tape/JIG changes are mixed.",
+      "Measurement outcome appears derived from a header row, not valid measurements.",
+      "Decision row is not cited in the draft evidence set."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild the case around frame deform root-cause tracking for F-PCB press JIG/tape condition.",
+      "Separate subgroup keys for line, process step, dry setting, and tape thickness.",
+      "Use NG count and NG rate rows as the main defect outcome.",
+      "Remove the invalid measurement-stat outcome unless raw measurement data is found.",
+      "Add concise citations for purpose, result rows, and final decision."
+    ],
+    "evidencePolicy": "Citations exist but are overbroad and omit key decision evidence; not sufficient yet."
+  },
+  "usage": {
+    "input_tokens": 4528,
+    "output_tokens": 755,
+    "total_tokens": 5283
+  }
+}

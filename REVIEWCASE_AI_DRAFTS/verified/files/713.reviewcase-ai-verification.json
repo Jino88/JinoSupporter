@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 713,
+  "sourceFile": "51. BRS-161014  Report test VP mold #4,#7,#8 change mold temperature and valcunizing agent 10% date 17.7.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\713.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 713,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source evidence but the changed-factor and outcome grouping are not reliable enough for Ask AI.",
+    "issues": [
+      "Primary change factor is misgrouped and mixes mold IDs, test rounds, temperature, and normal molds.",
+      "VP mold #4 is part of the test but is partly omitted from the changed condition.",
+      "FO normal mold data is incorrectly used as title/context for this VP temperature validation.",
+      "Several measurement outcomes are header-derived or nonsensical rather than valid result comparisons.",
+      "Evidence rows cite headers or partial rows without enough linked data for computed stats."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to test VP molds #4/#7/#8 at 180°C vs 190°C with 150°C 1h cure and vulcanizing agent 10%, compared to normal VP where present.",
+      "Keep mold number, test round, temperature, date, line, lot date, and normal mold as subgroup keys.",
+      "Rebuild NG laser cutting and function outcomes from actual data rows, including #4/#7/#8 and normal rows.",
+      "Remove or separately validate FO and NTI measurement sections unless tied to the same validation context with real data rows.",
+      "Replace header-only/stat artifacts with row-cited result tables and decision rows."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are insufficient because several support only headers or misgrouped data."
+  },
+  "usage": {
+    "input_tokens": 12996,
+    "output_tokens": 655,
+    "total_tokens": 13651
+  }
+}

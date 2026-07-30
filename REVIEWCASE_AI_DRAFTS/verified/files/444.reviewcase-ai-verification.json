@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 444,
+  "sourceFile": "24.BRS161016 GMI Report test VP new lot_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\444.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 444,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not verifiable because it merges distinct VP lot-date reports and misstates the changed factor.",
+    "issues": [
+      "Separate lot-date reports are merged under one 27.02.2026 case.",
+      "Changed factor wrongly uses mold list instead of lot/new-vs-old context.",
+      "Baseline is explicit only for sheet 13.3; other sheets are new-lot checks.",
+      "Outcomes mix sheets, dates, lots, and molds without grouping keys.",
+      "Measurement outcomes are header/title artifacts, not valid evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split review cases by report sheet or lot date.",
+      "For 13.3, model old lot VP #3/#12 versus new lot VP #3/#6/#10.",
+      "For other sheets, keep new lot date and mold as subgroup context unless a baseline is cited.",
+      "Keep SUB1 and function outcomes within each same sheet/report context.",
+      "Remove generated measurement/header artifact outcomes."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 18581,
+    "output_tokens": 764,
+    "total_tokens": 19345
+  }
+}

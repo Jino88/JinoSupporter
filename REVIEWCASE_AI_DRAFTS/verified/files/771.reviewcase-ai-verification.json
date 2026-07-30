@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 771,
+  "sourceFile": "6. BRS-161016  Report check VP+CD separate when wait dry for along time date 28.3.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\771.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 771,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook is citeable and comparable, but the draft needs corrected condition coverage and date/test-block grouping before use.",
+    "issues": [
+      "Changed condition list omits rows 30-33 despite using them as outcomes.",
+      "Date/test block grouping is not preserved for repeated Normal baselines.",
+      "Outcome metric names for blocks 2 and 3 are incorrect row fragments.",
+      "Changed factor should be framed as wait-time/process-sequence before dry or press jig, not generic jig comparison.",
+      "Header/context rows for result columns are incomplete in outcome evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add all tested conditions from rows 16-20, 23-27, and 30-34 under the same changed-factor context.",
+      "Set subgroup keys such as test date and result block for each comparison group.",
+      "Rename all outcomes to VP/CD vision separate NG count/rate or one unified outcome with block subgroups.",
+      "Clarify baseline as Normal within each date/block and changed conditions as process timing/sequence variants.",
+      "Cite table headers rows 14, 21, and 28 with the relevant result rows."
+    ],
+    "evidencePolicy": "Row citations exist, but final evidence must include the relevant headers and corrected block grouping."
+  },
+  "usage": {
+    "input_tokens": 5833,
+    "output_tokens": 605,
+    "total_tokens": 6438
+  }
+}

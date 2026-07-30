@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 931,
+  "sourceFile": "81. BRS-161014 DT Report test JIG Frame Array  material sus  date 21.11.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\931.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 931,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but incorrectly merges distinct JIG validation reports and unreliable outcome grouping.",
+    "issues": [
+      "Multiple sheets/reports collapsed into one changed factor.",
+      "Changed factor mixes material SUS, new/old JIG, line, settings, and totals.",
+      "Baseline/test pairing ignores date, line, and test-round context.",
+      "Spot-welding follow-up omits Normal comparator rows.",
+      "Measurement stats use wrong specs and mostly cite header rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split or separately group 10.9, NG Rate, initial material SUS, and follow-up material SUS contexts.",
+      "Define primary factor per report, e.g. material SUS vs Normal where supported.",
+      "Preserve date, line, type, setting, and test round as subgroup keys.",
+      "Rebuild outcomes with matched comparator rows including Normal totals.",
+      "Remove invalid measurement-stat section unless row-level measurements and specs are proven."
+    ],
+    "evidencePolicy": "Row citations exist, but they do not sufficiently support the current grouping or calculations."
+  },
+  "usage": {
+    "input_tokens": 9662,
+    "output_tokens": 693,
+    "total_tokens": 10355
+  }
+}

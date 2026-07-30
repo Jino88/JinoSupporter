@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 825,
+  "sourceFile": "66 .BRS-161014 Report test change Press condition at SUB yoke manual date 09.11.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\825.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:08Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 825,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The source is usable, but the draft misstates the changed factor and baseline/test grouping.",
+    "issues": [
+      "Changed factor is filename-based, not the actual press condition change.",
+      "Supplier/material domains are unsupported by cited rows.",
+      "Baseline and test conditions are wrongly marked not explicit.",
+      "Outcome metric label is a header, not the CMG tension result.",
+      "Press 8 sec row has a test-number typo that should not affect grouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to press machine condition/time for SUB yoke manual.",
+      "Use process condition as the change domain.",
+      "Set baseline as normal press 5 sec.",
+      "Set test conditions as no press, press 2 sec, press 6 sec, and press 8 sec.",
+      "Rename outcome to CMG tension after 4hr with result tension measurements."
+    ],
+    "evidencePolicy": "Citations are sufficient for context and measurements if rows 19-23 are retained."
+  },
+  "usage": {
+    "input_tokens": 3023,
+    "output_tokens": 747,
+    "total_tokens": 3770
+  }
+}

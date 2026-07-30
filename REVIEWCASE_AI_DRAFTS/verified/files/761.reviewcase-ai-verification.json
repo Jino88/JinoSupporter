@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 761,
+  "sourceFile": "58.BRS-161014 Report test new bond epoxy at Sub 3 03.11.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\761.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:18Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 761,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites existing rows but misgroups the epoxy comparison and omits key qualitative bonding evidence.",
+    "issues": [
+      "Primary factor should be new bond epoxy vs normal bond, not Sub 3/Sub 4/date.",
+      "Baseline and changed conditions are mixed and duplicated.",
+      "Sub 3/Sub 4 and Suspension C/D should be subgroup keys, not changed factors.",
+      "Bonding-line results are omitted despite critical negative finding.",
+      "Function header row was parsed as measurement outcome."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baseline to Normal EX-0930 and changed conditions to EX-0930-1 and EP001-35B.",
+      "Move date, Sub 3/Sub 4, and Suspension C/D into subgroup context.",
+      "Regroup NG separate, function, tension, and bonding-line outcomes under the epoxy comparison.",
+      "Remove spurious measurement outcome derived from the function header.",
+      "Add citations for purpose/content and bonding-line finding rows."
+    ],
+    "evidencePolicy": "Row citations exist, but coverage and grouping are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 5477,
+    "output_tokens": 650,
+    "total_tokens": 6127
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 112,
+  "sourceFile": "041.MSU-20S15-07 Result  test CD use laser improve NG separate VP + CD_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\112.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 112,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable laser/plasma evidence exists, but the draft misgroups conditions and misextracts key function/measurement outcomes.",
+    "issues": [
+      "Changed factor mixes Normal Laser and Normal Plasma as one baseline.",
+      "Function NG counts and rates do not match the visible rows.",
+      "FO and NTI outcomes parse sample labels as measurements incorrectly.",
+      "Header-only SPL/THD/IMP citations are not sufficient for numeric summaries.",
+      "Review title is a raw data row, not a case title."
+    ],
+    "requiredUserQuestions": [
+      "Is row 39 truly Normal CD Laser, or should it be Normal CD Plasma per the purpose text?"
+    ],
+    "correctionPlan": [
+      "Define primary comparison as CD laser versus CD plasma/normal, preserving lot/date/model.",
+      "Separate tension, function, UV, FO, and NTI outcomes under the same validation context.",
+      "Recalculate function OK/NG/rates from Input, OK, Sigma, Hearing, and Note columns.",
+      "Remove malformed FO/NTI statistics or cite actual data and average rows.",
+      "Rewrite title, baseline, changed condition, and evidence rows using concise source-supported labels."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient; use actual condition/data rows, not header-only rows."
+  },
+  "usage": {
+    "input_tokens": 9610,
+    "output_tokens": 797,
+    "total_tokens": 10407
+  }
+}

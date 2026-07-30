@@ -1,0 +1,222 @@
+{
+  "sourceFileId": 141,
+  "sourceFile": "06. TIU-C11-20 AWF DOE TEST_25.12.06_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\06. TIU-C11-20 AWF DOE TEST_25.12.06_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "8. AWF",
+    "sheetRowCount": 23,
+    "sheetCellCount": 402,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 4
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "8. AWF!1",
+      "sheetName": "8. AWF",
+      "rowNumber": 1,
+      "rowText": "| BACH WF - DOE Result"
+    },
+    {
+      "rowId": "8. AWF!2",
+      "sheetName": "8. AWF",
+      "rowNumber": 2,
+      "rowText": "| No. | Process | | | | CTQ | Factor 1 | | Factor 2 | | Factor 3 | | Output | | | | Spec"
+    },
+    {
+      "rowId": "8. AWF!3",
+      "sheetName": "8. AWF",
+      "rowNumber": 3,
+      "rowText": "| 8 | AWF | | | | O | Temperature | | Tension | | RPM | | Dimension / Condition / 포밍 Test | | | | 400±10℃ / 5~7g / 2800~3200RPM"
+    },
+    {
+      "rowId": "8. AWF!5",
+      "sheetName": "8. AWF",
+      "rowNumber": 5,
+      "rowText": "| Tem X Tension | | | | | | | | RPM X Tension | | | | | | | | Tem X RPM"
+    },
+    {
+      "rowId": "8. AWF!6",
+      "sheetName": "8. AWF",
+      "rowNumber": 6,
+      "rowText": "| Inner Dimension (5EA) | | Tension | | | | | | Inner Dimension (5EA) | | Tension | | | | | | Inner Dimension (5EA) | | RPM"
+    },
+    {
+      "rowId": "8. AWF!7",
+      "sheetName": "8. AWF",
+      "rowNumber": 7,
+      "rowText": "| | | 4 | 5 | 6 | 7 | 8 | | | | 4 | 5 | 6 | 7 | 8 | | | | 2600 | 2800 | 3000 | 3200 | 3400"
+    },
+    {
+      "rowId": "8. AWF!8",
+      "sheetName": "8. AWF",
+      "rowNumber": 8,
+      "rowText": "| Temperature | 380 | ? | ? | ? | ? | ? | | RPM | 2600 | ? | ? | ? | ? | ? | | Temperature | 380 | ? | ? | ? | ? | ?"
+    },
+    {
+      "rowId": "8. AWF!9",
+      "sheetName": "8. AWF",
+      "rowNumber": 9,
+      "rowText": "| | 390 | ? | OK | OK | OK | ? | | | 2800 | ? | OK | OK | OK | ? | | | 390 | ? | OK | OK | OK | ?"
+    },
+    {
+      "rowId": "8. AWF!10",
+      "sheetName": "8. AWF",
+      "rowNumber": 10,
+      "rowText": "| | 400 | ? | OK | OK | OK | ? | | | 3000 | ? | OK | OK | OK | ? | | | 400 | ? | OK | OK | OK | ?"
+    },
+    {
+      "rowId": "8. AWF!11",
+      "sheetName": "8. AWF",
+      "rowNumber": 11,
+      "rowText": "| | 410 | ? | OK | OK | OK | ? | | | 3200 | ? | OK | OK | OK | ? | | | 410 | ? | OK | OK | OK | ?"
+    },
+    {
+      "rowId": "8. AWF!12",
+      "sheetName": "8. AWF",
+      "rowNumber": 12,
+      "rowText": "| | 420 | ? | ? | ? | ? | ? | | | 3400 | ? | ? | ? | ? | ? | | | 420 | ? | ? | ? | ? | ?"
+    },
+    {
+      "rowId": "8. AWF!15",
+      "sheetName": "8. AWF",
+      "rowNumber": 15,
+      "rowText": "| AWF #1 M.C. | | | | Tension"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-141-rc-1",
+      "reviewTitle": "| BACH WF - DOE Result",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment",
+            "dimension/spec"
+          ],
+          "changedFactor": "06. TIU-C11-20 AWF DOE TEST_25.12.06",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "8. AWF!3",
+            "8. AWF!6",
+            "8. AWF!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Tem X Tension | RPM X Tension | Tem X RPM",
+          "comparisonRows": [
+            "8. AWF!6"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 49018,
+              "condition": "RPM X Tension / Inner Dimension (5EA)",
+              "spec": "",
+              "min": 7.601,
+              "max": 7.613,
+              "avg": 7.6081,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "8. AWF!6"
+              ]
+            },
+            {
+              "statId": 49019,
+              "condition": "Tem X RPM / Inner Dimension (5EA)",
+              "spec": "",
+              "min": 7.6,
+              "max": 7.611,
+              "avg": 7.606999999999999,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "8. AWF!6"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Inner Dimension (5EA) | Tension | Inner Dimension (5EA) | Tension | Inner Dimension (5EA) | RPM",
+          "comparisonRows": [
+            "8. AWF!8"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 49020,
+              "condition": "Inner Dimension (5EA) / RPM",
+              "spec": "",
+              "min": 7.601,
+              "max": 7.613,
+              "avg": 7.6081,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "8. AWF!8"
+              ]
+            },
+            {
+              "statId": 49021,
+              "condition": "Inner Dimension (5EA) / Temperature",
+              "spec": "",
+              "min": 7.6,
+              "max": 7.611,
+              "avg": 7.606999999999999,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "8. AWF!8"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "8. AWF!3",
+        "8. AWF!6",
+        "8. AWF!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "8. AWF!3",
+      "8. AWF!6",
+      "8. AWF!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

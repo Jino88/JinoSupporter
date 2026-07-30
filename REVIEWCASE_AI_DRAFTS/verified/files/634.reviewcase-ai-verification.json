@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 634,
+  "sourceFile": "42. BRS-161014  Report checking NTI Compare mold VP #10 and VP#2  4.06.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\634.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 634,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because the mold comparison and several measurement outcomes are misidentified or insufficiently cited.",
+    "issues": [
+      "Changed factor should be resolved from source as VP #10 vs VP #2, not filename text.",
+      "Baseline/test direction is missing and not supported by cited rows.",
+      "SPL/THD citations appear to cite only header rows without enough condition context.",
+      "FO values are parsed incorrectly as constant 2-based statistics.",
+      "Review title is a raw data row, not a review case title."
+    ],
+    "requiredUserQuestions": [
+      "Which mold is the baseline: VP #10 or VP #2?",
+      "Are FO E2/C2/ST groups tied to the VP #10 vs VP #2 mold comparison?"
+    ],
+    "correctionPlan": [
+      "Find source rows that explicitly label VP #10 and VP #2 conditions.",
+      "Set changedFactor to mold VP #10 vs VP #2 with clear baseline and changed condition.",
+      "Rebuild SPL, THD, IMP, and FO outcomes from actual numeric value rows and averages.",
+      "Preserve subgroup keys such as unit number, mask/ST, E2/C2/ST, and metric type.",
+      "Replace weak header-only citations with rows containing labels, values, and summaries."
+    ],
+    "evidencePolicy": "Current citations are insufficient for final evidence; cite rows that prove both condition labels and measured results."
+  },
+  "usage": {
+    "input_tokens": 5284,
+    "output_tokens": 821,
+    "total_tokens": 6105
+  }
+}

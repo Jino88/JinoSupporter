@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 979,
+  "sourceFile": "93.BRS -2015 Result  test Frame coil VP recycle 11.10.2014_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\979.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 979,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies a yoke recycle validation report but does not correctly define the changed factor or cite usable outcome data.",
+    "issues": [
+      "Changed factor is filename, not the process/material change.",
+      "Baseline and changed conditions are left unresolved despite purpose evidence for recycled yoke use.",
+      "Outcome grouping omits vision, air leak, and sub 4 result sections from the same validation report.",
+      "Measurement stats appear aggregated from headers or mixed count/rate fields and are not row-level comparable.",
+      "Evidence cites mostly titles/headers, not the data rows supporting results."
+    ],
+    "requiredUserQuestions": [
+      "Should this be treated as single-arm validation of recycled yoke use, with no explicit normal-yoke baseline?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to recycled yoke use in frame coil VP sample build.",
+      "Set changed condition to yoke recycle used; mark baseline as not directly reported unless source proves otherwise.",
+      "Add all result sections under the same changed-factor context: decap vision, sub 4 visual/air leak, function, and hearing recheck.",
+      "Replace header-only measurement stats with data-row outcomes preserving date, line, lot repair, test round, and type check.",
+      "Cite the specific data rows for each outcome, including rows 48-53 for hearing recheck."
+    ],
+    "evidencePolicy": "Current citations prove source existence but are insufficient as final evidence because result data rows are largely missing."
+  },
+  "usage": {
+    "input_tokens": 4654,
+    "output_tokens": 758,
+    "total_tokens": 5412
+  }
+}

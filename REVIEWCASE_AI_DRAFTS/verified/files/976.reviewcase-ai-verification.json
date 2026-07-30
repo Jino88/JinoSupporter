@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 976,
+  "sourceFile": "91. BRS-2015 Report checking NG Touch sample date 10.10.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\976.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:46Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 976,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed condition and uses unrelated or invalid outcome evidence.",
+    "issues": [
+      "Changed factor is not Marking Ink Coil; source is NG Touch investigation with OK vs NG sample context.",
+      "Baseline/test condition is ambiguous and not supported by cited rows.",
+      "Key gauss comparison rows for OK Sample and NG Touch Sample are omitted.",
+      "Sheet2 metrics appear unrelated to the report context.",
+      "PIC/image-style rows are treated as numeric measurements without support."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Reframe comparison as OK Sample vs NG Touch Sample if supported by full rows.",
+      "Use row 26 header with rows 33 and 39 for gauss outcome evidence.",
+      "Use ink checking only as defect-inspection outcome if row 27 content supports it.",
+      "Remove Sheet2 outcomes unless proven part of the same validation report.",
+      "Replace invalid PIC measurement extraction with citeable table data only."
+    ],
+    "evidencePolicy": "Current citations are insufficient; evidence must cite rows that directly show conditions, metrics, and results."
+  },
+  "usage": {
+    "input_tokens": 3537,
+    "output_tokens": 760,
+    "total_tokens": 4297
+  }
+}

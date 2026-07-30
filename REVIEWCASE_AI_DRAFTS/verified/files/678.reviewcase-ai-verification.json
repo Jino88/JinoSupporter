@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 678,
+  "sourceFile": "47.BRS-2015 Report Test YK 2016 material occurred different colour date 22.5.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\678.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 678,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Changed factor is supported, but outcome extraction has malformed and duplicate measurement groupings.",
+    "issues": [
+      "Measurement outcomes include generic column labels not valid conditions.",
+      "Tension results are duplicated across multiple outcome blocks.",
+      "Measurement specs are not carried into subresults despite header specs.",
+      "Drop test decision is cited in context but not represented as an outcome.",
+      "Some cited data rows are not shown in context, limiting auditability."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Keep primary factor as Normal vs YK Different colour.",
+      "Remove generic detected-table measurement block unless headers are resolved.",
+      "Consolidate tension into one outcome with Short-SMG and Yoke metrics by condition.",
+      "Add drop test outcome using result and decision rows if source rows support it.",
+      "Cite header, data, and decision rows for each outcome."
+    ],
+    "evidencePolicy": "Citations support the factor and function result, but measurement citations need clearer header/data mapping before approval."
+  },
+  "usage": {
+    "input_tokens": 5710,
+    "output_tokens": 545,
+    "total_tokens": 6255
+  }
+}

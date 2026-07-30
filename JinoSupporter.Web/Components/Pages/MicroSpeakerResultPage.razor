@@ -1,0 +1,273 @@
+@page "/data-inference/db"
+@rendermode InteractiveServer
+@using JinoSupporter.Web.Services
+@inject MicroSpeakerInputDataService MicroSpeaker
+
+<PageTitle>Result</PageTitle>
+
+<div class="msr-root">
+    <header class="msr-header">
+        <div>
+            <div class="msr-kicker">TEST DATA ANALYSIS</div>
+            <h1>Result</h1>
+        </div>
+        <div class="msr-stats">
+            <span>@FormatCount(_summary?.FileCount) files</span>
+            <span>@FormatCount(_summary?.PairCount) pairs</span>
+            <span>@FormatCount(_summary?.MeasurementStatCount) measurements</span>
+            <span>@FormatCount(_summary?.TermHitCount) terms</span>
+        </div>
+    </header>
+
+    <section class="msr-toolbar">
+        <div class="msr-tabs" role="tablist" aria-label="MicroSpeaker dashboards">
+            <button class='@TabClass("input")' type="button" @onclick='() => SelectDashboard("input")'>CLI Dashboard</button>
+            <button class='@TabClass("pair")' type="button" @onclick='() => SelectDashboard("pair")'>Pair Compare</button>
+            <button class='@TabClass("pair-review")' type="button" @onclick='() => SelectDashboard("pair-review")'>Pair Review</button>
+        </div>
+        <div class="msr-actions">
+            <a class="btn btn-outline-primary btn-sm" href="/microspeaker/review-cases/sample.json?limit=80" target="_blank" rel="noopener">ReviewCase JSON</a>
+            <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="Refresh">Refresh</button>
+        </div>
+    </section>
+
+    <section class="msr-status">
+        <div>
+            <span>MicroSpeaker DB</span>
+            <strong title="@(_summary?.Paths.DatabasePath ?? "")">@ReadyText</strong>
+        </div>
+        <div>
+            <span>Dataset</span>
+            <strong>@(_summary?.LatestRun?.Dataset ?? "-")</strong>
+        </div>
+        <div>
+            <span>Last Run</span>
+            <strong>@(_summary?.LatestRun?.FinishedAt ?? "-")</strong>
+        </div>
+        <div>
+            <span>Dashboard</span>
+            <strong title="@DashboardPath">@DashboardLabel</strong>
+        </div>
+    </section>
+
+    @if (_summary?.DatabaseExists != true)
+    {
+        <section class="msr-empty">
+            MicroSpeaker database is not ready.
+        </section>
+    }
+    else if (!DashboardExists)
+    {
+        <section class="msr-empty">
+            Dashboard file is missing: @DashboardPath
+        </section>
+    }
+    else
+    {
+        <section class="msr-frame-panel">
+            <iframe class="msr-frame" src="@DashboardUrl" title="@DashboardLabel"></iframe>
+        </section>
+    }
+</div>
+
+@code {
+    private MicroSpeakerSummary? _summary;
+    private string _dashboard = "input";
+    private long _cacheBust;
+
+    protected override void OnInitialized()
+    {
+        Refresh();
+    }
+
+    private void Refresh()
+    {
+        _summary = MicroSpeaker.GetSummary();
+        _cacheBust = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    }
+
+    private void SelectDashboard(string dashboard)
+    {
+        _dashboard = dashboard;
+        _cacheBust = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    }
+
+    private string ReadyText => _summary?.DatabaseExists == true ? "Ready" : "Missing";
+
+    private string DashboardLabel => _dashboard switch
+    {
+        "pair" => "Pair Compare",
+        "pair-review" => "Pair Review",
+        _ => "CLI Dashboard"
+    };
+
+    private string DashboardPath
+    {
+        get
+        {
+            if (_summary is null) return "";
+            return _dashboard switch
+            {
+                "pair" => Path.Combine(_summary.Paths.ProjectRoot, "db", "report_compare_dashboard.html"),
+                "pair-review" => Path.Combine(_summary.Paths.ProjectRoot, "db", "p0_rule_gap_pair_review.html"),
+                _ => _summary.Paths.DashboardPath
+            };
+        }
+    }
+
+    private bool DashboardExists => !string.IsNullOrWhiteSpace(DashboardPath) && File.Exists(DashboardPath);
+
+    private string DashboardUrl => $"/microspeaker/dashboard/{Uri.EscapeDataString(_dashboard)}?v={_cacheBust}";
+
+    private string TabClass(string dashboard) => dashboard == _dashboard ? "msr-tab active" : "msr-tab";
+
+    private static string FormatCount(long? value) => (value ?? 0).ToString("N0");
+}
+
+<style>
+    .msr-root {
+        min-height: calc(100vh - 24px);
+        padding: 16px;
+        background: #f4f6fa;
+        color: #172033;
+    }
+
+    .msr-header,
+    .msr-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .msr-header {
+        margin-bottom: 12px;
+    }
+
+    .msr-kicker {
+        font-size: 11px;
+        font-weight: 800;
+        color: #64748b;
+        letter-spacing: 0;
+    }
+
+    .msr-header h1 {
+        margin: 2px 0 0;
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: 0;
+    }
+
+    .msr-stats,
+    .msr-tabs,
+    .msr-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .msr-stats span {
+        border: 1px solid #d7deea;
+        border-radius: 6px;
+        background: #fff;
+        padding: 5px 9px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .msr-toolbar,
+    .msr-status,
+    .msr-frame-panel,
+    .msr-empty {
+        border: 1px solid #d7deea;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    .msr-toolbar {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .msr-tab {
+        min-height: 32px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background: #f8fafc;
+        color: #334155;
+        padding: 5px 10px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .msr-tab.active {
+        border-color: #2563eb;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .msr-status {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+        padding: 10px;
+    }
+
+    .msr-status div {
+        min-width: 0;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: #f8fafc;
+        padding: 8px;
+    }
+
+    .msr-status span {
+        display: block;
+        margin-bottom: 3px;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .msr-status strong {
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 12px;
+    }
+
+    .msr-frame-panel {
+        overflow: hidden;
+        height: calc(100vh - 184px);
+        min-height: 620px;
+    }
+
+    .msr-frame {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: #fff;
+    }
+
+    .msr-empty {
+        padding: 18px;
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    @@media (max-width: 1000px) {
+        .msr-status {
+            grid-template-columns: 1fr;
+        }
+
+        .msr-frame-panel {
+            height: calc(100vh - 260px);
+        }
+    }
+</style>

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 716,
+  "sourceFile": "51. TIU C11-20 Report  find reason NG SPL high 2026.1.31_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\716.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 716,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the NG investigation but misgroups baseline/test conditions and omits key Normal and Dry UV3 evidence.",
+    "issues": [
+      "Normal baseline row is omitted from changed-factor grouping.",
+      "Dry UV3 manual row and final decision are omitted despite being central.",
+      "Changed condition list stops before all relevant test rows.",
+      "Test!14 is cited but not provided in context rows.",
+      "Measurement outcome is a header-derived artifact, not a valid measurement comparison."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Use row 33 as the Normal comparison baseline if supported by source context.",
+      "Add row 31 Dry UV3 manual and row 45 decision to the primary evidence set.",
+      "Group all test conditions under one root-cause validation context with date/type as subgroup keys.",
+      "Remove the spurious measurement outcome or convert defect categories into submetrics from actual data rows.",
+      "Verify or replace Test!14 citation with available header/data row citations."
+    ],
+    "evidencePolicy": "Citations are source-row based but insufficient until missing key rows and invalid Test!14 citation are resolved."
+  },
+  "usage": {
+    "input_tokens": 5048,
+    "output_tokens": 500,
+    "total_tokens": 5548
+  }
+}

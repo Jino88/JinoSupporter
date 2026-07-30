@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 804,
+  "sourceFile": "63. BRS-161014  Report test Frame using new R-PT improment date 13.11.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\804.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 804,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the main function comparison but needs correction for changed-factor specificity and the omitted gauss sample comparison.",
+    "issues": [
+      "Changed factor should reflect new R-PT frame improvement, not only Normal vs Frame Test.",
+      "Change domain appears design/component/process, not clearly material.",
+      "Gauss final sample comparison is omitted despite matching Frame test vs Frame normal rows.",
+      "Drop test is changed-condition only and should not imply baseline comparison.",
+      "Header/context citations are thin for outcome interpretation."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename factor to normal frame vs frame using new R-PT improvement.",
+      "Change domain from material to design/component or process as appropriate.",
+      "Add gauss final sample outcome using Report!25 and Report!31 with averages.",
+      "Keep drop test as single-condition supporting result with limitation.",
+      "Add relevant header rows such as Report!12, Report!13, Report!19, and Report!23 to evidence."
+    ],
+    "evidencePolicy": "Current cited rows exist but are incomplete for final evidence because gauss and header citations are missing."
+  },
+  "usage": {
+    "input_tokens": 2944,
+    "output_tokens": 767,
+    "total_tokens": 3711
+  }
+}

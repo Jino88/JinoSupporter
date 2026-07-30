@@ -1,0 +1,380 @@
+{
+  "sourceFileId": 331,
+  "sourceFile": "17. TIU C11-20  Report checking Frame+vp separate lot using Frame clean Ethanol date 22.12.2025_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\17. TIU C11-20  Report checking Frame+vp separate lot using Frame clean Ethanol date 22.12.2025_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 37,
+    "sheetCellCount": 202,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 14,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | | REPORT TEST FRAME CLEAN ETHANOL AND DRY 12HOUR TIU-C11-20 | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date | 2025-12-22 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Find reason NG Frame + VP separate"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Checking and test Frame clean Ethanol"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| Make final sample and check function => checking Frame + VP separate"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| Compare with normal lot"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | 1. RESULT CHECKING FP+VP SEAPARATE"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | No | Date | Shift | Model | Type | | Time | Input | OK | VP SEPARATE | NG RATE | Note"
+    },
+    {
+      "rowId": "Test!50",
+      "sheetName": "Test",
+      "rowNumber": 50,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-331-rc-1",
+      "reviewTitle": "| | REPORT TEST FRAME CLEAN ETHANOL AND DRY 12HOUR TIU-C11-20 | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Find reason NG Frame + VP separate / | II. Content. / | - Checking and test Frame clean Ethanol / | Make final sample and check function => checking Frame + VP separate",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition",
+            "lot"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs TIU C11-20L, Day Shift, 10h00~12h00, Total, Night shift, 12h00~14h00",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "TIU C11-20L, Day Shift, 10h00~12h00, Total, Night shift, 12h00~14h00",
+          "subgroupKeys": [
+            "Frame clean Ethanol",
+            "TIU C11-20R",
+            "Total"
+          ],
+          "evidenceRows": [
+            "Test!10",
+            "Test!16",
+            "Test!17",
+            "Test!19",
+            "Test!2",
+            "Test!20",
+            "Test!21",
+            "Test!22",
+            "Test!23",
+            "Test!24",
+            "Test!26",
+            "Test!28",
+            "Test!29",
+            "Test!30",
+            "Test!31",
+            "Test!32",
+            "Test!5",
+            "Test!7",
+            "Test!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "1. RESULT CHECKING FP+VP SEAPARATE",
+          "comparisonRows": [
+            "Test!16",
+            "Test!17",
+            "Test!19",
+            "Test!20",
+            "Test!21",
+            "Test!22",
+            "Test!23",
+            "Test!24",
+            "Test!26",
+            "Test!28",
+            "Test!29",
+            "Test!30",
+            "Test!31",
+            "Test!32"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 19556,
+              "condition": "Day Shift | TIU C11-20R | Frame clean Ethanol",
+              "input": 2380.0,
+              "ok": 2354.0,
+              "ng": 26.0,
+              "ratePercent": 1.0924369999999999,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "metricId": 19557,
+              "condition": "10h00~12h00",
+              "input": 2957.0,
+              "ok": 2937.0,
+              "ng": 20.0,
+              "ratePercent": 0.676361,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "metricId": 19558,
+              "condition": "Total",
+              "input": 5337.0,
+              "ok": 5291.0,
+              "ng": 46.0,
+              "ratePercent": 1.7687979999999999,
+              "evidenceRows": [
+                "Test!19"
+              ]
+            },
+            {
+              "metricId": 19559,
+              "condition": "TIU C11-20L | Frame clean Ethanol",
+              "input": 1272.0,
+              "ok": 1096.0,
+              "ng": 176.0,
+              "ratePercent": 13.836478,
+              "evidenceRows": [
+                "Test!20"
+              ]
+            },
+            {
+              "metricId": 19560,
+              "condition": "10h00~12h00",
+              "input": 1298.0,
+              "ok": 1257.0,
+              "ng": 41.0,
+              "ratePercent": 3.158706,
+              "evidenceRows": [
+                "Test!21"
+              ]
+            },
+            {
+              "metricId": 19561,
+              "condition": "12h00~14h00",
+              "input": 1345.0,
+              "ok": 1148.0,
+              "ng": 197.0,
+              "ratePercent": 14.64684,
+              "evidenceRows": [
+                "Test!22"
+              ]
+            },
+            {
+              "metricId": 19562,
+              "condition": "Total",
+              "input": 3915.0,
+              "ok": 3501.0,
+              "ng": 414.0,
+              "ratePercent": 10.574713,
+              "evidenceRows": [
+                "Test!23"
+              ]
+            },
+            {
+              "metricId": 19563,
+              "condition": "Night shift | TIU C11-20R | Frame clean Ethanol | Total",
+              "input": 1960.0,
+              "ok": 1954.0,
+              "ng": 6.0,
+              "ratePercent": 0.306122,
+              "evidenceRows": [
+                "Test!24"
+              ]
+            },
+            {
+              "metricId": 19564,
+              "condition": "TIU C11-20L | Frame clean Ethanol | Total",
+              "input": 600.0,
+              "ok": 600.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!26"
+              ]
+            },
+            {
+              "metricId": 19565,
+              "condition": "Day Shift | TIU C11-20R | Frame clean Ethanol | Total",
+              "input": 7803.0,
+              "ok": 7780.0,
+              "ng": 23.0,
+              "ratePercent": 0.294758,
+              "evidenceRows": [
+                "Test!28"
+              ]
+            },
+            {
+              "metricId": 19566,
+              "condition": "TIU C11-20L | Frame clean Ethanol",
+              "input": 6465.0,
+              "ok": 6391.0,
+              "ng": 74.0,
+              "ratePercent": 1.144625,
+              "evidenceRows": [
+                "Test!29"
+              ]
+            },
+            {
+              "metricId": 19567,
+              "condition": "Night shift | TIU C11-20R | Frame clean Ethanol | Total",
+              "input": 6922.0,
+              "ok": 6917.0,
+              "ng": 5.0,
+              "ratePercent": 0.07223299999999999,
+              "evidenceRows": [
+                "Test!30"
+              ]
+            },
+            {
+              "metricId": 19568,
+              "condition": "TIU C11-20L | Frame clean Ethanol",
+              "input": 5554.0,
+              "ok": 5493.0,
+              "ng": 61.0,
+              "ratePercent": 1.0983079999999998,
+              "evidenceRows": [
+                "Test!31"
+              ]
+            },
+            {
+              "metricId": 19569,
+              "condition": "Day Shift | TIU C11-20R | Frame clean Ethanol | Total",
+              "input": 8264.0,
+              "ok": 8226.0,
+              "ng": 38.0,
+              "ratePercent": 0.45982599999999996,
+              "evidenceRows": [
+                "Test!32"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!10",
+        "Test!16",
+        "Test!17",
+        "Test!19",
+        "Test!2",
+        "Test!20",
+        "Test!21",
+        "Test!22",
+        "Test!23",
+        "Test!24",
+        "Test!26",
+        "Test!28",
+        "Test!29",
+        "Test!30",
+        "Test!31",
+        "Test!32",
+        "Test!5",
+        "Test!7",
+        "Test!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!10",
+      "Test!16",
+      "Test!17",
+      "Test!19",
+      "Test!2",
+      "Test!20",
+      "Test!21",
+      "Test!22",
+      "Test!23",
+      "Test!24",
+      "Test!26",
+      "Test!28",
+      "Test!29",
+      "Test!30",
+      "Test!31",
+      "Test!32",
+      "Test!5",
+      "Test!7",
+      "Test!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

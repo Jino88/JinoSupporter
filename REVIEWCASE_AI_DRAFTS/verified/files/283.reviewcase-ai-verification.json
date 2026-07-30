@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 283,
+  "sourceFile": "14. BRS-2015 Report test Suspension 201506 -A new vender WorldTop Vina_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\283.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:10Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 283,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies a real vendor validation but misstates the changed factor and omits key comparable outcomes.",
+    "issues": [
+      "Changed factor should be new suspension vendor WorldTop Vina versus Normal, not filename.",
+      "Baseline and changed conditions are explicit in rows as Normal and Lot test/Test.",
+      "Outcomes omit NG assy/frame, spot welding, function, and module-line decision results.",
+      "Tension subresults have parsing errors: spec/sample rows treated as measurements and sample counts wrong.",
+      "Subgroup keys such as date, line, test round, and check type are not preserved."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to suspension 201506 new vendor WorldTop Vina validation against Normal lot.",
+      "Define baselineCondition as Normal and changedCondition as Lot test/Test.",
+      "Add outcome groups for assy/frame NG, spot welding NG, function NG, tension, and module-line 1st/2nd results.",
+      "Reparse tension rows by date, round, test/normal, item, spec, min, max, average, excluding header-derived stats.",
+      "Carry date, line, round, and check type as subgroup keys with row citations."
+    ],
+    "evidencePolicy": "Citations exist but are incomplete and partly misgrouped; more cited rows are needed before final use."
+  },
+  "usage": {
+    "input_tokens": 5990,
+    "output_tokens": 482,
+    "total_tokens": 6472
+  }
+}

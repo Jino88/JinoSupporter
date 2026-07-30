@@ -1,0 +1,601 @@
+{
+  "sourceFileId": 940,
+  "sourceFile": "83. TIU L5S3-01  Report test Check iussue MG+YOKE separate (using MG special lot difference color)-  date 2026.04.14_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\83. TIU L5S3-01  Report test Check iussue MG+YOKE separate (using MG special lot difference color)-  date 2026.04.14_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "14.04",
+    "sheetRowCount": 23,
+    "sheetCellCount": 91,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 11,
+    "measurementStatCount": 12
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "14.04!2",
+      "sheetName": "14.04",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 REPORT CHECK IUSSUE MG+YK SEPARATE | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "14.04!3",
+      "sheetName": "14.04",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | Date | 2026-04-14 00:00:00"
+    },
+    {
+      "rowId": "14.04!4",
+      "sheetName": "14.04",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "14.04!5",
+      "sheetName": "14.04",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "14.04!6",
+      "sheetName": "14.04",
+      "rowNumber": 6,
+      "rowText": "| - Line Using C-MG Special lot difference color => Happen NG Cm+Yoke separate 50/4500pcs ~ 1.1%"
+    },
+    {
+      "rowId": "14.04!7",
+      "sheetName": "14.04",
+      "rowNumber": 7,
+      "rowText": "| => Check some codition in line to improve"
+    },
+    {
+      "rowId": "14.04!8",
+      "sheetName": "14.04",
+      "rowNumber": 8,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "14.04!9",
+      "sheetName": "14.04",
+      "rowNumber": 9,
+      "rowText": "| -Check some codition in line: increase temperature, dry time, clean material MG by Ethanol and primer (Normal clean by lumix)"
+    },
+    {
+      "rowId": "14.04!10",
+      "sheetName": "14.04",
+      "rowNumber": 10,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "14.04!11",
+      "sheetName": "14.04",
+      "rowNumber": 11,
+      "rowText": "| | * RESULT CHECKING"
+    },
+    {
+      "rowId": "14.04!12",
+      "sheetName": "14.04",
+      "rowNumber": 12,
+      "rowText": "| | Date | No | Item | | | Input | NG | NG rate | Note"
+    },
+    {
+      "rowId": "14.04!13",
+      "sheetName": "14.04",
+      "rowNumber": 13,
+      "rowText": "| | 2026-04-14 00:00:00 | 1 | Normal (250°C/5'40s) | | | 256 | 17 | 0.06640625 | Material special lot vendor Baotou"
+    },
+    {
+      "rowId": "14.04!14",
+      "sheetName": "14.04",
+      "rowNumber": 14,
+      "rowText": "| | | 2 | Increase temperature max spec (255°C) dry time 7'23s | | | 1280 | 28 | 0.021875 | Material special lot vendor Baotou"
+    },
+    {
+      "rowId": "14.04!16",
+      "sheetName": "14.04",
+      "rowNumber": 16,
+      "rowText": "| | | 3 | Clean C-MG by Ethanol (Dry time 5'40s) | | | 1896 | 3 | 0.00158228 | Same lot material normal but tension still NG"
+    },
+    {
+      "rowId": "14.04!17",
+      "sheetName": "14.04",
+      "rowNumber": 17,
+      "rowText": "| | | 6 | Using lot material normal (Vendor Ruijin) | | | 1280 | 2 | 0.0015625 | Normal using MTR Ruijin"
+    },
+    {
+      "rowId": "14.04!18",
+      "sheetName": "14.04",
+      "rowNumber": 18,
+      "rowText": "| | 2026-04-15 00:00:00 | 1 | Normal (250°C/5'40s) | | | 256 | 0 | 0 | Material RuiJin - Capa 24k"
+    },
+    {
+      "rowId": "14.04!25",
+      "sheetName": "14.04",
+      "rowNumber": 25,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-940-rc-1",
+      "reviewTitle": "| TIU L5S3-01 REPORT CHECK IUSSUE MG+YK SEPARATE | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Line Using C-MG Special lot difference color => Happen NG Cm+Yoke separate 50/4500pcs ~ 1.1% / | => Check some codition in line to improve / | II. Content. / | -Check some codition in line: increase temperature, dry time, clean material MG by Ethanol and primer (Normal clean by lumix)",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "supplier",
+            "material",
+            "process condition",
+            "dimension/spec",
+            "lot"
+          ],
+          "changedFactor": "Condition comparison: Normal (250°C/5'40s), Using lot material normal (Vendor Ruijin) vs Increase temperature max spec (255°C) dry time 7'23s, Clean C-MG by Primer (Dry time 5'40s), Clean C-MG by Ethanol (Dry time 5'40s), Increase dry time 6'00s, Increase dry time 6'40s, Increase dry time 7'00s, Increase dry time 7'30s, Increase dry time 8'02s",
+          "baselineCondition": "Normal (250°C/5'40s), Using lot material normal (Vendor Ruijin)",
+          "changedCondition": "Increase temperature max spec (255°C) dry time 7'23s, Clean C-MG by Primer (Dry time 5'40s), Clean C-MG by Ethanol (Dry time 5'40s), Increase dry time 6'00s, Increase dry time 6'40s, Increase dry time 7'00s, Increase dry time 7'30s, Increase dry time 8'02s",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "14.04!13",
+            "14.04!14",
+            "14.04!15",
+            "14.04!16",
+            "14.04!17",
+            "14.04!18",
+            "14.04!19",
+            "14.04!2",
+            "14.04!20",
+            "14.04!21",
+            "14.04!22",
+            "14.04!23",
+            "14.04!5",
+            "14.04!8",
+            "14.04!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "* RESULT CHECKING",
+          "comparisonRows": [
+            "14.04!13",
+            "14.04!14",
+            "14.04!15",
+            "14.04!16",
+            "14.04!17",
+            "14.04!18",
+            "14.04!19",
+            "14.04!20",
+            "14.04!21",
+            "14.04!22",
+            "14.04!23"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 25024,
+              "condition": "Normal (250°C/5'40s)",
+              "input": 256.0,
+              "ok": null,
+              "ng": 17.0,
+              "ratePercent": 6.640625,
+              "evidenceRows": [
+                "14.04!13"
+              ]
+            },
+            {
+              "metricId": 25025,
+              "condition": "Increase temperature max spec (255°C) dry time 7'23s",
+              "input": 1280.0,
+              "ok": null,
+              "ng": 28.0,
+              "ratePercent": 2.1875,
+              "evidenceRows": [
+                "14.04!14"
+              ]
+            },
+            {
+              "metricId": 25026,
+              "condition": "Clean C-MG by Primer (Dry time 5'40s)",
+              "input": 2176.0,
+              "ok": null,
+              "ng": 11.0,
+              "ratePercent": 0.5055149999999999,
+              "evidenceRows": [
+                "14.04!15"
+              ]
+            },
+            {
+              "metricId": 25027,
+              "condition": "Clean C-MG by Ethanol (Dry time 5'40s)",
+              "input": 1896.0,
+              "ok": null,
+              "ng": 3.0,
+              "ratePercent": 0.15822799999999998,
+              "evidenceRows": [
+                "14.04!16"
+              ]
+            },
+            {
+              "metricId": 25028,
+              "condition": "Using lot material normal (Vendor Ruijin)",
+              "input": 1280.0,
+              "ok": null,
+              "ng": 2.0,
+              "ratePercent": 0.15625,
+              "evidenceRows": [
+                "14.04!17"
+              ]
+            },
+            {
+              "metricId": 25029,
+              "condition": "Normal (250°C/5'40s)",
+              "input": 256.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "14.04!18"
+              ]
+            },
+            {
+              "metricId": 25030,
+              "condition": "Increase dry time 6'00s",
+              "input": 306.0,
+              "ok": null,
+              "ng": 1.0,
+              "ratePercent": 0.326797,
+              "evidenceRows": [
+                "14.04!19"
+              ]
+            },
+            {
+              "metricId": 25031,
+              "condition": "Increase dry time 6'40s",
+              "input": 298.0,
+              "ok": null,
+              "ng": 2.0,
+              "ratePercent": 0.671141,
+              "evidenceRows": [
+                "14.04!20"
+              ]
+            },
+            {
+              "metricId": 25032,
+              "condition": "Increase dry time 7'00s",
+              "input": 194.0,
+              "ok": null,
+              "ng": 2.0,
+              "ratePercent": 1.030928,
+              "evidenceRows": [
+                "14.04!21"
+              ]
+            },
+            {
+              "metricId": 25033,
+              "condition": "Increase dry time 7'30s",
+              "input": 197.0,
+              "ok": null,
+              "ng": 2.0,
+              "ratePercent": 1.015228,
+              "evidenceRows": [
+                "14.04!22"
+              ]
+            },
+            {
+              "metricId": 25034,
+              "condition": "Increase dry time 8'02s",
+              "input": 405.0,
+              "ok": null,
+              "ng": 2.0,
+              "ratePercent": 0.49382699999999996,
+              "evidenceRows": [
+                "14.04!23"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | No | Item | Input | NG | NG rate | Note",
+          "comparisonRows": [
+            "14.04!13"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65738,
+              "condition": "Item / Normal (250°C/5'40s)",
+              "spec": "",
+              "min": 5.0,
+              "max": 255.0,
+              "avg": 61.0,
+              "sampleCount": 9,
+              "violationCount": 0,
+              "evidenceRows": [
+                "14.04!13"
+              ]
+            },
+            {
+              "statId": 65739,
+              "condition": "Note / Material special lot vendor Baotou",
+              "spec": "",
+              "min": 17.0,
+              "max": 24.0,
+              "avg": 20.316666666666666,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "14.04!13"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "2026-04-14 00:00:00 | 1 | Normal (250°C/5'40s) | 256 | 17 | 0.06640625 | Material special lot vendor Baotou",
+          "comparisonRows": [
+            "14.04!14"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65740,
+              "condition": "Normal (250°C/5'40s) / Increase temperature max spec (255°C) dry time 7'23s",
+              "spec": "",
+              "min": 5.0,
+              "max": 250.0,
+              "avg": 36.75,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "14.04!14"
+              ]
+            },
+            {
+              "statId": 65741,
+              "condition": "Note / Material special lot vendor Baotou",
+              "spec": "",
+              "min": 17.0,
+              "max": 24.0,
+              "avg": 20.316666666666666,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "14.04!14"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "2 | Increase temperature max spec (255°C) dry time 7'23s | 1280 | 28 | 0.021875 | Material special lot vendor Baotou",
+          "comparisonRows": [
+            "14.04!15"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65742,
+              "condition": "Increase temperature max spec (255°C) dry time 7'23s / Clean C-MG by Primer (Dry time 5'40s)",
+              "spec": "",
+              "min": 5.0,
+              "max": 250.0,
+              "avg": 41.285714285714285,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "14.04!15"
+              ]
+            },
+            {
+              "statId": 65743,
+              "condition": "Material special lot vendor Baotou / NG reduce",
+              "spec": "",
+              "min": 17.0,
+              "max": 24.0,
+              "avg": 20.316666666666666,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "14.04!15"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-4",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "5 | Clean C-MG by Primer (Dry time 5'40s) | 2176 | 11 | 0.00505515 | NG reduce",
+          "comparisonRows": [
+            "14.04!16"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65744,
+              "condition": "Clean C-MG by Primer (Dry time 5'40s) / Clean C-MG by Ethanol (Dry time 5'40s)",
+              "spec": "",
+              "min": 6.0,
+              "max": 250.0,
+              "avg": 47.333333333333336,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "14.04!16"
+              ]
+            },
+            {
+              "statId": 65745,
+              "condition": "NG reduce / Same lot material normal but tension still NG",
+              "spec": "",
+              "min": 17.0,
+              "max": 24.0,
+              "avg": 20.316666666666666,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "14.04!16"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-5",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "3 | Clean C-MG by Ethanol (Dry time 5'40s) | 1896 | 3 | 0.00158228 | Same lot material normal but tension still NG",
+          "comparisonRows": [
+            "14.04!17"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65746,
+              "condition": "Clean C-MG by Ethanol (Dry time 5'40s) / Using lot material normal (Vendor Ruijin)",
+              "spec": "",
+              "min": 6.0,
+              "max": 250.0,
+              "avg": 47.333333333333336,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "14.04!17"
+              ]
+            },
+            {
+              "statId": 65747,
+              "condition": "Same lot material normal but tension still NG / Normal using MTR Ruijin",
+              "spec": "",
+              "min": 17.0,
+              "max": 24.0,
+              "avg": 20.316666666666666,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "14.04!17"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-6",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "6 | Using lot material normal (Vendor Ruijin) | 1280 | 2 | 0.0015625 | Normal using MTR Ruijin",
+          "comparisonRows": [
+            "14.04!18"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 65748,
+              "condition": "Using lot material normal (Vendor Ruijin) / Normal (250°C/5'40s)",
+              "spec": "",
+              "min": 6.0,
+              "max": 8.0,
+              "avg": 6.8,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "14.04!18"
+              ]
+            },
+            {
+              "statId": 65749,
+              "condition": "Normal using MTR Ruijin / Material RuiJin - Capa 24k",
+              "spec": "",
+              "min": 17.0,
+              "max": 22.8,
+              "avg": 19.580000000000002,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "14.04!18"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "14.04!13",
+        "14.04!14",
+        "14.04!15",
+        "14.04!16",
+        "14.04!17",
+        "14.04!18",
+        "14.04!19",
+        "14.04!2",
+        "14.04!20",
+        "14.04!21",
+        "14.04!22",
+        "14.04!23",
+        "14.04!5",
+        "14.04!8",
+        "14.04!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "14.04!13",
+      "14.04!14",
+      "14.04!15",
+      "14.04!16",
+      "14.04!17",
+      "14.04!18",
+      "14.04!19",
+      "14.04!2",
+      "14.04!20",
+      "14.04!21",
+      "14.04!22",
+      "14.04!23",
+      "14.04!5",
+      "14.04!8",
+      "14.04!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 737,
+  "sourceFile": "54. TIU C11-20 Report  find reason NG SPL high 2026.2.2_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\737.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 737,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the changed-factor grouping and outcome extraction are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor combines multiple test conditions and includes the baseline inside changed condition.",
+      "Baseline is ambiguous because the report says compare with normal lot but no normal-lot row is cited.",
+      "Row 15, 17, and 19 represent distinct process/spec combinations that should not be merged as one change.",
+      "Measurement outcome from Test!14 appears to parse defect columns as statistics, not a valid measurement result.",
+      "Review title is taken from unrelated Sheet1 spec/time header."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended baseline the old press jig 1.32 mg condition or a separate normal lot not shown?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factors from Test rows 15, 17, and 19 as separate comparable conditions.",
+      "Preserve press jig type, repair status, laser cutting condition, bonding amount, and spec note as grouping keys.",
+      "Use NG rate, total NG, input, and defect categories as process-defect outcomes only.",
+      "Remove the unsupported Test!14 measurement-stat outcome unless the row content proves a real measurement table.",
+      "Set title and purpose from Test report rows, not Sheet1 header rows."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient and partly misassigned for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3938,
+    "output_tokens": 746,
+    "total_tokens": 4684
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 344,
+  "sourceFile": "18. BRS-161016 Report checking and test laser marking CD date 28.10.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\344.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:07Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 344,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the changed-factor and outcome grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Primary factor mixes Laser CD, Normal, day/night shift, and setting context.",
+      "Shift/date/line should be subgroup keys, not changed conditions.",
+      "Sheet1 before/after setting stats are treated as outcome measurements without actual data-row support.",
+      "Header-derived measurement outcome duplicates defect-category data and is not a valid measurement result.",
+      "Baseline/test context for new base, JIG reverse, and VP+CD separate is conflated."
+    ],
+    "requiredUserQuestions": [
+      "Confirm primary comparison: Laser CD/marking CD 161016 vs Normal, with shift/date/line as subgroups?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to the validated laser marking CD/VP+CD separate condition versus Normal if confirmed.",
+      "Move day/night shift, date, line, lot/IR note, and test section into subgroup/context fields.",
+      "Keep VP+CD separate and function defects as outcomes under the same confirmed factor.",
+      "Remove or recast Sheet1 before/after settings as process-setting evidence, citing actual setting rows.",
+      "Remove header-only measurement aggregates unless supported by real measurement rows."
+    ],
+    "evidencePolicy": "Row citations exist, but header-only and setting-summary citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 5348,
+    "output_tokens": 775,
+    "total_tokens": 6123
+  }
+}

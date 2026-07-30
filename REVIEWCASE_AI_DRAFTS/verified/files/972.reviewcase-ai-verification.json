@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 972,
+  "sourceFile": "9.BRS-2015 Report Test material Frame happen PT 201506-S bending date 13.9.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\972.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 972,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid rows but misgroups the changed factor and omits a cited vision outcome.",
+    "issues": [
+      "Changed condition incorrectly includes process label FRAME ARRAY.",
+      "Primary comparison should likely be Frame Test material vs Frame normal.",
+      "Frame+Suspension vision outcome rows are omitted.",
+      "Decision and more-quantity limitation are not fully reflected.",
+      "Baseline uses n=100 versus test n=31 without limitation."
+    ],
+    "requiredUserQuestions": [
+      "Confirm the changed factor is PT-201506-S bending Frame Test material versus Frame normal.",
+      "Confirm whether Frame normal n=100 is an acceptable baseline for comparison."
+    ],
+    "correctionPlan": [
+      "Set changed factor to Frame Test/PT-201506-S bending material vs Frame normal.",
+      "Move FRAME ARRAY and E2-4A into outcome or subgroup context.",
+      "Add FR+SUS Vision outcome using rows 26-27.",
+      "Cite decision rows 40-43 and note more-quantity limitation.",
+      "Keep all three outcomes under one review case."
+    ],
+    "evidencePolicy": "Citations exist but are incomplete for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3452,
+    "output_tokens": 766,
+    "total_tokens": 4218
+  }
+}

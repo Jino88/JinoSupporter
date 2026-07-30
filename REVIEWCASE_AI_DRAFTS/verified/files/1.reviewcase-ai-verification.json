@@ -1,0 +1,44 @@
+{
+  "sourceFileId": 1,
+  "sourceFile": "00. Report TEST new dry machine with material make press JIG 2024.03.26_1778470442_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\1.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:42:52Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 1,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft has citeable rows but the primary changed factor, baseline/test conditions, and outcome evidence grouping are not sufficiently supported by the source rows.",
+    "issues": [
+      "Changed factor is taken from the filename rather than the cited table evidence.",
+      "Baseline and changed conditions are explicitly not identified, so this cannot be approved as a comparative ReviewCase yet.",
+      "Change domains are over-broad; coating is not supported, and equipment/jig/process/material are not clearly separable from the cited rows.",
+      "The table appears to report material samples, thickness, and dry-machine results at 230°C for 1, 3, and 5 minutes, but the draft does not preserve material name, thickness, or time as clear grouping keys.",
+      "Outcome metric is a concatenated header rather than a clear measured result.",
+      "Sub-result evidence cites only the time header row and does not cite the underlying sample data rows used for min, max, average, and sample count.",
+      "The draft reports sampleCount 15, but the provided context only shows rows through sample 9, so the missing data rows must be cited or the statistics cannot be verified from the visible evidence."
+    ],
+    "requiredUserQuestions": [
+      "Is this intended as a material comparison, dry-time comparison, or descriptive dry-machine test?",
+      "Is there a baseline or normal condition not shown in this sheet?"
+    ],
+    "correctionPlan": [
+      "Replace the filename-based changed factor with evidence-supported factors from the table, such as material type and/or dry time at 230°C, if that is the intended comparison.",
+      "Remove unsupported change domains, especially coating, unless additional cited evidence supports them.",
+      "Treat thickness as a subgroup or covariate unless the source explicitly identifies it as the changed factor.",
+      "Cite all data rows used in each statistic, not only the header row.",
+      "Separate the outcome into clear metrics for 1 min, 3 min, and 5 min results under the 230°C dry-machine setting.",
+      "If no baseline exists, mark the case as descriptive/not judged rather than a baseline-vs-test validation.",
+      "Verify and cite rows for all 15 samples before using the min, max, average, and sample count values."
+    ],
+    "evidencePolicy": "Evidence row citations are not sufficient because key statistics cite only headers and do not cite the underlying sample rows or an explicit baseline/test condition."
+  },
+  "usage": {
+    "input_tokens": 2142,
+    "output_tokens": 1003,
+    "total_tokens": 3145
+  }
+}

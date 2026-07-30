@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 941,
+  "sourceFile": "83.BRS-161014 Report checking AWF machine and test process solder date 11.12.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\941.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:57Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 941,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but the changed-factor and outcome grouping are too mixed for final evidence.",
+    "issues": [
+      "Unrelated AWF machine, pad cleaning, tip, suspension, coil, and jig tests are merged into one factor.",
+      "Baseline and changed conditions are not supported as a single comparison.",
+      "Date, shift, machine, line, item, type, and repair-stage grouping keys are not preserved.",
+      "Some pair metrics appear taken from repair/NG-sample columns but are labeled as input or NG rate.",
+      "BRS-161016 pad clean section is mixed into the BRS-161014 report case without separation."
+    ],
+    "requiredUserQuestions": [
+      "If only one final case is needed, should the focus be AWF machine, pad cleaning, or tip/process solder testing?"
+    ],
+    "correctionPlan": [
+      "Split review cases or changed factors by source table section and objective.",
+      "Preserve date, shift, AWF machine, line, item/type, and repair-stage keys in each outcome.",
+      "Define baseline/test only where rows show a valid intended comparison; otherwise keep as descriptive metrics.",
+      "Recalculate rates using the correct table headers for before repair, re-spot, and after repair fields.",
+      "Limit citations to relevant header and data rows for each rebuilt factor."
+    ],
+    "evidencePolicy": "Row citations exist, but they are overbroad and misassigned; sufficient only after regrouping."
+  },
+  "usage": {
+    "input_tokens": 8208,
+    "output_tokens": 1255,
+    "total_tokens": 9463
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 576,
+  "sourceFile": "36. BRS-161016 Report test JIG VP ASSY GUIDE JIG loosely and tight  2024.5.10_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\576.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:10Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 576,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the report but misstates the changed factor baseline/test grouping for loose versus tight jig conditions.",
+    "issues": [
+      "Changed factor incorrectly uses an implicit baseline instead of loose vs tight jig fit.",
+      "Type definition evidence rows 10.5!10 and 10.5!11 are omitted.",
+      "Result header row 10.5!18 should support metric interpretation.",
+      "Line/date context should be preserved as subgroup keys.",
+      "Judgement can note both conditions had identical NG rate, not remain wholly ungrouped."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to JIG VP ASSY guide jig fit: loose/NG versus tight/OK.",
+      "Use loose/NG as one condition and tight/OK as the comparator, without implicit baseline.",
+      "Add evidence rows 10.5!10, 10.5!11, and 10.5!18.",
+      "Add subgroup keys Line C2-3A and Date 2024-05-10 for result rows.",
+      "Summarize outcome as Input 120, OK 112, Total NG 8, NG rate 6.67% for both conditions."
+    ],
+    "evidencePolicy": "Current citations exist but are incomplete; add type-definition and metric-header rows before final use."
+  },
+  "usage": {
+    "input_tokens": 2924,
+    "output_tokens": 651,
+    "total_tokens": 3575
+  }
+}

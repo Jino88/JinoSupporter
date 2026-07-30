@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 732,
+  "sourceFile": "53. TIU L5S3-01 R Report test SUB 2 JIG design change  - 2026.01.07 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\732.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:24Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 732,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The comparison is clear as Normal JIG baseline versus Test/New JIG, but citations and factor labeling need cleanup before final use.",
+    "issues": [
+      "Change domain is overbroad for a JIG design-change report.",
+      "Changed condition should identify Test as New/Test JIG.",
+      "Section header rows for outcomes are not cited.",
+      "Decision row is not cited despite supporting overall conclusion.",
+      "Gauss check section is mentioned but no result rows are captured."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Limit changeDomain to jig/process condition unless source proves material or spec change.",
+      "Rename changedFactor to Normal JIG versus New/Test JIG design.",
+      "Add cited section headers for each outcome metric.",
+      "Add decision row as evidence for overall unusable conclusion.",
+      "Mark gauss check as uncaptured or exclude it from outcomes."
+    ],
+    "evidencePolicy": "Data row citations exist, but cited evidence is incomplete for labels and decision."
+  },
+  "usage": {
+    "input_tokens": 3636,
+    "output_tokens": 741,
+    "total_tokens": 4377
+  }
+}

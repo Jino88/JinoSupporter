@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 301,
+  "sourceFile": "15. TIU C11-20  Report Test relate improve NG VP deform 2025.12.19 ..ok_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\301.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:49Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 301,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source evidence but misgroups test conditions, rounds, and outcome metrics.",
+    "issues": [
+      "Time 1 and Time 2 are incorrectly treated as changed conditions.",
+      "Frame clean by plasma is a main test condition, not a subgroup key.",
+      "Outcome compares mixed rounds and omits total rows and the decision row.",
+      "Measurement outcome is fabricated from defect-count columns and should be removed or recast.",
+      "Baseline/test framing is too narrow for a five-condition validation report."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define one changed-factor context as five frame/VP/cleaning condition comparison.",
+      "Keep test round as subgroup or use total rows consistently for final judgement.",
+      "Use rows 16,18-46,57 as core cited evidence; drop unsupported row 17 stats.",
+      "Create defect outcomes for Total NG, NG rate, and defect categories, not measurement stats.",
+      "Reflect the source decision that plasma-clean frame and new frame VP Ø11 with ethanol clean are preferred."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient because key total and decision rows are omitted and one cited header/stat basis is unsupported."
+  },
+  "usage": {
+    "input_tokens": 5634,
+    "output_tokens": 785,
+    "total_tokens": 6419
+  }
+}

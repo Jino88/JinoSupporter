@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 65,
+  "sourceFile": "026.MSU-20S15-07 Result check NTI test bonding Frame VP offset 0.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\65.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 65,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable Normal vs change bonding frame+VP offset evidence exists, but outcome parsing and cited support are not reliable enough for final use.",
+    "issues": [
+      "Changed-condition row NG rate function!6 is cited but not shown in review context.",
+      "Function outcome may ignore Hearing +1V/+0V defect counts and rates.",
+      "SPL/IMP/THD measurement outcome uses header rows only and lacks actual data-row citations.",
+      "FO measurement subresults are misparsed from row labels, producing nonsensical stats.",
+      "Review title is a raw data row, not a case description."
+    ],
+    "requiredUserQuestions": [
+      "Should Hearing +1V and +0V rates be treated as function NG outcomes?",
+      "Does NG rate function!6 define the change bonding line offset 0.13 condition?"
+    ],
+    "correctionPlan": [
+      "Add citeable rows for both normal and changed function lines, including row 6 text.",
+      "Recompute function results using the intended defect columns and rates.",
+      "Regroup SPL, THD, IMP, and FO as Test vs Normal measurements with actual data rows cited.",
+      "Remove misparsed FO label-index statistics and use Test AVG vs Normal AVG where supported.",
+      "Replace the review title with a concise Normal vs offset 0.13 bonding frame+VP title."
+    ],
+    "evidencePolicy": "Row existence is sufficient, but citations are not sufficient for final evidence because key condition and measurement data rows are missing or misparsed."
+  },
+  "usage": {
+    "input_tokens": 6310,
+    "output_tokens": 751,
+    "total_tokens": 7061
+  }
+}

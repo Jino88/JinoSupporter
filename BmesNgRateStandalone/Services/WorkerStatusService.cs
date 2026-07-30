@@ -11,7 +11,12 @@ namespace BmesNgRateStandalone.Services;
 public sealed class WorkerStatusService(NgRateSettingsService settings)
 {
     private readonly NgRateSettingsService _settings = settings;
-    private const string BaseUrl = "http://bmes.bujeon.com";
+    // HTTPS, matching BmesLpaScrapeService: BMES now enforces TLS, and over plain http the
+    // anti-forgery cookie set on the token GET does not survive the redirect to https, so the
+    // LoginCheck POST fails validation ("Login failed"). https keeps the cookie on one origin.
+    private const string BaseUrl = "https://bmes.bujeon.com";
+    private const int FreshFetchDays = 7;
+    private static readonly JsonSerializerOptions CacheJsonOptions = new(JsonSerializerDefaults.Web);
 
     // ── Response model ────────────────────────────────────────────────────────────
 
@@ -58,6 +63,14 @@ public sealed class WorkerStatusService(NgRateSettingsService settings)
         public Dictionary<string, string> Raw { get; init; } = new();
     }
 
+    private sealed class WorkerStatusCacheFile
+    {
+        public WorkerStatusCacheFile() { }
+
+        public DateTime CachedAt { get; set; }
+        public List<WorkerRecord> Records { get; set; } = new();
+    }
+
     public sealed class FetchResult
     {
         public bool               IsSuccess    { get; set; }
@@ -84,113 +97,226 @@ public sealed class WorkerStatusService(NgRateSettingsService settings)
         if (endDate < startDate)
             (startDate, endDate) = (endDate, startDate);
 
-        if (!_settings.IsCredentialsConfigured)
-        {
-            result.ErrorMessage = "BMES credentials not configured. Go to BMES → Setting.";
-            return result;
-        }
+        startDate = startDate.Date;
+        endDate   = endDate.Date;
 
-        using var handler = new HttpClientHandler
-        {
-            UseCookies      = true,
-            CookieContainer = new CookieContainer(),
-        };
-        using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(60) };
-        client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+        var allDates = Enumerable
+            .Range(0, (int)(endDate - startDate).TotalDays + 1)
+            .Select(i => startDate.AddDays(i))
+            .ToList();
 
-        // 1. Token
-        progress?.Report("Fetching verification token…");
-        string token = await GetTokenAsync(client);
-        if (string.IsNullOrEmpty(token))
-        {
-            result.ErrorMessage = "Failed to obtain CSRF token.";
-            return result;
-        }
+        // Recent worker status can still change, so the last 7 days are always fetched.
+        // Older dates use the per-day cache when available, otherwise they are fetched once and cached.
+        DateTime freshCutoff = DateTime.Today.AddDays(-FreshFetchDays);
+        var toFetch = new List<DateTime>();
+        var cacheHits = new List<DateTime>();
+        var cachedRecords = new List<WorkerRecord>();
 
-        // 2. Login
-        progress?.Report("Logging in to BMES…");
-        if (!await LoginAsync(client, token))
+        progress?.Report($"Worker status cache: {GetCacheRoot()}");
+        foreach (var date in allDates)
         {
-            result.ErrorMessage = "Login failed — check credentials in BMES Setting.";
-            return result;
-        }
-        progress?.Report("Login successful.");
-
-        // 3. Fetch - read all people first, then resolve department membership only for new people.
-        var allRecords = new List<WorkerRecord>();
-        int totalDays = (endDate - startDate).Days + 1;
-        int dayIdx    = 0;
-
-        List<DepartmentRecord> departments;
-        try
-        {
-            departments = new List<DepartmentRecord>();
-            for (var date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
+            if (date < freshCutoff && TryLoadDayCache(date, out var dayCached))
             {
-                progress?.Report($"Fetching departments for {date:yyyy-MM-dd}...");
-                departments = await FetchDepartmentsAsync(client, date);
-                if (departments.Count > 0)
-                    break;
+                cacheHits.Add(date);
+                cachedRecords.AddRange(dayCached);
+                progress?.Report($"Cache hit {date:yyyy-MM-dd}: {dayCached.Count:N0} record(s)");
+            }
+            else
+            {
+                toFetch.Add(date);
+            }
+        }
+
+        progress?.Report(
+            $"Date range: {startDate:MM/dd} – {endDate:MM/dd} " +
+            $"(server: {toFetch.Count} day(s) / cache: {cacheHits.Count} day(s))");
+
+        var freshRecords = new List<WorkerRecord>();
+
+        if (toFetch.Count > 0)
+        {
+            if (!_settings.IsCredentialsConfigured)
+            {
+                result.ErrorMessage = "BMES credentials not configured. Go to BMES → Setting.";
+                return result;
             }
 
-            progress?.Report($"Found {departments.Count:N0} G09 department(s).");
-        }
-        catch (Exception ex)
-        {
-            result.ErrorMessage = $"Department fetch error: {ex.Message}";
-            progress?.Report($"[ERROR] {ex.Message}");
-            return result;
-        }
+            using var handler = new HttpClientHandler
+            {
+                UseCookies      = true,
+                CookieContainer = new CookieContainer(),
+            };
+            using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(60) };
+            client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
 
-        if (departments.Count == 0)
-        {
-            result.Records   = new List<WorkerRecord>();
-            result.IsSuccess = true;
-            result.FetchedAt = DateTime.Now;
-            progress?.Report("No G09 departments found.");
-            return result;
-        }
+            // 1. Token
+            progress?.Report("Fetching verification token…");
+            string token = await GetTokenAsync(client);
+            if (string.IsNullOrEmpty(token))
+            {
+                result.ErrorMessage = "Failed to obtain CSRF token.";
+                return result;
+            }
 
-        var aggregateDepartment = SelectAggregateDepartment(departments);
-        progress?.Report(
-            $"Using {aggregateDepartment.DepartmentCode} / {aggregateDepartment.DepartmentNo} for daily worker status.");
+            // 2. Login
+            progress?.Report("Logging in to BMES…");
+            if (!await LoginAsync(client, token))
+            {
+                result.ErrorMessage = "Login failed — check credentials in Setting.";
+                return result;
+            }
+            progress?.Report("Login successful.");
 
-        for (var date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
-        {
-            dayIdx++;
-            progress?.Report($"Fetching worker status for {date:yyyy-MM-dd} ({dayIdx}/{totalDays})...");
+            // 3. Fetch - read all people first, then resolve department membership only for new people.
+            List<DepartmentRecord> departments;
             try
             {
-                var records = await FetchWorkerStatusAsync(client, date, aggregateDepartment);
-                foreach (var r in records) r.Date = date;
-                allRecords.AddRange(records);
+                departments = new List<DepartmentRecord>();
+                foreach (var date in toFetch.OrderBy(d => d))
+                {
+                    progress?.Report($"Fetching departments for {date:yyyy-MM-dd}...");
+                    departments = await FetchDepartmentsAsync(client, date);
+                    if (departments.Count > 0)
+                        break;
+                }
+
+                progress?.Report($"Found {departments.Count:N0} G09 department(s).");
             }
             catch (Exception ex)
             {
-                result.ErrorMessage = $"Fetch error on {date:yyyy-MM-dd}: {ex.Message}";
-                progress?.Report($"[ERROR] {date:yyyy-MM-dd}: {ex.Message}");
-                // keep what we have so far; continue
+                result.ErrorMessage = $"Department fetch error: {ex.Message}";
+                progress?.Report($"[ERROR] {ex.Message}");
+                return result;
+            }
+
+            if (departments.Count == 0)
+            {
+                result.Records    = SortRecords(DeduplicateRecords(cachedRecords)).ToList();
+                result.TotalCount = result.Records.Count;
+                result.IsSuccess  = true;
+                result.FetchedAt  = DateTime.Now;
+                progress?.Report("No G09 departments found. Returning cached records only.");
+                return result;
+            }
+
+            var aggregateDepartment = SelectAggregateDepartment(departments);
+            progress?.Report(
+                $"Using {aggregateDepartment.DepartmentCode} / {aggregateDepartment.DepartmentNo} for daily worker status.");
+
+            int dayIdx = 0;
+            var fetchedDates = new HashSet<DateTime>();
+            foreach (var date in toFetch.OrderBy(d => d))
+            {
+                dayIdx++;
+                progress?.Report($"Fetching worker status for {date:yyyy-MM-dd} ({dayIdx}/{toFetch.Count})...");
+                try
+                {
+                    var records = await FetchWorkerStatusAsync(client, date, aggregateDepartment);
+                    foreach (var r in records) r.Date = date;
+                    freshRecords.AddRange(records);
+                    fetchedDates.Add(date);
+                }
+                catch (Exception ex)
+                {
+                    result.ErrorMessage = $"Fetch error on {date:yyyy-MM-dd}: {ex.Message}";
+                    progress?.Report($"[ERROR] {date:yyyy-MM-dd}: {ex.Message}");
+                    // keep what we have so far; continue
+                }
+            }
+
+            var employeeFirstSeenDates = GetEmployeeFirstSeenDates(freshRecords);
+            progress?.Report(
+                $"Mapping department membership for {employeeFirstSeenDates.Count:N0} people across {toFetch.Count} server day(s)...");
+            var employeeDepartments = await BuildEmployeeDepartmentMapAsync(
+                client,
+                employeeFirstSeenDates,
+                departments,
+                aggregateDepartment,
+                progress);
+            ApplyDepartmentMap(freshRecords, employeeDepartments, aggregateDepartment);
+
+            foreach (var date in fetchedDates.OrderBy(d => d))
+            {
+                var dayRecords = freshRecords
+                    .Where(r => r.Date.Date == date)
+                    .ToList();
+                SaveDayCache(date, dayRecords, progress);
             }
         }
 
-        var employeeFirstSeenDates = GetEmployeeFirstSeenDates(allRecords);
-        progress?.Report(
-            $"Mapping department membership for {employeeFirstSeenDates.Count:N0} people across {totalDays} day(s)...");
-        var employeeDepartments = await BuildEmployeeDepartmentMapAsync(
-            client,
-            employeeFirstSeenDates,
-            departments,
-            aggregateDepartment,
-            progress);
-        ApplyDepartmentMap(allRecords, employeeDepartments, aggregateDepartment);
-
+        var allRecords = new List<WorkerRecord>(freshRecords.Count + cachedRecords.Count);
+        allRecords.AddRange(freshRecords);
+        allRecords.AddRange(cachedRecords);
         result.Records    = SortRecords(DeduplicateRecords(allRecords)).ToList();
         result.TotalCount = result.Records.Count;
         result.IsSuccess  = result.Records.Count > 0 || string.IsNullOrEmpty(result.ErrorMessage);
         result.FetchedAt  = DateTime.Now;
-        progress?.Report($"Done - {result.Records.Count:N0} records over {totalDays} day(s).");
+        progress?.Report($"Done - {result.Records.Count:N0} records over {allDates.Count} day(s).");
 
         return result;
+    }
+
+    // ── Private: per-day cache ────────────────────────────────────────────────────
+
+    private string GetCacheRoot()
+        => _settings.WorkerStatusCacheDirectory;
+
+    private string GetDayCachePath(DateTime date)
+        => Path.Combine(GetCacheRoot(), $"{date:yyyyMMdd}.json");
+
+    private bool TryLoadDayCache(DateTime date, out List<WorkerRecord> records)
+    {
+        records = new List<WorkerRecord>();
+        string path = GetDayCachePath(date);
+        if (!File.Exists(path)) return false;
+
+        try
+        {
+            string json = File.ReadAllText(path, Encoding.UTF8);
+            var cache = JsonSerializer.Deserialize<WorkerStatusCacheFile>(json, CacheJsonOptions);
+            if (cache?.Records is null) return false;
+
+            records = cache.Records;
+            foreach (var record in records)
+                record.Date = date.Date;
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private void SaveDayCache(
+        DateTime date,
+        List<WorkerRecord> records,
+        IProgress<string>? progress)
+    {
+        try
+        {
+            string path = GetDayCachePath(date);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+            foreach (var record in records)
+                record.Date = date.Date;
+
+            var cache = new WorkerStatusCacheFile
+            {
+                CachedAt = DateTime.Now,
+                Records  = records,
+            };
+
+            string tmpPath = $"{path}.{Guid.NewGuid():N}.tmp";
+            string json = JsonSerializer.Serialize(cache, CacheJsonOptions);
+            File.WriteAllText(tmpPath, json, Encoding.UTF8);
+            File.Move(tmpPath, path, overwrite: true);
+            progress?.Report($"Cached {date:yyyy-MM-dd}: {records.Count:N0} record(s)");
+        }
+        catch (Exception ex)
+        {
+            progress?.Report($"[WARN] Failed to cache {date:yyyy-MM-dd}: {ex.Message}");
+        }
     }
 
     // ── Private: HTTP ──────────────────────────────────────────────────────────────

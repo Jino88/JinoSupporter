@@ -1,0 +1,44 @@
+{
+  "sourceFileId": 2,
+  "sourceFile": "00.BRS-161016 Report test VP all mold from supplier_1778463079_1778470471_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\2.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:42:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 2,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft has citeable rows but is not verified because it mixes separate report contexts and invents an unsupported VP #7 baseline/change grouping.",
+    "issues": [
+      "Blocking: changedFactor incorrectly combines unrelated contexts from 'REPORT TEST VP ALL MOLD' and 'REPORT CHANGE SEMI LINE 3A/3B'.",
+      "Blocking: baselineCondition 'VP #7 (Improve mold), Normal' is not supported by the cited purpose or table rows; the evidence indicates a multi-condition VP mold comparison, not a baseline/test validation against VP #7.",
+      "Blocking: changeDomain includes supplier, coating, process condition, and dimension/spec without sufficient cited evidence; the supported primary factor is VP mold/mold number, with lot/date/line/tolerance notes as subgroup context where applicable.",
+      "Blocking: outcome pair-1 gives an 'improved' judgement based on arbitrary pairwise comparisons against VP #7, which is not a valid stated control condition.",
+      "Blocking: multiple outcomes from Compare 3A.3B concern line 3A vs 3B and should not be under the same changed factor as VP all mold testing.",
+      "Blocking: measurement outcomes are mostly extraction artifacts or header-derived statistics, including '#DIV/0!' conditions, and should not be used as final evidence.",
+      "Non-blocking: row citations appear to exist, but many cited rows are not shown in contextRows and several header-only rows are used as if they support quantitative conclusions."
+    ],
+    "requiredUserQuestions": [
+      "Should line 3A/3B comparison be a separate ReviewCase?",
+      "Is VP #7 intended as a control baseline?"
+    ],
+    "correctionPlan": [
+      "Split the workbook into separate ReviewCases by report context: VP all mold testing, line 3A/3B comparison, and any separate block/sheet analyses only if they have clear purpose and comparable rows.",
+      "For the VP all mold ReviewCase, set the changed factor to VP mold number/type, not supplier/coating, and preserve date, line, lot date, test round, normal/improve/special lot, and tolerance note as subgroup keys.",
+      "Remove the unsupported VP #7 baseline/test framing; treat molds as parallel conditions unless a cited decision row explicitly identifies a baseline/control.",
+      "Rebuild outcomes directly from coherent tables: laser cutting NG rate, VP bending NG rate, and function NG rate from rows 13.5 and/or Summury, with no overall judgement unless supported by a decision or a valid predefined comparison.",
+      "Move Compare 3A.3B rows into a separate ReviewCase focused on line 3A vs line 3B or semi-line/component test type, preserving type test and line as grouping keys.",
+      "Remove measurement/statistical artifact outcomes such as detected tables, '#DIV/0!' conditions, and header-only measurement summaries unless a real measurement/spec table is cited and interpreted.",
+      "Ensure every outcome cites both the header row defining columns and the exact data rows used for the comparison."
+    ],
+    "evidencePolicy": "Source row IDs exist, but citations are not sufficient for final evidence because they support multiple unrelated contexts and do not justify the drafted baseline/change grouping or judgements."
+  },
+  "usage": {
+    "input_tokens": 20113,
+    "output_tokens": 1174,
+    "total_tokens": 21287
+  }
+}

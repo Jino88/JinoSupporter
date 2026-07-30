@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 715,
+  "sourceFile": "51. BRS-201506 Report test change Frame+VP outside bonding line date 4.6.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\715.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 715,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures the validation structure but the primary changed condition is inconsistent between outside and inside bonding line movement.",
+    "issues": [
+      "Changed factor says inside 0.03 while title, content, and conclusions indicate outside 0.03.",
+      "Key comparison rows 17 and 23 are cited but not shown in provided context for verification.",
+      "VP vision result also has an extra cited row 13 with 0 NG that may conflict with the 0.4% test result.",
+      "Baseline/test grouping depends on hidden rows, so final condition labels cannot be verified here."
+    ],
+    "requiredUserQuestions": [
+      "Was the tested bonding line change outside 0.03 or inside 0.03?"
+    ],
+    "correctionPlan": [
+      "Inspect rows 17 and 23 and confirm the exact test-condition labels.",
+      "Align changedFactor, changedCondition, and subResults to the confirmed outside/inside wording.",
+      "Clarify whether row 13 is separate preliminary VP check or part of the comparison.",
+      "Retain both VP vision and function outcomes under one changed-factor context after label correction.",
+      "Recheck rate calculations against the corrected comparison rows."
+    ],
+    "evidencePolicy": "Row citations exist, but cited comparison rows must be visible and condition conflict resolved before use."
+  },
+  "usage": {
+    "input_tokens": 3129,
+    "output_tokens": 800,
+    "total_tokens": 3929
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 873,
+  "sourceFile": "72.BRS-2015 Report Test change temperature process dry YK+C-MG date 10.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\873.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:45Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 873,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the changed-factor and outcome grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Primary factor conflates temperature, supplier, material, and totals.",
+      "Total Test is incorrectly used as a changed condition.",
+      "Baseline varies by sheet and supplier context.",
+      "Function judgement uses an invalid aggregate comparison.",
+      "Many measurement outcomes are header-derived or nonsensical."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to dry YK+C-MG temperature change: 90/110°C vs normal 130°C.",
+      "Keep supplier as subgroup unless a row proves supplier is the tested factor.",
+      "Separate valid outcome domains: drop, tension, function, gauss.",
+      "Remove Total Test as a test condition and compare matched conditions only.",
+      "Rebuild measurements from data rows with correct headers, specs, and sample counts."
+    ],
+    "evidencePolicy": "Row citations exist, but many cite headers or aggregates; full table context is needed."
+  },
+  "usage": {
+    "input_tokens": 14976,
+    "output_tokens": 660,
+    "total_tokens": 15636
+  }
+}

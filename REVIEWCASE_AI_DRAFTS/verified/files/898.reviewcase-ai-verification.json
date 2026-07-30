@@ -1,0 +1,35 @@
+{
+  "sourceFileId": 898,
+  "sourceFile": "78. BRS-161014 Report Check SUS NG spot welding 07.12.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\898.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 898,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook has citeable purpose, measurements, and decision text but no explicit changed-condition comparison for a ReviewCase.",
+    "issues": [
+      "No citeable baseline/test or changed-factor evidence.",
+      "Result values lack condition labels or grouping keys.",
+      "Draft status should be excluded, not needs_review.",
+      "Filename and sheet title differ, increasing context ambiguity."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Mark the file excluded for no citeable changed-condition evidence.",
+      "Do not generate a comparative ReviewCase from unlabeled result columns.",
+      "Retain rows 5-8 and 25-26 only as exclusion context.",
+      "Note that numeric rows are measurements without comparable conditions."
+    ],
+    "evidencePolicy": "Rows cited are sufficient to support exclusion, not final comparative evidence."
+  },
+  "usage": {
+    "input_tokens": 1773,
+    "output_tokens": 609,
+    "total_tokens": 2382
+  }
+}

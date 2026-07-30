@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 295,
+  "sourceFile": "15. BRS-161016 DT Report test TIP 883 repair to U844 same dimension (3D)   date 24.10.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\295.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 295,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misgroups the main comparison and outcome conditions.",
+    "issues": [
+      "Primary changed factor should be TIP 883 repair dimension versus TIP 844 normal, not before versus after repair.",
+      "Vision outcome mixes TIP 883, TIP 844, before-repair, and after-repair rows into invalid comparisons.",
+      "Function outcome should compare TIP 883 to TIP 844 normal and can be judged similar, not left ungrouped.",
+      "Measurement outcome is a header-derived artifact and should be removed or converted to defect-type details.",
+      "Duplicate sheets are double-counted without confirming they are separate runs."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baseline to TIP 844 normal and changed condition to TIP 883 repair dimension.",
+      "Use before-repair and after-repair spot welding as subgroup conditions for the vision result.",
+      "Compare like-for-like vision rows: TIP 883 before vs TIP 844 before, and TIP 883 after vs TIP 844 after.",
+      "Group function rows 54 and 56 as the function defect comparison under the same factor.",
+      "Remove duplicate-sheet double counting unless the sheets are proven separate evidence."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until duplicates and like-for-like comparisons are fixed."
+  },
+  "usage": {
+    "input_tokens": 6849,
+    "output_tokens": 1328,
+    "total_tokens": 8177
+  }
+}

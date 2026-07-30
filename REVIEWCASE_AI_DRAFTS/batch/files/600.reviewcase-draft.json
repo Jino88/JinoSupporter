@@ -1,0 +1,425 @@
+{
+  "sourceFileId": 600,
+  "sourceFile": "39. BRS-161014 DT Report test separate lot all mold VP  date 2024.05.23_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\39. BRS-161014 DT Report test separate lot all mold VP  date 2024.05.23_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 52,
+    "sheetCellCount": 348,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 9,
+    "measurementStatCount": 7
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | BRS-161016 DT - REPORT TEST SEPARATE ALL MOLD VP | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | Date | 2024-05-23 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | Marker | Le"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Test separate all mold VP OK or Not"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Separae all mold VP"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| - To make final and checking NG rate of function"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | 1. RESULT CHECKING FUNCTION SEPARATE ALL MOLD VP"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | Date | Mold VP | Input | OK | Sigma | | | Hearing | | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | | | | | SPL | SPL+THD | SPL+THD+F0 | Noise | Touch"
+    },
+    {
+      "rowId": "Test!57",
+      "sheetName": "Test",
+      "rowNumber": 57,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-600-rc-1",
+      "reviewTitle": "| BRS-161016 DT - REPORT TEST SEPARATE ALL MOLD VP | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Test separate all mold VP OK or Not / | II. Content. / | - Separae all mold VP / | - To make final and checking NG rate of function",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "mold",
+            "lot"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs #4, TOTAL, #6, #8, #10, 2024-05-21 00:00:00, Total, 2024-05-22 00:00:00",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "#4, TOTAL, #6, #8, #10, 2024-05-21 00:00:00, Total, 2024-05-22 00:00:00",
+          "subgroupKeys": [
+            "#10",
+            "#2"
+          ],
+          "evidenceRows": [
+            "Test!14",
+            "Test!15",
+            "Test!17",
+            "Test!19",
+            "Test!2",
+            "Test!21",
+            "Test!23",
+            "Test!25",
+            "Test!27",
+            "Test!29",
+            "Test!30",
+            "Test!5",
+            "Test!6",
+            "Test!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "1. RESULT CHECKING FUNCTION SEPARATE ALL MOLD VP",
+          "comparisonRows": [
+            "Test!15",
+            "Test!17",
+            "Test!19",
+            "Test!21",
+            "Test!23",
+            "Test!25",
+            "Test!27",
+            "Test!29",
+            "Test!30"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 22164,
+              "condition": "TOTAL",
+              "input": 686.0,
+              "ok": 668.0,
+              "ng": 18.0,
+              "ratePercent": 2.623907,
+              "evidenceRows": [
+                "Test!15"
+              ]
+            },
+            {
+              "metricId": 22165,
+              "condition": "#4",
+              "input": 26204.0,
+              "ok": 25355.0,
+              "ng": 849.0,
+              "ratePercent": 3.239963,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "metricId": 22166,
+              "condition": "#6",
+              "input": 2855.0,
+              "ok": 2716.0,
+              "ng": 139.0,
+              "ratePercent": 4.868651,
+              "evidenceRows": [
+                "Test!19"
+              ]
+            },
+            {
+              "metricId": 22167,
+              "condition": "#8",
+              "input": 6142.0,
+              "ok": 5904.0,
+              "ng": 238.0,
+              "ratePercent": 3.874959,
+              "evidenceRows": [
+                "Test!21"
+              ]
+            },
+            {
+              "metricId": 22168,
+              "condition": "#10",
+              "input": 11498.0,
+              "ok": 11308.0,
+              "ng": 190.0,
+              "ratePercent": 1.652461,
+              "evidenceRows": [
+                "Test!23"
+              ]
+            },
+            {
+              "metricId": 22169,
+              "condition": "2024-05-21 00:00:00 | #10",
+              "input": 5339.0,
+              "ok": 5225.0,
+              "ng": 114.0,
+              "ratePercent": 2.135231,
+              "evidenceRows": [
+                "Test!25"
+              ]
+            },
+            {
+              "metricId": 22170,
+              "condition": "#4",
+              "input": 4759.0,
+              "ok": 4640.0,
+              "ng": 119.0,
+              "ratePercent": 2.500525,
+              "evidenceRows": [
+                "Test!27"
+              ]
+            },
+            {
+              "metricId": 22171,
+              "condition": "Total",
+              "input": 10098.0,
+              "ok": 9865.0,
+              "ng": 233.0,
+              "ratePercent": 2.307388,
+              "evidenceRows": [
+                "Test!29"
+              ]
+            },
+            {
+              "metricId": 22172,
+              "condition": "2024-05-22 00:00:00 | #2",
+              "input": 686.0,
+              "ok": 668.0,
+              "ng": 18.0,
+              "ratePercent": 2.623907,
+              "evidenceRows": [
+                "Test!30"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Test!2"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 57555,
+              "condition": "BRS-161016 DT - REPORT TEST SEPARATE ALL MOLD VP",
+              "spec": "",
+              "min": 2.0,
+              "max": 10.0,
+              "avg": 6.444444444444445,
+              "sampleCount": 18,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!2"
+              ]
+            },
+            {
+              "statId": 57556,
+              "condition": "Dept",
+              "spec": "",
+              "min": 2.0,
+              "max": 10.0,
+              "avg": 6.615384615384615,
+              "sampleCount": 13,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!2"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Mold VP | Input | OK | Sigma | Hearing | Total NG | Total NG rate",
+          "comparisonRows": [
+            "Test!14"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 57557,
+              "condition": "Sigma / SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 39,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "statId": 57558,
+              "condition": "Sigma / SPL+THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 39,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "statId": 57559,
+              "condition": "Sigma / SPL+THD+F0",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 39,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "statId": 57560,
+              "condition": "Hearing / Noise",
+              "spec": "",
+              "min": 0.0077381,
+              "max": 744.0,
+              "avg": 88.34591433538462,
+              "sampleCount": 39,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "statId": 57561,
+              "condition": "Hearing / Touch",
+              "spec": "",
+              "min": 0.0,
+              "max": 105.0,
+              "avg": 11.052553485384616,
+              "sampleCount": 39,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!14",
+        "Test!15",
+        "Test!17",
+        "Test!19",
+        "Test!2",
+        "Test!21",
+        "Test!23",
+        "Test!25",
+        "Test!27",
+        "Test!29",
+        "Test!30",
+        "Test!5",
+        "Test!6",
+        "Test!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!14",
+      "Test!15",
+      "Test!17",
+      "Test!19",
+      "Test!2",
+      "Test!21",
+      "Test!23",
+      "Test!25",
+      "Test!27",
+      "Test!29",
+      "Test!30",
+      "Test!5",
+      "Test!6",
+      "Test!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

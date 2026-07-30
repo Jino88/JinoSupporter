@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 340,
+  "sourceFile": "18. BRS-161014  Report test new bond PT-8310M9S change bonding amount  17.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\340.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 340,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid evidence rows but misstates the main comparison and loses merged-condition grouping for tension rows.",
+    "issues": [
+      "Primary factor should be PT-8310M9S bonding amount reduction, not normal bond versus all PT amounts.",
+      "Baseline should likely be PT-8310M9S at 0.5-0.6 mg, with reduced amounts as tests.",
+      "Normal bond 0930 appears to be reference/control context, not the main baseline.",
+      "Tension rows for Suspension D lack inherited bond and amount conditions.",
+      "Decision row is cited in context but not used to capture final conclusion."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rewrite changed factor as bonding amount reduction for new bond PT-8310M9S.",
+      "Set PT-8310M9S 0.5-0.6 mg as baseline and 0.4-0.5 mg, 0.3-0.4 mg as changed conditions.",
+      "Keep Normal bond 0930 as a reference subgroup or secondary comparator.",
+      "Propagate parent condition to Suspension D tension rows.",
+      "Add decision/conclusion evidence if row 40 or following rows contain judgement."
+    ],
+    "evidencePolicy": "Row citations exist and are mostly sufficient, but grouping citations need corrected use of merged-row context."
+  },
+  "usage": {
+    "input_tokens": 4296,
+    "output_tokens": 815,
+    "total_tokens": 5111
+  }
+}

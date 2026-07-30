@@ -1,0 +1,34 @@
+{
+  "sourceFileId": 251,
+  "sourceFile": "12. TIU C11-20  Report check NG VP deform 2025.12.17_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\251.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 251,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "This is a positional NG count report without a changed-factor comparison, so it should be excluded.",
+    "issues": [
+      "No baseline/test or changed-condition pair is present.",
+      "Rows only document VP deform purpose, NG positions, and a recheck decision.",
+      "No comparable validation metric or outcome grouping exists."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set status to excluded.",
+      "Add exclusion reason: non-comparable positional NG report.",
+      "Cite title, purpose, result table, and decision rows only as exclusion support.",
+      "Do not create review cases or changed-factor claims."
+    ],
+    "evidencePolicy": "Citations are sufficient for exclusion but not for final Ask AI evidence."
+  },
+  "usage": {
+    "input_tokens": 1700,
+    "output_tokens": 682,
+    "total_tokens": 2382
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 540,
+  "sourceFile": "32. BRS-161014 Report check dimension Frame 2023.4.23_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\540.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:10Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 540,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is unreliable because it misgroups the cavity gap comparison and includes invalid extracted measurements.",
+    "issues": [
+      "Primary factor should likely be high-NG G3-D vs low-NG G2-A FP/YK gap, not broad letters/totals.",
+      "Baseline/test conditions mix cavities, molds, dates, lines, and totals.",
+      "Many measurements are parsed from headers or mixed units, causing false specs and violations.",
+      "Function, gap, frame, and yoke outcomes lack clear row-level grouping keys.",
+      "Key high/low cavity summary evidence is not used as primary support."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factor around supported mold/cavity gap comparison.",
+      "Separate function NG results by date, line, mold frame, and cavity.",
+      "Remove header-derived and unit-mixed measurement stats.",
+      "Recalculate dimensions/gaps only from actual data rows with correct specs.",
+      "Cite summary, gap, function, and dimension rows tied to each condition."
+    ],
+    "evidencePolicy": "Rows exist, but citations are misapplied; final needs condition-specific row citations."
+  },
+  "usage": {
+    "input_tokens": 19061,
+    "output_tokens": 1123,
+    "total_tokens": 20184
+  }
+}

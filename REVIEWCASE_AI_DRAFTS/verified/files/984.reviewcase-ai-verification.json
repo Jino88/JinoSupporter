@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 984,
+  "sourceFile": "BRS 201506 1Reliability test result for VP Plan 2 29.1_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\984.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 984,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the change context and converts a reliability validation report into unusable header-derived measurements.",
+    "issues": [
+      "Changed factor is filename, not source change context",
+      "Baseline and changed conditions are not established",
+      "Test items are mixed instead of preserved as subgroups",
+      "Outcomes include header/date/spec artifacts as measurements",
+      "Some cited rows are absent or weak, including sheet row 1 references"
+    ],
+    "requiredUserQuestions": [
+      "Should the primary context be VP Plan 2 validation or separate reliability stress tests?"
+    ],
+    "correctionPlan": [
+      "Set product BRS 201506S08ZZ and test reason VP Plan 2 as case context",
+      "Define each reliability item and condition as subgroup keys",
+      "Use PASS/OK and before/after SPL, THD, impedance, F0 as outcomes",
+      "Remove header/date/sample-count artifacts from measurement results",
+      "Replace invalid or weak citations with rows showing conditions, specs, samples, and results"
+    ],
+    "evidencePolicy": "Current citations are insufficient; citeable rows exist but must be regrouped and valid."
+  },
+  "usage": {
+    "input_tokens": 25064,
+    "output_tokens": 625,
+    "total_tokens": 25689
+  }
+}

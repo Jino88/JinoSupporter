@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 621,
+  "sourceFile": "40. BRS-161016  Report test VP mold #2, #4, #6, #8, #10 improve VP bending date 06.06.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\621.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 621,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable data but the changed factor and subgroup grouping are ambiguous and partly incorrect.",
+    "issues": [
+      "Primary change is stated as reduced 2nd drying temperature, not just mold comparison.",
+      "Baseline normal mold #2 is compared against multiple test mold numbers and a different lot date.",
+      "Mold number, lot date, date, line, and process step should be subgroup keys.",
+      "Measurement outcomes are header-derived aggregations, not valid row-level outcomes.",
+      "Changed condition list has duplicate formatting and omits some function rows."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended primary factor reduced 2nd drying temperature versus normal processing?",
+      "Should mold number and lot date be treated only as subgroups despite being confounded?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to reduced 2nd drying temperature test for VP molds from BRS supplier.",
+      "Set baseline as normal VP mold #2 lot 31/5 and test as VP molds #2/#4/#6/#8/#10 lot 3/6, noting confounding.",
+      "Add subgroup keys for mold number, lot date, date, line, and inspection step.",
+      "Remove header-only measurement outcomes or rebuild them from actual data rows.",
+      "Normalize condition names and include all cited function rows consistently."
+    ],
+    "evidencePolicy": "Row citations exist and cover results, but grouping evidence is insufficient until corrected."
+  },
+  "usage": {
+    "input_tokens": 9507,
+    "output_tokens": 738,
+    "total_tokens": 10245
+  }
+}

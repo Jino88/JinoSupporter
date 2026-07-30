@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 162,
+  "sourceFile": "08. BRS-161016 Report  test material Frame have PT NG dimension - test 2nd_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\162.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 162,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Primary Normal vs Test Frame grouping is supported, but outcome grouping and citations need correction before use.",
+    "issues": [
+      "FRAME+SP outcome wrongly includes function rows 33-34 and bogus zero stats.",
+      "Cited rows 27 and 29 are not in supplied context, so Sus D stats cannot be verified.",
+      "Function judgement should be same/similar, not improved, per report conclusion.",
+      "Tension specs are omitted despite visible spec values.",
+      "Reliability/drop/load result and decision context are underrepresented."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Remove rows 33-34 and zero stats from FRAME+SP measurement outcome.",
+      "Provide or verify source text for rows 27 and 29 before citing Sus D results.",
+      "Change function judgement to similar/no worse or not_judged with author note.",
+      "Capture tension spec values and keep Sus C/Sus D as subgroup keys.",
+      "Add concise reliability/drop/load outcome or limitation using rows 36, 49, 52-53."
+    ],
+    "evidencePolicy": "Citations are partly sufficient but need corrected row grouping and missing cited-row text."
+  },
+  "usage": {
+    "input_tokens": 4671,
+    "output_tokens": 779,
+    "total_tokens": 5450
+  }
+}

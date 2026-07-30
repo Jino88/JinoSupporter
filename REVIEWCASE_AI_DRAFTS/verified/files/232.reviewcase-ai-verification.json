@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 232,
+  "sourceFile": "11. MSU-L20S15-07 Report test Plasma suspension A,B to check tension Fr+Sus - 2025.03.26_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\232.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 232,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable tension test evidence exists, but the draft needs corrected factor, subgroup, metric, and judgement grouping.",
+    "issues": [
+      "Changed factor is filename, not the plasma suspension process change.",
+      "Baseline and test conditions are left unclear despite Test vs Normal rows.",
+      "Suspension A/B should be subgroup keys under one comparison.",
+      "Spec and sample counts are misparsed; spec is 0.3 kgf with five samples per row.",
+      "Judgement ignores pass rows and final decision that plasma is same as normal."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to plasma suspension process for Frame+susp tension.",
+      "Set changed condition as Test/plasma and baseline as Normal.",
+      "Group Suspension A and B as subresults or subgroup keys.",
+      "Correct metric to tension test kgf, spec 0.3, five samples per condition.",
+      "Add cited comparison/delta/decision rows and set judgement to equivalent/pass if supported."
+    ],
+    "evidencePolicy": "Row citations are citeable but incomplete; add delta and decision rows before final use."
+  },
+  "usage": {
+    "input_tokens": 2955,
+    "output_tokens": 766,
+    "total_tokens": 3721
+  }
+}

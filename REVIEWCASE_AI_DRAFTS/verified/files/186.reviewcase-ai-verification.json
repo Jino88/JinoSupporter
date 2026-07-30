@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 186,
+  "sourceFile": "1. BRS-161014 Report test DOE sub 2 manual_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\186.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 186,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable DOE content but the changed factor, condition grouping, and some metric interpretations are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor is a filename, not the DOE variables.",
+      "Baseline/test conditions are not identified.",
+      "CM+CP, CM+B-PT, bonding amount, needle, and drying levels are conflated.",
+      "Some stats appear derived from headers/sample IDs, not measurements.",
+      "Tension violations against ≥80 kgf are likely missed."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define changed factor as DOE bonding amount and drying conditions at Sub 2 manual.",
+      "Preserve process subgroups CM+CP and CM+B-PT, plus date/sheet context.",
+      "Use actual data rows for each condition level, not only section/header rows.",
+      "Separate visual/decap NG outcomes from tension and bonding amount measurements.",
+      "Recalculate pass/fail using explicit specs, including tension ≥80 kgf."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are too header-heavy; final evidence needs condition and data rows."
+  },
+  "usage": {
+    "input_tokens": 6501,
+    "output_tokens": 571,
+    "total_tokens": 7072
+  }
+}

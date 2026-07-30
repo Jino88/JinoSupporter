@@ -1,0 +1,129 @@
+@page "/tools/pc-download"
+@attribute [Authorize]
+@using JinoSupporter.Web.Services
+@inject IWebHostEnvironment Env
+
+<PageTitle>PC Download</PageTitle>
+
+@{
+    StandaloneRelease? release = StandaloneDownloadCatalog.Read(Env.ContentRootPath);
+}
+
+<div class="pcd-page">
+    <header class="pcd-head">
+        <h4 class="mb-1 fw-semibold">PC Download</h4>
+        <div class="text-muted small">
+            BMES NG Rate standalone — the desktop build of NG Rate / F-Cost / Worker Status /
+            Routing / Material / LPA. Runs without the web server and updates itself.
+        </div>
+    </header>
+
+    @if (release is null)
+    {
+        <div class="alert alert-warning small mb-0">
+            No desktop build has been published yet. Run
+            <code>BmesNgRateStandalone/tools/PublishStandaloneUpdate.ps1</code> to publish one.
+        </div>
+    }
+    else
+    {
+        <div class="pcd-card">
+            <div class="pcd-card-head">
+                <div>
+                    <div class="pcd-name">BMES NG Rate</div>
+                    <div class="pcd-meta">
+                        @* Parenthesised: Razor reads a bare `v@release.Version` as an email address. *@
+                        <span class="pcd-ver">v@(release.Version)</span>
+                        @if (release.PublishedAt is { } at)
+                        {
+                            <span class="pcd-dot">·</span>
+                            <span>published @at.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                        }
+                        <span class="pcd-dot">·</span>
+                        <span>Windows 10/11 64-bit</span>
+                    </div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(release.Notes))
+            {
+                <div class="pcd-notes">@release.Notes</div>
+            }
+
+            <div class="pcd-assets">
+                @if (release.Setup is { } setup)
+                {
+                    <a class="pcd-btn primary" href="@setup.Url" download>
+                        <span class="pcd-btn-main">Download Installer</span>
+                        <span class="pcd-btn-sub">@setup.FileName · @setup.SizeText</span>
+                    </a>
+                }
+                @if (release.Package is { } pkg)
+                {
+                    <a class="pcd-btn" href="@pkg.Url" download>
+                        <span class="pcd-btn-main">@(release.Setup is null ? "Download (zip)" : "Portable zip")</span>
+                        <span class="pcd-btn-sub">@pkg.FileName · @pkg.SizeText</span>
+                    </a>
+                }
+                @if (release.Setup is null && release.Package is null)
+                {
+                    <div class="alert alert-warning small mb-0">
+                        The manifest lists v@(release.Version) but no package file was found in
+                        <code>standalone-updates/</code>.
+                    </div>
+                }
+            </div>
+
+            @if (release.Setup is null)
+            {
+                <div class="pcd-hint">
+                    Only the portable zip is published. To also produce a one-click installer,
+                    install <a href="https://jrsoftware.org/isdl.php" target="_blank" rel="noreferrer">Inno Setup 6</a>
+                    on the publishing machine and re-run <code>PublishStandaloneUpdate.ps1</code>.
+                </div>
+            }
+        </div>
+
+        <div class="pcd-steps">
+            <div class="pcd-steps-title">Install</div>
+            <ol>
+                @if (release.Setup is not null)
+                {
+                    <li>Run the installer and follow the wizard. No admin rights are needed for a per-user install.</li>
+                }
+                else
+                {
+                    <li>Unzip the package into a folder you can write to (e.g. <code>C:\BmesNgRate</code>), then run <code>BmesNgRateStandalone.exe</code>.</li>
+                }
+                <li>On first launch the app opens <strong>Setting</strong> and asks for the <strong>Working Folder</strong> — every NG Rate / F-Cost / Worker Status file is stored under it.</li>
+                <li>Enter your <strong>BMES ID and password</strong> in the same Setting page, then restart the app.</li>
+                <li>Later versions install themselves: the app checks this server on start and prompts to update.</li>
+            </ol>
+        </div>
+    }
+</div>
+
+<style>
+.pcd-page { max-width: 760px; }
+.pcd-head { margin-bottom: 18px; }
+.pcd-card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:18px 20px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+.pcd-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.pcd-name { font-size:1.05rem; font-weight:700; color:#0f172a; }
+.pcd-meta { font-size:.8rem; color:#64748b; margin-top:3px; }
+.pcd-ver { font-weight:600; color:#1d4ed8; }
+.pcd-dot { margin:0 6px; color:#cbd5e1; }
+.pcd-notes { margin-top:14px; padding:10px 12px; background:#f8fafc; border-left:3px solid #cbd5e1; border-radius:4px; font-size:.85rem; color:#334155; white-space:pre-wrap; }
+.pcd-assets { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+.pcd-btn { display:flex; flex-direction:column; gap:2px; padding:10px 16px; border:1px solid #cbd5e1; border-radius:8px; text-decoration:none; color:#0f172a; background:#fff; min-width:230px; }
+.pcd-btn:hover { border-color:#94a3b8; background:#f8fafc; }
+.pcd-btn.primary { background:#1d4ed8; border-color:#1d4ed8; color:#fff; }
+.pcd-btn.primary:hover { background:#1e40af; border-color:#1e40af; }
+.pcd-btn-main { font-weight:600; font-size:.92rem; }
+.pcd-btn-sub { font-size:.75rem; opacity:.75; word-break:break-all; }
+.pcd-hint { margin-top:14px; font-size:.8rem; color:#64748b; }
+.pcd-steps { margin-top:20px; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:16px 20px; }
+.pcd-steps-title { font-weight:600; color:#0f172a; margin-bottom:8px; }
+.pcd-steps ol { margin:0; padding-left:20px; color:#334155; font-size:.85rem; }
+.pcd-steps li { margin-bottom:6px; }
+.pcd-steps code, .pcd-page code { background:#f1f5f9; padding:1px 5px; border-radius:3px; font-size:.8rem; color:#0f172a; }
+</style>

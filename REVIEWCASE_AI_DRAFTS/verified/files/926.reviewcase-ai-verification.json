@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 926,
+  "sourceFile": "80. TIU C11-20  Report  test bonding VP.CD by nozzle VZ06 improve NG bonding -  2026.05.08_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\926.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 926,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Primary nozzle comparison is clear, but outcome coverage and citations need cleanup before final use.",
+    "issues": [
+      "Bond amount result is cited but missing as an outcome.",
+      "Drop test uses Test!55 but that row text is not supplied for verification.",
+      "Changed factor wording duplicates Nozzle VZ06 and overstates domain as dimension/spec.",
+      "Visual result domain is left unknown.",
+      "Dates and location context are not preserved as subgroup keys."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add bond amount outcome using rows Test!16-Test!19.",
+      "Retrieve and cite Test!55 text or remove the drop test outcome.",
+      "Revise changed factor to Normal needle 25G vs Test Nozzle VZ06.",
+      "Set visual outcome domain to visual inspection defect.",
+      "Add date and location context to subgroup keys or outcome metadata."
+    ],
+    "evidencePolicy": "Citations mostly support comparisons, but missing Test!55 text and omitted outcome prevent approval."
+  },
+  "usage": {
+    "input_tokens": 4774,
+    "output_tokens": 1262,
+    "total_tokens": 6036
+  }
+}

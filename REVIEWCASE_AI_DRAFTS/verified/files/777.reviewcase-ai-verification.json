@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 777,
+  "sourceFile": "6. MSU-L20S15-07 Report test reverse direction magnetic CMG_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\777.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 777,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because the changed factor, evidence citations, statistics, and spec judgements are materially wrong or ambiguous.",
+    "issues": [
+      "Changed factor is misclassified as supplier/material; source indicates magnetic direction change/function check.",
+      "Baseline and changed/test conditions are not explicit from cited rows.",
+      "Evidence omits title and sample result rows, citing mostly headers/specs.",
+      "Stats and sample counts do not match visible sample rows.",
+      "Spec failures and Sigma NG results are ignored as zero violations."
+    ],
+    "requiredUserQuestions": [
+      "Is this report testing reverse magnetic direction against normal direction, or only checking reversed samples?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to magnetic direction change/reverse CMG, not supplier/material.",
+      "Use Sheet1!3 plus header/spec rows and all sample rows as evidence.",
+      "Recompute metrics from actual visible sample rows only.",
+      "Apply specs N 400-570G and S 390-590G and count out-of-spec/NG results.",
+      "Merge duplicate measurement outcomes into one validation outcome with Gauss, Sigma, Hearing, and remarks."
+    ],
+    "evidencePolicy": "Current citations are insufficient; final evidence must include title, spec, and sample result rows."
+  },
+  "usage": {
+    "input_tokens": 2414,
+    "output_tokens": 634,
+    "total_tokens": 3048
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 581,
+  "sourceFile": "36. TIU C11-20  Report Test change film D25-10-25 2026.1.21. - RAW soundcheck_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\581.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:24Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 581,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not approved because the primary change is misidentified and measurement outcomes are poorly grouped.",
+    "issues": [
+      "Primary changed factor should be film stack change, not Normal vs Day shift.",
+      "Baseline/test conditions conflict with Test sheet content.",
+      "Key changed-condition row Test!8 is omitted from factor evidence.",
+      "Measurement outcomes include headers, masks, and #DIV/0 artifacts.",
+      "Review title uses an unrelated graph header row."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Film D25+5+D25 normal vs D25+10+D25 test film.",
+      "Use Day shift only as subgroup context if supported by table rows.",
+      "Add Test!8 and relevant result rows as factor evidence.",
+      "Regroup SPL/THD raw data as measurement outcomes and remove header/error artifacts.",
+      "Replace title and purpose with Test sheet report title and purpose rows."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for final evidence until corrected."
+  },
+  "usage": {
+    "input_tokens": 7244,
+    "output_tokens": 621,
+    "total_tokens": 7865
+  }
+}

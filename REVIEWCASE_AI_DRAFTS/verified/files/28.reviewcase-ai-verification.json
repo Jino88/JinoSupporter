@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 28,
+  "sourceFile": "010.MSU-20S15-07 Result check Height dimension C-MG, S-MG - Date 2025.02.10_1778470980_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\28.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:05Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 28,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the primary changed-factor grouping and outcome mapping are ambiguous and partly wrong.",
+    "issues": [
+      "Changed factor states Normal vs unspecified, but height evidence compares C-MG and S-MG variants.",
+      "Function outcome only shows Normal, so it does not support a comparison.",
+      "Height measurements cite header rows instead of the main count rows.",
+      "Gauss and height outcomes may represent different condition contexts.",
+      "Change domains include supplier/lot without clear row evidence."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended primary comparison: C-MG vs S-MG Long/Short, or Normal vs CMG?",
+      "Should gauss and function results be grouped with the height check as one validation case?"
+    ],
+    "correctionPlan": [
+      "Redefine changed factor using explicit row-supported conditions.",
+      "Use height rows 7-12 and detail rows 17-18 for C-MG/S-MG evidence.",
+      "Keep Normal-only function data as context or exclude it from comparison.",
+      "Cite gauss condition rows with the related header/spec rows.",
+      "Remove unsupported supplier/lot domains unless source rows prove them."
+    ],
+    "evidencePolicy": "Current citations prove row existence but are insufficient for final comparative evidence."
+  },
+  "usage": {
+    "input_tokens": 3551,
+    "output_tokens": 675,
+    "total_tokens": 4226
+  }
+}

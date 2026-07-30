@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 377,
+  "sourceFile": "2. BRS-201506 DT Report test FRAME NG dimension ( PT of Frame NG dimension ) Date 03.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\377.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:16Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 377,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable Normal vs Lot test evidence exists, but title, grouping, and measurement extraction need correction before final use.",
+    "issues": [
+      "Review title incorrectly uses Decap NG instead of the main NG dimension test report.",
+      "Primary change lacks purpose/content rows proving Lot test relates to NG-dimension frame testing.",
+      "Measurement outcome mixes checking-function rows into tension statistics.",
+      "Specs are omitted despite cited tension rows containing acceptance limits.",
+      "Subgroup keys such as date, type, model, and test section are not preserved consistently."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Use NG rate title and purpose rows as the main review context.",
+      "Define changed factor as Lot test for NG-dimension frame condition versus Normal.",
+      "Preserve subgroups for test date, type Frame sus-A/B/VP, model C2-3A, and section.",
+      "Limit tension measurement outcome to rows 23-28 and capture specs.",
+      "Keep function comparison rows 34-35 separately and note the source says function is same normal despite higher numeric NG rate."
+    ],
+    "evidencePolicy": "Citations exist, but headers and grouping rows are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 5148,
+    "output_tokens": 847,
+    "total_tokens": 5995
+  }
+}

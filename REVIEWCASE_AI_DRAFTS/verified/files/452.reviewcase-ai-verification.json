@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 452,
+  "sourceFile": "25. TIU L5S3-01 R Report test machine AWF change design pusher -  13.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\452.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:09Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 452,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable AWF pusher-change evidence but misgroups the changed factor and includes an invalid measurement outcome.",
+    "issues": [
+      "Changed condition incorrectly includes AWF #1 and #3 baseline machines.",
+      "Baseline/test grouping is ambiguous because machine identity and pusher design are confounded.",
+      "AWF #2 has two test rounds that need explicit grouping or aggregation.",
+      "Measurement outcome from row 14 is a parsed table-header artifact, not a valid measurement result.",
+      "Evidence includes row 14, which is not shown in context and is weak for final claims."
+    ],
+    "requiredUserQuestions": [
+      "Are AWF #1 and AWF #3 intended as normal baseline comparators for AWF #2 pusher-change design?",
+      "Should the two AWF #2 rows be treated as separate test rounds or combined?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to AWF #2 pusher change design with bonding amount held constant.",
+      "Represent AWF #1 and AWF #3 as comparator/baseline machine conditions, not changed conditions.",
+      "Preserve test-round subgrouping for the two AWF #2 rows unless aggregation is confirmed.",
+      "Remove the spurious measurement outcome derived from row 14.",
+      "Cite title, purpose/content, table header, and all four result rows for the function-defect outcome."
+    ],
+    "evidencePolicy": "Citations are directionally sufficient for the table comparison, but row 14/header-derived measurement evidence is not sufficient."
+  },
+  "usage": {
+    "input_tokens": 3780,
+    "output_tokens": 726,
+    "total_tokens": 4506
+  }
+}

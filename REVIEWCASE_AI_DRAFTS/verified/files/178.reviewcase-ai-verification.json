@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 178,
+  "sourceFile": "09. TIU L5S3-01 - Report test material Yoke difference color - date 2026.04.28_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\178.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 178,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures some Normal vs Test comparisons but misses key source context and outcomes needed for final evidence.",
+    "issues": [
+      "Primary factor should be yoke difference-color test lot vs normal, not generic Normal vs Test only.",
+      "Review title/purpose cite Decap sheet while main validation evidence is on Test sheet.",
+      "Key outcomes are omitted: tension, function NG comparison, decision, and manual vision recheck context.",
+      "Height outcome is parsed as worse but row 39 qualifies it with manual vision OK context.",
+      "Changed-factor citations include weak Decap rows and miss Test title, purpose, compare-with-normal, and decision rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Retitle case from Test sheet report and cite Test!2, Test!6, and Test!15 for changed condition context.",
+      "Set baselineCondition to Normal and changedCondition to Test yoke difference-color lot/material.",
+      "Add outcomes for assembly checks, decap/drop, tension, height with recheck note, and function NG comparison.",
+      "Cite relevant headers and result rows for each outcome, including Test!18, !24, !30, !35, !41, !44, !46, !55, and !56.",
+      "Use Decap NG bako sheet only as supporting decap/NG context unless rebuilding it as a separate non-comparative note."
+    ],
+    "evidencePolicy": "Row ids exist, but citations are not sufficient for final Ask AI evidence until missing context, outcome, and decision rows are added."
+  },
+  "usage": {
+    "input_tokens": 4947,
+    "output_tokens": 850,
+    "total_tokens": 5797
+  }
+}

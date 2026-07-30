@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 874,
+  "sourceFile": "73. BRS-161014  Report test find reason NG Frame damage  date 3.11.2024 line #3_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\874.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 874,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The comparison is valid, but the changed factor is too generic and omits the key handling-change conclusion.",
+    "issues": [
+      "Changed factor is labeled only Normal vs Test, not the actual handling process change.",
+      "Row 22 conclusion is not cited though it identifies the likely damage cause.",
+      "Baseline condition is under-described; Normal likely includes removal/transfer handling.",
+      "Change domain should not be unknown."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to handling/removal process comparison.",
+      "Describe Test as running all process without removing semi frame plus coil tray.",
+      "Describe Normal as the normal removal/transfer process when supported by row 22.",
+      "Add row 22 to changed-factor and case evidence.",
+      "Set change domain to process handling or transfer process."
+    ],
+    "evidencePolicy": "Rows 20-21 support metrics; row 22 is required for causal changed-condition evidence."
+  },
+  "usage": {
+    "input_tokens": 2392,
+    "output_tokens": 734,
+    "total_tokens": 3126
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 592,
+  "sourceFile": "38. BRS-161014  Report test  check reason NG hearing 16.5.2024 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\592.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:45Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 592,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but misgroups distinct lot and machine-repair comparisons and includes a spurious measurement outcome.",
+    "issues": [
+      "Changed factor lumps separate lot, machine assy, and repair conditions into one comparison.",
+      "Machine assy after-repair rows are compared to Normal C2 instead of machine assy 1/2 baselines.",
+      "Rows 31, 33, 35, 38, and 39 are omitted despite relevant results or conclusions.",
+      "Measurement outcome is derived from header/defect-count columns and is not a true measurement domain.",
+      "Evidence cites row 14, while visible header context is row 13 and row 14 is not substantiated."
+    ],
+    "requiredUserQuestions": [
+      "Should Test Yoke Class1 be included as a separate follow-up condition or excluded?"
+    ],
+    "correctionPlan": [
+      "Split changed factors into lot C2/E2 comparison and machine assy before/after repair comparison.",
+      "Pair machine assy 1 and 2 baselines with their own after-repair 1st and 2nd results.",
+      "Add omitted result rows and conclusion rows as evidence.",
+      "Remove the measurement outcome or reclassify it as defect-count table data.",
+      "Replace unsupported row 14 citation with supported header/result citations."
+    ],
+    "evidencePolicy": "Current citations exist partly but are insufficient and misgrouped; add direct header, result, and conclusion rows."
+  },
+  "usage": {
+    "input_tokens": 4817,
+    "output_tokens": 1263,
+    "total_tokens": 6080
+  }
+}

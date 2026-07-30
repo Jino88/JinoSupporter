@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 890,
+  "sourceFile": "76. TIU L5S3-01 R Report  test Adjust Loader coil insert  AWF machine to check forming coil -  2026.03.11_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\890.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:16Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 890,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misgroups loader-coil insert settings, machines, and normal comparison conditions.",
+    "issues": [
+      "Changed factor mixes insert positions, Z-axis values, and machine summary rows.",
+      "Baseline/test condition is not reliably defined from the report context.",
+      "Subgroup keys are numeric settings, not preserved row grouping keys.",
+      "Measurement outcomes cite header rows only and appear derived, not direct comparisons.",
+      "Function-check rows are incomplete in context and may need grouped paired rows."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison adjusted AWF #1 vs normal line, or each loader-coil insert setting vs normal?"
+    ],
+    "correctionPlan": [
+      "Redefine changed factor from purpose/content rows as loader coil insert adjustment/setting comparison.",
+      "Preserve machine, date/time block, insert position, and Z-axis as subgroup keys.",
+      "Remove machine total rows from condition lists or label them as summaries.",
+      "Use actual data rows for visual/forming and function outcomes, not only header/stat rows.",
+      "Separate or clearly group coil forming and function lot checks under the same corrected factor."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 6287,
+    "output_tokens": 789,
+    "total_tokens": 7076
+  }
+}

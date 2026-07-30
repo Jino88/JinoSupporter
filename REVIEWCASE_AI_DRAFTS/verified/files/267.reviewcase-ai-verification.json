@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 267,
+  "sourceFile": "13. BRS-201506 Report test New BP+SM Ass'y guide JIG date 5.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\267.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 267,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "High-level New JIG vs Normal line context is valid, but outcome pairing and measurement grouping need correction.",
+    "issues": [
+      "SM vision pairs reuse wrong Normal rows and omit same-date controls.",
+      "Function pairs reuse one Normal row instead of same-date Normal rows.",
+      "Measurement outcomes are auto-extracted and not proven comparable to New JIG vs Normal line.",
+      "Changed factor domains overstate material and dimension changes.",
+      "Some cited rows are not shown in context and may be unsupported."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to BP+SM ass'y guide JIG move-out 0.02, New JIG vs Normal line.",
+      "Pair each New JIG row with its adjacent same-date Normal line row for SM vision.",
+      "Pair each function New JIG row with its adjacent same-date Normal line row.",
+      "Remove or demote raw material and dimension rows to background only unless tied to the jig test.",
+      "Drop unverified measurement outcomes or cite complete source rows before judging them."
+    ],
+    "evidencePolicy": "Citations support the main comparison only after complete same-date row pairs are cited; current evidence is incomplete."
+  },
+  "usage": {
+    "input_tokens": 7565,
+    "output_tokens": 767,
+    "total_tokens": 8332
+  }
+}

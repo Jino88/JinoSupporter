@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 725,
+  "sourceFile": "52.1Tiu L5S3-01 L Mark 2db 2026.01.07  (2)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\725.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:49Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 725,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the wrong changed factor and includes unverified noisy measurement groupings.",
+    "issues": [
+      "Changed factor is filename, not STD vs Mark 2db condition.",
+      "Baseline and test condition evidence rows are not cited.",
+      "Review title is a stray header row.",
+      "Outcomes mix specs, averages, raw values, zeros, and errors as metrics.",
+      "Important summary comparison rows GRAPH!8 and GRAPH!9 are omitted."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to STD baseline versus Mark 2db test sample.",
+      "Cite RAW DATA!2-3 and GRAPH!8-9 for condition identity and comparison.",
+      "Use GRAPH!2-9 as primary summarized acoustic outcomes.",
+      "Remove raw zero and #DIV/0! derived subresults.",
+      "Regroup metrics as SPL bands, Fo, and THD at 200/400/1000Hz."
+    ],
+    "evidencePolicy": "Current citations exist but are insufficient for changed-condition proof and outcome grouping."
+  },
+  "usage": {
+    "input_tokens": 8872,
+    "output_tokens": 592,
+    "total_tokens": 9464
+  }
+}

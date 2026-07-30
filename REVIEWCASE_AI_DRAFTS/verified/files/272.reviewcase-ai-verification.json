@@ -1,0 +1,34 @@
+{
+  "sourceFileId": 272,
+  "sourceFile": "13. TIU L5S3-01 R Result check dimention F-PCB  date 2025.12.01_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\272.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 272,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Workbook is a single dimension-check report with measurements but no changed-condition comparison.",
+    "issues": [
+      "No baseline/test or changed factor is cited.",
+      "Only one dated measurement row is present.",
+      "No review case can be formed from the available evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Change status from needs_review to excluded.",
+      "Set exclude reason to no comparable changed-condition evidence.",
+      "Do not create ReviewCase evidence for Ask AI.",
+      "Retain rows 5-12 and 19 only as exclusion support."
+    ],
+    "evidencePolicy": "Rows cited are sufficient for exclusion, not for comparative evidence."
+  },
+  "usage": {
+    "input_tokens": 1624,
+    "output_tokens": 354,
+    "total_tokens": 1978
+  }
+}

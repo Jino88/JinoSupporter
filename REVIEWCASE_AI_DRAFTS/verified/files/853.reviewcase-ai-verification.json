@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 853,
+  "sourceFile": "7. BRS-161016(DT) Sunmary Report TEST new JIG improve use new dry machine 2024.06.7_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\853.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 853,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable test evidence but the changed-factor and comparison grouping are not reliable.",
+    "issues": [
+      "Changed factor is an invented baseline-vs-run-number comparison.",
+      "Primary condition mixes new dry machine and improved jig ambiguously.",
+      "Run numbers, dates, and rounds are treated as changed conditions instead of subgroups.",
+      "Outcome should be OK/NG dry-result yield, not a generic measurement.",
+      "Summary and 7.6 rows appear duplicated or hierarchical but are not reconciled."
+    ],
+    "requiredUserQuestions": [
+      "Should the primary factor be new dry machine, improved jig, or the combined new-machine-plus-jig condition?"
+    ],
+    "correctionPlan": [
+      "Replace changed factor with the validated equipment/jig condition from title, purpose, and content rows.",
+      "Set baseline as not explicit unless a normal-machine or old-jig row is found.",
+      "Move date, round, time, temperature, and jig height to subgroup keys.",
+      "Group outcomes as input, OK, NG categories, total NG, and NG rate.",
+      "Reconcile Summary totals with 7.6 detailed rows and avoid double counting."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient for the current comparison claim."
+  },
+  "usage": {
+    "input_tokens": 5093,
+    "output_tokens": 792,
+    "total_tokens": 5885
+  }
+}

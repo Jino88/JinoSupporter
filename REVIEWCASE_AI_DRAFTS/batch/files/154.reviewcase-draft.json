@@ -1,0 +1,217 @@
+{
+  "sourceFileId": 154,
+  "sourceFile": "07. MSU-L20S15-07 DT  Report  New bond 3852-V28 and improve NG separate VP+CD Date  14.5.2025_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\07. MSU-L20S15-07 DT  Report  New bond 3852-V28 and improve NG separate VP+CD Date  14.5.2025_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "201507",
+    "sheetRowCount": 21,
+    "sheetCellCount": 61,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "201507!2",
+      "sheetName": "201507",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST NEW GLUE 3852-V28 IMPROVE SEPARATE VP/CD - MSU-L2015-07 DT | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "201507!3",
+      "sheetName": "201507",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date | 2025-05-14 00:00:00"
+    },
+    {
+      "rowId": "201507!4",
+      "sheetName": "201507",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker | Le"
+    },
+    {
+      "rowId": "201507!5",
+      "sheetName": "201507",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "201507!6",
+      "sheetName": "201507",
+      "rowNumber": 6,
+      "rowText": "| - To test new bond:"
+    },
+    {
+      "rowId": "201507!7",
+      "sheetName": "201507",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "201507!8",
+      "sheetName": "201507",
+      "rowNumber": 8,
+      "rowText": "| + Compare peak , total dry UV machine"
+    },
+    {
+      "rowId": "201507!9",
+      "sheetName": "201507",
+      "rowNumber": 9,
+      "rowText": "| + Tension test new bond comapare with normal : 10pcs"
+    },
+    {
+      "rowId": "201507!10",
+      "sheetName": "201507",
+      "rowNumber": 10,
+      "rowText": "| + Test 50pcs check process vision VP/CD"
+    },
+    {
+      "rowId": "201507!11",
+      "sheetName": "201507",
+      "rowNumber": 11,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "201507!12",
+      "sheetName": "201507",
+      "rowNumber": 12,
+      "rowText": "| | 1. RESULT CHECKING LED UV"
+    },
+    {
+      "rowId": "201507!13",
+      "sheetName": "201507",
+      "rowNumber": 13,
+      "rowText": "| | Line | Date | Led UV | | Peak | Total"
+    },
+    {
+      "rowId": "201507!17",
+      "sheetName": "201507",
+      "rowNumber": 17,
+      "rowText": "| | 2. RESULT CHECKING VISION VP+CD"
+    },
+    {
+      "rowId": "201507!18",
+      "sheetName": "201507",
+      "rowNumber": 18,
+      "rowText": "| | Line | Date | Type | Bond amount ( Spec 1.4~1.6 mg) | Ass'y press JIG ( Time) | Input | OK | Vision VP + CD | | Total NG | NG rate"
+    },
+    {
+      "rowId": "201507!20",
+      "sheetName": "201507",
+      "rowNumber": 20,
+      "rowText": "| | C2-2A | 2025-05-14 00:00:00 | Test bond 3852-V28 | 3.66 mg | 5 minutes | 4 | 0 | 1 | 3 | 4 | 1"
+    },
+    {
+      "rowId": "201507!33",
+      "sheetName": "201507",
+      "rowNumber": 33,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-154-rc-1",
+      "reviewTitle": "| REPORT TEST NEW GLUE 3852-V28 IMPROVE SEPARATE VP/CD - MSU-L2015-07 DT | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To test new bond: / | II. Content. / | + Compare peak , total dry UV machine / | + Tension test new bond comapare with normal : 10pcs",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Old bond (SJ4765) vs Test bond 3852-V28, Old bond (SJ4765)",
+          "baselineCondition": "Old bond (SJ4765)",
+          "changedCondition": "Test bond 3852-V28, Old bond (SJ4765)",
+          "subgroupKeys": [
+            "3.65 mg",
+            "3.66 mg",
+            "5 minutes"
+          ],
+          "evidenceRows": [
+            "201507!10",
+            "201507!2",
+            "201507!20",
+            "201507!21",
+            "201507!5",
+            "201507!6",
+            "201507!7",
+            "201507!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "2. RESULT CHECKING VISION VP+CD",
+          "comparisonRows": [
+            "201507!20",
+            "201507!21"
+          ],
+          "judgement": "worse",
+          "subResults": [
+            {
+              "pairId": 3638,
+              "controlCondition": "Old bond (SJ4765) | 3.65 mg",
+              "testCondition": "Test bond 3852-V28 | 3.66 mg | 5 minutes",
+              "control": {
+                "input": 50.0,
+                "ng": 0.0,
+                "ratePercent": 0.0
+              },
+              "test": {
+                "input": 4.0,
+                "ng": 4.0,
+                "ratePercent": 100.0
+              },
+              "deltaRatePercentPoint": 100.0,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "201507!20",
+                "201507!21"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "201507!10",
+        "201507!2",
+        "201507!20",
+        "201507!21",
+        "201507!5",
+        "201507!6",
+        "201507!7",
+        "201507!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "201507!10",
+      "201507!2",
+      "201507!20",
+      "201507!21",
+      "201507!5",
+      "201507!6",
+      "201507!7",
+      "201507!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 338,
+  "sourceFile": "17.BRS-2015 Report Test material Frame NG Bending PT 201506-S date 29.10.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\338.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:55Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 338,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but changed-factor and outcome grouping need correction before final use.",
+    "issues": [
+      "Changed factor wrongly includes process header as a condition.",
+      "Baseline/test labels mix BRS and X516 contexts without subgroup separation.",
+      "X516 outcome cites only normal row and omits test condition row 516!21.",
+      "Relevant decision and result rows are omitted from evidence.",
+      "Some outcomes from the report appear missing or underrepresented."
+    ],
+    "requiredUserQuestions": [
+      "Should BRS-201506 and X516 Bottom be one case with model subgroups or separate cases?"
+    ],
+    "correctionPlan": [
+      "Set primary factor to frame NG bending small or dimension-smaller frame versus normal frame.",
+      "Preserve model/sheet as subgroup context for BRS-201506 and X516 Bottom.",
+      "Add cited test rows for each comparison, especially 516!21 and missing BRS result rows.",
+      "Separate outcome domains for array, FR+SUS vision, function, and module-line checks.",
+      "Use decision rows to support final judgement but keep numeric rows as metric evidence."
+    ],
+    "evidencePolicy": "Row citations exist but are incomplete and not yet sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4647,
+    "output_tokens": 786,
+    "total_tokens": 5433
+  }
+}

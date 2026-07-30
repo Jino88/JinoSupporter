@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 123,
+  "sourceFile": "05. BRS-161016 DT Report test  suspension used SUS-D  cutting  60% 1st date 24.1.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\123.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 123,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the main comparison but omits or misjudges several required outcome comparisons, including the spot welding failure.",
+    "issues": [
+      "Ass'y coil/sus test row is omitted, so comparison is incomplete.",
+      "Spot welding test row with 100% NG is omitted, hiding a major adverse result.",
+      "Laser cutting test row is omitted, so comparison is incomplete.",
+      "Several outcomes are left not_judged despite clear normal vs test rows.",
+      "Changed-factor domain includes unsupported categories."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add row 26 vs row 28 as ass'y coil/sus no-change outcome.",
+      "Add row 33 vs row 35 as spot welding worsened outcome.",
+      "Add row 41 vs row 43 as laser cutting no-change outcome.",
+      "Include section header and both condition rows in each outcome citation set.",
+      "Limit changed-factor domain to supported process/design condition wording."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient because key test rows are missing."
+  },
+  "usage": {
+    "input_tokens": 3932,
+    "output_tokens": 588,
+    "total_tokens": 4520
+  }
+}

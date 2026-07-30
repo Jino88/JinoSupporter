@@ -16,10 +16,10 @@
         <div class="sub-grp-head">
             @if (IsActive(Node))
             {
-                <span class="grp-active-dot" title="Shift-Groups go into this group">●</span>
+                <span class="grp-active-dot" title="Shift Groups go into this sub group">●</span>
             }
             <span class="sub-badge sub-drag-handle"
-                  title="Drag to put this B-GR inside another B-GR"
+                  title="Drag to move this sub group under another sub group"
                   draggable="true"
                   @ondragstart="() => OnDragStart.InvokeAsync(Node)"
                   @ondragend="() => OnDragEnd.InvokeAsync()"
@@ -37,7 +37,7 @@
                     @onclick:stopPropagation="true">+ @ChildGroupLabel</button>
             <button class="btn btn-sm btn-outline-danger py-0 px-1"
                     style="font-size:9px; line-height:1.2;"
-                    title="Remove sub-group"
+                    title="Remove sub group"
                     @onclick="() => OnRemove.InvokeAsync(Node)"
                     @onclick:stopPropagation="true">✕</button>
         </div>
@@ -53,7 +53,7 @@
             {
                 var lsCap = ls;
                 <li>
-                    <span class="shift-badge" title="Shift-Group">S-GR</span>
+                    <span class="shift-badge" title="Shift Group">Shift Group</span>
                     <span>@lsCap</span>
                     <button class="ls-remove"
                             title="Remove"
@@ -104,9 +104,8 @@
     [Parameter] public EventCallback<BmesMakeModelGroupPage.SubGroupVm> OnDropOnSub  { get; set; }
     [Parameter] public EventCallback OnDragEnd { get; set; }
 
-    private string GroupLabel => "B-GR";
-    private string GroupLabelTitle => Depth == 0 && Node.SubGroups.Count > 0 ? "Building-Group" : "Line-Group";
-    private string ChildGroupLabel => "B-GR";
+    private string GroupLabel => "Sub Group";
+    private string ChildGroupLabel => "Sub Group";
     private bool IsDragging => ReferenceEquals(DraggingSub, Node);
     private bool CanAcceptDrop => IsDropTarget?.Invoke(Node) == true;
 }

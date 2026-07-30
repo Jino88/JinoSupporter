@@ -1,0 +1,34 @@
+{
+  "sourceFileId": 48,
+  "sourceFile": "02. TIU C11-20  Report test Frame clean by athanol , Dry at 80C (5') check VP separate , function 20.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\48.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:46:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 48,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The draft correctly identifies the Normal vs ethanol-cleaned and 80°C/5min dried frame comparison, but evidence citations are incomplete for the outcome table structure.",
+    "issues": [
+      "Outcome interpretation depends on the table title/header rows Test!13 and Test!14, but these are not included in the review case evidenceRows or outcome comparison/evidence rows.",
+      "Changed-factor grouping appears valid and supported by rows Test!8, Test!10, Test!16, and Test!18.",
+      "No final decision/conclusion text is captured after Test!21, so the case should remain not_judged unless additional rows exist."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add Test!13 and Test!14 to the reviewCase evidenceRows.",
+      "Add Test!13 and Test!14 to the outcome evidence or comparisonRows so Input, OK, defect categories, Total NG, and NG rate are citeable.",
+      "Optionally add Test!9 as supporting purpose/context evidence for checking Frame + VP separate.",
+      "Keep the changed factor as Normal vs Frame clean by ethanol + Drying temperature 80°C time 5min."
+    ],
+    "evidencePolicy": "Condition rows are sufficient for the comparison, but outcome citations need the table title/header rows before approval."
+  },
+  "usage": {
+    "input_tokens": 2306,
+    "output_tokens": 803,
+    "total_tokens": 3109
+  }
+}

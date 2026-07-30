@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 734,
+  "sourceFile": "53.BRS-2015 Report Test MG-B Of Baotou NG Blistered Plating date 10.6.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\734.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 734,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable Baotou MG-B NG blistered plating versus Normal evidence exists, but the draft grouping and outcomes are not reliable enough for final use.",
+    "issues": [
+      "Changed factor is a filename, not the actual Baotou NG plating vs Normal comparison.",
+      "Baseline and test conditions are marked unclear despite table context showing them.",
+      "Measurement outcomes are duplicated and misgrouped with generic column labels.",
+      "Decision results for separate glue, gauss, drop, and tension are not cited in outcomes.",
+      "Some key cited rows are not shown in context, limiting auditability."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed condition to Baotou MG-B NG blistered plating and baseline to Normal.",
+      "Keep supplier/material/coating as the changed-factor domain.",
+      "Regroup outcomes as separate glue, gauss, drop test, and tension under one validation report.",
+      "Use final decision rows for judgement: glue NG plating 7/12 at 58.3%, others OK, special-lot use allowed.",
+      "Replace generic detected-table metrics with named metrics and row-level citations."
+    ],
+    "evidencePolicy": "Citations prove source existence but are insufficient for final evidence until outcome rows and decision rows are cited clearly."
+  },
+  "usage": {
+    "input_tokens": 4617,
+    "output_tokens": 799,
+    "total_tokens": 5416
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 106,
+  "sourceFile": "04. L20S15-07 Report test new lot CD (4.21) ( IV 250417029)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\106.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 106,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misgroups the validation as a Lot 2 comparison instead of a new CD lot-use test across 10 lots and multiple checks.",
+    "issues": [
+      "Changed factor incorrectly set to baseline vs Lot 2.",
+      "Baseline/normal condition is not evidenced.",
+      "Most lot-level function and dyne results are omitted.",
+      "Bogus measurement outcome extracted from title/header rows.",
+      "Tension lot conditions are misparsed for rows after Lot 1."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define changed factor as new CD material lot/date IR250417029 including compensate lot context.",
+      "Keep Lot 1-10 as subgroup/test-lot results, not separate primary conditions.",
+      "Group dyne, tension, VP/CD separation, sigma, hearing, total NG, and NG rate under one validation case.",
+      "Remove title/header-derived measurement outcome.",
+      "Reparse Tension rows with lot number/material/type and sample statistics, citing each row."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient because key rows are misgrouped and some cited tension rows lack displayed source text."
+  },
+  "usage": {
+    "input_tokens": 5932,
+    "output_tokens": 601,
+    "total_tokens": 6533
+  }
+}

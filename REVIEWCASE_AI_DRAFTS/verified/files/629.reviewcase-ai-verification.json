@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 629,
+  "sourceFile": "41. BRS-201506 Report test process UV Led Press CD+COIL date 3.5.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\629.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:49Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 629,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Primary 17-turn vs 18-turn process change is supported, but outcome grouping and evidence citations need correction.",
+    "issues": [
+      "Direct change and decision rows are not cited.",
+      "Row 28 appears grouped with test condition but is not in the stated decision comparison.",
+      "Measurement outcome is header-derived and not citeable as a valid measurement result.",
+      "Judgement remains not_judged despite decision stating 18-turn is better.",
+      "Title/part context is inconsistent between VP+COIL and CD+COIL."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Cite Test!8 for the 17-to-18 turn change and Test!32 for the final comparison.",
+      "Keep function outcome focused on 28/1088 vs 82/1710 unless row 28 context proves same comparison group.",
+      "Remove the measurement outcome unless real measurement rows with specs are available.",
+      "Set judgement to improved for function NG rate if using the decision row.",
+      "Retain VP/CD+COIL wording as source context without inventing a resolved part name."
+    ],
+    "evidencePolicy": "Current citations exist but are insufficient; add direct change and decision rows before final use."
+  },
+  "usage": {
+    "input_tokens": 3173,
+    "output_tokens": 789,
+    "total_tokens": 3962
+  }
+}

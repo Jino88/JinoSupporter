@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 593,
+  "sourceFile": "38. BRS-161014 Report test dry final SPK_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\593.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 593,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft incorrectly merges several independent experiments into one changed factor and uses invalid cross-condition pairings.",
+    "issues": [
+      "Multiple distinct reports/experiments are grouped as one factor.",
+      "Waiting 12H pairs ignore test round, date, and drop-test status.",
+      "Dry final 80C, tray dry, laser, bonding, UC press, and waiting changes need separate factors or cases.",
+      "Measurement outcomes mix headers/function counts with tray height data and are not reliable.",
+      "Some cited rows are headers or absent from supplied context, not sufficient evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split review cases or changed factors by sheet/report and changed condition.",
+      "Rebuild comparisons only within matching date/test round/drop status/baseline context.",
+      "For Waiting 12H, include Test 1/Test 2 rows with their matching Normal rows and conclusion row.",
+      "For Dry final and tray dry, separate function NG-rate outcomes from tray height before/after outcome.",
+      "Remove generic measurement stats unless tied to explicit before/after or control/test rows."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient until grouped per comparable factor and outcome."
+  },
+  "usage": {
+    "input_tokens": 10777,
+    "output_tokens": 600,
+    "total_tokens": 11377
+  }
+}

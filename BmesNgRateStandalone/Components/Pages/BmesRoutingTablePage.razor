@@ -42,6 +42,15 @@
                     @_routingScrapeMsg
                 </span>
             }
+            <button class="btn btn-primary btn-sm" @onclick="UpdateRoutingToServer"
+                    disabled="@(_serverSyncBusy || _routingScrapeBusy)"
+                    title="Send local Routing Table rows to the server DB">
+                @if (_serverSyncBusy)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" style="width:10px; height:10px;"></span>
+                }
+                Update To Server
+            </button>
             <button class="btn btn-outline-primary btn-sm" @onclick="RefreshRoutingFromBmes"
                     disabled="@_routingScrapeBusy"
                     title="Scrape MES020240/SearchList for WERKS 3200/3210/3220 into bmes_routing_raw.db">
@@ -171,13 +180,14 @@
     private bool _routingScrapeBusy;
     private string _routingScrapeMsg = string.Empty;
     private bool _routingScrapeError;
+    private bool _serverSyncBusy;
 
     private string _statusMsg = string.Empty;
     private bool _statusError;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await PullRoutingFromServer();
+        _routingRows = NgRateSettings.GetRoutingRows();
     }
 
     private List<RoutingRow> GetFilteredRouting()
@@ -200,7 +210,7 @@
         return Task.CompletedTask;
     }
 
-    private async Task AddRoutingFromSearch()
+    private void AddRoutingFromSearch()
     {
         var newRow = new RoutingRow
         {
@@ -222,7 +232,7 @@
             ProcessName = newRow.ProcessName,
             ProcessType = newRow.ProcessType,
         };
-        await SyncRoutingToServer("Routing row added.");
+        SetStatus("Routing row added locally. Click Update To Server to sync.", false);
     }
 
     private void StartRoutingEdit(RoutingRow r)
@@ -238,31 +248,31 @@
         };
     }
 
-    private async Task SaveRoutingEdit()
+    private void SaveRoutingEdit()
     {
         NgRateSettings.UpdateRoutingRow(_editRouting);
         _routingRows = NgRateSettings.GetRoutingRows();
         _editRoutingId = -1;
-        await SyncRoutingToServer("Routing row saved.");
+        SetStatus("Routing row saved locally. Click Update To Server to sync.", false);
     }
 
     private void CancelRoutingEdit() => _editRoutingId = -1;
 
-    private async Task DeleteRoutingRow(long id)
+    private void DeleteRoutingRow(long id)
     {
         NgRateSettings.DeleteRoutingRow(id);
         _routingRows = NgRateSettings.GetRoutingRows();
         if (_editRoutingId == id) _editRoutingId = -1;
-        await SyncRoutingToServer("Routing row deleted.");
+        SetStatus("Routing row deleted locally. Click Update To Server to sync.", false);
     }
 
-    private async Task ImportRoutingFromFile()
+    private void ImportRoutingFromFile()
     {
         int count = NgRateSettings.ImportRoutingFromFile(NgRateSettings.RoutingFilePath);
         _routingRows = NgRateSettings.GetRoutingRows();
         _editRoutingId = -1;
         if (count > 0)
-            await SyncRoutingToServer($"Imported {count} routing rows from file.");
+            SetStatus($"Imported {count} routing rows locally. Click Update To Server to sync.", false);
         else
             SetStatus("File not found or empty.", true);
     }
@@ -292,7 +302,8 @@
             {
                 _routingRows = NgRateSettings.GetRoutingRows();
                 _editRoutingId = -1;
-                await SyncRoutingToServer($"Routing refreshed from BMES. {saved} row(s) saved.");
+                _routingScrapeMsg = $"Routing refreshed from BMES. {saved} row(s) saved locally.";
+                SetStatus($"{_routingScrapeMsg} Click Update To Server to sync.", false);
             }
         }
         catch (Exception ex)
@@ -313,24 +324,28 @@
         _statusError = isError;
     }
 
-    private async Task PullRoutingFromServer()
+    private async Task UpdateRoutingToServer()
     {
-        var result = await BmesSettingsSync.PullRoutingRowsFromServerAsync();
-        _routingRows = NgRateSettings.GetRoutingRows();
-        _editRoutingId = -1;
-
-        if (result.Succeeded)
-            SetStatus($"Loaded {result.Rows} routing row(s) from server DB.", false);
-        else
-            SetStatus($"Server load failed. Showing local DB: {result.Message}", true);
+        if (_serverSyncBusy) return;
+        _serverSyncBusy = true;
+        try
+        {
+            _routingRows = NgRateSettings.GetRoutingRows();
+            await SyncRoutingToServer();
+        }
+        finally
+        {
+            _serverSyncBusy = false;
+            StateHasChanged();
+        }
     }
 
-    private async Task SyncRoutingToServer(string localMessage)
+    private async Task SyncRoutingToServer()
     {
         var result = await BmesSettingsSync.SyncRoutingRowsAsync(_routingRows);
         if (result.Succeeded)
-            SetStatus($"{localMessage} Server synced ({result.Rows} rows).", false);
+            SetStatus($"Routing table updated to server ({result.Rows} rows).", false);
         else
-            SetStatus($"{localMessage} Local DB saved, but server sync failed: {result.Message}", true);
+            SetStatus($"Server update failed. Local DB is unchanged: {result.Message}", true);
     }
 }

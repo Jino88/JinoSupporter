@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 31,
+  "sourceFile": "011.MSU-20S15-07Check coil before and after check hearing _1778471078_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\31.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 31,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misidentifies the changed factor and mixes before/after, voltage, and normal/+1V contexts.",
+    "issues": [
+      "Changed factor is filename, not the evidenced condition change.",
+      "Baseline/test conditions are left unknown despite before/after rows.",
+      "Voltage or hearing type grouping is ambiguous and not preserved.",
+      "Outcome uses generic detected table and omits A/B dimension context.",
+      "Evidence rows cite summaries only and miss condition headers."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison before vs after check hearing within each hearing type?",
+      "Does Normal Hearing correspond to +0V in the dimension sheets?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to before vs after check hearing state.",
+      "Use +0V/Normal and +1V hearing as subgroup keys or separate contexts after confirmation.",
+      "Cite title, type, before/after, A/B dimension, and gap summary rows.",
+      "Separate A and B inner dimension outcomes from AI gap-check summaries.",
+      "Remove filename-based factor and unknown baseline/test wording."
+    ],
+    "evidencePolicy": "Current citations exist but are insufficient for final evidence because condition-defining rows are missing."
+  },
+  "usage": {
+    "input_tokens": 12674,
+    "output_tokens": 783,
+    "total_tokens": 13457
+  }
+}

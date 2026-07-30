@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 146,
+  "sourceFile": "07. BRS-161014 Report test change semi VP+CD of C2-E2 line 17.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\146.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:00Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 146,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has material grouping and pairing errors, so it cannot be used as final evidence.",
+    "issues": [
+      "C2 test is compared to E2 normal instead of C2 normal.",
+      "Line is a required subgroup key but is not preserved.",
+      "Changed factor merges two reciprocal line swaps too broadly.",
+      "Measurement outcome is spurious aggregate-column parsing.",
+      "Evidence cites row 15 and omits row 22 for the C2 comparison."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild comparisons by line: E2 test C2 semi versus E2 normal, and C2 test E2 semi versus C2 normal.",
+      "Add Line as a subgroup key or split into two changed-factor subresults.",
+      "Use row 22 as the C2 normal baseline and recalculate delta.",
+      "Remove the measurement outcome unless real measurement rows exist.",
+      "Cite title, purpose/content, header, all four result rows, and conclusion rows."
+    ],
+    "evidencePolicy": "Current citations are not sufficient; row-level pairing evidence must include the correct same-line normal rows."
+  },
+  "usage": {
+    "input_tokens": 3703,
+    "output_tokens": 643,
+    "total_tokens": 4346
+  }
+}

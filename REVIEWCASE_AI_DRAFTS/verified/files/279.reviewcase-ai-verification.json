@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 279,
+  "sourceFile": "14. BRS-161014 Report check check dimension coil 3D Date 4.12.2023 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\279.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 279,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it contains citeable before/after press and dry-condition evidence but no generated review case.",
+    "issues": [
+      "ReviewCases array is empty.",
+      "Changed-factor grouping was not extracted.",
+      "Baseline and test conditions need explicit separation.",
+      "Outcome metrics from dimension and peak/total tables are not structured.",
+      "Source row count metadata conflicts with cited row numbers."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Create one review case for coil 3D dry/press condition validation.",
+      "Use Before Not Press and Before Press as baselines as applicable.",
+      "Add After dry not press and After dry use press as test conditions.",
+      "Structure outcomes for Check Dimension 3D plus Peak and Total results.",
+      "Cite rows for purpose, content, headers, and each condition row."
+    ],
+    "evidencePolicy": "Cited rows are sufficient for reconstruction, but the draft has no final evidence citations."
+  },
+  "usage": {
+    "input_tokens": 2114,
+    "output_tokens": 429,
+    "total_tokens": 2543
+  }
+}

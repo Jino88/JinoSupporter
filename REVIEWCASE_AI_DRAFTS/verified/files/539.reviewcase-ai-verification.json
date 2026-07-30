@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 539,
+  "sourceFile": "32-1. BRS-201506 Report test New base JIG improvement NG VP laser cutting offset- date 15.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\539.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 539,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft uses function total labels as the changed factor instead of the new base JIG/Test versus Normal process comparison.",
+    "issues": [
+      "Changed factor is misidentified as Total Normal vs Total/G3.",
+      "Baseline and changed conditions should likely be Normal vs Test/new base JIG.",
+      "Change domain includes unsupported coating and dimension/spec.",
+      "Outcome grouping mixes VP line and function data without clear linkage.",
+      "Key process-change evidence rows are incomplete or under-cited."
+    ],
+    "requiredUserQuestions": [
+      "Confirm Test means new base JIG and Normal means existing carrier/tray process?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to new base JIG/process improvement for VP laser cutting offset detection.",
+      "Use Normal as baseline and Test as changed condition if confirmed by source.",
+      "Cite purpose and process rows plus Test/Normal result rows.",
+      "Separate VP line defect outcomes from function-check outcomes under the same factor.",
+      "Remove unsupported domains and subgroup labels."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are not sufficient to support the drafted grouping."
+  },
+  "usage": {
+    "input_tokens": 3609,
+    "output_tokens": 732,
+    "total_tokens": 4341
+  }
+}

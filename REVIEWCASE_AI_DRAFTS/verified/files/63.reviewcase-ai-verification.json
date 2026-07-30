@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 63,
+  "sourceFile": "026.1 MSU-20S15-07 GMI -Summary result check test bonding VP+ CD  improve NG function modul_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\63.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:05Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 63,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because the primary Normal vs bonding-change comparison and outcome groupings are misassigned.",
+    "issues": [
+      "Changed factor has baseline as test-like condition and changed condition undefined.",
+      "Review title is an unrelated graph header.",
+      "Many outcomes are raw extracted tables, not validated comparisons.",
+      "Several statistics cite only header rows, not data rows.",
+      "SPK Data cited rows are not shown in context for verification."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison Normal vs Test SPK Open bonding 0.05 with increased VP/CD corner bond?",
+      "Should TOP and BOTTOM models be separate subgroups or combined?"
+    ],
+    "correctionPlan": [
+      "Set primary factor from purpose/content rows and test item rows.",
+      "Define baseline as Normal and changed condition as bonding 0.05 plus increased VP/CD corner bond if confirmed.",
+      "Preserve date, model, lot, and test round as subgroup keys.",
+      "Keep function NG, SPL/Fo/THD, and tension as outcomes under the same validation context only where comparable.",
+      "Replace header-only citations with rows containing condition labels and result values."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are insufficient until condition and result rows are paired."
+  },
+  "usage": {
+    "input_tokens": 21591,
+    "output_tokens": 770,
+    "total_tokens": 22361
+  }
+}

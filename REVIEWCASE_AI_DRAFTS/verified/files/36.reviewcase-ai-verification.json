@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 36,
+  "sourceFile": "015.MSU-20S15-07 GMI -Result check NG function type no reason 201507 improve TF_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\36.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:46:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 36,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft incorrectly merges two separate tests and assigns the dry-time comparison to the wrong baseline, so it is not safe as final evidence.",
+    "issues": [
+      "Changed factor is incorrectly defined as 'Normal of C2 vs Use VP + CD change dry time 3s -> 4s', mixing Test 1 VP/CD lot transfer evidence with Test 2 dry-time evidence.",
+      "Baseline condition for Test 2 should be Normal dry time 3s, not Normal of C2.",
+      "Test 1 contains at least two separate comparisons: E2 using VP+CD of C2 vs Normal E2, and likely C2 using VP+CD of E2 vs Normal C2; the draft only captures Normal of C2 and omits the matching changed C2 condition row.",
+      "Outcome grouping is incomplete because each outcome contains only one side of the comparison rather than paired baseline and changed conditions.",
+      "Evidence for Test 2 omits the baseline row Function!32 from the changed factor evidence and cites Function!31 without showing it in contextRows.",
+      "The draft uses Function!22 Normal of C2 as evidence for a dry-time changed factor, which is not supported by the cited context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split the workbook into separate changed-factor contexts or separate review cases for Test 1 VP/CD lot transfer and Test 2 dry-time change.",
+      "For Test 1, pair E2 Use VP+CD of C2 with Normal E2, and pair C2 Use VP+CD of E2 with Normal C2 if the missing changed-condition row is present in the source.",
+      "For Test 2, define the changed factor as UC1/sub 1 VP+CD dry time changed from 3s to 4s, with baseline Normal dry time 3s and changed condition dry time 4s.",
+      "Include both baseline and changed-condition rows in each outcome's comparisonRows and subResults.",
+      "Re-extract or cite the missing table rows around Function!19-22 and Function!31-32 so all paired values are visible and verifiable.",
+      "Update evidenceRows to include the title/problem rows, test description rows, and all directly relevant result rows for each comparison."
+    ],
+    "evidencePolicy": "Current row citations are not sufficient because they omit required paired baseline/test rows and support an incorrect changed-factor grouping."
+  },
+  "usage": {
+    "input_tokens": 2826,
+    "output_tokens": 1020,
+    "total_tokens": 3846
+  }
+}

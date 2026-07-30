@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 595,
+  "sourceFile": "38. BRS-201506 Report test increase glue corner VP+CD date 21.4.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\595.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:52Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 595,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but final grouping and several outcome pairings are materially wrong.",
+    "issues": [
+      "Changed condition wrongly includes TOTAL as a condition instead of aggregation.",
+      "Function pairs for 4/22 and TOTAL use the 4/21 normal row instead of matching normal/total rows.",
+      "Process result has conflicting sheet-level results and is left unjudged despite decision evidence.",
+      "Measurement outcome is a false parse of header/defect columns and glue spec.",
+      "Possible duplicate or revised sheets are combined without authority/round handling."
+    ],
+    "requiredUserQuestions": [
+      "Should both sheets be kept as separate rounds, or is Test VP 21.4 the final authoritative revision?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to increased glue/bond corner VP+CD versus VP normal.",
+      "Keep date/sheet/test-round keys and separate partial, daily, and total comparisons.",
+      "Re-pair 4/22 test with 4/22 normal and TOTAL test with TOTAL normal.",
+      "Remove the bogus measurement outcome from header-derived data.",
+      "Judge process defect rows separately or mark conflict with cited decision rows."
+    ],
+    "evidencePolicy": "Row citations exist, but pairing citations are insufficient until corrected."
+  },
+  "usage": {
+    "input_tokens": 6222,
+    "output_tokens": 1111,
+    "total_tokens": 7333
+  }
+}

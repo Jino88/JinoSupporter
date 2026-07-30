@@ -1,0 +1,35 @@
+{
+  "sourceFileId": 24,
+  "sourceFile": "01.1. BRS-161016 Report analyse NG sample of reliability test_1778470885_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\24.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 24,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "This workbook is an NG failure-analysis report without a comparable changed-condition review case.",
+    "issues": [
+      "No baseline versus test condition is identified.",
+      "No primary changed factor is supported by cited rows.",
+      "No comparable measurement metrics or stats are extracted.",
+      "Rows describe NG counts and suspected reasons only."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Mark the file excluded for ReviewCase evidence use.",
+      "Do not infer a changed factor from NG categories.",
+      "Keep cited rows only as exclusion support.",
+      "If comparative source data exists, provide that workbook separately."
+    ],
+    "evidencePolicy": "Citations are sufficient to justify exclusion, not sufficient for final comparative evidence."
+  },
+  "usage": {
+    "input_tokens": 1854,
+    "output_tokens": 367,
+    "total_tokens": 2221
+  }
+}

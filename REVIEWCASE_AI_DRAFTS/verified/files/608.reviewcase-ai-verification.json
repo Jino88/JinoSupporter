@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 608,
+  "sourceFile": "4. BRS-161014 Report  Test FRAME ARRAY A JIG improve and NEW BASE machine laser Cutting SUS Date 1.3.2025 line 6_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\608.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 608,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid comparable evidence but grouping and pair construction need correction before use.",
+    "issues": [
+      "Changed factor wrongly includes dates and Total as changed conditions.",
+      "Normal/test comparisons reuse the wrong baseline rows across dates.",
+      "Total rows are mixed with single-date rows instead of paired separately.",
+      "Sheet1 duplicates the SUS table and should not be a separate outcome.",
+      "Measurement/header-derived outcomes are not reliable final evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to new base laser cutting SUS plus improved Frame Array A jig versus Normal.",
+      "Pair rows by same table and date, using total rows only for total comparisons.",
+      "For coil outcome, use rows 23-29 and note 3/3 test lacks Normal comparator.",
+      "For SUS outcome, use rows 34-40 and compute judgement from same-date and total pairs.",
+      "Remove Sheet1 duplicate and unsupported measurement/header outcomes unless row text is verified."
+    ],
+    "evidencePolicy": "Citations exist, but final evidence must cite corrected paired rows and avoid duplicate/header-only rows."
+  },
+  "usage": {
+    "input_tokens": 8495,
+    "output_tokens": 764,
+    "total_tokens": 9259
+  }
+}

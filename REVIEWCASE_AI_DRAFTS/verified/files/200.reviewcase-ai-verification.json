@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 200,
+  "sourceFile": "10 . MSU - L20S15-07 REPORT TEST NEW MOLD FRAME G4 24.3.2025 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\200.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 200,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable Normal vs new mold frame G4 evidence exists, but metric parsing and condition labeling need correction.",
+    "issues": [
+      "Changed condition should reflect new mold frame G4; source type appears misspelled as Fame G4.",
+      "SubResult NG and rate values do not match row totals or input-OK counts.",
+      "Multiple defect domains are collapsed into one ambiguous function metric.",
+      "Header mapping for Sigma, SPL/THD, and Hearing +1V/+0V totals is not preserved.",
+      "No decision outcome is cited beyond the result table."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to Normal vs new mold frame G4, noting source typo if retained.",
+      "Reparse row 16 and row 18 against rows 14-15 headers.",
+      "Separate or clearly group Sigma/SPL/THD and Hearing +1V/+0V defect outcomes.",
+      "Use cited row totals and NG rates exactly as table values, not inferred values.",
+      "Keep judgement as not_judged unless a decision row with content is available."
+    ],
+    "evidencePolicy": "Row citations are sufficient for conditions and table context, but not for current metric values."
+  },
+  "usage": {
+    "input_tokens": 2489,
+    "output_tokens": 788,
+    "total_tokens": 3277
+  }
+}

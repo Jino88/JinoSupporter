@@ -1,0 +1,301 @@
+{
+  "sourceFileId": 431,
+  "sourceFile": "23. TIU L5S3-01 R Report test separate machine AWF improve NG function Bako  09.12.2025_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\23. TIU L5S3-01 R Report test separate machine AWF improve NG function Bako  09.12.2025_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 20,
+    "sheetCellCount": 73,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 3,
+    "measurementStatCount": 4
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] REPORT TEST SEPARATE MACHINE AWF IMPROVE NG FUNCTION | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date | 2025-12-09 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - NG function Bako very high, rate 30~40% => Test improve and find reason NG"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Test separate machine AWF #1 & AWF #2"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| => Check function"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| 1. Result test separate machine AWF check Function"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | Result check function"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | No | Date | Type | | Input | OK | NG BAKO | | | | Total NG | NG rate | Note"
+    },
+    {
+      "rowId": "Test!15",
+      "sheetName": "Test",
+      "rowNumber": 15,
+      "rowText": "| | 1 | 2025-12-09 00:00:00 | Machine AWF #1 | | 40 | 33 | 7 | 0 | 0 | 0 | 7 | 0.175"
+    },
+    {
+      "rowId": "Test!17",
+      "sheetName": "Test",
+      "rowNumber": 17,
+      "rowText": "| | 2 | | Machine AWF #2 | | 40 | 29 | 9 | 2 | 0 | 0 | 11 | 0.275"
+    },
+    {
+      "rowId": "Test!19",
+      "sheetName": "Test",
+      "rowNumber": 19,
+      "rowText": "| | 3 | | Normal | | 123 | 89 | 31 | 3 | 0 | 0 | 34 | 0.27642276"
+    },
+    {
+      "rowId": "Test!23",
+      "sheetName": "Test",
+      "rowNumber": 23,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-431-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] REPORT TEST SEPARATE MACHINE AWF IMPROVE NG FUNCTION | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - NG function Bako very high, rate 30~40% => Test improve and find reason NG / | II. Content. / | - Test separate machine AWF #1 & AWF #2 / | => Check function",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Machine AWF #1, Machine AWF #2",
+          "baselineCondition": "Normal",
+          "changedCondition": "Machine AWF #1, Machine AWF #2",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!11",
+            "Test!14",
+            "Test!15",
+            "Test!17",
+            "Test!19",
+            "Test!2",
+            "Test!5",
+            "Test!6",
+            "Test!7",
+            "Test!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "Result check function",
+          "comparisonRows": [
+            "Test!15",
+            "Test!17",
+            "Test!19"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 20674,
+              "condition": "Machine AWF #1",
+              "input": 40.0,
+              "ok": 33.0,
+              "ng": 7.0,
+              "ratePercent": 17.5,
+              "evidenceRows": [
+                "Test!15"
+              ]
+            },
+            {
+              "metricId": 20675,
+              "condition": "Machine AWF #2",
+              "input": 40.0,
+              "ok": 29.0,
+              "ng": 11.0,
+              "ratePercent": 27.500000000000004,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "metricId": 20676,
+              "condition": "Normal",
+              "input": 123.0,
+              "ok": 89.0,
+              "ng": 34.0,
+              "ratePercent": 27.642276,
+              "evidenceRows": [
+                "Test!19"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No | Date | Type | Input | OK | NG BAKO | Total NG | NG rate | Note",
+          "comparisonRows": [
+            "Test!14"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 53941,
+              "condition": "NG BAKO / FRF",
+              "spec": "",
+              "min": 0.175,
+              "max": 31.0,
+              "avg": 7.942005420000001,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "statId": 53942,
+              "condition": "NG BAKO / FRF+SPL",
+              "spec": "",
+              "min": 0.0,
+              "max": 3.0,
+              "avg": 0.8457317066666666,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "statId": 53943,
+              "condition": "NG BAKO / THD",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            },
+            {
+              "statId": 53944,
+              "condition": "NG BAKO / No sound",
+              "spec": "",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Test!14"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!11",
+        "Test!14",
+        "Test!15",
+        "Test!17",
+        "Test!19",
+        "Test!2",
+        "Test!5",
+        "Test!6",
+        "Test!7",
+        "Test!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!11",
+      "Test!14",
+      "Test!15",
+      "Test!17",
+      "Test!19",
+      "Test!2",
+      "Test!5",
+      "Test!6",
+      "Test!7",
+      "Test!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

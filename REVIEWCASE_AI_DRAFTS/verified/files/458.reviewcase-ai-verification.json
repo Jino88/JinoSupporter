@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 458,
+  "sourceFile": "26. BRS-161014 Report test check Gauss 14.9.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\458.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 458,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not verified because the changed factor and outcome grouping do not match the cited voltage and material-treatment table.",
+    "issues": [
+      "Changed factor is incorrectly set to the filename.",
+      "Change domain supplier is unsupported by evidence.",
+      "Baseline and test conditions are unresolved despite visible voltage and treatment headers.",
+      "Outcome conditions use generic column labels instead of header-defined groups.",
+      "Evidence relies on aggregate row Sheet2!36 and omits needed row-level data citations."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison voltage, material treatment, or both?",
+      "Which condition is the baseline for this report?",
+      "Should Sheet3 be included in the same review case?"
+    ],
+    "correctionPlan": [
+      "Replace filename factor with evidence-based voltage and/or material-treatment factors.",
+      "Map each measurement group to its header condition from rows Sheet2!2-Sheet2!3.",
+      "Preserve voltage as a grouping key if material treatment is the primary factor, or vice versa.",
+      "Cite representative raw data rows plus any aggregate row used.",
+      "Review Sheet3 for related context before final grouping."
+    ],
+    "evidencePolicy": "Current citations prove rows exist but are insufficient for final evidence grouping."
+  },
+  "usage": {
+    "input_tokens": 2558,
+    "output_tokens": 606,
+    "total_tokens": 3164
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "sourceFileId": 598,
+  "sourceFile": "38. TIU L5S3-01 R Report test Dry test Fr+VP in A2 to improve NG BAKO 2025.12.26_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\38. TIU L5S3-01 R Report test Dry test Fr+VP in A2 to improve NG BAKO 2025.12.26_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 19,
+    "sheetCellCount": 64,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] REPORT TEST DRY SEMI FR+VP IN A2 TO IMPROVE NG BAKO (SPL) | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date | 2025-12-26 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - NG SPL high => Test Dry semi Fr+VP in A2 line to find reason NG"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Bonding+Ass'y Fr+VP in D3 line => Move A2 Dry"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| - Move main line D3 make final sample and check function"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| - Compare with normal"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | Result check function"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | No | Date | Type | | | Input | OK | NG BAKO | | | | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | 1 | 2025-12-26 00:00:00 | Test | | | 34 | 17 | 17 | 0 | 0 | 0 | 0 | 17 | 0.5"
+    },
+    {
+      "rowId": "Test!18",
+      "sheetName": "Test",
+      "rowNumber": 18,
+      "rowText": "| | 2 | | Normal | | | 40 | 21 | 19 | 0 | 0 | 0 | 0 | 19 | 0.475"
+    },
+    {
+      "rowId": "Test!28",
+      "sheetName": "Test",
+      "rowNumber": 28,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "Test!29",
+      "sheetName": "Test",
+      "rowNumber": 29,
+      "rowText": "| - Result lot test is same normal"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-598-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] REPORT TEST DRY SEMI FR+VP IN A2 TO IMPROVE NG BAKO (SPL) | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - NG SPL high => Test Dry semi Fr+VP in A2 line to find reason NG / | II. Content. / | - Bonding+Ass'y Fr+VP in D3 line => Move A2 Dry / | - Move main line D3 make final sample and check function",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Test",
+          "baselineCondition": "Normal",
+          "changedCondition": "Test",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!10",
+            "Test!16",
+            "Test!18",
+            "Test!2",
+            "Test!5",
+            "Test!6",
+            "Test!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "Result check function",
+          "comparisonRows": [
+            "Test!16",
+            "Test!18"
+          ],
+          "judgement": "worse",
+          "subResults": [
+            {
+              "pairId": 4374,
+              "controlCondition": "Normal",
+              "testCondition": "Test",
+              "control": {
+                "input": 40.0,
+                "ng": 19.0,
+                "ratePercent": 47.5
+              },
+              "test": {
+                "input": 34.0,
+                "ng": 17.0,
+                "ratePercent": 50.0
+              },
+              "deltaRatePercentPoint": 2.500000000000002,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Test!16",
+                "Test!18"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Test!10",
+        "Test!16",
+        "Test!18",
+        "Test!2",
+        "Test!5",
+        "Test!6",
+        "Test!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!10",
+      "Test!16",
+      "Test!18",
+      "Test!2",
+      "Test!5",
+      "Test!6",
+      "Test!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

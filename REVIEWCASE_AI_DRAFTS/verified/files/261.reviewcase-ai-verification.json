@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 261,
+  "sourceFile": "13. BRS-161014 DT Report test VP mold #4 add 0.05mm date 27.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\261.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:42Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 261,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the main VP mold #4 +0.05mm comparison but has blocking pairing and measurement extraction errors.",
+    "issues": [
+      "Vision E2 test is paired to the C2 normal instead of E2 normal mold #9.",
+      "Function E2 test is paired to the C2 normal instead of E2 normal mold #9.",
+      "Function judgement conflicts with the report conclusion and corrected pairings.",
+      "Picture/header rows are converted into invalid zero-valued measurements.",
+      "FO/NTI measurement stats are malformed or insufficiently cited."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Pair rows by line and mold context: C2 test vs mold #2 normal, E2 test vs mold #9 normal.",
+      "Add omitted comparison rows 27.01!23 and 27.01!44 to the relevant outcomes.",
+      "Recalculate vision and function outcomes using corrected row pairs and state any small rate differences with the report conclusion.",
+      "Remove picture/header-derived fake measurement outcomes.",
+      "Re-extract FO/NTI numeric tables with proper labels and row citations, or exclude them from final evidence."
+    ],
+    "evidencePolicy": "Row citations exist, but several are misapplied or too sparse for the claimed measurements."
+  },
+  "usage": {
+    "input_tokens": 12303,
+    "output_tokens": 798,
+    "total_tokens": 13101
+  }
+}

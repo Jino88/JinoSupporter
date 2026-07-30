@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 579,
+  "sourceFile": "36. MSU-20S15-07 RESULT CHECK GAUSS MG DATE 29.11.2025 (ME+PQC)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\579.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:12Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 579,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft conflates MG-C vendor comparison, voltage trials, dimensions, machines, and dates into one ambiguous change case.",
+    "issues": [
+      "Primary changed factor is not defined; baseline and test conditions are mixed.",
+      "Unrelated sheets and outcomes are grouped under one changed factor without source support.",
+      "Machine, date, line, lot, supplier, and voltage keys are not preserved consistently.",
+      "Several outcomes use header or candidate text rather than validated comparable metrics.",
+      "Some cited rows are missing from visible context or are insufficient alone."
+    ],
+    "requiredUserQuestions": [
+      "Should the final case focus on MG-C vendor comparison Beljing vs Ruijin only?",
+      "Should voltage-reduction and dimension-check sheets be split into separate cases?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor from source context, likely MG-C vendor Beljing vs Ruijin with Normal as reference only where cited.",
+      "Separate or exclude voltage, yoke-standard, and dimension sheets unless tied to the same validation purpose.",
+      "Preserve subgroup keys: date, model, machine side, line, supplier, lot, voltage, and drying stage.",
+      "Use total rows and final result rows for function/NG outcomes, with row-level citations.",
+      "Remove unsupported candidate metrics and header-only measurements."
+    ],
+    "evidencePolicy": "Main vendor/function rows are citeable, but current citations are overbroad and not sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 24251,
+    "output_tokens": 826,
+    "total_tokens": 25077
+  }
+}

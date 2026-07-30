@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 345,
+  "sourceFile": "18. BRS-2015 Report test Suspension 201506 -A and B  new vender WorldTop  Hanoi Vina_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\345.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 345,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable test-vs-normal evidence exists, but the draft misstates the changed factor and omits major outcome groups.",
+    "issues": [
+      "Changed factor is filename-like, not the material/vendor lot change.",
+      "Baseline and test conditions are explicit but left unspecified.",
+      "Only tension is modeled; NG, welding, function, and decision outcomes are omitted.",
+      "Subgroups such as date, line, SP A/B, test type, and lot are not preserved.",
+      "Some cited Sheet1 rows are not shown in context, limiting verification of those values."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to new vendor WorldTop Hanoi Vina suspension 201506 A/B lot test vs Normal.",
+      "Use change domain material/supplier, not generic process condition.",
+      "Add outcomes for assembly/frame NG, spot welding NG, function NG, tension, and module-line checks if citeable.",
+      "Preserve subgroup keys for date, E2-4B line, lot/test round, SP A/B, and tension type.",
+      "Cite header, purpose, paired test/normal rows, and decision rows for each outcome."
+    ],
+    "evidencePolicy": "Row citations are citeable but insufficiently complete for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4667,
+    "output_tokens": 623,
+    "total_tokens": 5290
+  }
+}

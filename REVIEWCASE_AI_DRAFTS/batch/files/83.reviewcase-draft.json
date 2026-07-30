@@ -1,0 +1,1155 @@
+{
+  "sourceFileId": 83,
+  "sourceFile": "03.1. BRS-161016  Report checking NTI test new bond SJ4774 and VE 562850_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\03.1. BRS-161016  Report checking NTI test new bond SJ4774 and VE 562850_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 5,
+    "sheetNames": "NTI_종합; SPL DATA_(NTI; THD DATA_(NTI; IMP  DATA_(NTI; FO DATA",
+    "sheetRowCount": 295,
+    "sheetCellCount": 10339,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 125
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "FO DATA!3",
+      "sheetName": "FO DATA",
+      "rowNumber": 3,
+      "rowText": "| RESULT CHECKING FO"
+    },
+    {
+      "rowId": "FO DATA!5",
+      "sheetName": "FO DATA",
+      "rowNumber": 5,
+      "rowText": "| Bond SJ4774 #1 | 899.31475 | Bond VE 562850 #1 | 932.67259 | Old bond #1 | 935.1947 | ST #1 | 866.48966"
+    },
+    {
+      "rowId": "FO DATA!6",
+      "sheetName": "FO DATA",
+      "rowNumber": 6,
+      "rowText": "| Bond SJ4774 #2 | 908.50602 | Bond VE 562850 #2 | 896.40004 | Old bond #2 | 893.95522 | ST #2 | 871.20821"
+    },
+    {
+      "rowId": "FO DATA!7",
+      "sheetName": "FO DATA",
+      "rowNumber": 7,
+      "rowText": "| Bond SJ4774 #3 | 922.27229 | Bond VE 562850 #3 | 910.80876 | Old bond #3 | 904.44954"
+    },
+    {
+      "rowId": "FO DATA!8",
+      "sheetName": "FO DATA",
+      "rowNumber": 8,
+      "rowText": "| Bond SJ4774 #4 | 929.61529 | Bond VE 562850 #4 | 901.60197 | Old bond #4 | 901.41373"
+    },
+    {
+      "rowId": "FO DATA!9",
+      "sheetName": "FO DATA",
+      "rowNumber": 9,
+      "rowText": "| Bond SJ4774 #5 | 914.97812 | Bond VE 562850 #5 | 890.43425 | Old bond #5 | 891.39801"
+    },
+    {
+      "rowId": "FO DATA!10",
+      "sheetName": "FO DATA",
+      "rowNumber": 10,
+      "rowText": "| Bond SJ4774 #6 | 924.71556 | Bond VE 562850 #6 | 899.54902 | Old bond #6 | 905.11214"
+    },
+    {
+      "rowId": "FO DATA!11",
+      "sheetName": "FO DATA",
+      "rowNumber": 11,
+      "rowText": "| Bond SJ4774 #7 | 905.73192 | Bond VE 562850 #7 | 916.41854 | Old bond #7 | 904.68765"
+    },
+    {
+      "rowId": "FO DATA!12",
+      "sheetName": "FO DATA",
+      "rowNumber": 12,
+      "rowText": "| Bond SJ4774 #8 | 910.22777 | Bond VE 562850 #8 | 901.7883 | Old bond #8 | 893.06"
+    },
+    {
+      "rowId": "FO DATA!13",
+      "sheetName": "FO DATA",
+      "rowNumber": 13,
+      "rowText": "| Bond SJ4774 #9 | 900.94705 | Bond VE 562850 #9 | 901.15737 | Old bond #9 | 907.42882"
+    },
+    {
+      "rowId": "FO DATA!14",
+      "sheetName": "FO DATA",
+      "rowNumber": 14,
+      "rowText": "| Bond SJ4774 #10 | 906.34397 | Bond VE 562850 #10 | 918.98798 | Old bond #10 | 906.24592"
+    },
+    {
+      "rowId": "FO DATA!15",
+      "sheetName": "FO DATA",
+      "rowNumber": 15,
+      "rowText": "| AVG | 912.265274 | AVG | 906.981882 | AVG | 904.294573 | AVG | 868.848935"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-83-rc-1",
+      "reviewTitle": "| Bond SJ4774 #1 | 899.31475 | Bond VE 562850 #1 | 932.67259 | Old bond #1 | 935.1947 | ST #1 | 866.48966",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "03.1. BRS-161016 Report checking NTI test new bond SJ4774 and VE 562850",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "SPL DATA_(NTI!2"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "SPL DATA_(NTI!2",
+            "THD DATA_(NTI!2"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 47557,
+              "condition": "MASK 1",
+              "spec": "",
+              "min": 74.79955,
+              "max": 119.241745,
+              "avg": 103.46204383333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47558,
+              "condition": "MASK 2",
+              "spec": "",
+              "min": 68.79955,
+              "max": 115.241745,
+              "avg": 97.89537716666665,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47559,
+              "condition": "ST AVG",
+              "spec": "",
+              "min": 71.79955,
+              "max": 117.241745,
+              "avg": 100.6787105,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47560,
+              "condition": "Bond SJ4774 #1",
+              "spec": "",
+              "min": 71.51797,
+              "max": 116.60169,
+              "avg": 100.14810949999998,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47561,
+              "condition": "Bond SJ4774 #2",
+              "spec": "",
+              "min": 71.17838,
+              "max": 116.72439,
+              "avg": 100.08170433333335,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47562,
+              "condition": "Bond SJ4774 #3",
+              "spec": "",
+              "min": 70.8391,
+              "max": 116.78853,
+              "avg": 99.75381716666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47563,
+              "condition": "Bond SJ4774 #4",
+              "spec": "",
+              "min": 70.54522,
+              "max": 116.80832,
+              "avg": 99.66167966666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47564,
+              "condition": "Bond SJ4774 #5",
+              "spec": "",
+              "min": 70.6644,
+              "max": 116.63984,
+              "avg": 99.74546649999999,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47565,
+              "condition": "Bond SJ4774 #6",
+              "spec": "",
+              "min": 70.64366,
+              "max": 116.52437,
+              "avg": 99.63029749999997,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47566,
+              "condition": "Bond SJ4774 #7",
+              "spec": "",
+              "min": 71.17755,
+              "max": 116.57595,
+              "avg": 100.02445249999998,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47567,
+              "condition": "Bond SJ4774 #8",
+              "spec": "",
+              "min": 71.10581,
+              "max": 116.44416,
+              "avg": 99.88635166666664,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47568,
+              "condition": "Bond SJ4774 #9",
+              "spec": "",
+              "min": 71.19972,
+              "max": 116.61752,
+              "avg": 100.02145716666668,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47569,
+              "condition": "Bond SJ4774 #10",
+              "spec": "",
+              "min": 71.19741,
+              "max": 116.79627,
+              "avg": 100.0375205,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47570,
+              "condition": "Bond SJ4774 AVG",
+              "spec": "",
+              "min": 71.006922,
+              "max": 116.652104,
+              "avg": 99.89908565000003,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47571,
+              "condition": "Bond VE 562850 #1",
+              "spec": "",
+              "min": 70.48638,
+              "max": 116.78801,
+              "avg": 99.53596450000003,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47572,
+              "condition": "Bond VE 562850 #2",
+              "spec": "",
+              "min": 71.10714,
+              "max": 116.37407,
+              "avg": 99.9300645,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47573,
+              "condition": "Bond VE 562850 #3",
+              "spec": "",
+              "min": 70.73557,
+              "max": 116.51881,
+              "avg": 99.6751838333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47574,
+              "condition": "Bond VE 562850 #4",
+              "spec": "",
+              "min": 71.04672,
+              "max": 116.30763,
+              "avg": 99.84048516666668,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47575,
+              "condition": "Bond VE 562850 #5",
+              "spec": "",
+              "min": 71.51876,
+              "max": 116.75142,
+              "avg": 100.26966216666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47576,
+              "condition": "Bond VE 562850 #6",
+              "spec": "",
+              "min": 71.17872,
+              "max": 116.23957,
+              "avg": 99.89098550000001,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47577,
+              "condition": "Bond VE 562850 #7",
+              "spec": "",
+              "min": 71.02908,
+              "max": 116.6272,
+              "avg": 99.8598638333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47578,
+              "condition": "Bond VE 562850 #8",
+              "spec": "",
+              "min": 71.01603,
+              "max": 116.72635,
+              "avg": 99.980992,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47579,
+              "condition": "Bond VE 562850 #9",
+              "spec": "",
+              "min": 71.18519,
+              "max": 116.49648,
+              "avg": 99.98894033333336,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47580,
+              "condition": "Bond VE 562850 #10",
+              "spec": "",
+              "min": 70.77115,
+              "max": 116.68571,
+              "avg": 99.81596516666667,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47581,
+              "condition": "Bond VE 562850 AVG",
+              "spec": "",
+              "min": 71.007474,
+              "max": 116.55095,
+              "avg": 99.87881070000002,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47582,
+              "condition": "Old bond #1",
+              "spec": "",
+              "min": 70.37214,
+              "max": 116.68973,
+              "avg": 99.515663,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47583,
+              "condition": "Old bond #2",
+              "spec": "",
+              "min": 71.06649,
+              "max": 116.62405,
+              "avg": 99.99979716666665,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47584,
+              "condition": "Old bond #3",
+              "spec": "",
+              "min": 71.09304,
+              "max": 116.559,
+              "avg": 99.97265683333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47585,
+              "condition": "Old bond #4",
+              "spec": "",
+              "min": 71.0712,
+              "max": 116.49256,
+              "avg": 99.95927116666664,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47586,
+              "condition": "Old bond #5",
+              "spec": "",
+              "min": 71.28311,
+              "max": 116.54281,
+              "avg": 100.09553133333331,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47587,
+              "condition": "Old bond #6",
+              "spec": "",
+              "min": 71.1253,
+              "max": 116.63167,
+              "avg": 100.02617650000002,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47588,
+              "condition": "Old bond #7",
+              "spec": "",
+              "min": 71.41426,
+              "max": 116.79394,
+              "avg": 100.18183199999999,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47589,
+              "condition": "Old bond #8",
+              "spec": "",
+              "min": 71.45176,
+              "max": 116.70869,
+              "avg": 100.23463916666661,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47590,
+              "condition": "Old bond #9",
+              "spec": "",
+              "min": 71.13101,
+              "max": 116.65225,
+              "avg": 99.95809299999999,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47591,
+              "condition": "Old bond #10",
+              "spec": "",
+              "min": 70.94,
+              "max": 116.547,
+              "avg": 99.83027516666668,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47592,
+              "condition": "Old bond AVG",
+              "spec": "",
+              "min": 71.094831,
+              "max": 116.623129,
+              "avg": 99.97739353333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47593,
+              "condition": "ST #1",
+              "spec": "",
+              "min": 71.73808,
+              "max": 117.17585,
+              "avg": 100.65981499999998,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47594,
+              "condition": "ST #2",
+              "spec": "",
+              "min": 71.86102,
+              "max": 117.30764,
+              "avg": 100.69760600000002,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "SPL DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47595,
+              "condition": "ST AVG",
+              "spec": "",
+              "min": 0.601095,
+              "max": 14.06145,
+              "avg": 7.28104625,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47596,
+              "condition": "Bond SJ4774 #1",
+              "spec": "",
+              "min": 0.55249,
+              "max": 13.38154,
+              "avg": 7.218456333333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47597,
+              "condition": "Bond SJ4774 #2",
+              "spec": "",
+              "min": 0.44588,
+              "max": 16.97747,
+              "avg": 9.114916833333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47598,
+              "condition": "Bond SJ4774 #3",
+              "spec": "",
+              "min": 0.43099,
+              "max": 14.33448,
+              "avg": 7.9423141666666615,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47599,
+              "condition": "Bond SJ4774 #4",
+              "spec": "",
+              "min": 0.51243,
+              "max": 12.60808,
+              "avg": 7.152440166666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47600,
+              "condition": "Bond SJ4774 #5",
+              "spec": "",
+              "min": 0.48835,
+              "max": 14.07815,
+              "avg": 7.928803500000003,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47601,
+              "condition": "Bond SJ4774 #6",
+              "spec": "",
+              "min": 0.42348,
+              "max": 16.42287,
+              "avg": 8.87439216666667,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47602,
+              "condition": "Bond SJ4774 #7",
+              "spec": "",
+              "min": 0.49103,
+              "max": 15.42407,
+              "avg": 8.44816683333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47603,
+              "condition": "Bond SJ4774 #8",
+              "spec": "",
+              "min": 0.43138,
+              "max": 16.34563,
+              "avg": 8.8896575,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47604,
+              "condition": "Bond SJ4774 #9",
+              "spec": "",
+              "min": 0.48717,
+              "max": 13.96082,
+              "avg": 7.74585783333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47605,
+              "condition": "Bond SJ4774 #10",
+              "spec": "",
+              "min": 0.50704,
+              "max": 13.79619,
+              "avg": 7.824061333333335,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47606,
+              "condition": "Bond SJ4774 AVG",
+              "spec": "",
+              "min": 0.484146,
+              "max": 14.587855,
+              "avg": 8.113906666666667,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47607,
+              "condition": "Bond VE 562850 #1",
+              "spec": "",
+              "min": 0.51149,
+              "max": 12.08241,
+              "avg": 6.639424166666668,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47608,
+              "condition": "Bond VE 562850 #2",
+              "spec": "",
+              "min": 0.4585,
+              "max": 13.28727,
+              "avg": 6.863042333333332,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47609,
+              "condition": "Bond VE 562850 #3",
+              "spec": "",
+              "min": 0.58268,
+              "max": 12.89611,
+              "avg": 5.794587000000002,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47610,
+              "condition": "Bond VE 562850 #4",
+              "spec": "",
+              "min": 0.45594,
+              "max": 13.21296,
+              "avg": 6.972538833333331,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47611,
+              "condition": "Bond VE 562850 #5",
+              "spec": "",
+              "min": 0.50304,
+              "max": 14.50948,
+              "avg": 7.701093833333332,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47612,
+              "condition": "Bond VE 562850 #6",
+              "spec": "",
+              "min": 0.44139,
+              "max": 13.78697,
+              "avg": 7.582257333333334,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47613,
+              "condition": "Bond VE 562850 #7",
+              "spec": "",
+              "min": 0.44701,
+              "max": 13.23456,
+              "avg": 7.0562385,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47614,
+              "condition": "Bond VE 562850 #8",
+              "spec": "",
+              "min": 0.50874,
+              "max": 13.33852,
+              "avg": 7.1766853333333325,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47615,
+              "condition": "Bond VE 562850 #9",
+              "spec": "",
+              "min": 0.47768,
+              "max": 13.14356,
+              "avg": 6.5011075,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            },
+            {
+              "statId": 47616,
+              "condition": "Bond VE 562850 #10",
+              "spec": "",
+              "min": 0.45659,
+              "max": 12.53367,
+              "avg": 6.8913416666666665,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "THD DATA_(NTI!2"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT CHECKING FO",
+          "comparisonRows": [
+            "FO DATA!5",
+            "FO DATA!6",
+            "FO DATA!7",
+            "FO DATA!8",
+            "FO DATA!9"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 47667,
+              "condition": "RESULT CHECKING FO / Bond SJ4774 #1",
+              "spec": "",
+              "min": 4774.0,
+              "max": 4774.0,
+              "avg": 4774.0,
+              "sampleCount": 9,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!5"
+              ]
+            },
+            {
+              "statId": 47668,
+              "condition": "RESULT CHECKING FO / Bond VE 562850 #1",
+              "spec": "",
+              "min": 562850.0,
+              "max": 562850.0,
+              "avg": 562850.0,
+              "sampleCount": 9,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!5"
+              ]
+            },
+            {
+              "statId": 47669,
+              "condition": "RESULT CHECKING FO / Old bond #1",
+              "spec": "",
+              "min": 2.0,
+              "max": 10.0,
+              "avg": 6.0,
+              "sampleCount": 9,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!5"
+              ]
+            },
+            {
+              "statId": 47670,
+              "condition": "RESULT CHECKING FO / Bond SJ4774 #2",
+              "spec": "",
+              "min": 4774.0,
+              "max": 4774.0,
+              "avg": 4774.0,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!6"
+              ]
+            },
+            {
+              "statId": 47671,
+              "condition": "Bond VE 562850 #1 / Bond VE 562850 #2",
+              "spec": "",
+              "min": 562850.0,
+              "max": 562850.0,
+              "avg": 562850.0,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!6"
+              ]
+            },
+            {
+              "statId": 47672,
+              "condition": "Old bond #1 / Old bond #2",
+              "spec": "",
+              "min": 3.0,
+              "max": 10.0,
+              "avg": 6.5,
+              "sampleCount": 8,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!6"
+              ]
+            },
+            {
+              "statId": 47673,
+              "condition": "RESULT CHECKING FO / Bond SJ4774 #3",
+              "spec": "",
+              "min": 4774.0,
+              "max": 4774.0,
+              "avg": 4774.0,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!7"
+              ]
+            },
+            {
+              "statId": 47674,
+              "condition": "Bond VE 562850 #2 / Bond VE 562850 #3",
+              "spec": "",
+              "min": 562850.0,
+              "max": 562850.0,
+              "avg": 562850.0,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!7"
+              ]
+            },
+            {
+              "statId": 47675,
+              "condition": "Old bond #2 / Old bond #3",
+              "spec": "",
+              "min": 4.0,
+              "max": 10.0,
+              "avg": 7.0,
+              "sampleCount": 7,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!7"
+              ]
+            },
+            {
+              "statId": 47676,
+              "condition": "Bond SJ4774 #4",
+              "spec": "",
+              "min": 4774.0,
+              "max": 4774.0,
+              "avg": 4774.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!8"
+              ]
+            },
+            {
+              "statId": 47677,
+              "condition": "Bond VE 562850 #3 / Bond VE 562850 #4",
+              "spec": "",
+              "min": 562850.0,
+              "max": 562850.0,
+              "avg": 562850.0,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!8"
+              ]
+            },
+            {
+              "statId": 47678,
+              "condition": "Old bond #3 / Old bond #4",
+              "spec": "",
+              "min": 5.0,
+              "max": 10.0,
+              "avg": 7.5,
+              "sampleCount": 6,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!8"
+              ]
+            },
+            {
+              "statId": 47679,
+              "condition": "Bond SJ4774 #5",
+              "spec": "",
+              "min": 4774.0,
+              "max": 4774.0,
+              "avg": 4774.0,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!9"
+              ]
+            },
+            {
+              "statId": 47680,
+              "condition": "Bond VE 562850 #4 / Bond VE 562850 #5",
+              "spec": "",
+              "min": 562850.0,
+              "max": 562850.0,
+              "avg": 562850.0,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!9"
+              ]
+            },
+            {
+              "statId": 47681,
+              "condition": "Old bond #4 / Old bond #5",
+              "spec": "",
+              "min": 6.0,
+              "max": 10.0,
+              "avg": 8.0,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO DATA!9"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "FO DATA!5",
+        "FO DATA!6",
+        "FO DATA!7",
+        "FO DATA!8",
+        "FO DATA!9",
+        "SPL DATA_(NTI!2",
+        "THD DATA_(NTI!2"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "FO DATA!5",
+      "FO DATA!6",
+      "FO DATA!7",
+      "FO DATA!8",
+      "FO DATA!9",
+      "SPL DATA_(NTI!2",
+      "THD DATA_(NTI!2"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 188,
+  "sourceFile": "1. BRS-161016 Report test new bond G06-0003_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\188.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 188,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable new bond vs normal bond evidence exists, but the draft misgroups conditions and outcomes.",
+    "issues": [
+      "Changed factor incorrectly includes MG+Yoke as a changed condition instead of a subgroup/test item.",
+      "Function test rounds are mispaired; 2nd result conflicts with draft worsened judgement.",
+      "Tension test evidence is omitted despite clear new vs normal comparison.",
+      "Bogus measurement outcome parses function header/data as unrelated stats.",
+      "Decap MG+Yoke evidence is cited by header only, with no clear paired result rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to New/Test bond G06-0003 vs Normal bond G06-0002 only.",
+      "Preserve subgroups such as MG+PT, MG+Yoke, CMG+Yoke, drop, and function test round.",
+      "Rebuild function comparisons by matching each test round new row to its corresponding normal row.",
+      "Add tension test outcome from rows 41-42 with spec context.",
+      "Remove the invalid measurement-stat outcome and any unsupported cited rows."
+    ],
+    "evidencePolicy": "Row citations exist, but several are insufficient or misgrouped for final evidence."
+  },
+  "usage": {
+    "input_tokens": 5129,
+    "output_tokens": 719,
+    "total_tokens": 5848
+  }
+}

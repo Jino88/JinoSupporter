@@ -1,8 +1,10 @@
 @inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Routing
 @inject ConnectedUsersService UsersService
 @inject UserCircuitHandler    CircuitHandler
 @inject WebRepository         Repo
 @inject NavigationManager     Nav
+@inject IJSRuntime            JS
 @implements IDisposable
 
 <div class="page">
@@ -25,6 +27,26 @@
     <main>
         <AuthorizeView>
             <Authorized>
+                @* Browser-style tab strip: a tab is opened for each page you navigate to,
+                   clicking a tab navigates to it, and × closes it. Navigation-based — switching
+                   re-navigates, so a page's in-progress state is not kept across tabs. *@
+                @if (_tabs.Count > 0)
+                {
+                    <div class="app-tabs">
+                        @foreach (TabEntry tab in _tabs)
+                        {
+                            <div class="app-tab @(IsActive(tab) ? "active" : "")"
+                                 title="@tab.Url"
+                                 @onclick="() => Activate(tab)">
+                                <span class="app-tab-title">@tab.Title</span>
+                                <button type="button" class="app-tab-close"
+                                        @onclick="() => CloseTab(tab)"
+                                        @onclick:stopPropagation="true"
+                                        aria-label="Close tab">×</button>
+                            </div>
+                        }
+                    </div>
+                }
                 <article class="content px-4">
                     @Body
                 </article>
@@ -45,9 +67,21 @@
 @code {
     [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
 
+    private sealed class TabEntry
+    {
+        public string Url { get; set; } = string.Empty;   // base-relative path, no query/hash
+        public string Title { get; set; } = string.Empty;
+    }
+
+    private readonly List<TabEntry> _tabs = new();
+    private string _activeUrl = string.Empty;
+    private DotNetObjectReference<MainLayout>? _selfRef;
+
     protected override async Task OnInitializedAsync()
     {
         UsersService.Changed += OnUsersChanged;
+        Nav.LocationChanged += OnLocationChanged;
+        TrackCurrent();                    // open a tab for the page we landed on
 
         var auth = await AuthState;
         string username = auth.User.Identity?.Name ?? string.Empty;
@@ -59,6 +93,114 @@
         }
     }
 
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        TrackCurrent();
+        InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Ensure the current route has a tab and mark it active.</summary>
+    private void TrackCurrent()
+    {
+        string url = CurrentRelative();
+        _activeUrl = url;
+        if (!_tabs.Any(t => string.Equals(t.Url, url, StringComparison.OrdinalIgnoreCase)))
+            _tabs.Add(new TabEntry { Url = url, Title = TitleFromUrl(url) });
+    }
+
+    private string CurrentRelative()
+    {
+        string rel = Nav.ToBaseRelativePath(Nav.Uri);
+        int cut = rel.IndexOfAny(['?', '#']);
+        if (cut >= 0) rel = rel[..cut];
+        return rel.Trim('/');
+    }
+
+    private bool IsActive(TabEntry tab)
+        => string.Equals(tab.Url, _activeUrl, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Path words that are acronyms, so the fallback label does not title-case them
+    /// into "Lpa". Only needed until the page reports its own &lt;PageTitle&gt;.</summary>
+    private static readonly HashSet<string> Acronyms =
+        new(StringComparer.OrdinalIgnoreCase) { "lpa" };
+
+    /// <summary>Best-effort label from the path; refined to the page's real title
+    /// (its &lt;PageTitle&gt; = document.title) after render.</summary>
+    private static string TitleFromUrl(string url)
+    {
+        if (string.IsNullOrEmpty(url)) return "Home";
+        string last = url.Split('/', StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } parts
+            ? parts[^1] : url;
+        last = last.Replace('-', ' ').Trim();
+        if (last.Length == 0) return "Home";
+        return Acronyms.Contains(last)
+             ? last.ToUpperInvariant()
+             : char.ToUpperInvariant(last[0]) + last[1..];
+    }
+
+    /// <summary>Subscribe to document.title changes so each tab is labelled with its page's own
+    /// &lt;PageTitle&gt; instead of a guessed-from-URL name. Polling the title after a render does
+    /// not work — &lt;PageTitle&gt; writes it asynchronously, so the read returns the title of the
+    /// page we just left and stamps it on the new tab.</summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        try
+        {
+            _selfRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("appTitleWatcher.start", _selfRef);
+        }
+        catch (JSException) { /* titles stay as the URL-derived fallback */ }
+        catch (InvalidOperationException) { /* prerender: no JS yet — fallback stands */ }
+    }
+
+    /// <summary>Called from JS whenever document.title changes; labels whichever tab is active
+    /// at that moment (navigation updates _activeUrl before the new page renders its title).</summary>
+    [JSInvokable]
+    public Task OnDocumentTitleChanged(string title)
+    {
+        title = (title ?? string.Empty).Trim();
+        if (title.Length == 0) return Task.CompletedTask;
+
+        TabEntry? active = _tabs.FirstOrDefault(IsActive);
+        if (active is null || active.Title == title) return Task.CompletedTask;
+
+        active.Title = title;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void Activate(TabEntry tab)
+    {
+        if (!IsActive(tab)) Nav.NavigateTo(tab.Url);
+    }
+
+    private void CloseTab(TabEntry tab)
+    {
+        int idx = _tabs.FindIndex(t => string.Equals(t.Url, tab.Url, StringComparison.OrdinalIgnoreCase));
+        if (idx < 0) return;
+
+        bool wasActive = IsActive(tab);
+        _tabs.RemoveAt(idx);
+
+        if (!wasActive)
+        {
+            StateHasChanged();          // a background tab closed; stay where we are
+            return;
+        }
+
+        if (_tabs.Count == 0)
+        {
+            _activeUrl = string.Empty;
+            Nav.NavigateTo("/");        // nothing left — go to the default page
+            return;
+        }
+
+        // Closing the active tab lands on its neighbour (clamped to the new range).
+        TabEntry next = _tabs[Math.Min(idx, _tabs.Count - 1)];
+        Nav.NavigateTo(next.Url);
+    }
+
     private void RedirectToLogin()
     {
         string encoded = Uri.EscapeDataString(Nav.Uri);
@@ -67,5 +209,10 @@
 
     private void OnUsersChanged() => InvokeAsync(StateHasChanged);
 
-    public void Dispose() => UsersService.Changed -= OnUsersChanged;
+    public void Dispose()
+    {
+        UsersService.Changed -= OnUsersChanged;
+        Nav.LocationChanged -= OnLocationChanged;
+        _selfRef?.Dispose();
+    }
 }

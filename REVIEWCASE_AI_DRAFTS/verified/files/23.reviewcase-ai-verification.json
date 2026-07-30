@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 23,
+  "sourceFile": "01. TIU L5S3-01 R Report test VP mold Korea - Forming D3  12.12.2025_1778470786_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\23.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:45:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 23,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The workbook contains valid Normal vs Test comparisons, but the draft misstates the changed condition by adding Manual and mishandles Auto/Manual-style conditions as subgroup context.",
+    "issues": [
+      "Changed factor is not verified as 'Normal vs Test, Manual'; cited visible evidence supports Normal lot vs Test lot, while Manual is not shown as a primary changed factor.",
+      "subgroupKeys contains only Auto, but Auto appears to be a drop-test method/secondary condition rather than the primary changed factor.",
+      "EvidenceRows include Test!31 and Test!33, but those row texts are not present in the supplied context, so their role cannot be independently verified here.",
+      "Measurement outcome has extraction issues: spec is blank despite row text showing 0.2 Kgf, and sampleCount appears to be 1 although multiple sample values are listed.",
+      "Measurement judgement is not_judged even though both Test and Normal pass; if retained, it should be framed as pass/pass with small average difference, not left as an ungrouped candidate."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Revise changedFactor to a source-supported condition such as 'Normal lot vs Test VP lot' or 'Normal vs Test' tied to VP mold Korea/Forming D3 context.",
+      "Remove 'Manual' from changedCondition unless rows Test!31/Test!33 or other source rows prove Manual is part of the primary changed factor.",
+      "Treat Auto/Manual, if present, as drop-test method or subgroup/secondary condition only, not as the main changed condition.",
+      "Add or expose row text for Test!31 and Test!33 if they remain cited, or remove them from evidenceRows.",
+      "Correct the tension measurement extraction to include spec 0.2 Kgf and the actual multiple sample values/count, then decide whether to report it as pass/pass or a descriptive measurement comparison.",
+      "Keep the function defect, tension, and drop-test outcomes under one Normal vs Test review case because they belong to the same validation report."
+    ],
+    "evidencePolicy": "Citations to the main comparison rows are generally sufficient, but unsupported/missing-row citations and the Manual/Auto grouping must be corrected before evidence can be approved."
+  },
+  "usage": {
+    "input_tokens": 3446,
+    "output_tokens": 985,
+    "total_tokens": 4431
+  }
+}

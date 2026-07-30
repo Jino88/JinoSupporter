@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 502,
+  "sourceFile": "3. BRS-161016 Report test new press coil SP of UC machine 2024.12.05_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\502.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 502,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies a usable new-vs-old press coil SP jig validation but the generated case is not reliable as final evidence.",
+    "issues": [
+      "Changed factor is the filename, not the process/equipment change.",
+      "Baseline and test conditions are left implicit despite old and new jig rows.",
+      "Key result and decision rows are omitted from evidence.",
+      "Outcomes cite header rows and aggregate metrics without preserving row-level comparisons.",
+      "Function result comparison is not grouped with the assembly NG outcome."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to new press coil SP jig versus old/normal press coil SP jig on UC machine.",
+      "Use old jig as baseline and new jig as changed condition.",
+      "Add evidence for purpose, content, new/old result rows, and decision rows, especially 1!43, 1!44, and 1!52.",
+      "Rebuild outcomes as assembly NG rate/defect types and function check under the same validation context.",
+      "Preserve date, line, type check, quantity, NG categories, and NG rate as subgroup keys."
+    ],
+    "evidencePolicy": "Current citations are insufficient because key comparison and decision rows are missing."
+  },
+  "usage": {
+    "input_tokens": 3327,
+    "output_tokens": 655,
+    "total_tokens": 3982
+  }
+}

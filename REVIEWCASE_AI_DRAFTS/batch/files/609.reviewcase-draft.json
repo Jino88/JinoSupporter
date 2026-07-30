@@ -1,0 +1,225 @@
+{
+  "sourceFileId": 609,
+  "sourceFile": "4. BRS-161014 Report check problem main 2 (VP+FR separate) 2023.08.10_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\4. BRS-161014 Report check problem main 2 (VP+FR separate) 2023.08.10_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "04.08",
+    "sheetRowCount": 18,
+    "sheetCellCount": 47,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 3,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "04.08!2",
+      "sheetName": "04.08",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT CHECK PROBLEM MAIN 2 ASS'Y FRAME+VP_161014 | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "04.08!3",
+      "sheetName": "04.08",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | Date | 2023-08-10 00:00:00"
+    },
+    {
+      "rowId": "04.08!4",
+      "sheetName": "04.08",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | Marker | Tu/Thuy"
+    },
+    {
+      "rowId": "04.08!5",
+      "sheetName": "04.08",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "04.08!6",
+      "sheetName": "04.08",
+      "rowNumber": 6,
+      "rowText": "| Improve NG ass'y Frame+VP separate, VP press NG"
+    },
+    {
+      "rowId": "04.08!7",
+      "sheetName": "04.08",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "04.08!8",
+      "sheetName": "04.08",
+      "rowNumber": 8,
+      "rowText": "| TEST: Use 3 type jig improve cutting to make sample and check condition ass'y Frame+VP"
+    },
+    {
+      "rowId": "04.08!20",
+      "sheetName": "04.08",
+      "rowNumber": 20,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "04.08!21",
+      "sheetName": "04.08",
+      "rowNumber": 21,
+      "rowText": "| Result checking ass'y Frame+VP"
+    },
+    {
+      "rowId": "04.08!22",
+      "sheetName": "04.08",
+      "rowNumber": 22,
+      "rowText": "| | Date | Type Jig | Input | Fr+ VP press OK | Fr+ VP press NG | VP separate"
+    },
+    {
+      "rowId": "04.08!23",
+      "sheetName": "04.08",
+      "rowNumber": 23,
+      "rowText": "| | 2023-08-10 00:00:00 | Type 1 | 5 | 5 | 0 | 5"
+    },
+    {
+      "rowId": "04.08!24",
+      "sheetName": "04.08",
+      "rowNumber": 24,
+      "rowText": "| | | Type 2 | 3 | 0 | 3 | 3"
+    },
+    {
+      "rowId": "04.08!27",
+      "sheetName": "04.08",
+      "rowNumber": 27,
+      "rowText": "| | Jig type 1 | Fr+VP press OK | | | VP separate"
+    },
+    {
+      "rowId": "04.08!35",
+      "sheetName": "04.08",
+      "rowNumber": 35,
+      "rowText": "| | Jig type 2 | Fr+VP press NG | | | VP separate"
+    },
+    {
+      "rowId": "04.08!43",
+      "sheetName": "04.08",
+      "rowNumber": 43,
+      "rowText": "| | Jig type 3 | Fr+VP press NG | | | VP separate"
+    },
+    {
+      "rowId": "04.08!54",
+      "sheetName": "04.08",
+      "rowNumber": 54,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-609-rc-1",
+      "reviewTitle": "REPORT CHECK PROBLEM MAIN 2 ASS'Y FRAME+VP_161014 | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | Improve NG ass'y Frame+VP separate, VP press NG / | II. Content. / | TEST: Use 3 type jig improve cutting to make sample and check condition ass'y Frame+VP / | 3.Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Type 1, Type 2, Type 3",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Type 1, Type 2, Type 3",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "04.08!2",
+            "04.08!23",
+            "04.08!24",
+            "04.08!25",
+            "04.08!5",
+            "04.08!7",
+            "04.08!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "Result checking ass'y Frame+VP",
+          "comparisonRows": [
+            "04.08!23",
+            "04.08!24",
+            "04.08!25"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 22229,
+              "condition": "Type 1",
+              "input": 5.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "04.08!23"
+              ]
+            },
+            {
+              "metricId": 22230,
+              "condition": "Type 2",
+              "input": 3.0,
+              "ok": null,
+              "ng": 3.0,
+              "ratePercent": 100.0,
+              "evidenceRows": [
+                "04.08!24"
+              ]
+            },
+            {
+              "metricId": 22231,
+              "condition": "Type 3",
+              "input": 3.0,
+              "ok": null,
+              "ng": 3.0,
+              "ratePercent": 100.0,
+              "evidenceRows": [
+                "04.08!25"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "04.08!2",
+        "04.08!23",
+        "04.08!24",
+        "04.08!25",
+        "04.08!5",
+        "04.08!7",
+        "04.08!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "04.08!2",
+      "04.08!23",
+      "04.08!24",
+      "04.08!25",
+      "04.08!5",
+      "04.08!7",
+      "04.08!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

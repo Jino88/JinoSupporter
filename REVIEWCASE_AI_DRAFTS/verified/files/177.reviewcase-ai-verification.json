@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 177,
+  "sourceFile": "09. TIU C11-20  Report test VP mold Korea and GN - Forming E2  12.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\177.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:52Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 177,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable source evidence but mis-groups the changed conditions and omits major outcome sections.",
+    "issues": [
+      "Changed factor incorrectly mixes VP conditions with Auto/Manual labels.",
+      "Three VP test conditions should be separated or grouped consistently against Normal.",
+      "Function and tension result sections are omitted from outcomes.",
+      "Mold Korea ED condition is treated as subgroup despite being a tested condition.",
+      "Evidence rows include result rows not shown in context, limiting verification detail."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary comparison as VP test conditions versus Normal lot.",
+      "Treat Auto/Manual as subgroup or secondary condition, not changed condition.",
+      "Add function check outcome rows and results.",
+      "Add tension check outcome rows and pass/sample values.",
+      "Rebuild evidence citations with headers plus each cited result row."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient for final evidence because grouping and outcome coverage need correction."
+  },
+  "usage": {
+    "input_tokens": 3880,
+    "output_tokens": 556,
+    "total_tokens": 4436
+  }
+}

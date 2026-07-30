@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 488,
+  "sourceFile": "29. BRS-161014 Report TEST sample over glue reinforcement_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\488.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:26Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 488,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Source supports an over-glue reinforcement test sample performing worse than normal, but the draft changed factor is too generic.",
+    "issues": [
+      "Primary changed factor should be over-glue reinforcement sample, not just Normal vs Test.",
+      "Change domain is left unknown despite clear process/sample context.",
+      "Key purpose row identifying over-glue reinforcement is not cited.",
+      "Heading-only rows are used as factor evidence where substantive rows exist."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to over-glue reinforcement test sample vs normal sample.",
+      "Set baselineCondition to normal sample and changedCondition to over-glue reinforcement test sample.",
+      "Assign a suitable process/sample change domain.",
+      "Add row 6 as changed-factor evidence and retain row 8 and title context.",
+      "Keep outcome comparison rows 21 and 23 with worse judgement."
+    ],
+    "evidencePolicy": "Outcome citations are sufficient; changed-factor citations need the substantive purpose row."
+  },
+  "usage": {
+    "input_tokens": 2438,
+    "output_tokens": 740,
+    "total_tokens": 3178
+  }
+}

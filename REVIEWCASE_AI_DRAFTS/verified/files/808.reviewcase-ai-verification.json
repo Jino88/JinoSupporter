@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 808,
+  "sourceFile": "63. NTI OK up voltage and NG sample standard 2024.07.15_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\808.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:38Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 808,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not ready because the primary comparison and cited evidence do not clearly support the changed-factor grouping.",
+    "issues": [
+      "Changed factor is taken from filename, not cited source context.",
+      "Baseline and changed conditions are unclear despite ST, NG ST, and OK up labels.",
+      "Outcome grouping mixes SPL, THD, IMP, and Fo without proving one validation context.",
+      "Evidence cites mostly header rows and omits relevant Fo comparison rows.",
+      "Statistics are descriptive tables, not verified comparisons or judgments."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison ST vs NG ST, ST vs OK up, or NG ST vs OK up?"
+    ],
+    "correctionPlan": [
+      "Review all sheets for headers defining ST, NG ST, and OK up conditions.",
+      "Set explicit baseline and changed conditions with preserved sample groups.",
+      "Cite rows containing condition labels plus representative data, including Fo rows for F0 gap.",
+      "Keep SPL, THD, IMP, and Fo together only if the workbook supports one validation report.",
+      "Recompute outcomes as comparisons and add clear limitations if no judgment is possible."
+    ],
+    "evidencePolicy": "Current row citations prove row existence but are insufficient as final evidence."
+  },
+  "usage": {
+    "input_tokens": 4127,
+    "output_tokens": 729,
+    "total_tokens": 4856
+  }
+}

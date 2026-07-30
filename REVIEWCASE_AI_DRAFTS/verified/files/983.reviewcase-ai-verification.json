@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 983,
+  "sourceFile": "BRS 161014S08ZZ Reliability Test result for dome 8.11.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\983.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:57Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 983,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it misidentifies the changed factor and treats header/raw-data rows as outcomes.",
+    "issues": [
+      "Changed factor is filename instead of reliability stress conditions.",
+      "Baseline/test grouping is not established as before vs after per test item.",
+      "Many outcomes are header-derived or frequency-row artifacts, not valid metrics.",
+      "PASS/NG summary rows and sample result rows are underused.",
+      "Load duration conflicts between overview and detail sheet."
+    ],
+    "requiredUserQuestions": [
+      "Should load test duration follow the summary row or detail sheet?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factors as reliability test conditions by sheet or report context.",
+      "Use before/after as baseline/test condition for each stress item.",
+      "Keep SPL, impedance, F0, THD and PASS/NG as outcomes only.",
+      "Cite condition rows plus actual result rows, especially summary PASS/NG rows.",
+      "Remove raw header statistics and invalid specs such as '>4'."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient because cited rows are mostly headers, not final evidence."
+  },
+  "usage": {
+    "input_tokens": 20339,
+    "output_tokens": 764,
+    "total_tokens": 21103
+  }
+}

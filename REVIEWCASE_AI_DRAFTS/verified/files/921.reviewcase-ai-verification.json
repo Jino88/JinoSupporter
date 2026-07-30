@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 921,
+  "sourceFile": "8. BRS-201506 Report test New VP ASS'Y PRESS JIG date 17.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\921.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:10Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 921,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable Normal line vs New JIG evidence exists, but grouping and Sheet1 measurement handling need correction before final use.",
+    "issues": [
+      "Date/test round subgroup keys are not preserved.",
+      "Sheet1 measurement outcome is not a valid baseline/test comparison.",
+      "Sheet1 stats rely mainly on header citation, not data rows.",
+      "Frame+VP qualitative findings are under-cited.",
+      "Report (2) frame process issue is omitted from outcomes or limitations."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add date/report sheet as subgroup keys for each subresult.",
+      "Remove Sheet1 as an outcome or recast it as test setting context with rows 5-9 cited.",
+      "Cite conclusion rows for Frame+VP process findings.",
+      "Add Report (2) frame process qualitative issue as evidence or limitation.",
+      "Keep VP vision and function comparisons grouped by each report date."
+    ],
+    "evidencePolicy": "Comparative rows are mostly sufficient, but Sheet1 and qualitative conclusion citations are insufficient."
+  },
+  "usage": {
+    "input_tokens": 5953,
+    "output_tokens": 750,
+    "total_tokens": 6703
+  }
+}

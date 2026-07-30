@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 99,
+  "sourceFile": "04. BRS-161016 DT Report test  suspension used SUS-D  cutting  60% 2nd date 25.1.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\99.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:31Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 99,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the main Normal vs Test cutting 60% comparison but omits required test rows for most outcomes.",
+    "issues": [
+      "Outcomes 2-4 cite only Normal rows and are not valid comparisons.",
+      "Missing test rows 26, 33, and 41 from outcome evidence.",
+      "Overall evidence omits key section headers for result domains.",
+      "Changed factor domain includes unsupported coating label.",
+      "Spot welding result should consider both before and after repair columns plus conclusion row."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add row 26 vs 28 comparison for ass'y coil/sus.",
+      "Add row 33 vs 35 comparison for spot welding.",
+      "Add row 41 vs 43 comparison for laser cutting suspension.",
+      "Include section headers rows 23, 30, 38 and conclusion row 37 where relevant.",
+      "Revise changeDomain to process condition and dimension/spec only."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient until all paired test/control rows and relevant headers are included."
+  },
+  "usage": {
+    "input_tokens": 3907,
+    "output_tokens": 546,
+    "total_tokens": 4453
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "sourceFileId": 16,
+  "sourceFile": "01. BRS-161016 Report check NG Over bond BP+SM, Yoke  - 2025.03.26_1778470593_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\16.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:44:45Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 16,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft cites real report rows but merges distinct process NG-rate checks, sample-type function checks, and normal comparison into one ambiguous changed-factor definition.",
+    "issues": [
+      "Blocking: changedFactor incorrectly frames the evidence as one Normal-vs-all comparison, while the source appears to contain separate contexts: process vision NG-rate check and main-line function testing of NG over-bond sample types versus Normal.",
+      "Blocking: baselineCondition='Normal' is only supported for the function-check table, not for the process NG-rate table covering Vision Bond BP/SM, MG/PT, and Yoke.",
+      "Blocking: rows 26.03!30 and 26.03!31 are central to the function comparison but their row text is not included in the provided contextRows, so their interpretation cannot be independently verified here.",
+      "Non-blocking: changeDomain='material' is likely too narrow or inaccurate; this appears to be process/defect-condition validation involving over glue/over bond samples and vision/main-line function checks.",
+      "Non-blocking: analysis sheets for BP+SM and Yoke identify Glue Clots quantities but are not represented as outcomes or supporting evidence, despite being relevant to NG function analysis."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split or clearly subgroup the changed factor into the actual evidence contexts: process vision NG-rate check by process, and function check by sample condition/type versus Normal.",
+      "Use Normal only as the baseline for the function-check outcome if rows 26.03!30-32 confirm the table structure.",
+      "Add the full row text and headers for 26.03!27-32 or equivalent evidence rows so the function-check table can be verified.",
+      "Revise changedFactor wording to focus on NG over glue/over bond sample condition/location rather than listing every metric row as a changed condition.",
+      "Consider adding analysis-sheet outcomes/supporting evidence for Glue Clots: BP+SM quantity 1 and Yoke quantity 3, if these sheets are part of the same validation report.",
+      "Reassess changeDomain after regrouping; process defect/function defect context may be more appropriate than material alone."
+    ],
+    "evidencePolicy": "Citations are row-level and mostly sufficient for existence, but final evidence is not sufficient until key cited function rows and grouping headers are visible and the changed-factor grouping is corrected."
+  },
+  "usage": {
+    "input_tokens": 4817,
+    "output_tokens": 984,
+    "total_tokens": 5801
+  }
+}

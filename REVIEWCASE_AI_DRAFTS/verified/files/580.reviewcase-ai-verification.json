@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 580,
+  "sourceFile": "36. Result check compare machine UV D3 & A2 2026.01.17_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\580.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:26Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 580,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The source contains a comparable UV machine D3 vs A2 validation, but the draft failed to extract any usable review case or evidence mapping.",
+    "issues": [
+      "No reviewCases were generated despite citeable comparison rows.",
+      "Changed factor should be UV machine A2 vs D3, not empty.",
+      "Peak and Total outcomes across Dry UV 1-4 were not structured.",
+      "Spec and pass/fail context were not mapped.",
+      "Second A2 check section may need separate outcome context."
+    ],
+    "requiredUserQuestions": [
+      "Should D3 be treated as baseline and A2 as the changed machine?"
+    ],
+    "correctionPlan": [
+      "Create one review case for UV machine D3 to A2 comparison.",
+      "Map Dry UV 1-4 process steps as subgroup/context.",
+      "Extract Peak and Total values for A2 and D3 with specs.",
+      "Include conveyor speed and A2 recheck rows as supporting context.",
+      "Add row citations for all changed condition and outcome claims."
+    ],
+    "evidencePolicy": "Rows are citeable, but the draft lacks sufficient evidence citations and structured claims."
+  },
+  "usage": {
+    "input_tokens": 2034,
+    "output_tokens": 765,
+    "total_tokens": 2799
+  }
+}

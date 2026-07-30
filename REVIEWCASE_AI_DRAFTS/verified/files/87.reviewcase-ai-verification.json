@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 87,
+  "sourceFile": "031.MSU - L20S15-07 REPORT TEST NEW FILM AEM  date 2025.03.07_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\87.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:44Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 87,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the film comparison but miscalculates function NG rates and reverses the likely outcome direction.",
+    "issues": [
+      "Function outcome uses input-minus-condition values as NG counts.",
+      "Normal baseline rate is not zero in row 29.",
+      "TEST 75A/80A/85A appear lower NG rate than NORMAL, not worse.",
+      "Measurement outcomes from header-like rows 22 and 24 are not valid judged evidence.",
+      "Evidence omits row 18 despite naming Normal 70A baseline context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Reparse function table headers and map Total NG/rate columns correctly.",
+      "Compare each TEST row to NORMAL row 29 using cited Total NG rates.",
+      "Change judgement if corrected rates show improvement versus NORMAL.",
+      "Remove or mark header-only measurement outcomes as unsupported.",
+      "Add row 18 or other baseline context rows if Normal 70A is part of the changed factor."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient because key values are misread and header rows are overused."
+  },
+  "usage": {
+    "input_tokens": 4468,
+    "output_tokens": 763,
+    "total_tokens": 5231
+  }
+}

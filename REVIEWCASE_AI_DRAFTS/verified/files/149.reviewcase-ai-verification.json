@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 149,
+  "sourceFile": "07. BRS-161016 Report  test material Suspension D surface treatment pinhole on suspension pad_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\149.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:07Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 149,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable normal versus test suspension evidence exists, but tension grouping and cited measurement rows need correction before final use.",
+    "issues": [
+      "Primary changed factor is test material with surface-treatment pinhole, not just generic Test Suspension.",
+      "Tension outcome incorrectly includes function rows 32-33 as measurement stats.",
+      "Tip B tension rows lost inherited Test/Normal condition labels.",
+      "Decision row 36 and function purpose row 17 are omitted from final evidence.",
+      "Tension result is unjudged despite normal comparison; acceptance basis needs clearer handling."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Restate changed factor as Suspension D surface-treatment pinhole test material versus normal line/frame.",
+      "Remove rows 32-33 from tension measurement comparison and stats.",
+      "Group tension as Test Tip A/B versus Normal Tip A/B with inherited labels from rows 25-28.",
+      "Keep spot welding and function NG outcomes under the same changed factor with current rate comparisons.",
+      "Add row 36 decision evidence and mark tension judgement as lower/not acceptance-judged unless spec criteria exist."
+    ],
+    "evidencePolicy": "Row citations support the comparison, but measurement citations must be cleaned and decision evidence added."
+  },
+  "usage": {
+    "input_tokens": 4239,
+    "output_tokens": 739,
+    "total_tokens": 4978
+  }
+}

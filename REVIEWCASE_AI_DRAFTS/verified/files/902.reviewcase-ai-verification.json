@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 902,
+  "sourceFile": "78. TIU L5S3-01 L Report Check iussue Frame -L can not pick up -  date 2026.03.16_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\902.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 902,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misidentifies the primary comparison and mixes diagnostic dimensions with repair/pickup outcomes.",
+    "issues": [
+      "G1/G2/G3 are treated as changed conditions but appear to be mold subgroups.",
+      "Before vs after repair/design improvement is likely the main changed factor.",
+      "Tray 1/Tray 2 should be preserved as subgroup context, not hidden.",
+      "Dimension checks are diagnostic OK evidence, not clearly part of the same comparison.",
+      "Some measurement candidates appear parsed from headers or row ranges, not valid metrics."
+    ],
+    "requiredUserQuestions": [
+      "Should the final case focus on before vs after frame-load-tray repair/design improvement?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor as frame load tray repair/design improvement if full rows confirm it.",
+      "Use mold G1/G2/G3 and tray as subgroup keys where applicable.",
+      "Separate pre-repair mold/tray pickup diagnosis from after-repair validation outcome.",
+      "Keep dimension frame and tray checks as supporting diagnostic outcomes with OK judgement.",
+      "Remove header-derived measurement stats unless source rows show valid measured values and specs."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until full data rows and headings are rechecked."
+  },
+  "usage": {
+    "input_tokens": 5071,
+    "output_tokens": 797,
+    "total_tokens": 5868
+  }
+}

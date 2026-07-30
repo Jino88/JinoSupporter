@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 668,
+  "sourceFile": "46. BRS-201506 Report checking dimension Frame and Ring Plate date 20.5.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\668.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 668,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook is a dimension inspection report without citeable baseline/test or changed-condition evidence.",
+    "issues": [
+      "No explicit changed factor or comparison condition is present.",
+      "Draft uses the filename as the changed factor.",
+      "Baseline and changed conditions are marked not explicit.",
+      "Outcomes appear duplicated across header/stat rows.",
+      "Measurement stats rely on rows not shown in context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Exclude from changed-factor ReviewCase evidence.",
+      "Do not approve for Ask AI as final comparative evidence.",
+      "If retained as reference, recast as measurement-only inspection data.",
+      "Cite actual sample/result rows supporting each statistic.",
+      "Remove invented baseline/test grouping and duplicate outcomes."
+    ],
+    "evidencePolicy": "Citations prove report context, not a changed-condition comparison; insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3415,
+    "output_tokens": 555,
+    "total_tokens": 3970
+  }
+}

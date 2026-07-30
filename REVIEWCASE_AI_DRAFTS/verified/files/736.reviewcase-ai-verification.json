@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 736,
+  "sourceFile": "54. BRS-201506 Report checking and test problem NG function high date 14.6.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\736.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 736,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because it overgroups unrelated workbook sections into one ambiguous changed factor.",
+    "issues": [
+      "Changed factor mixes many unrelated conditions and domains.",
+      "Baseline and test conditions are not traceable to one comparison.",
+      "Outcomes combine separate reports, process checks, function tests, and dimensions.",
+      "Several measurement stats are nonsensical or parsed from headers/counts.",
+      "Review title and purpose do not match the cited primary evidence."
+    ],
+    "requiredUserQuestions": [
+      "Which workbook section is the intended primary review case?",
+      "Should coil offset/JIG investigation be separate from frame size and VP tests?"
+    ],
+    "correctionPlan": [
+      "Identify one primary changed-condition context per report section.",
+      "Rebuild baseline and changed conditions from adjacent headers and row labels.",
+      "Split unrelated domains into separate review cases or exclude them.",
+      "Remove bogus measurement stats and header-derived metrics.",
+      "Cite header, data, and decision rows for each retained outcome."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient because grouping context and cited meanings are unreliable."
+  },
+  "usage": {
+    "input_tokens": 23464,
+    "output_tokens": 617,
+    "total_tokens": 24081
+  }
+}

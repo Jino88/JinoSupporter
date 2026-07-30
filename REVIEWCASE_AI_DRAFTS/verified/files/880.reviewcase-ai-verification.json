@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 880,
+  "sourceFile": "74.BRS-161014 Report test new tray vision VP sub1 2023.11.24_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\880.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:51Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 880,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable Normal vs Test tray-change validation is supported, but the draft needs factor/domain and citation cleanup.",
+    "issues": [
+      "Change domain incorrectly includes supplier.",
+      "Changed factor is too generic; it should name the new tray VP hand-transfer condition.",
+      "Key context rows for tray-change content, result header, and decision are omitted.",
+      "Purpose text includes section labels but misses the actual content row."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changeDomain to process condition or fixture/tray handling only.",
+      "Rename changedFactor to old tray VP flow vs new tray VP hand-transfer flow.",
+      "Keep baseline as Normal old tray flow and test as new tray transfer flow.",
+      "Add evidence rows 10.10!8, 10.10!25, 10.10!26, and 10.10!31.",
+      "Remove unnecessary generic section-label citations if concise evidence is preferred."
+    ],
+    "evidencePolicy": "Citations exist and support comparison, but key context/header rows should be added before final use."
+  },
+  "usage": {
+    "input_tokens": 3095,
+    "output_tokens": 515,
+    "total_tokens": 3610
+  }
+}

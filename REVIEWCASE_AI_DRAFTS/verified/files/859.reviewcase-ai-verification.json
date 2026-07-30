@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 859,
+  "sourceFile": "70. BRS-161016  Report checking aging  date 16.10.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\859.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:17Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 859,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not verified because it invents a baseline/test comparison and misgroups date/line monitoring data as a material change.",
+    "issues": [
+      "No explicit baseline versus changed condition is evidenced.",
+      "Change domain material is unsupported; report concerns process aging inspection.",
+      "Dates, lines, and totals are misused as changed factors instead of subgroup keys.",
+      "Merged-date rows appear incompletely inherited for C2-3B entries.",
+      "Sheet2 measurement outcomes lack clear linkage to the aging result context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Reframe as process aging check/monitoring only, or exclude if comparison evidence is required.",
+      "Use row 9 and result headers as context for applied aging check process.",
+      "Group results by date and line C2-3A/C2-3B with totals as summaries, not conditions.",
+      "Remove unsupported baseline/changed-condition language and material domain.",
+      "Validate Sheet2 context before retaining its measurement outcomes."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient for final evidence because key grouping and condition context is misinterpreted."
+  },
+  "usage": {
+    "input_tokens": 4680,
+    "output_tokens": 772,
+    "total_tokens": 5452
+  }
+}

@@ -13,6 +13,9 @@ public sealed class HierReports
     public NgRateReportService.NgRateReport? BySub2  { get; init; }   // LS → leaf-path key (this node's own LS only)
     public NgRateReportService.NgRateReport? ByLs    { get; init; }   // LS → LS (per-LineShift bucket)
     public List<ModelGroupRecord>            Groups { get; init; } = new();
+    public IReadOnlyDictionary<string, string> MidMapping { get; init; }
+        = new Dictionary<string, string>(StringComparer.Ordinal);
+    public IReadOnlyList<string> LineShifts { get; init; } = Array.Empty<string>();
 
     public bool HasData => ByGroup is not null && Groups.Count > 0;
 }
@@ -108,13 +111,33 @@ public sealed record HierSubRow(
 /// the recursive walker that emits Sub1/Sub2/… rows plus virtual LineShift leaves.</summary>
 public static class HierReportBuilder
 {
+    private sealed class PrefixedProgress(IProgress<string> inner, string label) : IProgress<string>
+    {
+        public void Report(string value)
+        {
+            if (string.Equals(value, "Report complete.", StringComparison.Ordinal))
+            {
+                inner.Report($"{label} complete.");
+                return;
+            }
+
+            inner.Report($"[{label}] {value}");
+        }
+    }
+
+    private static IProgress<string>? WithProgressLabel(IProgress<string>? progress, string label)
+        => progress is null ? null : new PrefixedProgress(progress, label);
+
     /// <summary>Generate all 5 hierarchy reports in one pass. Empty <paramref name="selectedGroups"/>
     /// or no LineShifts → returns an empty <see cref="HierReports"/> (HasData=false).</summary>
     public static async Task<HierReports> BuildAsync(
         NgRateReportService             svc,
         string                          dbPath,
         IReadOnlyList<ModelGroupRecord> selectedGroups,
-        IProgress<string>?              progress = null)
+        IProgress<string>?              progress = null,
+        DateTime?                       periodStart = null,
+        DateTime?                       periodEnd = null,
+        bool                            includeMidDetailReport = false)
     {
         if (selectedGroups.Count == 0)
             return new HierReports();
@@ -166,23 +189,68 @@ public static class HierReportBuilder
         if (mapping.Count == 0) return new HierReports();
 
         progress?.Report("─── Building Group/Mid/Sub hierarchy reports");
-        var byGroup = await svc.GenerateReportAsync(dbPath, mapping,    groupList, progress);
-        var byMid   = await svc.GenerateReportAsync(dbPath, midMapping, midList,   progress);
-        var bySub1  = subList.Count > 0
-            ? await svc.GenerateReportAsync(dbPath, subMapping, subList, progress)
+        static void AddMembership(Dictionary<string, List<string>> target, string lineShift, string groupName)
+        {
+            if (string.IsNullOrEmpty(lineShift) || string.IsNullOrEmpty(groupName)) return;
+            if (!target.TryGetValue(lineShift, out var groups))
+            {
+                groups = new List<string>();
+                target[lineShift] = groups;
+            }
+            if (!groups.Contains(groupName, StringComparer.Ordinal)) groups.Add(groupName);
+        }
+
+        var allMapping = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        foreach (var kv in mapping)        AddMembership(allMapping, kv.Key, kv.Value);
+        foreach (var kv in midMapping)     AddMembership(allMapping, kv.Key, kv.Value);
+        foreach (var kv in subMapping)     AddMembership(allMapping, kv.Key, kv.Value);
+        foreach (var kv in subLeafMapping) AddMembership(allMapping, kv.Key, kv.Value);
+        foreach (var kv in lsMapping)      AddMembership(allMapping, kv.Key, kv.Value);
+
+        var allGroupNames = groupList
+            .Concat(midList)
+            .Concat(subList)
+            .Concat(subLeafList)
+            .Concat(lsList)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        var allMappingReadOnly = allMapping.ToDictionary(
+            kv => kv.Key,
+            kv => (IReadOnlyList<string>)kv.Value,
+            StringComparer.Ordinal);
+
+        progress?.Report(includeMidDetailReport
+            ? "Starting hierarchy summary, Mid detail, and Sub Group detail reports in parallel."
+            : "Starting hierarchy summary report.");
+        var summaryProgress = WithProgressLabel(progress, "Hierarchy summary");
+        var midProgress = WithProgressLabel(progress, "Mid detail");
+        var sub1Progress = WithProgressLabel(progress, "Sub Group detail");
+        var summaryTask = svc.GenerateSummaryReportAsync(
+            dbPath, allMappingReadOnly, allGroupNames, summaryProgress, periodStart, periodEnd,
+            weightedGroupSummary: true);
+        var byMidTask = includeMidDetailReport
+            ? svc.GenerateReportAsync(dbPath, midMapping, midList, midProgress, periodStart, periodEnd)
             : null;
-        var bySub2  = subLeafList.Count > 0
-            ? await svc.GenerateReportAsync(dbPath, subLeafMapping, subLeafList, progress)
+        var bySub1Task = includeMidDetailReport && subList.Count > 0
+            ? svc.GenerateReportAsync(dbPath, subMapping, subList, sub1Progress, periodStart, periodEnd)
             : null;
-        var byLs    = lsList.Count > 0
-            ? await svc.GenerateReportAsync(dbPath, lsMapping, lsList, progress)
-            : null;
+
+        var summary = await summaryTask;
+        var byMid = byMidTask is not null ? await byMidTask : summary;
+        var bySub1 = bySub1Task is not null
+            ? await bySub1Task
+            : (subList.Count > 0 ? summary : null);
 
         return new HierReports
         {
-            ByGroup = byGroup, ByMid = byMid,
-            BySub1  = bySub1,  BySub2 = bySub2, ByLs = byLs,
+            ByGroup = summary,
+            ByMid   = byMid,
+            BySub1  = bySub1,
+            BySub2  = subLeafList.Count > 0 ? summary : null,
+            ByLs    = lsList.Count > 0 ? summary : null,
             Groups  = selectedGroups.ToList(),
+            MidMapping = new Dictionary<string, string>(midMapping, StringComparer.Ordinal),
+            LineShifts = lsList.ToList(),
         };
     }
 

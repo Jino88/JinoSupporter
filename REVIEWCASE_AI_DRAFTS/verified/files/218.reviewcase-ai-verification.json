@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 218,
+  "sourceFile": "10.BRS-2015 Report Test material silicone gasket date 13.9.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\218.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:30Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 218,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misgroups test conditions, baselines, and outcomes, so it is not safe as final evidence.",
+    "issues": [
+      "Changed factor mixes silicone gasket, new jig, and YS thickness variants without a clear primary comparison.",
+      "Baseline/test grouping ignores date-based row groups and compares nonmatching dates.",
+      "Key total and decision rows are omitted from outcome evidence.",
+      "Measurement outcomes are unsupported and appear derived from headers or hidden rows, not valid comparisons.",
+      "Evidence includes row IDs not shown in context and misses relevant later rows."
+    ],
+    "requiredUserQuestions": [
+      "Should the primary review be new jig plus silicone gasket versus normal/old jig, with YS thickness as subgroup?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor around the report purpose and decision conditions.",
+      "Group comparisons by date and condition rows, preserving same-sample and recheck context.",
+      "Include total test, total normal, and final decision rows in outcomes.",
+      "Remove unsupported measurement-stat outcomes unless raw measurement rows are available.",
+      "Recalculate function NG rates for each valid paired group and totals."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient and partly misapplied; final evidence needs corrected row-level grouping."
+  },
+  "usage": {
+    "input_tokens": 7298,
+    "output_tokens": 793,
+    "total_tokens": 8091
+  }
+}

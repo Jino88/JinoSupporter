@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 524,
+  "sourceFile": "30.1. MSU-L20S15-07 ( Đo cho ME 28.8.2025)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\524.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:31Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 524,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable condition headers but misidentifies the changed factor and does not reliably support the extracted statistics.",
+    "issues": [
+      "Changed factor is the filename instead of the condition comparison.",
+      "Baseline/test conditions are marked unclear despite headers showing NORMAL and two alternatives.",
+      "Outcome stats appear contaminated by header or standard values.",
+      "SPL and THD numeric evidence rows are not cited beyond headers.",
+      "Review title and purpose are unusable."
+    ],
+    "requiredUserQuestions": [
+      "Should NEW VEDER GES TRADING and MATERIAL CD FROM KR be treated as two test conditions against NORMAL?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to material/supplier condition comparison.",
+      "Use NORMAL as baseline and the two labeled alternatives as changed conditions if confirmed.",
+      "Keep SPL, THD, and IMP as separate outcome domains under one review case.",
+      "Recompute stats excluding headers, standards, and sample labels.",
+      "Cite representative numeric rows for each sheet and condition, not only header rows."
+    ],
+    "evidencePolicy": "Header citations prove condition labels, but numeric outcome citations are insufficient."
+  },
+  "usage": {
+    "input_tokens": 5119,
+    "output_tokens": 765,
+    "total_tokens": 5884
+  }
+}

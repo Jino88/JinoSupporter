@@ -1,0 +1,44 @@
+{
+  "sourceFileId": 11,
+  "sourceFile": "008.MSU-20S15-07 Test MC check Height dimension 1 2025.01.25_1778470549_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\11.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:44:46Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 11,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft is not verified because it invents the changed factor from the filename and does not cite row-level evidence for a baseline/test change condition.",
+    "issues": [
+      "Changed factor is taken from the filename rather than supported by workbook rows.",
+      "Baseline condition and changed/test condition are both explicitly not present in the draft.",
+      "EvidenceRows cite only Sheet1!25, which is a measurement result row, not evidence of the changed factor or test condition.",
+      "The workbook appears to contain sensor zero-setting data, NG height summary, and sample height measurements, but the draft groups only one measurement row and misses relevant rows such as Sheet1!3-Sheet1!6 and Sheet1!18-Sheet1!20.",
+      "SampleCount is likely incorrect: Sheet1!25 contains 10 displayed sample measurements plus min/max/average, not a sample count of 1.",
+      "ViolationCount is questionable because max 2.02 exceeds the stated spec upper limit of 2.0, although the row's summary fields and full 50-piece context need verification.",
+      "Review title is a table heading rather than a clear review case title.",
+      "The file may be a standalone measurement/check report rather than a comparable manufacturing review case."
+    ],
+    "requiredUserQuestions": [
+      "What is the actual baseline condition and test/change condition for this file?",
+      "Should this file be treated as a standalone height check report rather than a comparative review case?"
+    ],
+    "correctionPlan": [
+      "Do not use the filename as the changed factor unless the same condition is supported by citeable workbook rows.",
+      "Add row citations for the actual changed/test condition if present; otherwise mark the case excluded or keep it in needs_review.",
+      "Preserve all relevant row groups: sensor zero set rows, NG height summary rows, and sample height measurement rows.",
+      "Recalculate sample count and spec violations from the actual measurement values and cited rows.",
+      "Use a review title and changed factor that reflect supported source context, not extracted headings alone.",
+      "If no baseline/test changed condition can be identified, do not approve the case for Ask AI evidence."
+    ],
+    "evidencePolicy": "Current citations are insufficient because they support only one measurement row and do not cite any row-level changed-factor or baseline/test condition evidence."
+  },
+  "usage": {
+    "input_tokens": 2105,
+    "output_tokens": 979,
+    "total_tokens": 3084
+  }
+}

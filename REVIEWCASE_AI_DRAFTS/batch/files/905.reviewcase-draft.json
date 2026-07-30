@@ -1,0 +1,205 @@
+{
+  "sourceFileId": 905,
+  "sourceFile": "79. TIU C11-20  Report Test AWF JIG improve 2026.5.6_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\79. TIU C11-20  Report Test AWF JIG improve 2026.5.6_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 18,
+    "sheetCellCount": 70,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST NEW AWF JIG IMPROVE TIU-C11-20 | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | Date | 2026-05-06 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | Marker | Trung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Improve NG wire offset at solder pad"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| Use new AWF Jig test and compare with normal jig"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| 1. Result test"
+    },
+    {
+      "rowId": "Test!24",
+      "sheetName": "Test",
+      "rowNumber": 24,
+      "rowText": "| | Result check NG process"
+    },
+    {
+      "rowId": "Test!25",
+      "sheetName": "Test",
+      "rowNumber": 25,
+      "rowText": "| | No | Date | Type | | Input | OK | Vission coil | | Wire remove | | Spot welding | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Test!26",
+      "sheetName": "Test",
+      "rowNumber": 26,
+      "rowText": "| | | | | | | | Wire offset | Wire cutting | No cutting | no remove | Spot offset | Weak solder"
+    },
+    {
+      "rowId": "Test!27",
+      "sheetName": "Test",
+      "rowNumber": 27,
+      "rowText": "| | 1 | 2026-05-06 00:00:00 | New AWF Jig | | 40 | 14 | 17 | 0 | 7 | 0 | 2 | 0 | 26 | 0.65"
+    },
+    {
+      "rowId": "Test!29",
+      "sheetName": "Test",
+      "rowNumber": 29,
+      "rowText": "| | 2 | | Normal | | 40 | 15 | 19 | 0 | 5 | 0 | 1 | 0 | 25 | 0.625"
+    },
+    {
+      "rowId": "Test!32",
+      "sheetName": "Test",
+      "rowNumber": 32,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-905-rc-1",
+      "reviewTitle": "| REPORT TEST NEW AWF JIG IMPROVE TIU-C11-20 | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Improve NG wire offset at solder pad / | II. Content. / | Use new AWF Jig test and compare with normal jig / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment",
+            "jig"
+          ],
+          "changedFactor": "Condition comparison: Normal vs New AWF Jig",
+          "baselineCondition": "Normal",
+          "changedCondition": "New AWF Jig",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!10",
+            "Test!2",
+            "Test!27",
+            "Test!29",
+            "Test!5",
+            "Test!7",
+            "Test!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "Result check NG process",
+          "comparisonRows": [
+            "Test!27",
+            "Test!29"
+          ],
+          "judgement": "worse",
+          "subResults": [
+            {
+              "pairId": 4882,
+              "controlCondition": "Normal",
+              "testCondition": "New AWF Jig",
+              "control": {
+                "input": 40.0,
+                "ng": 25.0,
+                "ratePercent": 62.5
+              },
+              "test": {
+                "input": 40.0,
+                "ng": 26.0,
+                "ratePercent": 65.0
+              },
+              "deltaRatePercentPoint": 2.500000000000002,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Test!27",
+                "Test!29"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Test!10",
+        "Test!2",
+        "Test!27",
+        "Test!29",
+        "Test!5",
+        "Test!7",
+        "Test!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!10",
+      "Test!2",
+      "Test!27",
+      "Test!29",
+      "Test!5",
+      "Test!7",
+      "Test!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

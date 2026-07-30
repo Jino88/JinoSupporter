@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 199,
+  "sourceFile": "1.BRS-161016, 201506 Report test Suspension of new vendor CSY VINA date 23.07.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\199.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 199,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft improperly merges two separate vendor/material reports and has incomplete or questionable outcome evidence.",
+    "issues": [
+      "Two sheets are distinct reports with different models/vendors/materials.",
+      "Changed factor conflates CSY VINA test suspension with World Hanoi Vina new vender material.",
+      "201506 outcomes omit key cited context such as vision rows 27-28 and tension result.",
+      "201506 function calculation/judgement appears inconsistent with decision text.",
+      "Some evidence row IDs used are not shown in supplied context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split into separate review cases for 161016 and 201506.",
+      "Define each changed factor from that sheet title, purpose, and test rows only.",
+      "Rebuild 201506 outcomes including suspension array, frame+suspension vision, tension, and function as separate outcomes.",
+      "Recheck 201506 function totals/rates against table and decision rows before judging direction.",
+      "Cite title/purpose, headers, paired data rows, and decision rows for each case."
+    ],
+    "evidencePolicy": "Citations are not sufficient because row grouping is wrong and key source rows are missing or unclear."
+  },
+  "usage": {
+    "input_tokens": 5420,
+    "output_tokens": 720,
+    "total_tokens": 6140
+  }
+}

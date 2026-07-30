@@ -1,0 +1,42 @@
+{
+  "sourceFileId": 39,
+  "sourceFile": "018.MSU-20S15-07 Result test improve NG function 1_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\39.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:46:16Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 39,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft incorrectly merges many unrelated validation sheets and changed factors into one broad review case, so it cannot be used as final evidence.",
+    "issues": [
+      "Blocking: changedFactor is an over-broad aggregation of unrelated tests including bonding amount, coil supplier/origin, VP thickness, LED UC time, AWF dimension, jig repair, CMG/SMG height, yoke jig, and other process changes.",
+      "Blocking: baselineCondition and changedCondition are not coherent comparable conditions and mix normal/test labels from multiple independent sheets.",
+      "Blocking: many outcomes are assigned to the same changedFactorId even though they represent distinct primary changed factors.",
+      "Blocking: row-level grouping keys such as sheet/test title, date, machine, bonding amount, frame/yoke condition, jig condition, and dimension/spec are not preserved.",
+      "Blocking: some outcomes combine unrelated comparisons under one metric, for example LED UC timing with Frame+SP by-hand testing.",
+      "Blocking: outcome domains are unreliable; several function defect tables are labeled as measurement, and header-derived measurement statistics are not valid outcome evidence.",
+      "Blocking: several cited evidence rows are header rows or generic title rows rather than citeable changed-condition data rows.",
+      "Non-blocking: the workbook contains citeable changed-condition evidence, so the file should not be excluded."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split the draft into separate review cases or changed-factor groups by sheet/test title and primary changed factor.",
+      "For each group, define one clear baseline condition and one or more directly comparable changed conditions from the same table context.",
+      "Preserve date, machine, bonding amount, frame, yoke, jig, dimension/spec, and other secondary conditions as subgroup keys rather than merging them into the primary factor.",
+      "Remove unrelated sheets from each review case, especially comparisons that belong to LED UC time, coil Korea, VP thickness, AWF dimension, Sub 1 jig repair, CMG/SMG height, and bonding amount tests.",
+      "Use only citeable data rows for evidence and include the relevant title/header rows only as context if the final schema supports contextual citations.",
+      "Recalculate or restate judgements only after valid same-context comparisons are formed.",
+      "Remove invalid measurement statistics extracted from table headers or non-measurement function tables."
+    ],
+    "evidencePolicy": "Evidence row citations are not sufficient as drafted because they are mixed across unrelated contexts and include non-data/header rows; citations must be narrowed to comparable data rows within each changed-factor group."
+  },
+  "usage": {
+    "input_tokens": 23751,
+    "output_tokens": 926,
+    "total_tokens": 24677
+  }
+}

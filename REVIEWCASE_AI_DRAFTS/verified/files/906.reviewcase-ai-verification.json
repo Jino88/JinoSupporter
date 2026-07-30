@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 906,
+  "sourceFile": "79. TIU L5S3-01 R Data check UV dry AWF machine 2026.03.16_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\906.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 906,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the primary changed factor and grouping are not verified.",
+    "issues": [
+      "No explicit baseline or changed condition is evidenced.",
+      "AWF numbers and line areas appear to be subgroups, not proven change factors.",
+      "D3-3A line label is inconsistent with cited context.",
+      "Measurement outcomes include unclear formula/aggregate rows.",
+      "Rows beyond stated sheet count need source reconciliation."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended primary changed factor for this report?",
+      "Should D3-4A and D3-3A be separate review cases or subgroups?",
+      "Are AWF #1-#5 machines comparison groups or just samples?"
+    ],
+    "correctionPlan": [
+      "Rebuild changedFactor from purpose and decision rows only.",
+      "Treat date, line, area, and AWF number as subgroup keys unless proven otherwise.",
+      "Remove unclear measurement/formula outcomes unless source headers and units are verified.",
+      "Fix D3-3A line naming to match source context.",
+      "Recheck sheet row count versus cited rows 126 and 129."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient to support final changed-factor evidence."
+  },
+  "usage": {
+    "input_tokens": 6600,
+    "output_tokens": 787,
+    "total_tokens": 7387
+  }
+}

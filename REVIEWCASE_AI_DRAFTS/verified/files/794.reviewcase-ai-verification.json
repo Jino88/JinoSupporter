@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 794,
+  "sourceFile": "61.BRS-161014 Report test new dry machine 2023.11.03_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\794.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 794,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because it misstates the primary change and overgroups unrelated or misparsed outcomes.",
+    "issues": [
+      "Primary factor should be new dry machine vs normal dry, not mixed old/new method dates and numeric conditions.",
+      "Multiple sheets, products, dates, temperatures, times, and processes are collapsed without preserving subgroup context.",
+      "Several outcomes are misparsed from headers, notes, pictures, or defect rows as measurements.",
+      "Judgements of improvement are unsupported across inconsistent baselines and sample sizes.",
+      "Change domains include supplier/material/spec without clear cited evidence as primary factors."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changedFactor as new dry machine/process condition compared with normal dry.",
+      "Keep sheet/date/product/process/temperature/time as subgroup keys for each result block.",
+      "Separate dry defect rate, tension, Gauss, function, and visual/photo notes into valid outcome domains.",
+      "Remove non-data picture/header rows and malformed measurement statistics.",
+      "Recalculate judgements only within matched baseline/test rows and cite each source row."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are not sufficient because grouping and interpretation are incorrect."
+  },
+  "usage": {
+    "input_tokens": 20872,
+    "output_tokens": 740,
+    "total_tokens": 21612
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 698,
+  "sourceFile": "5. BRS-161016(DT) Sunmary Report TEST new JIG improve after repair use new dry machine 2024.04.22_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\698.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 698,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites real rows but misidentifies the changed factor and mixes trial rows, totals, and extracted statistics into unreliable evidence.",
+    "issues": [
+      "Changed factor is nonsensical numeric grouping rather than new/old JIG, dry machine, or dry-method change.",
+      "Baseline and test conditions are ambiguous despite old JIG and new JIG evidence rows.",
+      "Outcome grouping mixes summary totals, daily trials, duplicate totals, and invalid measurement statistics.",
+      "Some computed NG/OK totals appear inconsistent with row table meaning.",
+      "Final decision row says new JIG cannot be used but is not integrated into judgement."
+    ],
+    "requiredUserQuestions": [
+      "Should the primary comparison be new JIG vs old JIG, new dry machine usability, or dry-method change?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor from title, purpose, content, material labels, and decision rows.",
+      "Separate baseline old JIG, new JIG after repair, and dry-method-change contexts if needed.",
+      "Use OK, NG S/P separate, NG glue not dry, total NG, and NG rate as yield outcomes only.",
+      "Remove synthetic measurement-stat outcomes for temperature and time.",
+      "Cite summary decision and representative detail rows for each condition group."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are not sufficient until grouping and outcome interpretation are corrected."
+  },
+  "usage": {
+    "input_tokens": 11312,
+    "output_tokens": 643,
+    "total_tokens": 11955
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 241,
+  "sourceFile": "12. BRS-161014  GMI Report test VP mold #8 old lot NG high already return_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\241.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:16Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 241,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The file has usable VP#8 old-lot NG evidence, but the draft grouping and outcomes are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor mixes mold, lot, line, and normal references without preserving C2/E2 and lot groups.",
+      "Key conclusion rows 50-54 are not cited in the review case evidence.",
+      "Baseline/test pairing appears arbitrary, mainly comparing Normal VP #12 to VP #8 rows.",
+      "Draft omits VP#8 lot 240809017 and under-represents lot-level can/cannot decisions.",
+      "Measurement outcomes are misparsed numeric stats from headers, lot IDs, and picture context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factor as VP#8 old lots versus normal VP reference, with C2/E2 and lot as subgroup keys.",
+      "Cite rows 50-54 as conclusion evidence and include related data rows for each lot/line.",
+      "Separate process bending/laser NG and function NG as outcomes under the same validation report.",
+      "Remove bogus measurement-stat outcomes from headers, lot IDs, and picture rows.",
+      "Create subresults by lot and line: 240809017, 240814027, 240816006, 240821007."
+    ],
+    "evidencePolicy": "Row citations exist, but they are semantically insufficient until conclusion and subgroup rows are cited."
+  },
+  "usage": {
+    "input_tokens": 5936,
+    "output_tokens": 829,
+    "total_tokens": 6765
+  }
+}

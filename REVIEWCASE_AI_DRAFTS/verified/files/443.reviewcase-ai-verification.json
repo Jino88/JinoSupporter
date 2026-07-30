@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 443,
+  "sourceFile": "24.BRS-161014 Report checking Solder Tip from KR test process solder date 19.12.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\443.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:53Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 443,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparison evidence but misidentifies the changed factor and omits the Test result from outcomes.",
+    "issues": [
+      "Changed condition is explicit as Test/KR solder tip, not unknown.",
+      "Outcome includes only Normal row and misses Test row.",
+      "Test row metric parsing is unclear and needs corrected grouping.",
+      "Decision content is not cited beyond the section header."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal Tip vs KR/Test solder tip.",
+      "Use Normal as baseline and Test as changed condition.",
+      "Add Test row 19 result under the same solder vision outcome.",
+      "Verify column alignment for Test and Normal defect counts, total NG, and NG rate.",
+      "Cite any available decision rows if present, or mark decision unavailable."
+    ],
+    "evidencePolicy": "Rows cited are sufficient for purpose and comparison, but outcome citations must include both data rows and parsed values need review."
+  },
+  "usage": {
+    "input_tokens": 2367,
+    "output_tokens": 737,
+    "total_tokens": 3104
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 778,
+  "sourceFile": "6. MSU-L20S15-07DT Report test Check exactly reason process have trouble  ( Test in C2,E2)  date  8.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\778.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:44Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 778,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The draft has citeable result evidence but the changed-factor and condition grouping are ambiguous.",
+    "issues": [
+      "Baseline condition is not supported by cited rows.",
+      "Changed condition mixes type, clean, test, content, and defect category fields.",
+      "Likely two sample/process scenarios are collapsed into one unclear factor.",
+      "Outcome metric is mislabeled instead of using Input, OK, NG, and NG rate.",
+      "Row 28 is cited but not shown in supplied context."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended primary comparison: sample OK vs NG separate, C2 vs E2 movement, or another process step?",
+      "Should rows 26 and 28 be treated as comparable test conditions or separate confirmations?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor from the table headers and rows 26 and 28.",
+      "Set explicit baseline and test conditions only if supported by row evidence.",
+      "Keep type, clean, test, content, and defect status as subgroup keys unless one is the proven factor.",
+      "Rename outcome to NG result metrics with Input, OK, Total NG, and NG rate.",
+      "Include all cited result rows, especially row 28, in evidence context."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient for final evidence until grouping is corrected."
+  },
+  "usage": {
+    "input_tokens": 2487,
+    "output_tokens": 808,
+    "total_tokens": 3295
+  }
+}

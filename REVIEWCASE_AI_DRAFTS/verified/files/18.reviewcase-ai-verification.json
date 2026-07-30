@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 18,
+  "sourceFile": "01. L20S15-07DT Report test  Material CD from new Supplier GES Tranding    2025.4 (1)_1778470627_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\18.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:05Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 18,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable supplier/material change is supported, but several extracted outcomes are misgrouped or not citeable as final evidence.",
+    "issues": [
+      "Unsupported change domains beyond supplier/material.",
+      "Separate VP/CD omits available Normal comparison row.",
+      "FO outcomes are misparsed and use row numbers as data.",
+      "NTI detected-table stats cite headers only, not numeric rows.",
+      "Review title relies on Decap sheet instead of main report."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to New Supplier GES Trading CD material vs Normal/Ralon supplier.",
+      "Remove unsupported process/dimension change domains unless cited.",
+      "Add Report!28 to Separate VP/CD comparison and judge with caution.",
+      "Replace FO fragments with one FO avg comparison using FO rows 5-15.",
+      "Drop or recite NTI SPL/THD/IMP stats using numeric data rows."
+    ],
+    "evidencePolicy": "Main report citations are sufficient; header-only and misparsed FO citations are not sufficient."
+  },
+  "usage": {
+    "input_tokens": 9971,
+    "output_tokens": 572,
+    "total_tokens": 10543
+  }
+}

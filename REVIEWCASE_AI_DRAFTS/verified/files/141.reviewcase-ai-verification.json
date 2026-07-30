@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 141,
+  "sourceFile": "06. TIU-C11-20 AWF DOE TEST_25.12.06_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\141.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 141,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies citeable DOE context but misstates the changed factor and has unsupported outcome/stat grouping.",
+    "issues": [
+      "Changed factor is filename, not DOE factors Temperature, Tension, and RPM.",
+      "Baseline/test conditions are not explicit; this is a DOE factor-level matrix.",
+      "Outcome grouping duplicates matrix headers and mixes interaction blocks.",
+      "Numeric measurement stats are not supported by the cited rows shown.",
+      "OK/? condition meanings are not defined."
+    ],
+    "requiredUserQuestions": [
+      "Does '?' mean untested, NG, or unknown?",
+      "Are there hidden/source rows supporting the numeric inner-dimension stats?"
+    ],
+    "correctionPlan": [
+      "Replace changedFactor with AWF DOE factors Temperature, Tension, and RPM.",
+      "Represent three interaction blocks: Temp×Tension, RPM×Tension, Temp×RPM.",
+      "Use factor levels as conditions rather than baseline/test labels.",
+      "Cite rows 3 and 5-12 for DOE setup and OK/? matrix evidence.",
+      "Remove or recite numeric stats unless their source rows are available."
+    ],
+    "evidencePolicy": "Citations support DOE factors and matrix results, but not the extracted numeric statistics."
+  },
+  "usage": {
+    "input_tokens": 2775,
+    "output_tokens": 525,
+    "total_tokens": 3300
+  }
+}

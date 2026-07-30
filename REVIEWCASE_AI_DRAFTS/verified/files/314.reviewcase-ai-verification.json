@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 314,
+  "sourceFile": "16. L20S15-07 Report test CD lot date 17.3 ( KR separate type CD trouble) lot 27,28,29,30 date 29.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\314.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:16Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 314,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but misidentifies the changed-factor grouping and omits key lot/material results.",
+    "issues": [
+      "Changed factor falsely frames a baseline vs Bag/Lot28/Lot29 comparison.",
+      "Lot 27 and Lot 30 are excluded from the main result grouping despite source coverage.",
+      "Material sheet/bag should be grouped consistently by lot, not used as an incomplete changed condition.",
+      "Report header row was converted into invalid aggregate measurement statistics.",
+      "Tension spec 1.2kgf and pass notes are not preserved in outcome details."
+    ],
+    "requiredUserQuestions": [
+      "Should the primary comparison be by CD lot, by material sheet/bag, or both nested by lot?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor as Lot 27-30 CD lot/date investigation under normal plasma condition.",
+      "Preserve lot and material type as row-level grouping keys for all outcomes.",
+      "Include all Report result rows for Lot 27-30 sheet and bag.",
+      "Remove invalid aggregates derived from header rows.",
+      "Capture tension spec 1.2kgf and pass status for each tension row."
+    ],
+    "evidencePolicy": "Row citations exist, but they are incomplete and misgrouped for final evidence."
+  },
+  "usage": {
+    "input_tokens": 5602,
+    "output_tokens": 745,
+    "total_tokens": 6347
+  }
+}

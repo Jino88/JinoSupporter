@@ -1,0 +1,207 @@
+{
+  "sourceFileId": 288,
+  "sourceFile": "14. TIU L5S3-01 R Result test New spot tip - date 2025.12.01_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\14. TIU L5S3-01 R Result test New spot tip - date 2025.12.01_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 17,
+    "sheetCellCount": 63,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 1,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 L RESULT TEST NEW SPOT TIP | | | | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | Date | 2025-12-01 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | | Maker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Test New Spot Tip can use or not"
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| - Test 3 type Spot tip:"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| | + Check NG rate"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| III. Result."
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| 1. Result test"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | Picture sample"
+    },
+    {
+      "rowId": "Test!15",
+      "sheetName": "Test",
+      "rowNumber": 15,
+      "rowText": "| | Date | Line | Tip test | Input | OK | NG | | | | | Total NG | NG rate | Picture"
+    },
+    {
+      "rowId": "Test!17",
+      "sheetName": "Test",
+      "rowNumber": 17,
+      "rowText": "| | 2025-12-01 00:00:00 | D3-03 L5S3-L | Test 1 | 16 | 15 | 0 | 1 | 0 | 0 | 0 | 1 | 0.0625"
+    },
+    {
+      "rowId": "Test!22",
+      "sheetName": "Test",
+      "rowNumber": 22,
+      "rowText": "| | | | Test 2 | 8 | 5 | 1 | 2 | 0 | 0 | 0 | 3 | 0.375"
+    },
+    {
+      "rowId": "Test!27",
+      "sheetName": "Test",
+      "rowNumber": 27,
+      "rowText": "| | | | Test 3 | 8 | 3 | 1 | 3 | 0 | 1 | 0 | 5 | 0.625"
+    },
+    {
+      "rowId": "Test!33",
+      "sheetName": "Test",
+      "rowNumber": 33,
+      "rowText": "| III. Decision."
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-288-rc-1",
+      "reviewTitle": "| TIU L5S3-01 L RESULT TEST NEW SPOT TIP | | | | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Test New Spot Tip can use or not / | II. Content. / | - Test 3 type Spot tip: / | | + Check NG rate",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Test 1",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Test 1",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!13",
+            "Test!15",
+            "Test!17",
+            "Test!2",
+            "Test!22",
+            "Test!5",
+            "Test!6",
+            "Test!8",
+            "Test!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "Picture sample",
+          "comparisonRows": [
+            "Test!17"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 19261,
+              "condition": "Test 1",
+              "input": 16.0,
+              "ok": 15.0,
+              "ng": 0.0,
+              "ratePercent": 6.25,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!13",
+        "Test!15",
+        "Test!17",
+        "Test!2",
+        "Test!22",
+        "Test!5",
+        "Test!6",
+        "Test!8",
+        "Test!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!13",
+      "Test!15",
+      "Test!17",
+      "Test!2",
+      "Test!22",
+      "Test!5",
+      "Test!6",
+      "Test!8",
+      "Test!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

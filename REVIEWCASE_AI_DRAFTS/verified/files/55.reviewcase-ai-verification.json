@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 55,
+  "sourceFile": "020.MSU-20S15-07 Result check AI gap Coil_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\55.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:46Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 55,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid changed-condition rows but misgroups outcomes and invents or misreads several metrics.",
+    "issues": [
+      "No explicit baseline condition is cited.",
+      "Function defect results omit actual Total NG and NG Rate values.",
+      "Measurement outcome is derived from headers and mixed count/ratio rows, not valid stats.",
+      "Sheet1 before/after/hearing-voltage context is not integrated or excluded with reason.",
+      "Changed factor may be three process trials, not one baseline-vs-test comparison."
+    ],
+    "requiredUserQuestions": [
+      "Is there a normal or baseline lot outside the cited rows?",
+      "Should the three VP+CD process settings be compared against each other or only reported as trials?",
+      "Are Sheet1 before/after voltage measurements part of this review case?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed-factor grouping from Function rows 3-10.",
+      "Set baseline as unknown unless a normal condition is found.",
+      "Extract Hearing +1V and +0V Noise, Touch, Total NG, and NG Rate per trial.",
+      "Remove invalid measurement stats based only on headers.",
+      "Review Sheet1 numeric rows before deciding inclusion."
+    ],
+    "evidencePolicy": "Citations are sufficient for changed conditions but insufficient for current derived outcomes."
+  },
+  "usage": {
+    "input_tokens": 3730,
+    "output_tokens": 648,
+    "total_tokens": 4378
+  }
+}

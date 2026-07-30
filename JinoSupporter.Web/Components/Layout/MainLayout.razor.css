@@ -41,6 +41,62 @@ main {
     }
 }
 
+/* ── Browser-style tab strip ───────────────────────────────────────────── */
+.app-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    gap: 2px;
+    padding: 6px 10px 0;
+    background: #e2e8f0;
+    border-bottom: 1px solid #cbd5e1;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+.app-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 220px;
+    padding: 6px 8px 6px 12px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    font-size: 12.5px;
+    color: #475569;
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.app-tab:hover { background: #f8fafc; color: #0f172a; }
+
+.app-tab.active {
+    background: #fff;
+    color: #0f172a;
+    font-weight: 600;
+    box-shadow: inset 0 -2px 0 #3b82f6;
+}
+
+.app-tab-title { overflow: hidden; text-overflow: ellipsis; }
+
+.app-tab-close {
+    border: 0;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 15px;
+    line-height: 1;
+    padding: 0 3px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.app-tab-close:hover { background: #e2e8f0; color: #ef4444; }
+.app-tab.active .app-tab-close:hover { background: #f1f5f9; }
+
 /* ── Connected users panel ─────────────────────────────────────────────── */
 .connected-panel {
     margin-top: auto;

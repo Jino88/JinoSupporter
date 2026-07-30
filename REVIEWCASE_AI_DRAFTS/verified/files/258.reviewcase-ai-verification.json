@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 258,
+  "sourceFile": "13-1. TIU C11-20  Report test VP find reason NG function high 2026.1.12_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\258.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:33Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 258,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable condition headers but the changed factor and outcome grouping are not verified.",
+    "issues": [
+      "Changed factor is taken from filename, not evidence.",
+      "Baseline and test conditions are marked not explicit despite header evidence.",
+      "Condition grouping across Normal, 200, and 210/V3 is ambiguous.",
+      "Outcomes collapse SPL, IMP, and THD into generic measurement.",
+      "Numeric statistics cite only header rows, not value rows."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison Normal 180℃ versus V3.3 200℃ versus V3 210℃?",
+      "Should SPL, IMP, and THD remain one validation case with separate outcomes?"
+    ],
+    "correctionPlan": [
+      "Set changed factor from sheet headers, not filename.",
+      "Define baseline as Normal/Thường and changed levels as 200 and 210/V3 where supported.",
+      "Preserve replicate numbers as subgroup keys.",
+      "Split outcomes into SPL, impedance, and THD metrics.",
+      "Add value-row citations for computed statistics."
+    ],
+    "evidencePolicy": "Header citations prove condition labels but are insufficient for final numeric evidence without value-row citations."
+  },
+  "usage": {
+    "input_tokens": 6150,
+    "output_tokens": 438,
+    "total_tokens": 6588
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 591,
+  "sourceFile": "37.MSU-20S15-07 Result checking final SPK lot 50k NG separate VP+CD_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\591.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 591,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the report topic and result rows, but the changed-factor framing is incorrect and cannot be final evidence.",
+    "issues": [
+      "Baseline/test comparison is invented; report is a recheck/validation of a VP+CD separate NG lot.",
+      "Date and 2nd/3rd rounds are misclassified as changed conditions.",
+      "Subgroup keys mix line, model, and round without preserving them clearly.",
+      "Function results and VP+CD separate NG-sample results are merged under one vague metric header.",
+      "Decision row is identified but not cited in outcomes."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to the rechecked final SPK lot 50K NG separate VP+CD condition.",
+      "Remove explicit baseline/test comparison unless source rows prove one.",
+      "Treat 1st/2nd/3rd as test-round subgroup keys, not changed conditions.",
+      "Separate function-check outcomes from VP+CD separate NG-sample outcomes.",
+      "Add the decision row citation and use it only if its text is available."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until corrected."
+  },
+  "usage": {
+    "input_tokens": 3119,
+    "output_tokens": 778,
+    "total_tokens": 3897
+  }
+}

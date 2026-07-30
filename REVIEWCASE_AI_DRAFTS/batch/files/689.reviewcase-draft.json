@@ -1,0 +1,623 @@
+{
+  "sourceFileId": 689,
+  "sourceFile": "49. TIU C11-20 Report  find reason function high 2026.01.28_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\49. TIU C11-20 Report  find reason function high 2026.01.28_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 44,
+    "sheetCellCount": 283,
+    "comparisonPairCount": 6,
+    "metricCandidateCount": 12,
+    "measurementStatCount": 12
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST FIND REASON NG FUNCTION HIGH TIU-C11-20 | | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Date | 2026-01-28 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Find reason Ng function high"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| Type 1 : Test take sample after ass'y Fr/VP line L=> Move line R dry UV2 + Drying IR => Move line make check function"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| Type 2 : Test take sample after ass'y Fr/VP line R => Move line L dry UV2 + Drying IR => Move line make check function"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| Type 3: Change bonding amount VP/Coil > 1.7mg make sample check function"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| 'Compare with normal lot"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| 1.Test take sample after ass'y Fr/VP line L=> Move line R dry UV2 + Drying IR => Move line make check function"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | 1. RESULT CHECKING FUNC TION"
+    },
+    {
+      "rowId": "Test!15",
+      "sheetName": "Test",
+      "rowNumber": 15,
+      "rowText": "| | No | Date | Line | Type | | Input | OK | NG AUDIOBUS | | | | NG HEARING | | Total NG | NG rate | Note"
+    },
+    {
+      "rowId": "Test!17",
+      "sheetName": "Test",
+      "rowNumber": 17,
+      "rowText": "| | 1 | 1/28/2026 Day shift | TIU C11-20 R | Sample line R => Move line L Dry UV2 + Drying IR=>Move line R make final | | 203 | 198 | 0 | 0 | 18 | 0 | 5 | 0 | 5 | 0.02463054"
+    },
+    {
+      "rowId": "Test!19",
+      "sheetName": "Test",
+      "rowNumber": 19,
+      "rowText": "| | 2 | | | Normal | | 240 | 212 | 0 | 2 | 48 | 0 | 26 | 0 | 28 | 0.11666667"
+    },
+    {
+      "rowId": "Test!21",
+      "sheetName": "Test",
+      "rowNumber": 21,
+      "rowText": "| | 3 | | TIU C11-20 L | Sample line L => Move line R Dry UV2 + Drying IR =>Move line L make final | | 144 | 136 | 0 | 1 | 7 | 0 | 7 | 0 | 8 | 0.05555556"
+    },
+    {
+      "rowId": "Test!23",
+      "sheetName": "Test",
+      "rowNumber": 23,
+      "rowText": "| | 4 | | | Normal | | 150 | 140 | 0 | 0 | 10 | 0 | 10 | 0 | 10 | 0.06666667"
+    },
+    {
+      "rowId": "Test!25",
+      "sheetName": "Test",
+      "rowNumber": 25,
+      "rowText": "| | 1 | 1/28/2026 Night shift | TIU C11-20 R | Sample line R => Move line L Dry UV2 + Drying IR=>Move line R make final | | 329 | 314 | 8 | 0 | 10 | 0 | 6 | 1 | 15 | 0.04559271 | SPL high start"
+    },
+    {
+      "rowId": "Test!27",
+      "sheetName": "Test",
+      "rowNumber": 27,
+      "rowText": "| | 2 | | | Normal | | 300 | 289 | 6 | 0 | 10 | 0 | 5 | 0 | 11 | 0.03666667"
+    },
+    {
+      "rowId": "Test!29",
+      "sheetName": "Test",
+      "rowNumber": 29,
+      "rowText": "| | 3 | | TIU C11-20 L | Sample line L => Move line R Dry UV2 + Drying IR =>Move line L make final | | 300 | 289 | 0 | 1 | 11 | 0 | 10 | 0 | 11 | 0.03666667"
+    },
+    {
+      "rowId": "Test!31",
+      "sheetName": "Test",
+      "rowNumber": 31,
+      "rowText": "| | 4 | | | Normal | | 300 | 291 | 1 | 0 | 8 | 0 | 8 | 0 | 9 | 0.03"
+    },
+    {
+      "rowId": "Test!34",
+      "sheetName": "Test",
+      "rowNumber": 34,
+      "rowText": "| 2. Result test change bonding amount VP/Coil > 1.7mg make sample check function"
+    },
+    {
+      "rowId": "Test!35",
+      "sheetName": "Test",
+      "rowNumber": 35,
+      "rowText": "| | 1. RESULT CHECKING FUNC TION"
+    },
+    {
+      "rowId": "Test!36",
+      "sheetName": "Test",
+      "rowNumber": 36,
+      "rowText": "| | No | Date | Line | Type | | Input | OK | NG AUDIOBUS | | | | NG HEARING | | Total NG | NG rate | Note"
+    },
+    {
+      "rowId": "Test!38",
+      "sheetName": "Test",
+      "rowNumber": 38,
+      "rowText": "| | 1 | 2026-01-28 00:00:00 | TIU C11-20 R | Test bonding amount VP/Coil >1.7mg | | 1590 | 1436 | 8 | 4 | 201 | 0 | 142 | 0 | 154 | 0.09685535 | SPL 10khz : 7/8pcs SPL 20khz : 1/8pcs"
+    },
+    {
+      "rowId": "Test!40",
+      "sheetName": "Test",
+      "rowNumber": 40,
+      "rowText": "| | 2 | | | Normal ( 1.2-1.6mg ) | | 1650 | 1466 | 10 | 9 | 234 | 0 | 165 | 0 | 184 | 0.11151515"
+    },
+    {
+      "rowId": "Test!42",
+      "sheetName": "Test",
+      "rowNumber": 42,
+      "rowText": "| | 3 | | TIU C11-20 L | Test bonding amount VP/Coil >1.7mg | | 2720 | 2548 | 17 | 5 | 167 | 0 | 150 | 0 | 172 | 0.06323529 | SPL 10khz : 11/17pcs SPL 20hz : 6/17pcs"
+    },
+    {
+      "rowId": "Test!44",
+      "sheetName": "Test",
+      "rowNumber": 44,
+      "rowText": "| | 4 | | | Normal ( 1.2-1.6mg ) | | 1830 | 1733 | 10 | 2 | 88 | 0 | 85 | 0 | 97 | 0.05300546"
+    },
+    {
+      "rowId": "Test!47",
+      "sheetName": "Test",
+      "rowNumber": 47,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-689-rc-1",
+      "reviewTitle": "| REPORT TEST FIND REASON NG FUNCTION HIGH TIU-C11-20 | | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Find reason Ng function high / | II. Content. / | Type 1 : Test take sample after ass'y Fr/VP line L=> Move line R dry UV2 + Drying IR => Move line make check function / | Type 2 : Test take sample after ass'y Fr/VP line R => Move line L dry UV2 + Drying IR => Move line make check function",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal, Normal ( 1.2-1.6mg ) vs TIU C11-20 L, 1/28/2026 Day shift, 1/28/2026 Night shift, TIU C11-20 R",
+          "baselineCondition": "Normal, Normal ( 1.2-1.6mg )",
+          "changedCondition": "TIU C11-20 L, 1/28/2026 Day shift, 1/28/2026 Night shift, TIU C11-20 R",
+          "subgroupKeys": [
+            "TIU C11-20 R",
+            "Sample line R => Move line L Dry UV2 + Drying IR=>Move line R make final",
+            "Sample line L => Move line R Dry UV2 + Drying IR =>Move line L make final",
+            "Test bonding amount VP/Coil >1.7mg"
+          ],
+          "evidenceRows": [
+            "Test!11",
+            "Test!13",
+            "Test!16",
+            "Test!17",
+            "Test!19",
+            "Test!2",
+            "Test!21",
+            "Test!23",
+            "Test!25",
+            "Test!27",
+            "Test!29",
+            "Test!31",
+            "Test!37",
+            "Test!38",
+            "Test!40",
+            "Test!42",
+            "Test!44",
+            "Test!5",
+            "Test!7",
+            "Test!8",
+            "Test!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "1. RESULT CHECKING FUNC TION",
+          "comparisonRows": [
+            "Test!17",
+            "Test!19",
+            "Test!21",
+            "Test!25",
+            "Test!29",
+            "Test!38",
+            "Test!42"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 4553,
+              "controlCondition": "Normal",
+              "testCondition": "1/28/2026 Day shift | TIU C11-20 R | Sample line R => Move line L Dry UV2 + Drying IR=>Move line R make final",
+              "control": {
+                "input": 240.0,
+                "ng": 28.0,
+                "ratePercent": 11.666667
+              },
+              "test": {
+                "input": 203.0,
+                "ng": 5.0,
+                "ratePercent": 2.463054
+              },
+              "deltaRatePercentPoint": -9.203612999999999,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Test!17",
+                "Test!19"
+              ]
+            },
+            {
+              "pairId": 4554,
+              "controlCondition": "Normal",
+              "testCondition": "TIU C11-20 L | Sample line L => Move line R Dry UV2 + Drying IR =>Move line L make final",
+              "control": {
+                "input": 240.0,
+                "ng": 28.0,
+                "ratePercent": 11.666667
+              },
+              "test": {
+                "input": 144.0,
+                "ng": 8.0,
+                "ratePercent": 5.555555999999999
+              },
+              "deltaRatePercentPoint": -6.111111,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Test!19",
+                "Test!21"
+              ]
+            },
+            {
+              "pairId": 4555,
+              "controlCondition": "Normal",
+              "testCondition": "1/28/2026 Night shift | TIU C11-20 R | Sample line R => Move line L Dry UV2 + Drying IR=>Move line R make final",
+              "control": {
+                "input": 240.0,
+                "ng": 28.0,
+                "ratePercent": 11.666667
+              },
+              "test": {
+                "input": 329.0,
+                "ng": 15.0,
+                "ratePercent": 4.559271
+              },
+              "deltaRatePercentPoint": -7.107396,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Test!19",
+                "Test!25"
+              ]
+            },
+            {
+              "pairId": 4556,
+              "controlCondition": "Normal",
+              "testCondition": "TIU C11-20 L | Sample line L => Move line R Dry UV2 + Drying IR =>Move line L make final",
+              "control": {
+                "input": 240.0,
+                "ng": 28.0,
+                "ratePercent": 11.666667
+              },
+              "test": {
+                "input": 300.0,
+                "ng": 11.0,
+                "ratePercent": 3.666667
+              },
+              "deltaRatePercentPoint": -8.0,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Test!19",
+                "Test!29"
+              ]
+            },
+            {
+              "pairId": 4557,
+              "controlCondition": "Normal",
+              "testCondition": "TIU C11-20 R | Test bonding amount VP/Coil >1.7mg",
+              "control": {
+                "input": 240.0,
+                "ng": 28.0,
+                "ratePercent": 11.666667
+              },
+              "test": {
+                "input": 1590.0,
+                "ng": 154.0,
+                "ratePercent": 9.685535000000002
+              },
+              "deltaRatePercentPoint": -1.9811319999999992,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Test!19",
+                "Test!38"
+              ]
+            },
+            {
+              "pairId": 4558,
+              "controlCondition": "Normal",
+              "testCondition": "TIU C11-20 L | Test bonding amount VP/Coil >1.7mg",
+              "control": {
+                "input": 240.0,
+                "ng": 28.0,
+                "ratePercent": 11.666667
+              },
+              "test": {
+                "input": 2720.0,
+                "ng": 172.0,
+                "ratePercent": 6.323529
+              },
+              "deltaRatePercentPoint": -5.343138,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Test!19",
+                "Test!42"
+              ]
+            }
+          ],
+          "limitations": []
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "No | Date | Line | Type | Input | OK | NG AUDIOBUS | NG HEARING | Total NG | NG rate | Note",
+          "comparisonRows": [
+            "Test!16",
+            "Test!37"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 59794,
+              "condition": "NG AUDIOBUS / SPL",
+              "spec": "> 1.7mg",
+              "min": 0.0,
+              "max": 8.0,
+              "avg": 0.9404780899999999,
+              "sampleCount": 16,
+              "violationCount": 14,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 59795,
+              "condition": "NG AUDIOBUS / SPL+RB",
+              "spec": "> 1.7mg",
+              "min": 0.0,
+              "max": 2.0,
+              "avg": 0.25116319375,
+              "sampleCount": 16,
+              "violationCount": 15,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 59796,
+              "condition": "NG AUDIOBUS / RB",
+              "spec": "> 1.7mg",
+              "min": 0.02666667,
+              "max": 48.0,
+              "avg": 7.65818809625,
+              "sampleCount": 16,
+              "violationCount": 8,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 59797,
+              "condition": "NG AUDIOBUS / No sound",
+              "spec": "> 1.7mg",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 16,
+              "violationCount": 16,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 59798,
+              "condition": "NG HEARING / Noise",
+              "spec": "> 1.7mg",
+              "min": 0.01666667,
+              "max": 26.0,
+              "avg": 4.8339465875,
+              "sampleCount": 16,
+              "violationCount": 8,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 59799,
+              "condition": "NG HEARING / Touch",
+              "spec": "> 1.7mg",
+              "min": 0.0,
+              "max": 1.0,
+              "avg": 0.062689969375,
+              "sampleCount": 16,
+              "violationCount": 16,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "statId": 59800,
+              "condition": "NG AUDIOBUS / SPL",
+              "spec": "> 1.7mg",
+              "min": 0.00503145,
+              "max": 17.0,
+              "avg": 5.6278508175,
+              "sampleCount": 8,
+              "violationCount": 4,
+              "evidenceRows": [
+                "Test!37"
+              ]
+            },
+            {
+              "statId": 59801,
+              "condition": "NG AUDIOBUS / SPL+RB",
+              "spec": "> 1.7mg",
+              "min": 0.0010929,
+              "max": 9.0,
+              "avg": 2.5013626762500003,
+              "sampleCount": 8,
+              "violationCount": 4,
+              "evidenceRows": [
+                "Test!37"
+              ]
+            },
+            {
+              "statId": 59802,
+              "condition": "NG AUDIOBUS / RB",
+              "spec": "> 1.7mg",
+              "min": 0.04808743,
+              "max": 234.0,
+              "avg": 86.29721472,
+              "sampleCount": 8,
+              "violationCount": 4,
+              "evidenceRows": [
+                "Test!37"
+              ]
+            },
+            {
+              "statId": 59803,
+              "condition": "NG AUDIOBUS / No sound",
+              "spec": "> 1.7mg",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 8,
+              "violationCount": 8,
+              "evidenceRows": [
+                "Test!37"
+              ]
+            },
+            {
+              "statId": 59804,
+              "condition": "NG HEARING / Noise",
+              "spec": "> 1.7mg",
+              "min": 0.04644809,
+              "max": 165.0,
+              "avg": 67.78636291625,
+              "sampleCount": 8,
+              "violationCount": 4,
+              "evidenceRows": [
+                "Test!37"
+              ]
+            },
+            {
+              "statId": 59805,
+              "condition": "NG HEARING / Touch",
+              "spec": "> 1.7mg",
+              "min": 0.0,
+              "max": 0.0,
+              "avg": 0.0,
+              "sampleCount": 8,
+              "violationCount": 8,
+              "evidenceRows": [
+                "Test!37"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!11",
+        "Test!13",
+        "Test!16",
+        "Test!17",
+        "Test!19",
+        "Test!2",
+        "Test!21",
+        "Test!23",
+        "Test!25",
+        "Test!27",
+        "Test!29",
+        "Test!31",
+        "Test!37",
+        "Test!38",
+        "Test!40",
+        "Test!42",
+        "Test!44",
+        "Test!5",
+        "Test!7",
+        "Test!8",
+        "Test!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!11",
+      "Test!13",
+      "Test!16",
+      "Test!17",
+      "Test!19",
+      "Test!2",
+      "Test!21",
+      "Test!23",
+      "Test!25",
+      "Test!27",
+      "Test!29",
+      "Test!31",
+      "Test!37",
+      "Test!38",
+      "Test!40",
+      "Test!42",
+      "Test!44",
+      "Test!5",
+      "Test!7",
+      "Test!8",
+      "Test!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

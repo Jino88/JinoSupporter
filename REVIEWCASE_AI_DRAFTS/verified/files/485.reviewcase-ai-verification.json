@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 485,
+  "sourceFile": "28.1 MSU-L20S15-07GMI Result check NTI lot test New Bond PW 1470SX-N1 and A-3424B- 2025.07.08_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\485.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:09Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 485,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparison data but misidentifies the changed factor and produces unusable outcome grouping.",
+    "issues": [
+      "Changed factor is filename, not the tested conditions.",
+      "Baseline and changed conditions are left unresolved despite Normal, PW 1470SX-N1, and A-3424B labels.",
+      "Key condition evidence omits GRAPH rows for PW 1470SX-N1 and A-3424B.",
+      "Outcomes include duplicated and nonsensical raw-data numeric conditions.",
+      "Review title is an extracted header row, not a case title."
+    ],
+    "requiredUserQuestions": [
+      "Is STD a reference only, with Normal as baseline?",
+      "Is the primary change the New Bond material/lot: PW 1470SX-N1 and A-3424B?",
+      "Should PW 1470SX-N1 and A-3424B be separate changed conditions under one case?"
+    ],
+    "correctionPlan": [
+      "Rename case around NTI lot New Bond acoustic result check.",
+      "Set baseline to Normal and changed conditions to PW 1470SX-N1 and A-3424B, with STD as reference if applicable.",
+      "Cite condition rows RAW DATA!3-8 and summary rows GRAPH!8-11.",
+      "Consolidate outcomes to SPL bands, Fo, and THD at 200/400/1000 Hz.",
+      "Remove spurious raw-data numeric subresults and duplicate measurement outcomes."
+    ],
+    "evidencePolicy": "Current citations prove row existence but are insufficient for final changed-factor and outcome evidence."
+  },
+  "usage": {
+    "input_tokens": 13964,
+    "output_tokens": 856,
+    "total_tokens": 14820
+  }
+}

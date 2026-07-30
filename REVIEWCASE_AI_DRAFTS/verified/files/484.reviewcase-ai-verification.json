@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 484,
+  "sourceFile": "28. TIU L5S3-01 R Report test find reason NG BAKO high 2025.12.15_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\484.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 484,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Valid diagnostic machine comparison exists, but the draft misframes the changed factor and includes a spurious measurement outcome.",
+    "issues": [
+      "Unsupported baseline/normal condition framing",
+      "Changed factor should be AWF machine number comparison",
+      "Measurement outcome appears header-derived and invalid",
+      "Test!14 is cited but not shown in supplied context",
+      "Conclusion row says all machines remain high, not improvement"
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Machine AWF #1 vs #2 vs #3",
+      "Remove baseline/changed-condition wording unless a baseline row is found",
+      "Keep one function-defect outcome with Input, OK, NG BAKO, Total NG, NG rate",
+      "Remove the measurement-stat outcome",
+      "Use visible purpose, content, header, data, and conclusion rows as evidence"
+    ],
+    "evidencePolicy": "Citations are sufficient for the function comparison, but not for the derived measurement stats."
+  },
+  "usage": {
+    "input_tokens": 3180,
+    "output_tokens": 733,
+    "total_tokens": 3913
+  }
+}

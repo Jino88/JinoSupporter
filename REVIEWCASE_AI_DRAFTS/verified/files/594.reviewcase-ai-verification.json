@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 594,
+  "sourceFile": "38. BRS-161016 Report test MG -A, MG-B, MG-C of new supplier China East 13.05.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\594.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 594,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook is comparable, but the draft misgroups conditions and contains incorrect outcome pairings and bogus measurement results.",
+    "issues": [
+      "Primary change should be new supplier China East MG-A/MG-B/MG-C vs normal, not mixed yoke/DT/spec factors.",
+      "Decap MG-C is paired with Normal MG-A/MG-B instead of Normal MG-C.",
+      "Vision MG-C is paired with Normal MG-A/MG-B instead of Normal MG-C.",
+      "Measurement outcomes from header rows 33-34 are invalid and mix unrelated values.",
+      "Gauss and tension result sections are omitted despite cited source context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rewrite changed factor as new supplier China East MG-A/MG-B/MG-C material validation vs normal material, with product/test type as subgroup.",
+      "Fix decap pairs to MG-A/MG-B vs MG-A/MG-B and MG-C vs MG-C using rows 26-30.",
+      "Fix vision pairs to MG-A/MG-B vs MG-A/MG-B and MG-C vs MG-C using rows 75-78.",
+      "Remove invalid measurement outcomes based only on rows 33-34; rebuild from actual Gauss and tension rows 45-71.",
+      "Add row 95 conclusion as supporting evidence after outcomes are corrected."
+    ],
+    "evidencePolicy": "Row citations exist, but several are insufficient or mispaired; final evidence must cite the actual paired data rows."
+  },
+  "usage": {
+    "input_tokens": 8166,
+    "output_tokens": 844,
+    "total_tokens": 9010
+  }
+}

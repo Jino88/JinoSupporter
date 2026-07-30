@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 636,
+  "sourceFile": "42. TIU C11-20  Report Test VP Assy press Jig 2026.1.26_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\636.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 636,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the report but misgroups the primary changed factor and compares rows across mismatched model/shift/date contexts.",
+    "issues": [
+      "Primary factor should be New VP assy press Jig vs Normal, not shift/model/date.",
+      "Rows 26 and 30 are compared to the wrong Normal baseline.",
+      "Model, date, and shift merged-cell context is not preserved.",
+      "Measurement outcome is a header/count extraction artifact, not a separate measurement result.",
+      "Header evidence should include result/table header rows, not only Test!21."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Type: New VP assy press Jig vs Normal.",
+      "Use date, shift, and model as subgroup keys.",
+      "Pair Test!22 with Test!24, Test!26 with Test!28, and Test!30 with Test!32.",
+      "Remove the measurement outcome or convert defect categories into submetrics under function defects.",
+      "Add Test!19 and Test!20 as table/header evidence rows."
+    ],
+    "evidencePolicy": "Citations exist but are insufficiently grouped; evidence rows must support each matched baseline/test pair."
+  },
+  "usage": {
+    "input_tokens": 3912,
+    "output_tokens": 717,
+    "total_tokens": 4629
+  }
+}

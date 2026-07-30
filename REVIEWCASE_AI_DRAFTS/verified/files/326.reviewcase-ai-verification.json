@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 326,
+  "sourceFile": "17. BRS-161014 DT Report test CD supplier Ralon    date 16.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\326.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:33Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 326,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The main Ralon vs GES comparison is supported, but the draft incorrectly mixes in an unrelated Decap NG sheet as title and evidence.",
+    "issues": [
+      "Review title is taken from unrelated Decap NG BRS-161016 sheet.",
+      "Decap NG evidence row should not support the CD supplier comparison.",
+      "Top-level evidence omits key Test title/purpose rows.",
+      "Changed-factor grouping is otherwise supported by Test rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Use Test!2 as the review title source.",
+      "Remove Decap NG rows from this review case evidence.",
+      "Add Test!6 as purpose/changed-factor evidence.",
+      "Keep one changed factor: Normal CD supplier GES vs Test CD supplier Ralon.",
+      "Retain both vision VP/CD and function outcomes under that factor."
+    ],
+    "evidencePolicy": "Current outcome row citations are sufficient, but title and changed-factor citations need Test-sheet-only cleanup."
+  },
+  "usage": {
+    "input_tokens": 3684,
+    "output_tokens": 656,
+    "total_tokens": 4340
+  }
+}

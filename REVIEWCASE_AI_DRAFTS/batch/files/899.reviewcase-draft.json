@@ -1,0 +1,210 @@
+{
+  "sourceFileId": 899,
+  "sourceFile": "78. BRS-161014 Report test change  semi Frame +SP  of E2 line TF test in C2  line  Date 16.11.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\78. BRS-161014 Report test change  semi Frame +SP  of E2 line TF test in C2  line  Date 16.11.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report",
+    "sheetRowCount": 19,
+    "sheetCellCount": 67,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report!2",
+      "sheetName": "Report",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST CHANGE SEMI VP+CD OF C2/E2 LINE - 161014 | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report!3",
+      "sheetName": "Report",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | Date | 2024-01-17 00:00:00"
+    },
+    {
+      "rowId": "Report!4",
+      "sheetName": "Report",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | Marker | Le"
+    },
+    {
+      "rowId": "Report!5",
+      "sheetName": "Report",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report!6",
+      "sheetName": "Report",
+      "rowNumber": 6,
+      "rowText": "| - To find reason NG high at Modul line model S921"
+    },
+    {
+      "rowId": "Report!8",
+      "sheetName": "Report",
+      "rowNumber": 8,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report!9",
+      "sheetName": "Report",
+      "rowNumber": 9,
+      "rowText": "| - C2 : use semi VP+CD of E2 line"
+    },
+    {
+      "rowId": "Report!10",
+      "sheetName": "Report",
+      "rowNumber": 10,
+      "rowText": "| - E2 : use semi VP+CD of C2 line"
+    },
+    {
+      "rowId": "Report!11",
+      "sheetName": "Report",
+      "rowNumber": 11,
+      "rowText": "| => Make final and checking NG rate of funtion, OK sample move Modul S921 make => compare NG rate"
+    },
+    {
+      "rowId": "Report!22",
+      "sheetName": "Report",
+      "rowNumber": 22,
+      "rowText": "| III.Result"
+    },
+    {
+      "rowId": "Report!24",
+      "sheetName": "Report",
+      "rowNumber": 24,
+      "rowText": "| | RESULT TEST FUNCTION"
+    },
+    {
+      "rowId": "Report!25",
+      "sheetName": "Report",
+      "rowNumber": 25,
+      "rowText": "| | No | Date | Line | Type test | Input | OK | Sigma | | | Hearing | | Total NG | NG Rate"
+    },
+    {
+      "rowId": "Report!27",
+      "sheetName": "Report",
+      "rowNumber": 27,
+      "rowText": "| | 1 | 2024-11-16 00:00:00 | C2 | Test Frame+SP of E2 | 200 | 197 | 0 | 0 | 0 | 2 | 1 | 3 | 0.015"
+    },
+    {
+      "rowId": "Report!29",
+      "sheetName": "Report",
+      "rowNumber": 29,
+      "rowText": "| | 2 | | | Normal | 560 | 550 | 0 | 0 | 0 | 8 | 2 | 10 | 0.01785714"
+    },
+    {
+      "rowId": "Report!31",
+      "sheetName": "Report",
+      "rowNumber": 31,
+      "rowText": "| | => C2 line use semi Frame + SP of E2 line NG rate of function is same normal"
+    },
+    {
+      "rowId": "Report!34",
+      "sheetName": "Report",
+      "rowNumber": 34,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-899-rc-1",
+      "reviewTitle": "REPORT TEST CHANGE SEMI VP+CD OF C2/E2 LINE - 161014 | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To find reason NG high at Modul line model S921 / | II. Content. / | - C2 : use semi VP+CD of E2 line / | - E2 : use semi VP+CD of C2 line",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Test Frame+SP of E2",
+          "baselineCondition": "Normal",
+          "changedCondition": "Test Frame+SP of E2",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Report!2",
+            "Report!24",
+            "Report!25",
+            "Report!27",
+            "Report!29",
+            "Report!5",
+            "Report!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT TEST FUNCTION",
+          "comparisonRows": [
+            "Report!27",
+            "Report!29"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 4856,
+              "controlCondition": "Normal",
+              "testCondition": "Test Frame+SP of E2",
+              "control": {
+                "input": 560.0,
+                "ng": 10.0,
+                "ratePercent": 1.785714
+              },
+              "test": {
+                "input": 200.0,
+                "ng": 3.0,
+                "ratePercent": 1.5
+              },
+              "deltaRatePercentPoint": -0.28571400000000013,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Report!27",
+                "Report!29"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Report!2",
+        "Report!24",
+        "Report!25",
+        "Report!27",
+        "Report!29",
+        "Report!5",
+        "Report!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report!2",
+      "Report!24",
+      "Report!25",
+      "Report!27",
+      "Report!29",
+      "Report!5",
+      "Report!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

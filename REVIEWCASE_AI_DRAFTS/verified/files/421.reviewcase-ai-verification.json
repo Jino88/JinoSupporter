@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 421,
+  "sourceFile": "22.MSU-20S15-07 Result test  yoke semi recyle_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\421.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:59Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 421,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has a plausible recycle semi-yoke comparison but outcome grouping and extracted measurements are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor mixes Normal, recycle, G1 and G2 without preserving test-round/date grouping.",
+      "Vision-after-decap section appears to be screening context, not a direct Normal-vs-recycle comparison.",
+      "Several measurement outcomes are header-derived or nonsensical, including false specs and mixed columns.",
+      "Function table may be valid, but baseline/test rows need full header and row-level context.",
+      "Source row count conflicts with cited/context rows beyond the reported sheet range."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factor as Normal vs recycle semi yoke, with G1/G2 as subgroup keys if supported.",
+      "Use function table data rows with matching headers, dates, line, content, input, OK, NG and rates.",
+      "Treat decap vision rows as contextual inspection results unless comparable conditions are shown.",
+      "Remove generated measurement stats based only on headers or mixed numeric columns.",
+      "Recheck workbook row indexing and cite all actual header plus data rows used."
+    ],
+    "evidencePolicy": "Citations exist, but they are not sufficient because key outcomes rely on header-only or misgrouped rows."
+  },
+  "usage": {
+    "input_tokens": 6240,
+    "output_tokens": 737,
+    "total_tokens": 6977
+  }
+}

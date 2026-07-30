@@ -1,0 +1,276 @@
+{
+  "sourceFileId": 883,
+  "sourceFile": "75. BRS-161014 Report TEST VP curing temperature 120 25.11.2023_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\75. BRS-161014 Report TEST VP curing temperature 120 25.11.2023_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report (2)",
+    "sheetRowCount": 26,
+    "sheetCellCount": 101,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 4,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report (2)!2",
+      "sheetName": "Report (2)",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report (2)!3",
+      "sheetName": "Report (2)",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | Date | 2023-11-25 00:00:00"
+    },
+    {
+      "rowId": "Report (2)!4",
+      "sheetName": "Report (2)",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | Marker | Trung"
+    },
+    {
+      "rowId": "Report (2)!5",
+      "sheetName": "Report (2)",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report (2)!6",
+      "sheetName": "Report (2)",
+      "rowNumber": 6,
+      "rowText": "| - improve NG Drop VP at main 2"
+    },
+    {
+      "rowId": "Report (2)!7",
+      "sheetName": "Report (2)",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report (2)!8",
+      "sheetName": "Report (2)",
+      "rowNumber": 8,
+      "rowText": "| - Use VP curing temperature 120"
+    },
+    {
+      "rowId": "Report (2)!9",
+      "sheetName": "Report (2)",
+      "rowNumber": 9,
+      "rowText": "| 1. Check main 2 MTR drop happen or not?"
+    },
+    {
+      "rowId": "Report (2)!10",
+      "sheetName": "Report (2)",
+      "rowNumber": 10,
+      "rowText": "| 2. Check VP separation ok or not after JPD dry"
+    },
+    {
+      "rowId": "Report (2)!11",
+      "sheetName": "Report (2)",
+      "rowNumber": 11,
+      "rowText": "| 3. Check sub 4 NG rate"
+    },
+    {
+      "rowId": "Report (2)!12",
+      "sheetName": "Report (2)",
+      "rowNumber": 12,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "Report (2)!13",
+      "sheetName": "Report (2)",
+      "rowNumber": 13,
+      "rowText": "| | RESULT check main 2 MTR VP Drop and VP separation after JPD dry"
+    },
+    {
+      "rowId": "Report (2)!14",
+      "sheetName": "Report (2)",
+      "rowNumber": 14,
+      "rowText": "| | Date | Type | Input | OK | NG VP Drop | Laze cutting NG Main 2 | Vision VP Main 2 ( Burr) | Total NG | NG rate"
+    },
+    {
+      "rowId": "Report (2)!16",
+      "sheetName": "Report (2)",
+      "rowNumber": 16,
+      "rowText": "| | | Normal | 300 | 298 | 0 | 2 | 0 | 2 | 0.00666667"
+    },
+    {
+      "rowId": "Report (2)!17",
+      "sheetName": "Report (2)",
+      "rowNumber": 17,
+      "rowText": "| | when use material VP test 120⁰C don't have NG VP drop but happen NG laze cutting main 2. need cutting 2 time. => when vision VP happen NG burr"
+    },
+    {
+      "rowId": "Report (2)!19",
+      "sheetName": "Report (2)",
+      "rowNumber": 19,
+      "rowText": "| | RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "Report (2)!24",
+      "sheetName": "Report (2)",
+      "rowNumber": 24,
+      "rowText": "| | | Normal | 300 | 293 | 0 | 0 | 0 | 0 | 7 | 0 | 0 | 7 | 0.02333333"
+    },
+    {
+      "rowId": "Report (2)!26",
+      "sheetName": "Report (2)",
+      "rowNumber": 26,
+      "rowText": "| | when use material VP test 120⁰C NG same normal"
+    },
+    {
+      "rowId": "Report (2)!27",
+      "sheetName": "Report (2)",
+      "rowNumber": 27,
+      "rowText": "| 4. Decision"
+    },
+    {
+      "rowId": "Report (2)!28",
+      "sheetName": "Report (2)",
+      "rowNumber": 28,
+      "rowText": "| - when use material VP 120⁰C NG function same normal. But laze cutting happen NG increase. => can not use!"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-883-rc-1",
+      "reviewTitle": "| | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - improve NG Drop VP at main 2 / | II. Content. / | - Use VP curing temperature 120 / | 1. Check main 2 MTR drop happen or not?",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Temperature 120⁰C",
+          "baselineCondition": "Normal",
+          "changedCondition": "Temperature 120⁰C",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Report (2)!15",
+            "Report (2)!16",
+            "Report (2)!2",
+            "Report (2)!22",
+            "Report (2)!24",
+            "Report (2)!5",
+            "Report (2)!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "reliability",
+          "outcomeMetric": "RESULT check main 2 MTR VP Drop and VP separation after JPD dry",
+          "comparisonRows": [
+            "Report (2)!15",
+            "Report (2)!16"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 24456,
+              "condition": "Temperature 120⁰C",
+              "input": 296.0,
+              "ok": 260.0,
+              "ng": 36.0,
+              "ratePercent": 12.162162,
+              "evidenceRows": [
+                "Report (2)!15"
+              ]
+            },
+            {
+              "metricId": 24457,
+              "condition": "Normal",
+              "input": 300.0,
+              "ok": 298.0,
+              "ng": 2.0,
+              "ratePercent": 0.666667,
+              "evidenceRows": [
+                "Report (2)!16"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "metric-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "Report (2)!22",
+            "Report (2)!24"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 24458,
+              "condition": "Temperature 120⁰C",
+              "input": 288.0,
+              "ok": 281.0,
+              "ng": 7.0,
+              "ratePercent": 2.430556,
+              "evidenceRows": [
+                "Report (2)!22"
+              ]
+            },
+            {
+              "metricId": 24459,
+              "condition": "Normal",
+              "input": 300.0,
+              "ok": 293.0,
+              "ng": 7.0,
+              "ratePercent": 2.333333,
+              "evidenceRows": [
+                "Report (2)!24"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report (2)!15",
+        "Report (2)!16",
+        "Report (2)!2",
+        "Report (2)!22",
+        "Report (2)!24",
+        "Report (2)!5",
+        "Report (2)!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report (2)!15",
+      "Report (2)!16",
+      "Report (2)!2",
+      "Report (2)!22",
+      "Report (2)!24",
+      "Report (2)!5",
+      "Report (2)!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

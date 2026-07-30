@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 788,
+  "sourceFile": "60.MSU-L20S15-07  Report test material Yoke difference colour from Myungjin vender_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\788.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 788,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable report, but changed-factor grouping and tension/final-drop outcomes need correction before use.",
+    "issues": [
+      "Changed factor incorrectly includes auto/manual drop as changed conditions.",
+      "Primary factor should be yoke colour levels 1/2/3 vs Normal, with Myungjin as context.",
+      "Tension extraction omits 8kgf spec and misses level 1 Long-MG NG.",
+      "Function rows are wrongly included as tension measurements.",
+      "Final SPK drop test loses auto/manual subgroup labels for merged rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rewrite changedFactor as Normal Yoke vs Test Yoke colour levels 1, 2, and 3 from Myungjin.",
+      "Move auto/manual, MG type, date, line, and test section into subgroup keys or outcome context.",
+      "Rebuild tension outcome from rows 47-58 only, preserving MG type and 8kgf spec where applicable.",
+      "Mark level 1 Long-MG tension as spec-fail/mixed per decision rows 92 and 96.",
+      "Regroup final SPK drop rows 69-74 by auto/manual and level, with level 2 auto as 1 NG observed."
+    ],
+    "evidencePolicy": "Citations are citeable but misgrouped; add section headers and decision rows for final evidence."
+  },
+  "usage": {
+    "input_tokens": 10471,
+    "output_tokens": 1338,
+    "total_tokens": 11809
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 96,
+  "sourceFile": "039.MSU-20S15-07 Result test  yoke semi recyle_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\96.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:30Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 96,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable source context but changed-factor and outcome grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Baseline comparison is invented; source shows a recycle semi-yoke usability test, not explicit normal vs test.",
+      "Changed condition mixes recycle semi yoke with blister-size subcategories that appear to be defect dispositions.",
+      "Measurement outcomes use header rows and aggregate mixed table values, so statistics are not valid evidence.",
+      "Function rows 36-38 are cited but their row text is not shown for verification.",
+      "Vision, function, analysis, and reliability results need clearer grouping under one validation report."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Reframe changed factor as use/reuse of recycled semi yoke after decap unless source proves a baseline.",
+      "Treat plating defect categories and size limits as subgroup or inspection outcomes, not primary changed factors.",
+      "Re-extract full data rows for vision, function, analysis, reliability, and decision sections.",
+      "Remove calculated measurement stats derived from headers or mixed columns.",
+      "Cite each outcome to actual data rows and include row-level keys such as date, line, lot, and condition."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient; final evidence needs actual data rows, not mostly headers."
+  },
+  "usage": {
+    "input_tokens": 3790,
+    "output_tokens": 725,
+    "total_tokens": 4515
+  }
+}

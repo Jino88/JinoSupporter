@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 911,
+  "sourceFile": "8. BRS-161014 DT Report test FP161014 use PT 161014-S of Press line (Doojin coating) date 21.6.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\911.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 911,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The main Normal vs test PT press-line comparison is supported, but outcome coverage and measurement grouping need correction before final use.",
+    "issues": [
+      "Decap NG cause breakdown is present but not modeled as an outcome.",
+      "Measurement rows using merged labels lack explicit Test/Normal grouping for Suspension D.",
+      "Specs are embedded in condition text instead of structured pass/fail evidence.",
+      "Change domain overstates supplier/coating; primary change is the test PT press-line condition.",
+      "Review title should use the main NG rate report title, not only Decap analysis."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add a descriptive Decap NG outcome for function NG reason distribution.",
+      "Carry forward merged Type labels for all tension rows, especially Suspension D.",
+      "Extract tension specs into spec fields and state all samples pass spec.",
+      "Revise changed factor/domain to Normal vs Test Frame use PT of press line, with Doojin coating as context.",
+      "Use NG rate report title/purpose as the primary review context."
+    ],
+    "evidencePolicy": "Row citations exist, but final evidence is insufficient until missing outcome and merged-row context are fixed."
+  },
+  "usage": {
+    "input_tokens": 5449,
+    "output_tokens": 1297,
+    "total_tokens": 6746
+  }
+}

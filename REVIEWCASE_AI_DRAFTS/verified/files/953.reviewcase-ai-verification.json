@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 953,
+  "sourceFile": "86.BRS-2015 Report Test change bonding line VP+CD corner date 29.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\953.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:00Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 953,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has a valid function comparison but the changed-factor wording and tension measurements need correction before use.",
+    "issues": [
+      "Changed factor is too generic and omits corner move inside 0.05 and speed 30 to 26.",
+      "Tension measurement extraction is corrupted, including wrong spec and impossible date-derived values.",
+      "Row 15.8!28 is cited but not shown in context, limiting verification of tension data.",
+      "Function result judgement as worse is supported by the cited rates, but sample sizes differ.",
+      "Evidence mixes purpose, spec, and result rows without clear grouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rewrite changed factor as bonding line VP+CD corner move inside 0.05 with speed 30 to 26, compared against Normal.",
+      "Keep function defect outcome using rows 15.8!32 and 15.8!34 with judgement worse.",
+      "Re-extract the full tension table rows around 15.8!20-28 before judging measurement outcome.",
+      "Remove corrupted measurement-2 statistics and any date/spec-derived values.",
+      "Separate tension evidence from function evidence with clear outcome grouping."
+    ],
+    "evidencePolicy": "Function citations are sufficient; tension citations are incomplete and misparsed."
+  },
+  "usage": {
+    "input_tokens": 3400,
+    "output_tokens": 738,
+    "total_tokens": 4138
+  }
+}

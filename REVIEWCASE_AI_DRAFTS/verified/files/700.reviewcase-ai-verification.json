@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 700,
+  "sourceFile": "5. BRS-201506 Report test VP, Frame Dimension_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\700.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 700,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not safe because the changed factor and measurement grouping are misidentified despite usable table evidence.",
+    "issues": [
+      "Changed factor is filename, not the tested VP/frame dimension condition.",
+      "Baseline and test conditions are ambiguous.",
+      "Evidence cites only avg row, missing headers and spec/limit rows.",
+      "Several conditions are misparsed as Lower labels.",
+      "Violation counts are unsupported without applying limits."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison Frame dimensions vs VP dimensions under cooling/heating recipes?",
+      "Are the paired 14.xx and 19.xx columns separate dimension axes?"
+    ],
+    "correctionPlan": [
+      "Use rows 23-30 as evidence for table structure and values.",
+      "Define Frame as reference and VP cooling/heating recipes as test conditions if confirmed.",
+      "Split results by condition and by the two dimension axes.",
+      "Attach standard, upper, lower, min, max, and avg rows to each result.",
+      "Remove or recalculate violation counts against stated limits."
+    ],
+    "evidencePolicy": "Current row citation is insufficient; header, spec, limit, and statistic rows are needed."
+  },
+  "usage": {
+    "input_tokens": 2737,
+    "output_tokens": 753,
+    "total_tokens": 3490
+  }
+}

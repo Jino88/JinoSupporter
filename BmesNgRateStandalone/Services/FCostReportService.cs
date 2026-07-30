@@ -58,47 +58,7 @@ public sealed class FCostReportService(NgRateSettingsService settings)
         // come back with blank _TX fields (the BMES UI relies on the user "seeing" the prior
         // row's label) so a naive GroupBy on (Mod, Mat) breaks. Walk the rows in their stored
         // order instead and pair each FCOST/FRATE with the nearest preceding INAMT.
-        FCostMaterialBlock? totalBlock = null;
-        var perMaterial = new List<FCostMaterialBlock>();
-        FCostMaterialBlock? cur = null;
-
-        foreach (var r in rows)
-        {
-            if (string.Equals(r.ZType, "INAMT", StringComparison.OrdinalIgnoreCase))
-            {
-                // INAMT row starts a new block. The total block is the very first INAMT
-                // we encounter that has empty Matnr (BMES emits totals first).
-                bool isTotal = totalBlock is null && IsBmesTotalRow(r);
-
-                string matLabel = !string.IsNullOrEmpty(r.MatnrTx) ? r.MatnrTx
-                                : !string.IsNullOrEmpty(r.Matnr)   ? r.Matnr
-                                : "(no material)";
-                string display = isTotal
-                    ? "Total (GN)"
-                    : (string.IsNullOrEmpty(r.ModNoTx) ? matLabel : $"{r.ModNoTx} / {matLabel}");
-
-                cur = new FCostMaterialBlock
-                {
-                    DisplayName  = display,
-                    ProductGroup = r.PrdGrTx,
-                    ModelNo      = r.ModNoTx,
-                    Material     = string.IsNullOrEmpty(r.MatnrTx) ? r.Matnr : r.MatnrTx,
-                    Verid        = r.VeridTx,
-                    Input        = r,
-                };
-
-                if (isTotal) totalBlock = cur;
-                else         perMaterial.Add(cur);
-            }
-            else if (string.Equals(r.ZType, "FCOST", StringComparison.OrdinalIgnoreCase))
-            {
-                if (cur is not null) cur.Cost = r;
-            }
-            else if (string.Equals(r.ZType, "FRATE", StringComparison.OrdinalIgnoreCase))
-            {
-                if (cur is not null) cur.Rate = r;
-            }
-        }
+        var (totalBlock, perMaterial) = BuildMaterialBlocks(rows);
 
         // Sort biggest input first so the rows the user cares about are at the top.
         perMaterial = perMaterial
@@ -137,45 +97,7 @@ public sealed class FCostReportService(NgRateSettingsService settings)
         IReadOnlyList<ModelGroupRecord>? groups,
         IReadOnlyCollection<string>? selectedGroupNames)
     {
-        FCostMaterialBlock? totalBlock = null;
-        var perMaterial = new List<FCostMaterialBlock>();
-        FCostMaterialBlock? cur = null;
-
-        foreach (var r in rows)
-        {
-            if (string.Equals(r.ZType, "INAMT", StringComparison.OrdinalIgnoreCase))
-            {
-                bool isTotal = totalBlock is null && IsBmesTotalRow(r);
-
-                string matLabel = !string.IsNullOrEmpty(r.MatnrTx) ? r.MatnrTx
-                                : !string.IsNullOrEmpty(r.Matnr) ? r.Matnr
-                                : "(no material)";
-                string display = isTotal
-                    ? "Total (GN)"
-                    : (string.IsNullOrEmpty(r.ModNoTx) ? matLabel : $"{r.ModNoTx} / {matLabel}");
-
-                cur = new FCostMaterialBlock
-                {
-                    DisplayName = display,
-                    ProductGroup = r.PrdGrTx,
-                    ModelNo = r.ModNoTx,
-                    Material = string.IsNullOrEmpty(r.MatnrTx) ? r.Matnr : r.MatnrTx,
-                    Verid = r.VeridTx,
-                    Input = r,
-                };
-
-                if (isTotal) totalBlock = cur;
-                else perMaterial.Add(cur);
-            }
-            else if (string.Equals(r.ZType, "FCOST", StringComparison.OrdinalIgnoreCase))
-            {
-                if (cur is not null) cur.Cost = r;
-            }
-            else if (string.Equals(r.ZType, "FRATE", StringComparison.OrdinalIgnoreCase))
-            {
-                if (cur is not null) cur.Rate = r;
-            }
-        }
+        var (totalBlock, perMaterial) = BuildMaterialBlocks(rows);
 
         perMaterial = perMaterial
             .OrderByDescending(MaterialSortInput)
@@ -206,6 +128,85 @@ public sealed class FCostReportService(NgRateSettingsService settings)
 
     private static double MaterialSortInput(FCostMaterialBlock block)
         => block.Input?.Values is { Length: > 0 } vals ? vals.Sum() : block.InputTotal;
+
+    private static (FCostMaterialBlock? TotalBlock, List<FCostMaterialBlock> PerMaterial) BuildMaterialBlocks(
+        IReadOnlyList<FCostRow> rows)
+    {
+        const string totalKey = "__TOTAL__";
+        var blocks = new Dictionary<string, FCostMaterialBlock>(StringComparer.Ordinal);
+        var order = new Dictionary<string, int>(StringComparer.Ordinal);
+        FCostMaterialBlock? totalBlock = null;
+
+        for (int i = 0; i < rows.Count; i++)
+        {
+            var row = rows[i];
+            string ztype = row.ZType.Trim();
+            if (!string.Equals(ztype, "INAMT", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(ztype, "FCOST", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(ztype, "FRATE", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            bool isTotal = IsBmesTotalRow(row);
+            string key = isTotal ? totalKey : MaterialBlockKey(row);
+            if (string.IsNullOrWhiteSpace(key))
+                key = "__ROW__" + i.ToString(CultureInfo.InvariantCulture);
+
+            if (!blocks.TryGetValue(key, out var block))
+            {
+                block = CreateMaterialBlock(row, isTotal);
+                blocks[key] = block;
+                order[key] = i;
+            }
+
+            if (isTotal && totalBlock is null)
+                totalBlock = block;
+
+            if (string.Equals(ztype, "INAMT", StringComparison.OrdinalIgnoreCase))
+                block.Input = row;
+            else if (string.Equals(ztype, "FCOST", StringComparison.OrdinalIgnoreCase))
+                block.Cost = row;
+            else if (string.Equals(ztype, "FRATE", StringComparison.OrdinalIgnoreCase))
+                block.Rate = row;
+        }
+
+        var perMaterial = blocks
+            .Where(kv => !string.Equals(kv.Key, totalKey, StringComparison.Ordinal) && !ReferenceEquals(kv.Value, totalBlock))
+            .OrderBy(kv => order.GetValueOrDefault(kv.Key, int.MaxValue))
+            .Select(kv => kv.Value)
+            .ToList();
+
+        return (totalBlock, perMaterial);
+    }
+
+    private static FCostMaterialBlock CreateMaterialBlock(FCostRow row, bool isTotal)
+    {
+        string matLabel = !string.IsNullOrEmpty(row.MatnrTx) ? row.MatnrTx
+                        : !string.IsNullOrEmpty(row.Matnr)   ? row.Matnr
+                        : "(no material)";
+        string display = isTotal
+            ? "Total (GN)"
+            : (string.IsNullOrEmpty(row.ModNoTx) ? matLabel : $"{row.ModNoTx} / {matLabel}");
+
+        return new FCostMaterialBlock
+        {
+            DisplayName = display,
+            ProductGroup = row.PrdGrTx,
+            ModelNo = row.ModNoTx,
+            Material = string.IsNullOrEmpty(row.MatnrTx) ? row.Matnr : row.MatnrTx,
+            Verid = row.VeridTx,
+        };
+    }
+
+    private static string MaterialBlockKey(FCostRow row)
+        => string.Join('\t', new[]
+        {
+            row.Facco, row.Werks, row.PrdGr, row.ModNo, row.Verid, row.AbChg,
+            row.Cat01, row.Matnr, row.Assem, row.TwSyn, row.ZValu, row.FaccoTx,
+            row.PrdGrTx, row.VeridTx, row.ModNoTx, row.AssemTx, row.AbChgTx,
+            row.MCodeTx, row.MatnrTx,
+        });
 
     private static bool IsBmesTotalRow(FCostRow row)
         => string.IsNullOrWhiteSpace(row.Matnr)
@@ -375,7 +376,16 @@ public sealed class FCostReportService(NgRateSettingsService settings)
             }
 
             foreach (var source in sources)
-                entry.Row.Values![source.ReportIndex] += StoredColValue(raw, source.ColIndex);
+            {
+                if (entry.Row.Values is null ||
+                    source.ReportIndex < 0 ||
+                    source.ReportIndex >= entry.Row.Values.Length)
+                {
+                    continue;
+                }
+
+                entry.Row.Values[source.ReportIndex] += StoredColValue(raw, source.ColIndex);
+            }
         }
 
         return byKey.Values
@@ -439,7 +449,7 @@ public sealed class FCostReportService(NgRateSettingsService settings)
         cmd.Parameters.AddWithValue("@qdate", queryDate);
         cmd.Parameters.AddWithValue("@kind", kind);
         cmd.Parameters.AddWithValue("@pdate", pdate);
-        return Convert.ToInt32(cmd.ExecuteScalar() ?? 0);
+        return ScalarToInt(cmd.ExecuteScalar());
     }
 
     private static int FindFirstRawColumn(SqliteConnection conn, string queryDate, string kind)
@@ -454,8 +464,11 @@ public sealed class FCostReportService(NgRateSettingsService settings)
             """;
         cmd.Parameters.AddWithValue("@qdate", queryDate);
         cmd.Parameters.AddWithValue("@kind", kind);
-        return Convert.ToInt32(cmd.ExecuteScalar() ?? 0);
+        return ScalarToInt(cmd.ExecuteScalar());
     }
+
+    private static int ScalarToInt(object? value)
+        => value is null or DBNull ? 0 : Convert.ToInt32(value, CultureInfo.InvariantCulture);
 
     private static (string QueryDate, int ColIndex)? FindLatestRawPeriodColumn(
         SqliteConnection conn,
@@ -599,6 +612,8 @@ public sealed class FCostReportService(NgRateSettingsService settings)
         var lsToSub = new Dictionary<string, (string Grp, string Mid, string Key, string Disp)>(
             StringComparer.OrdinalIgnoreCase);
         var subAccu = new Dictionary<string, FCostSubGroupAggregate>(StringComparer.Ordinal);
+        var sourceRateNumeratorBySubGroup = new Dictionary<string, double[]>(StringComparer.Ordinal);
+        var sourceRateInputBySubGroup     = new Dictionary<string, double[]>(StringComparer.Ordinal);
         int columnCount = columns.Count > 0 ? columns.Count : 14;
 
         bool IncludeGroup(string n) =>
@@ -638,6 +653,8 @@ public sealed class FCostReportService(NgRateSettingsService settings)
 
             if (!subAccu.TryGetValue(hit.Key, out var agg))
             {
+                double[] numerator = new double[columnCount];
+                double[] weight = new double[columnCount];
                 agg = new FCostSubGroupAggregate
                 {
                     Display      = hit.Disp,
@@ -646,19 +663,52 @@ public sealed class FCostReportService(NgRateSettingsService settings)
                     SubGroupKey  = hit.Key,
                     InputByCol   = new double[columnCount],
                     CostByCol    = new double[columnCount],
+                    SourceRateByCol = new double[columnCount],
                 };
                 subAccu[hit.Key] = agg;
+                sourceRateNumeratorBySubGroup[hit.Key] = numerator;
+                sourceRateInputBySubGroup[hit.Key] = weight;
             }
 
-            // Sum each of the 14 columns from the Input/Cost rows. FRATE row is ignored —
-            // we recompute Rate% from the SUMS, not by averaging existing rates (that's
-            // what the user explicitly asked for: 더한뒤 백분율).
+            double[] rateNumerator = sourceRateNumeratorBySubGroup[hit.Key];
+            double[] rateWeight    = sourceRateInputBySubGroup[hit.Key];
+
+            // Sum each of the 14 columns from the Input/Cost rows.
+            // Keep FRATE for source-rate aggregation separately so we can show
+            // weighted FRATE at display time instead of recomputing it.
             for (int i = 1; i <= columnCount; i++)
             {
-                agg.InputByCol[i - 1] += mat.Input?.GetCol(i) ?? 0;
-                agg.CostByCol[i  - 1] += mat.Cost ?.GetCol(i) ?? 0;
+                double input = mat.Input?.GetCol(i) ?? 0;
+                double cost  = mat.Cost ?.GetCol(i) ?? 0;
+                double rate  = mat.Rate?.GetCol(i) ?? 0;
+
+                agg.InputByCol[i - 1] += input;
+                agg.CostByCol[i  - 1] += cost;
+
+                rateNumerator[i - 1] += input * rate;
+                rateWeight[i - 1] += input;
             }
             agg.MatchedMaterialCount++;
+        }
+
+        // 2.5. Build weighted FRATE from child rows:
+        //     sum(INPUT * FRATE) / sum(INPUT).
+        foreach (var agg in subAccu.Values)
+        {
+            if (!sourceRateNumeratorBySubGroup.TryGetValue(agg.SubGroupKey, out var numerator) ||
+                !sourceRateInputBySubGroup.TryGetValue(agg.SubGroupKey, out var weight))
+                continue;
+
+            int count = Math.Min(agg.SourceRateByCol.Length, columnCount);
+            for (int i = 0; i < count; i++)
+            {
+                if (weight[i] > 0)
+                    agg.SourceRateByCol[i] = numerator[i] / weight[i];
+                else if (agg.InputByCol[i] > 0)
+                    agg.SourceRateByCol[i] = agg.CostByCol[i] / agg.InputByCol[i] * 100.0;
+                else
+                    agg.SourceRateByCol[i] = 0;
+            }
         }
 
         // 3. Sort SubGroups by previous-week Rate% desc (highest defect cost-rate first), so

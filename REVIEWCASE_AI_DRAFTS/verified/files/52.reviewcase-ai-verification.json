@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 52,
+  "sourceFile": "02.1 BRS-161016 GMI Report  test MTR Suspension D used Susp- Array 161014 D-1 changing tin lating method 2nd- 2025.06.10_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\52.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:48Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 52,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the main Normal vs non-polish tin-plating test comparison but needs calculation and grouping fixes before final use.",
+    "issues": [
+      "Module-line NG counts are wrong; rates align with total NG 13 vs 11, not listed defect count 11 vs 10.",
+      "Tension Tip B rows lose inherited Test/Normal grouping, making measurement comparison incomplete.",
+      "Tension spec is omitted despite header showing 0.03 kgf minimum.",
+      "Changed factor wording is generic and should state polish to non-polish tin plating method on Suspension D.",
+      "Module-line outcome domain should not remain unknown."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Suspension D tin plating method change from polish to non-polish, with Normal as baseline and Test as changed condition.",
+      "Correct module-line total NG values to Test 13/861 and Normal 11/612 while keeping cited rates.",
+      "Group tension results as Test Tip A/B versus Normal Tip A/B and carry inherited Type labels.",
+      "Record tension spec as minimum 0.03 kgf and summarize both conditions as pass/no spec violation.",
+      "Rename module-line outcome domain to function or module-line defect and retain rows TEST!42 and TEST!44."
+    ],
+    "evidencePolicy": "Core row citations are sufficient, but corrected tension use requires TEST!31 and TEST!33 to be citeable with inherited labels."
+  },
+  "usage": {
+    "input_tokens": 4505,
+    "output_tokens": 1094,
+    "total_tokens": 5599
+  }
+}

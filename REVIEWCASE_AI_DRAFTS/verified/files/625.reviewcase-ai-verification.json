@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 625,
+  "sourceFile": "40.BRS-161014 Report test change Led UC press 1mm and 0.5 mm_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\625.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:47Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 625,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid rows but misgroups distinct UC press changes and unrelated Sheet2 mold data.",
+    "issues": [
+      "Distinct changes are merged: 1.0 to 0.5, 0.1 to 1.0 V14, and 0.1 to 1.0 V12.",
+      "Sheet2 VP mold 6/4 data is unsupported by shown context and not tied to UC press change.",
+      "Key content rows proving each change are omitted from changed-factor evidence.",
+      "Function and tension outcomes are pooled instead of paired by sheet/date/jig context.",
+      "Baseline and test conditions are ambiguous in the single changed factor."
+    ],
+    "requiredUserQuestions": [
+      "Should the three dated sheets be separate review cases or subgroups in one UC press validation?"
+    ],
+    "correctionPlan": [
+      "Split or subgroup by sheet/date and jig version before judging outcomes.",
+      "Define each changed factor from the relevant content row only.",
+      "Remove Sheet2 mold data unless source context proves it belongs to this report.",
+      "Pair function and tension results within each sheet only.",
+      "Add rows 02.11!8, 14.10!8, and 2.10!8 as primary change evidence."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping and primary-change citations are not sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 6687,
+    "output_tokens": 814,
+    "total_tokens": 7501
+  }
+}

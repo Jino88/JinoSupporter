@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 642,
+  "sourceFile": "43. BRS-161016  Report test dry VP to find NG reason function unstable_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\642.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:12Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 642,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid cited result data but incorrectly merges two distinct test contexts into one changed factor.",
+    "issues": [
+      "Distinct 13.5 dry-vs-normal test is merged with 15.6 storage-preserve-condition test.",
+      "Baseline and changed conditions are over-broad and mix separate test rounds.",
+      "Change domains include unsupported coating and dimension/spec labels.",
+      "15.6 condition-definition rows are not cited in the changed-factor evidence.",
+      "Review title and purpose reflect only the 13.5 sheet, not the full workbook."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split into two review cases or two changed factors by sheet/test round.",
+      "For 13.5 use normal temperature as baseline and Dry VP as test condition.",
+      "For 15.6 use Normal preserve condition as baseline and compare inside WH, outside WH, and outside WH plus dry 80C.",
+      "Set change domain to process/material preservation or storage/drying condition only.",
+      "Add cited rows for 15.6 title, purpose, content, and test definitions."
+    ],
+    "evidencePolicy": "Result row citations are mostly sufficient for metrics, but changed-condition citations need added context rows."
+  },
+  "usage": {
+    "input_tokens": 9094,
+    "output_tokens": 788,
+    "total_tokens": 9882
+  }
+}

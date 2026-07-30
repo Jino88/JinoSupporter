@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 845,
+  "sourceFile": "69.BRS-161014 Report test change bond PT-8137 2023.11.15_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\845.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:51Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 845,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid comparable evidence but needs regrouping and judgement corrections before final use.",
+    "issues": [
+      "Changed factor omits coupled amount, air-pressure, and dry-method changes.",
+      "Function result is marked worse despite essentially same rate and decision text says same.",
+      "Tension Suspension D rows are not tied to test/normal parent conditions.",
+      "Tension outcome is not judged though report decision states PT-8137 is better.",
+      "Final SPK visual check and decision rows are omitted from outcomes/evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Revise changed factor to PT-8137 plus new bonding amount, air pressure, and dry method versus EX-0930 normal condition.",
+      "Change function defect judgement to same/no material change and cite decision support.",
+      "Assign Suspension D rows to the correct test and normal bond groups, preserving suspension subgroup.",
+      "Judge tension as improved or explicitly cite report decision if using author conclusion.",
+      "Add final SPK visual outcome and cite section headers plus decision rows 47-48."
+    ],
+    "evidencePolicy": "Row citations exist, but evidence is incomplete and some grouping citations need parent/header context."
+  },
+  "usage": {
+    "input_tokens": 4490,
+    "output_tokens": 752,
+    "total_tokens": 5242
+  }
+}

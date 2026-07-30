@@ -318,8 +318,8 @@
         var c = AppPaths.Current;
         AppPaths.Save(new AppPathsConfig
         {
+            DbRootDirectory = c.DbRootDirectory,
             MainDbPath = c.MainDbPath,
-            ScheduleDbPath = c.ScheduleDbPath,
             NgRateDbSaveDirectory = c.NgRateDbSaveDirectory,
             NgRateRoutingFilePath = c.NgRateRoutingFilePath,
             NgRateReasonFilePath = c.NgRateReasonFilePath,

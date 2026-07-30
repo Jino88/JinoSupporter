@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 981,
+  "sourceFile": "95.BRS -2015 Result  test VP lot happen NG brocken after forming 11.18.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\981.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:49Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 981,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but misidentifies the change factor and builds invalid outcome metrics.",
+    "issues": [
+      "Changed factor is filename-based, not process-condition based.",
+      "Baseline/test conditions are marked unclear despite explicit Normal and test rows.",
+      "Multiple date/line/test settings are not preserved as subgroup keys.",
+      "Outcome grouping ignores vision Sub1 and visual results.",
+      "Measurement stats/specs appear fabricated or misparsed."
+    ],
+    "requiredUserQuestions": [
+      "Should each date/line/test setting be treated as a separate comparison?",
+      "Is Normal the intended baseline for function and visual checks?"
+    ],
+    "correctionPlan": [
+      "Define changed factor as VP forming/test setting condition after broken-after-forming NG.",
+      "Use Normal rows as baseline where present and test condition rows as changed conditions.",
+      "Preserve date, line, and type check as subgroup keys.",
+      "Rebuild outcomes for vision Sub1, function NG, and visual VP frame separately.",
+      "Remove invalid statistical specs and cite actual result rows for each comparison."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient because key comparisons and metrics are misgrouped."
+  },
+  "usage": {
+    "input_tokens": 4524,
+    "output_tokens": 577,
+    "total_tokens": 5101
+  }
+}

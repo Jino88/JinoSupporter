@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 578,
+  "sourceFile": "36. BRS-201506 Report checking and test C-PT happen bending date 12.4.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\578.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 578,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable bending/function evidence but the comparison grouping and extracted measurement outcomes are not reliable enough for Ask AI.",
+    "issues": [
+      "Normal baseline is only evidenced for function, not clearly for process vision bending results.",
+      "Bending little/much and PT bending little/much may be separate test stages, not one clean changed condition set.",
+      "Sheet1 AWF settings are setup context, not validated outcome results.",
+      "Measurement outcomes appear auto-extracted from headers/text and are not meaningful metrics.",
+      "Some key cited result rows are not shown in context, limiting verification of values."
+    ],
+    "requiredUserQuestions": [
+      "Is Normal intended as the baseline for all tests or only the function summary?",
+      "Should Sheet1 AWF conditions be treated only as test setup context?"
+    ],
+    "correctionPlan": [
+      "Regroup changed factor around C-PT bending severity/test stage with clear baseline scope.",
+      "Keep process vision and function outcomes under the same report only with stage-specific conditions.",
+      "Remove Sheet1 and bogus text/header measurements from outcomes unless supported by real data rows.",
+      "Cite the actual condition/result rows for rows 15,16,36,38,40 and preserve table grouping.",
+      "Recompute defect rates and add judgement only after grouping is corrected."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficiently grouped and include non-outcome rows."
+  },
+  "usage": {
+    "input_tokens": 5109,
+    "output_tokens": 761,
+    "total_tokens": 5870
+  }
+}

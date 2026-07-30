@@ -1,0 +1,192 @@
+{
+  "sourceFileId": 443,
+  "sourceFile": "24.BRS-161014 Report checking Solder Tip from KR test process solder date 19.12.2023_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\24.BRS-161014 Report checking Solder Tip from KR test process solder date 19.12.2023_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "19.12",
+    "sheetRowCount": 18,
+    "sheetCellCount": 64,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 1,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "19.12!2",
+      "sheetName": "19.12",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT CHECKING SOLDER TIP FROM KOREA TEST PROCESS SOLDER OF MODEL BRS-161014 | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "19.12!3",
+      "sheetName": "19.12",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | Date | 2023-12-19 00:00:00"
+    },
+    {
+      "rowId": "19.12!4",
+      "sheetName": "19.12",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "19.12!5",
+      "sheetName": "19.12",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "19.12!6",
+      "sheetName": "19.12",
+      "rowNumber": 6,
+      "rowText": "| - Check Solder Tip from KR can use or not?"
+    },
+    {
+      "rowId": "19.12!7",
+      "sheetName": "19.12",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "19.12!8",
+      "sheetName": "19.12",
+      "rowNumber": 8,
+      "rowText": "| - Check solder vision in line"
+    },
+    {
+      "rowId": "19.12!9",
+      "sheetName": "19.12",
+      "rowNumber": 9,
+      "rowText": "| - Compare with Normal Tip"
+    },
+    {
+      "rowId": "19.12!14",
+      "sheetName": "19.12",
+      "rowNumber": 14,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "19.12!16",
+      "sheetName": "19.12",
+      "rowNumber": 16,
+      "rowText": "| | RESULT CHECKING SOLDER VISION"
+    },
+    {
+      "rowId": "19.12!17",
+      "sheetName": "19.12",
+      "rowNumber": 17,
+      "rowText": "| | Date | Line | Tip | Input | OK | NG | | | | | Total NG | NG rate | Note"
+    },
+    {
+      "rowId": "19.12!18",
+      "sheetName": "19.12",
+      "rowNumber": 18,
+      "rowText": "| | | | | | | Weak solder | Burn | Offset | Damage coil | Damage suspension"
+    },
+    {
+      "rowId": "19.12!19",
+      "sheetName": "19.12",
+      "rowNumber": 19,
+      "rowText": "| | 2023-12-19 00:00:00 | C2-3A | Test | 3 | 0 | 0 | 0 | 0 | 1 | 2 | 3 | 1 | Tip NG"
+    },
+    {
+      "rowId": "19.12!21",
+      "sheetName": "19.12",
+      "rowNumber": 21,
+      "rowText": "| | | | Normal | 4511 | 4502 | 1 | 2 | 6 | 0 | 0 | 9 | 0.00199512"
+    },
+    {
+      "rowId": "19.12!34",
+      "sheetName": "19.12",
+      "rowNumber": 34,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-443-rc-1",
+      "reviewTitle": "REPORT CHECKING SOLDER TIP FROM KOREA TEST PROCESS SOLDER OF MODEL BRS-161014 | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Check Solder Tip from KR can use or not? / | II. Content. / | - Check solder vision in line / | - Compare with Normal Tip",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: Normal vs test/changed condition not explicit",
+          "baselineCondition": "Normal",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "19.12!19",
+            "19.12!2",
+            "19.12!21",
+            "19.12!5",
+            "19.12!7",
+            "19.12!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "RESULT CHECKING SOLDER VISION",
+          "comparisonRows": [
+            "19.12!21"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 20804,
+              "condition": "Normal",
+              "input": 4511.0,
+              "ok": 4502.0,
+              "ng": 1.0,
+              "ratePercent": 0.199512,
+              "evidenceRows": [
+                "19.12!21"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "19.12!19",
+        "19.12!2",
+        "19.12!21",
+        "19.12!5",
+        "19.12!7",
+        "19.12!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "19.12!19",
+      "19.12!2",
+      "19.12!21",
+      "19.12!5",
+      "19.12!7",
+      "19.12!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 703,
+  "sourceFile": "5.BRS-161016 TF line result check machine ass'y Yoke + SMG_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\703.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:11Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 703,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft has citeable yield rows but no citeable changed-condition comparison, so it is not valid final ReviewCase evidence.",
+    "issues": [
+      "No explicit baseline or test condition is evidenced.",
+      "Dates, rounds, and totals are misclassified as changed factors.",
+      "Detail rows and total rows are mixed as comparable conditions.",
+      "Outcome metric is too broad; actual metrics are NG counts/rates and defect categories.",
+      "Rows 13-19 are cited but not shown in supplied context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Do not approve this draft for Ask AI as a comparative ReviewCase.",
+      "Exclude unless source context identifies a real process/material/equipment change.",
+      "If retained descriptively, recast as a line result/yield log, not a changed-factor case.",
+      "Separate date/round detail rows from total summary rows.",
+      "Define outcomes as Input, Total NG, NG rate, and defect counts by head."
+    ],
+    "evidencePolicy": "Row citations support observed results only, not a changed-condition comparison."
+  },
+  "usage": {
+    "input_tokens": 4173,
+    "output_tokens": 741,
+    "total_tokens": 4914
+  }
+}

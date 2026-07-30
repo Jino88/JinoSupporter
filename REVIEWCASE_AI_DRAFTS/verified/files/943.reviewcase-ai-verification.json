@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 943,
+  "sourceFile": "84. BRS-161014 Report TEST AWF Jig improve  12.14.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\943.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:42Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 943,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the new jig test context but misgroups baseline Normal rows across test dates.",
+    "issues": [
+      "Uses the 12/14 Normal row as baseline for later 12/22 and 12/23 tests.",
+      "Comparison rows omit adjacent Normal rows for 12/22 and 12/23.",
+      "Subgroup keys should preserve date/test round and SUS Plasma note.",
+      "Outcome domain is too vague for NG spot welding results."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Pair Test time 1 12/14 with its adjacent Normal row.",
+      "Pair Test time 2 12/22 with the 12/22 Normal row.",
+      "Pair Test time 2 12/23 with the 12/23 Normal row.",
+      "Set subgroup keys to date or test round, plus note/material context if used.",
+      "Rename outcome metric to total NG rate and NG categories for spot welding."
+    ],
+    "evidencePolicy": "Row citations exist, but current pair citations are incomplete and misgrouped."
+  },
+  "usage": {
+    "input_tokens": 3240,
+    "output_tokens": 523,
+    "total_tokens": 3763
+  }
+}

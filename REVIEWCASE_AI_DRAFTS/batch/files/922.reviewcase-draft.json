@@ -1,0 +1,192 @@
+{
+  "sourceFileId": 922,
+  "sourceFile": "8. MSU-201507 DT Report test Reduce voltage hearing ( Improve coil deform )  date 21.3.2025_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\8. MSU-201507 DT Report test Reduce voltage hearing ( Improve coil deform )  date 21.3.2025_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "NG rate; XRAY",
+    "sheetRowCount": 20,
+    "sheetCellCount": 69,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 1,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "NG rate!2",
+      "sheetName": "NG rate",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | REPORT TEST CHECK VOLTAGE HEARING GOOD FOR PRODUCT BRS-201507DT | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "NG rate!3",
+      "sheetName": "NG rate",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | Date | 2025-03-21 00:00:00"
+    },
+    {
+      "rowId": "NG rate!4",
+      "sheetName": "NG rate",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | | Marker | Le"
+    },
+    {
+      "rowId": "NG rate!5",
+      "sheetName": "NG rate",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "NG rate!6",
+      "sheetName": "NG rate",
+      "rowNumber": 6,
+      "rowText": "| - Test reduce voltage hearing ( improve coil deform )"
+    },
+    {
+      "rowId": "NG rate!14",
+      "sheetName": "NG rate",
+      "rowNumber": 14,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "NG rate!15",
+      "sheetName": "NG rate",
+      "rowNumber": 15,
+      "rowText": "| - Test only hearing voltage 7V ( Not check 8V)"
+    },
+    {
+      "rowId": "NG rate!16",
+      "sheetName": "NG rate",
+      "rowNumber": 16,
+      "rowText": "| - C2 : Q'ty: 2000pcs : Use wire coil 0.097 => Move module each model 500pcs ( 526TOP/526BOTTOM/626TOP/626BOTTOM)"
+    },
+    {
+      "rowId": "NG rate!17",
+      "sheetName": "NG rate",
+      "rowNumber": 17,
+      "rowText": "| - Compare NG rate with normal"
+    },
+    {
+      "rowId": "NG rate!18",
+      "sheetName": "NG rate",
+      "rowNumber": 18,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "NG rate!19",
+      "sheetName": "NG rate",
+      "rowNumber": 19,
+      "rowText": "| | 1 Result check Function"
+    },
+    {
+      "rowId": "NG rate!20",
+      "sheetName": "NG rate",
+      "rowNumber": 20,
+      "rowText": "| | No | Date | Content | Input | OK | Sigma | | | | | | Hearing ( + 0V )"
+    },
+    {
+      "rowId": "NG rate!22",
+      "sheetName": "NG rate",
+      "rowNumber": 22,
+      "rowText": "| | 1 | 2025-03-21 00:00:00 | Test Only hearing voltage (7V) | 2154 | 2106 | 0 | 30 | 0 | 0 | 30 | 0.01392758 | 12 | 6 | 18 | 0.00835655"
+    },
+    {
+      "rowId": "NG rate!26",
+      "sheetName": "NG rate",
+      "rowNumber": 26,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-922-rc-1",
+      "reviewTitle": "| REPORT TEST CHECK VOLTAGE HEARING GOOD FOR PRODUCT BRS-201507DT | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Test reduce voltage hearing ( improve coil deform ) / | II. Content. / | - Test only hearing voltage 7V ( Not check 8V) / | - C2 : Q'ty: 2000pcs : Use wire coil 0.097 => Move module each model 500pcs ( 526TOP/526BOTTOM/626TOP/626BOTTOM)",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Test Only hearing voltage (7V)",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Test Only hearing voltage (7V)",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "NG rate!14",
+            "NG rate!15",
+            "NG rate!17",
+            "NG rate!2",
+            "NG rate!20",
+            "NG rate!22",
+            "NG rate!5",
+            "NG rate!6"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "1 Result check Function",
+          "comparisonRows": [
+            "NG rate!22"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 24884,
+              "condition": "Test Only hearing voltage (7V)",
+              "input": 2154.0,
+              "ok": 2106.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "NG rate!22"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "NG rate!14",
+        "NG rate!15",
+        "NG rate!17",
+        "NG rate!2",
+        "NG rate!20",
+        "NG rate!22",
+        "NG rate!5",
+        "NG rate!6"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "NG rate!14",
+      "NG rate!15",
+      "NG rate!17",
+      "NG rate!2",
+      "NG rate!20",
+      "NG rate!22",
+      "NG rate!5",
+      "NG rate!6"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

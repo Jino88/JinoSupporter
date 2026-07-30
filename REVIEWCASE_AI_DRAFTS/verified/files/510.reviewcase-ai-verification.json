@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 510,
+  "sourceFile": "3. MSU-L20S15-07DT Report test New Dry UV Machine 395nm ( Normal 365nm) date 2.05.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\510.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 510,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable 395nm versus normal 365nm evidence exists, but the draft misgroups conditions and uses weak or missing citations.",
+    "issues": [
+      "Changed factor is filename-like instead of 395nm dry UV versus normal 365nm.",
+      "Baseline and test conditions are marked not explicit despite clear source rows.",
+      "LED UV outcomes cite headers or missing rows instead of data rows.",
+      "Two sheets have distinct product/line/spec subgroup context not preserved.",
+      "LED UV stats and specs appear auto-derived and unreliable."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to new dry UV 395nm versus normal dry UV 365nm.",
+      "Use 201507!12-13 and result rows to define baseline and changed conditions.",
+      "Preserve sheet/product, line, film use, and tension spec as subgroup keys.",
+      "Rebuild LED UV outcomes from rows 22,24,30,32 per sheet.",
+      "Keep tension outcomes by sheet using rows 39,43,45 with pass notes."
+    ],
+    "evidencePolicy": "Insufficient: citeable rows exist, but current citations include missing/header rows and omit key condition rows."
+  },
+  "usage": {
+    "input_tokens": 6072,
+    "output_tokens": 584,
+    "total_tokens": 6656
+  }
+}

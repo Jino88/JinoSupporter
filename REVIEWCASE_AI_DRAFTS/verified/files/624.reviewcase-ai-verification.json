@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 624,
+  "sourceFile": "40. TIU L5S3-01 R Report test Frame deform to find reason NG BAKO 2025.12.27_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\624.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:42Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 624,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the main comparison; evidence supports Frame OK vs Frame Deform with Before and After 1day subgroups.",
+    "issues": [
+      "Changed factor incorrectly mixes type and time conditions.",
+      "Primary baseline/test should be Frame OK vs Frame Deform.",
+      "Outcome pairs compare Frame OK Before to After 1day, not the report decision.",
+      "Frame Deform Before row is omitted from outcome comparison.",
+      "Measurement outcome is a header-derived artifact, not valid evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to frame condition: Frame OK vs Frame Deform.",
+      "Keep Before and After 1day as subgroup/time keys.",
+      "Create subgroup comparisons using rows 14 vs 18 and 16 vs 20.",
+      "Judge Frame Deform worse for NG Bako/Total NG rate in both subgroups.",
+      "Remove the invalid measurement-stat outcome."
+    ],
+    "evidencePolicy": "Row citations exist, but current grouping citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 3743,
+    "output_tokens": 716,
+    "total_tokens": 4459
+  }
+}

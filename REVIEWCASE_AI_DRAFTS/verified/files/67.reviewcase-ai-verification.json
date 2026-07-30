@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 67,
+  "sourceFile": "027.MSU-20S15-07  Report checking problem NG height check date 13.8.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\67.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 67,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not safe for Ask AI because the changed factor and many measurement/spec groupings are misidentified.",
+    "issues": [
+      "Changed factor wrongly groups dates and V32-G4 instead of old/before-improve vs normal/new frame context.",
+      "Baseline/test conditions are inconsistent with cited headers and subgroup keys.",
+      "Many specs are propagated to unrelated dimensions, creating false violations.",
+      "Outcome tables mix frame, yoke, SMG, final height, and NG-rate data without valid grouping.",
+      "Several metric rows appear parsed from headers or counts rather than comparable results."
+    ],
+    "requiredUserQuestions": [
+      "Should the final case focus on old/before-improve frame mold versus normal/new frame mold?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor from source headers, likely old V06-K1 stock before improve vs normal/new V09-G4 frame mold.",
+      "Keep mold/date/component/grill status as subgroup keys unless proven primary.",
+      "Re-extract each table with its own header, spec, unit, and component context.",
+      "Remove misparsed metrics and false violation counts caused by wrong spec assignment.",
+      "Retain only outcomes directly comparable under the verified changed-factor context."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are not sufficient to support the current grouping."
+  },
+  "usage": {
+    "input_tokens": 10795,
+    "output_tokens": 804,
+    "total_tokens": 11599
+  }
+}

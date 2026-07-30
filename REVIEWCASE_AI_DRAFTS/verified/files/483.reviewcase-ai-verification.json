@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 483,
+  "sourceFile": "28. TIU C11-20  Report Test Frame #1-B improve damage mesh 2026.03.31. - RAW soundcheck_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\483.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:05Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 483,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is comparable but misidentifies the changed factor and includes unreliable measurement groupings.",
+    "issues": [
+      "Changed condition incorrectly set to Day shift; shift is context, not factor.",
+      "Primary comparison should be Frame Test Mold #1-B versus Normal/Normal L.",
+      "Measurement outcomes mix header/spec/frequency rows as data.",
+      "Decision row supporting usability/improvement is not cited.",
+      "Review title is an extracted raw header, not a concise case title."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Frame Test Mold #1-B improvement versus Normal baseline.",
+      "Move date, shift, model, and mold number to subgroup/context keys.",
+      "Rebuild SPL/THD measurement outcomes from actual frequency rows and averages only.",
+      "Keep function defect result as a separate outcome under the same factor.",
+      "Add decision/purpose citations including Test!2, Test!6, and Test!35."
+    ],
+    "evidencePolicy": "Row citations exist, but they do not sufficiently support the current grouping."
+  },
+  "usage": {
+    "input_tokens": 7241,
+    "output_tokens": 568,
+    "total_tokens": 7809
+  }
+}

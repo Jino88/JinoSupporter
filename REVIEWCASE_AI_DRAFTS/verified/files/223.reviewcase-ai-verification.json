@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 223,
+  "sourceFile": "11. BRS-161014 Report check Function for TEST of KR Member  2023.08.31_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\223.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 223,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cannot be verified because the changed factor and comparable conditions are not explicit and outcome evidence is header-only.",
+    "issues": [
+      "Changed factor is inferred from filename, not source rows.",
+      "Baseline/test conditions are not identified.",
+      "Type values may be grouping keys but are undefined.",
+      "Outcome stats mix counts and rates across rows.",
+      "Data rows are not cited for results."
+    ],
+    "requiredUserQuestions": [
+      "What do Type values 1, 3, 4, and 5 represent?",
+      "Is this a comparison study or only a KR member test yield summary?"
+    ],
+    "correctionPlan": [
+      "Define primary changed factor from source context or mark non-comparative.",
+      "Use Type/date as subgroup or condition only if confirmed.",
+      "Cite data rows Sheet1!6-Sheet1!13 for outcomes.",
+      "Separate count metrics from rate metrics.",
+      "Rebuild outcomes around Input, OK, NG, Total NG, NG rate, and defect categories."
+    ],
+    "evidencePolicy": "Current citations exist but are insufficient because they cite headers, not result rows or changed-condition evidence."
+  },
+  "usage": {
+    "input_tokens": 3147,
+    "output_tokens": 653,
+    "total_tokens": 3800
+  }
+}

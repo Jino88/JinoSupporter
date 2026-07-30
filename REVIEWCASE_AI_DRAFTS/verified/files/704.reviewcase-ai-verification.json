@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 704,
+  "sourceFile": "5.BRS-2015 Report Test suspension damage at solder point date 31.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\704.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:21Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 704,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misgroups outcome checks as changed conditions, so it is not ready for Ask AI.",
+    "issues": [
+      "Changed factor mixes metrics with test condition.",
+      "Baseline/test condition is inconsistent across outcomes.",
+      "Reliability result is referenced but not modeled.",
+      "Function row 201506!46 is not shown in contextRows.",
+      "Some citations support sections, not condition evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to suspension solder-point damage/test sample versus Normal.",
+      "Keep bonding, vision, function, and reliability as outcomes under that factor.",
+      "Use row 30/31 and 37/38 as metric comparisons, not factor labels.",
+      "Add cited reliability outcome rows or cite decision only as summary support.",
+      "Verify row 46 text and function NG calculation before final use."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient for final evidence because grouping support is incomplete."
+  },
+  "usage": {
+    "input_tokens": 3658,
+    "output_tokens": 743,
+    "total_tokens": 4401
+  }
+}

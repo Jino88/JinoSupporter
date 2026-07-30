@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 464,
+  "sourceFile": "26. TIU C11-20  Report test Plate supplier MYUNGJIN difference colour 2026.02.26_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\464.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 464,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures main Normal vs test-level comparison but omits drop-test results and overstates functional improvement.",
+    "issues": [
+      "Drop-test auto/manual outcome is omitted despite source results and decision rows.",
+      "Function outcome marked improved, while decision states test NG is same as normal.",
+      "Changed factor should reflect Myungjin plate/color test levels, not generic process condition.",
+      "Measurement outcomes cite header-only rows and add weak synthetic stats.",
+      "Evidence set misses key decision rows 70-74 and drop-test rows 44-56."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add drop-test outcome covering semi yoke manual, final manual, and final auto results.",
+      "Change function judgement to no adverse change or needs_review with sample-size limitation.",
+      "Revise changed factor to supplier/material color test levels versus normal.",
+      "Remove or merge header-only measurement outcomes into NG process/function outcomes.",
+      "Include purpose, title, result, and decision evidence rows including 70-74."
+    ],
+    "evidencePolicy": "Row citations exist but are incomplete and partly header-only; not sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 6616,
+    "output_tokens": 771,
+    "total_tokens": 7387
+  }
+}

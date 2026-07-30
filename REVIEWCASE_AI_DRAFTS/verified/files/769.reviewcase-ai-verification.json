@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 769,
+  "sourceFile": "6. BRS-161014 Report test  JIG Ass'y Guide JIG Up Dimension   Date 18.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\769.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 769,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures a comparable JIG up-dimension validation but grouping and outcome evidence are not final-safe.",
+    "issues": [
+      "Changed factor wrongly includes TOTAL as a condition.",
+      "Function totals omit 0.15mm total and many dated rows.",
+      "Header-only measurement outcomes are unsupported artifacts.",
+      "Subgroup keys are incomplete and biased to 0.05mm.",
+      "Row 51 data appears internally inconsistent and needs caution."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal vs JIG Guide UP 0.05, 0.1, and 0.15mm.",
+      "Remove TOTAL from conditions and use it only as aggregate label.",
+      "Include all function rows 47,49,51,53,55,57,59,61,63,65,67,69,71 or clearly separate totals from dated runs.",
+      "Drop header-only measurement outcomes unless raw measurements exist.",
+      "Cite purpose, type definitions, result tables, conclusion, and relevant total/detail rows."
+    ],
+    "evidencePolicy": "Current citations exist but are incomplete; header-only citations are not sufficient."
+  },
+  "usage": {
+    "input_tokens": 6175,
+    "output_tokens": 534,
+    "total_tokens": 6709
+  }
+}

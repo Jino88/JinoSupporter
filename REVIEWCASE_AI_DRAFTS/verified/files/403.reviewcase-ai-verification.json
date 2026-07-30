@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 403,
+  "sourceFile": "21. BRS-201506 Report checking NTI OK ans NG sample date 29.2.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\403.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:09Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 403,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cannot be verified because the comparison factor and measurement grouping are misidentified.",
+    "issues": [
+      "Changed factor is filename instead of OK/NG/ST sample condition.",
+      "Baseline and changed conditions are not defined.",
+      "SPL, THD, impedance, FO, and mask data are mixed under generic metrics.",
+      "Header/index/mask numbers appear treated as measurements.",
+      "Citations exist but lack enough surrounding rows for reliable grouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to sample status groups if confirmed by source rows.",
+      "Define ST, OK, and NG roles using sheet headers and context.",
+      "Separate outcomes by domain: SPL, THD, impedance, and FO result.",
+      "Remove non-measurement header, index, and mask scale values from stats.",
+      "Cite header rows plus data/min/max rows for each outcome."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are semantically insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4145,
+    "output_tokens": 744,
+    "total_tokens": 4889
+  }
+}

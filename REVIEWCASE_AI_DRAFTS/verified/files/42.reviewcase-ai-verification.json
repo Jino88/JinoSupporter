@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 42,
+  "sourceFile": "02. BRS-161014 Report test new DT machine combine Bonding+Ass'y yoke 10.01.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\42.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:46:31Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 42,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft cites existing result rows but incorrectly treats test dates as the changed condition instead of the new DT combine Bonding+Ass'y CM+Yoke machine/process validation.",
+    "issues": [
+      "Changed factor grouping is incorrect: 2024-01-10 and 2024-01-12 appear to be result dates/test runs, not baseline versus changed conditions.",
+      "Baseline or normal condition is not explicitly evidenced in the extracted rows.",
+      "Outcome grouping is under-specified as unknown/Result rather than production yield/NG defects such as NG don’t Pickup, Ass'y CM float, Total NG, and NG rate.",
+      "Row-level grouping should preserve date as a subgroup/test-run key, not as the primary changed factor.",
+      "Decision row is cited in context but not used; if it contains acceptance or conclusion text, it should be included as evidence."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended baseline or normal condition for this new DT machine test?",
+      "Should the primary changed factor be the new DT machine combining Bonding and Ass'y for CM+Yoke?"
+    ],
+    "correctionPlan": [
+      "Reframe the primary changed factor as the new DT machine/process combining Bonding+Ass'y for CM+Yoke, supported by the title and purpose/content rows.",
+      "Move 2024-01-10 and 2024-01-12 into subgroupKeys or subResults as test dates, not changed conditions.",
+      "Set baselineCondition to not explicit unless additional source rows identify the prior/normal machine or process.",
+      "Classify outcomes as production quality/yield defect results and name the metrics from the header row: Input, OK, NG don’t Pickup, Ass'y CM float, Total NG, and NG rate.",
+      "Add or inspect the decision row for final judgement/acceptance criteria before approval."
+    ],
+    "evidencePolicy": "Evidence row citations are sufficient for source existence and basic result values, but not sufficient to support the current baseline-versus-date changed-factor interpretation."
+  },
+  "usage": {
+    "input_tokens": 2202,
+    "output_tokens": 941,
+    "total_tokens": 3143
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 646,
+  "sourceFile": "43. TIU L5S3-01 R Report  test repair remove bond VP to check NG function 2025.12.29_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\646.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 646,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable comparison evidence but misgroups the changed factor and includes an invalid measurement outcome.",
+    "issues": [
+      "Primary factor should be repair/remove-bond semi-sub reuse vs normal, not Line L/R as changed conditions.",
+      "Line L and Line R appear to be subgroups and must be preserved as grouping keys.",
+      "Measurement outcome from header/defect columns is not a valid separate measurement analysis.",
+      "Referenced result rows Test!15 and Test!19 are not shown in context for verification.",
+      "Decision row Test!26 is relevant but not cited."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set baseline to Normal and changed condition to repaired/remove-bond VP/coil semi-sub reuse.",
+      "Move Line L and Line R into subgroup keys or subresults, not changedCondition.",
+      "Keep one function-defect outcome with Input, OK, NG categories, Total NG, and NG rate.",
+      "Remove the bogus measurement outcome and header-derived stats.",
+      "Add citations for Test!15, Test!19, and Test!26 with row text available."
+    ],
+    "evidencePolicy": "Evidence is partly sufficient, but final use needs visible test-row citations and no header-only measurement stats."
+  },
+  "usage": {
+    "input_tokens": 3319,
+    "output_tokens": 781,
+    "total_tokens": 4100
+  }
+}

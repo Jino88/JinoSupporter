@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 417,
+  "sourceFile": "22. TIU C11-20  Report Test VP stock date 6.1 check function 2026.1.29_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\417.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 417,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparison evidence but misstates the changed factor and includes invalid header-derived measurement statistics.",
+    "issues": [
+      "Changed factor should be VP date 6/1 sample versus normal date 29/1, not day shift versus TIU C11-20R.",
+      "L/R model or side is mixed between changed condition and subgroup context.",
+      "Rows 14 and 18 are key test rows but their extracted text is not shown in contextRows.",
+      "Measurement outcome is header-derived and not a valid separate measurement result.",
+      "Normal rows 16 and 20 may represent separate matched baselines and should not be pooled blindly."
+    ],
+    "requiredUserQuestions": [
+      "Should TIU C11-20L and TIU C11-20R be treated as separate subgroup comparisons?",
+      "Which normal row matches each L/R test row, if matching is required?"
+    ],
+    "correctionPlan": [
+      "Set primary changed factor to VP stock/date 6/1 sample check versus normal date 29/1.",
+      "Use TIU C11-20L/R and shift/date as subgroup keys only unless source proves they are the changed factor.",
+      "Expose and cite row text for Test!14 and Test!18.",
+      "Remove measurement-1 or convert defect columns into breakdown subresults under function defect outcome.",
+      "Keep rows 14,16,18,20 as row-level subresults with input, OK, total NG, and NG rate."
+    ],
+    "evidencePolicy": "Row citations exist, but key test-row text and corrected grouping are required before final evidence use."
+  },
+  "usage": {
+    "input_tokens": 3344,
+    "output_tokens": 853,
+    "total_tokens": 4197
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 160,
+  "sourceFile": "08. BRS-161014  Report test new jig magnetize for new model 161024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\160.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 160,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but the primary changed factor and subgroup grouping are inconsistent.",
+    "issues": [
+      "Changed factor wrongly says Normal vs JIG TEST with SMG Long while cited pair is SMG short.",
+      "Primary context appears new jig magnetize versus old/normal jig, not model/spec as stated.",
+      "Gauss results mix S-MG short and S-MH long without clear subgroup separation.",
+      "Jig damage statistics rely on header/partial rows and need data-row confirmation.",
+      "Several cited rows are not shown in context, limiting citation audit."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to new jig magnetize versus old/normal jig if supported by rows.",
+      "Separate subgroup results by magnet type: S-MG short and S-MH long.",
+      "Correct baseline and changed conditions for JIG TEST versus Normal rows.",
+      "Verify jig damage rows include actual before/after damage values, not only headers.",
+      "Retain damage, NG rate, and gauss outcomes under one validation report only after regrouping."
+    ],
+    "evidencePolicy": "Row citations are sufficient for existence but not yet sufficient for final grouping."
+  },
+  "usage": {
+    "input_tokens": 5291,
+    "output_tokens": 782,
+    "total_tokens": 6073
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 394,
+  "sourceFile": "20. L20S15-07GMI  Report test new bond PT - 7207P( H2 ) and SJ4056 ( H2 ) for process bonding as'y VP + CD_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\394.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:47Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 394,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misdefines the changed factor and omits key result domains from the validation report.",
+    "issues": [
+      "Changed factor is filename-like, not the actual tested bond/material condition.",
+      "Baseline and test conditions are marked unclear despite rows indicating Normal SJ4765 versus PT-7207P/SJ4056 test bonds and laser-CD condition.",
+      "Outcome grouping is incomplete; NG separate/function and VP deform results are omitted.",
+      "Tension!10 condition text is malformed and row text is not shown in context.",
+      "Evidence relies on analysis/tension rows while underusing report rows that define purpose, conditions, and results."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to new bond PT-7207P(H2) and SJ4056(H2) for VP+CD bonding, with Not-use MC laser CD as a secondary condition if supported.",
+      "Set baseline as Normal SJ4765 with laser CD use where cited, and changed conditions as PT-7207P(H2) and SJ4056(H2) test lots.",
+      "Add outcomes for NG separate, NG function, VP deform, and final function analysis under the same validation context.",
+      "Correct Tension!10 parsing to identify SJ4056(H2) as a test condition and cite the full row.",
+      "Use Report!6-14, relevant result rows, Report!18/26, and Tension!8/10/12 as primary citations."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient for final evidence until condition-defining and omitted result rows are cited."
+  },
+  "usage": {
+    "input_tokens": 4122,
+    "output_tokens": 747,
+    "total_tokens": 4869
+  }
+}

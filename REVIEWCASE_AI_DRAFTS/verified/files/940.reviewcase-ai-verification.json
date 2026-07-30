@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 940,
+  "sourceFile": "83. TIU L5S3-01  Report test Check iussue MG+YOKE separate (using MG special lot difference color)-  date 2026.04.14_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\940.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:45Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 940,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft has citeable defect-result evidence but the changed-factor grouping and added measurement outcomes are not reliable.",
+    "issues": [
+      "Baseline mixes Baotou special lot normal, Ruijin normal lot, and later date normal condition.",
+      "Critical subgroup keys are missing: date, vendor/lot/material condition, and process setting.",
+      "Measurement outcomes are parser artifacts from table text, not real measurements.",
+      "Rows 15 and 19-23 are cited but not shown in context, limiting verification of listed conditions.",
+      "Changed factor over-combines temperature, dry time, cleaning method, and material lot without clear hierarchy."
+    ],
+    "requiredUserQuestions": [
+      "Are 4/14 Baotou and 4/15 Ruijin trials intended as separate subgroups or one combined validation?"
+    ],
+    "correctionPlan": [
+      "Remove all measurement-* outcomes and keep only the defect result table.",
+      "Rebuild cf-1 as improvement-condition testing for MG+Yoke separation, with subgroup keys for date and material vendor/lot.",
+      "Separate baseline rows by subgroup: Baotou normal for 4/14 tests and Ruijin normal for 4/15 dry-time tests.",
+      "Verify and include row text for cited rows 15 and 19-23 before final use.",
+      "Keep Input, NG, and NG rate as the only outcome metrics with not_judged judgement unless a decision row supports a conclusion."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until all cited result rows are visible and grouped correctly."
+  },
+  "usage": {
+    "input_tokens": 6052,
+    "output_tokens": 853,
+    "total_tokens": 6905
+  }
+}

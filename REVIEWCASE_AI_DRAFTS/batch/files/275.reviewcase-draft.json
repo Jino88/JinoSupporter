@@ -1,0 +1,213 @@
+{
+  "sourceFileId": 275,
+  "sourceFile": "13.BRS-201506 Report  test bonding PAD improve quaility more good  date 19.1.2025_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\13.BRS-201506 Report  test bonding PAD improve quaility more good  date 19.1.2025_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 20,
+    "sheetCellCount": 65,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!1",
+      "sheetName": "Test",
+      "rowNumber": 1,
+      "rowText": "| TITLE | | BRS - 201506 REPORT TEST BONDING PAD IMPROVE QUAILITY MORE GOOD | | | | | | | | | | | | | | | | | | Dept: | ME"
+    },
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | Date: | 2025-01-19 00:00:00"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | | | | | Marker: | Le"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| - Model 201507 after reliability test happen crack PAD"
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| - Make sample and check function"
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Q'ty test : 200pcs"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| + Load test ( follow stardand)"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| III. Result."
+    },
+    {
+      "rowId": "Test!17",
+      "sheetName": "Test",
+      "rowNumber": 17,
+      "rowText": "| | 1. RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "Test!18",
+      "sheetName": "Test",
+      "rowNumber": 18,
+      "rowText": "| | Date | Line | Type | Input | OK | Sigma | | | Recheck Hearing | | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "Test!20",
+      "sheetName": "Test",
+      "rowNumber": 20,
+      "rowText": "| | 2025-01-20 00:00:00 | C2-2A | Test bonding pad | 200 | 190 | 0 | 1 | 0 | 6 | 3 | 10 | 0.05"
+    },
+    {
+      "rowId": "Test!22",
+      "sheetName": "Test",
+      "rowNumber": 22,
+      "rowText": "| | | | Normal | 280 | 267 | 0 | 0 | 0 | 8 | 5 | 13 | 0.04642857"
+    },
+    {
+      "rowId": "Test!25",
+      "sheetName": "Test",
+      "rowNumber": 25,
+      "rowText": "| | ++ RESULT DECAP NG HEARING"
+    },
+    {
+      "rowId": "Test!37",
+      "sheetName": "Test",
+      "rowNumber": 37,
+      "rowText": "| IV. Decision."
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-275-rc-1",
+      "reviewTitle": "| BRS - 201506 REPORT TEST BONDING PAD IMPROVE QUAILITY MORE GOOD | | | | | | | | | | | | | | | | | | Dept: | ME",
+      "reviewPurpose": "| I. Purpose. / | - Model 201507 after reliability test happen crack PAD / | II. Content. / | - Make sample and check function / | - Q'ty test : 200pcs",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Test bonding pad",
+          "baselineCondition": "Normal",
+          "changedCondition": "Test bonding pad",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!1",
+            "Test!20",
+            "Test!22",
+            "Test!4",
+            "Test!5",
+            "Test!6",
+            "Test!8",
+            "Test!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "1. RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "Test!20",
+            "Test!22"
+          ],
+          "judgement": "worse",
+          "subResults": [
+            {
+              "pairId": 3794,
+              "controlCondition": "Normal",
+              "testCondition": "Test bonding pad",
+              "control": {
+                "input": 280.0,
+                "ng": 13.0,
+                "ratePercent": 4.642857
+              },
+              "test": {
+                "input": 200.0,
+                "ng": 10.0,
+                "ratePercent": 5.0
+              },
+              "deltaRatePercentPoint": 0.35714300000000004,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Test!20",
+                "Test!22"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Test!1",
+        "Test!20",
+        "Test!22",
+        "Test!4",
+        "Test!5",
+        "Test!6",
+        "Test!8",
+        "Test!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!1",
+      "Test!20",
+      "Test!22",
+      "Test!4",
+      "Test!5",
+      "Test!6",
+      "Test!8",
+      "Test!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

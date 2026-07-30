@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 400,
+  "sourceFile": "21. BRS-161014 Report TEST FRAME ARRAY JIG improve bending Suspension 2023.09.08_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\400.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:00:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 400,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The changed factor is supported, but the outcome pairing is incorrect and must preserve date/input grouping.",
+    "issues": [
+      "Second subResult incorrectly pairs 2023-09-08 normal with 2023-09-09 test.",
+      "Outcome comparisonRows omit 9.8!23, the matching normal row for 2023-09-09.",
+      "Outcome metric is vague; should use NG bending or NG rate.",
+      "Date grouping from blank normal-date rows must be inherited from preceding dated test rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Pair 9.8!20 with 9.8!21 for 2023-09-08 input 117.",
+      "Pair 9.8!22 with 9.8!23 for 2023-09-09 input 100.",
+      "Add 9.8!23 to outcome comparisonRows.",
+      "Rename outcome metric to NG bending rate or NG bending count/rate.",
+      "Recalculate second delta as 1.0% vs 9.0%, delta -8.0 percentage points."
+    ],
+    "evidencePolicy": "Citations are mostly sufficient, but final outcome evidence must include row 9.8!23 and cite paired rows by date/input."
+  },
+  "usage": {
+    "input_tokens": 2704,
+    "output_tokens": 505,
+    "total_tokens": 3209
+  }
+}

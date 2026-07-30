@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 139,
+  "sourceFile": "06. TIU C11-20  Report test VP new mold make by GN date 26.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\139.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:50Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 139,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "The main Normal vs VP new GN mold comparison is plausible, but tension grouping evidence needs correction before final use.",
+    "issues": [
+      "Tension evidence rows Test!24 and Test!26 are cited but not shown in provided context.",
+      "Tension subgroups such as VP+COIL and FP+VP are not preserved as grouping keys.",
+      "Two Normal tension rows appear to match separate VP rows, but pairing is not explicit.",
+      "Tension sampleCount appears inconsistent with multiple sample values per row."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Expose or cite row text for Test!24 and Test!26.",
+      "Add subgroup keys for tension secondary conditions.",
+      "Map each VP tension row to its corresponding Normal row.",
+      "Verify tension sample count, spec, min, max, and average extraction.",
+      "Keep function and tension outcomes under the same new-mold changed factor after fixes."
+    ],
+    "evidencePolicy": "Function citations are sufficient; tension citations need visible row support and grouping clarity."
+  },
+  "usage": {
+    "input_tokens": 3462,
+    "output_tokens": 753,
+    "total_tokens": 4215
+  }
+}

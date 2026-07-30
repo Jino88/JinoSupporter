@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 238,
+  "sourceFile": "11.BRS-201506 Report  test change new tip U844- U864 improve NG spot offset date 26.12.2024 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\238.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:07Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 238,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because it treats repair status and totals as the changed factor instead of the new TIP 864 versus old TIP 844 validation.",
+    "issues": [
+      "Primary changed factor is misgrouped.",
+      "Baseline/test conditions mix tip, repair status, date, and total rows.",
+      "Vision subresults compare non-matching rows and duplicate one control.",
+      "Function result is left unjudged despite cited normal comparison.",
+      "Measurement outcome is invalid header-derived statistics."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to TIP 844 normal versus new TIP 864.",
+      "Keep repair status, date, and total as subgroup keys.",
+      "Rebuild vision comparisons only between matched tip conditions or use reported totals with clear context.",
+      "Judge function outcome against normal using rows 53 and 55 plus decision row 60.",
+      "Remove the header-based measurement outcome."
+    ],
+    "evidencePolicy": "Citations exist but are insufficiently grouped for final evidence; include row 53 text if used."
+  },
+  "usage": {
+    "input_tokens": 4988,
+    "output_tokens": 753,
+    "total_tokens": 5741
+  }
+}

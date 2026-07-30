@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 724,
+  "sourceFile": "52.1. BN DATA-TIM338 RA1 ASS'Y UNIT CHANGE NEW VP_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\724.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:51Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 724,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable New VP comparison evidence but the changed-factor grouping and outcome judgments need correction.",
+    "issues": [
+      "Changed factor is malformed; comparison is Rear Normal vs Rear Test New VP on L-side, not L-Side vs Rear Test.",
+      "Rear Normal is baseline condition, not subgroup context.",
+      "Numeric NG outcome is marked worse despite source conclusion saying the noise is not VP-related.",
+      "Raw WF/TW/MIC/LOOP tables are over-included as non-comparative detected-table statistics.",
+      "SUMMARY row citations are not shown in context, limiting verification of SPL/MIC grouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to unit/VP type change: Rear Normal vs Rear Test New VP, with L-side as subgroup.",
+      "Use Sheet1 rows 31-32 for function-test comparison and rows 57-60 for conclusion context.",
+      "Revise judgement to reflect numeric NG increase but no VP-related defect per conclusion, or mark not judged with limitation.",
+      "Remove or separate raw detected-table statistics unless linked to normal-vs-test comparison.",
+      "Include SUMMARY rows 52-53 text if SPL/MIC outcomes are retained."
+    ],
+    "evidencePolicy": "Row citations exist, but key grouping and conclusion evidence must be cited before Ask AI use."
+  },
+  "usage": {
+    "input_tokens": 6072,
+    "output_tokens": 660,
+    "total_tokens": 6732
+  }
+}

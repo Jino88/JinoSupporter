@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 410,
+  "sourceFile": "22. BRS- 161014  Report checking gauss  date 7.12.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\410.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:26Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 410,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable NG vs OK gauss evidence but grouping and outcome selection need correction before use.",
+    "issues": [
+      "Changed factor/domain is wrong; this is NG Gauss vs OK Gauss, not supplier/material or implicit baseline.",
+      "F0 and THD detected-table outcomes include metadata/frequency stats without verified NG/OK comparison.",
+      "Outcome grouping mixes gauss, function, and acoustic sheets without proving one validation context for all.",
+      "CMG/SMG subgroup rows are cited but parent NG/OK grouping is not visible in provided context.",
+      "Spec handling is incomplete for cited yoke rows with 480G spec."
+    ],
+    "requiredUserQuestions": [
+      "Should F0/SPL/THD acoustic sheets be included as outcomes for the NG vs OK gauss comparison?"
+    ],
+    "correctionPlan": [
+      "Change primary factor to Sample NG Gauss versus Sample OK Gauss for BRS-161014 gauss condition.",
+      "Set domain to process/material magnetic condition, not supplier.",
+      "Keep section 1 and 2 gauss results and function results as core outcomes with row-level citations.",
+      "Verify rows 17,18,20,23,24,26 and attach CMG/SMG rows under the correct NG or OK parent condition.",
+      "Remove or separately rebuild F0/THD/SPL outcomes only if their rows explicitly compare Gauss OK and Gauss NG."
+    ],
+    "evidencePolicy": "Core 1.6 citations are sufficient; F0/THD citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 8817,
+    "output_tokens": 856,
+    "total_tokens": 9673
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 685,
+  "sourceFile": "48.L20S15-07 Report Test Magnet A and B Of vender Ruijin clean with Chemicals E100B-006 date 27.10.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\685.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 685,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed factor and mixes unrelated conditions, so it cannot be used as final evidence.",
+    "issues": [
+      "Primary comparison should be E100B-006 cleaning vs normal alcohol, not SM VISION or S-MG A/B.",
+      "Outcome grouping is incomplete and wrongly combines vision with other table data.",
+      "Baseline/test conditions are inconsistent across cited rows.",
+      "Key result domains are omitted or under-cited: glue, tension, drop, final decision.",
+      "Row 201507!31 is used without shown context and appears misinterpreted."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factor as Ruijin S-MG A/B cleaned with E100B-006 versus normal alcohol.",
+      "Group outcomes under one validation report: vision NG, decap/glue, tension, and drop test.",
+      "Use row-level conditions from each result table and preserve test type or sample context.",
+      "Replace invalid mixed subresults with metrics from their own rows only.",
+      "Cite purpose, comparison headers, each result table, and decision rows."
+    ],
+    "evidencePolicy": "Current citations exist but are not sufficient because grouping and row interpretation are wrong."
+  },
+  "usage": {
+    "input_tokens": 4000,
+    "output_tokens": 658,
+    "total_tokens": 4658
+  }
+}

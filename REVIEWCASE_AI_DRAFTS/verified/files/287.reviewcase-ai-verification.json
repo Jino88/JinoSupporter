@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 287,
+  "sourceFile": "14. TIU C11-20 Result test Frame new vender POPS VINA 2026.01.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\287.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 287,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Comparable evidence exists, but the draft misstates the primary changed factor and leaves key paired outcomes unresolved.",
+    "issues": [
+      "Primary change should be normal lot/frame vs new vendor POPS VINA, not model vs Normal.",
+      "Changed condition and baseline labels are inconsistent and include a typo as a condition.",
+      "Review title is taken from a Sheet1 header instead of the validation report title.",
+      "Array Frame and Spot welding comparisons are not judged despite normal comparators.",
+      "Evidence set omits key title, purpose, compare-normal, and decision rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to new frame vendor POPS VINA versus normal lot/frame.",
+      "Normalize condition labels while preserving any source typo as row text context.",
+      "Use Test report title and purpose/content rows for review title and purpose.",
+      "Judge Array Frame, Spot welding, and Function under one validation case.",
+      "Add Test!2, Test!6, Test!9, Test!10, and Test!43-Test!45 as supporting evidence."
+    ],
+    "evidencePolicy": "Outcome row citations partly suffice, but context and decision citations are needed before final use."
+  },
+  "usage": {
+    "input_tokens": 4495,
+    "output_tokens": 784,
+    "total_tokens": 5279
+  }
+}

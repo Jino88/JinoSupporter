@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 412,
+  "sourceFile": "22. BRS-161014 Report Test Frame Mold Cavity_230909_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\412.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 412,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not verified because the changed factor and outcomes are generic and not tied to cited cavity NG-rate data.",
+    "issues": [
+      "Changed factor is the filename, not the evidenced Frame Mold/Cavity factor.",
+      "Baseline and changed conditions are not identified.",
+      "Outcome stats are derived from headers and omit cited result rows.",
+      "Second test section is not grouped or assessed.",
+      "Evidence cites mostly title/header rows, not measurement rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Use Frame Mold/Cavity as the changed-factor context if supported by full rows.",
+      "Preserve date, test round, No, and cavity as grouping keys.",
+      "Rebuild outcomes from SIGMA, Hearing, and Total NG-rate data rows.",
+      "Include both 1st and 2nd test sections when comparable.",
+      "Cite the exact rows containing cavity values and NG rates."
+    ],
+    "evidencePolicy": "Current citations are insufficient; final evidence must cite data rows, not only headers."
+  },
+  "usage": {
+    "input_tokens": 2404,
+    "output_tokens": 659,
+    "total_tokens": 3063
+  }
+}

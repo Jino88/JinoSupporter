@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 34,
+  "sourceFile": "014.MSU-20S15-07 Result test AWF cooling time 4s,8s,10s_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\34.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:21Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 34,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the AWF cooling-time comparison but misstates the factor, domains, and key outcome values.",
+    "issues": [
+      "Changed factor should be cooling time 4s vs 8s vs 10s, not baseline vs tests.",
+      "Change domains are inappropriate for a process timing parameter.",
+      "Function-defect NG and rate values are calculated from wrong columns.",
+      "Measurement outcome cites only a header row and mixes counts with ratio rows.",
+      "Sheet2 data lacks cited cooling-time linkage and should not drive this case unless mapped."
+    ],
+    "requiredUserQuestions": [
+      "Which metric is primary: OK rate, +1V hearing NG rate, or +0V hearing NG rate?"
+    ],
+    "correctionPlan": [
+      "Rename factor to AWF cooling time with conditions 4s, 8s, and 10s.",
+      "Set baselineCondition to none or first tested level, not normal condition.",
+      "Rebuild outcomes from Sheet1 rows 6, 8, and 10 using headers in rows 4 and 5.",
+      "Separate +1V and +0V hearing Noise, Touch, Total NG, and NG Rate metrics.",
+      "Remove header-only measurement statistics or recite them to actual data rows."
+    ],
+    "evidencePolicy": "Rows 3-6, 8, and 10 support the comparison; current metric citations are insufficient."
+  },
+  "usage": {
+    "input_tokens": 3975,
+    "output_tokens": 820,
+    "total_tokens": 4795
+  }
+}

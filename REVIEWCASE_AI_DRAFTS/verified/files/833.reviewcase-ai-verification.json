@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 833,
+  "sourceFile": "67. BRS-161016  Report test CD press JIG OK and worn out find reason NG separate conner date 20.09.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\833.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 833,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the result data but misstates the changed-factor grouping for the JIG wear comparison.",
+    "issues": [
+      "Changed factor should be JIG wear condition, not implicit baseline vs both types.",
+      "Baseline should be JIG OK/not worn out; test should be JIG worn out.",
+      "Rows defining the two JIG types are omitted from main evidence.",
+      "Outcome judgement can reflect no difference, both 0% NG."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedFactor to CD press JIG wear condition.",
+      "Set baselineCondition to JIG OK/not worn out.",
+      "Set changedCondition to JIG worn out.",
+      "Add rows 30.8!13-15 as condition-definition evidence.",
+      "Keep rows 30.8!20,22,23,32 for metric header, results, and decision."
+    ],
+    "evidencePolicy": "Citations are citeable but incomplete until type-definition and decision rows are added."
+  },
+  "usage": {
+    "input_tokens": 2718,
+    "output_tokens": 377,
+    "total_tokens": 3095
+  }
+}

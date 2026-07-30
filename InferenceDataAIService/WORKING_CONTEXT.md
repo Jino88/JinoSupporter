@@ -1,3 +1,20 @@
+# 2026-07-21 resume point
+
+Read [`SESSION_HANDOFF_2026-07-21.md`](SESSION_HANDOFF_2026-07-21.md) first.
+It records the completed 30-workbook result, the single remaining review item,
+the user's latest performance/validation decisions, and the existing 199-term
+micro-speaker dictionary found in `MicroSpeaker_ProductTech_DB`.
+
+# 2026-07-20 table-first override
+
+The active default implementation contract is
+[`TABLE_FIRST_SEMANTIC_PIPELINE.md`](TABLE_FIRST_SEMANTIC_PIPELINE.md).
+Do not resume exhaustive per-cell AI semanticization or strict workbook-wide
+blocking as the main corpus path. Build a compact table/text inventory, ask AI
+once per normal workbook for table purpose/group/comparison/metric labels, and
+let deterministic code preserve values, calculate statistics, and attach exact
+evidence. Store ambiguity as `NEEDS_REVIEW` or `PARTIAL`.
+
 # InferenceDataAIService — 목표 및 작업 이력
 
 최종 갱신: 2026-07-11

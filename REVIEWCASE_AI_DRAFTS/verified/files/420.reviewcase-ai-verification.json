@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 420,
+  "sourceFile": "22.BRS-161014 Result checking Problem NG Spot welding date 6.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\420.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:01:59Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 420,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not approvable because the primary comparison is misgrouped and key bonding evidence is omitted.",
+    "issues": [
+      "Changed factor incorrectly states normal baseline vs mixed material/shift/IR values.",
+      "Source decision identifies IR 251119016 problem lot vs IR 251123006 OK lot.",
+      "Bonding coating cream comparison rows 32-33 are key but omitted from outcomes.",
+      "Subgroup keys contain sample sizes, shifts, and dates as changed factors.",
+      "Some cited rows lack visible row text in the provided context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild changed factors as lot suspension IR comparison and coating cream process comparison.",
+      "Use row 66 for problem-lot vs OK-lot conclusion.",
+      "Use rows 31-33 and 67 for no-bonding vs bonding coating cream results.",
+      "Keep date, line, shift, lot date, and sample size as subgroup context.",
+      "Verify row text for cited rows 29-30 and 34-39 or remove unsupported citations."
+    ],
+    "evidencePolicy": "Citations are partly sufficient but must include key decision rows and visible support for all cited rows."
+  },
+  "usage": {
+    "input_tokens": 4907,
+    "output_tokens": 780,
+    "total_tokens": 5687
+  }
+}

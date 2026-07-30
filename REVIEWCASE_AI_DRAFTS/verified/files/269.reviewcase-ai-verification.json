@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 269,
+  "sourceFile": "13. MSU-L20S15-07DT  Report Test Supension B CSY TECH VINA send some kinds of samples for verify date 24.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\269.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 269,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures the main spot-welding comparison but needs regrouping and outcome cleanup before use as final evidence.",
+    "issues": [
+      "Four test sample types are over-aggregated as one changed condition.",
+      "Function outcome conflicts with report conclusion that function is OK.",
+      "Measurement outcomes cite header-like rows and are not valid judged evidence.",
+      "Key conclusion rows are omitted from final evidence citations.",
+      "Rows 24 and 33 are cited but not shown in supplied context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Represent each sample type as a distinct test condition or subgroup under the same report context.",
+      "Remove unsupported measurement-stat outcomes or mark them non-evidence.",
+      "Revise function judgement to reflect the report conclusion and keep numeric rates as detail.",
+      "Add conclusion rows 42-49 and decision row 51 as evidence.",
+      "Verify cited rows 24 and 33 or replace with visible header rows 23 and 32."
+    ],
+    "evidencePolicy": "Citations are partly sufficient for raw results but insufficient for final conclusions and unsupported measurement stats."
+  },
+  "usage": {
+    "input_tokens": 6101,
+    "output_tokens": 763,
+    "total_tokens": 6864
+  }
+}

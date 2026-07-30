@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 751,
+  "sourceFile": "56.BRS-161014 Report test new Suspension cutting 0.03mm_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\751.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 751,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the report context but misgroups the changed factor and omits key subgroup comparisons.",
+    "issues": [
+      "Changed factor incorrectly mixes Sub 4 into the test condition.",
+      "Primary factor should be 0.03mm C/D cutting suspension vs normal suspension.",
+      "Subgroup keys are incomplete; Sub 3, Sub 4, and C/D side context must be preserved.",
+      "NG rate outcome includes only Sub 3 and appears to omit Sub 4 rows.",
+      "Tension D rows lack inherited Test/Normal grouping from merged cells."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to new Suspension C/D cutting 0.03mm versus normal suspension.",
+      "Set baseline to normal suspension and changed condition to test suspension.",
+      "Move Sub 3/Sub 4 and C/D into subgroup or subresult context only.",
+      "Add or verify Sub 4 NG rate comparison using rows 27 and 29.",
+      "Repair tension grouping so C and D results inherit Test or Normal condition."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient until omitted subgroup rows and merged-cell grouping are corrected."
+  },
+  "usage": {
+    "input_tokens": 3988,
+    "output_tokens": 713,
+    "total_tokens": 4701
+  }
+}

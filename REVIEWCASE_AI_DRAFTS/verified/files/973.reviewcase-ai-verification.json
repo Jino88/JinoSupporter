@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 973,
+  "sourceFile": "90. BRS-161014 Report test new Upper magnetic jig 22.12.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\973.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:38Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 973,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies a real jig comparison report but misstates the changed factor, conditions, and outcome grouping.",
+    "issues": [
+      "Changed factor is filename, not upper magnetic jig type comparison.",
+      "Baseline is explicit normal jig, not unknown.",
+      "Changed conditions are jig test type 1 and type 2, not unknown.",
+      "Outcome metric is generic table instead of Gauss MG, Yoke, and final SPK.",
+      "Key report evidence rows are omitted from case evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to new upper magnetic jig type versus normal jig.",
+      "Set baseline condition to normal jig.",
+      "Set changed conditions to jig test type 1 and jig test type 2; preserve them as compared groups.",
+      "Group outcomes as Gauss MG, Gauss Yoke, and Gauss final SPK with 50 pcs per jig type where supported.",
+      "Cite Report rows 8, 12, 13, 18, 20 plus Gauss check label/data rows for type 1, type 2, and normal jig."
+    ],
+    "evidencePolicy": "Current row citations prove table existence but are insufficient for final evidence; add report and condition-label rows."
+  },
+  "usage": {
+    "input_tokens": 4989,
+    "output_tokens": 623,
+    "total_tokens": 5612
+  }
+}

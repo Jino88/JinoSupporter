@@ -1,0 +1,204 @@
+{
+  "sourceFileId": 477,
+  "sourceFile": "28. BRS-161014 Report TEST AWF #1 2023.09.14_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\28. BRS-161014 Report TEST AWF #1 2023.09.14_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report (2)",
+    "sheetRowCount": 17,
+    "sheetCellCount": 70,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report (2)!2",
+      "sheetName": "Report (2)",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT TEST AWF # 1 MACHINE CHANGE WINDING -161014 | | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report (2)!3",
+      "sheetName": "Report (2)",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | | Date | 2023-09-14 00:00:00"
+    },
+    {
+      "rowId": "Report (2)!4",
+      "sheetName": "Report (2)",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | | Marker | Thao/Thuy"
+    },
+    {
+      "rowId": "Report (2)!5",
+      "sheetName": "Report (2)",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report (2)!6",
+      "sheetName": "Report (2)",
+      "rowNumber": 6,
+      "rowText": "| - To improve NG function high"
+    },
+    {
+      "rowId": "Report (2)!7",
+      "sheetName": "Report (2)",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report (2)!8",
+      "sheetName": "Report (2)",
+      "rowNumber": 8,
+      "rowText": "| - AWF # 1 machine change winding -> to separate lot checking function and compare NG rate with normal AWF machine"
+    },
+    {
+      "rowId": "Report (2)!10",
+      "sheetName": "Report (2)",
+      "rowNumber": 10,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "Report (2)!11",
+      "sheetName": "Report (2)",
+      "rowNumber": 11,
+      "rowText": "| | RESULT CHECKING FUNCTION"
+    },
+    {
+      "rowId": "Report (2)!12",
+      "sheetName": "Report (2)",
+      "rowNumber": 12,
+      "rowText": "| | Date | Type | Input | OK | Sigma | | | | Hearing | | HOHD | Total NG | Total NG rate"
+    },
+    {
+      "rowId": "Report (2)!13",
+      "sheetName": "Report (2)",
+      "rowNumber": 13,
+      "rowText": "| | | | | | SPL | THD | SPL+THD | SPL+THD+F0 | Noise | Touch"
+    },
+    {
+      "rowId": "Report (2)!14",
+      "sheetName": "Report (2)",
+      "rowNumber": 14,
+      "rowText": "| | 2023-09-14 00:00:00 | AWF #1 | 292 | 141 | 0 | 0 | 0 | 0 | 129 | 22 | 0 | 151 | 0.51712329"
+    },
+    {
+      "rowId": "Report (2)!16",
+      "sheetName": "Report (2)",
+      "rowNumber": 16,
+      "rowText": "| | | Normal | 393 | 251 | 0 | 0 | 2 | 2 | 103 | 37 | 0 | 144 | 0.36641221"
+    },
+    {
+      "rowId": "Report (2)!19",
+      "sheetName": "Report (2)",
+      "rowNumber": 19,
+      "rowText": "| | => NG rate of function of AWF #1 machine is higer normal line"
+    },
+    {
+      "rowId": "Report (2)!20",
+      "sheetName": "Report (2)",
+      "rowNumber": 20,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-477-rc-1",
+      "reviewTitle": "REPORT TEST AWF # 1 MACHINE CHANGE WINDING -161014 | | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - To improve NG function high / | II. Content. / | - AWF # 1 machine change winding -> to separate lot checking function and compare NG rate with normal AWF machine / | 3.Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment"
+          ],
+          "changedFactor": "Condition comparison: Normal vs AWF #1",
+          "baselineCondition": "Normal",
+          "changedCondition": "AWF #1",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Report (2)!14",
+            "Report (2)!16",
+            "Report (2)!2",
+            "Report (2)!5",
+            "Report (2)!7",
+            "Report (2)!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "RESULT CHECKING FUNCTION",
+          "comparisonRows": [
+            "Report (2)!14",
+            "Report (2)!16"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 21167,
+              "condition": "AWF #1",
+              "input": 292.0,
+              "ok": 141.0,
+              "ng": 151.0,
+              "ratePercent": 51.712329000000004,
+              "evidenceRows": [
+                "Report (2)!14"
+              ]
+            },
+            {
+              "metricId": 21168,
+              "condition": "Normal",
+              "input": 393.0,
+              "ok": 251.0,
+              "ng": 144.0,
+              "ratePercent": 36.641221,
+              "evidenceRows": [
+                "Report (2)!16"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report (2)!14",
+        "Report (2)!16",
+        "Report (2)!2",
+        "Report (2)!5",
+        "Report (2)!7",
+        "Report (2)!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report (2)!14",
+      "Report (2)!16",
+      "Report (2)!2",
+      "Report (2)!5",
+      "Report (2)!7",
+      "Report (2)!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

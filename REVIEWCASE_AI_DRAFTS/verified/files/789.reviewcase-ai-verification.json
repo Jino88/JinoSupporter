@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 789,
+  "sourceFile": "61. BRS-161014  Report checking reason NG separate VP+CD_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\789.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:14:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 789,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable rows but incorrectly merges distinct tests and conditions into one changed factor.",
+    "issues": [
+      "Changed factor combines LED UV, VP thickness, jig run count, and VP mold comparisons.",
+      "Baseline Normal LED UV is not valid for VP thickness or VP mold outcomes.",
+      "Sheet 21.9 appears to be a separate root-cause check from sheet 15.9 validation tests.",
+      "Some cited rows are absent from provided context or are header/image-style evidence only.",
+      "Outcome grouping mixes defect rates, tension, peak checks, and bond-line checks without clear test grouping."
+    ],
+    "requiredUserQuestions": [
+      "Should sheets 21.9 and 15.9 be separate review cases?"
+    ],
+    "correctionPlan": [
+      "Split changed factors by test: LED UV peak, VP thickness, jig run count, bond line, and VP mold.",
+      "Assign baselines only where rows show a direct normal/test comparison.",
+      "Separate or justify 21.9 mold NG-rate results from 15.9 improvement tests.",
+      "Remove header/image-only metrics unless citeable result rows are available.",
+      "Keep date, line, test number, and condition as subgroup keys."
+    ],
+    "evidencePolicy": "Row citations exist partly, but grouping and header-only citations are not sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 8628,
+    "output_tokens": 806,
+    "total_tokens": 9434
+  }
+}

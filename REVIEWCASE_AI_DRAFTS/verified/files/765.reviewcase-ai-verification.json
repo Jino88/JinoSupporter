@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 765,
+  "sourceFile": "59. TIU L5S3-01 R Report  test find reason NG bako high 2026.01.16_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\765.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 765,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because the primary comparison and function pairings are misgrouped.",
+    "issues": [
+      "Changed factor should be before vs after UV dry repair, not Line R vs mixed conditions.",
+      "Line must be a subgroup; Line R and Line L should not be cross-paired.",
+      "Line L before repair result is omitted from the functional comparison.",
+      "UV dry measurement evidence cites mainly headers and omits value rows 14-21.",
+      "Measurement-2 stats appear to mix counts/rates and are not valid final evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedFactor to before repair vs after repair of UV dry process.",
+      "Use Line R and Line L as subgroup keys.",
+      "Create function subresults for Line R before/after and Line L before/after only.",
+      "Cite UV dry measurement rows 14-21 with row 13 as header context.",
+      "Remove or rebuild malformed measurement-2 aggregate stats from the function table."
+    ],
+    "evidencePolicy": "Current citations are insufficient; final evidence must cite value rows, not headers only."
+  },
+  "usage": {
+    "input_tokens": 4580,
+    "output_tokens": 724,
+    "total_tokens": 5304
+  }
+}

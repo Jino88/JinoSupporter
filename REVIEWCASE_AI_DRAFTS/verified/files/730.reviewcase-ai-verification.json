@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 730,
+  "sourceFile": "53. MSU-L20S15-07 GMI Report Test suspension L20S15-07 NG dimension  date 6.12.2025 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\730.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 730,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable Normal vs Suspension Test evidence exists, but outcome grouping and citations need correction before use.",
+    "issues": [
+      "Tension outcome wrongly includes function rows and bogus zero stats.",
+      "Tension spec/sample details are incomplete and should cite SP A/SP B rows only.",
+      "Drop test and reliability results are omitted from outcomes.",
+      "Decision rows supporting final use conclusion are not cited.",
+      "Changed-factor evidence misses direct type header rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Keep changed factor as Normal baseline vs Suspension Test condition.",
+      "Rebuild tension outcome using only tension rows with SP A/SP B, spec, min/max/avg, and OK judgement.",
+      "Add drop manual/auto outcome rows for both conditions.",
+      "Add reliability/shock/combined environment outcome or limitation with cited rows.",
+      "Cite type/header and decision rows supporting the final conclusion."
+    ],
+    "evidencePolicy": "Citations are partly sufficient but incomplete and include misgrouped rows."
+  },
+  "usage": {
+    "input_tokens": 5510,
+    "output_tokens": 744,
+    "total_tokens": 6254
+  }
+}

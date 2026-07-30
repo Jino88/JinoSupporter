@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 601,
+  "sourceFile": "39. BRS-161016 data check dimension material CD vendor RALON improve 2024.05.15_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\601.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 601,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable comparison evidence but needs normalization of changed factor, judgements, and dimension evidence before final use.",
+    "issues": [
+      "Changed factor text mixes baseline and test labels instead of stating Ralon CD/Dome versus normal CD.",
+      "SPK defect judgements conflict with source conclusions that test and normal are same.",
+      "Dimension outcome cites only average row and omits spec, min/max, and OK result rows.",
+      "Review title and purpose are pulled mainly from secondary sheets, not the main Ralon CD improvement report.",
+      "Measurement labels and sample counts appear extraction-derived and need header/spec validation."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to Ralon improved CD/Dome material/vendor compared with normal CD.",
+      "Change SPK vision and function judgements to no_change or note numeric deltas while preserving source same judgement.",
+      "Cite dimension rows for title/spec limits, max/min/average, sample rows if needed, and final OK result.",
+      "Use SPK report title/purpose as main case context and keep Module 921 as module-line follow-up outcome.",
+      "Correct measurement names, specs, and counts from the dimension table before approving."
+    ],
+    "evidencePolicy": "Row citations exist, but dimension and context citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 6607,
+    "output_tokens": 688,
+    "total_tokens": 7295
+  }
+}

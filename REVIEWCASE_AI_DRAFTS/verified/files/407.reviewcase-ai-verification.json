@@ -1,0 +1,35 @@
+{
+  "sourceFileId": 407,
+  "sourceFile": "21. TIU L5S3-01 R Reaction audit - date 2025.12.08_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\407.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 407,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "File is a reaction-audit note with no comparable changed condition or measurable validation outcome.",
+    "issues": [
+      "No baseline/test condition pair is present",
+      "No metric or measurement result is cited",
+      "Rows indicate containment/rework flow, not a manufacturing comparison",
+      "Draft leaves status as needs_review instead of excluding"
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set review case status to excluded",
+      "Use exclude reason: non-comparable reaction audit",
+      "Do not generate Ask AI evidence from this file",
+      "Retain title, purpose, and content rows only as exclusion support"
+    ],
+    "evidencePolicy": "Citations are sufficient only to support exclusion, not a review case."
+  },
+  "usage": {
+    "input_tokens": 1368,
+    "output_tokens": 385,
+    "total_tokens": 1753
+  }
+}

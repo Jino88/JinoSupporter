@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 203,
+  "sourceFile": "10. BRS-161014  Report checking NTI Compare C2 and E2  20.01.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\203.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:54:47Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 203,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies a likely C2 versus E2 NTI comparison but the changed factor, baseline/test roles, and FO statistics are not verified.",
+    "issues": [
+      "Changed factor is the filename, not the C2 vs E2 comparison.",
+      "Baseline and changed conditions are marked unclear despite source context.",
+      "FO outcome statistics are misparsed from row labels and not valid measurements.",
+      "SPL/THD/IMP citations point only to row 2 without visible context.",
+      "ST appears as reference context but is not explicitly handled."
+    ],
+    "requiredUserQuestions": [
+      "Should C2 or E2 be treated as the baseline condition?",
+      "Is ST only a reference group for this comparison?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to C2 versus E2 NTI comparison.",
+      "Set baseline/test conditions after confirming intended direction.",
+      "Rebuild FO outcome using numeric E2, C2, ST values and averages from FO rows.",
+      "Add citeable header/data rows for SPL, THD, and IMP tables before using those outcomes.",
+      "Keep SPL, THD, IMP, and FO under one validation report only if they share the same C2/E2 context."
+    ],
+    "evidencePolicy": "FO row citations are usable, but SPL/THD/IMP evidence is insufficient without cited headers and representative data rows."
+  },
+  "usage": {
+    "input_tokens": 5921,
+    "output_tokens": 543,
+    "total_tokens": 6464
+  }
+}

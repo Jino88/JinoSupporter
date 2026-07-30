@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 153,
+  "sourceFile": "07. MSU-20S15-07 Report TEST use IR Dry machine test for SUB1 2025.01.22_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\153.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:13Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 153,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites real rows but misstates the changed factor and omits the tension outcome.",
+    "issues": [
+      "Changed factor should be IR dry TEST 30s/1min at 120do vs Normal dry box 5min at 120do, not just Normal vs TEST.",
+      "Two TEST time conditions are distinct subgroups and should not be collapsed without labeling.",
+      "Tension test rows are part of the same validation report but are omitted as outcomes.",
+      "Evidence set omits key header rows defining Time dry and Temp for both sections.",
+      "Subgroup key incorrectly uses only the Normal dry box condition."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changed factor to dry method/time condition comparison.",
+      "Model TEST 30s and TEST 1min as separate subresults against Normal dry box 5min.",
+      "Add tension outcome using MIN, MAX, AVG and sample values from rows 7-9.",
+      "Add header evidence rows Sheet1!6, Sheet1!12, and Sheet1!13.",
+      "Revise subgroup keys to include date, type, time dry, temp, and section context."
+    ],
+    "evidencePolicy": "Row citations exist, but header and condition-defining citations are incomplete."
+  },
+  "usage": {
+    "input_tokens": 2734,
+    "output_tokens": 763,
+    "total_tokens": 3497
+  }
+}

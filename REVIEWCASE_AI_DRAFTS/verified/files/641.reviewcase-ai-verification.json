@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 641,
+  "sourceFile": "43. 1 BRS-2015 Report test material Frame improve NG Burr ( Ring Plate ) date 7.5.2024 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\641.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:16Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 641,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable defect comparisons but conflates distinct 6.5 and 16.5 test contexts and has unreliable dimension evidence.",
+    "issues": [
+      "Changed factor merges different dates/test rounds as one Frame test condition.",
+      "Baseline/test meaning differs between normal, normal burr, and improved frame contexts.",
+      "Dimension width spec is misread, causing false violation counts.",
+      "Measurement stats cite only header rows, not underlying value rows.",
+      "Outcome judgements become misleading because 6.5 and 16.5 are pooled."
+    ],
+    "requiredUserQuestions": [
+      "Should 6.5 and 16.5 be separate review cases or linked as before/after improved frame evidence?"
+    ],
+    "correctionPlan": [
+      "Separate or explicitly subgroup outcomes by sheet date and test round.",
+      "Define the primary changed factor as supported by purpose and decision rows.",
+      "Keep normal, normal burr, and improved frame as distinct conditions.",
+      "Correct width spec to 14.9~15.15 and recompute violations.",
+      "Cite actual dimension data rows or use only cited summary rows."
+    ],
+    "evidencePolicy": "Defect row citations are mostly sufficient; dimension citations are insufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 8521,
+    "output_tokens": 1023,
+    "total_tokens": 9544
+  }
+}

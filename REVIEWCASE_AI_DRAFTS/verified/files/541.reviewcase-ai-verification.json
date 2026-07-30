@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 541,
+  "sourceFile": "32. BRS-161014 Report TEST AWF #1 & 3_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\541.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:59Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 541,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the AWF function NG comparison but needs regrouping and removal of invalid measurement-derived outcomes.",
+    "issues": [
+      "AWF #1 cooling insert and AWF #3 pole change are distinct test conditions, not one identical change.",
+      "AWF #3 change evidence row is omitted from changed-factor citations.",
+      "Measurement outcome is invalid because it is derived from defect/count headers, not true measurements.",
+      "Conclusion row supporting reduced NG rate is omitted.",
+      "Judgement remains not_judged despite clear NG-rate comparison direction."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Represent one validation context with separate subconditions for Normal, AWF #1 cooling insert, and AWF #3 pole change.",
+      "Add row 9 as evidence for AWF #3 and row 29 as conclusion evidence.",
+      "Keep only RESULT CHECKING FUNCTION as the outcome unless real measurement rows exist.",
+      "Use rows 20-21 as headers and rows 22, 24, 26 as data evidence for NG rates.",
+      "Set outcome judgement to improved for AWF #1 and AWF #3 versus Normal if row values are confirmed."
+    ],
+    "evidencePolicy": "Current citations prove row existence but are insufficient for final evidence until key change and conclusion rows are added."
+  },
+  "usage": {
+    "input_tokens": 3271,
+    "output_tokens": 593,
+    "total_tokens": 3864
+  }
+}

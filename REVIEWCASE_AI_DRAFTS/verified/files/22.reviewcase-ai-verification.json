@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 22,
+  "sourceFile": "01. TIU L5S3 Result test JIG AWF 2025.11.121_1778470781_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\22.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:45:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 22,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft has citeable test-result rows but the changed factor, baseline/test grouping, title, and outcome interpretation are too ambiguous for final Ask AI evidence.",
+    "issues": [
+      "Review title is taken from an unrelated/low-context Sheet1 row rather than the Test sheet title or purpose.",
+      "Baseline condition is explicitly not identified, yet the changed factor is framed as a baseline-versus-test comparison.",
+      "Changed factor appears to mix jig identity, spot-welding separation, and multiple pin-position conditions without proving which is the primary changed factor.",
+      "Outcome fields appear likely misinterpreted: the header shows Input, Ok, Wire Moving, and Frame Deform, but the draft converts values into ng and ratePercent without clear evidence.",
+      "Evidence rows cite only result data rows and do not include key context rows such as title, purpose/content, and result header rows needed to interpret the data."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended primary factor the TIU L5S3 test jig, separated spot welding, or the pin-position condition?",
+      "Should Wire Moving and Frame Deform be treated as NG categories or separate outcome metrics?"
+    ],
+    "correctionPlan": [
+      "Replace the review title with the Test sheet title/purpose context.",
+      "Define the primary changed factor from source context without inventing a baseline if none is present.",
+      "Keep pin positions as subgroup/test-condition keys unless evidence proves they are the primary changed factor.",
+      "Rebuild outcomes using the actual header columns: Input, Ok, Wire Moving, and Frame Deform.",
+      "Add context evidence rows for title, purpose/content, and the result table header in addition to the result rows."
+    ],
+    "evidencePolicy": "Current row citations are not sufficient for final evidence because they cite result rows but omit the contextual header and changed-condition rows needed to support grouping and metric interpretation."
+  },
+  "usage": {
+    "input_tokens": 3272,
+    "output_tokens": 964,
+    "total_tokens": 4236
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 479,
+  "sourceFile": "28. BRS-201506 Report Test Coil date 13.3.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\479.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 479,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has a valid Normal vs reduced-height coil test context, but measurement grouping and citations are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor is too generic and misses reduced-height coil context.",
+      "Height dimension rows are misparsed as separate conditions.",
+      "Spec violation counts appear wrong for in-range height values.",
+      "NTI, IMP and FO measurements are mixed under weak generic metrics.",
+      "Several stats cite headers or unshown rows instead of traceable data rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename factor to Normal coil vs reduced-height COIL TEST and cite purpose rows.",
+      "Split outcomes into function, height, FO, SPL, THD and IMP metrics.",
+      "Reparse height samples 1-3 under one COIL TEST condition.",
+      "Correct inclusive spec violation logic for height dimensions.",
+      "Add header plus data or summary row citations for each retained measurement."
+    ],
+    "evidencePolicy": "Row existence passed, but citations are not sufficient for several measurement stats."
+  },
+  "usage": {
+    "input_tokens": 8459,
+    "output_tokens": 1361,
+    "total_tokens": 9820
+  }
+}

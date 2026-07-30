@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 899,
+  "sourceFile": "78. BRS-161014 Report test change  semi Frame +SP  of E2 line TF test in C2  line  Date 16.11.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\899.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:26Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 899,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the C2 normal vs E2 semi Frame/SP test comparison but misstates judgement and lacks key context citations.",
+    "issues": [
+      "Judgement marked improved despite report conclusion of same as normal.",
+      "Critical content and conclusion rows are not cited.",
+      "C2 line/date context should be preserved as subgroup keys.",
+      "Title/content mention VP+CD while result/conclusion mention Frame+SP.",
+      "E2-to-C2 swap is mentioned but has no cited result comparison."
+    ],
+    "requiredUserQuestions": [
+      "Should VP+CD and Frame+SP be treated as the same tested semi part in this report?"
+    ],
+    "correctionPlan": [
+      "Add rows 9-11 and 31 to changed-factor and case evidence.",
+      "Set subgroup keys to C2 line and 2024-11-16 test context.",
+      "Change judgement to neutral/same unless user confirms improvement interpretation.",
+      "Clarify changed factor as C2 normal vs C2 using E2 semi Frame/SP, noting naming inconsistency.",
+      "Do not create an E2 outcome without result rows."
+    ],
+    "evidencePolicy": "Current row citations prove row existence but omit required changed-condition and conclusion evidence."
+  },
+  "usage": {
+    "input_tokens": 2466,
+    "output_tokens": 783,
+    "total_tokens": 3249
+  }
+}

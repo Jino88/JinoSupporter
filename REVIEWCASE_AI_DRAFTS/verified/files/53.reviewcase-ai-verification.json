@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 53,
+  "sourceFile": "02.BRS-161016 GMI Report test  suspension - D used SUS-ARRAY happened NG offset date 2024.1.11_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\53.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:47:09Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 53,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has a valid comparable Test vs Normal structure, but the changed factor is too generic and outcome judgements conflict with the report conclusions while omitting reliability/load-test results.",
+    "issues": [
+      "Changed factor should identify the actual tested condition as Suspension-D using SUS-ARRAY / NG offset concern, not only generic 'Normal vs Test'.",
+      "Outcome judgements for vision spot and function are marked worse based only on rate deltas, but source conclusions state 'vision spot no problem', 'Reason NG function not by Suspension D', and final decision 'same normal'.",
+      "Reliability/load test 96h result is part of the same validation report but is omitted from outcomes.",
+      "Evidence rows for final conclusions and reliability are missing from the review case evidence set, especially rows NG rate!46, NG rate!54, NG rate!71, NG rate!72, NG rate!74, and NG rate!75.",
+      "The draft should distinguish numeric comparison results from the report's engineering judgement/conclusion."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changedFactor to reflect 'Suspension-D using SUS-ARRAY test condition vs normal condition' with baselineCondition 'Normal' and changedCondition 'Test'.",
+      "Revise outcome judgements to align with cited report conclusions, or explicitly record numeric deltas as observations while preserving the report judgement of no problem/same normal/not caused by Suspension-D.",
+      "Add a reliability/load test outcome citing rows NG rate!54, NG rate!71, NG rate!72, and NG rate!75 with judgement passed/OK.",
+      "Add conclusion evidence rows NG rate!38, NG rate!46, NG rate!74, and NG rate!75 to support final interpretation.",
+      "Keep the three measured comparison tables under the same changed-factor context because this is one validation report."
+    ],
+    "evidencePolicy": "Measured comparison rows are citeable, but citations are incomplete for the primary changed factor, final conclusions, and reliability outcome, so evidence is not yet sufficient for Ask AI."
+  },
+  "usage": {
+    "input_tokens": 4019,
+    "output_tokens": 953,
+    "total_tokens": 4972
+  }
+}

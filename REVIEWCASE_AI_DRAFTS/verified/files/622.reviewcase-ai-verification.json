@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 622,
+  "sourceFile": "40. BRS-161016 Report test material YK change dimension (Producft of press line - Glonic - Coating Doojin ) 2024.5.28_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\622.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 622,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is comparable but needs regrouping around Normal vs Test YK change dimension before use.",
+    "issues": [
+      "Primary changed factor is over-broadened with MG types, vendors, and totals.",
+      "Supplier/vendor terms should be subgroup context for tension only.",
+      "Measurement outcomes include unjudged or misparsed rows with NG results not reflected.",
+      "Function result duplicates TOTAL/C2-3A and labels worse despite source conclusion of same/use.",
+      "Evidence list includes headers/context and rows not shown in supplied context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Normal vs Test YK change dimension.",
+      "Move MG-S-A/B/C and Beijing/Baotou into subgroup keys for tension outcomes.",
+      "Rebuild tension outcomes using paired Normal/YK Test rows and preserve vendor/magnet keys.",
+      "Remove header-only/misparsed measurement candidates or convert to cited judged outcomes.",
+      "Align function judgement with rates and source conclusion, avoiding duplicate total/subgroup counting."
+    ],
+    "evidencePolicy": "Row citations are mostly sufficient but need pruning and complete paired-row context."
+  },
+  "usage": {
+    "input_tokens": 9185,
+    "output_tokens": 770,
+    "total_tokens": 9955
+  }
+}

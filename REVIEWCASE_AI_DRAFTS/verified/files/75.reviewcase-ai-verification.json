@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 75,
+  "sourceFile": "03. BRS-161016 Report  check and improve NG separate VP+CD-04.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\75.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:24Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 75,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft conflates several independent VP+CD improvement trials into one changed factor, so it is not valid final evidence.",
+    "issues": [
+      "Changed factor mixes LED UV dose, bond type, VP bending sorting, jig repair, and temperature context.",
+      "Baseline and test conditions are inconsistent, mixing Normal and Old bond across different dates and sheets.",
+      "Outcomes from separate reports and test rounds are grouped under one factor without preserving sheet/date context.",
+      "Some measurement candidates wrongly include defect-count rows as tension or LED UV statistics.",
+      "Review title and purpose reflect only the first sheet, not all grouped evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split into separate review cases or factors by report sheet/test round and primary changed condition.",
+      "Define baseline and test condition per comparable table only.",
+      "Keep date, line, round, bond type, UV setting, jig status, and temperature as grouping keys.",
+      "Remove or reclassify extracted measurement stats that come from defect/function rows.",
+      "Cite purpose/content rows plus matching result rows for each corrected factor."
+    ],
+    "evidencePolicy": "Row citations mostly exist, but they are insufficient because grouping and comparability are invalid."
+  },
+  "usage": {
+    "input_tokens": 16613,
+    "output_tokens": 624,
+    "total_tokens": 17237
+  }
+}

@@ -1,0 +1,391 @@
+{
+  "sourceFileId": 757,
+  "sourceFile": "58. BRS-201506 Report checking dimension Frame date 3.7.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\58. BRS-201506 Report checking dimension Frame date 3.7.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Frame",
+    "sheetRowCount": 40,
+    "sheetCellCount": 218,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 1,
+    "measurementStatCount": 12
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Frame!2",
+      "sheetName": "Frame",
+      "rowNumber": 2,
+      "rowText": "TITLE | | REPORT CHECKING DIEMSION FRAME OF MODEL BRS-201506 | | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Frame!3",
+      "sheetName": "Frame",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date | 2024-06-18 00:00:00"
+    },
+    {
+      "rowId": "Frame!4",
+      "sheetName": "Frame",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker | Thao"
+    },
+    {
+      "rowId": "Frame!5",
+      "sheetName": "Frame",
+      "rowNumber": 5,
+      "rowText": "I. Purpose."
+    },
+    {
+      "rowId": "Frame!6",
+      "sheetName": "Frame",
+      "rowNumber": 6,
+      "rowText": "- Find reason NG Function"
+    },
+    {
+      "rowId": "Frame!7",
+      "sheetName": "Frame",
+      "rowNumber": 7,
+      "rowText": "II. Content."
+    },
+    {
+      "rowId": "Frame!8",
+      "sheetName": "Frame",
+      "rowNumber": 8,
+      "rowText": "- Checking dimension Frame"
+    },
+    {
+      "rowId": "Frame!9",
+      "sheetName": "Frame",
+      "rowNumber": 9,
+      "rowText": "- Mold G2"
+    },
+    {
+      "rowId": "Frame!10",
+      "sheetName": "Frame",
+      "rowNumber": 10,
+      "rowText": "- Q'ty : 20pcs"
+    },
+    {
+      "rowId": "Frame!11",
+      "sheetName": "Frame",
+      "rowNumber": 11,
+      "rowText": "3.Result"
+    },
+    {
+      "rowId": "Frame!12",
+      "sheetName": "Frame",
+      "rowNumber": 12,
+      "rowText": "| RESULT CHECK FRAME DIMENSION"
+    },
+    {
+      "rowId": "Frame!13",
+      "sheetName": "Frame",
+      "rowNumber": 13,
+      "rowText": "| Date | MOLD | | No | | | | | AVG Posi 1 & 2 | AVG Posi 3 & 4 | GAP (Posi 1 & 2) -(Posi 3 & 4)"
+    },
+    {
+      "rowId": "Frame!39",
+      "sheetName": "Frame",
+      "rowNumber": 39,
+      "rowText": "| RESULT CHECKING DIMENSION FRAME"
+    },
+    {
+      "rowId": "Frame!43",
+      "sheetName": "Frame",
+      "rowNumber": 43,
+      "rowText": "4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-757-rc-1",
+      "reviewTitle": "| REPORT CHECKING DIEMSION FRAME OF MODEL BRS-201506 | | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "I. Purpose. / - Find reason NG Function / II. Content. / - Checking dimension Frame / - Mold G2",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "mold",
+            "dimension/spec"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs 2024-07-03 00:00:00",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "2024-07-03 00:00:00",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Frame!13",
+            "Frame!14",
+            "Frame!2",
+            "Frame!37",
+            "Frame!41",
+            "Frame!5",
+            "Frame!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT CHECKING DIMENSION FRAME",
+          "comparisonRows": [
+            "Frame!41"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 23486,
+              "condition": "2024-07-03 00:00:00",
+              "input": 20.0,
+              "ok": 16.0,
+              "ng": 4.0,
+              "ratePercent": 20.0,
+              "evidenceRows": [
+                "Frame!41"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Frame!37"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 61771,
+              "condition": "Column 6",
+              "spec": "",
+              "min": 2.92,
+              "max": 2.95,
+              "avg": 2.9325,
+              "sampleCount": 21,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Frame!37"
+              ]
+            },
+            {
+              "statId": 61772,
+              "condition": "Column 7",
+              "spec": "",
+              "min": 2.92,
+              "max": 2.95,
+              "avg": 2.9395,
+              "sampleCount": 21,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Frame!37"
+              ]
+            },
+            {
+              "statId": 61773,
+              "condition": "Column 8",
+              "spec": "",
+              "min": 2.9,
+              "max": 2.92,
+              "avg": 2.9035,
+              "sampleCount": 21,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Frame!37"
+              ]
+            },
+            {
+              "statId": 61774,
+              "condition": "Column 9",
+              "spec": "",
+              "min": 2.9,
+              "max": 2.92,
+              "avg": 2.9065,
+              "sampleCount": 21,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Frame!37"
+              ]
+            },
+            {
+              "statId": 61775,
+              "condition": "Column 12",
+              "spec": "",
+              "min": 0.015,
+              "max": 0.045,
+              "avg": 0.031,
+              "sampleCount": 21,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Frame!37"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT CHECK FRAME DIMENSION",
+          "comparisonRows": [
+            "Frame!13"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 61776,
+              "condition": "RESULT CHECK FRAME DIMENSION / AVG Posi 1 & 2",
+              "spec": "",
+              "min": 2.93,
+              "max": 2.945,
+              "avg": 2.9359999999999995,
+              "sampleCount": 20,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Frame!13"
+              ]
+            },
+            {
+              "statId": 61777,
+              "condition": "RESULT CHECK FRAME DIMENSION / AVG Posi 3 & 4",
+              "spec": "",
+              "min": 2.9,
+              "max": 2.915,
+              "avg": 2.9049999999999994,
+              "sampleCount": 20,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Frame!13"
+              ]
+            },
+            {
+              "statId": 61778,
+              "condition": "RESULT CHECK FRAME DIMENSION / GAP (Posi 1 & 2) -(Posi 3 & 4)",
+              "spec": "",
+              "min": 0.015,
+              "max": 0.045,
+              "avg": 0.03100000000000001,
+              "sampleCount": 20,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Frame!13"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | MOLD | No | AVG Posi 1 & 2 | AVG Posi 3 & 4 | GAP (Posi 1 & 2) -(Posi 3 & 4)",
+          "comparisonRows": [
+            "Frame!14"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 61779,
+              "condition": "MOLD / Position 1",
+              "spec": "",
+              "min": 2.92,
+              "max": 2.95,
+              "avg": 2.9325,
+              "sampleCount": 20,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Frame!14"
+              ]
+            },
+            {
+              "statId": 61780,
+              "condition": "MOLD / Position 2",
+              "spec": "",
+              "min": 2.92,
+              "max": 2.95,
+              "avg": 2.9395000000000002,
+              "sampleCount": 20,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Frame!14"
+              ]
+            },
+            {
+              "statId": 61781,
+              "condition": "MOLD / Position 3",
+              "spec": "",
+              "min": 2.9,
+              "max": 2.92,
+              "avg": 2.903499999999999,
+              "sampleCount": 20,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Frame!14"
+              ]
+            },
+            {
+              "statId": 61782,
+              "condition": "MOLD / Position 4",
+              "spec": "",
+              "min": 2.9,
+              "max": 2.92,
+              "avg": 2.9065,
+              "sampleCount": 20,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Frame!14"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Frame!13",
+        "Frame!14",
+        "Frame!2",
+        "Frame!37",
+        "Frame!41",
+        "Frame!5",
+        "Frame!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Frame!13",
+      "Frame!14",
+      "Frame!2",
+      "Frame!37",
+      "Frame!41",
+      "Frame!5",
+      "Frame!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

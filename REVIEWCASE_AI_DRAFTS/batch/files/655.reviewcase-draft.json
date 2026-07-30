@@ -1,0 +1,212 @@
+{
+  "sourceFileId": 655,
+  "sourceFile": "44. TIU L5S3-01 R Report  test Bond+ass'y VP+Coil in L line to find NG function 2025.12.30_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\44. TIU L5S3-01 R Report  test Bond+ass'y VP+Coil in L line to find NG function 2025.12.30_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 18,
+    "sheetCellCount": 64,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] REPORT TEST FIND REASON NG BAKO | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date | 2025-12-30 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - NG function R line ~ 40%, L line ~ 15% => Test to find reason NG function R line"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Take sample semi sub 3 R line => Move main L line to bonding ass'y VP/Coil => Separate lot and check function"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| - Compare with normal"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | Result check function"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | No | Date | Type | | | Input | OK | NG BAKO | | | | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | | | | | | | | FRF high | FRF Low | FRF+SPL | THD | No sound"
+    },
+    {
+      "rowId": "Test!15",
+      "sheetName": "Test",
+      "rowNumber": 15,
+      "rowText": "| | 1 | 2025-12-30 00:00:00 | Line R | Test | | 31 | 28 | 3 | 0 | 0 | 0 | 0 | 3 | 0.09677419"
+    },
+    {
+      "rowId": "Test!17",
+      "sheetName": "Test",
+      "rowNumber": 17,
+      "rowText": "| | 2 | | | Normal | | 30 | 27 | 3 | 0 | 0 | 0 | 0 | 3 | 0.1"
+    },
+    {
+      "rowId": "Test!19",
+      "sheetName": "Test",
+      "rowNumber": 19,
+      "rowText": "| | - NG lot test is same normal => Bonding ass'y VP/coil R line don't have reason"
+    },
+    {
+      "rowId": "Test!21",
+      "sheetName": "Test",
+      "rowNumber": 21,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-655-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] REPORT TEST FIND REASON NG BAKO | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - NG function R line ~ 40%, L line ~ 15% => Test to find reason NG function R line / | II. Content. / | - Take sample semi sub 3 R line => Move main L line to bonding ass'y VP/Coil => Separate lot and check function / | - Compare with normal",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Normal vs Line R",
+          "baselineCondition": "Normal",
+          "changedCondition": "Line R",
+          "subgroupKeys": [
+            "Test"
+          ],
+          "evidenceRows": [
+            "Test!15",
+            "Test!17",
+            "Test!2",
+            "Test!5",
+            "Test!6",
+            "Test!7",
+            "Test!9"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "Result check function",
+          "comparisonRows": [
+            "Test!15",
+            "Test!17"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 4514,
+              "controlCondition": "Normal",
+              "testCondition": "Line R | Test",
+              "control": {
+                "input": 30.0,
+                "ng": 3.0,
+                "ratePercent": 10.0
+              },
+              "test": {
+                "input": 31.0,
+                "ng": 3.0,
+                "ratePercent": 9.677419
+              },
+              "deltaRatePercentPoint": -0.32258100000000095,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Test!15",
+                "Test!17"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Test!15",
+        "Test!17",
+        "Test!2",
+        "Test!5",
+        "Test!6",
+        "Test!7",
+        "Test!9"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!15",
+      "Test!17",
+      "Test!2",
+      "Test!5",
+      "Test!6",
+      "Test!7",
+      "Test!9"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

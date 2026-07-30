@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 249,
+  "sourceFile": "12. L20S15-07 DT Report test Center Dome improvent lot of vendor Ralon ( Improve adhesion) date 24.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\249.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:26Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 249,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid row citations but the changed factor, baseline/test labels, and outcome coverage need correction before use.",
+    "issues": [
+      "Changed factor is filename-derived and not the evidence-based comparison.",
+      "Baseline and test conditions are marked not explicit despite rows showing Test/Lot improve versus Normal/Laser support.",
+      "Report outcomes for dyne, VP/CD separation, function NG, and decision are omitted.",
+      "Tension spec is available but not captured in subresults.",
+      "Change domains include unsupported or overbroad categories."
+    ],
+    "requiredUserQuestions": [
+      "Confirm the primary comparison: improved Ralon center dome lot/test condition versus normal laser support lot?"
+    ],
+    "correctionPlan": [
+      "Rename changed factor to the evidence-based lot/process comparison.",
+      "Set changed condition to Lot improve/Test condition and baseline to Normal/Laser support if confirmed.",
+      "Add subgroup keys date, line, lot/no, and type where applicable.",
+      "Add report outcomes for dyne, tension, VP/CD separation, and function NG rates under the same validation context.",
+      "Capture the 1.2 kgf tension spec and remove unsupported change domains."
+    ],
+    "evidencePolicy": "Citations exist and are sufficient for review, but final evidence needs corrected grouping and added outcome rows."
+  },
+  "usage": {
+    "input_tokens": 3345,
+    "output_tokens": 655,
+    "total_tokens": 4000
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 41,
+  "sourceFile": "02.  BRS-161016DT  Report Check reason NG hearing  Date  17.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\41.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:32Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 41,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not ready because the changed-factor grouping and outcome evidence mix several VP, mold, lot, date, and AWF contexts without a clear baseline.",
+    "issues": [
+      "Changed factor is an over-broad condition list, not a defined comparison.",
+      "Baseline/test roles are not supported by cited rows.",
+      "Separate mold VP, historical function, 25.11 summary, and AWF sections are merged under one factor.",
+      "Measurement outcomes cite mostly header rows rather than row-level data.",
+      "Totals and subgroup identifiers are treated inconsistently as conditions."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended primary comparison: VP mold/lot separation, Yoke normal AWF test, or UC VP+Coil check?",
+      "Should AWF machine results be a separate review case from mold VP function results?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor around the workbook-supported comparison only.",
+      "Preserve date, test round, mold VP, IR lot, head, and machine as subgroup keys.",
+      "Use row-level data rows for each metric, not only header rows.",
+      "Separate AWF results if they represent a different validation context.",
+      "Exclude or label total rows as summaries, not test conditions."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are not sufficient for final evidence until grouping and row-level outcome support are corrected."
+  },
+  "usage": {
+    "input_tokens": 7619,
+    "output_tokens": 820,
+    "total_tokens": 8439
+  }
+}

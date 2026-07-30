@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 316,
+  "sourceFile": "16. TIU C11-20  Report Test tracking process find reson NG   VP deform 2025.12.20_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\316.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:58:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 316,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it conflates investigation factors and contains clear metric extraction errors.",
+    "issues": [
+      "Changed factor mixes shift, line, process stage, machine room, and totals.",
+      "Baseline/test condition is not explicit; this is a root-cause tracking report.",
+      "Machine-room NG counts and rates are miscalculated versus cited rows.",
+      "Merged row context for DAY/NIGHT and line is not preserved for room rows.",
+      "Some cited metric rows are not visible in context, limiting auditability."
+    ],
+    "requiredUserQuestions": [
+      "Should the primary comparison be DAY vs NIGHT, process stage, or Audiobus room?",
+      "Should line D3-2B vs D3-2A be treated as a changed factor or subgroup?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor around one primary comparison with subgroup keys retained.",
+      "Re-extract rows 14-15, 20-21, and 26-35 from the workbook.",
+      "Correct NG counts/rates directly from each row, not cumulative values.",
+      "Separate process-stage visual VP damage outcomes from function-check outcomes.",
+      "Keep Audiobus room and shift/line/model as grouped conditions or separate cases."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until grouping and values are corrected."
+  },
+  "usage": {
+    "input_tokens": 4617,
+    "output_tokens": 804,
+    "total_tokens": 5421
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 142,
+  "sourceFile": "06.1 (C2) BRS-161016 DT Report test VP recently happend NG Function high rate date 2.6.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\142.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:55Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 142,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable data but the changed-factor and outcome grouping are too broad for final evidence.",
+    "issues": [
+      "Changed factor lumps many VP molds instead of focusing on the high-NG #9 decision.",
+      "IR lot, mold, and normal-reference grouping are not preserved.",
+      "Key conclusion and decision rows are missing from evidence.",
+      "Several measurement outcomes are spurious header or IR-number parses.",
+      "Tension and vision results need separation as supporting context only."
+    ],
+    "requiredUserQuestions": [
+      "Should the final case focus on VP mold #9 IR250520007 versus normal?",
+      "Are other VP molds intended as separate test conditions or only context?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor around the intended test VP mold/IR condition and matching normal baseline.",
+      "Preserve IR, mold number, test section, and normal-reference rows as subgroup keys.",
+      "Add conclusion and decision rows 111 and 115 as primary evidence.",
+      "Keep valid vision, tension, and function tables; remove header-derived measurement artifacts.",
+      "Assign outcome judgements from cited rates and pass/fail results only."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until key decision rows and corrected grouping are cited."
+  },
+  "usage": {
+    "input_tokens": 17862,
+    "output_tokens": 791,
+    "total_tokens": 18653
+  }
+}

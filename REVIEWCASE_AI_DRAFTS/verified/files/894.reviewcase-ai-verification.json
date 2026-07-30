@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 894,
+  "sourceFile": "77. TIU C11-20 Report test improve don't press jig VP+ Coil 2026.04.21_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\894.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 894,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but changed-factor and row-pair grouping are materially wrong.",
+    "issues": [
+      "Changed factor incorrectly treats models and positions as test conditions.",
+      "Left/right normal controls use wrong carried-down model rows.",
+      "R-side set-height result uses L normal values instead of R normal row.",
+      "Detection-position sections are capability checks, not changed-factor levels.",
+      "Two sheets may need separate changed factors or clearly nested outcomes."
+    ],
+    "requiredUserQuestions": [
+      "Should the two sheets be separate improvement cases or one combined jig-detection validation?"
+    ],
+    "correctionPlan": [
+      "Define changed factor as added sensor or set-height check versus normal/no check.",
+      "Use model L and R as subgroup keys, not changed conditions.",
+      "Pair L tests with L normal rows and R tests with R normal rows.",
+      "Keep position 1-4 rows as detection capability outcomes under each sheet.",
+      "Recalculate R-side NG rates and cite all paired rows including row 21."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient because key paired control rows are misused or omitted."
+  },
+  "usage": {
+    "input_tokens": 6730,
+    "output_tokens": 769,
+    "total_tokens": 7499
+  }
+}

@@ -1,0 +1,12 @@
+@page "/bmes/f-cost"
+@rendermode InteractiveServer
+
+@* Routable, interactive host for BmesFCostPage.
+
+   The render mode sits here rather than on BmesFCostPage so that
+   BmesReportHtmlExportService can render that component statically for the combined
+   report HTML — the standalone HtmlRenderer rejects any component that declares a
+   render mode. This wrapper is the interactive root, so the page behaves exactly as
+   before when reached through the nav menu. *@
+
+<BmesFCostPage />

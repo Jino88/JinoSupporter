@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 245,
+  "sourceFile": "12. BRS-161016 DT  Report  check Reason NG sigma (THD+SPL) date 27.06.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\245.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:56:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 245,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable report context but the changed-factor and outcome grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor conflates date, mold IDs, line, and Frame OK/bending.",
+      "Baseline and test condition are not clearly established.",
+      "Header rows are treated as measurement/stat evidence.",
+      "Data-row citations lack visible row text for verification.",
+      "Subgroup keys appear under-supported across all results."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison mold frame groups or Frame OK vs Frame bending?",
+      "What is the intended baseline or normal condition?"
+    ],
+    "correctionPlan": [
+      "Re-read rows 18-32, 34-44, and 48-51 with full row text.",
+      "Separate mold-frame NG-rate results from Frame OK vs bending results.",
+      "Define baseline/test conditions only from explicit source labels.",
+      "Remove header-only measurement stats unless backed by data rows.",
+      "Cite each condition and metric with its actual data row."
+    ],
+    "evidencePolicy": "Row existence is sufficient, but citations are not content-sufficient for final evidence."
+  },
+  "usage": {
+    "input_tokens": 4144,
+    "output_tokens": 593,
+    "total_tokens": 4737
+  }
+}

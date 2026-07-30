@@ -4,22 +4,17 @@
 @inject WebRepository Repo
 @inject ClaudeService  Claude
 @inject AiProviderSettingsService AiProviders
+@inject MicroSpeakerAskEvidenceService MicroSpeakerEvidence
 @inject IJSRuntime     JS
 
 <PageTitle>Data Inference — Ask AI</PageTitle>
 
 <div class="diask-root">
 
-@if (!Claude.IsConfigured)
-{
-    <div class="alert alert-warning mb-0 py-2 small" style="flex-shrink:0; margin:8px 14px 0;">
-        <strong>Claude API key not configured.</strong> API Ask is disabled; Codex CLI Ask is still available.
-    </div>
-}
 @if (!AiProviders.CodexCliEnabled)
 {
     <div class="alert alert-warning mb-0 py-2 small" style="flex-shrink:0; margin:8px 14px 0;">
-        <strong>Codex CLI is disabled.</strong> Turn it on in Admin Settings before using Ask via Codex CLI.
+        <strong>Codex CLI is disabled.</strong> Turn it on in Setting before using Ask AI.
     </div>
 }
 
@@ -43,6 +38,8 @@
         @(_showHistory ? "✕ History" : "🗂 History")
     </button>
 </div>
+
+<CurrentProblemWorkflowStrip ContextLabel="Ask AI" />
 
 <div class="diask-main">
 
@@ -71,14 +68,9 @@
         </select>
         <button class="btn btn-outline-secondary btn-sm" @onclick="Clear" disabled="@_isBusy">Clear</button>
         <button class="btn btn-primary btn-sm" @onclick="AskAsync"
-                disabled="@(_isBusy || string.IsNullOrWhiteSpace(_question) || !Claude.IsConfigured || FilteredReports.Count == 0)">
+                disabled="@(_isBusy || string.IsNullOrWhiteSpace(_question) || !AiProviders.CodexCliEnabled || FilteredReports.Count == 0)">
             @if (_isBusy && !_isWaitingCli) { <span class="spinner-border spinner-border-sm me-1"></span> }
             Ask AI
-        </button>
-        <button class="btn btn-success btn-sm" @onclick="LaunchCliAskAsync"
-                disabled="@(_isBusy || string.IsNullOrWhiteSpace(_question) || !AiProviders.CodexCliEnabled || FilteredReports.Count == 0)"
-                title="Launch Codex CLI in a new terminal. The answer will auto-appear here when CLI finishes.">
-            Ask via Codex CLI
         </button>
         @if (_isWaitingCli)
         {
@@ -140,53 +132,75 @@
                 <button class="btn @AnswerLangButtonClassEn" @onclick="SetAnswerViewEn">English</button>
                 <button class="btn @AnswerLangButtonClassVi" @onclick="SetAnswerViewVi">Tiếng Việt</button>
             </div>
-            @if (_isTranslatingAnswer)
-            {
-                <span class="diask-translating"><span class="spinner-border spinner-border-sm me-1"></span>Translating...</span>
-            }
         </div>
 
         @if (!string.IsNullOrWhiteSpace(displayAnswer.Overall))
         {
-            var actionRows = ParseOverallActionRows(displayAnswer.Overall);
-            <div class="diask-answer-card diask-overall">
-                <div class="diask-answer-title">@AskUi("Review Checklist")</div>
-                @if (actionRows.Count > 0)
-                {
-                    <div class="diask-action-note">
-                        @AskUi("What to check first, based on saved AI review records and previous dataset answers.")
+            @if (IsAskHtmlReport(displayAnswer.Overall))
+            {
+                string overallHtml = PrepareAskHtmlReport(displayAnswer.Overall);
+                <div class="diask-html-panel">
+                    <div class="diask-html-tools">
+                        @if (_activeHistoryId.HasValue)
+                        {
+                            <a class="btn btn-outline-primary btn-sm"
+                               href="@AskHistoryHtmlUrl(_activeHistoryId.Value)"
+                               target="_blank"
+                               rel="noopener">
+                                새 창으로 보기
+                            </a>
+                        }
                     </div>
-                    <table class="diask-action-table">
-                        <thead>
-                            <tr>
-                                <th>@AskUi("No")</th>
-                                <th>@AskUi("Check item / factor")</th>
-                                <th>@AskUi("Review count")</th>
-                                <th>@AskUi("Previous result")</th>
-                                <th>@AskUi("Overall judgement")</th>
-                                <th>@AskUi("Next action")</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var row in actionRows)
-                            {
+                    <div class="diask-html-wrap">
+                        <iframe class="diask-html-frame"
+                                title="Ask AI HTML report"
+                                sandbox="allow-scripts allow-popups allow-forms allow-downloads"
+                                srcdoc="@overallHtml"></iframe>
+                    </div>
+                </div>
+            }
+            else
+            {
+                var actionRows = ParseOverallActionRows(displayAnswer.Overall);
+                <div class="diask-answer-card diask-overall">
+                    <div class="diask-answer-title">@AskUi("Review Checklist")</div>
+                    @if (actionRows.Count > 0)
+                    {
+                        <div class="diask-action-note">
+                            @AskUi("What to check first, based on saved AI review records and previous dataset answers.")
+                        </div>
+                        <table class="diask-action-table">
+                            <thead>
                                 <tr>
-                                    <td>@row.No</td>
-                                    <td class="diask-action-main">@row.CheckItem</td>
-                                    <td>@row.ReviewCount</td>
-                                    <td>@row.PreviousResult</td>
-                                    <td>@row.OverallJudgement</td>
-                                    <td>@row.NextAction</td>
+                                    <th>@AskUi("No")</th>
+                                    <th>@AskUi("Check item / factor")</th>
+                                    <th>@AskUi("Review count")</th>
+                                    <th>@AskUi("Previous result")</th>
+                                    <th>@AskUi("Overall judgement")</th>
+                                    <th>@AskUi("Next action")</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
-                }
-                else
-                {
-                    <div class="diask-answer-body diask-markdown">@RenderMarkdown(displayAnswer.Overall)</div>
-                }
-            </div>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in actionRows)
+                                {
+                                    <tr>
+                                        <td>@row.No</td>
+                                        <td class="diask-action-main">@row.CheckItem</td>
+                                        <td>@row.ReviewCount</td>
+                                        <td>@row.PreviousResult</td>
+                                        <td>@row.OverallJudgement</td>
+                                        <td>@row.NextAction</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="diask-answer-body diask-markdown">@RenderMarkdown(displayAnswer.Overall)</div>
+                    }
+                </div>
+            }
         }
 
         @if (displayAnswer.PerDataset.Count > 0)
@@ -224,7 +238,20 @@
                             <span class="diask-ds-meta diask-ds-missing">(deleted or name mismatch)</span>
                         }
                     </div>
-                    <div class="diask-ds-body diask-markdown">@RenderMarkdown(pd.Answer)</div>
+                    @if (IsAskHtmlReport(pd.Answer))
+                    {
+                        string datasetHtml = PrepareAskHtmlReport(pd.Answer);
+                        <div class="diask-ds-html-wrap">
+                            <iframe class="diask-html-frame diask-ds-html-frame"
+                                    title="@($"Ask AI dataset report - {datasetName}")"
+                                    sandbox="allow-scripts allow-popups allow-forms allow-downloads"
+                                    srcdoc="@datasetHtml"></iframe>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="diask-ds-body diask-markdown">@RenderMarkdown(pd.Answer)</div>
+                    }
                 </div>
             }
             }
@@ -391,6 +418,28 @@
     .diask-answer-title {
         font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 8px;
     }
+    .diask-html-panel {
+        display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;
+    }
+    .diask-html-tools {
+        display: flex; justify-content: flex-end; align-items: center; gap: 8px;
+    }
+    .diask-html-wrap {
+        min-height: 680px; height: calc(100vh - 235px);
+        background: #fff; border: 1px solid #cbd5e1; border-radius: 6px;
+        overflow: hidden;
+    }
+    .diask-html-frame {
+        display: block; width: 100%; height: 100%; min-height: 680px;
+        border: 0; background: #fff;
+    }
+    .diask-ds-html-wrap {
+        height: 620px; min-height: 420px;
+        background: #fff;
+    }
+    .diask-ds-html-frame {
+        min-height: 420px;
+    }
     .diask-answer-body {
         font-size: 13px; color: #0f172a; line-height: 1.65;
     }
@@ -487,6 +536,149 @@
         background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 4px;
         padding: 1px 4px; font-size: 12px;
     }
+    .diask-md pre,
+    .diask-markdown pre {
+        margin: 8px 0 12px; padding: 9px 10px; overflow-x: auto;
+        background: #f3f6f9; border: 1px solid #d9e0e7; border-radius: 6px;
+        font-size: 12px;
+    }
+    .diask-ai-md-visual {
+        margin: 10px 0 12px;
+    }
+    .diask-ai-md-bars {
+        border: 1px solid #d9e0e7; border-radius: 8px; background: #fff;
+        padding: 8px 10px;
+    }
+    .diask-ai-vbar-chart {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+        gap: 10px;
+        align-items: end;
+        padding: 10px 12px;
+    }
+    .diask-ai-vbar-item {
+        min-width: 0;
+        display: grid;
+        grid-template-rows: auto 118px auto auto;
+        gap: 4px;
+        align-items: end;
+        text-align: center;
+    }
+    .diask-ai-vbar-value {
+        color: #17202a;
+        font-size: 11px;
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+    }
+    .diask-ai-vbar-plot {
+        height: 118px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        border-left: 1px solid #cfd8e3;
+        border-bottom: 1px solid #aebdca;
+        background: linear-gradient(to top, #eef3f8 1px, transparent 1px);
+        background-size: 100% 29px;
+    }
+    .diask-ai-vbar {
+        width: 46%;
+        min-width: 22px;
+        border-radius: 4px 4px 0 0;
+    }
+    .diask-ai-vbar-label {
+        min-height: 28px;
+        color: #17202a;
+        font-size: 10px;
+        font-weight: 800;
+        overflow-wrap: anywhere;
+    }
+    .diask-ai-vbar-detail {
+        min-height: 26px;
+        color: #617084;
+        font-size: 9px;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+    }
+    .diask-ai-bar-danger { background: #c24135; }
+    .diask-ai-bar-warn   { background: #c47a1b; }
+    .diask-ai-bar-good   { background: #2f7d4b; }
+    .diask-ai-heatmap {
+        display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px; margin-bottom: 10px;
+    }
+    @@media (max-width: 900px) {
+        .diask-ai-heatmap { grid-template-columns: 1fr; }
+    }
+    .diask-ai-heat {
+        min-height: 86px; border-radius: 8px; border: 1px solid #d9e0e7;
+        padding: 10px; display: flex; flex-direction: column; justify-content: space-between;
+        overflow: hidden;
+    }
+    .diask-ai-heat strong {
+        font-size: 18px; line-height: 1.1; font-variant-numeric: tabular-nums;
+    }
+    .diask-ai-heat span {
+        color: #17202a; font-size: 12px; font-weight: 800;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .diask-ai-heat em {
+        color: #526171; font-size: 11px; font-style: normal;
+        font-variant-numeric: tabular-nums;
+    }
+    .diask-ai-heat-worse {
+        background: #fff1ef; border-color: #efb2aa; color: #9b2419;
+    }
+    .diask-ai-heat-improved {
+        background: #edf8f0; border-color: #a9d9b8; color: #21673c;
+    }
+    .diask-ai-heat-flat {
+        background: #fff8eb; border-color: #edcf94; color: #8a570f;
+    }
+    .diask-ai-heat-matrix {
+        margin: 10px 0 12px;
+        border-collapse: separate;
+        border-spacing: 4px;
+        font-size: 11px;
+        width: 100%;
+    }
+    .diask-ai-heat-matrix th {
+        background: #eef3f8; color: #28405c;
+        font-size: 10px; font-weight: 900;
+        padding: 6px 10px;
+        border: 1px solid #d4dee8;
+        text-align: center;
+        white-space: nowrap;
+    }
+    .diask-ai-heat-matrix th.diask-ai-heat-rowhead {
+        background: #f4f8fb; color: #17324a;
+    }
+    .diask-ai-heat-matrix td.diask-ai-heat-cell {
+        min-width: 86px;
+        padding: 8px 10px;
+        border: 1px solid #d4dee8;
+        border-radius: 6px;
+        text-align: center;
+        vertical-align: middle;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+    .diask-ai-heat-cell strong {
+        display: block;
+        font-size: 14px;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+    }
+    .diask-ai-heat-cell em {
+        display: block;
+        margin-top: 3px;
+        font-size: 10px;
+        font-style: normal;
+        color: #526171;
+        font-variant-numeric: tabular-nums;
+    }
+    .diask-ai-heat-cell.diask-ai-heat-worse em { color: #9b2419; }
+    .diask-ai-heat-cell.diask-ai-heat-improved em { color: #21673c; }
+    .diask-ai-heat-cell.diask-ai-heat-flat em { color: #8a570f; }
 
     /* History panel */
     .diask-history-col {
@@ -540,7 +732,6 @@
     private ClaudeService.AskAiResult? _answer            = null;
     private Dictionary<string, ClaudeService.AskAiResult> _answerTranslations = new(StringComparer.OrdinalIgnoreCase);
     private string                     _answerViewLang    = "en";
-    private bool                       _isTranslatingAnswer;
     private bool                       _isBusy;
     private string                     _status            = "";
     private bool                       _statusError;
@@ -726,72 +917,7 @@
 
     private async Task AskAsync()
     {
-        if (string.IsNullOrWhiteSpace(_question))
-        {
-            SetStatus("Please enter a question.", true);
-            return;
-        }
-
-        _isBusy = true;
-        _status = "";
-        _answer = null;
-        _answerTranslations.Clear();
-        _answerViewLang = LangCodeFromAnswerLanguage(_answerLanguage);
-        _showDatasetEvidence = false;
-        _selectedReview = null;
-        _activeHistoryId = null;
-        StateHasChanged();
-
-        try
-        {
-            string context = await Task.Run(BuildDatasetsContextV2);
-            if (string.IsNullOrWhiteSpace(context))
-            {
-                SetStatus("No AI analysis reports match the selected filter.", true);
-                return;
-            }
-
-            _answer = await Claude.AskAiAsync(_question.Trim(), context, _answerLanguage);
-            _answerTranslations[_answerViewLang] = _answer;
-            _isTranslatingAnswer = true;
-            SetStatus("Answer generated. Translating to Korean / English / Vietnamese...", false);
-            StateHasChanged();
-
-            string? translationWarning = null;
-            try
-            {
-                _answerTranslations = await BuildAskTranslationsAsync(_answer, _answerLanguage);
-            }
-            catch (Exception tex)
-            {
-                translationWarning = tex.Message;
-                _answerTranslations[_answerViewLang] = _answer;
-            }
-            finally
-            {
-                _isTranslatingAnswer = false;
-            }
-
-            // Persist to DB
-            string perDsJson = System.Text.Json.JsonSerializer.Serialize(_answer.PerDataset);
-            string translationsJson = SerializeAskTranslations(_answerTranslations);
-            long id = Repo.SaveAskAiHistory(
-                _question.Trim(), _productTypeFilter, _answer.Overall, perDsJson, translationsJson);
-            _activeHistoryId = id;
-            _history = Repo.GetAskAiHistory();
-
-            SetStatus(translationWarning is null
-                ? $"Answer generated and translations saved - {_answer.PerDataset.Count} per-dataset answer(s)"
-                : $"Answer generated, but translation failed: {translationWarning}", translationWarning is not null);
-        }
-        catch (Exception ex)
-        {
-            SetStatus($"Error: {ex.Message}", true);
-        }
-        finally
-        {
-            _isBusy = false;
-        }
+        await LaunchCliAskAsync();
     }
 
     private async Task LaunchCliAskAsync()
@@ -808,11 +934,32 @@
         }
 
         string workDir = FindRepoRoot();
+        string runId   = Guid.NewGuid().ToString("N")[..12];
         string tmpDir  = Path.Combine(workDir, "tmp");
-        Directory.CreateDirectory(tmpDir);
+        string runDir  = Path.Combine(tmpDir, "ask_runs", runId);
+        Directory.CreateDirectory(runDir);
 
         string pendingQuestion  = _question.Trim();
         DateTime pendingStarted = DateTime.UtcNow;
+        _isBusy = true;
+        _isWaitingCli = false;
+        _status = "Building MicroSpeaker evidence pack...";
+        _statusError = false;
+        StateHasChanged();
+
+        MicroSpeakerAskEvidencePack evidence;
+        try
+        {
+            evidence = await Task.Run(() => MicroSpeakerEvidence.BuildEvidencePack(
+                pendingQuestion,
+                _productTypeFilter ?? ""));
+        }
+        catch (Exception ex)
+        {
+            _isBusy = false;
+            SetStatus($"Failed to build MicroSpeaker evidence pack: {ex.Message}", true);
+            return;
+        }
 
         var req = new
         {
@@ -820,50 +967,42 @@
             language          = _answerLanguage,
             productTypeFilter = _productTypeFilter ?? "",
             createdAt         = pendingStarted.ToString("O"),
+            microSpeakerEvidence = evidence,
         };
         try
         {
-            File.WriteAllText(Path.Combine(tmpDir, "ask_request.json"),
+            File.WriteAllText(Path.Combine(runDir, "ask_request.json"),
                 System.Text.Json.JsonSerializer.Serialize(req,
                     new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
         }
         catch (Exception ex)
         {
+            _isBusy = false;
             SetStatus($"Failed to write ask_request.json: {ex.Message}", true);
             return;
         }
 
-        string prompt =
-            "Read CLI_ASK_AI.md and execute it. " +
-            "Use the current AI_EXCEL_PROC schema first: AiDocuments, AiResults, AiNgBreakdowns, AiConclusions, AiTroubleshootingHints, AiExtractionLogs. " +
-            "When useful, inspect AiDocuments.RawJson as the raw AI analysis payload for each review result, then synthesize across matching datasets to answer the user's question. " +
-            "Use workbook-derived merged-cell handling when available; otherwise treat stored excel_paste metadata tags like {merged=A1:A4} or 〔merged=A1:A4〕 as evidence that the following value came from the merged range. " +
-            "Treat blank Date/Model/Type cells below a visible value as merged-cell continuations; carry the visible value forward before pairing rows. " +
-            "Do not treat percentage-only subrows as standalone result rows. " +
-            "When answering, compare NG rates against same-event Normal/Baseline/Before/Old/OK using (test/base-1)*100. " +
-            "If no baseline exists, do not claim improvement/worsening; use ng_without_baseline ranking. " +
-            "Use dimension/reliability/DOE/image-dependent report types when appropriate. " +
-            "Make Overall a Markdown table only. Each row must be a candidate check/action item that can reduce or explain the user's target problem. The first content column must be the thing to review or change, such as JIG condition, press condition, voltage, lot/mold/line, material, process parameter, inspection method, or retest condition. Do not put the defect/problem name itself as the reviewed item. Columns: No | Check item / factor | Review count | Previous result | Overall judgement | Next action. Do not write a prose summary. " +
-            "Also translate the final Ask AI result into Korean, English, and Vietnamese. Save TranslationsJson in AskAiHistory as a JSON object with keys ko, en, vi; each value must use the same schema as the main answer: overall and perDataset. Keep datasetName values unchanged. If the AskAiHistory table is missing TranslationsJson, add it with ALTER TABLE AskAiHistory ADD COLUMN TranslationsJson TEXT NOT NULL DEFAULT '{}'. " +
-            "Persist the final answer to AskAiHistory.";
-        if (!TryLaunchCodexAskTerminal(workDir, prompt, "Ask AI (Codex CLI)"))
+        string prompt = BuildRunScopedAskPrompt(
+            AiPromptRegistry.Read("data-inference/ask-ai-cli.md"),
+            runId);
+        if (!TryLaunchCodexAskTerminal(workDir, prompt, $"Ask AI (Codex CLI) {runId}"))
         {
+            _isBusy = false;
             SetStatus("Failed to launch Codex CLI.", true);
             return;
         }
 
-        _isBusy        = true;
         _isWaitingCli  = true;
         _answer        = null;
         _answerTranslations.Clear();
         _answerViewLang = LangCodeFromAnswerLanguage(_answerLanguage);
         _showDatasetEvidence = false;
         _selectedReview = null;
-        SetStatus("Codex CLI launched; waiting for answer to land in AskAiHistory.", false);
+        SetStatus($"Codex CLI launched ({runId}); evidence pack includes {evidence.MicroSpeaker.PairRows.Count:N0} pair, {evidence.MicroSpeaker.MetricRows.Count:N0} metric, {evidence.MicroSpeaker.MeasurementRows.Count:N0} measurement row(s). Waiting for AskAiHistory.", false);
         StateHasChanged();
 
         _cliCts?.Cancel(); _cliCts?.Dispose();
-        _cliCts = new System.Threading.CancellationTokenSource(TimeSpan.FromMinutes(10));
+        _cliCts = new System.Threading.CancellationTokenSource(TimeSpan.FromMinutes(90));
         var token = _cliCts.Token;
 
         try
@@ -892,7 +1031,7 @@
             }
             if (token.IsCancellationRequested && _answer is null)
             {
-                SetStatus("Wait cancelled or timed out (10min). Open History to load the answer manually when CLI finishes.", true);
+                SetStatus("Wait cancelled or timed out (90min). Open History to load the answer manually when CLI finishes.", true);
             }
         }
         catch (OperationCanceledException)
@@ -920,16 +1059,32 @@
     }
 
     private static string FindRepoRoot()
+        => AiPromptRegistry.FindRepositoryRoot();
+
+    private static string BuildRunScopedAskPrompt(string prompt, string runId)
     {
-        string dir = AppContext.BaseDirectory;
-        for (int i = 0; i < 8; i++)
+        string requestPath = $"tmp/ask_runs/{runId}/ask_request.json";
+        string payloadPath = $"tmp/ask_runs/{runId}/ask_result_payload.json";
+        string commitPath = $"tmp/ask_runs/{runId}/ask_commit.py";
+        string runDir = $"tmp/ask_runs/{runId}";
+
+        string scoped = (prompt ?? "")
+            .Replace("tmp/ask_request.json", requestPath, StringComparison.Ordinal)
+            .Replace("tmp/ask_result_payload.json", payloadPath, StringComparison.Ordinal)
+            .Replace("_tmp_ask_commit.py", commitPath, StringComparison.Ordinal);
+
+        return string.Join(Environment.NewLine, new[]
         {
-            if (File.Exists(Path.Combine(dir, "CLI_ASK_AI.md"))) return dir;
-            string? parent = Path.GetDirectoryName(dir.TrimEnd('\\', '/'));
-            if (string.IsNullOrEmpty(parent) || parent == dir) break;
-            dir = parent;
-        }
-        return AppContext.BaseDirectory;
+            "RUN-SCOPED ASK AI EXECUTION",
+            $"- This Ask AI run id is `{runId}`.",
+            $"- Read the request from `{requestPath}` only.",
+            $"- Write the final payload to `{payloadPath}` only.",
+            $"- If you create a commit script, create `{commitPath}` only.",
+            $"- Clean up only files under `{runDir}` for this run. Do not delete shared `tmp/` files, other ask run folders, or unrelated `_tmp_*.py` files.",
+            "- If any later instruction mentions a different ask_request/result path, this run-scoped path overrides it.",
+            "",
+            scoped,
+        });
     }
 
     private static bool TryLaunchCodexAskTerminal(string workDir, string prompt, string title)
@@ -1002,7 +1157,10 @@
         return string.Join(Environment.NewLine, new[]
         {
             "$ErrorActionPreference = 'Continue'",
-            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
+            "$utf8NoBom = New-Object System.Text.UTF8Encoding -ArgumentList $false",
+            "[Console]::InputEncoding = $utf8NoBom",
+            "[Console]::OutputEncoding = $utf8NoBom",
+            "$OutputEncoding = $utf8NoBom",
             "try { chcp 65001 | Out-Null } catch {}",
             $"try {{ $Host.UI.RawUI.WindowTitle = {Q(title)} }} catch {{}}",
             $"Set-Location -LiteralPath {Q(workDir)}",
@@ -1010,11 +1168,15 @@
             $"$promptPath = {Q(promptPath)}",
             $"$scriptPath = {Q(scriptPath)}",
             "$prompt = Get-Content -LiteralPath $promptPath -Raw -Encoding UTF8",
-            $"$prompt | & codex exec -c 'model_reasoning_effort=\"xhigh\"' --cd {Q(workDir)} --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check -",
+            "Write-Host 'Ask AI Codex analysis started. effort=high' -ForegroundColor Cyan",
+            "Write-Host ('WorkDir: ' + (Get-Location)) -ForegroundColor DarkGray",
+            "Write-Host ('Prompt: ' + $promptPath) -ForegroundColor DarkGray",
+            $"$prompt | & codex exec -c 'model_reasoning_effort=\"high\"' --cd {Q(workDir)} --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check -",
             "$exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }",
             "if ($exitCode -ne 0) {",
             "    Write-Host ('Codex exited with code ' + $exitCode + '.') -ForegroundColor Yellow",
             "}",
+            "if ($exitCode -eq 0) { Write-Host 'Ask AI Codex analysis finished.' -ForegroundColor Green }",
             "Remove-Item -LiteralPath $promptPath -Force -ErrorAction SilentlyContinue",
             "Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue",
         });
@@ -1831,6 +1993,35 @@
         string OverallJudgement,
         string NextAction);
 
+    private sealed class AskMarkdownVisualItem
+    {
+        public string Label  { get; set; } = "";
+        public string Value  { get; set; } = "";
+        public double? Amount { get; set; }
+        public string Detail { get; set; } = "";
+        public string Status { get; set; } = "";
+    }
+
+    private sealed class AskMarkdownHeatCell
+    {
+        public string Value  { get; set; } = "";
+        public string Count  { get; set; } = "";
+        public string Detail { get; set; } = "";
+        public string Status { get; set; } = "";
+    }
+
+    private sealed class AskMarkdownHeatRow
+    {
+        public string Label { get; set; } = "";
+        public List<AskMarkdownHeatCell> Cells { get; set; } = new();
+    }
+
+    private sealed class AskMarkdownHeatMatrix
+    {
+        public List<string> Columns { get; set; } = new();
+        public List<AskMarkdownHeatRow> Rows { get; set; } = new();
+    }
+
     private static List<AskActionRow> ParseOverallActionRows(string? markdown)
     {
         string[] lines = (markdown ?? "").Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
@@ -1867,93 +2058,362 @@
         return [];
     }
 
+    private static bool IsAskHtmlReport(string? value)
+    {
+        string text = (value ?? "").TrimStart();
+        if (text.Length == 0) return false;
+
+        return text.StartsWith("<!doctype", StringComparison.OrdinalIgnoreCase)
+               || text.StartsWith("<html", StringComparison.OrdinalIgnoreCase)
+               || (text.Contains("<body", StringComparison.OrdinalIgnoreCase)
+                   && text.Contains("</html>", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string AskHistoryHtmlUrl(long id)
+        => $"/data-inference/ask-history/{id}/html?lang={Uri.EscapeDataString(_answerViewLang)}";
+
+    private static string PrepareAskHtmlReport(string? html)
+    {
+        string text = html ?? "";
+        if (text.Contains("jino-ask-ai-report-css", StringComparison.OrdinalIgnoreCase))
+            return text;
+
+        string css = string.Join(Environment.NewLine, new[]
+        {
+            "<" + "style id=\"jino-ask-ai-report-css\">",
+            "html, body { margin: 0; padding: 10px; color: #0f172a; background: #f8fafc; font-family: \"Malgun Gothic\", \"Segoe UI\", Arial, sans-serif; font-size: 12px; line-height: 1.45; }",
+            "* { box-sizing: border-box; }",
+            "h1 { margin: 0 0 10px; font-size: 18px; line-height: 1.25; }",
+            "h2 { margin: 18px 0 8px; font-size: 15px; line-height: 1.3; }",
+            "h3 { margin: 14px 0 6px; font-size: 13px; line-height: 1.3; }",
+            "p { margin: 4px 0 8px; }",
+            "table { width: 100%; min-width: 1120px; border-collapse: collapse; table-layout: auto; background: #fff; font-size: 11px; }",
+            "th, td { border: 1px solid #cbd5e1; padding: 6px 7px; text-align: left !important; vertical-align: top !important; white-space: normal !important; word-break: keep-all; overflow-wrap: break-word; }",
+            "th { background: #e2e8f0; color: #1e293b; font-weight: 700; }",
+            "td { color: #0f172a; }",
+            "a[href^=\"/microspeaker/source-file/\"] { display: inline-block; white-space: nowrap; font-weight: 700; color: #1d4ed8; text-decoration: none; }",
+            "a[href^=\"/microspeaker/source-file/\"]:hover { text-decoration: underline; }",
+            ".num, .rate, .pct, td[data-type=\"number\"] { text-align: right !important; font-variant-numeric: tabular-nums; white-space: nowrap !important; }",
+            ".limit, .judgement { max-width: 180px; }",
+            "svg { max-width: 100%; }",
+            "</" + "style>",
+        });
+
+        int headClose = text.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
+        if (headClose >= 0)
+            return text.Insert(headClose, css);
+
+        int bodyOpenEnd = text.IndexOf("<body", StringComparison.OrdinalIgnoreCase);
+        if (bodyOpenEnd >= 0)
+        {
+            int bodyTagEnd = text.IndexOf('>', bodyOpenEnd);
+            if (bodyTagEnd >= 0)
+                return text.Insert(bodyTagEnd + 1, css);
+        }
+
+        return css + text;
+    }
+
     private static bool IsMarkdownTableSeparator(string row)
         => SplitMarkdownTableRow(row).All(cell =>
             cell.Length > 0 && cell.All(ch => ch == '-' || ch == ':' || char.IsWhiteSpace(ch)));
 
     private static Microsoft.AspNetCore.Components.MarkupString RenderMarkdown(string? markdown)
     {
-        string text = (markdown ?? "").Replace("\r\n", "\n").Replace('\r', '\n');
-        var lines = text.Split('\n');
+        static string Enc(string? value)
+            => System.Net.WebUtility.HtmlEncode(AskAiCleanExcelSerialDateText(value ?? ""));
+
+        static string Inline(string? value)
+        {
+            string text = Enc(value);
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"\*\*(.+?)\*\*", "<strong>$1</strong>");
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"`(.+?)`", "<code>$1</code>");
+            return text;
+        }
+
+        static bool IsTableLine(string line) => line.Trim().StartsWith("|", StringComparison.Ordinal)
+                                             && line.Trim().EndsWith("|", StringComparison.Ordinal);
+
+        static bool IsSeparator(string line)
+        {
+            string t = line.Trim().Trim('|').Replace(" ", "");
+            return t.Length > 0 && t.All(ch => ch == '-' || ch == ':' || ch == '|');
+        }
+
+        static List<string> Cells(string line)
+            => line.Trim().Trim('|').Split('|').Select(x => x.Trim()).ToList();
+
+        static bool IsLocationColumn(string header)
+        {
+            string text = (header ?? "").Trim();
+            string lower = text.ToLowerInvariant();
+            return lower is "cell" or "cells" or "source cell" or "source cells"
+                   || lower.Contains("evidence location")
+                   || lower.Contains("worksheet/cell")
+                   || lower.Contains("sheet/cell")
+                   || (lower.Contains("source") && lower.Contains("cell"))
+                   || text.Contains("근거 위치")
+                   || text.Contains("출처")
+                   || text.Contains("셀");
+        }
+
+        var lines = (markdown ?? "").Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
         var sb = new System.Text.StringBuilder();
         bool inList = false;
-
-        static string Enc(string value) => System.Net.WebUtility.HtmlEncode(value ?? "");
-        static string Inline(string value)
-        {
-            string html = Enc(value);
-            html = System.Text.RegularExpressions.Regex.Replace(html, @"\*\*(.+?)\*\*", "<strong>$1</strong>");
-            html = System.Text.RegularExpressions.Regex.Replace(html, @"`([^`]+)`", "<code>$1</code>");
-            return html;
-        }
 
         void CloseList()
         {
             if (!inList) return;
-            sb.AppendLine("</ul>");
+            sb.Append("</ul>");
             inList = false;
         }
 
         for (int i = 0; i < lines.Length; i++)
         {
-            string trim = lines[i].Trim();
+            string line = lines[i].TrimEnd();
+            string trim = line.Trim();
             if (string.IsNullOrWhiteSpace(trim))
             {
                 CloseList();
                 continue;
             }
 
-            if (trim.StartsWith('|') && trim.EndsWith('|')
-                && i + 1 < lines.Length
-                && lines[i + 1].Trim().StartsWith('|')
-                && lines[i + 1].Contains("---", StringComparison.Ordinal))
+            if (trim.StartsWith("```", StringComparison.Ordinal))
             {
                 CloseList();
-                var headers = SplitMarkdownTableRow(trim);
-                sb.AppendLine("<table><thead><tr>");
-                foreach (string h in headers) sb.Append("<th>").Append(Inline(h)).AppendLine("</th>");
-                sb.AppendLine("</tr></thead><tbody>");
-                i += 2;
-                for (; i < lines.Length; i++)
+                string kind = trim.Length > 3 ? trim[3..].Trim() : "";
+                var block = new System.Text.StringBuilder();
+                i++;
+                while (i < lines.Length && !lines[i].Trim().StartsWith("```", StringComparison.Ordinal))
                 {
-                    string row = lines[i].Trim();
-                    if (!row.StartsWith('|') || !row.EndsWith('|')) { i--; break; }
-                    sb.AppendLine("<tr>");
-                    foreach (string cell in SplitMarkdownTableRow(row)) sb.Append("<td>").Append(Inline(cell)).AppendLine("</td>");
-                    sb.AppendLine("</tr>");
+                    block.AppendLine(lines[i]);
+                    i++;
                 }
-                sb.AppendLine("</tbody></table>");
+
+                string visual = AskMarkdownVisualHtml(kind, block.ToString());
+                if (!string.IsNullOrWhiteSpace(visual))
+                    sb.Append(visual);
+                else
+                    sb.Append("<pre><code>").Append(Enc(block.ToString())).Append("</code></pre>");
                 continue;
             }
 
-            if (trim.StartsWith("### ", StringComparison.Ordinal))
+            if (IsTableLine(trim) && i + 1 < lines.Length && IsSeparator(lines[i + 1]))
             {
                 CloseList();
-                sb.Append("<h3>").Append(Inline(trim[4..].Trim())).AppendLine("</h3>");
+                var headers = Cells(trim);
+                var visibleIndexes = headers
+                    .Select((header, index) => new { header, index })
+                    .Where(x => !IsLocationColumn(x.header))
+                    .Select(x => x.index)
+                    .ToList();
+                if (visibleIndexes.Count == 0) visibleIndexes = Enumerable.Range(0, headers.Count).ToList();
+
+                i += 2;
+                sb.Append("<table><thead><tr>");
+                foreach (int idx in visibleIndexes) sb.Append("<th>").Append(Inline(headers[idx])).Append("</th>");
+                sb.Append("</tr></thead><tbody>");
+                while (i < lines.Length && IsTableLine(lines[i]))
+                {
+                    var rowCells = Cells(lines[i]);
+                    sb.Append("<tr>");
+                    foreach (int idx in visibleIndexes)
+                    {
+                        string cell = idx < rowCells.Count ? rowCells[idx] : "";
+                        sb.Append("<td>").Append(Inline(cell)).Append("</td>");
+                    }
+                    sb.Append("</tr>");
+                    i++;
+                }
+                i--;
+                sb.Append("</tbody></table>");
                 continue;
             }
-            if (trim.StartsWith("## ", StringComparison.Ordinal))
+
+            int heading = trim.TakeWhile(ch => ch == '#').Count();
+            if (heading is >= 1 and <= 4 && trim.Length > heading && trim[heading] == ' ')
             {
                 CloseList();
-                sb.Append("<h2>").Append(Inline(trim[3..].Trim())).AppendLine("</h2>");
+                string tag = heading <= 2 ? "h2" : "h3";
+                sb.Append('<').Append(tag).Append('>')
+                  .Append(Inline(trim[(heading + 1)..].Trim()))
+                  .Append("</").Append(tag).Append('>');
                 continue;
             }
+
             if (trim.StartsWith("- ", StringComparison.Ordinal))
             {
                 if (!inList)
                 {
-                    sb.AppendLine("<ul>");
+                    sb.Append("<ul>");
                     inList = true;
                 }
-                sb.Append("<li>").Append(Inline(trim[2..].Trim())).AppendLine("</li>");
+                sb.Append("<li>").Append(Inline(trim[2..].Trim())).Append("</li>");
                 continue;
             }
 
             CloseList();
-            sb.Append("<p>").Append(Inline(trim)).AppendLine("</p>");
+            sb.Append("<p>").Append(Inline(trim)).Append("</p>");
         }
         CloseList();
         return new Microsoft.AspNetCore.Components.MarkupString(sb.ToString());
+    }
+
+    private static string AskMarkdownVisualHtml(string kind, string json)
+    {
+        static string Enc(string? value)
+            => System.Net.WebUtility.HtmlEncode(AskAiCleanExcelSerialDateText(value ?? ""));
+
+        static string HeatClass(string? status)
+        {
+            string s = (status ?? "").Trim().ToLowerInvariant();
+            if (s is "bad" or "worse" or "fail" or "failed" or "ng" or "high") return "diask-ai-heat-worse";
+            if (s is "good" or "improved" or "pass" or "passed" or "ok" or "low") return "diask-ai-heat-improved";
+            return "diask-ai-heat-flat";
+        }
+
+        static string BarClass(string? status)
+        {
+            string s = (status ?? "").Trim().ToLowerInvariant();
+            if (s is "bad" or "worse" or "fail" or "failed" or "ng" or "high") return "diask-ai-bar-danger";
+            if (s is "good" or "improved" or "pass" or "passed" or "ok" or "low") return "diask-ai-bar-good";
+            return "diask-ai-bar-warn";
+        }
+
+        static double NumberValue(AskMarkdownVisualItem item)
+        {
+            if (item.Amount.HasValue) return Math.Abs(item.Amount.Value);
+            var m = System.Text.RegularExpressions.Regex.Match(item.Value ?? "", @"-?\d+(?:\.\d+)?");
+            return m.Success && double.TryParse(m.Value, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out double v)
+                ? Math.Abs(v)
+                : 1.0;
+        }
+
+        string normalizedKind = (kind ?? "").Trim().ToLowerInvariant();
+        if (normalizedKind is not ("report-heatmap" or "report-bars" or "report-heatmap-matrix"))
+            return "";
+
+        if (normalizedKind == "report-heatmap-matrix"
+            || (normalizedKind == "report-heatmap" && LooksLikeMatrixJson(json)))
+        {
+            string matrix = RenderAskHeatMatrix(json);
+            if (!string.IsNullOrEmpty(matrix)) return matrix;
+        }
+
+        try
+        {
+            var items = System.Text.Json.JsonSerializer.Deserialize<List<AskMarkdownVisualItem>>(
+                json,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+            items = items
+                .Where(x => !string.IsNullOrWhiteSpace(x.Label) || !string.IsNullOrWhiteSpace(x.Value))
+                .Take(12)
+                .ToList();
+            if (items.Count == 0) return "";
+
+            var sb = new System.Text.StringBuilder();
+            if (normalizedKind == "report-heatmap")
+            {
+                sb.Append("<div class=\"diask-ai-md-visual\"><div class=\"diask-ai-heatmap\">");
+                foreach (var item in items)
+                {
+                    sb.Append("<div class=\"diask-ai-heat ").Append(HeatClass(item.Status)).Append("\" title=\"")
+                      .Append(Enc(item.Detail)).Append("\"><strong>")
+                      .Append(Enc(item.Value)).Append("</strong><span>")
+                      .Append(Enc(item.Label)).Append("</span><em>")
+                      .Append(Enc(item.Detail)).Append("</em></div>");
+                }
+                sb.Append("</div></div>");
+                return sb.ToString();
+            }
+
+            double max = Math.Max(1.0, items.Select(NumberValue).DefaultIfEmpty(0).Max());
+            sb.Append("<div class=\"diask-ai-md-visual diask-ai-md-bars diask-ai-vbar-chart\">");
+            foreach (var item in items)
+            {
+                double value = NumberValue(item);
+                double height = value <= 0
+                    ? 0
+                    : Math.Clamp(value / max * 100.0, 5.0, 100.0);
+                sb.Append("<div class=\"diask-ai-vbar-item\" title=\"")
+                  .Append(Enc(item.Detail)).Append("\"><div class=\"diask-ai-vbar-value\">")
+                  .Append(Enc(item.Value)).Append("</div><div class=\"diask-ai-vbar-plot\"><div class=\"diask-ai-vbar ")
+                  .Append(BarClass(item.Status)).Append("\" style=\"height:")
+                  .Append(height.ToString("F1", System.Globalization.CultureInfo.InvariantCulture))
+                  .Append("%\"></div></div><div class=\"diask-ai-vbar-label\">")
+                  .Append(Enc(item.Label)).Append("</div><div class=\"diask-ai-vbar-detail\">")
+                  .Append(Enc(item.Detail)).Append("</div></div>");
+            }
+            sb.Append("</div>");
+            return sb.ToString();
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private static bool LooksLikeMatrixJson(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return false;
+        string head = json.TrimStart();
+        if (head.Length == 0 || head[0] != '{') return false;
+        return head.Contains("\"rows\"", StringComparison.OrdinalIgnoreCase)
+            && head.Contains("\"columns\"", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string RenderAskHeatMatrix(string json)
+    {
+        static string Enc(string? value)
+            => System.Net.WebUtility.HtmlEncode(AskAiCleanExcelSerialDateText(value ?? ""));
+
+        static string HeatClass(string? status)
+        {
+            string s = (status ?? "").Trim().ToLowerInvariant();
+            if (s is "bad" or "worse" or "fail" or "failed" or "ng" or "high") return "diask-ai-heat-worse";
+            if (s is "good" or "improved" or "pass" or "passed" or "ok" or "low") return "diask-ai-heat-improved";
+            return "diask-ai-heat-flat";
+        }
+
+        try
+        {
+            var matrix = System.Text.Json.JsonSerializer.Deserialize<AskMarkdownHeatMatrix>(
+                json,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (matrix is null || matrix.Rows.Count == 0 || matrix.Columns.Count == 0)
+                return "";
+
+            int colCount = matrix.Columns.Count;
+            var sb = new System.Text.StringBuilder();
+            sb.Append("<div class=\"diask-ai-md-visual\"><table class=\"diask-ai-heat-matrix\"><thead><tr><th class=\"diask-ai-heat-rowhead\"></th>");
+            foreach (string col in matrix.Columns)
+                sb.Append("<th>").Append(Enc(col)).Append("</th>");
+            sb.Append("</tr></thead><tbody>");
+            foreach (var row in matrix.Rows)
+            {
+                sb.Append("<tr><th class=\"diask-ai-heat-rowhead\">").Append(Enc(row.Label)).Append("</th>");
+                for (int c = 0; c < colCount; c++)
+                {
+                    var cell = c < row.Cells.Count ? row.Cells[c] : null;
+                    string cls = HeatClass(cell?.Status);
+                    string title = Enc(cell?.Detail ?? "");
+                    sb.Append("<td class=\"diask-ai-heat-cell ").Append(cls)
+                      .Append("\" title=\"").Append(title).Append("\">");
+                    sb.Append("<strong>").Append(Enc(cell?.Value ?? "")).Append("</strong>");
+                    if (!string.IsNullOrWhiteSpace(cell?.Count))
+                        sb.Append("<em>").Append(Enc(cell!.Count)).Append("</em>");
+                    sb.Append("</td>");
+                }
+                sb.Append("</tr>");
+            }
+            sb.Append("</tbody></table></div>");
+            return sb.ToString();
+        }
+        catch
+        {
+            return "";
+        }
     }
 
     private static List<string> SplitMarkdownTableRow(string row)

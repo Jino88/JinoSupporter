@@ -1,0 +1,43 @@
+{
+  "sourceFileId": 15,
+  "sourceFile": "01. BRS-161014-201507  Report check Gauss VALUE BP+SM-CM+CP -2025.05.09_1778470587_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\15.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:44:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 15,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft is not usable as final evidence because the changed factor is inferred from the filename, baseline/test conditions are not explicit, and measurement grouping/spec interpretation contains clear errors.",
+    "issues": [
+      "Changed factor is the workbook filename rather than a verified manufacturing change or condition from cited rows.",
+      "BaselineCondition and changedCondition are both not explicit, so the comparison structure is ambiguous.",
+      "Evidence shows a gauss value check for product/model groups 161016 and 201507, but does not clearly establish a baseline-versus-test changed factor.",
+      "Outcome grouping is duplicated between a generic detected table and a more specific gauss-value table.",
+      "Several specs are incorrectly assigned as >700G even where cited row indicates >1000G, >1100G, 900G~1350G, or N 400~750G.",
+      "Violation count for CM+CP Spec: N 400~750G appears to be based on the wrong >700G spec and is therefore unreliable.",
+      "Row NG rate!27 is cited for key statistics but its row text is not included in the provided contextRows, limiting independent verification of those calculated values."
+    ],
+    "requiredUserQuestions": [
+      "Is this report intended to compare 161016 against 201507, or only to record gauss measurements for both models?",
+      "What is the actual changed factor, if any?"
+    ],
+    "correctionPlan": [
+      "Replace the filename-based changed factor with a source-supported factor, or mark the case excluded if no actual changed condition exists.",
+      "Clarify whether 161016 and 201507 are baseline/test conditions, product models, or parallel sample groups.",
+      "Use row NG rate!14 specs exactly for each measurement subgroup: S>700G, S>1000G, S>1100G, S 900G~1350G, and N 400~750G.",
+      "Recalculate violation counts against the correct subgroup-specific specs.",
+      "Remove duplicate/generic detected-table outcome unless it adds distinct verified evidence.",
+      "Include row-level citations for the actual measurement rows used to compute min, max, average, sample count, and violations."
+    ],
+    "evidencePolicy": "Citations are enough to show title, purpose, and table headers, but not sufficient for final Ask AI evidence because the changed condition and calculated measurement statistics are not fully supported by visible row-level evidence."
+  },
+  "usage": {
+    "input_tokens": 3398,
+    "output_tokens": 1013,
+    "total_tokens": 4411
+  }
+}

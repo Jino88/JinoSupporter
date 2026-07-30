@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 907,
+  "sourceFile": "79.1 TIU L5S3-01  Data check UV dry AWF machine make again standard - 2026.03.18_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\907.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:49Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 907,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable data but misidentifies the primary changed factor and mixes test conditions with subgroup keys.",
+    "issues": [
+      "Primary factor should likely be UV dry peak/total standard change, not Normal versus line and AWF labels.",
+      "Line, side, and AWF machine labels are mixed into changedCondition instead of subgroup context.",
+      "Baseline/test conditions are ambiguous; Normal rows and AWF rows are not clearly old versus new spec.",
+      "Decision row supporting new spec is omitted from cited evidence.",
+      "Measurement outcomes from header rows appear over-aggregated and not valid final evidence."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended comparison old UV dry spec versus new peak/total spec?",
+      "Are AWF #1-#5 machine IDs, test days, or condition levels?"
+    ],
+    "correctionPlan": [
+      "Regroup changedFactor around UV dry peak/total standard remake if confirmed.",
+      "Move line, side, machine, date, and AWF number into subgroupKeys.",
+      "Separate functional NG-rate outcomes from peak/total measurement outcomes.",
+      "Cite purpose, table headers, relevant data rows, and decision row.",
+      "Remove derived header-stat measurements unless traceable to actual data cells."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient for Ask AI until corrected."
+  },
+  "usage": {
+    "input_tokens": 6521,
+    "output_tokens": 701,
+    "total_tokens": 7222
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 492,
+  "sourceFile": "29. MSU-L20S15-07 Report test New Dry UV Machine 395nm ( Normal 365nm) date 2.05.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\492.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:28Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 492,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies a usable validation report but misstates the change factor and uses unreliable LED UV grouping.",
+    "issues": [
+      "Changed factor is filename, not actual 365nm vs 395nm dry UV change.",
+      "Baseline and test conditions are marked unclear despite explicit normal/test rows.",
+      "LED UV outcomes cite headers and aggregate mixed rows instead of data rows.",
+      "Subgroup keys for sheet/product, line, film condition, and tension spec are missing.",
+      "Judgements and violation counts for LED UV appear unsupported."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to new dry UV 395nm versus normal dry UV 365nm.",
+      "Add subgroup keys for sheet/product, line, film use, VP film, and tension spec.",
+      "Rebuild LED UV outcomes from rows 22, 24, 30, and 32 per sheet.",
+      "Keep tension outcomes by sheet with rows 39, 43, 45, and decision row 50.",
+      "Remove unsupported spec and violation calculations unless directly evidenced."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient; final evidence must cite explicit condition and data rows."
+  },
+  "usage": {
+    "input_tokens": 6069,
+    "output_tokens": 781,
+    "total_tokens": 6850
+  }
+}

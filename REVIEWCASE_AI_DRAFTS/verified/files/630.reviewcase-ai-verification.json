@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 630,
+  "sourceFile": "41. TIU C11-20  Report Test VP Assy press Jig 2026.1.24_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\630.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 630,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the wrong primary changed factor; evidence supports Normal vs New VP assy press Jig, not Normal vs Day shift.",
+    "issues": [
+      "Primary changed factor is mislabeled as shift comparison.",
+      "Day shift should be subgroup context, not changed condition.",
+      "New VP assy press Jig is incorrectly placed as subgroup only.",
+      "Header rows for result columns are not cited in evidenceRows.",
+      "Outcome direction appears correct after regrouping."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedFactor to Normal vs New VP assy press Jig.",
+      "Set baselineCondition to Normal and changedCondition to New VP assy press Jig.",
+      "Move Day shift, date, model, and cut 0.03 to subgroup/context as supported.",
+      "Add Test!17 and Test!18 to evidence for metric and column definitions.",
+      "Keep NG rate comparison and worse judgement, noting small test input."
+    ],
+    "evidencePolicy": "Citations are mostly citeable but insufficient without header rows Test!17-Test!18."
+  },
+  "usage": {
+    "input_tokens": 2434,
+    "output_tokens": 628,
+    "total_tokens": 3062
+  }
+}

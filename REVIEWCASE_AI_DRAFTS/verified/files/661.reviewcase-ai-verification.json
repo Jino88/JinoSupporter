@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 661,
+  "sourceFile": "45. TIU L5S3-01 R Report test add more 2tape in F-PCB press JIG to improve NG frame deform 2025.12.31_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\661.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 661,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid comparable evidence but misidentifies the report context and pairs results across mismatched line/date groups.",
+    "issues": [
+      "Review title and purpose use Decap sheet instead of main Test report.",
+      "Line L/R are treated as changed conditions instead of subgroup keys.",
+      "Normal baselines are mismatched for Line R and 2026-01-02 tests.",
+      "Measurement outcome is derived from header-only data and is not valid.",
+      "Changed-factor evidence omits key Test purpose/content rows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Use Test sheet title, purpose, content, and compare-with-normal rows as primary context.",
+      "Set primary factor to adding two 0.14 mm tapes to the F-PCB press jig.",
+      "Keep date, line, and VP press jig variant as subgroup or secondary conditions.",
+      "Pair row 14 with 16, rows 18 and 20 with 22, and row 24 with 26.",
+      "Remove header-only measurement stats; retain function NG rate outcomes only."
+    ],
+    "evidencePolicy": "Citations exist, but final evidence needs corrected Test row grouping and context rows."
+  },
+  "usage": {
+    "input_tokens": 5147,
+    "output_tokens": 1299,
+    "total_tokens": 6446
+  }
+}

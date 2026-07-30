@@ -1,0 +1,277 @@
+{
+  "sourceFileId": 351,
+  "sourceFile": "18. TIU L5S3-01 R Report test Frame improve separate S-MG  date 2025.12.02_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\18. TIU L5S3-01 R Report test Frame improve separate S-MG  date 2025.12.02_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 19,
+    "sheetCellCount": 58,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 7,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] REPORT TEST FRAME IMPROVE SEPARATE SIDE MG | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | Date | 2025-12-02 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Material Frame happen separate side MG: Frame L 1.7%, Frame R 3.75% => Test Frame new mold improve separate Side MG Ok or not?"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Sub 3 tracking test: MTR visual check=> After frame loading check => After magnetization check => After ass'y frame+vp check => After revesse check => After ass'y F-PCB check => After Eject check"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| 1. Result check Function"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | No | Date | Process | | Input | NG S-MG separate | NG rate"
+    },
+    {
+      "rowId": "Test!15",
+      "sheetName": "Test",
+      "rowNumber": 15,
+      "rowText": "| | 1 | 2025-12-02 00:00:00 | Visual MTR frame | | 50 | 0 | 0"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | 2 | | Frame loading | | 50 | 0 | 0"
+    },
+    {
+      "rowId": "Test!24",
+      "sheetName": "Test",
+      "rowNumber": 24,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "Test!25",
+      "sheetName": "Test",
+      "rowNumber": 25,
+      "rowText": "| - Result Sub 3 tracking test lot frame improve is OK => Can use"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-351-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] REPORT TEST FRAME IMPROVE SEPARATE SIDE MG | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Material Frame happen separate side MG: Frame L 1.7%, Frame R 3.75% => Test Frame new mold improve separate Side MG Ok or not? / | II. Content. / | - Sub 3 tracking test: MTR visual check=> After frame loading check => After magnetization check => After ass'y frame+vp check => After revesse check => After ass'y F-PCB check => After Eject check / | III. Result",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Visual MTR frame, Frame loading, Magnetization, Ass'y frame+vp, Revese check, Ass'y frame+F-PCB, Eject check",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Visual MTR frame, Frame loading, Magnetization, Ass'y frame+vp, Revese check, Ass'y frame+F-PCB, Eject check",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!15",
+            "Test!16",
+            "Test!17",
+            "Test!18",
+            "Test!19",
+            "Test!2",
+            "Test!20",
+            "Test!21",
+            "Test!5",
+            "Test!6",
+            "Test!7",
+            "Test!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "1. Result check Function",
+          "comparisonRows": [
+            "Test!15",
+            "Test!16",
+            "Test!17",
+            "Test!18",
+            "Test!19",
+            "Test!20",
+            "Test!21"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 19691,
+              "condition": "Visual MTR frame",
+              "input": 50.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!15"
+              ]
+            },
+            {
+              "metricId": 19692,
+              "condition": "Frame loading",
+              "input": 50.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!16"
+              ]
+            },
+            {
+              "metricId": 19693,
+              "condition": "Magnetization",
+              "input": 50.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!17"
+              ]
+            },
+            {
+              "metricId": 19694,
+              "condition": "Ass'y frame+vp",
+              "input": 50.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!18"
+              ]
+            },
+            {
+              "metricId": 19695,
+              "condition": "Revese check",
+              "input": 50.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!19"
+              ]
+            },
+            {
+              "metricId": 19696,
+              "condition": "Ass'y frame+F-PCB",
+              "input": 50.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!20"
+              ]
+            },
+            {
+              "metricId": 19697,
+              "condition": "Eject check",
+              "input": 50.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!21"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!15",
+        "Test!16",
+        "Test!17",
+        "Test!18",
+        "Test!19",
+        "Test!2",
+        "Test!20",
+        "Test!21",
+        "Test!5",
+        "Test!6",
+        "Test!7",
+        "Test!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!15",
+      "Test!16",
+      "Test!17",
+      "Test!18",
+      "Test!19",
+      "Test!2",
+      "Test!20",
+      "Test!21",
+      "Test!5",
+      "Test!6",
+      "Test!7",
+      "Test!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

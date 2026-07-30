@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 740,
+  "sourceFile": "54.2. BRS-161014  Report checking NTI of test Frame improvement type C date 28.10.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\740.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 740,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable Normal vs Test evidence but the changed-factor and measurement grouping are not reliable enough for final use.",
+    "issues": [
+      "Changed factor uses filename and leaves baseline/test conditions unspecified.",
+      "SPL/THD/IMP outcomes are grouped as generic detected tables, not NTI metrics.",
+      "FO subresults are misparsed as row-index sequences instead of FO values.",
+      "ST/MASK/reference columns are mixed with Normal/Test conditions without role separation.",
+      "Evidence is mostly header or partial rows and omits likely summary context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary comparison to NORMAL baseline vs TEST frame improvement type C, with ST/MASK as reference or subgroup context.",
+      "Create separate outcomes for SPL, THD, IMP, and FO under the same validation report context.",
+      "Recompute FO statistics from the numeric FO values for TEST and NORMAL samples.",
+      "Use actual data and summary rows from each sheet, not only headers, for citations.",
+      "Preserve sample IDs and any ST/reference columns distinctly from the main comparison."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are insufficient for final evidence because grouping and parsed values are unreliable."
+  },
+  "usage": {
+    "input_tokens": 6841,
+    "output_tokens": 738,
+    "total_tokens": 7579
+  }
+}

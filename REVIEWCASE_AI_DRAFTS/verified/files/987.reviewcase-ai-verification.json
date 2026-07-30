@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 987,
+  "sourceFile": "BRS-MSU L20S15-07  NG Gap Coil +Spot welding -2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\987.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 987,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is a production NG summary by process/machine, not a citeable changed-factor comparison.",
+    "issues": [
+      "No explicit baseline or test changed condition is evidenced.",
+      "Machine, shift, row number, and total are misclassified as changed factors.",
+      "Two different process sheets are merged under one unsupported comparison.",
+      "Outcome title and domain are generic and not manufacturing-specific.",
+      "Totals are mixed with subgroup rows as if independent conditions."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Exclude from Ask AI changed-factor evidence.",
+      "If retained, reclassify as non-comparative NG/yield summary.",
+      "Separate GAP coil+pad and spot welding process summaries.",
+      "Use machine/date/shift only as subgroup context.",
+      "Require external/source rows showing an actual process change before making a review case."
+    ],
+    "evidencePolicy": "Row citations exist for metrics but are insufficient to support any changed-condition claim."
+  },
+  "usage": {
+    "input_tokens": 3077,
+    "output_tokens": 583,
+    "total_tokens": 3660
+  }
+}

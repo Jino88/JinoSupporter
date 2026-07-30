@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 887,
+  "sourceFile": "76. BRS-161014 Report  Test  improve NG NCR VP+Coil separate  Date 1.11.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\887.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 887,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misstates the changed factor and leaves baseline/test conditions too vague for final use.",
+    "issues": [
+      "Changed factor is a filename, not the process change.",
+      "Baseline and test conditions are not explicitly mapped.",
+      "Key change evidence row Report!8 is omitted.",
+      "Nozzle mass result rows are present but not assessed.",
+      "Spec text for tension is lost despite being cited."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to bonding-line inside narrowing/down bonding line 0.06.",
+      "Set baseline as Normal and changed condition as Bonding line test.",
+      "Add Report!8 to changed-factor evidence.",
+      "Preserve tension spec ≥1 kgf from Report!22-23.",
+      "Decide whether to include nozzle mass rows Report!43-45 as a second outcome."
+    ],
+    "evidencePolicy": "Citations exist and rows are valid, but evidence is incomplete for final Ask AI use."
+  },
+  "usage": {
+    "input_tokens": 2869,
+    "output_tokens": 539,
+    "total_tokens": 3408
+  }
+}

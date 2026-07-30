@@ -1,0 +1,210 @@
+{
+  "sourceFileId": 604,
+  "sourceFile": "39. TIU L5S3-01 R Report  test SEMI SUB 3 -A2 to find reason NG bako 2025.12.26_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\39. TIU L5S3-01 R Report  test SEMI SUB 3 -A2 to find reason NG bako 2025.12.26_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 19,
+    "sheetCellCount": 64,
+    "comparisonPairCount": 1,
+    "metricCandidateCount": 2,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] REPORT TEST SEMI SUB3 - A2 TO FIND NG BAKO (SPL) | | | | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date | 2025-12-26 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - NG SPL high => Test semi Sub3 - A2 line to find reason NG"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| - Take sample Sub3 semi from A2 => Move to D3 line"
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| - Make final sample and check function"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| - Compare with normal"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | Result check function"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| | No | Date | Type | | | Input | OK | NG BAKO | | | | | Total NG | NG rate"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | 1 | 2025-12-26 00:00:00 | Test Semi Sub3 A2 | | | 35 | 28 | 6 | 0 | 1 | 0 | 0 | 7 | 0.2"
+    },
+    {
+      "rowId": "Test!18",
+      "sheetName": "Test",
+      "rowNumber": 18,
+      "rowText": "| | 2 | | Normal ( D3 ) | | | 190 | 106 | 83 | 1 | 0 | 0 | 0 | 84 | 0.44210526"
+    },
+    {
+      "rowId": "Test!22",
+      "sheetName": "Test",
+      "rowNumber": 22,
+      "rowText": "| IV. Decision"
+    },
+    {
+      "rowId": "Test!23",
+      "sheetName": "Test",
+      "rowNumber": 23,
+      "rowText": "| - NG function of lot test using semi sub 3- A2 lower than normal"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-604-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] REPORT TEST SEMI SUB3 - A2 TO FIND NG BAKO (SPL) | | | | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - NG SPL high => Test semi Sub3 - A2 line to find reason NG / | II. Content. / | - Take sample Sub3 semi from A2 => Move to D3 line / | - Make final sample and check function",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "Condition comparison: Normal ( D3 ) vs Test Semi Sub3 A2",
+          "baselineCondition": "Normal ( D3 )",
+          "changedCondition": "Test Semi Sub3 A2",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!10",
+            "Test!16",
+            "Test!18",
+            "Test!2",
+            "Test!5",
+            "Test!6",
+            "Test!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "function defect",
+          "outcomeMetric": "Result check function",
+          "comparisonRows": [
+            "Test!16",
+            "Test!18"
+          ],
+          "judgement": "improved",
+          "subResults": [
+            {
+              "pairId": 4389,
+              "controlCondition": "Normal ( D3 )",
+              "testCondition": "Test Semi Sub3 A2",
+              "control": {
+                "input": 190.0,
+                "ng": 84.0,
+                "ratePercent": 44.210526
+              },
+              "test": {
+                "input": 35.0,
+                "ng": 7.0,
+                "ratePercent": 20.0
+              },
+              "deltaRatePercentPoint": -24.210525999999998,
+              "effectDirection": "IMPROVED",
+              "evidenceRows": [
+                "Test!16",
+                "Test!18"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Test!10",
+        "Test!16",
+        "Test!18",
+        "Test!2",
+        "Test!5",
+        "Test!6",
+        "Test!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!10",
+      "Test!16",
+      "Test!18",
+      "Test!2",
+      "Test!5",
+      "Test!6",
+      "Test!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

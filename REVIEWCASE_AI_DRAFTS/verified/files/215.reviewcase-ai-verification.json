@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 215,
+  "sourceFile": "10.1 BRS-161016GMI Report check NTI lot test new bond PW 1470SX-N1-AC026-A-3424B - 2025.07.08_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\215.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 215,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable acoustic test data exists, but the draft misidentifies the changed factor and groups outcomes incorrectly.",
+    "issues": [
+      "Changed factor is filename, not the sample-condition comparison.",
+      "Baseline and changed conditions are marked not explicit despite Normal and named test samples.",
+      "Evidence omits key summary rows for PW 1470SX-N1, AC026, and A-3424B.",
+      "Many subResults use numeric row values as conditions, creating invalid metrics.",
+      "Outcome grouping duplicates and mixes summary metrics with raw frequency tables."
+    ],
+    "requiredUserQuestions": [
+      "Are PW 1470SX-N1, AC026, and A-3424B separate changed sample lots to compare against Normal?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to sample/lot or new-bond condition comparison.",
+      "Use Normal as baseline and the three named samples as changed conditions.",
+      "Cite GRAPH!9-12 and RAW DATA!3-8 for grouping evidence.",
+      "Keep SPL, Fo, and THD summary metrics together under one acoustic outcome.",
+      "Remove malformed numeric-condition subResults or regroup them by frequency table headers."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for final evidence because key condition rows and corrected grouping are missing."
+  },
+  "usage": {
+    "input_tokens": 14106,
+    "output_tokens": 798,
+    "total_tokens": 14904
+  }
+}

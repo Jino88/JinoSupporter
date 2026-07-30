@@ -1,0 +1,1517 @@
+# JinoSupporter — Persistent Handoff
+
+이 파일은 세션 간 재개 지점을 기록한다. 최신 항목을 아래에 append한다. BMES Report
+정적 HTML 작업의 상세 이력은 `JinoSupporter.Web/SESSION_HANDOFF_2026-07-22.md`(§1~§19)에
+있다.
+
+## 2026-07-23 07:20 - Daily 하위 탭(§16) 런타임 검증
+- Completed: 사용자가 "Daily 탭에 Summary만 보이고 모델별 탭이 없다"고 지적. §16(Daily를
+  Summary + 모델별 하위 탭으로 분리)이 실제로 동작하는지 검증했다. 결론: 코드 정상,
+  화면이 오래된 리포트를 표시 중.
+- Decisions:
+  - 현재 생성물 `D:\000. MyWorks\002. DB\_temp\bmes-report\76def4...\report.html`
+    (07:14 생성, 3.6MB)에 `data-daily-section` 8개, `initSubTabs`, `rpt-subtabs` 모두 존재.
+    `show()`가 `initSubTabs(host)` 호출, `host=rpt-host` 정상.
+  - 정적 분석만으론 원인 불명이라 scratchpad에 jsdom 설치 후 그 report.html의 JS를
+    실제 실행. 결과: JS 에러 0, `.rpt-subtabs` 바 1개 + 알약 버튼 8개
+    (Summary + BRS/MSU/MSM-S931B/MSM-X526/TIU-C11/TIU-L5S3/ASSY 338) 정상 생성.
+    바는 `#rpt-host` 최상단(툴바 아래, "Summary" 제목 위)에 위치.
+  - 따라서 기능은 정상. 사용자 화면은 §16 이전 생성물이나 캐시된 iframe을 표시 중일 뿐.
+    07:14 파일이 §16 코드를 담고 있으므로 현재 실행 중인 서버는 이미 §16 빌드다.
+- Files: 코드 변경 없음. 검증 스크립트만 scratchpad에 생성(비영구).
+- Verification: jsdom 실행으로 하위 탭 바 렌더 확인(위 결과). dotnet 빌드는 돌리지 않음
+  (코드 변경이 없어서). 서버는 건드리지 않음(재시작은 사용자 몫).
+- Next: 사용자가 `/report/bmes`에서 `Get Report` 재실행(필요 시 Ctrl+F5)하면 툴바 아래
+  하위 탭 8개가 나타남. 재실행 후에도 안 뜨면 브라우저 캐시/더 오래된 서버 프로세스를
+  의심할 것. §16 코드 자체는 수정 불필요.
+- **정정: 위 "수정 불필요" 결론은 틀렸다. 아래 07:50 항목에서 실제 CSS 버그를 찾아 고쳤다.**
+
+## 2026-07-23 07:50 - 하위 탭 안 보이는 실제 원인 = CSS로 버튼 숨김, 수정
+- Completed: `Get Report` 재실행(402083 rows) 후에도 하위 탭이 안 보였다. jsdom에선
+  바가 렌더됐지만 실브라우저에서만 안 뜨는 차이 = 외부 CSS. **실제 Chrome 헤드리스로
+  report.html을 렌더**해 재현하고 계산된 스타일을 뽑아 근본 원인을 확정, 수정했다.
+- Decisions / 근본 원인:
+  - 헤드리스 Chrome 계산 스타일: `.rpt-subtabs` 바는 보이나(rectH=6, 빈 테두리만)
+    `.rpt-subtab` 버튼이 전부 `display:none`. 즉 바는 DOM에 있는데 버튼이 CSS로 숨겨짐.
+  - 범인: `BmesReportHtmlExportService.cs:283`
+    `.report-export button:not(.rpt-tab):not(.export-toggle) { display:none !important; }`
+    — 정적 export에서 인터랙티브 버튼(복사/이동/삭제)을 숨기는 blanket 규칙. §16에서
+    새로 만든 하위 탭 버튼 클래스 `.rpt-subtab`이 예외 목록에 없어 같이 숨겨졌다.
+  - 같은 규칙이 툴바 `#tb-reset`(초기화) 버튼도 숨기고 있었다(기존에 눈치 못 챈 버그).
+  - 수정: 예외에 `.rpt-subtab`과 `#tb-reset` 추가.
+    `...button:not(.rpt-tab):not(.rpt-subtab):not(.export-toggle):not(#tb-reset)`.
+  - 교훈: export 대상에 **새 버튼 클래스를 추가하면 반드시 이 :not 화이트리스트에 넣어야**
+    한다. 안 그러면 조용히 숨겨진다.
+- Files: `Services/BmesReportHtmlExportService.cs` (283행 규칙 1줄 + 위 주석).
+- Verification:
+  - 실제 Chrome 헤드리스로 수정 전(shot.png)=하위 탭 없음 재현 → 수정 후(shot3.png)=
+    Summary + 모델 7개 알약 바 + 초기화 버튼 정상 표시 확인.
+  - `dotnet msbuild -t:Compile` error CS 0건(기존 경고만). 서버는 건드리지 않음.
+- Next: **사용자가 서버 재시작 후 `/report/bmes`에서 `Get Report`를 다시 실행**해야 실제
+  화면에 반영됨(컴파일만 됨, 배포 아님). 그 뒤 Daily 탭 상단에 하위 탭 8개가 보이면 완료.
+
+## 2026-07-23 08:10 - LPA 목록 컬럼 정리 + 모델별 TOTAL 행
+- Completed: `BmesLpaPage.razor` 목록 표를 사용자 요청대로 변경.
+  - 헤더 라벨: OKCNT→OK, NGCNT→NG (`ColumnHeader`).
+  - NG(NGCNT) 바로 뒤에 합성 컬럼 `NG RATE`(ppm) 추가. 값 = NGCNT/TOTAL×1,000,000,
+    TOTAL=0이면 "-". 사용자 확정 분모 = TOTAL 열.
+  - NACNT, ERNAM_TX, VERID 컬럼 숨김(`HiddenColumns`에 추가). VERID_TX는 유지.
+  - 각 날짜의 각 모델 그룹 행(`lpa-model-row`)에 per-model TOTAL 표시: TOTAL/OK/NG 합계 +
+    NG RATE를 각 컬럼 아래 정렬해 렌더. 모델명 라벨은 첫 숫자 컬럼 직전까지 colspan.
+- Decisions:
+  - NG RATE는 데이터에 없는 합성 컬럼이라 `DisplayColumns`에서 NGCNT 뒤에 삽입, 셀 값은
+    행의 NGCNT/TOTAL로 계산(`RowNgRate`), 총계 행은 모델 합계로 계산(`ModelTotalText`).
+  - 숫자 컬럼(TOTAL/OKCNT/NGCNT/NG RATE)은 `.lpa-num`으로 우측 정렬 + tabular-nums.
+  - 모델 행 sticky-left는 라벨 셀(`.lpa-model-label`)에만 적용(예전엔 모든 td에 걸려 있어
+    총계 셀 여러 개면 왼쪽에 겹칠 문제 → 라벨만 sticky로 변경).
+- Files: `Components/Pages/BmesLpaPage.razor` (HiddenColumns, DisplayColumns, 헤더/데이터/
+  모델행 마크업, 헬퍼 `ModelTotal`/`IsTotalColumn`/`NumClass`/`ColumnHeader`/`ParseCount`/
+  `NgRateText`/`RowNgRate`/`ModelTotalText`, CSS).
+- Verification: `dotnet msbuild -t:Compile` error CS 0건. **런타임 미검증** — BMES 실조회가
+  필요해 Search를 못 돌렸다.
+- Next: 서버 재시작 후 `/bmes/lpa`에서 Search → (1) 헤더 OK/NG/NG RATE, (2) NACNT/ERNAM_TX/
+  VERID 사라짐, (3) 모델 행에 TOTAL/OK/NG/NG RATE 합계가 컬럼 아래 정렬돼 뜨는지 확인.
+- 참고: §16 하위 탭 + LPA 컬럼 변경은 사용자 화면(스크린샷)에서 정상 반영 확인됨.
+
+## 2026-07-23 08:30 - LPA 상세를 모달→인라인 행으로 전환
+- Completed: 상세(MES073261)를 오버레이 모달 대신 **클릭한 행 바로 아래 인라인 행**으로
+  펼치도록 변경. "각 모델 밑에 상세 표가 뜨게" 요청 반영.
+- Decisions:
+  - 데이터 행 렌더 직후 `selected`면 `<tr class="lpa-detail-row"><td colspan=전체>`로
+    상세 그리드를 인라인 렌더. 내용(로딩/에러/항목 그리드)은 기존 모달 본문과 동일 구조.
+  - `ShowDetailAsync`에 토글 추가: 이미 열린 행의 상세(또는 행)를 다시 누르면 접힘.
+  - 오버레이 모달 마크업/`@if (_detailLqrno …)` 블록과 `.lpa-overlay/.lpa-modal/
+    .lpa-modal-body` CSS 제거. 대신 `.lpa-detail-row/.lpa-detail-inline/
+    .lpa-detail-inline-head` CSS 추가(좌측 들여쓰기 40px, 배경 #f8fafc, 하단 강조선).
+  - `_detailLqrno/_detailRows/ShowDetailAsync/CloseDetail` 로직은 그대로 재사용 —
+    렌더 위치만 바뀜. **on-click 방식**(자동 전개 아님): 모델마다 상세 자동조회는 행당
+    BMES 호출이라 비용이 커서 배제. 상세 버튼/행 클릭 시 그 행만 인라인 조회.
+- Files: `Components/Pages/BmesLpaPage.razor` (인라인 상세 행, 모달 제거, 토글, CSS).
+- Verification: `dotnet msbuild -t:Compile` error CS 0건. 잔여 `lpa-overlay/lpa-modal`
+  참조 없음. **런타임 미검증**(BMES 실조회 필요).
+- Next: 서버 재시작 후 `/bmes/lpa` Search → 행 상세 클릭 시 그 행 아래에 상세가 인라인으로
+  펼쳐지고, 다시 클릭하면 접히는지 확인. 자동 전개를 원하면 별도 요청 필요.
+
+## 2026-07-23 09:00 - 상단 브라우저형 탭 바 추가(네비게이션 방식)
+- Completed: `MainLayout.razor`에 페이지 이동 시 탭 생성/전환/닫기 되는 상단 탭 바 구현.
+  사용자 확정 방식 = **네비게이션 탭**(상태 유지 X, 전환=재이동).
+- Decisions:
+  - 탭 상태(`List<TabEntry>{Url,Title}`)는 `MainLayout`에 보관. 레이아웃 인스턴스는 같은
+    레이아웃 내 페이지 이동 시 유지되므로 탭 목록이 살아있음.
+  - `Nav.LocationChanged` 구독 → `TrackCurrent()`가 현재 base-relative 경로(쿼리/해시 제거,
+    trim '/')로 탭 추가/활성화. 탭 클릭=`NavigateTo(url)`, ×=닫기(활성 탭 닫으면 인접 탭,
+    마지막이면 "/"로).
+  - 탭 라벨: URL 마지막 세그먼트로 임시 생성 후, `OnAfterRenderAsync`에서 JS `appDocTitle`
+    (=`document.title`, 각 페이지 `<PageTitle>`)로 실제 제목으로 갱신.
+  - CSS는 `MainLayout.razor.css`(스코프드) `.app-tabs/.app-tab/.app-tab-close`. main이 스크롤
+    컨테이너라 `.app-tabs`를 `position:sticky; top:0`로 상단 고정.
+- Files: `Components/Layout/MainLayout.razor`(탭 상태/로직/마크업),
+  `Components/Layout/MainLayout.razor.css`(탭 CSS), `wwwroot/js/app.js`(`appDocTitle`).
+- Verification: `dotnet msbuild -t:Compile` error CS 0건. **런타임 미검증**.
+- Next: 서버 재시작 후 여러 메뉴를 눌러 탭이 생기고, 탭 클릭으로 전환, ×로 닫힘, 활성 탭
+  닫을 때 인접 탭으로 가는지 확인. 라벨이 각 페이지 제목으로 뜨는지(=`appDocTitle` 동작).
+
+## 2026-07-23 09:05 - Schedule 삭제 요청: 조사 완료, 삭제는 보류(범위 확인 대기)
+- Completed: "Schedule/GN LAB Schedule 메뉴+코드+DB 전부 삭제" 요청의 영향 범위 조사.
+  **파괴적 + 공유 리소스라 실행 전 확인 필요 → 아직 아무것도 삭제/변경하지 않음.**
+- 발견(중요):
+  - Schedule 기능은 **Web 앱과 WPF 앱(`BmesNgRateStandalone`) 양쪽에 동일하게 존재**.
+    두 프로젝트 모두 `AppMenus.Schedule`, "GN LAB Schedule" 메뉴, `SchedulePage`(Web),
+    `WebRepository`의 `EnsureScheduleDatabase`/`Schedules` 테이블 CRUD를 가짐.
+  - DB는 **공유 SQLite `schedule.db`** — 실제 파일 `D:\000. MyWorks\002. DB\schedule.db`
+    (20KB) 및 `...\01. NG RATE\schedule.db`. WPF 앱도 이 DB를 씀.
+  - 따라서 Web만 지우고 `schedule.db`를 삭제하면 **WPF 앱 Schedule이 깨짐**(빈 테이블
+    재생성은 되나 기존 데이터 소실).
+- Web 삭제 대상 코드(참고): `Components/Pages/SchedulePage.razor`(라우트 `/schedule`),
+  `AppMenus.cs`(Schedule 상수·항목·역할 기본값 5곳), `NavMenu.razor`(Schedule 그룹/서브링크/
+  `_scheduleOpen`/`IsScheduleActive`/`ToggleSchedule`), `WebRepository.cs`(`ScheduleItem`,
+  `_scheduleDbPath`, `OpenScheduleConnection`, `EnsureScheduleDatabase`, `ReadScheduleItem`,
+  `GetSchedulesInRange`, `AddSchedule`, `UpdateSchedule`, `DeleteSchedule`, `GetAllScheduleTags`).
+- Next(사용자 결정 대기): (1) Web만 vs Web+WPF 둘 다 코드 삭제? (2) 공유 `schedule.db`
+  파일 삭제할지(백업 여부). 결정 후 실행.
+
+## 2026-07-23 09:40 - Schedule 완전 삭제 실행 완료 (Web+WPF, DB 삭제)
+- 사용자 결정: 코드는 Web+WPF 둘 다 삭제, `schedule.db`는 백업 없이 즉시 삭제.
+- Completed:
+  - DB: `D:\000. MyWorks\002. DB\schedule.db`, `...\01. NG RATE\schedule.db` 삭제(약 40KB).
+    잠금 없었음. **주의: 재시작 전 구버전 서버가 다시 만들 수 있음 → 재시작 후엔 생성 코드
+    없어 재생성 안 됨.**
+  - 코드(양 프로젝트): `SchedulePage.razor` 삭제(Web). `AppMenus.cs` Schedule 상수/메뉴/
+    역할 5곳 제거. `NavMenu.razor`(Web) Schedule 그룹/토글/IsScheduleActive 제거.
+    `WebRepository.cs` ScheduleItem 레코드·생성자 블록·EnsureScheduleDatabase·
+    OpenScheduleConnection·CRUD 전부 제거(scratchpad `strip_schedule.py` 앵커 기반,
+    각 199줄). `AppPathsService.cs` `ScheduleDbPath` 프로퍼티+7 사용처 제거.
+    `WpfSettingsReader.cs` `TryGetScheduleDatabasePath` 제거. `Program.cs`/`App.xaml.cs`
+    `Schedule:Path` 설정 제거. `BmesSettingPage`/`AdminDbQueryPage`/`TestExcelConverterPage`
+    의 ScheduleDbPath 복사·비교 제거.
+  - `WebRepository.cs`의 깨진 섹션 헤더(U+0080 혼입)는 Edit 매칭 불가라 Python으로 처리함.
+- Decisions/주의:
+  - WPF `AppMenus.cs`는 작업 중 외부(linter/사용자)에서 동시 수정됨(BmesDailyReport 추가 등).
+    Schedule 제거는 유지됨. 되돌리지 말 것.
+- Verification:
+  - 잔여 Schedule 참조 검색 0건(양 프로젝트, SchedStart/SchedEnd 등 무관 항목 제외).
+  - **Web: `dotnet msbuild -t:Compile` error CS 0건.**
+  - **WPF: Schedule 관련 에러 0건.** 남은 에러 3건은 전부 `NgRateSetupPanel.razor`의
+    `ReportStage` 미정의(CS0246)이며, `Services/ReportProgressTracker.cs`가 WPF 프로젝트에
+    아예 없어서 나는 **사전 존재/동시 sync 이슈**다. Schedule 삭제와 무관하며 건드리지 않음.
+- Next: 서버 재시작 후 Web에서 Schedule 메뉴/페이지가 사라졌는지 확인.
+
+## 2026-07-23 09:55 - WPF ReportStage 미정의 수정 (사전 존재 건)
+- Completed: 사용자 요청으로 WPF의 `ReportStage`/`ReportStageStatus` 미정의(CS0246 3건)
+  해결. Web `Services/ReportProgressTracker.cs`를 `BmesNgRateStandalone.Services`
+  네임스페이스로 복제해 `BmesNgRateStandalone/Services/ReportProgressTracker.cs` 신규 생성.
+  파일은 BCL만 의존해 그대로 이식 가능. WPF `_Imports.razor`에 이미 `@using
+  BmesNgRateStandalone.Services`가 있어 razor에서 해결됨. 기존 중복 정의 없음.
+- Verification:
+  - `-t:Compile`은 WPF XAML 마크업 컴파일 단계를 건너뛰어 InitializeComponent/named
+    element/Main 없음 오류(CS5001/CS0103)를 내지만 이는 타깃 아티팩트다.
+  - **`dotnet build`(전체, XAML 포함) 실제 CS 에러 0건.** ReportStage 3건 해소, 신규 오류 없음.
+- Next: 없음(이 건 종결). 서버/WPF 재시작·실행 확인은 사용자 몫.
+
+## 2026-07-24 07:28 - LPA를 Report식 정적 HTML 뷰어로 전환 + NG 집계 탭 추가
+- Completed: `/bmes/lpa`의 Search 결과를 Blazor 표 대신 **임시 HTML 1개 파일**로 만들어
+  iframe으로 보여주도록 전환(=`/report/bmes`와 같은 구조). 그 HTML 안에 하위 탭 2개:
+  `목록`(기존 표 전부) + `NG 집계`(날짜 × AULOC 교차표, 신규).
+- Decisions:
+  - **상세(MES073261)를 Search 때 전부 미리 조회**하는 방식으로 사용자 확정. 정적 HTML은
+    BMES를 다시 못 부르므로 자기완결 스냅샷이 되려면 선조회가 필수. 대신 Search가 느려짐.
+  - 그래서 `BmesLpaScrapeService`에 **세션 재사용**을 도입. 기존엔 호출 1건마다
+    token GET + login POST를 새로 했기 때문에 상세 N건 = 로그인 N번이었다. 신규
+    `FetchDetailsAsync`는 **로그인 1회 + 동시 4개**로 전체 상세를 받는다(`Session` 클래스,
+    `DetailBatchConcurrency=4`). 레거시 엔드포인트라 동시수는 일부러 낮게 잡음.
+  - 상세는 inert `<template>`에 넣고 클릭할 때만 DOM에 clone — Report의 메모리 대책과 동일.
+  - 컬럼 규칙(HiddenColumns / 합성 `NG RATE` / OK·NG 헤더 이름)은 페이지에서 export
+    서비스로 **이동**. 표가 이제 거기에만 존재하므로 규칙도 한 곳에 둔다.
+  - 뷰어 안에서 필터·접기/펼치기·크기(zoom)를 처리. 모델 합계와 그룹 건수는 **필터 통과분만**
+    JS가 재계산(기존 서버측 동작과 동일). 목록 필터 입력창은 페이지 → HTML로 이동.
+  - `NG 집계` 탭: 행=날짜(최신순), 열=AULOC, 값=NG 합계 + 행/열 합계. 셀에 NG/TOTAL/ppm을
+    data 속성으로 다 실어두고 `표시` 선택으로 전환(요청은 NG 건수, 그것이 기본값).
+  - 상세의 RESUT 배지는 기존에 값과 무관하게 초록이었음 → NG/FAIL만 빨강으로 분리.
+- Files:
+  - 신규 `Services/BmesLpaHtmlExportService.cs` (HTML 생성 전체).
+  - `Services/BmesLpaScrapeService.cs` (세션 재사용 `Session`/`OpenSessionAsync`,
+    신규 `FetchDetailsAsync`, `PostSearchAsync` 시그니처 변경).
+  - `Components/Pages/BmesLpaPage.razor` (표·상세·필터 마크업 전부 제거 → iframe + 조회/생성).
+  - `Program.cs` (DI 등록 + `GET /bmes/lpa/view/{token}` 라우트).
+  - 생성물 위치: `D:\000. MyWorks\002. DB\_temp\bmes-lpa\<token>\lpa.html` (이전 토큰 폴더는
+    새 생성 성공 후 정리).
+- Verification:
+  - `dotnet msbuild -t:Compile` **error CS 0건**(경고는 전부 기존 것). `-t:Rebuild`도 CS 에러
+    0건 — 실패한 건 실행 중 서버가 exe를 잠가서 나는 bin 복사(MSB3021/3027)뿐. 서버는 안 건드림.
+  - **런타임 검증함**: scratchpad에 실제 `BmesLpaHtmlExportService.cs`를 링크한 하네스를 만들어
+    합성 데이터(3날짜×3모델×3레이어=27행, 상세 없는 행 1개·실패 행 1개 포함)로 HTML을 생성하고
+    **실제 헤드리스 Chrome**으로 자체 테스트 55개 실행 → **55/55 PASS**. 커버: 상세 열기/닫기/
+    토글·누락·실패 폴백, 필터(9/27 및 재번호), 모델 합계·NG RATE 재계산, 날짜/모델 접기,
+    피벗 값이 목록 NG와 일치, 총계 86 일치, 표시 전환, 탭별 툴바, zoom, 가로 스크롤 없음.
+    `상세` 버튼이 CSS로 안 숨는지도 확인(07-23 07:50에 당했던 건).
+  - 스크린샷으로 목록/인라인 상세/피벗 레이아웃 육안 확인.
+  - 주의: **BMES 실조회는 못 했다.** 실제 응답 컬럼명·상세 소요시간은 미검증.
+- Next(이 항목은 아래 08:0x에서 이어짐): 서버 재시작 후 `/bmes/lpa`에서 Search. 확인할 것 (1) 상세 선조회 진행 표시
+  (`상세 조회 n / N…`)와 **실제 소요 시간** — 행이 수백 개면 오래 걸린다. 너무 느리면
+  `DetailBatchConcurrency` 상향 또는 "상세 미리받기" 옵션화를 검토. (2) 목록 탭이 기존 표와
+  같은지. (3) `NG 집계` 탭의 날짜×AULOC 값. (4) 상세 실패 건수가 status에 뜨는지.
+
+## 2026-07-24 07:45 - NG 집계 탭 재설계 (모델 × 일자/주차/월, ppm + NG/TOTAL)
+- Completed: `NG 집계` 탭을 사용자 요청 형태로 재구성. 축을 뒤집고 기간 블록 3개를 붙였다.
+  - **행 = 모델(AULOC)**, 정렬 = 검사수(TOTAL) 내림차순 → 동률 시 모델명. 정렬 기준이 안 보이면
+    이상하므로 맨 앞에 `전체` 열(기간 전체 집계)을 두어 정렬키를 노출.
+  - **열 = 최신→과거** 순의 3블록: `일자`(MM/dd) · `주차`(W#) · `월`(M#). 블록 사이에 구분열.
+  - **셀 = NG RATE(ppm) 크게 + 그 밑에 작게 `NG/TOTAL`**. 비율만 있으면 모집단이 안 보여서
+    (0/50과 0/50000이 구분 안 됨) 요청대로 원수를 함께 표시.
+  - 데이터 없는 기간은 빈칸(=감사 없음), 감사했는데 NG 0인 것과 구분.
+  - 기존 `표시`(NG건수/TOTAL/ppm) 셀렉터는 셀 형식이 고정되어 불필요 → 제거. 대신
+    `일자/주차/월` 개수 제한 입력을 추가(빈칸=전체). 열은 전부 파일에 있고 JS가 숨기기만 함.
+- Decisions:
+  - 주/월 버킷 키는 `NgRateReportService`의 기존 규칙을 그대로 따름 — `W:{yyyy}{ww}`
+    (`CalendarWeekRule.FirstDay`, 월요일 시작, **ISO 아님**), `M:{yyyy}{MM}`, 헤더 `W#`/`M#`.
+    BMES 리포트에서의 "W30"과 여기의 "W30"이 같은 주를 뜻하게 하기 위함.
+  - AUDAT 파싱 실패 행은 일자 열에는 남지만(원문 문자열이 키) 주/월에는 못 들어간다.
+- 이번에 잡은 버그 2개(둘 다 실제 브라우저 검증에서만 드러남):
+  - **날짜 헤더가 `07-23`으로 나옴.** `ToString("MM/dd")`의 `/`는 *문화권의* 날짜 구분자라
+    ko-KR 서버에서 `-`로 렌더된다. `CultureInfo.InvariantCulture` 지정으로 수정.
+    (`NgRateReportService.FormatDateHeader`도 같은 코드라 리포트도 동일 증상일 것 — 미수정.)
+  - **2단 헤더가 스크롤 시 겹침.** 밴드행 높이를 CSS `height:22px`로 고정했지만 표 셀에서
+    height는 최소값이라 실제 26.5px가 되어 아래 행이 4.5px 파고들었다. → 런타임에
+    `offsetHeight`를 재서 `--band-h`에 넣는 `syncPivotHeader()`로 수정(zoom 변경 시에도 재측정).
+- Files: `Services/BmesLpaHtmlExportService.cs` (피벗 빌더 전면 교체, 툴바/CSS/JS).
+- Verification: `dotnet msbuild -t:Compile` **error CS 0건**(경고 32개 전부 기존 것, LPA 파일 0건).
+  헤드리스 Chrome 자체 테스트 **80/80 PASS** (기존 71 + 신규):
+  - 기본 세트 71/71 — 행 정렬(TOTAL desc→이름), 헤더 `모델`/`전체`/밴드 `일자,주차,월`,
+    셀이 ppm+NG/TOTAL이고 목록 데이터와 일치, 합계행, 기간 제한(1개/0개/해제 시 밴드·구분열
+    동반 처리), 피벗 필터, 탭별 툴바.
+  - 넓은 데이터셋(5/20~7/23, 6일·5주·3개월) 3/3 — `07/23,07/21,07/08,06/30,06/10,05/20`,
+    `W30,W28,W27,W24,W21`, `M7,M6,M5` 모두 최신→과거 순 확인.
+  - sticky 6/6 — 스크롤 상태에서 밴드행 고정, 2행 헤더 겹침 없음, 모델 열 가로 고정.
+  - 스크린샷으로 레이아웃 육안 확인.
+  - 주의: 여전히 **BMES 실조회 미검증**.
+- Next: 서버 재시작 후 `/bmes/lpa` Search → `NG 집계` 탭에서 (1) 모델 정렬이 TOTAL 순인지,
+  (2) 일자/주차/월 열이 최신부터인지, (3) 셀의 ppm과 (NG/TOTAL)이 맞는지 확인. 실제 기간이
+  길면 일자 열이 많아지므로 `일자` 칸에 7 등을 넣어 좁혀 쓰면 된다.
+
+## 2026-07-24 08:12 - NG 집계 탭: 합계 최상단 이동 + 불량 상세 표 추가
+- Completed: 사용자 요청 2건.
+  - **합계 행을 표 맨 위로.** `<tfoot>`에 있던 합계를 `<thead>`의 **3번째 행**으로 옮겼다.
+    단순히 순서만 바꾸지 않고 sticky로 고정 — 밴드행/기간행 밑에 붙어서 모델 행이 밑으로
+    스크롤되어도 계속 보인다. `<thead>`에 둔 덕에 필터(=`tBodies[0]`만 훑음)가 합계를
+    숨길 수 없다는 이점도 있다.
+  - **밑에 `불량 상세` 표 신설.** 모델(AULOC)별 접기/펼치기 블록 + `모두 펼치기/모두 접기`
+    버튼. 상세(MES073261) 항목 중 **RESUT이 NG/FAIL인 것만** 행으로 나온다.
+    열 = `# / 일자 / 레이어 / 항목(LORSQ) / 점검항목(TYPRC) / 중요도(IMPLV) / 결과(RESUT)`
+    + **상세 응답에 실제로 값이 있던 나머지 키들**(동적, 첫 등장 순).
+- Decisions:
+  - 불량 판정 규칙을 `IsNgResult()` 하나로 통합. 기존 인라인 상세 배지가 쓰던
+    "NG 또는 FAIL 포함" 규칙과 새 표가 **절대 어긋나지 않게** 하기 위함. RESUT 값 집합이
+    문서화되어 있지 않아 규칙 자체는 그대로 뒀다.
+  - 뒤쪽 열을 하드코딩하지 않고 동적으로 뽑는다. MES073261 스키마가 미문서라 열 목록을
+    박아두면 필드가 조용히 사라진다. 단 **NG 항목 중 하나라도 값이 있는 키만** 열이 된다
+    (전부 빈 키, OK 항목에만 있는 키는 열이 안 생김 — 테스트로 고정).
+  - LQRNO 기준 중복 제거. 같은 감사가 목록 행 여러 개에 걸쳐 나와도 상세는 하나이므로
+    두 번 세면 안 된다.
+  - 그룹 정렬 = 불량 건수 내림차순 → 이름. 표의 목적이 "어디를 볼지"라서 가나다순은 무의미.
+  - 긴 점검 텍스트는 셀에서 말줄임 처리하고 원문은 `title`에 남김.
+  - 불량이 0건이면 표를 아예 만들지 않고 안내문만 — 이때 **목록 NG 합계가 0이 아니면
+    그 숫자를 같이 표시**한다(=RESUT 표기가 NG/FAIL이 아닐 수 있다는 신호). 실데이터에서
+    RESUT 값이 다른 표기면 이 문구로 바로 드러난다.
+  - 표 2개가 한 탭에 쌓이므로 `has-ng`일 때만 스크롤 박스 높이를 42vh로 반씩 나눈다.
+- 이번에 잡은 버그 1개(브라우저 검증에서만 드러남):
+  - **필터에 모델명을 치면 불량 표가 통째로 비었다.** 모델은 그룹 행에만 있고 데이터 행
+    셀에는 없어서 `tr.textContent`에 안 걸린다. → `dataset.model`을 매칭 대상에 명시적으로
+    붙여, 피벗과 동일하게 "그 모델만 남는" 동작이 되게 수정.
+- Files: `Services/BmesLpaHtmlExportService.cs` (피벗 합계 위치, NG 상세 빌더, CSS, JS).
+  다른 파일 변경 없음.
+- Verification:
+  - `dotnet msbuild -t:Compile` **error CS 0건**, LPA 파일 경고 0건(기존 경고만).
+  - 헤드리스 Chrome 자체 테스트 **127/127 PASS** (기존 세트 확장):
+    - `test.html` 101 — 기존 목록/상세/피벗 전부 + 신규: 합계가 tfoot이 아닌 thead 3번째 행,
+      모든 모델 행보다 위, 값은 전 행 합과 일치 / 불량표 25행·3그룹(9,9,7)·전부 NG 결과·
+      OK 항목 미유입 / 헤더가 고정열+값 있는 키만(EMPTYFLD·OKNOTE 제외 확인) /
+      1..25 연속 번호 / 접기 시 16행 남고 재번호 / 모두 접기·펼치기 / 필터 연동 / 이스케이프.
+    - `sticky.html` 12 — 스크롤 상태에서 합계행이 기간행 바로 밑에 붙고, 겹침 없고,
+      모델 행 위로 덮이는지(z-index) 확인.
+    - `cleantest.html` 11 — 불량 0건 데이터셋: 표 미생성, 버튼 미생성, 안내문에 목록 NG
+      6건이 언급됨, 합계는 여전히 최상단, 패널 높이 분할 안 함.
+    - `widetest.html` 3 — 다주/다월 데이터 열 순서.
+  - 스크린샷으로 레이아웃 육안 확인(합계 최상단, 아래 불량표 그룹 접기 UI).
+  - 주의: 여전히 **BMES 실조회 미검증**. 실제 RESUT 표기가 NG/FAIL이 아니면 불량표가
+    0건으로 나오는데, 그 경우 안내문에 목록 NG 합계가 찍히니 바로 알 수 있다.
+- Next: 서버 재시작 후 `/bmes/lpa` Search → `NG 집계` 탭에서 (1) 합계가 맨 위에 고정되는지,
+  (2) 아래 `불량 상세` 표의 건수가 합계행 NG(예: 134건)와 맞는지, (3) 안 맞으면 안내/부제에
+  찍힌 두 숫자를 비교해 RESUT 실제 표기를 확인 → 필요 시 `IsNgResult()` 규칙 보강.
+
+## 2026-07-24 11:21 - 불량 상세 0건 원인 규명 및 수정 (RESUT는 코드 A/B/C)
+- Completed: `NG 집계` 탭의 `불량 상세`가 "0건 / 목록 NG 합계 138건"으로 나오던 문제 해결.
+  원인은 **RESUT이 텍스트가 아니라 코드**라는 것. MES073261은 `RESUT: "A" | "B" | "C"`를
+  주고, BMES 화면은 페이지 스크립트의
+  `GRID_SELECT_OPT.RESUT = [A: "A : OK", B: "B : NG", C: "C : N/A"]`로 라벨을 붙여 그린다.
+  기존 `IsNgResult()`는 문자열에 "NG"/"FAIL"이 있는지만 봤으므로 코드 "B"를 못 잡아 항상 0건.
+- Decisions:
+  - 판정 기준 = **RESUT 코드 "B"**. 실데이터로 검증: GN / 2026-06-08~07-24 / 600 감사에서
+    감사별 `count(B) == NGCNT`가 **600건 전부 일치**(총합 138 = 138). 코드 분포는
+    A 6,056 / B 138 / C 238 / 공백 14, 합 6,446 = 목록 TOTAL 합계.
+  - 텍스트 규칙("NG"/"FAIL" 포함)은 **폴백으로 유지**. 엔드포인트가 나중에 라벨을 주더라도
+    동작하고, A/C에는 절대 걸리지 않는다.
+  - 화면에는 코드가 아니라 BMES와 같은 라벨(`B : NG`)을 표시. 배지 색은
+    NG=빨강, A/OK=초록, **C : N/A와 미지의 코드는 회색**(`.lpa-badge-na` 신설) —
+    N/A를 초록으로 칠하면 합격처럼 읽힌다.
+  - 불량 표의 동적 열 헤더를 MES073261 그리드 `colModel` 헤더와 동일하게 매핑
+    (DESCR→Comments, LCITM→Check Item 등). 원래 필드명은 `title`에 유지.
+    체크리스트 내부 필드 LOBVE/ZSORT/ZIMAG는 열에서 제외(ZIMAG_TX 경로만 표시).
+- Files: `JinoSupporter.Web/Services/BmesLpaHtmlExportService.cs` 단일 파일
+  (`ResutLabels`/`ResutLabel`/`IsNgResult`/`ResutBadgeClass`, `NgDetailHeaders`,
+  `NgDetailFixedKeys`, 부제 문구, 배지 CSS). 다른 파일 변경 없음.
+- Verification:
+  - `dotnet msbuild -t:Compile` **error CS 0건**, LPA 파일 경고 0건.
+  - **실데이터 오프라인 렌더 검증**(신규 방법): 스크래치패드에서 BMES 실조회를 그대로 덤프
+    (목록 600행 + 상세 600건/6,446항목 → `lpa_dump.json`) 후, `JinoSupporter.Web.dll`을 참조하는
+    작은 콘솔 앱이 리플렉션으로 `BuildHtml`을 호출해 HTML을 생성 → 서버 없이 실제 산출물 확인.
+    결과: 불량 상세 **138건**(= 피벗 합계행 NG 138, 목록 NGCNT 합계 138), 모델 그룹 5개
+    (UNIT 56 / MODULE / SPK / FRONT 338 / REAR ASSY 338), 배지 짝 검사
+    `result:A : OK 6,056 / ng:B : NG 276(=138 인라인+138 표) / na:C : N/A 238`, 공백 14건은 배지 없음.
+  - 헤드리스 Chrome 스크린샷으로 레이아웃 육안 확인(피벗 + 아래 불량 상세, Comments 열에
+    "Ng laser cắt lẹm VP NG : 1/8 pcs" 같은 실제 불량 내용이 보임).
+- Next: **사용자가 웹 서버를 재시작한 뒤** `/bmes/lpa` Search → `NG 집계` 탭에서
+  불량 상세가 138건(조회 기간에 따라 합계행 NG와 같은 값)으로 나오는지 확인.
+  참고: 상세 인라인 배지도 이제 `A : OK / B : NG / C : N/A`로 표시된다.
+
+## 2026-07-24 11:51 - 불량 상세에 Result Image 내장 + 클릭 팝업(라이트박스)
+- Completed: 사용자 요청 — LPA 불량 사진을 HTML에 내장하고 썸네일 클릭 시 팝업 확대.
+  - 신규 `Services/BmesLpaImageService.cs`: `ZIMAG_TX` 경로의 사진을
+    `/MES073261/GetImage?fileName=<경로>`로 받아(로그인 불필요, 실측 확인) 썸네일(≤160px)과
+    뷰(≤1000px) 두 크기로 축소해 data URI로 반환. 디스크 캐시
+    (`_temp/bmes-lpa-images`, 경로 SHA256 앞16B 키)로 재조회 시 즉시.
+  - `BmesLpaHtmlExportService`: 불량 상세 표에 `사진` 열, 인라인 상세 헤더에 썸네일 추가.
+    뷰 이미지는 화면에 안 그리고 `<script type=application/json id=lpa-img-data>` 안에만 두어,
+    클릭 전까지 파싱/디코드 0 → 사진 수백 장이어도 로딩 속도 유지. 라이트박스는
+    이전/다음(화면에 보이는 썸네일만 순회)·원본 링크·ESC/←/→ 지원.
+  - `BmesLpaPage.razor`: 상세 조회 후 참조된 이미지 경로만 모아 `LpaImages.FetchAsync`,
+    결과를 `ExportInput.Images`로 전달. 상태줄에 `이미지 N/M장` 표기(차이나면 링크 대체).
+  - `Program.cs`: `BmesLpaImageService` DI 등록.
+- Decisions:
+  - **원본은 장당 평균 3.7MB(최대 7.5MB)** → 그대로 못 박음. 뷰 1000px/q72면 장당 ~90KB,
+    141장이 base64 포함 HTML 27MB로 수렴(측정값). 썸네일은 장당 ~4KB.
+  - 임베드 상한 `MaxImages=600`, `MaxEmbeddedBytes=40MB`. 초과분은 파일에 안 넣고
+    `사진` 링크(BMES 직접)로 폴백 — 1년치 조회로 파일이 무한정 커지는 것 방지.
+  - 이미지 엔드포인트는 세션 불필요라 스크래퍼 로그인 핸들셰이크를 안 탐. HEAD는 404를
+    주므로(검증자 없음) 캐시는 경로만 키로. 삭제 시 폴더 지우면 재조회.
+  - System.Drawing은 Windows 6.1+ 전용 → `OperatingSystem.IsWindowsVersionAtLeast(6,1)`
+    가드로 감싸 비-Windows에선 "이미지 미내장"으로 degrade(크래시 X). CA1416 0건.
+  - JSON 임베드 시 `<`, `/`를 이스케이프해 `</script>`로 블록이 조기 종료되지 않게 함.
+- Files: `Services/BmesLpaImageService.cs`(신규), `Services/BmesLpaHtmlExportService.cs`,
+  `Components/Pages/BmesLpaPage.razor`, `Program.cs`.
+- Verification:
+  - `dotnet msbuild -t:Compile` **error CS 0건, 경고 0건**(LPA/이미지 파일 기준).
+  - **실데이터 오프라인 검증**: 실조회 덤프(600행/상세 600건)에서 이미지 경로 141개 추출 →
+    `BmesLpaImageService.FetchAsync` 실행 → **141/141 내장, 18.6초**(재실행 시 캐시로 0.0초),
+    썸네일 845KB·뷰 17.0MB, 최종 HTML 27MB. 리플렉션으로 `BuildHtml` 호출해 산출.
+  - 헤드리스 Chrome 스크린샷 2종: (1) 불량 표 `사진` 열에 행별 썸네일, (2) 썸네일 클릭 시
+    라이트박스가 실제 NG 사진(불량부 빨간 박스)·캡션(LPA번호·일자·모델·항목)·`1/140`·
+    이전/다음/원본/닫기와 함께 뜸.
+  - 참고: 임베드는 **상세 전체**의 사진(141장)을 포함(불량 138건 + OK/NA 항목 사진 포함),
+    표의 `사진` 열은 불량 138건에만 노출. 인라인 상세를 열면 해당 항목 사진도 보임.
+- Next: **사용자 서버 재시작 후** `/bmes/lpa` Search → 상태줄 `이미지 N/M장` 확인,
+  `NG 집계` 탭 `사진` 열 썸네일 클릭 → 팝업 확대·이전/다음 동작 확인. 최초 조회는
+  사진 다운로드로 다소 걸리고(경고: 첫 조회 수십 초), 이후 캐시로 빨라짐.
+
+## 2026-07-24 (오후) - 이미지 lazy 로딩(DB 저장) + 불량상세 매트릭스화 + 엑셀 추출
+- Completed(사용자 연속 요청 5건 처리, 모두 `/bmes/lpa`):
+  1) **툴바 기본값**: NG 집계 툴바 `일자=7 / 주차=4 / 월=3`(크기는 이미 100). 입력 `value=`만
+     추가 — `applyPivot()`가 로드 시 입력값을 읽으므로 JS 변경 불필요.
+  2) **이미지 선수집 폐지 → 뷰 시점 lazy 로딩**: Search가 이미지 다운로드로 18초씩 블록되던
+     것을 제거. 상세(텍스트)만 받아 HTML 생성 → 즉시. 이미지는 뷰어의 `<img loading="lazy">`가
+     신규 라우트 `GET /bmes/lpa/img?path=&size=thumb|view`로 그때그때 요청.
+     `<template>` 안(접힌 상세)·화면 밖 썸네일은 실제로 보일 때만 BMES를 침.
+  3) **축소본을 파일 캐시 → DB 저장**: `_temp/bmes-lpa-images` 디스크 캐시 폐지. 신규 테이블
+     `BmesLpaImages(Path,Kind,ImageData,CreatedAt, PK(Path,Kind))`(process-review.db).
+     `WebRepository.GetLpaImage/SaveLpaImagePair`. `Kind`='t'(썸네일160px)/'v'(뷰1000px).
+     경로당 1회만 원본 다운로드→두 크기 생성→저장, 이후 뷰·검색·재시작 모두 DB에서 즉시.
+  4) **불량 상세 표 → 매트릭스**: 행=모델(UNIT/MODULE…) 섹션 안에서 **(점검항목=TYPRC 1차 ·
+     Check Item=LCITM 2차)** 두 라벨 열, **열=일자(NG난 날, 최신순)**, **셀=수량 + 그 날·항목의
+     불량 썸네일 전부**. 라벨 2열은 sticky-left(150/200px), 날짜 헤더 sticky-top.
+     동적 컬럼/AppendClipped/NgDetailFixedKeys/NgDetailHeaders 제거. 집계는 공용
+     `BmesLpaHtmlExportService.BuildNgMatrix()`(public)로 추출 — HTML·엑셀이 동일 데이터 사용.
+     모델 '건' 카운트는 행 `data-ng`(행별 NG수) 합산(applyNgDetail 수정, # 번호열 제거).
+  5) **엑셀 추출(이미지 포함)**: 신규 `BmesLpaExcelExporter`(ClosedXML). 페이지에 `엑셀 추출
+     (불량 상세)` 버튼. `BuildNgMatrix`로 시트 구성(점검항목|Check Item|일자열, 모델 섹션행,
+     셀=수량+사진). 사진은 `BmesLpaImageService.GetAsync(path, view:true)`로 **뷰(1000px)** 를
+     받아 셀에 임베드하되 화면표시는 64px로 축소(엑셀에서 키우면 선명). `BrowserDownload`로 저장.
+     - 사용자 오해 정정: **DB에 원본 없음**(원본 3.7MB는 버림, 축소본 2개만 저장). 그래서 엑셀엔
+       "원본" 대신 우리가 가진 최고 축소본=뷰(1000px)를 넣음. 처음엔 썸네일(160px)을 넣어 흐렸음.
+- Files:
+  - `Services/BmesLpaImageService.cs` (전면 재작성: `GetAsync(path,view)` 단건 on-demand,
+    static HttpClient, DB 경유. FetchAsync/LpaImage/DataUri/Key/파일캐시/Max* 전부 제거).
+  - `Services/WebRepository.cs` (BmesLpaImages 테이블 + Get/Save 메서드).
+  - `Program.cs` (`GET /bmes/lpa/img` 라우트, 인증 게이트 + 장기 캐시 헤더).
+  - `Services/BmesLpaHtmlExportService.cs` (ExportInput.Images 제거, AppendThumbs 엔드포인트
+    lazy `<img>`+onerror 폴백, BuildImageData/JsonString/lpa-img-data 제거, NgMatrix 레코드 +
+    BuildNgMatrix + BuildNgDetailTab 매트릭스화, viewSrc 엔드포인트화, lpaImgFail, CSS 2열
+    sticky+셀 스타일, 툴바 기본값).
+  - `Services/BmesLpaExcelExporter.cs` (신규).
+  - `Components/Pages/BmesLpaPage.razor` (이미지 선수집 제거, `_lastResult/_lastDetails` 보관,
+    엑셀 버튼 + `ExportExcelAsync`, LpaImages/IJSRuntime 주입).
+- Verification: `dotnet msbuild -t:Compile` **error CS 0건**, 수정/신규 파일(BmesLpa*, WebRepository,
+  Program.cs) **경고 0건**(남은 경고 2건은 무관한 기존 것: DataInferenceInputTestPage, ExcelHelperRunner).
+  **런타임 미검증**(서버 재시작은 사용자 몫). 특히 ClosedXML 이미지 임베드(AddPicture/MoveTo/
+  WithSize)와 매트릭스 sticky 레이아웃은 실제 화면/엑셀로 미확인 — 컴파일로 API 시그니처만 확인.
+- Next(사용자 서버 재시작 후 확인):
+  1) Search가 이미지 없이 즉시 끝나고, 매트릭스 스크롤/상세 열 때 사진이 lazy로 채워지는지.
+  2) 불량 상세: 점검항목/Check Item 2열 + 일자열 + 셀 수량·이미지, 모델 '건' 합계가 피벗 NG와 일치.
+  3) `엑셀 추출` → xlsx에 이미지 포함(뷰1000px), 셀 크기·화질 OK. 첫 추출은 이미지 다운로드로 다소 걸림.
+  4) 화질 더 필요하면 `BmesLpaImageService`의 `ViewMaxPx`(1000)·`ViewQuality`(72) 상향 검토 —
+     **단 캐시 무효화 필요**: 현재 `Kind`가 't'/'v' 고정이라 크기만 바꾸면 기존 DB행이 재사용됨.
+     크기 바꾸려면 Kind에 크기를 넣어(예 'v1600') 자동 재생성시키거나 BmesLpaImages 테이블 비우기.
+
+## 2026-07-24 (오후 2) - 엑셀 화질 개선 + 엑셀 3시트화(피벗/불량상세/목록)
+- Completed(사용자 연속 요청 2건):
+  1) **엑셀 이미지 화질**: 사용자 "DB 원본을 셀크기 맞춰 넣어줘". 정정: DB에 원본 없음(축소본만).
+     엑셀에 넣던 **160px 썸네일 → 뷰(1000px)** 로 교체(`GetAsync(path, view:true)`), 셀 표시는
+     64px로 축소해 임베드 → 엑셀에서 키워도 선명. 상수 `ThumbPx=40→64`.
+  2) **엑셀 3시트**: `엑셀 추출` 결과를 (1)`NG 집계`(피벗, **첫 시트**) (2)`불량 상세`(매트릭스+이미지)
+     (3)`목록` 순 다중 시트로. 피벗은 툴바 기본값과 동일하게 **일자7/주차4/월3**로 제한.
+- 공용 데이터 추출(엑셀·HTML 동일 소스): `BmesLpaHtmlExportService`에 public 추가 —
+  `BuildPivotData(rows, dateN, weekN, monthN)`(+records `PivotData`/`PivotBlock`/`PivotBucket`),
+  `BuildListTable(columns, rows)`, `NgRateText` public화. **주의**: `BuildPivotTab`(HTML)은 안
+  건드리고 집계 루프를 `BuildPivotData`에 복제함 — 둘이 같은 규칙(WeekKey/MonthKey/Count/ppm)을
+  쓰지만 accumulate 루프는 2곳이니 한쪽 바꾸면 다른 쪽도 맞출 것.
+- Files: `Services/BmesLpaExcelExporter.cs`(3시트 재작성), `Services/BmesLpaHtmlExportService.cs`
+  (BuildPivotData/BuildListTable/records, NgRateText public), `Components/Pages/BmesLpaPage.razor`
+  (pivot/list 생성 후 Export에 전달).
+- Verification:
+  - `dotnet msbuild -t:Compile` **error CS 0건**, 수정/신규 파일 **경고 0건**.
+  - **ClosedXML 런타임 스모크 테스트 통과**(scratchpad `xlsxsmoke` 콘솔앱, ClosedXML 0.102.3):
+    내가 쓰는 호출 시퀀스(2단 병합 밴드 헤더 + 멀티라인 셀 + `AddPicture(jpeg).MoveTo(cell,x,y).
+    WithSize(64,64)` 오프셋 다중 이미지 + FreezeRows/Columns + 3시트 SaveAs)로 유효 xlsx 생성 확인
+    → 압축 해제 시 worksheet 3개 + `xl/media/image{,2,3}.jpg` + sheet2 이미지 rels 정상.
+  - **단 실제 데이터로 BmesLpaExcelExporter.Export는 미실행**(집계 LINQ는 컴파일만). 서버 재시작 후
+    실제 추출로 레이아웃/수량/이미지 확인 필요.
+- Next: 서버 재시작 후 `엑셀 추출` → (1)첫 시트 NG 집계 피벗(모델×일자7/주차4/월3, ppm+NG/TOTAL,
+  합계행), (2)불량 상세 이미지 화질(1000px 임베드), (3)목록 시트 확인.
+
+## 2026-07-24 (오후 3) - 엑셀 피벗: 셀 2줄 → 불량률/갯수 2행 분리
+- Completed: 사용자 "엑셀 피벗은 갯수 행·불량률 행으로 나눠줘". `BmesLpaExcelExporter.WritePivotSheet`
+  를 재구성: 모델(및 합계)마다 **두 행**(`불량률`=ppm / `갯수`=NG/TOTAL), 모델명은 두 행 병합,
+  신규 `구분` 열(B). 컬럼 A=모델 B=구분 C=전체 D..=기간. 갯수 행은 회색 9pt. Freeze 5행/3열.
+  `WritePivotEntity/WriteRate/WriteCount`로 분리, `PivotValue`(2줄 셀) 제거.
+- Files: `Services/BmesLpaExcelExporter.cs`만.
+- Verification: `dotnet msbuild -t:Compile` error 0/경고 0. 행방향 병합은 기존 스모크(A2:A3 병합)로
+  검증된 동일 API. 실데이터 Export는 여전히 미실행 — 서버 재시작 후 확인.
+- Next: 서버 재시작 후 `엑셀 추출` 첫 시트에서 모델별 불량률/갯수 2행이 맞는지 확인.
+
+## 2026-07-24 (오후 4) - BMES 로그인 실패(Worker Status 등) = http:// → https:// 수정
+- 증상: `/worker-status` Fetch가 "Logging in to BMES… → Login failed — check credentials"로 실패.
+  **LPA Search는 정상**(=자격증명 유효). 로그인 코드는 LPA와 동일한데 결과만 다름.
+- 근본 원인: `WorkerStatusService.BaseUrl`이 **`http://`** bmes.bujeon.com. LPA(`BmesLpaScrapeService`)만
+  **`https://`**. BMES가 TLS를 강제해 http로는 토큰 GET 때 받은 anti-forgery 쿠키가 https 리다이렉트를
+  넘어 유지되지 않아 `/MES000000/LoginCheck` POST가 검증 실패 → "Login failed". "갑자기 안 됨"과 일치.
+- 수정: **Web 앱** BMES 서비스 3곳 BaseUrl을 https로 통일 —
+  `WorkerStatusService.cs:14`, `BmesRoutingScrapeService.cs:17`, `BmesMaterialService.cs:15`.
+- Verification: `dotnet msbuild -t:Compile` error 0. 런타임(실제 BMES 로그인)은 서버 재시작 후 사용자 확인.
+- Next: 서버 재시작 → `/worker-status` Fetch 성공하는지. Routing/Material 페이지도 같이 정상화됨.
+
+## 2026-07-24 (오후 5) - WPF standalone도 https 수정 + 버전 1.0.21 게시
+- Completed: 사용자 "standalone도 업데이트하고 버전업".
+  - WPF `BmesNgRateStandalone`의 동일 3파일(`Services/WorkerStatusService.cs:14`,
+    `BmesRoutingScrapeService.cs:17/19`, `BmesMaterialService.cs:15/17`) BaseUrl http→**https**.
+  - csproj 버전 **1.0.20 → 1.0.21**(Version/FileVersion/AssemblyVersion).
+  - **`tools/PublishStandaloneUpdate.ps1` 실행**(csproj 버전 자동 읽음): Release self-contained
+    win-x64 게시 → `JinoSupporter.Web/standalone-updates/BmesNgRateStandalone-1.0.21.zip`(≈85.5MB)
+    생성 + `update.json`(version 1.0.21, url, sha256=902ce1fb…, notes) 갱신 + 서버 서빙 위치 복사.
+- Verification: 게시 성공. 빌드 경고는 기존 2건뿐(HierSubRows CS4014, NgRatePage CS8602) — 무관.
+  `update.json`이 1.0.21 가리키고 zip 존재 확인. 구 1.0.20.zip은 남겨둠(매니페스트는 1.0.21만 참조).
+- 배포 메커니즘: 서버가 `/standalone/update.json`을 **요청마다 파일에서 읽어** 서빙하므로 웹서버
+  재시작 없이도 클라이언트가 다음 폴링에서 1.0.21을 받아 자동 업데이트. (단, 웹서버가
+  이 폴더를 ContentRoot로 서빙 중일 때 — 1.0.20이 여기서 서빙되던 것과 동일 위치.)
+- Next: 클라이언트(설치된 standalone)에서 업데이트 알림/자동 갱신으로 1.0.21 받는지 확인.
+  받은 뒤 standalone에서 Worker Status/Routing/Material 로그인 정상인지.
+
+## 2026-07-24 (오후 6) - WPF standalone에 LPA 기능 이식
+- Completed: 사용자 "WPF에 LPA도 다 추가". 웹 LPA를 standalone(BlazorWebView)로 이식.
+- 핵심 제약: WPF는 **BlazorWebView라 서버 라우트(app.MapGet) 없음** → 웹의 iframe+`/bmes/lpa/view`·
+  `/bmes/lpa/img`를 못 씀. 대신 **`<iframe srcdoc="@_html">`**로 뷰어 HTML을 앱 안에 직접 렌더
+  (웹 HTML+JS 전부 재사용). **뷰어 사진은 BMES 익명 URL 직접 로드**(사용자 결정) — 라우트 불필요.
+- 공유 파일 파라미터화(웹 안 깨짐): `BmesLpaHtmlExportService`에 `ExportInput.DirectBmesImages`
+  추가. false(웹)=`/bmes/lpa/img` 엔드포인트, true(WPF)=BMES 직접 URL. `AppendThumbs`/
+  `AppendDetailItem`/`AppendDetailTemplate`/`BuildNgDetailTab`에 bool 전파, JS `viewSrc`는
+  `IMG_DIRECT` 플래그로 분기. 신규 `RenderHtml(input)`(문자열 반환, srcdoc용).
+- WPF 신규/변경:
+  - 서비스 4개 이식(네임스페이스만 변환): `Services/BmesLpaScrapeService.cs`,
+    `BmesLpaImageService.cs`, `BmesLpaHtmlExportService.cs`, `BmesLpaExcelExporter.cs`.
+  - `Components/Pages/BmesLpaPage.razor`(신규, 네이티브): Search→RenderHtml(DirectBmesImages=true)
+    →srcdoc iframe, 엑셀 버튼(3시트, 이미지 view 1000px). `@rendermode` 없음(WPF).
+  - `App.xaml.cs`: BmesLpaScrapeService/BmesLpaImageService/BmesLpaHtmlExportService 싱글턴 등록.
+  - `Components/Layout/NavMenu.razor`: `bmes/lpa` "LPA" 링크 추가.
+  - `WebRepository`(BmesLpaImages 테이블/GetLpaImage/SaveLpaImagePair)·`AppMenus`(BmesLpa)는
+    이미 web에서 sync돼 있었음(추가 작업 없음).
+- Verification: 웹 `-t:Compile` error 0(파라미터화 후에도). **WPF `dotnet build`(Debug, XAML 포함)
+  error 0**. Debug 빌드 실행 → 크래시 없이 기동(DI 정상). **단, LPA 실제 동작(srcdoc 렌더·
+  BMES 직접 이미지 로드·엑셀)은 클릭 미검증** — srcdoc은 이 앱에서 신규 패턴.
+- Next(사용자): 실행된 WPF에서 좌측 **LPA** 메뉴 → Search → 표/매트릭스/사진 뜨는지, 엑셀 추출 확인.
+
+## 2026-07-24 (오후 7) - WPF LPA 영어화 + 1.0.22 게시
+- Completed: 사용자 "WPF LPA는 영어로" + "버전업해서 다른 데서 업데이트 받게".
+  - **영어화**: WPF LPA 파일들(웹과 별도 복사본이라 웹은 한글 유지)의 사용자 노출 한글을 영어로.
+    Python 일괄 치환(longest-first)으로 `BmesLpaHtmlExportService`/`BmesLpaExcelExporter`/
+    `BmesLpaScrapeService` 번역 + 페이지(`BmesLpaPage.razor`) 수동 번역. 예: 목록→List,
+    NG 집계→NG Summary, 불량 상세→Defect Detail, 점검항목→Check Point, 불량률→NG Rate,
+    갯수→Count, 구분→Type, 전체→Overall, 합계→Total, 모델→Model, 원본→Original 등.
+    폰트명 'Malgun Gothic','맑은 고딕'과 일부 코드 주석(교차표/기간/원본)은 그대로(비노출).
+  - **주의(분기)**: WPF LPA는 sync 목록에 없는 수동 복사본 → 이제 웹(한글)과 divergent.
+    웹 LPA 수정 시 WPF는 자동 반영 안 됨(재복사하면 한글 재유입). 언어차 때문에 의도적 분기.
+  - **버전 1.0.21 → 1.0.22** + `PublishStandaloneUpdate.ps1` 재실행: zip(≈85.6MB) +
+    update.json(1.0.22, sha256=4c72c487…, 영어 notes) 갱신. 실행 중 인스턴스 taskkill 후 게시.
+- Verification: WPF `dotnet build`/publish error 0(게시 성공). 남은 한글 grep: 폰트명+주석뿐.
+  1.0.22 게시본 실행해 기동 확인. **LPA 실제 화면/엑셀 클릭 검증은 여전히 미수행**.
+- Next: 클라이언트가 1.0.22 자동업데이트로 LPA(영어) 받는지, LPA 메뉴 동작·엑셀 확인.
+
+## 2026-07-25 07:18 - 엑셀 불량 상세 시트에 AULOC 열 추가(웹+WPF)
+- Completed: 사용자 "엑셀 추출 쪽, 점검항목 왼쪽에 AULOC 1열 추가". `불량 상세`(WPF: Defect Detail)
+  시트를 A=AULOC, B=점검항목/Check Point, C=Check Item, D..=일자로 재배치.
+  - `firstDateCol` 3→4, `lastCol` `2+dateCount`→`3+dateCount`, 헤더 3개, 데이터행 3개 열로 시프트.
+  - 열폭 A=16 / B=26 / C=34, `FreezeColumns(2)`→`(3)`.
+- Decisions:
+  - AULOC 값은 `NgMatrixGroup.Model`(=AULOC, 이미 그룹 키). **행마다 반복 기입(병합 안 함)** —
+    엑셀 정렬/필터가 살아있게. 
+  - **모델 그룹 밴드 행은 그대로 유지**(모델명+건수 표시). 이제 AULOC 열과 정보가 중복되지만
+    per-model 건수가 밴드에만 있어서 제거하지 않음. 사용자가 원하면 밴드 삭제 가능.
+  - 웹/WPF는 의도적 분기(한글/영어) 상태라 **두 파일을 각각 동일하게 수정**.
+- Files: `JinoSupporter.Web/Services/BmesLpaExcelExporter.cs`,
+  `BmesNgRateStandalone/Services/BmesLpaExcelExporter.cs` (각각 WriteMatrixSheet + 클래스 doc).
+- Verification: 웹 `dotnet msbuild -t:Compile` **error 0**(BmesLpaExcelExporter 관련 경고 0, 나머지는
+  기존 무관 경고). WPF `dotnet build` **오류 0개/경고 4개**(기존 HierSubRows CS4014·NgRatePage CS8602가
+  wpftmp+본 프로젝트에 중복 계상). **실제 xlsx 추출은 미실행** — 컴파일/좌표 계산만 확인.
+- Next: 사용자 서버 재시작 후 웹 `엑셀 추출` → 2번째 시트 A열에 AULOC가 행마다 찍히고 사진이
+  D열 이후로 밀려서도 정상 배치되는지 확인. WPF는 배포하려면 버전업+PublishStandaloneUpdate.ps1 필요
+  (이번엔 게시 안 함, 현재 게시본은 1.0.22).
+
+## 2026-07-25 07:26 - 웹 PC Download 메뉴 + 설치파일 배포 경로 + WPF 첫 실행 경로설정 유도
+- Completed: 사용자 3건 요청.
+  1) **웹 Tools에 `PC Download` 메뉴** — id `pc-download`, 라우트 `/tools/pc-download`.
+     - `AppMenus`: 상수/`All` 항목(Tools 그룹) + 모든 role 기본권한에 추가.
+     - `WebRepository.SeedDefaultMenuPermissionsIfEmpty`: **기존 DB용 grant 추가**(QrBakoData/
+       DailyReport와 동일 패턴, AppRoles.All 전원). 안 하면 커스터마이즈된 기존 role에 안 뜸.
+     - `NavMenu.razor`: `showTools` 조건 + 💻 항목.
+  2) **설치파일 다운로드**
+     - 신규 `Services/StandaloneDownloadCatalog.cs`: `standalone-updates/update.json`을 읽어
+       `StandaloneRelease`(version/notes/publishedAt + Setup·Package `StandaloneAsset`) 반환.
+       Setup은 manifest `setupUrl`, 없으면 `BmesNgRateStandalone_Setup-<ver>.exe` 규칙으로 탐색.
+       파일 없으면 null → 페이지가 zip만 노출.
+     - 신규 `Components/Pages/PcDownloadPage.razor`(정적 렌더, `[Authorize]`): 버전/게시일/노트/
+       용량 + Installer·zip 버튼 + 설치 안내 4단계.
+     - `Program.cs`: `/standalone/download/{fileName}`이 **`.exe`도 허용**(기존 zip 전용).
+       익명 유지(업데이터가 로그인 전에 받음).
+     - `installer.iss`: `OutputBaseFilename`에 버전 삽입(`..._Setup-<ver>.exe`), 기본 버전 1.0.22.
+     - `tools/PublishStandaloneUpdate.ps1`: ISCC.exe 탐색(기본 경로 2곳→PATH) 후 있으면
+       `/DMyAppVersion=$Version`으로 설치파일 빌드→`standalone-updates`로 복사, manifest에
+       `setupUrl`/`setupSha256` 추가. **없으면 경고만 찍고 zip만 게시**(기존 동작 유지).
+       WPF `StandaloneUpdateService`는 unknown JSON 필드 무시하므로 기존 업데이트 흐름 무영향.
+  3) **WPF 첫 실행 시 경로 지정 화면**: `HomePage.razor` OnInitialized에서
+     `!Paths.IsNgRateStorageConfigured`면 `/bmes/setting?firstrun=1`로 replace 이동.
+     **static `_firstRunRedirected`로 프로세스당 1회만** — 계속 갇히지 않게.
+     `BmesSettingPage.razor`: `firstrun=1`이면 안내 배너(Working Folder→Save→BMES 계정→재시작).
+- Decisions/제약:
+  - **이 PC에 Inno Setup 미설치** → 설치파일(.exe) 생성 불가. 현재 페이지는 zip(81.6MB)만 노출하고
+    Inno Setup 안내 문구 표시. 설치하면 재게시만으로 자동으로 Installer 버튼이 생김.
+  - **게시 안 함**: 현재 배포본은 1.0.22라 오늘 변경(AULOC 열, 첫 실행 유도)이 다운로드에 없음.
+    게시는 전 클라이언트 자동업데이트를 유발하는 외부 영향 작업이라 사용자 확인 대기.
+- Files: web `Services/AppMenus.cs`, `Services/WebRepository.cs`, `Services/StandaloneDownloadCatalog.cs`(신규),
+  `Components/Pages/PcDownloadPage.razor`(신규), `Components/Layout/NavMenu.razor`, `Program.cs`;
+  wpf `Components/Pages/HomePage.razor`, `Components/Pages/BmesSettingPage.razor`,
+  `installer.iss`, `tools/PublishStandaloneUpdate.ps1`.
+- Verification:
+  - 웹 `dotnet msbuild -t:Compile` **error 0**(신규 파일 경고 0). WPF `dotnet build` **오류 0/경고 4**(기존 2건 중복 계상).
+  - PublishStandaloneUpdate.ps1 **PS 5.1 파서 통과**(`?.` 미사용으로 수정함).
+  - `StandaloneDownloadCatalog.Read` **실제 폴더로 콘솔 스모크 실행**: v1.0.22 / Package=
+    BmesNgRateStandalone-1.0.22.zip 81.6MB / Setup=(none) — 기대대로.
+  - **미검증**: 페이지 실제 렌더, 다운로드 라우트 응답, WPF 첫 실행 리다이렉트(설정 지운 상태로 실행 필요),
+    Inno Setup 경로의 설치파일 빌드(도구 없음).
+- Next(사용자 결정 필요):
+  1) 서버 재시작 → Tools > PC Download 표시/다운로드 확인.
+  2) 설치파일(.exe) 원하면 Inno Setup 6 설치 후 PublishStandaloneUpdate.ps1 재실행.
+  3) 오늘 WPF 변경을 배포하려면 csproj 1.0.22→1.0.23 + 게시(= 전 클라이언트 자동 업데이트).
+
+## 2026-07-25 07:33 - 정정: 설치파일 빌드 스크립트는 이미 있었음(BuildStandaloneInstaller.ps1)
+- 정정 내용: 직전 항목에서 "이 PC에 Inno Setup 미설치 → 설치파일 생성 불가"라고 적은 것은 **틀렸다.**
+  - Inno Setup은 **`%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe`** 에 설치돼 있다(사용자 단위 설치).
+    내가 Program Files 2곳과 PATH만 확인해서 놓쳤다.
+  - **`BmesNgRateStandalone/tools/BuildStandaloneInstaller.ps1`이 이미 존재**했고(2026-05-14),
+    LOCALAPPDATA 포함 6개 후보 경로를 탐색한다. VS Code task `build-standalone-installer`로도 실행됨.
+    내가 PublishStandaloneUpdate.ps1에 ISCC 탐색 로직을 **중복 구현**한 것도 잘못이었다.
+- Completed(정정 반영):
+  - `PublishStandaloneUpdate.ps1`: 중복 ISCC 블록 제거 → **`BuildStandaloneInstaller.ps1-SkipPublish` 호출**로 교체.
+    실패 시 warning만 내고 zip만 게시(기존 동작 보존). setupUrl/setupSha256 매니페스트 추가는 유지.
+  - `BuildStandaloneInstaller.ps1`: `-SkipPublish` 스위치 추가(publish 중복 방지, 없으면 publishDir 검사),
+    기대 산출물 경로를 **버전 포함 이름**(`dist\BmesNgRateStandalone_Setup-<ver>.exe`)으로 수정
+    — installer.iss의 `OutputBaseFilename` 변경과 맞춤. **이 수정 없으면 기존 스크립트가 깨진다.**
+  - `README.md`: 산출물 이름 버전 포함으로 갱신 + PC Download 연동 설명 추가.
+- Verification: **`BuildStandaloneInstaller.ps1` 실제 실행 성공** — Inno Setup 컴파일 57초,
+  `dist\BmesNgRateStandalone_Setup-1.0.22.exe` **60,396,767 bytes(57.6MB)** 생성 확인.
+  두 ps1 모두 PS 5.1 파서 통과.
+- **주의(버전 불일치)**: 방금 빌드한 dist의 exe는 파일명이 1.0.22지만 **내용은 오늘 변경분
+  (엑셀 AULOC 열, 첫 실행 경로유도)이 포함된 코드**다. 게시된 1.0.22 zip과 내용이 다르므로
+  **이 exe를 standalone-updates로 복사하지 않았다.** 배포하려면 csproj 1.0.23으로 올려 재빌드/게시할 것.
+- Next: 사용자 승인 시 csproj 1.0.22→1.0.23 + `PublishStandaloneUpdate.ps1` 1회 실행
+  (zip+설치파일+update.json 동시 생성 → PC Download에 Installer 버튼 자동 노출, 기존 클라이언트 자동 업데이트).
+
+## 2026-07-25 07:38 - 1.0.23 게시(zip+설치파일) + PC Download Razor 버그 수정
+- Completed:
+  1) **버전 1.0.22 → 1.0.23**(csproj Version/FileVersion/AssemblyVersion) 후
+     `PublishStandaloneUpdate.ps1` 1회 실행. 실행 전 프로세스 미실행 확인(taskkill 불필요).
+     산출물(모두 `JinoSupporter.Web/standalone-updates/`):
+     - `BmesNgRateStandalone-1.0.23.zip` 85,580,800 B (sha256 46134328…)
+     - `BmesNgRateStandalone_Setup-1.0.23.exe` 60,386,667 B (sha256 32d68253…) ← **설치파일 최초 게시**
+     - `update.json` version 1.0.23 + `setupUrl`/`setupSha256` 필드 포함.
+     Inno Setup 컴파일 43초. 구버전 zip(1.0.20~1.0.22)은 남겨둠.
+  2) **버그 수정**: PC Download 화면에 버전이 `v@release.Version` 문자 그대로 노출됨(사용자 스크린샷).
+     원인 = **Razor의 이메일 주소 자동 인식** — 문자 뒤에 바로 오는 `@`는 식별자가 아니라
+     이메일로 처리돼 이스케이프됨. 수정: `v@(release.Version)`로 괄호 감싸기(2곳: 버전 배지 + 경고문).
+     **교훈: Razor에서 `텍스트@변수` 형태는 항상 `@(변수)`로 쓸 것.**
+- Files: `BmesNgRateStandalone/BmesNgRateStandalone.csproj`(버전),
+  `JinoSupporter.Web/Components/Pages/PcDownloadPage.razor`(Razor 수정),
+  `standalone-updates/*`(게시 산출물).
+- Verification:
+  - 게시 스크립트 성공, 위 3개 파일 존재/크기/해시 확인, `update.json` 내용 확인.
+  - 웹 `-t:Compile` error 0.
+  - `StandaloneDownloadCatalog.Read` 콘솔 스모크 재실행 → **v1.0.23 / Setup=Setup-1.0.23.exe 57.6MB /
+    Package=1.0.23.zip 81.6MB** 정상 인식(이제 Installer 버튼이 뜰 상태).
+  - **미검증**: 실제 페이지 렌더(서버 재시작 필요), 설치파일 실행/설치 동작, 기존 클라이언트 자동 업데이트.
+- 배포 영향: `update.json`은 요청마다 파일에서 읽히므로 **웹서버 재시작 없이도** 기존 standalone
+  클라이언트가 다음 폴링에서 1.0.23 자동 업데이트를 받는다(zip 경로). 단 **PC Download 페이지 자체는
+  신규 코드라 웹서버 재시작 후에야 보인다.**
+- Next: 웹서버 재시작 → Tools > PC Download에서 v1.0.23 + **Download Installer** 버튼 확인 →
+  설치파일 받아 실제 설치 테스트(첫 실행 시 Setting 화면 뜨는지 포함).
+
+## 2026-07-25 08:02 - 설치파일 슬림화(Syncfusion 미사용 제거 + 다국어 리소스 제외) → 1.0.24 게시
+- 배경: 사용자 "기능 대비 설치파일이 왜 이렇게 크냐". 실측 결과 publish 207.5MB / 설치파일 57.6MB.
+  구성: .NET8+WPF 런타임 ≈138MB, Syncfusion 18.7MB, 다국어 리소스 13폴더 18.9MB,
+  OpenXml+XlsIO 13MB, SqlClient 8.3MB, wwwroot 8.3MB. 사용자 지시: "런타임은 넣고 나머지는 알아서".
+- Completed:
+  1) **Syncfusion 완전 제거** — `Syncfusion.Blazor.Core`/`Spreadsheet` PackageReference,
+     `App.xaml.cs`(using + RegisterLicense + AddSyncfusionBlazor), `_Imports.razor` 2줄,
+     `wwwroot/index.html` 3줄(테마 css + 스크립트 2개).
+     **근거: `SfSpreadsheet` 등 Syncfusion 컴포넌트 사용처가 코드 전체에 0건**(웹에서 복사될 때 딸려온 것).
+     `DocumentFormat.OpenXml`/`Syncfusion.XlsIO`도 직접 사용 0건 — Spreadsheet 패키지의 전이 의존성이라 같이 빠짐.
+     엑셀은 ClosedXML로 처리하므로 무영향.
+     **부수 확인**: `index.html`이 참조하던 `_content/Syncfusion.Blazor.Themes/bootstrap5.css`는
+     Themes 패키지가 참조돼 있지 않아 **원래부터 404**였다(자체 `bootstrap/bootstrap.min.css` 사용 중).
+     따라서 제거해도 시각적 변화 없음.
+  2) **`<SatelliteResourceLanguages>en</SatelliteResourceLanguages>`** — 다국어 리소스 13폴더 제외.
+  3) 버전 1.0.23 → **1.0.24** 후 재게시.
+- 결과(실측): publish **207.5MB → 168.0MB**(-39.5MB), 파일수 **625 → 318**,
+  zip **85.6MB → 72.1MB**, **설치파일 60.4MB → 53.6MB**. lang 폴더 0개 / Syncfusion 파일 0개 확인.
+- Files: `BmesNgRateStandalone.csproj`, `App.xaml.cs`, `Components/_Imports.razor`,
+  `wwwroot/index.html`, `standalone-updates/*`(1.0.24 산출물).
+- Verification:
+  - `dotnet build` 오류 0/경고 4(기존). **Debug 빌드 실제 실행 → 12초간 살아있고 MainWindowTitle
+    'BMES NG Rate' 확인 후 정상 종료**(Syncfusion DI 제거로 인한 기동 실패 없음).
+    `%LOCALAPPDATA%\JinoWorkHost\logs\bmes-ngrate-standalone.log`에 1.0.24 Startup 기록만, 에러 없음.
+  - 게시 산출물 3종 크기/해시/`update.json`(setupUrl 포함) 확인.
+  - **미검증: 각 화면 실제 렌더**(Syncfusion 테마 css 제거 후 시각 확인은 안 함 — 단 위 404 근거로 영향 없다고 판단).
+- Next: 웹서버 재시작 → PC Download에서 v1.0.24 Installer(53.6MB) 확인 → 설치 테스트.
+  더 줄이려면 framework-dependent 게시(-140MB, 각 PC에 .NET 8 Desktop Runtime 필요)뿐 — 사용자가 런타임 포함 유지 결정함.
+
+## 2026-07-25 08:15 - 탭 제목 오표시 버그 수정(LPA 눌렀는데 탭엔 DAILY REPORT)
+- 증상(사용자 스크린샷): 좌측 LPA 클릭 → 본문은 LPA인데 **탭 라벨 3개가 전부 "DAILY REPORT"**.
+- 근본 원인: `MainLayout.OnAfterRenderAsync`가 `JS appDocTitle()`로 **document.title을 한 번 읽어**
+  활성 탭에 기록하는 구조였다. 그런데 Blazor `<PageTitle>`은 title을 **비동기로 나중에** 쓴다.
+  → 레이아웃이 읽는 시점엔 아직 **직전 페이지 제목**이 남아 있어, 그 값이 새 탭에 그대로 박힌다.
+  이후 재렌더가 없으면 영영 안 고쳐져서 모든 새 탭이 직전 제목을 물려받는다.
+- 수정(폴링 → 이벤트 구독):
+  - `wwwroot/js/app.js`: 신규 `window.appTitleWatcher`. `document.head`에 MutationObserver
+    (`childList`+`characterData`+`subtree` — title 엘리먼트가 교체돼도 잡히게)를 걸고, title이 바뀔
+    때마다 `dotNetRef.invokeMethodAsync('OnDocumentTitleChanged', title)`. start 시 1회 seed 호출.
+    invoke는 `.catch(()=>{})`(페이지 정리 중 서킷 소멸 대비). `stop()`으로 disconnect.
+  - `Components/Layout/MainLayout.razor`: OnAfterRenderAsync는 **firstRender에서 watcher 시작만**
+    (document.title 읽기 제거). 신규 `[JSInvokable] OnDocumentTitleChanged(title)`가 그 순간의
+    활성 탭 라벨을 갱신. `DotNetObjectReference` 필드 추가 + `Dispose()`에서 해제.
+  - 기존 `window.appDocTitle`은 남겨둠(다른 호출부 있을 수 있어 제거 안 함).
+- Files: `JinoSupporter.Web/wwwroot/js/app.js`, `JinoSupporter.Web/Components/Layout/MainLayout.razor`.
+- Verification:
+  - `dotnet msbuild -t:Compile` error 0.
+  - **jsdom으로 JS 실동작 검증**(scratchpad `titlewatch`): app.js에서 appTitleWatcher 블록을
+    **직접 추출해 실행**(손으로 옮긴 로직 아님). 결과 PASS —
+    start 시 현재 제목 seed 발화, `document.title='LPA'`/`'Setting'` 대입마다 콜백 발화,
+    `stop()` 이후 대입은 발화 안 함. 즉 "title 대입이 head observer를 발화시킨다"는 핵심 가정 확인.
+  - **미검증**: 실제 브라우저에서 Blazor `<PageTitle>`과의 타이밍(서버 재시작 후 확인 필요).
+    URL 유래 폴백 라벨(`TitleFromUrl`)은 그대로라 최악의 경우에도 "Lpa"로 표시된다.
+- Next: 웹서버 재시작 → LPA/다른 메뉴 이동 시 탭 라벨이 각 페이지 `<PageTitle>`(LPA 등)로 바뀌는지 확인.
+
+## 2026-07-25 10:55 - LPA NG 집계 탭에 '점검항목별 불량률' 새 표 추가(웹+WPF)
+- 요청: 모델 피벗 표 밑에 **Check Item끼리 묶어서** 일/주/월별 불량률을 **새로운 표로**.
+- 설계 결정(중요):
+  - 행 = **LCITM(Check Item) 텍스트 distinct**, 모델 구분 없이 병합. NG 많은 순 정렬.
+    행 머리에 해당 Check Item이 속한 **점검항목(TYPRC)들을 작은 회색 글씨로 병기**(여러 개면 ' · ' 결합).
+  - **분모 = 위 모델 피벗과 동일**(해당 기간 전체 검사수량 TOTAL). 그래서 각 행 ppm의 합 = 합계 행이 되고
+    두 표를 그대로 비교할 수 있다. (점검 실시횟수 기준 분모는 위 표와 비교 불가라 채택 안 함.)
+  - 빈 셀 = 그 기간에 점검 자체가 없음. 점검했는데 이 항목이 정상이면 **진짜 0**(위 표 규칙과 동일).
+  - NG 집계는 **`BuildNgMatrix` 재사용** → LQRNO 중복 제거 로직이 불량 상세와 100% 동일.
+- 코드 구조:
+  - `BuildPivotTab`의 반환을 `string` → **`PivotRender(Html, Blocks, ColTotals)`** 로 변경.
+    새 표가 **같은 기간 컬럼과 같은 분모를 그대로 재사용**하게 하기 위함(루프 3번째 복제 방지).
+  - 신규 `BuildCheckPivotTab(rows, details, blocks, colTotals)`.
+  - 패널: `<div class="lpa-scroll">모델피벗</div>{{checkPivotSection}}{{ngDetailTab}}`.
+    패널 클래스에 `has-chk` 추가, `.lpa-panel.has-chk .lpa-scroll{max-height:30vh}`(3단 스택).
+  - JS: `applyPivot()`을 `applyPivotTable(table)` + `PIVOT_IDS=['lpa-pivot','lpa-chkpivot']` 로 일반화.
+    `syncPivotHeader()`가 인자로 테이블을 받도록 시그니처 변경(zoom 핸들러도 두 표 모두 호출).
+    → 툴바의 일자/주차/월 개수 제한과 필터가 새 표에도 그대로 적용됨.
+- Files: `JinoSupporter.Web/Services/BmesLpaHtmlExportService.cs`,
+  `BmesNgRateStandalone/Services/BmesLpaHtmlExportService.cs`(영어판 동일 이식:
+  'NG Rate by Check Item' / 'Total' / 'Overall' / '(no text)').
+- Verification(둘 다 **헤드리스 Chrome 실렌더**):
+  - scratchpad 하니스(`lpahtml`, `lpahtmlwpf`)로 **실제 서비스 파일을 그대로 컴파일**(BmesLpaScrapeService.
+    LpaResult / AppStoragePaths / BmesLpaImageService만 스텁) 후 합성 데이터로 HTML 생성 → puppeteer 렌더.
+  - 웹 `dotnet msbuild -t:Compile` error 0, WPF `dotnet build` 오류 0/경고 4(기존).
+  - **JS 에러 0건**. 새 표 렌더 확인(높이 155px). 기간 컬럼이 모델 피벗과 동일(07/24,07/20,06/15,W30,W25,M7,M6).
+  - **숫자 검산 통과**: 합성 데이터 NG 5건(L1:2, L2:1, L3:2) / 수량 4,300 기준
+    · 전체 5/4,300=1,163ppm · 07/24 3/1,500=2,000 · 07/20 2/2,000=1,000 · 06/15 0/800=0
+    · 행 합(Gap 3 + Coil 2)=5=합계, **새 표 합계 행이 모델 피벗 합계 행과 완전 일치**(분해 성질 확인).
+    · 'Coil 상태 확인'이 MODULE(AI Grill)과 UNIT(Frame + VP ass'y)에 걸쳐 **1행으로 병합**되고
+      점검항목 2개가 병기됨 — 요청한 "Check Item끼리 묶기" 동작 확인.
+  - **미검증**: 실제 BMES 데이터/긴 베트남어 Check Item에서의 열 너비, 서버 재시작 후 화면.
+- 주의: 엑셀 `NG 집계` 시트에는 **이 표를 넣지 않았다**(요청은 화면 기준). 필요하면 별도 요청.
+- Next: 웹서버 재시작 → LPA Search → NG 집계 탭에서 모델 피벗 밑 '점검항목별 불량률' 확인.
+
+## 2026-07-25 11:40 - 점검항목별 불량률: 엑셀 시트 추가 + 화면/엑셀에 점검항목·모델 병기
+- 요청 2건: (1) "엑셀 추출시 같이 가능하게" (2) "CheckItem 옆에 점검항목, 모델도 나오게".
+- Completed:
+  - **집계 로직 공용화**: 직전 항목에서 `BuildCheckPivotTab`(HTML) 안에 있던 누적 루프를
+    **public `BuildCheckPivotRows(rows, details)`** 로 추출. 반환 `CheckPivotRow(Item, CheckPoints,
+    Models, OverallNg, NgByKey)`. HTML/엑셀이 **같은 함수**를 쓰므로 BuildPivotTab/BuildPivotData
+    같은 이중 루프 문제를 반복하지 않는다. NgByKey의 키는 BuildPivotData와 동일(raw AUDAT / W: / M:)
+    → 분모를 `PivotData.ColTotals`에서 그대로 나눠 쓸 수 있음.
+  - **모델 병기**: `NgMatrixGroup.Model`(=AULOC)을 항목별 SortedSet으로 모아 `Models`에 ' · ' 결합.
+    한 Check Item이 여러 모델에 걸리면 "MODULE · UNIT"처럼 표시(점검항목과 동일한 병합 규칙).
+  - **화면**: 행 머리에 `점검항목 …` / `모델 …` 두 줄을 작은 회색 글씨로 추가(라벨 굵게, `.lpa-chk-typrc b`).
+  - **엑셀 신규 시트 `점검항목 NG`(2번째, WPF는 `NG by Check Item`)**:
+    A=Check Item B=점검항목 C=모델 D=구분 E=전체 F..=기간. 모델 피벗과 동일하게 항목당 2행
+    (불량률/갯수), 합계 행이 맨 위, 틀고정 5행/5열. 컬럼폭 A=52(문장이라 넓게)/B=22/C=16.
+    **분모는 `PivotData.ColTotals`(모델 피벗과 동일)** → 시트1 합계 행과 시트2 합계 행이 일치.
+  - 시그니처 변경: `BmesLpaExcelExporter.Export(pivot, **checkRows**, matrix, images, list, title)`.
+    호출부 `BmesLpaPage.razor`(웹/WPF) 갱신.
+- Files: 웹/WPF 각각 `Services/BmesLpaHtmlExportService.cs`, `Services/BmesLpaExcelExporter.cs`,
+  `Components/Pages/BmesLpaPage.razor`.
+- Verification(웹·WPF **양쪽 모두**):
+  - 웹 `-t:Compile` error 0 / WPF `dotnet build` 오류 0(경고 4=기존).
+  - scratchpad 하니스로 **실제 xlsx 생성 후 ClosedXML로 되읽어 셀 덤프**:
+    시트 4개(`NG 집계|점검항목 NG|불량 상세|목록`, WPF는 영문) 확인.
+    `점검항목 NG` 9행×12열, 헤더 `Check Item|점검항목|모델|구분|전체|일자…|주차…|월…`,
+    **합계 1,163 / 07/24 2,000 / 07/20 1,000 — 화면 표 및 시트1 합계와 완전 일치**,
+    Gap 확인 698(3/4,300), Coil 상태 확인 465(2/4,300), **모델 열에 'MODULE · UNIT' 병합 표시** 확인.
+    틀고정 rows=5 cols=5 확인.
+  - 화면은 puppeteer 재렌더 → JS 에러 0, 행 머리에 '점검항목 …/모델 …' 노출 확인
+    (웹: "Gap 확인 점검항목 Height check 모델 MODULE", WPF: "... Check Point ... Model MODULE").
+  - **미검증**: 실제 BMES 데이터 규모에서의 시트 폭/줄바꿈, 서버 재시작 후 실제 추출.
+- Next: 웹서버 재시작 → LPA Search → `엑셀 추출`로 2번째 시트 `점검항목 NG` 확인.
+  WPF에 반영하려면 1.0.24 → 1.0.25 버전업 후 재게시 필요(아직 안 함).
+
+## 2026-07-25 12:00 - 1.0.25 게시(점검항목 NG 피벗 + 엑셀 시트)
+- Completed: csproj 1.0.24 → **1.0.25** 후 `PublishStandaloneUpdate.ps1` 실행(실행 중 인스턴스 없음).
+  산출물(`JinoSupporter.Web/standalone-updates/`):
+  - `BmesNgRateStandalone-1.0.25.zip` 72,056,526 B (sha256 31dda51f…)
+  - `BmesNgRateStandalone_Setup-1.0.25.exe` 53,652,824 B (sha256 cd33081b…)
+  - `update.json` version 1.0.25 + setupUrl/setupSha256.
+  Inno Setup 컴파일 37초. 구버전(1.0.20~1.0.24) 파일은 남겨둠.
+- Verification:
+  - **게시본(Release publish) 실제 실행** → 12초 생존, 창 제목 'BMES NG Rate',
+    로그에 `Starting BMES NG Rate Standalone 1.0.25.0` 기록, 에러 없음.
+  - `StandaloneDownloadCatalog.Read` 재실행 → v1.0.25 / Setup 51.2MB / Package 68.7MB 정상 인식
+    (PC Download 페이지가 Installer 버튼을 띄울 상태).
+  - update.json의 notes에 작은따옴표가 `\u0027`로 이스케이프됨(PowerShell ConvertTo-Json 기본 동작).
+    System.Text.Json이 정상 디코드하는 것을 카탈로그 스모크 출력으로 확인 — **문제 없음**.
+  - **미검증**: 설치파일 실제 설치, 기존 클라이언트 자동 업데이트 수신, WPF LPA 화면/엑셀 클릭 동작.
+- 크기 추이: 1.0.23 설치파일 60.4MB → (슬림화) 1.0.24 53.6MB → 1.0.25 53.7MB.
+- Next: 클라이언트 자동 업데이트로 1.0.25 수신 확인 → WPF LPA에서 'NG by Check Item' 표와
+  엑셀 4시트 확인. 웹은 서버 재시작 필요(코드만 반영된 상태).
+
+## 2026-07-25 12:40 - **정정**: 점검항목별 표의 분모가 틀렸음 → 점검 횟수 기준으로 재설계 + 컬럼 순서
+- **내가 틀린 부분**: 07-25 10:55 항목에서 "분모 = 위 모델 피벗과 동일(기간별 전체 검사수량)"으로
+  설계한 것은 **잘못이다.** 사용자 지적: "1개 항목인데 하루에 78? 말이 아예 안 됨."
+  점검항목 1줄의 분모가 생산/검사 **수량(78, 117, 6,599)** 일 이유가 없다. 체크리스트 한 줄은
+  **감사 1건당 1회 응답**되므로 분모는 **그 항목이 점검된 횟수**여야 한다. ppm 분해 성질을 지키려던
+  의도가 표의 의미를 망가뜨렸다. (10:55 항목의 해당 설계 근거는 무효.)
+- 수정 내용:
+  1) **분모 = 점검 횟수**. `BuildCheckPivotRows`를 재작성 — 더 이상 `BuildNgMatrix`(NG만 보유)를
+     쓰지 않고 rows+details를 직접 순회(LQRNO 중복 제거 동일)하며 **RESUT A/B/C 모든 응답을
+     '점검 1회'로 카운트**하고 그중 NG(IsNgResult)만 따로 카운트. 레코드에 `OverallChecked` +
+     `CheckedByKey` 추가.
+  2) **단위 ppm → %**. 분모가 횟수라 ppm이면 40%가 400,000ppm으로 표시돼 오해를 부름.
+     신규 `NgPercentText(ng,total)`(소수1자리). `AppendPivotCell(..., bool percent=false)` /
+     엑셀 `WriteRate(..., bool percent=false)` 로 분기. **모델 피벗(시트1)은 ppm 그대로.**
+  3) 빈 셀 규칙 변경: **그 기간에 그 항목이 점검되지 않음** = 빈칸, 점검했는데 정상 = 0%.
+  4) **컬럼 순서 모델 → 점검항목 → Check Item**(사용자 요청). 엑셀 A/B/C 및 화면 행머리 순서 모두.
+     엑셀 폭 A=16 / B=22 / C=52. 합계 행 라벨은 A열(모델 자리)에 표시.
+  5) 모델 목록은 이제 **NG난 모델이 아니라 그 항목을 점검한 모든 모델**(분모와 일관).
+  6) 부제 문구: "NG건수 / 그 항목이 점검된 횟수 (%, 위 표의 ppm과 분모가 다름)".
+- 유지된 것: 행은 여전히 **NG 1건 이상인 Check Item만**(전 항목 나열은 노이즈), NG 많은 순 정렬.
+- Files: 웹/WPF 각각 `Services/BmesLpaHtmlExportService.cs`, `Services/BmesLpaExcelExporter.cs`.
+- Verification(웹·WPF 양쪽, scratchpad 하니스):
+  - 웹 `-t:Compile` error 0 / WPF `dotnet build` 오류 0(경고 4=기존).
+  - **실제 xlsx 재생성 후 ClosedXML 되읽기**: 헤더 `모델|점검항목|Check Item|구분|전체|일자…`,
+    합계 83.3% (5/6), `Gap 확인` 100% (3/3), `Coil 상태 확인` 66.7% (2/3).
+    합성데이터 기대치와 일치 — Coil은 L1/L2에서 NG, L4(SPK)에서 정상 응답이라 **3회 점검 중 2회 NG**.
+    모델 열도 그에 맞춰 `MODULE · SPK · UNIT`로 확장됨(정상).
+    점검 안 된 기간은 빈칸(`.`)으로 나옴 확인. 틀고정 5행/5열.
+  - 화면 puppeteer 재렌더: JS 에러 0, 셀이 `83.3% 5/6` 형태, 행머리 `모델 … 점검항목 … Check Item`.
+- **미검증**: 실제 BMES 데이터에서의 값(합성 데이터라 분모가 1~3으로 작아 %가 100%로 나옴 — 실데이터는
+  점검횟수가 커서 정상 범위일 것), 서버 재시작 후 화면/엑셀.
+- Next: 웹서버 재시작 → 실데이터로 분모가 납득 가능한 값(예: 16/40)인지 사용자 확인.
+  확인되면 WPF 1.0.25 → 1.0.26 버전업 후 재게시(아직 안 함).
+
+## 2026-07-25 13:10 - 점검항목 표: % → ppm 환원 + 엑셀 일자/주차/월 구분선
+- 요청: "일 하고 주차, 월 구분선 정확하게 표시해주고 %로 하지말고 ppm으로 변경".
+- Completed:
+  1) **단위 % → ppm 환원**(사용자 지시). 12:40 항목에서 내가 넣은 `NgPercentText`와
+     `AppendPivotCell(..., percent)` / `WriteRate(..., percent)` 분기를 **전부 제거**(죽은 코드 남기지 않음).
+     점검항목 표도 `NgRateText`(ppm) 사용. **분모는 12:40에서 고친 '점검 횟수' 그대로 유지** —
+     즉 ppm = NG건수 / 점검횟수 × 1e6. 시트1(모델 피벗)은 검사수량 기준 ppm이라 **두 표의 ppm은
+     서로 비교 불가**(부제/주석에 명시).
+  2) **엑셀 구분선**: 신규 `DrawBlockBorders(ws, pivot, firstPeriodCol, firstRow, lastRow)`.
+     각 기간 블록(일자/주차/월)의 **첫 컬럼에 Medium LeftBorder**, 마지막 기간 컬럼에 RightBorder,
+     라벨 영역과 숫자 영역 사이(전체 컬럼 우측)에도 RightBorder. **시트1·시트2 둘 다 적용**.
+     (화면 HTML은 sep-th/sep-td 빈 컬럼으로 이미 구분돼 있어 손대지 않음. 엑셀엔 그 빈 컬럼이
+     없어서 세 블록이 한 덩어리로 보이던 것이 원인.)
+- Files: 웹/WPF 각각 `Services/BmesLpaHtmlExportService.cs`, `Services/BmesLpaExcelExporter.cs`.
+- Verification(웹·WPF 양쪽):
+  - 웹 `-t:Compile` error 0 / WPF `dotnet build` 오류 0.
+  - **xlsx 재생성 후 ClosedXML로 테두리 실측**(하니스에 BorderReport 추가):
+    `[NG 집계] LEFT-of 4:07/24, 7:W30, 9:M7 / RIGHT-of 3:전체, 10:M6`
+    `[점검항목 NG] LEFT-of 6:07/24, 9:W30, 11:M7 / RIGHT-of 5:전체, 12:M6`
+    → **블록 경계와 정확히 일치**(일자 시작/주차 시작/월 시작 + 양 끝). WPF도 동일 좌표 확인.
+  - 셀 값이 ppm으로 환원됨 확인(합계 833,333 = 5/6 등). 화면도 puppeteer로 `833,333 5/6` 확인, JS 에러 0.
+  - **미검증**: 실데이터에서의 ppm 자릿수 체감(합성데이터는 분모가 1~3이라 ppm이 100만 근처).
+- Next: 웹서버 재시작 → 엑셀 추출로 구분선/ppm 확인. WPF 반영하려면 1.0.25 → 1.0.26 게시 필요.
+
+## 2026-07-25 13:35 - 점검항목 표 정렬을 컬럼 순서(모델→점검항목→Check Item)로 변경
+- 요청: "이거 정렬 순서가 이상한데"(모델 열이 MODULE/UNIT/SPK로 뒤섞여 보임).
+- 원인: `BuildCheckPivotRows`가 **NG 건수 내림차순**으로 정렬하고 있었음. 컬럼 순서를 모델→점검항목→
+  Check Item으로 바꾼 뒤에는 첫 열이 정렬키가 아니라서 뒤죽박죽으로 보임.
+- 수정: 정렬을 **`모델` → `점검항목` → `Check Item`(모두 Ordinal)** 로 변경. 표시 컬럼 순서와 동일.
+  정렬키 계산용 지역함수 `ModelsOf/PointsOf`를 만들고 **Select 투영에서도 재사용**(문자열 결합 중복 제거).
+  한 Check Item이 여러 모델/점검항목에 걸리면 결합 문자열("MODULE · SPK · UNIT")이 정렬키가 됨.
+- **트레이드오프**: NG 많은 항목이 더 이상 맨 위로 오지 않는다. 모델별로 묶어 보는 용도에 맞춘 것.
+  NG순/불량률순이 필요하면 정렬키만 바꾸면 됨(엑셀에서 사용자가 직접 정렬도 가능 — 병합은 라벨 3열뿐).
+- Files: 웹/WPF `Services/BmesLpaHtmlExportService.cs`(BuildCheckPivotRows 정렬부).
+- Verification: 하니스 합성데이터에 **모델 4종·점검항목 6종을 추가**해 정렬을 검증
+  (NG건수와 알파벳 순서가 일부러 어긋나게 구성).
+  결과 순서 = FRONT/Tape Main Mic → MODULE/Height check → MODULE · SPK · UNIT/AI Grill…
+  → SPK/Bako/bbb → SPK/Zebra check/aaa → UNIT/Yoke ass'y.
+  **모델 오름차순, 같은 모델 안에서 점검항목 오름차순**(SPK의 Bako가 Zebra check보다 앞, 그 결과
+  Check Item은 'bbb'가 'aaa'보다 앞 — 3순위 키라서 정상) 확인.
+  **웹 엑셀·웹 화면(puppeteer)·WPF 엑셀 3곳 모두 동일 순서** 확인. 빌드 error 0.
+- Next: 서버 재시작 후 실데이터에서 순서 확인. WPF 반영은 1.0.26 게시 필요(미실시).
+
+## 2026-07-25 14:15 - LPA 상태 박스에 진행률 바 추가(웹+WPF)
+- 요청: 상태 메시지 박스("623 row(s), 상세 623건 완료.")에 조그만 프로그레스바.
+- Completed:
+  - `BmesLpaScrapeService.FetchDetailsAsync`에 **선택 파라미터
+    `IProgress<(int Done,int Total)>? counter`** 추가(기존 `IProgress<string> progress`는 그대로).
+    문자열 "상세 조회 n / N…"을 파싱하는 대신 숫자를 따로 보냄. 10건마다 + 마지막에 보고.
+  - `BmesLpaPage.razor`: `_progDone/_progTotal` 필드 + `SetProgress/ClearProgress`,
+    상태 alert 안에 높이 4px 바(`.lpa-prog` / `.lpa-prog-bar`, transition .15s).
+    **`_progTotal > 0`일 때만 렌더** — 로그인/HTML 생성처럼 총량이 없는 단계에서 멈춘 바는
+    멈춘 것처럼 보이므로 아예 감춤. 완료/에러 시 `ClearProgress()`로 사라짐.
+  - 카운트되는 구간 2곳: **상세 프리페치**(counter 연결), **엑셀 이미지 다운로드**(20건→10건마다 갱신,
+    마지막 건도 갱신). 엑셀은 이미지 완료 후 "엑셀 파일 생성 중…"으로 바꾸고 바를 숨김.
+- **주의(버그 회피)**: 처음에 `style="width:@ProgressPercent.ToString("0.#", …)%"` 로 썼는데,
+  **따옴표를 가진 @식을 따옴표 속성 안에 넣는 형태**라 Razor 파싱이 위험(앞서 `v@release.Version`이
+  이메일로 오인된 것과 같은 계열). 컴파일은 통과하지만 신뢰할 수 없어 **`ProgressWidth` 프로퍼티가
+  "29.4%" 문자열을 통째로 반환**하도록 변경하고 `style="width:@ProgressWidth"`로 단순화.
+  InvariantCulture 고정(ko-KR에서 "29,4%" 방지).
+- Files: 웹/WPF 각각 `Services/BmesLpaScrapeService.cs`, `Components/Pages/BmesLpaPage.razor`.
+- Verification:
+  - 웹 `-t:Compile` error 0 / WPF `dotnet build` 오류 0.
+  - **실제 .razor에서 상태 박스 마크업과 <style>을 추출**해 4가지 상태로 렌더 후 헤드리스 Chrome 측정
+    (scratchpad `progbar`): 총량 없음 → 바 없음, 180/623 → **채움 29%**, 90/142 → **63%**,
+    완료 메시지 → 바 없음. 트랙 높이 4px 확인. 스크린샷으로 시각 확인.
+  - **미검증**: 실제 Blazor 서버에서의 실시간 갱신(서버 재시작 필요), WPF 실행 화면.
+- Next: 웹서버 재시작 → Search 중 바가 차오르는지, 엑셀 추출 중에도 동작하는지 확인.
+
+## 2026-07-25 14:35 - 점검항목 표: 불량 항목만 → 전체 점검항목 + From 기본값 7/20
+- 요청 2건: (1) "여기 불량만 말고 전체 다 보여줘" (2) "Audit Date From 기본값 2026-07-20".
+- Completed:
+  1) **`BuildCheckPivotRows`가 `overallNg.Keys` → `overallChecked.Keys` 를 순회**하도록 변경.
+     즉 **한 번이라도 응답된 모든 Check Item**이 행으로 나온다(NG 0건이면 0 ppm, 갯수 `0/n`).
+     `overallNg`는 `GetValueOrDefault(k)`로 읽고 `overallChecked[k]`가 분모.
+     14:15 이전에 내가 넣었던 "실패한 항목만" 필터는 제거됨(주석도 교체).
+     합계 행 분모도 그만큼 늘어남(예: 9/10 → 9/11).
+     부제 문구: "N개 점검항목(불량 0건 포함)" / WPF "N checks (including those with no NG)".
+  2) **`LpaFirstDate` 2026-06-08 → 2026-07-20**(웹/WPF 페이지의 From 기본값). LPA 데이터 시작일은
+     여전히 6/8이라 직접 입력하면 그 이전도 조회 가능 — 주석에 명시.
+- Files: 웹/WPF 각각 `Services/BmesLpaHtmlExportService.cs`, `Components/Pages/BmesLpaPage.razor`.
+- Verification(웹·WPF):
+  - 웹 `-t:Compile` error 0 / WPF `dotnet build` 오류 0.
+  - 하니스 합성데이터에 **RESUT=A만 있는 항목**(`MODULE / AI Grill / 기타`)을 두고 검증 →
+    이전에는 표에 없던 그 행이 **`0 ppm, 갯수 0/1`로 정상 출력**됨(엑셀 r8, 화면 행 목록 모두).
+    시트 행수 17 → 19, 합계 갯수 9/10 → **9/11**로 분모 증가 확인.
+  - 정렬(모델→점검항목→Check Item)·구분선·ppm은 그대로 유지됨을 같은 덤프에서 확인. JS 에러 0.
+- **미검증**: 실데이터에서 행 수가 얼마나 늘어나는지(체크리스트 전 항목이 나오므로 상당히 길어질 수 있음).
+  너무 길면 "NG 있는 항목만" 토글을 추가하는 것이 다음 후보.
+- Next: 웹서버 재시작 → 전체 항목 표시/기본 날짜 확인. WPF 반영은 1.0.26 게시 필요(미실시).
+
+## 2026-07-25 14:55 - 불량 상세를 독립 탭으로 분리 + 일자별 세로 구분선
+- 요청: "불량 상세는 탭으로 나눠서 전체 화면에서 보이게(너무 작게 보임) / 일자마다 구분선".
+- 원인: 불량 상세가 **NG 집계 탭 안에** 모델 피벗·점검항목 피벗과 함께 3단으로 쌓여 있어
+  `.lpa-panel.has-chk .lpa-scroll{max-height:30vh}`로 눌려 있었음.
+- Completed:
+  1) **탭 3개로 분리**: `목록 / NG 집계 / 불량 상세`(WPF: `List / NG Summary / Defect Detail`).
+     - 패널: `<div class="lpa-panel" data-panel="ng">{{ngDetailTab}}</div>` 신설,
+       pivot 패널에서 `{{ngDetailTab}}` 제거.
+     - `pivotPanelClass`에서 `has-ng` 제거(이제 pivot 탭은 피벗 2단만) → `has-chk`만.
+       `.lpa-panel.has-chk .lpa-scroll` 30vh → **40vh**, 불량 상세는 `.lpa-scroll` 기본 **78vh**.
+     - JS: `selectTab`에 `ng` 분기(`applyNgDetail()`), 필터 입력 핸들러도 3분기.
+       `applyPivot()`이 더 이상 `applyNgDetail()`을 호출하지 않음(다른 탭이라 불필요).
+  2) **일자 구분선**: `.lpa-ngdetail thead th.lpa-num, .lpa-ngdetail td.lpa-ng-cell
+     { border-left: 1px solid #dbe3ec; }` — 날짜 컬럼마다 세로선. 사진이 있는 인접 일자가
+     서로 붙어 보이던 문제 해소.
+- Files: 웹/WPF `Services/BmesLpaHtmlExportService.cs`.
+- Verification(웹·WPF 양쪽, 헤드리스 Chrome):
+  - 탭 3개 렌더 확인(`목록/NG 집계/불량 상세`, WPF는 영문).
+  - 탭 전환 후 활성 패널의 `max-height` 실측: **list 780px / pivot 400px / ng 780px**
+    → 불량 상세가 기존 30vh(≈300px) 대비 **전체 높이 사용** 확인.
+  - 불량 상세 탭에서 `td.lpa-ng-cell` / `thead th.lpa-num`의 `border-left-width` **1px** 확인.
+  - **JS 에러 0**, 스크린샷으로 탭·구분선 시각 확인.
+  - 빌드: 웹 `-t:Compile` error 0 / WPF `dotnet build` 오류 0.
+- **미검증**: 실데이터(사진 많은 셀)에서의 높이 체감, 서버 재시작 후 화면.
+- Next: 웹서버 재시작 → 불량 상세 탭 확인. WPF 반영은 1.0.26 게시 필요(미실시).
+
+## 2026-07-25 16:12 - 1.0.26 게시(LPA 개편 일괄)
+- Completed: csproj 1.0.25 → **1.0.26** 후 `PublishStandaloneUpdate.ps1` 실행(실행 중 인스턴스 없음).
+  포함 변경(12:40~14:55 항목 전부): 불량 상세 독립 탭+일자 구분선 / 점검항목 NG 피벗(전체 항목,
+  분모=점검횟수, ppm) 화면+엑셀 시트 / 모델·점검항목 컬럼 / 엑셀 일자·주차·월 구분선 /
+  정렬 모델→점검항목→Check Item / 진행률 바 / From 기본값 2026-07-20.
+  산출물(`JinoSupporter.Web/standalone-updates/`):
+  - `BmesNgRateStandalone-1.0.26.zip` 72,059,099 B (sha256 8695374e…)
+  - `BmesNgRateStandalone_Setup-1.0.26.exe` 53,648,421 B (sha256 c726e2c6…)
+  - `update.json` version 1.0.26 + setupUrl/setupSha256.
+  Inno Setup 컴파일 37.6초. 구버전(1.0.20~1.0.25) 파일은 남겨둠.
+- Verification:
+  - **게시본(Release publish) 실제 실행** → 12초 생존, 창 제목 'BMES NG Rate',
+    로그 `Starting BMES NG Rate Standalone 1.0.26.0`, 에러 없음.
+  - `StandaloneDownloadCatalog.Read` → v1.0.26 / Setup 51.2MB / Package 68.7MB 정상 인식.
+  - **미검증**: 설치파일 실제 설치, 클라이언트 자동 업데이트 수신, WPF LPA 화면 클릭 동작.
+- 배포 상태: 웹은 사용자 재시작으로 확인 완료(사용자 "확인 완료"). WPF 클라이언트는 다음 폴링에서
+  1.0.26 자동 업데이트 수신 예정.
+- Next: 클라이언트에서 1.0.26 수신 확인 → WPF LPA 3탭/엑셀 4시트 동작 확인.
+## 2026-07-27 07:10 - LPA 웹 UI 전면 영문화(Use Y/N 제외) + 탭 라벨 LPA 대문자
+- 요청: (1) "LPA 웹에 USE Y/N 이 부분 빼고 모든 한글로 되어있는거 영어로 변경"
+  (2) "탭에 Lpa 되어있는거 LPA 대문자로 표시".
+- 접근: **WPF(BmesNgRateStandalone) 쪽 LPA 서비스가 이미 전부 영문**이었고 웹과 네임스페이스 외
+  차이가 없었음 → 새로 번역하지 않고 **WPF 파일을 웹으로 복사 + 네임스페이스만 치환**.
+  번역 문구가 두 프로젝트에서 100% 동일해지고, 앞으로 웹/WPF diff가 네임스페이스 1줄만 남음.
+- Completed:
+  1) 웹 `Services/BmesLpaHtmlExportService.cs` · `BmesLpaExcelExporter.cs` · `BmesLpaScrapeService.cs`
+     = WPF판으로 교체(네임스페이스만 JinoSupporter.Web.Services). 화면 탭 `List / NG Summary /
+     Defect Detail`, 툴바 `Filter / Expand all / Collapse models / Collapse all / Date·Week·Month / Size`,
+     라이트박스 `Prev / Next / Original / Close`, 엑셀 시트 `NG Summary / NG by Check Item /
+     Defect Detail / List`, 헤더 `Model / Type / Overall / Check Point / NG Rate / Count`.
+  2) 웹 `Components/Pages/BmesLpaPage.razor` 한글 문구 전부 영문화(WPF 문구에 맞춤):
+     엑셀 버튼·툴팁, 초기 안내문, 상태 메시지(Fetching n detail(s)… / Generating HTML… /
+     Preparing n image(s) for Excel… / Excel saved …), 엑셀 제목 `LPA Defect Detail · …`,
+     **다운로드 파일명 `LPA_불량상세_…` → `LPA_DefectDetail_…`**.
+  3) **Use Y/N 컨트롤은 요청대로 그대로 둠**(원래도 영문 라벨 + Y/N/All).
+  4) WPF 번역 과정에서 남아 있던 찌꺼기를 **웹·WPF 양쪽에서** 정리:
+     `.Append("")`(건 제거 흔적) 2곳, JS `fmt(x) + ''` 3곳, "the model's  count"(이중 공백) 2곳,
+     남은 한글 주석 `교차표`/`기간`, 엑셀 주석 `Date -> Week` → `→`.
+  5) `font-family`의 `'맑은 고딕'` 제거(영문명 `'Malgun Gothic'`만 유지 — Windows에서 동일 폰트로
+     해석됨). 생성 HTML `<html lang="ko">` → `lang="en"`. **BMES 데이터 자체의 한글(점검항목·
+     Check Item 텍스트)은 당연히 그대로**.
+  6) 탭 라벨: `Components/Layout/MainLayout.razor`의 `TitleFromUrl`이 URL 마지막 조각을
+     Title Case 해서 "Lpa"가 됨. **`Acronyms` 집합(현재 "lpa")에 있으면 전체 대문자**로.
+     페이지가 `<PageTitle>`을 보고하면 어차피 덮어쓰지만, 그 전 fallback이 이 값이라 여기가 원인.
+     탭 스트립은 웹에만 있음(WPF 해당 없음).
+- Files:
+  - 웹: `Components/Pages/BmesLpaPage.razor`, `Components/Layout/MainLayout.razor`,
+    `Services/BmesLpaHtmlExportService.cs`, `BmesLpaExcelExporter.cs`, `BmesLpaScrapeService.cs`,
+    `BmesLpaImageService.cs`(주석 "원본"→"Original").
+  - WPF: `Services/BmesLpaHtmlExportService.cs`, `BmesLpaExcelExporter.cs`, `BmesLpaImageService.cs`
+    (4번·5번 정리분만).
+- 주의(다음 세션): 복사 시 `sed -i`가 **CRLF를 LF로 바꿔버림** → awk로 CRLF 복원함.
+  두 프로젝트 모두 CRLF이므로 파일 복사 후 `grep -c $''` 로 확인할 것.
+- Verification:
+  - 빌드: 웹 `-t:Compile` **error 0**, WPF `dotnet build` **오류 0**(경고는 기존 것).
+  - 한글 스캔: 웹/WPF LPA 페이지·서비스 + MainLayout **한글 0건**.
+  - 웹↔WPF 서비스 4종 diff = **네임스페이스 1줄뿐**(줄바꿈 포함 동일).
+  - 실제 소스에서 뷰어 HTML 템플릿을 추출해 합성 데이터로 렌더(헤드리스 Chrome):
+    탭 `List / NG Summary / Defect Detail`, 툴바·라이트박스 전부 영문, **렌더 결과 한글 0건**,
+    `<html lang="en">`, **JS 에러 0**.
+    JS 카운트 3경로 실측(`+ ''` 제거분): 일자 그룹 "1", 모델행 "1"+TOTAL 10, 불량 상세 "1",
+    `tb-stat` "1 / 1 rows". 스크린샷으로 시각 확인. 뷰어 JS 단독 `node --check` 통과.
+  - **미검증**: 실제 서버 화면(재시작 필요), 엑셀 재추출 시트명/헤더(코드가 1.0.26 WPF와
+    바이트 동일이라 동작은 같을 것으로 봄), 탭 라벨은 서버 재시작 후 확인 필요.
+- Next: 사용자 웹서버 재시작 → LPA 화면/엑셀/탭 라벨 "LPA" 확인.
+  WPF 클라이언트에 반영하려면 1.0.26 → **1.0.27 게시 필요**(미실시 — 이번 WPF 변경은 주석·폰트·
+  lang 정리라 기능 영향 없음).
+
+## 2026-07-27 07:32 - [UI][REMOVE] LpaSearchFilters: Use Y/N 필터 UI 제거(웹+WPF)
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: LpaSearchFilters
+- Change: REMOVE
+- Completed: LPA 검색 툴바의 Use Y/N 셀렉트를 웹·WPF 양쪽에서 제거하고, 조회는 상수
+  `UseYnFilter = "Y"`로 고정. 뷰어 HTML 헤더의 `· Use Y/All` 표기와 `ExportInput.UseYn`
+  프로퍼티도 함께 제거(더 이상 선택 항목이 아니므로 죽은 값).
+- Decisions: 사용자가 "안 씀"이라고 했으므로 UI만 숨기는 대신 값 자체를 상수로 고정
+  (기존 기본값과 동일한 USEYN=Y라 조회 결과 변화 없음). `LpaQuery.UseYn` 프로퍼티는
+  BMES 요청 파라미터라 그대로 유지. 웹/WPF `BmesLpaHtmlExportService.cs`는 계속
+  네임스페이스 1줄만 다른 상태를 유지.
+- Files: JinoSupporter.Web/Components/Pages/BmesLpaPage.razor,
+  JinoSupporter.Web/Services/BmesLpaHtmlExportService.cs,
+  BmesNgRateStandalone/Components/Pages/BmesLpaPage.razor,
+  BmesNgRateStandalone/Services/BmesLpaHtmlExportService.cs
+- Verification: 웹 `dotnet build -t:Compile` 오류 0(경고 32개, 전부 기존 것), WPF
+  `dotnet build` 오류 0(경고 4개, 기존 것). 잔여 `_useYn` 참조 0건(grep).
+  두 프로젝트 HtmlExportService diff = 네임스페이스 1줄뿐 확인. 실제 화면은 미확인
+  (웹 재시작은 사용자 담당, WPF는 재게시 필요).
+- Next: 사용자 웹서버 재시작 후 LPA 툴바에서 Use Y/N 사라진 것 확인. WPF 클라이언트
+  반영은 1.0.27 게시 필요(미실시).
+
+## 2026-07-27 07:50 - [UI][CHANGE] DailyReportRankings: 좌우 배치 + 데이터 있는 기준일 추적 + 전일대비 블록
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: DailyReportRankings
+- Change: CHANGE
+- Completed: DAILY REPORT의 Worsened/Improved 표를 상하 → 좌우 2열 그리드로 바꾸고,
+  비교 기준을 "직전 기간"에서 "그 모델이 실제로 생산된 가장 최근 기간"으로 변경(값 아래에
+  기준 기간과 −2w/−4d 표기). 같은 랭킹을 일(day) 단위로 계산하는 DAY OVER DAY 블록을
+  주차 블록 아래에 추가.
+- Decisions:
+  * "데이터 없음" 판정은 PPM==0이 아니라 report.GroupRawIn의 Input>0 존재 여부로 함
+    (PPM 0은 "무결점 생산"과 "미생산"을 구분하지 못함). GroupRawIn을 (unit, period)로
+    한 번만 인덱싱(ProductionIndex)해서 기존 전체 스캔도 O(1) 조회로 교체.
+  * 최신 기간(주/일)에 PPM이 없는 모델은 기존 정책대로 계속 제외(생산 중단은 개선이 아님).
+  * 일 단위는 최근 30일(DailyTrendDays)로 제한 — 스파크라인 길이 겸 기준일 소급 한계.
+  * 블록 헤딩(dr-block-head)을 그리드 전체 폭 span 아이템으로 넣어 표 마크업은 한 벌만 유지.
+  * 그리드 트랙 최소폭 760px + Change 열의 %를 값 아래로 내려 표 고유폭을 줄임
+    (그래야 2열에서 가로 스크롤이 안 생김). 좁은 화면에서는 auto-fit이 1열로 되돌림.
+  * BmesDailyReportModelRow.WeeklyPpm → TrendPpm 개명(일 단위 행에도 쓰이므로),
+    BaselineHeader/BaselineStepsBack 추가. SnapshotSchemaVersion 7 → 8.
+- Files: JinoSupporter.Web/Services/BmesDailyReportService.cs,
+  JinoSupporter.Web/Components/Pages/BmesDailyReportPage.razor
+- Verification: 웹 `dotnet build -t:Compile` 오류 0(경고 32개, 전부 기존 것).
+  레이아웃은 페이지의 실제 <style> 블록을 추출해 합성 데이터 목업으로 헤드리스 Chrome 렌더 +
+  스크린샷 확인: 1920/1800px = 2열이며 표 가로 스크롤 없음(client==scroll), 1500/1280px = 1열,
+  1600px에서는 2열이지만 가장 넓은 표만 약 60px 스크롤. 기준 기간 라벨(W28 −2w / 07/22 −4d /
+  no earlier week)과 DAY OVER DAY 블록 배치 육안 확인.
+  **미검증**: 실제 BMES 데이터로의 산출값(스냅샷 재생성 필요), 서버 화면.
+- Next: 스키마 8로 올렸으므로 기존 캐시 스냅샷은 폐기됨 → 웹 재시작 후 DAILY REPORT 첫 진입 시
+  자동 Refresh(수 분) 완료를 기다려 실제 수치/일 단위 표 확인.
+
+## 2026-07-27 07:59 - [DATA][FIX] DailyReportRankings: 생산 없는 날 기준으로 잡혀 전일대비 표가 비던 문제
+- Agent: Claude
+- Session: S5
+- Task-ID: S5-20260727-075722980-beb613c23c6e4b319
+- Category: DATA
+- Feature: DailyReportRankings
+- Change: FIX
+- Completed: DAY OVER DAY 표가 "Top 0 models"로 비어 나오던 원인을 찾아 수정. 최신 기간 컬럼이
+  데이터가 전혀 없는 날(일요일/휴일)이면 그 앞의 빈 컬럼들을 버리고 실제 데이터가 있는 최신
+  기간을 기준으로 삼도록 TrimToLatestWithData 추가(주/일 양쪽 공통 적용).
+- Decisions:
+  * 원인: NgRateReportService.BuildRequestedPeriodColumns가 요청 기간의 **모든 날짜**에 대해
+    컬럼을 생성한다(데이터 유무와 무관). 그래서 07/26(일)에 컬럼은 있으나 원본 행이 0건 →
+    모든 모델의 최신일 PPM=0 → `recent <= 0 continue`로 전부 탈락 → 0행.
+    저장된 스냅샷에서도 OverallRecentDayPpm=0 / OverallPreviousDayPpm=287,029로 확인.
+  * "최신 기간"은 전체 TOTAL 행에 값이 있는 첫 컬럼으로 정의. 모델별 기준(baseline) 소급은
+    기존대로 unit별 Produced() 판정을 그대로 사용.
+  * TOTAL 행 자체가 없으면 컬럼을 건드리지 않고 그대로 둠(대시보드 전체를 비우지 않기 위해).
+  * SnapshotSchemaVersion 8 → 9. IsStale은 오늘 생성된 스냅샷을 최신으로 보기 때문에,
+    버전을 올리지 않으면 오늘 안에는 자동 재계산이 돌지 않는다.
+- Files: JinoSupporter.Web/Services/BmesDailyReportService.cs
+- Verification: `dotnet build -t:Compile` 오류 0.
+  원인 확인은 실제 데이터로 함 — 저장된 스냅샷 JSON(AppSettings/BmesDailyReport:Snapshot)에서
+  일 단위 0행 + 07/26 전체 PPM 0 확인, 수집 DB(01. NG RATE/temp_20260727_075533.db)에서
+  PRODUCT_DATE='2026-07-26' 행 0건, '2026-07-25' 7,099행·33라인·NG 7,077 확인.
+  **미검증**: 실제 재계산 결과(스냅샷 재생성 필요).
+- Next: 웹 재시작 → DAILY REPORT 진입 시 스키마 9로 자동 Refresh → DAY OVER DAY가 07/25 vs
+  07/24 기준으로 채워지는지 확인.
+
+## 2026-07-28 18:57 - [UI][ADD] ReportKpiTab: KPI 주차 추이 탭 추가
+- Agent: Codex
+- Session: S1
+- Task-ID: S1-20260728-185247729-3227b31a9056432ab
+- Category: UI
+- Feature: ReportKpiTab
+- Change: ADD
+- Completed: Report 정적 HTML 뷰어에 KPI 탭을 추가하고 `순번 | KPI | W27 | W28 | W29 | W30…` 형태의 주차별 PPM 표를 구현했다. 조회 기간의 주차는 연도·주차 키 기준 오름차순으로 자동 표시된다.
+- Decisions: 추가 BMES 조회 없이 Daily 단계에서 이미 계산한 전체/공정유형별 요약 데이터를 재사용한다. KPI 행은 기존 요약 순서(TOTAL 및 공정유형)를 유지하고 0 PPM은 `-`로 표시한다.
+- Files: JinoSupporter.Web/Services/BmesReportHtmlExportService.cs
+- Verification: `dotnet msbuild JinoSupporter.Web/JinoSupporter.Web.csproj -t:Compile -p:BuildProjectReferences=false` 성공(오류 0). 소스 검사로 KPI 탭 등록, 본문 생성, 주차 오름차순, `순번`/`KPI` 헤더 존재를 확인했다.
+- Next: 웹 서버 재시작 후 `/report/bmes`에서 해당 기간으로 Get Report를 실행하여 실제 KPI 탭의 주차/값 표시를 확인한다. 애플리케이션 실행은 사용자 요청이 없어 수행하지 않았다.
+
+## 2026-07-29 07:24 - [DATA][ADD] FCostCoreParts: MES072410 저장 구조 조사
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260729-072134428-35f4601d716f43dfa
+- Category: DATA
+- Feature: FCostCoreParts
+- Change: ADD
+- Completed: 기존 Report F-COST의 MES072400 수집, `fcost_raw.db` 캐시, 리포트 로드 경로와 MES072410 응답 필드 차이를 추적했다. MES072410은 같은 SQLite 파일에 저장하되 기존 리포트 테이블과 분리해야 안전하다고 확정했다.
+- Decisions: MES072410 행은 `CPTYP_TX`와 공정별 집계 의미를 가지므로 `FCostRawRows`에 섞지 않고 endpoint 전용 Pulls/Rows/Columns 테이블을 사용한다. 응답에 신뢰할 수 있는 컬럼 메타가 있을 때만 Columns를 저장하며 공유된 브라우저 세션 쿠키는 사용하거나 기록하지 않는다.
+- Files: None
+- Verification: `FCostService`, `FCostReportService`, `BmesFCostPage`의 로그인·수집·SQLite 스키마·리포트 로드 경로를 읽기 전용으로 확인했다.
+- Next: MES072410 전용 파서와 날짜 범위 수집·동일 DB 분리 저장 서비스를 구현하고 Web 프로젝트를 좁게 컴파일한다.
+
+## 2026-07-29 07:34 - [DATA][ADD] FCostCoreParts: 타 세션 구현 계약 확정
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260729-072134428-35f4601d716f43dfa
+- Category: DATA
+- Feature: FCostCoreParts
+- Change: ADD
+- Completed: 실제 BMES 연결이나 코드 구현 없이 다른 AI 세션이 사용할 MES072410 수집·파싱·저장 계약을 확정했다. 기존 `FCostService`와 동일한 로그인/날짜별 캐시 흐름을 따르되 `fcost_raw.db` 안의 endpoint 전용 테이블로 분리하는 방식이다.
+- Decisions: 공개 진입점은 `ParseSearchListJson`, `BackfillAsync`, `GetStatus`, `GetRawDbPath`로 두고, 테이블은 `MES072410Pulls`, `MES072410Rows`, 메타가 확인될 때만 `MES072410Columns`를 사용한다. `RawJson`과 nullable 수치값을 함께 보존하고 INAMT 기준 공정명을 continuation 행에 forward-fill하며 기존 `FCostRaw*` 테이블과 Report UI는 변경하지 않는다.
+- Files: None
+- Verification: `FCostCorePartsService.cs`와 MES072410 DI 등록이 생성되지 않았음을 확인했으며 외부 BMES 요청도 실행하지 않았다.
+- Next: 다른 AI 세션에서 아래 구현 계약대로 신규 서비스를 작성한 뒤 제공된 샘플 JSON 파싱, 임시 SQLite upsert/readback, Web 프로젝트 scoped compile을 수행한다.
+
+## 2026-07-29 07:23 - [UI][CHANGE] ReportKpiTab: 월·주 혼합 KPI 표 골격 준비
+- Agent: Codex
+- Session: S1
+- Task-ID: S1-20260729-071709013-3e19e3d342ed48dba
+- Category: UI
+- Feature: ReportKpiTab
+- Change: CHANGE
+- Completed: KPI 탭을 예시 양식에 맞춰 `KPI | KPI 종류 | 기준실적 | 26년 목표 | 26년 실적 | 구분 | 월·주 기간` 구조로 개편했다. 각 KPI는 실적/달성률 2행으로 표시하고, 현재 보유한 월별·주별 PPM은 시간순으로 혼합 배치하며 좌측 6개 열은 가로 스크롤 시 고정된다.
+- Decisions: 추가 BMES 조회 없이 기존 Daily 요약의 MonthCols/WeekCols와 PPM을 재사용한다. 기준실적·목표·연간실적·달성률은 데이터 원천이 정해질 때까지 `-`로 표시하고, 월 경계 주차는 주중 기준으로 해당 월 뒤에 배치한다.
+- Files: JinoSupporter.Web/Services/BmesReportHtmlExportService.cs
+- Verification: `dotnet msbuild JinoSupporter.Web/JinoSupporter.Web.csproj -t:Compile -p:BuildProjectReferences=false` 성공(오류 0, 기존 경고만 발생). 소스 검사에서 월/주 데이터 소스, 고정 헤더, 2행 병합, sticky 열을 모두 PASS로 확인했고 W23~W27 배치 기준도 6월→7월 순서로 확인했다. 사용자 요청에 따라 애플리케이션/서버는 실행하지 않았다.
+- Next: 웹 서버 재시작 후 `/report/bmes`에서 Get Report를 실행해 실제 KPI 표 레이아웃을 확인한 뒤, 기준실적·목표·누적실적·달성률 데이터 원천과 KPI별 행 정의를 연결한다.
+
+## 2026-07-29 07:26 - [UI][FIX] ReportKpiTab: KPI 항목을 예시 정의로 교정
+- Agent: Codex
+- Session: S1
+- Task-ID: S1-20260729-071709013-3e19e3d342ed48dba
+- Category: UI
+- Feature: ReportKpiTab
+- Change: FIX
+- Completed: KPI 이름에 TOTAL·SUB 등 NG 요약 행이 표시되던 잘못된 연결을 제거하고, 예시의 `초과투입 재료비(Main)`, `초과투입 재료비(내재화)`, `Main 공정불량 개선율`, `IPG 공정불량 개선율` 4개 항목으로 교정했다. 재료비 KPI는 4개 세부 행, 공정불량 KPI는 2개 세부 행을 병합 표시하도록 구성했다.
+- Decisions: KPI 항목과 행 구성은 화면 정의로 고정하고 실제 기준실적·목표·누적실적·월·주 값은 향후 데이터 원천에서만 채운다. 기존 Summary의 공정유형 이름과 PPM 값은 KPI 본문에서 사용하지 않는다.
+- Files: JinoSupporter.Web/Services/BmesReportHtmlExportService.cs
+- Verification: `dotnet msbuild JinoSupporter.Web/JinoSupporter.Web.csproj -t:Compile -p:BuildProjectReferences=false` 성공(오류 0, 기존 경고만 발생). 4개 KPI 이름 존재, Summary 행 연결 제거, 가변 rowspan 구성을 소스 검사로 모두 PASS 확인했다. 애플리케이션/서버는 실행하지 않았다.
+- Next: 웹 서버 재시작 후 `/report/bmes`에서 Get Report를 다시 생성해 4개 KPI와 병합 행이 예시대로 표시되는지 확인한다.
+
+## 2026-07-29 07:38 - [INTEGRATION][ADD] ReportKpiData: F-COST 합계와 모델 평균 연동
+- Agent: Codex
+- Session: S1
+- Task-ID: S1-20260729-071709013-3e19e3d342ed48dba
+- Category: INTEGRATION
+- Feature: ReportKpiData
+- Change: ADD
+- Completed: `초과투입 재료비(Main)`의 기준실적 1.79%·목표 1%를 설정하고 월·주 실적에 F-COST의 TOTAL RATE, 초과 투입 재료비에 Total FCOST, 달성율에 목표/실적 비율을 연결했다. `Main 공정불량 개선율`에는 기준 73,934 ppm·목표 40,000 ppm을 설정하고 F-COST Trend 모델 불량률의 단순 평균과 목표 대비 달성율을 연결했다.
+- Decisions: Main 불량률 평균은 Trend의 최상위 실제 모델 행 중 표시값이 있는 항목만 사용하며 `기타_누락`, Sub Group, `-`로 표시되는 0값은 제외한다. 재료비 달성율은 정수 %, Main 불량 달성율은 소수점 1자리로 표시한다.
+- Files: JinoSupporter.Web/Components/Pages/BmesFCostPage.razor, JinoSupporter.Web/Services/BmesReportHtmlExportService.cs
+- Verification: `dotnet msbuild JinoSupporter.Web/JinoSupporter.Web.csproj -t:Compile -p:BuildProjectReferences=false` 성공(오류 0, 기존 경고만 발생). 데이터 바인딩·평균 제외 조건·달성율 정밀도 소스 검사를 모두 PASS 확인했고, 표본 계산으로 TOTAL RATE 1.25%→80%, Main 평균 63,803 ppm→62.7%를 확인했다. 애플리케이션/서버는 실행하지 않았다.
+- Next: 웹 서버 재시작 후 Get Report를 다시 생성해 KPI의 월·주 값이 F-COST Trend 합계 및 모델 평균과 일치하는지 실제 화면에서 확인한다.
+
+## 2026-07-29 07:49 - [DATA][ADD] KpiSourceParsers: MES072410 및 MES050032 파싱 계약 구현
+- Agent: Codex
+- Session: S1
+- Task-ID: S1-20260729-071709013-3e19e3d342ed48dba
+- Category: DATA
+- Feature: KpiSourceParsers
+- Change: ADD
+- Completed: MES072410 응답의 원본 행·nullable 수치·신뢰 가능한 열 메타데이터를 파싱하고 INAMT 뒤 FCOST/FRATE 식별 필드를 보정해 `fcost_raw.db` 전용 테이블에 날짜별로 멱등 저장하는 서비스를 구현했다. MES050032의 `header`와 `ChartRec`, AVEGR 및 COL0001~COL0014를 파싱하고 지정 조건의 POST payload를 생성하는 서비스를 추가했다.
+- Decisions: MES072410 열 헤더는 `BottomGridColumnList`가 실제 응답에 있을 때만 저장하며 추측하지 않는다. MES050032는 이번 단계에서 파싱과 요청 구성까지만 제공하고 DB 저장 및 Report KPI 매핑은 사용자 정의를 받은 뒤 연결하며, 복사된 브라우저 쿠키·SSO·세션 값은 어떤 입력이나 파일에도 사용하지 않는다.
+- Files: JinoSupporter.Web/Program.cs, JinoSupporter.Web/Services/FCostCorePartsService.cs, JinoSupporter.Web/Services/IpgDefectService.cs
+- Verification: 격리된 무자격 샘플 검증에서 MES072410의 16222.2·75.99·0.47, INAMT forward-fill, RawJson 불변, 동일 날짜 이중 저장 시 행 중복 없음, SQLite의 0/null 구분과 MES050032 헤더·ChartRec·빈값/0·요청 조건을 모두 PASS 확인했다. `dotnet msbuild JinoSupporter.Web/JinoSupporter.Web.csproj -t:Compile -p:BuildProjectReferences=false`도 오류 없이 성공했으며 애플리케이션·서버 및 외부 BMES 요청은 실행하지 않았다.
+- Next: 사용자에게 두 데이터 원천의 KPI 행 선택·집계·달성율 규칙을 확인한 뒤 Report UI 및 필요 시 MES050032 저장 계약을 구현한다.
+
+## 2026-07-29 08:02 - [INTEGRATION][ADD] ReportKpiData: 내재화와 IPG KPI 연동
+- Agent: Codex
+- Session: S1
+- Task-ID: S1-20260729-071709013-3e19e3d342ed48dba
+- Category: INTEGRATION
+- Feature: ReportKpiData
+- Change: ADD
+- Completed: `초과투입 재료비(내재화)`에 기준실적 0.95%·목표 0.76%를 설정하고 MES072410 Total 묶음의 FRATE를 실적, FCOST 달러를 초과 투입 재료비, 목표/실적 비율을 달성율로 연결했다. `IPG 공정불량 개선율`에는 기준 1,403 ppm·목표 1,000 ppm을 설정하고 MES050032의 각 기간 열 전체 공정 평균과 목표 대비 달성율을 연결했다.
+- Decisions: 내재화 Total은 명시적인 Total/합계/전체 또는 `ZTOTE` 표시가 있는 INAMT 묶음을 우선하며, 표시가 없을 때는 INAMT 묶음이 하나뿐인 경우에만 사용한다. IPG 평균은 각 COL 열의 null/빈값을 제외하고 숫자 0은 포함하며, `AVEGR` 전체 평균은 연간실적과 연간 달성율에 사용한다.
+- Files: JinoSupporter.Web/Services/BmesReportHtmlExportService.cs, JinoSupporter.Web/Services/FCostCorePartsService.cs, JinoSupporter.Web/Services/IpgDefectService.cs
+- Verification: 격리 샘플에서 상세행과 Total 행이 함께 있을 때 Total의 `$75.99`와 `0.47%`만 선택되는지, SQLite 저장 후 동일 값이 재구성되는지, IPG 열 평균이 null을 제외하고 0을 포함하는지 모두 PASS 확인했다. `dotnet msbuild JinoSupporter.Web/JinoSupporter.Web.csproj -t:Compile -p:BuildProjectReferences=false`도 오류 없이 성공했으며 기존 경고만 발생했고 애플리케이션·서버 및 외부 BMES 요청은 실행하지 않았다.
+- Next: 웹 서버 재시작 후 Get Report를 실행해 실제 MES072410 Total 표시값과 MES050032 월·주 매칭 결과가 KPI 표에 기대값으로 표시되는지 확인한다.
+
+## 2026-07-29 08:17 - [DATA][CHANGE] ReportKpiData: 빈 기간 원인 확인
+- Agent: Codex
+- Session: S1
+- Task-ID: S1-20260729-071709013-3e19e3d342ed48dba
+- Category: DATA
+- Feature: ReportKpiData
+- Change: CHANGE
+- Completed: KPI 표 중간의 빈 칸은 계산이나 키 매칭 오류가 아니라 각 BMES 응답이 제공하는 기간 범위가 Main 기준 열보다 짧아서 생기는 것으로 확인했다. 최신 MES072410 스냅샷은 W28~W31과 5~7월을, 현재 MES050032 주간 요청은 W25~W31만 제공한다.
+- Decisions: 사용자 선택 전에는 값을 추정하거나 빈 기간을 0으로 채우지 않는다. 과거 기준일 추가 조회로 주차 범위를 합칠 수 있으며, IPG 월 값은 월간 요청 응답을 검증해 사용하거나 주간값에서 계산하는 두 방식 중 하나를 정해야 한다.
+- Files: None
+- Verification: 실제 `fcost_raw.db`를 읽기 전용으로 조회해 MES072410의 최신 `BottomGridColumnList`가 7개 일간 열, W28~W31, 5~7월로 구성된 것을 확인했고 화면의 내재화 표시 기간과 일치했다. MES050032 코드의 `ZGUBN=W` 단일 종료일 요청 및 제공 샘플의 W25~W31 헤더가 화면의 IPG 표시 기간과 일치하는 것도 확인했다.
+- Next: 사용자에게 과거 주차 추가 조회 여부와 IPG 월 값을 월간 BMES 조회 또는 주차 평균 중 어떤 방식으로 채울지 확인한 뒤 구현한다.
+
+## 2026-07-29 08:56 - [INTEGRATION][CHANGE] ReportKpiData: 과거 주차와 IPG 월간 응답 병합
+- Agent: Codex
+- Session: S1
+- Task-ID: S1-20260729-071709013-3e19e3d342ed48dba
+- Category: INTEGRATION
+- Feature: ReportKpiData
+- Change: CHANGE
+- Completed: MES072410을 보고서 범위 내 21일 간격 기준일로 추가 조회하고 저장된 스냅샷의 주·월 값을 기간별로 병합해 최신 겹침값을 사용하도록 변경했다. MES050032는 한 인증 세션에서 42일 간격의 과거 주간 요청과 종료일 월간 `ZGUBN=M` 요청을 수행하고 실제 응답 헤더가 KPI 기간과 일치할 때만 평균값을 연결한다.
+- Decisions: 과거 응답과 최신 응답에 같은 주·월이 있으면 최신 기준일 값을 사용한다. IPG 월간 헤더가 없거나 요청이 실패하면 주간값으로 월 값을 추정하지 않고 `-`를 유지하며, 다른 기간 요청 실패도 확보된 실제 응답만 표시한다.
+- Files: JinoSupporter.Web/Services/BmesReportHtmlExportService.cs, JinoSupporter.Web/Services/FCostCorePartsService.cs, JinoSupporter.Web/Services/IpgDefectService.cs
+- Verification: 격리 샘플에서 W19~W21 병합, 중복 W20의 최신값 우선, `ZGUBN=M` payload, 월간 전체 행 평균, `26-07`→`M:202607` 및 `26-W19`→`W:202619` 매칭을 모두 PASS 확인했다. `dotnet msbuild JinoSupporter.Web/JinoSupporter.Web.csproj -t:Compile -p:BuildProjectReferences=false`도 오류 없이 성공했으며 기존 경고만 발생했고 애플리케이션·서버 및 외부 BMES 요청은 실행하지 않았다.
+- Next: 웹 서버 재시작 후 동일 기간으로 Get Report를 실행해 MES072410 과거 주차와 MES050032 월간 실제 응답이 채워지는지 확인하고, BMES가 반환하지 않은 기간만 `-`로 남는지 점검한다.
+
+## 2026-07-29 09:05 - [UI][ADD] ReportKpiWeekToggle: 월별 주차 접기·펼치기와 경계선 정렬
+- Agent: Codex
+- Session: S1
+- Task-ID: S1-20260729-071709013-3e19e3d342ed48dba
+- Category: UI
+- Feature: ReportKpiWeekToggle
+- Change: ADD
+- Completed: KPI 월 헤더에 작은 `−`/`+` 버튼을 추가해 해당 월에 속한 주차 헤더와 모든 KPI 값 열을 함께 접고 펼치도록 구현했다. 병합 행에서 첫 DOM 셀에 잘못 추가되던 좌측선과 KPI 구간의 위·아래 이중 경계선을 제거하고 묶음 하단의 한 줄로 정렬했다.
+- Decisions: 월 열 자체는 항상 표시하며 주차는 기존 시간축 정렬에 사용하는 주간 중간 날짜의 연월로 묶는다. 접힘 상태는 동일 정적 보고서에서 탭을 전환해도 유지하고, 월에 매칭되지 않는 주차는 임의로 숨기지 않는다.
+- Files: JinoSupporter.Web/Services/BmesReportHtmlExportService.cs
+- Verification: 월 버튼/주차 그룹/숨김 상태/버튼 기호/월 열 유지/중복 좌측선 제거/단일 구간 경계선 계약 검사를 모두 PASS했다. `dotnet msbuild JinoSupporter.Web/JinoSupporter.Web.csproj -t:Compile -p:BuildProjectReferences=false`도 오류 없이 성공했으며 기존 경고만 발생했고 애플리케이션·서버는 실행하지 않았다.
+- Next: 웹 서버 재시작 후 Get Report를 다시 생성해 각 월 버튼이 해당 월 주차만 접는지와 KPI 구간선이 전체 폭에서 동일한 굵기로 보이는지 확인한다.
+
+## 2026-07-29 09:35 - [UI][ADD] BmesTest5ModelGroupBom: Test 5 메뉴와 모델그룹 BOM 목록 페이지
+- Agent: Claude
+- Session: S3
+- Task-ID: S3-20260729-090813163-1ba4d206edd6441bb
+- Category: UI
+- Feature: BmesTest5ModelGroupBom
+- Change: ADD
+- Completed: BMES 하위에 Test 5 메뉴(`bmes-test5`, `/bmes/test5`)를 추가하고, 모델그룹을 고르면 그 그룹의 중그룹 모델별 하위 BOM을 레벨 들여쓰기 테이블로 보여주는 페이지를 만들었다. 기존에 정의만 되어 있고 호출되지 않던 `BomMaterialsSql`(MAST/STPO 재귀 전개)을 소비하는 `FetchBomTreeAsync`를 서비스에 추가했고, 결과를 독립 실행 HTML 파일로 내려받는 버튼도 붙였다.
+- Decisions: `FetchBomMaterialsWithSqlAsync`의 리더 루프를 `ReadBomRowsAsync`로 분리해, FCOST 후보 목록은 기존대로 자재 단위 중복 제거를 유지하고 BOM 트리는 부모·레벨 문맥을 살리기 위해 중복 제거를 하지 않는다. 모델그룹의 "모델"은 `MidGroupRecord.Material`로 해석했고, 모델 수가 많으면 조회 비용이 커지므로 체크박스로 대상 모델을 고르게 했다(기본 전체 선택, 모델당 최대 2000행). 권한은 신규 DB에서 Viewer 제외 역할에 기본 부여하고, 기존 DB에는 Test 3/Test 4/Model Group 권한 보유 역할에 마이그레이션으로 승계한다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest5Page.razor, JinoSupporter.Web/Components/Layout/NavMenu.razor, JinoSupporter.Web/Services/AppMenus.cs, JinoSupporter.Web/Services/BmesFcostActualService.cs, JinoSupporter.Web/Services/WebRepository.cs
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj`를 스크래치패드 출력 경로로 실행해 오류 0개·경고 0개로 성공했다(기본 출력 경로는 실행 중인 웹 서버가 exe를 잠가 복사 단계에서만 실패). 실제 BMES DB 조회와 화면 동작은 서버 기동 금지 방침에 따라 실행하지 않았다.
+- Next: 웹 서버 재시작 후 `/bmes/test5`에서 모델그룹을 선택해 BOM 행이 채워지는지, Download HTML 결과가 열리는지 확인한다. 모델 수가 많은 그룹에서 조회 시간이 길면 모델별 병렬 조회나 캐시 도입을 검토한다.
+
+## 2026-07-29 09:55 - [DATA][FIX] BmesTest5ModelGroupBom: BOM 쿼리를 dbo.BOMC 기준으로 교체
+- Agent: Claude
+- Session: S3
+- Task-ID: S3-20260729-090813163-1ba4d206edd6441bb
+- Category: DATA
+- Feature: BmesTest5ModelGroupBom
+- Change: FIX
+- Completed: Test 5에서 모든 모델이 `Invalid object name 'dbo.STPO'`로 실패하던 문제를 고쳤다. `BomMaterialsSql`이 SAP 이름 `dbo.STPO`를 참조하고 있었으나 BMES_LIV의 BOM 라인 테이블은 `dbo.BOMC`이므로, `BMES_FCOST_DB_NOTES.md`에 문서화된 `MAST`+`BOMC` 조인(STLNR/STLAL/STLAN)과 `CMATE`/`MENGE`/`MEINS`/`SDATE`/`EDATE`/`USEYN` 컬럼으로 재귀 CTE를 다시 작성했다. 페이지에 Work date 입력을 추가해 BOM 유효기간 기준일을 지정할 수 있게 했다.
+- Decisions: SQL Server는 재귀 CTE의 recursive member에서 서브쿼리와 outer join을 금지하므로, 재귀는 자재코드만으로 전개하고 이름 조회(`MATE.MAKTX`)는 최종 SELECT의 OUTER APPLY로 옮겼다. 그 결과 SQL이 만들 수 없게 된 이름 기반 `BomPathText`와 `HasChildren`은 `DecorateBomTree`에서 C#으로 채운다. MAST의 BOM 대체안 때문에 같은 경로가 중복될 수 있어 `BomPath` 기준으로 중복을 제거하고, 수량 곱셈 오버플로 여유를 위해 decimal(38,10) 대신 decimal(28,6)을 쓴다. 유효기간 컬럼이 NULL인 행은 제외하지 않는다. 모든 쿼리는 SELECT + NOLOCK 전용이며 BMES 서버에 쓰기 작업은 하지 않는다.
+- Files: JinoSupporter.Web/Services/BmesFcostActualService.cs, JinoSupporter.Web/Components/Pages/BmesTest5Page.razor
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj`를 스크래치패드 출력 경로로 실행해 오류 0개로 성공했다. 실제 BMES DB에 대한 쿼리 실행 검증은 하지 않았으므로 BOMC 스키마 가정(SDATE/EDATE가 date 계열, STLNR/STLAL/STLAN 조인)은 화면에서 확인이 필요하다.
+- Next: 웹 서버 재시작 후 `/bmes/test5`에서 같은 모델그룹을 다시 Load BOM 해 행이 채워지는지 확인한다. 여전히 비면 Work date를 BOM 유효기간 안의 날짜로 바꾸거나 Plant 값을 비워 재시도한다.
+
+## 2026-07-29 10:20 - [UI][CHANGE] BmesTest5ModelGroupBom: M-P 자재 숨김 옵션 추가
+- Agent: Claude
+- Session: S3
+- Task-ID: S3-20260729-090813163-1ba4d206edd6441bb
+- Category: UI
+- Feature: BmesTest5ModelGroupBom
+- Change: CHANGE
+- Completed: Test 5 BOM 목록에서 `M-P`로 시작하는 구매 자재 코드를 감추는 `Hide M-P codes` 체크박스를 추가했다(기본 켜짐). 화면 테이블, 행 수 배지, 상태 문구, Download HTML 결과에 모두 동일하게 적용되며 숨긴 행 수를 헤더에 표시한다.
+- Decisions: 조회 단계가 아니라 표시 단계에서 거른다. SQL에서 걸러내면 재귀 전개가 그 지점에서 끊겨 하위가 사라지고 옵션을 끌 때 재조회가 필요하기 때문이다. 부모가 숨겨졌는데 자식만 들여쓰기된 채 남는 것을 막기 위해 `BomPath` 접두사로 하위 트리도 함께 숨긴다. QTY 산출 기준은 이번 변경에서 건드리지 않았다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest5Page.razor
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj`를 스크래치패드 출력 경로로 실행해 오류 0개로 성공했다. 실제 데이터로 몇 행이 걸러지는지는 서버 미기동으로 확인하지 않았다.
+- Next: 사용자에게 QTY 기준을 설명했으며, BOM 기준수량(base quantity) 컬럼이 BOMC/MAST에 존재하는지 조회 전용으로 확인할지 회신 대기 중이다. 존재하면 누적 수량을 기준수량으로 나누도록 보정해야 한다.
+
+## 2026-07-29 10:35 - [UI][REMOVE] BmesTest5ModelGroupBom: 수량 열 제거와 누적 곱셈 폐기
+- Agent: Claude
+- Session: S3
+- Task-ID: S3-20260729-090813163-1ba4d206edd6441bb
+- Category: UI
+- Feature: BmesTest5ModelGroupBom
+- Change: REMOVE
+- Completed: Test 5 화면 테이블과 Download HTML에서 Qty·Unit 열을 없앴다. 함께 `BomMaterialsSql` 재귀 부분의 `bt.UsageQty * c.MENGE` 누적 곱셈을 제거해 각 행이 해당 BOM 라인의 원본 `MENGE`만 담도록 했다. 남은 표 구성은 Lv / Material / Code / Parent (+ HTML은 Path)이다.
+- Decisions: `BmesBomMaterialCandidate.UsageQty`/`UsageUnit` 속성은 FCOST 후보 조회 경로가 공유하므로 모델에서 제거하지 않았다. 누적 곱셈은 표시되지 않으면서 산술 오버플로 위험과 기준수량 미반영 문제만 남기므로 폐기했고, 이 근거를 `FetchBomTreeAsync` XML 주석에 남겼다. BOMC 기준수량 컬럼 확인 건은 수량 자체가 불필요해져 종료한다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest5Page.razor, JinoSupporter.Web/Services/BmesFcostActualService.cs
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj`를 스크래치패드 출력 경로로 실행해 오류 0개로 성공했다. 화면 확인은 서버 미기동으로 하지 않았다.
+- Next: 웹 서버 재시작 후 `/bmes/test5`에서 BOM 행이 실제로 조회되는지 확인한다. dbo.BOMC 기반 쿼리는 아직 실 DB에서 한 번도 실행되지 않았다.
+
+## 2026-07-29 10:55 - [UI][CHANGE] BmesTest5ModelGroupBom: C-S 숨김·Parent 열 제거·매칭 제품 표시
+- Agent: Claude
+- Session: S3
+- Task-ID: S3-20260729-090813163-1ba4d206edd6441bb
+- Category: UI
+- Feature: BmesTest5ModelGroupBom
+- Change: CHANGE
+- Completed: 숨김 대상에 `C-S` 접두사를 추가하고(체크박스 라벨 `Hide M-P / C-S codes`), 화면과 Download HTML에서 Parent 열을 제거했다. BOM 경로는 Material 셀 tooltip과 HTML의 Path 열에 남는다. 카드 헤더에 해당 모델명이 MATE에서 실제로 매칭한 제품 목록을 `matched: …`로 표시하도록 추가했다.
+- Decisions: `C-S`는 하위가 달린 어셈블리라 M-P처럼 하위 트리째 지우면 R-S 자재가 전부 사라진다. 그래서 숨김 로직을 "행만 제거하고 자식은 유지"로 바꾸고, 숨겨진 조상 수만큼 `BomLevel`과 `BomPathText`를 다시 계산해 들여쓰기가 어긋나지 않게 했다. 이 방식은 M-P에도 그대로 안전해 두 접두사를 같은 경로로 처리한다. `matched` 표시는 모델명이 한쪽 변형(예: -L)만 잡는 상황을 사용자가 바로 판별하도록 넣은 진단용이다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest5Page.razor
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj`를 스크래치패드 출력 경로로 실행해 오류 0개로 성공했다. 사용자 스크린샷으로 dbo.BOMC 기반 쿼리가 실 DB에서 정상 동작함을 확인했다(TIU-C11-20, 36행).
+- Next: TIU-C11-20이 `TIU-C11-20-L-ZZ`만 매칭하는 원인을 `matched` 표시로 확인한다. R 변형이 MATE에 있는지, 있다면 MAST에 BOM 헤더가 없거나 plant/유효기간 조건에서 걸리는지 조회 전용으로 점검이 필요하다.
+
+## 2026-07-29 11:20 - [UI][CHANGE] BmesTest5ModelGroupBom: 모델그룹 선택을 모델명 평면 목록으로 교체
+- Agent: Claude
+- Session: S3
+- Task-ID: S3-20260729-090813163-1ba4d206edd6441bb
+- Category: UI
+- Feature: BmesTest5ModelGroupBom
+- Change: CHANGE
+- Completed: 제품군/모델그룹 드롭다운을 없애고 모든 모델그룹의 중그룹 모델명을 하나로 펼친 평면 목록으로 바꿨다. 툴바에는 모델명 필터 입력을 넣었고, 칩은 전체 모델(중복 제거)을 보여주며 tooltip으로 그 모델이 속한 그룹명을 알려준다. All 버튼은 현재 필터에 걸린 것만 선택한다.
+- Decisions: 그룹은 BOM 조회에 불필요한 중간 단계이고 여러 그룹에 걸친 모델을 한 번에 뽑을 수 없었으므로 제거했다. 그룹 정보는 버리지 않고 칩 tooltip으로 남겼다. 이전에는 그룹 선택 시 전체 모델이 자동 선택됐으나, 이제 초기 선택은 비워 둔다(의도치 않은 대량 조회 방지). HTML 파일명·제목은 그룹명 대신 조회한 모델명 기준으로 바꿨다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest5Page.razor
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj`를 스크래치패드 출력 경로로 실행해 오류 0개로 성공했다. 로컬 process-review.db를 읽기 전용으로 조회해 distinct 모델명이 18개임을 확인했고, 이 규모에서는 칩 전체 렌더가 부담되지 않는다.
+- Next: 화면에서 모델 필터와 다중 선택 동작을 확인한다. TIU-C11-20이 -L 변형만 매칭하는 원인은 카드 헤더 `matched:` 표시로 계속 확인 대기 중이다.
+
+## 2026-07-29 11:45 - [UI][FIX] BmesTest5ModelGroupBom: 제품(L/R)별 그룹 구분과 중복 행 정리
+- Agent: Claude
+- Session: S3
+- Task-ID: S3-20260729-090813163-1ba4d206edd6441bb
+- Category: UI
+- Feature: BmesTest5ModelGroupBom
+- Change: FIX
+- Completed: 한 모델명이 여러 제품(-L-ZZ / -R-ZZ)에 매칭될 때 행들이 구분 없이 섞여 보이던 문제를 고쳤다. 화면과 Download HTML 모두 제품별 구분 행(제품명 + 행 수)으로 묶어 표시한다. 아울러 C-S 숨김으로 계층이 평탄해지면서 같은 자재가 한 제품 안에 중복 표시되던 것을 제품+자재코드 기준으로 합치고 가장 얕은 레벨의 행만 남긴다.
+- Decisions: `matched:` 표시로 L/R 제품이 실제로는 둘 다 조회되고 있었음을 확인했고(TIU-L5S3-01), 원인은 조회가 아니라 표시였다. 앞서 TIU-C11-20이 -L만 나온 것은 그 모델에 L 제품만 존재하기 때문으로 판단한다. 중복 제거는 숨김 옵션이 켜져 계층이 무너진 경우에만 적용되며, 옵션을 끄면 원래 트리와 중복 경로가 그대로 보인다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest5Page.razor
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj`를 스크래치패드 출력 경로로 실행해 오류 0개로 성공했다. 화면 확인은 서버 미기동으로 하지 않았다.
+- Next: `/bmes/test5`에서 TIU-L5S3-01을 다시 조회해 L-ZZ / R-ZZ 두 구획으로 나뉘고 각 구획 안에 자재 중복이 사라졌는지 확인한다.
+
+## 2026-07-29 12:00 - [UI][CHANGE] BmesTest5ModelGroupBom: 자재명 정렬 적용
+- Agent: Claude
+- Session: S3
+- Task-ID: S3-20260729-090813163-1ba4d206edd6441bb
+- Category: UI
+- Feature: BmesTest5ModelGroupBom
+- Change: CHANGE
+- Completed: 제품 구획 안의 자재 행을 이름순으로 정렬했다. 화면과 Download HTML 모두 동일하게 적용되며, 동명 자재는 자재코드 순으로 이어 정렬한다.
+- Decisions: 자재명 자체가 아니라 `BomPathText`(이름 경로)로 정렬한다. 부모의 경로가 자식 경로의 접두사라서 이 방식은 계층을 유지한 채 형제만 이름순으로 정렬하며, 숨김 옵션으로 트리가 평탄해진 기본 상태에서는 결과가 단순 자재명 오름차순과 같다. 자재명으로 직접 정렬하면 숨김을 해제했을 때 들여쓰기와 부모-자식 순서가 깨진다. `ByProduct`가 IGrouping 대신 `ProductRows` 레코드를 반환하도록 바꿔 그룹 내부 정렬을 담게 했다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest5Page.razor
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj`를 스크래치패드 출력 경로로 실행해 오류 0개로 성공했다. 화면 확인은 서버 미기동으로 하지 않았다.
+- Next: `/bmes/test5`에서 정렬 결과를 확인하고, 숨김 옵션을 해제했을 때 계층이 유지되는지도 함께 본다.
+
+## 2026-07-29 12:20 - [UI][ADD] BmesTest5ModelGroupBom: 공통/편측 전용 자재 구분 표시
+- Agent: Claude
+- Session: S3
+- Task-ID: S3-20260729-090813163-1ba4d206edd6441bb
+- Category: UI
+- Feature: BmesTest5ModelGroupBom
+- Change: ADD
+- Completed: 한 모델명이 여러 제품(-L-ZZ / -R-ZZ)에 매칭될 때, 제품별로 나열하던 것을 자재가 어느 제품들에 쓰이는지 기준으로 다시 묶었다. `Common — all N products`(초록 헤더)가 먼저 나오고 그 뒤에 `<제품> only` 구획이 이어진다. 공통 자재는 이제 한 번만 표시된다. 화면과 Download HTML 모두 동일하다.
+- Decisions: 이 재그룹핑은 숨김 옵션이 켜져 트리가 평탄한 상태이고 매칭 제품이 2개 이상일 때만 적용한다. 계층이 살아 있을 때 사용처 기준으로 묶으면 자식이 부모에서 떨어져 나가므로, 그 경우와 제품이 1개인 경우는 기존 제품별 트리 구획을 유지한다. 구획 내 정렬은 평탄 모드에서는 자재명 기준, 트리 모드에서는 경로 기준(형제만 이름순)으로 나눠 적용한다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest5Page.razor
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj`를 스크래치패드 출력 경로로 실행해 오류 0개로 성공했다. 화면 확인은 서버 미기동으로 하지 않았다.
+- Next: TIU-L5S3-01로 확인해 YOKE/DIAPHRAGM 류가 Common으로, FRAME-L/FRAME-R이 각 편측 구획으로 갈리는지 본다.
+
+## 2026-07-29 12:50 - [INTEGRATION][ADD] BmesPdmScrape: MES073300 도면/사양 마스터 수집과 Test 5 모델 선택 연동
+- Agent: Claude
+- Session: S3
+- Task-ID: S3-20260729-090813163-1ba4d206edd6441bb
+- Category: INTEGRATION
+- Feature: BmesPdmScrape
+- Change: ADD
+- Completed: BMES `MES073300/SearchList`(POST JSON)를 호출해 도면/사양 마스터 전체를 받아 `bmes_pdm_raw.db`의 `BmesPdm` 테이블에 전량 저장하는 `BmesPdmScrapeService`를 추가했다. Test 5의 모델 선택 UI를 모델그룹 칩에서 이 PDM 리스트로 교체해, `PDRTX`(부품명) 또는 `BMONO_TX`(모델명)로 검색하고 체크한 행의 `BMONO_TX`를 BOM 조회 대상으로 넘긴다. 페이지에 `Fetch PDM list` 버튼과 수집 시각·행 수 표시를 넣었다.
+- Decisions: 기존 `BmesRoutingScrapeService`의 로그인·토큰·전량 덮어쓰기 패턴을 그대로 따랐다(HTTPS 필수, 테이블 DROP 후 재생성). 검색 조건 payload는 사용자가 캡처한 값을 그대로 전송한다 — 응답에 여러 PDTNO가 섞여 오므로 `PDTNO:"0001"`이 결과를 좁히지 않는 것으로 보이나 확증은 없다. BOM 조회의 루트로는 `BMONO_TX`를 쓴다(모델명 형태가 기존 모델그룹 중그룹명과 동일 계열). 응답이 약 6.7MB라 `AutomaticDecompression`을 켜고 타임아웃 300초를 뒀으며, 검색은 기본 300행으로 제한하고 `(BMONO_TX, PDRTX)` 인덱스를 만든다. 이 엔드포인트는 BMES 웹 API 조회이며 서버 DB에는 쓰지 않는다.
+- Files: JinoSupporter.Web/Services/BmesPdmScrapeService.cs, JinoSupporter.Web/Components/Pages/BmesTest5Page.razor, JinoSupporter.Web/Program.cs
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj`를 스크래치패드 출력 경로로 실행해 오류 0개로 성공했다. 실제 MES073300 호출과 저장은 서버 미기동으로 실행하지 않았다.
+- Next: 웹 서버 재시작 후 Test 5에서 `Fetch PDM list`를 눌러 행이 저장되는지, 검색·선택 후 Load BOM이 동작하는지 확인한다. 모델그룹 기반 모델 목록은 제거됐으므로 필요하면 복원 여부를 결정한다.
+
+## 2026-07-29 13:30 - [INTEGRATION][CHANGE] BmesPdmScrape: PDM 리스트를 BOM 결과 기반 필터로 전환
+- Agent: Claude
+- Session: S3
+- Task-ID: S3-20260729-090813163-1ba4d206edd6441bb
+- Category: INTEGRATION
+- Feature: BmesPdmScrape
+- Change: CHANGE
+- Completed: 흐름을 뒤집었다. 모델 선택은 다시 모델그룹 기반 모델 칩 목록으로 되돌렸고, Load BOM으로 BOM을 먼저 조회한 뒤 그 결과 자재명으로 PDM 마스터를 걸러 보여준다. `SearchByNames(partNames, modelNames)`를 추가해 PDRTX/BMONO_TX exact match(대소문자 무시, 400개씩 배치)로 조회하며, PDM 테이블은 선택 기능 없는 표시 전용이 됐다.
+- Decisions: 첫 수집 데이터를 읽기 전용으로 검사한 결과 14,622행 중 `BMONO_TX`가 채워진 행은 17개뿐이고 전부 `MSU-L15S10-20` 하나였다. 따라서 모델 기준 조인은 불가능하고 실질 조인키는 `PDRTX`다. 스크린샷의 BOM 자재명 8건(FRAME-L5S3-01-L 등)이 모두 PDRTX에 정확히 1건씩 존재함을 확인해 `PDRTX = MATE.MAKTX` 관계를 검증했다. 정렬도 PDRTX 우선으로 바꿨다 — BMONO_TX 우선이면 빈 값이 앞에 몰려 첫 300행이 전부 공란이 되고 체크박스가 잠긴다(직전 증상의 원인).
+- Files: JinoSupporter.Web/Services/BmesPdmScrapeService.cs, JinoSupporter.Web/Components/Pages/BmesTest5Page.razor
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj` 오류 0개. 로컬 `bmes_pdm_raw.db`를 읽기 전용으로 조회해 BOM 자재명 8건이 전부 PDRTX와 exact match됨을 확인했다. 화면 동작은 서버 미기동으로 확인하지 않았다.
+- Next: 웹 서버 재시작 후 모델을 골라 Load BOM 하고 PDM list 구획이 해당 자재의 도면행으로 채워지는지 확인한다. 매칭이 부족하면 exact match를 접두사/부분 일치로 완화할지 판단한다.
+
+## 2026-07-29 13:50 - [UI][CHANGE] BmesPdmScrape: PDM 정보를 BOM 표 인라인 열로 병합
+- Agent: Claude
+- Session: S3
+- Task-ID: S3-20260729-090813163-1ba4d206edd6441bb
+- Category: UI
+- Feature: BmesPdmScrape
+- Change: CHANGE
+- Completed: 별도 `PDM list` 구획을 제거하고 BOM 표에 `PDMNO`·`PDTNO_TX` 열을 붙였다. 각 BOM 행의 자재명(PDRTX)으로 조회해 그 행에 도면번호와 분류가 바로 붙는다. `Fetch PDM` 버튼은 툴바로 옮겼고(툴팁에 마스터 행 수·수집 시각), Download HTML도 같은 두 열을 포함한다.
+- Decisions: 매칭 결과를 리스트 대신 자재명 기준 사전(`_pdmByPart`)으로 보관해 행 렌더링에서 O(1) 조회한다. PDRTX는 실무상 자재당 1건이지만 중복이 생기면 첫 행을 채택한다(TryAdd). 제품 구분 행의 colspan은 화면 5, HTML 6으로 맞췄다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest5Page.razor
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj` 오류 0개. 화면 확인은 서버 미기동으로 하지 않았다.
+- Next: 웹 서버 재시작 후 Load BOM 하고 PDMNO 열이 채워지는지, 빈 칸이 많으면 자재명 매칭 규칙을 완화할지 판단한다.
+
+## 2026-07-29 14:20 - [INTEGRATION][ADD] BmesPdmScrape: PDMNO 클릭 시 DWG 도면 다운로드
+- Agent: Claude
+- Session: S3
+- Task-ID: S3-20260729-090813163-1ba4d206edd6441bb
+- Category: INTEGRATION
+- Feature: BmesPdmScrape
+- Change: ADD
+- Completed: BOM 표의 PDMNO 셀을 버튼으로 바꾸고 `DownloadDrawingAsync(pdmno, pdmvr)`를 추가했다. SearchDetail로 첨부 파일 정보(PATTX/PATTP/P_FOLDE/P_PATTX/PDFSQ)를 얻고, DownloadCheck로 권한 확인(`Result=="S"`) 후 파일을 받아 브라우저로 내려준다. 첨부가 여러 개면 USEYN이 N이 아닌 DWG를 우선 선택하고 없으면 첫 파일을 쓴다.
+- Decisions: 캡처된 트래픽에 실제 파일 바이트를 받는 요청이 없다(BMES 페이지가 XHR이 아니라 navigation으로 받는 것으로 추정). 그래서 마지막 단계는 `/MES073300/Download`, `/MES073300/FileDownload`, `/Common/Download` 순으로 쿼리스트링 GET을 시도하고 바이트를 반환하는 첫 응답을 채택하며, 전부 실패하면 시도한 경로와 사유를 그대로 오류 메시지에 노출한다. content-type이 json/html이고 Content-Disposition이 없으면 파일이 아닌 것으로 판정한다. 다운로드는 매 클릭마다 새 세션으로 로그인한다(기존 스크레이프 서비스와 동일 패턴).
+- Files: JinoSupporter.Web/Services/BmesPdmScrapeService.cs, JinoSupporter.Web/Components/Pages/BmesTest5Page.razor
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj` 오류 0개. 실제 다운로드는 서버 미기동으로 실행하지 않았고, 파일 엔드포인트 경로는 추정이라 미검증이다.
+- Next: 웹 서버 재시작 후 PDMNO를 클릭해 DWG가 받아지는지 확인한다. 실패하면 오류 메시지에 시도 경로가 나오므로, BMES에서 도면 다운로드를 누를 때 DevTools 필터를 XHR이 아닌 All로 두고 실제 요청 URL을 캡처해 `DownloadDrawingAsync`의 후보 목록을 교체한다.
+
+## 2026-07-29 14:45 - [INTEGRATION][FIX] BmesPdmScrape: 실제 Download 엔드포인트 적용과 PDMVR 전달
+- Agent: Claude
+- Session: S3
+- Task-ID: S3-20260729-090813163-1ba4d206edd6441bb
+- Category: INTEGRATION
+- Feature: BmesPdmScrape
+- Change: FIX
+- Completed: 추정으로 두었던 파일 다운로드 단계를 실제 캡처대로 교체했다. `POST /MES073300/Download`에 `application/x-www-form-urlencoded`로 `Download[PDMNO]`·`Download[PDMVR]`·`Download[PATTX]`·`Download[P_FOLDE]`·`Download[P_PATTX]`를 보내고, 응답의 `Content-Disposition` 파일명을 그대로 사용한다. 아울러 PDMVR을 "0"으로 고정하던 것을 PDM 목록 행의 실제 값으로 전달하도록 고쳤다(`BmesPdmRow.Pdmvr` 추가, SELECT에 PDMVR 포함).
+- Decisions: 로컬 DB 확인 결과 14,622행 중 2,448행(약 17%)이 PDMVR≠0이고, 화면에서 보던 `FRAME-L5S3-01-L`/`-R`도 PDMVR=1이라 하드코딩 "0"이면 그 자재들부터 실패했을 것이다. SearchDetail 응답의 `Files[].PDMVR`이 있으면 그 값을 우선 사용하고 없으면 요청 버전으로 되돌린다. `X-Requested-With`는 기본 헤더에서 빼고 SearchDetail/DownloadCheck 두 JSON 호출에만 붙였다 — 파일 액션은 브라우저에서 navigation으로 호출되므로 AJAX로 오인되면 응답이 달라질 수 있다. 실패 시 서버가 200과 함께 HTML 오류 페이지를 주는 경우를 대비해 Content-Disposition 부재 + html 타입이면 실패로 처리한다.
+- Files: JinoSupporter.Web/Services/BmesPdmScrapeService.cs, JinoSupporter.Web/Components/Pages/BmesTest5Page.razor
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj` 오류 0개. 로컬 `bmes_pdm_raw.db` 읽기 전용 조회로 PDMVR 분포(0:12,174 / 1:1,770 / 2:469 / 3:142 / 4:41 / 5:20 / 6:3 / 8:2 / 9:1)를 확인했다. 실제 다운로드는 서버 미기동으로 실행하지 않았다.
+- Next: 웹 서버 재시작 후 PDMNO를 클릭해 DWG가 실제로 받아지는지 확인한다.
+
+## 2026-07-30 07:21 - [DATA][ADD] BmesTest5BomCache: 모델 캐시 우선 조회와 유사명 즉시 로드
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260730-072033265-3c5e6d2087ae4f6d9
+- Category: DATA
+- Feature: BmesTest5BomCache
+- Change: ADD
+- Completed: Test 5의 모델별 BOM을 `bmes_bom_cache.db`에 저장하고 기본 조회는 로컬 캐시를 우선 사용하며, `Load BOM from server` 체크 시 BMES SQL Server에서 강제 갱신하도록 구현했다. 최초 모델 칩은 BOM 행이 정상 저장된 캐시 모델만 표시하고, 모델 입력의 유사 후보를 클릭하면 해당 모델을 즉시 로드하며 표·트리 마커도 좌측 밀집 정렬로 보정했다.
+- Decisions: 캐시 키는 모델명·Plant·Depth·MaxRows 기준이며 Work date는 저장 메타로만 남겨 다음 날짜에도 같은 모델 캐시를 재사용한다. 새 날짜 기준으로 갱신하려면 서버 체크박스를 명시적으로 켜며, 캐시 미스는 체크가 꺼져 있어도 서버에서 한 번 조회 후 저장한다. 후보 순위는 구분자 제거 후 exact/prefix/contains/Levenshtein 순이고 상위 8개를 보여준다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest5Page.razor, JinoSupporter.Web/Services/BmesBomCacheService.cs, JinoSupporter.Web/Program.cs
+- Verification: 격리 출력의 `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj`가 오류 0개로 성공했다(기존 경고 32개). 임시 데이터 디렉터리 왕복 검증에서 2개 BOM 행 저장, 다음 날짜 캐시 재사용, decimal/문자열 복원, 성공 모델 인덱스를 확인해 `PASS rows=2 cachedDate=2026-07-29`를 얻었다. 앱/서버는 실행하지 않았다.
+- Next: 실행 중인 Web 서버를 재시작한 뒤 `/bmes/test5`에서 유사 모델 후보 클릭 즉시 로드, cache/server 배지, 서버 강제 갱신, 좌측 밀집 표와 트리 마커를 화면 확인한다.
+
+## 2026-07-30 07:33 - [INTEGRATION][FIX] BmesTest5ModelSearch: 모델그룹 별칭을 실제 BMES 제품 후보로 변환
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260730-073222125-691315c5117049ada
+- Category: INTEGRATION
+- Feature: BmesTest5ModelSearch
+- Change: FIX
+- Completed: Test 5의 모델 입력을 로컬 모델그룹명 후보가 아니라 BMES `MATE`의 실제 제품명 후보를 검색하도록 변경했다. 입력 토큰을 숫자·문자 단위로 순위화하고 `MAST`·`BOMC`에서 선택 Plant와 날짜에 유효한 BOM이 있는 제품만 보여주며, 후보 클릭 시 실제 제품명으로 BOM을 즉시 조회한다.
+- Decisions: `ASSY 338 RA1`처럼 모델그룹명과 제품명이 다를 때도 `ASSY`와 `338`의 부분 일치로 `ASSY REAR...338...` 계열을 상위에 둘 수 있도록 숫자 포함 토큰의 가중치를 높였다. 검색은 300ms 디바운스하고 이전 요청을 취소하며, 기존 성공 캐시는 관련 토큰이 맞는 경우에만 후보에 합친다. 후보 검색도 기존 읽기 전용 SQL 연결과 `NOLOCK`만 사용한다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest5Page.razor, JinoSupporter.Web/Services/BmesFcostActualService.cs
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/bmes-model-search-artifacts`가 오류 0개로 성공했다(기존 경고 32개). 사용자 지시에 따라 BMES 서버 연결과 앱 실행은 수행하지 않았다.
+- Next: Web 서버 재시작 후 `/bmes/test5`에서 `ASSY 338 RA1`을 입력해 실제 `ASSY REAR...338...` BMES 후보가 표시되고, 후보 클릭 후 BOM 행이 로드·캐시되는지 화면 확인한다.
+
+## 2026-07-30 07:37 - [UI][FIX] BmesTest5BomAlignment: 공통·전용 부품 목록의 잘못된 트리 들여쓰기 제거
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260730-073522028-4e10c36da9f248bc9
+- Category: UI
+- Feature: BmesTest5BomAlignment
+- Change: FIX
+- Completed: 여러 제품의 공통/전용 부품을 하나의 구간으로 합쳐 표시할 때 원래 제품별 BOM 레벨이 남아 관계없는 다음 행이 자식처럼 보이던 문제를 수정했다. 비교 구간의 행은 모두 레벨 1과 점 마커로 평면 정렬하며, 단일 제품을 표시하거나 노이즈 코드 숨김을 끈 경우에는 실제 BOM 트리를 그대로 유지한다.
+- Decisions: 공통/전용 구간은 제품별 트리가 아니라 자재 사용 비교 목록이므로 알파벳순 평면 표시가 의미에 맞다. 실제 경로는 툴팁용 `BomPathText`에 유지해 원본 계층 정보는 잃지 않는다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest5Page.razor
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/bmes-model-search-artifacts`가 오류 0개로 성공했다(기존 경고 32개). 앱/서버는 실행하지 않았다.
+- Next: Web 서버 재시작 후 여러 실제 제품이 매칭된 BOM에서 공통/전용 구간의 모든 행이 같은 좌측 위치와 `Lv 1`로 표시되는지 확인한다.
+
+## 2026-07-30 07:45 - [DATA][CHANGE] BmesTest5ModelCatalog: 입력 검색을 로컬 모델명 카탈로그로 전환
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260730-073940136-f27433752e36442eb
+- Category: DATA
+- Feature: BmesTest5ModelCatalog
+- Change: CHANGE
+- Completed: Test 5가 사용자의 입력마다 BMES SQL Server를 조회하던 흐름을 제거하고, `Sync model names` 실행 시 BOM이 있는 C-S 완제품의 코드·모델명만 한 번 받아 `bmes_bom_cache.db`에 저장하도록 변경했다. 이후 유사명 검색과 후보 순위화는 메모리에 로드된 로컬 카탈로그에서만 수행하고, 후보 클릭 시 저장된 정확한 모델명으로 기존 BOM 로드·캐시 흐름을 실행한다.
+- Decisions: 전체 MATE나 BOM 본문을 미리 저장하지 않고 선택 Plant·작업일에 유효한 `MAST`/`BOMC`가 있는 `C-S-` 제품의 코드와 이름만 최대 20,000개 동기화한다. 모델그룹 별칭처럼 일부 단어가 다른 경우를 위해 숫자 토큰을 우선하는 로컬 순위를 유지하며, Plant별 카탈로그·동기화 시각·기준일을 별도로 저장한다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest5Page.razor, JinoSupporter.Web/Services/BmesBomCacheService.cs, JinoSupporter.Web/Services/BmesFcostActualService.cs
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/bmes-model-search-artifacts`가 오류 0개로 성공했다(기존 경고 32개). 임시 데이터 디렉터리의 SQLite 왕복 검사에서 모델명 2개와 Plant·기준일·동기화 시각을 저장·복원해 `PASS rows=2 cachedDate=2026-07-29 modelNames=2`를 얻었다. BMES 서버와 앱은 실행하지 않았다.
+- Next: Web 서버 재시작 후 최초 한 번 `Sync model names`를 실행하고, 이후 여러 검색어를 입력해 네트워크 요청 없이 `local` 후보가 표시되며 정확한 모델명을 클릭했을 때 BOM이 로드되는지 확인한다.
+
+## 2026-07-30 07:56 - [DATA][FIX] BmesTest5ModelCatalog: 완제품 P-S 모델명으로 동기화 범위 수정
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260730-075459859-6ec8a57c308048e2a
+- Category: DATA
+- Feature: BmesTest5ModelCatalog
+- Change: FIX
+- Completed: 모델명 카탈로그가 `C-S-` 중간조립품을 저장해 TIU 완제품 L/R 모델을 누락하던 문제를 수정하고, 실제 완제품 코드인 `P-S-`만 동기화하도록 변경했다. 재동기화 후 `TIU-C11-20`과 `TIU-L5S3-01` 검색에서 L/R 실제 제품명이 로컬 후보가 되도록 했다.
+- Decisions: 실제 로컬 BOM 캐시를 읽어 `TIU-C11-20-L-ZZ`의 제품 코드가 `P-S-151100700`인 반면 잘못 동기화된 33개 이름은 `C-S-` ASSY 항목임을 확인했다. 기존 로컬 카탈로그는 삭제하지 않고 다음 `Sync model names` 실행이 Plant 3200 카탈로그를 P-S 결과로 교체하게 한다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest5Page.razor, JinoSupporter.Web/Services/BmesFcostActualService.cs
+- Verification: 실제 `bmes_bom_cache.db`를 읽기 전용 조회해 잘못된 카탈로그 33개가 C-S ASSY이고 캐시된 TIU 완제품이 P-S임을 확인했다. `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/bmes-model-search-artifacts`가 오류 0개로 성공했다(기존 경고 32개). BMES 서버와 앱은 실행하지 않았다.
+- Next: Web 서버 재시작 후 `Sync model names`를 다시 한 번 눌러 기존 C-S 33개를 P-S 완제품 카탈로그로 교체하고, `TIU-C11-20` 및 `TIU-L5S3-01` 검색에서 L/R 후보가 함께 나오는지 확인한다.
+
+## 2026-07-30 11:45 - [UI][CHANGE] BomAndDrawingTitle: Test 5 표시명 변경
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260730-114453958-04b42e257ea942a29
+- Category: UI
+- Feature: BomAndDrawingTitle
+- Change: CHANGE
+- Completed: 기존 `Test 5` 표시명을 메뉴, 페이지 제목, 화면 헤더, HTML 내보내기 제목 및 활동 로그에서 `BOM & Drawing`으로 변경했다.
+- Decisions: 기존 URL `/bmes/test5`, 권한 키 `bmes-test5`, 컴포넌트·상수 이름은 저장된 권한과 링크 호환성을 위해 유지했다. 메뉴 아이콘 표시는 `T5`에서 `BD`, 화면 머리표시는 `B&D`로 변경했다.
+- Files: JinoSupporter.Web/Components/Layout/NavMenu.razor, JinoSupporter.Web/Components/Pages/BmesTest5Page.razor, JinoSupporter.Web/Services/AppMenus.cs
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/bmes-model-search-artifacts`가 오류 0개로 성공했다(기존 경고 32개). 앱/서버는 실행하지 않았다.
+- Next: Web 서버 재시작 후 좌측 BMES 메뉴와 `/bmes/test5` 페이지·브라우저 탭에 `BOM & Drawing`이 표시되는지 확인한다.
+
+## 2026-07-30 11:56 - [UI][CHANGE] BmesSettingModelMenu: BMES 설정 메뉴 2단 그룹화
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260730-115431133-b91b9ae0bbf44f719
+- Category: UI
+- Feature: BmesSettingModelMenu
+- Change: CHANGE
+- Completed: BMES 하위에 접이식 `Setting Model` 그룹을 추가하고 `Model Group`, `Routing Table`, `Reason Table`을 2단 메뉴로 이동했다. 각 기존 권한은 그대로 적용되며 관련 페이지에 접속하면 BMES와 Setting Model 그룹이 자동으로 열린다.
+- Decisions: 새 권한 키나 경로를 추가하지 않고 기존 세 메뉴의 권한과 URL을 재사용했다. 하나 이상의 하위 메뉴 권한이 있을 때만 Setting Model 그룹을 표시한다.
+- Files: JinoSupporter.Web/Components/Layout/NavMenu.razor, JinoSupporter.Web/Components/Layout/NavMenu.razor.css
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/bmes-model-search-artifacts`가 오류 0개로 성공했다(기존 경고 32개). 앱과 서버는 지침에 따라 실행하지 않았다.
+- Next: Web 서버 재시작 후 BMES 메뉴의 2단 계층, 관련 페이지 활성 상태, 권한별 메뉴 표시를 확인한다.
+
+## 2026-07-30 11:59 - [UI][CHANGE] BmesSettingModelMenu: Setting Model 메뉴를 최하단으로 이동
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260730-115825226-062441303a4e40ebb
+- Category: UI
+- Feature: BmesSettingModelMenu
+- Change: CHANGE
+- Completed: BMES 내부의 `Setting Model` 그룹을 `LPA` 다음 위치로 옮겨 BMES 하위 메뉴의 가장 마지막에 표시되도록 변경했다.
+- Decisions: 그룹 내부 메뉴 순서와 권한 조건, 자동 펼침 동작은 유지하고 표시 위치만 변경했다.
+- Files: JinoSupporter.Web/Components/Layout/NavMenu.razor
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/bmes-model-search-artifacts`가 오류 0개로 성공했다(기존 경고 32개). 앱과 서버는 지침에 따라 실행하지 않았다.
+- Next: Web 서버 재시작 후 BMES 하위 메뉴에서 `Setting Model`이 최하단에 표시되는지 확인한다.

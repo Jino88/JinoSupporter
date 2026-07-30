@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 368,
+  "sourceFile": "2. BRS-161014  Report test new design of Press UC Coil Suspension - Date 26.10.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\368.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:57Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 368,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable evidence but the primary change and outcome grouping are incorrectly conflated.",
+    "issues": [
+      "Changed factor wrongly mixes dates, rounds, and Test as one condition.",
+      "Primary change should be press UC new design/change spring, but baseline/test link is not proven.",
+      "Vision rows are sequential test results, not a clear Normal vs changed comparison.",
+      "Measurement outcome appears derived from header/aggregate candidates and is not valid evidence.",
+      "Some cited rows lack surrounding headers or decision context needed for interpretation."
+    ],
+    "requiredUserQuestions": [
+      "Confirm the primary change: new press UC design/change spring?",
+      "Is the function table Test row the changed-condition result versus Normal?"
+    ],
+    "correctionPlan": [
+      "Rewrite changed factor as press UC new design/change spring if confirmed by source rows.",
+      "Keep dates, line, and test round as subgroup keys, not changed conditions.",
+      "Use Test 2nd function rows only for Normal vs Test comparison if condition meaning is confirmed.",
+      "Represent vision results as trial observations with no judgement unless a valid baseline exists.",
+      "Remove header-only measurement stats or recite them from actual data rows with headers."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient and partly header-only."
+  },
+  "usage": {
+    "input_tokens": 5190,
+    "output_tokens": 795,
+    "total_tokens": 5985
+  }
+}

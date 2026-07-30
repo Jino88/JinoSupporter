@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 606,
+  "sourceFile": "4. 2 MSU-L20S15-07DT  Report checking  gauss (TEST GONO JIG) yoke date 13 .5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\606.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 606,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable test-condition evidence but grouping and extracted measurements are not reliable enough for final Ask AI use.",
+    "issues": [
+      "Changed factor wrongly includes unproven supplier/material/jig domains.",
+      "Baseline is ambiguous; evidence supports Test 1 vs Test 2 peer conditions, not normal vs test.",
+      "Several measurement outcomes use header rows or parsed artifacts as data.",
+      "Final SPK spec is misapplied and JIG number appears parsed as a gauss value.",
+      "Gap JIG sheet table is included without clear link to the yoke gauss comparison."
+    ],
+    "requiredUserQuestions": [
+      "Should Test 1 be treated as baseline or are Test 1 and Test 2 peer test conditions?",
+      "Is the Gap JIG 07-06 sheet part of this same review case?"
+    ],
+    "correctionPlan": [
+      "Redefine changed factor as CMG/SMG dimension combination only.",
+      "Use rows 9,10,132,171 as primary changed-condition evidence.",
+      "Remove unproven supplier/material/jig domains unless supported by rows.",
+      "Re-extract measurement tables from data rows, separating Semi Yoke and Final SPK specs.",
+      "Exclude or separately classify Gap JIG data unless linked by source context."
+    ],
+    "evidencePolicy": "Row citations exist, but many are headers or weak context; substantive evidence is insufficient."
+  },
+  "usage": {
+    "input_tokens": 8023,
+    "output_tokens": 756,
+    "total_tokens": 8779
+  }
+}

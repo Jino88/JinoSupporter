@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 733,
+  "sourceFile": "53.BRS-161014 Report test VP 161014-ED happen black particle, white particle, flash particle_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\733.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:12:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 733,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has usable particle-test evidence but changed-factor and outcome grouping are not reliable enough for final use.",
+    "issues": [
+      "Baseline is marked not explicit though Normal result rows exist.",
+      "Particle type and size hierarchy is flattened, leaving Middle/Small without parent type.",
+      "Sheet1 appears to duplicate 21.10 results and may double count evidence.",
+      "Measurement outcomes are spurious header/text aggregations, not valid test results.",
+      "Normal result and decision rows are omitted from outcome evidence."
+    ],
+    "requiredUserQuestions": [
+      "Is the Normal row intended as the control comparator?",
+      "Is Sheet1 a duplicate extraction of sheet 21.10?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor as VP particle defect type and size versus Normal if confirmed by source.",
+      "Carry parent particle type into each Large/Middle/Small result row.",
+      "Use one authoritative sheet or mark duplicate sheet rows as supporting only.",
+      "Remove generated measurement-stat outcomes from headers and type lists.",
+      "Add Normal and decision rows to evidence and preserve function defect columns."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient until baseline, duplicates, hierarchy, and valid outcome rows are corrected."
+  },
+  "usage": {
+    "input_tokens": 6574,
+    "output_tokens": 656,
+    "total_tokens": 7230
+  }
+}

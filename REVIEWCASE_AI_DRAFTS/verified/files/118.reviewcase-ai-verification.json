@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 118,
+  "sourceFile": "049.MSU - L20S15-07 REPORT CHECKING NG SPL  DATE 09.04.2026_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\118.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 118,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable report context but changed-factor grouping and outcome evidence are too ambiguous for final use.",
+    "issues": [
+      "One changed factor conflates material vendor, AWF, bonding amount, drying, and NTI checks.",
+      "Baseline or control condition is not explicit for most tests.",
+      "Changed factor omits material vendor and AWF despite including their outcomes.",
+      "Several outcomes cite only header rows or computed aggregates instead of data rows.",
+      "Row-level keys such as vendor, gauss, machine, line, and bonding type are not preserved."
+    ],
+    "requiredUserQuestions": [
+      "Should these tests be separate changed factors or one NG SPL investigation case?",
+      "What baseline/control condition should be used, if any?"
+    ],
+    "correctionPlan": [
+      "Define the primary case context or split into test-specific changed factors.",
+      "Map each outcome only to its relevant tested factor.",
+      "Cite header plus actual data rows for each subresult.",
+      "Preserve subgroup keys: date, vendor, gauss, machine, line, bonding type, dry condition.",
+      "Remove unsupported aggregate measurement stats or recalculate from cited rows."
+    ],
+    "evidencePolicy": "Citations prove row existence but are insufficient because key data rows and grouping evidence are not fully cited."
+  },
+  "usage": {
+    "input_tokens": 7096,
+    "output_tokens": 776,
+    "total_tokens": 7872
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 884,
+  "sourceFile": "75. TIU C11-20 Report test find reason NG low gauss 2026.4.10_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\884.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:17:10Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 884,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft captures the dry-time defect rows but misstates the changed factor and invents an unsupported measurement outcome.",
+    "issues": [
+      "Changed factor should be dry duration versus normal 16s reference, not unspecified test condition.",
+      "10 min condition is omitted from changed-factor grouping.",
+      "Baseline/test relationship is ambiguous because normal 16s has no result row.",
+      "Measurement outcome is derived from headers, not gauss values.",
+      "Gauss table labels cite no numeric before/after results."
+    ],
+    "requiredUserQuestions": [
+      "Should Normal Dry 16s be treated only as a reference or as the baseline?",
+      "Are gauss values available in hidden/image content not extracted here?"
+    ],
+    "correctionPlan": [
+      "Rewrite changed factor as UV yoke sealing dry time: 1, 2, 3, 5, and 10 min with Normal Dry 16s reference.",
+      "Include all five dry-time conditions under one process-condition review case.",
+      "Keep function defect outcome using rows 14,16,18,20,22 with input, OK, NG, and rate.",
+      "Remove the unsupported measurement outcome unless numeric gauss rows are provided.",
+      "Mark judgement not_judged or needs_review due small n and missing normal baseline result."
+    ],
+    "evidencePolicy": "Citations are sufficient for defect counts only; measurement and baseline evidence are insufficient."
+  },
+  "usage": {
+    "input_tokens": 3987,
+    "output_tokens": 692,
+    "total_tokens": 4679
+  }
+}

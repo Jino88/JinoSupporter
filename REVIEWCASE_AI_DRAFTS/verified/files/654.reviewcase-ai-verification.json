@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 654,
+  "sourceFile": "44. TIU C11-20  Report Test VP MOLD KR 2026.1.26. - RAW soundcheck_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\654.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:35Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 654,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because the primary comparison is misgrouped and measurement outcomes include non-comparative table artifacts.",
+    "issues": [
+      "Changed factor says Normal vs Day shift, but cited context supports mold change VP MOLD KR MAKE vs Normal.",
+      "Day shift appears to be secondary context, not proven primary changed condition.",
+      "Function result depends on Test!14, which is cited but not shown in context for semantic verification.",
+      "Measurement outcomes mix headers, frequencies, masks, and stats rather than clean VP MOLD KR vs Normal comparisons.",
+      "Review title is taken from a graph axis row and is not meaningful."
+    ],
+    "requiredUserQuestions": [
+      "Is Day shift intended as a subgroup while VP MOLD KR MAKE is the changed condition?",
+      "Can the full Test!14 row be provided for verification?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to Normal vs VP MOLD KR MAKE or equivalent mold-condition wording if confirmed by rows.",
+      "Move Day shift and model identifiers into subgroup keys unless direct evidence proves otherwise.",
+      "Rebuild function defect outcome using complete Test rows including Test!14 and Test!16.",
+      "Rebuild SPL/THD measurement outcomes by comparing VP MOLD KR samples and averages against Normal samples and averages.",
+      "Exclude mask, frequency range, and graph-axis/spec rows as standalone outcomes unless tied to a comparison."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are semantically insufficient for final evidence until regrouped."
+  },
+  "usage": {
+    "input_tokens": 6407,
+    "output_tokens": 840,
+    "total_tokens": 7247
+  }
+}

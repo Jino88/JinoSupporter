@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 69,
+  "sourceFile": "028. MSU-20S15-07 Result check process make coil deform 2025.03.04_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\69.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:20:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 69,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not usable because it contains no review case despite citeable process-stage measurement evidence.",
+    "issues": [
+      "No reviewCases were generated.",
+      "Changed-factor grouping is ambiguous across many process stages.",
+      "Baseline versus test condition is not defined.",
+      "Length, width, and gap outcomes were not summarized.",
+      "Evidence rows were not checked or attached to conclusions."
+    ],
+    "requiredUserQuestions": [
+      "Should comparisons be sequential process stages or baseline versus final stage?",
+      "Which process stage is the intended control or reference?"
+    ],
+    "correctionPlan": [
+      "Create a review case for process-stage effect on coil deformation.",
+      "Use row 3 as process conditions and row 4 as metric specs.",
+      "Cite sample measurements from rows 5-8 and gap rows 9-12.",
+      "Summarize length, width, and gap by process stage.",
+      "Define baseline/test grouping before approval."
+    ],
+    "evidencePolicy": "Rows 3-12 provide sufficient citeable evidence, but current draft lacks citations in a review case."
+  },
+  "usage": {
+    "input_tokens": 2317,
+    "output_tokens": 604,
+    "total_tokens": 2921
+  }
+}

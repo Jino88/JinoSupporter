@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 225,
+  "sourceFile": "11. BRS-161014 Report test Yoke of V0 and V1 jig  date 25.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\225.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:42Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 225,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but the changed-factor and outcome grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Primary comparison appears to be V0 jig vs V1 jig, while draft frames Normal mixed jig as baseline.",
+      "Normal (V0+V1 jig) may be a reference mix, not a proven control condition.",
+      "Improved judgement may be misleading if intended comparison is V0 vs V1.",
+      "Measurement outcome is invalid because it cites header rows and derives stats from defect columns.",
+      "Key content row describing the test purpose is omitted from changed-factor evidence."
+    ],
+    "requiredUserQuestions": [
+      "Is Normal (V0+V1 jig) intended as the baseline/control or only a production reference?"
+    ],
+    "correctionPlan": [
+      "Reframe changed factor as jig type comparison if supported: V0 jig, V1 jig, and mixed normal reference.",
+      "Use rows 23, 25, and 27 as the function NG-rate comparison evidence.",
+      "Remove the measurement outcome unless real measurement data rows exist.",
+      "Recompute judgement separately for V0 vs V1 and for any normal-reference comparison.",
+      "Add row 8 as changed-factor purpose evidence and include decision details only if populated."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until row 8 and valid data rows support the final comparison."
+  },
+  "usage": {
+    "input_tokens": 3468,
+    "output_tokens": 821,
+    "total_tokens": 4289
+  }
+}

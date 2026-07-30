@@ -1,0 +1,41 @@
+{
+  "sourceFileId": 179,
+  "sourceFile": "09. TIU L5S3-01 R Report test Check iussue frame+f-pcb separate  date 2025.11.24_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\179.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:58Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 179,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable defect context but misidentifies result row numbers as changed conditions and lacks clear baseline/test grouping.",
+    "issues": [
+      "ChangedCondition uses No/date values, not process conditions.",
+      "Baseline condition is not explicit.",
+      "Rows 14-16 are cited but their text is not provided for verification.",
+      "Decision row with 300°C/9-10 min is relevant but not cited.",
+      "Possible combined actions: jig repair and IR dry change."
+    ],
+    "requiredUserQuestions": [
+      "What do result rows 14-16 represent?",
+      "What was the original IR dry condition?",
+      "Were jig repair and IR dry change tested together or separately?"
+    ],
+    "correctionPlan": [
+      "Replace changed factor with IR dry temperature/condition change only if supported.",
+      "Cite row 9 and row 25 for changed-condition evidence.",
+      "Use row 13 as initial defect baseline only if no better baseline exists.",
+      "Add row texts for 14-16 and preserve their item/note labels.",
+      "Separate jig repair from IR dry change if evidence shows distinct tests."
+    ],
+    "evidencePolicy": "Current citations prove row existence but are insufficient for final evidence grouping."
+  },
+  "usage": {
+    "input_tokens": 2673,
+    "output_tokens": 733,
+    "total_tokens": 3406
+  }
+}

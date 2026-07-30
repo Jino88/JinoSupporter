@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 677,
+  "sourceFile": "47.BRS-161014 Report test chang bond 0930S_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\677.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:10:28Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 677,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Clear 0930 vs 0930S comparison, but the draft misses one comparative outcome and has ambiguous tension subgroup grouping.",
+    "issues": [
+      "Bonding process comparison rows 15-16 are cited but not modeled as an outcome.",
+      "Tension rows 49 and 51 lack visible source text and subgroup labels are incomplete.",
+      "Suspension D tension results are not tied to test vs normal conditions.",
+      "Evidence set omits final visual SPK context if intended as non-comparative support."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Add bonding process defect outcome for rows 15-16 with NG-rate comparison.",
+      "Group tension by bond type and suspension C/D subgroup keys.",
+      "Verify row text for 49 and 51 before using their measurements.",
+      "Keep visual, bonding, function, and tension under the same bond-change factor.",
+      "Optionally add final visual SPK as test-only context, not a comparison."
+    ],
+    "evidencePolicy": "Row citations support the main change and two outcomes, but evidence is incomplete for bonding and ambiguous for tension."
+  },
+  "usage": {
+    "input_tokens": 4408,
+    "output_tokens": 745,
+    "total_tokens": 5153
+  }
+}

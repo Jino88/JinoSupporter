@@ -1,0 +1,36 @@
+{
+  "sourceFileId": 474,
+  "sourceFile": "27. TIU L5S3-01 R Report test JIG Fpcb press 15.12.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\474.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:49Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 474,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Core comparison is supported, but the draft needs clearer changed-factor and outcome labeling before final use.",
+    "issues": [
+      "Changed factor should specify smaller magnet F-PCB press jig, not only Test vs Normal JIG.",
+      "Outcome metric is mislabeled as result check instead of NG Frame stick Press Jig or NG rate.",
+      "Outcome domain should be quality/defect rate, not unknown.",
+      "Header row for result columns is not included in evidenceRows."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename changedFactor to Normal JIG vs smaller-magnet test F-PCB Press JIG.",
+      "Set baselineCondition to Normal JIG and changedCondition to smaller-magnet Test JIG.",
+      "Set outcomeMetric to NG Frame stick Press Jig / NG rate.",
+      "Set outcomeDomain to process quality or defect rate.",
+      "Add Test!15 to evidence rows for the result table header."
+    ],
+    "evidencePolicy": "Citations support the comparison but need the table header row added for metric clarity."
+  },
+  "usage": {
+    "input_tokens": 2239,
+    "output_tokens": 525,
+    "total_tokens": 2764
+  }
+}

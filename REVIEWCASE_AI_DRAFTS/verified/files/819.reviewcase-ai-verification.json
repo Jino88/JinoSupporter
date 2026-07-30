@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 819,
+  "sourceFile": "65 .BRS-161014 Report test change dry condition at SUB 3date 09.11.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\819.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:02Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 819,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but misidentifies the primary changed factor and includes invalid measurement extraction.",
+    "issues": [
+      "Primary factor should be press jig use vs no press jig with 10 min dry, not Normal vs line/process names.",
+      "Sub 3/Main 1/Main 2/Sub 4 are process-line subgroup keys, not changed conditions.",
+      "Normal appears only as a reference in function/tension results and is not part of the stated test plan.",
+      "Header-only measurement outcome from row 26 is invalid and should be removed.",
+      "Tension rows have no usable sample values and should not be treated as measured results."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to press jig usage during 10 min dry condition.",
+      "Use Using Press jig as one condition and Don’t using Press jig as the other condition.",
+      "Move Sub 3/Main 1/Main 2/Sub 4 into subgroup/context for SP separate results.",
+      "Keep function defect under the same factor, with Normal labeled as reference if retained.",
+      "Remove header-derived measurement stats and exclude empty tension measurements."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient until regrouped; cite content/test rows, result headers, and actual data rows only."
+  },
+  "usage": {
+    "input_tokens": 5086,
+    "output_tokens": 804,
+    "total_tokens": 5890
+  }
+}

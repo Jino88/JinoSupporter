@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 357,
+  "sourceFile": "19. BRS-161014 Report test ass'y Frame + Yoke by hand_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\357.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:59:39Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 357,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Main Normal vs hand assembly comparison is plausible, but outcome coverage and judgement are not final-evidence ready.",
+    "issues": [
+      "Function outcome is left not_judged despite source conclusion of no improvement.",
+      "Sub 4 inspection results appear omitted from the same validation context.",
+      "Changed-factor evidence omits stronger condition/content rows such as the hand test and conclusion rows.",
+      "Change domain includes material, but evidence supports process condition only.",
+      "Some cited rows are not visible in supplied context, limiting independent verification."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set change domain to process condition unless material evidence is found.",
+      "Add cited condition rows for hand assembly, Normal, function result, and conclusion.",
+      "Apply source judgement that function NG rate was not reduced.",
+      "Add Sub 4 inspection outcomes or justify exclusion.",
+      "Clean noisy title and purpose text without losing citations."
+    ],
+    "evidencePolicy": "Row citations exist, but final evidence needs more complete condition and conclusion citations."
+  },
+  "usage": {
+    "input_tokens": 2614,
+    "output_tokens": 1266,
+    "total_tokens": 3880
+  }
+}

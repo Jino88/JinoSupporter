@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 930,
+  "sourceFile": "81. 161014 SPot NG Anylize_231208_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\930.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:21:51Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 930,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft cannot be verified because the workbook appears to contain qualitative troubleshooting evidence but no review case or comparable changed-factor grouping was extracted.",
+    "issues": [
+      "No reviewCases were generated.",
+      "No comparison pairs, metrics, or measurement stats were extracted.",
+      "Primary changed factor is ambiguous across MTR, machine, AWF temperature, method, and after-change notes.",
+      "Outcome grouping mixes Weak Solder, Dirty Burn, AWF #3 NG, and OK/no-problem results without structure."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended primary changed factor for this report?",
+      "Should this be treated as one 4M troubleshooting case or separate cases by factor?"
+    ],
+    "correctionPlan": [
+      "Create a review case from the test-list rows if comparable conditions can be defined.",
+      "Preserve problem type, 4M category, reason, result, and note as grouping fields.",
+      "Separate AWF temperature comparison from machine or method change if they are distinct tests.",
+      "Cite rows for problem definition, test list header, each tested factor, and each result.",
+      "Leave as needs_review if baseline/test condition remains unclear."
+    ],
+    "evidencePolicy": "Current row citations are enough for context, but insufficient for final evidence without structured changed-condition and result mapping."
+  },
+  "usage": {
+    "input_tokens": 1619,
+    "output_tokens": 554,
+    "total_tokens": 2173
+  }
+}

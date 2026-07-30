@@ -1,0 +1,132 @@
+{
+  "sourceFileId": 37,
+  "sourceFile": "016.MSU-20S15-07 Result check Gauss Semi Yoke  - Date 2025.02.15_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\016.MSU-20S15-07 Result check Gauss Semi Yoke  - Date 2025.02.15_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 3,
+    "sheetNames": "Sheet1; Sheet2; Sheet3",
+    "sheetRowCount": 7,
+    "sheetCellCount": 81,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 1
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet1!4",
+      "sheetName": "Sheet1",
+      "rowNumber": 4,
+      "rowText": "| RESULT CHECK GAUSS SEMI YOKE ( MSU-L20S15-07 )"
+    },
+    {
+      "rowId": "Sheet1!5",
+      "sheetName": "Sheet1",
+      "rowNumber": 5,
+      "rowText": "| Date | Average | Max | Min | Sample No"
+    },
+    {
+      "rowId": "Sheet1!6",
+      "sheetName": "Sheet1",
+      "rowNumber": 6,
+      "rowText": "| | | | | #1 | #2 | #3 | #4 | #5 | #6 | #7 | #8 | #9 | #10 | #11 | #12 | #13 | #14 | #15 | #16 | #17 | #18 | #19 | #20"
+    },
+    {
+      "rowId": "Sheet1!7",
+      "sheetName": "Sheet1",
+      "rowNumber": 7,
+      "rowText": "| 2025-02-15 00:00:00 | 398.26 | 410 | 387 | 392 | 400 | 401 | 402 | 397 | 409 | 394 | 391 | 402 | 400 | 398 | 403 | 399 | 388 | 400 | 388 | 387 | 397 | 398 | 400"
+    },
+    {
+      "rowId": "Sheet1!8",
+      "sheetName": "Sheet1",
+      "rowNumber": 8,
+      "rowText": "| | | | | 402 | 387 | 396 | 398 | 396 | 400 | 409 | 392 | 403 | 387 | 398 | 404 | 396 | 390 | 397 | 400 | 402 | 395 | 398 | 399"
+    },
+    {
+      "rowId": "Sheet1!9",
+      "sheetName": "Sheet1",
+      "rowNumber": 9,
+      "rowText": "| | | | | 410 | 397 | 397 | 394 | 407 | 408 | 410 | 391 | 403 | 401"
+    },
+    {
+      "rowId": "Sheet1!13",
+      "sheetName": "Sheet1",
+      "rowNumber": 13,
+      "rowText": "| => Update Gauss spec for Semi YOKE: 375~425G (Mr.Kim)"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-37-rc-1",
+      "reviewTitle": "| RESULT CHECK GAUSS SEMI YOKE ( MSU-L20S15-07 )",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material",
+            "dimension/spec"
+          ],
+          "changedFactor": "016.MSU-20S15-07 Result check Gauss Semi Yoke - Date 2025.02.15",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Sheet1!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "RESULT CHECK GAUSS SEMI YOKE ( MSU-L20S15-07 )",
+          "comparisonRows": [
+            "Sheet1!7"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 45729,
+              "condition": "2025-02-15 00:00:00",
+              "spec": "",
+              "min": 387.0,
+              "max": 410.0,
+              "avg": 398.26,
+              "sampleCount": 1,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!7"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Sheet1!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet1!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

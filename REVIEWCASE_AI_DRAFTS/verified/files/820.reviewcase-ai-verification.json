@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 820,
+  "sourceFile": "65. BRS-161016 Report Test improve NG hearing rate    Date 28.08.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\820.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 820,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the primary comparison; evidence indicates VP mold/material numbers are compared under mostly fixed machine/frame conditions.",
+    "issues": [
+      "Changed factor is incorrectly framed as equipment/AWF comparison.",
+      "VP numbers are primary comparison levels, not subgroup-only context.",
+      "Baseline/normal condition is unsupported; this is a peer comparison among VP molds.",
+      "Row 32 decision is key evidence but is not cited.",
+      "Measurement outcome from row 18 appears to be a header-derived artifact."
+    ],
+    "requiredUserQuestions": [
+      "Should the fixed AWF machine be #1 or #2 given the content and decision conflict?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to VP mold/material number comparison: VP#2,#3,#4,#6,#10.",
+      "Treat AWF machine and Frame mold #2 as fixed context, noting the AWF #1/#2 conflict.",
+      "Use function NG/hearing total NG rate as the outcome domain.",
+      "Cite result rows 19,21,23,25,27 plus purpose/content and decision row 32.",
+      "Remove the row 18 measurement/statistics outcome unless real measurement data is confirmed."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient because key decision evidence is omitted and row 18 is misused."
+  },
+  "usage": {
+    "input_tokens": 3456,
+    "output_tokens": 805,
+    "total_tokens": 4261
+  }
+}

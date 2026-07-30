@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 454,
+  "sourceFile": "25.BRS-161016 GMI Report checking and test Frame bending date 20.4.2026_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\454.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:03:14Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 454,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft cites existing rows but incorrectly mixes material bending checks, function groups, and header-derived measurements into one unclear comparison.",
+    "issues": [
+      "Changed factor combines unrelated labels and an invalid baseline/test structure.",
+      "Material bending and function results need clearer row-level grouping.",
+      "Header row Test!33 is treated as measurement data.",
+      "Condition '2 | date' appears parsed from row metadata, not a real condition.",
+      "Decision text supports rates but not the current combined comparison wording."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary factor as frame condition/status, not 'Normal vs Frame, 2'.",
+      "Separate material bending-rate outcome from function NG-rate outcome under the same report context if justified.",
+      "Remove measurement outcome derived only from header row Test!33.",
+      "Correct row 17 and row 19 condition labels using their actual table columns.",
+      "Use decision row to summarize observed rates without adding unsupported judgement."
+    ],
+    "evidencePolicy": "Citations exist, but some are insufficient because header and misparsed rows are used as evidence."
+  },
+  "usage": {
+    "input_tokens": 3402,
+    "output_tokens": 762,
+    "total_tokens": 4164
+  }
+}

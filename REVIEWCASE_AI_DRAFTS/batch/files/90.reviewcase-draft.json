@@ -1,0 +1,241 @@
+{
+  "sourceFileId": 90,
+  "sourceFile": "033. MSU-L20S1507 Report test Check iussue Decap bond MG+PT not dry  date 2025.03.18_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\033. MSU-L20S1507 Report test Check iussue Decap bond MG+PT not dry  date 2025.03.18_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "201507DT",
+    "sheetRowCount": 17,
+    "sheetCellCount": 51,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 5,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "201507DT!2",
+      "sheetName": "201507DT",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | MSU-L20S15-07 REPORT CHECK IUSSUE BOND MG/PT NOT DRY | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "201507DT!3",
+      "sheetName": "201507DT",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | Date | 2025-03-18 00:00:00"
+    },
+    {
+      "rowId": "201507DT!4",
+      "sheetName": "201507DT",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "201507DT!5",
+      "sheetName": "201507DT",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "201507DT!6",
+      "sheetName": "201507DT",
+      "rowNumber": 6,
+      "rowText": "| - Process change MG+PT happen NG MG+PT separate => Reason is bond not dry, rate 20/2500pcs ~ 0.8% (Lot C-MG vendor baotou)"
+    },
+    {
+      "rowId": "201507DT!7",
+      "sheetName": "201507DT",
+      "rowNumber": 7,
+      "rowText": "| => Check some codition in line find reason"
+    },
+    {
+      "rowId": "201507DT!8",
+      "sheetName": "201507DT",
+      "rowNumber": 8,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "201507DT!9",
+      "sheetName": "201507DT",
+      "rowNumber": 9,
+      "rowText": "| -Check some codition in line:"
+    },
+    {
+      "rowId": "201507DT!10",
+      "sheetName": "201507DT",
+      "rowNumber": 10,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "201507DT!11",
+      "sheetName": "201507DT",
+      "rowNumber": 11,
+      "rowText": "| | * RESULT CHECKING"
+    },
+    {
+      "rowId": "201507DT!12",
+      "sheetName": "201507DT",
+      "rowNumber": 12,
+      "rowText": "| | Date | No | Item | | | Input | NG | NG rate | Note"
+    },
+    {
+      "rowId": "201507DT!13",
+      "sheetName": "201507DT",
+      "rowNumber": 13,
+      "rowText": "| | 2025-03-18 00:00:00 | 1 | Thay đổi keo mới, giảm tốc độ băng tải từ 11.0 => 9.5 | | | 8 | 1 | 0.125"
+    },
+    {
+      "rowId": "201507DT!16",
+      "sheetName": "201507DT",
+      "rowNumber": 16,
+      "rowText": "| | | 4 | Clean Material by Primer | | | 8 | 1 | 0.125"
+    },
+    {
+      "rowId": "201507DT!20",
+      "sheetName": "201507DT",
+      "rowNumber": 20,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-90-rc-1",
+      "reviewTitle": "| MSU-L20S15-07 REPORT CHECK IUSSUE BOND MG/PT NOT DRY | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - Process change MG+PT happen NG MG+PT separate => Reason is bond not dry, rate 20/2500pcs ~ 0.8% (Lot C-MG vendor baotou) / | => Check some codition in line find reason / | II. Content. / | -Check some codition in line:",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "supplier",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Thay đổi keo mới, giảm tốc độ băng tải từ 11.0 => 9.5, Sấy lò sấy MG/PT D2, Kiểm tra lò sấy, thay lò mới, Clean Material by Primer, Increase dry temperature: 90ºC =>120ºC Dry time 4'24s",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Thay đổi keo mới, giảm tốc độ băng tải từ 11.0 => 9.5, Sấy lò sấy MG/PT D2, Kiểm tra lò sấy, thay lò mới, Clean Material by Primer, Increase dry temperature: 90ºC =>120ºC Dry time 4'24s",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "201507DT!13",
+            "201507DT!14",
+            "201507DT!15",
+            "201507DT!16",
+            "201507DT!17",
+            "201507DT!2",
+            "201507DT!5",
+            "201507DT!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "* RESULT CHECKING",
+          "comparisonRows": [
+            "201507DT!13",
+            "201507DT!14",
+            "201507DT!15",
+            "201507DT!16",
+            "201507DT!17"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 17900,
+              "condition": "Thay đổi keo mới, giảm tốc độ băng tải từ 11.0 => 9.5",
+              "input": 8.0,
+              "ok": null,
+              "ng": 1.0,
+              "ratePercent": 12.5,
+              "evidenceRows": [
+                "201507DT!13"
+              ]
+            },
+            {
+              "metricId": 17901,
+              "condition": "Sấy lò sấy MG/PT D2",
+              "input": 8.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "201507DT!14"
+              ]
+            },
+            {
+              "metricId": 17902,
+              "condition": "Kiểm tra lò sấy, thay lò mới",
+              "input": 8.0,
+              "ok": null,
+              "ng": 6.0,
+              "ratePercent": 75.0,
+              "evidenceRows": [
+                "201507DT!15"
+              ]
+            },
+            {
+              "metricId": 17903,
+              "condition": "Clean Material by Primer",
+              "input": 8.0,
+              "ok": null,
+              "ng": 1.0,
+              "ratePercent": 12.5,
+              "evidenceRows": [
+                "201507DT!16"
+              ]
+            },
+            {
+              "metricId": 17904,
+              "condition": "Increase dry temperature: 90ºC =>120ºC Dry time 4'24s",
+              "input": 8.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "201507DT!17"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "201507DT!13",
+        "201507DT!14",
+        "201507DT!15",
+        "201507DT!16",
+        "201507DT!17",
+        "201507DT!2",
+        "201507DT!5",
+        "201507DT!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "201507DT!13",
+      "201507DT!14",
+      "201507DT!15",
+      "201507DT!16",
+      "201507DT!17",
+      "201507DT!2",
+      "201507DT!5",
+      "201507DT!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

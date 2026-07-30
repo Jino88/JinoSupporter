@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 46,
+  "sourceFile": "02. L20S15-07DT Report test new lot CD (3-17)  ( Size 510)date   2025.04.14_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\46.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 46,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not ready because the changed factor and outcomes are misgrouped despite citeable source rows existing.",
+    "issues": [
+      "Changed factor is a filename, not the tested CD lot/material condition.",
+      "Baseline and changed condition are unresolved from the cited rows.",
+      "Outcomes include title/header artifacts as measurements.",
+      "Conclusion rows identifying OK and unusable lots are not cited.",
+      "Tension spec and failures are not judged correctly."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended baseline or comparison condition for the new CD lot test?"
+    ],
+    "correctionPlan": [
+      "Define the changed factor as the new CD material lot tested on 4/14, with lot/material IDs preserved.",
+      "Separate subgroup keys by lot number, material lot, test date, and test type.",
+      "Remove title/header-derived measurement outcomes.",
+      "Use Report conclusion rows for dyne, tension, and VP/CD separation judgements.",
+      "Apply the 1.2 kgf tension spec and mark lots below spec or listed as unusable."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for final evidence because key conclusion and condition rows are missing."
+  },
+  "usage": {
+    "input_tokens": 6585,
+    "output_tokens": 776,
+    "total_tokens": 7361
+  }
+}

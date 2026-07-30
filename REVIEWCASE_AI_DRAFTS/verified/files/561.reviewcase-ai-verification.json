@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 561,
+  "sourceFile": "34. TIU C11-20  Report test find reason NG NG function high 2026.01.16_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\561.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 561,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but misgroups separate comparisons and includes invalid extracted measurement outcomes.",
+    "issues": [
+      "Changed factor mixes Normal/no-bonding comparison with Yoke OK/NG swap comparison.",
+      "Baseline and changed condition are not consistently supported by cited rows.",
+      "Gauss evidence uses row 46 without visible source text and has suspect stats/violations.",
+      "Measurement-2 is derived from headers/defect counts, not a valid spec measurement.",
+      "Subgroup keys are promoted into the primary changed factor incorrectly."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split into distinct changed-factor contexts for no-bonding vs Normal and Yoke OK/NG swap.",
+      "Rebuild baseline/test labels from rows 18-23 and 47-52 only.",
+      "Remove header-derived Measurement-2.",
+      "Re-extract and verify gauss/height rows before using measurement outcomes.",
+      "Keep line/date/type as subgroup context, not the primary factor unless evidenced."
+    ],
+    "evidencePolicy": "Row citations exist for function results, but measurement citations are insufficient and row 46 text must be verified."
+  },
+  "usage": {
+    "input_tokens": 4013,
+    "output_tokens": 680,
+    "total_tokens": 4693
+  }
+}

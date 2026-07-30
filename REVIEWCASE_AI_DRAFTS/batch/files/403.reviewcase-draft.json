@@ -1,0 +1,429 @@
+{
+  "sourceFileId": 403,
+  "sourceFile": "21. BRS-201506 Report checking NTI OK ans NG sample date 29.2.2024_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\21. BRS-201506 Report checking NTI OK ans NG sample date 29.2.2024_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 6,
+    "sheetNames": "NTI DATA; NTI  SPL; NTI  THD; NTI IMP; FO; Sheet1",
+    "sheetRowCount": 310,
+    "sheetCellCount": 4572,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 17
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "FO!5",
+      "sheetName": "FO",
+      "rowNumber": 5,
+      "rowText": "| | | RESULT CHECKING FO | | | | | | Mask"
+    },
+    {
+      "rowId": "FO!6",
+      "sheetName": "FO",
+      "rowNumber": 6,
+      "rowText": "| | | | | | | | 100 | 50"
+    },
+    {
+      "rowId": "FO!7",
+      "sheetName": "FO",
+      "rowNumber": 7,
+      "rowText": "| | | | | | | | 212 | 50"
+    },
+    {
+      "rowId": "FO!8",
+      "sheetName": "FO",
+      "rowNumber": 8,
+      "rowText": "| | | NO | RESULT | | | | 300 | 35"
+    },
+    {
+      "rowId": "FO!9",
+      "sheetName": "FO",
+      "rowNumber": 9,
+      "rowText": "| | | | OK | NG | ST | | 400 | 25"
+    },
+    {
+      "rowId": "FO!10",
+      "sheetName": "FO",
+      "rowNumber": 10,
+      "rowText": "| | | 1 | 656.66644 | 646.92292 | 648.58735 | | 500 | 20"
+    },
+    {
+      "rowId": "FO!11",
+      "sheetName": "FO",
+      "rowNumber": 11,
+      "rowText": "| | | 2 | 641.15076 | 651.54138 | 650.73714 | | 600 | 15"
+    },
+    {
+      "rowId": "FO!12",
+      "sheetName": "FO",
+      "rowNumber": 12,
+      "rowText": "| | | 3 | 655.40502 | 655.06603 | | | 710 | 12"
+    },
+    {
+      "rowId": "FO!13",
+      "sheetName": "FO",
+      "rowNumber": 13,
+      "rowText": "| | | 4 | 645.75624 | 654.71934 | | | 800 | 10"
+    },
+    {
+      "rowId": "FO!14",
+      "sheetName": "FO",
+      "rowNumber": 14,
+      "rowText": "| | | 5 | 651.58711 | 647.768 | | | 900 | 9"
+    },
+    {
+      "rowId": "FO!15",
+      "sheetName": "FO",
+      "rowNumber": 15,
+      "rowText": "| | | MIN | 641.15076 | 646.92292 | 648.58735 | | 6000 | 8"
+    },
+    {
+      "rowId": "FO!16",
+      "sheetName": "FO",
+      "rowNumber": 16,
+      "rowText": "| | | MAX | 656.66644 | 655.06603 | 650.73714 | | 7100 | 5"
+    },
+    {
+      "rowId": "NTI  THD!5",
+      "sheetName": "NTI  THD",
+      "rowNumber": 5,
+      "rowText": "| | Standard | | [Avg] | #1 | #2 | #3 | #4 | #5 | [Avg] | #1 | #2 | #3 | #4 | #5 | [Avg]"
+    },
+    {
+      "rowId": "NTI DATA!1",
+      "sheetName": "NTI DATA",
+      "rowNumber": 1,
+      "rowText": "| 측정 JIG | BRS-201506 Sub Baffle JIG | | | | 측정 전압 | 3.58V(1.6W) | | | 측정 거리 | 1cm | | | | | 측정 JIG | BRS-201506 Sub Baffle JIG | | | | 측정 전압 | 3.58V(1.6W) | | | 측정 거리 | 1cm | | | | | 측정 JIG | BRS-201506 Sub Baffle JIG | | | | 측정 전압 | 3.58V(1.6W) | | | 측정 거리 | 1cm"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-403-rc-1",
+      "reviewTitle": "| | | RESULT CHECKING FO | | | | | | Mask",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "unknown"
+          ],
+          "changedFactor": "21. BRS-201506 Report checking NTI OK ans NG sample date 29.2.2024",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "FO!17",
+            "FO!5",
+            "NTI  SPL!5",
+            "NTI  THD!5",
+            "NTI IMP!1",
+            "NTI IMP!2"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "ST | OK | OK | NG | NG",
+          "comparisonRows": [
+            "NTI  SPL!5",
+            "NTI  THD!5"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 53098,
+              "condition": "ST / AVG",
+              "spec": "",
+              "min": 79.93739,
+              "max": 118.00972,
+              "avg": 105.60836166666671,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NTI  SPL!5"
+              ]
+            },
+            {
+              "statId": 53099,
+              "condition": "AVG",
+              "spec": "",
+              "min": 79.789904,
+              "max": 117.742964,
+              "avg": 105.39101746666664,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NTI  SPL!5"
+              ]
+            },
+            {
+              "statId": 53100,
+              "condition": "Avg",
+              "spec": "",
+              "min": 79.95766,
+              "max": 117.802402,
+              "avg": 105.5062989333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NTI  SPL!5"
+              ]
+            },
+            {
+              "statId": 53101,
+              "condition": "Standard",
+              "spec": "",
+              "min": 0.24847,
+              "max": 26.20768,
+              "avg": 11.61753416666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NTI  THD!5"
+              ]
+            },
+            {
+              "statId": 53102,
+              "condition": "ST / [Avg]",
+              "spec": "",
+              "min": 0.261635,
+              "max": 25.69073,
+              "avg": 11.009425583333341,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NTI  THD!5"
+              ]
+            },
+            {
+              "statId": 53103,
+              "condition": "[Avg]",
+              "spec": "",
+              "min": 0.226828,
+              "max": 27.034402,
+              "avg": 11.52038293333333,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NTI  THD!5"
+              ]
+            },
+            {
+              "statId": 53104,
+              "condition": "[Avg]",
+              "spec": "",
+              "min": 0.224304,
+              "max": 29.590932,
+              "avg": 11.823091299999993,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NTI  THD!5"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "FO!17",
+            "FO!5",
+            "NTI IMP!1"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 53105,
+              "condition": "ST",
+              "spec": "",
+              "min": 6.34318,
+              "max": 8.46471,
+              "avg": 7.174437288135589,
+              "sampleCount": 59,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NTI IMP!1"
+              ]
+            },
+            {
+              "statId": 53106,
+              "condition": "ST",
+              "spec": "",
+              "min": 6.34497,
+              "max": 8.45685,
+              "avg": 7.176374322033901,
+              "sampleCount": 59,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NTI IMP!1"
+              ]
+            },
+            {
+              "statId": 53110,
+              "condition": "RESULT",
+              "spec": "",
+              "min": 641.15076,
+              "max": 656.66644,
+              "avg": 650.113114,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO!17"
+              ]
+            },
+            {
+              "statId": 53111,
+              "condition": "RESULT 2",
+              "spec": "",
+              "min": 646.92292,
+              "max": 655.06603,
+              "avg": 651.203534,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO!17"
+              ]
+            },
+            {
+              "statId": 53112,
+              "condition": "ST",
+              "spec": "",
+              "min": 648.58735,
+              "max": 650.73714,
+              "avg": 649.662245,
+              "sampleCount": 2,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO!17"
+              ]
+            },
+            {
+              "statId": 53113,
+              "condition": "RESULT CHECKING FO",
+              "spec": "",
+              "min": 1.0,
+              "max": 5.0,
+              "avg": 3.0,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO!5"
+              ]
+            },
+            {
+              "statId": 53114,
+              "condition": "Mask",
+              "spec": "",
+              "min": 9.0,
+              "max": 50.0,
+              "avg": 25.11111111111111,
+              "sampleCount": 9,
+              "violationCount": 0,
+              "evidenceRows": [
+                "FO!5"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "ST | ST | OK | OK | NG | NG",
+          "comparisonRows": [
+            "NTI IMP!2"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 53107,
+              "condition": "ST / AVG",
+              "spec": "",
+              "min": 6.34497,
+              "max": 8.45685,
+              "avg": 7.178109416666669,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NTI IMP!2"
+              ]
+            },
+            {
+              "statId": 53108,
+              "condition": "AVG",
+              "spec": "",
+              "min": 6.524508,
+              "max": 8.593408,
+              "avg": 7.354913866666666,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NTI IMP!2"
+              ]
+            },
+            {
+              "statId": 53109,
+              "condition": "AVG",
+              "spec": "",
+              "min": 6.483092,
+              "max": 8.575464,
+              "avg": 7.313863500000002,
+              "sampleCount": 60,
+              "violationCount": 0,
+              "evidenceRows": [
+                "NTI IMP!2"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "FO!17",
+        "FO!5",
+        "NTI  SPL!5",
+        "NTI  THD!5",
+        "NTI IMP!1",
+        "NTI IMP!2"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "FO!17",
+      "FO!5",
+      "NTI  SPL!5",
+      "NTI  THD!5",
+      "NTI IMP!1",
+      "NTI IMP!2"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

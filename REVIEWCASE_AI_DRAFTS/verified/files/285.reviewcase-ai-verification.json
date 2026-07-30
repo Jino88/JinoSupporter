@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 285,
+  "sourceFile": "14. MSU-L20S15-07 Report test Suspension change Design improve NG No sound module - 2025.03.31_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\285.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 285,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the comparison context but mis-pairs date-matched Normal/Test rows and mis-extracts function NG totals.",
+    "issues": [
+      "Sub 3 second pair compares 3/31 Normal to 4/4 Test instead of 4/4 Normal.",
+      "Function second pair compares 3/31 Normal to 4/4 Test and omits 4/4 Normal.",
+      "Function NG values use wrong columns; total NG and NG rate should be used.",
+      "Measurement-only outcomes are header-derived and not valid separate measurement evidence.",
+      "Changed factor label is generic and should name the suspension/pad spot welding design change."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to Test design/spot-welding change versus Normal lot.",
+      "Group comparisons by date: 3/31 Test vs Normal and 4/4 Test vs Normal.",
+      "For Sub 3 use rows 17/19 and 21/23 with zero NG results.",
+      "For function use rows 29/31 and 33/35 with Total NG and NG rate columns.",
+      "Remove header-only measurement outcomes or convert them into defect-category context only."
+    ],
+    "evidencePolicy": "Row citations exist, but cited rows are insufficient until pairings and metric columns are corrected."
+  },
+  "usage": {
+    "input_tokens": 5056,
+    "output_tokens": 809,
+    "total_tokens": 5865
+  }
+}

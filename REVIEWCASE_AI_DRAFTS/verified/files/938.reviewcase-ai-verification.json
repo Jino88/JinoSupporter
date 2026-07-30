@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 938,
+  "sourceFile": "82.BRS-2015 Report Test improve VP+CD offset date 26.8.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\938.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:40Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 938,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but misstates the changed factor and compares the wrong outcome rows/rates.",
+    "issues": [
+      "Changed factor should be X-axis unload position 81.62 to 81.64, not Normal vs Total Test.",
+      "Baseline/test grouping mixes Normal row and Total Normal aggregate.",
+      "Outcome uses row 27 vs row 33, while decision supports Total Test vs Total Normal.",
+      "Judgement should use recheck NG rates about 4.1% vs 6.0%, not 6.69% vs 9.28%.",
+      "Measurement outcome is spurious table-stat extraction, not a separate measurement result."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedFactor to unload X-axis position change 81.62 to 81.64 for VP+CD offset improvement.",
+      "Set baselineCondition to normal/current setting and changedCondition to test changed X-axis setting.",
+      "Compare aggregate Total Test row 33 with Total Normal row 35, preserving recheck and non-recheck NG rates separately.",
+      "Cite decision rows 40 and 42 with content rows 9 to 11 and result rows 33 and 35.",
+      "Remove the measurement outcome unless real measurement rows/specs are found."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are misapplied; final evidence must cite rows for factor, totals, and decision."
+  },
+  "usage": {
+    "input_tokens": 3886,
+    "output_tokens": 791,
+    "total_tokens": 4677
+  }
+}

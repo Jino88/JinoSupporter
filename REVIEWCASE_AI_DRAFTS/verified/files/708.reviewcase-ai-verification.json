@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 708,
+  "sourceFile": "50. TIU C11-20 Report  find reason function high 2026.01.30_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\708.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 708,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but overmerges distinct tests and uses an unsafe normal-vs-test comparison.",
+    "issues": [
+      "Changed factor combines Type 1 holder-position test with Type 2 VP-not-spread test.",
+      "Primary comparison uses Normal row from Type 1 against VP-not-spread row from Type 2.",
+      "Changed condition includes subgroup details as if all are one factor.",
+      "Measurement outcome is extracted from count columns, not a separate measurement domain.",
+      "Several cited rows needed for grouping are not shown in the review context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split Type 1 holder-position and Type 2 VP-not-spread into separate changed-factor contexts or keep only the supported one.",
+      "For Type 2, compare Test VP not spread only against Normal rows within the same section and preserve line/date as subgroup keys.",
+      "For Type 1, compare each position or holder condition against its matching normal baseline if rows support it.",
+      "Remove the measurement outcome or recast defect categories as sub-defect counts under process defect.",
+      "Expose and cite the actual rows for all selected comparison records and headers."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are not sufficient because comparison grouping is not reliable."
+  },
+  "usage": {
+    "input_tokens": 4405,
+    "output_tokens": 703,
+    "total_tokens": 5108
+  }
+}

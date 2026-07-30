@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 49,
+  "sourceFile": "02. TIU C11-20 Report Check Gauss Sub2 2025.11.14_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\49.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 49,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable gauss data but misidentifies the changed factor and loses key report context.",
+    "issues": [
+      "Changed factor is the filename, not the JUNJIE machine change.",
+      "Baseline and changed condition are unresolved despite report content rows.",
+      "Magnetic 2-time and 1-time result groups are collapsed without subgroup keys.",
+      "Spec and decision rows are omitted from outcome judgement evidence.",
+      "Sheet1!24 is used but not shown in provided context rows."
+    ],
+    "requiredUserQuestions": [
+      "Is this report intended as after-change validation only, or a baseline-versus-JUNJIE comparison?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to JUNJIE machine change/test, with machine as change domain.",
+      "Use Test rows for purpose, content, result headings, spec, and final decision evidence.",
+      "Separate outcomes or subgroup keys by Magnetic 2 time and Magnetic 1 time plus position.",
+      "Capture spec 470-660G and judge gauss results against it.",
+      "Verify Sheet1!24 row content before citing it."
+    ],
+    "evidencePolicy": "Current citations are insufficient; include changed-condition, spec, result, and decision rows."
+  },
+  "usage": {
+    "input_tokens": 4017,
+    "output_tokens": 785,
+    "total_tokens": 4802
+  }
+}

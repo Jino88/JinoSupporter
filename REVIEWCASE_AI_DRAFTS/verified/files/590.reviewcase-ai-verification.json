@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 590,
+  "sourceFile": "37.2 L20S15-07 Report test find reason CD make NG 2025.04.09_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\590.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:41Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 590,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but its changed-factor and outcome grouping are too generic and partly incorrect.",
+    "issues": [
+      "Changed factor is filename, not an evidence-based condition.",
+      "Baseline/test conditions are not defined despite visible CD lot dates and process settings.",
+      "Outcomes mix dyne, NG rate, function, and tension without preserving test-item grouping.",
+      "Several extracted stats are invalid, including dates as measurements and fail rows with zero violations.",
+      "Key grouping fields such as CD date, test number, process type, setting, and spec are not consistently preserved."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison CD lot date, process parameter setting, or both within one investigation?"
+    ],
+    "correctionPlan": [
+      "Replace filename changed factor with evidence-based CD lot/process-condition investigation context.",
+      "Define baseline normal settings and changed settings for speed, height, delay, clean, plasma, and lot date where supported.",
+      "Group outcomes separately by dyne NG, VP/CD separate, function NG, total NG rate, and tension vs 1.2 kgf spec.",
+      "Preserve row-level keys: test number, CD date, material/type, condition stage, setting, and pass/fail note.",
+      "Remove bad auto-stats and recalculate only from clearly aligned header/data rows."
+    ],
+    "evidencePolicy": "Citations are row-level and mostly citeable, but not sufficient because grouping and metric interpretation are unreliable."
+  },
+  "usage": {
+    "input_tokens": 11966,
+    "output_tokens": 833,
+    "total_tokens": 12799
+  }
+}

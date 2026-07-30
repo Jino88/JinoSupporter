@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 108,
+  "sourceFile": "04. TIU C11-20 Report  Test new frame cuter check vision Coil & SPot 2025.11.17_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\108.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:51Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 108,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable changed-condition context but the changed factor and measurement grouping are not sufficiently verified.",
+    "issues": [
+      "Changed factor conflates AWF #2 pusher change, new frame after cutter, and no-cutter baseline.",
+      "Review title is an unrelated Sheet1 table header.",
+      "Measurement tables are not linked to normal vs new-frame conditions.",
+      "Measurement evidence cites only summary rows and omits needed headers/raw context.",
+      "Possible spot-offset outcome is not represented despite report title."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison pusher change or normal no cutter vs new frame cutter?",
+      "Should spot-offset results be included with coil results?"
+    ],
+    "correctionPlan": [
+      "Rename title from the report title row.",
+      "Use Test purpose/content/result rows to define one clear changed factor.",
+      "Verify Test!27 and Test!29 labels and values before judging improvement.",
+      "Regroup Sheet1 tables only if their condition headers identify baseline/test context.",
+      "Add or exclude spot-offset outcome based on source rows."
+    ],
+    "evidencePolicy": "Citations exist but are insufficient for final evidence until condition labels and table context are cited."
+  },
+  "usage": {
+    "input_tokens": 4267,
+    "output_tokens": 727,
+    "total_tokens": 4994
+  }
+}

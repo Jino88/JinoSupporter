@@ -1,0 +1,380 @@
+{
+  "sourceFileId": 986,
+  "sourceFile": "BRS-201506 Sub VP - Result check material Film AEM - Date 2024.11.18_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\BRS-201506 Sub VP - Result check material Film AEM - Date 2024.11.18_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 24,
+    "sheetCellCount": 89,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 13,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | BRS - 201506 REPORT CHECK LOT MATERIAL FILM AEM HAPPEN NG BROKEN AFTER FORMING | | | | | | | | | | | | | Part | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | | | | Date: | 2024-11-18 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | | | | Marker: | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - Using new lot material. Production date: 2024.11.16 Happen NG VP broken after forming rate 48/48pcs ~ 100%"
+    },
+    {
+      "rowId": "Test!14",
+      "sheetName": "Test",
+      "rowNumber": 14,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!15",
+      "sheetName": "Test",
+      "rowNumber": 15,
+      "rowText": "| - Check some items lot material NG after VP forming"
+    },
+    {
+      "rowId": "Test!17",
+      "sheetName": "Test",
+      "rowNumber": 17,
+      "rowText": "| III. Result."
+    },
+    {
+      "rowId": "Test!18",
+      "sheetName": "Test",
+      "rowNumber": 18,
+      "rowText": "| 1. Result checking"
+    },
+    {
+      "rowId": "Test!19",
+      "sheetName": "Test",
+      "rowNumber": 19,
+      "rowText": "| | No | Date | Type | | Input | NG | NG rate | Picture | | | | Note"
+    },
+    {
+      "rowId": "Test!20",
+      "sheetName": "Test",
+      "rowNumber": 20,
+      "rowText": "| | 1 | 2024-11-18 00:00:00 | | | 48 | 48 | 1 | | | | | NG can not using"
+    },
+    {
+      "rowId": "Test!23",
+      "sheetName": "Test",
+      "rowNumber": 23,
+      "rowText": "| | 2 | | | | 48 | 48 | 1 | | | | | NG can not using"
+    },
+    {
+      "rowId": "Test!50",
+      "sheetName": "Test",
+      "rowNumber": 50,
+      "rowText": "| | 11 | | | | 1391 | 115 | 0.08267434 | | | | | Production move Mainline test"
+    },
+    {
+      "rowId": "Test!53",
+      "sheetName": "Test",
+      "rowNumber": 53,
+      "rowText": "| | 12 | | | | 288 | 0 | 0 | | | | | Timer delay 30s to 60s Production move main line test"
+    },
+    {
+      "rowId": "Test!58",
+      "sheetName": "Test",
+      "rowNumber": 58,
+      "rowText": "| | 13 | | | | 208 | 0 | 0 | | | | | Timer delay 30s to 60s Production move main line test"
+    },
+    {
+      "rowId": "Test!65",
+      "sheetName": "Test",
+      "rowNumber": 65,
+      "rowText": "| IV. Decision."
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-986-rc-1",
+      "reviewTitle": "| BRS - 201506 REPORT CHECK LOT MATERIAL FILM AEM HAPPEN NG BROKEN AFTER FORMING | | | | | | | | | | | | | Part | ME",
+      "reviewPurpose": "| I. Purpose. / | - Using new lot material. Production date: 2024.11.16 Happen NG VP broken after forming rate 48/48pcs ~ 100% / | II. Content. / | - Check some items lot material NG after VP forming / | III. Result.",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs 1, 2, 3, 4, 5, 6, 7, 8",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "1, 2, 3, 4, 5, 6, 7, 8",
+          "subgroupKeys": [
+            "2024-11-18 00:00:00"
+          ],
+          "evidenceRows": [
+            "Test!14",
+            "Test!15",
+            "Test!2",
+            "Test!20",
+            "Test!23",
+            "Test!26",
+            "Test!29",
+            "Test!32",
+            "Test!35",
+            "Test!38",
+            "Test!41",
+            "Test!44",
+            "Test!47",
+            "Test!5",
+            "Test!50",
+            "Test!53",
+            "Test!58",
+            "Test!6"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "1. Result checking",
+          "comparisonRows": [
+            "Test!20",
+            "Test!23",
+            "Test!26",
+            "Test!29",
+            "Test!32",
+            "Test!35",
+            "Test!38",
+            "Test!41",
+            "Test!44",
+            "Test!47",
+            "Test!50",
+            "Test!53",
+            "Test!58"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 25316,
+              "condition": "1 | 2024-11-18 00:00:00",
+              "input": 48.0,
+              "ok": null,
+              "ng": 48.0,
+              "ratePercent": 100.0,
+              "evidenceRows": [
+                "Test!20"
+              ]
+            },
+            {
+              "metricId": 25317,
+              "condition": "2",
+              "input": 48.0,
+              "ok": null,
+              "ng": 48.0,
+              "ratePercent": 100.0,
+              "evidenceRows": [
+                "Test!23"
+              ]
+            },
+            {
+              "metricId": 25318,
+              "condition": "3",
+              "input": 48.0,
+              "ok": null,
+              "ng": 48.0,
+              "ratePercent": 100.0,
+              "evidenceRows": [
+                "Test!26"
+              ]
+            },
+            {
+              "metricId": 25319,
+              "condition": "4",
+              "input": 24.0,
+              "ok": null,
+              "ng": 24.0,
+              "ratePercent": 100.0,
+              "evidenceRows": [
+                "Test!29"
+              ]
+            },
+            {
+              "metricId": 25320,
+              "condition": "5",
+              "input": 24.0,
+              "ok": null,
+              "ng": 24.0,
+              "ratePercent": 100.0,
+              "evidenceRows": [
+                "Test!32"
+              ]
+            },
+            {
+              "metricId": 25321,
+              "condition": "6",
+              "input": 12.0,
+              "ok": null,
+              "ng": 12.0,
+              "ratePercent": 100.0,
+              "evidenceRows": [
+                "Test!35"
+              ]
+            },
+            {
+              "metricId": 25322,
+              "condition": "7",
+              "input": 12.0,
+              "ok": null,
+              "ng": 12.0,
+              "ratePercent": 100.0,
+              "evidenceRows": [
+                "Test!38"
+              ]
+            },
+            {
+              "metricId": 25323,
+              "condition": "8",
+              "input": 12.0,
+              "ok": null,
+              "ng": 12.0,
+              "ratePercent": 100.0,
+              "evidenceRows": [
+                "Test!41"
+              ]
+            },
+            {
+              "metricId": 25324,
+              "condition": "9",
+              "input": 12.0,
+              "ok": null,
+              "ng": 12.0,
+              "ratePercent": 100.0,
+              "evidenceRows": [
+                "Test!44"
+              ]
+            },
+            {
+              "metricId": 25325,
+              "condition": "10",
+              "input": 12.0,
+              "ok": null,
+              "ng": 12.0,
+              "ratePercent": 100.0,
+              "evidenceRows": [
+                "Test!47"
+              ]
+            },
+            {
+              "metricId": 25326,
+              "condition": "11",
+              "input": 1391.0,
+              "ok": null,
+              "ng": 115.0,
+              "ratePercent": 8.267434,
+              "evidenceRows": [
+                "Test!50"
+              ]
+            },
+            {
+              "metricId": 25327,
+              "condition": "12",
+              "input": 288.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!53"
+              ]
+            },
+            {
+              "metricId": 25328,
+              "condition": "13",
+              "input": 208.0,
+              "ok": null,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "Test!58"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Test!14",
+        "Test!15",
+        "Test!2",
+        "Test!20",
+        "Test!23",
+        "Test!26",
+        "Test!29",
+        "Test!32",
+        "Test!35",
+        "Test!38",
+        "Test!41",
+        "Test!44",
+        "Test!47",
+        "Test!5",
+        "Test!50",
+        "Test!53",
+        "Test!58",
+        "Test!6"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!14",
+      "Test!15",
+      "Test!2",
+      "Test!20",
+      "Test!23",
+      "Test!26",
+      "Test!29",
+      "Test!32",
+      "Test!35",
+      "Test!38",
+      "Test!41",
+      "Test!44",
+      "Test!47",
+      "Test!5",
+      "Test!50",
+      "Test!53",
+      "Test!58",
+      "Test!6"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

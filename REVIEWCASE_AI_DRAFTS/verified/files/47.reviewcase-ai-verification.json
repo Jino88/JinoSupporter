@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 47,
+  "sourceFile": "02. MSU-L20S15-07 GMI Report test MC bonding and ass'y Suspension improve PHI ( Sub 3 )_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\47.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:49:38Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 47,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies a real comparable test report but misgroups the changed factor and cites mostly headers instead of data rows.",
+    "issues": [
+      "Changed factor is a filename, not the MC bonding and ass'y process improvement.",
+      "Baseline and test conditions are explicit but not captured: before/normal vs after/Test MC.",
+      "Outcome stats are derived from headers/process numbers rather than result data rows.",
+      "Key data rows for process steps and NG results are omitted from evidence.",
+      "Rows 37 and 49 are cited but not shown in provided context."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to MC bonding frame plus ass'y SP process improvement for PHI.",
+      "Use before improve/Normal as baseline and after improve/Test MC as changed condition.",
+      "Cite process comparison rows 7-14 and result data rows 38-43 and 50-54.",
+      "Separate outcomes into process WK change, vision frame SP NG, and final SPK visual NG under one review case.",
+      "Preserve date, line E2-4B, type check, lot, and Sub 3 as subgroup context."
+    ],
+    "evidencePolicy": "Current citations are insufficient; final evidence must include both headers and row-level data."
+  },
+  "usage": {
+    "input_tokens": 6551,
+    "output_tokens": 742,
+    "total_tokens": 7293
+  }
+}

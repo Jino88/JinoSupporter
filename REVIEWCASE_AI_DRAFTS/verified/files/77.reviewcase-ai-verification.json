@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 77,
+  "sourceFile": "03. L20S15-07 Report test new lot CD (3-27) date   2025.04.14_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\77.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:28Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 77,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The workbook is a comparable new CD lot validation, but the draft misdefines the changed factor and outcome grouping.",
+    "issues": [
+      "Changed factor is a filename, not the tested CD lot condition.",
+      "Baseline or comparator condition is not identified despite comparison intent.",
+      "Outcome metrics include parser artifacts and unjudged raw tables.",
+      "Lot-level conclusions in Report!65-72 are omitted from outcome evidence.",
+      "Tension spec is cited but violation logic is not applied."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended baseline or comparator for the new CD lot 3/27?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to new CD material lot 3/27 validation.",
+      "Use Report!6-11 as purpose and test-condition evidence.",
+      "Group outcomes as dyne, tension, VP/CD separation, hearing/function NG by lot.",
+      "Add conclusion evidence from Report!65-72 and any decision rows after Report!74.",
+      "Remove parser-artifact measurement summaries and apply stated spec/judgements."
+    ],
+    "evidencePolicy": "Row citations exist, but final evidence is insufficient until condition and conclusion rows are correctly grouped."
+  },
+  "usage": {
+    "input_tokens": 7431,
+    "output_tokens": 645,
+    "total_tokens": 8076
+  }
+}

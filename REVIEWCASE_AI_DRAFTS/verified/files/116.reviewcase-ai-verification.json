@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 116,
+  "sourceFile": "046.MSU-20S15-07 Result check NG SPL ( At ~ 12.5)_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\116.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:52:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 116,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the changed factor and does not support final Ask AI evidence.",
+    "issues": [
+      "Changed factor is filename, not the process change.",
+      "Baseline/test conditions are not correctly defined.",
+      "FO bond normal data is treated as primary context without support.",
+      "Measurement outcomes cite mostly headers, not data rows.",
+      "NG rate result rows are omitted from outcomes."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary factor to increased bonding VP plus CD times 2.",
+      "Use normal/current lot or normal condition as baseline context.",
+      "Add Function rows for problem, lot check, process change, and NG result.",
+      "Group SPL/NTI/FO/THD/IMP as outcomes under the same investigation only with data-row citations.",
+      "Remove filename-derived factor and unsupported FO-only title."
+    ],
+    "evidencePolicy": "Row existence is OK, but citations are insufficient for changed-condition and measurement evidence."
+  },
+  "usage": {
+    "input_tokens": 5863,
+    "output_tokens": 678,
+    "total_tokens": 6541
+  }
+}

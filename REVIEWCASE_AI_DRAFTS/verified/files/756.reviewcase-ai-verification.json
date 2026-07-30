@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 756,
+  "sourceFile": "57. TIU L5S3-01 R Report  test change poisition Dry uv ass'y VP+coil  at AWF machine 2026.01.09_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\756.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:06Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 756,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft uses citeable rows but misgroups the changed factor and function comparisons.",
+    "issues": [
+      "Changed factor incorrectly mixes AWF before/after with line Test/Normal labels.",
+      "Function pair for 2026-01-12 compares Test to prior Normal instead of same-date Normal row.",
+      "Row Test!28 is cited but omitted from function comparisonRows and subResults.",
+      "Measurement outcome is spurious; function rows are defect-count tables, not measurement stats.",
+      "Baseline/test labels are inconsistent across outcomes."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define primary change as dry UV VP+coil assembly position change at AWF machine.",
+      "Use AWF Before as baseline and AWF After as changed for machine NG outcome.",
+      "Use Normal line as baseline and Test line as changed for function outcome by matching date/run rows.",
+      "Add row Test!28 to the 2026-01-12 function comparison and recalculate deltas.",
+      "Remove the measurement outcome based only on header-derived candidates."
+    ],
+    "evidencePolicy": "Citations exist, but row grouping is insufficient until corrected."
+  },
+  "usage": {
+    "input_tokens": 4572,
+    "output_tokens": 712,
+    "total_tokens": 5284
+  }
+}

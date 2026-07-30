@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 71,
+  "sourceFile": "029.MSU-20S15-07 Frame deformation test_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\71.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:23Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 71,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has valid source evidence for a temperature dry-box validation but grouping and outcome extraction need correction.",
+    "issues": [
+      "Baseline/test condition is ambiguous because Normal 120 and Test 120 are mixed.",
+      "Function outcome omits the 180C result row and is not fully compared.",
+      "Tension results lose inherited temperature for Suspension B subgroup rows.",
+      "Function rows and a header row are incorrectly treated as measurement stats.",
+      "Changed-factor domain and title are too generic or misleading."
+    ],
+    "requiredUserQuestions": [
+      "Should Test 120C be treated as the same baseline as Normal 120C across all sections?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to dry-box temperature condition for Frame+SP.",
+      "Use 120C baseline consistently or flag label ambiguity.",
+      "Keep frame deform, tension, and function as outcomes under the same temperature comparison.",
+      "Add function 180C row and remove header/function rows from measurement stats.",
+      "Propagate temperature to Suspension B rows and keep suspension as subgroup context."
+    ],
+    "evidencePolicy": "Citations are citeable but not yet sufficient because key rows are omitted and some cited rows are misclassified."
+  },
+  "usage": {
+    "input_tokens": 5976,
+    "output_tokens": 779,
+    "total_tokens": 6755
+  }
+}

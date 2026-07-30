@@ -1,0 +1,363 @@
+{
+  "sourceFileId": 467,
+  "sourceFile": "27. BRS-161014 Report check problem NG Gap frame+Yoke 2023.09.14_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\27. BRS-161014 Report check problem NG Gap frame+Yoke 2023.09.14_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:20Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Report",
+    "sheetRowCount": 23,
+    "sheetCellCount": 82,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 12
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Report!2",
+      "sheetName": "Report",
+      "rowNumber": 2,
+      "rowText": "| TITLE | REPORT CHECK REASON NG GAP FRAME/YOKE | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Report!3",
+      "sheetName": "Report",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | Date | 2023-09-14 00:00:00"
+    },
+    {
+      "rowId": "Report!4",
+      "sheetName": "Report",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | Marker | Tu"
+    },
+    {
+      "rowId": "Report!5",
+      "sheetName": "Report",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Report!6",
+      "sheetName": "Report",
+      "rowNumber": 6,
+      "rowText": "| -Improve NG height check"
+    },
+    {
+      "rowId": "Report!12",
+      "sheetName": "Report",
+      "rowNumber": 12,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Report!13",
+      "sheetName": "Report",
+      "rowNumber": 13,
+      "rowText": "| - Check dimension Frame ( check by 3D)"
+    },
+    {
+      "rowId": "Report!14",
+      "sheetName": "Report",
+      "rowNumber": 14,
+      "rowText": "| - Check dimension BPT (Check by caliper)"
+    },
+    {
+      "rowId": "Report!15",
+      "sheetName": "Report",
+      "rowNumber": 15,
+      "rowText": "| 3.Result"
+    },
+    {
+      "rowId": "Report!16",
+      "sheetName": "Report",
+      "rowNumber": 16,
+      "rowText": "| Result check dimension"
+    },
+    {
+      "rowId": "Report!18",
+      "sheetName": "Report",
+      "rowNumber": 18,
+      "rowText": "| | Date | Sample | Dimension FRAME | | Dimension BPT | | Gap (1) Frame-BPT | Gap (2) Frame-BPT"
+    },
+    {
+      "rowId": "Report!19",
+      "sheetName": "Report",
+      "rowNumber": 19,
+      "rowText": "| | | | 1 | 2 | 1 | 2"
+    },
+    {
+      "rowId": "Report!20",
+      "sheetName": "Report",
+      "rowNumber": 20,
+      "rowText": "| | | | Spec: 5.80~5.85 | Spec: 14.21~14.26 | Spec: 5.82~5.85 | Spec: 14.23~14.26"
+    },
+    {
+      "rowId": "Report!45",
+      "sheetName": "Report",
+      "rowNumber": 45,
+      "rowText": "| 4. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-467-rc-1",
+      "reviewTitle": "REPORT CHECK REASON NG GAP FRAME/YOKE | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | -Improve NG height check / | II. Content. / | - Check dimension Frame ( check by 3D) / | - Check dimension BPT (Check by caliper)",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material",
+            "process condition",
+            "dimension/spec"
+          ],
+          "changedFactor": "27. BRS-161014 Report check problem NG Gap frame+Yoke 2023.09.14",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Report!12",
+            "Report!18",
+            "Report!2",
+            "Report!20",
+            "Report!28",
+            "Report!5"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "Report!28"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 54441,
+              "condition": "Spec: 5.80~5.85",
+              "spec": "5.80~5.85",
+              "min": 5.7932,
+              "max": 5.8396,
+              "avg": 5.8164,
+              "sampleCount": 7,
+              "violationCount": 3,
+              "evidenceRows": [
+                "Report!28"
+              ]
+            },
+            {
+              "statId": 54442,
+              "condition": "Spec: 14.21~14.26",
+              "spec": "5.80~5.85",
+              "min": 14.2895,
+              "max": 14.3317,
+              "avg": 14.3106,
+              "sampleCount": 7,
+              "violationCount": 7,
+              "evidenceRows": [
+                "Report!28"
+              ]
+            },
+            {
+              "statId": 54443,
+              "condition": "Spec: 5.82~5.85",
+              "spec": "5.80~5.85",
+              "min": 5.83,
+              "max": 5.84,
+              "avg": 5.835,
+              "sampleCount": 7,
+              "violationCount": 1,
+              "evidenceRows": [
+                "Report!28"
+              ]
+            },
+            {
+              "statId": 54444,
+              "condition": "Spec: 14.23~14.26",
+              "spec": "5.80~5.85",
+              "min": 14.24,
+              "max": 14.25,
+              "avg": 14.245,
+              "sampleCount": 7,
+              "violationCount": 7,
+              "evidenceRows": [
+                "Report!28"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Result check dimension",
+          "comparisonRows": [
+            "Report!18"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 54445,
+              "condition": "Result check dimension / Dimension FRAME",
+              "spec": "5.80~5.85",
+              "min": 1.0,
+              "max": 5.8396,
+              "avg": 5.120442857142857,
+              "sampleCount": 7,
+              "violationCount": 3,
+              "evidenceRows": [
+                "Report!18"
+              ]
+            },
+            {
+              "statId": 54446,
+              "condition": "Result check dimension / Dimension BPT",
+              "spec": "5.80~5.85",
+              "min": 1.0,
+              "max": 5.84,
+              "avg": 5.140000000000001,
+              "sampleCount": 7,
+              "violationCount": 1,
+              "evidenceRows": [
+                "Report!18"
+              ]
+            },
+            {
+              "statId": 54447,
+              "condition": "Result check dimension / Gap (1) Frame-BPT",
+              "spec": "5.80~5.85",
+              "min": -0.0373,
+              "max": 0.0096,
+              "avg": -0.02338,
+              "sampleCount": 5,
+              "violationCount": 5,
+              "evidenceRows": [
+                "Report!18"
+              ]
+            },
+            {
+              "statId": 54448,
+              "condition": "Result check dimension / Gap (2) Frame-BPT",
+              "spec": "5.80~5.85",
+              "min": 0.0395,
+              "max": 0.0917,
+              "avg": 0.06492,
+              "sampleCount": 5,
+              "violationCount": 5,
+              "evidenceRows": [
+                "Report!18"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-3",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Date | Sample | Dimension FRAME | Dimension BPT | Gap (1) Frame-BPT | Gap (2) Frame-BPT",
+          "comparisonRows": [
+            "Report!20"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 54449,
+              "condition": "Dimension FRAME / Spec: 5.80~5.85",
+              "spec": "5.80~5.85",
+              "min": 5.7932,
+              "max": 5.8396,
+              "avg": 5.8086199999999995,
+              "sampleCount": 5,
+              "violationCount": 2,
+              "evidenceRows": [
+                "Report!20"
+              ]
+            },
+            {
+              "statId": 54450,
+              "condition": "Dimension FRAME / Spec: 14.21~14.26",
+              "spec": "5.80~5.85",
+              "min": 14.2895,
+              "max": 14.3317,
+              "avg": 14.30892,
+              "sampleCount": 5,
+              "violationCount": 5,
+              "evidenceRows": [
+                "Report!20"
+              ]
+            },
+            {
+              "statId": 54451,
+              "condition": "Dimension BPT / Spec: 5.82~5.85",
+              "spec": "5.80~5.85",
+              "min": 5.83,
+              "max": 5.84,
+              "avg": 5.832,
+              "sampleCount": 5,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Report!20"
+              ]
+            },
+            {
+              "statId": 54452,
+              "condition": "Dimension BPT / Spec: 14.23~14.26",
+              "spec": "5.80~5.85",
+              "min": 14.24,
+              "max": 14.25,
+              "avg": 14.244,
+              "sampleCount": 5,
+              "violationCount": 5,
+              "evidenceRows": [
+                "Report!20"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Report!12",
+        "Report!18",
+        "Report!2",
+        "Report!20",
+        "Report!28",
+        "Report!5"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Report!12",
+      "Report!18",
+      "Report!2",
+      "Report!20",
+      "Report!28",
+      "Report!5"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

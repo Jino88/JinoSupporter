@@ -1,0 +1,43 @@
+{
+  "sourceFileId": 266,
+  "sourceFile": "13. BRS-161016 Report Test PT 161014-S of Press line (Doojin coating) happen  NG dimension 30.9.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\266.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:41:42Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 266,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The source contains citeable Normal Frame vs PT 161014-S NG-dimension Test Frame evidence, but the draft has blocking changed-factor and outcome-grouping errors.",
+    "issues": [
+      "Blocking: changedFactor incorrectly includes Drop test Auto and Drop test manual as changed conditions; they are reliability test methods/outcomes, not baseline/test material conditions.",
+      "Blocking: primary changed factor should be Test Frame using PT 161014-S NG dimension versus Normal Frame, with sheet/date/line retained as subgroup context.",
+      "Blocking: 4.4 height dimension result is omitted from the main height outcome even though rows 4.4!35, 4.4!36 and decision row 4.4!59 show Test Frame NG 34/2718 rate 1.3% versus Normal 0%.",
+      "Blocking: tension FRAME+SP outcome is contaminated with drop-test and function rows, so measurement grouping is not reliable.",
+      "Blocking: Height check measurement outcomes appear auto-extracted from partial/header rows and include duplicated or malformed comparisons, including likely incorrect spec assignment for Have Grill measurements.",
+      "Non-blocking: supplier/coating changeDomain is not directly supported by the cited report rows; Doojin coating appears only in the filename and should not be treated as citeable evidence unless supported by worksheet rows.",
+      "Non-blocking: 21.10 function rows numerically show Test Frame lower NG rate than Normal, while conclusion text says test Frame is higher than normal line, so that sheet's function judgement should be flagged with a limitation or reconciled."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rewrite changed factor as 'Frame with PT 161014-S NG dimension / Test Frame vs Normal Frame'.",
+      "Remove Drop test Auto and Drop test manual from changedCondition and keep them only under the drop-test outcome.",
+      "Add subgroup keys for sheet/test round, date, line, and type where applicable, especially 4.4 versus 21.10 and E2-3A/E2-3B.",
+      "Regroup AOI laser cutting, height dimension, function, tension VP+Frame, tension Frame+SP, and drop test as separate outcomes under the same changed-factor context.",
+      "Add 4.4 height dimension comparison to the height outcome and judge it as worse for that round; keep 21.10 as no-change for that round.",
+      "Clean tension Frame+SP so it contains only Frame+SP rows, including Sus C and Sus D as subgroup conditions, and remove drop/function rows from that outcome.",
+      "Use decision rows 4.4!57 through 4.4!61 and 21.10!57 through 21.10!61 as supporting conclusion evidence, but do not let copied conclusion text override conflicting numeric rows without noting the limitation.",
+      "Remove or separately rework Height check auto-extracted measurement outcomes unless the row-level headers/specs can be cited and interpreted correctly.",
+      "Remove unsupported supplier/coating domains unless worksheet rows provide direct evidence."
+    ],
+    "evidencePolicy": "Evidence row citations are sufficient to prove a comparable Test Frame versus Normal Frame study exists, but current citations are not sufficient for final Ask AI use because several cited rows are misgrouped or only partial/header-derived."
+  },
+  "usage": {
+    "input_tokens": 12741,
+    "output_tokens": 1724,
+    "total_tokens": 14465
+  }
+}

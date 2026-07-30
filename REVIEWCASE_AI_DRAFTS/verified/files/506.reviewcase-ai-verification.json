@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 506,
+  "sourceFile": "3. BRS-201506 Report checking and improve problem NG VP vision date 4.1.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\506.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:59Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 506,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Core Normal line vs VP press JIG comparisons are citeable, but factor scope and invalid measurement outcomes need correction.",
+    "issues": [
+      "Changed factor omits possible bonding-line change from stated test content.",
+      "Date grouping is not preserved in subResults.",
+      "Header-derived measurement outcomes are not valid final evidence.",
+      "Sheet1 AWF settings are not tied to the main comparison as outcomes.",
+      "Evidence row list is overbroad and includes context/header rows as metrics."
+    ],
+    "requiredUserQuestions": [
+      "Is the test condition the new VP press JIG only, or press JIG plus bonding line outside 0.03?",
+      "Is Sheet1 intended as setup context for this validation or unrelated data?"
+    ],
+    "correctionPlan": [
+      "Revise changedFactor to reflect confirmed tested condition scope.",
+      "Add date as subgroup key for each paired result row.",
+      "Keep VP vision and function as separate outcomes under one review case.",
+      "Remove measurement outcomes based only on headers or cite actual data rows if kept.",
+      "Use concise evidence rows: purpose/content, table headers, and each compared data row."
+    ],
+    "evidencePolicy": "Citations are sufficient for core defect tables, insufficient for generated measurement stats."
+  },
+  "usage": {
+    "input_tokens": 6961,
+    "output_tokens": 788,
+    "total_tokens": 7749
+  }
+}

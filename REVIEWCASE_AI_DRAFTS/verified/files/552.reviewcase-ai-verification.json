@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 552,
+  "sourceFile": "33. BRS-161016 Report test material YOKE 161016 occurred dirty plating after clean Ethanol- 24.4.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\552.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:25Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 552,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is citeable but misidentifies the changed factor and misgroups tension and defect outcomes.",
+    "issues": [
+      "Changed factor incorrectly set as date instead of dirty-plated ethanol-cleaned test YOKE versus normal YOKE.",
+      "Baseline and changed conditions are reversed/unclear despite Test YOKE and Normal YOKE headers.",
+      "Tension measurements include sample indices as values and duplicate Test YOKE groups need table-level regrouping.",
+      "Visual NG outcome cites row 43 while provided context supports rows 41 and 67.",
+      "Judgements remain not_judged despite explicit OK/NG conclusions."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to dirty-plated YOKE 161016 cleaned by ethanol/test material versus normal YOKE.",
+      "Use rows 6,17,22-23 as condition evidence and preserve Test YOKE/Normal YOKE grouping.",
+      "Rebuild tension outcome using value columns only and apply spec >=50 kgf.",
+      "Add marking OK and visual SPK NG 7/18 outcomes with rows 39,41,67.",
+      "Assign judgements: tension OK, marking OK, visual final SPK failed/high NG."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient until corrected to cite the actual condition and outcome rows."
+  },
+  "usage": {
+    "input_tokens": 3886,
+    "output_tokens": 703,
+    "total_tokens": 4589
+  }
+}

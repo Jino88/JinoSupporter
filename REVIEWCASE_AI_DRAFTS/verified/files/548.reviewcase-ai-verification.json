@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 548,
+  "sourceFile": "32.1 BRS-161014 Report TEST AWF #1, #2, #3, #4 2023.09.20_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\548.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 548,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable AWF test evidence but misgroups the changed factor and includes artifact measurement outcomes.",
+    "issues": [
+      "Baseline/normal condition is not evidenced; report compares AWF#1-#4 test machines.",
+      "Primary factor is ambiguous between AWF machine and jig/pole settings.",
+      "Function results appear in two row groups but date/type/test-round keys are not preserved.",
+      "Measurement outcomes are extraction artifacts from headers/settings, not outcome evidence.",
+      "Evidence includes rows not shown in context, limiting content verification."
+    ],
+    "requiredUserQuestions": [
+      "Is the intended comparison among AWF machines or among jig/pole settings?",
+      "Do the two function-result blocks represent separate dates, types, or test rounds?"
+    ],
+    "correctionPlan": [
+      "Replace baseline-vs-test wording with AWF#1-#4 comparative test conditions.",
+      "Record Winding JIG size and Stretching POLE as condition attributes or subgroups.",
+      "Keep only function NG/OK/rate outcomes tied to each AWF row group.",
+      "Remove header-derived measurement/stat outcomes unless actual measurements are cited.",
+      "Add row citations for all result headers and each function result row used."
+    ],
+    "evidencePolicy": "Row citations exist but are not sufficient until grouping rows and result-row context are fully cited."
+  },
+  "usage": {
+    "input_tokens": 7071,
+    "output_tokens": 806,
+    "total_tokens": 7877
+  }
+}

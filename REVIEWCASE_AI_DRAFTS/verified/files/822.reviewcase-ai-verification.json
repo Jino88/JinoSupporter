@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 822,
+  "sourceFile": "65. TIU L5S3-01 R Report test new jig  F-PCB PRESS JIG #V5  to improve NG Frame deform -  date 2026.01.29_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\822.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:15:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 822,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft misidentifies the primary comparison; it should be New JIG V5 with added magnet versus normal jig, with line as subgroup.",
+    "issues": [
+      "Changed factor reverses/misgroups baseline and test conditions.",
+      "Line R and Line L are subgroup keys, not changed conditions.",
+      "New JIG V5 is incorrectly placed as subgroup instead of test condition.",
+      "Outcome metric is too generic and misses NG rate domains.",
+      "Decision row supporting apply/OK is not cited."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to F-PCB PRESS JIG V5 add Magnet 1.5 versus normal jig.",
+      "Set baselineCondition to normal jig and changedCondition to New JIG V5.",
+      "Use Line R and Line L as subgroup keys, preserving row pairs.",
+      "Define outcomes as NG counts/rates for frame deform and F-PCB separate.",
+      "Add header rows 14-15 and decision row 29 to evidence."
+    ],
+    "evidencePolicy": "Citations exist but are incomplete for final use; add metric headers and decision evidence."
+  },
+  "usage": {
+    "input_tokens": 2769,
+    "output_tokens": 576,
+    "total_tokens": 3345
+  }
+}

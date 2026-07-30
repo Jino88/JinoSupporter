@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 482,
+  "sourceFile": "28. TIU C11-20  Report Test  find reson NG   VP deform 2025.12.30_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\482.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:03Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 482,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because it merges unrelated comparison contexts and contains incorrect extracted results.",
+    "issues": [
+      "Changed factor mixes new grill test, shift/line, and Audiobus room analysis.",
+      "Baseline/test condition is not valid for most outcomes.",
+      "Several Audiobus room NG counts and rates conflict with cited rows.",
+      "Outcome pair judges new grill result as worse despite cited normal row showing 0 NG.",
+      "Row grouping keys are lost across shift, line, model, and machine room."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Split or regroup the report into coherent contexts: process check, new grill trial, shift tracking, and Audiobus room check.",
+      "Define each changed factor from cited source statements, not candidate-condition aggregation.",
+      "Re-extract NG, OK, input, and rates from the table rows with merged-cell context preserved.",
+      "Rejudge outcomes only where a valid baseline and comparator exist.",
+      "Keep shift, line, model, machine room, and total rows as separate grouping keys."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are not sufficient until values and grouping are corrected."
+  },
+  "usage": {
+    "input_tokens": 6016,
+    "output_tokens": 557,
+    "total_tokens": 6573
+  }
+}

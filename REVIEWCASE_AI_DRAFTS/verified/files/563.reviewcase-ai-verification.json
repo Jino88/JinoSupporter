@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 563,
+  "sourceFile": "34. TIU L5S3-01 R Report test find reason NG BAKO 2025.12.22_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\563.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:06:44Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 563,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but changed-factor and outcome grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor mixes time/type conditions with defect categories and totals.",
+      "Baseline/test condition is overbroad and only one subcomparison is actually calculated.",
+      "Measurement outcome is misclassified from function-defect table headers/categories.",
+      "Important result rows are cited but not represented in visible context, limiting verification.",
+      "Decision/conclusion rows are referenced but decision content is missing."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison Normal vs After 1 day, Type 1 vs Type 2, or both under one test?",
+      "Should FRF High/Low and Total NG be treated only as defect breakdown metrics?"
+    ],
+    "correctionPlan": [
+      "Rebuild changed factor around actual tested conditions from rows 8-10 and result table.",
+      "Separate Type 1 and Type 2 subgroups and keep date/after-1-day context.",
+      "Treat NG BAKO, FRF High/Low, Total NG, and NG rate as function-defect metrics, not measurements.",
+      "Cite all result rows used for each comparison and remove unused condition labels.",
+      "Add or cite the final decision row if it contains a conclusion."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until corrected."
+  },
+  "usage": {
+    "input_tokens": 3376,
+    "output_tokens": 638,
+    "total_tokens": 4014
+  }
+}

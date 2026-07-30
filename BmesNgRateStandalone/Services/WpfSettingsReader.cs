@@ -6,18 +6,14 @@ namespace BmesNgRateStandalone.Services;
 
 /// <summary>
 /// Reads settings from the WPF app's settings file.
-/// The actual settings file path is resolved through settings-bootstrap.json,
-/// which the WPF app writes to %LOCALAPPDATA%\JinoWorkHost\.
+/// The actual settings file path is resolved through settings-bootstrap.json
+/// under <see cref="AppStoragePaths.RootDirectory"/>.
 /// </summary>
 public static class WpfSettingsReader
 {
-    private static readonly string BootstrapPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "JinoWorkHost", "settings-bootstrap.json");
+    private static readonly string BootstrapPath = AppStoragePaths.Combine("settings-bootstrap.json");
 
-    private static readonly string FallbackSettingsPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "JinoWorkHost", "workhost-settings.json");
+    private static readonly string FallbackSettingsPath = AppStoragePaths.Combine("workhost-settings.json");
 
     /// <summary>
     /// Resolves the actual settings file path by reading settings-bootstrap.json.
@@ -59,26 +55,6 @@ public static class WpfSettingsReader
 
             if (!doc.RootElement.TryGetProperty("DataInference", out JsonElement diEl)) return null;
             if (!diEl.TryGetProperty("DatabasePath", out JsonElement pathEl))           return null;
-
-            string? path = pathEl.GetString();
-            return string.IsNullOrWhiteSpace(path) ? null : path;
-        }
-        catch { return null; }
-    }
-
-    /// <summary>
-    /// Returns the custom Schedule DB path set by the WPF app, or null if not configured.
-    /// Path is stored in Schedule.DatabasePath inside workhost-settings.json.
-    /// </summary>
-    public static string? TryGetScheduleDatabasePath()
-    {
-        try
-        {
-            using JsonDocument? doc = TryOpenSettings();
-            if (doc is null) return null;
-
-            if (!doc.RootElement.TryGetProperty("Schedule", out JsonElement schedEl)) return null;
-            if (!schedEl.TryGetProperty("DatabasePath", out JsonElement pathEl))      return null;
 
             string? path = pathEl.GetString();
             return string.IsNullOrWhiteSpace(path) ? null : path;

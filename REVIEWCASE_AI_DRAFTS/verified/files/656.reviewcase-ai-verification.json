@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 656,
+  "sourceFile": "44.BRS-161014 Report test new concept align ass'y Frame+Yoke_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\656.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:38Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 656,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft has citeable new-concept and outcome rows, but the baseline/comparison framing is not supported clearly enough for final evidence.",
+    "issues": [
+      "No explicit baseline or normal condition is evidenced.",
+      "Changed factor is framed as a comparison despite no comparison pair.",
+      "Outcome evidence rows 6.10!25 and 6.10!43 are cited but not shown in context text.",
+      "Outcome domains and judgements remain generic or not judged."
+    ],
+    "requiredUserQuestions": [
+      "Should this be treated as a one-condition validation of new concept align?",
+      "Is there an intended baseline or normal align condition in the workbook?"
+    ],
+    "correctionPlan": [
+      "Reframe changed factor as new concept align validation unless a baseline row is found.",
+      "Add row text or extracted values for 6.10!25 and 6.10!43.",
+      "Preserve visual and function results under one validation context.",
+      "Set outcome domains from the actual result tables.",
+      "Keep judgement as not judged unless decision rows support a conclusion."
+    ],
+    "evidencePolicy": "Citations exist, but outcome row content and baseline evidence are insufficient for final Ask AI use."
+  },
+  "usage": {
+    "input_tokens": 2499,
+    "output_tokens": 601,
+    "total_tokens": 3100
+  }
+}

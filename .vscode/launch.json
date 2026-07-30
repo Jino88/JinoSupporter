@@ -29,6 +29,46 @@
           "throwAction": "ignore"
         }
       ]
+    },
+    {
+      "name": "Standalone App",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-standalone-debug",
+      "program": "${workspaceFolder}/BmesNgRateStandalone/bin/Debug/net8.0-windows/BmesNgRateStandalone.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}/BmesNgRateStandalone/bin/Debug/net8.0-windows",
+      "stopAtEntry": false,
+      "console": "externalTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Deploy Standalone Update",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}/BmesNgRateStandalone/tools/PublishStandaloneUpdate.ps1\" -Version \"${input:standaloneUpdateVersion}\" -Notes \"${input:standaloneUpdateNotes}\"",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Build Standalone Installer",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}/BmesNgRateStandalone/tools/BuildStandaloneInstaller.ps1\" -Version \"${input:standaloneUpdateVersion}\"",
+      "cwd": "${workspaceFolder}"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "standaloneUpdateVersion",
+      "type": "promptString",
+      "description": "Standalone version, for example 1.0.10",
+      "default": "1.0.10"
+    },
+    {
+      "id": "standaloneUpdateNotes",
+      "type": "promptString",
+      "description": "Release notes shown in the Standalone update prompt",
+      "default": ""
     }
   ]
 }

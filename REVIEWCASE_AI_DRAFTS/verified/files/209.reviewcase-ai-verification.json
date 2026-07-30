@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 209,
+  "sourceFile": "10. BRS-201506 Report test material AEM lot improvement plan2  - 2024.01.25_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\209.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:13Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 209,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Comparable validation evidence exists, but the draft needs corrected changed-factor naming, outcome coverage, and citations before final use.",
+    "issues": [
+      "Changed factor should be AEM lot improvement plan 2 versus current/normal lot, not mixed VP labels.",
+      "Sub VP line result is cited but missing as an outcome.",
+      "Decision rows supporting material OK are not cited in the case evidence.",
+      "Tension test specs and subgroup keys are not preserved correctly.",
+      "Function metric includes stray extracted numeric text."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rename baseline as current/normal lot and test as AEM lot improvement plan 2 with VP Test Plan 2 aliases.",
+      "Add sub VP line defect outcome from rows 16-17 with note that higher NG was attributed to working method.",
+      "Add decision rows 58-63 to case and relevant outcome evidence.",
+      "Preserve tension subgroups VP+Dome, Frame+VP, Coil and their specs; judge all against spec if supported.",
+      "Clean outcome metric titles and align vision judgement with cited decision context."
+    ],
+    "evidencePolicy": "Row citations exist, but final decision and subgroup/spec citations are incomplete."
+  },
+  "usage": {
+    "input_tokens": 5197,
+    "output_tokens": 749,
+    "total_tokens": 5946
+  }
+}

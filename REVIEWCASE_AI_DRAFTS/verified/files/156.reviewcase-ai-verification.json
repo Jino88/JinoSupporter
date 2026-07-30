@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 156,
+  "sourceFile": "07. TIU C11-20 Result test AWF JIG Cut guide more  2025.12.10_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\156.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 156,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft cites valid rows but misidentifies the primary changed factor and outcome metric grouping.",
+    "issues": [
+      "Primary factor should be cut-more-guide JIG TEST vs Normal, not date comparison.",
+      "Baseline/test conditions are reversed or unclear in changedFactors.",
+      "Outcome metric should be Total NG rate and NG categories, not section title.",
+      "Date/shift differences are subgroup or confounding context and must be preserved.",
+      "Comparison uses one Normal row against multiple JIG TEST date/shift rows."
+    ],
+    "requiredUserQuestions": [
+      "Is the single 12/10 DAY Normal row an acceptable control for all JIG TEST rows?"
+    ],
+    "correctionPlan": [
+      "Set changedFactor to AWF jig cut-more-guide/JIG TEST condition.",
+      "Set baselineCondition to Normal and changedCondition to JIG TEST cut-more-guide.",
+      "Keep date and day/night as subgroup keys, not primary factors.",
+      "Rename outcome to Total NG rate with NG coil damage/separate counts.",
+      "State limitation that control coverage is only 12/10 DAY Normal."
+    ],
+    "evidencePolicy": "Row citations exist and are sufficient, but interpretation needs correction."
+  },
+  "usage": {
+    "input_tokens": 2775,
+    "output_tokens": 596,
+    "total_tokens": 3371
+  }
+}

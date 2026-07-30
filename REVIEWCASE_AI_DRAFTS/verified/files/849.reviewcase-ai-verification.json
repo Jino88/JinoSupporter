@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 849,
+  "sourceFile": "7. BRS-161014 Report Test  vision VP cutting offset  2023.11.9_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\849.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:16:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 849,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable rows but misgroups the compared conditions and includes an unsupported measurement outcome.",
+    "issues": [
+      "Primary comparison should be VP cutting offset G3 vs VP cutting OK, not Normal E2 vs both test types.",
+      "Normal E2 appears only as a function reference row, not the shared baseline for all outcomes.",
+      "Changed-factor domains include unsupported categories such as coating.",
+      "Measurement outcome from defect columns is not valid as dimensional/statistical evidence.",
+      "Key type-label evidence rows 13 and 15 are omitted from citations."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to vision VP cutting condition: offset G3 versus VP cutting OK.",
+      "Keep Normal E2 as a function-table reference or separate comparator only if explicitly supported.",
+      "Remove unsupported change domains and use process condition/inspection setting only.",
+      "Delete or reclassify the measurement outcome as function defect categories, not measurement stats.",
+      "Add rows 13, 15, 44, 45, 52 and 62 to evidence as needed for labels, headers and conclusion."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are incomplete and not sufficient for final Ask AI evidence."
+  },
+  "usage": {
+    "input_tokens": 3893,
+    "output_tokens": 792,
+    "total_tokens": 4685
+  }
+}

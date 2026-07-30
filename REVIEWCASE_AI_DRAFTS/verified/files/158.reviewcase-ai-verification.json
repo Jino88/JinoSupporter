@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 158,
+  "sourceFile": "07. TIU L5S3-01 R Result check Gauss Frame  happen NG low gauss_25.11.17_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\158.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:53:20Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 158,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the workbook but misstates the primary change and relies on unrelated SPL measurement rows instead of the gauss result evidence.",
+    "issues": [
+      "Primary changed factor should be magnetization setting 1 point to 2 point, not filename.",
+      "Baseline and changed conditions are explicit but marked not explicit.",
+      "Outcome should be gauss position results against N>150G, especially after-change row.",
+      "SPL rows appear secondary/raw and are not enough for final evidence grouping.",
+      "Change domain should be process setting, not dimension/spec."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changedFactor to magnetization setting change.",
+      "Set baselineCondition to 1 point magnetization and changedCondition to 2 point magnetization.",
+      "Use rows 13.11!6, 13.11!10, 13.11!13, 13.11!14, and 13.11!18 as core evidence.",
+      "Replace generic SPL outcomes with gauss values by position #1-#8 and OK judgement versus N>150G.",
+      "Add any decision rows after 13.11!35 if they contain the final conclusion."
+    ],
+    "evidencePolicy": "Current citations prove row existence but not sufficient final evidence; cite the changed-setting and result rows directly."
+  },
+  "usage": {
+    "input_tokens": 5214,
+    "output_tokens": 624,
+    "total_tokens": 5838
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 523,
+  "sourceFile": "30.1. BRS-161014  Report checking NTI test VP mold 7 add 0.3mm 16.4.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\523.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:33Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 523,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft finds a real Test VP vs Normal VP comparison but the changed factor and outcomes are not cleanly verified.",
+    "issues": [
+      "Changed factor is copied from filename, not normalized.",
+      "Baseline and changed conditions are marked not explicit despite Test VP and Normal VP evidence.",
+      "FO outcomes are misparsed into bogus per-row metrics and statistics.",
+      "SPL/THD/IMP evidence cites mostly header rows, not enough data rows.",
+      "ST appears to be a reference group but is not handled clearly."
+    ],
+    "requiredUserQuestions": [
+      "Confirm the changed condition is VP mold 7 with +0.3 mm versus normal VP?"
+    ],
+    "correctionPlan": [
+      "Set baseline to Normal VP and changed condition to Test VP.",
+      "Normalize changed factor to VP mold 7 +0.3 mm test if confirmed by source context.",
+      "Group SPL, THD, IMP, and FO as outcomes under one validation case.",
+      "Remove bogus FO row-derived statistics and use actual averages/data only.",
+      "Cite header plus representative data and average rows for each outcome."
+    ],
+    "evidencePolicy": "Current citations prove Test VP vs Normal VP labels, but not enough valid data or factor detail."
+  },
+  "usage": {
+    "input_tokens": 6366,
+    "output_tokens": 785,
+    "total_tokens": 7151
+  }
+}

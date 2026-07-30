@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 512,
+  "sourceFile": "3.BRS-161014  REPORT TEST  MC Bonding+Ass'y VP +Dome  30.11.2023_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\512.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:05:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 512,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable result rows but changed-factor grouping and one measurement outcome are not reliable enough for final evidence.",
+    "issues": [
+      "No explicit baseline or normal condition is evidenced.",
+      "Rows labeled 2 and 4 appear likely to be row numbers or merged-cell artifacts, not conditions.",
+      "Measurement outcome is derived from header/category data and is invalid.",
+      "Changed factor mixes needle type, bonding amount, and line extension without clear grouping.",
+      "Decision row context is not captured, so final judgement is missing."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Rebuild conditions from full rows 38, 40, 42, 44, and 46 with headers preserved.",
+      "Do not treat No values or bonding-amount ranges as primary changed factors unless supported by row context.",
+      "Represent this as a multi-condition validation if no baseline exists.",
+      "Remove the header-derived measurement statistics outcome.",
+      "Add any decision/conclusion row evidence if present."
+    ],
+    "evidencePolicy": "Row citations exist, but citations are insufficient until condition grouping is corrected."
+  },
+  "usage": {
+    "input_tokens": 3248,
+    "output_tokens": 763,
+    "total_tokens": 4011
+  }
+}

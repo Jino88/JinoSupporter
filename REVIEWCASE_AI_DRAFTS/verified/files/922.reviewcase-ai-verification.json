@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 922,
+  "sourceFile": "8. MSU-201507 DT Report test Reduce voltage hearing ( Improve coil deform )  date 21.3.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\922.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:18:12Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 922,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft identifies the 7V hearing-voltage test but lacks clear normal baseline data and may misread result metrics.",
+    "issues": [
+      "Normal baseline is referenced but no baseline result row is cited.",
+      "Row 22 contains multiple counts/rates; NG and rate values appear misparsed.",
+      "XRAY sheet is present but not assessed for relevant outcomes.",
+      "Changed-factor domain is left unknown despite voltage/process context.",
+      "Subgroups/models from row 16 are not preserved in outcomes."
+    ],
+    "requiredUserQuestions": [
+      "Is there a normal baseline table or row outside the cited rows?",
+      "Which columns in row 22 define NG rate for function and hearing?"
+    ],
+    "correctionPlan": [
+      "Inspect all sheets, especially XRAY, for baseline and outcome rows.",
+      "Rebuild column mapping for row 20 and row 22 before recording metrics.",
+      "Preserve model/module subgroups if results are split or intended by row 16.",
+      "Set changed factor to normal voltage check versus 7V-only hearing check if supported.",
+      "Do not judge comparison until normal baseline values are cited."
+    ],
+    "evidencePolicy": "Cited rows prove test intent and 7V condition, but are insufficient for baseline comparison and exact metrics."
+  },
+  "usage": {
+    "input_tokens": 2403,
+    "output_tokens": 680,
+    "total_tokens": 3083
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 767,
+  "sourceFile": "59.MSU-L20S15-07  Report test material center plate difference colour from Myungjin vender date 27.2.2026_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\767.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:27Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 767,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but mis-groups the changed factor and final SPK comparisons.",
+    "issues": [
+      "Changed factor wrongly includes auto/manual drop test as changed conditions.",
+      "Primary factor should be C-PT color level 1/level 2 versus Normal where present.",
+      "Final SPK has no Normal baseline, so auto/manual should be subgroup context only.",
+      "Decision rows supporting use approval are not cited.",
+      "Subgroup keys are incomplete and inconsistent."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Revise changedFactor to center plate/C-PT color level 1 and level 2 from Myungjin versus Normal C-PT.",
+      "Move auto/manual drop test to subgroup or method keys, not changedCondition.",
+      "Keep decap, semi-yoke, function, and final SPK under one validation report context.",
+      "For final SPK, record level 1/level 2 auto/manual pass results without Normal-vs-test judgement.",
+      "Add decision evidence rows 50-56 and relevant section headers."
+    ],
+    "evidencePolicy": "Row citations are present but insufficient until grouping and decision citations are corrected."
+  },
+  "usage": {
+    "input_tokens": 6390,
+    "output_tokens": 704,
+    "total_tokens": 7094
+  }
+}

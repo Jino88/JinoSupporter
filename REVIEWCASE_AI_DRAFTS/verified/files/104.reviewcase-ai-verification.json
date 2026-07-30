@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 104,
+  "sourceFile": "04. L20S15-07 Report test new lot CD (4-12) date   2025.4.12_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\104.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:51:44Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 104,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source rows but changed-factor and outcome grouping are not reliable enough for final evidence.",
+    "issues": [
+      "Changed factor is a filename, not the tested lot/material condition.",
+      "Baseline or comparison condition is not identified beyond vague other condition.",
+      "Several outcomes are header/title artifacts, not real metrics.",
+      "Tension rows are mis-labeled and spec 1.2 kgf is not applied.",
+      "Report and Tension results need one coherent validation context."
+    ],
+    "requiredUserQuestions": [
+      "What is the intended baseline or other condition for comparing CD lot 4/12?",
+      "Are numbered rows separate lots/samples under the same CD lot test?"
+    ],
+    "correctionPlan": [
+      "Set changed factor to new CD lot 4/12 material/lot validation.",
+      "Define baseline from source or mark it explicitly unknown if absent.",
+      "Remove title/header-derived measurement outcomes.",
+      "Regroup outcomes as dyne, tension, VP/CD separate, and function NG results.",
+      "Cite purpose, content, table headers, data rows, tension spec, and conclusion rows."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are not sufficient because grouping and metric evidence are misused."
+  },
+  "usage": {
+    "input_tokens": 5631,
+    "output_tokens": 659,
+    "total_tokens": 6290
+  }
+}

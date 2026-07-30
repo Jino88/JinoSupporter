@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 653,
+  "sourceFile": "44. BRS-201506 Report Checking and test problem Suspension + Coil Gap date 11.5.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\653.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:09:37Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 653,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but the changed-factor grouping is materially over-broad and mixes conditions, dates, positions, totals, and outcomes.",
+    "issues": [
+      "Changed factor incorrectly lists dates, positions, totals, and test condition as one factor.",
+      "Baseline/test definition is only clear for function rows, not for process-position rows.",
+      "Process outcome is unjudged and not grouped by date, position, or improvement status.",
+      "Subgroup key is incomplete because #1-#4, dates, and totals are row-level context.",
+      "Evidence omits some needed header/note context for process rows."
+    ],
+    "requiredUserQuestions": [
+      "Is the primary comparison Normal/before improvement vs after UV LED press improvement?",
+      "Should process rows be compared by date, by position, or only summarized as before/after improvement?"
+    ],
+    "correctionPlan": [
+      "Redefine changed factor as UV LED press improvement only if confirmed by source notes.",
+      "Keep date and position as subgroup keys, not changed conditions.",
+      "Separate process table rows into before/after groups or mark as descriptive if no baseline/test is proven.",
+      "Retain function comparison Normal vs After improve with NG rate improvement.",
+      "Cite table headers plus each compared data row and relevant improvement notes."
+    ],
+    "evidencePolicy": "Row citations exist, but grouping citations are insufficient until headers, notes, and condition rows support the comparison."
+  },
+  "usage": {
+    "input_tokens": 4399,
+    "output_tokens": 827,
+    "total_tokens": 5226
+  }
+}

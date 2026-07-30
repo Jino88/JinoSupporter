@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 489,
+  "sourceFile": "29. BRS-161016 Report check problem damage Frame  13.4.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\489.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:04:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 489,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The source is a monitoring/check report with no citeable baseline-vs-changed condition, so it should not become a comparative ReviewCase.",
+    "issues": [
+      "No explicit changed factor or test condition is evidenced.",
+      "Dates, rounds, and totals are misclassified as changed conditions.",
+      "Baseline condition is invented rather than source-supported.",
+      "Outcome grouping may collapse Main 1 and Main 2 result domains.",
+      "Rows exist but do not support the proposed comparison."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Exclude this draft from comparative ReviewCase use.",
+      "Remove the invented changed-factor comparison.",
+      "If observational records are supported, recast as a non-comparative inspection summary.",
+      "Preserve date, round, and Main 1/Main 2 as grouping keys only.",
+      "Cite purpose, test content, result table, and final conclusion rows."
+    ],
+    "evidencePolicy": "Row citations exist, but they are insufficient as changed-condition evidence."
+  },
+  "usage": {
+    "input_tokens": 3426,
+    "output_tokens": 588,
+    "total_tokens": 4014
+  }
+}

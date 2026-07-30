@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 723,
+  "sourceFile": "52. TIU L5S3-01 L Report test mark bako +-2,3db to improve NG SPL at Bac ninh -  date 2026.01.06_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\723.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:11:54Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 723,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures the mask tolerance comparison but overgroups line/date contexts and includes unsupported measurement-style outcomes.",
+    "issues": [
+      "Changed factor mixes mask tolerance with GMI/DT line labels instead of preserving line/date as subgroups.",
+      "DT ±3db row is omitted from changed factor and outcome grouping.",
+      "Sheet1 and Test results appear duplicated but are treated as separate outcome domains.",
+      "Measurement outcome is derived from a header/category row and is not valid measurement evidence.",
+      "Title/file side mismatch L vs R needs context check if side matters."
+    ],
+    "requiredUserQuestions": [
+      "Should GMI and DT line/date results be separate subgroups under one mask tolerance comparison?"
+    ],
+    "correctionPlan": [
+      "Set primary factor to Normal mask ±4db vs test mask ±2db and ±3db.",
+      "Add subgroup keys for date, line, and side if supported by rows.",
+      "Include complete rows for each subgroup, including DT ±3db.",
+      "Merge duplicate function defect tables or mark one as supporting evidence only.",
+      "Remove or recast the measurement outcome as defect category breakdown only if data rows support it."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient: key subgroup rows are missing and one cited row is only a header."
+  },
+  "usage": {
+    "input_tokens": 4523,
+    "output_tokens": 799,
+    "total_tokens": 5322
+  }
+}

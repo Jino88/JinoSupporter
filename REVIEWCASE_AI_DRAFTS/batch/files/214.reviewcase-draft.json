@@ -1,0 +1,298 @@
+{
+  "sourceFileId": 214,
+  "sourceFile": "10. TIU L5S3-01 R Report test Check iussue MG+YOKE separate  date 2025.11.29_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\10. TIU L5S3-01 R Report test Check iussue MG+YOKE separate  date 2025.11.29_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:19Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Test",
+    "sheetRowCount": 22,
+    "sheetCellCount": 79,
+    "comparisonPairCount": 4,
+    "metricCandidateCount": 9,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Test!2",
+      "sheetName": "Test",
+      "rowNumber": 2,
+      "rowText": "| TITLE | | TIU L5S3-01 [R] REPORT CHECK IUSSUE MG+YK SEPARATE | | | | | | | | | | Dept | ME"
+    },
+    {
+      "rowId": "Test!3",
+      "sheetName": "Test",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | | | | | Date | 2025-11-29 00:00:00"
+    },
+    {
+      "rowId": "Test!4",
+      "sheetName": "Test",
+      "rowNumber": 4,
+      "rowText": "| | | | | | | | | | | | | Marker | Nhung"
+    },
+    {
+      "rowId": "Test!5",
+      "sheetName": "Test",
+      "rowNumber": 5,
+      "rowText": "| I. Purpose."
+    },
+    {
+      "rowId": "Test!6",
+      "sheetName": "Test",
+      "rowNumber": 6,
+      "rowText": "| - After dry => MG +YK happen separate, rate 2/8pcs ~25%"
+    },
+    {
+      "rowId": "Test!7",
+      "sheetName": "Test",
+      "rowNumber": 7,
+      "rowText": "| => Check some codition in line find reason"
+    },
+    {
+      "rowId": "Test!8",
+      "sheetName": "Test",
+      "rowNumber": 8,
+      "rowText": "| II. Content."
+    },
+    {
+      "rowId": "Test!9",
+      "sheetName": "Test",
+      "rowNumber": 9,
+      "rowText": "| -Check some codition in line:"
+    },
+    {
+      "rowId": "Test!10",
+      "sheetName": "Test",
+      "rowNumber": 10,
+      "rowText": "| III. Result"
+    },
+    {
+      "rowId": "Test!11",
+      "sheetName": "Test",
+      "rowNumber": 11,
+      "rowText": "| | * RESULT CHECKING"
+    },
+    {
+      "rowId": "Test!12",
+      "sheetName": "Test",
+      "rowNumber": 12,
+      "rowText": "| | Date | No | Item | | | Input | NG | NG rate | Note"
+    },
+    {
+      "rowId": "Test!13",
+      "sheetName": "Test",
+      "rowNumber": 13,
+      "rowText": "| | 2025-12-01 00:00:00 | 1 | Clean Material MG, YK (2nd) Ethanol | | | 8 | 2 | 0.25 | NG"
+    },
+    {
+      "rowId": "Test!16",
+      "sheetName": "Test",
+      "rowNumber": 16,
+      "rowText": "| | | 4 | Using lot Old material (Material ME setting machine) | | | 24 | 0 | 0 | OK"
+    },
+    {
+      "rowId": "Test!17",
+      "sheetName": "Test",
+      "rowNumber": 17,
+      "rowText": "| | | 5 | Change new lot material MG | | | 24 | 13 | 0.54166667 | NG"
+    },
+    {
+      "rowId": "Test!20",
+      "sheetName": "Test",
+      "rowNumber": 20,
+      "rowText": "| | | 8 | Clean Material MG, YK by Primer | | | 200 | 0 | 0 | OK"
+    },
+    {
+      "rowId": "Test!21",
+      "sheetName": "Test",
+      "rowNumber": 21,
+      "rowText": "| | | 9 | Clean Material MG, YK by Lumix 840 | | | 700 | 1 | 0.00142857 | OK"
+    },
+    {
+      "rowId": "Test!23",
+      "sheetName": "Test",
+      "rowNumber": 23,
+      "rowText": "| IV. Decision"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-214-rc-1",
+      "reviewTitle": "| TIU L5S3-01 [R] REPORT CHECK IUSSUE MG+YK SEPARATE | | | | | | | | | | Dept | ME",
+      "reviewPurpose": "| I. Purpose. / | - After dry => MG +YK happen separate, rate 2/8pcs ~25% / | => Check some codition in line find reason / | II. Content. / | -Check some codition in line:",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "material",
+            "process condition"
+          ],
+          "changedFactor": "Condition comparison: Using lot Old material (Material ME setting machine) vs Change dry oven same codition (Fr+vp), Change new lot material MG, Change dry oven same codition (Dry Yoke 11-20), Change dry oven Frame+F-PCB (300/10min), Clean Material MG, YK (2nd) Ethanol, Increase bond amount (actual 0.05mg), Using lot Old material (Material ME setting machine), Clean Material MG, YK by Primer",
+          "baselineCondition": "Using lot Old material (Material ME setting machine)",
+          "changedCondition": "Change dry oven same codition (Fr+vp), Change new lot material MG, Change dry oven same codition (Dry Yoke 11-20), Change dry oven Frame+F-PCB (300/10min), Clean Material MG, YK (2nd) Ethanol, Increase bond amount (actual 0.05mg), Using lot Old material (Material ME setting machine), Clean Material MG, YK by Primer",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Test!13",
+            "Test!14",
+            "Test!15",
+            "Test!16",
+            "Test!17",
+            "Test!18",
+            "Test!19",
+            "Test!2",
+            "Test!20",
+            "Test!21",
+            "Test!5",
+            "Test!8"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "pair-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "process defect",
+          "outcomeMetric": "* RESULT CHECKING",
+          "comparisonRows": [
+            "Test!15",
+            "Test!16",
+            "Test!17",
+            "Test!18",
+            "Test!19"
+          ],
+          "judgement": "worse",
+          "subResults": [
+            {
+              "pairId": 3694,
+              "controlCondition": "Using lot Old material (Material ME setting machine)",
+              "testCondition": "Change dry oven same codition (Fr+vp)",
+              "control": {
+                "input": 24.0,
+                "ng": 0.0,
+                "ratePercent": 0.0
+              },
+              "test": {
+                "input": 16.0,
+                "ng": 2.0,
+                "ratePercent": 12.5
+              },
+              "deltaRatePercentPoint": 12.5,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Test!15",
+                "Test!16"
+              ]
+            },
+            {
+              "pairId": 3695,
+              "controlCondition": "Using lot Old material (Material ME setting machine)",
+              "testCondition": "Change new lot material MG",
+              "control": {
+                "input": 24.0,
+                "ng": 0.0,
+                "ratePercent": 0.0
+              },
+              "test": {
+                "input": 24.0,
+                "ng": 13.0,
+                "ratePercent": 54.166667000000004
+              },
+              "deltaRatePercentPoint": 54.166667000000004,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Test!16",
+                "Test!17"
+              ]
+            },
+            {
+              "pairId": 3696,
+              "controlCondition": "Using lot Old material (Material ME setting machine)",
+              "testCondition": "Change dry oven same codition (Dry Yoke 11-20)",
+              "control": {
+                "input": 24.0,
+                "ng": 0.0,
+                "ratePercent": 0.0
+              },
+              "test": {
+                "input": 16.0,
+                "ng": 8.0,
+                "ratePercent": 50.0
+              },
+              "deltaRatePercentPoint": 50.0,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Test!16",
+                "Test!18"
+              ]
+            },
+            {
+              "pairId": 3697,
+              "controlCondition": "Using lot Old material (Material ME setting machine)",
+              "testCondition": "Change dry oven Frame+F-PCB (300/10min)",
+              "control": {
+                "input": 24.0,
+                "ng": 0.0,
+                "ratePercent": 0.0
+              },
+              "test": {
+                "input": 16.0,
+                "ng": 1.0,
+                "ratePercent": 6.25
+              },
+              "deltaRatePercentPoint": 6.25,
+              "effectDirection": "WORSENED",
+              "evidenceRows": [
+                "Test!16",
+                "Test!19"
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "evidenceRows": [
+        "Test!13",
+        "Test!14",
+        "Test!15",
+        "Test!16",
+        "Test!17",
+        "Test!18",
+        "Test!19",
+        "Test!2",
+        "Test!20",
+        "Test!21",
+        "Test!5",
+        "Test!8"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Test!13",
+      "Test!14",
+      "Test!15",
+      "Test!16",
+      "Test!17",
+      "Test!18",
+      "Test!19",
+      "Test!2",
+      "Test!20",
+      "Test!21",
+      "Test!5",
+      "Test!8"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

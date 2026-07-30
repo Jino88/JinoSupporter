@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 216,
+  "sourceFile": "10.1.BRS-2015 Report Test material silicone gasket date 4.10.2024_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\216.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:30Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 216,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source context but the changed-factor grouping and outcome calculations are not reliable.",
+    "issues": [
+      "Changed factor incorrectly mixes BRS-201506 and X616/X516 conditions as baseline/test.",
+      "Baseline should be Normal or old jig normal, not a list including test conditions.",
+      "616BOTTOM comparisons ignore date/model/side adjacency and use mismatched rows.",
+      "NG counts use defect subcolumns while rates use Total NG, causing inconsistent metrics.",
+      "Header-only measurement statistics are not valid outcome evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define one changed factor as new Hearing+Bako jig with silicone gasket and Y/S 0.45-0.55T versus normal/old jig normal.",
+      "Keep subgroup keys by sheet, date, model, side, and test stage.",
+      "Rebuild function outcomes from paired rows and total rows using Input, Total NG, and NG rate consistently.",
+      "Use 201506 totals and 616BOTTOM totals as separate outcomes under the same validation context if supported by decision rows.",
+      "Remove fabricated measurement stats based only on header rows."
+    ],
+    "evidencePolicy": "Row citations exist, but current citations are insufficient because grouping and metric use are wrong."
+  },
+  "usage": {
+    "input_tokens": 10758,
+    "output_tokens": 794,
+    "total_tokens": 11552
+  }
+}

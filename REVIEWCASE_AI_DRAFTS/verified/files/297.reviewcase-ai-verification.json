@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 297,
+  "sourceFile": "15. BRS-2015 Report test Suspension 201506 -B  new vender WorldTop  Hanoi Vina_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\297.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:57:43Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 297,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable evidence but the changed factor, baseline/test labels, and outcome coverage are not verified enough for final Ask AI use.",
+    "issues": [
+      "Changed factor is filename-like instead of new vendor WorldTop Hanoi Vina suspension 2015-B lot test.",
+      "Baseline and changed conditions are left implicit despite Normal and Lot test/Test rows.",
+      "Major outcomes are omitted: assy/frame NG, sport welding NG, function NG, module-line decision.",
+      "Merged-cell context is not preserved for tension coil rows, causing Test/Normal ambiguity.",
+      "Tension spec and sample counts are extracted incorrectly or incompletely."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set changed factor to new vendor WorldTop Hanoi Vina suspension material lot test versus Normal.",
+      "Preserve date, line E2-4B, lot/test type, and measurement item as subgroup keys.",
+      "Add all result domains under the same validation report changed factor.",
+      "Fix tension subresults with inherited Test/Normal labels, specs, and actual sample counts.",
+      "Cite result headers, comparison rows, and decision rows for each outcome."
+    ],
+    "evidencePolicy": "Row citations exist, but final evidence must include all outcome and decision rows with preserved grouping context."
+  },
+  "usage": {
+    "input_tokens": 4170,
+    "output_tokens": 767,
+    "total_tokens": 4937
+  }
+}

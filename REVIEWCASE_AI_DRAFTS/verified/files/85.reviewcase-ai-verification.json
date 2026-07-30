@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 85,
+  "sourceFile": "03.MSU-L20S15-07 Report test New AWF Machine-02025.06.13_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\85.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:50:44Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 85,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft identifies a comparable coil-change report but misgroups the factor and contains unsupported extracted measurements.",
+    "issues": [
+      "Changed factor is too generic and misclassified as equipment.",
+      "Baseline/test labels should be Normal vs Test New coil, not Test only.",
+      "Review title is a graph header, not the report title.",
+      "Many measurement outcomes are header-derived or nonsensical.",
+      "Visual/function citations and column parsing need validation."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set title from the Test sheet report title.",
+      "Define factor as coil stretching/shape change from normal to new square coil.",
+      "Rebuild visual and function tables with both Normal and Test rows.",
+      "Keep acoustic SPL, Fo, and THD as one valid outcome group using GRAPH/RAW averages.",
+      "Remove bogus header-derived measurement subresults."
+    ],
+    "evidencePolicy": "Citations are partially sufficient for factor evidence but not for final outcomes."
+  },
+  "usage": {
+    "input_tokens": 26093,
+    "output_tokens": 737,
+    "total_tokens": 26830
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 211,
+  "sourceFile": "10. MSU-L20S15-07 DT Report test Plasma suspension A,B to improve NG solder weak - 2025.5.14_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\211.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T12:55:15Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 211,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "medium",
+    "summary": "Draft captures a plasma-vs-normal spot-welding test but misgroups SUS type as a changed condition and uses an invalid outcome metric label.",
+    "issues": [
+      "Changed condition incorrectly includes SUS B instead of treating SUS A/B as subgroups.",
+      "Baseline/test mapping is ambiguous for SUS B due merged or omitted content rows.",
+      "Outcome metric is a section title, not NG rate or spot-welding defect result.",
+      "Full cited texts for key test rows 17 and 19 are absent from the provided context.",
+      "Bonding solder pad condition may be a secondary condition or confound for SUS B baseline."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Set primary changed factor to plasma suspension use versus normal process.",
+      "Keep SUS A and SUS B as subgroup keys, not changed conditions.",
+      "Confirm full row 17 and row 19 values including merged content/date fields.",
+      "Define outcomes as input, OK, weak solder, offset, total NG, and NG rate.",
+      "Record bonding solder pad as a secondary condition for the SUS B normal baseline if applicable."
+    ],
+    "evidencePolicy": "Citations exist but are not sufficient until key comparison rows and headers are fully exposed and grouped."
+  },
+  "usage": {
+    "input_tokens": 2822,
+    "output_tokens": 761,
+    "total_tokens": 3583
+  }
+}

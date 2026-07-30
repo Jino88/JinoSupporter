@@ -1,17 +1,22 @@
 @page "/bmes/setting"
+@page "/setting"
 @rendermode InteractiveServer
 @using JinoSupporter.Web.Services
 @using Microsoft.AspNetCore.Components.Web
+@inject AppPathsService         AppPaths
 @inject NgRateSettingsService    NgRateSettings
 @inject BmesMaterialService      BmesMaterials
 @inject BmesRoutingScrapeService BmesRoutingScrape
+@inject BmesSettingsSyncService  BmesSettingsSync
 @inject WebRepository            Repo
+@inject AiProviderSettingsService AiProviders
+@inject QrBakoDataService        QrBakoData
 
-<PageTitle>BMES Setting</PageTitle>
+<PageTitle>Setting</PageTitle>
 
 <div class="d-flex align-items-center gap-2 mb-3">
     <span style="font-size:20px;">⚙️</span>
-    <h5 class="mb-0 fw-semibold">BMES Setting</h5>
+    <h5 class="mb-0 fw-semibold">Setting</h5>
 </div>
 
 @if (!string.IsNullOrEmpty(_statusMsg))
@@ -22,12 +27,233 @@
     </div>
 }
 
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <div class="row g-3 mb-3">
+            <div class="col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header fw-semibold small">Claude API</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold mb-1">API Key</label>
+                            <div class="input-group input-group-sm">
+                                <input type="@(_showKey ? "text" : "password")"
+                                       class="form-control form-control-sm font-monospace"
+                                       placeholder="sk-ant-api03-..."
+                                       @bind="_apiKey" />
+                                <button class="btn btn-outline-secondary btn-sm" type="button"
+                                        @onclick="() => _showKey = !_showKey">
+                                    @(_showKey ? "Hide" : "Show")
+                                </button>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" @onclick="SaveClaudeAsync" disabled="@_claudeSaving">
+                            @(_claudeSaving ? "Saving..." : "Save")
+                        </button>
+                        @if (_claudeSaved) { <span class="ms-2 text-success fw-semibold small">Saved.</span> }
+                        @if (!string.IsNullOrEmpty(_claudeError)) { <div class="small text-danger mt-2">@_claudeError</div> }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header fw-semibold small">Codex API (OpenAI)</div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold mb-1">API Key</label>
+                            <div class="input-group input-group-sm">
+                                <input type="@(_showCodexKey ? "text" : "password")"
+                                       class="form-control form-control-sm font-monospace"
+                                       placeholder="sk-..."
+                                       @bind="_codexApiKey" />
+                                <button class="btn btn-outline-secondary btn-sm" type="button"
+                                        @onclick="() => _showCodexKey = !_showCodexKey">
+                                    @(_showCodexKey ? "Hide" : "Show")
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold mb-1">Translate Model</label>
+                            <input class="form-control form-control-sm font-monospace"
+                                   placeholder="@CodexApiService.DefaultTranslateModel"
+                                   @bind="_codexTranslateModel" />
+                        </div>
+                        <button class="btn btn-primary btn-sm" @onclick="SaveCodexAsync" disabled="@_codexSaving">
+                            @(_codexSaving ? "Saving..." : "Save")
+                        </button>
+                        @if (_codexSaved) { <span class="ms-2 text-success fw-semibold small">Saved.</span> }
+                        @if (!string.IsNullOrEmpty(_codexError)) { <div class="small text-danger mt-2">@_codexError</div> }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header fw-semibold small">AI Provider Switches</div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="aiClaudeApi"
+                                   @bind="_aiProviders.ClaudeApiEnabled" />
+                            <label class="form-check-label small" for="aiClaudeApi">Claude API</label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="aiClaudeCli"
+                                   @bind="_aiProviders.ClaudeCliEnabled" />
+                            <label class="form-check-label small" for="aiClaudeCli">Claude CLI</label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="aiCodexCli"
+                                   @bind="_aiProviders.CodexCliEnabled" />
+                            <label class="form-check-label small" for="aiCodexCli">Codex CLI</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="aiCodexApi"
+                                   @bind="_aiProviders.CodexApiEnabled" />
+                            <label class="form-check-label small" for="aiCodexApi">Codex API</label>
+                        </div>
+                        <button class="btn btn-primary btn-sm" @onclick="SaveAiProvidersAsync" disabled="@_aiProviderSaving">
+                            @(_aiProviderSaving ? "Saving..." : "Save")
+                        </button>
+                        @if (_aiProviderSaved) { <span class="ms-2 text-success fw-semibold small">Saved.</span> }
+                        @if (!string.IsNullOrEmpty(_aiProviderError)) { <div class="small text-danger mt-2">@_aiProviderError</div> }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header fw-semibold small">QR BAKO DATA DB</div>
+                    <div class="card-body">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-lg-3 col-md-6">
+                                <label class="form-label small fw-semibold mb-1">Server</label>
+                                <input class="form-control form-control-sm" @bind="_pathsForm.QrBakoDataServer" />
+                            </div>
+                            <div class="col-lg-1 col-md-3">
+                                <label class="form-label small fw-semibold mb-1">Port</label>
+                                <input class="form-control form-control-sm" type="number" min="1" max="65535" @bind="_pathsForm.QrBakoDataPort" />
+                            </div>
+                            <div class="col-lg-2 col-md-4">
+                                <label class="form-label small fw-semibold mb-1">Database</label>
+                                <input class="form-control form-control-sm" @bind="_pathsForm.QrBakoDataDatabase" />
+                            </div>
+                            <div class="col-lg-2 col-md-4">
+                                <label class="form-label small fw-semibold mb-1">User ID</label>
+                                <input class="form-control form-control-sm" @bind="_pathsForm.QrBakoDataUserId" autocomplete="off" />
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <label class="form-label small fw-semibold mb-1">Password</label>
+                                <div class="input-group input-group-sm">
+                                    <input class="form-control form-control-sm"
+                                           type="@(_showQrBakoPassword ? "text" : "password")"
+                                           @bind="_pathsForm.QrBakoDataPassword"
+                                           autocomplete="off" />
+                                    <button class="btn btn-outline-secondary btn-sm"
+                                            type="button"
+                                            @onclick="() => _showQrBakoPassword = !_showQrBakoPassword">
+                                        @(_showQrBakoPassword ? "Hide" : "Show")
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-lg-1 col-md-3">
+                                <label class="form-label small fw-semibold mb-1">Rows</label>
+                                <input class="form-control form-control-sm" type="number" min="1" max="20000" @bind="_pathsForm.QrBakoDataDefaultMaxRows" />
+                            </div>
+                            <div class="col-lg-2 col-md-3">
+                                <label class="form-label small fw-semibold mb-1">Timeout</label>
+                                <input class="form-control form-control-sm" type="number" min="1" max="300" @bind="_pathsForm.QrBakoDataTimeoutSeconds" />
+                            </div>
+                            <div class="col-lg-4 col-md-6 d-flex align-items-end gap-3">
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" id="qrBakoEncrypt" type="checkbox" @bind="_pathsForm.QrBakoDataEncrypt" />
+                                    <label class="form-check-label small" for="qrBakoEncrypt">Encrypt</label>
+                                </div>
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" id="qrBakoTrust" type="checkbox" @bind="_pathsForm.QrBakoDataTrustServerCertificate" />
+                                    <label class="form-check-label small" for="qrBakoTrust">Trust server certificate</label>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12 d-flex align-items-end gap-2">
+                                <button class="btn btn-primary btn-sm" @onclick="SaveQrBakoDbAsync" disabled="@_qrBakoSaving">
+                                    @if (_qrBakoSaving)
+                                    { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                    Save
+                                </button>
+                                <button class="btn btn-outline-primary btn-sm" @onclick="TestQrBakoDbAsync" disabled="@(_qrBakoSaving || _qrBakoTesting)">
+                                    @if (_qrBakoTesting)
+                                    { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                    Test Connection
+                                </button>
+                                @if (!string.IsNullOrWhiteSpace(_qrBakoMsg))
+                                {
+                                    <span class="small fw-semibold @(_qrBakoError ? "text-danger" : "text-success")">@_qrBakoMsg</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Authorized>
+</AuthorizeView>
+
 @{
     var rFiltered  = GetFilteredRouting();
     var rsFiltered = GetFilteredReason();
 }
 
 <div class="row g-3 mb-3">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold small">App Path</div>
+            <div class="card-body">
+                <label class="form-label small fw-semibold mb-1">
+                    Working Folder
+                    <span class="badge bg-warning text-dark ms-1">restart</span>
+                </label>
+                <div class="input-group input-group-sm">
+                    <input class="form-control form-control-sm font-monospace"
+                           @bind="_pathsForm.DbRootDirectory"
+                           placeholder="@AppPathsService.DefaultDbRootDirectory" />
+                    <button class="btn btn-outline-secondary btn-sm"
+                            type="button"
+                            @onclick="UseDefaultAppPath">
+                        Default
+                    </button>
+                    <button class="btn btn-primary btn-sm"
+                            type="button"
+                            @onclick="SaveAppPathAsync"
+                            disabled="@_pathSaving">
+                        @if (_pathSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        Save
+                    </button>
+                </div>
+                <div class="small text-muted mt-2">
+                    NG RATE: <code>@NgRateWorkDirectory</code><br />
+                    FCOST: <code>@FCostWorkDirectory</code><br />
+                    WK STATUS: <code>@WorkerStatusWorkDirectory</code>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_pathStatus))
+                {
+                    <div class="small mt-2 @(_pathStatusError ? "text-danger" : "text-success") fw-semibold">
+                        @_pathStatus
+                    </div>
+                }
+                @if (_pathSavedRequiresRestart)
+                {
+                    <div class="small text-warning fw-semibold mt-2">
+                        Restart the app for main DB path changes to fully take effect.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
     <!-- ══ BMES Credentials ═══════════════════════════════════════════════════ -->
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
@@ -46,20 +272,42 @@
         </div>
     </div>
 
-    <!-- ══ RWT Credentials ════════════════════════════════════════════════════ -->
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
-            <div class="card-header fw-semibold small">⏱ Request Work Time Credentials</div>
+            <div class="card-header fw-semibold small">Server Tables</div>
             <div class="card-body">
-                <div class="mb-2">
-                    <label class="form-label small fw-semibold mb-1">Login ID</label>
-                    <input class="form-control form-control-sm" @bind="_snap.RwtLoginId" placeholder="RWT ID" />
+                <div class="small text-muted mb-2">
+                    Save target: <code>@ServerTableTargetPreview</code>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold mb-1">Password</label>
-                    <input class="form-control form-control-sm" type="password" @bind="_snap.RwtPassword" placeholder="RWT Password" />
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="btn btn-outline-primary btn-sm"
+                            @onclick="PullRoutingFromServerAsync"
+                            disabled="@(_serverTableBusy || _pathSaving)">
+                        @if (_serverTableBusy && _serverTableAction == "routing")
+                        { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        Load Routing
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm"
+                            @onclick="PullReasonFromServerAsync"
+                            disabled="@(_serverTableBusy || _pathSaving)">
+                        @if (_serverTableBusy && _serverTableAction == "reason")
+                        { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        Load Reason
+                    </button>
+                    <button class="btn btn-primary btn-sm"
+                            @onclick="PullRoutingReasonFromServerAsync"
+                            disabled="@(_serverTableBusy || _pathSaving)">
+                        @if (_serverTableBusy && _serverTableAction == "all")
+                        { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        Load Both
+                    </button>
                 </div>
-                <button class="btn btn-primary btn-sm" @onclick="SaveCredentials">Save</button>
+                @if (!string.IsNullOrWhiteSpace(_serverTableMsg))
+                {
+                    <div class="small mt-2 @(_serverTableError ? "text-danger" : "text-success") fw-semibold">
+                        @_serverTableMsg
+                    </div>
+                }
             </div>
         </div>
     </div>
@@ -498,7 +746,31 @@
 </style>
 
 @code {
+    private string _apiKey      = string.Empty;
+    private bool   _showKey;
+    private bool   _claudeSaving;
+    private bool   _claudeSaved;
+    private string _claudeError = string.Empty;
+
+    private string _codexApiKey         = string.Empty;
+    private string _codexTranslateModel = CodexApiService.DefaultTranslateModel;
+    private bool   _showCodexKey;
+    private bool   _codexSaving;
+    private bool   _codexSaved;
+    private string _codexError = string.Empty;
+
+    private AiProviderSettingsSnapshot _aiProviders = new();
+    private bool   _aiProviderSaving;
+    private bool   _aiProviderSaved;
+    private string _aiProviderError = string.Empty;
+
     private NgRateSettingsSnapshot _snap = new();
+    private AppPathsConfig _pathsForm = new();
+    private bool   _showQrBakoPassword;
+    private bool   _qrBakoSaving;
+    private bool   _qrBakoTesting;
+    private string _qrBakoMsg = string.Empty;
+    private bool   _qrBakoError;
 
     private List<RoutingRow> _routingRows = [];
     private List<ReasonRow>  _reasonRows  = [];
@@ -510,6 +782,29 @@
 
     private string _statusMsg   = string.Empty;
     private bool   _statusError;
+    private bool   _serverTableBusy;
+    private string _serverTableAction = string.Empty;
+    private string _serverTableMsg    = string.Empty;
+    private bool   _serverTableError;
+    private bool   _pathSaving;
+    private bool   _pathSavedRequiresRestart;
+    private string _pathStatus = string.Empty;
+    private bool   _pathStatusError;
+    private string _origDbRoot = string.Empty;
+    private string _origMainDb = string.Empty;
+    private string _origSettingsDbDir = string.Empty;
+    private string EffectiveWorkDirectory =>
+        string.IsNullOrWhiteSpace(_pathsForm.DbRootDirectory)
+            ? AppPathsService.DefaultDbRootDirectory
+            : _pathsForm.DbRootDirectory.Trim();
+    private string NgRateWorkDirectory =>
+        AppPathsService.GetNgRateDirectory(EffectiveWorkDirectory);
+    private string FCostWorkDirectory =>
+        AppPathsService.GetFCostDirectory(EffectiveWorkDirectory);
+    private string WorkerStatusWorkDirectory =>
+        AppPathsService.GetWorkerStatusDirectory(EffectiveWorkDirectory);
+    private string ServerTableTargetPreview =>
+        Path.Combine(NgRateWorkDirectory, "ngrate_settings.db");
 
     // ── Routing search ────────────────────────────────────────────────────────
     private string _rqModelName   = string.Empty;
@@ -538,12 +833,291 @@
 
     protected override void OnInitialized()
     {
+        CopyAppPathFromCurrent();
+        _apiKey = Repo.GetSetting("Claude:ApiKey") ?? string.Empty;
+        _codexApiKey = Repo.GetSetting("OpenAI:ApiKey")
+            ?? Repo.GetSetting("Codex:ApiKey")
+            ?? string.Empty;
+        _codexTranslateModel = Repo.GetSetting("OpenAI:TranslateModel")
+            ?? Repo.GetSetting("Codex:TranslateModel")
+            ?? CodexApiService.DefaultTranslateModel;
+        _aiProviders = AiProviders.GetSnapshot();
         _snap        = NgRateSettings.GetSnapshot();
         _routingRows = NgRateSettings.GetRoutingRows();
         _reasonRows  = NgRateSettings.GetReasonRows();
 
         _latest         = Repo.GetLatestBmesMaterial();
         _materialCount  = Repo.GetBmesMaterialCount();
+    }
+
+    private async Task SaveClaudeAsync()
+    {
+        _claudeSaving = true;
+        _claudeSaved  = false;
+        _claudeError  = string.Empty;
+        try
+        {
+            Repo.SetSetting("Claude:ApiKey", _apiKey.Trim());
+            _claudeSaved = true;
+        }
+        catch (Exception ex)
+        {
+            _claudeError = ex.Message;
+        }
+        finally
+        {
+            _claudeSaving = false;
+        }
+        await Task.CompletedTask;
+    }
+
+    private async Task SaveCodexAsync()
+    {
+        _codexSaving = true;
+        _codexSaved  = false;
+        _codexError  = string.Empty;
+        try
+        {
+            string model = string.IsNullOrWhiteSpace(_codexTranslateModel)
+                ? CodexApiService.DefaultTranslateModel
+                : _codexTranslateModel.Trim();
+            Repo.SetSetting("OpenAI:ApiKey", _codexApiKey.Trim());
+            Repo.SetSetting("OpenAI:TranslateModel", model);
+            if (!string.IsNullOrWhiteSpace(_codexApiKey))
+            {
+                _aiProviders.CodexApiEnabled = true;
+                AiProviders.Save(_aiProviders);
+            }
+            _codexTranslateModel = model;
+            _codexSaved = true;
+        }
+        catch (Exception ex)
+        {
+            _codexError = ex.Message;
+        }
+        finally
+        {
+            _codexSaving = false;
+        }
+        await Task.CompletedTask;
+    }
+
+    private async Task SaveAiProvidersAsync()
+    {
+        _aiProviderSaving = true;
+        _aiProviderSaved  = false;
+        _aiProviderError  = string.Empty;
+        try
+        {
+            AiProviders.Save(_aiProviders);
+            _aiProviderSaved = true;
+        }
+        catch (Exception ex)
+        {
+            _aiProviderError = ex.Message;
+        }
+        finally
+        {
+            _aiProviderSaving = false;
+        }
+        await Task.CompletedTask;
+    }
+
+    private void CopyAppPathFromCurrent()
+    {
+        var c = AppPaths.Current;
+        _pathsForm = new AppPathsConfig
+        {
+            DbRootDirectory = c.DbRootDirectory,
+            MainDbPath = c.MainDbPath,
+            NgRateDbSaveDirectory = c.NgRateDbSaveDirectory,
+            NgRateRoutingFilePath = c.NgRateRoutingFilePath,
+            NgRateReasonFilePath = c.NgRateReasonFilePath,
+            NgRateSettingsDbDirectory = c.NgRateSettingsDbDirectory,
+            ModelBmesJsonFolder = c.ModelBmesJsonFolder,
+            TestExcelConverterSourceDir = c.TestExcelConverterSourceDir,
+            TestExcelConverterDestDir = c.TestExcelConverterDestDir,
+            AdminDbQueryServer = c.AdminDbQueryServer,
+            AdminDbQueryPort = c.AdminDbQueryPort,
+            AdminDbQueryDatabase = c.AdminDbQueryDatabase,
+            AdminDbQueryUserId = c.AdminDbQueryUserId,
+            AdminDbQueryPassword = c.AdminDbQueryPassword,
+            AdminDbQueryTimeoutSeconds = c.AdminDbQueryTimeoutSeconds,
+            AdminDbQueryEncrypt = c.AdminDbQueryEncrypt,
+            AdminDbQueryTrustServerCertificate = c.AdminDbQueryTrustServerCertificate,
+            QrBakoDataServer = c.QrBakoDataServer,
+            QrBakoDataPort = c.QrBakoDataPort,
+            QrBakoDataDatabase = c.QrBakoDataDatabase,
+            QrBakoDataUserId = c.QrBakoDataUserId,
+            QrBakoDataPassword = c.QrBakoDataPassword,
+            QrBakoDataTimeoutSeconds = c.QrBakoDataTimeoutSeconds,
+            QrBakoDataDefaultMaxRows = c.QrBakoDataDefaultMaxRows,
+            QrBakoDataEncrypt = c.QrBakoDataEncrypt,
+            QrBakoDataTrustServerCertificate = c.QrBakoDataTrustServerCertificate,
+        };
+        _origDbRoot = c.DbRootDirectory;
+        _origMainDb = c.MainDbPath;
+        _origSettingsDbDir = c.NgRateSettingsDbDirectory;
+    }
+
+    private void UseDefaultAppPath()
+    {
+        _pathsForm.DbRootDirectory = AppPathsService.DefaultDbRootDirectory;
+        ApplyUnifiedAppPathToForm();
+        _pathStatus = "Default working folder applied. Click Save to keep it.";
+        _pathStatusError = false;
+    }
+
+    private async Task SaveAppPathAsync() =>
+        await SaveAppPathCoreAsync(showSavedMessage: true);
+
+    private async Task<bool> SaveAppPathCoreAsync(bool showSavedMessage)
+    {
+        if (_pathSaving) return false;
+        _pathSaving = true;
+        _pathStatus = string.Empty;
+        _pathStatusError = false;
+        StateHasChanged();
+
+        try
+        {
+            string requestedRoot = string.IsNullOrWhiteSpace(_pathsForm.DbRootDirectory)
+                ? AppPathsService.DefaultDbRootDirectory
+                : _pathsForm.DbRootDirectory.Trim();
+            if (AppPathsService.DirectoryPathConflictsWithFile(requestedRoot))
+            {
+                _pathStatusError = true;
+                _pathStatus = $"Working Folder points to an existing file, not a folder: {requestedRoot}";
+                return false;
+            }
+
+            ApplyUnifiedAppPathToForm();
+            await Task.Run(() => AppPaths.Save(_pathsForm));
+            NgRateSettings.EnsureDatabase();
+            _pathSavedRequiresRestart =
+                !PathEquals(_pathsForm.DbRootDirectory, _origDbRoot) ||
+                !PathEquals(_pathsForm.MainDbPath, _origMainDb) ||
+                !PathEquals(_pathsForm.NgRateSettingsDbDirectory, _origSettingsDbDir);
+            CopyAppPathFromCurrent();
+            _snap = NgRateSettings.GetSnapshot();
+            _routingRows = NgRateSettings.GetRoutingRows();
+            _reasonRows = NgRateSettings.GetReasonRows();
+            if (showSavedMessage)
+                _pathStatus = $"Saved. Server table DB: {NgRateSettings.SettingsDbPath}";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _pathStatusError = true;
+            _pathStatus = ex.Message;
+            return false;
+        }
+        finally
+        {
+            _pathSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyUnifiedAppPathToForm()
+    {
+        if (string.IsNullOrWhiteSpace(_pathsForm.DbRootDirectory))
+            _pathsForm.DbRootDirectory = AppPathsService.DefaultDbRootDirectory;
+        _pathsForm = AppPathsService.ApplyUnifiedDbDirectory(_pathsForm);
+    }
+
+    private async Task SaveQrBakoDbAsync() =>
+        await SaveQrBakoDbCoreAsync(showSavedMessage: true);
+
+    private async Task<bool> SaveQrBakoDbCoreAsync(bool showSavedMessage)
+    {
+        if (_qrBakoSaving) return false;
+        _qrBakoSaving = true;
+        _qrBakoMsg = string.Empty;
+        _qrBakoError = false;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Run(() => AppPaths.Save(BuildQrBakoSaveConfig()));
+            CopyAppPathFromCurrent();
+            if (showSavedMessage)
+                _qrBakoMsg = "QR BAKO DB connection saved.";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _qrBakoError = true;
+            _qrBakoMsg = ex.Message;
+            return false;
+        }
+        finally
+        {
+            _qrBakoSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task TestQrBakoDbAsync()
+    {
+        if (_qrBakoTesting) return;
+        _qrBakoTesting = true;
+        _qrBakoMsg = string.Empty;
+        _qrBakoError = false;
+        StateHasChanged();
+
+        try
+        {
+            if (!await SaveQrBakoDbCoreAsync(showSavedMessage: false))
+                return;
+
+            await QrBakoData.TestConnectionAsync();
+            _qrBakoMsg = "Connected to TCDB.dbo.BKTD.";
+        }
+        catch (Exception ex)
+        {
+            _qrBakoError = true;
+            _qrBakoMsg = ex.Message;
+        }
+        finally
+        {
+            _qrBakoTesting = false;
+            StateHasChanged();
+        }
+    }
+
+    private AppPathsConfig BuildQrBakoSaveConfig()
+    {
+        var c = AppPaths.Current;
+        return new AppPathsConfig
+        {
+            DbRootDirectory = c.DbRootDirectory,
+            MainDbPath = c.MainDbPath,
+            NgRateDbSaveDirectory = c.NgRateDbSaveDirectory,
+            NgRateRoutingFilePath = c.NgRateRoutingFilePath,
+            NgRateReasonFilePath = c.NgRateReasonFilePath,
+            NgRateSettingsDbDirectory = c.NgRateSettingsDbDirectory,
+            ModelBmesJsonFolder = c.ModelBmesJsonFolder,
+            TestExcelConverterSourceDir = c.TestExcelConverterSourceDir,
+            TestExcelConverterDestDir = c.TestExcelConverterDestDir,
+            AdminDbQueryServer = c.AdminDbQueryServer,
+            AdminDbQueryPort = c.AdminDbQueryPort,
+            AdminDbQueryDatabase = c.AdminDbQueryDatabase,
+            AdminDbQueryUserId = c.AdminDbQueryUserId,
+            AdminDbQueryPassword = c.AdminDbQueryPassword,
+            AdminDbQueryTimeoutSeconds = c.AdminDbQueryTimeoutSeconds,
+            AdminDbQueryEncrypt = c.AdminDbQueryEncrypt,
+            AdminDbQueryTrustServerCertificate = c.AdminDbQueryTrustServerCertificate,
+            QrBakoDataServer = _pathsForm.QrBakoDataServer.Trim(),
+            QrBakoDataPort = Math.Clamp(_pathsForm.QrBakoDataPort, 1, 65535),
+            QrBakoDataDatabase = _pathsForm.QrBakoDataDatabase.Trim(),
+            QrBakoDataUserId = _pathsForm.QrBakoDataUserId.Trim(),
+            QrBakoDataPassword = _pathsForm.QrBakoDataPassword,
+            QrBakoDataTimeoutSeconds = Math.Clamp(_pathsForm.QrBakoDataTimeoutSeconds, 1, 300),
+            QrBakoDataDefaultMaxRows = Math.Clamp(_pathsForm.QrBakoDataDefaultMaxRows, 1, 20000),
+            QrBakoDataEncrypt = _pathsForm.QrBakoDataEncrypt,
+            QrBakoDataTrustServerCertificate = _pathsForm.QrBakoDataTrustServerCertificate,
+        };
     }
 
     private async Task FetchAllMaterialsAsync()
@@ -589,6 +1163,77 @@
     {
         NgRateSettings.ApplySnapshot(_snap);
         SetStatus("Credentials saved.", false);
+    }
+
+    private async Task PullRoutingFromServerAsync() =>
+        await PullServerTableAsync(
+            "routing",
+            BmesSettingsSync.PullRoutingRowsFromServerAsync,
+            () => _routingRows = NgRateSettings.GetRoutingRows());
+
+    private async Task PullReasonFromServerAsync() =>
+        await PullServerTableAsync(
+            "reason",
+            BmesSettingsSync.PullReasonRowsFromServerAsync,
+            () => _reasonRows = NgRateSettings.GetReasonRows());
+
+    private async Task PullRoutingReasonFromServerAsync() =>
+        await PullServerTableAsync(
+            "all",
+            BmesSettingsSync.PullAllRowsFromServerAsync,
+            () =>
+            {
+                _routingRows = NgRateSettings.GetRoutingRows();
+                _reasonRows = NgRateSettings.GetReasonRows();
+            });
+
+    private async Task PullServerTableAsync(
+        string action,
+        Func<Task<BmesSettingsSyncResult>> pull,
+        Action refreshLocalRows)
+    {
+        if (_serverTableBusy) return;
+        _serverTableBusy = true;
+        _serverTableAction = action;
+        _serverTableMsg = string.Empty;
+        _serverTableError = false;
+        StateHasChanged();
+
+        try
+        {
+            if (!await SaveAppPathCoreAsync(showSavedMessage: false))
+            {
+                _serverTableError = true;
+                _serverTableMsg = "Working folder save failed.";
+                SetStatus(_serverTableMsg, true);
+                return;
+            }
+            var result = await pull();
+            if (result.Succeeded)
+            {
+                refreshLocalRows();
+                _serverTableMsg = $"{result.Message} {result.Rows:N0} row(s) saved.";
+                SetStatus(_serverTableMsg, false);
+            }
+            else
+            {
+                _serverTableError = true;
+                _serverTableMsg = result.Message;
+                SetStatus($"Server table load failed: {result.Message}", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            _serverTableError = true;
+            _serverTableMsg = ex.Message;
+            SetStatus($"Server table load failed: {ex.Message}", true);
+        }
+        finally
+        {
+            _serverTableBusy = false;
+            _serverTableAction = string.Empty;
+            StateHasChanged();
+        }
     }
 
     // ── Filter helpers ────────────────────────────────────────────────────────
@@ -905,4 +1550,7 @@
         _statusMsg   = msg;
         _statusError = isError;
     }
+
+    private static bool PathEquals(string a, string b) =>
+        string.Equals((a ?? string.Empty).Trim(), (b ?? string.Empty).Trim(), StringComparison.OrdinalIgnoreCase);
 }

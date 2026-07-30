@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 786,
+  "sourceFile": "60.1 TIU L5S3-01 R Check SPL separate AWF - 2026.01.16_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\786.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:13:56Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 786,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable data but misidentifies the changed factor and metric grouping, so it is not final evidence.",
+    "issues": [
+      "Changed factor is filename, not source condition.",
+      "STD versus Awf #1-#5 grouping is not set.",
+      "Baseline and test conditions remain ambiguous.",
+      "Outcomes include misparsed numeric rows as metrics.",
+      "Review title is a header fragment."
+    ],
+    "requiredUserQuestions": [
+      "Confirm whether STD is baseline and Awf #1-#5 are test conditions."
+    ],
+    "correctionPlan": [
+      "Set changed factor to AWF separation/variant comparison.",
+      "Use STD as baseline if confirmed by source context.",
+      "Group Awf #1-#5 as changed-condition subgroups.",
+      "Limit outcomes to SPL, Fo, and THD graph/raw metrics.",
+      "Remove misparsed raw numeric subResults."
+    ],
+    "evidencePolicy": "Row IDs exist, but citations are insufficient until STD/Awf grouping and metrics are corrected."
+  },
+  "usage": {
+    "input_tokens": 7907,
+    "output_tokens": 743,
+    "total_tokens": 8650
+  }
+}

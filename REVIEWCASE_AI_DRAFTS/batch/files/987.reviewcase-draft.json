@@ -1,0 +1,285 @@
+{
+  "sourceFileId": 987,
+  "sourceFile": "BRS-MSU L20S15-07  NG Gap Coil +Spot welding -2025_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\BRS-MSU L20S15-07  NG Gap Coil +Spot welding -2025_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 2,
+    "sheetNames": "GAP Coil+pad; spot welding",
+    "sheetRowCount": 16,
+    "sheetCellCount": 98,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 9,
+    "measurementStatCount": 0
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "GAP Coil+pad!2",
+      "sheetName": "GAP Coil+pad",
+      "rowNumber": 2,
+      "rowText": "| No | Date | Shift | AWF machine | Input | OK | Gap coil | Gap rate | NG type"
+    },
+    {
+      "rowId": "GAP Coil+pad!3",
+      "sheetName": "GAP Coil+pad",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | Coil+pad gap"
+    },
+    {
+      "rowId": "GAP Coil+pad!11",
+      "sheetName": "GAP Coil+pad",
+      "rowNumber": 11,
+      "rowText": "| 1 | 2025-02-15 00:00:00 | Day shift | #1 | 100 | 100 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "GAP Coil+pad!12",
+      "sheetName": "GAP Coil+pad",
+      "rowNumber": 12,
+      "rowText": "| 2 | | | #2 | 100 | 100 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "GAP Coil+pad!13",
+      "sheetName": "GAP Coil+pad",
+      "rowNumber": 13,
+      "rowText": "| 3 | | | #3 | 100 | 100 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "GAP Coil+pad!14",
+      "sheetName": "GAP Coil+pad",
+      "rowNumber": 14,
+      "rowText": "| 4 | | | #4 | 100 | 100 | 0 | 0 | 0"
+    },
+    {
+      "rowId": "GAP Coil+pad!15",
+      "sheetName": "GAP Coil+pad",
+      "rowNumber": 15,
+      "rowText": "| 5 | | | #5 | 100 | 97 | 3 | 0.03 | 3"
+    },
+    {
+      "rowId": "GAP Coil+pad!16",
+      "sheetName": "GAP Coil+pad",
+      "rowNumber": 16,
+      "rowText": "| 6 | | | Total | 500 | 497 | 3 | 0.006 | 3"
+    },
+    {
+      "rowId": "spot welding!2",
+      "sheetName": "spot welding",
+      "rowNumber": 2,
+      "rowText": "| No | Date | Shift | Spot welding machine | Input | OK | Total NG | NG rate | NG type"
+    },
+    {
+      "rowId": "spot welding!3",
+      "sheetName": "spot welding",
+      "rowNumber": 3,
+      "rowText": "| | | | | | | | | Wire damage"
+    },
+    {
+      "rowId": "spot welding!11",
+      "sheetName": "spot welding",
+      "rowNumber": 11,
+      "rowText": "| 1 | 2025-02-15 00:00:00 | Day shift | # 1 | 50 | 49 | 1 | 0.02 | 1"
+    },
+    {
+      "rowId": "spot welding!12",
+      "sheetName": "spot welding",
+      "rowNumber": 12,
+      "rowText": "| 2 | | | # 2 | 50 | 50 | 0 | 0 | 0"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-987-rc-1",
+      "reviewTitle": "| No | Date | Shift | AWF machine | Input | OK | Gap coil | Gap rate | NG type",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "equipment"
+          ],
+          "changedFactor": "Condition comparison: baseline/normal condition not explicit vs Day shift, Total, 2, 3, 4, 5, # 2",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "Day shift, Total, 2, 3, 4, 5, # 2",
+          "subgroupKeys": [
+            "#2",
+            "#3",
+            "#4",
+            "#5",
+            "# 1"
+          ],
+          "evidenceRows": [
+            "GAP Coil+pad!11",
+            "GAP Coil+pad!12",
+            "GAP Coil+pad!13",
+            "GAP Coil+pad!14",
+            "GAP Coil+pad!15",
+            "GAP Coil+pad!16",
+            "spot welding!11",
+            "spot welding!12",
+            "spot welding!13"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "metric-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "unknown",
+          "outcomeMetric": "Detected table",
+          "comparisonRows": [
+            "GAP Coil+pad!11",
+            "GAP Coil+pad!12",
+            "GAP Coil+pad!13",
+            "GAP Coil+pad!14",
+            "GAP Coil+pad!15",
+            "GAP Coil+pad!16",
+            "spot welding!11",
+            "spot welding!12",
+            "spot welding!13"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "metricId": 25329,
+              "condition": "Day shift",
+              "input": 100.0,
+              "ok": 100.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "GAP Coil+pad!11"
+              ]
+            },
+            {
+              "metricId": 25330,
+              "condition": "2 | #2",
+              "input": 100.0,
+              "ok": 100.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "GAP Coil+pad!12"
+              ]
+            },
+            {
+              "metricId": 25331,
+              "condition": "3 | #3",
+              "input": 100.0,
+              "ok": 100.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "GAP Coil+pad!13"
+              ]
+            },
+            {
+              "metricId": 25332,
+              "condition": "4 | #4",
+              "input": 100.0,
+              "ok": 100.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "GAP Coil+pad!14"
+              ]
+            },
+            {
+              "metricId": 25333,
+              "condition": "5 | #5",
+              "input": 100.0,
+              "ok": 97.0,
+              "ng": 3.0,
+              "ratePercent": 3.0,
+              "evidenceRows": [
+                "GAP Coil+pad!15"
+              ]
+            },
+            {
+              "metricId": 25334,
+              "condition": "Total",
+              "input": 500.0,
+              "ok": 497.0,
+              "ng": 3.0,
+              "ratePercent": 0.6,
+              "evidenceRows": [
+                "GAP Coil+pad!16"
+              ]
+            },
+            {
+              "metricId": 25335,
+              "condition": "Day shift | # 1",
+              "input": 50.0,
+              "ok": 49.0,
+              "ng": 1.0,
+              "ratePercent": 2.0,
+              "evidenceRows": [
+                "spot welding!11"
+              ]
+            },
+            {
+              "metricId": 25336,
+              "condition": "# 2",
+              "input": 50.0,
+              "ok": 50.0,
+              "ng": 0.0,
+              "ratePercent": 0.0,
+              "evidenceRows": [
+                "spot welding!12"
+              ]
+            },
+            {
+              "metricId": 25337,
+              "condition": "Total",
+              "input": 100.0,
+              "ok": 99.0,
+              "ng": 1.0,
+              "ratePercent": 1.0,
+              "evidenceRows": [
+                "spot welding!13"
+              ]
+            }
+          ],
+          "limitations": [
+            "metric candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "GAP Coil+pad!11",
+        "GAP Coil+pad!12",
+        "GAP Coil+pad!13",
+        "GAP Coil+pad!14",
+        "GAP Coil+pad!15",
+        "GAP Coil+pad!16",
+        "spot welding!11",
+        "spot welding!12",
+        "spot welding!13"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "GAP Coil+pad!11",
+      "GAP Coil+pad!12",
+      "GAP Coil+pad!13",
+      "GAP Coil+pad!14",
+      "GAP Coil+pad!15",
+      "GAP Coil+pad!16",
+      "spot welding!11",
+      "spot welding!12",
+      "spot welding!13"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}

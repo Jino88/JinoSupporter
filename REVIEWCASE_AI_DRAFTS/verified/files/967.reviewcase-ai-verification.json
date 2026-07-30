@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 967,
+  "sourceFile": "9. MSU-L20S15-07DT  Report Check reason NG weak solder  date 9.5.2025_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\967.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:19:24Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 967,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft is not reliable because it mixes unrelated conditions and creates invalid before/after comparisons.",
+    "issues": [
+      "Changed factor combines lot, repair status, sorting, and row labels into one incoherent factor.",
+      "Several pairs compare different material/lot conditions instead of matching before vs after repair within the same condition.",
+      "C2 move E2 sorting results are a separate outcome context and should not be treated as a changed condition.",
+      "Outcome domain and metric labels are generic or incorrect for weak-solder NG investigation.",
+      "Some cited evidence rows are headers or context only, not direct condition-result evidence."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Define one review case for weak-solder NG investigation with subgrouped test conditions.",
+      "Pair rows 23/25, 27/29, 31/33, 35/37, and 53/55 only as same-condition before/after repair comparisons.",
+      "Keep rows 39, 41, 43, 45, 47, 49, and 51 as unpaired condition results unless matching after-repair rows exist.",
+      "Separate the C2 move E2 sorting sheet as supporting sorting evidence or a distinct outcome, not a changed factor.",
+      "Use direct row citations for each condition-result pair and cite title/content rows only as context."
+    ],
+    "evidencePolicy": "Citations mostly exist, but they are not sufficient because grouping and pair logic are wrong."
+  },
+  "usage": {
+    "input_tokens": 5817,
+    "output_tokens": 676,
+    "total_tokens": 6493
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "sourceFileId": 612,
+  "sourceFile": "4. BRS-161016(DT) Report TEST new JIG improve use new dry machine 2024.04.05_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\612.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:08:19Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 612,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Draft has citeable source context but changed-factor and outcome grouping are not reliable enough for Ask AI evidence.",
+    "issues": [
+      "Primary changed factor is misidentified as mixed materials, jig names, and row numbers.",
+      "Baseline/test condition is ambiguous; no prior normal machine or jig baseline is cited.",
+      "Outcome tables are over-split and include invalid derived measurement candidates from headers or count rows.",
+      "Key grouping factors such as time, material, jig type, shift, and trial number are not preserved consistently.",
+      "Evidence row existence passed, but citations do not support many generated statistics."
+    ],
+    "requiredUserQuestions": [
+      "Should this be treated as new dry machine plus improved jig validation, or only as internal setting comparison within the new setup?"
+    ],
+    "correctionPlan": [
+      "Redefine changed factor from cited title, purpose, and content rows.",
+      "Separate subgroup keys for material, time, jig type, shift, and trial number.",
+      "Keep valid NG/OK rate results and tension test results; remove header-derived measurement outcomes.",
+      "Do not claim a baseline unless prior machine/jig evidence is present.",
+      "Rebuild concise evidence rows around table headers and actual data rows only."
+    ],
+    "evidencePolicy": "Row citations exist but are insufficient for final evidence until grouping and invalid stats are corrected."
+  },
+  "usage": {
+    "input_tokens": 13967,
+    "output_tokens": 663,
+    "total_tokens": 14630
+  }
+}

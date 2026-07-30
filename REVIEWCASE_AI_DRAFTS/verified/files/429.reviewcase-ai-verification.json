@@ -1,0 +1,40 @@
+{
+  "sourceFileId": 429,
+  "sourceFile": "23. MSU-L20S15-07GMI  Report Test Supension-B changing tin plating method (From non polish to polish) - 2025.06.17_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\429.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:02:22Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 429,
+    "aiReviewCaseStatus": "needs_review",
+    "verificationStatus": "needs_review",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "Needs review because the draft has comparable Normal/Test evidence but misstates the changed factor and misgroups outcomes.",
+    "issues": [
+      "Primary factor is too generic; title indicates tin plating method non-polish to polish.",
+      "Normal/Test mapping to non-polish/polish is not explicit in cited result rows.",
+      "Bond flux use differs in the welding vision rows and may be a confounder.",
+      "Module function rows are misclassified as tension measurements and missing as a function outcome.",
+      "Cited rows 37,39,51,53 are not shown in provided context, limiting verification."
+    ],
+    "requiredUserQuestions": [
+      "Does Test mean polished tin plating and Normal mean non-polished tin plating?",
+      "Should bond flux use be treated as a separate changed condition or only a note?"
+    ],
+    "correctionPlan": [
+      "Rename the changed factor to tin plating method non-polish vs polish if confirmed.",
+      "Keep Normal/Test as condition labels and bond flux as subgroup or limitation.",
+      "Add module line function defect outcome using rows 64 and 65.",
+      "Rebuild tension outcomes by table and subgroup, excluding function rows.",
+      "Include visible row citations for all cited subrows and table headers."
+    ],
+    "evidencePolicy": "Comparison citations are partly sufficient, but missing cited row text and ambiguous factor mapping block final use."
+  },
+  "usage": {
+    "input_tokens": 5901,
+    "output_tokens": 1112,
+    "total_tokens": 7013
+  }
+}

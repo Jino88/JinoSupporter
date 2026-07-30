@@ -1,0 +1,37 @@
+{
+  "sourceFileId": 574,
+  "sourceFile": "35.MSU-20S15-07 Result checking Problem NG VP damagedate 1.11.2025 -_clean.xlsx",
+  "sourceDraftPath": "REVIEWCASE_AI_DRAFTS\\batch\\files\\574.reviewcase-draft.json",
+  "manualDraftUsed": false,
+  "verifiedAt": "2026-07-06T13:07:04Z",
+  "model": "gpt-5.5",
+  "aiVerification": {
+    "sourceFileId": 574,
+    "aiReviewCaseStatus": "excluded",
+    "verificationStatus": "failed",
+    "approvedForAskAi": false,
+    "confidence": "high",
+    "summary": "The draft invents a baseline/test comparison from report metadata; the source appears to be a non-comparative NG VP damage check.",
+    "issues": [
+      "No explicit changed factor or baseline condition is evidenced.",
+      "Date is metadata, not a tested changed condition.",
+      "comparisonPairCount is zero, supporting non-comparable status.",
+      "E2-4B subgroup use is not supported by shown context.",
+      "Outcome may be a defect count but not tied to a valid comparison."
+    ],
+    "requiredUserQuestions": [],
+    "correctionPlan": [
+      "Mark the file excluded for Ask AI comparative evidence use.",
+      "Remove the invented baseline versus date changed factor.",
+      "Do not treat SUB4 tracking as a condition comparison unless source rows prove it.",
+      "Keep row 16 only as descriptive defect-result data if needed.",
+      "Reprocess only if additional rows show explicit comparable conditions."
+    ],
+    "evidencePolicy": "Citations prove report context and likely result data, but not a citeable changed-condition comparison."
+  },
+  "usage": {
+    "input_tokens": 2310,
+    "output_tokens": 637,
+    "total_tokens": 2947
+  }
+}

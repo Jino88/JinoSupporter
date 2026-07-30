@@ -1,0 +1,999 @@
+@page "/bmes/daily-report"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using System.Globalization
+@using JinoSupporter.Web.Services
+@implements IDisposable
+@inject BmesDailyReportService DailyReport
+
+<PageTitle>DAILY REPORT</PageTitle>
+
+<div class="dr-root">
+
+    <div class="dr-titlebar">
+        <div>
+            <div class="dr-kicker">BMES · Defect rate trend by model</div>
+            <h1>DAILY REPORT</h1>
+            <div class="dr-subtitle">
+                @if (_snapshot is not null)
+                {
+                    <span>@_snapshot.StartDate.ToString("yyyy-MM-dd") ~ @_snapshot.EndDate.ToString("yyyy-MM-dd")</span>
+                    <span class="dr-dot">·</span>
+                    <span>as of @_snapshot.GeneratedAt.ToString("MM-dd HH:mm")</span>
+                }
+                else
+                {
+                    <span>Last 2 months – yesterday</span>
+                }
+            </div>
+        </div>
+        <div class="dr-actions">
+            @if (DailyReport.IsRefreshing)
+            {
+                <span class="dr-refreshing"><span class="dr-spinner"></span>Fetching from BMES…</span>
+            }
+            <button class="dr-btn" @onclick="RefreshNow" disabled="@DailyReport.IsRefreshing">Refresh now</button>
+            <a class="dr-btn dr-btn-ghost" href="report/bmes">Full report →</a>
+        </div>
+    </div>
+
+    @if (_snapshot is null)
+    {
+        <div class="dr-empty">
+            @if (DailyReport.IsRefreshing)
+            {
+                <span class="dr-spinner dr-spinner-lg"></span>
+                <p>Aggregating the last two months from BMES. This can take a few minutes.</p>
+                @if (RecentLogs() is { Count: > 0 } logs)
+                {
+                    <div class="dr-log">
+                        @foreach (string line in logs)
+                        {
+                            <div>@line</div>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <p>No report yet. Click <strong>Refresh now</strong> to build the first one.</p>
+            }
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(_snapshot.Error))
+    {
+        <div class="dr-error">
+            <strong>Could not build the report.</strong>
+            <span>@_snapshot.Error</span>
+        </div>
+    }
+    else
+    {
+        @* ── Headline stats: single numbers, so no chart ──────────────────── *@
+        <div class="dr-stats">
+            <div class="dr-stat">
+                <div class="dr-stat-label">Latest week (@_snapshot.RecentWeekHeader) overall PPM</div>
+                <div class="dr-stat-value">@Ppm(_snapshot.OverallRecentPpm)</div>
+            </div>
+            <div class="dr-stat">
+                <div class="dr-stat-label">Previous week (@_snapshot.PreviousWeekHeader) overall PPM</div>
+                <div class="dr-stat-value dr-muted">@Ppm(_snapshot.OverallPreviousPpm)</div>
+            </div>
+            <div class="dr-stat">
+                <div class="dr-stat-label">
+                    Week-over-week change
+                    @if (!string.IsNullOrEmpty(_snapshot.PreviousWeekHeader))
+                    {
+                        <span class="dr-stat-sub">vs @_snapshot.PreviousWeekHeader</span>
+                    }
+                </div>
+                @{
+                    double overallDelta = _snapshot.OverallRecentPpm - _snapshot.OverallPreviousPpm;
+                }
+                <div class="dr-stat-value @DeltaClass(overallDelta)">
+                    @SignedPpm(overallDelta)
+                </div>
+            </div>
+            <div class="dr-stat">
+                <div class="dr-stat-label">Latest day (@_snapshot.RecentDayHeader) overall PPM</div>
+                <div class="dr-stat-value">@Ppm(_snapshot.OverallRecentDayPpm)</div>
+            </div>
+            <div class="dr-stat">
+                <div class="dr-stat-label">
+                    Day-over-day change
+                    @if (!string.IsNullOrEmpty(_snapshot.PreviousDayHeader))
+                    {
+                        <span class="dr-stat-sub">vs @_snapshot.PreviousDayHeader</span>
+                    }
+                </div>
+                @{
+                    double dayDelta = _snapshot.OverallRecentDayPpm - _snapshot.OverallPreviousDayPpm;
+                }
+                <div class="dr-stat-value @DeltaClass(dayDelta)">
+                    @SignedPpm(dayDelta)
+                </div>
+            </div>
+            <div class="dr-stat">
+                <div class="dr-stat-label">Models analysed</div>
+                <div class="dr-stat-value dr-muted">@_snapshot.ModelCount</div>
+            </div>
+        </div>
+
+        @* One grid holds both blocks: Worsened and Improved sit side by side, week over
+           week on the first row and day over day underneath. Auto-fit drops everything
+           back to a single column when the window is too narrow for two tables. *@
+        <div class="dr-sections">
+            @foreach (RankBlock block in BuildBlocks(_snapshot))
+            {
+                <div class="dr-block-head">
+                    <h2>@block.Title</h2>
+                    <span class="dr-block-note">@block.Note</span>
+                </div>
+
+                @foreach (RankSection sec in block.Sections)
+                {
+                    <section class="dr-section">
+                        <div class="dr-section-head">
+                            <h2>
+                                <span class="dr-badge @(sec.IsWorse ? "dr-badge-worse" : "dr-badge-better")">
+                                    @(sec.IsWorse ? "+ Worsened" : "− Improved")
+                                </span>
+                                Top @sec.Rows.Count models
+                            </h2>
+                            <div class="dr-section-note">@sec.Note</div>
+                        </div>
+
+                        @if (sec.Rows.Count == 0)
+                        {
+                            <div class="dr-none">@sec.EmptyText</div>
+                        }
+                        else
+                        {
+                            <div class="dr-table-wrap">
+                                <table class="dr-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="dr-th-rank">#</th>
+                                            <th>Model</th>
+                                            <th class="dr-th-num">Latest</th>
+                                            <th class="dr-th-num">Baseline</th>
+                                            <th class="dr-th-num">Change</th>
+                                            <th class="dr-th-bar">@(sec.IsWorse ? "Increase" : "Decrease")</th>
+                                            <th class="dr-th-spark">@(sec.IsDaily ? "Daily" : "Weekly") trend <span class="dr-th-hint">← latest</span></th>
+                                            <th class="dr-th-cause">Top 5 defect causes <span class="dr-th-hint">vs baseline</span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @for (int i = 0; i < sec.Rows.Count; i++)
+                                        {
+                                            BmesDailyReportModelRow row = sec.Rows[i];
+                                            <tr>
+                                                <td class="dr-td-rank">@(i + 1)</td>
+                                                <td class="dr-td-name">
+                                                    <div class="dr-model" title="@row.ModelName">@row.ModelName</div>
+                                                    <div class="dr-model-group" title="@ModelPath(row)">@ModelPath(row)</div>
+                                                </td>
+                                                <td class="dr-td-num dr-strong">@Ppm(row.RecentPpm)</td>
+                                                @* Which period the comparison actually landed on. A model
+                                                   idle last week is measured against the last week it ran,
+                                                   so the label under the number is what makes the Change
+                                                   column readable. *@
+                                                <td class="dr-td-num dr-muted">
+                                                    @if (row.BaselineStepsBack > 0)
+                                                    {
+                                                        @Ppm(row.PreviousPpm)
+                                                        <div class="dr-baseline" title="@BaselineTooltip(row, sec)">
+                                                            @row.BaselineHeader
+                                                            @if (row.BaselineStepsBack > 1)
+                                                            {
+                                                                <span class="dr-baseline-gap">−@(row.BaselineStepsBack)@(sec.StepUnit)</span>
+                                                            }
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="dr-spark-empty">—</span>
+                                                        <div class="dr-baseline">no earlier @sec.PeriodNoun</div>
+                                                    }
+                                                </td>
+                                                <td class="dr-td-num @DeltaClass(row.DeltaPpm)">
+                                                    @SignedPpm(row.DeltaPpm)
+                                                    <span class="dr-pct">@Pct(row.DeltaPercent)</span>
+                                                </td>
+                                                <td class="dr-td-bar">
+                                                    <div class="dr-bar-track" title="@DeltaTooltip(row, sec.IsWorse)">
+                                                        <div class="dr-bar @(sec.IsWorse ? "dr-bar-worse" : "dr-bar-better")"
+                                                             style="width:@BarWidth(row.DeltaPpm, sec.MaxAbsDelta)"></div>
+                                                    </div>
+                                                </td>
+                                                <td class="dr-td-spark">
+                                                    @if (Spark(row.TrendPpm) is SparkGeometry spark)
+                                                    {
+                                                        <svg class="dr-spark" width="@SparkWidth" height="@SparkHeight"
+                                                             viewBox="0 0 @SparkWidth @SparkHeight" role="img"
+                                                             aria-label="@SparkLabel(row, sec)">
+                                                            <polyline points="@spark.Points" fill="none"
+                                                                      stroke="#94a3b8" stroke-width="2"
+                                                                      stroke-linejoin="round" stroke-linecap="round" />
+                                                            <circle cx="@spark.RecentX" cy="@spark.RecentY" r="3.5"
+                                                                    fill="@(sec.IsWorse ? "#dc2626" : "#2563eb")"
+                                                                    stroke="#fff" stroke-width="2" />
+                                                        </svg>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="dr-spark-empty">—</span>
+                                                    }
+                                                </td>
+                                                <td class="dr-td-cause">
+                                                    @if (row.TopCauses.Count == 0)
+                                                    {
+                                                        <span class="dr-spark-empty">No defect data for the latest @sec.PeriodNoun</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <ul class="dr-causes">
+                                                            @foreach (BmesDailyReportCause cause in row.TopCauses)
+                                                            {
+                                                                <li title="@CauseTooltip(cause, sec)">
+                                                                    <span class="dr-cause-ng">@cause.NgName</span>
+                                                                    <span class="dr-cause-ppm">@Ppm(cause.Ppm)</span>
+                                                                    <span class="dr-cause-delta @DeltaClass(cause.DeltaPpm, cause.IsNew)">
+                                                                        @CauseDeltaText(cause)
+                                                                    </span>
+                                                                    <span class="dr-cause-proc">
+                                                                        @if (!string.IsNullOrWhiteSpace(cause.ProcessType))
+                                                                        {
+                                                                            <span class="dr-pt @PtClass(cause.ProcessType)">@cause.ProcessType</span>
+                                                                        }
+                                                                        @cause.ProcessName
+                                                                    </span>
+                                                                    <span class="dr-cause-prev">
+                                                                        prev @(cause.IsNew ? "—" : Ppm(cause.PreviousPpm))
+                                                                    </span>
+                                                                </li>
+                                                            }
+                                                        </ul>
+                                                        <div class="dr-cause-total">@row.RecentNgQty.ToString("N0") defects in the latest @sec.PeriodNoun</div>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </section>
+                }
+            }
+        </div>
+    }
+</div>
+
+<style>
+    /* Wide enough for the two ranking tables to stand next to each other; the reading
+       width used to be 1180px, when they were stacked. */
+    .dr-root {
+        max-width: 1720px;
+        padding: 4px 2px 32px;
+    }
+
+    /* ── Title bar ─────────────────────────────────────────────────────── */
+    .dr-titlebar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
+
+    .dr-kicker {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .6px;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 4px;
+    }
+
+    .dr-titlebar h1 {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -.3px;
+        color: #0f172a;
+        margin: 0 0 4px;
+    }
+
+    .dr-subtitle {
+        font-size: 12.5px;
+        color: #64748b;
+    }
+
+    .dr-dot { margin: 0 6px; color: #cbd5e1; }
+
+    .dr-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .dr-btn {
+        font-size: 12.5px;
+        font-weight: 500;
+        padding: 6px 13px;
+        border-radius: 7px;
+        border: 1px solid #2563eb;
+        background: #2563eb;
+        color: #fff;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all .15s ease;
+    }
+
+    .dr-btn:hover:not(:disabled) { background: #1d4ed8; border-color: #1d4ed8; }
+    .dr-btn:disabled { opacity: .55; cursor: default; }
+
+    .dr-btn-ghost {
+        background: #fff;
+        border-color: #e2e8f0;
+        color: #475569;
+    }
+
+    .dr-btn-ghost:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+    .dr-refreshing {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .dr-spinner {
+        width: 12px;
+        height: 12px;
+        border: 2px solid #cbd5e1;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        display: inline-block;
+        animation: dr-spin .7s linear infinite;
+    }
+
+    .dr-spinner-lg { width: 22px; height: 22px; border-width: 3px; }
+
+    @@keyframes dr-spin { to { transform: rotate(360deg); } }
+
+    /* ── Stat tiles ────────────────────────────────────────────────────── */
+    .dr-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-bottom: 22px;
+    }
+
+    .dr-stat {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.03);
+    }
+
+    .dr-stat-label {
+        font-size: 11.5px;
+        font-weight: 500;
+        color: #64748b;
+        margin-bottom: 6px;
+    }
+
+    /* Which period the change was measured against — the baseline can be older than the
+       period immediately before when nothing was produced then. */
+    .dr-stat-sub {
+        font-size: 10.5px;
+        color: #94a3b8;
+        margin-left: 3px;
+    }
+
+    .dr-stat-value {
+        font-size: 25px;
+        font-weight: 700;
+        letter-spacing: -.6px;
+        color: #0f172a;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .dr-unit {
+        font-size: 14px;
+        font-weight: 500;
+        color: #94a3b8;
+        margin-left: 3px;
+    }
+
+    /* ── Sections ──────────────────────────────────────────────────────── */
+    /* Two tracks whenever both tables fit, one otherwise — the tables are dense, so a
+       fixed 2-column grid would only trade stacking for inner scrollbars. The 760px
+       floor is what one table needs to render without scrolling sideways. */
+    .dr-sections {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(760px, 1fr));
+        gap: 18px;
+        align-items: start;
+    }
+
+    .dr-section { min-width: 0; }
+
+    /* Spans every track so the two rankings underneath read as one block. */
+    .dr-block-head {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 14px;
+        margin-top: 4px;
+    }
+
+    .dr-sections > .dr-block-head:first-child {
+        border-top: 0;
+        padding-top: 0;
+        margin-top: 0;
+    }
+
+    .dr-block-head h2 {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: .5px;
+        text-transform: uppercase;
+        color: #334155;
+        margin: 0;
+    }
+
+    .dr-block-note {
+        font-size: 11.5px;
+        color: #94a3b8;
+    }
+
+    .dr-section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 9px;
+    }
+
+    .dr-section-head h2 {
+        font-size: 14.5px;
+        font-weight: 650;
+        color: #0f172a;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .dr-section-note {
+        font-size: 11.5px;
+        color: #94a3b8;
+    }
+
+    .dr-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 999px;
+        letter-spacing: .2px;
+    }
+
+    .dr-badge-worse  { background: #fef2f2; color: #dc2626; }
+    .dr-badge-better { background: #eff6ff; color: #2563eb; }
+
+    /* ── Table ─────────────────────────────────────────────────────────── */
+    .dr-table-wrap {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow-x: auto;
+        box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.03);
+    }
+
+    .dr-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        /* Matches the grid track minimum, so a side-by-side column never scrolls. */
+        min-width: 640px;
+    }
+
+    .dr-table th {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .3px;
+        text-transform: uppercase;
+        color: #94a3b8;
+        text-align: left;
+        padding: 10px 9px;
+        border-bottom: 1px solid #e2e8f0;
+        white-space: nowrap;
+    }
+
+    .dr-th-num  { text-align: right; }
+    .dr-th-rank { width: 34px; text-align: center; }
+    .dr-th-bar  { width: 96px; }
+    .dr-th-spark{ width: 124px; }
+    .dr-th-cause{ width: 210px; }
+
+    .dr-table td {
+        padding: 9px 9px;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+
+    .dr-table tbody tr:last-child td { border-bottom: 0; }
+    .dr-table tbody tr:hover { background: #f8fafc; }
+
+    .dr-td-rank {
+        text-align: center;
+        font-size: 12px;
+        font-weight: 600;
+        color: #94a3b8;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .dr-td-name { max-width: 190px; }
+
+    /* Which period the baseline number came from, under the number itself. */
+    .dr-baseline {
+        font-size: 10.5px;
+        font-weight: 500;
+        color: #94a3b8;
+        margin-top: 1px;
+        white-space: nowrap;
+    }
+
+    /* Only shown when periods were skipped, so it earns a stronger colour. */
+    .dr-baseline-gap {
+        margin-left: 3px;
+        padding: 0 4px;
+        border-radius: 4px;
+        background: #f1f5f9;
+        color: #64748b;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .dr-model {
+        font-weight: 600;
+        color: #0f172a;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .dr-model-group {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-top: 1px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* ── Per-model cause breakdown ─────────────────────────────────────── */
+    .dr-td-cause { min-width: 210px; }
+
+    .dr-causes {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .dr-causes li {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        align-items: baseline;
+        gap: 6px;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .dr-cause-ng {
+        color: #0f172a;
+        font-weight: 550;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .dr-cause-proc {
+        grid-column: 1;
+        grid-row: 2;
+        font-size: 10.5px;
+        color: #94a3b8;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Process class (MAIN / SUB / …) — monochrome by design, see PtClass. */
+    .dr-pt {
+        display: inline-block;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: .4px;
+        line-height: 1.4;
+        padding: 0 4px;
+        border-radius: 3px;
+        margin-right: 4px;
+        vertical-align: 1px;
+    }
+
+    .dr-pt-main {
+        background: #475569;
+        color: #fff;
+    }
+
+    .dr-pt-other {
+        background: #fff;
+        color: #64748b;
+        box-shadow: inset 0 0 0 1px #cbd5e1;
+    }
+
+    .dr-cause-ppm {
+        font-variant-numeric: tabular-nums;
+        color: #475569;
+        font-size: 11.5px;
+        white-space: nowrap;
+    }
+
+    .dr-cause-delta {
+        font-variant-numeric: tabular-nums;
+        font-size: 10.5px;
+        font-weight: 700;
+        min-width: 56px;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .dr-cause-prev {
+        grid-column: 2 / span 2;
+        grid-row: 2;
+        font-variant-numeric: tabular-nums;
+        font-size: 10px;
+        color: #cbd5e1;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .dr-th-hint {
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: 0;
+        color: #cbd5e1;
+        margin-left: 3px;
+    }
+
+    .dr-cause-total {
+        margin-top: 5px;
+        font-size: 10.5px;
+        color: #94a3b8;
+    }
+
+    .dr-td-num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .dr-strong { font-weight: 650; color: #0f172a; }
+    .dr-muted  { color: #64748b; }
+    .dr-worse  { color: #dc2626; font-weight: 650; }
+    .dr-better { color: #2563eb; font-weight: 650; }
+
+    /* Under the signed PPM rather than beside it: side by side, the Change column alone
+       cost ~60px of intrinsic table width, which is what pushed the side-by-side tables
+       into a horizontal scrollbar. It also lines up with the baseline label opposite. */
+    .dr-pct {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        color: #94a3b8;
+        margin-top: 1px;
+    }
+
+    /* ── Bars: 4px rounded data-end, anchored to a recessive track ─────── */
+    .dr-bar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+        height: 9px;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .dr-bar {
+        height: 100%;
+        border-radius: 4px;
+        min-width: 3px;
+    }
+
+    .dr-bar-worse  { background: #dc2626; }
+    .dr-bar-better { background: #2563eb; }
+
+    .dr-spark { display: block; }
+    .dr-spark-empty { color: #cbd5e1; font-size: 12px; }
+
+    /* ── States ────────────────────────────────────────────────────────── */
+    .dr-empty, .dr-none, .dr-error {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 28px 20px;
+        text-align: center;
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    .dr-none { padding: 18px; }
+
+    .dr-log {
+        margin: 14px auto 0;
+        max-width: 620px;
+        text-align: left;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 11px;
+        line-height: 1.65;
+        color: #94a3b8;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 10px 12px;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .dr-empty p { margin: 10px 0 0; }
+
+    .dr-error {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: #b91c1c;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+</style>
+
+@code {
+    private BmesDailyReportSnapshot? _snapshot;
+    private Timer? _progressTick;
+
+    protected override void OnInitialized()
+    {
+        _snapshot = DailyReport.Load();
+        DailyReport.SnapshotChanged += OnSnapshotChanged;
+
+        // Cache-first: whatever is stored renders immediately above; a stale
+        // snapshot kicks off one shared background refresh that swaps itself in.
+        DailyReport.EnsureFresh();
+        SyncProgressTick();
+    }
+
+    private void OnSnapshotChanged()
+    {
+        _snapshot = DailyReport.Load();
+        StopProgressTick();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void RefreshNow()
+    {
+        DailyReport.EnsureFresh(force: true);
+        SyncProgressTick();
+    }
+
+    /// <summary>The refresh runs off-circuit, so poll while it is in flight to keep
+    /// the progress log moving. <see cref="OnSnapshotChanged"/> stops the timer.</summary>
+    private void SyncProgressTick()
+    {
+        if (!DailyReport.IsRefreshing) return;
+        _progressTick ??= new Timer(
+            _ => InvokeAsync(StateHasChanged),
+            null,
+            TimeSpan.FromSeconds(2),
+            TimeSpan.FromSeconds(2));
+    }
+
+    private void StopProgressTick()
+    {
+        _progressTick?.Dispose();
+        _progressTick = null;
+    }
+
+    private const int VisibleLogLines = 6;
+
+    private List<string> RecentLogs() =>
+        DailyReport.Logs.TakeLast(VisibleLogLines).ToList();
+
+    // ── Sections ──────────────────────────────────────────────────────────────
+    /// <summary>One ranking table. <paramref name="IsDaily"/> only switches wording —
+    /// the rows are already built against the right granularity by the service.</summary>
+    private sealed record RankSection(
+        bool IsWorse,
+        bool IsDaily,
+        string Note,
+        string EmptyText,
+        List<BmesDailyReportModelRow> Rows)
+    {
+        public double MaxAbsDelta => Rows.Count == 0 ? 0 : Rows.Max(r => Math.Abs(r.DeltaPpm));
+
+        public string PeriodNoun => IsDaily ? "day" : "week";
+
+        /// <summary>Suffix for the "how far back the baseline sits" marker: −2w / −3d.</summary>
+        public string StepUnit => IsDaily ? "d" : "w";
+    }
+
+    /// <summary>The two rankings of one granularity, under a heading that spans the grid.</summary>
+    private sealed record RankBlock(string Title, string Note, List<RankSection> Sections);
+
+    /// <summary>Both blocks are always emitted with both of their sections, even when a
+    /// list is empty: the grid places them two-up, and dropping a section would slide the
+    /// day-over-day tables up next to the weekly ones.</summary>
+    private static List<RankBlock> BuildBlocks(BmesDailyReportSnapshot snapshot) =>
+    [
+        new RankBlock(
+            Title: "Week over week",
+            Note:  BlockNote(snapshot.RecentWeekHeader, snapshot.PreviousWeekHeader, "week"),
+            Sections:
+            [
+                new RankSection(IsWorse: true, IsDaily: false,
+                    Note: "Latest week PPM − baseline week PPM, largest increase first",
+                    EmptyText: "No models worsened.",
+                    Rows: snapshot.Worsened),
+                new RankSection(IsWorse: false, IsDaily: false,
+                    Note: "Largest decrease first",
+                    EmptyText: "No models improved.",
+                    Rows: snapshot.Improved),
+            ]),
+        new RankBlock(
+            Title: "Day over day",
+            Note:  BlockNote(snapshot.RecentDayHeader, snapshot.PreviousDayHeader, "day"),
+            Sections:
+            [
+                new RankSection(IsWorse: true, IsDaily: true,
+                    Note: "Latest day PPM − baseline day PPM, largest increase first",
+                    EmptyText: "No models worsened.",
+                    Rows: snapshot.WorsenedDaily),
+                new RankSection(IsWorse: false, IsDaily: true,
+                    Note: "Largest decrease first",
+                    EmptyText: "No models improved.",
+                    Rows: snapshot.ImprovedDaily),
+            ]),
+    ];
+
+    /// <summary>Headline for a block: which two periods the overall figures compare. Each
+    /// row may still sit on an older baseline of its own — that is labelled per row.</summary>
+    private static string BlockNote(string recent, string previous, string noun)
+    {
+        if (string.IsNullOrEmpty(recent)) return string.Empty;
+        return string.IsNullOrEmpty(previous)
+            ? $"{recent} · no earlier {noun} with data"
+            : $"{recent} vs {previous} · each model against the last {noun} it was produced in";
+    }
+
+    // ── Sparkline geometry ────────────────────────────────────────────────────
+    private const double SparkWidth  = 118;
+    private const double SparkHeight = 26;
+    private const double SparkPad    = 3;
+
+    /// <param name="RecentX">Marker position for the latest week — the leftmost point.</param>
+    private sealed record SparkGeometry(string Points, string RecentX, string RecentY);
+
+    /// <summary>Weekly PPM is stored newest-first, so it plots straight to screen:
+    /// leftmost point = most recent week, running back in time to the right.
+    /// Null when there is nothing to draw (fewer than two weeks, or all zeroes).</summary>
+    private static SparkGeometry? Spark(List<double> points)
+    {
+        if (points.Count < 2) return null;
+        double max = points.Max();
+        if (max <= 0) return null;
+
+        double stepX = (SparkWidth - SparkPad * 2) / (points.Count - 1);
+        double Y(double v) => SparkHeight - SparkPad - (v / max) * (SparkHeight - SparkPad * 2);
+
+        string plotted = string.Join(' ', points.Select((v, i) =>
+            $"{Num(SparkPad + stepX * i)},{Num(Y(v))}"));
+
+        return new SparkGeometry(plotted, Num(SparkPad), Num(Y(points[0])));
+    }
+
+    private static string Num(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    /// <summary>Where the row sits in the tree: model group → model.</summary>
+    private static string ModelPath(BmesDailyReportModelRow row) =>
+        string.IsNullOrWhiteSpace(row.ParentModelName)
+            ? row.GroupName
+            : $"{row.GroupName} · {row.ParentModelName}";
+
+    private static string SparkLabel(BmesDailyReportModelRow row, RankSection sec) =>
+        $"{row.ModelName} {sec.PeriodNoun}ly PPM trend, most recent on the left, " +
+        $"latest {sec.PeriodNoun} {Ppm(row.RecentPpm)}";
+
+    /// <summary>Spells out a baseline that is not the immediately preceding period, which
+    /// is the case the row label abbreviates to "−3d".</summary>
+    private static string BaselineTooltip(BmesDailyReportModelRow row, RankSection sec)
+    {
+        string what = $"Compared against {row.BaselineHeader} ({Ppm(row.PreviousPpm)} PPM)";
+        return row.BaselineStepsBack <= 1
+            ? $"{what} — the previous {sec.PeriodNoun}"
+            : $"{what} — {row.BaselineStepsBack} {sec.PeriodNoun}s back; " +
+              $"this model was not produced in the {sec.PeriodNoun}s in between";
+    }
+
+    private static string DeltaTooltip(BmesDailyReportModelRow row, bool isWorse) =>
+        $"{row.ModelName}: {(isWorse ? "+" : "−")}{Ppm(Math.Abs(row.DeltaPpm))} PPM";
+
+    /// <summary>MAIN reads as the stronger, filled badge; everything else stays
+    /// outlined. Deliberately monochrome — the red/blue in this column already means
+    /// increase/decrease, and a coloured process badge would compete with it.</summary>
+    private static string PtClass(string processType) =>
+        processType.Trim().StartsWith("MAIN", StringComparison.OrdinalIgnoreCase)
+            ? "dr-pt-main"
+            : "dr-pt-other";
+
+    // ── Week-over-week movement ───────────────────────────────────────────────
+    // Rising defect rate is red and signed "+"; falling is blue and signed "−".
+    // The sign carries the meaning on its own, so the colour is never the only cue.
+    private static string DeltaClass(double delta, bool isNew = false) =>
+        isNew || delta > 0 ? "dr-worse"
+        : delta < 0        ? "dr-better"
+        : "dr-muted";
+
+    /// <summary>Signed magnitude, e.g. <c>+1,204</c> / <c>−980</c>.</summary>
+    private static string SignedPpm(double delta)
+    {
+        if (delta == 0) return "0";
+        return (delta > 0 ? "+" : "−") + Ppm(Math.Abs(delta));
+    }
+
+    private static string CauseDeltaText(BmesDailyReportCause cause)
+    {
+        if (cause.IsNew) return "NEW";
+        if (cause.DeltaPpm == 0) return "–";
+        return SignedPpm(cause.DeltaPpm);
+    }
+
+    private static string CauseTooltip(BmesDailyReportCause cause, RankSection sec)
+    {
+        string movement = cause.IsNew
+            ? $"Not present in the baseline {sec.PeriodNoun} (new)"
+            : $"Baseline {sec.PeriodNoun} {Ppm(cause.PreviousPpm)} → latest {sec.PeriodNoun} {Ppm(cause.Ppm)} "
+              + $"({(cause.DeltaPpm > 0 ? "+" : "")}{cause.DeltaPercent.ToString("0.#", CultureInfo.InvariantCulture)}%)";
+
+        return $"{cause.NgName} · {cause.ProcessName}\n{movement}";
+    }
+
+    // ── Formatting ────────────────────────────────────────────────────────────
+    private static string Ppm(double value) => value.ToString("N0", CultureInfo.InvariantCulture);
+
+    private static string Pct(double value) =>
+        $"({(value > 0 ? "+" : "")}{value.ToString("0.#", CultureInfo.InvariantCulture)}%)";
+
+
+    private static string BarWidth(double delta, double maxAbsDelta)
+    {
+        if (maxAbsDelta <= 0) return "0%";
+        double pct = Math.Abs(delta) / maxAbsDelta * 100;
+        return pct.ToString("0.#", CultureInfo.InvariantCulture) + "%";
+    }
+
+    public void Dispose()
+    {
+        DailyReport.SnapshotChanged -= OnSnapshotChanged;
+        StopProgressTick();
+    }
+}

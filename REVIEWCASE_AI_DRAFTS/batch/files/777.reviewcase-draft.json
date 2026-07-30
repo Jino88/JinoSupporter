@@ -1,0 +1,219 @@
+{
+  "sourceFileId": 777,
+  "sourceFile": "6. MSU-L20S15-07 Report test reverse direction magnetic CMG_clean.xlsx",
+  "sourcePath": "D:\\000. MyWorks\\test\\result\\InputDataFinish\\6. MSU-L20S15-07 Report test reverse direction magnetic CMG_clean.xlsx",
+  "generatedAt": "2026-07-06T12:35:21Z",
+  "generationMode": "generic extracted-data batch preanalysis",
+  "manualDraftExists": false,
+  "auditDecision": null,
+  "sourceStats": {
+    "sheetCount": 1,
+    "sheetNames": "Sheet1",
+    "sheetRowCount": 13,
+    "sheetCellCount": 63,
+    "comparisonPairCount": 0,
+    "metricCandidateCount": 0,
+    "measurementStatCount": 4
+  },
+  "reviewCaseStatus": "needs_ai_verification",
+  "contextRows": [
+    {
+      "rowId": "Sheet1!3",
+      "sheetName": "Sheet1",
+      "rowNumber": 3,
+      "rowText": "| REPORT CHANGE DIRECTION MAGNETIC CMG AND CHECK FUNCTION"
+    },
+    {
+      "rowId": "Sheet1!5",
+      "sheetName": "Sheet1",
+      "rowNumber": 5,
+      "rowText": "| Sample | Gauss CMG/CPT | Gauss final sample | Sigma | Hearing | Remark"
+    },
+    {
+      "rowId": "Sheet1!7",
+      "sheetName": "Sheet1",
+      "rowNumber": 7,
+      "rowText": "| | N 400~570G | S: 390~590G"
+    },
+    {
+      "rowId": "Sheet1!8",
+      "sheetName": "Sheet1",
+      "rowNumber": 8,
+      "rowText": "| 1 | 541 | 460 | OK | OK"
+    },
+    {
+      "rowId": "Sheet1!9",
+      "sheetName": "Sheet1",
+      "rowNumber": 9,
+      "rowText": "| 2 | 522 | 463 | OK | OK"
+    },
+    {
+      "rowId": "Sheet1!10",
+      "sheetName": "Sheet1",
+      "rowNumber": 10,
+      "rowText": "| 3 | 475 | 437 | OK | OK"
+    },
+    {
+      "rowId": "Sheet1!11",
+      "sheetName": "Sheet1",
+      "rowNumber": 11,
+      "rowText": "| 4 | 71 | 52 | NG | OK | Small sound but OK"
+    },
+    {
+      "rowId": "Sheet1!12",
+      "sheetName": "Sheet1",
+      "rowNumber": 12,
+      "rowText": "| 5 | 19 | 59 | NG | OK | Small sound but OK"
+    },
+    {
+      "rowId": "Sheet1!13",
+      "sheetName": "Sheet1",
+      "rowNumber": 13,
+      "rowText": "| 6 | 16 | 49 | NG | OK | Small sound but OK"
+    },
+    {
+      "rowId": "Sheet1!14",
+      "sheetName": "Sheet1",
+      "rowNumber": 14,
+      "rowText": "| 7 | 473 | 420 | OK | OK"
+    },
+    {
+      "rowId": "Sheet1!15",
+      "sheetName": "Sheet1",
+      "rowNumber": 15,
+      "rowText": "| 8 | 83 | 51 | NG | OK | Small sound but OK"
+    },
+    {
+      "rowId": "Sheet1!16",
+      "sheetName": "Sheet1",
+      "rowNumber": 16,
+      "rowText": "| 9 | 499 | 465 | OK | OK"
+    }
+  ],
+  "reviewCases": [
+    {
+      "reviewCaseId": "ms-777-rc-1",
+      "reviewTitle": "| REPORT CHANGE DIRECTION MAGNETIC CMG AND CHECK FUNCTION",
+      "reviewPurpose": "",
+      "changedFactors": [
+        {
+          "changedFactorId": "cf-1",
+          "changeDomain": [
+            "supplier",
+            "material"
+          ],
+          "changedFactor": "6. MSU-L20S15-07 Report test reverse direction magnetic CMG",
+          "baselineCondition": "baseline/normal condition not explicit",
+          "changedCondition": "test/changed condition not explicit",
+          "subgroupKeys": [],
+          "evidenceRows": [
+            "Sheet1!5",
+            "Sheet1!7"
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "outcomeId": "measurement-1",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "REPORT CHANGE DIRECTION MAGNETIC CMG AND CHECK FUNCTION",
+          "comparisonRows": [
+            "Sheet1!5"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 62012,
+              "condition": "REPORT CHANGE DIRECTION MAGNETIC CMG AND CHECK FUNCTION / Gauss CMG/CPT",
+              "spec": "",
+              "min": 16.0,
+              "max": 541.0,
+              "avg": 329.45454545454544,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!5"
+              ]
+            },
+            {
+              "statId": 62013,
+              "condition": "REPORT CHANGE DIRECTION MAGNETIC CMG AND CHECK FUNCTION / Gauss final sample",
+              "spec": "",
+              "min": 49.0,
+              "max": 466.0,
+              "avg": 301.09090909090907,
+              "sampleCount": 11,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!5"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        },
+        {
+          "outcomeId": "measurement-2",
+          "changedFactorId": "cf-1",
+          "outcomeDomain": "measurement",
+          "outcomeMetric": "Sample | Gauss CMG/CPT | Gauss final sample | Sigma | Hearing | Remark",
+          "comparisonRows": [
+            "Sheet1!7"
+          ],
+          "judgement": "not_judged",
+          "subResults": [
+            {
+              "statId": 62014,
+              "condition": "Gauss CMG/CPT / N 400~570G",
+              "spec": "",
+              "min": 16.0,
+              "max": 541.0,
+              "avg": 322.4,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!7"
+              ]
+            },
+            {
+              "statId": 62015,
+              "condition": "Gauss final sample / S: 390~590G",
+              "spec": "",
+              "min": 49.0,
+              "max": 466.0,
+              "avg": 292.2,
+              "sampleCount": 10,
+              "violationCount": 0,
+              "evidenceRows": [
+                "Sheet1!7"
+              ]
+            }
+          ],
+          "limitations": [
+            "measurement candidates need AI grouping verification"
+          ]
+        }
+      ],
+      "evidenceRows": [
+        "Sheet1!5",
+        "Sheet1!7"
+      ],
+      "limitations": [
+        "batch draft generated from extracted DB rows; AI must verify grouping before Ask AI uses it as final evidence",
+        "candidate pairs/metrics/measurements are hints and may miss merged-cell or image-only context"
+      ]
+    }
+  ],
+  "verification": {
+    "status": "passed_for_source_row_existence",
+    "checkedEvidenceRows": [
+      "Sheet1!5",
+      "Sheet1!7"
+    ],
+    "missingEvidenceRows": [],
+    "issues": []
+  },
+  "batchGeneratedAt": "2026-07-06T12:35:19Z"
+}
