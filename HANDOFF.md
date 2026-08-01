@@ -1515,3 +1515,190 @@
 - Files: JinoSupporter.Web/Components/Layout/NavMenu.razor
 - Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/bmes-model-search-artifacts`가 오류 0개로 성공했다(기존 경고 32개). 앱과 서버는 지침에 따라 실행하지 않았다.
 - Next: Web 서버 재시작 후 BMES 하위 메뉴에서 `Setting Model`이 최하단에 표시되는지 확인한다.
+
+## 2026-07-30 15:33 - [OTHER][FIX] BmesReportPerformance: Get Report 성능 병목 조사
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260730-152832180-70b0ecbf8bab45b8a
+- Category: OTHER
+- Feature: BmesReportPerformance
+- Change: FIX
+- Completed: BMES Report의 실제 실행 로그와 호출 구조를 대조해 Daily와 F-COST의 주요 병목을 확인했다. Daily는 60만 행 임시 DB 생성과 동일 원본의 최대 3회 집계가 크고, F-COST는 최근 3일 RAW 갱신·네트워크 원자재 분석·MES072410·MES050032가 직렬 실행되어 약 40초가 소요된다.
+- Decisions: 1차 개선은 선택 LineShift SQL 필터와 계층 집계 중복 제거, F-COST 원격 결과 캐시 및 독립 작업 병렬화로 잡는다. 원인 비중·Weekly의 Daily 결과 재사용과 F-COST 4개 탭의 계산 스냅샷 재사용은 이미 적절하므로 유지한다.
+- Files: None
+- Verification: `web-20260730.log`의 2026-07-30 15:20 실행을 확인했다. NG Rate 수집·임시 DB 처리는 15.524초였고, F-COST는 RAW 갱신 7.514초, 원자재 분석 16.805초, MES072410 1.820초, MES050032 13.965초로 확인됐다. 코드 변경은 없어 빌드는 실행하지 않았다.
+- Next: 승인 시 선택 LineShift를 SQLite 쿼리에서 필터링하고 계층 보고서 중복 집계를 축소한 뒤, F-COST 캐시·병렬화를 단계별로 구현하고 동일 기간으로 전후 시간을 비교한다.
+
+## 2026-07-30 15:47 - [DATA][FIX] BmesReportPerformance: Daily 선택 LineShift 선필터 적용
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260730-154200396-1ce6502d9efd47548
+- Category: DATA
+- Feature: BmesReportPerformance
+- Change: FIX
+- Completed: BMES Report의 Daily 생성 시 선택된 모델 그룹의 LineShift 목록을 NG Rate 수집 단계까지 전달하고, 월별 DB에서 날짜와 LineShift를 함께 SQL 필터링하도록 변경했다. 최근 서버 행도 임시 DB 저장 전에 같은 LineShift 집합으로 줄이며 Sub Group 보고서는 필요한 요약 집계만 생성한다.
+- Decisions: 기존 monthly DB와 전체 데이터 캐시 형식은 유지하고 Report 전용 경로에서만 선필터를 전달한다. LineShift 필터가 없는 기존 호출자는 이전처럼 전체 데이터를 사용하며, 인스턴스 재사용 DB 키에도 필터 집합을 포함해 다른 선택 결과가 섞이지 않게 했다.
+- Files: JinoSupporter.Web/Components/Pages/NgRateForDailyReportPage.razor, JinoSupporter.Web/Services/NgRateService.cs, JinoSupporter.Web/Services/HierReportSupport.cs
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/bmes-model-search-artifacts`가 오류 0개로 성공했다(기존 경고 32개). 새 출력 폴더의 첫 시도는 복원 자산 부재로 시작되지 않아 기존 검증 폴더를 사용했으며 앱과 서버는 실행하지 않았다.
+- Next: MES050032 및 F-COST 원자재 분석 결과의 SQLite 캐시 구현을 통합하고 동일 Web 빌드로 최종 검증한다.
+
+## 2026-07-30 15:51 - [DATA][ADD] IpgDefectCache: MES050032 response cache
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260730-154200396-1ce6502d9efd47548
+- Category: DATA
+- Feature: IpgDefectCache
+- Change: ADD
+- Completed: Added a persistent MES050032 SearchList cache in `fcost_raw.db` keyed by query date and W/M period, with cache reads checked before BMES authentication so repeat report calls can avoid login and network requests. Historical cached entries are reused indefinitely, recent mutable entries use a 15 minute TTL, and cache hit/progress messages are logged.
+- Decisions: Stored only BMES response JSON plus metadata in a dedicated `MES050032SearchListCache` table so credentials and cookies are never persisted and existing FCost/MES072410 tables coexist untouched. Weekly query generation now uses 42-day checkpoints and omits the redundant start query when the oldest checkpoint covers it.
+- Files: JinoSupporter.Web/Services/IpgDefectService.cs
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --artifacts-path .codex-verify/ipg-cache-artifacts` succeeded with existing warnings. A temporary smoke console verified weekly query dates and cache TTL policy, then was removed except ignored binary/cache remnants that deletion policy blocked.
+- Next: Run an actual Get Report twice for the same period and confirm the second run logs MES050032 cache hits and skips BMES login for fully cached IPG queries.
+
+## 2026-07-30 15:53 - [DATA][ADD] BmesFcostRawBreakdownCache: raw breakdown SQLite cache
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260730-154200396-1ce6502d9efd47548
+- Category: DATA
+- Feature: BmesFcostRawBreakdownCache
+- Change: ADD
+- Completed: Added a persistent cache lookup before the SQL Server raw breakdown query and stores successful `BmesFcostRawBreakdownResult` payloads in `fcost_raw.db`. Historical queries are cached without expiry, recent mutable periods use a 15 minute TTL, and cache hit, miss, and store outcomes are logged.
+- Decisions: The cache uses a dedicated coexistence table keyed from non-secret inputs only: normalized database name, fact, plant, normalized periods, and the effective line-shift/group/model mapping. Server, user, password, cookies, and connection secrets are not stored; corrupt or expired payloads are ignored and the SQL path is used.
+- Files: JinoSupporter.Web/Services/BmesFcostActualService.cs
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --artifacts-path .codex-verify/fcost-raw-breakdown-cache-artifacts` succeeded with existing warnings. An initial `--no-restore` attempt against the fresh artifacts path failed only because `project.assets.json` did not exist there.
+- Next: Run the same F-COST raw breakdown query twice in the app and confirm the first run logs cache miss/store and the second run logs cache hit without SQL Server raw breakdown execution.
+
+## 2026-07-30 15:59 - [DATA][FIX] BmesReportPerformance: F-COST 반복 원격 조회 제거
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260730-155710252-59494120a90f44bfb
+- Category: DATA
+- Feature: BmesReportPerformance
+- Change: FIX
+- Completed: F-COST 최근 RAW와 MES072410은 15분 이내 성공 캐시를 재사용하고, MES050032 응답 및 원자재 breakdown 결과는 `fcost_raw.db`의 전용 테이블에 영속 캐시하도록 통합했다. 필요한 날짜가 모두 캐시에 있으면 BMES 로그인까지 생략하며, 보고서 로딩 시 사용하지 않는 F-COST RawJson 할당과 불필요한 Sub Group 상세 집계도 제거했다.
+- Decisions: 과거 조회 캐시는 만료 없이 재사용하고 최근 변동 가능 데이터만 15분 TTL을 적용한다. MES050032의 시작일 쿼리는 기간 경계 KPI 누락을 피하기 위해 유지하며, 원격 작업의 공격적 병렬화는 공유 SQLite 쓰기 경합을 유발할 수 있어 이번 단계에서는 적용하지 않았다.
+- Files: JinoSupporter.Web/Components/Pages/BmesFCostPage.razor, JinoSupporter.Web/Services/BmesFcostActualService.cs, JinoSupporter.Web/Services/BmesReportHtmlExportService.cs, JinoSupporter.Web/Services/FCostCorePartsService.cs, JinoSupporter.Web/Services/FCostReportService.cs, JinoSupporter.Web/Services/FCostService.cs, JinoSupporter.Web/Services/IpgDefectService.cs
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/bmes-model-search-artifacts`가 오류 0개로 성공했고 기존 경고 32개만 남았다. 변경 파일 대상 `git diff --check`도 통과했으며 프로젝트 지침에 따라 웹 서버와 외부 BMES 요청은 실행하지 않았다.
+- Next: 웹 서버 재시작 후 같은 기간·같은 모델 선택으로 Get Report를 두 번 실행해 두 번째 실행의 Daily filtered row 수와 F-COST/MES072410/MES050032 cache hit 로그 및 총 소요 시간을 비교한다.
+
+## 2026-07-30 16:10 - [DATA][FIX] BmesReportPerformance: Daily 중복 집계와 완성 보고서 캐시 개선
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260730-160047439-911b33f3d807401a9
+- Category: DATA
+- Feature: BmesReportPerformance
+- Change: FIX
+- Completed: Daily 계층 보고서가 같은 30만 행을 Group/Mid/Sub 용도로 세 번 읽고 집계하던 경로를 모든 계층 요약과 Mid 상세를 한 번에 만드는 단일 보고서로 합쳤다. 최근 3일 NG Rate 원본도 monthly DB에 저장해 15분간 재사용하며, 같은 기간·같은 모델 선택의 완성 HTML 보고서는 디스크 메타데이터와 함께 15분간 재사용해 프로세스 재시작 후에도 재생성을 건너뛴다.
+- Decisions: 완성 보고서 키에는 날짜와 선택된 모델 그룹 전체 구조를 포함해 다른 선택 결과가 섞이지 않게 했다. 상세 Reason/Input/NG 행은 Mid 매핑만 사용해 단일 집계가 불필요하게 모든 계층 상세를 확장하지 않도록 했고, 최근 데이터와 완성 보고서는 변동 가능성을 고려해 모두 15분 TTL을 적용했다.
+- Files: JinoSupporter.Web/Services/BmesReportHtmlExportService.cs, JinoSupporter.Web/Services/HierReportSupport.cs, JinoSupporter.Web/Services/NgRateReportService.cs, JinoSupporter.Web/Services/NgRateService.cs
+- Verification: 실제 `web-20260730.log`에서 개선 전 완료 실행이 Daily 원본 준비 11.813초, 이후 Daily/Cause/Weekly 생성 약 27.2초, 미충전 MES050032 약 10.3초를 사용한 것을 확인했다. `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/bmes-model-search-artifacts`는 오류 0개와 기존 경고 32개로 성공했고 대상 파일 `git diff --check`도 통과했다. 실행 중 서버는 재시작하지 않았다.
+- Next: 서버를 한 번 재시작해 새 코드를 반영하고 같은 기간·모델로 연속 두 번 실행한다. 첫 실행의 단일 hierarchy 시간과 두 번째 실행의 `Reusing complete report cache` 로그를 확인한다.
+
+## 2026-07-30 16:33 - [DATA][FIX] BmesReportPerformance: hierarchy 회귀 제거와 KPI 병렬화
+- Agent: Codex
+- Session: S2
+- Task-ID: S2-20260730-161613748-081631f64670454db
+- Category: DATA
+- Feature: BmesReportPerformance
+- Change: FIX
+- Completed: 모든 hierarchy 단계를 하나의 상세 보고서로 합쳐 3분 가까이 걸리던 회귀를 제거하고, 화면에 상세 행이 필요한 Mid 보고서와 전체 hierarchy 요약만 병렬 생성하도록 축소했다. 요약 전용 경로의 불필요한 Process 원시 집계를 생략하고 F-COST 생성과 MES072410/MES050032 KPI 조회도 병렬 시작하도록 변경했다.
+- Decisions: Sub1/Sub2/LineShift 화면은 `GroupSummary`만 사용하므로 전체 hierarchy 요약 결과를 공유하고, Reason/Input/NG 상세가 필요한 Mid만 별도 상세 보고서로 유지한다. 실행 중인 웹 서버는 프로젝트 지침에 따라 재시작하지 않았다.
+- Files: JinoSupporter.Web/Services/BmesReportHtmlExportService.cs, JinoSupporter.Web/Services/HierReportSupport.cs, JinoSupporter.Web/Services/NgRateReportService.cs
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore -p:OutputPath=...`가 기존 경고 32개와 오류 0개로 성공했다. 임시 성능 하네스는 실DB 18,866행에서 1.282초, 202607 월 DB에서 3.239초, 3개월 601,259행 과부하 DB에서 9.170초에 hierarchy를 생성했고 모두 결과 행 존재 및 종료 코드 0을 확인했다.
+- Next: 웹 앱을 한 번 재시작한 뒤 동일 조건 Get Report를 실행해 새 hierarchy 시간과 `Starting F-COST and KPI source loading in parallel.` 로그를 확인한다. 같은 기간·선택을 15분 안에 다시 실행하면 완성 HTML 캐시가 즉시 재사용되어야 한다.
+
+## 2026-08-01 08:40 - [UI][ADD] InstrumentDesignSystem: 전체 UI 재설계 HTML 목업
+- Agent: Claude
+- Session: S4
+- Task-ID: S4-20260801-082612948-ca9a245bad0347d6a
+- Category: UI
+- Feature: InstrumentDesignSystem
+- Change: ADD
+- Prompt: "이 프로젝트 전체 UI 디자인 다시 해줘 . 싹다 뜯어고쳐두 됨. 일단 html로 먼저 UI 만 만들어봐"
+- Answer: 기존 Bootstrap 기반 slate/blue UI를 버리고 "계측기(INSTRUMENT)" 컨셉 — 다크 그래파이트 섀시가 밝은 데이터 플레이트를 감싸는 구조, 앰버 시그널 단일 액센트, 각진 hairline, Archivo + IBM Plex Mono — 으로 잡고 Blazor 이식 전에 정적 HTML 목업으로 먼저 확인하도록 제안했다.
+- Applied: (1) 디자인 시스템 CSS(토큰/셸/패널/덴스테이블/차트/채팅/로그인) 신규 작성 (2) 셸 렌더러와 차트 런타임 JS 작성(라인·바·스파크라인·히트맵·정렬·테마토글) (3) 대표 6개 화면 목업 페이지 작성(Daily Report, NG Rate, F-Cost, Ask AI, Users, Login) (4) 차트 팔레트를 dataviz 6검사로 light/dark 양쪽 검증 (5) 디자인 토큰·컴포넌트·Blazor 이식 매핑 README 작성
+- Completed: `ui-redesign/` 아래에 의존성 없는 정적 HTML 목업 세트를 만들었다. 브라우저에서 바로 열리며 ?theme=dark 로 다크모드 확인이 가능하고, 실제 앱의 메뉴 구조(22개 메뉴, 권한 그룹)와 화면 원형(설정 deck → 리포트 테이블 → 실행 로그)을 그대로 반영했다.
+- Decisions: Bootstrap 의존을 제거하는 전제로 설계했다(모든 컴포넌트가 자체 클래스). 사이드바/상단바는 라이트·다크 공통으로 항상 다크 섀시로 고정해 컨셉을 유지했다. 차트 계열색은 orange를 1번 슬롯으로 재정렬했는데, 원래 순서는 dark에서 red↔yellow가 인접해 normal-vision floor(ΔE 13.0 < 15)에 걸려 yellow와 red 사이에 green을 넣어 재검증했다. 목업 셸 마크업은 각 페이지에 복붙하지 않고 instrument.js의 NAV 배열에서 렌더하도록 해 실제 AppMenus/MenuPermissionService 구조와 대응시켰다.
+- Files: ui-redesign/assets/instrument.css, ui-redesign/assets/instrument.js, ui-redesign/index.html, ui-redesign/ng-rate.html, ui-redesign/f-cost.html, ui-redesign/ask-ai.html, ui-redesign/admin-users.html, ui-redesign/login.html, ui-redesign/README.md
+- Verification: headless Chrome로 6개 페이지 + 다크모드를 1600px 폭으로 렌더해 육안 확인했다. 1차 렌더에서 발견한 축 눈금이 clean number가 아닌 문제, 라인 끝 라벨 겹침, `.notice` flex로 인한 텍스트 분해, `.split` 패널 강제 stretch, 2행 헤더 sticky 겹침, 다크 히트맵 셀 텍스트 대비 부족을 수정하고 재렌더로 확인했다. 팔레트는 `validate_palette.js`로 light(surface #ffffff)/dark(surface #171b21) 모두 통과(worst adjacent CVD ΔE 7.2/6.9, normal-vision 19.6/19.3), sequential ramp는 monotone L·ΔL≥0.06·단일 hue 통과. .NET 빌드나 서버 기동은 하지 않았다(정적 파일만 추가, 앱 코드 미변경).
+- Next: 목업 시안 확정 후 이식 착수. 순서는 토큰+셸 먼저(wwwroot/app.css, MainLayout.razor(.css), NavMenu.razor(.css)) → 페이지 단위 순차 전환. Bootstrap 제거 여부를 먼저 결정해야 한다(현재 목업은 제거 전제).
+
+## 2026-08-01 09:05 - [UI][CHANGE] InstrumentDesignSystem: 데이터 표를 엑셀 격자 폼으로 전환
+- Agent: Claude
+- Session: S4
+- Task-ID: S4-20260801-082612948-ca9a245bad0347d6a
+- Category: UI
+- Feature: InstrumentDesignSystem
+- Change: CHANGE
+- Prompt: "데이터 표 는 왠만하면 기본 엑셀폼과 비슷한 표로 만들어줘 . 캡쳐해서 공유해야되서"
+- Answer: 표를 캡쳐해 공유하는 용도이므로 가로줄만 있던 hairline 스타일을 버리고 전 셀 격자선 + 회색 헤더 밴드의 엑셀 폼으로 바꿨다. 표 일부만 잘라내도 표로 읽히고, hover나 색 단독에 의존하는 정보가 없도록 했다.
+- Applied: (1) 표 전용 토큰 5종 추가(--tbl-line/--tbl-line-hard/--tbl-head/--tbl-head-2/--tbl-head-ink, light/dark) (2) .dt를 전 셀 우/하 보더 + 회색 볼드 중앙정렬 헤더 밴드로 재작성하고 정렬 표시를 색 대신 ▾/▴ 글리프로 변경 (3) 그룹행/합계행을 굵은 밴드 행으로, 컬럼그룹 구분선과 합계선을 진한 선으로 분리 (4) .heat 매트릭스도 border-spacing 제거하고 같은 격자로 통일 (5) 긴 표용 .dt--banded 옵션 추가(기본 off) (6) NG Rate 리포트 표를 split에서 빼내 전체 폭으로 배치하고 보조 패널 3개를 아래 grid3으로 이동
+- Completed: 모든 데이터 표가 엑셀 기본 표 형태(전 셀 격자 + 회색 헤더)로 렌더된다. 13열짜리 NG Rate 계층 표가 헤더 폰트 확대로 State 열이 잘리던 문제도 전체 폭 배치로 해소했다.
+- Decisions: 헤더는 열 정렬과 무관하게 전부 중앙정렬로 통일했다(국내 관리표 폼 관례). 밴딩(줄무늬)은 히트맵 색상 셀과 충돌해 기본 비활성으로 두고 옵션 클래스로만 제공한다. 히트맵 셀 간 2px 간격(dataviz 권장)은 엑셀 조건부서식처럼 보이도록 격자선으로 대체했다.
+- Files: ui-redesign/assets/instrument.css, ui-redesign/ng-rate.html, ui-redesign/README.md
+- Verification: headless Chrome로 ng-rate/f-cost/index(dark)를 1560px 폭으로 재렌더해 육안 확인했다. F-Cost 2단 헤더 표와 NG Rate 13열 표 모두 격자·헤더 밴드·합계선이 의도대로 렌더되고 열 잘림이 없음을 확인했다. 다크모드에서도 헤더 밴드와 격자선 대비가 유지됨을 확인했다.
+- Next: 시안 확정 대기. 확정되면 토큰+셸부터 Blazor 이식 착수(Bootstrap 제거 여부 결정 필요).
+
+## 2026-08-01 09:35 - [UI][ADD] NewVerPreview: 앱 안에서 새 디자인 미리보기 메뉴 추가
+- Agent: Claude
+- Session: S4
+- Task-ID: S4-20260801-082612948-ca9a245bad0347d6a
+- Category: UI
+- Feature: NewVerPreview
+- Change: ADD
+- Prompt: "근데 이게 실제로 이렇게 보일려나... 기본 페이지에 New Ver 이라고 메뉴 하나 만들고 그거 누르면 수정된 디자인으로 보여줄수있게 만들어봐"
+- Answer: 목업을 wwwroot로 옮겨 앱이 직접 서빙하게 하고, 사이드바 최상단에 Preview 섹션과 `New Ver` 메뉴(/new-ver)를 추가했다. 앱이 Bootstrap을 전역 로드하고 새 디자인 시스템이 .btn/.badge/.row/.small을 같은 이름으로 정의하므로 한 문서에 섞으면 충돌한다고 판단해 미리보기는 iframe으로 격리했고, 이 점을 README와 페이지 주석에 명시했다.
+- Applied: (1) `ui-redesign/`을 `JinoSupporter.Web/wwwroot/ui-redesign/`으로 이동해 단일 사본으로 통합 (2) `/new-ver` 라우트의 NewVerPage.razor 추가(EmptyLayout, 상단 페이지 전환 스트립 + iframe, 미인증 시 로그인 리다이렉트) (3) AppMenus에 NewVer("new-ver") 상수와 Preview 그룹 MenuItemDef 등록 (4) NavMenu 최상단에 Preview 섹션과 New Ver 링크 추가 (5) README에 접근 경로 3가지와 iframe 사용 이유 기재
+- Completed: 앱 메뉴에서 새 디자인을 열어볼 수 있는 경로를 만들었다. 정적 파일은 실행 중인 서버가 이미 서빙하고 있어(200 확인) 재시작 없이 http://localhost:5050/ui-redesign/index.html 로 즉시 확인 가능하고, /new-ver 라우트만 재빌드·재시작이 필요하다.
+- Decisions: 미리보기를 iframe으로 한 것은 Bootstrap과의 클래스 충돌을 피하면서 시안을 왜곡 없이 보여주기 위함이다. 따라서 이 미리보기는 "새 디자인이 앱 안에서 어떻게 보이는지"는 증명하지만 "새 CSS가 Bootstrap과 공존 가능한지"는 증명하지 않는다. 목업을 repo 루트에 두지 않고 wwwroot로 옮겨 사본 이원화를 막았다. New Ver 메뉴는 이식 완료 후 제거할 임시 항목으로 표시했다.
+- Files: JinoSupporter.Web/Components/Pages/NewVerPage.razor, JinoSupporter.Web/Components/Layout/NavMenu.razor, JinoSupporter.Web/Services/AppMenus.cs, JinoSupporter.Web/wwwroot/ui-redesign/README.md, JinoSupporter.Web/wwwroot/ui-redesign/(assets/instrument.css, assets/instrument.js, index.html, ng-rate.html, f-cost.html, ask-ai.html, admin-users.html, login.html — 루트에서 이동)
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --artifacts-path .codex-verify/newver-artifacts`가 오류 0개, 경고 32개(기존과 동일)로 성공했다. 실행 중인 5050 서버에 curl로 `/ui-redesign/index.html`과 `/ui-redesign/assets/instrument.css` 모두 200을 확인했고, `/new-ver`는 예상대로 404였다(실행 중 바이너리가 신규 라우트 이전 빌드). 지침에 따라 서버는 기동·종료하지 않았고 빌드도 bin/Debug가 아닌 별도 artifacts 경로로 했다.
+- Next: 사용자가 F5(또는 restart-web.cmd)로 앱을 재빌드·재시작하면 사이드바 최상단 Preview > New Ver 이 뜬다. 시안 확정 후 Bootstrap 제거 여부를 결정하고 토큰+셸부터 실제 이식을 시작한다.
+
+## 2026-08-01 11:45 - [UI][CHANGE] NewVerPreview: iframe 목업을 실제 동작하는 Blazor 페이지로 교체
+- Agent: Claude
+- Session: S4
+- Task-ID: S4-20260801-082612948-ca9a245bad0347d6a
+- Category: UI
+- Feature: NewVerPreview
+- Change: CHANGE
+- Prompt: "아니 실제 사용은 안되는데?" / "실제 동작도 되야지"
+- Answer: /new-ver 라우트 자체는 살아 있었고(앞서 404로 보고한 것은 Git Bash가 curl URL을 경로로 변환한 오판정, 실제 302), 문제는 내용물이 정적 목업 iframe이라 아무 동작도 하지 않는 것이었다. iframe을 걷어내고 실제 서비스·실제 DB에 연결된 Blazor 페이지로 교체했다.
+- Applied: (1) tools/scope-css.js 신규 — instrument.css의 모든 셀렉터를 .ins 아래로 스코프해 instrument.scoped.css 생성(:root→.ins, [data-theme=dark]→.ins[data-theme=dark], @keyframes 내부는 미변환) (2) instrument.css에 §23 Framework neutraliser 추가 — Bootstrap이 남기는 .btn/.badge border-radius와 .row>* 그리드 컬럼 무력화 (3) NewVerPage.razor를 실제 페이지로 재작성 — 좌측 레일은 AppMenus+MenuPermissionService 권한 필터 결과, 상단 readout은 ConnectedUsersService 실시간 값, 본문은 WebRepository 기반 Users 화면(검색·정렬·역할변경·표시명 인라인편집·추가·삭제·비밀번호 재설정·메뉴권한 매트릭스 전부 실제 쓰기) (4) 테마 토글·레일 접기 동작 (5) 미이식 화면은 Design reference 탭으로 정적 목업 연결
+- Completed: New Ver 메뉴가 실제로 쓸 수 있는 화면이 됐다. Users 화면의 모든 조작이 /admin/users와 동일한 SQLite 행을 읽고 쓴다. Bootstrap과의 클래스 충돌은 .ins 스코프로 해소했다.
+- Decisions: 첫 실제 이식 대상으로 Users를 골랐다. BMES 세션·네트워크 의존이 없어 단독으로 완결되고, 읽기와 쓰기가 모두 있어 "실제 동작"을 증명하기에 적합하기 때문이다. NG Rate/F-Cost/Daily Report/Ask AI는 아직 정적 목업이며 같은 패턴으로 순차 이식한다. instrument.scoped.css는 생성물이므로 직접 수정 금지, instrument.css 수정 후 스크립트 재실행이 규칙이다.
+- Files: tools/scope-css.js, JinoSupporter.Web/Components/Pages/NewVerPage.razor, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.scoped.css, JinoSupporter.Web/wwwroot/ui-redesign/README.md
+- Verification: `dotnet build --artifacts-path .codex-verify/newver-artifacts`가 오류 0개, 경고 32개(기존과 동일, 신규 경고 없음)로 성공했다. Bootstrap 공존은 별도 검증 페이지로 확인 — App.razor와 같은 순서로 bootstrap.min.css + app.css + instrument.scoped.css를 로드하고 .ins 안팎을 동시에 렌더한 뒤 headless Chrome로 캡쳐해, 바깥 Bootstrap 마크업(btn-primary/badge/table/alert)은 무변화이고 안쪽은 새 디자인으로 렌더됨을 확인했다. 1차 캡쳐에서 .row>* 때문에 배지가 세로로 늘어지고 .btn/.badge에 Bootstrap 라운드가 남는 것을 발견해 §23 추가 후 재캡쳐로 해소를 확인했다. 지침에 따라 서버는 기동·종료하지 않았고 빌드도 bin/Debug가 아닌 별도 artifacts 경로로 했다.
+- Next: 사용자가 F5로 재빌드·재시작하면 New Ver에서 실제 동작 화면이 뜬다(현재 실행 중 바이너리는 이전 빌드). 그 다음 이식 대상은 사용자가 지정하는 화면으로, 같은 .ins 스코프 + 실제 서비스 주입 패턴을 따른다.
+
+## 2026-08-01 11:55 - [UI][FIX] NewVerPreview: HeadContent가 static HeadOutlet에 전달되지 않아 CSS 미적용
+- Agent: Claude
+- Session: S4
+- Task-ID: S4-20260801-082612948-ca9a245bad0347d6a
+- Category: UI
+- Feature: NewVerPreview
+- Change: FIX
+- Prompt: (사용자가 /new-ver 화면 캡쳐 첨부 — 스타일이 전혀 적용되지 않은 순수 HTML 상태)
+- Answer: instrument.scoped.css는 서버에서 정상 제공되고 있었고(200, 49,933바이트), 원인은 App.razor의 `<HeadOutlet />`에 렌더모드가 없어 static인데 NewVerPage는 InteractiveServer라 `<HeadContent>`의 link가 head에 도달하지 못한 것이었다. link를 컴포넌트 본문으로 옮겨 해결했다.
+- Applied: (1) NewVerPage.razor의 `<HeadContent>` 제거하고 폰트·스타일시트 link를 컴포넌트 본문 최상단으로 이동(이유를 주석으로 명시) (2) 스코프 CSS 캐시버스터 v1→v2 (3) 레일 채널코드가 글리프와 어긋나던 문제 수정 — Code()가 id가 아닌 Label 기준으로 생성하도록 변경해 글리프와 코드의 두 글자가 일치
+- Completed: 페이지 본문에서 스타일시트를 로드하도록 바꿔 CSS 미적용 문제를 제거했다. App.razor의 전역 HeadOutlet은 건드리지 않았다.
+- Decisions: HeadOutlet에 렌더모드를 부여하는 방법(문서상 정공법)은 앱 전체 페이지에 영향이 가므로 채택하지 않았다. body 내 `<link>`는 모든 브라우저가 적용하고 컴포넌트 언마운트 시 Blazor가 제거하므로 이 페이지에만 CSS가 국한되는 이점도 있다.
+- Files: JinoSupporter.Web/Components/Pages/NewVerPage.razor
+- Verification: `dotnet build --artifacts-path .codex-verify/newver-artifacts` 오류 0개, 경고 32개(신규 없음). 렌더링은 실제 페이지와 동일한 CSS 로드 순서(bootstrap.min.css → app.css → body 내 instrument.scoped.css)와 동일한 셸 마크업(rail/topbar/tabs/view/stats/dt/권한매트릭스)을 가진 검증 페이지를 headless Chrome로 1500px 캡쳐해 확인했다. 레일·상단바·탭·테이블·배지가 모두 의도대로 렌더되고, app.css의 `a{color:#2563eb}`가 링크를 파랗게 만들지 않는 것도 확인했다. 서버는 기동·종료하지 않았다.
+- Next: F5 재빌드·재시작 후 /new-ver 확인. 이후 이식 대상 화면을 사용자가 지정.
+
+## 2026-08-01 12:20 - [UI][CHANGE] InstrumentShell: 새 UI를 레이아웃으로 승격해 전체 기능을 새 셸에서 사용
+- Agent: Claude
+- Session: S4
+- Task-ID: S4-20260801-082612948-ca9a245bad0347d6a
+- Category: UI
+- Feature: InstrumentShell
+- Change: CHANGE
+- Prompt: "아니... 새로운 UI 로 모든 기능이 되어야지. 누르면 원래 버전으로 돌아가면 안되고"
+- Answer: 새 셸을 페이지가 아니라 레이아웃(InstrumentLayout)으로 만들어 Routes의 DefaultLayout을 런타임에 전환하도록 했다. 페이지를 한 장도 고치지 않고 모든 라우트·기능이 새 셸 안에서 열리며, 메뉴를 눌러도 구버전으로 나가지 않는다. 기존 Bootstrap 마크업은 §23–24 브리지 CSS로 새 디자인에 매핑했다.
+- Applied: (1) UiModeService(Scoped) 추가 — 회로 단위 셸 선택, localStorage로 새로고침 후 복원 (2) Routes.razor의 DefaultLayout을 동적으로 변경 (3) InstrumentLayout.razor 신규 — 실제 권한 기반 레일, 실시간 접속자 readout, 탭 스트립(MainLayout 로직 이식), 테마 토글, Classic UI 복귀 버튼, @Body 호스팅 (4) instrument.css에 BRIDGE 구간 신설 — card/form/table/alert/badge/nav-tabs/버튼 및 app.css 고유 규칙(paste-modal, hier-level-badge, rpt-row 등)을 새 디자인으로 매핑 (5) scope-css.js가 BRIDGE 구간 선언에 !important를 자동 부착 (6) NewVerPage를 셸 전환 페이지로 재작성 (7) Program.cs에 UiModeService 등록
+- Completed: New Ver에서 전환하면 앱 전체가 새 셸로 바뀌고, 모든 메뉴·페이지·기능이 그 안에서 그대로 동작한다. Classic UI 버튼으로 즉시 되돌아간다.
+- Decisions: 페이지별 재작성 대신 레이아웃 교체 + CSS 브리지를 택했다. 60k 라인 마크업을 건드리지 않고 전 기능을 새 UI로 옮길 수 있고, 페이지별 정식 이식은 그 위에서 점진적으로 하면 되기 때문이다. UiModeService는 Scoped라 한 사용자의 전환이 다른 세션에 영향을 주지 않으며 기본값은 기존 MainLayout이다. app.css를 통째로 비활성화하는 방법은, 누락 시 화면이 무스타일로 깨지는 실패 모드가 더 나빠서 채택하지 않고 !important 브리지를 택했다.
+- Files: JinoSupporter.Web/Services/UiModeService.cs, JinoSupporter.Web/Components/Routes.razor, JinoSupporter.Web/Components/Layout/InstrumentLayout.razor, JinoSupporter.Web/Components/Pages/NewVerPage.razor, JinoSupporter.Web/Program.cs, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.scoped.css, tools/scope-css.js
+- Verification: 전체 재빌드 오류 0개, 경고 32개(기존과 동일). 렌더링은 실제 UsersPage.razor의 Bootstrap 마크업을 그대로 새 셸 안에 넣고 App.razor와 동일한 CSS 로드 순서로 headless Chrome 캡쳐해 확인했다. 1차 캡쳐에서 btn-primary가 파란색으로 남고 셀 안 select가 잘리는 문제를 발견 — 원인은 app.css가 Bootstrap을 !important로 재정의하는 것과 브리지의 고정 행 높이였고, BRIDGE 구간 !important 자동화와 행 높이 content-driven 전환으로 해소 후 재캡쳐로 확인했다. 디자인 시스템 자체 컴포넌트(.btn--go/.badge--*)가 !important 재기술로 깨지지 않는 것도 별도 캡쳐로 확인했다. 서버는 기동·종료하지 않았다.
+- Next: F5 재빌드·재시작 → New Ver에서 "Switch to new UI". 전체 화면을 돌며 레이아웃이 깨지는 페이지(특히 자체 100% 높이 스크롤을 쓰는 Ask AI/일부 BMES 화면)를 추려 개별 이식 순서를 정한다.

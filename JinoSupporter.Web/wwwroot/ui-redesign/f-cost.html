@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>F-Cost — GN LAB Supporter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..800;1,75..125,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/instrument.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand__mark"></div>
+      <div class="brand__text">
+        <div class="brand__name">GN LAB</div>
+        <div class="brand__sub">SUPPORTER</div>
+      </div>
+    </div>
+    <div class="rail__scroll"></div>
+    <div class="rail__foot">
+      <div class="who">
+        <div class="who__av">BJ</div>
+        <div style="min-width:0">
+          <div class="who__name">Byun Jinho</div>
+          <div class="who__role">Administrator</div>
+        </div>
+      </div>
+      <div class="live"><i class="live__dot"></i><span class="live__text">5 connected</span></div>
+      <button class="railbtn">Sign out</button>
+    </div>
+  </aside>
+
+  <div class="stage">
+    <header class="topbar">
+      <button class="iconbtn" data-rail-toggle aria-label="Toggle navigation"></button>
+      <nav class="crumb"></nav>
+      <div class="readouts"></div>
+      <button class="iconbtn" data-theme-toggle aria-label="Toggle theme"></button>
+      <button class="iconbtn" data-icon="out" aria-label="Sign out"></button>
+    </header>
+
+    <nav class="tabs"></nav>
+
+    <main class="view">
+
+      <div class="pagehead rise" style="--d:0">
+        <div>
+          <span class="code">FC-02 · BMES REPORT</span>
+          <h1 class="pagehead__t">F-Cost</h1>
+          <p class="pagehead__d">Failure cost by model, built from <span class="num">fcost_raw.db</span>. Missing dates in the range are fetched automatically; the last 3 dates refresh on every run.</p>
+        </div>
+        <div class="pagehead__actions">
+          <div class="seg">
+            <button class="seg__b is-on">F-Cost</button>
+            <button class="seg__b">Trend</button>
+            <button class="seg__b">Core parts</button>
+          </div>
+          <button class="btn btn--sm">Export Excel</button>
+        </div>
+      </div>
+
+      <div class="deck rise" style="--d:1">
+        <div class="deck__row">
+          <div class="field">
+            <span class="field__l">Start</span>
+            <input class="input num" type="date" value="2026-07-01" style="width:150px">
+          </div>
+          <div class="field">
+            <span class="field__l">End</span>
+            <input class="input num" type="date" value="2026-08-01" style="width:150px">
+          </div>
+          <div class="deck__sep"></div>
+          <div class="field">
+            <span class="field__l">Basis</span>
+            <div class="seg">
+              <button class="seg__b is-on">Actual</button>
+              <button class="seg__b">Standard</button>
+            </div>
+          </div>
+          <div class="field">
+            <span class="field__l">Currency</span>
+            <select class="select num" style="width:110px">
+              <option>KRW ₩</option><option>USD $</option><option>VND ₫</option>
+            </select>
+          </div>
+          <div class="field">
+            <span class="field__l">Options</span>
+            <div class="row" style="height:29px">
+              <label class="switch"><input type="checkbox" checked><span class="switch__t"></span> Join NG rate</label>
+              <label class="switch"><input type="checkbox"><span class="switch__t"></span> Include scrap</label>
+            </div>
+          </div>
+          <div class="deck__go">
+            <span class="badge badge--ok">● Credentials OK</span>
+            <button class="btn btn--go">Get report</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats rise" style="--d:2">
+        <div class="stat">
+          <div class="stat__k"><span class="stat__label">Cost per 1k units</span></div>
+          <div class="stat__v">40.2<span class="stat__u">k ₩</span></div>
+          <div class="stat__b">
+            <span class="stat__d is-up">▲ 6.1% <small>vs Jun</small></span>
+            <span data-spark="36,37,35,38,37,39,38,40,39,41,40,40,41,40"></span>
+          </div>
+        </div>
+        <div class="stat">
+          <div class="stat__k"><span class="stat__label">Scrapped qty</span></div>
+          <div class="stat__v">14,208<span class="stat__u">pcs</span></div>
+          <div class="stat__b">
+            <span class="stat__d is-up">▲ 11.2% <small>vs Jun</small></span>
+            <span data-spark="410,428,402,455,441,432,468,489,472,498,512,504,528,541"></span>
+          </div>
+        </div>
+        <div class="stat">
+          <div class="stat__k"><span class="stat__label">Rework cost</span></div>
+          <div class="stat__v">21.4<span class="stat__u">M ₩</span></div>
+          <div class="stat__b">
+            <span class="stat__d is-down">▼ 2.4% <small>vs Jun</small></span>
+            <span data-spark="22.4,22.1,22.3,21.9,22.0,21.7,21.8,21.6,21.5,21.6,21.4,21.5,21.3,21.4"></span>
+          </div>
+        </div>
+        <div class="stat">
+          <div class="stat__k"><span class="stat__label">Models over budget</span></div>
+          <div class="stat__v">7<span class="stat__u">/ 106</span></div>
+          <div class="stat__b"><span class="dotstat"><i style="background:var(--crit)"></i> 4 critical · 3 watch</span></div>
+        </div>
+        <div class="stat">
+          <div class="stat__k"><span class="stat__label">Coverage</span></div>
+          <div class="stat__v">32<span class="stat__u">/ 32 days</span></div>
+          <div class="stat__b"><span class="small faint">no gaps in range</span></div>
+        </div>
+      </div>
+
+      <div class="split split--wide rise" style="--d:3">
+
+        <section class="panel">
+          <div class="panel__head">
+            <span class="panel__t">Failure cost trend</span>
+            <span class="panel__meta">DAILY · JULY 2026</span>
+            <div class="panel__tools">
+              <div class="seg">
+                <button class="seg__b is-on">Daily</button>
+                <button class="seg__b">Weekly</button>
+              </div>
+            </div>
+          </div>
+          <div class="panel__body">
+            <div class="leadrow">
+              <div class="hero">
+                <div class="hero__k"><span class="code">TOTAL F-COST · JUL 2026</span></div>
+                <div class="hero__v">118.3<small>M ₩</small></div>
+                <div class="row" style="gap:8px">
+                  <span class="stat__d is-up">▲ 8.9 M <small>vs Jun</small></span>
+                  <span class="badge badge--warn">▲ Over budget</span>
+                </div>
+                <div style="width:100%">
+                  <div class="hero__target"><span>Budget 110.0 M</span><span>108 %</span></div>
+                  <div class="meter"><i style="width:100%;background:var(--warn)"></i></div>
+                </div>
+                <p class="hero__note">Two models — <b>BRS-161016</b> and <b>RSB-1109-B</b> — carry <b>31 %</b> of the total on <b>9 %</b> of the volume.</p>
+              </div>
+              <div class="chartbox" id="costtrend"></div>
+            </div>
+            <div class="legend mt16" style="padding-left:2px">
+              <span class="legend__i"><span class="legend__k" style="background:var(--s1)"></span> Actual</span>
+              <span class="legend__i"><span class="legend__k" style="background:var(--s2)"></span> Budget</span>
+              <span class="spacer"></span>
+              <span class="legend__i faint">Million ₩ per day</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel__head">
+            <span class="panel__t">Cost by defect reason</span>
+            <span class="panel__meta">MILLION ₩</span>
+          </div>
+          <div class="panel__body">
+            <div class="chartbox" id="costreason"></div>
+          </div>
+          <div class="panel__foot">
+            <span class="small">Rub &amp; Buzz costs <b>2.4×</b> more per NG unit than SPL Low — the part is scrapped, not reworked.</span>
+          </div>
+        </section>
+      </div>
+
+      <section class="panel mt16 rise" style="--d:4">
+        <div class="panel__head">
+          <span class="panel__t">Model cost table</span>
+          <span class="panel__meta">JOINED WITH NG RATE ON MatnrTx / VeridTx</span>
+          <div class="panel__tools">
+            <input class="input" placeholder="Filter model…" style="width:170px;height:25px;font-size:11.5px">
+            <button class="btn btn--sm">Columns</button>
+          </div>
+        </div>
+        <div class="panel__body panel__body--tight">
+          <div class="tablewrap">
+            <table class="dt">
+              <thead>
+                <tr>
+                  <th rowspan="2" style="min-width:150px">Model</th>
+                  <th rowspan="2">Group</th>
+                  <th rowspan="2" class="is-sortable n">Prod qty</th>
+                  <th colspan="3" class="grp">Failure cost</th>
+                  <th colspan="2" class="grp">NG rate</th>
+                  <th rowspan="2" class="sep-l">State</th>
+                </tr>
+                <tr>
+                  <th class="n sep-l is-sortable is-sorted" data-dir="desc">Total ₩</th>
+                  <th class="n is-sortable">Share</th>
+                  <th class="n is-sortable">Per 1k</th>
+                  <th class="n sep-l is-sortable">Rate %</th>
+                  <th class="n is-sortable">Δ pp</th>
+                </tr>
+              </thead>
+              <tbody data-sortable>
+                <tr>
+                  <td class="b">BRS-161016</td><td class="faint">MS-B</td><td class="n">742,400</td>
+                  <td class="n sep-l b">22,140,000</td><td class="n">18.7 %</td><td class="n">29,821</td>
+                  <td class="n sep-l">1.698</td><td class="n" style="color:var(--crit)">+0.302</td>
+                  <td class="sep-l"><span class="badge badge--crit">◆ Critical</span></td>
+                </tr>
+                <tr>
+                  <td class="b">RSB-1109-B</td><td class="faint">MS-A</td><td class="n">398,200</td>
+                  <td class="n sep-l b">14,620,000</td><td class="n">12.4 %</td><td class="n">36,715</td>
+                  <td class="n sep-l">1.884</td><td class="n" style="color:var(--crit)">+0.418</td>
+                  <td class="sep-l"><span class="badge badge--crit">◆ Critical</span></td>
+                </tr>
+                <tr>
+                  <td class="b">BRS-140811</td><td class="faint">MS-B</td><td class="n">586,900</td>
+                  <td class="n sep-l b">11,840,000</td><td class="n">10.0 %</td><td class="n">20,174</td>
+                  <td class="n sep-l">1.206</td><td class="n" style="color:var(--crit)">+0.118</td>
+                  <td class="sep-l"><span class="badge badge--crit">◆ Critical</span></td>
+                </tr>
+                <tr>
+                  <td class="b">RCV-2841</td><td class="faint">RCV</td><td class="n">638,600</td>
+                  <td class="n sep-l b">9,204,000</td><td class="n">7.8 %</td><td class="n">14,413</td>
+                  <td class="n sep-l">0.733</td><td class="n is-flat">+0.019</td>
+                  <td class="sep-l"><span class="badge badge--warn">▲ Watch</span></td>
+                </tr>
+                <tr>
+                  <td class="b">RSB-1109-A</td><td class="faint">MS-A</td><td class="n">402,400</td>
+                  <td class="n sep-l b">7,880,000</td><td class="n">6.7 %</td><td class="n">19,582</td>
+                  <td class="n sep-l">0.583</td><td class="n" style="color:var(--ok)">−0.044</td>
+                  <td class="sep-l"><span class="badge badge--ok">● Stable</span></td>
+                </tr>
+                <tr>
+                  <td class="b">RSB-0904</td><td class="faint">MS-A</td><td class="n">917,600</td>
+                  <td class="n sep-l b">7,140,000</td><td class="n">6.0 %</td><td class="n">7,781</td>
+                  <td class="n sep-l">0.578</td><td class="n" style="color:var(--ok)">−0.062</td>
+                  <td class="sep-l"><span class="badge badge--ok">● Stable</span></td>
+                </tr>
+                <tr>
+                  <td class="b">BRS-120609</td><td class="faint">MS-B</td><td class="n">571,600</td>
+                  <td class="n sep-l b">6,420,000</td><td class="n">5.4 %</td><td class="n">11,232</td>
+                  <td class="n sep-l">0.884</td><td class="n" style="color:var(--ok)">−0.041</td>
+                  <td class="sep-l"><span class="badge badge--ok">● Stable</span></td>
+                </tr>
+                <tr>
+                  <td class="b">RCV-1620</td><td class="faint">RCV</td><td class="n">545,000</td>
+                  <td class="n sep-l b">5,280,000</td><td class="n">4.5 %</td><td class="n">9,688</td>
+                  <td class="n sep-l">0.552</td><td class="n is-flat">+0.002</td>
+                  <td class="sep-l"><span class="badge badge--ok">● Stable</span></td>
+                </tr>
+                <tr>
+                  <td class="b">RSB-0712</td><td class="faint">MS-A</td><td class="n">728,500</td>
+                  <td class="n sep-l b">4,960,000</td><td class="n">4.2 %</td><td class="n">6,808</td>
+                  <td class="n sep-l">0.566</td><td class="n" style="color:var(--ok)">−0.028</td>
+                  <td class="sep-l"><span class="badge badge--ok">● Stable</span></td>
+                </tr>
+                <tr class="row-sum">
+                  <td>Total · 106 models</td><td></td><td class="n">9,842,300</td>
+                  <td class="n sep-l">118,300,000</td><td class="n">100 %</td><td class="n">12,020</td>
+                  <td class="n sep-l">0.873</td><td class="n" style="color:var(--crit)">+0.068</td>
+                  <td class="sep-l"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel__foot">
+          <span class="code">TOP 9 OF 106 · FCOST_RAW.DB 12:04</span>
+          <span class="spacer"></span>
+          <span class="small">Share is of the range total, not of the group.</span>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script src="assets/instrument.js"></script>
+<script>
+Shell.render({
+  active: 'f-cost',
+  crumb: ['BMES', 'F-Cost'],
+  readouts: [
+    { k: 'BMES',  v: 'LINKED', cls: 'is-ok' },
+    { k: 'DB',    v: '716 MB' },
+    { k: 'SYNC',  v: '12:04' },
+    { k: 'QUEUE', v: '0' }
+  ],
+  tabs: [
+    { code: 'DR-11', label: 'Daily Report', href: 'index.html' },
+    { code: 'NG-01', label: 'NG Rate',      href: 'ng-rate.html' },
+    { code: 'FC-02', label: 'F-Cost',       href: 'f-cost.html', on: true },
+    { code: 'AI-14', label: 'Ask AI',       href: 'ask-ai.html' }
+  ]
+});
+
+Charts.sparks();
+
+Charts.line('#costtrend', {
+  height: 232,
+  dp: 1,
+  labels: ['07-01','07-04','07-07','07-10','07-13','07-16','07-19','07-22','07-25','07-28','07-31'],
+  series: [
+    { name: 'Actual', data: [3.2,3.6,3.4,3.9,3.7,4.1,3.8,4.3,4.0,4.4,4.6], area: true },
+    { name: 'Budget', data: [3.5,3.5,3.5,3.5,3.5,3.5,3.5,3.5,3.5,3.5,3.5], dash: true }
+  ],
+  unit: 'M'
+});
+
+Charts.bars('#costreason', {
+  name: 'Cost',
+  labelW: 118,
+  unit: ' M',
+  dp: 1,
+  rows: [
+    { k: 'Rub & Buzz',      v: 38.4, note: 'scrapped — no rework' },
+    { k: 'SPL Low',         v: 24.1, note: 'reworked 82 %' },
+    { k: 'Coil open',       v: 16.8 },
+    { k: 'THD over',        v: 12.2 },
+    { k: 'Polarity',        v: 9.4 },
+    { k: 'Foreign material',v: 7.6 },
+    { k: 'Bonding',         v: 5.9 },
+    { k: 'Appearance',      v: 3.9 }
+  ]
+});
+</script>
+</body>
+</html>

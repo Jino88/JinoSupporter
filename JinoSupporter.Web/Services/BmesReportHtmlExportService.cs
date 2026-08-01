@@ -1,5 +1,7 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using JinoSupporter.Web.Components.Pages;
@@ -41,9 +43,12 @@ public sealed class BmesReportHtmlExportService
     };
 
     private const string ReportFileName = "report.html";
+    private const string ReportCacheMetadataFileName = "cache.json";
+    private static readonly TimeSpan CompleteReportCacheTtl = TimeSpan.FromMinutes(15);
 
     /// <summary>Serializes generation so one run cannot clean up another's token folder.</summary>
     private static readonly SemaphoreSlim GenerationLock = new(1, 1);
+    private static CompletedReportCacheEntry? _lastCompletedReport;
 
     /// <summary>Starting value of the viewer toolbar's Minimum PPM filter. The export itself
     /// carries every reason row, so this only decides what the report shows on first open.</summary>
@@ -98,7 +103,18 @@ public sealed class BmesReportHtmlExportService
         await GenerationLock.WaitAsync();
         try
         {
-            return await GenerateAllTabsCoreAsync(start, end, groups, tracker, log);
+            string cacheKey = BuildCompleteReportCacheKey(start, end, groups);
+            if (TryGetCompletedReport(cacheKey, out string cachedToken))
+            {
+                log?.Invoke("Reusing complete report cache (same period and model selection).");
+                foreach (string stageName in StageNames)
+                    tracker?.MarkDone(stageName);
+                return cachedToken;
+            }
+
+            string token = await GenerateAllTabsCoreAsync(start, end, groups, tracker, log);
+            RememberCompletedReport(cacheKey, token);
+            return token;
         }
         finally
         {
@@ -180,6 +196,18 @@ public sealed class BmesReportHtmlExportService
         // display flags.
         BmesFCostPage.FCostExportSnapshot? fcostSnapshot = null;
         IProgress<string> fcostProgress = Stage(StageFCost);
+        DateTime kpiQueryDate = end.Date > DateTime.Today ? DateTime.Today : end.Date;
+        log?.Invoke("Starting F-COST and KPI source loading in parallel.");
+        Task<FCostCorePartsKpiSnapshot?> corePartsKpiTask = LoadCorePartsKpiAsync(
+            scope.ServiceProvider,
+            start.Date,
+            kpiQueryDate,
+            fcostProgress);
+        Task<IpgDefectKpiSnapshot?> ipgKpiTask = LoadIpgKpiAsync(
+            scope.ServiceProvider,
+            start.Date,
+            kpiQueryDate,
+            fcostProgress);
 
         foreach ((string key, bool weeklyReport, bool allColumns, bool trendCard) in FCostVariants)
         {
@@ -214,45 +242,9 @@ public sealed class BmesReportHtmlExportService
         // MES050032 returns one defect-PPM row per process. They are deliberately
         // fetched here (after the reusable F-COST snapshot exists), so the ordinary
         // F-COST component and its four rendered variants remain unchanged.
-        DateTime kpiQueryDate = end.Date > DateTime.Today ? DateTime.Today : end.Date;
-        FCostCorePartsKpiSnapshot? corePartsKpi = null;
-        IpgDefectKpiSnapshot? ipgKpi = null;
-
-        try
-        {
-            var coreParts = scope.ServiceProvider.GetRequiredService<FCostCorePartsService>();
-            bool refresh = kpiQueryDate >= DateTime.Today.AddDays(-2);
-            DateTime kpiStartDate = fcostSnapshot?.StartDate.Date ?? start.Date;
-            FCostCorePartsBackfillResult pull = await coreParts.BackfillAsync(
-                kpiStartDate,
-                kpiQueryDate,
-                force: false,
-                forceFromDate: refresh ? kpiQueryDate : null,
-                delayMs: 0,
-                queryIntervalDays: 21,
-                progress: fcostProgress);
-            corePartsKpi = coreParts.GetKpiRangeSnapshot(kpiStartDate, kpiQueryDate);
-            if (pull.FailedDays > 0 || corePartsKpi is null)
-                fcostProgress.Report("[WARN] MES072410 KPI snapshot is unavailable.");
-        }
-        catch (Exception ex)
-        {
-            fcostProgress.Report("[WARN] MES072410 KPI: " + ex.Message);
-        }
-
-        try
-        {
-            var ipg = scope.ServiceProvider.GetRequiredService<IpgDefectService>();
-            DateTime kpiStartDate = fcostSnapshot?.StartDate.Date ?? start.Date;
-            ipgKpi = await ipg.FetchKpiRangeAsync(
-                kpiStartDate,
-                kpiQueryDate,
-                fcostProgress);
-        }
-        catch (Exception ex)
-        {
-            fcostProgress.Report("[WARN] MES050032 KPI: " + ex.Message);
-        }
+        await Task.WhenAll(corePartsKpiTask, ipgKpiTask);
+        FCostCorePartsKpiSnapshot? corePartsKpi = await corePartsKpiTask;
+        IpgDefectKpiSnapshot? ipgKpi = await ipgKpiTask;
 
         tracker?.MarkDone(StageFCost);
 
@@ -278,6 +270,157 @@ public sealed class BmesReportHtmlExportService
     /// where it belongs. It is gated behind <c>BmesFCostPage.TrendReportOnly</c>, which had
     /// no caller anywhere in the web project, so the card had never reached the export (or
     /// any route) at all — see the 2026-07-22 handoff §12/§14.</summary>
+    private static async Task<FCostCorePartsKpiSnapshot?> LoadCorePartsKpiAsync(
+        IServiceProvider services,
+        DateTime startDate,
+        DateTime queryDate,
+        IProgress<string> progress)
+    {
+        try
+        {
+            var coreParts = services.GetRequiredService<FCostCorePartsService>();
+            bool refresh = queryDate >= DateTime.Today.AddDays(-2);
+            FCostCorePartsBackfillResult pull = await coreParts.BackfillAsync(
+                startDate,
+                queryDate,
+                force: false,
+                forceFromDate: refresh ? queryDate : null,
+                forceRefreshTtl: refresh ? TimeSpan.FromMinutes(15) : null,
+                delayMs: 0,
+                queryIntervalDays: 21,
+                progress: progress);
+            FCostCorePartsKpiSnapshot? snapshot =
+                coreParts.GetKpiRangeSnapshot(startDate, queryDate);
+            if (pull.FailedDays > 0 || snapshot is null)
+                progress.Report("[WARN] MES072410 KPI snapshot is unavailable.");
+            return snapshot;
+        }
+        catch (Exception ex)
+        {
+            progress.Report("[WARN] MES072410 KPI: " + ex.Message);
+            return null;
+        }
+    }
+
+    private static async Task<IpgDefectKpiSnapshot?> LoadIpgKpiAsync(
+        IServiceProvider services,
+        DateTime startDate,
+        DateTime queryDate,
+        IProgress<string> progress)
+    {
+        try
+        {
+            var ipg = services.GetRequiredService<IpgDefectService>();
+            return await ipg.FetchKpiRangeAsync(startDate, queryDate, progress);
+        }
+        catch (Exception ex)
+        {
+            progress.Report("[WARN] MES050032 KPI: " + ex.Message);
+            return null;
+        }
+    }
+
+    private static string BuildCompleteReportCacheKey(
+        DateTime start,
+        DateTime end,
+        IReadOnlyList<ModelGroupRecord> groups)
+    {
+        string payload = JsonSerializer.Serialize(new
+        {
+            Version = 1,
+            Start = start.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            End = end.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            Groups = groups,
+        });
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload)));
+    }
+
+    private static bool TryGetCompletedReport(string cacheKey, out string token)
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        if (_lastCompletedReport is { } memoryEntry &&
+            string.Equals(memoryEntry.CacheKey, cacheKey, StringComparison.Ordinal) &&
+            now - memoryEntry.CreatedAtUtc <= CompleteReportCacheTtl &&
+            ResolveCachedReportPath(memoryEntry.Token) is not null)
+        {
+            token = memoryEntry.Token;
+            return true;
+        }
+
+        try
+        {
+            if (!Directory.Exists(ExportRoot))
+            {
+                token = string.Empty;
+                return false;
+            }
+
+            foreach (string directory in Directory
+                         .EnumerateDirectories(ExportRoot)
+                         .OrderByDescending(Directory.GetLastWriteTimeUtc))
+            {
+                string candidateToken = Path.GetFileName(directory);
+                string metadataPath = Path.Combine(directory, ReportCacheMetadataFileName);
+                string reportPath = Path.Combine(directory, ReportFileName);
+                if (!File.Exists(metadataPath) || !File.Exists(reportPath))
+                    continue;
+
+                CompletedReportCacheEntry? entry = JsonSerializer.Deserialize<CompletedReportCacheEntry>(
+                    File.ReadAllText(metadataPath, Encoding.UTF8));
+                if (entry is null ||
+                    !string.Equals(entry.Token, candidateToken, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(entry.CacheKey, cacheKey, StringComparison.Ordinal) ||
+                    now - entry.CreatedAtUtc > CompleteReportCacheTtl)
+                {
+                    continue;
+                }
+
+                _lastCompletedReport = entry;
+                token = candidateToken;
+                return true;
+            }
+        }
+        catch
+        {
+            // A cache read must never prevent a fresh report from being generated.
+        }
+
+        token = string.Empty;
+        return false;
+    }
+
+    private static void RememberCompletedReport(string cacheKey, string token)
+    {
+        var entry = new CompletedReportCacheEntry(cacheKey, token, DateTimeOffset.UtcNow);
+        _lastCompletedReport = entry;
+        try
+        {
+            string directory = Path.Combine(ExportRoot, token);
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(
+                Path.Combine(directory, ReportCacheMetadataFileName),
+                JsonSerializer.Serialize(entry),
+                new UTF8Encoding(false));
+        }
+        catch
+        {
+            // In-memory reuse still works when metadata persistence is unavailable.
+        }
+    }
+
+    private static string? ResolveCachedReportPath(string token)
+    {
+        if (!IsValidToken(token))
+            return null;
+        string path = Path.Combine(ExportRoot, token, ReportFileName);
+        return File.Exists(path) ? path : null;
+    }
+
+    private sealed record CompletedReportCacheEntry(
+        string CacheKey,
+        string Token,
+        DateTimeOffset CreatedAtUtc);
+
     private static readonly (string Key, bool WeeklyReport, bool AllColumns, bool TrendCard)[] FCostVariants =
     {
         ("fcost",            false, false, true),

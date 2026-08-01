@@ -35,6 +35,7 @@ public sealed class FCostCorePartsService(
         DateTime end,
         bool force = false,
         DateTime? forceFromDate = null,
+        TimeSpan? forceRefreshTtl = null,
         int delayMs = 1200,
         int queryIntervalDays = 1,
         IProgress<string>? progress = null,
@@ -61,6 +62,44 @@ public sealed class FCostCorePartsService(
             StartDate = start,
             EndDate = end,
         };
+
+        int totalDays = queryDates.Count;
+        var datesToFetch = new List<(DateTime Day, int Ordinal)>();
+        for (int dateIndex = 0; dateIndex < queryDates.Count; dateIndex++)
+        {
+            DateTime day = queryDates[dateIndex];
+            cancellationToken.ThrowIfCancellationRequested();
+            int ordinal = dateIndex + 1;
+            result.AttemptedDays++;
+
+            bool isRefreshWindow =
+                forceFromDate is { } refreshFrom &&
+                day >= refreshFrom.Date;
+            bool cachedPullIsUsable = !force && PullSucceeded(
+                dbPath,
+                day,
+                isRefreshWindow ? forceRefreshTtl : null);
+            bool forceDay =
+                force ||
+                (isRefreshWindow &&
+                 (forceRefreshTtl is null || !cachedPullIsUsable));
+            if (!forceDay && cachedPullIsUsable)
+            {
+                result.SkippedDays++;
+                Report(progress, $"[{ordinal}/{totalDays}] {day:yyyy-MM-dd}: skip (already OK)");
+                continue;
+            }
+
+            datesToFetch.Add((day, ordinal));
+        }
+
+        if (datesToFetch.Count == 0)
+        {
+            Report(
+                progress,
+                $"MES072410 cache complete: skipped={result.SkippedDays:N0}, no BMES login required");
+            return result;
+        }
 
         string loginId = _settings.LoginId;
         string password = _settings.Password;
@@ -93,24 +132,10 @@ public sealed class FCostCorePartsService(
             return result;
         }
 
-        int totalDays = queryDates.Count;
-        int ordinal = 0;
-        for (int dateIndex = 0; dateIndex < queryDates.Count; dateIndex++)
+        for (int fetchIndex = 0; fetchIndex < datesToFetch.Count; fetchIndex++)
         {
-            DateTime day = queryDates[dateIndex];
+            (DateTime day, int ordinal) = datesToFetch[fetchIndex];
             cancellationToken.ThrowIfCancellationRequested();
-            ordinal++;
-            result.AttemptedDays++;
-
-            bool forceDay =
-                force ||
-                (forceFromDate is { } forceFrom && day >= forceFrom.Date);
-            if (!forceDay && PullSucceeded(dbPath, day))
-            {
-                result.SkippedDays++;
-                Report(progress, $"[{ordinal}/{totalDays}] {day:yyyy-MM-dd}: skip (already OK)");
-                continue;
-            }
 
             try
             {
@@ -135,7 +160,7 @@ public sealed class FCostCorePartsService(
                 Report(progress, "[WARN] " + message);
             }
 
-            if (delayMs > 0 && dateIndex < queryDates.Count - 1)
+            if (delayMs > 0 && fetchIndex < datesToFetch.Count - 1)
                 await Task.Delay(delayMs, cancellationToken);
         }
 
@@ -960,7 +985,10 @@ public sealed class FCostCorePartsService(
         return Convert.ToInt64(command.ExecuteScalar() ?? 0L) > 0;
     }
 
-    private static bool PullSucceeded(string dbPath, DateTime queryDate)
+    private static bool PullSucceeded(
+        string dbPath,
+        DateTime queryDate,
+        TimeSpan? maxAge = null)
     {
         if (!File.Exists(dbPath))
             return false;
@@ -971,14 +999,27 @@ public sealed class FCostCorePartsService(
                 return false;
             using var command = connection.CreateCommand();
             command.CommandText =
-                "SELECT Status FROM MES072410Pulls WHERE QueryDate=@date;";
+                "SELECT Status, FetchedAt FROM MES072410Pulls WHERE QueryDate=@date;";
             command.Parameters.AddWithValue(
                 "@date",
                 queryDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-            return string.Equals(
-                Convert.ToString(command.ExecuteScalar(), CultureInfo.InvariantCulture),
-                "OK",
-                StringComparison.OrdinalIgnoreCase);
+            using var reader = command.ExecuteReader();
+            if (!reader.Read())
+                return false;
+
+            string status = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
+            if (!string.Equals(status, "OK", StringComparison.OrdinalIgnoreCase))
+                return false;
+            if (maxAge is not TimeSpan ttl)
+                return true;
+
+            string fetchedText = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+            return DateTimeOffset.TryParse(
+                       fetchedText,
+                       CultureInfo.InvariantCulture,
+                       DateTimeStyles.RoundtripKind,
+                       out DateTimeOffset fetchedAt) &&
+                   DateTimeOffset.Now - fetchedAt <= ttl;
         }
         catch
         {

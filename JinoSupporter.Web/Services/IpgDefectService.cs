@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.Data.Sqlite;
 
 namespace JinoSupporter.Web.Services;
 
@@ -15,6 +16,7 @@ public sealed class IpgDefectService(
     AppActivityLogger activity)
 {
     private const string BaseUrl = "https://bmes.bujeon.com";
+    private static readonly TimeSpan MutableCacheTtl = TimeSpan.FromMinutes(15);
     private readonly NgRateSettingsService _settings = settings;
     private readonly AppActivityLogger _activity = activity;
 
@@ -23,6 +25,9 @@ public sealed class IpgDefectService(
         IProgress<string>? progress = null,
         CancellationToken cancellationToken = default)
     {
+        if (TryReadSearchListCache(queryDate, "W", progress) is { } cached)
+            return cached;
+
         using HttpClient client = CreateClient();
         await AuthenticateAsync(client, progress, cancellationToken);
         return await FetchSearchListAsync(
@@ -45,59 +50,78 @@ public sealed class IpgDefectService(
         if (start > end)
             throw new ArgumentException("Start date must be before or equal to end date.");
 
-        using HttpClient client = CreateClient();
-        await AuthenticateAsync(client, progress, cancellationToken);
-
         var periodsByKey =
             new Dictionary<string, IpgDefectKpiPeriod>(StringComparer.OrdinalIgnoreCase);
         double? annualAveragePpm = null;
-        List<DateTime> weeklyQueryDates = BuildQueryDates(start, end, intervalDays: 42);
+        IReadOnlyList<DateTime> weeklyQueryDates = BuildWeeklyQueryDates(start, end);
 
-        for (int index = 0; index < weeklyQueryDates.Count; index++)
+        HttpClient? client = null;
+        bool authenticated = false;
+        async Task<HttpClient> GetAuthenticatedClientAsync()
         {
-            DateTime queryDate = weeklyQueryDates[index];
-            try
+            if (client is null)
+                client = CreateClient();
+            if (!authenticated)
             {
-                Report(
-                    progress,
-                    $"MES050032 weekly [{index + 1}/{weeklyQueryDates.Count}]: {queryDate:yyyy-MM-dd}");
-                IpgDefectParseResult parsed = await FetchSearchListAsync(
-                    client,
-                    queryDate,
-                    "W",
-                    progress,
-                    cancellationToken);
-                IpgDefectKpiSnapshot snapshot = BuildKpiSnapshot(parsed, "Week");
-                annualAveragePpm = snapshot.AnnualAveragePpm;
-                foreach (IpgDefectKpiPeriod period in snapshot.Periods)
-                    periodsByKey[IpgPeriodIdentity(period)] = period;
+                await AuthenticateAsync(client, progress, cancellationToken);
+                authenticated = true;
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                Report(
-                    progress,
-                    $"[WARN] MES050032 weekly {queryDate:yyyy-MM-dd}: {ex.Message}");
-            }
+
+            return client;
         }
 
         try
         {
-            Report(progress, $"MES050032 monthly: {end:yyyy-MM-dd}");
-            IpgDefectParseResult parsed = await FetchSearchListAsync(
-                client,
-                end,
-                "M",
-                progress,
-                cancellationToken);
-            IpgDefectKpiSnapshot monthly = BuildKpiSnapshot(parsed, "Month");
-            foreach (IpgDefectKpiPeriod period in monthly.Periods)
-                periodsByKey[IpgPeriodIdentity(period)] = period;
+            for (int index = 0; index < weeklyQueryDates.Count; index++)
+            {
+                DateTime queryDate = weeklyQueryDates[index];
+                try
+                {
+                    Report(
+                        progress,
+                        $"MES050032 weekly [{index + 1}/{weeklyQueryDates.Count}]: {queryDate:yyyy-MM-dd}");
+                    IpgDefectParseResult parsed = await FetchSearchListCachedAsync(
+                        GetAuthenticatedClientAsync,
+                        queryDate,
+                        "W",
+                        progress,
+                        cancellationToken);
+                    IpgDefectKpiSnapshot snapshot = BuildKpiSnapshot(parsed, "Week");
+                    annualAveragePpm = snapshot.AnnualAveragePpm;
+                    foreach (IpgDefectKpiPeriod period in snapshot.Periods)
+                        periodsByKey[IpgPeriodIdentity(period)] = period;
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    Report(
+                        progress,
+                        $"[WARN] MES050032 weekly {queryDate:yyyy-MM-dd}: {ex.Message}");
+                }
+            }
+
+            try
+            {
+                Report(progress, $"MES050032 monthly: {end:yyyy-MM-dd}");
+                IpgDefectParseResult parsed = await FetchSearchListCachedAsync(
+                    GetAuthenticatedClientAsync,
+                    end,
+                    "M",
+                    progress,
+                    cancellationToken);
+                IpgDefectKpiSnapshot monthly = BuildKpiSnapshot(parsed, "Month");
+                foreach (IpgDefectKpiPeriod period in monthly.Periods)
+                    periodsByKey[IpgPeriodIdentity(period)] = period;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // A monthly response is optional until BMES actually returns trustworthy
+                // header metadata. No inferred monthly value is generated on failure.
+                Report(progress, "[WARN] MES050032 monthly: " + ex.Message);
+            }
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        finally
         {
-            // A monthly response is optional until BMES actually returns trustworthy
-            // header metadata. No inferred monthly value is generated on failure.
-            Report(progress, "[WARN] MES050032 monthly: " + ex.Message);
+            client?.Dispose();
         }
 
         return new IpgDefectKpiSnapshot(
@@ -265,6 +289,24 @@ public sealed class IpgDefectService(
             annualValues.Length > 0 ? annualValues.Average() : null);
     }
 
+    public static IReadOnlyList<DateTime> BuildWeeklyQueryDates(DateTime start, DateTime end)
+        => BuildQueryDates(start.Date, end.Date, intervalDays: 42);
+
+    public static bool IsCachedSearchListReusable(
+        DateTime queryDate,
+        DateTime fetchedAt,
+        DateTime now,
+        TimeSpan mutableTtl)
+    {
+        if (mutableTtl <= TimeSpan.Zero)
+            return false;
+
+        DateTime queryDay = queryDate.Date;
+        DateTime currentDay = now.Date;
+        bool isRecentMutableQuery = queryDay >= currentDay.AddDays(-1);
+        return !isRecentMutableQuery || fetchedAt >= now.Subtract(mutableTtl);
+    }
+
     private static HttpClient CreateClient()
     {
         var handler = new HttpClientHandler
@@ -305,6 +347,44 @@ public sealed class IpgDefectService(
         CancellationToken cancellationToken)
     {
         string normalizedPeriodCode = NormalizePeriodCode(periodCode);
+        string json = await FetchSearchListJsonAsync(
+            client,
+            queryDate,
+            normalizedPeriodCode,
+            cancellationToken);
+        IpgDefectParseResult parsed = ParseSearchListJson(json);
+        ReportParsed(progress, normalizedPeriodCode, parsed);
+        TrySaveSearchListCache(queryDate, normalizedPeriodCode, json, parsed, progress);
+        return parsed;
+    }
+
+    private async Task<IpgDefectParseResult> FetchSearchListCachedAsync(
+        Func<Task<HttpClient>> authenticatedClientFactory,
+        DateTime queryDate,
+        string periodCode,
+        IProgress<string>? progress,
+        CancellationToken cancellationToken)
+    {
+        string normalizedPeriodCode = NormalizePeriodCode(periodCode);
+        if (TryReadSearchListCache(queryDate, normalizedPeriodCode, progress) is { } cached)
+            return cached;
+
+        HttpClient client = await authenticatedClientFactory();
+        return await FetchSearchListAsync(
+            client,
+            queryDate,
+            normalizedPeriodCode,
+            progress,
+            cancellationToken);
+    }
+
+    private static async Task<string> FetchSearchListJsonAsync(
+        HttpClient client,
+        DateTime queryDate,
+        string periodCode,
+        CancellationToken cancellationToken)
+    {
+        string normalizedPeriodCode = NormalizePeriodCode(periodCode);
         string payload = BuildSearchListPayload(queryDate, normalizedPeriodCode);
         using var content = new StringContent(payload, Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
@@ -313,12 +393,17 @@ public sealed class IpgDefectService(
             cancellationToken);
         string json = await response.Content.ReadAsStringAsync(cancellationToken);
         response.EnsureSuccessStatusCode();
+        return json;
+    }
 
-        IpgDefectParseResult parsed = ParseSearchListJson(json);
+    private void ReportParsed(
+        IProgress<string>? progress,
+        string normalizedPeriodCode,
+        IpgDefectParseResult parsed)
+    {
         Report(
             progress,
             $"MES050032 {normalizedPeriodCode}: parsed {parsed.Rows.Count:N0} rows · {parsed.Columns.Count:N0} headers");
-        return parsed;
     }
 
     private static List<DateTime> BuildQueryDates(
@@ -326,7 +411,10 @@ public sealed class IpgDefectService(
         DateTime end,
         int intervalDays)
     {
-        var dates = new HashSet<DateTime> { start.Date, end.Date };
+        start = start.Date;
+        end = end.Date;
+
+        var dates = new HashSet<DateTime> { start, end };
         for (DateTime cursor = end.Date;
              cursor > start.Date && cursor >= DateTime.MinValue.AddDays(intervalDays);
              cursor = cursor.AddDays(-intervalDays))
@@ -362,6 +450,172 @@ public sealed class IpgDefectService(
         _activity.Log("IpgDefect", message);
         progress?.Report(message);
     }
+
+    private string GetRawDbPath()
+        => Path.Combine(_settings.FCostDbSaveDirectory, "fcost_raw.db");
+
+    private IpgDefectParseResult? TryReadSearchListCache(
+        DateTime queryDate,
+        string periodCode,
+        IProgress<string>? progress)
+    {
+        string normalizedPeriodCode = NormalizePeriodCode(periodCode);
+        string dbPath = GetRawDbPath();
+        if (!File.Exists(dbPath))
+            return null;
+
+        try
+        {
+            using SqliteConnection connection = OpenCacheConnection(dbPath, readOnly: true);
+            if (!TableExists(connection, "MES050032SearchListCache"))
+                return null;
+
+            string queryDateText = queryDate.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText =
+                """
+                SELECT FetchedAt, ResponseJson
+                FROM MES050032SearchListCache
+                WHERE QueryDate = @queryDate AND PeriodCode = @periodCode;
+                """;
+            command.Parameters.AddWithValue("@queryDate", queryDateText);
+            command.Parameters.AddWithValue("@periodCode", normalizedPeriodCode);
+
+            using SqliteDataReader reader = command.ExecuteReader();
+            if (!reader.Read())
+                return null;
+
+            string fetchedAtText = ReadDbText(reader, 0);
+            string json = ReadDbText(reader, 1);
+            if (!DateTime.TryParse(
+                    fetchedAtText,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.RoundtripKind,
+                    out DateTime fetchedAt) ||
+                !IsCachedSearchListReusable(
+                    queryDate,
+                    fetchedAt,
+                    DateTime.Now,
+                    MutableCacheTtl))
+            {
+                return null;
+            }
+
+            IpgDefectParseResult parsed = ParseSearchListJson(json);
+            Report(
+                progress,
+                $"MES050032 {normalizedPeriodCode}: cache hit {queryDateText} (cached {fetchedAt:yyyy-MM-dd HH:mm})");
+            ReportParsed(progress, normalizedPeriodCode, parsed);
+            return parsed;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Report(
+                progress,
+                $"[WARN] MES050032 {normalizedPeriodCode} cache read {queryDate:yyyy-MM-dd}: {ex.Message}");
+            return null;
+        }
+    }
+
+    private void TrySaveSearchListCache(
+        DateTime queryDate,
+        string periodCode,
+        string json,
+        IpgDefectParseResult parsed,
+        IProgress<string>? progress)
+    {
+        try
+        {
+            string saveDir = _settings.FCostDbSaveDirectory;
+            Directory.CreateDirectory(saveDir);
+            string dbPath = Path.Combine(saveDir, "fcost_raw.db");
+            EnsureCacheDatabase(dbPath);
+
+            using SqliteConnection connection = OpenCacheConnection(dbPath, readOnly: false);
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText =
+                """
+                INSERT INTO MES050032SearchListCache
+                    (QueryDate, PeriodCode, FetchedAt, RowCount, ColumnCount, ResponseJson)
+                VALUES
+                    (@queryDate, @periodCode, @fetchedAt, @rowCount, @columnCount, @responseJson)
+                ON CONFLICT(QueryDate, PeriodCode) DO UPDATE SET
+                    FetchedAt=excluded.FetchedAt,
+                    RowCount=excluded.RowCount,
+                    ColumnCount=excluded.ColumnCount,
+                    ResponseJson=excluded.ResponseJson;
+                """;
+            command.Parameters.AddWithValue(
+                "@queryDate",
+                queryDate.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            command.Parameters.AddWithValue("@periodCode", NormalizePeriodCode(periodCode));
+            command.Parameters.AddWithValue(
+                "@fetchedAt",
+                DateTime.Now.ToString("O", CultureInfo.InvariantCulture));
+            command.Parameters.AddWithValue("@rowCount", parsed.Rows.Count);
+            command.Parameters.AddWithValue("@columnCount", parsed.ColumnCount);
+            command.Parameters.AddWithValue("@responseJson", json);
+            command.ExecuteNonQuery();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Report(
+                progress,
+                $"[WARN] MES050032 {periodCode} cache save {queryDate:yyyy-MM-dd}: {ex.Message}");
+        }
+    }
+
+    private static void EnsureCacheDatabase(string dbPath)
+    {
+        using SqliteConnection connection = OpenCacheConnection(dbPath, readOnly: false);
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText =
+            """
+            PRAGMA journal_mode=WAL;
+            PRAGMA busy_timeout=5000;
+
+            CREATE TABLE IF NOT EXISTS MES050032SearchListCache (
+                QueryDate TEXT NOT NULL,
+                PeriodCode TEXT NOT NULL,
+                FetchedAt TEXT NOT NULL,
+                RowCount INTEGER NOT NULL,
+                ColumnCount INTEGER NOT NULL,
+                ResponseJson TEXT NOT NULL,
+                PRIMARY KEY (QueryDate, PeriodCode)
+            );
+
+            CREATE INDEX IF NOT EXISTS IX_MES050032SearchListCache_FetchedAt
+                ON MES050032SearchListCache(FetchedAt);
+            """;
+        command.ExecuteNonQuery();
+    }
+
+    private static SqliteConnection OpenCacheConnection(string dbPath, bool readOnly)
+    {
+        var builder = new SqliteConnectionStringBuilder
+        {
+            DataSource = dbPath,
+            Mode = readOnly ? SqliteOpenMode.ReadOnly : SqliteOpenMode.ReadWriteCreate,
+        };
+        var connection = new SqliteConnection(builder.ToString());
+        connection.Open();
+        using SqliteCommand pragma = connection.CreateCommand();
+        pragma.CommandText = "PRAGMA busy_timeout=5000;";
+        pragma.ExecuteNonQuery();
+        return connection;
+    }
+
+    private static bool TableExists(SqliteConnection connection, string tableName)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText =
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=@name;";
+        command.Parameters.AddWithValue("@name", tableName);
+        return Convert.ToInt64(command.ExecuteScalar() ?? 0L) > 0;
+    }
+
+    private static string ReadDbText(SqliteDataReader reader, int ordinal) =>
+        reader.IsDBNull(ordinal) ? string.Empty : reader.GetString(ordinal);
 
     private static async Task<string> GetTokenAsync(
         HttpClient client,

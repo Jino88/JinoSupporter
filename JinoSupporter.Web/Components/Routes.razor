@@ -1,6 +1,40 @@
-﻿<Router AppAssembly="typeof(Program).Assembly">
+@using JinoSupporter.Web.Services
+@inject UiModeService UiMode
+@inject IJSRuntime    JS
+@implements IDisposable
+
+@*
+    The default layout is chosen at runtime so the redesigned shell can host every
+    existing page without any of them being rewritten. Pages that declare their own
+    layout (LoginPage) are unaffected either way.
+*@
+<Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <RouteView RouteData="routeData" DefaultLayout="@ShellLayout" />
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
 </Router>
+
+@code {
+    private Type ShellLayout =>
+        UiMode.NewUi ? typeof(Layout.InstrumentLayout) : typeof(Layout.MainLayout);
+
+    protected override void OnInitialized() => UiMode.Changed += OnModeChanged;
+
+    private void OnModeChanged() => InvokeAsync(StateHasChanged);
+
+    /// <summary>Restore the choice after a full reload — the service itself is per-circuit.</summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            string? saved = await JS.InvokeAsync<string?>("localStorage.getItem", UiModeService.StorageKey);
+            if (saved == "new" && !UiMode.NewUi) UiMode.NewUi = true;
+        }
+        catch (JSException) { /* storage blocked — stay on the classic shell */ }
+        catch (InvalidOperationException) { /* prerender, no JS yet */ }
+    }
+
+    public void Dispose() => UiMode.Changed -= OnModeChanged;
+}

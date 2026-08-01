@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ask AI — GN LAB Supporter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..800;1,75..125,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/instrument.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand__mark"></div>
+      <div class="brand__text">
+        <div class="brand__name">GN LAB</div>
+        <div class="brand__sub">SUPPORTER</div>
+      </div>
+    </div>
+    <div class="rail__scroll"></div>
+    <div class="rail__foot">
+      <div class="who">
+        <div class="who__av">BJ</div>
+        <div style="min-width:0">
+          <div class="who__name">Byun Jinho</div>
+          <div class="who__role">Administrator</div>
+        </div>
+      </div>
+      <div class="live"><i class="live__dot"></i><span class="live__text">5 connected</span></div>
+      <button class="railbtn">Sign out</button>
+    </div>
+  </aside>
+
+  <div class="stage">
+    <header class="topbar">
+      <button class="iconbtn" data-rail-toggle aria-label="Toggle navigation"></button>
+      <nav class="crumb"></nav>
+      <div class="readouts"></div>
+      <button class="iconbtn" data-theme-toggle aria-label="Toggle theme"></button>
+      <button class="iconbtn" data-icon="out" aria-label="Sign out"></button>
+    </header>
+
+    <nav class="tabs"></nav>
+
+    <main class="view view--flush">
+
+      <!-- Slim page bar — the chat needs the height, so no full page head -->
+      <div class="row" style="padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel);flex-shrink:0">
+        <span class="code">AI-14 · TEST DATA ANALYSIS</span>
+        <span style="font-size:14px;font-weight:650">Ask AI</span>
+        <span class="badge badge--sig">◆ Codex CLI</span>
+        <span class="spacer"></span>
+        <span class="small faint">315 datasets registered · 128 in scope</span>
+        <button class="btn btn--sm">New thread</button>
+        <button class="btn btn--sm">History</button>
+      </div>
+
+      <div class="worksplit">
+
+        <!-- ── Chat ──────────────────────────────────────────────────────── -->
+        <div class="chat">
+          <div class="chat__log">
+
+            <div class="msg rise" style="--d:0">
+              <div class="msg__av">BJ</div>
+              <div class="msg__body">
+                <div class="msg__meta">
+                  <span class="msg__who">Byun Jinho</span>
+                  <span class="msg__time">12:06:41</span>
+                </div>
+                <div class="msg__txt">
+                  <p>BRS-161016 frequently has SPL NG on line L-03. Compare Test vs Normal condition and tell me what actually changed — and how we should fix it.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="msg msg--ai rise" style="--d:1">
+              <div class="msg__av">AI</div>
+              <div class="msg__body">
+                <div class="msg__meta">
+                  <span class="msg__who">Claude Opus</span>
+                  <span class="msg__time">12:06:58</span>
+                  <span class="badge">18.2 s · 24.1k tok</span>
+                </div>
+                <div class="msg__txt">
+                  <p><strong>The SPL shift is a coil-gap problem, not a magnet problem.</strong> Across the 7 datasets in scope, Test condition moved SPL mean down <code>−1.42 dB</code> while THD stayed flat — that pattern points at the voice-coil gap, not magnetisation.</p>
+
+                  <table class="dt tw" style="margin:10px 0;font-size:11.5px">
+                    <thead>
+                      <tr>
+                        <th>Metric</th><th class="n">Normal</th><th class="n">Test</th>
+                        <th class="n">Δ</th><th>Reading</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>SPL mean (dB)</td><td class="n">87.42</td><td class="n">86.00</td>
+                          <td class="n" style="color:var(--crit)">−1.42</td><td class="faint">out of spec</td></tr>
+                      <tr><td>SPL σ (dB)</td><td class="n">0.31</td><td class="n">0.88</td>
+                          <td class="n" style="color:var(--crit)">+0.57</td><td class="faint">2.8× spread</td></tr>
+                      <tr><td>THD @1kHz (%)</td><td class="n">0.84</td><td class="n">0.86</td>
+                          <td class="n is-flat">+0.02</td><td class="faint">unchanged</td></tr>
+                      <tr><td>Rub &amp; Buzz NG (%)</td><td class="n">0.92</td><td class="n">2.86</td>
+                          <td class="n" style="color:var(--crit)">+1.94</td><td class="faint">tracks σ</td></tr>
+                    </tbody>
+                  </table>
+
+                  <p><strong>Why coil gap:</strong> SPL fell <em>and</em> variance tripled while THD held. A weak magnet lowers SPL uniformly and lifts THD; an off-centre coil lowers SPL only on the units that rub — which is exactly the Rub &amp; Buzz curve since 07-25.</p>
+
+                  <p><strong>What to do, in order:</strong></p>
+                  <ul>
+                    <li>Measure the bonding jig centring on <b>L-03</b> first — it is the only line that changed fixtures on 07-24 <span class="cite">◆ DS-0291</span></li>
+                    <li>Pull 30 pcs from the 07-31 lot and check gap concentricity before re-running SPL</li>
+                    <li>If concentricity is within spec, then check magnetiser current — but the evidence does not currently point there</li>
+                  </ul>
+
+                  <p class="faint" style="font-size:11.5px;margin-bottom:0">
+                    Evidence: <span class="cite">◆ DS-0291</span> <span class="cite">◆ DS-0288</span>
+                    <span class="cite">◆ DS-0274</span> and 4 more · confidence <b>0.82</b>
+                  </p>
+                </div>
+                <div class="row mt8" style="gap:6px">
+                  <button class="btn btn--sm">Copy</button>
+                  <button class="btn btn--sm">Save to report</button>
+                  <button class="btn btn--sm btn--ghost">Show evidence rows</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="msg rise" style="--d:2">
+              <div class="msg__av">BJ</div>
+              <div class="msg__body">
+                <div class="msg__meta">
+                  <span class="msg__who">Byun Jinho</span>
+                  <span class="msg__time">12:09:12</span>
+                </div>
+                <div class="msg__txt">
+                  <p>Which other models share the same jig on L-03?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="msg msg--ai rise" style="--d:3">
+              <div class="msg__av">AI</div>
+              <div class="msg__body">
+                <div class="msg__meta">
+                  <span class="msg__who">Claude Opus</span>
+                  <span class="msg__time">12:09:15</span>
+                </div>
+                <div class="msg__txt">
+                  <span class="thinking"><i></i><i></i><i></i></span>
+                  <span class="faint" style="font-size:11.5px;margin-left:6px">Reading routing table · 1,204 rows…</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Composer -->
+          <div class="composer">
+            <div class="composer__box">
+              <textarea class="composer__ta" rows="3" placeholder="Ask about a model, a line, a defect reason, or a date range…"></textarea>
+              <div class="composer__bar">
+                <span class="badge">◆ 128 datasets</span>
+                <span class="badge">Jul 2026</span>
+                <button class="btn btn--sm btn--ghost">+ Attach paste</button>
+                <span class="spacer"></span>
+                <span class="code">CTRL + ENTER TO SEND</span>
+                <button class="btn btn--go btn--sm">Send</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Context rail ──────────────────────────────────────────────── -->
+        <aside class="ctxrail">
+
+          <div class="ctxsec">
+            <div class="ctxsec__t">Scope <span class="spacer"></span><button class="btn btn--sm btn--ghost">Reset</button></div>
+            <div class="field mb8">
+              <span class="field__l">Product type</span>
+              <select class="select"><option>All</option><option selected>Micro speaker</option><option>Receiver</option></select>
+            </div>
+            <div class="field mb8">
+              <span class="field__l">Date range</span>
+              <select class="select num"><option>2026-07-01 → 08-01</option><option>Last 90 days</option></select>
+            </div>
+            <div class="chips">
+              <button class="chip is-on" data-toggleable>L-03</button>
+              <button class="chip is-on" data-toggleable>BRS-161016</button>
+              <button class="chip" data-toggleable>Shift A</button>
+              <button class="chip" data-toggleable>SPL only</button>
+            </div>
+          </div>
+
+          <div class="ctxsec">
+            <div class="ctxsec__t">Evidence used <span class="spacer"></span><span class="num" style="color:var(--ink-2)">7</span></div>
+            <div class="srcrow">
+              <span class="badge badge--sig">DS-0291</span>
+              <span class="srcrow__n">L-03 jig change 07-24</span>
+              <span class="srcrow__c">0.94</span>
+            </div>
+            <div class="srcrow">
+              <span class="badge badge--sig">DS-0288</span>
+              <span class="srcrow__n">SPL sweep — Test lot</span>
+              <span class="srcrow__c">0.91</span>
+            </div>
+            <div class="srcrow">
+              <span class="badge badge--sig">DS-0274</span>
+              <span class="srcrow__n">SPL sweep — Normal lot</span>
+              <span class="srcrow__c">0.88</span>
+            </div>
+            <div class="srcrow">
+              <span class="badge">DS-0269</span>
+              <span class="srcrow__n">R&amp;B daily counts</span>
+              <span class="srcrow__c">0.71</span>
+            </div>
+            <div class="srcrow">
+              <span class="badge">DS-0255</span>
+              <span class="srcrow__n">Magnetiser current log</span>
+              <span class="srcrow__c">0.42</span>
+            </div>
+            <div class="notice notice--sig mt8" style="font-size:11.5px">
+              2 datasets were registered as <b>inventory-only</b> (confidence 0.30) and were not used as evidence.
+            </div>
+          </div>
+
+          <div class="ctxsec">
+            <div class="ctxsec__t">Recent questions</div>
+            <button class="qrow">Why did RCV-2841 coil-open jump in week 30?<time>2026-07-31 16:22</time></button>
+            <button class="qrow">Summarise MS-B defect trend for the monthly report<time>2026-07-30 09:04</time></button>
+            <button class="qrow">Compare shift A vs B on L-05 SPL spread<time>2026-07-28 14:47</time></button>
+            <button class="qrow">Which reasons drive F-Cost most per unit?<time>2026-07-27 11:15</time></button>
+          </div>
+
+          <div class="ctxsec">
+            <div class="ctxsec__t">Session cost</div>
+            <div class="row small mb8"><span class="faint">Input tokens</span><span class="spacer"></span><span class="num">184,210</span></div>
+            <div class="row small mb8"><span class="faint">Output tokens</span><span class="spacer"></span><span class="num">12,884</span></div>
+            <div class="row small"><span class="faint">Estimated</span><span class="spacer"></span><span class="num" style="font-weight:600">$ 2.41</span></div>
+          </div>
+
+        </aside>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="assets/instrument.js"></script>
+<script>
+Shell.render({
+  active: 'ask',
+  crumb: ['Tools', 'Test Data Analysis', 'Ask AI'],
+  readouts: [
+    { k: 'CODEX', v: 'READY',  cls: 'is-ok' },
+    { k: 'MODEL', v: 'OPUS 5' },
+    { k: 'SPEND', v: '$2.41' },
+    { k: 'QUEUE', v: '1', cls: 'is-warn' }
+  ],
+  tabs: [
+    { code: 'DR-11', label: 'Daily Report', href: 'index.html' },
+    { code: 'NG-01', label: 'NG Rate',      href: 'ng-rate.html' },
+    { code: 'FC-02', label: 'F-Cost',       href: 'f-cost.html' },
+    { code: 'AI-14', label: 'Ask AI',       href: 'ask-ai.html', on: true }
+  ]
+});
+</script>
+</body>
+</html>

@@ -11,18 +11,18 @@
 
 <h4 class="mb-3 fw-semibold">Translate</h4>
 
-@if (!CodexApi.IsConfigured && !AiProviders.CodexCliEnabled)
+@if (IsCliModel && !AiProviders.CodexCliEnabled)
 {
     <div class="alert alert-warning">
-        <strong>No translate provider is configured.</strong>
-        Save a Codex API key in Settings or enable Codex CLI.
+        <strong>CLI is disabled in settings.</strong>
+        Enable CLI in Settings to translate using @CodexApi.Model.
     </div>
 }
-else if (!CodexApi.IsConfigured)
+else if (!IsCliModel && !CodexApi.IsConfigured)
 {
     <div class="alert alert-warning">
-        <strong>Codex API is not configured.</strong>
-        Translate will fall back to Codex CLI.
+        <strong>Translate API is not configured.</strong>
+        Save an API key in Settings or use CLI translation.
     </div>
 }
 
@@ -223,10 +223,11 @@ else if (!CodexApi.IsConfigured)
         string Model);
 
     private bool HasInput => !string.IsNullOrWhiteSpace(_inputText) || _images.Count > 0;
-    private bool HasTranslateProvider => CodexApi.IsConfigured || AiProviders.CodexCliEnabled;
-    private string TranslateButtonLabel => CodexApi.IsConfigured
-        ? $"Translate ({CodexApi.Model})"
-        : "Translate (Codex CLI)";
+    private bool IsCliModel => !CodexApi.IsConfigured || CodexApi.Model.Contains("gemini", StringComparison.OrdinalIgnoreCase);
+    private bool HasTranslateProvider => IsCliModel ? AiProviders.CodexCliEnabled : CodexApi.IsConfigured;
+    private string TranslateButtonLabel => IsCliModel
+        ? $"Translate ({CodexApi.Model} CLI)"
+        : $"Translate ({CodexApi.Model})";
 
     protected override async Task OnInitializedAsync()
     {
@@ -285,7 +286,7 @@ else if (!CodexApi.IsConfigured)
         }
         if (!HasTranslateProvider)
         {
-            _error = "Codex API is not configured and Codex CLI is disabled.";
+            _error = IsCliModel ? "CLI is disabled in settings." : "Codex API is not configured.";
             return;
         }
 
@@ -304,7 +305,12 @@ else if (!CodexApi.IsConfigured)
             string actor = ActorLog();
             LogTranslate($"request target={_targetLanguage}, textChars={_inputText.Length:N0}, images={_images.Count}", actor);
             TranslationResult result;
-            if (CodexApi.IsConfigured)
+            if (IsCliModel)
+            {
+                LogTranslate($"using CLI model={CodexApi.Model}", actor);
+                result = await TranslateWithCodexCliAsync(_inputText, _targetLanguage, _images, CodexApi.Model, actor, _translateCts.Token);
+            }
+            else
             {
                 LogTranslate($"using Codex API model={CodexApi.Model}", actor);
                 var images = _images.Select(img => (img.MediaType, img.Base64)).ToList();
@@ -320,11 +326,6 @@ else if (!CodexApi.IsConfigured)
                     apiResult.Usage,
                     "Codex API",
                     CodexApi.Model);
-            }
-            else
-            {
-                LogTranslate("Codex API not configured; falling back to Codex CLI", actor);
-                result = await TranslateWithCodexCliAsync(_inputText, _targetLanguage, _images, actor, _translateCts.Token);
             }
             _recognizedSourceText = _images.Count > 0 ? result.SourceText : string.Empty;
             _outputText = result.Translation;
@@ -353,6 +354,7 @@ else if (!CodexApi.IsConfigured)
         string text,
         string targetLanguage,
         IReadOnlyList<PastedImage> images,
+        string model,
         string actor,
         CancellationToken ct)
     {
@@ -379,7 +381,7 @@ else if (!CodexApi.IsConfigured)
 
             string prompt = BuildCodexTranslatePrompt(text, targetLanguage, imageFiles);
             await File.WriteAllTextAsync(promptPath, prompt, new System.Text.UTF8Encoding(false), ct);
-            await File.WriteAllTextAsync(scriptPath, BuildCodexTranslateScript(workDir, promptPath), new System.Text.UTF8Encoding(false), ct);
+            await File.WriteAllTextAsync(scriptPath, BuildCodexTranslateScript(workDir, promptPath, imageFiles, model), new System.Text.UTF8Encoding(false), ct);
             LogTranslate($"prompt ready chars={prompt.Length:N0}, images={imageFiles.Count}, script={scriptPath}", actor);
 
             var psi = new System.Diagnostics.ProcessStartInfo
@@ -400,7 +402,7 @@ else if (!CodexApi.IsConfigured)
             psi.ArgumentList.Add(scriptPath);
 
             using var proc = new System.Diagnostics.Process { StartInfo = psi };
-            LogTranslate("starting Codex CLI process", actor);
+            LogTranslate("starting CLI process", actor);
             proc.Start();
             ChildProcessJob.Assign(proc);
             LogTranslate($"started pid={proc.Id}", actor);
@@ -423,12 +425,12 @@ else if (!CodexApi.IsConfigured)
 
             if (proc.ExitCode != 0)
                 throw new InvalidOperationException(string.IsNullOrWhiteSpace(stderr)
-                    ? $"Codex CLI exited with code {proc.ExitCode}."
-                    : $"Codex CLI exited with code {proc.ExitCode}: {stderr.Trim()}");
+                    ? $"CLI exited with code {proc.ExitCode}."
+                    : $"CLI exited with code {proc.ExitCode}: {stderr.Trim()}");
 
-            TranslationResult result = ParseCodexTranslationResult(stdout);
+            TranslationResult result = ParseCodexTranslationResult(stdout, model);
             if (string.IsNullOrWhiteSpace(result.Translation))
-                throw new InvalidOperationException("Codex CLI returned an empty translation.");
+                throw new InvalidOperationException("CLI returned an empty translation.");
 
             return result;
         }
@@ -532,9 +534,17 @@ else if (!CodexApi.IsConfigured)
             ("sourceText", string.IsNullOrWhiteSpace(text) ? "(none)" : text.Trim()));
     }
 
-    private static string BuildCodexTranslateScript(string workDir, string promptPath)
+    private static string BuildCodexTranslateScript(string workDir, string promptPath, IReadOnlyList<string> imageFiles, string model)
     {
         static string Q(string value) => "'" + (value ?? "").Replace("'", "''") + "'";
+        var imgCmds = new List<string>();
+        foreach (var img in imageFiles)
+        {
+            imgCmds.Add("-i");
+            imgCmds.Add(Q(img));
+        }
+        string imageArgsStr = imgCmds.Count > 0 ? string.Join(" ", imgCmds) : "";
+
         return string.Join(Environment.NewLine, new[]
         {
             "$ErrorActionPreference = 'Stop'",
@@ -545,41 +555,75 @@ else if (!CodexApi.IsConfigured)
             "try { chcp 65001 | Out-Null } catch {}",
             $"Set-Location -LiteralPath {Q(workDir)}",
             $"$prompt = Get-Content -LiteralPath {Q(promptPath)} -Raw -Encoding UTF8",
-            $"$prompt | & codex exec -c 'model_reasoning_effort=\"high\"' --cd {Q(workDir)} --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check -"
+            "if (Get-Command agy -ErrorAction SilentlyContinue) {",
+            $"    & agy --model {Q(model)} --effort high --dangerously-skip-permissions --prompt $prompt",
+            "} else {",
+            $"    $prompt | & codex exec {imageArgsStr} -c 'model_reasoning_effort=\"high\"' --cd {Q(workDir)} --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check -",
+            "}"
         });
     }
 
     private static string CleanCodexOutput(string output)
     {
         string text = (output ?? "").Trim();
-        if (text.StartsWith("```", StringComparison.Ordinal))
+        int firstFence = text.IndexOf("```", StringComparison.Ordinal);
+        if (firstFence >= 0)
         {
-            int firstNewline = text.IndexOf('\n');
-            if (firstNewline >= 0) text = text[(firstNewline + 1)..];
-            int fence = text.LastIndexOf("```", StringComparison.Ordinal);
-            if (fence >= 0) text = text[..fence];
+            int firstNewline = text.IndexOf('\n', firstFence);
+            int lastFence = text.LastIndexOf("```", StringComparison.Ordinal);
+            if (firstNewline >= 0 && lastFence > firstNewline)
+            {
+                text = text[(firstNewline + 1)..lastFence];
+            }
         }
         return text.Trim();
     }
 
-    private static TranslationResult ParseCodexTranslationResult(string output)
+    private static TranslationResult ParseCodexTranslationResult(string output, string model)
     {
         string text = CleanCodexOutput(output);
         try
         {
             using var doc = System.Text.Json.JsonDocument.Parse(text);
             var root = doc.RootElement;
-            string source = root.TryGetProperty("sourceText", out var s)
-                ? s.GetString() ?? ""
-                : "";
-            string translation = root.TryGetProperty("translation", out var t)
-                ? t.GetString() ?? ""
-                : "";
-            return new TranslationResult(source.Trim(), translation.Trim(), null, "Codex CLI", "codex-cli");
+            string source = root.TryGetProperty("sourceText", out var s) ? s.GetString() ?? "" : "";
+            string translation = "";
+            if (root.TryGetProperty("translation", out var t) && !string.IsNullOrWhiteSpace(t.GetString()))
+                translation = t.GetString()!;
+            else if (root.TryGetProperty("translatedText", out var tt) && !string.IsNullOrWhiteSpace(tt.GetString()))
+                translation = tt.GetString()!;
+            else if (root.TryGetProperty("result", out var tr) && !string.IsNullOrWhiteSpace(tr.GetString()))
+                translation = tr.GetString()!;
+
+            return new TranslationResult(source.Trim(), translation.Trim(), null, "Antigravity CLI", model);
         }
         catch
         {
-            return new TranslationResult("", text, null, "Codex CLI", "codex-cli");
+            int firstBrace = text.IndexOf('{');
+            int lastBrace = text.LastIndexOf('}');
+            if (firstBrace >= 0 && lastBrace > firstBrace)
+            {
+                try
+                {
+                    string subJson = text[firstBrace..(lastBrace + 1)];
+                    using var doc = System.Text.Json.JsonDocument.Parse(subJson);
+                    var root = doc.RootElement;
+                    string source = root.TryGetProperty("sourceText", out var s) ? s.GetString() ?? "" : "";
+                    string translation = "";
+                    if (root.TryGetProperty("translation", out var t) && !string.IsNullOrWhiteSpace(t.GetString()))
+                        translation = t.GetString()!;
+                    else if (root.TryGetProperty("translatedText", out var tt) && !string.IsNullOrWhiteSpace(tt.GetString()))
+                        translation = tt.GetString()!;
+                    else if (root.TryGetProperty("result", out var tr) && !string.IsNullOrWhiteSpace(tr.GetString()))
+                        translation = tr.GetString()!;
+
+                    if (!string.IsNullOrWhiteSpace(translation))
+                        return new TranslationResult(source.Trim(), translation.Trim(), null, "Antigravity CLI", model);
+                }
+                catch { }
+            }
+
+            return new TranslationResult("", text, null, "Antigravity CLI", model);
         }
     }
 

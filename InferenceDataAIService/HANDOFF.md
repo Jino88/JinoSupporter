@@ -2042,3 +2042,29 @@
 - Files: `inference_data_ai_terminal_review_queue.py`, `tests/test_inference_data_ai_terminal_review_queue.py`
 - Verification: 관련 단위 테스트 34/34와 `py_compile`이 통과했고 실제 CLI 재생성도 성공했다. 새 `terminal-review-queue.json`은 `READY_FOR_HUMAN_REVIEW`, invariant 7/7, terminal 164 workbook/739 table, supporting 378, one-off quantitative 344, repeated quarantined 17, repeated group 5, AI 0이다.
 - Next: `table-structure-54c7e8bfe2dc13bfe044`는 고차원 SPL/THD/IMP 원자료라 자동 recipe 범위를 별도로 설계해야 한다. 나머지 4개 반복 그룹은 의미·단위·축이 불충분하다는 HIGH-confidence 명시적 격리이므로 사람 승인 없이 자동 복구하지 않는다.
+
+## 2026-07-30 12:03 - [OTHER][ADD] ResumeContextInvestigation: 재개 대상 확인
+- Agent: Codex
+- Session: S1
+- Task-ID: S1-20260730-120201338-6ff1db371ccd4eea9
+- Category: OTHER
+- Feature: ResumeContextInvestigation
+- Change: ADD
+- Completed: 프로젝트 handoff와 작업 문맥, Git 상태를 점검했으나 현재 대화에는 다시 수행할 원 요청이 남아 있지 않음을 확인했다. 점검 중 공유 작업 커밋 `71fbd75`가 생성되어 작업 트리는 깨끗한 상태로 전환됐다.
+- Decisions: 원 요청을 추정해 기존 파일이나 새 커밋을 임의로 변경하지 않고 정확한 재작업 범위를 사용자에게 확인한다.
+- Files: None
+- Verification: `HANDOFF.md`, `WORKING_CONTEXT.md`, 최근 파일 시각, `git status`, `git log`를 읽기 전용으로 확인했으며 현재 `main`은 clean이고 `origin/main`보다 3커밋 앞선 상태다.
+- Next: 사용자가 다시 수행할 기능·파일·오류 또는 직전 요청 문장을 알려주면 해당 범위부터 구현하고 검증한다.
+
+## 2026-07-30 15:19 - [DATA][REMOVE] StructureRecipeRecovery: SPL/THD/IMP 원자료 제외
+- Agent: Codex
+- Session: S1
+- Task-ID: S1-20260730-151940479-85d7285cde114437b
+- Category: DATA
+- Feature: StructureRecipeRecovery
+- Change: REMOVE
+- Completed: `table-structure-54c7e8bfe2dc13bfe044`의 SPL/THD/IMP 원자료를 후속 분석과 자동 recipe 복구 대상에서 제외했다.
+- Decisions: 사용자 지시에 따라 해당 원자료는 구조 확인, recipe 설계, replay, canonical DB 반영을 모두 수행하지 않는다.
+- Files: None
+- Verification: 범위 제외 결정만 기록했으며 코드와 데이터는 변경하지 않아 검증 명령을 실행하지 않았다.
+- Next: 해당 구조를 계속 제외하고, 사용자가 지정하는 다른 작업 대상으로 진행한다.

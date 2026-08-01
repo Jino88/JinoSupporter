@@ -1,0 +1,102 @@
+@page "/new-ver"
+@rendermode InteractiveServer
+@using JinoSupporter.Web.Services
+@inject UiModeService     UiMode
+@inject NavigationManager Nav
+@inject IJSRuntime        JS
+
+@*
+    The switch between the classic shell and the redesigned one.
+
+    Deliberately written in the app's existing Bootstrap markup: it has to read
+    correctly in BOTH shells, and in the new one it doubles as a live check that
+    the Bootstrap bridge (instrument.css §24) restyles ordinary pages properly.
+*@
+
+<PageTitle>New Ver</PageTitle>
+
+<div style="max-width:760px">
+
+    <h1 class="fw-bold mb-1" style="font-size:22px">New UI</h1>
+    <p class="text-muted mb-4" style="font-size:13px">
+        The redesigned shell hosts every page in the app — same routes, same data,
+        same features. Switching is per-browser and reversible at any time.
+    </p>
+
+    <div class="card">
+        <div class="card-header">Shell</div>
+        <div class="card-body">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <span style="font-size:13px">Currently using</span>
+                @if (UiMode.NewUi)
+                {
+                    <span class="badge bg-primary">New UI</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">Classic UI</span>
+                }
+            </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary btn-sm" @onclick="UseNew" disabled="@UiMode.NewUi">
+                    Switch to new UI
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="UseClassic" disabled="@(!UiMode.NewUi)">
+                    Back to classic UI
+                </button>
+            </div>
+
+            <div class="alert alert-info mt-3 mb-0" style="font-size:12px">
+                The choice is stored in this browser only — nobody else's session changes.
+                It survives a reload, and <b>Classic UI</b> in the top bar brings you straight back.
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">What is already true</div>
+        <div class="card-body">
+            <ul class="mb-0" style="font-size:12.5px; line-height:1.8">
+                <li>Every menu, route and feature works — the pages themselves are untouched.</li>
+                <li>The rail is built from the real menu registry and your role's permissions.</li>
+                <li>Page content is bridged onto the new design: cards, tables, forms, buttons
+                    and alerts pick up the new styling without being rewritten.</li>
+                <li>Light and dark are both available from the top bar.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">What is not done yet</div>
+        <div class="card-body">
+            <p class="mb-2" style="font-size:12.5px">
+                Bridged is not the same as designed. Pages still use their original layout and
+                spacing — they look like the new system but were not laid out for it. Reports
+                with their own full-height scrolling (Ask AI, some BMES screens) are the most
+                likely to sit awkwardly.
+            </p>
+            <p class="mb-0" style="font-size:12.5px">
+                The finished look for the main screens is the
+                <a href="/ui-redesign/index.html" target="_blank">design reference</a>;
+                pages get rebuilt to that one at a time.
+            </p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private async Task UseNew()
+    {
+        try { await JS.InvokeVoidAsync("localStorage.setItem", UiModeService.StorageKey, "new"); }
+        catch (JSException) { /* storage blocked — the switch still applies for this circuit */ }
+        UiMode.NewUi = true;
+    }
+
+    private async Task UseClassic()
+    {
+        try { await JS.InvokeVoidAsync("localStorage.removeItem", UiModeService.StorageKey); }
+        catch (JSException) { /* as above */ }
+        UiMode.NewUi = false;
+    }
+}

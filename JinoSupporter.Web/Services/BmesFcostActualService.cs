@@ -1,18 +1,32 @@
 using System.Data;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.Data.Sqlite;
 using Microsoft.Data.SqlClient;
 
 namespace JinoSupporter.Web.Services;
 
-public sealed partial class BmesFcostActualService(AppActivityLogger activity)
+public sealed partial class BmesFcostActualService(
+    AppActivityLogger activity,
+    NgRateSettingsService settings)
 {
     private const int DefaultTimeoutSeconds = 300;
     private const int MaxTimeoutSeconds = 600;
     private const int DefaultMaxRows = 5000;
     private const int HardMaxRows = 50000;
+    private const int RawBreakdownCacheSchemaVersion = 1;
+    private static readonly TimeSpan RawBreakdownRecentMutableWindow = TimeSpan.FromDays(7);
+    private static readonly TimeSpan RawBreakdownRecentCacheTtl = TimeSpan.FromMinutes(15);
+    private static readonly JsonSerializerOptions RawBreakdownCacheJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
 
     private readonly AppActivityLogger _activity = activity;
+    private readonly NgRateSettingsService _settings = settings;
 
     public async Task TestConnectionAsync(
         BmesFcostDbConnection connection,
@@ -107,6 +121,15 @@ public sealed partial class BmesFcostActualService(AppActivityLogger activity)
                 Rows = [],
             };
         }
+
+        RawBreakdownCacheKey cacheKey = BuildRawBreakdownCacheKey(query, periods, lineShifts);
+        RawBreakdownCachePolicy cachePolicy = BuildRawBreakdownCachePolicy(periods);
+        BmesFcostRawBreakdownResult? cachedResult = await TryReadRawBreakdownCacheAsync(
+            cacheKey,
+            cachePolicy,
+            cancellationToken);
+        if (cachedResult is not null)
+            return cachedResult;
 
         await using var conn = new SqlConnection(BuildConnectionString(query.Connection));
         await conn.OpenAsync(cancellationToken);
@@ -212,13 +235,411 @@ public sealed partial class BmesFcostActualService(AppActivityLogger activity)
             "BMES F-COST Raw",
             $"Raw material breakdown periods={periods.Count:N0}, lineShifts={lineShifts.Count:N0}, rows={resultRows.Count:N0}");
 
-        return new BmesFcostRawBreakdownResult
+        var result = new BmesFcostRawBreakdownResult
         {
             Periods = periods,
             ExchangeRates = exchangeRates,
             Rows = resultRows,
         };
+        await StoreRawBreakdownCacheAsync(cacheKey, cachePolicy, result, cancellationToken);
+        return result;
     }
+
+    private async Task<BmesFcostRawBreakdownResult?> TryReadRawBreakdownCacheAsync(
+        RawBreakdownCacheKey cacheKey,
+        RawBreakdownCachePolicy cachePolicy,
+        CancellationToken cancellationToken)
+    {
+        return await Task.Run(
+            () =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                return TryReadRawBreakdownCache(cacheKey, cachePolicy);
+            },
+            cancellationToken);
+    }
+
+    private BmesFcostRawBreakdownResult? TryReadRawBreakdownCache(
+        RawBreakdownCacheKey cacheKey,
+        RawBreakdownCachePolicy cachePolicy)
+    {
+        try
+        {
+            string dbPath = GetRawBreakdownCacheDbPath();
+            if (string.IsNullOrWhiteSpace(dbPath))
+            {
+                LogRawBreakdownCache(cacheKey, "miss", "reason=no-db-path");
+                return null;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(dbPath) ?? ".");
+            using var conn = new SqliteConnection(BuildSqliteConnectionString(dbPath));
+            conn.Open();
+            EnsureRawBreakdownCacheTable(conn);
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText =
+                """
+                SELECT SchemaVersion, PayloadJson, ExpiresAtUtc
+                FROM FCostRawBreakdownCache
+                WHERE KeyHash = @key;
+                """;
+            cmd.Parameters.AddWithValue("@key", cacheKey.Hash);
+
+            using var reader = cmd.ExecuteReader();
+            if (!reader.Read())
+            {
+                LogRawBreakdownCache(cacheKey, "miss", CacheModeDetail(cachePolicy) + " reason=empty");
+                return null;
+            }
+
+            int schemaVersion = reader.IsDBNull(0) ? 0 : Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture);
+            if (schemaVersion != RawBreakdownCacheSchemaVersion)
+            {
+                LogRawBreakdownCache(cacheKey, "miss", CacheModeDetail(cachePolicy) + $" reason=schema-{schemaVersion}");
+                return null;
+            }
+
+            string payloadJson = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+            string expiresAtText = reader.IsDBNull(2) ? string.Empty : reader.GetString(2);
+            if (!string.IsNullOrWhiteSpace(expiresAtText))
+            {
+                if (!TryParseCacheInstant(expiresAtText, out DateTimeOffset expiresAtUtc))
+                {
+                    TryDeleteRawBreakdownCache(conn, cacheKey.Hash);
+                    LogRawBreakdownCache(cacheKey, "miss", CacheModeDetail(cachePolicy) + " reason=corrupt-expiry");
+                    return null;
+                }
+
+                if (expiresAtUtc <= DateTimeOffset.UtcNow)
+                {
+                    TryDeleteRawBreakdownCache(conn, cacheKey.Hash);
+                    LogRawBreakdownCache(cacheKey, "miss", CacheModeDetail(cachePolicy) + " reason=expired");
+                    return null;
+                }
+            }
+
+            BmesFcostRawBreakdownResult? result = JsonSerializer.Deserialize<BmesFcostRawBreakdownResult>(
+                payloadJson,
+                RawBreakdownCacheJsonOptions);
+            if (result is null)
+                throw new JsonException("Raw breakdown cache payload is empty.");
+            ValidateRawBreakdownCachePayload(result);
+
+            TryTouchRawBreakdownCache(conn, cacheKey.Hash);
+            LogRawBreakdownCache(
+                cacheKey,
+                "hit",
+                CacheModeDetail(cachePolicy) + $" rows={result.Rows.Count:N0}");
+            return result;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            LogRawBreakdownCache(cacheKey, "miss", "reason=unavailable " + CompactException(ex));
+            return null;
+        }
+    }
+
+    private async Task StoreRawBreakdownCacheAsync(
+        RawBreakdownCacheKey cacheKey,
+        RawBreakdownCachePolicy cachePolicy,
+        BmesFcostRawBreakdownResult result,
+        CancellationToken cancellationToken)
+    {
+        await Task.Run(
+            () =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                StoreRawBreakdownCache(cacheKey, cachePolicy, result);
+            },
+            cancellationToken);
+    }
+
+    private void StoreRawBreakdownCache(
+        RawBreakdownCacheKey cacheKey,
+        RawBreakdownCachePolicy cachePolicy,
+        BmesFcostRawBreakdownResult result)
+    {
+        try
+        {
+            string dbPath = GetRawBreakdownCacheDbPath();
+            if (string.IsNullOrWhiteSpace(dbPath))
+            {
+                LogRawBreakdownCache(cacheKey, "store-skip", "reason=no-db-path");
+                return;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(dbPath) ?? ".");
+            using var conn = new SqliteConnection(BuildSqliteConnectionString(dbPath));
+            conn.Open();
+            EnsureRawBreakdownCacheTable(conn);
+
+            DateTimeOffset nowUtc = DateTimeOffset.UtcNow;
+            DateTimeOffset? expiresAtUtc = cachePolicy.UsesTtl
+                ? nowUtc.Add(RawBreakdownRecentCacheTtl)
+                : null;
+            string payloadJson = JsonSerializer.Serialize(result, RawBreakdownCacheJsonOptions);
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText =
+                """
+                INSERT INTO FCostRawBreakdownCache
+                    (KeyHash, SchemaVersion, CacheKeyJson, PayloadJson, CreatedAtUtc, ExpiresAtUtc,
+                     LastHitAtUtc, HitCount, PeriodCount, LineShiftCount, RowCount)
+                VALUES
+                    (@key, @schema, @keyJson, @payload, @created, @expires,
+                     NULL, 0, @periods, @lineShifts, @rows)
+                ON CONFLICT(KeyHash) DO UPDATE SET
+                    SchemaVersion = excluded.SchemaVersion,
+                    CacheKeyJson = excluded.CacheKeyJson,
+                    PayloadJson = excluded.PayloadJson,
+                    CreatedAtUtc = excluded.CreatedAtUtc,
+                    ExpiresAtUtc = excluded.ExpiresAtUtc,
+                    LastHitAtUtc = NULL,
+                    HitCount = 0,
+                    PeriodCount = excluded.PeriodCount,
+                    LineShiftCount = excluded.LineShiftCount,
+                    RowCount = excluded.RowCount;
+                """;
+            cmd.Parameters.AddWithValue("@key", cacheKey.Hash);
+            cmd.Parameters.AddWithValue("@schema", RawBreakdownCacheSchemaVersion);
+            cmd.Parameters.AddWithValue("@keyJson", cacheKey.Json);
+            cmd.Parameters.AddWithValue("@payload", payloadJson);
+            cmd.Parameters.AddWithValue("@created", nowUtc.ToString("O", CultureInfo.InvariantCulture));
+            cmd.Parameters.AddWithValue(
+                "@expires",
+                expiresAtUtc is null
+                    ? DBNull.Value
+                    : expiresAtUtc.Value.ToString("O", CultureInfo.InvariantCulture));
+            cmd.Parameters.AddWithValue("@periods", cacheKey.PeriodCount);
+            cmd.Parameters.AddWithValue("@lineShifts", cacheKey.LineShiftCount);
+            cmd.Parameters.AddWithValue("@rows", result.Rows.Count);
+            cmd.ExecuteNonQuery();
+
+            string ttlText = expiresAtUtc is null
+                ? "ttl=historical"
+                : $"ttl={RawBreakdownRecentCacheTtl.TotalMinutes:N0}m expires={expiresAtUtc.Value:O}";
+            LogRawBreakdownCache(cacheKey, "store", $"{ttlText} rows={result.Rows.Count:N0}");
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            LogRawBreakdownCache(cacheKey, "store-fail", CompactException(ex));
+        }
+    }
+
+    private RawBreakdownCacheKey BuildRawBreakdownCacheKey(
+        BmesFcostRawBreakdownQuery query,
+        IReadOnlyList<BmesFcostRawBreakdownPeriod> periods,
+        IReadOnlyList<BmesFcostRawBreakdownLineShift> lineShifts)
+    {
+        string fact = NormalizeFilter(query.Fact);
+        string plant = NormalizeFilter(query.Plant);
+        string database = string.IsNullOrWhiteSpace(query.Connection.Database)
+            ? "BMES_LIV"
+            : query.Connection.Database.Trim();
+
+        var payload = new RawBreakdownCacheKeyPayload(
+            RawBreakdownCacheSchemaVersion,
+            database,
+            fact,
+            plant,
+            periods
+                .Select(p => new RawBreakdownCachePeriod(
+                    p.Ordinal,
+                    NormalizeFilter(p.Key),
+                    NormalizeFilter(p.Header),
+                    NormalizeFilter(p.Kind),
+                    p.StartDate.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    p.EndDateExclusive.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))
+                .ToList(),
+            lineShifts
+                .Select(l => new RawBreakdownCacheLineShift(
+                    NormalizeFilter(l.GroupName),
+                    NormalizeFilter(l.ModelName),
+                    NormalizeFilter(l.LineShift)))
+                .OrderBy(l => l.LineShift, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(l => l.GroupName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(l => l.ModelName, StringComparer.OrdinalIgnoreCase)
+                .ToList());
+        string json = JsonSerializer.Serialize(payload, RawBreakdownCacheJsonOptions);
+        return new RawBreakdownCacheKey(
+            Sha256Hex(json),
+            json,
+            fact,
+            plant,
+            payload.Periods.Count,
+            payload.LineShifts.Count);
+    }
+
+    private static RawBreakdownCachePolicy BuildRawBreakdownCachePolicy(
+        IReadOnlyList<BmesFcostRawBreakdownPeriod> periods)
+    {
+        DateTime mutableWindowStart = DateTime.Today.Subtract(RawBreakdownRecentMutableWindow);
+        bool usesTtl = periods.Any(p => p.EndDateExclusive.Date.AddDays(-1) >= mutableWindowStart);
+        return new RawBreakdownCachePolicy(usesTtl);
+    }
+
+    private string GetRawBreakdownCacheDbPath()
+        => Path.Combine(_settings.FCostDbSaveDirectory, "fcost_raw.db");
+
+    private static string BuildSqliteConnectionString(string dbPath)
+    {
+        var builder = new SqliteConnectionStringBuilder
+        {
+            DataSource = dbPath,
+            Mode = SqliteOpenMode.ReadWriteCreate,
+        };
+        return builder.ToString();
+    }
+
+    private static void EnsureRawBreakdownCacheTable(SqliteConnection conn)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText =
+            """
+            PRAGMA journal_mode=WAL;
+            PRAGMA busy_timeout=5000;
+
+            CREATE TABLE IF NOT EXISTS FCostRawBreakdownCache (
+                KeyHash TEXT PRIMARY KEY,
+                SchemaVersion INTEGER NOT NULL,
+                CacheKeyJson TEXT NOT NULL,
+                PayloadJson TEXT NOT NULL,
+                CreatedAtUtc TEXT NOT NULL,
+                ExpiresAtUtc TEXT NULL,
+                LastHitAtUtc TEXT NULL,
+                HitCount INTEGER NOT NULL DEFAULT 0,
+                PeriodCount INTEGER NOT NULL DEFAULT 0,
+                LineShiftCount INTEGER NOT NULL DEFAULT 0,
+                RowCount INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS IX_FCostRawBreakdownCache_ExpiresAtUtc
+                ON FCostRawBreakdownCache(ExpiresAtUtc);
+            """;
+        cmd.ExecuteNonQuery();
+    }
+
+    private static void TryTouchRawBreakdownCache(SqliteConnection conn, string keyHash)
+    {
+        try
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText =
+                """
+                UPDATE FCostRawBreakdownCache
+                SET LastHitAtUtc = @hit,
+                    HitCount = HitCount + 1
+                WHERE KeyHash = @key;
+                """;
+            cmd.Parameters.AddWithValue("@hit", DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+            cmd.Parameters.AddWithValue("@key", keyHash);
+            cmd.ExecuteNonQuery();
+        }
+        catch
+        {
+            // Cache hit accounting must not turn a valid payload into a miss.
+        }
+    }
+
+    private static void TryDeleteRawBreakdownCache(SqliteConnection conn, string keyHash)
+    {
+        try
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "DELETE FROM FCostRawBreakdownCache WHERE KeyHash = @key;";
+            cmd.Parameters.AddWithValue("@key", keyHash);
+            cmd.ExecuteNonQuery();
+        }
+        catch
+        {
+            // Best-effort cleanup only; the next read will still validate before use.
+        }
+    }
+
+    private static void ValidateRawBreakdownCachePayload(BmesFcostRawBreakdownResult result)
+    {
+        if (result.Periods is null ||
+            result.ExchangeRates is null ||
+            result.Rows is null)
+        {
+            throw new JsonException("Raw breakdown cache payload has null top-level collections.");
+        }
+
+        foreach (var row in result.Rows)
+        {
+            if (row.FCostByPeriod is null ||
+                row.EquivalentQtyByPeriod is null ||
+                row.PriceByPeriod is null)
+            {
+                throw new JsonException("Raw breakdown cache payload has null row dictionaries.");
+            }
+        }
+    }
+
+    private static bool TryParseCacheInstant(string value, out DateTimeOffset instant)
+        => DateTimeOffset.TryParse(
+            value,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+            out instant);
+
+    private void LogRawBreakdownCache(RawBreakdownCacheKey cacheKey, string action, string detail)
+    {
+        _activity.Log(
+            "BMES F-COST Raw",
+            $"cache {action} key={ShortHash(cacheKey.Hash)} fact={cacheKey.Fact} plant={cacheKey.Plant} periods={cacheKey.PeriodCount:N0} lineShifts={cacheKey.LineShiftCount:N0} {detail}");
+    }
+
+    private static string CacheModeDetail(RawBreakdownCachePolicy cachePolicy)
+        => cachePolicy.UsesTtl ? "mode=recent" : "mode=historical";
+
+    private static string Sha256Hex(string value)
+        => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
+
+    private static string ShortHash(string hash)
+        => hash.Length <= 12 ? hash : hash[..12];
+
+    private static string CompactException(Exception ex)
+    {
+        string message = Regex.Replace(ex.Message, @"\s+", " ").Trim();
+        if (message.Length > 120)
+            message = message[..120] + "...";
+
+        return string.IsNullOrWhiteSpace(message)
+            ? ex.GetType().Name
+            : $"{ex.GetType().Name}: {message}";
+    }
+
+    private sealed record RawBreakdownCacheKey(
+        string Hash,
+        string Json,
+        string Fact,
+        string Plant,
+        int PeriodCount,
+        int LineShiftCount);
+
+    private sealed record RawBreakdownCachePolicy(bool UsesTtl);
+
+    private sealed record RawBreakdownCacheKeyPayload(
+        int SchemaVersion,
+        string Database,
+        string Fact,
+        string Plant,
+        List<RawBreakdownCachePeriod> Periods,
+        List<RawBreakdownCacheLineShift> LineShifts);
+
+    private sealed record RawBreakdownCachePeriod(
+        int Ordinal,
+        string Key,
+        string Header,
+        string Kind,
+        string StartDate,
+        string EndDateExclusive);
+
+    private sealed record RawBreakdownCacheLineShift(
+        string GroupName,
+        string ModelName,
+        string LineShift);
 
     public async Task<List<BmesBomMaterialCandidate>> FetchBomMaterialsAsync(
         BmesBomMaterialQuery query,
@@ -1549,9 +1970,9 @@ public sealed class BmesFcostRawMaterialBreakdownRow
     public string ModelName { get; init; } = string.Empty;
     public string MaterialCode { get; init; } = string.Empty;
     public string MaterialName { get; init; } = string.Empty;
-    public Dictionary<string, decimal> FCostByPeriod { get; } = new(StringComparer.Ordinal);
-    public Dictionary<string, decimal> EquivalentQtyByPeriod { get; } = new(StringComparer.Ordinal);
-    public Dictionary<string, BmesFcostRawMaterialPeriodPrice> PriceByPeriod { get; } = new(StringComparer.Ordinal);
+    public Dictionary<string, decimal> FCostByPeriod { get; init; } = new(StringComparer.Ordinal);
+    public Dictionary<string, decimal> EquivalentQtyByPeriod { get; init; } = new(StringComparer.Ordinal);
+    public Dictionary<string, BmesFcostRawMaterialPeriodPrice> PriceByPeriod { get; init; } = new(StringComparer.Ordinal);
     public decimal TotalFCostVnd { get; set; }
     public long SourceRows { get; set; }
 }

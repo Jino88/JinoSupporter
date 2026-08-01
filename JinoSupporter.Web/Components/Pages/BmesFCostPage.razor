@@ -3470,6 +3470,7 @@
                 end,
                 force: false,
                 forceFromDate: forceFrom,
+                forceRefreshTtl: TimeSpan.FromMinutes(15),
                 progress: progress);
             _rawStatus = FCost.GetRawStatus();
 

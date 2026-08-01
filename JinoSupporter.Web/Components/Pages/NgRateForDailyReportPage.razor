@@ -775,7 +775,19 @@
         try
         {
             progress.Report($"Fetching data: {_startDate:yyyy-MM-dd} ~ {_endDate:yyyy-MM-dd}");
-            string? dbPath = await NgRate.GetOrFetchAsync(_startDate, _endDate, progress);
+            List<ModelGroupRecord> selectedGroups = SelectedGroups;
+            List<string> selectedLineShifts = selectedGroups
+                .SelectMany(group => group.MidGroups)
+                .SelectMany(mid => mid.LineShifts)
+                .Where(lineShift => !string.IsNullOrWhiteSpace(lineShift))
+                .Select(lineShift => lineShift.Trim())
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+            string? dbPath = await NgRate.GetOrFetchAsync(
+                _startDate,
+                _endDate,
+                progress,
+                selectedLineShifts);
             _isBusy = false;
 
             if (string.IsNullOrEmpty(dbPath))
@@ -787,7 +799,7 @@
 
             _savedDbPath = dbPath;
             ReloadGroups();
-            var selectedGroups = SelectedGroups;
+            selectedGroups = SelectedGroups;
             Activity.Log("NG Rate Daily", $"Generate Report selectedGroups={selectedGroups.Count:N0}");
             progress.Report($"Using DB: {Path.GetFileName(dbPath)}");
 

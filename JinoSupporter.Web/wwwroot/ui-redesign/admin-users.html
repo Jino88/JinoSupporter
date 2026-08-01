@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Users — GN LAB Supporter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..800;1,75..125,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/instrument.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand__mark"></div>
+      <div class="brand__text">
+        <div class="brand__name">GN LAB</div>
+        <div class="brand__sub">SUPPORTER</div>
+      </div>
+    </div>
+    <div class="rail__scroll"></div>
+    <div class="rail__foot">
+      <div class="who">
+        <div class="who__av">BJ</div>
+        <div style="min-width:0">
+          <div class="who__name">Byun Jinho</div>
+          <div class="who__role">Administrator</div>
+        </div>
+      </div>
+      <div class="live"><i class="live__dot"></i><span class="live__text">5 connected</span></div>
+      <button class="railbtn">Sign out</button>
+    </div>
+  </aside>
+
+  <div class="stage">
+    <header class="topbar">
+      <button class="iconbtn" data-rail-toggle aria-label="Toggle navigation"></button>
+      <nav class="crumb"></nav>
+      <div class="readouts"></div>
+      <button class="iconbtn" data-theme-toggle aria-label="Toggle theme"></button>
+      <button class="iconbtn" data-icon="out" aria-label="Sign out"></button>
+    </header>
+
+    <nav class="tabs"></nav>
+
+    <main class="view">
+
+      <div class="pagehead rise" style="--d:0">
+        <div>
+          <span class="code">US-20 · SYSTEM</span>
+          <h1 class="pagehead__t">Users</h1>
+          <p class="pagehead__d">Accounts and the menus each role may open. Menu visibility is resolved per role, not per user.</p>
+        </div>
+        <div class="pagehead__actions">
+          <button class="btn btn--sm">Import</button>
+          <button class="btn btn--go btn--sm">Add user</button>
+        </div>
+      </div>
+
+      <div class="split rise" style="--d:1">
+
+        <section class="panel">
+          <div class="panel__head">
+            <span class="panel__t">Accounts</span>
+            <span class="panel__meta">14 ACTIVE · 2 DISABLED</span>
+            <div class="panel__tools">
+              <input class="input" placeholder="Search…" style="width:150px;height:25px;font-size:11.5px">
+              <div class="seg">
+                <button class="seg__b is-on">All</button>
+                <button class="seg__b">Active</button>
+                <button class="seg__b">Disabled</button>
+              </div>
+            </div>
+          </div>
+          <div class="panel__body panel__body--tight">
+            <div class="tablewrap" style="max-height:none">
+              <table class="dt">
+                <thead>
+                  <tr>
+                    <th style="width:30px"><input class="cbx" type="checkbox"></th>
+                    <th class="is-sortable" style="min-width:150px">User</th>
+                    <th class="is-sortable">Login ID</th>
+                    <th class="is-sortable">Role</th>
+                    <th class="is-sortable">Department</th>
+                    <th class="is-sortable n">Last seen</th>
+                    <th>State</th>
+                    <th style="width:60px"></th>
+                  </tr>
+                </thead>
+                <tbody data-sortable>
+                  <tr>
+                    <td><input class="cbx" type="checkbox" checked></td>
+                    <td class="b">Byun Jinho</td><td class="num">jhbyun</td>
+                    <td><span class="badge badge--sig">Admin</span></td>
+                    <td class="faint">Quality</td><td class="n">now</td>
+                    <td><span class="badge badge--ok">● Online</span></td>
+                    <td><button class="btn btn--sm btn--ghost">Edit</button></td>
+                  </tr>
+                  <tr>
+                    <td><input class="cbx" type="checkbox"></td>
+                    <td class="b">Nguyen Thi Mai</td><td class="num">ntmai</td>
+                    <td><span class="badge">Engineer</span></td>
+                    <td class="faint">Production</td><td class="n">2 m ago</td>
+                    <td><span class="badge badge--ok">● Online</span></td>
+                    <td><button class="btn btn--sm btn--ghost">Edit</button></td>
+                  </tr>
+                  <tr>
+                    <td><input class="cbx" type="checkbox"></td>
+                    <td class="b">Le Minh Quan</td><td class="num">lmquan</td>
+                    <td><span class="badge">Engineer</span></td>
+                    <td class="faint">Production</td><td class="n">18 m ago</td>
+                    <td><span class="badge badge--ok">● Online</span></td>
+                    <td><button class="btn btn--sm btn--ghost">Edit</button></td>
+                  </tr>
+                  <tr>
+                    <td><input class="cbx" type="checkbox"></td>
+                    <td class="b">Kim Seoyeon</td><td class="num">sykim</td>
+                    <td><span class="badge">Manager</span></td>
+                    <td class="faint">Quality</td><td class="n">1 h ago</td>
+                    <td><span class="badge">○ Away</span></td>
+                    <td><button class="btn btn--sm btn--ghost">Edit</button></td>
+                  </tr>
+                  <tr>
+                    <td><input class="cbx" type="checkbox"></td>
+                    <td class="b">Tran Van Hung</td><td class="num">tvhung</td>
+                    <td><span class="badge">Viewer</span></td>
+                    <td class="faint">Planning</td><td class="n">Yesterday</td>
+                    <td><span class="badge">○ Away</span></td>
+                    <td><button class="btn btn--sm btn--ghost">Edit</button></td>
+                  </tr>
+                  <tr>
+                    <td><input class="cbx" type="checkbox"></td>
+                    <td class="b">Park Junho</td><td class="num">jhpark</td>
+                    <td><span class="badge">Engineer</span></td>
+                    <td class="faint">Equipment</td><td class="n">3 d ago</td>
+                    <td><span class="badge">○ Away</span></td>
+                    <td><button class="btn btn--sm btn--ghost">Edit</button></td>
+                  </tr>
+                  <tr style="opacity:.55">
+                    <td><input class="cbx" type="checkbox"></td>
+                    <td class="b">Do Thi Lan</td><td class="num">dtlan</td>
+                    <td><span class="badge">Viewer</span></td>
+                    <td class="faint">Planning</td><td class="n">2026-05-14</td>
+                    <td><span class="badge badge--crit">◆ Disabled</span></td>
+                    <td><button class="btn btn--sm btn--ghost">Edit</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel__foot">
+            <span class="code">1 SELECTED</span>
+            <span class="spacer"></span>
+            <button class="btn btn--sm">Reset password</button>
+            <button class="btn btn--sm btn--danger">Disable</button>
+          </div>
+        </section>
+
+        <section class="panel" style="align-self:start">
+          <div class="panel__head">
+            <span class="panel__t">Byun Jinho</span>
+            <span class="panel__meta">JHBYUN</span>
+          </div>
+          <div class="panel__body">
+            <div class="field mb16">
+              <span class="field__l">Display name</span>
+              <input class="input" value="Byun Jinho">
+            </div>
+            <div class="field mb16">
+              <span class="field__l">Login ID</span>
+              <input class="input num" value="jhbyun">
+            </div>
+            <div class="grid2" style="gap:10px" >
+              <div class="field mb16">
+                <span class="field__l">Role</span>
+                <select class="select">
+                  <option selected>Admin</option><option>Manager</option>
+                  <option>Engineer</option><option>Viewer</option>
+                </select>
+              </div>
+              <div class="field mb16">
+                <span class="field__l">Department</span>
+                <select class="select">
+                  <option selected>Quality</option><option>Production</option>
+                  <option>Equipment</option><option>Planning</option>
+                </select>
+              </div>
+            </div>
+            <div class="field mb16">
+              <span class="field__l">Account</span>
+              <div class="stack-v" style="gap:8px;margin-top:2px">
+                <label class="switch"><input type="checkbox" checked><span class="switch__t"></span> Enabled</label>
+                <label class="switch"><input type="checkbox" checked><span class="switch__t"></span> Can export Excel</label>
+                <label class="switch"><input type="checkbox"><span class="switch__t"></span> Force password change</label>
+              </div>
+            </div>
+            <div class="notice notice--warn mb16">
+              Changing the role rewrites this user's menu access immediately — open sessions are re-evaluated on the next navigation.
+            </div>
+            <div class="row">
+              <button class="btn" style="flex:1">Cancel</button>
+              <button class="btn btn--go" style="flex:1">Save</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section class="panel mt16 rise" style="--d:2">
+        <div class="panel__head">
+          <span class="panel__t">Menu permission matrix</span>
+          <span class="panel__meta">ROLE × MENU</span>
+          <div class="panel__tools">
+            <button class="btn btn--sm">Copy role</button>
+            <button class="btn btn--go btn--sm">Save matrix</button>
+          </div>
+        </div>
+        <div class="panel__body panel__body--tight">
+          <div class="tablewrap" style="max-height:none">
+            <table class="dt">
+              <thead>
+                <tr>
+                  <th style="min-width:190px">Menu</th>
+                  <th style="width:90px">Code</th>
+                  <th style="width:88px;text-align:center">Admin</th>
+                  <th style="width:88px;text-align:center">Manager</th>
+                  <th style="width:88px;text-align:center">Engineer</th>
+                  <th style="width:88px;text-align:center">Viewer</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="row-grp"><td colspan="7">BMES</td></tr>
+                <tr><td class="ind1">NG Rate</td><td class="num faint">NG-01</td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked disabled></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked></td>
+                  <td class="faint">Read-only for Viewer</td></tr>
+                <tr><td class="ind1">F-Cost</td><td class="num faint">FC-02</td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked disabled></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox"></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox"></td>
+                  <td class="faint">Contains cost figures</td></tr>
+                <tr><td class="ind1">Worker Status</td><td class="num faint">WS-04</td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked disabled></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox"></td>
+                  <td class="faint">—</td></tr>
+                <tr><td class="ind1">Model Group</td><td class="num faint">MG-07</td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked disabled></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox"></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox"></td>
+                  <td class="faint">Feeds NG summary rollup</td></tr>
+
+                <tr class="row-grp"><td colspan="7">Tools</td></tr>
+                <tr><td class="ind1">Input Data (Batch)</td><td class="num faint">BT-12</td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked disabled></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox"></td>
+                  <td class="faint">—</td></tr>
+                <tr><td class="ind1">Ask AI</td><td class="num faint">AI-14</td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked disabled></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox"></td>
+                  <td class="faint">Metered — see AI Usages</td></tr>
+                <tr><td class="ind1">Translate</td><td class="num faint">TR-17</td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked disabled></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked></td>
+                  <td class="faint">—</td></tr>
+
+                <tr class="row-grp"><td colspan="7">System</td></tr>
+                <tr><td class="ind1">Users</td><td class="num faint">US-20</td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked disabled></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox"></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox"></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox"></td>
+                  <td class="faint">Admin only</td></tr>
+                <tr><td class="ind1">DB Query</td><td class="num faint">DB-22</td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox" checked disabled></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox"></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox"></td>
+                  <td style="text-align:center"><input class="cbx" type="checkbox"></td>
+                  <td class="faint">SELECT only — writes are blocked</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel__foot">
+          <span class="code">9 OF 22 MENUS SHOWN</span>
+          <span class="spacer"></span>
+          <span class="small">Admin is locked on for every menu and cannot be unchecked.</span>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script src="assets/instrument.js"></script>
+<script>
+Shell.render({
+  active: 'users',
+  crumb: ['System', 'Users'],
+  readouts: [
+    { k: 'BMES',  v: 'LINKED', cls: 'is-ok' },
+    { k: 'DB',    v: '716 MB' },
+    { k: 'SYNC',  v: '12:04' },
+    { k: 'QUEUE', v: '0' }
+  ],
+  tabs: [
+    { code: 'DR-11', label: 'Daily Report', href: 'index.html' },
+    { code: 'NG-01', label: 'NG Rate',      href: 'ng-rate.html' },
+    { code: 'US-20', label: 'Users',        href: 'admin-users.html', on: true }
+  ]
+});
+</script>
+</body>
+</html>

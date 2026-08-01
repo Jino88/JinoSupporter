@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NG Rate — GN LAB Supporter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..800;1,75..125,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/instrument.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand__mark"></div>
+      <div class="brand__text">
+        <div class="brand__name">GN LAB</div>
+        <div class="brand__sub">SUPPORTER</div>
+      </div>
+    </div>
+    <div class="rail__scroll"></div>
+    <div class="rail__foot">
+      <div class="who">
+        <div class="who__av">BJ</div>
+        <div style="min-width:0">
+          <div class="who__name">Byun Jinho</div>
+          <div class="who__role">Administrator</div>
+        </div>
+      </div>
+      <div class="live"><i class="live__dot"></i><span class="live__text">5 connected</span></div>
+      <button class="railbtn">Sign out</button>
+    </div>
+  </aside>
+
+  <div class="stage">
+    <header class="topbar">
+      <button class="iconbtn" data-rail-toggle aria-label="Toggle navigation"></button>
+      <nav class="crumb"></nav>
+      <div class="readouts"></div>
+      <button class="iconbtn" data-theme-toggle aria-label="Toggle theme"></button>
+      <button class="iconbtn" data-icon="out" aria-label="Sign out"></button>
+    </header>
+
+    <nav class="tabs"></nav>
+
+    <main class="view">
+
+      <div class="pagehead rise" style="--d:0">
+        <div>
+          <span class="code">NG-01 · BMES REPORT</span>
+          <h1 class="pagehead__t">NG Rate</h1>
+          <p class="pagehead__d">Defect rate pulled straight from BMES for a date range, rolled up model group → model → process. Parent levels are the average of their direct children.</p>
+        </div>
+        <div class="pagehead__actions">
+          <div class="seg">
+            <button class="seg__b is-on">By model</button>
+            <button class="seg__b">By group</button>
+            <button class="seg__b">All</button>
+            <button class="seg__b">Daily</button>
+            <button class="seg__b">Weekly</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Setup deck -->
+      <div class="deck rise" style="--d:1">
+        <div class="deck__row">
+          <div class="field">
+            <span class="field__l">Start</span>
+            <input class="input num" type="date" value="2026-07-01" style="width:150px">
+          </div>
+          <div class="field">
+            <span class="field__l">End</span>
+            <input class="input num" type="date" value="2026-08-01" style="width:150px">
+          </div>
+          <div class="field">
+            <span class="field__l">Preset</span>
+            <div class="seg">
+              <button class="seg__b">Today</button>
+              <button class="seg__b">7D</button>
+              <button class="seg__b is-on">MTD</button>
+              <button class="seg__b">90D</button>
+            </div>
+          </div>
+          <div class="deck__sep"></div>
+          <div class="field">
+            <span class="field__l">BMES session</span>
+            <div class="row" style="height:29px">
+              <span class="badge badge--ok">● Credentials OK</span>
+              <span class="num small faint">jhbyun@gnlab</span>
+            </div>
+          </div>
+          <div class="deck__go">
+            <button class="btn">Clear result</button>
+            <button class="btn btn--go">Get report</button>
+          </div>
+        </div>
+
+        <div class="deck__row" style="align-items:flex-start">
+          <div class="field" style="flex:1;min-width:0">
+            <span class="field__l">Product group</span>
+            <div class="seg mb8">
+              <button class="seg__b is-on">MS-A</button>
+              <button class="seg__b">MS-B</button>
+              <button class="seg__b">RCV</button>
+              <button class="seg__b">BUZZER</button>
+            </div>
+            <div class="chips">
+              <button class="chip is-on" data-toggleable>RSB-1109 <span class="chip__n">4 sub</span></button>
+              <button class="chip is-on" data-toggleable>RSB-0904 <span class="chip__n">3 sub</span></button>
+              <button class="chip is-on" data-toggleable>RSB-0712 <span class="chip__n">2 sub</span></button>
+              <button class="chip" data-toggleable>RSB-0610 <span class="chip__n">3 sub</span></button>
+              <button class="chip" data-toggleable>RSB-0512 <span class="chip__n">2 sub</span></button>
+              <button class="chip" data-toggleable>RSB-0408 <span class="chip__n">5 sub</span></button>
+              <button class="chip" data-toggleable>RSB-0311 <span class="chip__n">2 sub</span></button>
+            </div>
+          </div>
+          <div class="field" style="min-width:190px">
+            <span class="field__l">Selected</span>
+            <div class="row tight" style="height:29px">
+              <span class="num" style="font-size:19px;font-weight:600">3</span>
+              <span class="small faint">groups · 9 sub entries</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats rise" style="--d:2">
+        <div class="stat">
+          <div class="stat__k"><span class="stat__label">Weighted NG rate</span></div>
+          <div class="stat__v">0.712<span class="stat__u">%</span></div>
+          <div class="stat__b">
+            <span class="stat__d is-down">▼ 0.043 pp <small>vs prev range</small></span>
+            <span data-spark="0.79,0.78,0.80,0.76,0.77,0.75,0.76,0.74,0.73,0.74,0.72,0.73,0.71,0.71"></span>
+          </div>
+        </div>
+        <div class="stat">
+          <div class="stat__k"><span class="stat__label">Worst model</span></div>
+          <div class="stat__v" style="font-size:20px">RSB-1109-B</div>
+          <div class="stat__b"><span class="stat__d is-up">1.884 % <small>SPL Low</small></span></div>
+        </div>
+        <div class="stat">
+          <div class="stat__k"><span class="stat__label">Total input</span></div>
+          <div class="stat__v">2.94<span class="stat__u">M pcs</span></div>
+          <div class="stat__b"><span class="small faint">32 days · 3 groups</span></div>
+        </div>
+        <div class="stat">
+          <div class="stat__k"><span class="stat__label">Total NG</span></div>
+          <div class="stat__v">20,932<span class="stat__u">pcs</span></div>
+          <div class="stat__b"><span class="small faint">across 9 sub entries</span></div>
+        </div>
+        <div class="stat">
+          <div class="stat__k"><span class="stat__label">Fetch</span></div>
+          <div class="stat__v" style="font-size:20px">18.4<span class="stat__u">s</span></div>
+          <div class="stat__b"><span class="small faint">32 requests · 0 retries</span></div>
+        </div>
+      </div>
+
+      <div class="rise" style="--d:3">
+
+        <!-- Report — full width: this is the table that gets captured and shared -->
+        <section class="panel">
+          <div class="panel__head">
+            <span class="panel__t">Report</span>
+            <span class="panel__meta">2026-07-01 → 2026-08-01</span>
+            <div class="panel__tools">
+              <div class="seg">
+                <button class="seg__b is-on">RSB-1109</button>
+                <button class="seg__b">RSB-0904</button>
+                <button class="seg__b">RSB-0712</button>
+              </div>
+              <button class="btn btn--sm">Export Excel</button>
+            </div>
+          </div>
+
+          <div class="panel__body panel__body--tight">
+            <div class="tablewrap" style="max-height:520px">
+              <table class="dt" data-heat="0.25,0.5,0.8,1.2,1.8,2.6">
+                <thead>
+                  <tr>
+                    <th rowspan="2" style="min-width:78px">Level</th>
+                    <th rowspan="2" style="min-width:190px">Model / process</th>
+                    <th rowspan="2" class="is-sortable n">Input</th>
+                    <th rowspan="2" class="is-sortable n">NG</th>
+                    <th rowspan="2" class="is-sortable n is-sorted" data-dir="desc">Rate %</th>
+                    <th rowspan="2" class="is-sortable n">PPM</th>
+                    <th colspan="6" class="grp">Process NG rate %</th>
+                    <th rowspan="2" class="sep-l">State</th>
+                  </tr>
+                  <tr>
+                    <th class="n sep-l">SMT</th><th class="n">Bond</th><th class="n">Assy</th>
+                    <th class="n">Aging</th><th class="n">SPL</th><th class="n">R&amp;B</th>
+                  </tr>
+                </thead>
+                <tbody data-sortable>
+                  <tr class="row-grp">
+                    <td><span class="lvl lvl--0">Group</span></td>
+                    <td>RSB-1109</td>
+                    <td class="n">1,204,800</td><td class="n">9,584</td>
+                    <td class="n">0.795</td><td class="n">7,955</td>
+                    <td class="n sep-l" data-v="0.19" data-k="RSB-1109 · SMT">0.19</td>
+                    <td class="n" data-v="0.48" data-k="RSB-1109 · Bond">0.48</td>
+                    <td class="n" data-v="0.71" data-k="RSB-1109 · Assy">0.71</td>
+                    <td class="n" data-v="0.31" data-k="RSB-1109 · Aging">0.31</td>
+                    <td class="n" data-v="1.34" data-k="RSB-1109 · SPL">1.34</td>
+                    <td class="n" data-v="0.92" data-k="RSB-1109 · R&amp;B">0.92</td>
+                    <td class="sep-l"><span class="badge badge--warn">▲ Watch</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="lvl lvl--1">Sub 1</span></td>
+                    <td class="ind1 b">RSB-1109-A</td>
+                    <td class="n">402,400</td><td class="n">2,344</td>
+                    <td class="n b">0.583</td><td class="n">5,825</td>
+                    <td class="n sep-l" data-v="0.14" data-k="RSB-1109-A · SMT">0.14</td>
+                    <td class="n" data-v="0.38" data-k="RSB-1109-A · Bond">0.38</td>
+                    <td class="n" data-v="0.52" data-k="RSB-1109-A · Assy">0.52</td>
+                    <td class="n" data-v="0.26" data-k="RSB-1109-A · Aging">0.26</td>
+                    <td class="n" data-v="0.98" data-k="RSB-1109-A · SPL">0.98</td>
+                    <td class="n" data-v="0.71" data-k="RSB-1109-A · R&amp;B">0.71</td>
+                    <td class="sep-l"><span class="badge badge--ok">● Stable</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="lvl lvl--1">Sub 1</span></td>
+                    <td class="ind1 b">RSB-1109-B</td>
+                    <td class="n">398,200</td><td class="n">7,502</td>
+                    <td class="n b">1.884</td><td class="n">18,840</td>
+                    <td class="n sep-l" data-v="0.24" data-k="RSB-1109-B · SMT">0.24</td>
+                    <td class="n" data-v="0.61" data-k="RSB-1109-B · Bond">0.61</td>
+                    <td class="n" data-v="1.02" data-k="RSB-1109-B · Assy">1.02</td>
+                    <td class="n" data-v="0.38" data-k="RSB-1109-B · Aging">0.38</td>
+                    <td class="n" data-v="2.31" data-k="RSB-1109-B · SPL">2.31</td>
+                    <td class="n" data-v="1.44" data-k="RSB-1109-B · R&amp;B">1.44</td>
+                    <td class="sep-l"><span class="badge badge--crit">◆ Critical</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="lvl">Sub 2</span></td>
+                    <td class="ind2">L-03 · Shift A</td>
+                    <td class="n">199,100</td><td class="n">4,812</td>
+                    <td class="n">2.417</td><td class="n">24,170</td>
+                    <td class="n sep-l" data-v="0.28" data-k="L-03 A · SMT">0.28</td>
+                    <td class="n" data-v="0.72" data-k="L-03 A · Bond">0.72</td>
+                    <td class="n" data-v="1.31" data-k="L-03 A · Assy">1.31</td>
+                    <td class="n" data-v="0.44" data-k="L-03 A · Aging">0.44</td>
+                    <td class="n" data-v="2.88" data-k="L-03 A · SPL">2.88</td>
+                    <td class="n" data-v="1.92" data-k="L-03 A · R&amp;B">1.92</td>
+                    <td class="sep-l"><span class="badge badge--crit">◆ Critical</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="lvl">Sub 2</span></td>
+                    <td class="ind2">L-03 · Shift B</td>
+                    <td class="n">199,100</td><td class="n">2,690</td>
+                    <td class="n">1.351</td><td class="n">13,510</td>
+                    <td class="n sep-l" data-v="0.20" data-k="L-03 B · SMT">0.20</td>
+                    <td class="n" data-v="0.50" data-k="L-03 B · Bond">0.50</td>
+                    <td class="n" data-v="0.73" data-k="L-03 B · Assy">0.73</td>
+                    <td class="n" data-v="0.32" data-k="L-03 B · Aging">0.32</td>
+                    <td class="n" data-v="1.74" data-k="L-03 B · SPL">1.74</td>
+                    <td class="n" data-v="0.96" data-k="L-03 B · R&amp;B">0.96</td>
+                    <td class="sep-l"><span class="badge badge--warn">▲ Watch</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="lvl lvl--1">Sub 1</span></td>
+                    <td class="ind1 b">RSB-1109-C</td>
+                    <td class="n">216,400</td><td class="n">1,092</td>
+                    <td class="n b">0.505</td><td class="n">5,046</td>
+                    <td class="n sep-l" data-v="0.16" data-k="RSB-1109-C · SMT">0.16</td>
+                    <td class="n" data-v="0.41" data-k="RSB-1109-C · Bond">0.41</td>
+                    <td class="n" data-v="0.58" data-k="RSB-1109-C · Assy">0.58</td>
+                    <td class="n" data-v="0.28" data-k="RSB-1109-C · Aging">0.28</td>
+                    <td class="n" data-v="0.84" data-k="RSB-1109-C · SPL">0.84</td>
+                    <td class="n" data-v="0.62" data-k="RSB-1109-C · R&amp;B">0.62</td>
+                    <td class="sep-l"><span class="badge badge--ok">● Stable</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="lvl lvl--1">Sub 1</span></td>
+                    <td class="ind1 b">RSB-1109-D</td>
+                    <td class="n">187,800</td><td class="n">1,646</td>
+                    <td class="n b">0.876</td><td class="n">8,764</td>
+                    <td class="n sep-l" data-v="0.21" data-k="RSB-1109-D · SMT">0.21</td>
+                    <td class="n" data-v="0.52" data-k="RSB-1109-D · Bond">0.52</td>
+                    <td class="n" data-v="0.79" data-k="RSB-1109-D · Assy">0.79</td>
+                    <td class="n" data-v="0.33" data-k="RSB-1109-D · Aging">0.33</td>
+                    <td class="n" data-v="1.42" data-k="RSB-1109-D · SPL">1.42</td>
+                    <td class="n" data-v="0.91" data-k="RSB-1109-D · R&amp;B">0.91</td>
+                    <td class="sep-l"><span class="badge badge--warn">▲ Watch</span></td>
+                  </tr>
+                  <tr class="row-sum">
+                    <td></td><td>Average of 4 sub entries</td>
+                    <td class="n">1,204,800</td><td class="n">9,584</td>
+                    <td class="n">0.962</td><td class="n">9,619</td>
+                    <td class="n sep-l">0.19</td><td class="n">0.48</td><td class="n">0.73</td>
+                    <td class="n">0.31</td><td class="n">1.39</td><td class="n">0.92</td>
+                    <td class="sep-l"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel__foot">
+            <span class="code">8 ROWS · SAVED TO ng_rate.db</span>
+            <span class="ramp"><span>LOW</span><span class="ramp__s" data-ramp></span><span>HIGH</span></span>
+            <span class="spacer"></span>
+            <span class="small">Rate % is lot-weighted; PPM is the same figure ×10,000.</span>
+          </div>
+        </section>
+
+        <!-- Supporting panels -->
+        <div class="grid3 mt16">
+
+          <section class="panel">
+            <div class="panel__head">
+              <span class="panel__t">Process contribution</span>
+              <span class="panel__meta">RSB-1109</span>
+            </div>
+            <div class="panel__body">
+              <div class="chartbox" id="proc"></div>
+            </div>
+            <div class="panel__foot">
+              <span class="small">SPL test and Rub &amp; Buzz together account for <b>68 %</b> of all NG in this group.</span>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel__head">
+              <span class="panel__t">Run log</span>
+              <span class="panel__meta">32 REQUESTS</span>
+              <div class="panel__tools">
+                <button class="btn btn--sm btn--ghost">Clear</button>
+              </div>
+            </div>
+            <div class="panel__body panel__body--tight">
+              <div class="console">
+                <div><span class="t">12:03:41</span> <b>Login</b> BMES … <span class="ok">OK</span></div>
+                <div><span class="t">12:03:42</span> Range 2026-07-01 → 2026-08-01 (32 days)</div>
+                <div><span class="t">12:03:42</span> Cached days: 29 · missing: 3</div>
+                <div><span class="t">12:03:43</span> Fetch <span class="sg">2026-07-30</span> … 1,204 rows</div>
+                <div><span class="t">12:03:49</span> Fetch <span class="sg">2026-07-31</span> … 1,188 rows</div>
+                <div><span class="t">12:03:55</span> Fetch <span class="sg">2026-08-01</span> … 1,231 rows</div>
+                <div><span class="t">12:04:01</span> Refresh last 3 days … <span class="ok">OK</span></div>
+                <div><span class="t">12:04:02</span> Rollup group → model → process</div>
+                <div><span class="t">12:04:03</span> <b>ng_rate.db</b> written (4.2 MB)</div>
+                <div><span class="t">12:04:03</span> <span class="ok">DONE</span> in 18.4 s</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel__head">
+              <span class="panel__t">Saved result</span>
+            </div>
+            <div class="panel__body">
+              <div class="row mb8">
+                <span class="code">PATH</span>
+                <span class="spacer"></span>
+                <span class="num small">D:\002. DB\ng_rate.db</span>
+              </div>
+              <div class="row mb8">
+                <span class="code">SIZE</span><span class="spacer"></span><span class="num small">4.2 MB</span>
+              </div>
+              <div class="row">
+                <span class="code">WRITTEN</span><span class="spacer"></span><span class="num small">2026-08-01 12:04</span>
+              </div>
+              <div class="row mt16">
+                <button class="btn btn--sm" style="flex:1">Open folder</button>
+                <button class="btn btn--sm btn--danger" style="flex:1">Delete</button>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="assets/instrument.js"></script>
+<script>
+Shell.render({
+  active: 'ng-rate',
+  crumb: ['BMES', 'NG Rate', 'By model'],
+  readouts: [
+    { k: 'BMES',  v: 'LINKED', cls: 'is-ok' },
+    { k: 'DB',    v: '716 MB' },
+    { k: 'SYNC',  v: '12:04' },
+    { k: 'QUEUE', v: '0' }
+  ],
+  tabs: [
+    { code: 'DR-11', label: 'Daily Report', href: 'index.html' },
+    { code: 'NG-01', label: 'NG Rate',      href: 'ng-rate.html', on: true },
+    { code: 'FC-02', label: 'F-Cost',       href: 'f-cost.html' },
+    { code: 'AI-14', label: 'Ask AI',       href: 'ask-ai.html' }
+  ]
+});
+
+Charts.sparks();
+
+Charts.bars('#proc', {
+  name: 'NG rate',
+  labelW: 92,
+  unit: ' %',
+  dp: 2,
+  rows: [
+    { k: 'SPL test',   v: 1.34, note: '4,102 pcs' },
+    { k: 'Rub & Buzz', v: 0.92, note: '2,418 pcs' },
+    { k: 'Assembly',   v: 0.71, note: '1,604 pcs' },
+    { k: 'Bonding',    v: 0.48, note: '921 pcs' },
+    { k: 'Aging',      v: 0.31, note: '388 pcs' },
+    { k: 'SMT',        v: 0.19, note: '151 pcs' }
+  ]
+});
+</script>
+</body>
+</html>

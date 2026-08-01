@@ -1,0 +1,394 @@
+@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Routing
+@using JinoSupporter.Web.Services
+@using System.Security.Claims
+@inject ConnectedUsersService UsersService
+@inject UserCircuitHandler    CircuitHandler
+@inject WebRepository         Repo
+@inject MenuPermissionService Perms
+@inject UiModeService         UiMode
+@inject NavigationManager     Nav
+@inject IJSRuntime            JS
+@implements IDisposable
+
+@*
+    INSTRUMENT shell — the redesigned chrome, hosting every existing page unchanged.
+
+    Nothing here is a mockup: the rail is AppMenus filtered through
+    MenuPermissionService, the readouts are live ConnectedUsersService values, and
+    @Body is whatever page the router resolved. Page content keeps its own markup;
+    instrument.css §24 bridges the Bootstrap classes those pages use onto this
+    design, so they adopt the new look without being rewritten.
+
+    Switching back to the classic shell is one click and never leaves the app in a
+    half-state — UiModeService just flips which layout Routes.razor picks.
+*@
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..800;1,75..125,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
+<link rel="stylesheet" href="ui-redesign/assets/instrument.scoped.css?v=3" />
+
+<AuthorizeView>
+    <NotAuthorized>
+        @{ RedirectToLogin(); }
+    </NotAuthorized>
+    <Authorized>
+        @{
+            string userName = context.User.Identity?.Name ?? "";
+            string userRole = context.User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+        }
+
+        <div class="ins" data-theme="@_theme" style="height:100vh;">
+            <div class="shell @(_railMin ? "is-collapsed" : "")">
+
+                <!-- ── Rail ──────────────────────────────────────────────────── -->
+                <aside class="rail">
+                    <a class="brand" href="/" style="text-decoration:none">
+                        <div class="brand__mark"></div>
+                        <div class="brand__text">
+                            <div class="brand__name">GN LAB</div>
+                            <div class="brand__sub">SUPPORTER</div>
+                        </div>
+                    </a>
+
+                    <div class="rail__scroll">
+                        @foreach (var grp in AppMenus.All
+                                             .Where(m => Perms.IsAllowed(userRole, m.Id))
+                                             .GroupBy(m => m.Group))
+                        {
+                            <div class="navsec">@grp.Key</div>
+                            @foreach (MenuItemDef m in grp)
+                            {
+                                string route = RouteFor(m.Id);
+                                <a class="navlink @(IsActive(route) ? "is-active" : "")" href="@route">
+                                    <span class="navlink__glyph">@Glyph(m.Label)</span>
+                                    <span class="navlink__label">@m.Label</span>
+                                    <span class="navlink__code">@Code(m)</span>
+                                </a>
+                            }
+                        }
+                    </div>
+
+                    <div class="rail__foot">
+                        <div class="who">
+                            <div class="who__av">@Initials(userName)</div>
+                            <div style="min-width:0">
+                                <div class="who__name">@userName</div>
+                                <div class="who__role">@userRole</div>
+                            </div>
+                        </div>
+                        <div class="live">
+                            <i class="live__dot"></i>
+                            <span class="live__text">@UsersService.Count connected</span>
+                        </div>
+                        <form method="post" action="/auth/logout">
+                            <button class="railbtn" type="submit">Sign out</button>
+                        </form>
+                    </div>
+                </aside>
+
+                <!-- ── Stage ─────────────────────────────────────────────────── -->
+                <div class="stage">
+
+                    <header class="topbar">
+                        <button class="iconbtn" @onclick="() => _railMin = !_railMin" title="Toggle navigation">
+                            <svg viewBox="0 0 16 16"><path d="M2 3h12M2 8h12M2 13h12" /></svg>
+                        </button>
+
+                        <nav class="crumb">
+                            <span class="crumb__b">@CurrentGroup()</span>
+                            <span class="crumb__sep">/</span>
+                            <span class="crumb__c">@CurrentLabel()</span>
+                        </nav>
+
+                        <div class="readouts">
+                            <div class="ro">
+                                <span class="ro__k">ONLINE</span>
+                                <span class="ro__v is-ok">@UsersService.Count</span>
+                            </div>
+                            <div class="ro">
+                                <span class="ro__k">ROLE</span>
+                                <span class="ro__v">@userRole.ToUpperInvariant()</span>
+                            </div>
+                            <div class="ro">
+                                <span class="ro__k">SERVER</span>
+                                <span class="ro__v">@DateTime.Now.ToString("HH:mm")</span>
+                            </div>
+                            <div class="stack">
+                                @foreach (UserInfo u in UsersService.Users.Take(5))
+                                {
+                                    <span class="stack__av" title="@u.Name">
+                                        @Initials(string.IsNullOrWhiteSpace(u.Name) ? u.Username : u.Name)
+                                    </span>
+                                }
+                            </div>
+                        </div>
+
+                        <button class="iconbtn" @onclick="ToggleTheme" title="Toggle theme">
+                            @if (_theme == "dark")
+                            {
+                                <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="3.2" /><path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3.1 3.1l1.1 1.1M11.8 11.8l1.1 1.1M12.9 3.1l-1.1 1.1M4.2 11.8l-1.1 1.1" /></svg>
+                            }
+                            else
+                            {
+                                <svg viewBox="0 0 16 16"><path d="M13.5 9.6A6 6 0 0 1 6.4 2.5a6 6 0 1 0 7.1 7.1z" /></svg>
+                            }
+                        </button>
+
+                        <button class="btn btn--sm" style="height:25px" @onclick="BackToClassic"
+                                title="Return to the classic shell">Classic UI</button>
+                    </header>
+
+                    <!-- Tab strip: one tab per page opened this session -->
+                    @if (_tabs.Count > 0)
+                    {
+                        <nav class="tabs">
+                            @foreach (TabEntry tab in _tabs)
+                            {
+                                <div class="tab @(IsActiveTab(tab) ? "is-active" : "")"
+                                     title="@tab.Url" @onclick="() => Activate(tab)">
+                                    <span>@tab.Title</span>
+                                    <button type="button" class="tab__x" aria-label="Close tab"
+                                            @onclick="() => CloseTab(tab)"
+                                            @onclick:stopPropagation="true">×</button>
+                                </div>
+                            }
+                        </nav>
+                    }
+
+                    <main class="view">
+                        @Body
+                    </main>
+                </div>
+            </div>
+        </div>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    private string _theme = "light";
+    private bool   _railMin;
+
+    // ── tab strip (same behaviour as MainLayout) ─────────────────────────────
+    private sealed class TabEntry
+    {
+        public string Url { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+    }
+
+    private readonly List<TabEntry> _tabs = [];
+    private string _activeUrl = string.Empty;
+    private DotNetObjectReference<InstrumentLayout>? _selfRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        UsersService.Changed += OnUsersChanged;
+        Nav.LocationChanged += OnLocationChanged;
+        TrackCurrent();
+
+        var auth = await AuthState;
+        string username = auth.User.Identity?.Name ?? string.Empty;
+        if (!string.IsNullOrEmpty(username))
+        {
+            UserRecord? record = Repo.GetUser(username);
+            CircuitHandler.Register(username, record?.DisplayName ?? string.Empty);
+        }
+    }
+
+    private void ToggleTheme() => _theme = _theme == "dark" ? "light" : "dark";
+
+    private async Task BackToClassic()
+    {
+        try { await JS.InvokeVoidAsync("localStorage.removeItem", UiModeService.StorageKey); }
+        catch (JSException) { /* storage blocked; the in-memory flag still flips */ }
+        UiMode.NewUi = false;
+    }
+
+    // ── routing helpers ──────────────────────────────────────────────────────
+    private string CurrentRelative()
+    {
+        string rel = Nav.ToBaseRelativePath(Nav.Uri);
+        int cut = rel.IndexOfAny(['?', '#']);
+        if (cut >= 0) rel = rel[..cut];
+        return rel.Trim('/');
+    }
+
+    /// <summary>Active when the current path is the menu's route or sits below it.</summary>
+    private bool IsActive(string route)
+    {
+        string here = CurrentRelative();
+        string r = route.Trim('/');
+        if (r.Length == 0) return here.Length == 0;
+        return here.Equals(r, StringComparison.OrdinalIgnoreCase)
+            || here.StartsWith(r + "/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private MenuItemDef? CurrentMenu() =>
+        AppMenus.All
+            .Where(m => IsActive(RouteFor(m.Id)))
+            .OrderByDescending(m => RouteFor(m.Id).Length)
+            .FirstOrDefault();
+
+    private string CurrentGroup() => CurrentMenu()?.Group.ToUpperInvariant() ?? "GN LAB";
+    private string CurrentLabel() => CurrentMenu()?.Label.ToUpperInvariant() ?? "HOME";
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        TrackCurrent();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void TrackCurrent()
+    {
+        string url = CurrentRelative();
+        _activeUrl = url;
+        if (!_tabs.Any(t => string.Equals(t.Url, url, StringComparison.OrdinalIgnoreCase)))
+            _tabs.Add(new TabEntry { Url = url, Title = TitleFromUrl(url) });
+    }
+
+    private bool IsActiveTab(TabEntry tab)
+        => string.Equals(tab.Url, _activeUrl, StringComparison.OrdinalIgnoreCase);
+
+    private static readonly HashSet<string> Acronyms =
+        new(StringComparer.OrdinalIgnoreCase) { "lpa" };
+
+    private static string TitleFromUrl(string url)
+    {
+        if (string.IsNullOrEmpty(url)) return "Home";
+        string last = url.Split('/', StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } parts
+            ? parts[^1] : url;
+        last = last.Replace('-', ' ').Trim();
+        if (last.Length == 0) return "Home";
+        return Acronyms.Contains(last)
+             ? last.ToUpperInvariant()
+             : char.ToUpperInvariant(last[0]) + last[1..];
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            _selfRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("appTitleWatcher.start", _selfRef);
+        }
+        catch (JSException) { /* tab labels stay as the URL-derived fallback */ }
+        catch (InvalidOperationException) { /* prerender: no JS yet */ }
+    }
+
+    [JSInvokable]
+    public Task OnDocumentTitleChanged(string title)
+    {
+        title = (title ?? string.Empty).Trim();
+        if (title.Length == 0) return Task.CompletedTask;
+
+        TabEntry? active = _tabs.FirstOrDefault(IsActiveTab);
+        if (active is null || active.Title == title) return Task.CompletedTask;
+
+        active.Title = title;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void Activate(TabEntry tab)
+    {
+        if (!IsActiveTab(tab)) Nav.NavigateTo(tab.Url);
+    }
+
+    private void CloseTab(TabEntry tab)
+    {
+        int idx = _tabs.FindIndex(t => string.Equals(t.Url, tab.Url, StringComparison.OrdinalIgnoreCase));
+        if (idx < 0) return;
+
+        bool wasActive = IsActiveTab(tab);
+        _tabs.RemoveAt(idx);
+
+        if (!wasActive) { StateHasChanged(); return; }
+
+        if (_tabs.Count == 0)
+        {
+            _activeUrl = string.Empty;
+            Nav.NavigateTo("/");
+            return;
+        }
+
+        Nav.NavigateTo(_tabs[Math.Min(idx, _tabs.Count - 1)].Url);
+    }
+
+    // ── menu presentation ────────────────────────────────────────────────────
+    /// <summary>Route each menu id navigates to; mirrors NavMenu.razor.</summary>
+    private static readonly Dictionary<string, string> Routes = new(StringComparer.Ordinal)
+    {
+        [AppMenus.NgRate]             = "ng-rate",
+        [AppMenus.BmesFCost]          = "bmes/f-cost",
+        [AppMenus.BmesWorkerStatus]   = "bmes/worker-status",
+        [AppMenus.BmesMakeModelGroup] = "bmes/make-model-group",
+        [AppMenus.BmesRoutingTable]   = "bmes/routing-table",
+        [AppMenus.BmesReasonTable]    = "bmes/reason-table",
+        [AppMenus.BmesTest3]          = "bmes/test3",
+        [AppMenus.BmesTest4]          = "bmes/test4",
+        [AppMenus.BmesTest5]          = "bmes/test5",
+        [AppMenus.BmesLpa]            = "bmes/lpa",
+        [AppMenus.QrBakoData]         = "bmes/qr-bako-data",
+        [AppMenus.BmesDailyReport]    = "bmes/daily-report",
+        [AppMenus.BmesSetting]        = "setting",
+        [AppMenus.GraphMaker]         = "tools/graph-maker",
+        [AppMenus.DiInputBatch]       = "input-data-batch",
+        [AppMenus.DiDb]               = "data-inference/db",
+        [AppMenus.DiAsk]              = "data-inference/ask",
+        [AppMenus.DailyTestInput]     = "daily-test-data/input",
+        [AppMenus.Report]             = "report",
+        [AppMenus.Translate]          = "translate",
+        [AppMenus.PcDownload]         = "tools/pc-download",
+        [AppMenus.AdminUsers]         = "admin/users",
+        [AppMenus.AdminAiUsages]      = "admin/ai-usages",
+        [AppMenus.TestExcelConverter] = "admin/test-excel-converter",
+        [AppMenus.AdminDbQuery]       = "admin/db-query",
+        [AppMenus.NewVer]             = "new-ver",
+    };
+
+    private static string RouteFor(string id) => Routes.TryGetValue(id, out string? r) ? r : "";
+
+    /// <summary>Two-letter rail glyph from the label, so no icon set is needed.</summary>
+    private static string Glyph(string label)
+    {
+        string[] parts = label.Split([' ', '-', '&', '('], StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "··";
+        return parts.Length == 1
+            ? parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant()
+            : $"{char.ToUpperInvariant(parts[0][0])}{char.ToUpperInvariant(parts[1][0])}";
+    }
+
+    private static string Code(MenuItemDef m)
+    {
+        int i = Array.FindIndex(AppMenus.All, x => x.Id == m.Id);
+        return i < 0 ? "" : $"{Glyph(m.Label)}-{i + 1:00}";
+    }
+
+    private static string Initials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        string[] parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length == 1
+            ? parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant()
+            : $"{char.ToUpperInvariant(parts[0][0])}{char.ToUpperInvariant(parts[1][0])}";
+    }
+
+    private void RedirectToLogin()
+    {
+        string encoded = Uri.EscapeDataString(Nav.Uri);
+        Nav.NavigateTo($"/login?returnUrl={encoded}", forceLoad: true);
+    }
+
+    private void OnUsersChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        UsersService.Changed -= OnUsersChanged;
+        Nav.LocationChanged -= OnLocationChanged;
+        _selfRef?.Dispose();
+    }
+}

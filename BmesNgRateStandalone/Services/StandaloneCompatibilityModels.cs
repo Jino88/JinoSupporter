@@ -2,7 +2,7 @@ namespace BmesNgRateStandalone.Services;
 
 public static class CodexApiService
 {
-    public const string DefaultTranslateModel = "gpt-5.5";
+    public const string DefaultTranslateModel = "gemini-3.6-flash";
 }
 
 public sealed record CurrentProblemApplyResult(

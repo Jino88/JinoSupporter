@@ -14,7 +14,7 @@ public sealed class CodexApiService(
     WebRepository repo,
     AiProviderSettingsService providers)
 {
-    public const string DefaultTranslateModel = "gpt-5.5";
+    public const string DefaultTranslateModel = "gemini-3.6-flash";
 
     public bool IsConfigured => providers.CodexApiEnabled && !string.IsNullOrWhiteSpace(ApiKey);
 

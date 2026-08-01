@@ -49,6 +49,8 @@ public static class AppMenus
     public const string AdminPaths         = "admin-paths";
     public const string TestExcelConverter = "test-excel-converter";
     public const string AdminDbQuery       = "admin-db-query";
+    /// <summary>Preview of the redesigned UI; temporary, removed once the port lands.</summary>
+    public const string NewVer             = "new-ver";
 
     public static readonly MenuItemDef[] All =
     [
@@ -77,6 +79,7 @@ public static class AppMenus
         new(AdminAiUsages,      "AI Usages",                "Admin"),
         new(TestExcelConverter, "Test Excel Converter",     "Admin"),
         new(AdminDbQuery,       "DB Query",                 "Admin"),
+        new(NewVer,             "New Ver",                  "Preview"),
     ];
 
     /// <summary>

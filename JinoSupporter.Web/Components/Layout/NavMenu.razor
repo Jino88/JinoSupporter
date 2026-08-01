@@ -43,14 +43,26 @@
 
         bool showDailyTestData = can(AppMenus.DailyTestInput);
 
+        bool showNewVer = can(AppMenus.NewVer);
         bool showSetting = can(AppMenus.BmesSetting);
         bool showAdmin = can(AppMenus.AdminUsers) || can(AppMenus.AdminAiUsages) || can(AppMenus.TestExcelConverter) || can(AppMenus.AdminDbQuery);
         bool showTools = can(AppMenus.GraphMaker) || can(AppMenus.Translate) || can(AppMenus.PcDownload) || showTestDataAnalysis || showDailyTestData;
     }
 
+    @* Preview of the redesigned UI — temporary, sits on top so it is easy to find. *@
+    @if (showNewVer)
+    {
+        <div class="nav-section">Preview</div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="new-ver">
+                <span class="nav-icon">✨</span> New Ver
+            </NavLink>
+        </div>
+    }
+
     @if (showBmes)
     {
-        <div class="nav-section">BMES</div>
+        <div class="nav-section" style="margin-top:12px;">BMES</div>
         <div class="nav-item">
             <button class="nav-link nav-group-toggle @(IsBmesActive ? "active" : "")"
                     @onclick="ToggleBmes"

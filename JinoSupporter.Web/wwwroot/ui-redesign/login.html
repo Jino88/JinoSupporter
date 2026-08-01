@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in — GN LAB Supporter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..800;1,75..125,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/instrument.css">
+</head>
+<body>
+
+<div class="auth">
+  <div class="plate rise">
+
+    <div class="plate__top">
+      <div class="brand__mark" style="width:18px;height:18px"></div>
+      <span class="code" style="color:var(--ch-ink-3)">GN LAB SUPPORTER</span>
+      <span style="flex:1"></span>
+      <span class="code" style="color:var(--ch-ink-3)">v4.2.1</span>
+    </div>
+
+    <div class="plate__body">
+      <div class="plate__title">Sign in</div>
+      <div class="plate__sub">Quality &amp; cost analytics</div>
+
+      <form style="margin-top:26px">
+        <div class="field" style="margin-bottom:14px">
+          <span class="field__l">Username</span>
+          <input class="input" name="username" autocomplete="username" placeholder="jhbyun" autofocus>
+        </div>
+        <div class="field" style="margin-bottom:18px">
+          <span class="field__l">Password</span>
+          <input class="input" type="password" name="password" autocomplete="current-password" placeholder="••••••••">
+        </div>
+
+        <label class="switch" style="color:var(--ch-ink-3);margin-bottom:20px">
+          <input type="checkbox" checked><span class="switch__t" style="background:var(--ch-200);border-color:var(--ch-line-2)"></span>
+          Keep me signed in on this PC
+        </label>
+
+        <button class="btn btn--go" type="button" style="width:100%;height:35px">Sign in</button>
+      </form>
+    </div>
+
+    <div class="plate__foot">
+      <span style="color:#4ade80">●</span>
+      <span>BMES LINKED</span>
+      <span style="flex:1"></span>
+      <span>SEO-VN-01</span>
+    </div>
+
+  </div>
+</div>
+
+<script src="assets/instrument.js"></script>
+<script>
+  document.documentElement.dataset.theme = localStorage.getItem('ins-theme') || 'light';
+</script>
+</body>
+</html>
