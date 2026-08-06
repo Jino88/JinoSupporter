@@ -15,6 +15,9 @@
  * `.ins .btn` (0,2,0) outranks Bootstrap's `.btn` (0,1,0), so the design system
  * wins inside the container and changes nothing outside it.
  *
+ * Two regions are treated specially, both marked by comments in the source:
+ * BRIDGE gets !important, RESET is dropped. See the constants below.
+ *
  * Usage: node tools/scope-css.js
  *   in  JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css
  *   out JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.scoped.css
@@ -42,6 +45,24 @@ const OUT = path.join(__dirname, '..', 'JinoSupporter.Web', 'wwwroot', 'ui-redes
 const BRIDGE_START = 'BRIDGE-START';
 const BRIDGE_END = 'BRIDGE-END';
 
+/**
+ * Declarations between these markers are dropped entirely.
+ *
+ * The element reset is right for the static mockup and wrong for the app. Under
+ * .ins it becomes `.ins button` / `.ins table` / `.ins a` (0,1,1), and because
+ * the shell is the layout for every page, that outranks the (0,1,0) classes the
+ * pages style their own buttons, tables, links and inputs with — 242 page rules
+ * lose. instrument.css §1b restates the same properties on the design system's
+ * own controls, so dropping the region costs the shell nothing.
+ */
+const RESET_START = 'RESET-START';
+const RESET_END = 'RESET-END';
+
+const RESET_NOTE =
+  `/* instrument.css §1 element reset omitted — it is scoped to .ins here, where
+   \`.ins button\`/\`.ins table\`/\`.ins a\` would outrank every hosted page's own
+   classes. See §1b in the source for the design system's own restatement. */`;
+
 function importantise(block) {
   return block
     .split(';')
@@ -63,8 +84,15 @@ function scopeSelectorList(list) {
     .join(', ');
 }
 
+/**
+ * `.ins` already leads this selector, so it needs no wrapping. The boundary
+ * matters: `.ins-row` merely starts with the same characters and is a normal
+ * design-system class that must still be scoped.
+ */
+const ALREADY_SCOPED = new RegExp(`^${ROOT.replace('.', '\\.')}(?![\\w-])`);
+
 function scopeOne(sel) {
-  if (sel.startsWith(ROOT)) return sel;                       // already scoped
+  if (ALREADY_SCOPED.test(sel)) return sel;                   // already scoped
   if (sel === ':root') return ROOT;                           // token block
   if (sel === 'html' || sel === 'body') return ROOT;          // page-level resets
   if (sel.startsWith('[data-theme=')) {
@@ -86,19 +114,34 @@ function scope(css) {
   let buf = '';
   let depth = 0;
   let bridge = false;        // inside the !important region
+  let reset = false;         // inside the dropped region
+  let dropped = 0;           // rules the reset region cost us, for the log
   const stack = [];          // what each open brace belongs to
+
+  // everything the walker writes goes through here, so one flag mutes the
+  // whole reset region without threading a condition through each branch
+  const emit = s => { if (!reset) out += s; };
 
   for (let i = 0; i < css.length; i++) {
     const ch = css[i];
 
-    // pass comments through verbatim; they also carry the bridge markers
+    // pass comments through verbatim; they also carry the region markers
     if (ch === '/' && css[i + 1] === '*') {
       const end = css.indexOf('*/', i + 2);
       const stop = end === -1 ? css.length : end + 2;
       const comment = css.slice(i, stop);
-      if (comment.includes(BRIDGE_START)) bridge = true;
-      else if (comment.includes(BRIDGE_END)) bridge = false;
-      out += buf + comment;
+
+      if (comment.includes(RESET_START)) {
+        emit(buf + RESET_NOTE);           // leave a marker where the block was
+        reset = true;
+      } else if (comment.includes(RESET_END)) {
+        reset = false;
+      } else {
+        if (comment.includes(BRIDGE_START)) bridge = true;
+        else if (comment.includes(BRIDGE_END)) bridge = false;
+        emit(buf + comment);
+      }
+
       buf = '';
       i = stop - 1;
       continue;
@@ -107,18 +150,19 @@ function scope(css) {
     if (ch === '{') {
       const head = buf.trim();
       const inKeyframes = stack.includes('keyframes');
+      if (reset) dropped++;
 
       if (head.startsWith('@')) {
         const name = head.slice(1).split(/[\s({]/)[0].toLowerCase();
         stack.push(name === 'keyframes' || name.endsWith('keyframes') ? 'keyframes' : 'at');
-        out += buf + '{';
+        emit(buf + '{');
       } else if (inKeyframes || depth > 0 && stack[stack.length - 1] === 'decl') {
         stack.push('decl');
-        out += buf + '{';
+        emit(buf + '{');
       } else {
         stack.push('decl');
         const lead = buf.slice(0, buf.length - buf.trimStart().length);   // keep indentation
-        out += lead + scopeSelectorList(head) + ' {';
+        emit(lead + scopeSelectorList(head) + ' {');
       }
 
       buf = '';
@@ -129,14 +173,18 @@ function scope(css) {
     if (ch === '}') {
       const kind = stack.pop();
       depth--;
-      out += (bridge && kind === 'decl' ? importantise(buf) : buf) + '}';
+      emit((bridge && kind === 'decl' ? importantise(buf) : buf) + '}');
       buf = '';
       continue;
     }
 
     buf += ch;
   }
-  return out + buf;
+
+  // an unclosed RESET-START would silently swallow the rest of the stylesheet
+  if (reset) throw new Error(`${RESET_START} was never closed by ${RESET_END}`);
+
+  return { css: out + buf, dropped };
 }
 
 const src = fs.readFileSync(SRC, 'utf8');
@@ -146,7 +194,12 @@ const header =
    Every selector is scoped under ${ROOT} so this can be loaded alongside Bootstrap. */
 
 `;
-fs.writeFileSync(OUT, header + scope(src), 'utf8');
+const result = scope(src);
+fs.writeFileSync(OUT, header + result.css, 'utf8');
 
 const rules = (src.match(/\{/g) || []).length;
-console.log(`scoped ${rules} blocks -> ${path.relative(process.cwd(), OUT)}`);
+console.log(
+  `scoped ${rules - result.dropped} blocks ` +
+  `(${result.dropped} dropped with the element reset) ` +
+  `-> ${path.relative(process.cwd(), OUT)}`
+);

@@ -21,15 +21,34 @@ Two things live here:
 | `assets/instrument.scoped.css` | `/new-ver` inside the app | **generated**; every selector scoped under `.ins` |
 
 The app loads Bootstrap globally, and this design system defines its own `.btn`,
-`.badge`, `.row` and `.small` — plus a `*` reset and `:root` variables. Loading it
-raw would restyle every existing page. `tools/scope-css.js` rewrites every
-selector under a single `.ins` root, so `.ins .btn` (0,2,0) beats Bootstrap's
-`.btn` (0,1,0) inside the container and changes nothing outside it. Section 23 of
-`instrument.css` restates the handful of properties Bootstrap still lands
-(`border-radius`, the `.row > *` grid columns) — delete it when Bootstrap goes.
+`.badge` and `.small` — plus a `*` reset and `:root` variables. Loading it raw
+would restyle every existing page. `tools/scope-css.js` rewrites every selector
+under a single `.ins` root, so `.ins .btn` (0,2,0) beats Bootstrap's `.btn`
+(0,1,0) inside the container and changes nothing outside it.
 
-**After editing `instrument.css`, re-run `node tools/scope-css.js`.** The scoped
-file is generated and must never be hand-edited.
+The generator treats two marked regions specially:
+
+| Region | Marker | What happens |
+|---|---|---|
+| Bootstrap bridge (§23–24) | `BRIDGE-START` / `BRIDGE-END` | every declaration is emitted with `!important`, because `app.css` re-skins Bootstrap that way and specificity alone cannot win |
+| Element reset (§1) | `RESET-START` / `RESET-END` | **dropped from the scoped build** |
+
+The reset is dropped because this shell is the layout for *every* page, not just
+`/new-ver`. Scoped, `button { background: none }` becomes `.ins button` (0,1,1),
+which outranks the (0,1,0) classes each page styles its own buttons, tables,
+links and inputs with — 242 page rules lost their background, border, padding,
+`border-collapse`, link affordance and font that way. §1b of `instrument.css`
+restates those properties on the design system's own controls instead, so both
+builds behave the same for `.railbtn`, `.iconbtn`, `.tab__x`, `.seg__b`, `.qrow`,
+`.chip`, `.btn`, `.input`, `.select`, `.textarea`, `.dt` and `.heat`.
+
+For the same reason the layout strip is `.ins-row`, not `.row`: Bootstrap owns
+that name and 176 places in the app use it as a grid row. New classes that could
+collide with Bootstrap or a page take the `ins-` prefix.
+
+**After editing `instrument.css`, re-run `node tools/scope-css.js`, then bump the
+`?v=` on the `<link>` in `InstrumentLayout.razor`.** The scoped file is generated
+and must never be hand-edited, and nothing fingerprints it for you.
 
 ```
 JinoSupporter.Web/wwwroot/ui-redesign/
