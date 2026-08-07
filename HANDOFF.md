@@ -1718,3 +1718,19 @@
 - Files: JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.scoped.css, tools/scope-css.js, JinoSupporter.Web/Components/Layout/InstrumentLayout.razor, JinoSupporter.Web/wwwroot/ui-redesign/README.md, JinoSupporter.Web/wwwroot/ui-redesign/index.html, JinoSupporter.Web/wwwroot/ui-redesign/ng-rate.html, JinoSupporter.Web/wwwroot/ui-redesign/f-cost.html, JinoSupporter.Web/wwwroot/ui-redesign/ask-ai.html, JinoSupporter.Web/wwwroot/ui-redesign/admin-users.html
 - Verification: `dotnet build` 오류 0개, 경고 32개(신규 없음). 생성물 정적 검사 6항목 통과 — 셀렉터 438개 전부 .ins 스코프, `.ins button|table|a|input|select|textarea` 0개, `.row`/`col-*` 0개, `.ins-row`가 `.ins .ins-row`로 스코프됨, 브리지 !important 247/247 유지, 컨트롤이 상속할 `.ins{font-family:var(--sans)}` 존재. 셸 컨트롤 커버리지 스크립트로 리셋이 주던 속성 중 아무도 선언하지 않는 것이 없음을 확인(초기 실행에서 `.brand`의 color 누락을 발견해 §1b에 추가). 렌더링은 실제 앱과 동일한 CSS 로드 순서(bootstrap → app.css → body 내 instrument.scoped.css → 페이지 style)로 조립한 검증 페이지를 변경 전/후 CSS로 각각 headless Chrome 캡쳐·계산스타일 비교했다. 변경 후: .dib-tab border 0→1px·padding-left 0→12px, .bmes-table separate→collapse, .col-md-6 86.7px→745px, 링크 #0f1319/none→#2563eb/underline, .grp-name-input 13px/400→12px/700, .idt-auto-preview Archivo→Consolas, .btn-close background-image none→SVG 복원. 셸 쪽 .railbtn/.iconbtn/.tab__x/.btn--sm의 background·border·padding·cursor·font-family·color는 전/후 완전 동일. 서버는 기동·종료하지 않았다.
 - Next: F5 재빌드·재시작 후 실제 화면에서 확인. 다음 우선순위는 감사 §5의 3번 R4(테마 localStorage 영속화), 이어서 R5(생성기 강화 — importantise 문자 파서, 블록 내 주석 처리, @keyframes ins- 접두사), R6(빌드 연결 + 해시 기반 캐시버스팅).
+
+## 2026-08-07 07:30 - [UI][ADD] InstrumentShell: R1·R2 독립 검증 통과
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: InstrumentShell
+- Change: ADD
+- Prompt: "'JinoSupporter' 작업을 이어서 진행해."
+- Answer: 구현 세션이 자기 합성 마크업으로 자기 작업을 검증한 점이 약점이라, 실제 .razor 마크업과 실제 CSS 로드 순서로 루트가 직접 재검증했다. 판정은 통과 — 셸 크롬 6개 그룹이 전후 완전 동일하고 페이지 스타일 7개 그룹이 의도한 방향으로 복원됐으며 회귀는 없었다.
+- Applied: (1) 검증 보고서 SHELL_FIX_VALIDATION.md 추가 — 렌더 대조 결과표, 정적 항목 9종, 검증하지 못한 범위 명시
+- Completed: headless Chrome로 e7e7177^ 대 현재의 계산 스타일을 비교해 R1·R2가 의도대로 동작함을 확인했다. 코드 변경은 없다.
+- Decisions: 검증 세션(S25)이 훅 신뢰 프롬프트에서 멈춘 뒤 재시작으로 소실돼, 단일 결합 작업이므로 워커를 다시 만들지 않고 루트가 직접 수행했다. 렌더 대조는 대표 4개 페이지(DataInferenceBatch, BmesReasonTable, BmesFCost, BmesMakeModelGroup)의 style 블록 682줄을 원문 그대로 넣어 캐스케이드를 재현했다.
+- Files: JinoSupporter.Web/wwwroot/ui-redesign/audit/SHELL_FIX_VALIDATION.md
+- Verification: 셸 크롬 .railbtn/.iconbtn/.tab__x/.btn--sm/.navlink/.brand 6개 그룹 전후 동일. 복원 확인 — .dib-tab border 0→1px·padding-left 0→12px, .pg-pill border 0→1px, .bmes-table separate→collapse, .btn-close background-image none→SVG, .col-md-6 width 8.39px→675px, .row align-items center→normal, 링크 #0f1319/none→#2563eb/underline. scope-css.js 재실행 결과가 커밋본과 일치(438 blocks, 6 dropped). 스코프 출력에 element 리셋 0건, bare .row/col-* 0건, .row-grp/.row-sum 4건 보존. 서버는 기동·종료하지 않았다.
+- Next: 사용자가 F5 재빌드·재시작 후 실제 화면 확인. 그다음은 감사 §5 우선순위 3번 이후 — R4(테마 localStorage 영속화), R5(생성기 강화), R6(빌드 연결), 이어서 감사 A·B의 페이지별 이식 순서.
