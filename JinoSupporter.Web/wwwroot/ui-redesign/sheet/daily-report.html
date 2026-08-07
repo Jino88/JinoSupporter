@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Daily Report — JinoSupporter</title>
+<link rel="stylesheet" href="assets/sheet.css" />
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Index ─────────────────────────────────────────────────────────── -->
+  <nav class="index">
+    <div class="mark">
+      <div class="mark__name">GN LAB</div>
+      <div class="mark__sub">QUALITY</div>
+    </div>
+
+    <div class="index__scroll">
+      <div class="index__sec">BMES</div>
+      <a href="#">Report NG rate</a>
+      <a href="#">F-Cost</a>
+      <a href="#">Worker status</a>
+      <a href="#">Model group</a>
+      <a href="#">Routing table</a>
+      <a href="#">Reason table</a>
+      <a href="#">BOM &amp; drawing</a>
+      <a href="#">LPA</a>
+      <a href="#">QR Bako data</a>
+      <a href="#" aria-current="page">Daily report</a>
+
+      <div class="index__sec">TEST DATA</div>
+      <a href="#">Input data (batch)</a>
+      <a href="#">Result</a>
+      <a href="#">Ask AI</a>
+      <a href="#">Report</a>
+
+      <div class="index__sec">TOOLS</div>
+      <a href="#">Graph maker</a>
+      <a href="#">Translate</a>
+      <a href="#">PC download</a>
+
+      <div class="index__sec">ADMIN</div>
+      <a href="#">Users</a>
+      <a href="#">Setting</a>
+    </div>
+
+    <div class="index__foot">
+      <span>admin</span>
+      <span style="color:var(--ink-3)">1 online</span>
+    </div>
+  </nav>
+
+  <!-- ── Stage ─────────────────────────────────────────────────────────── -->
+  <div class="stage">
+
+    <div class="topline">
+      <div class="crumb">BMES <span style="color:var(--rule-hard)">/</span> <b>Daily report</b></div>
+      <div class="topline__right">
+        <span class="stamp">W32</span>
+        <span class="stamp">08-07 07:16</span>
+      </div>
+    </div>
+
+    <main class="sheet">
+
+      <header class="doc-head">
+        <div>
+          <div class="doc-kicker">DEFECT RATE TREND BY MODEL</div>
+          <h1 class="doc-title">Daily Report</h1>
+          <div class="doc-meta">
+            2026-06-07 – 2026-08-06 <span class="sep">·</span> 9 models analysed
+            <span class="sep">·</span> baseline W31
+          </div>
+        </div>
+        <div class="doc-actions">
+          <button class="btn">Full report</button>
+          <button class="btn btn--ink">Refresh</button>
+        </div>
+      </header>
+
+      <!-- Readings -->
+      <section class="readings">
+        <div class="reading">
+          <span class="reading__k">LATEST WEEK W32</span>
+          <div class="reading__v">244,670</div>
+          <div class="reading__note">overall PPM</div>
+        </div>
+        <div class="reading">
+          <span class="reading__k">BASELINE W31</span>
+          <div class="reading__v">245,181</div>
+          <div class="reading__note">overall PPM</div>
+        </div>
+        <div class="reading">
+          <span class="reading__k">WEEK OVER WEEK</span>
+          <div class="reading__v is-better">−511</div>
+          <div class="reading__note">improved vs W31</div>
+        </div>
+        <div class="reading">
+          <span class="reading__k">LATEST DAY 08/06</span>
+          <div class="reading__v">233,799</div>
+          <div class="reading__note">overall PPM</div>
+        </div>
+        <div class="reading">
+          <span class="reading__k">DAY OVER DAY</span>
+          <div class="reading__v is-better">−13,247</div>
+          <div class="reading__note">improved vs 08/05</div>
+        </div>
+      </section>
+
+      <!-- Week over week — one record per model, one shared baseline -->
+      <div class="rule">
+        <h2>WEEK OVER WEEK</h2>
+        <p>W32 against the last week each model was produced in. Bars share one baseline: left is better, right is worse.</p>
+      </div>
+
+      <div class="scroll-x">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th class="rank">#</th>
+              <th style="text-align:left">MODEL</th>
+              <th class="n">LATEST</th>
+              <th class="n">BASELINE</th>
+              <th><div class="devhead"><span class="l">better ◀</span><span class="r">▶ worse</span></div></th>
+              <th class="n">CHANGE</th>
+              <th style="text-align:left">TOP DEFECT CAUSES <span style="font-weight:400;color:var(--ink-3)">latest vs baseline</span></th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <tr class="grp grp--worse">
+              <td colspan="7">WORSENED <span class="count">5 models</span></td>
+            </tr>
+
+            <tr>
+              <td class="rank">1</td>
+              <td class="model">MSU-L20S15-07_E2<small>MSU-L20S15-07</small></td>
+              <td class="n">70,495</td>
+              <td class="n">55,993<span class="pct">W31</span></td>
+              <td><div class="dev"><div class="dev__bar is-worse" style="width:76px"></div></div></td>
+              <td class="delta is-worse">+14,502<span class="pct">+25.9%</span></td>
+              <td>
+                <ul class="causes">
+                  <li><span class="tag">FUNC</span><span class="c-name">Noise Defect</span><span class="c-val">35,527</span><span class="c-d is-worse">+12,430</span></li>
+                  <li><span class="tag">FUNC</span><span class="c-name">Touch Defect</span><span class="c-val">20,781</span><span class="c-d is-worse">+2,363</span></li>
+                  <li><span class="tag">MAIN</span><span class="c-name">NG Coil</span><span class="c-val">3,994</span><span class="c-d is-worse">+437</span></li>
+                  <li><span class="tag">MAIN</span><span class="c-name">Over turn</span><span class="c-val">1,402</span><span class="c-d is-worse">+456</span></li>
+                  <li><span class="tag">MAIN</span><span class="c-name">Don't cut wire</span><span class="c-val">1,038</span><span class="c-d is-worse">+122</span></li>
+                </ul>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="rank">2</td>
+              <td class="model">MSM-X626B-TOP<small>MSM-X526/X626B</small></td>
+              <td class="n">44,457</td>
+              <td class="n">41,851<span class="pct">W30</span></td>
+              <td><div class="dev"><div class="dev__bar is-worse" style="width:14px"></div></div></td>
+              <td class="delta is-worse">+2,606<span class="pct">+6.2%</span></td>
+              <td>
+                <ul class="causes">
+                  <li><span class="tag">FUNC</span><span class="c-name">R&amp;B NG</span><span class="c-val">15,868</span><span class="c-d is-worse">+421</span></li>
+                  <li><span class="tag">FUNC</span><span class="c-name">Noise Defect</span><span class="c-val">12,081</span><span class="c-d is-better">−4,293</span></li>
+                  <li><span class="tag">FUNC</span><span class="c-name">High</span><span class="c-val">5,940</span><span class="c-d is-worse">+393</span></li>
+                  <li><span class="tag">AIR</span><span class="c-name">Touch Defect</span><span class="c-val">4,524</span><span class="c-d is-worse">new</span></li>
+                  <li><span class="tag">MAIN</span><span class="c-name">Offset spot welding</span><span class="c-val">1,650</span><span class="c-d is-worse">new</span></li>
+                </ul>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="rank">3</td>
+              <td class="model">MSM-X526B-TOP<small>MSM-X526/X626B</small></td>
+              <td class="n">36,901</td>
+              <td class="n">35,759<span class="pct">W31</span></td>
+              <td><div class="dev"><div class="dev__bar is-worse" style="width:6px"></div></div></td>
+              <td class="delta is-worse">+1,142<span class="pct">+3.2%</span></td>
+              <td>
+                <ul class="causes">
+                  <li><span class="tag">FUNC</span><span class="c-name">R&amp;B NG</span><span class="c-val">11,666</span><span class="c-d is-better">−42</span></li>
+                  <li><span class="tag">FUNC</span><span class="c-name">Noise Defect</span><span class="c-val">10,224</span><span class="c-d is-worse">+168</span></li>
+                  <li><span class="tag">FUNC</span><span class="c-name">High</span><span class="c-val">8,580</span><span class="c-d is-worse">+1,191</span></li>
+                </ul>
+              </td>
+            </tr>
+
+            <tr class="grp grp--better">
+              <td colspan="7">IMPROVED <span class="count">4 models</span></td>
+            </tr>
+
+            <tr>
+              <td class="rank">1</td>
+              <td class="model">TIU-L5S3-01_D3<small>TIU-L5S3-01</small></td>
+              <td class="n">77,751</td>
+              <td class="n">93,002<span class="pct">W31</span></td>
+              <td><div class="dev"><div class="dev__bar is-better" style="width:80px"></div></div></td>
+              <td class="delta is-better">−15,251<span class="pct">−18.4%</span></td>
+              <td>
+                <ul class="causes">
+                  <li><span class="tag">FUNC</span><span class="c-name">Low frequency</span><span class="c-val">7,601</span><span class="c-d is-better">−2,028</span></li>
+                  <li><span class="tag">FUNC</span><span class="c-name">High frequency</span><span class="c-val">6,752</span><span class="c-d is-better">−1,824</span></li>
+                  <li><span class="tag">VIS</span><span class="c-name">Partical</span><span class="c-val">4,904</span><span class="c-d is-better">−871</span></li>
+                  <li><span class="tag">VIS</span><span class="c-name">Leak glue</span><span class="c-val">4,794</span><span class="c-d is-better">−2,251</span></li>
+                  <li><span class="tag">SUB</span><span class="c-name">Offset yoke</span><span class="c-val">4,344</span><span class="c-d is-better">−437</span></li>
+                </ul>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="rank">2</td>
+              <td class="model">MSM-X626B-BOTTOM<small>MSM-X526/X626B</small></td>
+              <td class="n">32,575</td>
+              <td class="n">38,447<span class="pct">W31</span></td>
+              <td><div class="dev"><div class="dev__bar is-better" style="width:31px"></div></div></td>
+              <td class="delta is-better">−5,872<span class="pct">−15.3%</span></td>
+              <td>
+                <ul class="causes">
+                  <li><span class="tag">FUNC</span><span class="c-name">Noise Defect</span><span class="c-val">11,973</span><span class="c-d is-better">−2,374</span></li>
+                  <li><span class="tag">FUNC</span><span class="c-name">R&amp;B NG</span><span class="c-val">11,504</span><span class="c-d is-better">−3,591</span></li>
+                  <li><span class="tag">FUNC</span><span class="c-name">High</span><span class="c-val">4,686</span><span class="c-d is-better">−97</span></li>
+                  <li><span class="tag">AIR</span><span class="c-name">Upper damage</span><span class="c-val">1,788</span><span class="c-d is-better">−271</span></li>
+                  <li><span class="tag">VIS</span><span class="c-name">Damage</span><span class="c-val">397</span><span class="c-d is-worse">new</span></li>
+                </ul>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="rank">3</td>
+              <td class="model">MSM-S931B<small>MSM-S931</small></td>
+              <td class="n">59,581</td>
+              <td class="n">63,388<span class="pct">W31</span></td>
+              <td><div class="dev"><div class="dev__bar is-better" style="width:20px"></div></div></td>
+              <td class="delta is-better">−3,807<span class="pct">−6.0%</span></td>
+              <td>
+                <ul class="causes">
+                  <li><span class="tag">FUNC</span><span class="c-name">R&amp;B NG</span><span class="c-val">39,379</span><span class="c-d is-worse">+331</span></li>
+                  <li><span class="tag">FUNC</span><span class="c-name">Noise Defect</span><span class="c-val">4,472</span><span class="c-d is-better">−318</span></li>
+                  <li><span class="tag">FUNC</span><span class="c-name">Hearing</span><span class="c-val">4,085</span><span class="c-d is-better">−3,701</span></li>
+                </ul>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

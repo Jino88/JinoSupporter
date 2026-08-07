@@ -1,0 +1,304 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   SHEET — a design system for JinoSupporter
+
+   The subject is a microspeaker plant's quality record. An engineer opens this
+   to answer one question — which model got worse against its baseline week, and
+   why — and then screenshots it into a report. So the page is built as the
+   document it will become: a white sheet, ink rules, and figures on a baseline.
+
+   Two rules the previous direction broke, kept here deliberately:
+
+   1. No webfont. The plant runs on an intranet where a Google Fonts request
+      stalls. Everything below is on the machine already: Bahnschrift is the DIN
+      face Windows ships (the typeface of drawings and instrument faces), and it
+      carries figures and labels; Malgun Gothic carries Korean text, so model
+      and defect names from BMES render instead of falling back.
+
+   2. No colour-only meaning. Better and worse are read from which side of the
+      baseline a bar sits on. Red and blue are the second signal, not the first,
+      which is also why they are ink colours from an inspection stamp rather
+      than the usual red/green.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Tokens ──────────────────────────────────────────────────────────────── */
+:root {
+  /* The sheet sits on a field, so it reads as a sheet and not as the window. */
+  --field:      #EEF0F3;
+  --paper:      #FFFFFF;
+  --paper-2:    #F7F8FA;   /* table header band, inset panels */
+
+  --rule:       #D7DCE3;   /* hairline: cell borders, dividers */
+  --rule-hard:  #98A3B0;   /* section rule, table outer edge */
+
+  --ink:        #16202B;   /* blue-black, not pure black */
+  --ink-2:      #5C6875;
+  --ink-3:      #8A93A0;
+
+  --worse:      #C8342A;   /* stamp red   — above baseline */
+  --better:     #1F5FA8;   /* stamp blue  — below baseline */
+  --worse-wash: #FBEDEC;
+  --better-wash:#EAF1F9;
+
+  --display: "Bahnschrift", "DIN Alternate", "Segoe UI", sans-serif;
+  --text:    "Segoe UI", "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
+
+  --sheet-w: 1360px;
+  --rail-w:  208px;
+}
+
+* , *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--field);
+  color: var(--ink);
+  font-family: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Figures line up in columns or the table is unreadable. */
+.num, td.n, th.n { font-variant-numeric: tabular-nums; }
+
+/* ── Shell ───────────────────────────────────────────────────────────────── */
+.app { display: grid; grid-template-columns: var(--rail-w) minmax(0, 1fr); min-height: 100vh; }
+
+/* The index. White, like the sheet — the previous dark rail fought the data
+   next to it and was the first thing anyone noticed. Here it recedes. */
+.index {
+  background: var(--paper);
+  border-right: 1px solid var(--rule);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
+}
+.mark {
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.mark__name {
+  font-family: var(--display);
+  font-size: 17px; font-weight: 600; letter-spacing: .04em;
+}
+.mark__sub { font-size: 10.5px; color: var(--ink-3); letter-spacing: .16em; }
+
+.index__scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0 14px; }
+.index__sec {
+  padding: 14px 18px 5px;
+  font-size: 10px; font-weight: 600; letter-spacing: .14em;
+  color: var(--ink-3);
+}
+.index a {
+  display: block; padding: 5px 18px;
+  color: var(--ink-2); text-decoration: none; font-size: 12.5px;
+  border-left: 2px solid transparent;
+}
+.index a:hover { background: var(--paper-2); color: var(--ink); }
+.index a[aria-current] {
+  color: var(--ink); font-weight: 600;
+  border-left-color: var(--ink);
+  background: var(--paper-2);
+}
+.index__foot {
+  border-top: 1px solid var(--rule);
+  padding: 11px 18px;
+  font-size: 11.5px; color: var(--ink-2);
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* ── Header line ─────────────────────────────────────────────────────────── */
+.stage { min-width: 0; }
+.topline {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 13px 26px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  position: sticky; top: 0; z-index: 20;
+}
+.crumb { font-size: 11px; letter-spacing: .1em; color: var(--ink-3); }
+.crumb b { color: var(--ink); font-weight: 600; }
+.topline__right { margin-left: auto; display: flex; align-items: baseline; gap: 16px; }
+.stamp {
+  font-family: var(--display); font-size: 12px; letter-spacing: .06em; color: var(--ink-2);
+}
+
+/* ── The sheet ───────────────────────────────────────────────────────────── */
+.sheet {
+  max-width: var(--sheet-w);
+  margin: 22px auto 60px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-top: 2px solid var(--rule-hard);
+  padding: 26px 30px 34px;
+}
+
+.doc-head { display: flex; align-items: flex-end; gap: 20px; padding-bottom: 14px; }
+.doc-kicker {
+  font-size: 10.5px; letter-spacing: .16em; color: var(--ink-3);
+  margin-bottom: 5px;
+}
+.doc-title {
+  font-family: var(--display);
+  font-size: 30px; font-weight: 600; letter-spacing: .01em; line-height: 1.05;
+  margin: 0;
+}
+.doc-meta { font-size: 12px; color: var(--ink-2); margin-top: 6px; }
+.doc-meta .sep { color: var(--rule-hard); margin: 0 7px; }
+.doc-actions { margin-left: auto; display: flex; gap: 8px; }
+
+.btn {
+  font-family: var(--text); font-size: 12px;
+  padding: 6px 13px; border: 1px solid var(--rule-hard); border-radius: 2px;
+  background: var(--paper); color: var(--ink); cursor: pointer;
+}
+.btn:hover { background: var(--paper-2); }
+.btn--ink { background: var(--ink); border-color: var(--ink); color: #fff; }
+.btn--ink:hover { background: #24313f; }
+.btn:focus-visible { outline: 2px solid var(--better); outline-offset: 1px; }
+
+/* ── Section rule ────────────────────────────────────────────────────────── */
+.rule {
+  display: flex; align-items: baseline; gap: 12px;
+  margin: 26px 0 12px;
+  border-top: 1px solid var(--rule-hard);
+  padding-top: 9px;
+}
+.rule h2 {
+  font-family: var(--display);
+  font-size: 13px; font-weight: 600; letter-spacing: .1em; margin: 0;
+}
+.rule p { margin: 0; font-size: 11.5px; color: var(--ink-3); }
+
+/* ── Readings: the top figures ───────────────────────────────────────────────
+   A reading is a measured value with its baseline underneath, not a card with a
+   drop shadow. The rule above each one is the only frame it needs. */
+.readings {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  border-top: 1px solid var(--rule);
+  border-left: 1px solid var(--rule);
+}
+.reading {
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 11px 14px 12px;
+}
+.reading__k {
+  font-size: 10.5px; letter-spacing: .1em; color: var(--ink-3);
+  display: block; margin-bottom: 4px;
+}
+.reading__v {
+  font-family: var(--display); font-variant-numeric: tabular-nums;
+  font-size: 27px; font-weight: 600; letter-spacing: -.01em; line-height: 1.1;
+}
+.reading__v.is-worse  { color: var(--worse); }
+.reading__v.is-better { color: var(--better); }
+.reading__note { font-size: 11px; color: var(--ink-2); margin-top: 2px; }
+
+/* ── SIGNATURE — the baseline deviation bar ──────────────────────────────────
+   Every screen in this app compares a period to the one before it, so the
+   comparison gets its own column rather than a coloured number. A shared
+   vertical baseline runs down the column; a bar grows left when the value
+   improved and right when it worsened. Direction is legible with no colour at
+   all, which is what makes the red and blue safe to use. */
+.dev { position: relative; width: 170px; height: 15px; }
+/* One baseline runs the whole column, so every model is measured against the
+   same axis and the eye can scan the column without reading a single number. */
+.dev::before {
+  content: ""; position: absolute; left: 50%; top: -7px; bottom: -7px;
+  width: 1px; background: var(--ink-3);
+}
+.dev__bar { position: absolute; top: 3px; height: 9px; }
+.dev__bar.is-worse  { left: 50%;  background: var(--worse);  }
+.dev__bar.is-better { right: 50%; background: var(--better); }
+/* the tick closes the bar so a 1px value is still visible */
+.dev__bar::after {
+  content: ""; position: absolute; top: -3px; bottom: -3px; width: 1px;
+  background: inherit;
+}
+.dev__bar.is-worse::after  { right: 0; }
+.dev__bar.is-better::after { left: 0; }
+
+.devhead { position: relative; width: 170px; height: 12px; font-size: 9.5px; color: var(--ink-3); }
+.devhead span { position: absolute; top: 0; }
+.devhead .l { right: 52%; }
+.devhead .r { left: 52%; }
+
+/* ── Data table — kept as an Excel grid on purpose ───────────────────────────
+   These tables get cropped and pasted into reports, so a fragment has to still
+   read as a table: every cell ruled, header banded, no reliance on hover. */
+.grid { width: 100%; border-collapse: collapse; font-size: 12px; }
+.grid caption { text-align: left; font-size: 11.5px; color: var(--ink-3); padding-bottom: 6px; }
+.grid th, .grid td {
+  border: 1px solid var(--rule);
+  padding: 6px 9px;
+  vertical-align: middle;
+}
+.grid thead th {
+  background: var(--paper-2);
+  border-bottom-color: var(--rule-hard);
+  font-size: 10.5px; font-weight: 600; letter-spacing: .07em;
+  color: var(--ink-2); text-align: center; white-space: nowrap;
+}
+.grid tbody td.n { text-align: right; font-variant-numeric: tabular-nums; }
+.grid tbody tr:hover td { background: #FBFCFD; }
+.grid .model { font-weight: 600; white-space: nowrap; }
+.grid .model small { display: block; font-weight: 400; color: var(--ink-3); font-size: 10.5px; }
+.grid .rank { color: var(--ink-3); text-align: center; width: 30px; }
+.grid .delta.is-worse  { color: var(--worse);  font-variant-numeric: tabular-nums; text-align: right; }
+.grid .delta.is-better { color: var(--better); font-variant-numeric: tabular-nums; text-align: right; }
+.grid .pct { font-size: 10.5px; color: var(--ink-3); display: block; }
+
+/* A wide table scrolls rather than being cut off at the window edge — the old
+   shell clipped these columns, which is the one bug you cannot screenshot
+   around. */
+.scroll-x { overflow-x: auto; border: 1px solid var(--rule-hard); }
+.scroll-x .grid { border: 0; }
+.scroll-x .grid th:first-child, .scroll-x .grid td:first-child { border-left: 0; }
+.scroll-x .grid th:last-child,  .scroll-x .grid td:last-child  { border-right: 0; }
+
+/* ── Cause list inside a row ─────────────────────────────────────────────── */
+.causes { margin: 0; padding: 0; list-style: none; font-size: 11.5px; }
+.causes li { display: flex; align-items: baseline; gap: 8px; padding: 1.5px 0; }
+.causes .c-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.causes .c-val  { font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.causes .c-d    { font-variant-numeric: tabular-nums; width: 62px; text-align: right; }
+.causes .c-d.is-worse  { color: var(--worse); }
+.causes .c-d.is-better { color: var(--better); }
+.tag {
+  font-size: 9.5px; letter-spacing: .06em; padding: 0 4px;
+  border: 1px solid var(--rule); color: var(--ink-3); border-radius: 2px;
+}
+
+/* ── Two-column split ────────────────────────────────────────────────────── */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+.side-k {
+  font-family: var(--display); font-size: 12px; letter-spacing: .08em;
+  padding-bottom: 7px; display: flex; align-items: baseline; gap: 8px;
+}
+.side-k .count { color: var(--ink-3); font-weight: 400; letter-spacing: 0; }
+.side-k.is-worse  { border-bottom: 2px solid var(--worse);  }
+.side-k.is-better { border-bottom: 2px solid var(--better); }
+
+.spark { display: block; }
+
+@media (max-width: 1100px) {
+  .split { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* ── Grouping inside the single record table ─────────────────────────────────
+   Worsened and improved are two bands of one table rather than two tables side
+   by side. Two tables meant two baselines and half the width each — the columns
+   were cut off, which is the thing this screen is screenshotted for. */
+.grp td {
+  background: var(--paper-2);
+  border-top: 2px solid var(--rule-hard) !important;
+  font-family: var(--display);
+  font-size: 11.5px; letter-spacing: .09em;
+  padding: 5px 9px;
+}
+.grp .count { color: var(--ink-3); letter-spacing: 0; font-family: var(--text); }
+.grp--worse  td { box-shadow: inset 3px 0 0 var(--worse);  }
+.grp--better td { box-shadow: inset 3px 0 0 var(--better); }

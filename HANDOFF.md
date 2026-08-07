@@ -1814,3 +1814,19 @@
 - Files: JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.scoped.css, JinoSupporter.Web/Components/Layout/InstrumentLayout.razor
 - Verification: `dotnet build` 오류 0개, 경고 32개(신규 없음). headless Chrome 재현 및 회복 확인 — 되돌리기 전 형제 3개가 각 242px로 균등 분배됐고, 되돌린 뒤 각자 자연 크기(19px/19px/87px)를 갖고 `.view`가 필요할 때만 스크롤하며 잘림 없음. 서버는 기동·종료하지 않았다.
 - Next: 작업영역 계약을 다시 시도한다면 반드시 각 페이지의 실제 최상위 구조를 먼저 확인하고, 단일 루트를 가정하지 말 것. 형제가 여럿인 페이지는 페이지 쪽에서 루트 하나로 감싸는 편이 안전하다. 그 전까지는 문서형이 기본이며 이중 스크롤은 감수한다.
+
+## 2026-08-07 12:40 - [UI][ADD] SheetDesign: 검사 성적서 방향 1차 시안
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: SheetDesign
+- Change: ADD
+- Prompt: "이런 UI 말고 .."
+- Answer: 사용자가 INSTRUMENT 시안을 거절했다. 확인 결과 방향 자체를 바꾸길 원했고, 가장 거슬린 것은 어두운 레일·상단바였다. 새 방향은 "검사 성적서" — 크롬을 밝게 걷어내고 데이터를 문서처럼 두며, 비교는 공유 기준선 좌우 편차 막대로 표현한다.
+- Applied: (1) wwwroot/ui-redesign/sheet/assets/sheet.css 신규 — 종이/잉크 토큰, 밝은 인덱스 레일, 성적서 시트, 엑셀 격자 표, 편차 막대 (2) sheet/daily-report.html 신규 — 실제 화면의 실제 수치로 구성한 Daily Report 시안
+- Completed: 정적 목업 1장을 만들어 headless Chrome로 렌더 확인했다. 앱 코드는 건드리지 않았다.
+- Decisions: 웹폰트를 쓰지 않는다 — 감사 C가 지적한 대로 공장 인트라넷에서 Google Fonts 요청이 지연되므로, Windows 기본 탑재 Bahnschrift(DIN 계열, 도면·계측기 서체)를 숫자·라벨에, Segoe UI + 맑은 고딕을 본문에 쓴다. 한글 데이터도 폴백 없이 렌더된다. 개선색은 초록이 아니라 파랑이다 — 국내 검사 성적서 관행이고 적록색약에 안전하다. 좋아짐/나빠짐은 기준선 좌우 위치로 먼저 읽히고 색은 보조라 WCAG 1.4.1을 충족한다. 1차 시안은 좌우 2단이었으나 렌더해 보니 두 표가 각각 좁아져 열이 잘리고 기준선이 둘로 나뉘어, 하나의 기준선을 공유하는 단일 표로 바꿨다. 표는 캡쳐해 보고서에 붙이는 용도라 엑셀 격자를 유지했다.
+- Files: JinoSupporter.Web/wwwroot/ui-redesign/sheet/assets/sheet.css, JinoSupporter.Web/wwwroot/ui-redesign/sheet/daily-report.html
+- Verification: headless Chrome 1600x1000 렌더로 육안 확인. 1차 렌더에서 모델명이 3줄로 깨지고 오른쪽 표가 잘리는 문제를 발견해 단일 표로 재구성 후 재렌더로 해소. 앱 빌드는 하지 않았다(정적 파일만 추가, 앱 코드 미변경).
+- Next: 사용자가 이 시안을 확정하면 나머지 대표 화면(NG Rate, F-Cost, Ask AI, Users, Login)으로 확장한 뒤 Blazor 이식에 착수한다. 이식은 기존 InstrumentShell을 대체하는 방식이므로, 그때 instrument.css 계열 자산의 폐기 범위를 함께 정한다.
