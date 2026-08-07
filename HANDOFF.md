@@ -1830,3 +1830,19 @@
 - Files: JinoSupporter.Web/wwwroot/ui-redesign/sheet/assets/sheet.css, JinoSupporter.Web/wwwroot/ui-redesign/sheet/daily-report.html
 - Verification: headless Chrome 1600x1000 렌더로 육안 확인. 1차 렌더에서 모델명이 3줄로 깨지고 오른쪽 표가 잘리는 문제를 발견해 단일 표로 재구성 후 재렌더로 해소. 앱 빌드는 하지 않았다(정적 파일만 추가, 앱 코드 미변경).
 - Next: 사용자가 이 시안을 확정하면 나머지 대표 화면(NG Rate, F-Cost, Ask AI, Users, Login)으로 확장한 뒤 Blazor 이식에 착수한다. 이식은 기존 InstrumentShell을 대체하는 방식이므로, 그때 instrument.css 계열 자산의 폐기 범위를 함께 정한다.
+
+## 2026-08-07 13:05 - [UI][CHANGE] SheetDesign: 좌측 메뉴 전면 개편과 누락 메뉴 복원
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: SheetDesign
+- Change: CHANGE
+- Prompt: "신규 UI 에 BMES-REPORT 메뉴 빠져있음. 그리고 UI 싹다 갈아  좌측 메뉴 를 이런식으로 구성 / 일단 메인화면은 냅둬"
+- Answer: 시안의 메뉴를 실제 NavMenu.razor 구조와 대조한 결과 Report 하나가 아니라 Test 3, Test 4, Setting Model 하위 3개까지 빠져 있었다. 실제 구조대로 복원하면서 사용자가 준 참고 이미지 구성(검색창, 아이콘, 섹션, 접기, 하단 고정)을 적용했다. 본문은 지시대로 건드리지 않았다.
+- Applied: (1) 좌측 메뉴를 로고+접기 버튼, 검색창(Ctrl K), 아이콘 메뉴, 섹션 라벨, 하단 고정 Setting/접속자/사용자 구조로 재작성 (2) 누락 메뉴 복원 — Report(report/bmes), Test 3, Test 4, 그리고 Setting Model 아래 Model Group/Routing Table/Reason Table 2단 중첩 (3) 아이콘 26종을 인라인 SVG 스프라이트로 작성 (4) 레일 폭 208px에서 246px로
+- Completed: 좌측 메뉴가 실제 앱 메뉴와 1:1로 맞고 참고 이미지 구성을 따른다.
+- Decisions: 아이콘은 아이콘 폰트나 CDN 대신 인라인 SVG 스프라이트로 넣었다 — 이 디자인의 전제가 공장 인트라넷에서 외부 요청 0이기 때문이다. 메뉴 근거는 AppMenus.cs가 아니라 NavMenu.razor에서 가져왔다. AppMenus는 Report를 Test Data Analysis 그룹으로 두지만 실제 화면은 BMES 아래 report/bmes로 렌더하며, 사용자가 본 것은 후자다. 선택된 메뉴의 아이콘 색을 빨강에서 잉크색으로 바꿨다 — 이 디자인에서 빨강은 규격 이탈을 뜻하므로 현재 위치 표시에 쓰면 의미가 흐려진다.
+- Files: JinoSupporter.Web/wwwroot/ui-redesign/sheet/assets/sheet.css, JinoSupporter.Web/wwwroot/ui-redesign/sheet/daily-report.html
+- Verification: headless Chrome 1600x1120 렌더로 육안 확인. 메뉴 항목을 NavMenu.razor와 대조해 BMES 11개(2단 3개 포함), Test Data Analysis 4개, Daily Test Data 1개, Tools 3개, Admin 4개, Setting 1개가 모두 존재함을 확인. 앱 빌드는 하지 않았다(정적 파일만 변경).
+- Next: 사용자가 메뉴 구성을 확정하면 나머지 대표 화면으로 확장한다. 본문 레이아웃은 아직 지시 대기 상태다.

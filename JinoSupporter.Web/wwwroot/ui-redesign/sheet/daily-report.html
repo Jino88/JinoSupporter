@@ -9,45 +9,118 @@
 <body>
 <div class="app">
 
-  <!-- ── Index ─────────────────────────────────────────────────────────── -->
+  <!-- Icon sprite: inline so the menu needs no icon font and no network. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <symbol id="i-trend" viewBox="0 0 16 16"><path d="M2 4l4 5 3-2 5 5"/><path d="M14 8v4h-4"/></symbol>
+    <symbol id="i-cost" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.5v7M6 6.5h3.2a1.5 1.5 0 010 3H6.3M6 9.5h4"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 16 16"><path d="M9 1.5H4.5A1.5 1.5 0 003 3v10a1.5 1.5 0 001.5 1.5h7A1.5 1.5 0 0013 13V5.5z"/><path d="M9 1.5V5.5H13M5.5 8.5h5M5.5 11h3.5"/></symbol>
+    <symbol id="i-worker" viewBox="0 0 16 16"><circle cx="8" cy="5" r="2.6"/><path d="M2.8 13.6a5.2 5.2 0 0110.4 0"/></symbol>
+    <symbol id="i-test" viewBox="0 0 16 16"><path d="M6 1.8v4.4L2.8 12a1.4 1.4 0 001.2 2.2h8a1.4 1.4 0 001.2-2.2L10 6.2V1.8"/><path d="M5 1.8h6M4.6 9.5h6.8"/></symbol>
+    <symbol id="i-bom" viewBox="0 0 16 16"><path d="M8 1.6l6 3-6 3-6-3z"/><path d="M2 8l6 3 6-3M2 11.4l6 3 6-3"/></symbol>
+    <symbol id="i-lpa" viewBox="0 0 16 16"><path d="M5.5 2.5H4A1.5 1.5 0 002.5 4v9A1.5 1.5 0 004 14.5h8a1.5 1.5 0 001.5-1.5V4A1.5 1.5 0 0012 2.5h-1.5"/><rect x="5.5" y="1.2" width="5" height="2.6" rx=".8"/><path d="M5.8 8.4l1.6 1.6 3-3.2"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 16 16"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/><circle cx="6" cy="4.5" r="1.6"/><circle cx="10.5" cy="8" r="1.6"/><circle cx="5" cy="11.5" r="1.6"/></symbol>
+    <symbol id="i-qr" viewBox="0 0 16 16"><rect x="2" y="2" width="4.6" height="4.6" rx=".7"/><rect x="9.4" y="2" width="4.6" height="4.6" rx=".7"/><rect x="2" y="9.4" width="4.6" height="4.6" rx=".7"/><path d="M9.4 9.4h2v2h-2zM13 13h1M11.4 14h2.6"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6.5h12M5.5 1.6v2.6M10.5 1.6v2.6"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 16 16"><path d="M2 9.5l1.8-6A1.4 1.4 0 015.1 2.5h5.8a1.4 1.4 0 011.3 1l1.8 6"/><path d="M2 9.5h3.2l.9 1.8h3.8l.9-1.8H14v3A1.5 1.5 0 0112.5 14h-9A1.5 1.5 0 012 12.5z"/></symbol>
+    <symbol id="i-table" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1.4"/><path d="M2 6.4h12M6.4 6.4V13M10 6.4V13"/></symbol>
+    <symbol id="i-ai" viewBox="0 0 16 16"><path d="M8 1.8l1.4 3.4L12.8 6.6 9.4 8 8 11.4 6.6 8 3.2 6.6 6.6 5.2z"/><path d="M12.4 11.2l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 16 16"><path d="M11.2 2.4l2.4 2.4M2.5 13.5l.7-2.9 8-8a1.3 1.3 0 011.9 0l1 1a1.3 1.3 0 010 1.9l-8 8z"/></symbol>
+    <symbol id="i-graph" viewBox="0 0 16 16"><path d="M2.5 2v11.5H14"/><rect x="4.6" y="7" width="2.2" height="4.5"/><rect x="8.2" y="4.4" width="2.2" height="7.1"/><rect x="11.8" y="8.6" width="2.2" height="2.9"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M2.2 8h11.6M8 2.1a10 10 0 010 11.8A10 10 0 018 2.1z"/></symbol>
+    <symbol id="i-down" viewBox="0 0 16 16"><path d="M8 2v8M4.8 7l3.2 3.2L11.2 7M2.6 13.4h10.8"/></symbol>
+    <symbol id="i-users" viewBox="0 0 16 16"><circle cx="6.2" cy="5.2" r="2.4"/><path d="M1.8 13.4a4.4 4.4 0 018.8 0"/><path d="M10.6 3.2a2.4 2.4 0 010 4.5M11.6 9.6a4.4 4.4 0 012.6 3.8"/></symbol>
+    <symbol id="i-usage" viewBox="0 0 16 16"><path d="M1.8 9.5h2.4l1.6-5 2.4 8 1.8-4.4 1.2 1.4h2.9"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 16 16"><path d="M3 5.5h9L9.6 3M13 10.5H4l2.4 2.5"/></symbol>
+    <symbol id="i-db" viewBox="0 0 16 16"><ellipse cx="8" cy="3.7" rx="5.3" ry="2.1"/><path d="M2.7 3.7v8.6c0 1.2 2.4 2.1 5.3 2.1s5.3-.9 5.3-2.1V3.7M2.7 8c0 1.2 2.4 2.1 5.3 2.1s5.3-.9 5.3-2.1"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.6l.9 1.7 1.9-.4.6 1.8 1.8.6-.4 1.9 1.7.9-1.7.9.4 1.9-1.8.6-.6 1.8-1.9-.4-.9 1.7-.9-1.7-1.9.4-.6-1.8-1.8-.6.4-1.9L1.6 8l1.7-.9-.4-1.9 1.8-.6.6-1.8 1.9.4z"/></symbol>
+    <symbol id="i-out" viewBox="0 0 16 16"><path d="M6.2 2.6H4A1.4 1.4 0 002.6 4v8A1.4 1.4 0 004 13.4h2.2M10.4 11.2L13.4 8l-3-3.2M6.6 8h6.8"/></symbol>
+    <symbol id="i-caret" viewBox="0 0 16 16"><path d="M6 3.5L10.5 8 6 12.5"/></symbol>
+    <symbol id="i-collapse" viewBox="0 0 16 16"><path d="M9.5 4.5L6 8l3.5 3.5M12.5 3v10"/></symbol>
+    <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7.2" cy="7.2" r="4.4"/><path d="M10.5 10.5L13.6 13.6"/></symbol>
+  </defs></svg>
+
+  <!-- ── Index ──────────────────── -->
   <nav class="index">
+
     <div class="mark">
-      <div class="mark__name">GN LAB</div>
-      <div class="mark__sub">QUALITY</div>
+      <div class="mark__logo">GN</div>
+      <div class="mark__text">
+        <div class="mark__name">GN LAB</div>
+        <div class="mark__sub">SUPPORTER</div>
+      </div>
+      <button class="mark__collapse" title="Collapse menu" aria-label="Collapse menu">
+        <svg class="ico" style="width:14px;height:14px"><use href="#i-collapse"/></svg>
+      </button>
+    </div>
+
+    <div class="seek">
+      <label class="seek__box">
+        <svg class="ico" style="width:14px;height:14px"><use href="#i-search"/></svg>
+        <input type="search" placeholder="Search menu" />
+        <span class="seek__key">Ctrl K</span>
+      </label>
     </div>
 
     <div class="index__scroll">
-      <div class="index__sec">BMES</div>
-      <a href="#">Report NG rate</a>
-      <a href="#">F-Cost</a>
-      <a href="#">Worker status</a>
-      <a href="#">Model group</a>
-      <a href="#">Routing table</a>
-      <a href="#">Reason table</a>
-      <a href="#">BOM &amp; drawing</a>
-      <a href="#">LPA</a>
-      <a href="#">QR Bako data</a>
-      <a href="#" aria-current="page">Daily report</a>
 
-      <div class="index__sec">TEST DATA</div>
-      <a href="#">Input data (batch)</a>
-      <a href="#">Result</a>
-      <a href="#">Ask AI</a>
-      <a href="#">Report</a>
+      <div class="index__sec">BMES</div>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-trend"/></svg><span class="nav-label">Report NG RATE</span></a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-cost"/></svg><span class="nav-label">F-Cost</span></a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-doc"/></svg><span class="nav-label">Report</span></a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-worker"/></svg><span class="nav-label">Worker Status</span></a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-test"/></svg><span class="nav-label">Test 3</span></a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-test"/></svg><span class="nav-label">Test 4</span></a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-bom"/></svg><span class="nav-label">BOM &amp; Drawing</span></a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-lpa"/></svg><span class="nav-label">LPA</span></a>
+
+      <button class="nav-tog" aria-expanded="true">
+        <svg class="ico"><use href="#i-sliders"/></svg>
+        <span class="nav-label">Setting Model</span>
+        <svg class="caret"><use href="#i-caret"/></svg>
+      </button>
+      <div class="nav-sub">
+        <a class="nav-a" href="#"><span class="nav-label">Model Group</span></a>
+        <a class="nav-a" href="#"><span class="nav-label">Routing Table</span></a>
+        <a class="nav-a" href="#"><span class="nav-label">Reason Table</span></a>
+      </div>
+
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-qr"/></svg><span class="nav-label">QR BAKO DATA</span></a>
+      <a class="nav-a" href="#" aria-current="page"><svg class="ico"><use href="#i-cal"/></svg><span class="nav-label">DAILY REPORT</span></a>
+
+      <div class="index__sec">TEST DATA ANALYSIS</div>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-inbox"/></svg><span class="nav-label">INPUT DATA (BATCH)</span></a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-table"/></svg><span class="nav-label">Result</span></a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-ai"/></svg><span class="nav-label">Ask AI</span></a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-doc"/></svg><span class="nav-label">Report</span></a>
+
+      <div class="index__sec">DAILY TEST DATA</div>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-pencil"/></svg><span class="nav-label">Input Data</span></a>
 
       <div class="index__sec">TOOLS</div>
-      <a href="#">Graph maker</a>
-      <a href="#">Translate</a>
-      <a href="#">PC download</a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-graph"/></svg><span class="nav-label">Graph Maker</span></a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-globe"/></svg><span class="nav-label">Translate</span></a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-down"/></svg><span class="nav-label">PC Download</span></a>
 
       <div class="index__sec">ADMIN</div>
-      <a href="#">Users</a>
-      <a href="#">Setting</a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-users"/></svg><span class="nav-label">Users</span></a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-usage"/></svg><span class="nav-label">AI Usages</span></a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-swap"/></svg><span class="nav-label">Test Excel Converter</span></a>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-db"/></svg><span class="nav-label">DB Query</span></a>
     </div>
 
     <div class="index__foot">
-      <span>admin</span>
-      <span style="color:var(--ink-3)">1 online</span>
+      <a class="nav-a" href="#"><svg class="ico"><use href="#i-gear"/></svg><span class="nav-label">Setting</span></a>
+      <div class="online"><i></i> 1 connected</div>
+      <div class="who">
+        <div class="who__av">AD</div>
+        <div style="min-width:0">
+          <div class="who__name">admin</div>
+          <div class="who__role">ADMIN</div>
+        </div>
+        <button class="who__out" title="Sign out" aria-label="Sign out">
+          <svg class="ico" style="width:15px;height:15px"><use href="#i-out"/></svg>
+        </button>
+      </div>
     </div>
   </nav>
 

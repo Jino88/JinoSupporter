@@ -43,7 +43,7 @@
   --text:    "Segoe UI", "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
 
   --sheet-w: 1360px;
-  --rail-w:  208px;
+  --rail-w:  246px;
 }
 
 * , *::before, *::after { box-sizing: border-box; }
@@ -64,47 +64,109 @@ body {
 /* ── Shell ───────────────────────────────────────────────────────────────── */
 .app { display: grid; grid-template-columns: var(--rail-w) minmax(0, 1fr); min-height: 100vh; }
 
-/* The index. White, like the sheet — the previous dark rail fought the data
-   next to it and was the first thing anyone noticed. Here it recedes. */
+/* ══ Index (left menu) ══════════════════════════════════════════════════════
+   Light, not the dark chassis it replaces. The structure mirrors what the app
+   actually has — a collapsible BMES group with Setting Model nested inside it —
+   rather than a flattened list, because a flat list hid three items and made the
+   two-level relationship invisible. */
 .index {
   background: var(--paper);
   border-right: 1px solid var(--rule);
   display: flex; flex-direction: column;
   position: sticky; top: 0; height: 100vh;
 }
-.mark {
-  padding: 16px 18px 14px;
-  border-bottom: 1px solid var(--rule);
-}
-.mark__name {
-  font-family: var(--display);
-  font-size: 17px; font-weight: 600; letter-spacing: .04em;
-}
-.mark__sub { font-size: 10.5px; color: var(--ink-3); letter-spacing: .16em; }
 
-.index__scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0 14px; }
+.mark { display: flex; align-items: center; gap: 9px; padding: 14px 14px 12px; }
+.mark__logo {
+  width: 28px; height: 28px; flex: none; border-radius: 7px;
+  background: var(--ink); color: #fff;
+  display: grid; place-items: center;
+  font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: .02em;
+}
+.mark__text { min-width: 0; }
+.mark__name { font-size: 13.5px; font-weight: 600; line-height: 1.15; }
+.mark__sub { font-size: 10px; color: var(--ink-3); letter-spacing: .13em; }
+.mark__collapse {
+  margin-left: auto; flex: none;
+  width: 24px; height: 24px; border-radius: 6px;
+  border: 1px solid var(--rule); background: var(--paper); color: var(--ink-3);
+  display: grid; place-items: center; cursor: pointer;
+}
+.mark__collapse:hover { background: var(--paper-2); color: var(--ink); }
+
+/* Search — the menu is 25 items deep, so typing is faster than hunting. */
+.seek { padding: 0 14px 10px; }
+.seek__box {
+  display: flex; align-items: center; gap: 7px;
+  height: 32px; padding: 0 9px;
+  border: 1px solid var(--rule); border-radius: 8px;
+  background: var(--paper-2); color: var(--ink-3);
+}
+.seek__box:focus-within { border-color: var(--ink-3); background: var(--paper); }
+.seek__box input {
+  flex: 1; min-width: 0; border: 0; outline: 0; background: none;
+  font-family: var(--text); font-size: 12.5px; color: var(--ink);
+}
+.seek__box input::placeholder { color: var(--ink-3); }
+.seek__key {
+  flex: none; font-size: 10px; letter-spacing: .04em; color: var(--ink-3);
+  border: 1px solid var(--rule); border-radius: 4px; padding: 1px 5px; background: var(--paper);
+}
+
+.index__scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 8px 14px; }
 .index__sec {
-  padding: 14px 18px 5px;
-  font-size: 10px; font-weight: 600; letter-spacing: .14em;
-  color: var(--ink-3);
+  padding: 13px 6px 5px;
+  font-size: 9.5px; font-weight: 700; letter-spacing: .13em; color: var(--ink-3);
 }
-.index a {
-  display: block; padding: 5px 18px;
-  color: var(--ink-2); text-decoration: none; font-size: 12.5px;
-  border-left: 2px solid transparent;
+
+/* One row, whether it is a link or a group toggle. */
+.nav-a, .nav-tog {
+  width: 100%;
+  display: flex; align-items: center; gap: 9px;
+  padding: 6px 8px; margin: 1px 0;
+  border: 0; border-radius: 7px;
+  background: none; color: var(--ink-2);
+  font-family: var(--text); font-size: 12.5px; text-align: left;
+  text-decoration: none; cursor: pointer;
 }
-.index a:hover { background: var(--paper-2); color: var(--ink); }
-.index a[aria-current] {
-  color: var(--ink); font-weight: 600;
-  border-left-color: var(--ink);
-  background: var(--paper-2);
+.nav-a:hover, .nav-tog:hover { background: var(--paper-2); color: var(--ink); }
+.nav-a:focus-visible, .nav-tog:focus-visible { outline: 2px solid var(--better); outline-offset: -2px; }
+.nav-a[aria-current] { background: #EDF0F4; color: var(--ink); font-weight: 600; }
+
+.ico { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none;
+       stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; color: var(--ink-3); }
+.nav-a:hover .ico, .nav-tog:hover .ico { color: var(--ink-2); }
+/* Ink, not red. Red means out of spec everywhere else in this design; spending
+   it on "you are here" would make the one alarming colour ordinary. */
+.nav-a[aria-current] .ico { color: var(--ink); }
+.nav-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.caret { width: 12px; height: 12px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.6;
+         color: var(--ink-3); transition: transform .15s ease; }
+.nav-tog[aria-expanded="true"] .caret { transform: rotate(90deg); }
+
+/* Nested levels indent against a hairline, so depth is visible without dots. */
+.nav-sub { margin: 1px 0 3px 17px; padding-left: 9px; border-left: 1px solid var(--rule); }
+
+.index__foot { border-top: 1px solid var(--rule); padding: 8px; }
+.who {
+  display: flex; align-items: center; gap: 9px;
+  padding: 6px 8px; border-radius: 7px;
 }
-.index__foot {
-  border-top: 1px solid var(--rule);
-  padding: 11px 18px;
-  font-size: 11.5px; color: var(--ink-2);
-  display: flex; align-items: center; justify-content: space-between;
+.who:hover { background: var(--paper-2); }
+.who__av {
+  width: 26px; height: 26px; flex: none; border-radius: 50%;
+  background: var(--paper-2); border: 1px solid var(--rule);
+  display: grid; place-items: center; font-size: 10.5px; font-weight: 600; color: var(--ink-2);
 }
+.who__name { font-size: 12.5px; font-weight: 600; line-height: 1.2; }
+.who__role { font-size: 10.5px; color: var(--ink-3); letter-spacing: .06em; }
+.who__out {
+  margin-left: auto; flex: none; width: 24px; height: 24px; border-radius: 6px;
+  border: 0; background: none; color: var(--ink-3); display: grid; place-items: center; cursor: pointer;
+}
+.who__out:hover { background: var(--rule); color: var(--worse); }
+.online { display: flex; align-items: center; gap: 6px; padding: 4px 10px 2px; font-size: 10.5px; color: var(--ink-3); }
+.online i { width: 6px; height: 6px; border-radius: 50%; background: var(--better); display: block; }
 
 /* ── Header line ─────────────────────────────────────────────────────────── */
 .stage { min-width: 0; }
