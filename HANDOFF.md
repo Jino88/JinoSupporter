@@ -1750,3 +1750,19 @@
 - Files: JinoSupporter.Web/Components/Layout/InstrumentLayout.razor, JinoSupporter.Web/Services/AssetVersionService.cs, JinoSupporter.Web/Program.cs, JinoSupporter.Web/JinoSupporter.Web.csproj, tools/scope-css.js, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.scoped.css, JinoSupporter.Web/wwwroot/ui-redesign/README.md
 - Verification: `dotnet build` 오류 0개, 경고 32개(신규 없음). 드리프트 검사 종단 확인 — 생성물을 일부러 오염시키면 빌드가 `error : instrument.scoped.css is out of date`로 실패하고 복원하면 통과. importantise 파서 6개 케이스 단위 검증(데이터 URI 세미콜론 미분할, gradient 쉼표, 주석에 stray !important 없음, 중복 !important 없음). 생성물 재확인 — element 리셋 0건, `.ins, .ins *`로 box-sizing이 컨테이너까지 도달, keyframes 3개 모두 ins- 접두사, `!important` 252개 유지. 회귀 확인 — 검증 완료 커밋 83587b6의 스코프 CSS와 현재를 동일 하네스로 headless Chrome 렌더 비교해 계산 스타일 차이 0. 서버는 기동·종료하지 않았다.
 - Next: 사용자가 F5 재빌드·재시작 후 실제 화면 확인(테마 토글 후 새로고침하면 유지되어야 한다). 남은 것은 감사 §5의 R7(청소)과 감사 A·B의 페이지별 이식 — 1순위는 BmesTest3Page, QrBakoDataPage, DataInferenceAskPage, DataInferenceDbPage.
+
+## 2026-08-07 08:45 - [UI][FIX] InstrumentShell: 라우트별 .view 계약과 뷰포트 루트 치환(G1·G2)
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: InstrumentShell
+- Change: FIX
+- Prompt: "'JinoSupporter' 작업을 이어서 진행해."
+- Answer: 페이지 개별 이식으로 넘어가려 했으나 감사 B의 결론이 "18개를 동시에 고치는 작업이 아니라 전역 slice G1/G2를 먼저 적용하면 H와 root 수준 V/O 대부분이 사라진다"고 명시하고 있어 그쪽을 먼저 했다. 페이지 클래스명을 열거하는 대신 셸이 자식에게 계약을 거는 방식(.view > *, .view--flush > *)을 택해 페이지를 한 장도 고치지 않았다.
+- Applied: (1) instrument.css §8b 신설 — 문서형은 `.view > * { min-height:0 }`로 뷰포트 바닥 제거, 작업영역형은 `.view--flush > *`에 확정 높이 부여 (2) `.view`와 `.stage`에 min-height:0 명시 (3) InstrumentLayout이 WorkspaceRoutes allow-list로 `.view--flush`를 선택 (4) 라우트 11개를 작업영역으로 지정, 나머지는 문서형 기본값
+- Completed: 페이지가 뷰포트를 소유하던 전제를 셸이 대신 만족시켜, `height:100vh`/`calc(100vh - N)` 루트가 stage 높이에 맞게 해석된다.
+- Decisions: 작업영역 판정은 취향이 아니라 근거로 했다 — 각 페이지 CSS가 `flex:1; min-height:0; overflow:hidden` 또는 명시적 `height:100vh` flex 컬럼을 선언한 것만 넣었다. 기본값은 문서형으로 뒀다: 문서형을 flush로 렌더하면 잘리지만 작업영역형을 문서형으로 렌더하면 스크롤이 두 번 생길 뿐이라 실패 모드가 덜 나쁘다. `/data-inference/db`는 MicroSpeakerResultPage이고 루트가 `min-height: calc(100vh - 24px)`라 문서형으로 분류했다(감사 B가 라우트 연결을 확인 못 했던 항목이다). 감사 G4대로 sticky 전역 보정은 하지 않았고, G3(overlay 정책)은 현재 Z 충돌 근거가 없어 이번 범위에서 제외했다.
+- Files: JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.scoped.css, JinoSupporter.Web/Components/Layout/InstrumentLayout.razor
+- Verification: `dotnet build` 오류 0개, 경고 32개(신규 없음). 실제 페이지 style 블록을 넣고 headless Chrome 렌더 대조 — 문서형(.msr-root) 이전/현재: `.view` 높이 839px→725px, 루트 781px→65px. 이전에는 뷰포트 805px보다 view가 커서 stage가 셸 밖으로 밀려 `.shell{overflow:hidden}`에 잘리고 있었고 지금은 정확히 들어맞는다. 작업영역형(.diask-root): view 725px = 루트 725px, `.view` 자체 스크롤 없음, 셸 밖으로 넘치지 않음. 셸 크롬·페이지 probe 13종은 직전 커밋 1f6a87d 대비 계산 스타일 차이 0. 서버는 기동·종료하지 않았다.
+- Next: 사용자가 F5 재빌드·재시작 후 Ask AI, Daily Input, Model Analysis 같은 작업영역 화면에서 이중 스크롤이 사라졌는지 확인. 그다음은 감사 A·B의 페이지 개별 이식(G5) — 하드코딩 hex를 토큰으로, 페이지 `<style>`의 전역 셀렉터 격리(InputDataBatchPage의 `.panel`/`table`/`th`/`td`가 1순위), 공유 컴포넌트 OcrTextEditor → CurrentProblemWorkflowStrip 순.
