@@ -1766,3 +1766,19 @@
 - Files: JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.scoped.css, JinoSupporter.Web/Components/Layout/InstrumentLayout.razor
 - Verification: `dotnet build` 오류 0개, 경고 32개(신규 없음). 실제 페이지 style 블록을 넣고 headless Chrome 렌더 대조 — 문서형(.msr-root) 이전/현재: `.view` 높이 839px→725px, 루트 781px→65px. 이전에는 뷰포트 805px보다 view가 커서 stage가 셸 밖으로 밀려 `.shell{overflow:hidden}`에 잘리고 있었고 지금은 정확히 들어맞는다. 작업영역형(.diask-root): view 725px = 루트 725px, `.view` 자체 스크롤 없음, 셸 밖으로 넘치지 않음. 셸 크롬·페이지 probe 13종은 직전 커밋 1f6a87d 대비 계산 스타일 차이 0. 서버는 기동·종료하지 않았다.
 - Next: 사용자가 F5 재빌드·재시작 후 Ask AI, Daily Input, Model Analysis 같은 작업영역 화면에서 이중 스크롤이 사라졌는지 확인. 그다음은 감사 A·B의 페이지 개별 이식(G5) — 하드코딩 hex를 토큰으로, 페이지 `<style>`의 전역 셀렉터 격리(InputDataBatchPage의 `.panel`/`table`/`th`/`td`가 1순위), 공유 컴포넌트 OcrTextEditor → CurrentProblemWorkflowStrip 순.
+
+## 2026-08-07 11:15 - [UI][FIX] InstrumentShell: 페이지 style 블록의 전역 셀렉터 누출 차단
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: InstrumentShell
+- Change: FIX
+- Prompt: "중간에 멈춘거 같은데 진행해"
+- Answer: 페이지 이식(G5)을 워커 3개로 나누려 했으나 호스트가 응답하지 않아 대상을 직접 검증했고, 그 과정에서 감사가 집계한 "전역 셀렉터 누출"의 상당수가 오탐임을 확인했다. 실제 누출은 4개 파일 9개 규칙뿐이었고 작고 기계적이라 워커 없이 직접 고쳤다.
+- Applied: (1) InputDataBatchPage의 h1/table/th,td/th/td/td .btn+.btn 6개 규칙을 .input-data-root 아래로 스코프 (2) DataInferenceDbPage의 td.n을 .didb-root 아래로 (3) DataInferenceBatchPage의 td.n을 .dib-root 아래로 (4) DataInferenceValidationPage의 td.n을 .div-root 아래로
+- Completed: 페이지 style 블록이 다른 화면을 오염시키는 경로를 없앴다. 특히 td의 max-width:360px + white-space:nowrap가 무관한 화면의 표 셀을 잘라내던 실제 기능 버그가 사라졌다.
+- Decisions: 오탐 3종은 건드리지 않았다 — DailyTestDataInputPage의 h3/p/table/th,td/pre(3629~3635)와 DataInferenceDbPage:4038의 body/section/h3은 내보내기용 독립 HTML을 조립하는 C# 문자열이고, LoginPage의 html,body는 @layout EmptyLayout으로 자체 문서 전체를 렌더하므로 셸에 들어가지 않는다. 감사 A·B는 R1/R2 이전에 작성돼 B(브리지 미적용) 항목 상당수가 이미 무의미해졌으므로, 남은 페이지 작업은 감사 목록을 그대로 따르지 말고 재확인 후 진행해야 한다.
+- Files: JinoSupporter.Web/Components/Pages/InputDataBatchPage.razor, JinoSupporter.Web/Components/Pages/DataInferenceDbPage.razor, JinoSupporter.Web/Components/Pages/DataInferenceBatchPage.razor, JinoSupporter.Web/Components/Pages/DataInferenceValidationPage.razor
+- Verification: `dotnet build` 오류 0개, 경고 32개(신규 없음). 1차 시도에서 CSS 주석에 <style> 문자열을 넣어 Razor가 태그로 파싱해 RZ9980 오류 2건이 났고 문구를 고쳐 해소했다. 렌더 대조 — 실제 CSS 로드 순서로 조립한 하네스에 무관한 화면 마크업과 이 페이지 마크업을 나란히 넣고 수정 전/후를 headless Chrome로 비교. 무관한 h1 26px/800 -> 30.71px/500, 무관한 th 배경 #eef2f7/하단 1px/패딩 8px -> 전부 해제, 무관한 td max-width 360px·nowrap -> none·normal. Input Data Batch 자신의 h1/th/td 3항목은 전후 동일. 서버는 기동·종료하지 않았다.
+- Next: 남은 페이지 작업은 화면 렌더 판단이 필요한 것들이다 — DailyTestDataInputPage 내부 패널 vh 5곳(38/64/68/78vh, min-height 72vh 2곳), InputDataTestPage:899 `min(1200px, calc(100vh - 230px))`, DataInferenceAskPage:428 iframe `calc(100vh - 235px)`, DataInferenceDbPage:2069/2206 보고서 frame. 전부 stage가 뷰포트보다 짧아진 만큼 어긋나며, flex 체인 확인이 필요해 추측으로 고치면 패널이 무너질 수 있다.

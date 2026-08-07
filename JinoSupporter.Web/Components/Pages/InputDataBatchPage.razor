@@ -2221,7 +2221,10 @@
         letter-spacing: 0;
     }
 
-    h1 {
+    /* Scoped to the page root on purpose. This style block is injected into the
+       shared document, so a bare `h1` here restyled every other screen's
+       heading once the new shell started hosting all pages in one document. */
+    .input-data-root h1 {
         margin: 2px 0 0;
         font-size: 26px;
         font-weight: 800;
@@ -2378,34 +2381,36 @@
         border-radius: 6px;
     }
 
-    table {
+    /* All table rules are scoped to the page root for the same reason as h1
+       above: bare `table`/`th`/`td` here reached every table in the app. */
+    .input-data-root table {
         width: 100%;
         min-width: 760px;
         border-collapse: collapse;
         font-size: 12px;
     }
 
-    th,
-    td {
+    .input-data-root th,
+    .input-data-root td {
         border-bottom: 1px solid #e2e8f0;
         border-right: 1px solid #e2e8f0;
         padding: 7px 8px;
         vertical-align: top;
     }
 
-    th {
+    .input-data-root th {
         background: #eef2f7;
         font-weight: 800;
     }
 
-    td {
+    .input-data-root td {
         max-width: 360px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
-    td .btn + .btn {
+    .input-data-root td .btn + .btn {
         margin-left: 6px;
     }
 

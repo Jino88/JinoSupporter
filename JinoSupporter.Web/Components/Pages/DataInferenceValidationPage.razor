@@ -315,7 +315,8 @@ else
         background:#f1f5f9; font-weight:600; color:#475569;
         position:sticky; top:0; z-index:1;
     }
-    td.n             { text-align:right; font-variant-numeric:tabular-nums; }
+    /* scoped: a bare `td.n` in this shared document reached every screen's tables */
+    .div-root td.n   { text-align:right; font-variant-numeric:tabular-nums; }
     .div-summary-cell { max-width:500px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#b45309; }
     .div-row-bad:hover { background:#fef3c7; }
     .div-row-ok        { color:#64748b; }

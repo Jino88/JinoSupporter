@@ -2356,7 +2356,9 @@ else
             grid-column: 1 / -1;
         }
     }
-    td.n             { text-align: right; font-variant-numeric: tabular-nums; }
+    /* scoped: this style block lands in the shared document, so a bare `td.n`
+       would right-align that column on every other screen's tables too */
+    .didb-root td.n  { text-align: right; font-variant-numeric: tabular-nums; }
     .didb-set-pt     { color: #2563eb; cursor: pointer; font-size: 12px;
                        text-decoration: underline dashed; text-underline-offset: 3px; }
     .didb-set-pt:hover { color: #1d4ed8; text-decoration: underline solid; }

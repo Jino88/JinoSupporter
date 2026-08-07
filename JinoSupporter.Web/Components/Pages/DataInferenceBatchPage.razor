@@ -396,7 +396,8 @@ else
         background: #f1f5f9; font-weight: 600; color: #475569;
         position: sticky; top: 0; z-index: 1;
     }
-    td.n { text-align: right; font-variant-numeric: tabular-nums; }
+    /* scoped: a bare `td.n` in this shared document reached every screen's tables */
+    .dib-root td.n { text-align: right; font-variant-numeric: tabular-nums; }
 
     .dib-map-inline {
         border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8;
