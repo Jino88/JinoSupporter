@@ -2066,7 +2066,9 @@ else
     }
     .didb-ask-html-frame {
         display: block; width: 100%;
-        height: min(900px, 58vh); min-height: 520px;
+        /* proportional to the pane the shell gives this page, not to the window —
+           58vh of the viewport is taller than the area that holds it */
+        height: min(900px, calc(var(--view-h, 100vh) * .58)); min-height: 520px;
         border: 0; border-top: 1px solid #e2e8f0; background: #fff;
     }
     .didb-ask-markdown {
@@ -2203,7 +2205,7 @@ else
     .didb-input-test-html-frame {
         display: block;
         width: 100%;
-        height: min(1300px, 72vh);
+        height: min(1300px, calc(var(--view-h, 100vh) * .72));
         min-height: 720px;
         border: 0;
         background: #fff;

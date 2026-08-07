@@ -140,6 +140,16 @@ a { color: inherit; text-decoration: none; }
   --topbar-h: 46px;
   --tabs-h: 34px;
 
+  /* Height a hosted page actually gets: the viewport minus this shell's chrome
+     (topbar + tab strip, each with a 1px bottom border).
+
+     Pages written before the shell existed size themselves with `100vh` because
+     they owned the viewport. Inside the shell that overshoots by exactly this
+     chrome, which is how a panel ends up taller than the area holding it. Such a
+     page should read `var(--view-h)` instead of `100vh`, and drop the part of its
+     own subtrahend that used to cover the classic shell's 34px tab strip. */
+  --view-h: calc(100vh - var(--topbar-h) - var(--tabs-h) - 2px);
+
   --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
   --sans: "Archivo", "Segoe UI", system-ui, -apple-system, "Malgun Gothic", sans-serif;
 }

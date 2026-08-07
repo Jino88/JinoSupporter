@@ -1782,3 +1782,19 @@
 - Files: JinoSupporter.Web/Components/Pages/InputDataBatchPage.razor, JinoSupporter.Web/Components/Pages/DataInferenceDbPage.razor, JinoSupporter.Web/Components/Pages/DataInferenceBatchPage.razor, JinoSupporter.Web/Components/Pages/DataInferenceValidationPage.razor
 - Verification: `dotnet build` 오류 0개, 경고 32개(신규 없음). 1차 시도에서 CSS 주석에 <style> 문자열을 넣어 Razor가 태그로 파싱해 RZ9980 오류 2건이 났고 문구를 고쳐 해소했다. 렌더 대조 — 실제 CSS 로드 순서로 조립한 하네스에 무관한 화면 마크업과 이 페이지 마크업을 나란히 넣고 수정 전/후를 headless Chrome로 비교. 무관한 h1 26px/800 -> 30.71px/500, 무관한 th 배경 #eef2f7/하단 1px/패딩 8px -> 전부 해제, 무관한 td max-width 360px·nowrap -> none·normal. Input Data Batch 자신의 h1/th/td 3항목은 전후 동일. 서버는 기동·종료하지 않았다.
 - Next: 남은 페이지 작업은 화면 렌더 판단이 필요한 것들이다 — DailyTestDataInputPage 내부 패널 vh 5곳(38/64/68/78vh, min-height 72vh 2곳), InputDataTestPage:899 `min(1200px, calc(100vh - 230px))`, DataInferenceAskPage:428 iframe `calc(100vh - 235px)`, DataInferenceDbPage:2069/2206 보고서 frame. 전부 stage가 뷰포트보다 짧아진 만큼 어긋나며, flex 체인 확인이 필요해 추측으로 고치면 패널이 무너질 수 있다.
+
+## 2026-08-07 11:45 - [UI][FIX] InstrumentShell: 페이지 내부 뷰포트 수식을 --view-h 기준으로 교정
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: InstrumentShell
+- Change: FIX
+- Prompt: "하던거 마저해"
+- Answer: 감사가 "일괄 override하지 말고 페이지별로 고치라"고 한 내부 iframe·패널 높이를 실제 렌더 측정으로 교정했다. 셸이 자기 크롬 높이를 --view-h로 노출하고 페이지가 그것을 기준으로 쓰게 해서, 매직넘버를 다시 심지 않고 해결했다.
+- Applied: (1) instrument.css에 --view-h 토큰 추가 (100vh에서 topbar 46px·tabs 34px·보더 2px 차감) (2) DataInferenceAskPage의 .diask-html-wrap을 calc(var(--view-h) - 201px)로 교정 (3) DataInferenceDbPage의 보고서 frame 2곳을 58vh·72vh에서 --view-h 비례로 (4) DailyTestDataInputPage의 root와 패널 5곳, 분석 iframe 인라인 스타일을 --view-h 비례로
+- Completed: 페이지가 뷰포트를 소유하던 시절의 높이 수식이 실제 작업 영역 기준으로 계산된다.
+- Decisions: 상수 201px은 추측이 아니라 측정값이다 — 셸 안에서 Ask 페이지를 렌더해 프레임 위 페이지 자체 크롬(header 43 + question 92 + toolbars 66)을 재서 얻었고, 원래 상수 235px과의 차이 34px이 구 MainLayout 탭 스트립 높이와 일치해 교차 검증됐다. min-height floor(Ask 680px, DB 520/720px)는 전부 유지했다 — 작은 화면에서 보고서를 일부러 크게 두고 스크롤시키려는 의도이며 지우면 가독성이 나빠진다. InputDataTestPage.razor는 @page도 컴포넌트 참조도 없는 미사용 파일이라 건드리지 않았다. Classic UI에서는 --view-h가 없어 fallback 100vh가 쓰이며 Ask 프레임이 34px 커지는데, 폐기 예정 경로이고 스크롤 컨테이너 안이라 영향이 없다.
+- Files: JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.scoped.css, JinoSupporter.Web/Components/Pages/DataInferenceAskPage.razor, JinoSupporter.Web/Components/Pages/DataInferenceDbPage.razor, JinoSupporter.Web/Components/Pages/DailyTestDataInputPage.razor
+- Verification: `dotnet build` 오류 0개, 경고 32개(신규 없음). scope-css.js check 통과(생성물 동기). headless Chrome 측정 — Ask 프레임은 창 1080에서 750px(스크롤러 대비 +46px 넘침) -> 702px(-2px, 정확히 들어맞음), 1440에서도 -2px. 창 900에서는 680px floor가 유지돼 의도대로 스크롤. Daily 패널은 .64가 462.72px(--view-h 723의 64% = 462.7), .68이 491.64px로 계산 일치. DB ask frame은 1440에서 732.53px(0.58 x 1263), 900에서는 min-height 520px floor가 적용. 서버는 기동·종료하지 않았다.
+- Next: 사용자가 F5 재빌드·재시작 후 Ask AI와 Daily Input에서 보고서 프레임이 화면에 맞는지 확인. 감사 A(BMES)의 calc(100vh - N) 화면들(BmesTest3 150/96px, RoutingTable·ReasonTable 190px, CauseMonthly 285px, MicroSpeakerResult 184/260px)도 같은 --view-h 패턴으로 교정 가능하며, 각각 페이지 자체 크롬을 측정해 상수를 다시 잡아야 한다.

@@ -424,8 +424,13 @@
     .diask-html-tools {
         display: flex; justify-content: flex-end; align-items: center; gap: 8px;
     }
+    /* 201px is this page's own chrome above the frame (header 43 + question 92 +
+       toolbars 66), measured in the shell. The old 235px also covered the classic
+       shell's 34px tab strip, which --view-h now accounts for.
+       min-height stays: below ~880px of viewport the report is deliberately
+       taller than the pane and the answer column scrolls. */
     .diask-html-wrap {
-        min-height: 680px; height: calc(100vh - 235px);
+        min-height: 680px; height: calc(var(--view-h, 100vh) - 201px);
         background: #fff; border: 1px solid #cbd5e1; border-radius: 6px;
         overflow: hidden;
     }
