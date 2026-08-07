@@ -1,4 +1,4 @@
-@inherits LayoutComponentBase
+﻿@inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Routing
 @using JinoSupporter.Web.Services
 @using System.Security.Claims
@@ -161,7 +161,10 @@
                         </nav>
                     }
 
-                    <main class="view @(IsWorkspaceRoute() ? "view--flush" : "")">
+                    @* Every route is a document view: `.view` owns the vertical
+                       scroll. The workspace variant (`view--flush`) is not applied —
+                       see instrument.css §8b for why it was reverted. *@
+                    <main class="view">
                         @Body
                     </main>
                 </div>
@@ -241,36 +244,6 @@
         return here.Equals(r, StringComparison.OrdinalIgnoreCase)
             || here.StartsWith(r + "/", StringComparison.OrdinalIgnoreCase);
     }
-
-    /// <summary>
-    /// Routes whose page owns a fixed-height workspace instead of a document that
-    /// flows downward: the root declares <c>overflow:hidden</c> and scrolls its own
-    /// panes. Those get <c>.view--flush</c>, which stops scrolling and hands the
-    /// page a definite height (instrument.css §8b).
-    ///
-    /// Membership is not a style judgement — each of these declares the contract in
-    /// its own CSS, either as <c>flex:1; min-height:0; overflow:hidden</c> or as an
-    /// explicit <c>height:100vh</c> flex column. Everything else stays a document,
-    /// because that is the safe default: a document rendered flush would be clipped,
-    /// while a workspace rendered as a document merely scrolls twice.
-    /// </summary>
-    private static readonly HashSet<string> WorkspaceRoutes =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            "data-inference",                   // .di-root
-            "data-inference/ask",               // .diask-root
-            "data-inference/db-legacy",         // .didb-root
-            "data-inference/analysis",          // .dian-root
-            "data-inference/batch",             // .dib-root
-            "data-inference/validation",        // .div-root
-            "data-inference/model-analysis",    // .dima-root  (height:100vh)
-            "data-inference/first-analysis",    // .fav-root   (height:100vh)
-            "data-inference/current-problem",   // .fav-root
-            "data-inference-test",              // .di-root
-            "daily-test-data/input",            // .daily-root (calc(100vh - 24px))
-        };
-
-    private bool IsWorkspaceRoute() => WorkspaceRoutes.Contains(CurrentRelative());
 
     private MenuItemDef? CurrentMenu() =>
         AppMenus.All

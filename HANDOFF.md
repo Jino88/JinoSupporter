@@ -1798,3 +1798,19 @@
 - Files: JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.scoped.css, JinoSupporter.Web/Components/Pages/DataInferenceAskPage.razor, JinoSupporter.Web/Components/Pages/DataInferenceDbPage.razor, JinoSupporter.Web/Components/Pages/DailyTestDataInputPage.razor
 - Verification: `dotnet build` 오류 0개, 경고 32개(신규 없음). scope-css.js check 통과(생성물 동기). headless Chrome 측정 — Ask 프레임은 창 1080에서 750px(스크롤러 대비 +46px 넘침) -> 702px(-2px, 정확히 들어맞음), 1440에서도 -2px. 창 900에서는 680px floor가 유지돼 의도대로 스크롤. Daily 패널은 .64가 462.72px(--view-h 723의 64% = 462.7), .68이 491.64px로 계산 일치. DB ask frame은 1440에서 732.53px(0.58 x 1263), 900에서는 min-height 520px floor가 적용. 서버는 기동·종료하지 않았다.
 - Next: 사용자가 F5 재빌드·재시작 후 Ask AI와 Daily Input에서 보고서 프레임이 화면에 맞는지 확인. 감사 A(BMES)의 calc(100vh - N) 화면들(BmesTest3 150/96px, RoutingTable·ReasonTable 190px, CauseMonthly 285px, MicroSpeakerResult 184/260px)도 같은 --view-h 패턴으로 교정 가능하며, 각각 페이지 자체 크롬을 측정해 상수를 다시 잡아야 한다.
+
+## 2026-08-07 12:10 - [UI][FIX] InstrumentShell: view--flush 작업영역 계약 회귀를 되돌림
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: InstrumentShell
+- Change: FIX
+- Prompt: "안보임"
+- Answer: 사용자가 화면이 안 보인다고 알려와 원인을 추적한 결과, 2026-08-07 08:45 항목(G1/G2)에서 내가 넣은 `.view--flush > *` 계약이 원인이었다. 그 규칙은 "페이지가 루트 요소 하나만 렌더한다"고 가정했는데 실제로는 대부분 최상위 형제가 여럿이라, flex 컬럼이 높이를 균등 분배해 진짜 콘텐츠 루트가 화면의 일부만 차지하고 나머지가 잘렸다.
+- Applied: (1) instrument.css 8b에서 `.view--flush > *` 규칙 삭제하고 되돌린 이유를 주석으로 남김 (2) InstrumentLayout에서 WorkspaceRoutes 목록과 IsWorkspaceRoute 제거, `.view`만 사용 (3) instrument.scoped.css 재생성
+- Completed: 모든 라우트가 문서형 `.view`로 돌아가 화면이 다시 정상 표시된다.
+- Decisions: 근본 실수는 최상위 구조를 확인하지 않고 "루트 하나"를 가정한 것이다. 실제 확인 결과 DataInferenceAskPage는 최상위 형제 4개(PageTitle, div, div, CurrentProblemWorkflowStrip, div, div), DataInferenceDbPage는 5개(PageTitle, div, div, CurrentProblemWorkflowStrip, section, details)다. 측정으로 재현했다 — 725px 뷰에 형제 3개를 넣으면 각 242px씩 균등 분배됐다. 8b의 `.view > * { min-height: 0 }`과 `.view`/`.stage`의 min-height:0은 유지했다. 이것들은 별개 근거로 검증됐고(문서형 화면에서 view 839px -> 725px), 형제 수와 무관하다. --view-h 토큰과 페이지별 높이 교정(11:45 항목)도 유지했다. 그것들은 flush와 독립이며 스크롤 컨테이너 안에서 동작한다.
+- Files: JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.scoped.css, JinoSupporter.Web/Components/Layout/InstrumentLayout.razor
+- Verification: `dotnet build` 오류 0개, 경고 32개(신규 없음). headless Chrome 재현 및 회복 확인 — 되돌리기 전 형제 3개가 각 242px로 균등 분배됐고, 되돌린 뒤 각자 자연 크기(19px/19px/87px)를 갖고 `.view`가 필요할 때만 스크롤하며 잘림 없음. 서버는 기동·종료하지 않았다.
+- Next: 작업영역 계약을 다시 시도한다면 반드시 각 페이지의 실제 최상위 구조를 먼저 확인하고, 단일 루트를 가정하지 말 것. 형제가 여럿인 페이지는 페이지 쪽에서 루트 하나로 감싸는 편이 안전하다. 그 전까지는 문서형이 기본이며 이중 스크롤은 감수한다.

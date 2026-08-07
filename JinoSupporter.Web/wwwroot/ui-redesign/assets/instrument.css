@@ -538,15 +538,15 @@ body {
    viewport-sized min-height would force a second scrollbar inside it. */
 .view > * { min-height: 0; }
 
-/* Workspace routes — `.view--flush` does not scroll; it hands its child a
-   definite height so the page's own internal panes can scroll instead. This is
-   what replaces `height: 100vh` / `calc(100vh - N)` on those roots. */
-.view--flush > * {
-  flex: 1 1 auto;
-  min-height: 0;
-  height: 100%;
-  max-height: 100%;
-}
+/* No `.view--flush > *` contract here on purpose.
+   It was tried and reverted: giving every direct child `flex:1 1 auto; height:100%`
+   assumed each page renders a single root element. Most do not — Ask renders four
+   top-level siblings and DB legacy five (banner, workflow strip, section, …), and
+   a flex column then splits the height evenly between them, leaving the real
+   content root with a fraction of the view and clipping the rest. Measured: three
+   siblings in a 725px view got 242px each.
+   Any future version of this has to be verified against the pages' real top-level
+   structure, not against a single-root assumption. */
 
 .pagehead {
   display: flex; align-items: flex-end; gap: 18px;
