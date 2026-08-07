@@ -46,9 +46,21 @@ For the same reason the layout strip is `.ins-row`, not `.row`: Bootstrap owns
 that name and 176 places in the app use it as a grid row. New classes that could
 collide with Bootstrap or a page take the `ins-` prefix.
 
-**After editing `instrument.css`, re-run `node tools/scope-css.js`, then bump the
-`?v=` on the `<link>` in `InstrumentLayout.razor`.** The scoped file is generated
-and must never be hand-edited, and nothing fingerprints it for you.
+**After editing `instrument.css`, re-run `node tools/scope-css.js`.** The scoped
+file is generated and must never be hand-edited.
+
+Two things now catch a forgotten regeneration, so it cannot ship silently:
+
+- The build runs `node tools/scope-css.js check` and **fails** when the generated
+  file no longer matches its source (`CheckScopedCss` in `JinoSupporter.Web.csproj`).
+  Without Node installed the check warns and is skipped; `SkipScopedCssCheck=true`
+  opts out deliberately.
+- The `?v=` token on the `<link>` is the file's own content hash
+  (`AssetVersionService`), so there is no version number to bump by hand.
+
+Animation names carry the `ins-` prefix (`ins-pulse`, `ins-blip`, `ins-rise`):
+`@keyframes` is global no matter how the selectors are scoped, so an unprefixed
+`pulse` would be visible to — and collide with — any page that defines its own.
 
 ```
 JinoSupporter.Web/wwwroot/ui-redesign/

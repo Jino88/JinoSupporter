@@ -1734,3 +1734,19 @@
 - Files: JinoSupporter.Web/wwwroot/ui-redesign/audit/SHELL_FIX_VALIDATION.md
 - Verification: 셸 크롬 .railbtn/.iconbtn/.tab__x/.btn--sm/.navlink/.brand 6개 그룹 전후 동일. 복원 확인 — .dib-tab border 0→1px·padding-left 0→12px, .pg-pill border 0→1px, .bmes-table separate→collapse, .btn-close background-image none→SVG, .col-md-6 width 8.39px→675px, .row align-items center→normal, 링크 #0f1319/none→#2563eb/underline. scope-css.js 재실행 결과가 커밋본과 일치(438 blocks, 6 dropped). 스코프 출력에 element 리셋 0건, bare .row/col-* 0건, .row-grp/.row-sum 4건 보존. 서버는 기동·종료하지 않았다.
 - Next: 사용자가 F5 재빌드·재시작 후 실제 화면 확인. 그다음은 감사 §5 우선순위 3번 이후 — R4(테마 localStorage 영속화), R5(생성기 강화), R6(빌드 연결), 이어서 감사 A·B의 페이지별 이식 순서.
+
+## 2026-08-07 07:50 - [UI][CHANGE] InstrumentShell: 테마 영속화·생성기 강화·빌드 연결(R4·R5·R6)
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: InstrumentShell
+- Change: CHANGE
+- Prompt: "ㅇㅇ 진행해"
+- Answer: 감사 §5 우선순위 3~5번을 한 번에 처리했다. 각각 단일 결합 변경이라 워커를 만들지 않고 루트가 직접 구현했다. 조사 중 실제 결함 두 가지를 추가로 발견해 함께 고쳤다 — `.ins` 컨테이너 자신이 box-sizing을 못 받고 있었고, `@keyframes pulse` 같은 흔한 이름이 스코프와 무관하게 전역으로 새고 있었다.
+- Applied: (1) R4 테마를 localStorage(`jino-ui-theme`)에 미러링해 F5 후에도 유지 (2) R5 importantise를 문자 파서로 교체 — 따옴표·괄호 깊이를 추적해 `url("data:...;...")`의 세미콜론에 안 잘리고, 주석만 있는 조각에 `!important`를 붙이지 않음 (3) R5 선언 블록 안의 주석을 버퍼에 이어붙여 브리지 규칙이 조용히 !important를 잃지 않게 함 (4) R5 `*` 셀렉터를 `.ins, .ins *`로 확장 (5) R5 셀렉터 목록 중복 제거 (6) S8 애니메이션 이름에 ins- 접두사 (7) R6 scope-css.js에 check 모드 추가, csproj CheckScopedCss 타깃이 드리프트 시 빌드 실패 (8) R6 `?v=` 수동 토큰을 콘텐츠 해시(AssetVersionService)로 교체 (9) README를 새 규약으로 갱신
+- Completed: 테마가 새로고침 후에도 유지되고, 생성물이 소스와 어긋난 채 배포되는 경로가 빌드에서 차단되며, 캐시버스터를 사람이 잊을 수 없게 됐다.
+- Decisions: keyframes 접두사는 생성기에서 정규식으로 바꾸지 않고 소스에서 직접 개명했다 — animation 참조까지 안전하게 바꾸려면 이름 수집·치환이 필요한데, 소스에서 고치면 목업도 같은 이름을 쓰게 되어 단순하고 위험이 없다. check 모드는 줄바꿈을 정규화해 비교한다(git이 CRLF로 체크아웃하는데 생성기는 LF로 써서 오탐이 난다). 빌드 타깃은 node가 없으면 경고만 내고 넘어간다 — 검사 하나 때문에 Node 미설치 환경의 빌드를 막는 건 과하다. AssetVersionService는 해시를 프로세스 수명 동안 캐시한다(재빌드하면 어차피 새로 뜬다).
+- Files: JinoSupporter.Web/Components/Layout/InstrumentLayout.razor, JinoSupporter.Web/Services/AssetVersionService.cs, JinoSupporter.Web/Program.cs, JinoSupporter.Web/JinoSupporter.Web.csproj, tools/scope-css.js, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.scoped.css, JinoSupporter.Web/wwwroot/ui-redesign/README.md
+- Verification: `dotnet build` 오류 0개, 경고 32개(신규 없음). 드리프트 검사 종단 확인 — 생성물을 일부러 오염시키면 빌드가 `error : instrument.scoped.css is out of date`로 실패하고 복원하면 통과. importantise 파서 6개 케이스 단위 검증(데이터 URI 세미콜론 미분할, gradient 쉼표, 주석에 stray !important 없음, 중복 !important 없음). 생성물 재확인 — element 리셋 0건, `.ins, .ins *`로 box-sizing이 컨테이너까지 도달, keyframes 3개 모두 ins- 접두사, `!important` 252개 유지. 회귀 확인 — 검증 완료 커밋 83587b6의 스코프 CSS와 현재를 동일 하네스로 headless Chrome 렌더 비교해 계산 스타일 차이 0. 서버는 기동·종료하지 않았다.
+- Next: 사용자가 F5 재빌드·재시작 후 실제 화면 확인(테마 토글 후 새로고침하면 유지되어야 한다). 남은 것은 감사 §5의 R7(청소)과 감사 A·B의 페이지별 이식 — 1순위는 BmesTest3Page, QrBakoDataPage, DataInferenceAskPage, DataInferenceDbPage.

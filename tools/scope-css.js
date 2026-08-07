@@ -63,24 +63,76 @@ const RESET_NOTE =
    \`.ins button\`/\`.ins table\`/\`.ins a\` would outrank every hosted page's own
    classes. See §1b in the source for the design system's own restatement. */`;
 
+/**
+ * Append !important to every declaration in a block.
+ *
+ * Splitting on ';' is wrong: a semicolon is ordinary text inside quotes and
+ * inside url(), and `background: url("data:image/svg+xml;charset=utf8,...")`
+ * would be cut in half. This walks characters instead, tracking paren depth and
+ * quote state, so only a top-level ';' ends a declaration.
+ *
+ * Comments are carried along rather than split out. A comment is whitespace to
+ * CSS, so `color: red /* why *\/ !important` is valid — but a fragment that is
+ * only a comment must not get an !important of its own, hence the bare test.
+ */
 function importantise(block) {
-  return block
-    .split(';')
-    .map(d => {
-      const t = d.trim();
-      if (!t || t.includes('!important') || !t.includes(':')) return d;
-      return d.replace(/\s+$/, '') + ' !important';
-    })
-    .join(';');
+  const uncomment = s => s.replace(/\/\*[\s\S]*?\*\//g, '');
+
+  let out = '';
+  let decl = '';
+  let depth = 0;      // ( ) nesting
+  let quote = null;   // ' or " while open
+
+  const flush = () => {
+    const bare = uncomment(decl).trim();
+    out += bare && bare.includes(':') && !bare.includes('!important')
+      ? decl.replace(/\s+$/, '') + ' !important'
+      : decl;
+    decl = '';
+  };
+
+  for (let i = 0; i < block.length; i++) {
+    const ch = block[i];
+
+    if (quote) {
+      decl += ch;
+      if (ch === '\\') decl += block[++i] ?? '';
+      else if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") { quote = ch; decl += ch; continue; }
+    if (ch === '/' && block[i + 1] === '*') {            // comment: opaque
+      const end = block.indexOf('*/', i + 2);
+      const stop = end === -1 ? block.length : end + 2;
+      decl += block.slice(i, stop);
+      i = stop - 1;
+      continue;
+    }
+    if (ch === '(') depth++;
+    else if (ch === ')') depth--;
+    else if (ch === ';' && depth === 0) { flush(); out += ';'; continue; }
+
+    decl += ch;
+  }
+  flush();
+  return out;
 }
 
-/** Rewrite one comma-separated selector list. */
+/**
+ * Rewrite one comma-separated selector list.
+ *
+ * Deduplicated because several source selectors collapse onto the same scoped
+ * one — `html, body` both become `.ins`, and `*` expands to a list that already
+ * contains `.ins`. Emitting `.ins, .ins` is harmless but reads like a bug.
+ */
 function scopeSelectorList(list) {
+  const seen = new Set();
   return list
     .split(',')
     .map(s => s.trim())
     .filter(Boolean)
-    .map(scopeOne)
+    .flatMap(s => scopeOne(s).split(',').map(x => x.trim()))
+    .filter(s => !seen.has(s) && seen.add(s))
     .join(', ');
 }
 
@@ -95,6 +147,9 @@ function scopeOne(sel) {
   if (ALREADY_SCOPED.test(sel)) return sel;                   // already scoped
   if (sel === ':root') return ROOT;                           // token block
   if (sel === 'html' || sel === 'body') return ROOT;          // page-level resets
+  // `*` alone would scope to `.ins *`, which skips the container itself — the
+  // one element that is not a descendant of `.ins`. box-sizing has to reach it.
+  if (sel === '*') return `${ROOT}, ${ROOT} *`;
   if (sel.startsWith('[data-theme=')) {
     // theme flag lives on the container itself, not on <html>
     const rest = sel.slice(sel.indexOf(']') + 1).trim();
@@ -130,6 +185,16 @@ function scope(css) {
       const end = css.indexOf('*/', i + 2);
       const stop = end === -1 ? css.length : end + 2;
       const comment = css.slice(i, stop);
+
+      // Inside a declaration block the comment belongs to the buffer, not the
+      // output. Flushing here would emit the declarations before it untouched,
+      // so a commented bridge rule would silently lose its !important — the
+      // block is only importantised as a whole, at its closing brace.
+      if (stack[stack.length - 1] === 'decl') {
+        buf += comment;
+        i = stop - 1;
+        continue;
+      }
 
       if (comment.includes(RESET_START)) {
         emit(buf + RESET_NOTE);           // leave a marker where the block was
@@ -195,11 +260,29 @@ const header =
 
 `;
 const result = scope(src);
-fs.writeFileSync(OUT, header + result.css, 'utf8');
-
+const output = header + result.css;
 const rules = (src.match(/\{/g) || []).length;
-console.log(
+const summary =
   `scoped ${rules - result.dropped} blocks ` +
-  `(${result.dropped} dropped with the element reset) ` +
-  `-> ${path.relative(process.cwd(), OUT)}`
-);
+  `(${result.dropped} dropped with the element reset)`;
+
+// `node tools/scope-css.js check` verifies instead of writing, so the build can
+// fail when the committed file no longer matches its source. Line endings are
+// normalised first: git may check the file out as CRLF while this writes LF,
+// and that difference is not drift.
+const nl = s => s.replace(/\r\n/g, '\n');
+
+if (process.argv.slice(2).includes('check')) {
+  const current = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8') : '';
+  if (nl(current) !== nl(output)) {
+    console.error(
+      `${path.basename(OUT)} is out of date with ${path.basename(SRC)}.\n` +
+      `Run: node tools/scope-css.js`
+    );
+    process.exit(1);
+  }
+  console.log(`${summary} — generated file is up to date`);
+} else {
+  fs.writeFileSync(OUT, output, 'utf8');
+  console.log(`${summary} -> ${path.relative(process.cwd(), OUT)}`);
+}

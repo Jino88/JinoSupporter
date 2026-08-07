@@ -7,6 +7,7 @@
 @inject WebRepository         Repo
 @inject MenuPermissionService Perms
 @inject UiModeService         UiMode
+@inject AssetVersionService   Assets
 @inject NavigationManager     Nav
 @inject IJSRuntime            JS
 @implements IDisposable
@@ -28,7 +29,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..800;1,75..125,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
-<link rel="stylesheet" href="ui-redesign/assets/instrument.scoped.css?v=4" />
+@* The token is the file's own content hash, so regenerating the scoped CSS
+   invalidates the browser cache on its own — no manual ?v= bump to forget. *@
+<link rel="stylesheet" href="ui-redesign/assets/instrument.scoped.css?v=@Assets.For(ScopedCssPath)" />
 
 <AuthorizeView>
     <NotAuthorized>
@@ -170,6 +173,13 @@
 @code {
     [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
 
+    /// <summary>Where the theme choice is mirrored, so it survives a full reload.
+    /// Same approach as <see cref="UiModeService.StorageKey"/>: the component is
+    /// per-circuit, so without this the toggle resets on every F5.</summary>
+    private const string ThemeStorageKey = "jino-ui-theme";
+
+    private const string ScopedCssPath = "ui-redesign/assets/instrument.scoped.css";
+
     private string _theme = "light";
     private bool   _railMin;
 
@@ -199,7 +209,12 @@
         }
     }
 
-    private void ToggleTheme() => _theme = _theme == "dark" ? "light" : "dark";
+    private async Task ToggleTheme()
+    {
+        _theme = _theme == "dark" ? "light" : "dark";
+        try { await JS.InvokeVoidAsync("localStorage.setItem", ThemeStorageKey, _theme); }
+        catch (JSException) { /* storage blocked; the choice still holds for this circuit */ }
+    }
 
     private async Task BackToClassic()
     {
@@ -277,6 +292,20 @@
             await JS.InvokeVoidAsync("appTitleWatcher.start", _selfRef);
         }
         catch (JSException) { /* tab labels stay as the URL-derived fallback */ }
+        catch (InvalidOperationException) { /* prerender: no JS yet */ }
+
+        // Restore the theme after a full reload. Separate try block on purpose: a
+        // failed title watcher must not cost the user their theme, or the reverse.
+        try
+        {
+            string? saved = await JS.InvokeAsync<string?>("localStorage.getItem", ThemeStorageKey);
+            if (saved == "dark" && _theme != "dark")
+            {
+                _theme = "dark";
+                StateHasChanged();
+            }
+        }
+        catch (JSException) { /* storage blocked — stay light */ }
         catch (InvalidOperationException) { /* prerender: no JS yet */ }
     }
 

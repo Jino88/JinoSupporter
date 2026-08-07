@@ -48,4 +48,23 @@
     </Content>
   </ItemGroup>
 
+  <!-- wwwroot/ui-redesign/assets/instrument.scoped.css is generated from
+       instrument.css by tools/scope-css.js. Editing the source and forgetting to
+       regenerate ships stale CSS with no visible failure, so the build checks.
+
+       Node is treated as optional: exit code 1 means real drift and fails the
+       build, anything else (9009/127 = node not installed) only warns, so a
+       machine without Node can still build. Set SkipScopedCssCheck=true to opt out. -->
+  <Target Name="CheckScopedCss" BeforeTargets="Build" Condition="'$(SkipScopedCssCheck)' != 'true'">
+    <Exec Command="node tools/scope-css.js check"
+          WorkingDirectory="$(MSBuildProjectDirectory)/.."
+          ContinueOnError="true">
+      <Output TaskParameter="ExitCode" PropertyName="ScopedCssExit" />
+    </Exec>
+    <Warning Condition="'$(ScopedCssExit)' != '0' and '$(ScopedCssExit)' != '1'"
+             Text="Skipped the scoped-CSS check: node exited $(ScopedCssExit). Install Node.js to enable it." />
+    <Error Condition="'$(ScopedCssExit)' == '1'"
+           Text="instrument.scoped.css is out of date with instrument.css. Run: node tools/scope-css.js" />
+  </Target>
+
 </Project>

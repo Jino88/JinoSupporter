@@ -77,6 +77,7 @@ builder.Services.AddSingleton<AppActivityLogger>();
 // NG Rate: scoped (per-connection HTTP client, progress state)
 // Which shell the app renders in (classic MainLayout vs redesigned InstrumentLayout).
 // Scoped, so one user switching never changes what anyone else sees.
+builder.Services.AddSingleton<AssetVersionService>();
 builder.Services.AddScoped<UiModeService>();
 builder.Services.AddScoped<NgRateService>();
 // NG Rate report: scoped (reads DB files per request)
