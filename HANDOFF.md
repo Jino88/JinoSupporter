@@ -1846,3 +1846,19 @@
 - Files: JinoSupporter.Web/wwwroot/ui-redesign/sheet/assets/sheet.css, JinoSupporter.Web/wwwroot/ui-redesign/sheet/daily-report.html
 - Verification: headless Chrome 1600x1120 렌더로 육안 확인. 메뉴 항목을 NavMenu.razor와 대조해 BMES 11개(2단 3개 포함), Test Data Analysis 4개, Daily Test Data 1개, Tools 3개, Admin 4개, Setting 1개가 모두 존재함을 확인. 앱 빌드는 하지 않았다(정적 파일만 변경).
 - Next: 사용자가 메뉴 구성을 확정하면 나머지 대표 화면으로 확장한다. 본문 레이아웃은 아직 지시 대기 상태다.
+
+## 2026-08-07 16:35 - [UI][CHANGE] SheetDesign: 시안을 앱 셸에 실제 적용
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: SheetDesign
+- Change: CHANGE
+- Prompt: "전혀 바뀌는게 없는데 / 일단 이 형태로 다 적용해"
+- Answer: 사용자가 앱을 보며 변화가 없다고 했는데, 지금까지 만든 것이 정적 목업(/ui-redesign/sheet/)이라 앱에는 반영되지 않는 게 맞았다. 목업을 더 만드는 대신 시안 체계를 앱 셸에 실제로 이식했다.
+- Applied: (1) 섀시 토큰 --ch-* 를 어두운 기계 하우징에서 종이색으로 재정의해 레일·상단바가 한 번에 밝아지도록 함 (2) 다크 전용으로 쓰인 예외 7곳 수정 — 흰색 알파 hover, 앰버 액티브 그라디언트·글로우를 종이 배경에 맞게 (3) 액센트 --signal 을 앰버에서 잉크로, --crit 을 스탬프 레드, --ok 를 스탬프 블루로, focus 아웃라인은 시인성 때문에 파랑 유지 (4) 폰트를 Archivo/IBM Plex Mono(Google Fonts CDN)에서 Bahnschrift/Segoe UI/맑은 고딕 시스템 스택으로 교체하고 InstrumentLayout 의 폰트 link 3개 제거 (5) 레일에 검색창 추가(라벨·그룹 부분일치 필터) (6) 두 글자 코드(RN/FC/MG-04)를 인라인 SVG 아이콘 25종으로 교체 (7) BMES → Report 복원 — AppMenus 에 없고 classic NavMenu 가 인라인으로 report/bmes 를 렌더하던 항목이라 같은 조건(F-Cost 뒤, NG Rate/F-Cost 권한)으로 되살림
+- Completed: 앱 셸이 시안의 종이·잉크 체계로 바뀌었고 메뉴 누락이 해소됐다. 본문 페이지 마크업은 건드리지 않았고 브리지 CSS를 통해 같은 토큰을 따른다.
+- Decisions: 크롬을 규칙 단위로 다시 쓰지 않고 --ch-* 토큰을 재정의했다 — 레일과 상단바가 모두 이 토큰에서 색을 읽으므로 한 곳만 바꾸면 전체가 뒤집히고, 되돌리기도 쉽다. --signal 을 파랑이 아니라 잉크로 정한 이유는 파랑을 이미 '개선'에 썼기 때문이다. 같은 파랑을 기본 동작에도 쓰면 색의 의미가 흐려진다. --ok 를 초록에서 파랑으로 바꾼 것은 검사 성적서 관행이자 적록색약 안전이다. Setting Model 2단 중첩은 이번에 넣지 않았다 — AppMenus 가 평면 Group 문자열만 갖고 있어 하위 그룹 개념을 추가해야 하고, 그건 메뉴 데이터 모델 변경이라 범위를 넘는다.
+- Files: JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.scoped.css, JinoSupporter.Web/Components/Layout/InstrumentLayout.razor
+- Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일하며 InstrumentLayout 관련 신규 경고 0건. 중간에 42개로 보였던 것은 파일 잠금으로 실패한 빌드가 경고를 중복 집계한 것이었다. 서버를 중지하고 재빌드 후 재기동했으며(PID 12848), 배포된 instrument.scoped.css 에서 --ch-100:#FFFFFF, --ch-ink:#16202B, --signal:#16202b, Bahnschrift, navlink__ico, railseek 를 HTTP 응답으로 직접 확인했다. 실제 로그인 화면 내부는 인증이 필요해 확인하지 못했다.
+- Next: 사용자가 브라우저에서 셸을 확인한다. 본문 페이지들은 아직 각자 하드코딩된 색(hex 2,641개)을 갖고 있어 완전히 시안대로 보이지는 않는다. 다음 단계는 페이지별 hex → 토큰 치환이며, 감사 문서의 G5 순서를 따른다.

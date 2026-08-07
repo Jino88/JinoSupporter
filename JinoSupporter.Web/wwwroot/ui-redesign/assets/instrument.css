@@ -11,7 +11,7 @@
 /* These two are safe in both builds: Bootstrap sets the same box model, and no
    page defines a :focus-visible rule for `.ins :focus-visible` to fight with. */
 *, *::before, *::after { box-sizing: border-box; }
-:focus-visible { outline: 2px solid var(--signal); outline-offset: 1px; }
+:focus-visible { outline: 2px solid #1f5fa8; outline-offset: 1px; }
 
 /* ── Element reset ── RESET-START ─────────────────────────────────────────────
    Mockup-only. tools/scope-css.js drops everything between the markers, so none
@@ -70,17 +70,21 @@ a { color: inherit; text-decoration: none; }
 :root {
   color-scheme: light;
 
-  /* Chassis — constant in both themes. This is the machine housing. */
-  --ch-000: #08090b;
-  --ch-100: #0d0f13;
-  --ch-200: #14171c;
-  --ch-300: #1c2027;
-  --ch-400: #262b33;
-  --ch-line: rgba(255,255,255,.075);
-  --ch-line-2: rgba(255,255,255,.14);
-  --ch-ink: #e8ebef;
-  --ch-ink-2: #9aa4b0;
-  --ch-ink-3: #5d6875;
+  /* Chassis — the frame around the data. It used to be a dark machine housing;
+     it is paper now. The dark chrome was the first thing anyone saw and it
+     fought the light tables it wrapped, so the frame recedes and the only
+     strong thing on screen is the data itself. Rail and topbar both read from
+     these, so redefining them here relights the whole shell. */
+  --ch-000: #FFFFFF;
+  --ch-100: #FFFFFF;
+  --ch-200: #F7F8FA;
+  --ch-300: #EDF0F4;
+  --ch-400: #E3E7EC;
+  --ch-line: #D7DCE3;
+  --ch-line-2: #C3CAD3;
+  --ch-ink: #16202B;
+  --ch-ink-2: #5C6875;
+  --ch-ink-3: #8A93A0;
 
   /* Work surface */
   --plane: #e8eaee;
@@ -94,20 +98,23 @@ a { color: inherit; text-decoration: none; }
   --ink-3: #7f8a98;
 
   /* Signal — the one accent. Step 500 of the sequential ramp. */
-  --signal: #e3661f;
-  --signal-hot: #bc4c17;
-  --signal-lit: #f5a877;
-  --signal-wash: #fdf1e8;
-  --signal-line: #f6cdae;
+  /* The accent is ink. Amber read as decoration on every screen and competed
+     with the one thing that should alarm anyone — a rate above its baseline.
+     Colour now means a measurement is off, never that a button is important. */
+  --signal: #16202b;
+  --signal-hot: #24313f;
+  --signal-lit: #5c6875;
+  --signal-wash: #edf0f4;
+  --signal-line: #c3cad3;
 
   /* Status (fixed, never themed — always paired with icon + label) */
-  --ok: #0ca30c;
+  --ok: #1f5fa8;
   --warn: #fab219;
   --serious: #ec835a;
-  --crit: #d03b3b;
-  --ok-wash: #e8f6e8;
+  --crit: #c8342a;
+  --ok-wash: #eaf1f9;
   --warn-wash: #fdf4e0;
-  --crit-wash: #fbeaea;
+  --crit-wash: #fbedec;
 
   /* Categorical series — fixed order, never cycled */
   --s1: #eb6834;  /* orange */
@@ -150,8 +157,13 @@ a { color: inherit; text-decoration: none; }
      own subtrahend that used to cover the classic shell's 34px tab strip. */
   --view-h: calc(100vh - var(--topbar-h) - var(--tabs-h) - 2px);
 
-  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
-  --sans: "Archivo", "Segoe UI", system-ui, -apple-system, "Malgun Gothic", sans-serif;
+  /* Both faces ship with Windows, so the shell needs no network. The plant runs
+     on an intranet where a webfont request stalls and the page renders in a
+     fallback anyway; Bahnschrift is the DIN face used on drawings and
+     instrument dials, and Malgun Gothic carries the Korean that comes back in
+     BMES model and defect names. */
+  --mono: "Bahnschrift", "DIN Alternate", Consolas, ui-monospace, monospace;
+  --sans: "Segoe UI", "Malgun Gothic", system-ui, -apple-system, sans-serif;
 }
 
 [data-theme="dark"] {
@@ -166,11 +178,11 @@ a { color: inherit; text-decoration: none; }
   --ink-2: #aab3bf;
   --ink-3: #78828f;
 
-  --signal: #ef8749;
-  --signal-hot: #e3661f;
-  --signal-lit: #f9c9a8;
-  --signal-wash: #2a1a12;
-  --signal-line: #52301c;
+  --signal: #d8dee6;
+  --signal-hot: #ffffff;
+  --signal-lit: #9aa4b0;
+  --signal-wash: #1c222b;
+  --signal-line: #333c47;
 
   --ok-wash: #14261a;
   --warn-wash: #2b2211;
@@ -281,7 +293,7 @@ body {
 .brand__mark::before {
   content: "";
   position: absolute; inset: 5px;
-  border: 1px solid rgba(255,255,255,.1);
+  border: 1px solid var(--ch-line);
 }
 .brand__text { min-width: 0; line-height: 1.05; }
 .brand__name {
@@ -298,6 +310,33 @@ body {
 }
 
 .rail__scroll { flex: 1; overflow-y: auto; padding: 8px 8px 12px; position: relative; }
+
+/* Search — the rail carries 25 destinations, so typing beats hunting. */
+.railseek {
+  display: flex; align-items: center; gap: 7px;
+  margin: 0 12px 4px; padding: 0 9px; height: 30px;
+  border: 1px solid var(--ch-line); border-radius: 7px;
+  background: var(--ch-200);
+}
+.railseek:focus-within { border-color: var(--ch-line-2); background: var(--ch-000); }
+.railseek svg { width: 13px; height: 13px; flex: none; stroke: var(--ch-ink-3); fill: none; stroke-width: 1.6; stroke-linecap: round; }
+.railseek input {
+  flex: 1; min-width: 0; border: 0; outline: 0; background: none;
+  font-family: var(--sans); font-size: 12.5px; color: var(--ch-ink);
+}
+.railseek input::placeholder { color: var(--ch-ink-3); }
+
+/* Icons replace the old two-letter codes, which named nothing. */
+.navlink__ico {
+  width: 16px; height: 16px; flex: none;
+  stroke: currentColor; fill: none; stroke-width: 1.5;
+  stroke-linecap: round; stroke-linejoin: round;
+  color: var(--ch-ink-3);
+}
+.navlink:hover .navlink__ico { color: var(--ch-ink-2); }
+.navlink.is-active .navlink__ico { color: var(--ch-ink); }
+
+.navempty { padding: 14px 12px; font-size: 11.5px; color: var(--ch-ink-3); }
 
 .navsec {
   font-family: var(--mono);
@@ -327,10 +366,12 @@ body {
   width: 2px; background: transparent;
   transition: background .13s, box-shadow .13s;
 }
-.navlink:hover { background: rgba(255,255,255,.045); color: var(--ch-ink); }
-.navlink.is-active { color: #fff; background: linear-gradient(90deg, rgba(227,102,31,.20), rgba(227,102,31,.02)); }
-.navlink.is-active::before { background: var(--signal); box-shadow: 0 0 9px rgba(227,102,31,.8); }
-.navlink.is-active .navlink__code { color: var(--signal-lit); }
+.navlink:hover { background: var(--ch-200); color: var(--ch-ink); }
+.navlink.is-active { color: var(--ch-ink); background: var(--ch-300); font-weight: 600; }
+/* Ink, not amber. Red and amber mean out of spec in the data; spending a
+   signal colour on "you are here" makes the alarming colour ordinary. */
+.navlink.is-active::before { background: var(--ch-ink); box-shadow: none; }
+.navlink.is-active .navlink__code { color: var(--ch-ink-2); }
 
 .navlink__glyph {
   width: 18px; flex-shrink: 0;
@@ -413,7 +454,7 @@ body {
   font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
   transition: background .13s, color .13s, border-color .13s;
 }
-.railbtn:hover { background: rgba(255,255,255,.06); color: var(--ch-ink); border-color: rgba(255,255,255,.24); }
+.railbtn:hover { background: var(--ch-200); color: var(--ch-ink); border-color: var(--ch-line-2); }
 
 /* collapsed rail */
 .shell.is-collapsed .brand__text,
@@ -452,7 +493,7 @@ body {
   transition: color .13s, background .13s, border-color .13s;
   flex-shrink: 0;
 }
-.iconbtn:hover { color: var(--ch-ink); background: rgba(255,255,255,.06); border-color: var(--ch-line); }
+.iconbtn:hover { color: var(--ch-ink); background: var(--ch-200); border-color: var(--ch-line); }
 .iconbtn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.6; }
 
 .crumb { display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 10px; letter-spacing: .13em; text-transform: uppercase; }
