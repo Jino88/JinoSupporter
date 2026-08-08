@@ -170,7 +170,7 @@
         color: var(--ink-3, #7f8a98);
         font-size: 13px;
     }
-    .btn-fetch {
+    .ws-fetch {
         display: inline-flex;
         align-items: center;
         gap: 5px;
@@ -184,9 +184,9 @@
         cursor: pointer;
         transition: background .15s;
     }
-    .btn-fetch:hover:not(:disabled) { background: var(--signal, #16202b); }
-    .btn-fetch:disabled { opacity: .55; cursor: not-allowed; }
-    .btn-export {
+    .ws-fetch:hover:not(:disabled) { background: var(--signal, #16202b); }
+    .ws-fetch:disabled { opacity: .55; cursor: not-allowed; }
+    .ws-export {
         display: inline-flex;
         align-items: center;
         gap: 5px;
@@ -200,8 +200,8 @@
         cursor: pointer;
         transition: background .15s, color .15s;
     }
-    .btn-export:hover:not(:disabled) { background: var(--ok, #1f5fa8); color: var(--panel, #fff); }
-    .btn-export:disabled { opacity: .55; cursor: not-allowed; }
+    .ws-export:hover:not(:disabled) { background: var(--ok, #1f5fa8); color: var(--panel, #fff); }
+    .ws-export:disabled { opacity: .55; cursor: not-allowed; }
     .ws-stat-pill {
         display: inline-flex;
         align-items: center;
@@ -240,7 +240,7 @@
                @onchange="OnEndDateChanged"
                disabled="@_isBusy" />
 
-        <button class="btn-fetch" @onclick="FetchAsync" disabled="@_isBusy">
+        <button class="ws-fetch" @onclick="FetchAsync" disabled="@_isBusy">
             @if (_isBusy)
             {
                 <span class="spinner-border spinner-border-sm" role="status"></span>
@@ -254,7 +254,7 @@
 
         @if (_result is not null && _result.IsSuccess && _result.Records.Count > 0)
         {
-            <button class="btn-export"
+            <button class="ws-export"
                     @onclick="ExportExcelAsync"
                     disabled="@(_isBusy || _isExporting)"
                     title="Download as Excel (.xlsx)">

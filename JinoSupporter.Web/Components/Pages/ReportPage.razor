@@ -108,7 +108,7 @@
                     }
                     @if (!string.IsNullOrEmpty(_reportHtml))
                     {
-                        <button class="btn btn-sm btn-success" @onclick="SaveAiReportAsync">Save Report</button>
+                        <button class="btn rpt-action-button btn-sm" @onclick="SaveAiReportAsync">Save Report</button>
                         <button class="btn btn-sm btn-outline-secondary"
                                 @onclick="() => _showReport = !_showReport">
                             @(_showReport ? "Hide Report" : "Show Report")
@@ -336,6 +336,8 @@
     .rpt-dataset-name-selected { font-weight: 600; }
     .rpt-dataset-name-active { color: var(--signal, #16202b); }
     .rpt-actionbar { color: var(--ink-2, #4a5461); }
+    .rpt-action-button { background: var(--signal, #16202b); border-color: var(--signal, #16202b); color: var(--panel, #fff); }
+    .rpt-action-button:hover { background: var(--signal-hot, #283442); border-color: var(--signal-hot, #283442); color: var(--panel, #fff); }
     .rpt-status { border-radius: 2px; }
     .rpt-ai-body { max-height: 60vh; overflow: auto; }
     .rpt-tabs { border-bottom: 1px solid var(--line-2, #c6ccd5); }

@@ -117,7 +117,7 @@
             @if (_lastSummary is not null)
             {
                 <span class="ms-2 small">
-                    <span class="badge bg-success me-1">OK @_lastSummary.Value.Ok</span>
+                    <span class="badge tec-badge-ok me-1">OK @_lastSummary.Value.Ok</span>
                     @if (_lastSummary.Value.Fail > 0)
                     { <span class="badge bg-danger">Fail @_lastSummary.Value.Fail</span> }
                 </span>
@@ -263,6 +263,7 @@
     .tec-empty-log { color: var(--ink-3, #7f8a98); }
     .tec-progress-bar { background: var(--signal, #16202b); }
     .tec-progress-done { background: var(--ok, #1f5fa8); }
+    .tec-badge-ok { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
     .log-ok    { color: var(--ok, #1f5fa8); }
     .log-warn  { color: var(--warn-ink, #92610a); }
     .log-err   { color: var(--crit, #c8342a); }
