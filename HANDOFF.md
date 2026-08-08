@@ -2113,3 +2113,19 @@
 - Files: JinoSupporter.Web/Components/Pages/BmesFCostPage.razor, BmesMakeModelGroupPage.razor, BmesReportPage.razor, BmesLpaPage.razor, BmesCauseMonthlyReportPage.razor, BmesReasonTablePage.razor, BmesRoutingTablePage.razor, BmesSettingPage.razor, DailyTestDataInputPage.razor, InputDataBatchPage.razor, InputDataTestPage.razor, BmesTest3Page.razor, BmesTest4Page.razor, BmesTest5Page.razor, MicroSpeakerResultPage.razor, CurrentProblemAnalysisPage.razor, JinoSupporter.Web/Components/Shared/CurrentProblemWorkflowStrip.razor
 - Verification: 각 워커 워크트리에서 직접 빌드 — 둘 다 오류 0, 경고 32개로 기준선과 동일. 병합 후 전체 화면 재계측에서 두 그룹 17개 파일 모두 잔량 0 확인. C# 내보내기 문자열은 보존됨.
 - Next: 세션 32(도구·관리)의 결과를 같은 절차로 검증·병합한 뒤 서버를 재기동한다.
+
+## 2026-08-08 17:20 - [UI][CHANGE] SheetPorting: 도구·관리 화면 병합으로 전 화면 이식 완료
+- Agent: Claude
+- Session: S17
+- Task-ID: S17-20260808-113039006-03ff5857f8c544b9
+- Category: UI
+- Feature: SheetPorting
+- Change: CHANGE
+- Prompt: ㄱㄱ
+- Answer: 마지막 그룹인 도구·관리 10개 화면을 병합하면서 이 브랜치만 빌드가 깨져 있어(Razor RZ10007) 원인을 잡아 고친 뒤 병합했고, 이로써 앱의 모든 화면이 검사 성적서 디자인으로 넘어왔다.
+- Applied: (1) 도구·관리 10개 화면의 하드코딩 색을 토큰으로, 카드 모서리 2px, 그림자 제거, 표 격자 적용 (2) AiPromptPage 의 뷰포트 종속 높이 4곳과 GraphMakerPage 1곳을 var(--view-h) 기준으로 교체 (3) AdminAiUsagesPage 의 중복 class 속성 4곳을 하나로 합쳐 빌드 실패를 해소 (4) 서버를 전체 재빌드 후 5050 으로 재기동
+- Completed: 앱 전체에서 화면 CSS 의 하드코딩 색·드롭 섀도·통제되지 않은 뷰포트 높이가 모두 0이 되었다. 남은 한 건은 로그인 화면의 의도적 지역 토큰 정의와 정당한 min-height:100vh 다.
+- Decisions: 워커가 이식하면서 기존 `class="small mt-2"` 를 확장하지 않고 두 번째 `class="aiu-snippet"` 를 덧붙여 Razor 가 거부했다. 4곳 모두 한 속성으로 합치되 기존 클래스를 지우지 않았다 — `.aiu-snippet` 이 자체 font-size 를 갖고 페이지 style 이 부트스트랩보다 뒤에 오므로 표시는 그대로다. 왕복 비용이 수정보다 커서 돌려보내지 않고 워커 브랜치 위에서 직접 고쳤다. 웨이브4 워커 넷 모두 빌드를 실행하지 않았고(자신들이 받은 worker 규칙 때문으로 보인다) 그중 하나가 실제로 깨져 있었으므로, 앞으로도 병합 전 브랜치 빌드는 루트가 반드시 직접 해야 한다.
+- Files: JinoSupporter.Web/Components/Pages/GraphMakerPage.razor, ReportPage.razor, TranslatePage.razor, PcDownloadPage.razor, TestExcelConverterPage.razor, UsersPage.razor, AdminAiUsagesPage.razor, AiPromptPage.razor, WorkerStatusPage.razor, JinoSupporter.Web/Components/Shared/OcrTextEditor.razor
+- Verification: 워커 워크트리에서 빌드 시 RZ10007 오류 4건 발생 → 수정 후 오류 0, 경고 32개로 기준선과 동일. 내보내기용 C# 문자열 6줄이 바이트 단위로 동일한지 대조해 계약 8절 위반이 없음을 확인. 병합 후 전체 화면 재계측 결과 잔여 1건(로그인, 의도적). 전체 재빌드 오류 0, 서버 5050 재기동 후 /login 200.
+- Next: 사용자 확인. 화면별 세부 레이아웃(시안의 기준선 편차 막대 같은 구조)은 사용자가 우선순위를 정하면 이어서 한다.
