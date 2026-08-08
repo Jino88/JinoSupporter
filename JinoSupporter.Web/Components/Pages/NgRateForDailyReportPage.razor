@@ -70,9 +70,9 @@
 {
     @if (!ReasonOnly)
     {
-    <div class="card shadow-sm mt-3"
+    <div class="card mt-3 ngrate-report-card"
          data-daily-section="@ExportSectionKey("summary")" data-daily-label="Summary">
-        <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+        <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
             <span>Summary - Group / Model x Date / Week / Month (PPM)</span>
             <span class="text-muted" style="font-size:11px;">
                 D @VisibleDateCols.Count/@_report.DateCols.Count - W @VisibleWeekCols.Count/@_report.WeekCols.Count - M @VisibleMonthCols.Count/@_report.MonthCols.Count - @_report.TotalRows rows
@@ -113,7 +113,7 @@
                 </div>
             </div>
         </div>
-        <div class="card-body p-0">
+        <div class="card-body ngrate-card-body p-0">
             @if (!string.IsNullOrEmpty(_copyError))
             {
                 <div class="alert alert-warning m-3 py-2 small">@_copyError</div>
@@ -161,6 +161,7 @@
 
                                 <tr class="grp-total-row">
                                     <td class="label-td">
+                                        <span class="ngrate-hier-level">GROUP</span>
                                         <strong>@ReportGroupDisplayName(groupName)</strong>
                                     </td>
                                     @foreach (var col in VisibleDateCols)
@@ -230,8 +231,9 @@
              data-daily-section="@ExportSectionKey(model.Key)" data-daily-label="@model.Material">
             @if (!ReasonOnly)
             {
-            <div class="card shadow-sm mt-3">
-                <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+            <div class="card mt-3 ngrate-report-card">
+                <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
+                    <span class="ngrate-hier-level">MODEL</span>
                     <span>@model.Material</span>
                     <span class="text-muted" style="font-size:11px;">@model.GroupName - Process Type</span>
                     <button type="button"
@@ -242,7 +244,7 @@
                         @CopyButtonText(modelCopyTargetId)
                     </button>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body ngrate-card-body p-0">
                     @if (summaryRows.Count == 0)
                     {
                         <div class="text-muted small p-4 text-center">No process data.</div>
@@ -293,8 +295,9 @@
             </div>
             }
 
-            <div class="card shadow-sm @(ReasonOnly ? "mt-3" : "mt-2")">
-                <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+            <div class="card ngrate-report-card @(ReasonOnly ? "mt-3" : "mt-2")">
+                <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
+                    <span class="ngrate-hier-level">MODEL</span>
                     <span>@model.Material</span>
                     <span class="text-muted" style="font-size:11px;">
                         @model.GroupName -
@@ -318,7 +321,7 @@
                         </button>
                     }
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body ngrate-card-body p-0">
                     @if (!showReasonTable)
                     {
                     }
