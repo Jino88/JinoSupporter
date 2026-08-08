@@ -134,6 +134,27 @@
                     </div>
                 </div>
 
+                @if (_result.Summary is QrBakoDataSummary summary)
+                {
+                    <div class="qr-summary-grid" aria-label="선택 날짜 QR 요약">
+                        <article class="qr-summary-card">
+                            <span>Input 개수</span>
+                            <strong>@summary.InputCount.ToString("N0")</strong>
+                            <small>중복 ProductID 제외</small>
+                        </article>
+                        <article class="qr-summary-card">
+                            <span>NG 개수</span>
+                            <strong>@summary.NgCount.ToString("N0")</strong>
+                            <small>한 번이라도 NG이면 NG</small>
+                        </article>
+                        <article class="qr-summary-card">
+                            <span>NG Rate</span>
+                            <strong>@FormatPpm(summary.NgRatePpm)</strong>
+                            <small>NG ÷ Input · PPM</small>
+                        </article>
+                    </div>
+                }
+
                 <div class="qr-table-wrap">
                     @if (_result.Columns.Count == 0)
                     {
@@ -577,6 +598,40 @@
         background: var(--panel, #fff);
     }
 
+    .qr-summary-grid {
+        display: grid;
+        flex: 0 0 auto;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        border-bottom: 1px solid var(--line-2, #c6ccd5);
+        background: var(--panel, #fff);
+    }
+
+    .qr-summary-card {
+        display: grid;
+        min-height: 4.4rem;
+        padding: 0.55rem 0.7rem;
+        align-content: center;
+        gap: 0.12rem;
+        border-right: 1px solid var(--line, #dde1e7);
+        background: var(--panel, #fff);
+    }
+
+    .qr-summary-card:last-child {
+        border-right: 0;
+    }
+
+    .qr-summary-card span,
+    .qr-summary-card small {
+        color: var(--ink-3, #7f8a98);
+        font-size: 0.64rem;
+    }
+
+    .qr-summary-card strong {
+        color: var(--ink, #0f1319);
+        font: 800 1.05rem var(--mono, Bahnschrift, Consolas, monospace);
+        font-variant-numeric: tabular-nums;
+    }
+
     .qr-data-table th:nth-child(2) {
         z-index: 4;
         background: var(--panel-2, #f5f6f9);
@@ -917,6 +972,9 @@
 
     private static string FormatRowDate(DateOnly? date) =>
         date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "-";
+
+    private static string FormatPpm(double value) =>
+        $"{value.ToString("N0", CultureInfo.CurrentCulture)} ppm";
 
     private static string DisplayCell(string value) =>
         string.IsNullOrWhiteSpace(value) ? "-" : value;

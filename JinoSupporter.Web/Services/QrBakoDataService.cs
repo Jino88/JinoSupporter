@@ -59,6 +59,7 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
             cancellationToken);
         string? sortColumn = ResolveTestTimeColumn(tableColumns);
         string? productIdColumn = ResolveExactColumn(tableColumns, "ProductID");
+        string? testResultColumn = ResolveExactColumn(tableColumns, "TestResult");
 
         List<QrBakoDateSummary> dates = sortColumn is null
             ? []
@@ -84,17 +85,22 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
         long? totalRows = sortColumn is null
             ? 0
             : dates.Where(item => selectedDateSet.Contains(item.Date)).Sum(item => item.RowCount);
-        long? validTotalRows = productIdColumn is null
-            ? totalRows
-            : await CountValidProductIdsAsync(
+        ProductAggregate? productAggregate = productIdColumn is null
+            ? null
+            : await FetchProductAggregateAsync(
                 conn,
                 sortColumn,
                 productIdColumn,
+                testResultColumn,
                 selectedDates,
                 NormalizeTimeoutSeconds(snapshot.TimeoutSeconds),
                 cancellationToken);
+        long? validTotalRows = productAggregate?.ValidRows ?? totalRows;
         long? excludedRows = totalRows is long allRows && validTotalRows is long validRows
             ? Math.Max(0, allRows - validRows)
+            : null;
+        QrBakoDataSummary? summary = productAggregate is not null && testResultColumn is not null
+            ? new QrBakoDataSummary(productAggregate.InputCount, productAggregate.NgCount)
             : null;
 
         await using var cmd = conn.CreateCommand();
@@ -174,6 +180,8 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
             warnings.Add("TestTime column was not found in dbo.BKTD, so the date list could not be created.");
         if (productIdColumn is null)
             warnings.Add("ProductID column was not found in dbo.BKTD, so invalid QR values could not be excluded.");
+        if (testResultColumn is null)
+            warnings.Add("TestResult column was not found in dbo.BKTD, so the QR summary could not be calculated.");
         if (dateSelectionLimited)
             warnings.Add($"날짜는 한 번에 최대 {MaxSelectedDates:N0}개까지 조회하며, 가장 최근 날짜부터 적용했습니다.");
 
@@ -192,6 +200,7 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
             SelectedDates = selectedDates,
             Dates = dates,
             WarningMessage = string.Join(' ', warnings),
+            Summary = summary,
             Columns = columns,
             Rows = rows,
         };
@@ -282,10 +291,11 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
         return "(" + string.Join(" OR ", predicates) + ")";
     }
 
-    private static async Task<long> CountValidProductIdsAsync(
+    private static async Task<ProductAggregate> FetchProductAggregateAsync(
         SqlConnection conn,
         string? sortColumn,
         string productIdColumn,
+        string? testResultColumn,
         IReadOnlyCollection<DateOnly> selectedDates,
         int timeoutSeconds,
         CancellationToken cancellationToken)
@@ -296,16 +306,34 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
             predicates.Add(AddSelectedDatePredicate(cmd, sortColumn, selectedDates));
         predicates.Add(ProductIdLengthPredicate(productIdColumn));
 
+        string cleanProductId = $"LTRIM(RTRIM({QuoteSqlServerIdentifier(productIdColumn)}))";
+        // A ProductID is NG when any one of its inspections is NG, even if another row passes.
+        string ngExpression = testResultColumn is null
+            ? "CONVERT(int, 0)"
+            : $"CASE WHEN UPPER(LTRIM(RTRIM({QuoteSqlServerIdentifier(testResultColumn)}))) IN (N'NG', N'N/G', N'FAIL') THEN 1 ELSE 0 END";
         cmd.CommandText = $"""
-            SELECT COUNT_BIG(1)
-            FROM [dbo].[BKTD] WITH (NOLOCK)
-            WHERE {string.Join(" AND ", predicates)};
+            SELECT COALESCE(SUM([ProductRows]), 0) AS [ValidRows],
+                   COUNT_BIG(1) AS [InputCount],
+                   COALESCE(SUM(CONVERT(bigint, [HasNg])), 0) AS [NgCount]
+            FROM
+            (
+                SELECT {cleanProductId} AS [CleanProductID],
+                       COUNT_BIG(1) AS [ProductRows],
+                       MAX({ngExpression}) AS [HasNg]
+                FROM [dbo].[BKTD] WITH (NOLOCK)
+                WHERE {string.Join(" AND ", predicates)}
+                GROUP BY {cleanProductId}
+            ) AS [ProductSummary];
             """;
         cmd.CommandTimeout = timeoutSeconds;
-        object? value = await cmd.ExecuteScalarAsync(cancellationToken);
-        return value is null or DBNull
-            ? 0
-            : Convert.ToInt64(value, CultureInfo.InvariantCulture);
+        await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+            return new ProductAggregate(0, 0, 0);
+
+        return new ProductAggregate(
+            reader.IsDBNull(0) ? 0 : reader.GetInt64(0),
+            reader.IsDBNull(1) ? 0 : reader.GetInt64(1),
+            reader.IsDBNull(2) ? 0 : reader.GetInt64(2));
     }
 
     private static string ProductIdLengthPredicate(string productIdColumn) =>
@@ -480,6 +508,7 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
     }
 
     private readonly record struct DateRange(DateOnly Start, DateOnly EndExclusive);
+    private sealed record ProductAggregate(long ValidRows, long InputCount, long NgCount);
 }
 
 public sealed class QrBakoDataConnectionSnapshot
@@ -515,6 +544,7 @@ public sealed class QrBakoDataResult
     public string SortColumnName { get; init; } = string.Empty;
     public List<DateOnly> SelectedDates { get; init; } = [];
     public string WarningMessage { get; init; } = string.Empty;
+    public QrBakoDataSummary? Summary { get; init; }
     public List<QrBakoDateSummary> Dates { get; init; } = [];
     public List<QrBakoDataColumn> Columns { get; init; } = [];
     public List<QrBakoDataRow> Rows { get; init; } = [];
@@ -522,6 +552,11 @@ public sealed class QrBakoDataResult
 }
 
 public sealed record QrBakoDataColumn(string Name, string DataType);
+
+public sealed record QrBakoDataSummary(long InputCount, long NgCount)
+{
+    public double NgRatePpm => InputCount <= 0 ? 0 : NgCount / (double)InputCount * 1_000_000d;
+}
 
 public sealed record QrBakoDataRow(IReadOnlyList<string> Values, DateTimeOffset? TestTime = null)
 {
