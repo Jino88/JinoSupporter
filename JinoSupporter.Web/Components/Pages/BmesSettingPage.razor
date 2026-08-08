@@ -31,8 +31,8 @@
     <Authorized>
         <div class="row g-3 mb-3">
             <div class="col-lg-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header fw-semibold small">Claude API</div>
+<div class="card setting-card h-100">
+    <div class="card-header fw-semibold small">Claude API</div>
                     <div class="card-body">
                         <div class="mb-3">
                             <label class="form-label small fw-semibold mb-1">API Key</label>
@@ -57,8 +57,8 @@
             </div>
 
             <div class="col-lg-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header fw-semibold small">Codex API (OpenAI)</div>
+<div class="card setting-card h-100">
+    <div class="card-header fw-semibold small">Codex API (OpenAI)</div>
                     <div class="card-body">
                         <div class="mb-2">
                             <label class="form-label small fw-semibold mb-1">API Key</label>
@@ -89,8 +89,8 @@
             </div>
 
             <div class="col-lg-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header fw-semibold small">AI Provider Switches</div>
+<div class="card setting-card h-100">
+    <div class="card-header fw-semibold small">AI Provider Switches</div>
                     <div class="card-body">
                         <div class="form-check form-switch mb-2">
                             <input class="form-check-input" type="checkbox" id="aiClaudeApi"
@@ -123,8 +123,8 @@
         </div>
         <div class="row g-3 mb-3">
             <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header fw-semibold small">QR BAKO DATA DB</div>
+<div class="card setting-card">
+    <div class="card-header fw-semibold small">QR BAKO DATA DB</div>
                     <div class="card-body">
                         <div class="row g-2 align-items-end">
                             <div class="col-lg-3 col-md-6">
@@ -206,8 +206,8 @@
 
 <div class="row g-3 mb-3">
     <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-header fw-semibold small">App Path</div>
+<div class="card setting-card">
+    <div class="card-header fw-semibold small">App Path</div>
             <div class="card-body">
                 <label class="form-label small fw-semibold mb-1">
                     Working Folder
@@ -256,8 +256,8 @@
 
     <!-- ══ BMES Credentials ═══════════════════════════════════════════════════ -->
     <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header fw-semibold small">🔑 BMES Credentials <span class="text-muted fw-normal">(NG Rate / Worker Status)</span></div>
+<div class="card setting-card h-100">
+    <div class="card-header fw-semibold small">🔑 BMES Credentials <span class="text-muted fw-normal">(NG Rate / Worker Status)</span></div>
             <div class="card-body">
                 <div class="mb-2">
                     <label class="form-label small fw-semibold mb-1">Login ID</label>
@@ -273,8 +273,8 @@
     </div>
 
     <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header fw-semibold small">Server Tables</div>
+<div class="card setting-card h-100">
+    <div class="card-header fw-semibold small">Server Tables</div>
             <div class="card-body">
                 <div class="small text-muted mb-2">
                     Save target: <code>@ServerTableTargetPreview</code>
@@ -314,8 +314,8 @@
 
     <!-- ══ BMES Material Fetch (test) ═════════════════════════════════════════ -->
     <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-header d-flex align-items-center gap-2">
+<div class="card setting-card">
+    <div class="card-header d-flex align-items-center gap-2">
                 <span class="fw-semibold small">🧪 BMES Material Fetch (MES020010)</span>
                 <span class="badge bg-secondary" style="font-size:10px;">DB rows: @_materialCount</span>
                 <div class="ms-auto">
@@ -331,7 +331,7 @@
             <div class="card-body">
                 @if (!string.IsNullOrEmpty(_fetchLog))
                 {
-                    <pre class="small mb-2" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; max-height:160px; overflow:auto;">@_fetchLog</pre>
+                    <pre class="small mb-2 setting-fetch-log">@_fetchLog</pre>
                 }
                 @if (_latest is not null)
                 {
@@ -356,7 +356,7 @@
 
 <div class="row g-3 mb-3">
     <div class="col-md-6">
-        <a class="card shadow-sm text-decoration-none h-100" href="/bmes/routing-table">
+<a class="card setting-card text-decoration-none h-100" href="/bmes/routing-table">
             <div class="card-body">
                 <div class="fw-semibold small text-dark">Routing Table</div>
                 <div class="text-muted small mt-1">Moved to its own BMES menu.</div>
@@ -364,7 +364,7 @@
         </a>
     </div>
     <div class="col-md-6">
-        <a class="card shadow-sm text-decoration-none h-100" href="/bmes/reason-table">
+<a class="card setting-card text-decoration-none h-100" href="/bmes/reason-table">
             <div class="card-body">
                 <div class="fw-semibold small text-dark">Reason Table</div>
                 <div class="text-muted small mt-1">Moved to its own BMES menu. Model search is in the first column.</div>
@@ -377,8 +377,8 @@
 
     <!-- ══ Routing Table ═══════════════════════════════════════════════════════ -->
     <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-header d-flex align-items-center gap-2">
+<div class="card setting-card">
+    <div class="card-header d-flex align-items-center gap-2">
                 <span class="fw-semibold small">Routing Table</span>
                 <span class="badge bg-secondary ms-1" style="font-size:10px;">@_routingRows.Count rows</span>
                 @if (_anyRoutingSearch)
@@ -492,8 +492,8 @@
 
     <!-- ══ Reason Table ════════════════════════════════════════════════════════ -->
     <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-header d-flex align-items-center gap-2">
+<div class="card setting-card">
+    <div class="card-header d-flex align-items-center gap-2">
                 <span class="fw-semibold small">Reason Table</span>
                 <span class="badge bg-secondary ms-1" style="font-size:10px;">@_reasonRows.Count rows</span>
                 @if (_modelScanActive)
@@ -703,11 +703,22 @@
 </div>
 
 <style>
+    .ins .setting-card,
+    .ins .setting-card .card-header { border-radius: 2px !important; }
+    .setting-fetch-log {
+        background: var(--panel-2, #f5f6f9);
+        border: 1px solid var(--line, #dde1e7);
+        border-radius: 2px;
+        padding: 8px;
+        max-height: 160px;
+        overflow: auto;
+    }
+
     .bmes-table {
         width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap;
     }
     .bmes-table thead th {
-        background: var(--panel-3, #eceef2); font-weight: 700; font-size: 10px; color: var(--ink-2, #4a5461);
+        background: var(--panel-2, #f5f6f9); font-weight: 700; font-size: 10px; color: var(--ink-2, #4a5461);
         text-transform: uppercase; letter-spacing: .4px;
         padding: 6px 10px; border: 1px solid var(--line, #dde1e7);
         position: sticky; top: 0; z-index: 2;
@@ -726,7 +737,7 @@
         color: var(--ink-2, #4a5461);
     }
     .bmes-search-input:focus {
-        border-color: #93c5fd; background: var(--panel, #fff);
+        border-color: var(--signal, #16202b); background: var(--panel, #fff);
     }
     .bmes-table td {
         padding: 4px 10px; border: 1px solid var(--line, #dde1e7); vertical-align: middle;
@@ -734,14 +745,14 @@
     .bmes-row:hover td { background: var(--panel-2, #f5f6f9); }
     .bmes-row-missing td { background: var(--crit-wash, #fbedec); }
     .bmes-row-missing:hover td { background: var(--crit-wash, #fbedec); }
-    .bmes-edit-row td { background: #eff6ff; }
+    .bmes-edit-row td { background: var(--signal-wash, #edf0f4); }
     .bmes-actions { text-align: center; white-space: nowrap; }
     .bmes-input {
         width: 100%; font-size: 12px; padding: 2px 6px;
-        border: 1px solid #93c5fd; border-radius: 2px;
+        border: 1px solid var(--signal, #16202b); border-radius: 2px;
         background: var(--panel, #fff); outline: none;
     }
-    .bmes-input:focus { border-color: #3b82f6;}
+    .bmes-input:focus { border-color: var(--signal, #16202b);}
 </style>
 
 @code {

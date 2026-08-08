@@ -35,7 +35,7 @@
 <div class="row g-3">
 
     <div class="col-12">
-        <div class="card shadow-sm h-100">
+<div class="card fcost-card h-100">
             <div class="card-header small fw-semibold">Report</div>
             <div class="card-body d-flex flex-column gap-2">
                 <div class="small text-muted">
@@ -165,7 +165,7 @@
 
     @if ((IsTrendReportRoute || ShowMajorTrendCard) && trendRows.Count > 0)
     {
-        <div class="card shadow-sm mt-3 fcost-trend-card">
+<div class="card fcost-card mt-3 fcost-trend-card">
             <div class="card-body p-0">
                 <div class="fcost-trend-title"><span></span> @(ShowAllPeriodColumns ? "FCOST Trend (전체)" : "FCOST Trend")</div>
                 <div style="overflow-x:auto;">
@@ -281,7 +281,7 @@
             var rawBreakdownRows = BuildRawBreakdownViewRows();
             int rawBreakdownColSpan = 4 + _rawMaterialBreakdown.Periods.Count;
 
-            <div class="card shadow-sm mt-3 fcost-breakdown-card">
+<div class="card fcost-card mt-3 fcost-breakdown-card">
                 <div class="card-header small fw-semibold d-flex align-items-center gap-2 flex-wrap">
                     <span>FCOST Raw Material Breakdown</span>
                     <span class="text-muted" style="font-size:11px;">
@@ -431,7 +431,7 @@
 
     @if (ShowFCostWeeklyReport)
     {
-    <div class="card shadow-sm mt-3 fcost-weekly-card">
+<div class="card fcost-card mt-3 fcost-weekly-card">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
             <span>@(ShowAllPeriodColumns ? "Weekly Report (전체)" : "Weekly Report")</span>
                 <span class="text-muted" style="font-size:11px;">@(ShowAllPeriodColumns ? "목표 불량률 (Period 선택 전체 기간)" : "목표 불량률 (WEEK: 4주 내림차순, MONTH: 3달 내림차순)")</span>
@@ -591,7 +591,7 @@
 @if (!IsTrendReportRoute && ShowRegularFCostDetails && _report is not null && (_report.SubGroups.Count > 0 || _report.Total is not null))
 {
     var subColumnIndexes = VisibleFCostColumnIndexes();
-    <div class="card shadow-sm mt-3">
+<div class="card fcost-card mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
             <span>Model / Sub Group Summary - Input / F-Cost / 불량률%</span>
             <span class="text-muted" style="font-size:11px;">
@@ -804,7 +804,7 @@
 {
     var materialColumnIndexes = VisibleFCostColumnIndexes();
 
-    <div class="card shadow-sm mt-3">
+<div class="card fcost-card mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
             <span>F-Cost Query Date @_report.QueryDate</span>
             <span class="text-muted" style="font-size:11px;">
@@ -967,9 +967,12 @@
 }
 
 <style>
+    .ins .fcost-card,
+    .ins .fcost-card .card-header { border-radius: 2px !important; }
+
     .fcost-table { font-size: 12px; white-space: nowrap; border-collapse: collapse; width: 100%; }
     .fcost-table th {
-        background: var(--panel-3, #eceef2); font-weight: 700; font-size: 10px; color: var(--ink-2, #4a5461);
+        background: var(--panel-2, #f5f6f9); font-weight: 700; font-size: 10px; color: var(--ink-2, #4a5461);
         text-transform: uppercase; letter-spacing: .4px;
         padding: 5px 10px; text-align: right; border: 1px solid var(--line, #dde1e7);
         position: sticky; top: 0; z-index: 1;
@@ -977,12 +980,12 @@
     .fcost-table th.label-th { text-align: left; }
     .fcost-table td {
         padding: 4px 10px; border: 1px solid var(--line, #dde1e7);
-        text-align: right; font-family: var(--mono, monospace);
+        text-align: right; font-family: var(--mono, monospace); font-variant-numeric: tabular-nums;
     }
     .fcost-table td.label-td { text-align: left; font-family: inherit; }
 
-    .fcost-row-total td  { background: #fff3c4; color: #6b3a00; font-weight: 700;
-                            border-top: 2px solid #eab308; border: 1px solid var(--line, #dde1e7); }
+    .fcost-row-total td  { background: var(--warn-wash, #fff3c4); color: var(--warn-ink, #92610a); font-weight: 700;
+                            border-top: 2px solid var(--warn, #fab219); border: 1px solid var(--line, #dde1e7); }
     .fcost-row-input td,
     .fcost-row-cost  td,
     .fcost-row-rate  td  { background: var(--panel, #fff); color: var(--ink, #0f1319); font-weight: 500; }
@@ -1001,7 +1004,7 @@
     .fcost-row-mid.fcost-row-input td { border-top: 2px solid var(--ink-3, #7f8a98); }
     .fcost-row-sub1 td { background: var(--panel, #fff); color: var(--ink, #0f1319); font-weight: 600; }
     .fcost-row-sub2 td { background: var(--panel, #fff);    color: var(--ink-2, #4a5461); font-weight: 500; font-size: 11.5px; }
-    .fcost-tog        { display: inline-block; width: 14px; color: #6366f1;
+    .fcost-tog        { display: inline-block; width: 14px; color: var(--signal, #16202b);
                         font-size: 10px; margin-right: 4px; }
     .fcost-tog-blank  { width: 14px; }
 
@@ -1009,7 +1012,7 @@
        period block. Heavier than the regular row border so the eye picks out where
        the day ??week ??month transition happens. */
     .fcost-table th.col-day-start,
-    .fcost-table td.col-day-start    { border-left: 2px solid #93c5fd; }
+    .fcost-table td.col-day-start    { border-left: 2px solid var(--line-2, #c6ccd5); }
     .fcost-table th.col-week-start,
     .fcost-table td.col-week-start   { border-left: 2px solid var(--ok-wash, #eaf1f9); }
     .fcost-table th.col-month-start,
@@ -1018,7 +1021,7 @@
     .fcost-weekly-card { border-color: var(--line-2, #c6ccd5); }
     .fcost-weekly-table { font-size: 12px; white-space: nowrap; border-collapse: collapse; width: max-content; table-layout: fixed; }
     .fcost-weekly-table th {
-        background: var(--line, var(--line, #dde1e7)); color: #1f2937; font-weight: 700;
+        background: var(--panel-2, #f5f6f9); color: var(--ink, #0f1319); font-weight: 700;
         padding: 8px 12px; text-align: center; border: 1px solid var(--ink-2, #4a5461);
     }
     .fcost-weekly-table th { width: 150px; min-width: 150px; }
@@ -1028,8 +1031,8 @@
     .fcost-weekly-table th.weekly-model-th,
     .fcost-weekly-table th.weekly-metric-th { width: 150px; min-width: 150px; text-align: center; }
     .fcost-weekly-table td {
-        width: 150px; min-width: 150px; padding: 6px 10px; text-align: center;
-        border: 1px solid var(--ink-3, #7f8a98); font-family: var(--mono, monospace); vertical-align: middle;
+        width: 150px; min-width: 150px; padding: 6px 10px; text-align: right;
+        border: 1px solid var(--line, #dde1e7); font-family: var(--mono, monospace); font-variant-numeric: tabular-nums; vertical-align: middle;
     }
     .fcost-weekly-table td.weekly-site-td,
     .fcost-weekly-table td.weekly-target-td,
@@ -1047,7 +1050,7 @@
     .fcost-weekly-table .weekly-model-achievement {
         font-weight: 700;
     }
-    .weekly-total-row td { background: #fff7cc; color: #6b3a00; font-weight: 700; }
+    .weekly-total-row td { background: var(--warn-wash, #fff7cc); color: var(--warn-ink, #92610a); font-weight: 700; }
     .weekly-total-cost-row td { background: var(--panel, #fff); color: var(--ink, #0f1319); }
     .weekly-total-input-row td { background: var(--panel, #fff); color: var(--ink, #0f1319); }
     .fcost-weekly-table td.weekly-total-label {
@@ -1061,7 +1064,7 @@
     .weekly-model-amount { color: var(--ink-2, #4a5461); font-weight: 600; }
     .weekly-model-share { color: var(--ink-2, #4a5461); font-weight: 600; }
     .fcost-weekly-table th.col-day-start,
-    .fcost-weekly-table td.col-day-start    { border-left: 2px solid #93c5fd; }
+    .fcost-weekly-table td.col-day-start    { border-left: 2px solid var(--line-2, #c6ccd5); }
     .fcost-weekly-table th.col-week-start,
     .fcost-weekly-table td.col-week-start   { border-left: 2px solid var(--ok-wash, #eaf1f9); }
     .fcost-weekly-table th.col-month-start,
@@ -1133,7 +1136,7 @@
         color: var(--ink, #0f1319);
     }
     .fcost-trend-table th {
-        background: #d9d9d9; color: var(--ink, #0f1319); font-weight: 700;
+        background: var(--panel-2, #f5f6f9); color: var(--ink, #0f1319); font-weight: 700;
         padding: 5px 8px; border: 1px solid var(--ink, #0f1319); text-align: center;
     }
     .fcost-trend-table td {
@@ -1249,11 +1252,11 @@
         border-top: 2px solid var(--ink-2, #4a5461);
     }
     .fcost-breakdown-table .breakdown-grand-total-row td {
-        background: #fff7cc; color: var(--ink, #0f1319); font-weight: 800;
+        background: var(--warn-wash, #fff7cc); color: var(--ink, #0f1319); font-weight: 800;
         border-top: 2px solid var(--ink, #0f1319); border: 1px solid var(--line, #dde1e7);
     }
     .fcost-breakdown-table .breakdown-total-row td {
-        background: #eff6ff; color: var(--ink, #0f1319); font-weight: 800;
+        background: var(--signal-wash, #edf0f4); color: var(--ink, #0f1319); font-weight: 800;
     }
     .fcost-breakdown-table .breakdown-subtotal-row td {
         background: var(--panel-2, #f5f6f9); color: var(--ink, #0f1319); font-weight: 700;

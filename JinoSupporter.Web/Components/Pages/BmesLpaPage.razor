@@ -14,7 +14,7 @@
     <h5 class="mb-0 fw-semibold">Layered Process Audit</h5>
 </div>
 
-<div class="card shadow-sm mb-3">
+<div class="card lpa-card mb-3">
     <div class="card-body d-flex flex-wrap align-items-end gap-3">
         <div>
             <label class="form-label small fw-semibold mb-1" for="lpaFrom">Audit Date From</label>
@@ -96,9 +96,11 @@
 </div>
 
 <style>
+    .ins .lpa-card,
+    .ins .lpa-card .card-header { border-radius: 2px !important; }
     .lpa-view { background: var(--panel, #fff); border: 1px solid var(--line-2, #c6ccd5); border-radius: 2px; }
-    .lpa-prog { height: 4px; background: #dfe5ec; border-radius: 2px; overflow: hidden; }
-    .lpa-prog-bar { height: 100%; background: #0d6efd; border-radius: 2px; transition: width .15s linear; }
+    .lpa-prog { height: 4px; background: var(--panel-3, #eceef2); border-radius: 2px; overflow: hidden; }
+    .lpa-prog-bar { height: 100%; background: var(--ok, #1f5fa8); border-radius: 2px; transition: width .15s linear; }
 </style>
 
 @code {
