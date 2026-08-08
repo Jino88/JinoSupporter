@@ -26,7 +26,7 @@
                 }
                 else
                 {
-                    <textarea class="form-control ocr-editor font-monospace"
+                    <textarea class="form-control ocr-editor ocr-mono"
                               spellcheck="false"
                               @bind="_buffer" @bind:event="oninput"></textarea>
 
@@ -98,6 +98,7 @@
         overflow: auto;
         font-size: 11px;
     }
+    .ocr-mono { font-family: var(--mono, Bahnschrift, monospace); }
     .ocr-status-ok { color: var(--ok, #1f5fa8); }
     .ocr-status-error { color: var(--crit, #c8342a); }
     .ocr-foot  {

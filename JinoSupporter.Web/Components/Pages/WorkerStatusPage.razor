@@ -29,6 +29,8 @@
     .ws-stat-out { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
     .ws-stat-late { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); }
     .ws-record-count { color: var(--ink-3, #7f8a98); font-size: 11px; font-weight: 400; }
+    .ws-row-number { color: var(--ink-3, #7f8a98); vertical-align: top; }
+    .ws-code-cell { font-family: var(--mono, Bahnschrift, monospace); font-size: 11px; vertical-align: top; }
     .ws-card {
         background: var(--panel, #fff);
         border: 1px solid var(--line, var(--line, #dde1e7));
@@ -439,10 +441,10 @@
                                     <tr class="ws-metric-row" style="@(metricIndex == 0 ? firstRowStyle : "")">
                                         @if (metricIndex == 0)
                                         {
-                                            <td rowspan="@rowSpan" style="color:#94a3b8; vertical-align:top;">@groupNum</td>
-                                            <td rowspan="@rowSpan" style="font-family:monospace; font-size:11px; vertical-align:top;" title="@rec.DepartmentName">@rec.DepartmentCode</td>
-                                            <td rowspan="@rowSpan" style="font-family:monospace; font-size:11px; vertical-align:top;">@rec.DepartmentNo</td>
-                                            <td rowspan="@rowSpan" style="font-family:monospace; font-size:11px; vertical-align:top;">@rec.EmpNo</td>
+                                            <td rowspan="@rowSpan" class="ws-row-number">@groupNum</td>
+                                            <td rowspan="@rowSpan" class="ws-code-cell" title="@rec.DepartmentName">@rec.DepartmentCode</td>
+                                            <td rowspan="@rowSpan" class="ws-code-cell">@rec.DepartmentNo</td>
+                                            <td rowspan="@rowSpan" class="ws-code-cell">@rec.EmpNo</td>
                                             <td rowspan="@rowSpan" style="font-weight:600; vertical-align:top;">@rec.Name</td>
                                         }
                                         <td class="ws-metric-label">@metric</td>

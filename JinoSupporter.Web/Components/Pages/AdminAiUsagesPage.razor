@@ -137,7 +137,7 @@
         <div class="card-body">
             <div class="mb-3">
                 <label class="form-label small text-muted mb-1">Plan usage</label>
-                <input type="text" class="form-control form-control-sm font-monospace text-end"
+                <input type="text" class="form-control form-control-sm aiu-mono text-end"
                        placeholder="e.g. 42%"
                        @bind="_codexPlanUsage" />
                 @if (TryParsePct(_codexPlanUsage) is double cpu)
@@ -149,7 +149,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label small text-muted mb-1">Weekly / monthly limit</label>
-                <input type="text" class="form-control form-control-sm font-monospace text-end"
+                <input type="text" class="form-control form-control-sm aiu-mono text-end"
                        placeholder="e.g. 18%"
                        @bind="_codexPlanLimitUsage" />
                 @if (TryParsePct(_codexPlanLimitUsage) is double cpl)
@@ -173,7 +173,7 @@
                 @if (!string.IsNullOrEmpty(_codexPlanError)) { <span class="aiu-status-crit small">@_codexPlanError</span> }
             </div>
             <div class="small text-muted mt-2">
-                Last updated: <span class="font-monospace">@FormatTs(_codexPlanUpdatedAt)</span>
+                Last updated: <span class="aiu-mono">@FormatTs(_codexPlanUpdatedAt)</span>
             </div>
             @if (!string.IsNullOrEmpty(_codexPlanScrapeError))
             {
@@ -201,7 +201,7 @@
                 <label class="form-label small text-muted mb-1">Current session usage</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text small">Current session</span>
-                    <input type="text" class="form-control form-control-sm font-monospace text-end"
+                    <input type="text" class="form-control form-control-sm aiu-mono text-end"
                            placeholder="e.g. 42%"
                            @bind="_sessionUsage" />
                 </div>
@@ -217,7 +217,7 @@
                 <label class="form-label small text-muted mb-1">Weekly limit usage</label>
                 <div class="input-group input-group-sm mb-1">
                     <span class="input-group-text small" style="width:120px;">All models</span>
-                    <input type="text" class="form-control form-control-sm font-monospace text-end"
+                    <input type="text" class="form-control form-control-sm aiu-mono text-end"
                            placeholder="e.g. 41%" @bind="_weeklyAllModels" />
                 </div>
                 @if (TryParsePct(_weeklyAllModels) is double wa)
@@ -229,7 +229,7 @@
 
                 <div class="input-group input-group-sm mb-1">
                     <span class="input-group-text small" style="width:120px;">Sonnet only</span>
-                    <input type="text" class="form-control form-control-sm font-monospace text-end"
+                    <input type="text" class="form-control form-control-sm aiu-mono text-end"
                            placeholder="e.g. 27%" @bind="_weeklySonnet" />
                 </div>
                 @if (TryParsePct(_weeklySonnet) is double ws)
@@ -241,7 +241,7 @@
 
                 <div class="input-group input-group-sm mb-1">
                     <span class="input-group-text small" style="width:120px;">Claude Design</span>
-                    <input type="text" class="form-control form-control-sm font-monospace text-end"
+                    <input type="text" class="form-control form-control-sm aiu-mono text-end"
                            placeholder="e.g. 0%" @bind="_weeklyClaudeDesign" />
                 </div>
                 @if (TryParsePct(_weeklyClaudeDesign) is double wd)
@@ -259,7 +259,7 @@
                         <div class="input-group input-group-sm">
                             <span class="input-group-text small">Extra usage</span>
                             <span class="input-group-text">$</span>
-                            <input type="text" class="form-control form-control-sm font-monospace text-end"
+                           <input type="text" class="form-control form-control-sm aiu-mono text-end"
                                    placeholder="0.00"
                                    @bind="_extraUsage" />
                         </div>
@@ -269,7 +269,7 @@
                         <div class="input-group input-group-sm">
                             <span class="input-group-text small">Balance</span>
                             <span class="input-group-text">$</span>
-                            <input type="text" class="form-control form-control-sm font-monospace text-end"
+                           <input type="text" class="form-control form-control-sm aiu-mono text-end"
                                    placeholder="0.00"
                                    @bind="_extraBalance" />
                         </div>
@@ -287,7 +287,7 @@
                 </div>
                 <div class="col-sm-6 text-sm-end">
                     <div class="small text-muted">Last updated</div>
-                    <div class="font-monospace small">@FormatTs(_planUpdatedAt)</div>
+                    <div class="aiu-mono small">@FormatTs(_planUpdatedAt)</div>
                 </div>
             </div>
 
@@ -318,23 +318,23 @@
             <div class="row g-2">
                 <div class="col-sm-4">
                     <label class="form-label small text-muted mb-1">Input tokens</label>
-                    <input type="text" class="form-control form-control-sm font-monospace text-end"
+                    <input type="text" class="form-control form-control-sm aiu-mono text-end"
                            @bind="_codexApiInputTokens" />
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label small text-muted mb-1">Output tokens</label>
-                    <input type="text" class="form-control form-control-sm font-monospace text-end"
+                           <input type="text" class="form-control form-control-sm aiu-mono text-end"
                            @bind="_codexApiOutputTokens" />
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label small text-muted mb-1">Total tokens</label>
-                    <input type="text" class="form-control form-control-sm font-monospace text-end"
+                           <input type="text" class="form-control form-control-sm aiu-mono text-end"
                            @bind="_codexApiTotalTokens" />
                 </div>
             </div>
             <div class="mt-3">
                 <label class="form-label small text-muted mb-1">Last request</label>
-                <div class="font-monospace small">@FormatTs(_codexApiLastRequestAt)</div>
+                <div class="aiu-mono small">@FormatTs(_codexApiLastRequestAt)</div>
             </div>
             <div class="d-flex align-items-center gap-2 mt-3">
                 <button class="btn btn-primary btn-sm" @onclick="SaveCodexApiAsync" disabled="@_codexApiSaving">
@@ -373,14 +373,14 @@
                     <label class="form-label small text-muted mb-1">API credit balance (USD)</label>
                     <div class="input-group">
                         <span class="input-group-text">$</span>
-                        <input type="text" class="form-control font-monospace text-end"
+                               <input type="text" class="form-control aiu-mono text-end"
                                placeholder="0.00"
                                @bind="_apiCreditBalance" />
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="small text-muted">Last updated</div>
-                    <div class="font-monospace small">@FormatTs(_apiUpdatedAt)</div>
+                    <div class="aiu-mono small">@FormatTs(_apiUpdatedAt)</div>
                 </div>
             </div>
 
@@ -419,6 +419,7 @@
         background: var(--panel-2, #f5f6f9);
         border-bottom: 1px solid var(--line-2, #c6ccd5);
     }
+    .aiu-mono { font-family: var(--mono, Bahnschrift, monospace); }
     .aiu-badge { border-radius: 2px; font-weight: 600; }
     .aiu-badge-ok,
     .aiu-status-ok { color: var(--ok, #1f5fa8) !important; }

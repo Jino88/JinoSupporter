@@ -134,7 +134,7 @@ else if (!IsCliModel && !CodexApi.IsConfigured)
                     {
                         <div class="translate-usage mb-3">@_tokenUsageText</div>
                     }
-                    <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit; font-size: 14px; line-height: 1.6;">@_outputText</pre>
+                    <pre class="tr-output-text mb-0">@_outputText</pre>
                 }
                 else
                 {
@@ -161,6 +161,12 @@ else if (!IsCliModel && !CodexApi.IsConfigured)
     }
     .tr-panel-body { background: var(--panel, #fff); }
     .tr-output-body { overflow-y: auto; max-height: 72vh; background: var(--panel, #fff); }
+    .tr-output-text {
+        white-space: pre-wrap;
+        font-family: var(--sans, "Segoe UI", "Malgun Gothic", sans-serif);
+        font-size: 14px;
+        line-height: 1.6;
+    }
     .img-strip {
         display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
         padding: 6px; border: 1px dashed var(--line-2, #c6ccd5); border-radius: 2px;
@@ -190,7 +196,7 @@ else if (!IsCliModel && !CodexApi.IsConfigured)
     .img-clear:hover { border-color: var(--crit, #c8342a); color: var(--crit, #c8342a); }
     .translate-source {
         white-space: pre-wrap;
-        font-family: inherit;
+        font-family: var(--sans, "Segoe UI", "Malgun Gothic", sans-serif);
         font-size: 13px;
         line-height: 1.55;
         padding: 10px;

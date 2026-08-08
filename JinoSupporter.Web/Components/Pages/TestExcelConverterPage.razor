@@ -26,7 +26,7 @@
 {
     <div class="alert alert-warning small">
         <strong>Python converter not found.</strong> ExcelDuplicator 경로와 venv를 확인해주세요.
-        <div class="font-monospace mt-1" style="font-size:11px;">@Helper.ConverterStatus</div>
+        <div class="tec-mono mt-1" style="font-size:11px;">@Helper.ConverterStatus</div>
     </div>
 }
 
@@ -66,7 +66,7 @@
         <div class="mb-3">
             <label class="form-label small mb-1">Input files</label>
             <div class="input-group input-group-sm">
-                <input class="form-control font-monospace"
+                <input class="form-control tec-mono"
                        @bind="_sourceDir" @bind:after="SaveSettings"
                        placeholder="e.g. D:\reports\input" />
                 <button class="btn btn-outline-secondary"
@@ -79,7 +79,7 @@
             <label class="form-label small mb-1">Destination folder</label>
             <small class="text-muted d-block mb-1">Output files are written directly inside this folder as <code>&lt;original&gt;_clean.xlsx</code>.</small>
             <div class="input-group input-group-sm">
-                <input class="form-control font-monospace"
+                <input class="form-control tec-mono"
                        @bind="_destDir" @bind:after="SaveSettings"
                        placeholder="e.g. D:\reports\output" />
                 <button class="btn btn-outline-secondary"
@@ -160,7 +160,7 @@
     <div class="card-body p-0">
         @* id="tec-log" — needed by JS to scroll-to-bottom on each new entry.
            Without this the user has to scroll manually as logs stream in. *@
-        <div id="tec-log" class="tec-log font-monospace p-2 overflow-auto">
+        <div id="tec-log" class="tec-log tec-mono p-2 overflow-auto">
             @if (_log.Count == 0)
             {
                 <span class="tec-empty-log">No log entries yet.</span>
@@ -183,6 +183,7 @@
         border: 1px solid var(--line-2, #c6ccd5);
         border-radius: 2px;
     }
+    .tec-mono { font-family: var(--mono, Bahnschrift, monospace); }
     .tec-settings-card > .card-body > .mb-3:nth-of-type(2) {
         display: none;
     }
