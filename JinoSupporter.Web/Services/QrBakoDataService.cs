@@ -58,13 +58,26 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
             cancellationToken);
         string? sortColumn = ResolveTestTimeColumn(tableColumns);
 
-        long? totalRows = await TryCountRowsAsync(
-            conn,
-            NormalizeTimeoutSeconds(snapshot.TimeoutSeconds),
-            cancellationToken);
+        List<QrBakoDateSummary> dates = sortColumn is null
+            ? []
+            : await FetchDateSummariesAsync(
+                conn,
+                sortColumn,
+                NormalizeTimeoutSeconds(snapshot.TimeoutSeconds),
+                cancellationToken);
+        DateOnly? selectedDate = query.TestDate ?? dates.FirstOrDefault()?.Date;
+
+        long? totalRows = selectedDate is null || sortColumn is null
+            ? 0
+            : await TryCountRowsAsync(
+                conn,
+                sortColumn,
+                selectedDate.Value,
+                NormalizeTimeoutSeconds(snapshot.TimeoutSeconds),
+                cancellationToken);
 
         await using var cmd = conn.CreateCommand();
-        cmd.CommandText = sortColumn is null
+        cmd.CommandText = sortColumn is null || selectedDate is null
             ? """
             SELECT TOP (@MaxRows) *
             FROM [dbo].[BKTD] WITH (NOLOCK);
@@ -72,10 +85,18 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
             : $"""
             SELECT TOP (@MaxRows) *
             FROM [dbo].[BKTD] WITH (NOLOCK)
+            WHERE {QuoteSqlServerIdentifier(sortColumn)} >= @DateStart
+              AND {QuoteSqlServerIdentifier(sortColumn)} < @DateEnd
             ORDER BY {QuoteSqlServerIdentifier(sortColumn)} DESC;
             """;
         cmd.CommandTimeout = NormalizeTimeoutSeconds(snapshot.TimeoutSeconds);
         cmd.Parameters.Add(new SqlParameter("@MaxRows", SqlDbType.Int) { Value = maxRows });
+        if (sortColumn is not null && selectedDate is not null)
+        {
+            DateTime dateStart = selectedDate.Value.ToDateTime(TimeOnly.MinValue);
+            cmd.Parameters.Add(new SqlParameter("@DateStart", SqlDbType.DateTime2) { Value = dateStart });
+            cmd.Parameters.Add(new SqlParameter("@DateEnd", SqlDbType.DateTime2) { Value = dateStart.AddDays(1) });
+        }
 
         var columns = new List<QrBakoDataColumn>();
         var rows = new List<QrBakoDataRow>();
@@ -110,7 +131,7 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
 
         _activity.Log(
             "QR BAKO DATA",
-            $"Fetched dbo.BKTD preview rows={rows.Count:N0}, maxRows={maxRows:N0}, total={(totalRows?.ToString("N0", CultureInfo.InvariantCulture) ?? "unknown")}");
+            $"Fetched dbo.BKTD date={selectedDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "none"}, rows={rows.Count:N0}, maxRows={maxRows:N0}, total={(totalRows?.ToString("N0", CultureInfo.InvariantCulture) ?? "unknown")}");
 
         return new QrBakoDataResult
         {
@@ -122,12 +143,43 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
             MaxRows = maxRows,
             TotalRows = totalRows,
             SortColumnName = sortColumn ?? string.Empty,
+            SelectedDate = selectedDate,
+            Dates = dates,
             WarningMessage = sortColumn is null
-                ? "Test Time column was not found in dbo.BKTD, so rows were loaded without Test Time sorting."
+                ? "TestTime column was not found in dbo.BKTD, so the date list could not be created."
                 : string.Empty,
             Columns = columns,
             Rows = rows,
         };
+    }
+
+    private static async Task<List<QrBakoDateSummary>> FetchDateSummariesAsync(
+        SqlConnection conn,
+        string sortColumn,
+        int timeoutSeconds,
+        CancellationToken cancellationToken)
+    {
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"""
+            SELECT CONVERT(date, {QuoteSqlServerIdentifier(sortColumn)}) AS [TestDate],
+                   COUNT_BIG(1) AS [RecordCount]
+            FROM [dbo].[BKTD] WITH (NOLOCK)
+            WHERE {QuoteSqlServerIdentifier(sortColumn)} IS NOT NULL
+            GROUP BY CONVERT(date, {QuoteSqlServerIdentifier(sortColumn)})
+            ORDER BY [TestDate] DESC;
+            """;
+        cmd.CommandTimeout = timeoutSeconds;
+
+        var dates = new List<QrBakoDateSummary>();
+        await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess, cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            DateTime date = reader.GetDateTime(0);
+            long recordCount = reader.GetInt64(1);
+            dates.Add(new QrBakoDateSummary(DateOnly.FromDateTime(date), recordCount));
+        }
+
+        return dates;
     }
 
     private static async Task<List<string>> FetchTableColumnNamesAsync(
@@ -163,14 +215,24 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
 
     private static async Task<long?> TryCountRowsAsync(
         SqlConnection conn,
+        string sortColumn,
+        DateOnly date,
         int timeoutSeconds,
         CancellationToken cancellationToken)
     {
         try
         {
             await using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT COUNT_BIG(1) FROM [dbo].[BKTD] WITH (NOLOCK);";
+            cmd.CommandText = $"""
+                SELECT COUNT_BIG(1)
+                FROM [dbo].[BKTD] WITH (NOLOCK)
+                WHERE {QuoteSqlServerIdentifier(sortColumn)} >= @DateStart
+                  AND {QuoteSqlServerIdentifier(sortColumn)} < @DateEnd;
+                """;
             cmd.CommandTimeout = timeoutSeconds;
+            DateTime dateStart = date.ToDateTime(TimeOnly.MinValue);
+            cmd.Parameters.Add(new SqlParameter("@DateStart", SqlDbType.DateTime2) { Value = dateStart });
+            cmd.Parameters.Add(new SqlParameter("@DateEnd", SqlDbType.DateTime2) { Value = dateStart.AddDays(1) });
             object? value = await cmd.ExecuteScalarAsync(cancellationToken);
             return value is null or DBNull ? null : Convert.ToInt64(value, CultureInfo.InvariantCulture);
         }
@@ -309,6 +371,7 @@ public sealed class QrBakoDataConnectionSnapshot
 public sealed class QrBakoDataQuery
 {
     public int MaxRows { get; init; } = 1000;
+    public DateOnly? TestDate { get; init; }
 }
 
 public sealed class QrBakoDataResult
@@ -321,7 +384,9 @@ public sealed class QrBakoDataResult
     public int MaxRows { get; init; }
     public long? TotalRows { get; init; }
     public string SortColumnName { get; init; } = string.Empty;
+    public DateOnly? SelectedDate { get; init; }
     public string WarningMessage { get; init; } = string.Empty;
+    public List<QrBakoDateSummary> Dates { get; init; } = [];
     public List<QrBakoDataColumn> Columns { get; init; } = [];
     public List<QrBakoDataRow> Rows { get; init; } = [];
     public bool HitMaxRows => Rows.Count >= MaxRows;
@@ -330,3 +395,5 @@ public sealed class QrBakoDataResult
 public sealed record QrBakoDataColumn(string Name, string DataType);
 
 public sealed record QrBakoDataRow(IReadOnlyList<string> Values);
+
+public sealed record QrBakoDateSummary(DateOnly Date, long RowCount);

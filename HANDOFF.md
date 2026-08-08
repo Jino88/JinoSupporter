@@ -1974,3 +1974,46 @@
 - Files: JinoSupporter.Web/Components 아래 .razor 다수
 - Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일. 드라이런으로 색 179곳·폰트 32곳을 먼저 확인하고 적용했다. 적용 후 전수 재측정으로 감소분을 확인했다. 서버 재기동 완료.
 - Next: 기계적으로 처리할 것은 사실상 소진됐다. 남은 것은 (1) 디자인에 경고 색 정의 추가 (2) 화면별 레이아웃 이식 — 시안의 기준선 편차 막대 같은 구조는 화면마다 수작업이 필요하다. 사용자가 화면을 확인 중이며 지적 사항에 따라 우선순위를 정한다.
+
+## 2026-08-08 08:18 - [UI][CHANGE] QrBakoDateBrowser: 날짜별 원본 데이터 화면 구현
+- Agent: Codex
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: QrBakoDateBrowser
+- Change: CHANGE
+- Completed: QR BAKO DATA의 KPI·Pareto·중첩 상세 이력을 제거하고 좌측 TestTime 날짜 목록과 우측 선택 날짜의 BKTD 원본 컬럼 표로 교체했다. 조회 서비스는 날짜별 건수와 선택 날짜 행만 SELECT하도록 변경했다.
+- Decisions: 실 DB 메타데이터를 읽기 전용으로 확인한 결과 67개 컬럼이 요청 목록과 일치했다. 연결 문자열의 ApplicationIntent=ReadOnly와 SELECT/NOLOCK만 유지하며 DB 쓰기 기능은 추가하지 않았다.
+- Files: JinoSupporter.Web/Components/Pages/QrBakoDataPage.razor, JinoSupporter.Web/Services/QrBakoDataService.cs
+- Verification: 아직 실행하지 않음 — 구현 직후 단계이며 다음 단계에서 변경 파일 대상 빌드와 읽기 전용 SQL 정적 점검을 수행한다.
+- Next: Razor/C# 컴파일을 수행하고 날짜별 조회 결과 및 SQL 쓰기 구문 부재를 검증한다.
+
+## 2026-08-08 08:20 - [BUILD][CHANGE] QrBakoDateBrowser: 날짜 조회 화면 검증 완료
+- Agent: Codex
+- Session: External
+- Task-ID: Unavailable
+- Category: BUILD
+- Feature: QrBakoDateBrowser
+- Change: CHANGE
+- Completed: 변경된 QR BAKO 페이지와 서비스가 컴파일되며, 실 BKTD에서 날짜 집계와 선택 날짜 원본 행 조회가 일치함을 확인했다. 서비스 SQL에는 SELECT만 남아 있고 쓰기 구문은 없다.
+- Decisions: 실행 중인 서버와 브라우저는 사용자 지시의 실행 제한에 따라 재기동하거나 열지 않았다. 기존 프로젝트 경고는 이번 변경 파일 밖의 32건으로 유지했다.
+- Files: None
+- Verification: JinoSupporter.Web 프로젝트 별도 artifacts 빌드 오류 0개·기존 경고 32개. ApplicationIntent=ReadOnly 실측 조회 결과 날짜 12개, 최신 2026-07-15 집계 8건=조회 8건, 컬럼 67개였고 git diff --check와 쓰기 SQL 토큰 검사도 통과했다.
+- Next: 실행 중인 웹 서버를 다음 정상 재기동 시 갱신한 뒤 `/bmes/qr-bako-data`에서 좌측 날짜 선택과 우측 가로 스크롤 표의 실제 배치를 확인한다.
+
+## 2026-08-08 08:30 - [BUILD][REMOVE] RepositoryDiskCleanup: 빌드 산출물·병합완료 워크트리 정리로 11.2GB 회수
+
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: BUILD
+- Feature: RepositoryDiskCleanup
+- Change: REMOVE
+- Prompt: "D:\000. MyWorks\005. Program\Repository\JinoSupporter\ 여기에 쓰지 않는 빌드 산출물 지워줘 .. 여기 용량 엄청 먹네"
+- Answer: 22.4GB → 11.17GB로 절반을 회수했다. 정리 중 **용량 폭증의 구조적 원인**을 찾았다 — `.codex-verify/`가 `.gitignore`에 없고 **git이 5018개 파일로 추적 중**이다(빌드 산출물, DLL, Playwright 브라우저 포함). 그래서 워크트리를 하나 만들 때마다 통째로 체크아웃되고, 워크트리 20개가 그 사본을 각각 들고 있었다. `.codex`가 18GB였던 이유이며 bin/obj는 그중 1.14GB뿐이었다. 사용자는 이번에 이 부분(git에서 제거)과 `BmesNgRateStandalone/dist` 설치본 정리는 선택하지 않았다.
+- Applied: (1) `bin`/`obj`/`__pycache__` 40개 폴더 삭제 — 2.56GB. 전부 `.gitignore:2-3`의 `bin/`·`obj/` 대상이라 git 추적에 영향 없음 (2) 병합완료·클린 워크트리 10개를 `git worktree remove`로 제거 — s3·s11·s15·s19·s20·s21·s22·s23·s24·s27, 약 8.6GB (3) `git worktree prune`으로 메타데이터 정리. 등록 워크트리 21 → 11
+- Completed: 전체 22.4GB → 11.17GB. 남은 `.codex` 7.98GB는 미병합·더티 워크트리 10개다.
+- Decisions: (1) **삭제 대상을 미병합 커밋 0개 + 더티 파일 0개인 워크트리로만 한정했다.** 제외한 9개: s10(미병합 1커밋+더티 9), s12(미병합 1커밋), s16(미병합 1커밋+더티 5), s13(더티 8), s14(1), s18(1), s25(1), s26(2), s28(더티 8392, locked). (2) **`JinoSupporter.Web/bin`은 건드리지 않았다** — `JinoSupporter.Web.exe`(PID 21092)가 실행 중이다. (3) 10개 중 4개(s15·s21·s23·s27)는 `git worktree remove`가 "Permission denied"로 디렉터리 삭제에 실패했으나 **등록 해제는 이미 끝난 상태**였고, 이후 `rm -rf`로 삭제됐다. git 자체 삭제 경로만 막히는 현상으로, CodexDesktop 뿌리 W의 비상속 DENY ACE와 같은 계열로 보이나 이번에 확정하지는 않았다.
+- Files: None
+- Verification: 삭제 전 `git worktree list --porcelain`으로 워크트리별 `rev-list --count main..HEAD`와 `status --porcelain`을 전수 측정해 0|0인 것만 골랐다. `git check-ignore -v`로 `bin/`·`obj/`가 ignore 대상임을, `.codex-verify`가 아님을 확인. 삭제 후 `git worktree list` 11개, PowerShell 재측정 11.17GB. **공유 체크아웃의 미커밋 3파일(`HANDOFF.md`, `QrBakoDataPage.razor`, `QrBakoDataService.cs`)은 이 작업 이전부터 있던 것이다** — 이번 삭제는 gitignore 대상과 등록 해제된 워크트리 디렉터리만 건드렸다.
+- Next: 근본 해결은 `.codex-verify`를 `git rm --cached` 하고 `.gitignore`에 추가하는 것이다(추적 5018파일, 현재 1.73GB + 남은 워크트리 사본). main에 커밋이 필요하고 기존 워크트리 10개가 각각 dirty로 표시되므로, 그 워크트리들을 정리한 뒤에 하는 편이 낫다. 미병합 3개(s10·s12·s16)는 먼저 병합 여부를 판단해야 한다.
