@@ -1,4 +1,4 @@
-@page "/bmes/reason-table"
+﻿@page "/bmes/reason-table"
 @rendermode InteractiveServer
 @using JinoSupporter.Web.Services
 @using Microsoft.AspNetCore.Components.Web
@@ -282,21 +282,21 @@
 <style>
     .bmes-table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
     .bmes-table thead th {
-        background: #f1f5f9; font-weight: 700; font-size: 10px; color: #64748b;
+        background: var(--panel-3, #eceef2); font-weight: 700; font-size: 10px; color: var(--ink-2, #4a5461);
         text-transform: uppercase; letter-spacing: .4px; padding: 6px 10px;
-        border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 2;
+        border-bottom: 1px solid var(--line, var(--line, #dde1e7)); position: sticky; top: 0; z-index: 2;
     }
-    .bmes-search-row { position: sticky; top: 29px; z-index: 1; background: #fff; }
-    .bmes-search-row td { padding: 4px 6px; border-bottom: 2px solid #e2e8f0; background: #fff; }
+    .bmes-search-row { position: sticky; top: 29px; z-index: 1; background: var(--panel, #fff); }
+    .bmes-search-row td { padding: 4px 6px; border-bottom: 2px solid var(--line, var(--line, #dde1e7)); background: var(--panel, #fff); }
     .bmes-model-search { display: grid; grid-template-columns: minmax(130px, 1fr) auto auto; gap: 4px; align-items: center; }
     .bmes-model-search .btn { font-size: 10px; padding: 2px 6px; }
     .bmes-search-input {
-        width: 100%; font-size: 11px; padding: 3px 6px; border: 1px solid #e2e8f0;
-        border-radius: 3px; background: #f8fafc; outline: none; color: #334155;
+        width: 100%; font-size: 11px; padding: 3px 6px; border: 1px solid var(--line, var(--line, #dde1e7));
+        border-radius: 2px; background: var(--panel-2, #f5f6f9); outline: none; color: var(--ink-2, #4a5461);
     }
-    .bmes-search-input:focus { border-color: #93c5fd; background: #fff; box-shadow: 0 0 0 2px rgba(147,197,253,.25); }
-    .bmes-table td { padding: 4px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-    .bmes-row:hover td { background: #f8fafc; }
+    .bmes-search-input:focus { border-color: #93c5fd; background: var(--panel, #fff);}
+    .bmes-table td { padding: 4px 10px; border-bottom: 1px solid var(--panel-3, #eceef2); vertical-align: middle; }
+    .bmes-row:hover td { background: var(--panel-2, #f5f6f9); }
     .bmes-row-missing td { background: #fef2f2; }
     .bmes-row-missing:hover td { background: #fee2e2; }
     .bmes-edit-row td { background: #eff6ff; }
@@ -304,9 +304,9 @@
     .bmes-actions .btn { font-size: 10px; }
     .bmes-input {
         width: 100%; font-size: 12px; padding: 2px 6px; border: 1px solid #93c5fd;
-        border-radius: 3px; background: #fff; outline: none;
+        border-radius: 2px; background: var(--panel, #fff); outline: none;
     }
-    .bmes-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.15); }
+    .bmes-input:focus { border-color: #3b82f6;}
     .bmes-reason-cell { cursor: text; min-width: 220px; }
     .bmes-reason-cell:hover { background: #eff6ff !important; }
     .bmes-reason-select { min-width: 220px; }

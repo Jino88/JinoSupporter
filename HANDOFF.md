@@ -1894,3 +1894,19 @@
 - Files: JinoSupporter.Web/wwwroot/ui-redesign/SHEET_PORTING_CONTRACT.md, JinoSupporter.Web/Components/Pages/BmesDailyReportPage.razor
 - Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일. 렌더 대조(headless Chrome, 실제 CSS 로드 순서 재현) — .dr-stat radius 12px→2px·그림자 있음→none, .dr-table-wrap 동일, th 배경 투명→rgb(245,246,249)·테두리 0→1px, td 테두리 0→1px. 서버 재기동 완료. 실제 로그인 화면은 인증이 필요해 직접 보지 못했다.
 - Next: 같은 방식으로 다음 화면을 이어간다. 남은 순서는 Report NG RATE 계열(가장 큼, 12개 파일), F-Cost, Report/LPA, 그 뒤 Test Data Analysis·Tools·Admin. 화면 50개 중 지금까지 본문까지 이식된 것은 1개다.
+
+## 2026-08-08 07:40 - [UI][CHANGE] SheetDesign: 전 화면 표면을 종이·잉크 체계로 일괄 전환
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: SheetDesign
+- Change: CHANGE
+- Prompt: "끝까지 골을 잡고 다하세요"
+- Answer: Daily Report 한 장에 쓴 변환을 일반화해 전 화면에 적용했다. 의미가 모호하지 않은 것(중립 회색, 모서리, 그림자)만 자동화하고, 표 격자와 액센트처럼 화면마다 뜻이 다른 것은 자동 변환에서 제외했다.
+- Applied: (1) 마크업 style 블록 38개 파일에서 중립 하드코딩 hex 1,661곳을 토큰으로(Classic UI용 폴백 포함) (2) border-radius 317곳을 2px로 (3) 떠 있는 box-shadow 35곳 제거, inset 링은 1px 테두리 대용이라 유지 (4) 서버를 콘솔 창 없이 기동하도록 변경
+- Completed: 앱 전 화면이 같은 표면 규칙을 따른다. 토큰 사용 1,745곳, 떠 있는 그림자 0곳, radius는 2px·50%·모서리 조합만 남았다.
+- Decisions: 자동화 범위를 의도적으로 좁혔다 — 표 격자선과 액센트 색은 화면마다 의미가 달라 일괄 치환하면 뜻이 뭉개진다. C# 문자열로 조립하는 내보내기 HTML은 화면 스타일이 아니므로 제외했고, LoginPage는 자체 문서 전체를 렌더해 셸 밖이라 제외했다. 적용 전 데이터 URI 안의 hex와 id 셀렉터가 오염될 위험을 점검해 해당 사례가 없음을 확인했다.
+- Files: JinoSupporter.Web/Components 아래 .razor 38개 (Pages 35, Shared 3)
+- Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일. 드라이런을 먼저 돌려 대상과 건수를 확인한 뒤 적용했다. 1차 적용에서 radius 정규식이 다중값의 첫 값만 바꿔 `8px 8px 0 0`이 `2px 8px 0 0`으로 비대칭이 되는 버그를 자체 검증에서 발견하고, 값 단위로 정규화하는 후속 스크립트로 8곳을 교정했다. 서버 재기동 후 /login 200. 실제 화면은 인증이 필요해 직접 보지 못했다.
+- Next: 표 격자(엑셀 폼)와 액센트 색은 화면별 수작업이 필요하다. Daily Report는 완료했고, 다음은 사용 빈도 순으로 Report NG RATE 계열, F-Cost, Report/LPA 순이다.

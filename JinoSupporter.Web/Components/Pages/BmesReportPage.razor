@@ -1,4 +1,4 @@
-@page "/report/bmes"
+﻿@page "/report/bmes"
 @rendermode InteractiveServer
 @using JinoSupporter.Web.Services
 @using System.Text.Json
@@ -88,27 +88,27 @@
         border: 1px solid transparent;
         border-bottom: 0;
         background: transparent;
-        color: #475569;
+        color: var(--ink-2, #4a5461);
         padding: 9px 18px;
         font-size: 13px;
         font-weight: 600;
-        border-radius: 6px 6px 0 0;
+        border-radius: 2px 2px 0 0;
     }
 
     .bmes-report-tab:hover {
-        background: #f8fafc;
-        color: #0f172a;
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink, #0f1319);
     }
 
     .bmes-report-tab.active {
-        background: #fff;
+        background: var(--panel, #fff);
         border-color: #d7dee8;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
         margin-bottom: -1px;
     }
 
     .bmes-report-tab-content {
-        background: #fff;
+        background: var(--panel, #fff);
         border: 1px solid #d7dee8;
         border-top: 0;
         padding: 18px 0 0;

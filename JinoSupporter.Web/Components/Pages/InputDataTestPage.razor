@@ -1,4 +1,4 @@
-@rendermode InteractiveServer
+﻿@rendermode InteractiveServer
 @implements IAsyncDisposable
 @using ClosedXML.Excel
 @using System.Diagnostics
@@ -377,8 +377,8 @@
 
     .idt-left, .idt-step {
         border: 1px solid #d9e2ee;
-        background: #fff;
-        border-radius: 6px;
+        background: var(--panel, #fff);
+        border-radius: 2px;
     }
 
     .idt-left {
@@ -413,16 +413,16 @@
         margin: 1px 0 0;
         font-size: 16px;
         font-weight: 850;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
     }
 
     .idt-icon-btn {
         width: 32px;
         height: 32px;
-        border: 1px solid #cbd5e1;
-        background: #fff;
-        border-radius: 6px;
-        color: #334155;
+        border: 1px solid var(--line-2, #c6ccd5);
+        background: var(--panel, #fff);
+        border-radius: 2px;
+        color: var(--ink-2, #4a5461);
         font-size: 12px;
         font-weight: 800;
     }
@@ -433,9 +433,9 @@
         place-items: center;
         gap: 7px;
         min-height: 108px;
-        border: 2px dashed #94a3b8;
-        border-radius: 6px;
-        background: #f8fafc;
+        border: 2px dashed var(--ink-3, #7f8a98);
+        border-radius: 2px;
+        background: var(--panel-2, #f5f6f9);
         cursor: pointer;
         text-align: center;
         padding: 12px;
@@ -466,7 +466,7 @@
         justify-content: center;
         width: 52px;
         height: 34px;
-        border-radius: 4px;
+        border-radius: 2px;
         background: #134e4a;
         color: #ccfbf1;
         font-size: 12px;
@@ -476,13 +476,13 @@
     .idt-drop-title {
         font-size: 14px;
         font-weight: 800;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
     }
 
     .idt-drop-name {
         max-width: 100%;
         font-size: 12px;
-        color: #475569;
+        color: var(--ink-2, #4a5461);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -493,13 +493,13 @@
         flex-wrap: wrap;
         gap: 6px;
         font-size: 11px;
-        color: #475569;
+        color: var(--ink-2, #4a5461);
     }
 
     .idt-file-meta span {
-        border: 1px solid #e2e8f0;
-        background: #fff;
-        border-radius: 4px;
+        border: 1px solid var(--line, var(--line, #dde1e7));
+        background: var(--panel, #fff);
+        border-radius: 2px;
         padding: 3px 7px;
     }
 
@@ -514,8 +514,8 @@
         gap: 7px;
         padding: 8px;
         border: 1px solid #dbe3ef;
-        border-radius: 6px;
-        background: #f8fafc;
+        border-radius: 2px;
+        background: var(--panel-2, #f5f6f9);
     }
 
     .idt-extract-card.ready {
@@ -532,11 +532,11 @@
         display: grid;
         gap: 2px;
         font-size: 11px;
-        color: #475569;
+        color: var(--ink-2, #4a5461);
     }
 
     .idt-extract-info strong {
-        color: #0f172a;
+        color: var(--ink, #0f1319);
         font-size: 12px;
     }
 
@@ -555,24 +555,23 @@
         margin: 0;
         font-size: 12px;
         font-weight: 800;
-        color: #334155;
+        color: var(--ink-2, #4a5461);
     }
 
     .idt-textarea {
         resize: vertical;
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
         padding: 9px 10px;
         font-size: 13px;
         line-height: 1.45;
-        color: #0f172a;
-        background: #fff;
+        color: var(--ink, #0f1319);
+        background: var(--panel, #fff);
         outline: none;
     }
 
     .idt-textarea:focus {
         border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
     }
 
     .idt-textarea.purpose { min-height: 86px; }
@@ -580,7 +579,7 @@
     .idt-textarea.prompt  { min-height: 128px; height: 128px; }
 
     .idt-status {
-        border-radius: 6px;
+        border-radius: 2px;
         padding: 9px 10px;
         font-size: 12px;
         line-height: 1.4;
@@ -614,13 +613,13 @@
     .idt-title {
         font-size: 17px;
         font-weight: 850;
-        color: #111827;
+        color: var(--ink, #0f1319);
     }
 
     .idt-subtitle {
         margin-top: 2px;
         font-size: 12px;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
     }
 
     .idt-steps {
@@ -638,7 +637,7 @@
         margin: 0 2px 10px;
         padding: 10px;
         border: 1px solid #bfdbfe;
-        border-radius: 6px;
+        border-radius: 2px;
         background: #eff6ff;
     }
 
@@ -658,15 +657,15 @@
     .idt-auto-subtitle {
         margin-top: 2px;
         font-size: 11px;
-        color: #475569;
+        color: var(--ink-2, #4a5461);
     }
 
     .idt-auto-close {
         width: 26px;
         height: 26px;
         border: 1px solid #93c5fd;
-        border-radius: 5px;
-        background: #fff;
+        border-radius: 2px;
+        background: var(--panel, #fff);
         color: #1d4ed8;
         font-size: 11px;
         font-weight: 850;
@@ -688,12 +687,12 @@
         gap: 8px;
         flex-wrap: wrap;
         font-size: 11px;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
     }
 
     .idt-auto-preview-label strong {
         font-size: 12px;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
     }
 
     .idt-auto-preview {
@@ -702,10 +701,10 @@
         max-height: 360px;
         resize: vertical;
         border: 1px solid #bfdbfe;
-        border-radius: 6px;
+        border-radius: 2px;
         padding: 8px;
-        background: #fff;
-        color: #0f172a;
+        background: var(--panel, #fff);
+        color: var(--ink, #0f1319);
         font-family: Consolas, "Courier New", monospace;
         font-size: 11px;
         line-height: 1.4;
@@ -720,9 +719,9 @@
     .idt-auto-empty {
         padding: 10px;
         border: 1px dashed #93c5fd;
-        border-radius: 6px;
-        background: #fff;
-        color: #475569;
+        border-radius: 2px;
+        background: var(--panel, #fff);
+        color: var(--ink-2, #4a5461);
         font-size: 12px;
     }
 
@@ -740,8 +739,8 @@
         margin: 0;
         padding: 8px;
         border: 1px solid #dbeafe;
-        border-radius: 6px;
-        background: #fff;
+        border-radius: 2px;
+        background: var(--panel, #fff);
         cursor: pointer;
     }
 
@@ -759,14 +758,14 @@
 
     .idt-auto-item strong {
         font-size: 12px;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
     }
 
     .idt-auto-item em {
         font-style: normal;
         font-size: 11px;
         line-height: 1.35;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
     }
 
     .idt-auto-remove {
@@ -774,8 +773,8 @@
         height: 22px;
         flex-shrink: 0;
         border: 1px solid #fecaca;
-        border-radius: 4px;
-        background: #fff;
+        border-radius: 2px;
+        background: var(--panel, #fff);
         color: #b91c1c;
         font-size: 10px;
         font-weight: 850;
@@ -792,12 +791,12 @@
         min-height: 32px;
         max-height: 86px;
         resize: vertical;
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
         padding: 6px 8px;
         font-size: 12px;
         line-height: 1.35;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
     }
 
     .idt-auto-add .btn {
@@ -823,18 +822,17 @@
 
     .idt-step.running {
         border-color: #60a5fa;
-        box-shadow: 0 0 0 3px rgba(96, 165, 250, .12);
     }
 
     .idt-step-title {
         font-size: 14px;
         font-weight: 850;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
     }
 
     .idt-step-meta, .idt-result-time {
         font-size: 11px;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
     }
 
     .idt-step-actions {
@@ -864,9 +862,9 @@
         margin: 0;
         overflow: auto;
         border: 1px solid #dbe3ef;
-        border-radius: 6px;
+        border-radius: 2px;
         background: #fbfdff;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
         padding: 10px;
         font-size: 13px;
         line-height: 1.5;
@@ -878,7 +876,7 @@
     .idt-result.empty, .idt-result.loading {
         display: flex;
         align-items: center;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
     }
 
     .idt-result.error-text {
@@ -890,7 +888,7 @@
     .idt-ai-html-host {
         padding: 0;
         overflow: hidden;
-        background: #fff;
+        background: var(--panel, #fff);
     }
 
     .idt-ai-html-frame {
@@ -899,7 +897,7 @@
         height: min(1200px, calc(100vh - 230px));
         min-height: 620px;
         border: 0;
-        background: #fff;
+        background: var(--panel, #fff);
     }
 
     .idt-result.html-report {
@@ -911,14 +909,14 @@
         margin: 0 0 10px;
         font-size: 18px;
         font-weight: 850;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
     }
 
     .idt-result.html-report h3 {
         margin: 14px 0 8px;
         font-size: 14px;
         font-weight: 850;
-        color: #1e293b;
+        color: var(--ink, #0f1319);
     }
 
     .idt-result.html-report p {
@@ -940,7 +938,7 @@
     }
 
     .idt-result.html-report th {
-        background: #f1f5f9;
+        background: var(--panel-3, #eceef2);
         font-weight: 800;
     }
 
@@ -960,10 +958,10 @@
         align-items: center;
         max-width: 260px;
         padding: 3px 9px;
-        border-radius: 999px;
-        border: 1px solid #cbd5e1;
-        background: #f8fafc;
-        color: #334155;
+        border-radius: 2px;
+        border: 1px solid var(--line-2, #c6ccd5);
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
         font-size: 11px;
         font-weight: 750;
         line-height: 1.35;
@@ -987,8 +985,8 @@
     .idt-result.html-report .idt-brief,
     .idt-result.html-report .idt-process {
         border: 1px solid #dbe3ef;
-        border-radius: 6px;
-        background: #fff;
+        border-radius: 2px;
+        background: var(--panel, #fff);
         padding: 10px 12px;
     }
 
@@ -997,7 +995,7 @@
         margin: 0 0 8px;
         font-size: 13px;
         font-weight: 850;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
     }
 
     .idt-result.html-report .idt-brief ul {
@@ -1018,9 +1016,9 @@
         gap: 6px;
         margin: 8px 0 10px;
         padding: 8px;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        background: #f8fafc;
+        border: 1px solid var(--line, var(--line, #dde1e7));
+        border-radius: 2px;
+        background: var(--panel-2, #f5f6f9);
     }
 
     .idt-result.html-report .idt-bar {
@@ -1033,27 +1031,27 @@
     }
 
     .idt-result.html-report .idt-bar-label {
-        color: #334155;
+        color: var(--ink-2, #4a5461);
         font-weight: 700;
         overflow-wrap: anywhere;
     }
 
     .idt-result.html-report .idt-bar-track {
         height: 8px;
-        border-radius: 999px;
-        background: #e2e8f0;
+        border-radius: 2px;
+        background: var(--line, var(--line, #dde1e7));
         overflow: hidden;
     }
 
     .idt-result.html-report .idt-bar-fill {
         display: block;
         height: 100%;
-        border-radius: 999px;
+        border-radius: 2px;
         background: #2563eb;
     }
 
     .idt-result.html-report .idt-bar-value {
-        color: #475569;
+        color: var(--ink-2, #4a5461);
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
     }
@@ -1068,7 +1066,7 @@
 
     .idt-extracted-data .sheet-block + .sheet-block {
         padding-top: 14px;
-        border-top: 1px solid #e2e8f0;
+        border-top: 1px solid var(--line, var(--line, #dde1e7));
     }
 
     .idt-extracted-data .text-list {

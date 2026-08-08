@@ -1,4 +1,4 @@
-@page "/data-inference/first-analysis"
+﻿@page "/data-inference/first-analysis"
 @page "/data-inference/current-problem"
 @rendermode InteractiveServer
 @inject CurrentProblemAnalysisService CurrentProblem
@@ -168,7 +168,7 @@
         flex-direction: column;
         overflow: hidden;
         background: #f5f7fb;
-        color: #172033;
+        color: var(--ink, #0f1319);
     }
 
     .fav-header {
@@ -178,20 +178,20 @@
         justify-content: space-between;
         gap: 12px;
         padding: 10px 14px;
-        border-bottom: 1px solid #d9e0e7;
-        background: #fff;
+        border-bottom: 1px solid var(--line, #dde1e7);
+        background: var(--panel, #fff);
         flex-shrink: 0;
     }
 
     .fav-title {
         font-size: 16px;
         font-weight: 850;
-        color: #17202a;
+        color: var(--ink, #0f1319);
     }
 
     .fav-subtitle {
         margin-top: 2px;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-size: 11px;
         overflow-wrap: anywhere;
     }
@@ -202,7 +202,7 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        background: #fff;
+        background: var(--panel, #fff);
     }
 
     .fav-toolbar {
@@ -211,8 +211,8 @@
         align-items: center;
         gap: 10px;
         padding: 10px 12px;
-        border-bottom: 1px solid #d9e0e7;
-        background: #f8fafc;
+        border-bottom: 1px solid var(--line, #dde1e7);
+        background: var(--panel-2, #f5f6f9);
     }
 
     .fav-toolbar input {
@@ -222,7 +222,7 @@
 
     .fav-toolbar span {
         margin-left: auto;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-size: 12px;
         font-weight: 800;
         white-space: nowrap;
@@ -233,7 +233,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #94a3b8;
+        color: var(--ink-3, #7f8a98);
         font-size: 13px;
     }
 
@@ -249,12 +249,12 @@
         justify-content: center;
         gap: 10px;
         padding: 12px;
-        border-top: 1px solid #e2e8f0;
-        background: #f8fafc;
+        border-top: 1px solid var(--line, var(--line, #dde1e7));
+        background: var(--panel-2, #f5f6f9);
     }
 
     .fav-load-more span {
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-size: 12px;
         font-weight: 750;
     }
@@ -267,7 +267,7 @@
 
     .fav-table th,
     .fav-table td {
-        border-bottom: 1px solid #e2e8f0;
+        border-bottom: 1px solid var(--line, var(--line, #dde1e7));
         padding: 7px 8px;
         text-align: left;
         vertical-align: top;
@@ -278,18 +278,18 @@
         top: 0;
         z-index: 1;
         background: #eef3f8;
-        color: #475569;
+        color: var(--ink-2, #4a5461);
         font-weight: 850;
     }
 
     .fav-table tr:hover td {
-        background: #f8fafc;
+        background: var(--panel-2, #f5f6f9);
     }
 
     .fav-table .num {
         width: 54px;
         text-align: right;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-variant-numeric: tabular-nums;
     }
 
@@ -303,7 +303,7 @@
         min-width: 46px;
         justify-content: center;
         padding: 2px 7px;
-        border-radius: 999px;
+        border-radius: 2px;
         background: #ecfdf5;
         color: #047857;
         border: 1px solid #86efac;
@@ -312,7 +312,7 @@
 
     .fav-purpose-detail {
         margin-top: 3px;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-size: 11px;
     }
 
@@ -321,10 +321,10 @@
         max-width: 260px;
         margin: 0 4px 4px 0;
         padding: 2px 7px;
-        border: 1px solid #cbd5e1;
-        border-radius: 999px;
-        background: #f8fafc;
-        color: #334155;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
         font-size: 11px;
         font-weight: 750;
         line-height: 1.35;
@@ -340,6 +340,6 @@
     }
 
     .fav-muted {
-        color: #94a3b8;
+        color: var(--ink-3, #7f8a98);
     }
 </style>

@@ -1,4 +1,4 @@
-@page "/bmes/lpa"
+﻿@page "/bmes/lpa"
 @rendermode InteractiveServer
 @using JinoSupporter.Web.Services
 @inject BmesLpaScrapeService Lpa
@@ -96,7 +96,7 @@
 </div>
 
 <style>
-    .lpa-view { background: #fff; border: 1px solid #d7dee8; border-radius: 6px; }
+    .lpa-view { background: var(--panel, #fff); border: 1px solid #d7dee8; border-radius: 2px; }
     .lpa-prog { height: 4px; background: #dfe5ec; border-radius: 2px; overflow: hidden; }
     .lpa-prog-bar { height: 100%; background: #0d6efd; border-radius: 2px; transition: width .15s linear; }
 </style>

@@ -1,4 +1,4 @@
-@page "/translate"
+﻿@page "/translate"
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 @inject AiProviderSettingsService AiProviders
@@ -148,13 +148,13 @@ else if (!IsCliModel && !CodexApi.IsConfigured)
 <style>
     .img-strip {
         display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
-        padding: 6px; border: 1px dashed #cbd5e1; border-radius: 6px;
-        background: #f8fafc;
+        padding: 6px; border: 1px dashed var(--line-2, #c6ccd5); border-radius: 2px;
+        background: var(--panel-2, #f5f6f9);
     }
     .img-thumb {
         position: relative; width: 64px; height: 64px;
-        border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden;
-        background: #fff; flex-shrink: 0;
+        border: 1px solid var(--line, var(--line, #dde1e7)); border-radius: 2px; overflow: hidden;
+        background: var(--panel, #fff); flex-shrink: 0;
     }
     .img-thumb img {
         width: 100%; height: 100%; object-fit: cover; display: block;
@@ -162,15 +162,15 @@ else if (!IsCliModel && !CodexApi.IsConfigured)
     .img-remove {
         position: absolute; top: 1px; right: 1px;
         width: 18px; height: 18px; padding: 0; line-height: 16px;
-        font-size: 14px; font-weight: 700; color: #fff;
+        font-size: 14px; font-weight: 700; color: var(--panel, #fff);
         background: rgba(0,0,0,.55); border: none; border-radius: 50%;
         cursor: pointer;
     }
     .img-remove:hover { background: #ef4444; }
     .img-clear {
         font-size: 11px; padding: 2px 8px; margin-left: auto;
-        border: 1px solid #e2e8f0; border-radius: 12px; background: #fff;
-        color: #64748b; cursor: pointer;
+        border: 1px solid var(--line, var(--line, #dde1e7)); border-radius: 2px; background: var(--panel, #fff);
+        color: var(--ink-2, #4a5461); cursor: pointer;
     }
     .img-clear:hover { border-color: #ef4444; color: #ef4444; }
     .translate-source {
@@ -179,10 +179,10 @@ else if (!IsCliModel && !CodexApi.IsConfigured)
         font-size: 13px;
         line-height: 1.55;
         padding: 10px;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        background: #f8fafc;
-        color: #334155;
+        border: 1px solid var(--line, var(--line, #dde1e7));
+        border-radius: 2px;
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
     }
     .translate-usage {
         display: inline-flex;
@@ -191,7 +191,7 @@ else if (!IsCliModel && !CodexApi.IsConfigured)
         line-height: 1.4;
         padding: 6px 10px;
         border: 1px solid #dbeafe;
-        border-radius: 6px;
+        border-radius: 2px;
         background: #eff6ff;
         color: #1e40af;
     }

@@ -1,4 +1,4 @@
-@page "/admin/test-excel-converter"
+﻿@page "/admin/test-excel-converter"
 @rendermode InteractiveServer
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
 @implements IDisposable
@@ -190,9 +190,9 @@
         place-items: center;
         min-height: 138px;
         border: 2px dashed #93c5fd;
-        border-radius: 8px;
+        border-radius: 2px;
         background: #f8fbff;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
         cursor: pointer;
         transition: border-color .15s ease, background .15s ease;
     }
@@ -225,15 +225,15 @@
         font-size: 14px;
     }
     .tec-drop-sub {
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-size: 12px;
         margin-top: 4px;
     }
     .tec-file-list {
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
+        border: 1px solid var(--line, var(--line, #dde1e7));
+        border-radius: 2px;
         padding: 8px;
-        background: #fff;
+        background: var(--panel, #fff);
     }
     .tec-file-row {
         display: flex;
@@ -241,12 +241,12 @@
         gap: 12px;
         padding: 4px 0;
         font-size: 12px;
-        border-top: 1px solid #f1f5f9;
+        border-top: 1px solid var(--panel-3, #eceef2);
     }
     .tec-file-row:first-of-type {
         border-top: 0;
     }
-    .log-info  { color: #94a3b8; }
+    .log-info  { color: var(--ink-3, #7f8a98); }
     .log-ok    { color: #4ade80; }
     .log-warn  { color: #fbbf24; }
     .log-err   { color: #f87171; }

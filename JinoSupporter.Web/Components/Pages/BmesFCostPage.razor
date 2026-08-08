@@ -1,4 +1,4 @@
-@* Route and render mode live on BmesFCost.razor, not here: BmesReportHtmlExportService
+﻿@* Route and render mode live on BmesFCost.razor, not here: BmesReportHtmlExportService
    renders this component through the standalone HtmlRenderer, which supports no render
    modes at all, so a @@rendermode directive on the component itself makes the export
    fail outright. Keeping it a plain component also matches the other three report tabs. *@
@@ -969,14 +969,14 @@
 <style>
     .fcost-table { font-size: 12px; white-space: nowrap; border-collapse: collapse; width: 100%; }
     .fcost-table th {
-        background: #f1f5f9; font-weight: 700; font-size: 10px; color: #64748b;
+        background: var(--panel-3, #eceef2); font-weight: 700; font-size: 10px; color: var(--ink-2, #4a5461);
         text-transform: uppercase; letter-spacing: .4px;
-        padding: 5px 10px; text-align: right; border-bottom: 1px solid #e2e8f0;
+        padding: 5px 10px; text-align: right; border-bottom: 1px solid var(--line, var(--line, #dde1e7));
         position: sticky; top: 0; z-index: 1;
     }
     .fcost-table th.label-th { text-align: left; }
     .fcost-table td {
-        padding: 4px 10px; border-bottom: 1px solid #f1f5f9;
+        padding: 4px 10px; border-bottom: 1px solid var(--panel-3, #eceef2);
         text-align: right; font-family: monospace;
     }
     .fcost-table td.label-td { text-align: left; font-family: inherit; }
@@ -985,22 +985,22 @@
                             border-top: 2px solid #eab308; border-bottom: 2px solid #eab308; }
     .fcost-row-input td,
     .fcost-row-cost  td,
-    .fcost-row-rate  td  { background: #fff; color: #0f172a; font-weight: 500; }
-    .fcost-row-input td  { border-top: 1px solid #cbd5e1; }
+    .fcost-row-rate  td  { background: var(--panel, #fff); color: var(--ink, #0f1319); font-weight: 500; }
+    .fcost-row-input td  { border-top: 1px solid var(--line-2, #c6ccd5); }
     .fcost-row-rate  td  { font-weight: 600; }
 
     .ztype-badge {
         display: inline-block; font-size: 10px; font-weight: 700;
-        padding: 1px 7px; border: 1px solid #cbd5e1; border-radius: 3px;
-        background: #f8fafc; color: #475569;
+        padding: 1px 7px; border: 1px solid var(--line-2, #c6ccd5); border-radius: 2px;
+        background: var(--panel-2, #f5f6f9); color: var(--ink-2, #4a5461);
     }
-    .zero { color: #cbd5e1; }
+    .zero { color: var(--line-2, #c6ccd5); }
 
     /* SubGroup Summary ??Mid ??Sub1 ??Sub2 expand/collapse hierarchy */
-    .fcost-row-mid  td { background: #fff; color: #0f172a; font-weight: 700; }
-    .fcost-row-mid.fcost-row-input td { border-top: 2px solid #94a3b8; }
-    .fcost-row-sub1 td { background: #fff; color: #1e293b; font-weight: 600; }
-    .fcost-row-sub2 td { background: #fff;    color: #475569; font-weight: 500; font-size: 11.5px; }
+    .fcost-row-mid  td { background: var(--panel, #fff); color: var(--ink, #0f1319); font-weight: 700; }
+    .fcost-row-mid.fcost-row-input td { border-top: 2px solid var(--ink-3, #7f8a98); }
+    .fcost-row-sub1 td { background: var(--panel, #fff); color: var(--ink, #0f1319); font-weight: 600; }
+    .fcost-row-sub2 td { background: var(--panel, #fff);    color: var(--ink-2, #4a5461); font-weight: 500; font-size: 11.5px; }
     .fcost-tog        { display: inline-block; width: 14px; color: #6366f1;
                         font-size: 10px; margin-right: 4px; }
     .fcost-tog-blank  { width: 14px; }
@@ -1018,8 +1018,8 @@
     .fcost-weekly-card { border-color: #d7dee8; }
     .fcost-weekly-table { font-size: 12px; white-space: nowrap; border-collapse: collapse; width: max-content; table-layout: fixed; }
     .fcost-weekly-table th {
-        background: #e5e7eb; color: #1f2937; font-weight: 700;
-        padding: 8px 12px; text-align: center; border: 1px solid #64748b;
+        background: var(--line, var(--line, #dde1e7)); color: #1f2937; font-weight: 700;
+        padding: 8px 12px; text-align: center; border: 1px solid var(--ink-2, #4a5461);
     }
     .fcost-weekly-table th { width: 150px; min-width: 150px; }
     .fcost-weekly-table th.weekly-site-th,
@@ -1029,7 +1029,7 @@
     .fcost-weekly-table th.weekly-metric-th { width: 150px; min-width: 150px; text-align: center; }
     .fcost-weekly-table td {
         width: 150px; min-width: 150px; padding: 6px 10px; text-align: center;
-        border: 1px solid #94a3b8; font-family: monospace; vertical-align: middle;
+        border: 1px solid var(--ink-3, #7f8a98); font-family: monospace; vertical-align: middle;
     }
     .fcost-weekly-table td.weekly-site-td,
     .fcost-weekly-table td.weekly-target-td,
@@ -1037,29 +1037,29 @@
     .fcost-weekly-table td.weekly-metric-td,
     .fcost-weekly-table td.weekly-model-target-td,
     .fcost-weekly-table td.weekly-model-achievement-td {
-        background: #fff; color: #0f172a; font-family: inherit; text-align: center;
+        background: var(--panel, #fff); color: var(--ink, #0f1319); font-family: inherit; text-align: center;
     }
     .fcost-weekly-table td.weekly-model-td { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
     .fcost-weekly-table .weekly-model-target-input {
         width: 100%; margin: 0; padding: 0; border: 0; outline: 0; background: transparent;
-        color: inherit; font: inherit; text-align: center; box-shadow: none;
+        color: inherit; font: inherit; text-align: center;
     }
     .fcost-weekly-table .weekly-model-achievement {
         font-weight: 700;
     }
     .weekly-total-row td { background: #fff7cc; color: #6b3a00; font-weight: 700; }
-    .weekly-total-cost-row td { background: #fff; color: #0f172a; }
-    .weekly-total-input-row td { background: #fff; color: #0f172a; }
+    .weekly-total-cost-row td { background: var(--panel, #fff); color: var(--ink, #0f1319); }
+    .weekly-total-input-row td { background: var(--panel, #fff); color: var(--ink, #0f1319); }
     .fcost-weekly-table td.weekly-total-label {
-        background: #fff; color: #0f172a; font-family: inherit; font-weight: 700; text-align: center;
+        background: var(--panel, #fff); color: var(--ink, #0f1319); font-family: inherit; font-weight: 700; text-align: center;
     }
-    .weekly-model-row td { background: #fff; color: #0f172a; }
+    .weekly-model-row td { background: var(--panel, #fff); color: var(--ink, #0f1319); }
     .weekly-model-rate { font-weight: 700; margin-top: 1px; }
-    .weekly-model-cost-row td { background: #fff; color: #0f172a; }
-    .weekly-model-input-row td { background: #fff; color: #0f172a; }
-    .weekly-model-share-row td { background: #fff; color: #475569; font-size: 11px; }
-    .weekly-model-amount { color: #475569; font-weight: 600; }
-    .weekly-model-share { color: #475569; font-weight: 600; }
+    .weekly-model-cost-row td { background: var(--panel, #fff); color: var(--ink, #0f1319); }
+    .weekly-model-input-row td { background: var(--panel, #fff); color: var(--ink, #0f1319); }
+    .weekly-model-share-row td { background: var(--panel, #fff); color: var(--ink-2, #4a5461); font-size: 11px; }
+    .weekly-model-amount { color: var(--ink-2, #4a5461); font-weight: 600; }
+    .weekly-model-share { color: var(--ink-2, #4a5461); font-weight: 600; }
     .fcost-weekly-table th.col-day-start,
     .fcost-weekly-table td.col-day-start    { border-left: 2px solid #93c5fd; }
     .fcost-weekly-table th.col-week-start,
@@ -1068,29 +1068,29 @@
     .fcost-weekly-table td.col-month-start  { border-left: 2px solid #fcd34d; }
     .fcost-weekly-config {
         display: grid; gap: 8px; padding: 10px 12px; border-top: 1px solid #dbe3ef;
-        background: #f8fafc; font-size: 12px;
+        background: var(--panel-2, #f5f6f9); font-size: 12px;
     }
     .fcost-weekly-config-grid {
         display: grid; grid-template-columns: repeat(3, minmax(120px, 160px)); gap: 8px;
     }
     .fcost-weekly-config label span {
-        display: block; color: #64748b; font-size: 11px; font-weight: 700; margin-bottom: 3px;
+        display: block; color: var(--ink-2, #4a5461); font-size: 11px; font-weight: 700; margin-bottom: 3px;
     }
     .fcost-weekly-list-editor { max-width: 760px; }
     .fcost-weekly-saved-list {
-        display: grid; gap: 2px; color: #0f172a; font-size: 15px; background: #fff;
+        display: grid; gap: 2px; color: var(--ink, #0f1319); font-size: 15px; background: var(--panel, #fff);
         border: 1px solid #dbe3ef; padding: 8px 10px;
     }
     .weekly-list-bullet { color: #000; margin-right: 6px; }
 
-    .fcost-trend-card { border-color: #111827; }
+    .fcost-trend-card { border-color: var(--ink, #0f1319); }
     .fcost-trend-title {
         padding: 4px 2px 5px; color: #000; font-size: 13px; font-weight: 800;
     }
     .fcost-trend-title span { margin-right: 5px; }
     .fcost-currency-tools {
         display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap;
-        color: #475569; font-size: 12px; font-weight: 700;
+        color: var(--ink-2, #4a5461); font-size: 12px; font-weight: 700;
     }
     .fcost-currency-tools label {
         display: flex; align-items: center; gap: 5px; margin: 0;
@@ -1107,14 +1107,14 @@
         width: 92px;
     }
     .fcost-rate-source {
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-size: 11px;
         line-height: 1.35;
         max-width: 640px;
         white-space: normal;
     }
     .fcost-currency-status {
-        color: #64748b; line-height: 32px;
+        color: var(--ink-2, #4a5461); line-height: 32px;
     }
     .fcost-currency-warning {
         color: #b45309; line-height: 32px;
@@ -1134,11 +1134,11 @@
     }
     .fcost-trend-table th {
         background: #d9d9d9; color: #000; font-weight: 700;
-        padding: 5px 8px; border: 1px solid #111827; text-align: center;
+        padding: 5px 8px; border: 1px solid var(--ink, #0f1319); text-align: center;
     }
     .fcost-trend-table td {
-        padding: 3px 8px; border: 1px solid #111827; text-align: right;
-        font-family: monospace; background: #fff; vertical-align: middle;
+        padding: 3px 8px; border: 1px solid var(--ink, #0f1319); text-align: right;
+        font-family: monospace; background: var(--panel, #fff); vertical-align: middle;
     }
     .fcost-trend-table .trend-model-th { min-width: 210px; }
     .fcost-trend-table .trend-metric-th { min-width: 88px; }
@@ -1149,12 +1149,12 @@
     .fcost-trend-table .trend-model-td {
         max-width: 240px; overflow: hidden; text-overflow: ellipsis;
     }
-    .fcost-trend-table .trend-model-muted { color: #9ca3af; }
-    .fcost-trend-table .trend-child-row td { background: #f8fafc; }
+    .fcost-trend-table .trend-model-muted { color: var(--ink-3, #7f8a98); }
+    .fcost-trend-table .trend-child-row td { background: var(--panel-2, #f5f6f9); }
     .fcost-trend-table .trend-child-model { padding-left: 24px; }
     .trend-expand-btn {
         width: 18px; height: 18px; padding: 0; margin-right: 5px;
-        border: 1px solid #6b7280; background: #fff; color: #111827;
+        border: 1px solid var(--ink-2, #4a5461); background: var(--panel, #fff); color: var(--ink, #0f1319);
         font-size: 12px; line-height: 16px; font-weight: 700; text-align: center;
     }
     .trend-expand-spacer {
@@ -1162,24 +1162,24 @@
     }
     .trend-bgroup-badge {
         display: inline-block; margin-right: 6px; padding: 1px 4px;
-        border: 1px solid #9ca3af; background: #eef2ff; color: #374151;
+        border: 1px solid var(--ink-3, #7f8a98); background: #eef2ff; color: var(--ink-2, #4a5461);
         font-size: 10px; line-height: 1.2; font-weight: 700;
     }
     .fcost-trend-table .trend-period-start,
     .fcost-trend-table .col-week-start,
-    .fcost-trend-table .col-month-start { border-left: 3px double #111827; }
+    .fcost-trend-table .col-month-start { border-left: 3px double var(--ink, #0f1319); }
     .trend-defect-row td { color: #000; }
     .trend-fcost-row td,
     .trend-share-row td { color: #000; }
     .fcost-trend-table .trend-total-row td {
-        background: #f8fafc; color: #000; font-weight: 800;
+        background: var(--panel-2, #f5f6f9); color: #000; font-weight: 800;
     }
     .fcost-trend-table .trend-total-first-row td {
-        border-top: 2px solid #111827;
+        border-top: 2px solid var(--ink, #0f1319);
     }
     .fcost-breakdown-table {
         width: max-content; min-width: 100%; border-collapse: collapse;
-        font-size: 12px; color: #111827;
+        font-size: 12px; color: var(--ink, #0f1319);
     }
     .fcost-breakdown-table th,
     .fcost-breakdown-table td {
@@ -1187,11 +1187,11 @@
         text-align: right; font-variant-numeric: tabular-nums;
     }
     .fcost-breakdown-table th {
-        background: #f8fafc; color: #334155; font-weight: 700;
+        background: var(--panel-2, #f5f6f9); color: var(--ink-2, #4a5461); font-weight: 700;
         text-align: center;
     }
     .fcost-breakdown-table .breakdown-rate-hint {
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-size: 10px;
         font-weight: 500;
         line-height: 1.2;
@@ -1213,7 +1213,7 @@
     .fcost-breakdown-table .breakdown-material-th { min-width: 240px; }
     .fcost-breakdown-table .breakdown-price-th { min-width: 120px; }
     .fcost-breakdown-table .breakdown-price-td {
-        color: #0f172a;
+        color: var(--ink, #0f1319);
         font-size: 11px;
         font-weight: 600;
     }
@@ -1229,7 +1229,7 @@
         font-weight: 700;
     }
     .fcost-breakdown-table .breakdown-qty {
-        color: #0f172a;
+        color: var(--ink, #0f1319);
         font-size: 10px;
         font-weight: 600;
         line-height: 1.25;
@@ -1237,29 +1237,29 @@
         white-space: nowrap;
     }
     .fcost-breakdown-table .breakdown-price-line {
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-size: 10px;
         line-height: 1.25;
         margin-top: 2px;
     }
     .fcost-breakdown-table .breakdown-price-line {
-        color: #475569;
+        color: var(--ink-2, #4a5461);
     }
     .fcost-breakdown-table .breakdown-group-start td {
-        border-top: 2px solid #64748b;
+        border-top: 2px solid var(--ink-2, #4a5461);
     }
     .fcost-breakdown-table .breakdown-grand-total-row td {
-        background: #fff7cc; color: #111827; font-weight: 800;
-        border-top: 2px solid #111827; border-bottom: 2px solid #111827;
+        background: #fff7cc; color: var(--ink, #0f1319); font-weight: 800;
+        border-top: 2px solid var(--ink, #0f1319); border-bottom: 2px solid var(--ink, #0f1319);
     }
     .fcost-breakdown-table .breakdown-total-row td {
-        background: #eff6ff; color: #111827; font-weight: 800;
+        background: #eff6ff; color: var(--ink, #0f1319); font-weight: 800;
     }
     .fcost-breakdown-table .breakdown-subtotal-row td {
-        background: #f8fafc; color: #111827; font-weight: 700;
+        background: var(--panel-2, #f5f6f9); color: var(--ink, #0f1319); font-weight: 700;
     }
     .fcost-breakdown-table .breakdown-material-row td {
-        background: #fff;
+        background: var(--panel, #fff);
     }
     .breakdown-tree-label {
         display: flex; align-items: flex-start; gap: 6px;
@@ -1269,7 +1269,7 @@
     .breakdown-tree-label.depth-3 { padding-left: 38px; }
     .breakdown-expand-btn {
         flex: 0 0 auto; width: 18px; height: 18px; padding: 0;
-        border: 1px solid #94a3b8; background: #fff; color: #0f172a;
+        border: 1px solid var(--ink-3, #7f8a98); background: var(--panel, #fff); color: var(--ink, #0f1319);
         font-size: 12px; line-height: 16px; font-weight: 800; text-align: center;
     }
     .breakdown-expand-spacer {

@@ -1,4 +1,4 @@
-@page "/input-data-batch"
+﻿@page "/input-data-batch"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Text.Json
@@ -2197,7 +2197,7 @@
         min-height: calc(100vh - 24px);
         padding: 18px;
         background: #f6f7fb;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
     }
 
     .page-head,
@@ -2217,7 +2217,7 @@
     .kicker {
         font-size: 11px;
         font-weight: 800;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         letter-spacing: 0;
     }
 
@@ -2235,8 +2235,8 @@
         margin-top: 12px;
         padding: 14px;
         border: 1px solid #d7deea;
-        border-radius: 8px;
-        background: #fff;
+        border-radius: 2px;
+        background: var(--panel, #fff);
     }
 
     .panel h2 {
@@ -2248,14 +2248,14 @@
 
     .panel p {
         margin: 4px 0 0;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-size: 12px;
     }
 
     .status-chip {
         border: 1px solid #d7deea;
-        border-radius: 6px;
-        background: #fff;
+        border-radius: 2px;
+        background: var(--panel, #fff);
         padding: 6px 10px;
         font-size: 12px;
         font-weight: 800;
@@ -2289,7 +2289,7 @@
         margin-bottom: 4px;
         font-size: 12px;
         font-weight: 800;
-        color: #475569;
+        color: var(--ink-2, #4a5461);
     }
 
     .source-input-row {
@@ -2326,7 +2326,7 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         font-size: 11px;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
     }
 
     .toolbar {
@@ -2340,7 +2340,7 @@
         gap: 6px;
         font-size: 12px;
         font-weight: 700;
-        color: #334155;
+        color: var(--ink-2, #4a5461);
     }
 
     .summary-grid {
@@ -2352,17 +2352,17 @@
 
     .summary-grid div {
         min-width: 0;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
+        border: 1px solid var(--line, var(--line, #dde1e7));
+        border-radius: 2px;
         padding: 8px;
-        background: #f8fafc;
+        background: var(--panel-2, #f5f6f9);
     }
 
     .summary-grid span {
         display: block;
         font-size: 11px;
         font-weight: 800;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
     }
 
     .summary-grid strong {
@@ -2371,14 +2371,14 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         font-size: 12px;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
     }
 
     .table-wrap {
         margin-top: 10px;
         overflow: auto;
         border: 1px solid #d7deea;
-        border-radius: 6px;
+        border-radius: 2px;
     }
 
     /* All table rules are scoped to the page root for the same reason as h1
@@ -2392,8 +2392,8 @@
 
     .input-data-root th,
     .input-data-root td {
-        border-bottom: 1px solid #e2e8f0;
-        border-right: 1px solid #e2e8f0;
+        border-bottom: 1px solid var(--line, var(--line, #dde1e7));
+        border-right: 1px solid var(--line, var(--line, #dde1e7));
         padding: 7px 8px;
         vertical-align: top;
     }
@@ -2425,7 +2425,7 @@
     }
 
     .muted {
-        color: #94a3b8;
+        color: var(--ink-3, #7f8a98);
     }
 
     .review-badges {
@@ -2444,9 +2444,9 @@
     .review-block,
     .case-card,
     .factor-grid div {
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        background: #f8fafc;
+        border: 1px solid var(--line, var(--line, #dde1e7));
+        border-radius: 2px;
+        background: var(--panel-2, #f5f6f9);
     }
 
     .review-block {
@@ -2460,7 +2460,7 @@
         display: block;
         font-size: 11px;
         font-weight: 800;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
     }
 
     .review-block p,
@@ -2468,16 +2468,16 @@
     .case-card p,
     .factor-grid p {
         margin: 4px 0 0;
-        color: #334155;
+        color: var(--ink-2, #4a5461);
         line-height: 1.45;
         white-space: normal;
     }
 
     .recognition-card {
         margin-top: 8px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        background: #fff;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
         padding: 10px;
     }
 
@@ -2489,9 +2489,9 @@
     }
 
     .recognized-factor {
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        background: #f8fafc;
+        border: 1px solid var(--line, var(--line, #dde1e7));
+        border-radius: 2px;
+        background: var(--panel-2, #f5f6f9);
         padding: 10px;
     }
 
@@ -2499,7 +2499,7 @@
     .recognized-outcomes th {
         font-size: 11px;
         font-weight: 800;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
     }
 
     .recognized-factor dl {
@@ -2511,13 +2511,13 @@
     }
 
     .recognized-factor dt {
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-weight: 800;
     }
 
     .recognized-factor dd {
         margin: 0;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
         overflow-wrap: anywhere;
     }
 
@@ -2530,18 +2530,18 @@
 
     .chip-row span {
         border: 1px solid #dbe3ef;
-        border-radius: 4px;
+        border-radius: 2px;
         background: #eef2f7;
         padding: 2px 5px;
         font-size: 11px;
-        color: #334155;
+        color: var(--ink-2, #4a5461);
     }
 
     .recognized-outcomes {
         margin-top: 10px;
         overflow: auto;
         border: 1px solid #d7deea;
-        border-radius: 6px;
+        border-radius: 2px;
     }
 
     .recognized-outcomes table {
@@ -2575,9 +2575,9 @@
     }
 
     .recognized-data-table {
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-        background: #fff;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
         overflow: hidden;
     }
 
@@ -2588,12 +2588,12 @@
         gap: 12px;
         padding: 8px 10px;
         border-bottom: 1px solid #dbe3ef;
-        background: #f1f5f9;
+        background: var(--panel-3, #eceef2);
     }
 
     .recognized-data-head strong {
         font-size: 12px;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
     }
 
     .recognized-data-head span {
@@ -2601,7 +2601,7 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         font-size: 11px;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
     }
 
     .recognized-data-scroll {
@@ -2623,29 +2623,29 @@
         text-overflow: clip;
         overflow: visible;
         line-height: 1.35;
-        background: #fff;
+        background: var(--panel, #fff);
     }
 
     .recognized-data-scroll thead th {
         position: sticky;
         top: 0;
         z-index: 1;
-        background: #e2e8f0;
+        background: var(--line, var(--line, #dde1e7));
         font-weight: 800;
-        color: #334155;
+        color: var(--ink-2, #4a5461);
     }
 
     .review-panel h3 {
         margin: 14px 0 6px;
         font-size: 13px;
         font-weight: 800;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
     }
 
     .review-list {
         margin: 0;
         padding-left: 18px;
-        color: #334155;
+        color: var(--ink-2, #4a5461);
         font-size: 12px;
         line-height: 1.55;
     }
@@ -2658,7 +2658,7 @@
     .open-file-status {
         margin: 8px 0 0;
         border: 1px solid #fed7aa;
-        border-radius: 6px;
+        border-radius: 2px;
         background: #fff7ed;
         color: #9a3412;
         padding: 8px 10px;
@@ -2672,8 +2672,8 @@
         margin-top: 8px;
         padding: 10px;
         border: 1px solid #d7deea;
-        border-radius: 6px;
-        background: #f8fafc;
+        border-radius: 2px;
+        background: var(--panel-2, #f5f6f9);
     }
 
     .answer-row {
@@ -2684,11 +2684,11 @@
     .answer-row span {
         font-size: 11px;
         font-weight: 800;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
     }
 
     .answer-row strong {
-        color: #0f172a;
+        color: var(--ink, #0f1319);
         font-size: 12px;
     }
 
@@ -2697,23 +2697,23 @@
         gap: 6px;
         padding: 8px;
         border: 1px solid #dbe3ef;
-        border-radius: 6px;
-        background: #fff;
+        border-radius: 2px;
+        background: var(--panel, #fff);
     }
 
     .question-row-preview-title {
         font-size: 11px;
         font-weight: 800;
-        color: #334155;
+        color: var(--ink-2, #4a5461);
     }
 
     .question-ref-row {
         display: grid;
         gap: 5px;
         padding: 6px;
-        border: 1px solid #e2e8f0;
-        border-radius: 5px;
-        background: #f8fafc;
+        border: 1px solid var(--line, var(--line, #dde1e7));
+        border-radius: 2px;
+        background: var(--panel-2, #f5f6f9);
     }
 
     .question-ref-head {
@@ -2729,10 +2729,10 @@
         width: fit-content;
         margin: 0;
         padding: 2px 6px;
-        border: 1px solid #cbd5e1;
-        border-radius: 4px;
-        background: #e2e8f0;
-        color: #0f172a;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--line, var(--line, #dde1e7));
+        color: var(--ink, #0f1319);
         font-size: 11px;
         font-weight: 800;
     }
@@ -2757,9 +2757,9 @@
         margin: 0;
         padding: 3px 6px;
         border: 1px solid #dbe3ef;
-        border-radius: 4px;
-        background: #fff;
-        color: #334155;
+        border-radius: 2px;
+        background: var(--panel, #fff);
+        color: var(--ink-2, #4a5461);
         font-size: 11px;
         font-weight: 600;
         overflow-wrap: anywhere;
@@ -2767,7 +2767,7 @@
 
     .question-ref-cells b {
         margin-right: 3px;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
     }
 
     .answer-row textarea {
@@ -2819,7 +2819,7 @@
         cursor: pointer;
         font-size: 12px;
         font-weight: 800;
-        color: #334155;
+        color: var(--ink-2, #4a5461);
     }
 
     .json-view {
@@ -2828,9 +2828,9 @@
         margin: 8px 0 0;
         padding: 10px;
         border: 1px solid #d7deea;
-        border-radius: 6px;
-        background: #0f172a;
-        color: #e2e8f0;
+        border-radius: 2px;
+        background: var(--ink, #0f1319);
+        color: var(--line, var(--line, #dde1e7));
         font-size: 12px;
         white-space: pre-wrap;
     }
@@ -2841,9 +2841,9 @@
         margin: 10px 0 0;
         padding: 10px;
         border: 1px solid #d7deea;
-        border-radius: 6px;
-        background: #0f172a;
-        color: #e2e8f0;
+        border-radius: 2px;
+        background: var(--ink, #0f1319);
+        color: var(--line, var(--line, #dde1e7));
         font-size: 12px;
         white-space: pre-wrap;
     }

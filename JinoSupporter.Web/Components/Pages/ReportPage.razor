@@ -1,4 +1,4 @@
-@page "/report"
+﻿@page "/report"
 @rendermode InteractiveServer
 @using System.Linq
 @inject WebRepository Repo
@@ -319,7 +319,7 @@
     .rpt-viewer-close {
         position: absolute; top: 16px; right: 20px; width: 36px; height: 36px;
         border-radius: 50%; border: none; background: rgba(255,255,255,.2);
-        color: #fff; font-size: 18px; cursor: pointer;
+        color: var(--panel, #fff); font-size: 18px; cursor: pointer;
     }
     .rpt-viewer-close:hover { background: rgba(255,255,255,.35); }
 </style>

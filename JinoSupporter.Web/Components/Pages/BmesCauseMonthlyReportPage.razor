@@ -1,4 +1,4 @@
-@using JinoSupporter.Web.Services
+﻿@using JinoSupporter.Web.Services
 
 <div class="cause-report-shell">
     <div class="cause-report-main">
@@ -154,7 +154,7 @@
     .cause-monthly-panel {
         min-width: 0;
         border: 1px solid #d7dee8;
-        background: #fff;
+        background: var(--panel, #fff);
     }
 
     .cause-report-header {
@@ -163,20 +163,20 @@
         justify-content: space-between;
         gap: 12px;
         padding: 10px 12px;
-        border-bottom: 1px solid #e2e8f0;
-        background: #f8fafc;
+        border-bottom: 1px solid var(--line, var(--line, #dde1e7));
+        background: var(--panel-2, #f5f6f9);
     }
 
     .cause-report-title {
         font-size: 13px;
         font-weight: 700;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
     }
 
     .cause-report-subtitle,
     .cause-report-count {
         font-size: 11px;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         white-space: nowrap;
     }
 
@@ -201,8 +201,8 @@
         top: 0;
         z-index: 1;
         background: #eaf1f8;
-        color: #334155;
-        border-bottom: 1px solid #cbd5e1;
+        color: var(--ink-2, #4a5461);
+        border-bottom: 1px solid var(--line-2, #c6ccd5);
         padding: 7px 9px;
         font-size: 11px;
         font-weight: 700;
@@ -213,18 +213,18 @@
     .cause-monthly-table td {
         border-bottom: 1px solid #eef2f7;
         padding: 6px 9px;
-        color: #1e293b;
+        color: var(--ink, #0f1319);
         vertical-align: middle;
     }
 
     .cause-row-empty td {
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
     }
 
     .cause-model-cell,
     .cause-month-model {
         font-weight: 600;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
     }
 
     .cause-center,
@@ -236,11 +236,11 @@
     }
 
     .cause-subtotal-row td {
-        background: #f1f5f9;
-        border-top: 1px solid #cbd5e1;
-        border-bottom: 1px solid #cbd5e1;
+        background: var(--panel-3, #eceef2);
+        border-top: 1px solid var(--line-2, #c6ccd5);
+        border-bottom: 1px solid var(--line-2, #c6ccd5);
         font-weight: 700;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
     }
 
     .cause-subtotal-row td:nth-child(3) {
@@ -253,7 +253,7 @@
     }
 
     .cause-month-rate {
-        color: #0f172a !important;
+        color: var(--ink, #0f1319) !important;
         font-weight: 700;
     }
 
@@ -263,17 +263,17 @@
 
     .cause-empty {
         padding: 28px 20px;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-size: 12px;
         text-align: center;
     }
 
     .cause-ppm-zero {
-        color: #cbd5e1 !important;
+        color: var(--line-2, #c6ccd5) !important;
     }
 
     .cause-ppm-value {
-        color: #0f172a !important;
+        color: var(--ink, #0f1319) !important;
         font-weight: 700;
     }
 

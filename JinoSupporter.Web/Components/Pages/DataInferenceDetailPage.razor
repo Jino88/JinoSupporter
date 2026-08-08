@@ -1,4 +1,4 @@
-@page "/data-inference/detail"
+﻿@page "/data-inference/detail"
 @rendermode InteractiveServer
 @inject WebRepository Repo
 
@@ -555,30 +555,30 @@ else
 
 <style>
     .didet-root {
-        min-height: 100vh; background: #f8fafc; padding: 20px 24px;
+        min-height: 100vh; background: var(--panel-2, #f5f6f9); padding: 20px 24px;
         font-family: 'Segoe UI', sans-serif;
     }
-    .didet-empty { padding: 60px; text-align: center; color: #94a3b8; font-size: 14px; }
+    .didet-empty { padding: 60px; text-align: center; color: var(--ink-3, #7f8a98); font-size: 14px; }
     .didet-header {
-        background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+        background: var(--panel, #fff); border: 1px solid var(--line, var(--line, #dde1e7)); border-radius: 2px;
         padding: 14px 18px; margin-bottom: 14px;
     }
-    .didet-title { font-size: 17px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+    .didet-title { font-size: 17px; font-weight: 700; color: var(--ink, #0f1319); margin-bottom: 6px; }
     .didet-meta  { display: flex; flex-wrap: wrap; gap: 6px; }
     .didet-chip  {
         display: inline-flex; align-items: center; padding: 2px 10px;
-        border-radius: 12px; font-size: 11px; font-weight: 600;
-        background: #f1f5f9; color: #334155;
+        border-radius: 2px; font-size: 11px; font-weight: 600;
+        background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461);
     }
     .didet-chip-prod { background: #e0e7ff; color: #4338ca; }
-    .didet-chip-dim  { background: transparent; color: #94a3b8; font-weight: 500; }
+    .didet-chip-dim  { background: transparent; color: var(--ink-3, #7f8a98); font-weight: 500; }
 
     .didet-body { display: flex; flex-direction: column; gap: 12px; }
     .didet-card {
-        background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+        background: var(--panel, #fff); border: 1px solid var(--line, var(--line, #dde1e7)); border-radius: 2px;
         padding: 14px 18px;
     }
-    .didet-card-title { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+    .didet-card-title { font-size: 13px; font-weight: 700; color: var(--ink, #0f1319); margin-bottom: 8px; }
 
     /* Collapsible sub-section header — replaces the title in cards whose body
        is heavy enough that it should be opt-in (heatmap / raw rows / images). */
@@ -589,23 +589,23 @@ else
     .didet-section-toggle {
         display: flex; align-items: center; justify-content: space-between;
         width: 100%; padding: 12px 18px; background: transparent; border: none;
-        font-size: 13px; font-weight: 700; color: #1e293b; text-align: left;
-        cursor: pointer; border-radius: 10px;
+        font-size: 13px; font-weight: 700; color: var(--ink, #0f1319); text-align: left;
+        cursor: pointer; border-radius: 2px;
     }
-    .didet-section-toggle:hover  { background: #f8fafc; }
-    .didet-section-arrow         { color: #64748b; font-weight: 600; font-size: 11px; }
+    .didet-section-toggle:hover  { background: var(--panel-2, #f5f6f9); }
+    .didet-section-arrow         { color: var(--ink-2, #4a5461); font-weight: 600; font-size: 11px; }
     .didet-card-head  { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
     .didet-card-head .didet-card-title { margin-bottom: 0; }
 
     /* Language picker pills */
     .didet-lang-row   { display: inline-flex; gap: 4px; }
     .didet-lang       {
-        border: 1px solid #cbd5e1; background: #fff; color: #475569;
-        padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+        border: 1px solid var(--line-2, #c6ccd5); background: var(--panel, #fff); color: var(--ink-2, #4a5461);
+        padding: 2px 10px; border-radius: 2px; font-size: 11px; font-weight: 600;
         cursor: pointer; transition: all .12s;
     }
-    .didet-lang:hover { background: #f1f5f9; border-color: #94a3b8; }
-    .didet-lang.active { background: #4338ca; border-color: #4338ca; color: #fff; }
+    .didet-lang:hover { background: var(--panel-3, #eceef2); border-color: var(--ink-3, #7f8a98); }
+    .didet-lang.active { background: #4338ca; border-color: #4338ca; color: var(--panel, #fff); }
 
     /* Verdict + headline row — the at-a-glance summary at the top of the AI card */
     .didet-verdict-row {
@@ -614,15 +614,15 @@ else
     }
     .didet-verdict {
         font-size: 11px; font-weight: 800; letter-spacing: .05em;
-        padding: 3px 12px; border-radius: 12px; white-space: nowrap;
+        padding: 3px 12px; border-radius: 2px; white-space: nowrap;
         text-transform: uppercase;
     }
     .didet-v-good     { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
     .didet-v-bad      { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
     .didet-v-partial  { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
-    .didet-v-neutral  { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    .didet-v-neutral  { background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); border: 1px solid var(--line-2, #c6ccd5); }
     .didet-card-conclusion {
-        font-size: 14px; font-weight: 600; color: #0f172a; line-height: 1.4;
+        font-size: 14px; font-weight: 600; color: var(--ink, #0f1319); line-height: 1.4;
     }
 
     /* ─────────────────────────────────────────────────────────────
@@ -637,8 +637,8 @@ else
         .didet-dash { grid-template-columns: 1fr; }
     }
     .didet-dash-side {
-        padding: 14px 16px; background: linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%);
-        border: 1px solid #e2e8f0; border-radius: 10px;
+        padding: 14px 16px; background: linear-gradient(180deg,var(--panel-2, #f5f6f9) 0%,#eef2ff 100%);
+        border: 1px solid var(--line, var(--line, #dde1e7)); border-radius: 2px;
         display: flex; flex-direction: column; gap: 12px;
         position: sticky; top: 12px;
     }
@@ -648,7 +648,7 @@ else
     .didet-kpi-hero {
         display: flex; flex-direction: column; gap: 2px;
         padding: 10px 0 4px;
-        border-top: 1px dashed #cbd5e1;
+        border-top: 1px dashed var(--line-2, #c6ccd5);
     }
     .didet-kpi-value {
         font-size: 28px; font-weight: 800; line-height: 1.1;
@@ -656,31 +656,31 @@ else
     }
     .didet-kpi-value.didet-ev-down { color: #065f46; background: transparent !important; }
     .didet-kpi-value.didet-ev-up   { color: #991b1b; background: transparent !important; }
-    .didet-kpi-value.didet-ev-flat { color: #64748b; background: transparent !important; }
+    .didet-kpi-value.didet-ev-flat { color: var(--ink-2, #4a5461); background: transparent !important; }
     .didet-kpi-label {
-        font-size: 11px; color: #475569; font-weight: 600;
+        font-size: 11px; color: var(--ink-2, #4a5461); font-weight: 600;
         text-transform: uppercase; letter-spacing: .03em;
     }
     .didet-kpi-meta {
-        display: flex; gap: 14px; font-size: 11px; color: #64748b;
-        padding-top: 8px; border-top: 1px dashed #cbd5e1;
+        display: flex; gap: 14px; font-size: 11px; color: var(--ink-2, #4a5461);
+        padding-top: 8px; border-top: 1px dashed var(--line-2, #c6ccd5);
     }
     .didet-kpi-meta-n {
-        font-size: 13px; font-weight: 700; color: #1e293b;
+        font-size: 13px; font-weight: 700; color: var(--ink, #0f1319);
         font-variant-numeric: tabular-nums;
     }
     .didet-dash-headline {
-        font-size: 12px; color: #0f172a; line-height: 1.5; font-weight: 500;
-        padding-top: 8px; border-top: 1px dashed #cbd5e1;
+        font-size: 12px; color: var(--ink, #0f1319); line-height: 1.5; font-weight: 500;
+        padding-top: 8px; border-top: 1px dashed var(--line-2, #c6ccd5);
     }
-    .didet-tags-side { margin: 0; padding-top: 8px; border-top: 1px dashed #cbd5e1; }
+    .didet-tags-side { margin: 0; padding-top: 8px; border-top: 1px dashed var(--line-2, #c6ccd5); }
     .didet-tags-side .didet-tag { font-size: 10px; padding: 1px 7px; }
 
     .didet-dash-main {
         display: flex; flex-direction: column; gap: 10px; min-width: 0;
     }
     .didet-dash-section-title {
-        font-size: 11px; font-weight: 700; color: #64748b;
+        font-size: 11px; font-weight: 700; color: var(--ink-2, #4a5461);
         text-transform: uppercase; letter-spacing: .04em;
         margin-bottom: 2px;
     }
@@ -693,49 +693,49 @@ else
         border-collapse: collapse;
         font-size: 12px; width: 100%;
         font-variant-numeric: tabular-nums;
-        background: #fff;
+        background: var(--panel, #fff);
     }
     .didet-evidence th, .didet-evidence td {
-        border: 1px solid #cbd5e1;
+        border: 1px solid var(--line-2, #c6ccd5);
         padding: 6px 10px;
         text-align: left;
         vertical-align: top;
     }
     .didet-evidence thead th {
-        background: #e2e8f0;
-        color: #1e293b;
+        background: var(--line, var(--line, #dde1e7));
+        color: var(--ink, #0f1319);
         font-size: 10px; font-weight: 700;
         text-transform: uppercase; letter-spacing: .04em;
-        border-color: #94a3b8;
+        border-color: var(--ink-3, #7f8a98);
         position: sticky; top: 0;
     }
-    .didet-evidence tbody tr:nth-child(even) td { background: #f8fafc; }
+    .didet-evidence tbody tr:nth-child(even) td { background: var(--panel-2, #f5f6f9); }
     .didet-evidence td.n     { text-align: right; }
-    .didet-ev-metric         { font-weight: 600; color: #0f172a; min-width: 140px; }
-    .didet-ev-label          { display: block; font-size: 10px; color: #64748b; margin-bottom: 2px; }
-    .didet-ev-val            { display: block; color: #0f172a; font-weight: 500; }
-    .didet-ev-note-cell      { font-size: 11px; color: #475569; font-style: italic; }
+    .didet-ev-metric         { font-weight: 600; color: var(--ink, #0f1319); min-width: 140px; }
+    .didet-ev-label          { display: block; font-size: 10px; color: var(--ink-2, #4a5461); margin-bottom: 2px; }
+    .didet-ev-val            { display: block; color: var(--ink, #0f1319); font-weight: 500; }
+    .didet-ev-note-cell      { font-size: 11px; color: var(--ink-2, #4a5461); font-style: italic; }
     .didet-ev-delta          { font-weight: 700; white-space: nowrap; min-width: 64px; }
     .didet-ev-down           { color: #065f46; background: #ecfdf5 !important; }
     .didet-ev-up             { color: #991b1b; background: #fef2f2 !important; }
-    .didet-ev-flat           { color: #64748b; }
-    .didet-ev-range          { font-size: 10px; color: #64748b; font-weight: 500; margin-top: 2px; }
+    .didet-ev-flat           { color: var(--ink-2, #4a5461); }
+    .didet-ev-range          { font-size: 10px; color: var(--ink-2, #4a5461); font-weight: 500; margin-top: 2px; }
 
     /* v7 multi-arm: comparisons stacked in a single colspan cell */
     .didet-ev-comparisons    { display: flex; flex-direction: column; gap: 4px; }
     .didet-ev-comp           {
         display: flex; align-items: baseline; gap: 8px;
-        padding: 3px 6px; border-radius: 4px;
-        background: #fff; border: 1px solid #e2e8f0;
+        padding: 3px 6px; border-radius: 2px;
+        background: var(--panel, #fff); border: 1px solid var(--line, var(--line, #dde1e7));
     }
     .didet-ev-comp.didet-comp-best     { background: #ecfdf5; border-color: #6ee7b7; }
     .didet-ev-comp.didet-comp-worst    { background: #fef2f2; border-color: #fca5a5; }
     .didet-ev-comp.didet-comp-baseline { border-left: 3px solid #4338ca; }
-    .didet-ev-comp-label     { font-weight: 600; color: #0f172a; min-width: 100px; }
-    .didet-ev-comp-val       { color: #0f172a; }
-    .didet-ev-comp-n         { font-size: 10px; color: #94a3b8; }
+    .didet-ev-comp-label     { font-weight: 600; color: var(--ink, #0f1319); min-width: 100px; }
+    .didet-ev-comp-val       { color: var(--ink, #0f1319); }
+    .didet-ev-comp-n         { font-size: 10px; color: var(--ink-3, #7f8a98); }
     .didet-ev-comp-flag {
-        font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 8px;
+        font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 2px;
         text-transform: uppercase; letter-spacing: .03em; margin-left: auto;
     }
     .didet-ev-comp-flag.baseline { background: #e0e7ff; color: #4338ca; }
@@ -746,51 +746,51 @@ else
     .didet-doe-wrap { overflow-x: auto; margin: 4px 0 8px; }
     .didet-doe { border-collapse: collapse; font-size: 11px; font-variant-numeric: tabular-nums; }
     .didet-doe th, .didet-doe td {
-        border: 1px solid #cbd5e1; padding: 4px 8px; min-width: 64px;
+        border: 1px solid var(--line-2, #c6ccd5); padding: 4px 8px; min-width: 64px;
         text-align: center; white-space: nowrap;
     }
-    .didet-doe th             { background: #e2e8f0; font-weight: 700; color: #1e293b; font-size: 10px; }
-    .didet-doe-cell           { color: #0f172a; }
+    .didet-doe th             { background: var(--line, var(--line, #dde1e7)); font-weight: 700; color: var(--ink, #0f1319); font-size: 10px; }
+    .didet-doe-cell           { color: var(--ink, #0f1319); }
     .didet-doe-ok             { background: #d1fae5; color: #065f46; font-weight: 600; }
     .didet-doe-ng             { background: #fee2e2; color: #991b1b; font-weight: 600; }
     .didet-doe-borderline     { background: #fef3c7; color: #92400e; font-weight: 600; }
-    .didet-doe-empty          { background: #f8fafc; color: #cbd5e1; }
+    .didet-doe-empty          { background: var(--panel-2, #f5f6f9); color: var(--line-2, #c6ccd5); }
 
     /* v7 Trend list */
     .didet-trend {
         list-style: none; margin: 4px 0 8px 0; padding: 0;
-        font-size: 12px; color: #1e293b;
+        font-size: 12px; color: var(--ink, #0f1319);
     }
     .didet-trend li {
         display: flex; gap: 12px; padding: 5px 0; align-items: baseline;
-        border-bottom: 1px dashed #e2e8f0;
+        border-bottom: 1px dashed var(--line, var(--line, #dde1e7));
     }
-    .didet-trend-label { font-weight: 600; min-width: 80px; color: #475569; }
-    .didet-trend-value { font-weight: 700; color: #0f172a; min-width: 60px; }
-    .didet-trend-note  { font-size: 11px; color: #64748b; font-style: italic; }
+    .didet-trend-label { font-weight: 600; min-width: 80px; color: var(--ink-2, #4a5461); }
+    .didet-trend-value { font-weight: 700; color: var(--ink, #0f1319); min-width: 60px; }
+    .didet-trend-note  { font-size: 11px; color: var(--ink-2, #4a5461); font-style: italic; }
 
     /* v7 reportType badge in the side aside */
     .didet-rt-badge {
         align-self: flex-start;
-        font-size: 9px; font-weight: 700; padding: 1px 8px; border-radius: 10px;
+        font-size: 9px; font-weight: 700; padding: 1px 8px; border-radius: 2px;
         text-transform: uppercase; letter-spacing: .04em;
-        background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;
+        background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); border: 1px solid var(--line-2, #c6ccd5);
     }
     .didet-rt-multi   { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
     .didet-rt-doe     { background: #fae8ff; color: #86198f; border-color: #f0abfc; }
     .didet-rt-reli    { background: #ecfdf5; color: #065f46; border-color: #6ee7b7; }
     .didet-rt-trend   { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
-    .didet-rt-log     { background: #f3f4f6; color: #4b5563; border-color: #d1d5db; }
+    .didet-rt-log     { background: var(--panel-3, #eceef2); color: #4b5563; border-color: var(--line-2, #c6ccd5); }
 
     /* v2 — Actions list (priority-ordered) */
     .didet-actions {
         list-style: none; margin: 4px 0 8px 0; padding: 0;
-        font-size: 13px; color: #1e293b; line-height: 1.55;
+        font-size: 13px; color: var(--ink, #0f1319); line-height: 1.55;
     }
     .didet-actions li {
         display: flex; gap: 8px; padding: 4px 0; align-items: baseline;
     }
-    .didet-actions li + li { border-top: 1px dashed #e2e8f0; }
+    .didet-actions li + li { border-top: 1px dashed var(--line, var(--line, #dde1e7)); }
     .didet-action-kind     { flex-shrink: 0; width: 18px; font-weight: 700; color: #2563eb; }
     .didet-action-text     { flex: 1; }
     .didet-action-investigate .didet-action-kind { color: #7c3aed; }
@@ -800,23 +800,23 @@ else
     /* v2 — Context (process / stage / baselineReason) — collapsed by default */
     .didet-context {
         margin: 4px 0 0 0; padding: 8px 12px;
-        background: #f8fafc; border-left: 3px solid #cbd5e1; border-radius: 4px;
+        background: var(--panel-2, #f5f6f9); border-left: 3px solid var(--line-2, #c6ccd5); border-radius: 2px;
         font-size: 12px; line-height: 1.55;
         display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;
     }
     .didet-context dt {
-        font-size: 10px; font-weight: 700; color: #64748b;
+        font-size: 10px; font-weight: 700; color: var(--ink-2, #4a5461);
         text-transform: uppercase; letter-spacing: .04em;
         padding-top: 2px;
     }
-    .didet-context dd { margin: 0; color: #0f172a; }
+    .didet-context dd { margin: 0; color: var(--ink, #0f1319); }
     .didet-card-list {
         list-style: none; margin: 0 0 8px 0; padding: 0;
-        font-size: 12px; color: #334155; line-height: 1.5;
+        font-size: 12px; color: var(--ink-2, #4a5461); line-height: 1.5;
     }
     .didet-card-list li { position: relative; padding-left: 16px; margin-top: 3px; }
     .didet-card-list li::before {
-        content: "•"; position: absolute; left: 4px; color: #94a3b8;
+        content: "•"; position: absolute; left: 4px; color: var(--ink-3, #7f8a98);
     }
     .didet-card-actions { color: #1d4ed8; }
     .didet-card-actions li::before { content: "→"; color: #2563eb; }
@@ -825,27 +825,27 @@ else
         font-size: 11px; font-weight: 600; cursor: pointer; padding: 4px 0;
         margin-top: 4px;
     }
-    .didet-show-details:hover { color: #1e293b; text-decoration: underline; }
+    .didet-show-details:hover { color: var(--ink, #0f1319); text-decoration: underline; }
 
     /* Per-field block inside the AI Analysis card */
     .didet-field        { margin-top: 10px; }
     .didet-field:first-of-type { margin-top: 0; }
     .didet-field-label  {
-        font-size: 11px; font-weight: 700; color: #64748b;
+        font-size: 11px; font-weight: 700; color: var(--ink-2, #4a5461);
         text-transform: uppercase; letter-spacing: .04em; margin-bottom: 3px;
     }
     /* Bullet-style preformatted block for the structured fields */
     .didet-bullet-block {
         margin: 0; padding: 6px 10px;
-        font-family: inherit; font-size: 12px; color: #0f172a;
+        font-family: inherit; font-size: 12px; color: var(--ink, #0f1319);
         line-height: 1.55; white-space: pre-wrap; word-wrap: break-word;
-        background: #f8fafc; border-left: 3px solid #cbd5e1; border-radius: 4px;
+        background: var(--panel-2, #f5f6f9); border-left: 3px solid var(--line-2, #c6ccd5); border-radius: 2px;
     }
     /* Conclusion gets a punchier callout — the headline of the report */
     .didet-field-conclusion .didet-field-label { color: #1e3a8a; }
     .didet-conclusion-body {
-        font-size: 14px !important; font-weight: 600; color: #0f172a !important;
-        background: #eef2ff; padding: 8px 12px; border-radius: 6px;
+        font-size: 14px !important; font-weight: 600; color: var(--ink, #0f1319) !important;
+        background: #eef2ff; padding: 8px 12px; border-radius: 2px;
         border-left: 4px solid #4338ca;
     }
     /* Comparison setup — orange tint to flag baseline/variant */
@@ -861,11 +861,11 @@ else
     /* Heatmap */
     .didet-heatmap        { border-collapse: collapse; font-size: 12px; }
     .didet-heatmap th, .didet-heatmap td {
-        border: 1px solid #e2e8f0; padding: 4px 8px; min-width: 60px;
+        border: 1px solid var(--line, var(--line, #dde1e7)); padding: 4px 8px; min-width: 60px;
         text-align: center; white-space: nowrap;
     }
-    .didet-heatmap th     { background: #f1f5f9; font-weight: 600; color: #475569; }
-    .didet-heatmap td     { color: #1e293b; font-weight: 600; font-variant-numeric: tabular-nums; padding: 4px 6px; }
+    .didet-heatmap th     { background: var(--panel-3, #eceef2); font-weight: 600; color: var(--ink-2, #4a5461); }
+    .didet-heatmap td     { color: var(--ink, #0f1319); font-weight: 600; font-variant-numeric: tabular-nums; padding: 4px 6px; }
     .didet-heat-pct       { font-size: 12px; line-height: 1.1; }
     .didet-heat-ratio     { font-size: 10px; font-weight: 500; opacity: .8; line-height: 1.2; }
     .didet-heat-defects   {
@@ -874,39 +874,39 @@ else
         padding-top: 3px; border-top: 1px dashed rgba(0,0,0,.18);
         text-align: left;
     }
-    .didet-heat-empty     { background: #f8fafc; color: #cbd5e1 !important; font-weight: 400; }
+    .didet-heat-empty     { background: var(--panel-2, #f5f6f9); color: var(--line-2, #c6ccd5) !important; font-weight: 400; }
     .didet-heat-legend    {
-        display: flex; gap: 6px; margin-top: 8px; font-size: 10px; color: #fff;
+        display: flex; gap: 6px; margin-top: 8px; font-size: 10px; color: var(--panel, #fff);
     }
     .didet-heat-legend span {
-        padding: 2px 8px; border-radius: 4px; font-weight: 700;
+        padding: 2px 8px; border-radius: 2px; font-weight: 700;
     }
-    .didet-card-body  { font-size: 13px; color: #0f172a; margin: 0; line-height: 1.6; }
+    .didet-card-body  { font-size: 13px; color: var(--ink, #0f1319); margin: 0; line-height: 1.6; }
     .didet-findings   {
-        font-size: 12px; color: #475569; white-space: pre-wrap; margin-top: 6px;
-        background: #f8fafc; padding: 8px 10px; border-radius: 6px;
+        font-size: 12px; color: var(--ink-2, #4a5461); white-space: pre-wrap; margin-top: 6px;
+        background: var(--panel-2, #f5f6f9); padding: 8px 10px; border-radius: 2px;
     }
     .didet-tags       { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
     .didet-tag        {
         background: #e0e7ff; color: #4338ca;
-        padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: 600;
+        padding: 2px 9px; border-radius: 2px; font-size: 11px; font-weight: 600;
     }
 
     .didet-table-wrap { overflow-x: auto; }
     .didet-table      { border-collapse: collapse; font-size: 12px; width: max-content; min-width: 100%; }
     .didet-table th, .didet-table td {
-        border: 1px solid #e2e8f0; padding: 4px 8px; white-space: nowrap; text-align: left;
+        border: 1px solid var(--line, var(--line, #dde1e7)); padding: 4px 8px; white-space: nowrap; text-align: left;
     }
-    .didet-table th   { background: #f1f5f9; font-weight: 600; color: #475569; }
+    .didet-table th   { background: var(--panel-3, #eceef2); font-weight: 600; color: var(--ink-2, #4a5461); }
     .didet-table td.n { text-align: right; font-variant-numeric: tabular-nums; }
 
     .didet-imgs-grid { display: flex; flex-wrap: wrap; gap: 10px; }
     .didet-img-thumb {
-        position: relative; width: 140px; height: 140px; border-radius: 8px;
-        overflow: hidden; border: 1px solid #e2e8f0; cursor: pointer; background: #fff;
+        position: relative; width: 140px; height: 140px; border-radius: 2px;
+        overflow: hidden; border: 1px solid var(--line, var(--line, #dde1e7)); cursor: pointer; background: var(--panel, #fff);
     }
     .didet-img-thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .didet-img-thumb:hover { box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+    .didet-img-thumb:hover {}
     .didet-img-num {
         position: absolute; bottom: 4px; left: 6px; font-size: 10px;
         color: rgba(255,255,255,.95); text-shadow: 0 1px 3px rgba(0,0,0,.7); font-weight: 700;
@@ -915,12 +915,12 @@ else
     .didet-files { display: flex; flex-wrap: wrap; gap: 6px; }
     .didet-file-chip {
         display: inline-flex; align-items: center; gap: 6px;
-        background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 14px;
-        padding: 4px 10px; font-size: 12px; color: #334155; text-decoration: none;
+        background: var(--panel-3, #eceef2); border: 1px solid var(--line, var(--line, #dde1e7)); border-radius: 2px;
+        padding: 4px 10px; font-size: 12px; color: var(--ink-2, #4a5461); text-decoration: none;
     }
-    .didet-file-chip:hover { background: #e0e7ff; color: #1e293b; }
+    .didet-file-chip:hover { background: #e0e7ff; color: var(--ink, #0f1319); }
     .didet-file-name { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-    .didet-file-size { color: #94a3b8; font-size: 10px; }
+    .didet-file-size { color: var(--ink-3, #7f8a98); font-size: 10px; }
 
     .didet-viewer {
         position: fixed; inset: 0; background: rgba(0,0,0,.88); z-index: 9500;
@@ -930,7 +930,7 @@ else
     .didet-viewer-close {
         position: absolute; top: 16px; right: 20px; width: 36px; height: 36px;
         border-radius: 50%; border: none; background: rgba(255,255,255,.2);
-        color: #fff; font-size: 18px; cursor: pointer;
+        color: var(--panel, #fff); font-size: 18px; cursor: pointer;
     }
 </style>
 

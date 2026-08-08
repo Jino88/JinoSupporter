@@ -1,4 +1,4 @@
-@page "/bmes/test4"
+﻿@page "/bmes/test4"
 @rendermode InteractiveServer
 @using System.Globalization
 @using JinoSupporter.Web.Services
@@ -254,22 +254,22 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
 
     .test4-kpis > div {
         border: 1px solid #dbe4f0;
-        background: #fff;
-        border-radius: 6px;
+        background: var(--panel, #fff);
+        border-radius: 2px;
         padding: 8px 10px;
         min-height: 54px;
     }
 
     .test4-kpis span {
         display: block;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
     }
 
     .test4-kpis strong {
-        color: #0f172a;
+        color: var(--ink, #0f1319);
         font-size: 18px;
     }
 
@@ -294,9 +294,9 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
     }
 
     .test4-section-title span {
-        border-radius: 999px;
-        background: #64748b;
-        color: #fff;
+        border-radius: 2px;
+        background: var(--ink-2, #4a5461);
+        color: var(--panel, #fff);
         font-size: 10px;
         font-weight: 700;
         line-height: 1;
@@ -307,7 +307,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
         overflow: auto;
         max-height: 360px;
         border: 1px solid #dbe4f0;
-        background: #fff;
+        background: var(--panel, #fff);
     }
 
     .test4-table {
@@ -323,7 +323,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
         z-index: 1;
         background: #edf3f9;
         color: #193653;
-        border-bottom: 1px solid #cbd5e1;
+        border-bottom: 1px solid var(--line-2, #c6ccd5);
         padding: 7px 8px;
         font-size: 11px;
         text-transform: uppercase;
@@ -338,7 +338,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
     }
 
     .test4-table tr:hover td {
-        background: #f8fafc;
+        background: var(--panel-2, #f5f6f9);
     }
 
     .test4-unmapped-row td {
@@ -353,7 +353,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
         border: 1px solid #bdd0e7;
         background: #f8fbff;
         color: #10233f;
-        border-radius: 4px;
+        border-radius: 2px;
         padding: 3px 6px;
         margin: 2px 4px 2px 0;
         font-size: 11px;
@@ -365,14 +365,14 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
     }
 
     .test4-chip.muted {
-        color: #64748b;
-        background: #f1f5f9;
-        border-color: #cbd5e1;
+        color: var(--ink-2, #4a5461);
+        background: var(--panel-3, #eceef2);
+        border-color: var(--line-2, #c6ccd5);
     }
 
     .test4-logs {
         font-size: 11px;
-        color: #475569;
+        color: var(--ink-2, #4a5461);
     }
 
     @@media (max-width: 900px) {

@@ -325,7 +325,7 @@
         border-radius: 2px;
         border: 1px solid var(--signal, #16202b);
         background: var(--signal, #16202b);
-        color: var(--panel, #fff);
+        color: var(--panel, var(--panel, #fff));
         cursor: pointer;
         text-decoration: none;
         transition: all .15s ease;
@@ -335,8 +335,8 @@
     .dr-btn:disabled { opacity: .55; cursor: default; }
 
     .dr-btn-ghost {
-        background: var(--panel, #fff);
-        border-color: var(--line, #dde1e7);
+        background: var(--panel, var(--panel, #fff));
+        border-color: var(--line, var(--line, #dde1e7));
         color: var(--ink-2, #4a5461);
     }
 
@@ -373,8 +373,8 @@
     }
 
     .dr-stat {
-        background: var(--panel, #fff);
-        border: 1px solid var(--line, #dde1e7);
+        background: var(--panel, var(--panel, #fff));
+        border: 1px solid var(--line, var(--line, #dde1e7));
         border-radius: 2px;
         padding: 12px 14px;
     }
@@ -429,7 +429,7 @@
         align-items: baseline;
         gap: 10px;
         flex-wrap: wrap;
-        border-top: 1px solid var(--line, #dde1e7);
+        border-top: 1px solid var(--line, var(--line, #dde1e7));
         padding-top: 14px;
         margin-top: 4px;
     }
@@ -491,7 +491,7 @@
 
     /* ── Table ─────────────────────────────────────────────────────────── */
     .dr-table-wrap {
-        background: var(--panel, #fff);
+        background: var(--panel, var(--panel, #fff));
         border: 1px solid var(--line-2, #c6ccd5);
         border-radius: 2px;
         overflow-x: auto;
@@ -516,7 +516,7 @@
         background: var(--panel-2, #f5f6f9);
         text-align: left;
         padding: 8px 9px;
-        border: 1px solid var(--line, #dde1e7);
+        border: 1px solid var(--line, var(--line, #dde1e7));
         border-bottom-color: var(--line-2, #c6ccd5);
         white-space: nowrap;
     }
@@ -529,7 +529,7 @@
 
     .dr-table td {
         padding: 8px 9px;
-        border: 1px solid var(--line, #dde1e7);
+        border: 1px solid var(--line, var(--line, #dde1e7));
         vertical-align: middle;
     }
 
@@ -635,11 +635,11 @@
 
     .dr-pt-main {
         background: var(--ink-2, #4a5461);
-        color: var(--panel, #fff);
+        color: var(--panel, var(--panel, #fff));
     }
 
     .dr-pt-other {
-        background: var(--panel, #fff);
+        background: var(--panel, var(--panel, #fff));
         color: var(--ink-2, #4a5461);
         box-shadow: inset 0 0 0 1px var(--line-2, #c6ccd5);
     }
@@ -729,8 +729,8 @@
 
     /* ── States ────────────────────────────────────────────────────────── */
     .dr-empty, .dr-none, .dr-error {
-        background: var(--panel, #fff);
-        border: 1px solid var(--line, #dde1e7);
+        background: var(--panel, var(--panel, #fff));
+        border: 1px solid var(--line, var(--line, #dde1e7));
         border-radius: 2px;
         padding: 28px 20px;
         text-align: center;
@@ -749,7 +749,7 @@
         line-height: 1.65;
         color: var(--ink-3, #7f8a98);
         background: var(--panel-2, #f5f6f9);
-        border: 1px solid var(--line, #dde1e7);
+        border: 1px solid var(--line, var(--line, #dde1e7));
         border-radius: 2px;
         padding: 10px 12px;
         overflow-x: auto;

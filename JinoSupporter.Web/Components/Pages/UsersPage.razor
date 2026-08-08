@@ -1,4 +1,4 @@
-@page "/admin/users"
+﻿@page "/admin/users"
 @rendermode InteractiveServer
 @using JinoSupporter.Web.Services
 @inject WebRepository         Repo
@@ -181,7 +181,7 @@
 <style>
     .perms-table th, .perms-table td { font-size: 12px; vertical-align: middle; }
     .perms-group-row td {
-        background: #f1f5f9; font-weight: 700; color: #475569;
+        background: var(--panel-3, #eceef2); font-weight: 700; color: var(--ink-2, #4a5461);
         font-size: 11px; letter-spacing: .3px; text-transform: uppercase;
     }
 </style>
