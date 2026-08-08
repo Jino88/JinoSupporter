@@ -115,7 +115,8 @@
                         <span>검사 데이터</span>
                     </div>
                     <div class="qr-row-summary">
-                        <span>표시 @_result.Rows.Count.ToString("N0")건</span>
+                        <span>표시 @_rowGroups.Count.ToString("N0") QR</span>
+                        <span>원본 @_result.Rows.Count.ToString("N0")건</span>
                         @if (_result.TotalRows is long totalRows)
                         {
                             <span>DB @totalRows.ToString("N0")건</span>
@@ -146,6 +147,10 @@
                         <table class="qr-data-table">
                             <thead>
                                 <tr>
+                                    <th class="qr-expand-head">
+                                        <span>QR</span>
+                                        <small>묶음</small>
+                                    </th>
                                     @foreach (var column in _result.Columns)
                                     {
                                         <th title="@column.DataType">
@@ -156,16 +161,49 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var row in _result.Rows)
+                                @foreach (var group in _rowGroups)
                                 {
-                                    <tr>
+                                    bool expanded = _expandedProductIds.Contains(group.Key);
+                                    QrBakoDataRow representative = group.Rows[0];
+                                    <tr class="qr-primary-row">
+                                        <td class="qr-expand-cell">
+                                            @if (group.Rows.Count > 1)
+                                            {
+                                                <button class="qr-group-toggle"
+                                                        type="button"
+                                                        aria-expanded="@expanded.ToString().ToLowerInvariant()"
+                                                        title="@(expanded ? "같은 QR 행 접기" : "같은 QR 행 펼치기")"
+                                                        @onclick="() => ToggleGroup(group.Key)">
+                                                    <span aria-hidden="true">@(expanded ? "−" : "+")</span>
+                                                    <b>@group.Rows.Count.ToString("N0")</b>
+                                                </button>
+                                            }
+                                        </td>
                                         @for (int columnIndex = 0; columnIndex < _result.Columns.Count; columnIndex++)
                                         {
                                             var column = _result.Columns[columnIndex];
-                                            string value = columnIndex < row.Values.Count ? row.Values[columnIndex] : string.Empty;
+                                            string value = columnIndex < representative.Values.Count ? representative.Values[columnIndex] : string.Empty;
                                             <td class="@CellClass(column, value)">@DisplayCell(value)</td>
                                         }
                                     </tr>
+                                    @if (expanded)
+                                    {
+                                        @for (int rowIndex = 1; rowIndex < group.Rows.Count; rowIndex++)
+                                        {
+                                            QrBakoDataRow childRow = group.Rows[rowIndex];
+                                            <tr class="qr-child-row">
+                                                <td class="qr-expand-cell">
+                                                    <span class="qr-child-mark" aria-label="같은 QR의 추가 검사 행">└</span>
+                                                </td>
+                                                @for (int columnIndex = 0; columnIndex < _result.Columns.Count; columnIndex++)
+                                                {
+                                                    var column = _result.Columns[columnIndex];
+                                                    string value = columnIndex < childRow.Values.Count ? childRow.Values[columnIndex] : string.Empty;
+                                                    <td class="@CellClass(column, value)">@DisplayCell(value)</td>
+                                                }
+                                            </tr>
+                                        }
+                                    }
                                 }
                             </tbody>
                         </table>
@@ -505,6 +543,48 @@
         background: var(--panel-2, #f5f6f9);
     }
 
+    .qr-data-table .qr-expand-head,
+    .qr-data-table .qr-expand-cell {
+        width: 3.7rem;
+        min-width: 3.7rem;
+        padding-right: 0.3rem;
+        padding-left: 0.3rem;
+        text-align: center;
+    }
+
+    .qr-group-toggle {
+        display: inline-flex;
+        min-width: 2.9rem;
+        min-height: 1.45rem;
+        padding: 0.12rem 0.3rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.22rem;
+        border: 1px solid var(--signal, #16202b);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+        color: var(--signal, #16202b);
+        font: 700 0.65rem var(--mono, Bahnschrift, Consolas, monospace);
+        cursor: pointer;
+    }
+
+    .qr-group-toggle:hover {
+        background: var(--signal, #16202b);
+        color: var(--panel, #fff);
+    }
+
+    .qr-child-row .qr-expand-cell {
+        border-left: 3px solid var(--signal, #16202b);
+        background: var(--panel-3, #eceef2);
+    }
+
+    .qr-child-mark {
+        display: inline-block;
+        padding-left: 0.45rem;
+        color: var(--ink-2, #4a5461);
+        font: 700 0.72rem var(--mono, Bahnschrift, Consolas, monospace);
+    }
+
     .qr-data-table tbody tr:nth-child(even) td:first-child {
         background: var(--panel-2, #f5f6f9);
     }
@@ -581,6 +661,8 @@
     };
 
     private QrBakoDataResult? _result;
+    private IReadOnlyList<QrBakoRowGroup> _rowGroups = [];
+    private readonly HashSet<string> _expandedProductIds = new(StringComparer.Ordinal);
     private DateOnly? _selectedDate;
     private string _error = string.Empty;
     private int _maxRows;
@@ -634,6 +716,8 @@
                 TestDate = date,
             });
             _result = result;
+            _rowGroups = BuildRowGroups(result);
+            _expandedProductIds.Clear();
             _selectedDate = result.SelectedDate;
             _maxRows = result.MaxRows;
         }
@@ -684,6 +768,58 @@
     private string DateButtonClass(DateOnly date) =>
         _selectedDate == date ? "qr-date-button qr-selected" : "qr-date-button";
 
+    private void ToggleGroup(string key)
+    {
+        if (!_expandedProductIds.Add(key))
+            _expandedProductIds.Remove(key);
+    }
+
+    private static IReadOnlyList<QrBakoRowGroup> BuildRowGroups(QrBakoDataResult result)
+    {
+        int productIdIndex = FindColumnIndex(result.Columns, "ProductID");
+        if (productIdIndex < 0)
+            return result.Rows
+                .Select((row, index) => QrBakoRowGroup.Single($"row:{index}", row))
+                .ToList();
+
+        var groups = new List<QrBakoRowGroup>();
+        var byProductId = new Dictionary<string, QrBakoRowGroup>(StringComparer.OrdinalIgnoreCase);
+        for (int rowIndex = 0; rowIndex < result.Rows.Count; rowIndex++)
+        {
+            QrBakoDataRow row = result.Rows[rowIndex];
+            string productId = productIdIndex < row.Values.Count ? row.Values[productIdIndex].Trim() : string.Empty;
+            if (string.IsNullOrWhiteSpace(productId))
+            {
+                groups.Add(QrBakoRowGroup.Single($"row:{rowIndex}", row));
+                continue;
+            }
+
+            if (!byProductId.TryGetValue(productId, out QrBakoRowGroup? group))
+            {
+                group = new QrBakoRowGroup($"product:{productId}");
+                byProductId.Add(productId, group);
+                groups.Add(group);
+            }
+            group.Rows.Add(row);
+        }
+
+        return groups;
+    }
+
+    private static int FindColumnIndex(IReadOnlyList<QrBakoDataColumn> columns, string expectedName)
+    {
+        string normalizedExpected = NormalizeColumnName(expectedName);
+        for (int i = 0; i < columns.Count; i++)
+        {
+            if (NormalizeColumnName(columns[i].Name) == normalizedExpected)
+                return i;
+        }
+        return -1;
+    }
+
+    private static string NormalizeColumnName(string value) =>
+        new(value.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
+
     private static string FormatDate(DateOnly date) =>
         date.ToDateTime(TimeOnly.MinValue).ToString("yyyy-MM-dd (ddd)", CultureInfo.CurrentCulture);
 
@@ -710,4 +846,17 @@
         value.Equals("FAIL", StringComparison.OrdinalIgnoreCase)
         || value.Equals("NG", StringComparison.OrdinalIgnoreCase)
         || value.Equals("N/G", StringComparison.OrdinalIgnoreCase);
+
+    private sealed class QrBakoRowGroup(string key)
+    {
+        public string Key { get; } = key;
+        public List<QrBakoDataRow> Rows { get; } = [];
+
+        public static QrBakoRowGroup Single(string key, QrBakoDataRow row)
+        {
+            var group = new QrBakoRowGroup(key);
+            group.Rows.Add(row);
+            return group;
+        }
+    }
 }
