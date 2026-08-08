@@ -126,9 +126,9 @@
 
 <style>
     .msr-root {
-        min-height: calc(100vh - 24px);
+        min-height: calc(var(--view-h, 100vh) - 24px);
         padding: 16px;
-        background: #f4f6fa;
+        background: var(--plane, #e8eaee);
         color: var(--ink, #0f1319);
     }
 
@@ -205,7 +205,7 @@
     .msr-tab.active {
         border-color: var(--signal, #16202b);
         background: var(--signal-wash, #edf0f4);
-        color: #1d4ed8;
+        color: var(--signal, #16202b);
     }
 
     .msr-status {
@@ -243,7 +243,7 @@
 
     .msr-frame-panel {
         overflow: hidden;
-        height: calc(100vh - 184px);
+        height: calc(var(--view-h, 100vh) - 184px);
         min-height: 620px;
     }
 
@@ -267,7 +267,7 @@
         }
 
         .msr-frame-panel {
-            height: calc(100vh - 260px);
+            height: calc(var(--view-h, 100vh) - 260px);
         }
     }
 </style>
