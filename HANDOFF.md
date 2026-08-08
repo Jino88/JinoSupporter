@@ -1878,3 +1878,19 @@
 - Files: JinoSupporter.Web/Components/Pages/BmesDailyReportPage.razor
 - Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일. diff 12줄 교체로 범위가 좁음을 확인. 서버 재기동 후 /login 200. 실제 Daily Report 화면은 인증이 필요해 직접 보지 못했고 사용자 확인이 필요하다.
 - Next: 사용자가 Daily Report를 열어 색 체계를 확인한다. 나머지 페이지도 같은 방식이 필요하면 액센트 충돌이 있는 곳만(예: DataInferenceDbPage의 인디고 #4338ca 토글 19곳) 선별해 정렬한다. 중립색 전면 치환은 하지 않는다.
+
+## 2026-08-08 07:35 - [UI][CHANGE] SheetDesign: Daily Report 본문을 검사 성적서 형태로
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: SheetDesign
+- Change: CHANGE
+- Prompt: "싹다 해줘"
+- Answer: 화면 전체 이식을 워커 3개로 병렬 진행하려 했으나 세션 27이 생성 직후 재시작으로 죽어 아무것도 남기지 못했다. 오늘 만든 워커 8개 중 산출물을 낸 것은 3개뿐이고 반영된 커밋 7건은 모두 루트가 직접 한 것이라, 방식을 바꿔 루트가 화면 단위로 직접 이식하고 매번 커밋하기로 했다. 첫 화면은 사용자가 가장 자주 보는 Daily Report다.
+- Applied: (1) 화면 이식 공통 규칙 문서 SHEET_PORTING_CONTRACT.md 작성 — 색 토큰과 세 가지 의미(빨강=악화, 파랑=개선, 잉크=동작), 형태(radius 2px·그림자 금지), 엑셀 격자 표, 웹폰트 금지, 뷰포트 높이 금지, 페이지 style 누출 금지, 검증 절차 (2) BmesDailyReportPage 본문 이식 — 카드 radius 12px→2px와 그림자 제거, 표를 아래 테두리만 있던 형태에서 전 셀 격자+헤더 밴드로, 중립색 하드코딩 hex를 토큰으로(폴백 포함), 흰색 7곳 포함
+- Completed: Daily Report 본문이 셸과 같은 종이·잉크 체계로 보인다.
+- Decisions: 워커 병렬 이식을 접고 루트 직접 작업으로 전환했다 — 호스트 재시작 주기가 워커 수명보다 짧아 지금 환경에서는 위임이 산출물로 이어지지 않는다. 규칙 문서를 먼저 만든 이유는 화면마다 다른 사람이 손대도 한 벌로 보이게 하기 위함이며, 이후 화면에도 이 문서를 기준으로 적용한다. inset box-shadow 한 곳(.dr-pt-other)은 남겼다 — 떠 있는 그림자가 아니라 1px 테두리 대용이라 규칙 §3에 어긋나지 않는다. border-radius 50%는 원형 점이라 유지했다.
+- Files: JinoSupporter.Web/wwwroot/ui-redesign/SHEET_PORTING_CONTRACT.md, JinoSupporter.Web/Components/Pages/BmesDailyReportPage.razor
+- Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일. 렌더 대조(headless Chrome, 실제 CSS 로드 순서 재현) — .dr-stat radius 12px→2px·그림자 있음→none, .dr-table-wrap 동일, th 배경 투명→rgb(245,246,249)·테두리 0→1px, td 테두리 0→1px. 서버 재기동 완료. 실제 로그인 화면은 인증이 필요해 직접 보지 못했다.
+- Next: 같은 방식으로 다음 화면을 이어간다. 남은 순서는 Report NG RATE 계열(가장 큼, 12개 파일), F-Cost, Report/LPA, 그 뒤 Test Data Analysis·Tools·Admin. 화면 50개 중 지금까지 본문까지 이식된 것은 1개다.
