@@ -1218,9 +1218,9 @@
 
 <style>
     .gm-page {
-        min-height: calc(100vh - 32px);
+        min-height: calc(var(--view-h, 100vh) - 32px);
         background: var(--panel-2, #f5f6f9);
-        color: #1f2937;
+        color: var(--ink, #0f1319);
         padding: 18px;
     }
 
@@ -1481,7 +1481,7 @@
     }
 
     .gm-sheet:focus {
-        border-color: #2563eb;
+        border-color: var(--signal, #16202b);
     }
 
     .gm-sheet table {
@@ -1544,38 +1544,45 @@
     }
 
     .gm-sheet .gm-col-x {
-        background: #dbeafe;
-        box-shadow: inset 0 0 0 2px #2563eb;
+        background: var(--signal-wash, #edf0f4);
+        outline: 1px solid var(--signal, #16202b);
+        outline-offset: -1px;
     }
 
     .gm-sheet .gm-col-y {
         background: var(--ok-wash, #eaf1f9);
-        box-shadow: inset 0 0 0 2px var(--ok, #1f5fa8);
+        outline: 1px solid var(--ok, #1f5fa8);
+        outline-offset: -1px;
     }
 
     .gm-sheet .gm-col-heat-x {
         background: var(--warn-wash, #fdf4e0);
-        box-shadow: inset 0 0 0 2px #d97706;
+        outline: 1px solid var(--warn-line, #f0cf8a);
+        outline-offset: -1px;
     }
 
     .gm-sheet .gm-col-heat-y {
-        background: #fce7f3;
-        box-shadow: inset 0 0 0 2px #db2777;
+        background: var(--panel-2, #f5f6f9);
+        outline: 1px solid var(--line-2, #c6ccd5);
+        outline-offset: -1px;
     }
 
     .gm-sheet .gm-col-heat-v {
-        background: #ede9fe;
-        box-shadow: inset 0 0 0 2px #7c3aed;
+        background: var(--panel-3, #eceef2);
+        outline: 1px solid var(--line-2, #c6ccd5);
+        outline-offset: -1px;
     }
 
     .gm-sheet .gm-col-heat-ng {
         background: var(--crit-wash, #fbedec);
-        box-shadow: inset 0 0 0 2px var(--crit, #c8342a);
+        outline: 1px solid var(--crit, #c8342a);
+        outline-offset: -1px;
     }
 
     .gm-sheet .gm-col-heat-input {
-        background: #cffafe;
-        box-shadow: inset 0 0 0 2px #0891b2;
+        background: var(--panel-2, #f5f6f9);
+        outline: 1px solid var(--line-2, #c6ccd5);
+        outline-offset: -1px;
     }
 
     .gm-sheet tr.gm-row-usl > th,
@@ -1591,7 +1598,8 @@
             transparent 4px,
             transparent 8px
         );
-        box-shadow: inset 0 1px 0 var(--ink, #0f1319), inset 0 -1px 0 var(--ink, #0f1319);
+        border-top: 1px solid var(--ink, #0f1319);
+        border-bottom: 1px solid var(--ink, #0f1319);
     }
 
     .gm-sheet tr.gm-row-usl > .gm-row-number::after {
