@@ -307,7 +307,7 @@
     .mmg-table td.n { text-align: right; font-variant-numeric: tabular-nums; }
     .row-click { cursor: pointer; }
     .row-click:hover td { background: var(--panel-2, #f5f6f9); }
-    .row-selected td { background: #e0e7ff !important; color: #3730a3; font-weight: 600; }
+    .row-selected td { background: var(--signal-wash, #edf0f4) !important; color: #3730a3; font-weight: 600; }
 
     .grp-box {
         border: 1px solid var(--line, var(--line, #dde1e7)); border-radius: 2px; background: var(--panel, #fff);
@@ -316,7 +316,7 @@
     .grp-box:hover { border-color: var(--line-2, #c6ccd5); }
     .grp-box.grp-active {
         border-color: #6366f1;    }
-    .grp-active .grp-head { background: #eef2ff; }
+    .grp-active .grp-head { background: var(--signal-wash, #edf0f4); }
     .grp-head {
         display: flex; align-items: center; gap: 6px;
         padding: 5px 8px; border-bottom: 1px solid var(--panel-3, #eceef2);
@@ -345,7 +345,7 @@
     }
     .mid-grp-head {
         display: flex; align-items: center; gap: 4px;
-        padding: 4px 8px; border-bottom: 1px solid #eef2ff;
+        padding: 4px 8px; border-bottom: 1px solid var(--signal-wash, #edf0f4);
         background: #f3f4ff; border-top-left-radius: 5px; border-top-right-radius: 5px;
         font-size: 12px;
     }
@@ -386,7 +386,7 @@
     .pg-pill:hover { border-color: var(--line-2, #c6ccd5); color: var(--ink-2, #4a5461); }
     .pg-pill.pg-pill-on { color: var(--panel, #fff); }
     .pg-pill.pg-pill-on.pg-SPK    { background:#ca8a04; border-color:#a16207; }
-    .pg-pill.pg-pill-on.pg-UNIT   { background:#16a34a; border-color:#15803d; }
+    .pg-pill.pg-pill-on.pg-UNIT   { background:#16a34a; border-color:var(--ok, #1f5fa8); }
     .pg-pill.pg-pill-on.pg-MODULE { background:#2563eb; border-color:#1d4ed8; }
     .pg-pill.pg-pill-on.pg-TWS    { background:#db2777; border-color:#be185d; }
     .pg-pill.pg-pill-on.pg-ETC    { background:var(--ink-2, #4a5461); border-color:var(--ink-2, #4a5461); }
@@ -407,7 +407,7 @@
     .sub-grp.sub-dragging { opacity: .55; }
     .sub-grp-head {
         display: flex; align-items: center; gap: 4px;
-        padding: 3px 6px; border-bottom: 1px dashed #eef2ff;
+        padding: 3px 6px; border-bottom: 1px dashed var(--signal-wash, #edf0f4);
     }
     .sub-badge {
         display: inline-block; font-size: 9px; font-weight: 700;
@@ -441,7 +441,7 @@
         border: none; background: transparent; color: var(--line-2, #c6ccd5);
         padding: 0 4px; cursor: pointer; border-radius: 2px;
     }
-    .grp-list li:hover .ls-remove { color: #ef4444; background: #fef2f2; }
+    .grp-list li:hover .ls-remove { color: #ef4444; background: var(--crit-wash, #fbedec); }
 </style>
 
 @code {

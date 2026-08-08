@@ -396,7 +396,7 @@
     .diask-actions  { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
     .diask-status   { font-size: 12px; }
     .diask-ok       { color: #16a34a; }
-    .diask-error    { color: #dc2626; }
+    .diask-error    { color: var(--crit, #c8342a); }
 
     .diask-answer-wrap {
         flex: 1; min-height: 0; overflow-y: auto; padding: 14px;
@@ -710,7 +710,7 @@
         border-radius: 50%; border: none; background: transparent;
         color: var(--ink-3, #7f8a98); font-size: 10px; cursor: pointer; padding: 0;
     }
-    .diask-history-del:hover { background: #dc2626; color: var(--panel, #fff); }
+    .diask-history-del:hover { background: var(--crit, #c8342a); color: var(--panel, #fff); }
     .diask-review-section-head {
         display: flex; align-items: center; justify-content: space-between;
         padding: 9px 12px; border-top: 1px solid var(--line, var(--line, #dde1e7)); border-bottom: 1px solid var(--line, var(--line, #dde1e7));

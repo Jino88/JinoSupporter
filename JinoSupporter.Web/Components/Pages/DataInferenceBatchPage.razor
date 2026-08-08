@@ -369,7 +369,7 @@ else
     .dib-count   { font-size: 12px; color: var(--ink-3, #7f8a98); }
     .dib-status  { padding: 5px 14px; font-size: 12px; flex-shrink: 0; }
     .dib-ok      { color: #16a34a; background: #f0fdf4; border-bottom: 1px solid #bbf7d0; }
-    .dib-error   { color: #dc2626; background: #fef2f2; border-bottom: 1px solid #fecaca; }
+    .dib-error   { color: var(--crit, #c8342a); background: var(--crit-wash, #fbedec); border-bottom: 1px solid var(--crit-wash, #fbedec); }
 
     .dib-tabs {
         display: flex; align-items: center; gap: 6px; padding: 8px 14px;
@@ -469,8 +469,8 @@ else
     .dib-map-message {
         margin-top: 10px; border-radius: 2px; padding: 7px 8px; font-size: 12px; font-weight: 700;
     }
-    .dib-map-message.ok { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-    .dib-map-message.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .dib-map-message.ok { background: #f0fdf4; color: var(--ok, #1f5fa8); border: 1px solid #bbf7d0; }
+    .dib-map-message.err { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); border: 1px solid var(--crit-wash, #fbedec); }
     .dib-map-empty {
         margin-top: 12px; padding: 24px 10px; text-align: center; color: var(--ink-3, #7f8a98);
         background: var(--panel-2, #f5f6f9); border: 1px solid var(--line, var(--line, #dde1e7)); border-radius: 2px; font-size: 13px;
@@ -480,17 +480,17 @@ else
         display: inline-flex; align-items: center; padding: 2px 9px;
         border-radius: 2px; font-size: 11px; font-weight: 600;
     }
-    .dib-badge-done    { background: #dcfce7; color: #166534; }
+    .dib-badge-done    { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
     .dib-badge-pending { background: #fef3c7; color: #92400e; }
     .dib-badge-skip    { background: var(--line, var(--line, #dde1e7)); color: var(--ink-2, #4a5461); }
     .dib-badge-run     { background: #dbeafe; color: #1d4ed8; }
-    .dib-badge-ok      { background: #dcfce7; color: #166534; }
-    .dib-badge-err     { background: #fee2e2; color: #b91c1c; }
+    .dib-badge-ok      { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
+    .dib-badge-err     { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); }
     .dib-badge-stop    { background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); }
     .dib-badge-warn    { background: #fef3c7; color: #b45309; cursor: pointer; }
     .dib-badge-warn:hover { background: #fde68a; }
     .dib-badge-btn     { border: none; cursor: pointer; text-decoration: underline dotted; }
-    .dib-badge-btn:hover { background: #fecaca; }
+    .dib-badge-btn:hover { background: var(--crit-wash, #fbedec); }
     .dib-batched-at    { font-size: 11px; color: var(--ink-2, #4a5461); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .dib-filter-check {
         display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px;
@@ -515,13 +515,13 @@ else
     .dib-error-head {
         display: flex; align-items: center; justify-content: space-between;
         padding: 12px 16px; border-bottom: 1px solid var(--line, var(--line, #dde1e7));
-        font-size: 14px; font-weight: 700; color: #b91c1c;
+        font-size: 14px; font-weight: 700; color: var(--crit, #c8342a);
     }
     .dib-error-close {
         border: none; background: transparent; color: var(--ink-2, #4a5461);
         font-size: 16px; cursor: pointer; padding: 0 4px;
     }
-    .dib-error-close:hover { color: #dc2626; }
+    .dib-error-close:hover { color: var(--crit, #c8342a); }
     .dib-error-body {
         flex: 1; overflow: auto; margin: 0; padding: 14px 16px;
         font-size: 12px; color: var(--ink, #0f1319); background: var(--panel-2, #f5f6f9);

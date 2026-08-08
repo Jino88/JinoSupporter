@@ -375,7 +375,7 @@
         padding: 7px;
         gap: 2px;
     }
-    .daily-history-card:hover { border-color: #86efac; background: #f7fff9; }
+    .daily-history-card:hover { border-color: var(--ok-wash, #eaf1f9); background: #f7fff9; }
     .daily-history-card.active { border-color: #16a34a; background: #f0fdf4; }
     .daily-history-top { display: flex; align-items: center; gap: 5px; min-width: 0; }
     .daily-history-title { min-width: 0; flex: 1; font-size: 11px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -390,14 +390,14 @@
         line-height: 1.35;
         white-space: nowrap;
     }
-    .daily-history-badge.done { color: #166534; border-color: #86efac; background: #dcfce7; }
+    .daily-history-badge.done { color: var(--ok, #1f5fa8); border-color: var(--ok-wash, #eaf1f9); background: var(--ok-wash, #eaf1f9); }
     .daily-history-badge.pending { color: #92400e; border-color: #fcd34d; background: #fef3c7; }
     .daily-item-name { font-weight: 700; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .daily-item-meta, .daily-muted { font-size: 11px; color: var(--ink-2, #4a5461); }
     .daily-item-badge {
         justify-self: start;
         font-size: 10px;
-        color: #166534;
+        color: var(--ok, #1f5fa8);
         border: 1px solid #bbf7d0;
         background: #f0fdf4;
         border-radius: 2px;
@@ -565,8 +565,8 @@
         font-size: 11px;
         font-weight: 800;
     }
-    .daily-diff-stat.add { background: #dcfce7; color: #166534; }
-    .daily-diff-stat.remove { background: #fee2e2; color: #991b1b; }
+    .daily-diff-stat.add { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
+    .daily-diff-stat.remove { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); }
     .daily-history-diff-body {
         max-height: 260px;
         overflow: auto;
@@ -581,7 +581,7 @@
         word-break: break-word;
     }
     .daily-diff-line.add { background: #ecfdf5; color: #14532d; }
-    .daily-diff-line.remove { background: #fef2f2; color: #7f1d1d; }
+    .daily-diff-line.remove { background: var(--crit-wash, #fbedec); color: #7f1d1d; }
     .daily-diff-kind {
         font-weight: 900;
         text-align: center;

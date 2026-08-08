@@ -452,7 +452,7 @@
     .qr-alert.danger {
         border-color: #7f1d1d;
         background: #1c1014;
-        color: #fecaca;
+        color: var(--crit-wash, #fbedec);
     }
 
     .qr-alert.warning {
@@ -1042,9 +1042,9 @@
     }
 
     .qr-alert.danger {
-        border-color: #fecaca;
+        border-color: var(--crit-wash, #fbedec);
         background: #fff5f5;
-        color: #991b1b;
+        color: var(--crit, #c8342a);
     }
 
     .qr-alert.warning {
@@ -1062,7 +1062,7 @@
 
     .qr-kpi.danger,
     .qr-item-card.fail {
-        border-color: #fecaca;
+        border-color: var(--crit-wash, #fbedec);
         background: #fff7f7;
     }
 
@@ -1078,12 +1078,12 @@
     }
 
     .qr-kpi.good strong {
-        color: #15803d !important;
+        color: var(--ok, #1f5fa8) !important;
     }
 
     .qr-kpi.bad strong,
     .qr-kpi.danger strong {
-        color: #dc2626 !important;
+        color: var(--crit, #c8342a) !important;
     }
 
     .qr-kpi small,
@@ -1162,11 +1162,11 @@
     }
 
     .qr-date-pass {
-        color: #15803d !important;
+        color: var(--ok, #1f5fa8) !important;
     }
 
     .qr-date-fail {
-        color: #dc2626 !important;
+        color: var(--crit, #c8342a) !important;
     }
 
     .qr-inspection-row.fail-row td {
@@ -1191,14 +1191,14 @@
     }
 
     .qr-result.good {
-        background: #dcfce7;
-        color: #166534;
+        background: var(--ok-wash, #eaf1f9);
+        color: var(--ok, #1f5fa8);
     }
 
     .qr-result.bad,
     .qr-ng-chip {
-        background: #fee2e2;
-        color: #991b1b;
+        background: var(--crit-wash, #fbedec);
+        color: var(--crit, #c8342a);
     }
 
     .qr-detail-row td {
@@ -1224,13 +1224,13 @@
     }
 
     .qr-item-head em {
-        background: #dcfce7;
-        color: #166534;
+        background: var(--ok-wash, #eaf1f9);
+        color: var(--ok, #1f5fa8);
     }
 
     .qr-item-card.fail .qr-item-head em {
-        background: #fee2e2;
-        color: #991b1b;
+        background: var(--crit-wash, #fbedec);
+        color: var(--crit, #c8342a);
     }
 
     .qr-item-card small {

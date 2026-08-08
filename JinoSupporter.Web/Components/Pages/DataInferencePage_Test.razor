@@ -233,7 +233,7 @@
     .di-input-name   { width: 200px; }
     .di-status-bar   { padding: 4px 14px; font-size: 12px; flex-shrink: 0; }
     .di-ok           { color: #16a34a; background: #f0fdf4; border-bottom: 1px solid #bbf7d0; }
-    .di-error        { color: #dc2626; background: #fef2f2; border-bottom: 1px solid #fecaca; }
+    .di-error        { color: var(--crit, #c8342a); background: var(--crit-wash, #fbedec); border-bottom: 1px solid var(--crit-wash, #fbedec); }
 
     /* Image zone */
     .di-split {
@@ -323,7 +323,7 @@
         width: 18px; height: 18px; border-radius: 50%; border: none;
         background: transparent; color: var(--ink-3, #7f8a98); font-size: 10px; cursor: pointer; padding: 0;
     }
-    .di-file-del:hover { background: #dc2626; color: var(--panel, #fff); }
+    .di-file-del:hover { background: var(--crit, #c8342a); color: var(--panel, #fff); }
 
     .bf-drop-zone {
         display: flex; align-items: center; gap: 8px; justify-content: center;
@@ -353,13 +353,13 @@
         display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 2px;
         font-size: 11px; font-weight: 600; line-height: 1.4;
     }
-    .di-tag-keyword   { background: #e0e7ff; color: #4338ca; }
+    .di-tag-keyword   { background: var(--signal-wash, #edf0f4); color: var(--signal, #16202b); }
     .di-tag-del       {
         margin-left: 4px; border: none; background: transparent; padding: 0;
         color: inherit; opacity: .5; cursor: pointer; font-size: 10px; line-height: 1;
         font-weight: 700;
     }
-    .di-tag-del:hover { opacity: 1; color: #dc2626; }
+    .di-tag-del:hover { opacity: 1; color: var(--crit, #c8342a); }
     .di-results-header {
         font-size: 13px; font-weight: 600; color: var(--ink, #0f1319); margin-bottom: 6px;
     }
@@ -376,11 +376,11 @@
     .di-table tbody tr:hover { background: var(--panel-2, #f5f6f9); }
     .di-row-del-cell { text-align: center; padding: 2px !important; }
     .di-row-del {
-        width: 22px; height: 22px; border-radius: 50%; border: 1px solid #fecaca;
-        background: var(--panel, #fff); color: #dc2626; font-size: 11px; font-weight: 700;
+        width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--crit-wash, #fbedec);
+        background: var(--panel, #fff); color: var(--crit, #c8342a); font-size: 11px; font-weight: 700;
         line-height: 1; cursor: pointer; padding: 0; transition: all .12s;
     }
-    .di-row-del:hover { background: #dc2626; color: var(--panel, #fff); border-color: #dc2626; }
+    .di-row-del:hover { background: var(--crit, #c8342a); color: var(--panel, #fff); border-color: var(--crit, #c8342a); }
 </style>
 
 @code {

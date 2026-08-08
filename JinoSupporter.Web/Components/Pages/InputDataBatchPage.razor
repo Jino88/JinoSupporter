@@ -2262,15 +2262,15 @@
     }
 
     .status-chip.ok {
-        color: #166534;
+        color: var(--ok, #1f5fa8);
         background: #f0fdf4;
         border-color: #bbf7d0;
     }
 
     .status-chip.error {
-        color: #991b1b;
-        background: #fef2f2;
-        border-color: #fecaca;
+        color: var(--crit, #c8342a);
+        background: var(--crit-wash, #fbedec);
+        border-color: var(--crit-wash, #fbedec);
     }
 
     .form-grid {
@@ -2415,12 +2415,12 @@
     }
 
     .ok-text {
-        color: #166534;
+        color: var(--ok, #1f5fa8);
         font-weight: 800;
     }
 
     .error-text {
-        color: #991b1b;
+        color: var(--crit, #c8342a);
         font-weight: 800;
     }
 
@@ -2779,7 +2779,7 @@
     }
 
     .save-status {
-        color: #166534;
+        color: var(--ok, #1f5fa8);
         font-size: 12px;
         font-weight: 800;
     }

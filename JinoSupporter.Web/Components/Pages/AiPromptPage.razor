@@ -261,15 +261,15 @@
     }
 
     .aip-status.ok {
-        color: #166534;
+        color: var(--ok, #1f5fa8);
         border: 1px solid #bbf7d0;
         background: #f0fdf4;
     }
 
     .aip-status.missing {
-        color: #991b1b;
-        border: 1px solid #fecaca;
-        background: #fef2f2;
+        color: var(--crit, #c8342a);
+        border: 1px solid var(--crit-wash, #fbedec);
+        background: var(--crit-wash, #fbedec);
     }
 
     .aip-meta {
@@ -307,8 +307,8 @@
     }
 
     .aip-error {
-        color: #991b1b;
-        background: #fef2f2;
+        color: var(--crit, #c8342a);
+        background: var(--crit-wash, #fbedec);
     }
 
     @@media (max-width: 900px) {
