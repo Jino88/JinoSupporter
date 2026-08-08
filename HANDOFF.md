@@ -2097,3 +2097,19 @@
 - Files: JinoSupporter.Web/Components/Pages/DataInferenceDbPage.razor, DataInferenceDetailPage.razor, DataInferenceInputTestPage.razor, DataInferenceAskPage.razor, DataInferenceBatchPage.razor, DataInferenceAnalysisPage.razor, DataInferenceModelAnalysisPage.razor, DataInferenceValidationPage.razor, DataInferencePage_Test.razor, LoginPage.razor
 - Verification: 워커가 빌드를 돌리지 않아 내가 해당 워크트리에서 직접 빌드했다 — 오류 0, 경고 32개로 기준선과 동일(신규 경고 없음). 병합 후 로그인 화면 변경이 유지되는지와 C# 문자열 31건이 보존됐는지 재계측으로 확인. 로그인 화면의 지역 정의 토큰 5개가 instrument.css 값과 일치하는지 대조 확인.
 - Next: 세션 29(BMES 조회·설정), 30(테스트데이터), 32(도구·관리)의 결과를 같은 절차로 검증·병합한다.
+
+## 2026-08-08 16:35 - [UI][CHANGE] SheetPorting: BMES 조회·설정과 테스트데이터 화면 17개 이식
+- Agent: Claude
+- Session: S17
+- Task-ID: S17-20260808-113039006-03ff5857f8c544b9
+- Category: UI
+- Feature: SheetPorting
+- Change: CHANGE
+- Prompt: ㄱㄱ
+- Answer: 웨이브4 워커 중 둘(BMES 조회·설정 8개, 테스트데이터 입력·결과 9개)이 끝나 검증 후 병합했다. 두 워커 모두 빌드를 돌리지 않았으므로 각 워크트리에서 내가 직접 빌드해 확인하고 병합했다.
+- Applied: (1) BMES 조회·설정 8개 화면의 하드코딩 색을 토큰으로, 표를 엑셀 격자로, 카드 그림자 제거와 모서리 2px 적용 (2) 테스트데이터 입력·결과 9개 화면에 같은 정리를 적용하고 뷰포트 종속 높이를 var(--view-h) 기준으로 교체
+- Completed: 두 그룹 17개 화면의 실질 잔량이 모두 0이 되었다. 전체 앱에서 남은 것은 도구·관리 그룹 6개 파일뿐이다.
+- Decisions: 병합 전에 계약 위반을 기계적으로 훑었다 — 맨 element 셀렉터 신규 도입 0건, C# 코드 변경 0줄, 원형(border-radius 50%)을 각지게 바꾼 곳 0건, 워커가 소유 파일 밖을 만진 곳 0건. 특히 원형을 확인한 이유는 "2px 이외 반경 0건" 이라는 보고가 상태 점 같은 원형까지 각지게 만들었다는 뜻일 수 있어서였고, 실제로는 보존되어 있었다.
+- Files: JinoSupporter.Web/Components/Pages/BmesFCostPage.razor, BmesMakeModelGroupPage.razor, BmesReportPage.razor, BmesLpaPage.razor, BmesCauseMonthlyReportPage.razor, BmesReasonTablePage.razor, BmesRoutingTablePage.razor, BmesSettingPage.razor, DailyTestDataInputPage.razor, InputDataBatchPage.razor, InputDataTestPage.razor, BmesTest3Page.razor, BmesTest4Page.razor, BmesTest5Page.razor, MicroSpeakerResultPage.razor, CurrentProblemAnalysisPage.razor, JinoSupporter.Web/Components/Shared/CurrentProblemWorkflowStrip.razor
+- Verification: 각 워커 워크트리에서 직접 빌드 — 둘 다 오류 0, 경고 32개로 기준선과 동일. 병합 후 전체 화면 재계측에서 두 그룹 17개 파일 모두 잔량 0 확인. C# 내보내기 문자열은 보존됨.
+- Next: 세션 32(도구·관리)의 결과를 같은 절차로 검증·병합한 뒤 서버를 재기동한다.
