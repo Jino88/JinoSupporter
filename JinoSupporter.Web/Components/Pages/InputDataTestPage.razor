@@ -513,14 +513,14 @@
         display: grid;
         gap: 7px;
         padding: 8px;
-        border: 1px solid #dbe3ef;
+        border: 1px solid var(--line, #dde1e7);
         border-radius: 2px;
         background: var(--panel-2, #f5f6f9);
     }
 
     .idt-extract-card.ready {
-        border-color: #bbf7d0;
-        background: #f0fdf4;
+        border-color: var(--ok-wash, #eaf1f9);
+        background: var(--ok-wash, #eaf1f9);
     }
 
     .idt-extract-card .btn {
@@ -586,8 +586,8 @@
     }
 
     .idt-status.ok {
-        border: 1px solid #bbf7d0;
-        background: #f0fdf4;
+        border: 1px solid var(--ok-wash, #eaf1f9);
+        background: var(--ok-wash, #eaf1f9);
         color: var(--ok, #1f5fa8);
     }
 
@@ -705,7 +705,7 @@
         padding: 8px;
         background: var(--panel, #fff);
         color: var(--ink, #0f1319);
-        font-family: Consolas, "Courier New", monospace;
+        font-family: var(--mono, Consolas, monospace);
         font-size: 11px;
         line-height: 1.4;
         white-space: pre;
@@ -861,7 +861,7 @@
         max-height: 54vh;
         margin: 0;
         overflow: auto;
-        border: 1px solid #dbe3ef;
+        border: 1px solid var(--line, #dde1e7);
         border-radius: 2px;
         background: #fbfdff;
         color: var(--ink, #0f1319);
@@ -870,7 +870,7 @@
         line-height: 1.5;
         white-space: pre-wrap;
         word-break: break-word;
-        font-family: "Segoe UI", Arial, sans-serif;
+        font-family: var(--sans, "Segoe UI", sans-serif);
     }
 
     .idt-result.empty, .idt-result.loading {
@@ -902,7 +902,7 @@
 
     .idt-result.html-report {
         white-space: normal;
-        font-family: "Segoe UI", Arial, sans-serif;
+        font-family: var(--sans, "Segoe UI", sans-serif);
     }
 
     .idt-result.html-report h2 {
@@ -932,7 +932,7 @@
 
     .idt-result.html-report th,
     .idt-result.html-report td {
-        border: 1px solid #dbe3ef;
+        border: 1px solid var(--line, #dde1e7);
         padding: 7px 8px;
         vertical-align: top;
     }
@@ -977,14 +977,14 @@
     }
 
     .idt-result.html-report .idt-check-tags .idt-chip {
-        background: #ecfdf5;
+        background: var(--ok-wash, #eaf1f9);
         border-color: var(--ok-wash, #eaf1f9);
         color: var(--ok, #1f5fa8);
     }
 
     .idt-result.html-report .idt-brief,
     .idt-result.html-report .idt-process {
-        border: 1px solid #dbe3ef;
+        border: 1px solid var(--line, #dde1e7);
         border-radius: 2px;
         background: var(--panel, #fff);
         padding: 10px 12px;

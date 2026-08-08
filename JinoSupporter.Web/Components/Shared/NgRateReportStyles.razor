@@ -162,7 +162,7 @@
     }
     .ngrate-stage-bar {
         height: 6px;
-        background: #eef2f7;
+        background: var(--panel-3, #eceef2);
     }
     .ngrate-stage-step {
         margin-top: 3px;
@@ -180,7 +180,7 @@
         padding: 2px 6px;
         border-radius: 2px;
         font-size: 11px;
-        font-family: monospace;
+        font-family: var(--mono, monospace);
         color: var(--ink-2, #4a5461);
         cursor: pointer;
     }
@@ -215,7 +215,7 @@
     .grp-chk .grp-name { flex: 1; }
     .grp-chk .grp-count {
         font-size: 10px;
-        font-family: monospace;
+        font-family: var(--mono, monospace);
     }
 
     .pg-tab {
@@ -330,7 +330,7 @@
     .pivot-table td {
         padding: 2px 6px;
         text-align: right;
-        font-family: monospace;
+        font-family: var(--mono, monospace);
     }
     .pivot-table th:not(.label-th):not(.sep-th),
     .pivot-table td:not(.label-td):not(.sep-td) {
@@ -460,7 +460,7 @@
         font-size: 10.5px;
         font-style: italic;
         border-top: 1px dashed var(--ink-3, #7f8a98);
-        font-family: monospace;
+        font-family: var(--mono, monospace);
     }
     .daily-summary-table .grp-total-row,
     .daily-summary-table .grp-mid-row {
@@ -792,7 +792,7 @@
         border-collapse: collapse;
         table-layout: fixed;
         font-size: 12px;
-        color: #000;
+        color: var(--ink, #0f1319);
     }
     .weekly-form-table th,
     .weekly-form-table td {
@@ -824,7 +824,7 @@
     .weekly-form-table .wrf-triangle {
         display: inline-block;
         width: 14px;
-        color: #000;
+        color: var(--ink, #0f1319);
     }
     .weekly-form-table .wrf-product-col { width: 150px; }
     .weekly-form-table .wrf-base-col { width: 110px; }

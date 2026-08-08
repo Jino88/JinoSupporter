@@ -1958,3 +1958,19 @@
 - Files: JinoSupporter.Web/Components 아래 .razor 10개
 - Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일. 드라이런으로 13개 규칙을 먼저 확인하고 적용했다. 적용 후 선택 상태에 파랑 배경이 남았는지 grep 으로 재확인해 0건. 서버 재기동 후 /login 200. 디스크 여유는 정리 후 7.81GB.
 - Next: 남은 회색 #617084·#dbe3ef·#dfe5ee 토큰 매핑, 그리고 화면별 세부 확인. 사용자 육안 확인이 필요한 시점이다.
+
+## 2026-08-08 08:30 - [UI][CHANGE] SheetDesign: 남은 중립색·초록·폰트 스택 토큰화
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: SheetDesign
+- Change: CHANGE
+- Prompt: "확인은 최종적으로 내가 할테니 너는 계속해"
+- Answer: 기계적으로 처리 가능한 마지막 대상을 정리했다. 앞선 패스가 닿지 않은 중립 회색 9종, 놓친 초록 5종, 하드코딩 폰트 스택을 토큰으로 바꿨다.
+- Applied: (1) 중립 회색 #617084·#dbe3ef·#dfe5ee·#e5eaf1·#d7dee8·#d7deea·#eef2f7·#eef3f8·#fbfcfd 와 순수 검정 #000 을 ink/line/panel 토큰으로 (2) 초록 #16a34a·#065f46 와 wash 3종을 --ok 계열로 (3) font-family 32곳을 var(--mono)/var(--sans) 로 — Consolas·Courier New·monospace·Segoe UI 스택
+- Completed: 페이지 style 블록의 하드코딩 색이 2,641회에서 669회로, 고유 색이 287종에서 234종으로 줄었다.
+- Decisions: 앰버(#92400e 16, #fef3c7 14, #fcd34d 9)는 손대지 않았다 — 이 디자인은 빨강·파랑·잉크 세 의미만 정의하고 경고에 쓸 어두운 앰버가 없다. #92400e 를 --warn(#fab219, 밝은 노랑)으로 옮기면 종이 위에서 글자가 읽히지 않는다. 경고는 이 앱에 실제로 있는 상태이므로, 억지로 세 색에 밀어넣는 대신 디자인에 경고 항목을 추가하는 것이 옳은 순서다. 파랑 계열(#1d4ed8 32, #2563eb 27 등)도 링크·개선 지표라 그대로 두었다.
+- Files: JinoSupporter.Web/Components 아래 .razor 다수
+- Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일. 드라이런으로 색 179곳·폰트 32곳을 먼저 확인하고 적용했다. 적용 후 전수 재측정으로 감소분을 확인했다. 서버 재기동 완료.
+- Next: 기계적으로 처리할 것은 사실상 소진됐다. 남은 것은 (1) 디자인에 경고 색 정의 추가 (2) 화면별 레이아웃 이식 — 시안의 기준선 편차 막대 같은 구조는 화면마다 수작업이 필요하다. 사용자가 화면을 확인 중이며 지적 사항에 따라 우선순위를 정한다.

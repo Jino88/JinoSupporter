@@ -368,7 +368,7 @@ else
     .dib-title   { font-size: 15px; font-weight: 700; color: var(--ink, #0f1319); }
     .dib-count   { font-size: 12px; color: var(--ink-3, #7f8a98); }
     .dib-status  { padding: 5px 14px; font-size: 12px; flex-shrink: 0; }
-    .dib-ok      { color: #16a34a; background: #f0fdf4; border-bottom: 1px solid #bbf7d0; }
+    .dib-ok      { color: var(--ok, #1f5fa8); background: var(--ok-wash, #eaf1f9); border-bottom: 1px solid var(--ok-wash, #eaf1f9); }
     .dib-error   { color: var(--crit, #c8342a); background: var(--crit-wash, #fbedec); border-bottom: 1px solid var(--crit-wash, #fbedec); }
 
     .dib-tabs {
@@ -469,7 +469,7 @@ else
     .dib-map-message {
         margin-top: 10px; border-radius: 2px; padding: 7px 8px; font-size: 12px; font-weight: 700;
     }
-    .dib-map-message.ok { background: #f0fdf4; color: var(--ok, #1f5fa8); border: 1px solid #bbf7d0; }
+    .dib-map-message.ok { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); border: 1px solid var(--ok-wash, #eaf1f9); }
     .dib-map-message.err { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); border: 1px solid var(--crit-wash, #fbedec); }
     .dib-map-empty {
         margin-top: 12px; padding: 24px 10px; text-align: center; color: var(--ink-3, #7f8a98);
@@ -526,7 +526,7 @@ else
         flex: 1; overflow: auto; margin: 0; padding: 14px 16px;
         font-size: 12px; color: var(--ink, #0f1319); background: var(--panel-2, #f5f6f9);
         white-space: pre-wrap; word-break: break-word;
-        font-family: ui-monospace, Consolas, monospace;
+        font-family: var(--mono, Consolas, monospace);
     }
     .dib-error-foot {
         display: flex; gap: 8px; justify-content: flex-end;

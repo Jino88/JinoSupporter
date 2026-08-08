@@ -376,7 +376,7 @@
         gap: 2px;
     }
     .daily-history-card:hover { border-color: var(--ok-wash, #eaf1f9); background: #f7fff9; }
-    .daily-history-card.active { border-color: #16a34a; background: #f0fdf4; }
+    .daily-history-card.active { border-color: var(--ok, #1f5fa8); background: var(--ok-wash, #eaf1f9); }
     .daily-history-top { display: flex; align-items: center; gap: 5px; min-width: 0; }
     .daily-history-title { min-width: 0; flex: 1; font-size: 11px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .daily-history-meta { font-size: 10px; color: var(--ink-2, #4a5461); }
@@ -398,8 +398,8 @@
         justify-self: start;
         font-size: 10px;
         color: var(--ok, #1f5fa8);
-        border: 1px solid #bbf7d0;
-        background: #f0fdf4;
+        border: 1px solid var(--ok-wash, #eaf1f9);
+        background: var(--ok-wash, #eaf1f9);
         border-radius: 2px;
         padding: 1px 5px;
         font-weight: 700;
@@ -580,7 +580,7 @@
         white-space: pre-wrap;
         word-break: break-word;
     }
-    .daily-diff-line.add { background: #ecfdf5; color: #14532d; }
+    .daily-diff-line.add { background: var(--ok-wash, #eaf1f9); color: #14532d; }
     .daily-diff-line.remove { background: var(--crit-wash, #fbedec); color: #7f1d1d; }
     .daily-diff-kind {
         font-weight: 900;
@@ -622,7 +622,7 @@
     .daily-textarea {
         min-height: 260px;
         resize: vertical;
-        font-family: Consolas, "Courier New", monospace;
+        font-family: var(--mono, Consolas, monospace);
         font-size: 12px;
         line-height: 1.45;
     }
@@ -708,7 +708,7 @@
     }
     .daily-generated-html {
         max-height: calc(var(--view-h, 100vh) * .78);
-        border-color: #bbf7d0;
+        border-color: var(--ok-wash, #eaf1f9);
         background: #fcfffd;
     }
     .daily-result-grid .daily-panel:last-child {
@@ -736,7 +736,7 @@
         opacity: 0;
         cursor: pointer;
     }
-    .daily-param { font-family: Consolas, "Courier New", monospace; }
+    .daily-param { font-family: var(--mono, Consolas, monospace); }
     .daily-summary {
         display: flex;
         flex-direction: column;

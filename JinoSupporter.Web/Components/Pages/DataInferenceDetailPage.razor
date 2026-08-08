@@ -617,7 +617,7 @@ else
         padding: 3px 12px; border-radius: 2px; white-space: nowrap;
         text-transform: uppercase;
     }
-    .didet-v-good     { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .didet-v-good     { background: #d1fae5; color: var(--ok, #1f5fa8); border: 1px solid #6ee7b7; }
     .didet-v-bad      { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); border: 1px solid #fca5a5; }
     .didet-v-partial  { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
     .didet-v-neutral  { background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); border: 1px solid var(--line-2, #c6ccd5); }
@@ -654,7 +654,7 @@ else
         font-size: 28px; font-weight: 800; line-height: 1.1;
         font-variant-numeric: tabular-nums; letter-spacing: -.01em;
     }
-    .didet-kpi-value.didet-ev-down { color: #065f46; background: transparent !important; }
+    .didet-kpi-value.didet-ev-down { color: var(--ok, #1f5fa8); background: transparent !important; }
     .didet-kpi-value.didet-ev-up   { color: var(--crit, #c8342a); background: transparent !important; }
     .didet-kpi-value.didet-ev-flat { color: var(--ink-2, #4a5461); background: transparent !important; }
     .didet-kpi-label {
@@ -716,7 +716,7 @@ else
     .didet-ev-val            { display: block; color: var(--ink, #0f1319); font-weight: 500; }
     .didet-ev-note-cell      { font-size: 11px; color: var(--ink-2, #4a5461); font-style: italic; }
     .didet-ev-delta          { font-weight: 700; white-space: nowrap; min-width: 64px; }
-    .didet-ev-down           { color: #065f46; background: #ecfdf5 !important; }
+    .didet-ev-down           { color: var(--ok, #1f5fa8); background: var(--ok-wash, #eaf1f9) !important; }
     .didet-ev-up             { color: var(--crit, #c8342a); background: var(--crit-wash, #fbedec) !important; }
     .didet-ev-flat           { color: var(--ink-2, #4a5461); }
     .didet-ev-range          { font-size: 10px; color: var(--ink-2, #4a5461); font-weight: 500; margin-top: 2px; }
@@ -728,7 +728,7 @@ else
         padding: 3px 6px; border-radius: 2px;
         background: var(--panel, #fff); border: 1px solid var(--line, var(--line, #dde1e7));
     }
-    .didet-ev-comp.didet-comp-best     { background: #ecfdf5; border-color: #6ee7b7; }
+    .didet-ev-comp.didet-comp-best     { background: var(--ok-wash, #eaf1f9); border-color: #6ee7b7; }
     .didet-ev-comp.didet-comp-worst    { background: var(--crit-wash, #fbedec); border-color: #fca5a5; }
     .didet-ev-comp.didet-comp-baseline { border-left: 3px solid var(--signal, #16202b); }
     .didet-ev-comp-label     { font-weight: 600; color: var(--ink, #0f1319); min-width: 100px; }
@@ -739,7 +739,7 @@ else
         text-transform: uppercase; letter-spacing: .03em; margin-left: auto;
     }
     .didet-ev-comp-flag.baseline { background: var(--signal-wash, #edf0f4); color: var(--signal, #16202b); }
-    .didet-ev-comp-flag.best     { background: #d1fae5; color: #065f46; }
+    .didet-ev-comp-flag.best     { background: #d1fae5; color: var(--ok, #1f5fa8); }
     .didet-ev-comp-flag.worst    { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); }
 
     /* v7 DOE 2-D grid */
@@ -751,7 +751,7 @@ else
     }
     .didet-doe th             { background: var(--line, var(--line, #dde1e7)); font-weight: 700; color: var(--ink, #0f1319); font-size: 10px; }
     .didet-doe-cell           { color: var(--ink, #0f1319); }
-    .didet-doe-ok             { background: #d1fae5; color: #065f46; font-weight: 600; }
+    .didet-doe-ok             { background: #d1fae5; color: var(--ok, #1f5fa8); font-weight: 600; }
     .didet-doe-ng             { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); font-weight: 600; }
     .didet-doe-borderline     { background: #fef3c7; color: #92400e; font-weight: 600; }
     .didet-doe-empty          { background: var(--panel-2, #f5f6f9); color: var(--line-2, #c6ccd5); }
@@ -778,7 +778,7 @@ else
     }
     .didet-rt-multi   { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
     .didet-rt-doe     { background: #fae8ff; color: #86198f; border-color: #f0abfc; }
-    .didet-rt-reli    { background: #ecfdf5; color: #065f46; border-color: #6ee7b7; }
+    .didet-rt-reli    { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); border-color: #6ee7b7; }
     .didet-rt-trend   { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
     .didet-rt-log     { background: var(--panel-3, #eceef2); color: #4b5563; border-color: var(--line-2, #c6ccd5); }
 
@@ -854,7 +854,7 @@ else
     }
     /* Effect direction — green/red would need parsing; leave a neutral accent */
     .didet-field-effect .didet-bullet-block {
-        background: #ecfdf5; border-left-color: #10b981;
+        background: var(--ok-wash, #eaf1f9); border-left-color: #10b981;
         font-weight: 600;
     }
 
