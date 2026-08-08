@@ -155,6 +155,7 @@
         min-width: 0;
         border: 1px solid var(--line-2, #c6ccd5);
         background: var(--panel, #fff);
+        border-radius: 2px;
     }
 
     .cause-report-header {
@@ -183,7 +184,7 @@
     .cause-table-wrap,
     .cause-monthly-wrap {
         overflow: auto;
-        max-height: calc(100vh - 285px);
+        max-height: calc(var(--view-h, 100vh) - 285px);
     }
 
     .cause-table,
@@ -200,7 +201,7 @@
         position: sticky;
         top: 0;
         z-index: 1;
-        background: #eaf1f8;
+        background: var(--panel-2, #f5f6f9);
         color: var(--ink-2, #4a5461);
         border: 1px solid var(--line, #dde1e7);
         padding: 7px 9px;

@@ -142,9 +142,10 @@
 </div>
 
 <style>
+    .routing-card { border-radius: 2px; }
     .bmes-table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
     .bmes-table thead th {
-        background: var(--panel-3, #eceef2); font-weight: 700; font-size: 10px; color: var(--ink-2, #4a5461);
+        background: var(--panel-2, #f5f6f9); font-weight: 700; font-size: 10px; color: var(--ink-2, #4a5461);
         text-transform: uppercase; letter-spacing: .4px; padding: 6px 10px;
         border: 1px solid var(--line, #dde1e7); position: sticky; top: 0; z-index: 2;
     }
@@ -154,17 +155,17 @@
         width: 100%; font-size: 11px; padding: 3px 6px; border: 1px solid var(--line, var(--line, #dde1e7));
         border-radius: 2px; background: var(--panel-2, #f5f6f9); outline: none; color: var(--ink-2, #4a5461);
     }
-    .bmes-search-input:focus { border-color: #93c5fd; background: var(--panel, #fff);}
+    .bmes-search-input:focus { border-color: var(--signal, #16202b); background: var(--panel, #fff);}
     .bmes-table td { padding: 4px 10px; border: 1px solid var(--line, #dde1e7); vertical-align: middle; }
     .bmes-row:hover td { background: var(--panel-2, #f5f6f9); }
-    .bmes-edit-row td { background: #eff6ff; }
+    .bmes-edit-row td { background: var(--signal-wash, #edf0f4); }
     .bmes-actions { text-align: center; white-space: nowrap; }
     .bmes-actions .btn { font-size: 10px; }
     .bmes-input {
-        width: 100%; font-size: 12px; padding: 2px 6px; border: 1px solid #93c5fd;
+        width: 100%; font-size: 12px; padding: 2px 6px; border: 1px solid var(--signal, #16202b);
         border-radius: 2px; background: var(--panel, #fff); outline: none;
     }
-    .bmes-input:focus { border-color: #3b82f6;}
+    .bmes-input:focus { border-color: var(--signal, #16202b);}
 </style>
 
 @code {
