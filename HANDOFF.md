@@ -2081,3 +2081,19 @@
 - Files: None
 - Verification: 아직 없다. 워커 산출물이 나오면 브랜치별로 빌드와 렌더 대조를 확인한 뒤 병합한다.
 - Next: 세션 29~32 의 출력을 읽고 계약 위반(맨 element 셀렉터, C# 문자열 수정, 기능 변경) 여부를 확인한 뒤 순차 병합한다.
+
+## 2026-08-08 15:55 - [UI][CHANGE] SheetPorting: Data Inference 9개 화면 이식과 로그인 화면 정리
+- Agent: Claude
+- Session: S17
+- Task-ID: S17-20260808-113039006-03ff5857f8c544b9
+- Category: UI
+- Feature: SheetPorting
+- Change: CHANGE
+- Prompt: ㄱㄱ
+- Answer: 웨이브4 중 Data Inference 그룹이 먼저 끝나 검증 후 병합했고, 워커 범위에서 뺐던 로그인 화면은 내가 직접 맞췄다. 그 과정에서 내가 워커에게 준 계측치 자체가 5배 부풀려져 있었다는 것을 발견해 계측 기준을 바로잡았다.
+- Applied: (1) Data Inference 9개 화면의 하드코딩 색을 토큰으로 바꾸고 표를 엑셀 격자로, 모서리를 2px로 정리 (2) DetailPage와 ModelAnalysisPage의 뷰포트 종속 높이를 부모 기준으로 교체 (3) 로그인 화면의 16px 라운드와 드롭 섀도를 2px + 1px 선으로 바꾸고 팔레트를 검사 성적서 색으로 교체
+- Completed: Data Inference 그룹의 실질 잔량이 0이 되었다(하드코딩 hex 304 → 0, 뷰포트 높이 6 → 0). C# 내보내기 문자열 31건은 계약대로 그대로 두었다.
+- Decisions: 내가 워커에게 준 hex 계측치가 틀렸다는 것을 도중에 확인했다. 전체 2578건 중 2039건이 계약이 요구하는 `var(--x, #폴백)` 의 폴백이고, box-shadow 로 센 것 중 상당수는 1px 선을 그리는 inset 관용구이며, 큰 라운드로 센 것 대부분은 원형 점을 만드는 50% 였다. 숫자를 0으로 만드는 것이 목표가 아니라는 뜻이고, 계측 스크립트가 C# 문자열 안의 style 조각까지 화면 CSS 로 세던 것도 함께 고쳤다. 워커들이 자체 정적 점검으로 같은 결론에 도달해 별도 정정 지시는 보내지 않았다. 로그인 화면은 EmptyLayout 이라 디자인 시스템 CSS 가 로드되지 않는데, 전체를 끌어오면 `.ins .btn` 이 부트스트랩 `.btn-primary` 와 충돌하므로 쓰는 토큰 5개만 같은 값으로 지역 정의했다. 이 화면은 뷰포트를 소유하므로 100vh 를 그대로 두었다.
+- Files: JinoSupporter.Web/Components/Pages/DataInferenceDbPage.razor, DataInferenceDetailPage.razor, DataInferenceInputTestPage.razor, DataInferenceAskPage.razor, DataInferenceBatchPage.razor, DataInferenceAnalysisPage.razor, DataInferenceModelAnalysisPage.razor, DataInferenceValidationPage.razor, DataInferencePage_Test.razor, LoginPage.razor
+- Verification: 워커가 빌드를 돌리지 않아 내가 해당 워크트리에서 직접 빌드했다 — 오류 0, 경고 32개로 기준선과 동일(신규 경고 없음). 병합 후 로그인 화면 변경이 유지되는지와 C# 문자열 31건이 보존됐는지 재계측으로 확인. 로그인 화면의 지역 정의 토큰 5개가 instrument.css 값과 일치하는지 대조 확인.
+- Next: 세션 29(BMES 조회·설정), 30(테스트데이터), 32(도구·관리)의 결과를 같은 절차로 검증·병합한다.
