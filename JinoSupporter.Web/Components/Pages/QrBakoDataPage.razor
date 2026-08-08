@@ -117,18 +117,43 @@
                     </div>
                     <div class="qr-row-summary">
                         <span>표시 @_rowGroups.Count.ToString("N0") QR</span>
-                        <span>원본 @_result.Rows.Count.ToString("N0")건</span>
+                        <span>조회 @_result.Rows.Count.ToString("N0")건</span>
                         @if (_result.TotalRows is long totalRows)
                         {
-                            <span>DB @totalRows.ToString("N0")건</span>
+                            <span>DB 원본 @totalRows.ToString("N0")건</span>
+                        }
+                        @if (_result.ExcludedRows is long excludedRows)
+                        {
+                            <span class="@(excludedRows > 0 ? "qr-excluded" : string.Empty)">제외 @excludedRows.ToString("N0")건</span>
                         }
                         <span>@_result.Columns.Count.ToString("N0")개 컬럼</span>
-                        @if (_result.TotalRows is long selectedTotal && selectedTotal > _result.Rows.Count)
+                        @if (_result.ValidTotalRows is long validTotal && validTotal > _result.Rows.Count)
                         {
                             <b>최신 @_result.MaxRows.ToString("N0")건 제한 · QR 묶음은 표시 범위 기준</b>
                         }
                     </div>
                 </div>
+
+                @if (_result.Summary is QrBakoDataSummary summary)
+                {
+                    <div class="qr-summary-grid" aria-label="선택 날짜 QR 요약">
+                        <article class="qr-summary-card">
+                            <span>Input 개수</span>
+                            <strong>@summary.InputCount.ToString("N0")</strong>
+                            <small>@(_result.HitMaxRows ? "표시 범위 · 중복 ProductID 제외" : "중복 ProductID 제외")</small>
+                        </article>
+                        <article class="qr-summary-card">
+                            <span>NG 개수</span>
+                            <strong>@summary.NgCount.ToString("N0")</strong>
+                            <small>@(_result.HitMaxRows ? "표시 범위 · 최신 TestTime 기준" : "최신 TestTime 결과 기준")</small>
+                        </article>
+                        <article class="qr-summary-card">
+                            <span>NG Rate</span>
+                            <strong>@FormatPpm(summary.NgRatePpm)</strong>
+                            <small>NG ÷ Input × 1,000,000 (ppm)</small>
+                        </article>
+                    </div>
+                }
 
                 <div class="qr-table-wrap">
                     @if (_result.Columns.Count == 0)
@@ -484,8 +509,13 @@
     }
 
     .qr-row-summary b {
-        color: var(--crit, #c8342a);
+        color: var(--warn-ink, #92610a);
         font-size: 0.68rem;
+    }
+
+    .qr-row-summary .qr-excluded {
+        color: var(--warn-ink, #92610a);
+        font-weight: 700;
     }
 
     .qr-table-wrap {
@@ -566,6 +596,40 @@
         z-index: 2;
         border-right-color: var(--line-2, #c6ccd5);
         background: var(--panel, #fff);
+    }
+
+    .qr-summary-grid {
+        display: grid;
+        flex: 0 0 auto;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        border-bottom: 1px solid var(--line-2, #c6ccd5);
+        background: var(--panel, #fff);
+    }
+
+    .qr-summary-card {
+        display: grid;
+        min-height: 4.4rem;
+        padding: 0.55rem 0.7rem;
+        align-content: center;
+        gap: 0.12rem;
+        border-right: 1px solid var(--line, #dde1e7);
+        background: var(--panel, #fff);
+    }
+
+    .qr-summary-card:last-child {
+        border-right: 0;
+    }
+
+    .qr-summary-card span,
+    .qr-summary-card small {
+        color: var(--ink-3, #7f8a98);
+        font-size: 0.64rem;
+    }
+
+    .qr-summary-card strong {
+        color: var(--ink, #0f1319);
+        font: 800 1.05rem var(--mono, Bahnschrift, Consolas, monospace);
+        font-variant-numeric: tabular-nums;
     }
 
     .qr-data-table th:nth-child(2) {
@@ -908,6 +972,11 @@
 
     private static string FormatRowDate(DateOnly? date) =>
         date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "-";
+
+    private static string FormatPpm(double? value) =>
+        value is double ppm
+            ? $"{ppm.ToString("N0", CultureInfo.CurrentCulture)} ppm"
+            : "-";
 
     private static string DisplayCell(string value) =>
         string.IsNullOrWhiteSpace(value) ? "-" : value;

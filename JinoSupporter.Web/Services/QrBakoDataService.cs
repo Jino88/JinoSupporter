@@ -58,6 +58,8 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
             NormalizeTimeoutSeconds(snapshot.TimeoutSeconds),
             cancellationToken);
         string? sortColumn = ResolveTestTimeColumn(tableColumns);
+        string? productIdColumn = ResolveExactColumn(tableColumns, "ProductID");
+        string? testResultColumn = ResolveExactColumn(tableColumns, "TestResult");
 
         List<QrBakoDateSummary> dates = sortColumn is null
             ? []
@@ -83,25 +85,39 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
         long? totalRows = sortColumn is null
             ? 0
             : dates.Where(item => selectedDateSet.Contains(item.Date)).Sum(item => item.RowCount);
-
+        ProductAggregate? productAggregate = productIdColumn is null || sortColumn is null
+            ? null
+            : await FetchProductAggregateAsync(
+                conn,
+                sortColumn,
+                productIdColumn,
+                testResultColumn,
+                selectedDates,
+                NormalizeTimeoutSeconds(snapshot.TimeoutSeconds),
+                cancellationToken);
+        long? validTotalRows = productAggregate?.ValidRows ?? totalRows;
+        long? excludedRows = totalRows is long allRows && validTotalRows is long validRows
+            ? Math.Max(0, allRows - validRows)
+            : null;
         await using var cmd = conn.CreateCommand();
-        if (sortColumn is null || selectedDates.Count == 0)
-        {
-            cmd.CommandText = """
-            SELECT TOP (@MaxRows) *
-            FROM [dbo].[BKTD] WITH (NOLOCK);
-            """;
-        }
-        else
-        {
-            string datePredicate = AddSelectedDatePredicate(cmd, sortColumn, selectedDates);
-            cmd.CommandText = $"""
+        var predicates = new List<string>();
+        if (sortColumn is not null && selectedDates.Count > 0)
+            predicates.Add(AddSelectedDatePredicate(cmd, sortColumn, selectedDates));
+        if (productIdColumn is not null)
+            predicates.Add(ProductIdLengthPredicate(productIdColumn));
+
+        string whereClause = predicates.Count == 0
+            ? string.Empty
+            : "WHERE " + string.Join(" AND ", predicates);
+        string orderClause = sortColumn is null
+            ? string.Empty
+            : $"ORDER BY {QuoteSqlServerIdentifier(sortColumn)} DESC";
+        cmd.CommandText = $"""
             SELECT TOP (@MaxRows) *
             FROM [dbo].[BKTD] WITH (NOLOCK)
-            WHERE {datePredicate}
-            ORDER BY {QuoteSqlServerIdentifier(sortColumn)} DESC;
+            {whereClause}
+            {orderClause};
             """;
-        }
         cmd.CommandTimeout = NormalizeTimeoutSeconds(snapshot.TimeoutSeconds);
         cmd.Parameters.Add(new SqlParameter("@MaxRows", SqlDbType.Int) { Value = maxRows });
 
@@ -151,13 +167,23 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
                 rows.Sort(static (left, right) => Nullable.Compare(right.TestTime, left.TestTime));
         }
 
+        QrBakoDataSummary? summary = productAggregate is not null && testResultColumn is not null
+            ? rows.Count >= maxRows
+                ? BuildVisibleSummary(rows, columns, productIdColumn!, testResultColumn)
+                : new QrBakoDataSummary(productAggregate.InputCount, productAggregate.NgCount)
+            : null;
+
         _activity.Log(
             "QR BAKO DATA",
-            $"Fetched dbo.BKTD dates={SelectedDatesLogText(selectedDates)}, rows={rows.Count:N0}, maxRows={maxRows:N0}, total={(totalRows?.ToString("N0", CultureInfo.InvariantCulture) ?? "unknown")}");
+            $"Fetched dbo.BKTD dates={SelectedDatesLogText(selectedDates)}, rows={rows.Count:N0}, maxRows={maxRows:N0}, validTotal={(validTotalRows?.ToString("N0", CultureInfo.InvariantCulture) ?? "unknown")}, excluded={(excludedRows?.ToString("N0", CultureInfo.InvariantCulture) ?? "unknown")}");
 
         var warnings = new List<string>();
         if (sortColumn is null)
             warnings.Add("TestTime column was not found in dbo.BKTD, so the date list could not be created.");
+        if (productIdColumn is null)
+            warnings.Add("ProductID column was not found in dbo.BKTD, so invalid QR values could not be excluded.");
+        if (testResultColumn is null)
+            warnings.Add("TestResult column was not found in dbo.BKTD, so the QR summary could not be calculated.");
         if (dateSelectionLimited)
             warnings.Add($"날짜는 한 번에 최대 {MaxSelectedDates:N0}개까지 조회하며, 가장 최근 날짜부터 적용했습니다.");
 
@@ -170,10 +196,13 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
             FetchedAt = DateTime.Now,
             MaxRows = maxRows,
             TotalRows = totalRows,
+            ValidTotalRows = validTotalRows,
+            ExcludedRows = excludedRows,
             SortColumnName = sortColumn ?? string.Empty,
             SelectedDates = selectedDates,
             Dates = dates,
             WarningMessage = string.Join(' ', warnings),
+            Summary = summary,
             Columns = columns,
             Rows = rows,
         };
@@ -262,6 +291,107 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
         }
 
         return "(" + string.Join(" OR ", predicates) + ")";
+    }
+
+    private static async Task<ProductAggregate> FetchProductAggregateAsync(
+        SqlConnection conn,
+        string sortColumn,
+        string productIdColumn,
+        string? testResultColumn,
+        IReadOnlyCollection<DateOnly> selectedDates,
+        int timeoutSeconds,
+        CancellationToken cancellationToken)
+    {
+        await using var cmd = conn.CreateCommand();
+        var predicates = new List<string>();
+        if (selectedDates.Count > 0)
+            predicates.Add(AddSelectedDatePredicate(cmd, sortColumn, selectedDates));
+        predicates.Add(ProductIdLengthPredicate(productIdColumn));
+
+        string cleanProductId = $"LTRIM(RTRIM({QuoteSqlServerIdentifier(productIdColumn)}))";
+        string testTimeIdentifier = QuoteSqlServerIdentifier(sortColumn);
+        // A retest replaces the prior verdict: use the newest TestTime row, matching the table's representative row.
+        string ngExpression = testResultColumn is null
+            ? "CONVERT(int, 0)"
+            : $"CASE WHEN UPPER(LTRIM(RTRIM({QuoteSqlServerIdentifier(testResultColumn)}))) IN (N'NG', N'N/G', N'FAIL') THEN 1 ELSE 0 END";
+        cmd.CommandText = $"""
+            SELECT COALESCE(SUM([ProductRows]), 0) AS [ValidRows],
+                   COUNT_BIG(1) AS [InputCount],
+                   COALESCE(SUM(CONVERT(bigint, [IsNg])), 0) AS [NgCount]
+            FROM
+            (
+                SELECT [ProductRows], [IsNg]
+                FROM
+                (
+                    SELECT COUNT_BIG(1) OVER (PARTITION BY {cleanProductId}) AS [ProductRows],
+                           {ngExpression} AS [IsNg],
+                           ROW_NUMBER() OVER
+                           (
+                               PARTITION BY {cleanProductId}
+                               ORDER BY {testTimeIdentifier} DESC
+                           ) AS [LatestRank]
+                    FROM [dbo].[BKTD] WITH (NOLOCK)
+                    WHERE {string.Join(" AND ", predicates)}
+                ) AS [RankedProductRows]
+                WHERE [LatestRank] = 1
+            ) AS [LatestProducts];
+            """;
+        cmd.CommandTimeout = timeoutSeconds;
+        await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+            return new ProductAggregate(0, 0, 0);
+
+        return new ProductAggregate(
+            reader.IsDBNull(0) ? 0 : reader.GetInt64(0),
+            reader.IsDBNull(1) ? 0 : reader.GetInt64(1),
+            reader.IsDBNull(2) ? 0 : reader.GetInt64(2));
+    }
+
+    private static string ProductIdLengthPredicate(string productIdColumn) =>
+        $"LEN(LTRIM(RTRIM({QuoteSqlServerIdentifier(productIdColumn)}))) = 17";
+
+    private static QrBakoDataSummary BuildVisibleSummary(
+        IReadOnlyList<QrBakoDataRow> rows,
+        IReadOnlyList<QrBakoDataColumn> columns,
+        string productIdColumn,
+        string testResultColumn)
+    {
+        int productIdOrdinal = FindColumnOrdinal(columns, productIdColumn);
+        int testResultOrdinal = FindColumnOrdinal(columns, testResultColumn);
+        if (productIdOrdinal < 0 || testResultOrdinal < 0)
+            return new QrBakoDataSummary(0, 0);
+
+        var seenProductIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        long ngCount = 0;
+        // Rows are newest-first, so the first occurrence is the table representative and the current retest verdict.
+        // If TOP limits the table, summarize that same visible scope so the cards and representative rows stay aligned.
+        foreach (QrBakoDataRow row in rows)
+        {
+            string productId = row.Values[productIdOrdinal].Trim();
+            if (!seenProductIds.Add(productId))
+                continue;
+
+            string testResult = row.Values[testResultOrdinal].Trim();
+            if (testResult.Equals("NG", StringComparison.OrdinalIgnoreCase)
+                || testResult.Equals("N/G", StringComparison.OrdinalIgnoreCase)
+                || testResult.Equals("FAIL", StringComparison.OrdinalIgnoreCase))
+            {
+                ngCount++;
+            }
+        }
+
+        return new QrBakoDataSummary(seenProductIds.Count, ngCount);
+    }
+
+    private static int FindColumnOrdinal(IReadOnlyList<QrBakoDataColumn> columns, string columnName)
+    {
+        for (int index = 0; index < columns.Count; index++)
+        {
+            if (string.Equals(columns[index].Name, columnName, StringComparison.OrdinalIgnoreCase))
+                return index;
+        }
+
+        return -1;
     }
 
     private static List<DateRange> BuildDateRanges(IReadOnlyCollection<DateOnly> selectedDates)
@@ -364,6 +494,13 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
         });
     }
 
+    private static string? ResolveExactColumn(IReadOnlyList<string> columns, string expectedName)
+    {
+        string normalizedExpected = NormalizeColumnName(expectedName);
+        return columns.FirstOrDefault(column =>
+            string.Equals(NormalizeColumnName(column), normalizedExpected, StringComparison.OrdinalIgnoreCase));
+    }
+
     private static string NormalizeColumnName(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -426,6 +563,7 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
     }
 
     private readonly record struct DateRange(DateOnly Start, DateOnly EndExclusive);
+    private sealed record ProductAggregate(long ValidRows, long InputCount, long NgCount);
 }
 
 public sealed class QrBakoDataConnectionSnapshot
@@ -456,9 +594,12 @@ public sealed class QrBakoDataResult
     public DateTime FetchedAt { get; init; }
     public int MaxRows { get; init; }
     public long? TotalRows { get; init; }
+    public long? ValidTotalRows { get; init; }
+    public long? ExcludedRows { get; init; }
     public string SortColumnName { get; init; } = string.Empty;
     public List<DateOnly> SelectedDates { get; init; } = [];
     public string WarningMessage { get; init; } = string.Empty;
+    public QrBakoDataSummary? Summary { get; init; }
     public List<QrBakoDateSummary> Dates { get; init; } = [];
     public List<QrBakoDataColumn> Columns { get; init; } = [];
     public List<QrBakoDataRow> Rows { get; init; } = [];
@@ -466,6 +607,14 @@ public sealed class QrBakoDataResult
 }
 
 public sealed record QrBakoDataColumn(string Name, string DataType);
+
+public sealed record QrBakoDataSummary(long InputCount, long NgCount)
+{
+    // This app reports defect rates in ppm; without any input the rate is undefined and the UI shows "-".
+    public double? NgRatePpm => InputCount <= 0
+        ? null
+        : NgCount / (double)InputCount * 1_000_000d;
+}
 
 public sealed record QrBakoDataRow(IReadOnlyList<string> Values, DateTimeOffset? TestTime = null)
 {
