@@ -5,7 +5,7 @@
     <div class="d-flex align-items-center gap-2">
         @if (SelectedCount > 0)
         {
-            <span class="badge bg-primary" style="font-size:10px;">@SelectedCount selected</span>
+            <span class="ngrate-picker-selection">@SelectedCount selected</span>
         }
         <span class="text-muted" style="font-size:11px;">
             @Groups.Count group@(Groups.Count == 1 ? "" : "s")
@@ -13,7 +13,7 @@
         <button class="btn btn-link btn-sm p-0 text-secondary" @onclick="OnRefresh" title="Refresh">Refresh</button>
     </div>
 </div>
-<div class="d-flex flex-column min-h-0">
+<div class="ngrate-picker d-flex flex-column min-h-0">
     @if (Groups.Count == 0)
     {
         <div class="text-muted small p-3 flex-grow-1">
@@ -22,12 +22,13 @@
     }
     else
     {
-        <div class="d-flex flex-wrap gap-1 px-2 py-2 border-bottom bg-light">
+        <div class="ngrate-picker-tabs d-flex flex-wrap gap-1 px-2 py-2 border-bottom">
             @foreach (var pg in GroupProductGroups)
             {
                 int pgCount = Groups.Count(g => g.ProductGroup == pg);
                 int pgSel = SelectedGroupIds.Count(id => Groups.Any(g => g.Id == id && g.ProductGroup == pg));
                 <button class="pg-tab @(ActiveProductGroup == pg ? "active" : "")"
+                        title="@($"{pg}: {pgSel} selected of {pgCount}")"
                         @onclick="@(() => ActiveProductGroupChanged.InvokeAsync(pg))">
                     @pg
                     @if (pgSel > 0)
@@ -53,9 +54,9 @@
                                class="form-check-input"
                                checked="@isChecked"
                                @onchange="@(_ => OnToggleGroup.InvokeAsync(g.Id))" />
-                        <span style="color:#6366f1; font-size:13px;">#</span>
+                        <span class="ngrate-picker-level">GROUP</span>
                         <span>@g.Name</span>
-                        <span class="file-date">@lsCount LS</span>
+                        <span class="file-date ngrate-picker-count">@lsCount shifts</span>
                     </label>
 
                     @foreach (var entry in ChildEntryProvider(g))
@@ -63,14 +64,17 @@
                         var cap = entry;
                         bool subChecked = SelectedSubEntries.Contains(cap.Key);
                         int padPx = 8 + cap.Depth * 14;
+                        string levelLabel = cap.Key.Contains("|mid|", StringComparison.Ordinal)
+                            ? "MODEL"
+                            : $"SUB {Math.Max(1, cap.Depth - 1)}";
                         <label class="json-file-item sub-row" title="@cap.Label" style="padding-left: @(padPx)px;">
                             <input type="checkbox"
                                    class="form-check-input"
                                    checked="@subChecked"
                                    @onchange="@(_ => OnToggleSubEntry.InvokeAsync(cap.Key))" />
-                            <span style="color:#94a3b8; font-size:11px;">-</span>
+                            <span class="ngrate-picker-level">@levelLabel</span>
                             <span>@cap.Label</span>
-                            <span class="file-date">@cap.LsCount LS</span>
+                            <span class="file-date ngrate-picker-count">@cap.LsCount shifts</span>
                         </label>
                     }
                 }

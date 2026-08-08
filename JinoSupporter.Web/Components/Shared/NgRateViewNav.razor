@@ -1,22 +1,22 @@
-<div class="d-flex align-items-center gap-2 mb-3">
+<div class="ngrate-view-nav d-flex align-items-center gap-2 mb-3">
     <h5 class="mb-0 fw-semibold">NG Rate</h5>
-    <div class="ms-3 btn-group btn-group-sm" role="group" aria-label="View mode">
+    <nav class="ms-3 btn-group btn-group-sm" aria-label="NG Rate view mode">
         @foreach (var view in Views)
         {
             if (string.Equals(CurrentView, view.Key, StringComparison.Ordinal))
             {
-                <button type="button" class="btn btn-primary" disabled title="@($"Current view: {view.Title}")">
+                <button type="button" class="btn ngrate-view-current" disabled aria-current="page" title="@($"Current view: {view.Title}")">
                     @view.Label
                 </button>
             }
             else
             {
-                <a href="@view.Href" class="btn btn-outline-secondary" title="@($"Switch to {view.Title}")">
+                <a href="@view.Href" class="btn btn-outline-secondary ngrate-view-link" title="@($"Switch to {view.Title}")">
                     @view.Label
                 </a>
             }
         }
-    </div>
+    </nav>
 </div>
 
 @code {
