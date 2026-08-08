@@ -85,7 +85,7 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
         long? totalRows = sortColumn is null
             ? 0
             : dates.Where(item => selectedDateSet.Contains(item.Date)).Sum(item => item.RowCount);
-        ProductAggregate? productAggregate = productIdColumn is null
+        ProductAggregate? productAggregate = productIdColumn is null || sortColumn is null
             ? null
             : await FetchProductAggregateAsync(
                 conn,
@@ -293,7 +293,7 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
 
     private static async Task<ProductAggregate> FetchProductAggregateAsync(
         SqlConnection conn,
-        string? sortColumn,
+        string sortColumn,
         string productIdColumn,
         string? testResultColumn,
         IReadOnlyCollection<DateOnly> selectedDates,
@@ -302,28 +302,37 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
     {
         await using var cmd = conn.CreateCommand();
         var predicates = new List<string>();
-        if (sortColumn is not null && selectedDates.Count > 0)
+        if (selectedDates.Count > 0)
             predicates.Add(AddSelectedDatePredicate(cmd, sortColumn, selectedDates));
         predicates.Add(ProductIdLengthPredicate(productIdColumn));
 
         string cleanProductId = $"LTRIM(RTRIM({QuoteSqlServerIdentifier(productIdColumn)}))";
-        // A ProductID is NG when any one of its inspections is NG, even if another row passes.
+        string testTimeIdentifier = QuoteSqlServerIdentifier(sortColumn);
+        // A retest replaces the prior verdict: use the newest TestTime row, matching the table's representative row.
         string ngExpression = testResultColumn is null
             ? "CONVERT(int, 0)"
             : $"CASE WHEN UPPER(LTRIM(RTRIM({QuoteSqlServerIdentifier(testResultColumn)}))) IN (N'NG', N'N/G', N'FAIL') THEN 1 ELSE 0 END";
         cmd.CommandText = $"""
             SELECT COALESCE(SUM([ProductRows]), 0) AS [ValidRows],
                    COUNT_BIG(1) AS [InputCount],
-                   COALESCE(SUM(CONVERT(bigint, [HasNg])), 0) AS [NgCount]
+                   COALESCE(SUM(CONVERT(bigint, [IsNg])), 0) AS [NgCount]
             FROM
             (
-                SELECT {cleanProductId} AS [CleanProductID],
-                       COUNT_BIG(1) AS [ProductRows],
-                       MAX({ngExpression}) AS [HasNg]
-                FROM [dbo].[BKTD] WITH (NOLOCK)
-                WHERE {string.Join(" AND ", predicates)}
-                GROUP BY {cleanProductId}
-            ) AS [ProductSummary];
+                SELECT [ProductRows], [IsNg]
+                FROM
+                (
+                    SELECT COUNT_BIG(1) OVER (PARTITION BY {cleanProductId}) AS [ProductRows],
+                           {ngExpression} AS [IsNg],
+                           ROW_NUMBER() OVER
+                           (
+                               PARTITION BY {cleanProductId}
+                               ORDER BY {testTimeIdentifier} DESC
+                           ) AS [LatestRank]
+                    FROM [dbo].[BKTD] WITH (NOLOCK)
+                    WHERE {string.Join(" AND ", predicates)}
+                ) AS [RankedProductRows]
+                WHERE [LatestRank] = 1
+            ) AS [LatestProducts];
             """;
         cmd.CommandTimeout = timeoutSeconds;
         await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken);
