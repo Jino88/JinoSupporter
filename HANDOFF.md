@@ -1910,3 +1910,19 @@
 - Files: JinoSupporter.Web/Components 아래 .razor 38개 (Pages 35, Shared 3)
 - Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일. 드라이런을 먼저 돌려 대상과 건수를 확인한 뒤 적용했다. 1차 적용에서 radius 정규식이 다중값의 첫 값만 바꿔 `8px 8px 0 0`이 `2px 8px 0 0`으로 비대칭이 되는 버그를 자체 검증에서 발견하고, 값 단위로 정규화하는 후속 스크립트로 8곳을 교정했다. 서버 재기동 후 /login 200. 실제 화면은 인증이 필요해 직접 보지 못했다.
 - Next: 표 격자(엑셀 폼)와 액센트 색은 화면별 수작업이 필요하다. Daily Report는 완료했고, 다음은 사용 빈도 순으로 Report NG RATE 계열, F-Cost, Report/LPA 순이다.
+
+## 2026-08-08 07:50 - [UI][CHANGE] SheetDesign: 표를 엑셀 격자로 일괄 전환
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: SheetDesign
+- Change: CHANGE
+- Prompt: "계속해"
+- Answer: 표면 전환에 이어 표 격자를 정리했다. 조사해 보니 대부분의 표가 이미 border-collapse:collapse 인데 셀은 아래 테두리만 있어, 잘라내 붙이면 표로 안 읽히는 상태였다. 사용자가 예전에 요구한 "엑셀폼 표, 캡쳐해서 공유"와 직결된다.
+- Applied: (1) th·td 를 지정한 규칙의 border-bottom 을 전 테두리(border: 1px solid var(--line))로 38곳 (2) 마지막 행의 border-bottom:none 1곳은 격자가 끊기므로 선언 자체를 제거
+- Completed: 19개 화면의 표가 전 셀 격자로 렌더된다.
+- Decisions: 1차 드라이런에서 두 가지 오작동을 발견해 자동화 범위를 좁혔다 — th:nth-child(1) 처럼 폭만 지정하는 규칙에 헤더 배경이 붙었고, tr:last-child td { border-bottom: 0 } 같은 의도적 제거가 전 테두리로 뒤집혔다. 헤더 밴드 자동 부착은 폐기하고 화면별 수작업으로 넘겼으며, 0/none 값은 변환 대신 선언 제거로 처리했다. border 축약형을 이미 가진 규칙은 네 면을 의도적으로 정한 것이라 건드리지 않았다.
+- Files: JinoSupporter.Web/Components 아래 .razor 19개
+- Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일. 드라이런으로 대상 39곳을 먼저 확인하고 적용했다. 서버 재기동 후 /login 200. 실제 표 렌더는 인증이 필요해 직접 보지 못했다.
+- Next: 표 헤더 밴드(회색 배경)는 화면별로 넣어야 한다. 그다음 액센트 정리 — DataInferenceDbPage 의 인디고 #4338ca 19곳처럼 이 체계에 없는 색.
