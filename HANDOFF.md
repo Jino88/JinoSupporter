@@ -2049,3 +2049,35 @@
 - Files: JinoSupporter.Web/Services/QrBakoDataService.cs, JinoSupporter.Web/Components/Pages/QrBakoDataPage.razor
 - Verification: 병합 전 브랜치에서 최신판정(ROW_NUMBER/LatestRank)·ppm(1_000_000)·17자리 필터·쓰기성 SQL 부재를 소스에서 직접 확인. 병합 후 전체 재컴파일(--no-incremental) 오류 0개·경고 32개로 기존과 동일, 서버 5050 재기동 후 /login 200. 화면 동작의 최종 확인은 사용자가 수행한다.
 - Next: 남은 화면별 레이아웃 이식(F-Cost, Report/LPA, 이후 Test Data Analysis / Tools / Admin).
+
+## 2026-08-08 15:20 - [BUILD][FIX] BuildArtifacts: 검증 빌드 산출물을 git 추적에서 제외
+- Agent: Claude
+- Session: S17
+- Task-ID: S17-20260808-113039006-03ff5857f8c544b9
+- Category: BUILD
+- Feature: BuildArtifacts
+- Change: FIX
+- Prompt: ㄱㄱ
+- Answer: 워커 4개를 병렬로 붙이기 전에 저장소를 점검했더니 검증 빌드 출력이 통째로 커밋에 들어가 있었고, 이대로 병렬 워커를 돌리면 브랜치마다 산출물을 들고 다니다 병합 때 산출물끼리 충돌하므로 먼저 끊었다.
+- Applied: (1) .gitignore 에 .codex-verify/ 추가 (2) 추적 중이던 빌드 산출물 5018개를 인덱스에서 제거(디스크 파일은 보존)
+- Completed: 검증 빌드 출력이 더 이상 커밋에 실리지 않는다. 추적 파일 5018 → 0.
+- Decisions: 파일 삭제는 하지 않았다. 사용자가 디스크 정리를 직접 하기로 되어 있고, 추적 해제만으로 병합 충돌 문제는 해소된다. D 드라이브 여유는 12.6GB 로 워커 4개가 각자 워크트리에서 검증 빌드를 돌리기에 충분하다.
+- Files: .gitignore
+- Verification: `git ls-files .codex-verify` 0건, 디렉터리는 디스크에 그대로 존재 확인.
+- Next: 웨이브4 워커 4개(세션 29 BMES 조회·설정 / 30 테스트데이터 / 31 DataInference / 32 도구·관리)의 결과를 받아 검증 후 병합한다.
+
+## 2026-08-08 15:25 - [UI][CHANGE] SheetPorting: 남은 36개 화면 레이아웃 이식 웨이브4 착수
+- Agent: Claude
+- Session: S17
+- Task-ID: S17-20260808-113039006-03ff5857f8c544b9
+- Category: UI
+- Feature: SheetPorting
+- Change: CHANGE
+- Prompt: ㄱㄱ
+- Answer: 남은 화면을 파일이 겹치지 않는 4개 축(BMES 조회·설정 / 테스트데이터 입력·결과 / DataInference / 도구·관리)으로 갈라 Codex 워커에 병렬로 붙였다.
+- Applied: None
+- Completed: 화면별 hex·큰 라운드·box-shadow·100vh 잔량을 계측해 그룹을 나누고, 각 워커에 계측치와 계약 문서를 함께 준 프롬프트로 세션 29~32 를 기동했다.
+- Decisions: DataInferenceDbPage 의 hex 555개는 대부분 내보내기용 C# 문자열일 것으로 보고, 해당 워커에는 작업 전에 "Razor style 블록 안" 과 "C# 문자열 안" 을 갈라 세어 보고하도록 먼저 지시했다. 100vh 를 고칠 때 형제 요소에 높이를 나눠 주는 flex 를 새로 만들지 말라는 금지를 세 워커 프롬프트에 과거 사고 사례와 함께 명시했다. LoginPage 는 셸 바깥 전체 화면이라 100vh 가 정상이므로 범위에서 뺐다. GraphMaker 의 차트 계열 색은 의미 4색과 다른 문제이므로 억지로 줄이지 말라고 예외를 뒀다.
+- Files: None
+- Verification: 아직 없다. 워커 산출물이 나오면 브랜치별로 빌드와 렌더 대조를 확인한 뒤 병합한다.
+- Next: 세션 29~32 의 출력을 읽고 계약 위반(맨 element 셀렉터, C# 문자열 수정, 기능 변경) 여부를 확인한 뒤 순차 병합한다.
