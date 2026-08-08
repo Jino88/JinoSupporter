@@ -26,14 +26,13 @@
                 }
                 else
                 {
-                    <textarea class="form-control font-monospace"
-                              style="flex:1; min-height:400px; white-space:pre; overflow:auto; font-size:11px;"
+                    <textarea class="form-control ocr-editor font-monospace"
                               spellcheck="false"
                               @bind="_buffer" @bind:event="oninput"></textarea>
 
                     @if (!string.IsNullOrEmpty(_status))
                     {
-                        <div class="mt-2 small @(_statusError ? "text-danger" : "text-success")">@_status</div>
+                        <div class="ocr-status mt-2 small @(_statusError ? "ocr-status-error" : "ocr-status-ok")">@_status</div>
                     }
                 }
             </div>
@@ -60,7 +59,7 @@
                         disabled="@(_isBusy || !_hasCache && string.IsNullOrWhiteSpace(_buffer))">
                     💾 Save text
                 </button>
-                <button class="btn btn-success btn-sm"
+                <button class="btn btn-primary btn-sm"
                         @onclick="ReanalyzeFromTextAsync"
                         disabled="@(_isBusy || string.IsNullOrWhiteSpace(_buffer))">
                     🔄 Re-analyze from text
@@ -92,6 +91,15 @@
     }
     .ocr-close:hover { color: var(--crit, #c8342a); }
     .ocr-body  { flex: 1; display: flex; flex-direction: column; padding: 10px 16px; overflow: auto; }
+    .ocr-editor {
+        flex: 1;
+        min-height: 400px;
+        white-space: pre;
+        overflow: auto;
+        font-size: 11px;
+    }
+    .ocr-status-ok { color: var(--ok, #1f5fa8); }
+    .ocr-status-error { color: var(--crit, #c8342a); }
     .ocr-foot  {
         display: flex; gap: 8px; align-items: center; padding: 10px 16px;
         border-top: 1px solid var(--line, var(--line, #dde1e7)); flex-wrap: wrap;
