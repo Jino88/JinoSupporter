@@ -117,13 +117,17 @@
                     </div>
                     <div class="qr-row-summary">
                         <span>표시 @_rowGroups.Count.ToString("N0") QR</span>
-                        <span>원본 @_result.Rows.Count.ToString("N0")건</span>
+                        <span>조회 @_result.Rows.Count.ToString("N0")건</span>
                         @if (_result.TotalRows is long totalRows)
                         {
-                            <span>DB @totalRows.ToString("N0")건</span>
+                            <span>DB 원본 @totalRows.ToString("N0")건</span>
+                        }
+                        @if (_result.ExcludedRows is long excludedRows)
+                        {
+                            <span class="@(excludedRows > 0 ? "qr-excluded" : string.Empty)">제외 @excludedRows.ToString("N0")건</span>
                         }
                         <span>@_result.Columns.Count.ToString("N0")개 컬럼</span>
-                        @if (_result.TotalRows is long selectedTotal && selectedTotal > _result.Rows.Count)
+                        @if (_result.ValidTotalRows is long validTotal && validTotal > _result.Rows.Count)
                         {
                             <b>최신 @_result.MaxRows.ToString("N0")건 제한 · QR 묶음은 표시 범위 기준</b>
                         }
@@ -484,8 +488,13 @@
     }
 
     .qr-row-summary b {
-        color: var(--crit, #c8342a);
+        color: var(--warn-ink, #92610a);
         font-size: 0.68rem;
+    }
+
+    .qr-row-summary .qr-excluded {
+        color: var(--warn-ink, #92610a);
+        font-weight: 700;
     }
 
     .qr-table-wrap {

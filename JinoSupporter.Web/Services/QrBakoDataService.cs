@@ -58,6 +58,7 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
             NormalizeTimeoutSeconds(snapshot.TimeoutSeconds),
             cancellationToken);
         string? sortColumn = ResolveTestTimeColumn(tableColumns);
+        string? productIdColumn = ResolveExactColumn(tableColumns, "ProductID");
 
         List<QrBakoDateSummary> dates = sortColumn is null
             ? []
@@ -83,25 +84,38 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
         long? totalRows = sortColumn is null
             ? 0
             : dates.Where(item => selectedDateSet.Contains(item.Date)).Sum(item => item.RowCount);
+        long? validTotalRows = productIdColumn is null
+            ? totalRows
+            : await CountValidProductIdsAsync(
+                conn,
+                sortColumn,
+                productIdColumn,
+                selectedDates,
+                NormalizeTimeoutSeconds(snapshot.TimeoutSeconds),
+                cancellationToken);
+        long? excludedRows = totalRows is long allRows && validTotalRows is long validRows
+            ? Math.Max(0, allRows - validRows)
+            : null;
 
         await using var cmd = conn.CreateCommand();
-        if (sortColumn is null || selectedDates.Count == 0)
-        {
-            cmd.CommandText = """
-            SELECT TOP (@MaxRows) *
-            FROM [dbo].[BKTD] WITH (NOLOCK);
-            """;
-        }
-        else
-        {
-            string datePredicate = AddSelectedDatePredicate(cmd, sortColumn, selectedDates);
-            cmd.CommandText = $"""
+        var predicates = new List<string>();
+        if (sortColumn is not null && selectedDates.Count > 0)
+            predicates.Add(AddSelectedDatePredicate(cmd, sortColumn, selectedDates));
+        if (productIdColumn is not null)
+            predicates.Add(ProductIdLengthPredicate(productIdColumn));
+
+        string whereClause = predicates.Count == 0
+            ? string.Empty
+            : "WHERE " + string.Join(" AND ", predicates);
+        string orderClause = sortColumn is null
+            ? string.Empty
+            : $"ORDER BY {QuoteSqlServerIdentifier(sortColumn)} DESC";
+        cmd.CommandText = $"""
             SELECT TOP (@MaxRows) *
             FROM [dbo].[BKTD] WITH (NOLOCK)
-            WHERE {datePredicate}
-            ORDER BY {QuoteSqlServerIdentifier(sortColumn)} DESC;
+            {whereClause}
+            {orderClause};
             """;
-        }
         cmd.CommandTimeout = NormalizeTimeoutSeconds(snapshot.TimeoutSeconds);
         cmd.Parameters.Add(new SqlParameter("@MaxRows", SqlDbType.Int) { Value = maxRows });
 
@@ -153,11 +167,13 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
 
         _activity.Log(
             "QR BAKO DATA",
-            $"Fetched dbo.BKTD dates={SelectedDatesLogText(selectedDates)}, rows={rows.Count:N0}, maxRows={maxRows:N0}, total={(totalRows?.ToString("N0", CultureInfo.InvariantCulture) ?? "unknown")}");
+            $"Fetched dbo.BKTD dates={SelectedDatesLogText(selectedDates)}, rows={rows.Count:N0}, maxRows={maxRows:N0}, validTotal={(validTotalRows?.ToString("N0", CultureInfo.InvariantCulture) ?? "unknown")}, excluded={(excludedRows?.ToString("N0", CultureInfo.InvariantCulture) ?? "unknown")}");
 
         var warnings = new List<string>();
         if (sortColumn is null)
             warnings.Add("TestTime column was not found in dbo.BKTD, so the date list could not be created.");
+        if (productIdColumn is null)
+            warnings.Add("ProductID column was not found in dbo.BKTD, so invalid QR values could not be excluded.");
         if (dateSelectionLimited)
             warnings.Add($"날짜는 한 번에 최대 {MaxSelectedDates:N0}개까지 조회하며, 가장 최근 날짜부터 적용했습니다.");
 
@@ -170,6 +186,8 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
             FetchedAt = DateTime.Now,
             MaxRows = maxRows,
             TotalRows = totalRows,
+            ValidTotalRows = validTotalRows,
+            ExcludedRows = excludedRows,
             SortColumnName = sortColumn ?? string.Empty,
             SelectedDates = selectedDates,
             Dates = dates,
@@ -263,6 +281,35 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
 
         return "(" + string.Join(" OR ", predicates) + ")";
     }
+
+    private static async Task<long> CountValidProductIdsAsync(
+        SqlConnection conn,
+        string? sortColumn,
+        string productIdColumn,
+        IReadOnlyCollection<DateOnly> selectedDates,
+        int timeoutSeconds,
+        CancellationToken cancellationToken)
+    {
+        await using var cmd = conn.CreateCommand();
+        var predicates = new List<string>();
+        if (sortColumn is not null && selectedDates.Count > 0)
+            predicates.Add(AddSelectedDatePredicate(cmd, sortColumn, selectedDates));
+        predicates.Add(ProductIdLengthPredicate(productIdColumn));
+
+        cmd.CommandText = $"""
+            SELECT COUNT_BIG(1)
+            FROM [dbo].[BKTD] WITH (NOLOCK)
+            WHERE {string.Join(" AND ", predicates)};
+            """;
+        cmd.CommandTimeout = timeoutSeconds;
+        object? value = await cmd.ExecuteScalarAsync(cancellationToken);
+        return value is null or DBNull
+            ? 0
+            : Convert.ToInt64(value, CultureInfo.InvariantCulture);
+    }
+
+    private static string ProductIdLengthPredicate(string productIdColumn) =>
+        $"LEN(LTRIM(RTRIM({QuoteSqlServerIdentifier(productIdColumn)}))) = 17";
 
     private static List<DateRange> BuildDateRanges(IReadOnlyCollection<DateOnly> selectedDates)
     {
@@ -364,6 +411,13 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
         });
     }
 
+    private static string? ResolveExactColumn(IReadOnlyList<string> columns, string expectedName)
+    {
+        string normalizedExpected = NormalizeColumnName(expectedName);
+        return columns.FirstOrDefault(column =>
+            string.Equals(NormalizeColumnName(column), normalizedExpected, StringComparison.OrdinalIgnoreCase));
+    }
+
     private static string NormalizeColumnName(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -456,6 +510,8 @@ public sealed class QrBakoDataResult
     public DateTime FetchedAt { get; init; }
     public int MaxRows { get; init; }
     public long? TotalRows { get; init; }
+    public long? ValidTotalRows { get; init; }
+    public long? ExcludedRows { get; init; }
     public string SortColumnName { get; init; } = string.Empty;
     public List<DateOnly> SelectedDates { get; init; } = [];
     public string WarningMessage { get; init; } = string.Empty;
