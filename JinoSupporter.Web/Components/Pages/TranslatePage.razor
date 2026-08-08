@@ -9,7 +9,8 @@
 
 <PageTitle>Translate</PageTitle>
 
-<h4 class="mb-3 fw-semibold">Translate</h4>
+<div class="tr-page">
+<h4 class="tr-title mb-3 fw-semibold">Translate</h4>
 
 @if (IsCliModel && !AiProviders.CodexCliEnabled)
 {
@@ -30,14 +31,14 @@ else if (!IsCliModel && !CodexApi.IsConfigured)
 
     <!-- ── Input ─────────────────────────────────────────────────────────── -->
     <div class="col-xl-5 col-lg-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header fw-semibold small d-flex align-items-center gap-2">
+        <div class="card tr-panel h-100">
+            <div class="card-header tr-panel-head fw-semibold small d-flex align-items-center gap-2">
                 <span>Source</span>
                 <span class="text-muted ms-auto" style="font-size:11px;">
                     💡 Ctrl+V to paste image(s)
                 </span>
             </div>
-            <div class="card-body d-flex flex-column gap-2">
+            <div class="card-body tr-panel-body d-flex flex-column gap-2">
                 <textarea @bind="_inputText" class="form-control"
                           rows="10" placeholder="Enter text to translate, paste an image, or both…"
                           style="resize: vertical;" />
@@ -97,8 +98,8 @@ else if (!IsCliModel && !CodexApi.IsConfigured)
 
     <!-- ── Output ────────────────────────────────────────────────────────── -->
     <div class="col-xl-7 col-lg-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header fw-semibold small d-flex justify-content-between align-items-center">
+        <div class="card tr-panel h-100">
+            <div class="card-header tr-panel-head fw-semibold small d-flex justify-content-between align-items-center">
                 <span>
                     Translation Result
                     @if (!string.IsNullOrEmpty(_outputText))
@@ -113,7 +114,7 @@ else if (!IsCliModel && !CodexApi.IsConfigured)
                     </button>
                 }
             </div>
-            <div class="card-body" style="overflow-y: auto; max-height: 72vh;">
+            <div class="card-body tr-output-body">
                 @if (_isLoading)
                 {
                     <div class="d-flex align-items-center gap-2 text-muted">
@@ -144,8 +145,23 @@ else if (!IsCliModel && !CodexApi.IsConfigured)
     </div>
 
 </div>
+</div>
 
 <style>
+    .tr-title { color: var(--ink, #0f1319); }
+    .tr-panel {
+        background: var(--panel, #fff);
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        box-shadow: none;
+    }
+    .tr-panel-head {
+        background: var(--panel-2, #f5f6f9);
+        border-bottom: 1px solid var(--line-2, #c6ccd5);
+        color: var(--ink, #0f1319);
+    }
+    .tr-panel-body { background: var(--panel, #fff); }
+    .tr-output-body { overflow-y: auto; max-height: 72vh; background: var(--panel, #fff); }
     .img-strip {
         display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
         padding: 6px; border: 1px dashed var(--line-2, #c6ccd5); border-radius: 2px;
@@ -166,13 +182,13 @@ else if (!IsCliModel && !CodexApi.IsConfigured)
         background: rgba(0,0,0,.55); border: none; border-radius: 50%;
         cursor: pointer;
     }
-    .img-remove:hover { background: #ef4444; }
+    .img-remove:hover { background: var(--crit, #c8342a); }
     .img-clear {
         font-size: 11px; padding: 2px 8px; margin-left: auto;
         border: 1px solid var(--line, var(--line, #dde1e7)); border-radius: 2px; background: var(--panel, #fff);
         color: var(--ink-2, #4a5461); cursor: pointer;
     }
-    .img-clear:hover { border-color: #ef4444; color: #ef4444; }
+    .img-clear:hover { border-color: var(--crit, #c8342a); color: var(--crit, #c8342a); }
     .translate-source {
         white-space: pre-wrap;
         font-family: inherit;
@@ -190,10 +206,10 @@ else if (!IsCliModel && !CodexApi.IsConfigured)
         font-size: 12px;
         line-height: 1.4;
         padding: 6px 10px;
-        border: 1px solid #dbeafe;
+        border: 1px solid var(--ok, #1f5fa8);
         border-radius: 2px;
-        background: #eff6ff;
-        color: #1e40af;
+        background: var(--ok-wash, #eaf1f9);
+        color: var(--ok, #1f5fa8);
     }
 </style>
 

@@ -10,6 +10,7 @@
 
 <PageTitle>Test Excel Converter</PageTitle>
 
+<div class="tec-page">
 <div class="d-flex align-items-center gap-2 mb-3">
     <span style="font-size:20px;">📑</span>
     <h5 class="mb-0 fw-semibold">Test Excel Converter</h5>
@@ -29,7 +30,7 @@
     </div>
 }
 
-<div class="card shadow-sm mb-3 tec-settings-card">
+<div class="card tec-panel mb-3 tec-settings-card">
     <div class="card-header small fw-semibold">Files</div>
     <div class="card-body">
         <div class="mb-3">
@@ -135,7 +136,7 @@
                     <span class="fw-semibold">@pct %</span>
                 </div>
                 <div class="progress" style="height: 8px;">
-                    <div class="progress-bar @(_isBusy ? "progress-bar-striped progress-bar-animated" : "bg-success")"
+                    <div class="progress-bar tec-progress-bar @(_isBusy ? "progress-bar-striped progress-bar-animated" : "tec-progress-done")"
                          role="progressbar" style="width:@(pct)%;"></div>
                 </div>
             </div>
@@ -147,7 +148,7 @@
     </div>
 </div>
 
-<div class="card shadow-sm">
+<div class="card tec-panel">
     <div class="card-header small fw-semibold d-flex align-items-center gap-2">
         <span>📜 Log</span>
         @if (_log.Count > 0)
@@ -159,12 +160,10 @@
     <div class="card-body p-0">
         @* id="tec-log" — needed by JS to scroll-to-bottom on each new entry.
            Without this the user has to scroll manually as logs stream in. *@
-        <div id="tec-log" class="font-monospace p-2 overflow-auto"
-             style="height:380px; background:#0f172a; color:#94a3b8;
-                    font-size:11px; border-radius:0 0 .375rem .375rem;">
+        <div id="tec-log" class="tec-log font-monospace p-2 overflow-auto">
             @if (_log.Count == 0)
             {
-                <span style="opacity:.4;">No log entries yet.</span>
+                <span class="tec-empty-log">No log entries yet.</span>
             }
             else
             {
@@ -176,8 +175,15 @@
         </div>
     </div>
 </div>
+</div>
 
 <style>
+    .tec-panel {
+        background: var(--panel, #fff);
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        box-shadow: none;
+    }
     .tec-settings-card > .card-body > .mb-3:nth-of-type(2) {
         display: none;
     }
@@ -189,16 +195,16 @@
         display: grid;
         place-items: center;
         min-height: 138px;
-        border: 2px dashed #93c5fd;
+        border: 2px dashed var(--line-2, #c6ccd5);
         border-radius: 2px;
-        background: #f8fbff;
+        background: var(--panel-2, #f5f6f9);
         color: var(--ink, #0f1319);
         cursor: pointer;
         transition: border-color .15s ease, background .15s ease;
     }
     .tec-drop-zone:hover {
-        border-color: #2563eb;
-        background: #eff6ff;
+        border-color: var(--signal, #16202b);
+        background: var(--signal-wash, #edf0f4);
     }
     .tec-drop-zone.disabled {
         opacity: .6;
@@ -247,10 +253,20 @@
         border-top: 0;
     }
     .log-info  { color: var(--ink-3, #7f8a98); }
-    .log-ok    { color: #4ade80; }
-    .log-warn  { color: #fbbf24; }
-    .log-err   { color: #f87171; }
-    .log-step  { color: #93c5fd; }
+    .tec-log {
+        height: 380px;
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
+        font-size: 11px;
+        border-top: 1px solid var(--line, #dde1e7);
+    }
+    .tec-empty-log { color: var(--ink-3, #7f8a98); }
+    .tec-progress-bar { background: var(--signal, #16202b); }
+    .tec-progress-done { background: var(--ok, #1f5fa8); }
+    .log-ok    { color: var(--ok, #1f5fa8); }
+    .log-warn  { color: var(--warn-ink, #92610a); }
+    .log-err   { color: var(--crit, #c8342a); }
+    .log-step  { color: var(--signal, #16202b); }
 </style>
 
 @code {

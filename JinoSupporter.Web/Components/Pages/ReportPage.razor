@@ -297,6 +297,142 @@
 }
 
 <style>
+    .rpt-title { color: var(--ink, #0f1319); }
+    .rpt-layout { align-items: start; }
+    .rpt-panel,
+    .rpt-dataset-card {
+        background: var(--panel, #fff);
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        box-shadow: none;
+    }
+    .rpt-panel .card-header,
+    .rpt-dataset-card .card-header {
+        background: var(--panel-2, #f5f6f9);
+        border-bottom: 1px solid var(--line-2, #c6ccd5);
+        color: var(--ink, #0f1319);
+    }
+    .rpt-panel .card-body,
+    .rpt-dataset-card .card-body { background: var(--panel, #fff); }
+    .rpt-scroll { overflow-y: auto; }
+    .rpt-tag-scroll { max-height: 220px; }
+    .rpt-dataset-scroll { max-height: 500px; }
+    .rpt-dataset-item {
+        cursor: pointer;
+        border-left: 3px solid transparent;
+        border-right: 0;
+        border-top: 0;
+        border-bottom: 1px solid var(--line, #dde1e7);
+        background: var(--panel, #fff);
+    }
+    .rpt-dataset-item:hover,
+    .rpt-dataset-selected { background: var(--signal-wash, #edf0f4); }
+    .rpt-dataset-active { border-left-color: var(--signal, #16202b); }
+    .rpt-dataset-copy { flex: 1; min-width: 0; }
+    .rpt-dataset-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--ink-2, #4a5461);
+        font-weight: 500;
+    }
+    .rpt-dataset-name-selected { font-weight: 600; }
+    .rpt-dataset-name-active { color: var(--signal, #16202b); }
+    .rpt-actionbar { color: var(--ink-2, #4a5461); }
+    .rpt-status { border-radius: 2px; }
+    .rpt-ai-body { max-height: 60vh; overflow: auto; }
+    .rpt-tabs { border-bottom: 1px solid var(--line-2, #c6ccd5); }
+    .rpt-tab { border-radius: 2px 2px 0 0 !important; }
+    .rpt-dataset-card-tabbed { border-top-left-radius: 0; }
+    .rpt-summary {
+        padding: 10px 14px;
+        background: var(--ok-wash, #eaf1f9);
+        border-bottom: 1px solid var(--ok, #1f5fa8);
+    }
+    .rpt-summary-text { font-size: 12.5px; color: var(--ok, #1f5fa8); }
+    .rpt-findings { margin-top: 4px; white-space: pre-wrap; font-size: 11.5px; color: var(--ink-2, #4a5461); }
+    .rpt-section-head {
+        padding: 6px 14px;
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
+        border-bottom: 1px solid var(--line-2, #c6ccd5);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+    .rpt-count {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 1px 7px;
+        border-radius: 2px;
+        background: var(--panel-3, #eceef2);
+        color: var(--ink-3, #7f8a98);
+        font-size: 10px;
+        font-weight: 500;
+    }
+    .rpt-table-wrap { overflow-x: auto; }
+    .rpt-table {
+        width: 100%;
+        min-width: max-content;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+    .rpt-table th,
+    .rpt-table td { border: 1px solid var(--line, #dde1e7); }
+    .rpt-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding: 8px 12px;
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
+        font-size: 10.5px;
+        font-weight: 700;
+        text-align: left;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        white-space: nowrap;
+    }
+    .rpt-td { padding: 6px 12px; }
+    .rpt-num { text-align: right; font-variant-numeric: tabular-nums; }
+    .rpt-section { padding: 12px 14px; border-top: 1px solid var(--line-2, #c6ccd5); }
+    .rpt-section-title {
+        margin-bottom: 10px;
+        color: var(--ink-2, #4a5461);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+    .rpt-image-grid { display: flex; flex-wrap: wrap; gap: 16px; }
+    .rpt-image-figure { margin: 0; text-align: center; }
+    .rpt-image {
+        display: block;
+        max-width: 480px;
+        max-height: 360px;
+        object-fit: contain;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        cursor: zoom-in;
+    }
+    .rpt-image-caption { margin-top: 4px; color: var(--ink-3, #7f8a98); font-size: 11px; }
+    .rpt-file-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .rpt-file {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border: 1px solid var(--line, #dde1e7);
+        border-radius: 2px;
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
+        font-size: 12px;
+        text-decoration: none;
+    }
+    .rpt-file:hover { border-color: var(--signal, #16202b); }
+    .rpt-file-name { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .rpt-file-size { color: var(--ink-3, #7f8a98); font-size: 10px; }
     .rpt-viewer-overlay {
         position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 9500;
         display: flex; align-items: center; justify-content: center; cursor: zoom-out;
