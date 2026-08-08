@@ -321,7 +321,7 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
         overflow-y: auto;
         margin-top: 2px;
         padding: 4px;
-        border: 1px solid #ced4da;
+        border: 1px solid var(--line-2, #c6ccd5);
         border-radius: 2px;
         background: var(--panel, #fff);
     }
@@ -336,14 +336,14 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
         border-radius: 2px;
         padding: 5px 7px;
         background: transparent;
-        color: #212529;
+        color: var(--ink, #0f1319);
         font-size: 12px;
         text-align: left;
     }
 
     .t5-suggestion:hover,
     .t5-suggestion:focus {
-        background: #e7f1ff;
+        background: var(--panel-2, #f5f6f9);
         outline: 0;
     }
 
@@ -356,7 +356,7 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
     }
 
     .t5-suggestion-main small {
-        color: #6c757d;
+        color: var(--ink-3, #7f8a98);
         font-size: 10.5px;
     }
 
@@ -365,7 +365,7 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
         align-items: center;
         gap: 6px;
         padding: 6px 7px;
-        color: #6c757d;
+        color: var(--ink-3, #7f8a98);
         font-size: 11.5px;
     }
 
@@ -392,7 +392,7 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
     }
 
     .t5-models {
-        border: 1px solid #dee2e6;
+        border: 1px solid var(--line, #dde1e7);
         border-radius: 2px;
         padding: 8px 10px;
         background: var(--panel, #fff);
@@ -417,23 +417,23 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        border: 1px solid #ced4da;
+        border: 1px solid var(--line-2, #c6ccd5);
         border-radius: 2px;
         padding: 2px 10px;
         font-size: 12px;
         cursor: pointer;
-        background: #f8f9fa;
+        background: var(--panel-2, #f5f6f9);
     }
 
     .t5-chip.selected {
-        border-color: #0d6efd;
-        background: #e7f1ff;
+        border-color: var(--signal, #16202b);
+        background: var(--signal-wash, #edf0f4);
     }
 
     .t5-chip input { margin: 0; }
 
     .t5-card {
-        border: 1px solid #dee2e6;
+        border: 1px solid var(--line, #dde1e7);
         border-radius: 2px;
         background: var(--panel, #fff);
         overflow: hidden;
@@ -444,8 +444,8 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
         align-items: center;
         gap: 8px;
         padding: 8px 10px;
-        background: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
+        background: var(--panel-2, #f5f6f9);
+        border-bottom: 1px solid var(--line, #dde1e7);
     }
 
     .t5-table-wrap {
@@ -457,6 +457,7 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
         width: auto;
         min-width: 850px;
         table-layout: fixed;
+        border-collapse: collapse;
     }
 
     .t5-table .t5-col-level { width: 52px; }
@@ -468,16 +469,23 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
     .t5-table th {
         position: sticky;
         top: 0;
-        background: var(--panel, #fff);
+        background: var(--panel-2, #f5f6f9);
         z-index: 1;
         font-size: 12px;
         text-align: left;
+        border: 1px solid var(--line, #dde1e7);
     }
 
     .t5-table td {
         font-size: 12.5px;
         vertical-align: middle;
         text-align: left;
+        border: 1px solid var(--line, #dde1e7);
+    }
+
+    .t5-table tr[class*="t5-lv"] td:first-child {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
     }
 
     .t5-tree-item {
@@ -496,12 +504,12 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
         background: var(--panel-3, #eceef2);
         font-weight: 600;
         font-size: 12px;
-        color: #23415e;
+        color: var(--ink-2, #4a5461);
     }
 
     .t5-table tr.t5-product.shared td {
-        background: #e3f0e5;
-        color: #1e5631;
+        background: var(--ok-wash, #eaf1f9);
+        color: var(--ok, #1f5fa8);
     }
 
     .t5-dwg {
@@ -513,8 +521,8 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
     .t5-dwg:hover { text-decoration: underline; }
 
     .t5-table tr.t5-lv1 td:nth-child(2) { font-weight: 600; }
-    .t5-table tr.t5-lv2 td:nth-child(2) { color: #23415e; }
-    .t5-table tr.t5-lv3 td:nth-child(2) { color: #4a5a68; }
+    .t5-table tr.t5-lv2 td:nth-child(2) { color: var(--ink-2, #4a5461); }
+    .t5-table tr.t5-lv3 td:nth-child(2) { color: var(--ink-2, #4a5461); }
 
     .t5-empty { padding: 10px; }
 </style>

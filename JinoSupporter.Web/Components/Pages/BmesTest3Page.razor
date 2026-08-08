@@ -406,8 +406,8 @@
         text-overflow: ellipsis;
     }
     .test3-model-chip.left small {
-        background: #dbeafe;
-        color: #1d4ed8;
+        background: var(--signal-wash, #edf0f4);
+        color: var(--signal, #16202b);
     }
     .test3-model-chip.right small {
         background: var(--ok-wash, #eaf1f9);
@@ -415,7 +415,7 @@
     }
     .test3-table-scroll {
         overflow: auto;
-        max-height: calc(100vh - 150px);
+        max-height: calc(var(--view-h, 100vh) - 150px);
     }
     .test3-table {
         width: max-content;
@@ -428,7 +428,7 @@
         position: sticky;
         top: 0;
         z-index: 1;
-        background: var(--panel-3, #eceef2);
+        background: var(--panel-2, #f5f6f9);
         color: var(--ink-2, #4a5461);
         font-size: 10px;
         font-weight: 800;
@@ -441,10 +441,15 @@
         border: 1px solid var(--line, #dde1e7);
         color: var(--ink, #0f1319);
     }
+
+    .test3-table .text-end {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
     .test3-table tr:hover td { background: var(--panel-2, #f5f6f9); }
     .test3-table tr.drag-over td {
-        background: #eff6ff;
-        box-shadow: inset 0 2px 0 #2563eb;
+        background: var(--signal-wash, #edf0f4);
+        border-top: 2px solid var(--signal, #16202b);
     }
     .test3-table tr.drag-source td {
         opacity: .65;
@@ -488,13 +493,12 @@
         cursor: pointer;
     }
     .test3-drop-zone:hover {
-        border-color: #2563eb;
-        background: #eff6ff;
+        border-color: var(--line-2, #c6ccd5);
+        background: var(--panel-2, #f5f6f9);
     }
     .test3-drop-zone.active {
         border-color: var(--signal, #16202b);
         background: var(--signal-wash, #edf0f4);
-        box-shadow: inset 0 0 0 1px #2563eb;
     }
     .test3-drop-placeholder {
         color: var(--ink-3, #7f8a98);
@@ -522,9 +526,9 @@
         text-overflow: ellipsis;
     }
     .test3-process-ref {
-        border-color: #93c5fd;
-        background: #eff6ff;
-        color: #1d4ed8;
+        border-color: var(--line-2, #c6ccd5);
+        background: var(--signal-wash, #edf0f4);
+        color: var(--signal, #16202b);
         font-weight: 700;
     }
     .test3-mapped-material.replace {
@@ -551,8 +555,8 @@
         text-transform: uppercase;
     }
     .test3-map-role.side {
-        background: #dbeafe;
-        color: #1d4ed8;
+        background: var(--signal-wash, #edf0f4);
+        color: var(--signal, #16202b);
     }
     .test3-ref-input {
         width: 78px;
@@ -573,7 +577,7 @@
     .test3-chip-remove:hover { color: var(--crit, #c8342a); }
     .test3-bom-tray {
         min-width: 0;
-        max-height: calc(100vh - 96px);
+        max-height: calc(var(--view-h, 100vh) - 96px);
         overflow: hidden;
         padding: 8px 10px;
         border: 1px solid var(--line-2, #c6ccd5);
@@ -593,7 +597,7 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         gap: 4px;
-        max-height: calc(100vh - 150px);
+        max-height: calc(var(--view-h, 100vh) - 150px);
         overflow: auto;
     }
     .test3-bom-card {
@@ -606,12 +610,12 @@
         margin: 0;
     }
     .test3-bom-card:hover {
-        border-color: #2563eb;
-        background: #eff6ff;
+        border-color: var(--line-2, #c6ccd5);
+        background: var(--panel-2, #f5f6f9);
     }
     .test3-bom-card.selected {
-        border-color: var(--ok, #1f5fa8);
-        background: var(--ok-wash, #eaf1f9);
+        border-color: var(--signal, #16202b);
+        background: var(--signal-wash, #edf0f4);
     }
     .test3-bom-card input {
         margin: 0;

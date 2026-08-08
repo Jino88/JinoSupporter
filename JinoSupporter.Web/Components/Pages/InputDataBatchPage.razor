@@ -19,8 +19,8 @@
         <span class="status-chip @(_statusError ? "error" : "ok")">@_status</span>
     </header>
 
-    <section class="panel">
-        <div class="panel-head">
+    <section class="idb-panel">
+        <div class="idb-panel-head">
             <div>
                 <h2>Excel Input Data 입력</h2>
                 <p>Excel COM으로 원본을 읽고, 병합셀 구조와 raw grid를 DB에 저장합니다.</p>
@@ -89,8 +89,8 @@
 
     @if (_lastRun is not null)
     {
-        <section class="panel">
-            <div class="panel-head">
+        <section class="idb-panel">
+            <div class="idb-panel-head">
                 <div>
                     <h2>마지막 실행 결과</h2>
                     <p>@_lastRun.FinishedAt</p>
@@ -149,7 +149,7 @@
                                         }
                                         else
                                         {
-                                            <span class="muted">-</span>
+                                            <span class="idb-muted">-</span>
                                         }
                                     </td>
                                 </tr>
@@ -163,8 +163,8 @@
 
     @if (_recentReviewCases.Count > 0)
     {
-        <section class="panel">
-            <div class="panel-head">
+        <section class="idb-panel">
+            <div class="idb-panel-head">
                 <div>
                     <h2>저장된 AI 인식 결과</h2>
                     <p>이 데이터셋에 DB 저장된 최신 AI 인식/추출 점검 결과입니다.</p>
@@ -224,8 +224,8 @@
 
     @if (_selectedReviewCase is not null && _reviewView is not null)
     {
-        <section class="panel review-panel">
-            <div class="panel-head">
+        <section class="idb-panel review-panel">
+            <div class="idb-panel-head">
                 <div>
                     <h2>AI 인식 결과 검토</h2>
                     <p>@_selectedReviewFileName</p>
@@ -514,7 +514,7 @@
     }
     else if (!string.IsNullOrWhiteSpace(_reviewLoadError))
     {
-        <section class="panel">
+        <section class="idb-panel">
             <h2>AI 인식 결과 검토</h2>
             <p class="error-text">@_reviewLoadError</p>
         </section>
@@ -522,8 +522,8 @@
 
     @if (_log.Count > 0)
     {
-        <section class="panel">
-            <div class="panel-head">
+        <section class="idb-panel">
+            <div class="idb-panel-head">
                 <h2>Log</h2>
                 <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="_log.Clear" disabled="@_isRunning">
                     Clear
@@ -2194,14 +2194,14 @@
 
 <style>
     .input-data-root {
-        min-height: calc(100vh - 24px);
+        min-height: calc(var(--view-h, 100vh) - 24px);
         padding: 18px;
-        background: #f6f7fb;
+        background: var(--plane, #e8eaee);
         color: var(--ink, #0f1319);
     }
 
     .page-head,
-    .panel-head,
+    .idb-panel-head,
     .toolbar {
         display: flex;
         align-items: center;
@@ -2231,7 +2231,7 @@
         letter-spacing: 0;
     }
 
-    .panel {
+    .idb-panel {
         margin-top: 12px;
         padding: 14px;
         border: 1px solid var(--line-2, #c6ccd5);
@@ -2239,14 +2239,14 @@
         background: var(--panel, #fff);
     }
 
-    .panel h2 {
+    .idb-panel h2 {
         margin: 0;
         font-size: 16px;
         font-weight: 800;
         letter-spacing: 0;
     }
 
-    .panel p {
+    .idb-panel p {
         margin: 4px 0 0;
         color: var(--ink-2, #4a5461);
         font-size: 12px;
@@ -2399,7 +2399,7 @@
     }
 
     .input-data-root th {
-        background: var(--panel-3, #eceef2);
+        background: var(--panel-2, #f5f6f9);
         font-weight: 800;
     }
 
@@ -2424,7 +2424,7 @@
         font-weight: 800;
     }
 
-    .muted {
+    .idb-muted {
         color: var(--ink-3, #7f8a98);
     }
 
@@ -2531,7 +2531,7 @@
     .chip-row span {
         border: 1px solid var(--line, #dde1e7);
         border-radius: 2px;
-        background: var(--panel-3, #eceef2);
+        background: var(--panel-2, #f5f6f9);
         padding: 2px 5px;
         font-size: 11px;
         color: var(--ink-2, #4a5461);
@@ -2588,7 +2588,7 @@
         gap: 12px;
         padding: 8px 10px;
         border-bottom: 1px solid var(--line, #dde1e7);
-        background: var(--panel-3, #eceef2);
+        background: var(--panel-2, #f5f6f9);
     }
 
     .recognized-data-head strong {
@@ -2630,7 +2630,7 @@
         position: sticky;
         top: 0;
         z-index: 1;
-        background: var(--line, var(--line, #dde1e7));
+        background: var(--panel-2, #f5f6f9);
         font-weight: 800;
         color: var(--ink-2, #4a5461);
     }
@@ -2657,10 +2657,10 @@
     .review-warning,
     .open-file-status {
         margin: 8px 0 0;
-        border: 1px solid #fed7aa;
+        border: 1px solid var(--warn-line, #f0cf8a);
         border-radius: 2px;
-        background: #fff7ed;
-        color: #9a3412;
+        background: var(--warn-wash, #fdf4e0);
+        color: var(--warn-ink, #92610a);
         padding: 8px 10px;
         font-size: 12px;
         font-weight: 700;
@@ -2731,16 +2731,16 @@
         padding: 2px 6px;
         border: 1px solid var(--line-2, #c6ccd5);
         border-radius: 2px;
-        background: var(--line, var(--line, #dde1e7));
+        background: var(--panel-2, #f5f6f9);
         color: var(--ink, #0f1319);
         font-size: 11px;
         font-weight: 800;
     }
 
     .question-ref-head .actual-ref {
-        background: #ecfeff;
-        color: #155e75;
-        border-color: #a5f3fc;
+        background: var(--signal-wash, #edf0f4);
+        color: var(--signal, #16202b);
+        border-color: var(--signal, #16202b);
     }
 
     .question-ref-cells {
@@ -2811,11 +2811,11 @@
         padding: 8px;
     }
 
-    details {
+    .input-data-root details {
         margin-top: 10px;
     }
 
-    summary {
+    .input-data-root summary {
         cursor: pointer;
         font-size: 12px;
         font-weight: 800;

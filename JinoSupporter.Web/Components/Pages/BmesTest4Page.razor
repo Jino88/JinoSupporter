@@ -253,7 +253,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
     }
 
     .test4-kpis > div {
-        border: 1px solid #dbe4f0;
+        border: 1px solid var(--line, #dde1e7);
         background: var(--panel, #fff);
         border-radius: 2px;
         padding: 8px 10px;
@@ -275,7 +275,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
 
     .test4-section {
         margin-top: 14px;
-        border-top: 1px solid #dbe4f0;
+        border-top: 1px solid var(--line, #dde1e7);
         padding-top: 10px;
     }
 
@@ -290,7 +290,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
         margin: 0;
         font-size: 13px;
         font-weight: 800;
-        color: #10233f;
+        color: var(--ink, #0f1319);
     }
 
     .test4-section-title span {
@@ -306,7 +306,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
     .test4-table-scroll {
         overflow: auto;
         max-height: 360px;
-        border: 1px solid #dbe4f0;
+        border: 1px solid var(--line, #dde1e7);
         background: var(--panel, #fff);
     }
 
@@ -321,8 +321,8 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
         position: sticky;
         top: 0;
         z-index: 1;
-        background: #edf3f9;
-        color: #193653;
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
         border: 1px solid var(--line, #dde1e7);
         padding: 7px 8px;
         font-size: 11px;
@@ -337,12 +337,17 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
         white-space: nowrap;
     }
 
+    .test4-table .text-end {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
     .test4-table tr:hover td {
         background: var(--panel-2, #f5f6f9);
     }
 
     .test4-unmapped-row td {
-        background: #fff7ed;
+        background: var(--warn-wash, #fdf4e0);
     }
 
     .test4-chip {
@@ -350,9 +355,9 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
         align-items: center;
         gap: 5px;
         max-width: 260px;
-        border: 1px solid #bdd0e7;
-        background: #f8fbff;
-        color: #10233f;
+        border: 1px solid var(--line-2, #c6ccd5);
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink, #0f1319);
         border-radius: 2px;
         padding: 3px 6px;
         margin: 2px 4px 2px 0;
