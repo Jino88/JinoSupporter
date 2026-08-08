@@ -73,11 +73,18 @@
         border: 1px solid var(--line, #dde1e7);
         background: var(--panel, #fff);
     }
+    .ngrate-report-card {
+        border: 1px solid var(--line-2, #c6ccd5);
+        background: var(--panel, #fff);
+        box-shadow: none !important;
+    }
     .ngrate-card-header {
         padding: .4rem .65rem;
         background: var(--panel-2, #f5f6f9);
         color: var(--ink-2, #4a5461);
         border-bottom: 1px solid var(--line-2, #c6ccd5);
+        min-height: 30px;
+        font-size: 11.5px;
     }
     .ngrate-card-body {
         padding: .65rem;
@@ -222,6 +229,60 @@
     .grp-chk .grp-count {
         font-size: 10px;
         font-family: var(--mono, monospace);
+    }
+    .ngrate-picker-tabs {
+        background: var(--panel-2, #f5f6f9);
+    }
+    .ngrate-picker-selection,
+    .ngrate-picker-count,
+    .ngrate-picker .file-date,
+    .ngrate-picker .grp-count {
+        color: var(--ink-2, #4a5461);
+        font-family: var(--mono, monospace);
+        font-size: 10px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+    .ngrate-picker-selection::before {
+        content: "\2713\00a0";
+        color: var(--ink, #0f1319);
+        font-weight: 700;
+    }
+    .ngrate-hier-level,
+    .ngrate-picker-level {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 42px;
+        margin-right: 4px;
+        padding: 0 3px;
+        border: 1px solid var(--line-2, #c6ccd5);
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
+        font-family: var(--sans, "Segoe UI", sans-serif);
+        font-size: 8px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: .35px;
+        line-height: 1.35;
+        vertical-align: 1px;
+    }
+
+    .ngrate-view-nav {
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--line, #dde1e7);
+    }
+    .ngrate-view-current,
+    .ngrate-view-current:disabled {
+        border-color: var(--signal, #16202b);
+        background: var(--signal, #16202b);
+        color: var(--panel, #fff);
+        opacity: 1;
+    }
+    .ngrate-view-link {
+        border-color: var(--line-2, #c6ccd5);
+        background: var(--panel, #fff);
+        color: var(--ink-2, #4a5461);
     }
 
     .pg-tab {
@@ -437,6 +498,10 @@
     .grp-total-row td:first-child {
         border-left: 3px solid var(--ink, #0f1319) !important;
     }
+    .pivot-table tr.total-row td,
+    .grp-overall-row td {
+        border-top: 3px double var(--ink-2, #4a5461) !important;
+    }
     .pivot-table tr.rank-row:nth-child(odd) td,
     .pivot-table tr.hier-sub2-row td,
     .pivot-table tr.hier-ls-row td,
@@ -461,6 +526,19 @@
     .wr-mid-row td {
         font-weight: 600;
         border-top: 1px solid var(--line-2, #c6ccd5) !important;
+    }
+    .pivot-table tr.hier-sub1-row td:first-child,
+    .grp-sub1-row td:first-child,
+    .wr-sub1-row td:first-child {
+        border-left: 2px solid var(--line-2, #c6ccd5) !important;
+    }
+    .pivot-table tr.hier-sub2-row td:first-child,
+    .grp-sub2-row td:first-child,
+    .wr-sub2-row td:first-child,
+    .pivot-table tr.hier-ls-row td:first-child,
+    .grp-ls-row td:first-child,
+    .wr-ls-row td:first-child {
+        border-left: 2px dashed var(--line-2, #c6ccd5) !important;
     }
     .pivot-table tr.rank-row:hover td,
     .pivot-table tr.group-row:hover td,
@@ -496,11 +574,19 @@
         cursor: default;
     }
     .daily-summary-table .grp-total-row td,
-    .daily-summary-table .grp-mid-row td,
     .daily-summary-table .grp-total-row:hover td,
+    .daily-summary-table .grp-mid-row td,
     .daily-summary-table .grp-mid-row:hover td {
-        background: var(--panel, #fff);
         filter: none;
+    }
+    .daily-summary-table .grp-total-row td,
+    .daily-summary-table .grp-total-row:hover td {
+        background: var(--panel-2, #f5f6f9);
+        border-top: 2px solid var(--line-2, #c6ccd5) !important;
+    }
+    .daily-summary-table .grp-mid-row td,
+    .daily-summary-table .grp-mid-row:hover td {
+        background: var(--panel-3, #eceef2);
     }
     .group-name-td,
     .toggle-cell:hover,
@@ -812,6 +898,9 @@
         font-size: 10px;
         text-align: center;
     }
+    .weekly-form-settings-table td.text-end {
+        font-variant-numeric: tabular-nums;
+    }
     .weekly-form-wrap {
         overflow-x: auto;
     }
@@ -849,6 +938,11 @@
     .weekly-form-table .wrf-target-col,
     .weekly-form-table .wrf-ach-col {
         color: var(--ink, #0f1319);
+        font-variant-numeric: tabular-nums;
+    }
+    .weekly-form-table .wrf-target,
+    .weekly-form-table .wrf-achievement {
+        text-align: right;
     }
     .weekly-form-table .wrf-triangle {
         display: inline-block;
