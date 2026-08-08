@@ -162,12 +162,12 @@
 
 <style>
     .fav-root {
-        height: 100vh;
+        height: calc(var(--view-h, 100vh) - 24px);
         min-height: 0;
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        background: #f5f7fb;
+        background: var(--plane, #e8eaee);
         color: var(--ink, #0f1319);
     }
 
@@ -277,7 +277,7 @@
         position: sticky;
         top: 0;
         z-index: 1;
-        background: var(--panel-3, #eceef2);
+        background: var(--panel-2, #f5f6f9);
         color: var(--ink-2, #4a5461);
         font-weight: 850;
     }
@@ -305,7 +305,7 @@
         padding: 2px 7px;
         border-radius: 2px;
         background: var(--ok-wash, #eaf1f9);
-        color: #047857;
+        color: var(--ok, #1f5fa8);
         border: 1px solid var(--ok-wash, #eaf1f9);
         font-weight: 850;
     }
@@ -334,9 +334,9 @@
     }
 
     .fav-pill.model {
-        background: #dbeafe;
-        border-color: #93c5fd;
-        color: #1d4ed8;
+        background: var(--panel-2, #f5f6f9);
+        border-color: var(--line-2, #c6ccd5);
+        color: var(--ink-2, #4a5461);
     }
 
     .fav-muted {
