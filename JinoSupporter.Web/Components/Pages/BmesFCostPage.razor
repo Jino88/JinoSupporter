@@ -35,7 +35,7 @@
 <div class="row g-3">
 
     <div class="col-12">
-        <div class="card shadow-sm h-100">
+<div class="card fcost-card h-100">
             <div class="card-header small fw-semibold">Report</div>
             <div class="card-body d-flex flex-column gap-2">
                 <div class="small text-muted">
@@ -165,7 +165,7 @@
 
     @if ((IsTrendReportRoute || ShowMajorTrendCard) && trendRows.Count > 0)
     {
-        <div class="card shadow-sm mt-3 fcost-trend-card">
+<div class="card fcost-card mt-3 fcost-trend-card">
             <div class="card-body p-0">
                 <div class="fcost-trend-title"><span></span> @(ShowAllPeriodColumns ? "FCOST Trend (전체)" : "FCOST Trend")</div>
                 <div style="overflow-x:auto;">
@@ -281,7 +281,7 @@
             var rawBreakdownRows = BuildRawBreakdownViewRows();
             int rawBreakdownColSpan = 4 + _rawMaterialBreakdown.Periods.Count;
 
-            <div class="card shadow-sm mt-3 fcost-breakdown-card">
+<div class="card fcost-card mt-3 fcost-breakdown-card">
                 <div class="card-header small fw-semibold d-flex align-items-center gap-2 flex-wrap">
                     <span>FCOST Raw Material Breakdown</span>
                     <span class="text-muted" style="font-size:11px;">
@@ -431,7 +431,7 @@
 
     @if (ShowFCostWeeklyReport)
     {
-    <div class="card shadow-sm mt-3 fcost-weekly-card">
+<div class="card fcost-card mt-3 fcost-weekly-card">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
             <span>@(ShowAllPeriodColumns ? "Weekly Report (전체)" : "Weekly Report")</span>
                 <span class="text-muted" style="font-size:11px;">@(ShowAllPeriodColumns ? "목표 불량률 (Period 선택 전체 기간)" : "목표 불량률 (WEEK: 4주 내림차순, MONTH: 3달 내림차순)")</span>
@@ -591,7 +591,7 @@
 @if (!IsTrendReportRoute && ShowRegularFCostDetails && _report is not null && (_report.SubGroups.Count > 0 || _report.Total is not null))
 {
     var subColumnIndexes = VisibleFCostColumnIndexes();
-    <div class="card shadow-sm mt-3">
+<div class="card fcost-card mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
             <span>Model / Sub Group Summary - Input / F-Cost / 불량률%</span>
             <span class="text-muted" style="font-size:11px;">
@@ -804,7 +804,7 @@
 {
     var materialColumnIndexes = VisibleFCostColumnIndexes();
 
-    <div class="card shadow-sm mt-3">
+<div class="card fcost-card mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
             <span>F-Cost Query Date @_report.QueryDate</span>
             <span class="text-muted" style="font-size:11px;">

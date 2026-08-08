@@ -25,7 +25,7 @@
     var modelFiltered = ModelPairsFiltered().ToList();
 }
 
-<div class="card shadow-sm">
+<div class="card reason-card">
     <div class="card-header d-flex align-items-center gap-2">
         <span class="fw-semibold small">Reason Table</span>
         <span class="badge bg-secondary ms-1" style="font-size:10px;">@_reasonRows.Count rows</span>
@@ -70,7 +70,7 @@
             </button>
         </div>
     </div>
-    <div style="overflow-x:auto; max-height:calc(100vh - 190px); overflow-y:auto;">
+    <div style="overflow-x:auto; max-height:calc(var(--view-h, 100vh) - 190px); overflow-y:auto;">
         <datalist id="reason-options">
             @foreach (var reason in ReasonOptions)
             {

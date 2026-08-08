@@ -55,7 +55,7 @@
 
     <!-- ══ Left: accumulated groups ════════════════════════════════════════ -->
     <div class="col-md-4">
-        <div class="card shadow-sm">
+<div class="card mmg-card">
             <div class="card-header fw-semibold small d-flex align-items-center gap-2">
                 <span>🧱 Groups</span>
                 <span class="badge bg-secondary" style="font-size:10px;">@_groups.Count</span>
@@ -171,7 +171,7 @@
 
     <!-- ══ Middle: distinct (Maktx, Mtype) with search ════════════════════════ -->
     <div class="col-md-4">
-        <div class="card shadow-sm">
+<div class="card mmg-card">
             <div class="card-header fw-semibold small">
                 📋 BMES Materials — distinct (Maktx, Mtype)
             </div>
@@ -233,7 +233,7 @@
 
     <!-- Right: Shift Groups for selected Maktx -->
     <div class="col-md-4">
-        <div class="card shadow-sm">
+<div class="card mmg-card">
             <div class="card-header fw-semibold small d-flex align-items-center gap-2">
                 <span>🧭 Shift Groups</span>
                 @if (!string.IsNullOrEmpty(_selectedMaktx))
@@ -290,12 +290,14 @@
 </div>
 
 <style>
+    .mmg-card { border-radius: 2px; }
+
     .mmg-table {
         width: 100%; border-collapse: collapse; font-size: 12px;
     }
     .mmg-table thead th {
         position: sticky; top: 0; z-index: 1;
-        background: var(--panel-3, #eceef2); font-weight: 700; font-size: 10px; color: var(--ink-2, #4a5461);
+        background: var(--panel-2, #f5f6f9); font-weight: 700; font-size: 10px; color: var(--ink-2, #4a5461);
         text-transform: uppercase; letter-spacing: .4px;
         padding: 6px 10px; border: 1px solid var(--line, #dde1e7);
         text-align: left;
@@ -307,22 +309,22 @@
     .mmg-table td.n { text-align: right; font-variant-numeric: tabular-nums; }
     .row-click { cursor: pointer; }
     .row-click:hover td { background: var(--panel-2, #f5f6f9); }
-    .row-selected td { background: var(--signal-wash, #edf0f4) !important; color: #3730a3; font-weight: 600; }
+    .row-selected td { background: var(--signal-wash, #edf0f4) !important; color: var(--signal, #16202b); font-weight: 600; }
 
     .grp-box {
         border: 1px solid var(--line, var(--line, #dde1e7)); border-radius: 2px; background: var(--panel, #fff);
-        cursor: pointer; transition: border-color .12s, box-shadow .12s;
+        cursor: pointer; transition: border-color .12s;
     }
     .grp-box:hover { border-color: var(--line-2, #c6ccd5); }
     .grp-box.grp-active {
-        border-color: #6366f1;    }
+        border-color: var(--signal, #16202b);    }
     .grp-active .grp-head { background: var(--signal-wash, #edf0f4); }
     .grp-head {
         display: flex; align-items: center; gap: 6px;
         padding: 5px 8px; border-bottom: 1px solid var(--panel-3, #eceef2);
-        background: var(--panel-2, #f5f6f9); border-top-left-radius: 6px; border-top-right-radius: 6px;
+        background: var(--panel-2, #f5f6f9); border-top-left-radius: 2px; border-top-right-radius: 2px;
     }
-    .grp-active-dot { color: #6366f1; font-size: 9px; }
+    .grp-active-dot { color: var(--signal, #16202b); font-size: 9px; }
     .grp-name-input {
         flex: 1 1 auto; min-width: 0;
         border: 1px solid transparent; background: transparent;
@@ -331,7 +333,7 @@
     }
     .grp-name-input:hover  { border-color: var(--line, var(--line, #dde1e7)); background: var(--panel, #fff); }
     .grp-name-input:focus  {
-        outline: none; border-color: #93c5fd; background: var(--panel, #fff);
+        outline: none; border-color: var(--signal, #16202b); background: var(--panel, #fff);
     }
     .grp-list {
         list-style: none; margin: 0; padding: 4px 8px 6px 16px;
@@ -341,18 +343,18 @@
 
     .mid-grp {
         border: 1px solid var(--line, var(--line, #dde1e7)); border-radius: 2px;
-        background: #fafbff; margin-bottom: 4px;
+        background: var(--panel, #fff); margin-bottom: 4px;
     }
     .mid-grp-head {
         display: flex; align-items: center; gap: 4px;
         padding: 4px 8px; border-bottom: 1px solid var(--signal-wash, #edf0f4);
-        background: #f3f4ff; border-top-left-radius: 5px; border-top-right-radius: 5px;
+        background: var(--panel-2, #f5f6f9); border-top-left-radius: 2px; border-top-right-radius: 2px;
         font-size: 12px;
     }
     .mid-badge {
         display: inline-block; font-size: 9px; font-weight: 700;
         padding: 1px 5px; border-radius: 2px;
-        background: #14b8a6; color: var(--panel, #fff);
+        background: var(--ink-2, #4a5461); color: var(--panel, #fff);
     }
     .mid-name { font-size: 12px; color: var(--ink, #0f1319); }
     .mid-name-input {
@@ -363,14 +365,14 @@
     }
     .mid-name-input:hover { border-color: var(--line, var(--line, #dde1e7)); background: var(--panel, #fff); }
     .mid-name-input:focus {
-        outline: none; border-color: #93c5fd; background: var(--panel, #fff);
+        outline: none; border-color: var(--signal, #16202b); background: var(--panel, #fff);
     }
-    .mid-grp.mid-active { border-color: #14b8a6;}
+    .mid-grp.mid-active { border-color: var(--signal, #16202b);}
 
     .pg-row {
         display: flex; align-items: center; gap: 4px;
         padding: 4px 8px; border-bottom: 1px solid var(--panel-3, #eceef2);
-        background: #fcfcfd;
+        background: var(--panel, #fff);
     }
     .pg-row-label {
         font-size: 9px; font-weight: 700; color: var(--ink-2, #4a5461);
@@ -385,25 +387,25 @@
     }
     .pg-pill:hover { border-color: var(--line-2, #c6ccd5); color: var(--ink-2, #4a5461); }
     .pg-pill.pg-pill-on { color: var(--panel, #fff); }
-    .pg-pill.pg-pill-on.pg-SPK    { background:#ca8a04; border-color:#a16207; }
+    .pg-pill.pg-pill-on.pg-SPK    { background:var(--warn, #fab219); border-color:var(--warn-line, #f0cf8a); }
     .pg-pill.pg-pill-on.pg-UNIT   { background:var(--ok, #1f5fa8); border-color:var(--ok, #1f5fa8); }
     .pg-pill.pg-pill-on.pg-MODULE { background:var(--signal, #16202b); border-color:var(--signal, #16202b); }
-    .pg-pill.pg-pill-on.pg-TWS    { background:#db2777; border-color:#be185d; }
+    .pg-pill.pg-pill-on.pg-TWS    { background:var(--signal, #16202b); border-color:var(--signal, #16202b); }
     .pg-pill.pg-pill-on.pg-ETC    { background:var(--ink-2, #4a5461); border-color:var(--ink-2, #4a5461); }
 
     .sub-list { padding: 3px 6px 5px 6px; }
     .sub-grp {
         border: 1px dashed var(--line-2, #c6ccd5); border-radius: 2px; background: var(--panel, #fff);
-        margin-top: 3px; cursor: pointer; transition: border-color .12s, box-shadow .12s;
+        margin-top: 3px; cursor: pointer; transition: border-color .12s;
     }
-    .sub-grp:hover { border-color: #a5b4fc; }
+    .sub-grp:hover { border-color: var(--signal, #16202b); }
     .sub-grp.sub-active {
-        border-style: solid; border-color: #a855f7;
+        border-style: solid; border-color: var(--signal, #16202b);
     }
     .sub-grp.sub-drop-target {
-        border-style: solid; border-color: #7c3aed;
-        background: #faf5ff;    }
-    .sub-grp.sub-drop-target > .sub-grp-head { background: #faf5ff; }
+        border-style: solid; border-color: var(--signal, #16202b);
+        background: var(--signal-wash, #edf0f4);    }
+    .sub-grp.sub-drop-target > .sub-grp-head { background: var(--signal-wash, #edf0f4); }
     .sub-grp.sub-dragging { opacity: .55; }
     .sub-grp-head {
         display: flex; align-items: center; gap: 4px;
@@ -412,7 +414,7 @@
     .sub-badge {
         display: inline-block; font-size: 9px; font-weight: 700;
         padding: 1px 5px; border-radius: 2px;
-        background: #a855f7; color: var(--panel, #fff);
+        background: var(--signal, #16202b); color: var(--panel, #fff);
     }
     .sub-drag-handle { cursor: grab; user-select: none; }
     .sub-drag-handle:active { cursor: grabbing; }
@@ -429,7 +431,7 @@
     }
     .sub-name-input:hover { border-color: var(--line, var(--line, #dde1e7)); background: var(--panel, #fff); }
     .sub-name-input:focus {
-        outline: none; border-color: #c4b5fd; background: var(--panel, #fff);
+        outline: none; border-color: var(--signal, #16202b); background: var(--panel, #fff);
     }
 
     .grp-list li {
@@ -441,7 +443,7 @@
         border: none; background: transparent; color: var(--line-2, #c6ccd5);
         padding: 0 4px; cursor: pointer; border-radius: 2px;
     }
-    .grp-list li:hover .ls-remove { color: #ef4444; background: var(--crit-wash, #fbedec); }
+    .grp-list li:hover .ls-remove { color: var(--crit, #c8342a); background: var(--crit-wash, #fbedec); }
 </style>
 
 @code {
