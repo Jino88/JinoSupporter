@@ -61,8 +61,8 @@
     var wrMonths = WeeklyReportMonthCols;
     var wrRows   = WeeklyReportRows;
 
-    <div class="card shadow-sm mt-3">
-        <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+    <div class="card mt-3 ngrate-report-card">
+        <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
             <span class="text-muted" style="font-size:11px;">@wrRows.Count row(s)</span>
             <div class="d-flex align-items-center gap-2 ms-auto">
                 @if (!string.IsNullOrWhiteSpace(_weeklyFormSettingsStatus))
@@ -119,7 +119,7 @@
                 </div>
             </div>
         }
-        <div class="card-body p-0">
+        <div class="card-body ngrate-card-body p-0">
             @if (wrRows.Count == 0)
             {
                 <div class="text-muted small p-4 text-center">
@@ -166,6 +166,9 @@
                                                     1 => "wr-sub1-row",
                                                     _ => "wr-sub2-row"
                                                 };
+                                string levelLabel = row.IsLineShift ? "SHIFT"
+                                                  : row.Depth == 0 ? "MODEL"
+                                                  : "SUB";
                                 bool   expanded = IsSectionExpanded(_expandedRowsWr, row.RowId);
                                 bool   canExp   = hasChildren.Contains(row.RowId);
                                 string capturedId = row.RowId;
@@ -180,6 +183,7 @@
                                         {
                                             <span class="wr-tog wr-tog-blank"></span>
                                         }
+                                        <span class="ngrate-hier-level">@levelLabel</span>
                                         <span class="ms-1">@row.Display</span>
                                     </td>
                                     @foreach (var col in wrWeeks)
@@ -204,8 +208,8 @@
 }
 
 <!-- ?먥븧 Summary (per group 횞 per date) ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧 -->
-<div class="card shadow-sm mt-3">
-    <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+<div class="card mt-3 ngrate-report-card">
+    <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
         <span>Summary - group x Date / Week / Month (PPM)</span>
         @if (_report is not null)
         {
@@ -244,7 +248,7 @@
             </button>
         }
     </div>
-    <div class="card-body p-0">
+    <div class="card-body ngrate-card-body p-0">
         @if (!string.IsNullOrEmpty(_reportError))
         {
             <div class="alert alert-danger m-3 py-2 small">@_reportError</div>
@@ -319,6 +323,7 @@
                             <tr class="grp-total-row" @onclick="() => ToggleExpand(gName)">
                                 <td class="label-td">
                                     <span class="tog-icon">@(expanded ? "v" : ">")</span>
+                                    <span class="ngrate-hier-level">GROUP</span>
                                     <strong>@ReportGroupDisplayName(gName)</strong>
                                 </td>
                                 @foreach (var col in VisibleDateCols)
@@ -379,11 +384,11 @@
 <!-- ?먥븧 Chart (per-group PPM trend over dates) ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧 -->
 @if (_report is not null && TotalColCount > 0 && _selectedGroupNames.Count > 0)
 {
-    <div class="card shadow-sm mt-3">
-        <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+    <div class="card mt-3 ngrate-report-card">
+        <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
             <span>Group trend - PPM (Date / Week / Month)</span>
         </div>
-        <div class="card-body" style="height:320px;">
+        <div class="card-body ngrate-card-body" style="height:320px;">
             <canvas id="ngrateByGroupCanvas"></canvas>
             @ExportChartPayload(CanvasId)
         </div>
@@ -391,8 +396,8 @@
 }
 
 <!-- ?먥븧 Summary 2 (per group 횞 per model) ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??-->
-<div class="card shadow-sm mt-3">
-    <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+<div class="card mt-3 ngrate-report-card">
+    <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
         <span>Summary - Group - Model Name x Week / Month (PPM)</span>
         @if (_reportByMid is not null)
         {
@@ -418,7 +423,7 @@
             </div>
         }
     </div>
-    <div class="card-body p-0">
+    <div class="card-body ngrate-card-body p-0">
         @if (_report is null || _reportByMid is null)
         {
             <div class="text-muted small p-4 text-center">
@@ -497,6 +502,7 @@
                             <tr class="grp-total-row" @onclick="() => ToggleExpandModel(gName)">
                                 <td class="label-td">
                                     <span class="tog-icon">@(exp ? "v" : ">")</span>
+                                    <span class="ngrate-hier-level">GROUP</span>
                                     <strong>@ReportGroupDisplayName(gName)</strong>
                                 </td>
                                 @foreach (var col in VisibleDateCols)
@@ -533,6 +539,7 @@
                                     <tr class="grp-sub-row grp-mid-row" @onclick="() => ToggleExpandMid(midKey)">
                                         <td class="label-td ps-4" style="font-size:11px;">
                                             <span class="tog-icon">@(midExp ? "v" : ">")</span>
+                                            <span class="ngrate-hier-level">MODEL</span>
                                             <span class="ms-1">@mid.Material</span>
                                             <span class="text-muted ms-1" style="font-size:10px;">@mid.LineShifts.Count</span>
                                         </td>
@@ -605,11 +612,11 @@
 <!-- ?먥븧 Chart 2 (per-model PPM trend) ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??-->
 @if (_reportByModel is not null && TotalColCount > 0 && _selectedGroupNames.Count > 0)
 {
-    <div class="card shadow-sm mt-3">
-        <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+    <div class="card mt-3 ngrate-report-card">
+        <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
             <span>Group trend - PPM (Date / Week / Month)</span>
         </div>
-        <div class="card-body" style="height:320px;">
+        <div class="card-body ngrate-card-body" style="height:320px;">
             <canvas id="ngrateByGroupModelCanvas"></canvas>
             @ExportChartPayload(CanvasIdModel)
         </div>
@@ -620,8 +627,8 @@
 @if (_midNgReport is not null && _selectedGroupNames.Count > 0)
 {
     var (_refKey, _refBucket) = SortRefKey();
-    <div class="card shadow-sm mt-3">
-        <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+    <div class="card mt-3 ngrate-report-card">
+        <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
             <span>Top 10 per group - Model Name x Process x NG</span>
             <span class="text-muted" style="font-size:11px;">
                 @if (!string.IsNullOrEmpty(_refKey))
@@ -629,7 +636,7 @@
                 else { <text>No sort reference available.</text> }
             </span>
         </div>
-        <div class="card-body p-0">
+        <div class="card-body ngrate-card-body p-0">
             @foreach (var gName in _selectedGroupNames)
             {
                 // 以묎렇猷??ㅻ뒗 "?洹몃９::Material" ?뺥깭. ?꾩옱 ?洹몃９???대떦?섎뒗 ?ㅻ쭔 ?꾪꽣.
@@ -648,6 +655,7 @@
                     .ToList();
 
                 <div class="px-3 py-2 top10-group-head">
+                    <span class="ngrate-hier-level">GROUP</span>
                     <strong class="me-2">@ReportGroupDisplayName(gName)</strong>
                     <span class="text-muted small">@top.Count rows</span>
                 </div>
@@ -2033,9 +2041,9 @@
 
     /// <summary>
     /// Renders a PPM cell content with a "+/-delta" tail vs the previous period.
-    /// Red for positive (worse), blue for negative (better). Skipped when prev is
-    /// null (oldest period) or both values are zero. Used on Mid-Group rows in the
-    /// For Weekly Report view.
+    /// Positive/negative signs and up/down markers carry direction; color is only
+    /// a secondary cue. Skipped when prev is null (oldest period) or both values
+    /// are zero. Used on Mid-Group rows in the For Weekly Report view.
     /// </summary>
     private static MarkupString FormatPpmWithDelta(double current, double? prev)
     {
@@ -2051,13 +2059,13 @@
             return new MarkupString(System.Net.WebUtility.HtmlEncode(main));
 
         long absRounded = (long)Math.Round(Math.Abs(delta));
-        string sign     = delta > 0 ? "+" : "-";
-        string color    = delta > 0 ? "#dc2626" : "#2563eb";   // red / blue
-        string deltaStr = $" ({sign}{absRounded:N0})";
+        string sign       = delta > 0 ? "+" : "-";
+        string deltaClass = delta > 0 ? "ppm-delta-up" : "ppm-delta-down";
+        string deltaStr   = $"{sign}{absRounded:N0}";
 
         return new MarkupString(
-            System.Net.WebUtility.HtmlEncode(main) +
-            $"<span style=\"color:{color};font-size:10px;font-weight:600;margin-left:2px;\">" +
+            $"<span class=\"ppm-cell-value\">{System.Net.WebUtility.HtmlEncode(main)}</span>" +
+            $"<span class=\"ppm-delta {deltaClass}\">" +
             System.Net.WebUtility.HtmlEncode(deltaStr) +
             "</span>");
     }
