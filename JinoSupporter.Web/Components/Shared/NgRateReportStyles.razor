@@ -79,18 +79,19 @@
         background: var(--panel, #fff);
         box-shadow: none !important;
     }
-    .ngrate-setup-card > .ngrate-card-header,
-    .ngrate-report-card > .ngrate-card-header {
-        padding: .4rem .65rem;
-        background: var(--panel-2, #f5f6f9);
-        color: var(--ink-2, #4a5461);
-        border-bottom: 1px solid var(--line-2, #c6ccd5);
-        min-height: 30px;
-        font-size: 11.5px;
+    .ngrate-setup-card > .ngrate-card-header {
+        min-height: 30px !important;
+        padding: .4rem .65rem !important;
+        background: var(--panel-2, #f5f6f9) !important;
+        color: var(--ink-2, #4a5461) !important;
+        border-bottom: 1px solid var(--line-2, #c6ccd5) !important;
+        font-size: 11.5px !important;
     }
-    .ngrate-setup-card > .ngrate-card-body,
-    .ngrate-report-card > .ngrate-card-body {
-        padding: .65rem;
+    .ngrate-setup-card > .ngrate-card-header::before {
+        content: none !important;
+    }
+    .ngrate-setup-card > .ngrate-card-body {
+        padding: .65rem !important;
         background: var(--panel, #fff);
     }
     .ngrate-setup-card > .ngrate-card-body.p-0,
@@ -278,10 +279,10 @@
     }
     .ngrate-view-current,
     .ngrate-view-current:disabled {
-        border-color: var(--signal, #16202b);
-        background: var(--signal, #16202b);
-        color: var(--panel, #fff);
-        opacity: 1;
+        border-color: var(--signal, #16202b) !important;
+        background: var(--signal, #16202b) !important;
+        color: var(--panel, #fff) !important;
+        opacity: 1 !important;
     }
     .ngrate-view-link {
         border-color: var(--line-2, #c6ccd5);
