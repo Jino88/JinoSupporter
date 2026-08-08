@@ -120,13 +120,28 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
                 columns.Add(new QrBakoDataColumn(name, reader.GetDataTypeName(i)));
             }
 
+            int sortColumnOrdinal = sortColumn is null
+                ? -1
+                : columns.FindIndex(column =>
+                    string.Equals(column.Name, sortColumn, StringComparison.OrdinalIgnoreCase));
+
             while (await reader.ReadAsync(cancellationToken))
             {
                 var values = new List<string>(reader.FieldCount);
+                DateTimeOffset? testTime = null;
                 for (int i = 0; i < reader.FieldCount; i++)
-                    values.Add(FormatCell(reader, i));
-                rows.Add(new QrBakoDataRow(values));
+                {
+                    object? rawValue = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                    values.Add(FormatCell(rawValue));
+                    if (i == sortColumnOrdinal)
+                        testTime = ConvertTestTime(rawValue);
+                }
+                rows.Add(new QrBakoDataRow(values, testTime));
             }
+
+
+            if (sortColumnOrdinal >= 0)
+                rows.Sort(static (left, right) => Nullable.Compare(right.TestTime, left.TestTime));
         }
 
         _activity.Log(
@@ -330,12 +345,26 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
     private static string QuoteSqlServerIdentifier(string value) =>
         "[" + value.Replace("]", "]]", StringComparison.Ordinal) + "]";
 
-    private static string FormatCell(SqlDataReader reader, int ordinal)
+    private static DateTimeOffset? ConvertTestTime(object? value)
     {
-        if (reader.IsDBNull(ordinal))
+        return value switch
+        {
+            DateTime dt => new DateTimeOffset(dt),
+            DateTimeOffset dto => dto,
+            _ when DateTimeOffset.TryParse(
+                Convert.ToString(value, CultureInfo.InvariantCulture),
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeLocal,
+                out DateTimeOffset parsed) => parsed,
+            _ => null,
+        };
+    }
+
+    private static string FormatCell(object? value)
+    {
+        if (value is null or DBNull)
             return string.Empty;
 
-        object value = reader.GetValue(ordinal);
         return value switch
         {
             DateTime dt => dt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.CurrentCulture),
@@ -394,6 +423,6 @@ public sealed class QrBakoDataResult
 
 public sealed record QrBakoDataColumn(string Name, string DataType);
 
-public sealed record QrBakoDataRow(IReadOnlyList<string> Values);
+public sealed record QrBakoDataRow(IReadOnlyList<string> Values, DateTimeOffset? TestTime = null);
 
 public sealed record QrBakoDateSummary(DateOnly Date, long RowCount);
