@@ -99,10 +99,6 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
         long? excludedRows = totalRows is long allRows && validTotalRows is long validRows
             ? Math.Max(0, allRows - validRows)
             : null;
-        QrBakoDataSummary? summary = productAggregate is not null && testResultColumn is not null
-            ? new QrBakoDataSummary(productAggregate.InputCount, productAggregate.NgCount)
-            : null;
-
         await using var cmd = conn.CreateCommand();
         var predicates = new List<string>();
         if (sortColumn is not null && selectedDates.Count > 0)
@@ -170,6 +166,12 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
             if (sortColumnOrdinal >= 0)
                 rows.Sort(static (left, right) => Nullable.Compare(right.TestTime, left.TestTime));
         }
+
+        QrBakoDataSummary? summary = productAggregate is not null && testResultColumn is not null
+            ? rows.Count >= maxRows
+                ? BuildVisibleSummary(rows, columns, productIdColumn!, testResultColumn)
+                : new QrBakoDataSummary(productAggregate.InputCount, productAggregate.NgCount)
+            : null;
 
         _activity.Log(
             "QR BAKO DATA",
@@ -347,6 +349,50 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
 
     private static string ProductIdLengthPredicate(string productIdColumn) =>
         $"LEN(LTRIM(RTRIM({QuoteSqlServerIdentifier(productIdColumn)}))) = 17";
+
+    private static QrBakoDataSummary BuildVisibleSummary(
+        IReadOnlyList<QrBakoDataRow> rows,
+        IReadOnlyList<QrBakoDataColumn> columns,
+        string productIdColumn,
+        string testResultColumn)
+    {
+        int productIdOrdinal = FindColumnOrdinal(columns, productIdColumn);
+        int testResultOrdinal = FindColumnOrdinal(columns, testResultColumn);
+        if (productIdOrdinal < 0 || testResultOrdinal < 0)
+            return new QrBakoDataSummary(0, 0);
+
+        var seenProductIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        long ngCount = 0;
+        // Rows are newest-first, so the first occurrence is the table representative and the current retest verdict.
+        // If TOP limits the table, summarize that same visible scope so the cards and representative rows stay aligned.
+        foreach (QrBakoDataRow row in rows)
+        {
+            string productId = row.Values[productIdOrdinal].Trim();
+            if (!seenProductIds.Add(productId))
+                continue;
+
+            string testResult = row.Values[testResultOrdinal].Trim();
+            if (testResult.Equals("NG", StringComparison.OrdinalIgnoreCase)
+                || testResult.Equals("N/G", StringComparison.OrdinalIgnoreCase)
+                || testResult.Equals("FAIL", StringComparison.OrdinalIgnoreCase))
+            {
+                ngCount++;
+            }
+        }
+
+        return new QrBakoDataSummary(seenProductIds.Count, ngCount);
+    }
+
+    private static int FindColumnOrdinal(IReadOnlyList<QrBakoDataColumn> columns, string columnName)
+    {
+        for (int index = 0; index < columns.Count; index++)
+        {
+            if (string.Equals(columns[index].Name, columnName, StringComparison.OrdinalIgnoreCase))
+                return index;
+        }
+
+        return -1;
+    }
 
     private static List<DateRange> BuildDateRanges(IReadOnlyCollection<DateOnly> selectedDates)
     {

@@ -140,12 +140,12 @@
                         <article class="qr-summary-card">
                             <span>Input 개수</span>
                             <strong>@summary.InputCount.ToString("N0")</strong>
-                            <small>중복 ProductID 제외</small>
+                            <small>@(_result.HitMaxRows ? "표시 범위 · 중복 ProductID 제외" : "중복 ProductID 제외")</small>
                         </article>
                         <article class="qr-summary-card">
                             <span>NG 개수</span>
                             <strong>@summary.NgCount.ToString("N0")</strong>
-                            <small>최신 TestTime 결과 기준</small>
+                            <small>@(_result.HitMaxRows ? "표시 범위 · 최신 TestTime 기준" : "최신 TestTime 결과 기준")</small>
                         </article>
                         <article class="qr-summary-card">
                             <span>NG Rate</span>
