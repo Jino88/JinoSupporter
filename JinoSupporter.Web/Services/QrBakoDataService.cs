@@ -8,6 +8,7 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
 {
     private const int FallbackMaxRows = 1000;
     private const int HardMaxRows = 20000;
+    private const int MaxSelectedDates = 512;
     private const int FallbackTimeoutSeconds = 60;
     private const int MaxTimeoutSeconds = 300;
 
@@ -65,38 +66,44 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
                 sortColumn,
                 NormalizeTimeoutSeconds(snapshot.TimeoutSeconds),
                 cancellationToken);
-        DateOnly? selectedDate = query.TestDate ?? dates.FirstOrDefault()?.Date;
+        var availableDates = dates.Select(item => item.Date).ToHashSet();
+        List<DateOnly> requestedDates = query.TestDates
+            .Where(availableDates.Contains)
+            .Distinct()
+            .OrderByDescending(date => date)
+            .ToList();
+        if (requestedDates.Count == 0 && dates.FirstOrDefault() is { } latestDate)
+            requestedDates.Add(latestDate.Date);
 
-        long? totalRows = selectedDate is null || sortColumn is null
+        bool dateSelectionLimited = requestedDates.Count > MaxSelectedDates;
+        List<DateOnly> selectedDates = requestedDates
+            .Take(MaxSelectedDates)
+            .ToList();
+        var selectedDateSet = selectedDates.ToHashSet();
+        long? totalRows = sortColumn is null
             ? 0
-            : await TryCountRowsAsync(
-                conn,
-                sortColumn,
-                selectedDate.Value,
-                NormalizeTimeoutSeconds(snapshot.TimeoutSeconds),
-                cancellationToken);
+            : dates.Where(item => selectedDateSet.Contains(item.Date)).Sum(item => item.RowCount);
 
         await using var cmd = conn.CreateCommand();
-        cmd.CommandText = sortColumn is null || selectedDate is null
-            ? """
+        if (sortColumn is null || selectedDates.Count == 0)
+        {
+            cmd.CommandText = """
             SELECT TOP (@MaxRows) *
             FROM [dbo].[BKTD] WITH (NOLOCK);
-            """
-            : $"""
+            """;
+        }
+        else
+        {
+            string datePredicate = AddSelectedDatePredicate(cmd, sortColumn, selectedDates);
+            cmd.CommandText = $"""
             SELECT TOP (@MaxRows) *
             FROM [dbo].[BKTD] WITH (NOLOCK)
-            WHERE {QuoteSqlServerIdentifier(sortColumn)} >= @DateStart
-              AND {QuoteSqlServerIdentifier(sortColumn)} < @DateEnd
+            WHERE {datePredicate}
             ORDER BY {QuoteSqlServerIdentifier(sortColumn)} DESC;
             """;
+        }
         cmd.CommandTimeout = NormalizeTimeoutSeconds(snapshot.TimeoutSeconds);
         cmd.Parameters.Add(new SqlParameter("@MaxRows", SqlDbType.Int) { Value = maxRows });
-        if (sortColumn is not null && selectedDate is not null)
-        {
-            DateTime dateStart = selectedDate.Value.ToDateTime(TimeOnly.MinValue);
-            cmd.Parameters.Add(new SqlParameter("@DateStart", SqlDbType.DateTime2) { Value = dateStart });
-            cmd.Parameters.Add(new SqlParameter("@DateEnd", SqlDbType.DateTime2) { Value = dateStart.AddDays(1) });
-        }
 
         var columns = new List<QrBakoDataColumn>();
         var rows = new List<QrBakoDataRow>();
@@ -146,7 +153,13 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
 
         _activity.Log(
             "QR BAKO DATA",
-            $"Fetched dbo.BKTD date={selectedDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "none"}, rows={rows.Count:N0}, maxRows={maxRows:N0}, total={(totalRows?.ToString("N0", CultureInfo.InvariantCulture) ?? "unknown")}");
+            $"Fetched dbo.BKTD dates={SelectedDatesLogText(selectedDates)}, rows={rows.Count:N0}, maxRows={maxRows:N0}, total={(totalRows?.ToString("N0", CultureInfo.InvariantCulture) ?? "unknown")}");
+
+        var warnings = new List<string>();
+        if (sortColumn is null)
+            warnings.Add("TestTime column was not found in dbo.BKTD, so the date list could not be created.");
+        if (dateSelectionLimited)
+            warnings.Add($"날짜는 한 번에 최대 {MaxSelectedDates:N0}개까지 조회하며, 가장 최근 날짜부터 적용했습니다.");
 
         return new QrBakoDataResult
         {
@@ -158,11 +171,9 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
             MaxRows = maxRows,
             TotalRows = totalRows,
             SortColumnName = sortColumn ?? string.Empty,
-            SelectedDate = selectedDate,
+            SelectedDates = selectedDates,
             Dates = dates,
-            WarningMessage = sortColumn is null
-                ? "TestTime column was not found in dbo.BKTD, so the date list could not be created."
-                : string.Empty,
+            WarningMessage = string.Join(' ', warnings),
             Columns = columns,
             Rows = rows,
         };
@@ -228,33 +239,55 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
         }
     }
 
-    private static async Task<long?> TryCountRowsAsync(
-        SqlConnection conn,
+    private static string AddSelectedDatePredicate(
+        SqlCommand cmd,
         string sortColumn,
-        DateOnly date,
-        int timeoutSeconds,
-        CancellationToken cancellationToken)
+        IReadOnlyCollection<DateOnly> selectedDates)
     {
-        try
+        List<DateRange> ranges = BuildDateRanges(selectedDates);
+        var predicates = new List<string>(ranges.Count);
+        for (int i = 0; i < ranges.Count; i++)
         {
-            await using var cmd = conn.CreateCommand();
-            cmd.CommandText = $"""
-                SELECT COUNT_BIG(1)
-                FROM [dbo].[BKTD] WITH (NOLOCK)
-                WHERE {QuoteSqlServerIdentifier(sortColumn)} >= @DateStart
-                  AND {QuoteSqlServerIdentifier(sortColumn)} < @DateEnd;
-                """;
-            cmd.CommandTimeout = timeoutSeconds;
-            DateTime dateStart = date.ToDateTime(TimeOnly.MinValue);
-            cmd.Parameters.Add(new SqlParameter("@DateStart", SqlDbType.DateTime2) { Value = dateStart });
-            cmd.Parameters.Add(new SqlParameter("@DateEnd", SqlDbType.DateTime2) { Value = dateStart.AddDays(1) });
-            object? value = await cmd.ExecuteScalarAsync(cancellationToken);
-            return value is null or DBNull ? null : Convert.ToInt64(value, CultureInfo.InvariantCulture);
+            string startName = $"@DateStart{i}";
+            string endName = $"@DateEnd{i}";
+            predicates.Add($"({QuoteSqlServerIdentifier(sortColumn)} >= {startName} AND {QuoteSqlServerIdentifier(sortColumn)} < {endName})");
+            cmd.Parameters.Add(new SqlParameter(startName, SqlDbType.DateTime2)
+            {
+                Value = ranges[i].Start.ToDateTime(TimeOnly.MinValue),
+            });
+            cmd.Parameters.Add(new SqlParameter(endName, SqlDbType.DateTime2)
+            {
+                Value = ranges[i].EndExclusive.ToDateTime(TimeOnly.MinValue),
+            });
         }
-        catch
+
+        return "(" + string.Join(" OR ", predicates) + ")";
+    }
+
+    private static List<DateRange> BuildDateRanges(IReadOnlyCollection<DateOnly> selectedDates)
+    {
+        List<DateOnly> ordered = selectedDates.Distinct().OrderBy(date => date).ToList();
+        var ranges = new List<DateRange>();
+        if (ordered.Count == 0)
+            return ranges;
+
+        DateOnly rangeStart = ordered[0];
+        DateOnly rangeEnd = ordered[0];
+        for (int i = 1; i < ordered.Count; i++)
         {
-            return null;
+            if (ordered[i] == rangeEnd.AddDays(1))
+            {
+                rangeEnd = ordered[i];
+                continue;
+            }
+
+            ranges.Add(new DateRange(rangeStart, rangeEnd.AddDays(1)));
+            rangeStart = ordered[i];
+            rangeEnd = ordered[i];
         }
+
+        ranges.Add(new DateRange(rangeStart, rangeEnd.AddDays(1)));
+        return ranges;
     }
 
     private QrBakoDataConnectionSnapshot RequireConfiguredSnapshot()
@@ -345,6 +378,15 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
     private static string QuoteSqlServerIdentifier(string value) =>
         "[" + value.Replace("]", "]]", StringComparison.Ordinal) + "]";
 
+    private static string SelectedDatesLogText(IReadOnlyList<DateOnly> dates)
+    {
+        if (dates.Count == 0)
+            return "none";
+        if (dates.Count == 1)
+            return dates[0].ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        return $"{dates[^1]:yyyy-MM-dd}..{dates[0]:yyyy-MM-dd} ({dates.Count:N0})";
+    }
+
     private static DateTimeOffset? ConvertTestTime(object? value)
     {
         return value switch
@@ -382,6 +424,8 @@ public sealed class QrBakoDataService(AppPathsService appPaths, AppActivityLogge
         if (bytes.Length <= 32) return "0x" + Convert.ToHexString(bytes);
         return "0x" + Convert.ToHexString(bytes.AsSpan(0, 32)) + $"... ({bytes.Length:N0} bytes)";
     }
+
+    private readonly record struct DateRange(DateOnly Start, DateOnly EndExclusive);
 }
 
 public sealed class QrBakoDataConnectionSnapshot
@@ -400,7 +444,7 @@ public sealed class QrBakoDataConnectionSnapshot
 public sealed class QrBakoDataQuery
 {
     public int MaxRows { get; init; } = 1000;
-    public DateOnly? TestDate { get; init; }
+    public IReadOnlyCollection<DateOnly> TestDates { get; init; } = [];
 }
 
 public sealed class QrBakoDataResult
@@ -413,7 +457,7 @@ public sealed class QrBakoDataResult
     public int MaxRows { get; init; }
     public long? TotalRows { get; init; }
     public string SortColumnName { get; init; } = string.Empty;
-    public DateOnly? SelectedDate { get; init; }
+    public List<DateOnly> SelectedDates { get; init; } = [];
     public string WarningMessage { get; init; } = string.Empty;
     public List<QrBakoDateSummary> Dates { get; init; } = [];
     public List<QrBakoDataColumn> Columns { get; init; } = [];
@@ -423,6 +467,11 @@ public sealed class QrBakoDataResult
 
 public sealed record QrBakoDataColumn(string Name, string DataType);
 
-public sealed record QrBakoDataRow(IReadOnlyList<string> Values, DateTimeOffset? TestTime = null);
+public sealed record QrBakoDataRow(IReadOnlyList<string> Values, DateTimeOffset? TestTime = null)
+{
+    public DateOnly? TestDate => TestTime is DateTimeOffset value
+        ? DateOnly.FromDateTime(value.DateTime)
+        : null;
+}
 
 public sealed record QrBakoDateSummary(DateOnly Date, long RowCount);
