@@ -212,11 +212,9 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @{ int rowIdx = 0; }
                                         @foreach (NormalizedMeasurement m in view.Measurements)
                                         {
-                                            string bg = rowIdx++ % 2 == 0 ? "#ffffff" : "#f8fafc";
-                                            <tr style="background:@bg;">
+                                            <tr>
                                                 <td class="rpt-td">@m.Variable</td>
                                                 <td class="rpt-td">@m.VariableDetail</td>
                                                 <td class="rpt-td">@m.VariableGroup</td>
@@ -394,6 +392,7 @@
         white-space: nowrap;
     }
     .rpt-td { padding: 6px 12px; }
+    .rpt-table tbody tr:nth-child(even) { background: var(--panel-2, #f5f6f9); }
     .rpt-num { text-align: right; font-variant-numeric: tabular-nums; }
     .rpt-section { padding: 12px 14px; border-top: 1px solid var(--line-2, #c6ccd5); }
     .rpt-section-title {
