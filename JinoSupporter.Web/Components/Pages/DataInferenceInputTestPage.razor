@@ -413,15 +413,15 @@ else
     .dit-q-done .dit-q-detail { color: var(--ok, #1f5fa8); }
     .dit-q-error      { background: var(--crit-wash, #fbedec); }
     .dit-q-error .dit-q-detail { color: var(--crit, #c8342a); font-weight: 600; }
-    .dit-q-duplicate  { background: #fffbeb; }
-    .dit-q-duplicate .dit-q-detail { color: #92400e; font-weight: 600; }
+    .dit-q-duplicate  { background: var(--warn-wash, #fdf4e0); }
+    .dit-q-duplicate .dit-q-detail { color: var(--warn-ink, #92610a); font-weight: 600; }
     .dit-q-force {
         margin-left: 6px;
-        border: 1px solid #fbbf24; background: #fffbeb; color: #92400e;
+        border: 1px solid #fbbf24; background: var(--warn-wash, #fdf4e0); color: var(--warn-ink, #92610a);
         padding: 0 6px; border-radius: 2px; font-size: 9px; font-weight: 700;
         cursor: pointer; line-height: 1.4;
     }
-    .dit-q-force:hover { background: #fef3c7; }
+    .dit-q-force:hover { background: var(--warn-wash, #fdf4e0); }
     .dit-q-pt {
         display: inline-block; margin-left: 6px;
         background: var(--signal-wash, #edf0f4); color: var(--signal, #16202b);
@@ -465,8 +465,8 @@ else
         vertical-align: top;
     }
     .dit-alias-table th { background: var(--panel-3, #eceef2); font-weight: 700; color: var(--ink-2, #4a5461); }
-    .dit-alias-table tr.dit-alias-unmatched { background: #fffbeb; }
-    .dit-alias-table tr.dit-alias-unmatched td:first-child code { color: #b45309; font-weight: 700; }
+    .dit-alias-table tr.dit-alias-unmatched { background: var(--warn-wash, #fdf4e0); }
+    .dit-alias-table tr.dit-alias-unmatched td:first-child code { color: var(--warn-ink, #92610a); font-weight: 700; }
     .dit-alias-samples { font-size: 10px; color: var(--ink-2, #4a5461); }
     .dit-alias-samples > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px; }
     .di-topbar {

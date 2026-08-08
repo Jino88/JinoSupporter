@@ -391,7 +391,7 @@
         white-space: nowrap;
     }
     .daily-history-badge.done { color: var(--ok, #1f5fa8); border-color: var(--ok-wash, #eaf1f9); background: var(--ok-wash, #eaf1f9); }
-    .daily-history-badge.pending { color: #92400e; border-color: #fcd34d; background: #fef3c7; }
+    .daily-history-badge.pending { color: var(--warn-ink, #92610a); border-color: var(--warn-line, #f0cf8a); background: var(--warn-wash, #fdf4e0); }
     .daily-item-name { font-weight: 700; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .daily-item-meta, .daily-muted { font-size: 11px; color: var(--ink-2, #4a5461); }
     .daily-item-badge {
@@ -456,8 +456,8 @@
         align-items: center;
         gap: 8px;
         min-width: 0;
-        border: 1px solid #fcd34d;
-        background: #fffbeb;
+        border: 1px solid var(--warn-line, #f0cf8a);
+        background: var(--warn-wash, #fdf4e0);
         color: #78350f;
         border-radius: 2px;
         padding: 7px 10px;
@@ -474,9 +474,9 @@
     .daily-pending-badge {
         flex: 0 0 auto;
         border-radius: 2px;
-        border: 1px solid #f59e0b;
-        background: #fef3c7;
-        color: #92400e;
+        border: 1px solid var(--warn, #fab219);
+        background: var(--warn-wash, #fdf4e0);
+        color: var(--warn-ink, #92610a);
         padding: 1px 6px;
         font-size: 10px;
         font-weight: 900;

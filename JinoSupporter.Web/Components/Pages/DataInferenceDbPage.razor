@@ -2345,7 +2345,7 @@ else
         border-color: var(--ok-wash, #eaf1f9); background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8);
     }
     .didb-input-test-html .idt-delta-neutral {
-        border-color: #fde68a; background: #fffbeb; color: #92400e;
+        border-color: var(--warn-line, #f0cf8a); background: var(--warn-wash, #fdf4e0); color: var(--warn-ink, #92610a);
     }
     .didb-input-test-html .idt-compare-note {
         margin: 0; color: var(--ink-2, #4a5461); font-size: 11px;
@@ -2447,7 +2447,7 @@ else
     }
     .didb-v-good     { background: #d1fae5; color: var(--ok, #1f5fa8); border: 1px solid #6ee7b7; }
     .didb-v-bad      { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); border: 1px solid #fca5a5; }
-    .didb-v-partial  { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .didb-v-partial  { background: var(--warn-wash, #fdf4e0); color: var(--warn-ink, #92610a); border: 1px solid var(--warn-line, #f0cf8a); }
     .didb-v-neutral  { background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); border: 1px solid var(--line-2, #c6ccd5); }
 
     /* v2 — Evidence table: Excel-grid styling */
@@ -2514,7 +2514,7 @@ else
     .didb-doe th             { background: var(--line, var(--line, #dde1e7)); font-weight: 700; color: var(--ink, #0f1319); font-size: 9px; }
     .didb-doe-ok             { background: #d1fae5; color: var(--ok, #1f5fa8); font-weight: 600; }
     .didb-doe-ng             { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); font-weight: 600; }
-    .didb-doe-borderline     { background: #fef3c7; color: #92400e; font-weight: 600; }
+    .didb-doe-borderline     { background: var(--warn-wash, #fdf4e0); color: var(--warn-ink, #92610a); font-weight: 600; }
     .didb-doe-empty          { background: var(--panel-2, #f5f6f9); color: var(--line-2, #c6ccd5); }
 
     /* v7 Trend list */
@@ -2540,7 +2540,7 @@ else
     .didb-rt-multi   { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
     .didb-rt-doe     { background: #fae8ff; color: #86198f; border-color: #f0abfc; }
     .didb-rt-reli    { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); border-color: #6ee7b7; }
-    .didb-rt-trend   { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .didb-rt-trend   { background: var(--warn-wash, #fdf4e0); color: var(--warn-ink, #92610a); border-color: var(--warn-line, #f0cf8a); }
     .didb-rt-log     { background: var(--panel-3, #eceef2); color: #4b5563; border-color: var(--line-2, #c6ccd5); }
 
     /* v2 — Actions list */
@@ -2643,7 +2643,7 @@ else
     .didb-ai-primary {
         display: inline-flex; align-items: center;
         padding: 2px 9px; border-radius: 2px;
-        background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;
+        background: var(--warn-wash, #fdf4e0); color: var(--warn-ink, #92610a); border: 1px solid var(--warn-line, #f0cf8a);
         font-size: 10px; font-weight: 800; text-transform: uppercase;
     }
     .didb-ai-title {

@@ -110,6 +110,11 @@ a { color: inherit; text-decoration: none; }
   /* Status (fixed, never themed — always paired with icon + label) */
   --ok: #1f5fa8;
   --warn: #fab219;
+  /* Amber at text weight. #fab219 is a signal, not a colour anyone can
+     read a sentence in, which is why the badge and alert rules below
+     used to hardcode a darker one. */
+  --warn-ink: #92610a;
+  --warn-line: #f0cf8a;
   --serious: #ec835a;
   --crit: #c8342a;
   --ok-wash: #eaf1f9;
@@ -185,6 +190,8 @@ a { color: inherit; text-decoration: none; }
   --signal-line: #333c47;
 
   --ok-wash: #14261a;
+  --warn-ink: #f0c268;
+  --warn-line: #6a4f1d;
   --warn-wash: #2b2211;
   --crit-wash: #2d1717;
 
@@ -913,7 +920,7 @@ body {
   border: 1px solid var(--line-2); color: var(--ink-2); background: var(--panel);
 }
 .badge--ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); background: var(--ok-wash); }
-.badge--warn { color: #92610a; border-color: color-mix(in srgb, var(--warn) 45%, transparent); background: var(--warn-wash); }
+.badge--warn { color: var(--warn-ink); border-color: var(--warn-line); background: var(--warn-wash); }
 .badge--crit { color: var(--crit); border-color: color-mix(in srgb, var(--crit) 40%, transparent); background: var(--crit-wash); }
 .badge--sig { color: var(--signal-hot); border-color: var(--signal-line); background: var(--signal-wash); }
 [data-theme="dark"] .badge--warn { color: var(--warn); }
@@ -1113,7 +1120,7 @@ body {
   padding: 10px 13px; font-size: 12px; line-height: 1.55; color: var(--ink-2);
   background: var(--panel);
 }
-.notice--warn { border-left-color: var(--warn); background: var(--warn-wash); color: #7a5208; }
+.notice--warn { border-left-color: var(--warn); background: var(--warn-wash); color: var(--warn-ink); }
 .notice--sig { border-left-color: var(--signal); background: var(--signal-wash); }
 [data-theme="dark"] .notice--warn { color: var(--warn); }
 .notice b { color: var(--ink); font-weight: 650; }
@@ -1218,7 +1225,7 @@ body {
   height: 19px; letter-spacing: .1em;
 }
 .badge--ok   { color: var(--ok);          background: var(--ok-wash); }
-.badge--warn { color: #92610a;            background: var(--warn-wash); }
+.badge--warn { color: var(--warn-ink);    background: var(--warn-wash); }
 .badge--crit { color: var(--crit);        background: var(--crit-wash); }
 .badge--sig  { color: var(--signal-hot);  background: var(--signal-wash); }
 
@@ -1326,7 +1333,7 @@ textarea.form-control { height: auto; padding: 8px 9px; line-height: 1.5; }
   padding: 10px 13px; font-size: 12px; line-height: 1.55;
 }
 .alert-danger  { background: var(--crit-wash);   border-left-color: var(--crit); color: var(--crit); }
-.alert-warning { background: var(--warn-wash);   border-left-color: var(--warn); color: #7a5208; }
+.alert-warning { background: var(--warn-wash);   border-left-color: var(--warn); color: var(--warn-ink); }
 .alert-success { background: var(--ok-wash);     border-left-color: var(--ok);   color: var(--ok); }
 .alert-info,
 .alert-primary { background: var(--signal-wash); border-left-color: var(--signal); color: var(--ink-2); }

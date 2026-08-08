@@ -93,6 +93,11 @@
   /* Status (fixed, never themed — always paired with icon + label) */
   --ok: #1f5fa8;
   --warn: #fab219;
+  /* Amber at text weight. #fab219 is a signal, not a colour anyone can
+     read a sentence in, which is why the badge and alert rules below
+     used to hardcode a darker one. */
+  --warn-ink: #92610a;
+  --warn-line: #f0cf8a;
   --serious: #ec835a;
   --crit: #c8342a;
   --ok-wash: #eaf1f9;
@@ -168,6 +173,8 @@
   --signal-line: #333c47;
 
   --ok-wash: #14261a;
+  --warn-ink: #f0c268;
+  --warn-line: #6a4f1d;
   --warn-wash: #2b2211;
   --crit-wash: #2d1717;
 
@@ -889,7 +896,7 @@
   border: 1px solid var(--line-2); color: var(--ink-2); background: var(--panel);
 }
 .ins .badge--ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); background: var(--ok-wash); }
-.ins .badge--warn { color: #92610a; border-color: color-mix(in srgb, var(--warn) 45%, transparent); background: var(--warn-wash); }
+.ins .badge--warn { color: var(--warn-ink); border-color: var(--warn-line); background: var(--warn-wash); }
 .ins .badge--crit { color: var(--crit); border-color: color-mix(in srgb, var(--crit) 40%, transparent); background: var(--crit-wash); }
 .ins .badge--sig { color: var(--signal-hot); border-color: var(--signal-line); background: var(--signal-wash); }
 .ins[data-theme="dark"] .badge--warn { color: var(--warn); }
@@ -1089,7 +1096,7 @@
   padding: 10px 13px; font-size: 12px; line-height: 1.55; color: var(--ink-2);
   background: var(--panel);
 }
-.ins .notice--warn { border-left-color: var(--warn); background: var(--warn-wash); color: #7a5208; }
+.ins .notice--warn { border-left-color: var(--warn); background: var(--warn-wash); color: var(--warn-ink); }
 .ins .notice--sig { border-left-color: var(--signal); background: var(--signal-wash); }
 .ins[data-theme="dark"] .notice--warn { color: var(--warn); }
 .ins .notice b { color: var(--ink); font-weight: 650; }
@@ -1194,7 +1201,7 @@
   height: 19px !important; letter-spacing: .1em !important;
 }
 .ins .badge--ok { color: var(--ok) !important;          background: var(--ok-wash) !important; }
-.ins .badge--warn { color: #92610a !important;            background: var(--warn-wash) !important; }
+.ins .badge--warn { color: var(--warn-ink) !important;    background: var(--warn-wash) !important; }
 .ins .badge--crit { color: var(--crit) !important;        background: var(--crit-wash) !important; }
 .ins .badge--sig { color: var(--signal-hot) !important;  background: var(--signal-wash) !important; }
 
@@ -1301,7 +1308,7 @@
   padding: 10px 13px !important; font-size: 12px !important; line-height: 1.55 !important;
 }
 .ins .alert-danger { background: var(--crit-wash) !important;   border-left-color: var(--crit) !important; color: var(--crit) !important; }
-.ins .alert-warning { background: var(--warn-wash) !important;   border-left-color: var(--warn) !important; color: #7a5208 !important; }
+.ins .alert-warning { background: var(--warn-wash) !important;   border-left-color: var(--warn) !important; color: var(--warn-ink) !important; }
 .ins .alert-success { background: var(--ok-wash) !important;     border-left-color: var(--ok) !important;   color: var(--ok) !important; }
 .ins .alert-info, .ins .alert-primary { background: var(--signal-wash) !important; border-left-color: var(--signal) !important; color: var(--ink-2) !important; }
 

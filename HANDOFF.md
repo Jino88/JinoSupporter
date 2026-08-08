@@ -2017,3 +2017,19 @@
 - Files: None
 - Verification: 삭제 전 `git worktree list --porcelain`으로 워크트리별 `rev-list --count main..HEAD`와 `status --porcelain`을 전수 측정해 0|0인 것만 골랐다. `git check-ignore -v`로 `bin/`·`obj/`가 ignore 대상임을, `.codex-verify`가 아님을 확인. 삭제 후 `git worktree list` 11개, PowerShell 재측정 11.17GB. **공유 체크아웃의 미커밋 3파일(`HANDOFF.md`, `QrBakoDataPage.razor`, `QrBakoDataService.cs`)은 이 작업 이전부터 있던 것이다** — 이번 삭제는 gitignore 대상과 등록 해제된 워크트리 디렉터리만 건드렸다.
 - Next: 근본 해결은 `.codex-verify`를 `git rm --cached` 하고 `.gitignore`에 추가하는 것이다(추적 5018파일, 현재 1.73GB + 남은 워크트리 사본). main에 커밋이 필요하고 기존 워크트리 10개가 각각 dirty로 표시되므로, 그 워크트리들을 정리한 뒤에 하는 편이 낫다. 미병합 3개(s10·s12·s16)는 먼저 병합 여부를 판단해야 한다.
+
+## 2026-08-08 08:45 - [UI][ADD] SheetDesign: 팔레트에 경고(앰버) 항목 추가
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: SheetDesign
+- Change: ADD
+- Prompt: "확인은 최종적으로 내가 할테니 너는 계속해"
+- Answer: 앞선 패스에서 앰버를 "체계에 대응 색이 없다"며 보류했는데, 조사해 보니 그것은 페이지 문제가 아니라 팔레트에 항목이 빠진 것이었다. --warn(#fab219)이 신호용 밝은 노랑뿐이라 글자로 쓸 수 없었고, 그래서 디자인 시스템 자신이 #92610a·#7a5208 을 하드코딩해 덮고 있었다. 토큰을 추가해 양쪽을 정리했다.
+- Applied: (1) instrument.css 에 --warn-ink(#92610a)와 --warn-line(#f0cf8a) 추가, 다크 테마에는 #f0c268·#6a4f1d (2) 디자인 시스템이 하드코딩하던 badge--warn·notice--warn·alert-warning 4곳을 토큰 참조로 (3) 페이지 앰버 54곳을 --warn-ink/--warn-line/--warn-wash/--warn 으로, 11개 파일 (4) SHEET_PORTING_CONTRACT.md 를 "색의 의미는 셋"에서 넷으로 갱신하고 앰버가 나중에 추가된 경위를 기록
+- Completed: 경고 상태가 팔레트 안에 자리를 갖고, 다크 테마에도 따라간다.
+- Decisions: 앰버를 빨강으로 접지 않았다. 이 앱에는 "대기 중", "검토 필요" 같은 상태가 실제로 있고 그것을 규격 이탈과 같은 색으로 칠하면 구분이 사라진다. 세 색으로 억지로 줄이는 대신 팔레트를 넓히는 쪽이 옳았다.
+- Files: JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css, instrument.scoped.css, SHEET_PORTING_CONTRACT.md, Components 아래 .razor 11개
+- Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일. scope-css.js check 로 생성물 동기 확인. 작업 중 라이트 테마 토큰 정의가 CRLF 매칭 실패로 누락된 채 참조만 들어가는 사고가 있었고, 스코프 출력 전체에서 정의 없는 var() 참조를 기계적으로 훑어 발견·수정했다(남은 --d 는 목업이 인라인으로 주는 값이며 var(--d, 0) 폴백이 있어 정상). 서버 재기동 완료.
+- Next: 기계적 정리는 소진됐다. 남은 것은 화면별 레이아웃 이식(시안의 기준선 편차 막대 같은 구조)이며 사용자 확인 결과에 따라 우선순위를 정한다.
