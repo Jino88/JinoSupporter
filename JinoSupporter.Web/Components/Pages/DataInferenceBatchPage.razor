@@ -1,4 +1,4 @@
-﻿@page "/data-inference/batch"
+@page "/data-inference/batch"
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 @inject WebRepository Repo
@@ -400,10 +400,10 @@ else
     .dib-root td.n { text-align: right; font-variant-numeric: tabular-nums; }
 
     .dib-map-inline {
-        border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8;
+        border: 1px solid var(--ok-wash, #eaf1f9); background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8);
         border-radius: 2px; padding: 2px 8px; font-size: 11px; font-weight: 700;
     }
-    .dib-map-inline:hover { background: #dbeafe; }
+    .dib-map-inline:hover { background: var(--ok-wash, #eaf1f9); }
     .dib-map-panel {
         width: 360px; flex: 0 0 360px; min-height: 0; overflow: auto;
         background: var(--panel, #fff); border-left: 1px solid var(--line, var(--line, #dde1e7)); padding: 12px;
@@ -430,7 +430,7 @@ else
         border-radius: 2px; padding: 6px 8px; font-size: 12px; font-weight: 700;
     }
     .dib-map-candidate:hover { background: var(--panel-3, #eceef2); }
-    .dib-map-candidate.active { border-color: var(--signal, #16202b); background: var(--signal-wash, #edf0f4); color: #1e3a8a; }
+    .dib-map-candidate.active { border-color: var(--signal, #16202b); background: var(--signal-wash, #edf0f4); color: var(--ok, #1f5fa8); }
     .dib-map-alias { display: block; margin-top: 1px; font-size: 10px; color: var(--ink-2, #4a5461); font-weight: 700; }
     .dib-map-candidate-count {
         min-width: 24px; text-align: center; border-radius: 2px; padding: 1px 6px;
@@ -483,7 +483,7 @@ else
     .dib-badge-done    { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
     .dib-badge-pending { background: var(--warn-wash, #fdf4e0); color: var(--warn-ink, #92610a); }
     .dib-badge-skip    { background: var(--line, var(--line, #dde1e7)); color: var(--ink-2, #4a5461); }
-    .dib-badge-run     { background: #dbeafe; color: #1d4ed8; }
+    .dib-badge-run     { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
     .dib-badge-ok      { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
     .dib-badge-err     { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); }
     .dib-badge-stop    { background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); }
@@ -499,7 +499,7 @@ else
     }
     .dib-filter-check input { margin: 0; }
     .dib-filter-check:has(input:checked) {
-        border-color: #2563eb; color: #1d4ed8; background: #eff6ff;
+        border-color: var(--ok, #1f5fa8); color: var(--ok, #1f5fa8); background: var(--ok-wash, #eaf1f9);
     }
 
     .dib-overlay {
@@ -526,7 +526,7 @@ else
         flex: 1; overflow: auto; margin: 0; padding: 14px 16px;
         font-size: 12px; color: var(--ink, #0f1319); background: var(--panel-2, #f5f6f9);
         white-space: pre-wrap; word-break: break-word;
-        font-family: var(--mono, Consolas, monospace);
+        font-family: var(--mono);
     }
     .dib-error-foot {
         display: flex; gap: 8px; justify-content: flex-end;

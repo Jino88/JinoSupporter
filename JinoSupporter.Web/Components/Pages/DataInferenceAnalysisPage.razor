@@ -1,4 +1,4 @@
-﻿@page "/data-inference/analysis"
+@page "/data-inference/analysis"
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 @inject WebRepository Repo
@@ -164,14 +164,14 @@
 <style>
     .dian-root {
         flex: 1; min-height: 0; display: flex; flex-direction: column;
-        overflow: hidden; background: #f6f7fb; color: var(--ink, #0f1319);
+        overflow: hidden; background: var(--panel-2, #f5f6f9); color: var(--ink, #0f1319);
     }
     .dian-header {
         display: flex; align-items: center; gap: 10px; padding: 10px 14px;
         background: var(--panel, #fff); border-bottom: 1px solid var(--line, #dde1e7); flex-shrink: 0;
     }
     .dian-title { font-size: 15px; font-weight: 750; }
-    .dian-subtitle { font-size: 11px; color: #667085; margin-top: 2px; }
+    .dian-subtitle { font-size: 11px; color: var(--ink-3, #7f8a98); margin-top: 2px; }
     .dian-spacer { flex: 1; }
     .dian-search { width: 260px; }
     .dian-statbar {
@@ -180,9 +180,9 @@
     }
     .dian-stat {
         font-size: 11px; font-weight: 650; padding: 2px 9px; border-radius: 2px;
-        background: var(--panel-3, #eceef2); color: #475467;
+        background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461);
     }
-    .dian-stat-active { background: #dbeafe; color: #1d4ed8; }
+    .dian-stat-active { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
     .dian-workspace {
         flex: 1; min-height: 0; display: grid;
         grid-template-columns: minmax(210px, 260px) minmax(300px, 400px) minmax(0, 1fr);
@@ -196,28 +196,28 @@
     .dian-pane-head {
         height: 42px; display: flex; align-items: center; justify-content: space-between;
         padding: 0 12px; border-bottom: 1px solid var(--line, #dde1e7); font-size: 12px;
-        color: #344054; background: #fbfcfe;
+        color: var(--ink-2, #4a5461); background: var(--panel-2, #f5f6f9);
     }
     .dian-link-btn {
-        border: 0; background: transparent; color: #2563eb; font-size: 11px; font-weight: 700;
+        border: 0; background: transparent; color: var(--ok, #1f5fa8); font-size: 11px; font-weight: 700;
         cursor: pointer;
     }
-    .dian-link-btn:disabled { color: #98a2b3; cursor: default; }
+    .dian-link-btn:disabled { color: var(--ink-3, #7f8a98); cursor: default; }
     .dian-tags-list, .dian-file-list { height: calc(100% - 42px); overflow: auto; padding: 8px; }
     .dian-tag-btn {
         width: 100%; min-height: 30px; display: flex; align-items: center; justify-content: space-between;
         gap: 8px; padding: 5px 8px; margin-bottom: 5px; border: 1px solid var(--line, #dde1e7);
-        background: var(--panel, #fff); color: #344054; border-radius: 2px; text-align: left;
+        background: var(--panel, #fff); color: var(--ink-2, #4a5461); border-radius: 2px; text-align: left;
         font-size: 11px; font-weight: 650; cursor: pointer;
     }
     .dian-tag-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .dian-tag-btn em {
-        min-width: 26px; text-align: right; font-style: normal; color: #667085;
+        min-width: 26px; text-align: right; font-style: normal; color: var(--ink-3, #7f8a98);
         font-variant-numeric: tabular-nums;
     }
-    .dian-tag-btn:hover, .dian-file-btn:hover { background: var(--panel-2, #f5f6f9); border-color: #bfd4ff; }
+    .dian-tag-btn:hover, .dian-file-btn:hover { background: var(--panel-2, #f5f6f9); border-color: var(--ok-wash, #eaf1f9); }
     .dian-tag-btn.active {
-        background: #eaf2ff; border-color: var(--signal, #16202b); color: #1d4ed8;
+        background: var(--ok-wash, #eaf1f9); border-color: var(--signal, #16202b); color: var(--ok, #1f5fa8);
     }
     .dian-file-btn {
         display: flex; flex-direction: column; gap: 3px; width: 100%; padding: 8px 9px;
@@ -230,33 +230,33 @@
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .dian-file-title {
-        font-size: 11px; color: #475467; line-height: 1.35;
+        font-size: 11px; color: var(--ink-2, #4a5461); line-height: 1.35;
         display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
     .dian-file-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
     .dian-file-meta span {
-        font-size: 10px; color: #475467; background: var(--panel-3, #eceef2); padding: 1px 6px; border-radius: 2px;
+        font-size: 10px; color: var(--ink-2, #4a5461); background: var(--panel-3, #eceef2); padding: 1px 6px; border-radius: 2px;
     }
     .dian-excel-head {
         min-height: 58px; display: flex; align-items: center; justify-content: space-between;
         gap: 12px; padding: 9px 12px; border-bottom: 1px solid var(--line, #dde1e7); background: var(--panel, #fff);
     }
     .dian-excel-file { font-size: 13px; font-weight: 750; color: var(--ink, #0f1319); }
-    .dian-excel-title { font-size: 11px; color: #667085; margin-top: 2px; }
+    .dian-excel-title { font-size: 11px; color: var(--ink-3, #7f8a98); margin-top: 2px; }
     .dian-view-toggle { display: flex; gap: 4px; }
     .dian-view-btn {
-        border: 1px solid #d0d5dd; background: var(--panel, #fff); color: #475467; border-radius: 2px;
+        border: 1px solid var(--line-2, #c6ccd5); background: var(--panel, #fff); color: var(--ink-2, #4a5461); border-radius: 2px;
         padding: 3px 10px; font-size: 11px; font-weight: 650; cursor: pointer;
     }
     .dian-view-btn.active { background: var(--signal, #16202b); color: var(--panel, #fff); border-color: var(--signal, #16202b); }
     .dian-view-btn:disabled { opacity: .45; cursor: default; }
     .dian-selected-tags {
         display: flex; flex-wrap: wrap; gap: 5px; padding: 7px 12px;
-        border-bottom: 1px solid var(--line, #dde1e7); background: #fbfcfe;
+        border-bottom: 1px solid var(--line, #dde1e7); background: var(--panel-2, #f5f6f9);
     }
     .dian-mini-tag {
         border: 0; border-radius: 2px; padding: 2px 7px; font-size: 10px;
-        font-weight: 650; background: var(--signal-wash, #edf0f4); color: #3440a0; cursor: pointer;
+        font-weight: 650; background: var(--signal-wash, #edf0f4); color: var(--signal, #16202b); cursor: pointer;
     }
     .dian-table-preview { flex: 1; min-height: 0; overflow: auto; padding: 10px 12px; }
     .dian-sheet-name {
@@ -267,7 +267,7 @@
     .dian-sheet-scroll { overflow: auto; margin-bottom: 16px; }
     .dian-preview-table {
         border-collapse: collapse; width: max-content; min-width: 100%;
-        background: var(--panel, #fff); font-size: 11px; font-family: var(--mono, Consolas, monospace);
+        background: var(--panel, #fff); font-size: 11px; font-family: var(--mono);
     }
     .dian-preview-table td {
         border: 1px solid var(--line, #dde1e7); padding: 2px 6px;
@@ -276,11 +276,11 @@
     }
     .dian-excel-text {
         flex: 1; min-height: 0; overflow: auto; margin: 0; padding: 10px 12px;
-        background: #fbfcfe; color: #344054; font-size: 11px; line-height: 1.45;
+        background: var(--panel-2, #f5f6f9); color: var(--ink-2, #4a5461); font-size: 11px; line-height: 1.45;
         white-space: pre-wrap; word-break: break-word;
     }
     .dian-empty {
-        padding: 60px; text-align: center; color: #98a2b3; font-size: 14px; line-height: 1.7;
+        padding: 60px; text-align: center; color: var(--ink-3, #7f8a98); font-size: 14px; line-height: 1.7;
     }
     .dian-empty-fill { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
 </style>

@@ -1,4 +1,4 @@
-﻿@page "/data-inference-test"
+@page "/data-inference-test"
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 @using ClosedXML.Excel
@@ -45,7 +45,7 @@
     }
     <div class="dit-queue-drop">
         <InputFile OnChange="OnQueueFilesSelected" multiple accept=".xlsx,.xlsm"
-                   style="font-size:11px; color:#64748b; display:block;" />
+                   style="font-size:11px; color:var(--ink-3, #7f8a98); display:block;" />
         <small class="text-muted d-block mt-1" style="font-size:10px;">
             Drop already-unlocked .xlsx / .xlsm — each becomes its own dataset.
         </small>
@@ -364,21 +364,21 @@ else
     .dit-queue-progress { padding: 4px 10px 0; flex-shrink: 0; }
     .dit-queue-drop {
         padding: 8px 10px; border-bottom: 1px dashed var(--line, var(--line, #dde1e7));
-        flex-shrink: 0; background: #fafbfc;
+        flex-shrink: 0; background: var(--panel-2, #f5f6f9);
     }
     .dit-dup-panel {
-        background: #fff7ed; border-bottom: 1px dashed #fed7aa;
+        background: var(--warn-wash, #fdf4e0); border-bottom: 1px dashed var(--warn-line, #f0cf8a);
         font-size: 11px; flex-shrink: 0;
     }
     .dit-dup-head {
         display: flex; align-items: center; gap: 4px;
-        padding: 5px 10px; cursor: pointer; color: #9a3412; font-weight: 600;
+        padding: 5px 10px; cursor: pointer; color: var(--warn-ink, #92610a); font-weight: 600;
     }
-    .dit-dup-head:hover { background: #ffedd5; }
+    .dit-dup-head:hover { background: var(--warn-wash, #fdf4e0); }
     .dit-dup-list {
         list-style: none; margin: 0; padding: 2px 10px 6px 24px;
         max-height: 160px; overflow-y: auto;
-        font-size: 10px; color: #7c2d12;
+        font-size: 10px; color: var(--warn-ink, #92610a);
     }
     .dit-dup-list li { padding: 1px 0; }
     .dit-queue-list {
@@ -405,10 +405,10 @@ else
     .dit-q-queued     { }
     .dit-q-staging,
     .dit-q-extracting,
-    .dit-q-saving     { background: #eff6ff; }
+    .dit-q-saving     { background: var(--ok-wash, #eaf1f9); }
     .dit-q-staging .dit-q-detail,
     .dit-q-extracting .dit-q-detail,
-    .dit-q-saving .dit-q-detail { color: #1d4ed8; font-weight: 600; }
+    .dit-q-saving .dit-q-detail { color: var(--ok, #1f5fa8); font-weight: 600; }
     .dit-q-done       { background: var(--ok-wash, #eaf1f9); }
     .dit-q-done .dit-q-detail { color: var(--ok, #1f5fa8); }
     .dit-q-error      { background: var(--crit-wash, #fbedec); }
@@ -417,7 +417,7 @@ else
     .dit-q-duplicate .dit-q-detail { color: var(--warn-ink, #92610a); font-weight: 600; }
     .dit-q-force {
         margin-left: 6px;
-        border: 1px solid #fbbf24; background: var(--warn-wash, #fdf4e0); color: var(--warn-ink, #92610a);
+        border: 1px solid var(--warn, #fab219); background: var(--warn-wash, #fdf4e0); color: var(--warn-ink, #92610a);
         padding: 0 6px; border-radius: 2px; font-size: 9px; font-weight: 700;
         cursor: pointer; line-height: 1.4;
     }
@@ -513,7 +513,7 @@ else
         padding: 8px 10px;
         min-height: 180px;
     }
-    .dit-col-drm    { background: #fff7ed; border-color: #fed7aa; }
+    .dit-col-drm    { background: var(--warn-wash, #fdf4e0); border-color: var(--warn-line, #f0cf8a); }
     .dit-col-images { /* default white */ }
     .dit-col-backup { /* default white */ }
 
@@ -522,7 +522,7 @@ else
         font-size: 12px; font-weight: 600; color: var(--ink-2, #4a5461);
         margin-bottom: 6px;
     }
-    .dit-col-drm .dit-col-head { color: #9a3412; }
+    .dit-col-drm .dit-col-head { color: var(--warn-ink, #92610a); }
     .dit-col-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
 
     /* Full-width raw text section below trio */
@@ -558,7 +558,7 @@ else
     .dit-table-wrap  { overflow-x: auto; margin-bottom: 4px; }
     .dit-preview-table {
         border-collapse: collapse; font-size: 11px; width: max-content;
-        font-family: var(--mono, Consolas, monospace);
+        font-family: var(--mono);
     }
     .dit-preview-table td {
         border: 1px solid var(--line, var(--line, #dde1e7)); padding: 2px 6px;
@@ -592,16 +592,16 @@ else
     }
     .dit-excel-wrap { overflow: visible; margin: 0 8px 12px; }
     .dit-excel-grid th, .dit-excel-grid td {
-        border: 1px solid #d8dee9; height: 22px; padding: 2px 6px;
+        border: 1px solid var(--line, #dde1e7); height: 22px; padding: 2px 6px;
     }
     .dit-excel-grid thead th {
         position: sticky; top: 36px; z-index: 4;
-        background: #edf2f7; color: var(--ink-2, #4a5461); text-align: center;
+        background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); text-align: center;
         font-weight: 700;
     }
     .dit-excel-grid .dit-excel-row {
         position: sticky; left: 0; z-index: 3;
-        background: #edf2f7; color: var(--ink-2, #4a5461); text-align: right;
+        background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); text-align: right;
         font-weight: 600; min-width: 42px;
     }
     .dit-excel-grid .dit-excel-corner {
@@ -612,8 +612,8 @@ else
     /* DRM chip — used inside dit-col-drm */
     .di-drm-chip {
         display: inline-flex; align-items: center; gap: 6px;
-        background: var(--panel, #fff); border: 1px solid #fed7aa; border-radius: 2px;
-        padding: 2px 10px; font-size: 11px; color: #7c2d12; margin-top: 4px;
+        background: var(--panel, #fff); border: 1px solid var(--warn-line, #f0cf8a); border-radius: 2px;
+        padding: 2px 10px; font-size: 11px; color: var(--warn-ink, #92610a); margin-top: 4px;
         max-width: 100%;
     }
     .di-drm-chip .di-file-name { max-width: 200px; }
@@ -623,7 +623,7 @@ else
     .di-drm-log summary { cursor: pointer; color: var(--ink-2, #4a5461); }
     .di-drm-log-body {
         max-height: 120px; overflow: auto;
-        font-family: var(--mono, Consolas, monospace); font-size: 10px;
+        font-family: var(--mono); font-size: 10px;
         background: var(--ink, #0f1319); color: var(--line-2, #c6ccd5);
         padding: 6px 8px; border-radius: 2px; margin-top: 4px;
     }
@@ -637,12 +637,12 @@ else
     .di-text-area {
         flex: 1 1 auto; min-height: 160px;
         border: 1px solid var(--line-2, #c6ccd5); border-radius: 2px;
-        padding: 8px 10px; font-family: var(--mono, Consolas, monospace);
+        padding: 8px 10px; font-family: var(--mono);
         font-size: 11px; color: var(--ink-2, #4a5461); background: var(--panel, #fff);
         resize: vertical; outline: none; white-space: pre; overflow: auto;
     }
     .di-text-area:focus {
-        border-color: #93c5fd;    }
+        border-color: var(--ok-wash, #eaf1f9);    }
     .di-drop-zone {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         border: 2px dashed var(--line-2, #c6ccd5); border-radius: 2px; padding: 28px 20px;
@@ -665,7 +665,7 @@ else
     .di-thumb img    { width: 100%; height: 100%; object-fit: cover; }
     .di-thumb-del    {
         position: absolute; top: 2px; right: 2px; width: 18px; height: 18px;
-        border-radius: 50%; border: none; background: rgba(220,38,38,.85);
+        border-radius:2px; border: none; background: rgba(220,38,38,.85);
         color: var(--panel, #fff); font-size: 9px; line-height: 18px; text-align: center;
         cursor: pointer; padding: 0; display: none;
     }
@@ -696,7 +696,7 @@ else
     .di-file-name    { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
     .di-file-size    { color: var(--ink-3, #7f8a98); font-size: 10px; }
     .di-file-del     {
-        width: 18px; height: 18px; border-radius: 50%; border: none;
+        width: 18px; height: 18px; border-radius:2px; border: none;
         background: transparent; color: var(--ink-3, #7f8a98); font-size: 10px; cursor: pointer; padding: 0;
     }
     .di-file-del:hover { background: var(--crit, #c8342a); color: var(--panel, #fff); }
@@ -710,7 +710,7 @@ else
     }
     .bf-drop-zone:hover      { border-color: var(--ink-3, #7f8a98); color: var(--ink-2, #4a5461); }
     .bf-drop-zone.bf-drop-active {
-        border-color: #3b82f6; background: #dbeafe; color: #1d4ed8;
+        border-color: var(--ok, #1f5fa8); background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8);
     }
     .bf-drop-icon { font-size: 14px; }
 
@@ -752,7 +752,7 @@ else
     .di-table tbody tr:hover { background: var(--panel-2, #f5f6f9); }
     .di-row-del-cell { text-align: center; padding: 2px !important; }
     .di-row-del {
-        width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--crit-wash, #fbedec);
+        width: 22px; height: 22px; border-radius:2px; border: 1px solid var(--crit-wash, #fbedec);
         background: var(--panel, #fff); color: var(--crit, #c8342a); font-size: 11px; font-weight: 700;
         line-height: 1; cursor: pointer; padding: 0; transition: all .12s;
     }

@@ -1,4 +1,4 @@
-﻿@page "/data-inference"
+@page "/data-inference"
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 @inject WebRepository Repo
@@ -87,12 +87,12 @@
                 }
                 <div class="di-thumb-add" @onclick:stopPropagation="true" @onclick="EnablePaste">
                     <div style="font-size:22px; line-height:1;">＋</div>
-                    <div style="font-size:10px; color:#94a3b8; margin-top:3px;">Paste more</div>
+                    <div style="font-size:10px; color:var(--ink-3, #7f8a98); margin-top:3px;">Paste more</div>
                 </div>
             </div>
         }
         <div class="di-upload-row">
-            <InputFile OnChange="OnFilesSelected" multiple accept="image/*" style="font-size:12px; color:#64748b;" />
+            <InputFile OnChange="OnFilesSelected" multiple accept="image/*" style="font-size:12px; color:var(--ink-3, #7f8a98);" />
             <span class="di-img-count">@_images.Count image(s)</span>
         </div>
     </div>
@@ -133,7 +133,7 @@
             }
         </div>
     }
-    <InputFile OnChange="OnBackupFilesSelected" multiple style="font-size:12px; color:#64748b; margin-top:4px;" />
+    <InputFile OnChange="OnBackupFilesSelected" multiple style="font-size:12px; color:var(--ink-3, #7f8a98); margin-top:4px;" />
 </div>
 
 <!-- ── Results ──────────────────────────────────────────────────────────────── -->
@@ -251,12 +251,12 @@
     .di-text-area {
         flex: 1 1 auto; min-height: 160px;
         border: 1px solid var(--line-2, #c6ccd5); border-radius: 2px;
-        padding: 8px 10px; font-family: var(--mono, Consolas, monospace);
+        padding: 8px 10px; font-family: var(--mono);
         font-size: 11px; color: var(--ink-2, #4a5461); background: var(--panel, #fff);
         resize: vertical; outline: none; white-space: pre; overflow: auto;
     }
     .di-text-area:focus {
-        border-color: #93c5fd;    }
+        border-color: var(--ok-wash, #eaf1f9);    }
     .di-image-section {
         flex-shrink: 0; padding: 10px 14px 6px;
         background: var(--panel, #fff); border-bottom: 1px solid var(--line, var(--line, #dde1e7));
@@ -283,7 +283,7 @@
     .di-thumb img    { width: 100%; height: 100%; object-fit: cover; }
     .di-thumb-del    {
         position: absolute; top: 2px; right: 2px; width: 18px; height: 18px;
-        border-radius: 50%; border: none; background: rgba(220,38,38,.85);
+        border-radius:2px; border: none; background: rgba(220,38,38,.85);
         color: var(--panel, #fff); font-size: 9px; line-height: 18px; text-align: center;
         cursor: pointer; padding: 0; display: none;
     }
@@ -320,7 +320,7 @@
     .di-file-name    { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
     .di-file-size    { color: var(--ink-3, #7f8a98); font-size: 10px; }
     .di-file-del     {
-        width: 18px; height: 18px; border-radius: 50%; border: none;
+        width: 18px; height: 18px; border-radius:2px; border: none;
         background: transparent; color: var(--ink-3, #7f8a98); font-size: 10px; cursor: pointer; padding: 0;
     }
     .di-file-del:hover { background: var(--crit, #c8342a); color: var(--panel, #fff); }
@@ -334,7 +334,7 @@
     }
     .bf-drop-zone:hover      { border-color: var(--ink-3, #7f8a98); color: var(--ink-2, #4a5461); }
     .bf-drop-zone.bf-drop-active {
-        border-color: #3b82f6; background: #dbeafe; color: #1d4ed8;
+        border-color: var(--ok, #1f5fa8); background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8);
     }
     .bf-drop-icon { font-size: 14px; }
 
@@ -376,7 +376,7 @@
     .di-table tbody tr:hover { background: var(--panel-2, #f5f6f9); }
     .di-row-del-cell { text-align: center; padding: 2px !important; }
     .di-row-del {
-        width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--crit-wash, #fbedec);
+        width: 22px; height: 22px; border-radius:2px; border: 1px solid var(--crit-wash, #fbedec);
         background: var(--panel, #fff); color: var(--crit, #c8342a); font-size: 11px; font-weight: 700;
         line-height: 1; cursor: pointer; padding: 0; transition: all .12s;
     }

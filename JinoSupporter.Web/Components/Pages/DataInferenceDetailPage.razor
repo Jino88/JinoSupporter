@@ -1,4 +1,4 @@
-﻿@page "/data-inference/detail"
+@page "/data-inference/detail"
 @rendermode InteractiveServer
 @inject WebRepository Repo
 
@@ -555,8 +555,8 @@ else
 
 <style>
     .didet-root {
-        min-height: 100vh; background: var(--panel-2, #f5f6f9); padding: 20px 24px;
-        font-family: 'Segoe UI', sans-serif;
+        min-height: 0; background: var(--panel-2, #f5f6f9); padding: 20px 24px;
+        font-family: var(--sans);
     }
     .didet-empty { padding: 60px; text-align: center; color: var(--ink-3, #7f8a98); font-size: 14px; }
     .didet-header {
@@ -617,8 +617,8 @@ else
         padding: 3px 12px; border-radius: 2px; white-space: nowrap;
         text-transform: uppercase;
     }
-    .didet-v-good     { background: #d1fae5; color: var(--ok, #1f5fa8); border: 1px solid #6ee7b7; }
-    .didet-v-bad      { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); border: 1px solid #fca5a5; }
+    .didet-v-good     { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); border: 1px solid var(--ok-wash, #eaf1f9); }
+    .didet-v-bad      { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); border: 1px solid var(--crit-wash, #fbedec); }
     .didet-v-partial  { background: var(--warn-wash, #fdf4e0); color: var(--warn-ink, #92610a); border: 1px solid var(--warn-line, #f0cf8a); }
     .didet-v-neutral  { background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); border: 1px solid var(--line-2, #c6ccd5); }
     .didet-card-conclusion {
@@ -728,8 +728,8 @@ else
         padding: 3px 6px; border-radius: 2px;
         background: var(--panel, #fff); border: 1px solid var(--line, var(--line, #dde1e7));
     }
-    .didet-ev-comp.didet-comp-best     { background: var(--ok-wash, #eaf1f9); border-color: #6ee7b7; }
-    .didet-ev-comp.didet-comp-worst    { background: var(--crit-wash, #fbedec); border-color: #fca5a5; }
+    .didet-ev-comp.didet-comp-best     { background: var(--ok-wash, #eaf1f9); border-color: var(--ok-wash, #eaf1f9); }
+    .didet-ev-comp.didet-comp-worst    { background: var(--crit-wash, #fbedec); border-color: var(--crit-wash, #fbedec); }
     .didet-ev-comp.didet-comp-baseline { border-left: 3px solid var(--signal, #16202b); }
     .didet-ev-comp-label     { font-weight: 600; color: var(--ink, #0f1319); min-width: 100px; }
     .didet-ev-comp-val       { color: var(--ink, #0f1319); }
@@ -739,7 +739,7 @@ else
         text-transform: uppercase; letter-spacing: .03em; margin-left: auto;
     }
     .didet-ev-comp-flag.baseline { background: var(--signal-wash, #edf0f4); color: var(--signal, #16202b); }
-    .didet-ev-comp-flag.best     { background: #d1fae5; color: var(--ok, #1f5fa8); }
+    .didet-ev-comp-flag.best     { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
     .didet-ev-comp-flag.worst    { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); }
 
     /* v7 DOE 2-D grid */
@@ -751,7 +751,7 @@ else
     }
     .didet-doe th             { background: var(--line, var(--line, #dde1e7)); font-weight: 700; color: var(--ink, #0f1319); font-size: 10px; }
     .didet-doe-cell           { color: var(--ink, #0f1319); }
-    .didet-doe-ok             { background: #d1fae5; color: var(--ok, #1f5fa8); font-weight: 600; }
+    .didet-doe-ok             { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); font-weight: 600; }
     .didet-doe-ng             { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); font-weight: 600; }
     .didet-doe-borderline     { background: var(--warn-wash, #fdf4e0); color: var(--warn-ink, #92610a); font-weight: 600; }
     .didet-doe-empty          { background: var(--panel-2, #f5f6f9); color: var(--line-2, #c6ccd5); }
@@ -776,11 +776,11 @@ else
         text-transform: uppercase; letter-spacing: .04em;
         background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); border: 1px solid var(--line-2, #c6ccd5);
     }
-    .didet-rt-multi   { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
-    .didet-rt-doe     { background: #fae8ff; color: #86198f; border-color: #f0abfc; }
-    .didet-rt-reli    { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); border-color: #6ee7b7; }
+    .didet-rt-multi   { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); border-color: var(--ok, #1f5fa8); }
+    .didet-rt-doe     { background: var(--signal-wash, #edf0f4); color: var(--signal, #16202b); border-color: var(--signal-line, #c3cad3); }
+    .didet-rt-reli    { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); border-color: var(--ok-wash, #eaf1f9); }
     .didet-rt-trend   { background: var(--warn-wash, #fdf4e0); color: var(--warn-ink, #92610a); border-color: var(--warn-line, #f0cf8a); }
-    .didet-rt-log     { background: var(--panel-3, #eceef2); color: #4b5563; border-color: var(--line-2, #c6ccd5); }
+    .didet-rt-log     { background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); border-color: var(--line-2, #c6ccd5); }
 
     /* v2 — Actions list (priority-ordered) */
     .didet-actions {
@@ -791,9 +791,9 @@ else
         display: flex; gap: 8px; padding: 4px 0; align-items: baseline;
     }
     .didet-actions li + li { border-top: 1px dashed var(--line, var(--line, #dde1e7)); }
-    .didet-action-kind     { flex-shrink: 0; width: 18px; font-weight: 700; color: #2563eb; }
+    .didet-action-kind     { flex-shrink: 0; width: 18px; font-weight: 700; color: var(--ok, #1f5fa8); }
     .didet-action-text     { flex: 1; }
-    .didet-action-investigate .didet-action-kind { color: #7c3aed; }
+    .didet-action-investigate .didet-action-kind { color: var(--signal, #16202b); }
     .didet-action-risk        .didet-action-kind { color: var(--crit, #c8342a); }
     .didet-action-risk        .didet-action-text { color: var(--crit, #c8342a); }
 
@@ -818,10 +818,10 @@ else
     .didet-card-list li::before {
         content: "•"; position: absolute; left: 4px; color: var(--ink-3, #7f8a98);
     }
-    .didet-card-actions { color: #1d4ed8; }
-    .didet-card-actions li::before { content: "→"; color: #2563eb; }
+    .didet-card-actions { color: var(--ok, #1f5fa8); }
+    .didet-card-actions li::before { content: "→"; color: var(--ok, #1f5fa8); }
     .didet-show-details {
-        background: transparent; border: none; color: #6366f1;
+        background: transparent; border: none; color: var(--signal, #16202b);
         font-size: 11px; font-weight: 600; cursor: pointer; padding: 4px 0;
         margin-top: 4px;
     }
@@ -842,7 +842,7 @@ else
         background: var(--panel-2, #f5f6f9); border-left: 3px solid var(--line-2, #c6ccd5); border-radius: 2px;
     }
     /* Conclusion gets a punchier callout — the headline of the report */
-    .didet-field-conclusion .didet-field-label { color: #1e3a8a; }
+    .didet-field-conclusion .didet-field-label { color: var(--ok, #1f5fa8); }
     .didet-conclusion-body {
         font-size: 14px !important; font-weight: 600; color: var(--ink, #0f1319) !important;
         background: var(--signal-wash, #edf0f4); padding: 8px 12px; border-radius: 2px;
@@ -850,11 +850,11 @@ else
     }
     /* Comparison setup — orange tint to flag baseline/variant */
     .didet-field-setup .didet-bullet-block {
-        background: #fff7ed; border-left-color: #fb923c;
+        background: var(--warn-wash, #fdf4e0); border-left-color: var(--warn, #fab219);
     }
     /* Effect direction — green/red would need parsing; leave a neutral accent */
     .didet-field-effect .didet-bullet-block {
-        background: var(--ok-wash, #eaf1f9); border-left-color: #10b981;
+        background: var(--ok-wash, #eaf1f9); border-left-color: var(--ok, #1f5fa8);
         font-weight: 600;
     }
 
@@ -929,7 +929,7 @@ else
     .didet-viewer img { max-width: 94vw; max-height: 92vh; object-fit: contain; cursor: auto; }
     .didet-viewer-close {
         position: absolute; top: 16px; right: 20px; width: 36px; height: 36px;
-        border-radius: 50%; border: none; background: rgba(255,255,255,.2);
+        border-radius:2px; border: none; background: rgba(255,255,255,.2);
         color: var(--panel, #fff); font-size: 18px; cursor: pointer;
     }
 </style>
