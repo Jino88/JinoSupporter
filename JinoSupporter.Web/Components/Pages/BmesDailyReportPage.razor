@@ -1,4 +1,4 @@
-@page "/bmes/daily-report"
+﻿@page "/bmes/daily-report"
 @rendermode InteractiveServer
 @attribute [Authorize]
 @using System.Globalization
@@ -216,7 +216,7 @@
                                                                       stroke="#94a3b8" stroke-width="2"
                                                                       stroke-linejoin="round" stroke-linecap="round" />
                                                             <circle cx="@spark.RecentX" cy="@spark.RecentY" r="3.5"
-                                                                    fill="@(sec.IsWorse ? "#dc2626" : "#2563eb")"
+                                                                    fill="@(sec.IsWorse ? "#c8342a" : "#1f5fa8")"
                                                                     stroke="#fff" stroke-width="2" />
                                                         </svg>
                                                     }
@@ -323,15 +323,15 @@
         font-weight: 500;
         padding: 6px 13px;
         border-radius: 7px;
-        border: 1px solid #2563eb;
-        background: #2563eb;
+        border: 1px solid var(--signal, #16202b);
+        background: var(--signal, #16202b);
         color: #fff;
         cursor: pointer;
         text-decoration: none;
         transition: all .15s ease;
     }
 
-    .dr-btn:hover:not(:disabled) { background: #1d4ed8; border-color: #1d4ed8; }
+    .dr-btn:hover:not(:disabled) { background: var(--signal-hot, #24313f); border-color: var(--signal-hot, #24313f); }
     .dr-btn:disabled { opacity: .55; cursor: default; }
 
     .dr-btn-ghost {
@@ -354,7 +354,7 @@
         width: 12px;
         height: 12px;
         border: 2px solid #cbd5e1;
-        border-top-color: #2563eb;
+        border-top-color: var(--signal, #16202b);
         border-radius: 50%;
         display: inline-block;
         animation: dr-spin .7s linear infinite;
@@ -487,8 +487,8 @@
         letter-spacing: .2px;
     }
 
-    .dr-badge-worse  { background: #fef2f2; color: #dc2626; }
-    .dr-badge-better { background: #eff6ff; color: #2563eb; }
+    .dr-badge-worse  { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); }
+    .dr-badge-better { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
 
     /* ── Table ─────────────────────────────────────────────────────────── */
     .dr-table-wrap {
@@ -691,8 +691,8 @@
 
     .dr-strong { font-weight: 650; color: #0f172a; }
     .dr-muted  { color: #64748b; }
-    .dr-worse  { color: #dc2626; font-weight: 650; }
-    .dr-better { color: #2563eb; font-weight: 650; }
+    .dr-worse  { color: var(--crit, #c8342a); font-weight: 650; }
+    .dr-better { color: var(--ok, #1f5fa8); font-weight: 650; }
 
     /* Under the signed PPM rather than beside it: side by side, the Change column alone
        cost ~60px of intrinsic table width, which is what pushed the side-by-side tables
@@ -720,8 +720,8 @@
         min-width: 3px;
     }
 
-    .dr-bar-worse  { background: #dc2626; }
-    .dr-bar-better { background: #2563eb; }
+    .dr-bar-worse  { background: var(--crit, #c8342a); }
+    .dr-bar-better { background: var(--ok, #1f5fa8); }
 
     .dr-spark { display: block; }
     .dr-spark-empty { color: #cbd5e1; font-size: 12px; }

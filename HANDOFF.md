@@ -1862,3 +1862,19 @@
 - Files: JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css, JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.scoped.css, JinoSupporter.Web/Components/Layout/InstrumentLayout.razor
 - Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일하며 InstrumentLayout 관련 신규 경고 0건. 중간에 42개로 보였던 것은 파일 잠금으로 실패한 빌드가 경고를 중복 집계한 것이었다. 서버를 중지하고 재빌드 후 재기동했으며(PID 12848), 배포된 instrument.scoped.css 에서 --ch-100:#FFFFFF, --ch-ink:#16202B, --signal:#16202b, Bahnschrift, navlink__ico, railseek 를 HTTP 응답으로 직접 확인했다. 실제 로그인 화면 내부는 인증이 필요해 확인하지 못했다.
 - Next: 사용자가 브라우저에서 셸을 확인한다. 본문 페이지들은 아직 각자 하드코딩된 색(hex 2,641개)을 갖고 있어 완전히 시안대로 보이지는 않는다. 다음 단계는 페이지별 hex → 토큰 치환이며, 감사 문서의 G5 순서를 따른다.
+
+## 2026-08-08 07:20 - [UI][CHANGE] SheetDesign: Daily Report 액센트를 스탬프 잉크로 정렬
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: SheetDesign
+- Change: CHANGE
+- Prompt: "'JinoSupporter' 작업을 이어서 진행해."
+- Answer: 남은 작업으로 잡아뒀던 "페이지 hex 2,641개를 토큰으로 치환"을 실행하기 전에 분포를 측정했고, 그 결과 계획을 접었다. 상위 20종이 61.6%를 차지하는데 전부 Tailwind slate 계열이라 시안 팔레트와 거의 같은 색이었다. 대신 실제로 어긋나던 액센트만 정렬했다.
+- Applied: (1) BmesDailyReportPage의 .dr-worse/.dr-bar-worse/.dr-badge-worse를 --crit(스탬프 레드)로, .dr-better 계열을 --ok(스탬프 블루)로 (2) 스파크라인 fill도 같은 쌍으로 (3) .dr-btn 기본 동작 색을 파랑에서 --signal(잉크)로, hover는 --signal-hot, 스피너 테두리도 잉크로
+- Completed: Daily Report의 색이 셸과 같은 의미 체계를 쓴다. 파랑은 개선, 빨강은 악화, 잉크는 동작이다.
+- Decisions: 전면 hex 치환을 하지 않기로 했다 — 본문 중립색(#f8fafc, #0f172a, #e2e8f0)과 시안 팔레트(#F7F8FA, #16202B, #D7DCE3)가 거의 같아서 2,641곳을 고쳐도 화면 변화는 미미하고 회귀 위험만 크다. 실제 충돌은 액센트에 있었다. 이 페이지는 이미 '파랑=개선, 빨강=악화'를 쓰고 있어 시안과 의미가 일치했고 색조만 달랐다. 기본 동작 버튼이 개선과 같은 파랑이던 것이 유일한 의미 충돌이라 잉크로 옮겼다. 값은 var(--token, 하드코딩 폴백) 형태로 넣어 Classic UI에서도 그대로 동작한다. 브리지에 페이지 클래스를 복제하는 방식은 감사 G5가 유지보수 불가라고 못박아 채택하지 않았다.
+- Files: JinoSupporter.Web/Components/Pages/BmesDailyReportPage.razor
+- Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일. diff 12줄 교체로 범위가 좁음을 확인. 서버 재기동 후 /login 200. 실제 Daily Report 화면은 인증이 필요해 직접 보지 못했고 사용자 확인이 필요하다.
+- Next: 사용자가 Daily Report를 열어 색 체계를 확인한다. 나머지 페이지도 같은 방식이 필요하면 액센트 충돌이 있는 곳만(예: DataInferenceDbPage의 인디고 #4338ca 토글 19곳) 선별해 정렬한다. 중립색 전면 치환은 하지 않는다.
