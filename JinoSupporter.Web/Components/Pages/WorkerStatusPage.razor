@@ -13,6 +13,24 @@
         gap: 10px;
         margin-bottom: 16px;
     }
+    .ws-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--ink, #0f1319);
+    }
+    .ws-query-card { margin-bottom: 16px; }
+    .ws-query-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .ws-query-label { font-size: 12px; font-weight: 600; color: var(--ink-2, #4a5461); }
+    .ws-fetched { margin-left: 4px; color: var(--ink-3, #7f8a98); font-size: 11px; }
+    .ws-summary-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .ws-stat-people { background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); }
+    .ws-stat-days { background: var(--panel-2, #f5f6f9); color: var(--ink-2, #4a5461); }
+    .ws-stat-in,
+    .ws-stat-out { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
+    .ws-stat-late { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); }
+    .ws-record-count { color: var(--ink-3, #7f8a98); font-size: 11px; font-weight: 400; }
+    .ws-row-number { color: var(--ink-3, #7f8a98); vertical-align: top; }
+    .ws-code-cell { font-family: var(--mono, Bahnschrift, monospace); font-size: 11px; font-variant-numeric: tabular-nums; text-align: right; vertical-align: top; }
     .ws-card {
         background: var(--panel, #fff);
         border: 1px solid var(--line, var(--line, #dde1e7));
@@ -62,11 +80,11 @@
         letter-spacing: .2px;
     }
     .ws-in     { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
-    .ws-out    { background: #dbeafe; color: #1e40af; }
+    .ws-out    { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
     .ws-absent { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); }
     .ws-other  { background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); }
     .ws-late   { color: var(--crit, #c8342a); font-weight: 700; }
-    .ws-time   { font-family: var(--mono, monospace); font-size: 12px; }
+    .ws-time   { font-family: var(--mono, Bahnschrift, monospace); font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
     .ws-check-in-time {
         display: inline-block;
         min-width: 38px;
@@ -84,7 +102,7 @@
         background: var(--signal-wash, #edf0f4) !important;
         color: var(--ink-2, #4a5461);
         font-weight: 700;
-        border-top: 2px solid #c7d2fe;
+        border-top: 2px solid var(--line-2, #c6ccd5);
         border: 1px solid var(--line, #dde1e7);
     }
     .ws-dept-toggle {
@@ -108,7 +126,7 @@
     .ws-date-th {
         min-width: 92px;
         text-align: center;
-        font-family: var(--mono, monospace);
+        font-family: var(--mono, Bahnschrift, monospace);
     }
     .ws-metric-col { width: 90px; }
     .ws-metric-row td { vertical-align: middle; }
@@ -123,13 +141,13 @@
     }
     .ws-date-row td,
     .ws-date-row th {
-        background: #fbfdff;
+        background: var(--panel, #fff);
         border: 1px solid var(--line, #dde1e7);
     }
     .ws-empty-cell { color: var(--ink-3, #7f8a98); }
     .ws-progress {
         font-size: 11px;
-        font-family: var(--mono, monospace);
+        font-family: var(--mono, Bahnschrift, monospace);
         color: var(--ink-2, #4a5461);
         background: var(--panel-2, #f5f6f9);
         border: 1px solid var(--line, var(--line, #dde1e7));
@@ -152,7 +170,7 @@
         color: var(--ink-3, #7f8a98);
         font-size: 13px;
     }
-    .btn-fetch {
+    .ws-fetch {
         display: inline-flex;
         align-items: center;
         gap: 5px;
@@ -161,14 +179,14 @@
         font-weight: 600;
         border-radius: 2px;
         border: none;
-        background: #6366f1;
+        background: var(--signal, #16202b);
         color: var(--panel, #fff);
         cursor: pointer;
         transition: background .15s;
     }
-    .btn-fetch:hover:not(:disabled) { background: var(--signal, #16202b); }
-    .btn-fetch:disabled { opacity: .55; cursor: not-allowed; }
-    .btn-export {
+    .ws-fetch:hover:not(:disabled) { background: var(--signal, #16202b); }
+    .ws-fetch:disabled { opacity: .55; cursor: not-allowed; }
+    .ws-export {
         display: inline-flex;
         align-items: center;
         gap: 5px;
@@ -182,8 +200,8 @@
         cursor: pointer;
         transition: background .15s, color .15s;
     }
-    .btn-export:hover:not(:disabled) { background: var(--ok, #1f5fa8); color: var(--panel, #fff); }
-    .btn-export:disabled { opacity: .55; cursor: not-allowed; }
+    .ws-export:hover:not(:disabled) { background: var(--ok, #1f5fa8); color: var(--panel, #fff); }
+    .ws-export:disabled { opacity: .55; cursor: not-allowed; }
     .ws-stat-pill {
         display: inline-flex;
         align-items: center;
@@ -200,13 +218,13 @@
 
 <div class="ws-header-bar">
     <span style="font-size:20px;">👷</span>
-    <span style="font-size:18px; font-weight:700; color:#1e293b;">Worker Status</span>
+    <span class="ws-title">Worker Status</span>
 </div>
 
 <!-- ── Query bar ─────────────────────────────────────────────────────────── -->
-<div class="ws-card" style="margin-bottom:16px;">
-    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <label style="font-size:12px; font-weight:600; color:#475569;">From</label>
+<div class="ws-card ws-query-card">
+    <div class="ws-query-row">
+        <label class="ws-query-label">From</label>
         <input type="date"
                class="form-control form-control-sm"
                style="width:160px;"
@@ -214,7 +232,7 @@
                @onchange="OnStartDateChanged"
                disabled="@_isBusy" />
 
-        <label style="font-size:12px; font-weight:600; color:#475569;">To</label>
+        <label class="ws-query-label">To</label>
         <input type="date"
                class="form-control form-control-sm"
                style="width:160px;"
@@ -222,7 +240,7 @@
                @onchange="OnEndDateChanged"
                disabled="@_isBusy" />
 
-        <button class="btn-fetch" @onclick="FetchAsync" disabled="@_isBusy">
+        <button class="ws-fetch" @onclick="FetchAsync" disabled="@_isBusy">
             @if (_isBusy)
             {
                 <span class="spinner-border spinner-border-sm" role="status"></span>
@@ -236,7 +254,7 @@
 
         @if (_result is not null && _result.IsSuccess && _result.Records.Count > 0)
         {
-            <button class="btn-export"
+            <button class="ws-export"
                     @onclick="ExportExcelAsync"
                     disabled="@(_isBusy || _isExporting)"
                     title="Download as Excel (.xlsx)">
@@ -254,7 +272,7 @@
 
         @if (_result is not null && _result.IsSuccess)
         {
-            <span style="font-size:11px; color:#94a3b8; margin-left:4px;">
+            <span class="ws-fetched">
                 fetched @_result.FetchedAt.ToString("HH:mm:ss")
             </span>
         }
@@ -280,25 +298,25 @@
     int cntCheckedOut = _result.Records.Count(r => !string.IsNullOrEmpty(r.CheckOut));
     int cntLate       = _result.Records.Count(r => IsLate(r));
 
-    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+    <div class="ws-summary-row">
         <div class="ws-stat-pill">
             Rows <span class="ws-stat-num">@cntTotal</span>
         </div>
-        <div class="ws-stat-pill" style="background:#ede9fe; color:#5b21b6;">
+        <div class="ws-stat-pill ws-stat-people">
             People <span class="ws-stat-num">@cntPeople</span>
         </div>
-        <div class="ws-stat-pill" style="background:#f1f5f9; color:#334155;">
+        <div class="ws-stat-pill ws-stat-days">
             Days <span class="ws-stat-num">@cntDays</span>
         </div>
-        <div class="ws-stat-pill" style="background:#dbeafe; color:#1e40af;">
+        <div class="ws-stat-pill ws-stat-in">
             Checked In <span class="ws-stat-num">@cntCheckedIn</span>
         </div>
-        <div class="ws-stat-pill" style="background:#e0f2fe; color:#0369a1;">
+        <div class="ws-stat-pill ws-stat-out">
             Checked Out <span class="ws-stat-num">@cntCheckedOut</span>
         </div>
         @if (cntLate > 0)
         {
-            <div class="ws-stat-pill" style="background:#fef2f2; color:#b91c1c;">
+            <div class="ws-stat-pill ws-stat-late">
                 Late <span class="ws-stat-num">@cntLate</span>
             </div>
         }
@@ -311,7 +329,7 @@
         <span>📋 Attendance</span>
         @if (_result is not null && _result.IsSuccess)
         {
-            <span style="font-size:11px; font-weight:400; color:#94a3b8;">
+            <span class="ws-record-count">
                 @_result.TotalCount records
             </span>
         }
@@ -423,10 +441,10 @@
                                     <tr class="ws-metric-row" style="@(metricIndex == 0 ? firstRowStyle : "")">
                                         @if (metricIndex == 0)
                                         {
-                                            <td rowspan="@rowSpan" style="color:#94a3b8; vertical-align:top;">@groupNum</td>
-                                            <td rowspan="@rowSpan" style="font-family:monospace; font-size:11px; vertical-align:top;" title="@rec.DepartmentName">@rec.DepartmentCode</td>
-                                            <td rowspan="@rowSpan" style="font-family:monospace; font-size:11px; vertical-align:top;">@rec.DepartmentNo</td>
-                                            <td rowspan="@rowSpan" style="font-family:monospace; font-size:11px; vertical-align:top;">@rec.EmpNo</td>
+                                            <td rowspan="@rowSpan" class="ws-row-number">@groupNum</td>
+                                            <td rowspan="@rowSpan" class="ws-code-cell" title="@rec.DepartmentName">@rec.DepartmentCode</td>
+                                            <td rowspan="@rowSpan" class="ws-code-cell">@rec.DepartmentNo</td>
+                                            <td rowspan="@rowSpan" class="ws-code-cell">@rec.EmpNo</td>
                                             <td rowspan="@rowSpan" style="font-weight:600; vertical-align:top;">@rec.Name</td>
                                         }
                                         <td class="ws-metric-label">@metric</td>

@@ -18,10 +18,10 @@
 </div>
 
 <!-- User list -->
-<div class="card mb-4">
+<div class="card usr-panel mb-4">
     <div class="card-header">Users</div>
     <div class="card-body p-0">
-        <table class="table table-bordered mb-0">
+        <table class="table usr-table mb-0">
             <thead>
                 <tr>
                     <th>Username</th>
@@ -44,7 +44,7 @@
                                     <input class="form-control form-control-sm" style="width:140px;"
                                            @bind="_editNameValue"
                                            @onkeydown="@(e => { if (e.Key == "Enter") SaveDisplayName(u.Id); else if (e.Key == "Escape") CancelEditName(); })" />
-                                    <button class="btn btn-success btn-sm py-0 px-2"  @onclick="() => SaveDisplayName(u.Id)">✓</button>
+                                    <button class="btn btn-primary btn-sm py-0 px-2"  @onclick="() => SaveDisplayName(u.Id)">✓</button>
                                     <button class="btn btn-secondary btn-sm py-0 px-2" @onclick="CancelEditName">✕</button>
                                 </div>
                             }
@@ -88,7 +88,7 @@
 </div>
 
 <!-- Add user -->
-<div class="card mb-3">
+<div class="card usr-panel mb-3">
     <div class="card-header">Add User</div>
     <div class="card-body">
         <div class="row g-2 align-items-end">
@@ -125,20 +125,20 @@
 </div>
 
 <!-- Menu permissions matrix -->
-<div class="card mb-4">
+<div class="card usr-panel mb-4">
     <div class="card-header d-flex align-items-center justify-content-between">
         <span>Menu Permissions (by Role)</span>
         <span class="text-muted small">
             Changes save automatically on checkbox click. The Admin role always has full menu access.
             @if (_permsSavedFlash)
             {
-                <span class="badge bg-success ms-2">✓ Saved</span>
+                <span class="badge usr-saved ms-2">✓ Saved</span>
             }
         </span>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-bordered table-sm mb-0 perms-table">
+            <table class="table usr-table usr-perms-table mb-0">
                 <thead>
                     <tr>
                         <th style="min-width:180px;">Menu</th>
@@ -179,11 +179,37 @@
 </div>
 
 <style>
-    .perms-table th, .perms-table td { font-size: 12px; vertical-align: middle; }
+    .usr-panel {
+        background: var(--panel, #fff);
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+    }
+    .usr-panel > .card-header {
+        background: var(--panel-2, #f5f6f9);
+        border-bottom: 1px solid var(--line-2, #c6ccd5);
+    }
+    .usr-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .usr-table th,
+    .usr-table td {
+        border: 1px solid var(--line, #dde1e7);
+        font-size: 12px;
+        vertical-align: middle;
+    }
+    .usr-table th {
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
+        font-weight: 700;
+    }
+    .usr-perms-table th:not(:first-child),
+    .usr-perms-table td:not(:first-child) { text-align: center; }
     .perms-group-row td {
         background: var(--panel-3, #eceef2); font-weight: 700; color: var(--ink-2, #4a5461);
         font-size: 11px; letter-spacing: .3px; text-transform: uppercase;
     }
+    .usr-saved { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
 </style>
 
 <!-- Reset password modal -->

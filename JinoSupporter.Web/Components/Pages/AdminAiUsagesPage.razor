@@ -18,25 +18,25 @@
     <h5 class="fw-bold mb-0">AI Usages</h5>
 </div>
 
-<div class="card mb-4" style="max-width:920px;">
+<div class="card aiu-card aiu-session-card mb-4">
     <div class="card-header d-flex align-items-center">
         <span class="fw-semibold">Browser Sessions</span>
         <span class="ms-auto d-flex gap-2">
             @if (Scraper.SessionProfileExists)
             {
-                <span class="badge bg-success">Claude saved</span>
+                <span class="badge aiu-badge aiu-badge-ok">Claude saved</span>
             }
             else
             {
-                <span class="badge bg-secondary">Claude none</span>
+                <span class="badge aiu-badge aiu-badge-muted">Claude none</span>
             }
             @if (CodexScraper.SessionProfileExists)
             {
-                <span class="badge bg-success">Codex saved</span>
+                <span class="badge aiu-badge aiu-badge-ok">Codex saved</span>
             }
             else
             {
-                <span class="badge bg-secondary">Codex none</span>
+                <span class="badge aiu-badge aiu-badge-muted">Codex none</span>
             }
         </span>
     </div>
@@ -48,7 +48,7 @@
                 @if (_loginBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
                 Login
             </button>
-            <button class="btn btn-success btn-sm" @onclick="RefreshAsync"
+            <button class="btn btn-primary btn-sm" @onclick="RefreshAsync"
                     disabled="@(_loginBusy || _scrapeBusy || !Scraper.SessionProfileExists)">
                 @if (_scrapeBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
                 Refresh
@@ -62,7 +62,7 @@
 
         @if (!string.IsNullOrEmpty(_sessionStatus))
         {
-            <div class="mt-2 small @(_sessionError ? "text-danger" : "text-success")">@_sessionStatus</div>
+            <div class="mt-2 small aiu-status @(_sessionError ? "aiu-status-crit" : "aiu-status-ok")">@_sessionStatus</div>
         }
 
         <div class="d-flex gap-2 flex-wrap align-items-center mt-3 mb-2">
@@ -72,7 +72,7 @@
                 @if (_codexLoginBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
                 Login
             </button>
-            <button class="btn btn-success btn-sm" @onclick="RefreshCodexAsync"
+            <button class="btn btn-primary btn-sm" @onclick="RefreshCodexAsync"
                     disabled="@(_codexLoginBusy || _codexScrapeBusy || !CodexScraper.SessionProfileExists)">
                 @if (_codexScrapeBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
                 Refresh
@@ -86,14 +86,14 @@
 
         @if (!string.IsNullOrEmpty(_codexSessionStatus))
         {
-            <div class="mt-2 small @(_codexSessionError ? "text-danger" : "text-success")">@_codexSessionStatus</div>
+            <div class="mt-2 small aiu-status @(_codexSessionError ? "aiu-status-crit" : "aiu-status-ok")">@_codexSessionStatus</div>
         }
 
         <div class="form-text mt-2">
             Login once on first use. Claude opens platform.claude.com and claude.ai. Codex/OpenAI opens chatgpt.com and platform.openai.com.
             Sign in on both tabs, then close the window. Refresh reuses the saved browser profile.
         </div>
-        <div class="form-text" style="color:#b45309;">
+        <div class="form-text aiu-warning">
             Refresh runs hidden first. If a provider redirects to its login page, use that provider's Login button once.
         </div>
         <div class="form-text">
@@ -104,13 +104,13 @@
         </div>
         @if (Scraper.SessionProfileExists)
         {
-            <div class="form-text text-success">
+            <div class="form-text aiu-status-ok">
                 Claude session is saved. Click Refresh when you want to update.
             </div>
         }
         @if (CodexScraper.SessionProfileExists)
         {
-            <div class="form-text text-success">
+            <div class="form-text aiu-status-ok">
                 Codex/OpenAI session is saved. Click Refresh when you want to update.
             </div>
         }
@@ -128,7 +128,7 @@
 }
 
 <div class="ai-usage-grid mb-4">
-    <div class="card h-100">
+    <div class="card aiu-card h-100">
         <div class="card-header d-flex align-items-center">
             <span class="fw-semibold">Codex Plan</span>
             <a href="https://chatgpt.com/" target="_blank"
@@ -137,25 +137,25 @@
         <div class="card-body">
             <div class="mb-3">
                 <label class="form-label small text-muted mb-1">Plan usage</label>
-                <input type="text" class="form-control form-control-sm font-monospace text-end"
+                <input type="text" class="form-control form-control-sm aiu-mono text-end"
                        placeholder="e.g. 42%"
                        @bind="_codexPlanUsage" />
                 @if (TryParsePct(_codexPlanUsage) is double cpu)
                 {
                     <div class="progress mt-2" style="height:8px;">
-                        <div class="progress-bar bg-primary" style="width:@(cpu.ToString("0.#"))%"></div>
+                        <div class="progress-bar aiu-progress-main" style="width:@(cpu.ToString("0.#"))%"></div>
                     </div>
                 }
             </div>
             <div class="mb-3">
                 <label class="form-label small text-muted mb-1">Weekly / monthly limit</label>
-                <input type="text" class="form-control form-control-sm font-monospace text-end"
+                <input type="text" class="form-control form-control-sm aiu-mono text-end"
                        placeholder="e.g. 18%"
                        @bind="_codexPlanLimitUsage" />
                 @if (TryParsePct(_codexPlanLimitUsage) is double cpl)
                 {
                     <div class="progress mt-2" style="height:6px;">
-                        <div class="progress-bar bg-success" style="width:@(cpl.ToString("0.#"))%"></div>
+                        <div class="progress-bar aiu-progress-ok" style="width:@(cpl.ToString("0.#"))%"></div>
                     </div>
                 }
             </div>
@@ -169,11 +169,11 @@
                 <button class="btn btn-primary btn-sm" @onclick="SaveCodexPlanAsync" disabled="@_codexPlanSaving">
                     @(_codexPlanSaving ? "Saving..." : "Save")
                 </button>
-                @if (_codexPlanSaved) { <span class="text-success fw-semibold small">Saved.</span> }
-                @if (!string.IsNullOrEmpty(_codexPlanError)) { <span class="text-danger small">@_codexPlanError</span> }
+                @if (_codexPlanSaved) { <span class="aiu-status-ok fw-semibold small">Saved.</span> }
+                @if (!string.IsNullOrEmpty(_codexPlanError)) { <span class="aiu-status-crit small">@_codexPlanError</span> }
             </div>
             <div class="small text-muted mt-2">
-                Last updated: <span class="font-monospace">@FormatTs(_codexPlanUpdatedAt)</span>
+                Last updated: <span class="aiu-mono">@FormatTs(_codexPlanUpdatedAt)</span>
             </div>
             @if (!string.IsNullOrEmpty(_codexPlanScrapeError))
             {
@@ -183,14 +183,13 @@
             {
                 <details class="mt-2 small">
                     <summary class="text-muted" style="cursor:pointer;">Raw page snippet (debug)</summary>
-                    <pre class="small mt-2"
-                         style="max-height:220px; overflow:auto; background:#f8fafc; padding:8px; border:1px solid #e2e8f0; font-size:11px; white-space:pre-wrap; word-break:break-word;">@_codexPlanSnippet</pre>
+                    <pre class="small mt-2 aiu-snippet">@_codexPlanSnippet</pre>
                 </details>
             }
         </div>
     </div>
 
-    <div class="card h-100">
+    <div class="card aiu-card h-100">
         <div class="card-header d-flex align-items-center">
             <span class="fw-semibold">Claude Plan</span>
             <a href="https://claude.ai/settings/usage" target="_blank"
@@ -201,14 +200,14 @@
                 <label class="form-label small text-muted mb-1">Current session usage</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text small">Current session</span>
-                    <input type="text" class="form-control form-control-sm font-monospace text-end"
+                    <input type="text" class="form-control form-control-sm aiu-mono text-end"
                            placeholder="e.g. 42%"
                            @bind="_sessionUsage" />
                 </div>
                 @if (TryParsePct(_sessionUsage) is double su)
                 {
                     <div class="progress mt-2" style="height:8px;">
-                        <div class="progress-bar bg-primary" style="width:@(su.ToString("0.#"))%"></div>
+                        <div class="progress-bar aiu-progress-main" style="width:@(su.ToString("0.#"))%"></div>
                     </div>
                 }
             </div>
@@ -217,37 +216,37 @@
                 <label class="form-label small text-muted mb-1">Weekly limit usage</label>
                 <div class="input-group input-group-sm mb-1">
                     <span class="input-group-text small" style="width:120px;">All models</span>
-                    <input type="text" class="form-control form-control-sm font-monospace text-end"
+                    <input type="text" class="form-control form-control-sm aiu-mono text-end"
                            placeholder="e.g. 41%" @bind="_weeklyAllModels" />
                 </div>
                 @if (TryParsePct(_weeklyAllModels) is double wa)
                 {
                     <div class="progress mb-2" style="height:6px;">
-                        <div class="progress-bar bg-success" style="width:@(wa.ToString("0.#"))%"></div>
+                        <div class="progress-bar aiu-progress-ok" style="width:@(wa.ToString("0.#"))%"></div>
                     </div>
                 }
 
                 <div class="input-group input-group-sm mb-1">
                     <span class="input-group-text small" style="width:120px;">Sonnet only</span>
-                    <input type="text" class="form-control form-control-sm font-monospace text-end"
+                    <input type="text" class="form-control form-control-sm aiu-mono text-end"
                            placeholder="e.g. 27%" @bind="_weeklySonnet" />
                 </div>
                 @if (TryParsePct(_weeklySonnet) is double ws)
                 {
                     <div class="progress mb-2" style="height:6px;">
-                        <div class="progress-bar bg-info" style="width:@(ws.ToString("0.#"))%"></div>
+                        <div class="progress-bar aiu-progress-neutral" style="width:@(ws.ToString("0.#"))%"></div>
                     </div>
                 }
 
                 <div class="input-group input-group-sm mb-1">
                     <span class="input-group-text small" style="width:120px;">Claude Design</span>
-                    <input type="text" class="form-control form-control-sm font-monospace text-end"
+                    <input type="text" class="form-control form-control-sm aiu-mono text-end"
                            placeholder="e.g. 0%" @bind="_weeklyClaudeDesign" />
                 </div>
                 @if (TryParsePct(_weeklyClaudeDesign) is double wd)
                 {
                     <div class="progress mb-2" style="height:6px;">
-                        <div class="progress-bar bg-secondary" style="width:@(wd.ToString("0.#"))%"></div>
+                        <div class="progress-bar aiu-progress-neutral" style="width:@(wd.ToString("0.#"))%"></div>
                     </div>
                 }
             </div>
@@ -259,7 +258,7 @@
                         <div class="input-group input-group-sm">
                             <span class="input-group-text small">Extra usage</span>
                             <span class="input-group-text">$</span>
-                            <input type="text" class="form-control form-control-sm font-monospace text-end"
+                           <input type="text" class="form-control form-control-sm aiu-mono text-end"
                                    placeholder="0.00"
                                    @bind="_extraUsage" />
                         </div>
@@ -269,7 +268,7 @@
                         <div class="input-group input-group-sm">
                             <span class="input-group-text small">Balance</span>
                             <span class="input-group-text">$</span>
-                            <input type="text" class="form-control form-control-sm font-monospace text-end"
+                           <input type="text" class="form-control form-control-sm aiu-mono text-end"
                                    placeholder="0.00"
                                    @bind="_extraBalance" />
                         </div>
@@ -282,12 +281,12 @@
                     <button class="btn btn-primary btn-sm" @onclick="SavePlanAsync" disabled="@_planSaving">
                         @(_planSaving ? "Saving..." : "Save")
                     </button>
-                    @if (_planSaved) { <span class="ms-2 text-success fw-semibold small">Saved.</span> }
-                    @if (!string.IsNullOrEmpty(_planError)) { <span class="ms-2 text-danger small">@_planError</span> }
+                    @if (_planSaved) { <span class="ms-2 aiu-status-ok fw-semibold small">Saved.</span> }
+                    @if (!string.IsNullOrEmpty(_planError)) { <span class="ms-2 aiu-status-crit small">@_planError</span> }
                 </div>
                 <div class="col-sm-6 text-sm-end">
                     <div class="small text-muted">Last updated</div>
-                    <div class="font-monospace small">@FormatTs(_planUpdatedAt)</div>
+                    <div class="aiu-mono small">@FormatTs(_planUpdatedAt)</div>
                 </div>
             </div>
 
@@ -299,8 +298,7 @@
             {
                 <details class="mt-2 small">
                     <summary class="text-muted" style="cursor:pointer;">Raw page snippet (debug)</summary>
-                    <pre class="small mt-2"
-                         style="max-height:220px; overflow:auto; background:#f8fafc; padding:8px; border:1px solid #e2e8f0; font-size:11px; white-space:pre-wrap; word-break:break-word;">@_usageSnippet</pre>
+                    <pre class="small mt-2 aiu-snippet">@_usageSnippet</pre>
                 </details>
             }
             <div class="form-text mt-2">
@@ -309,39 +307,39 @@
         </div>
     </div>
 
-    <div class="card h-100">
+    <div class="card aiu-card h-100">
         <div class="card-header d-flex align-items-center">
             <span class="fw-semibold">Codex API</span>
-            <span class="badge bg-secondary ms-auto">Translate tokens</span>
+            <span class="badge aiu-badge aiu-badge-muted ms-auto">Translate tokens</span>
         </div>
         <div class="card-body">
             <div class="row g-2">
                 <div class="col-sm-4">
                     <label class="form-label small text-muted mb-1">Input tokens</label>
-                    <input type="text" class="form-control form-control-sm font-monospace text-end"
+                    <input type="text" class="form-control form-control-sm aiu-mono text-end"
                            @bind="_codexApiInputTokens" />
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label small text-muted mb-1">Output tokens</label>
-                    <input type="text" class="form-control form-control-sm font-monospace text-end"
+                           <input type="text" class="form-control form-control-sm aiu-mono text-end"
                            @bind="_codexApiOutputTokens" />
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label small text-muted mb-1">Total tokens</label>
-                    <input type="text" class="form-control form-control-sm font-monospace text-end"
+                           <input type="text" class="form-control form-control-sm aiu-mono text-end"
                            @bind="_codexApiTotalTokens" />
                 </div>
             </div>
             <div class="mt-3">
                 <label class="form-label small text-muted mb-1">Last request</label>
-                <div class="font-monospace small">@FormatTs(_codexApiLastRequestAt)</div>
+                <div class="aiu-mono small">@FormatTs(_codexApiLastRequestAt)</div>
             </div>
             <div class="d-flex align-items-center gap-2 mt-3">
                 <button class="btn btn-primary btn-sm" @onclick="SaveCodexApiAsync" disabled="@_codexApiSaving">
                     @(_codexApiSaving ? "Saving..." : "Save")
                 </button>
-                @if (_codexApiSaved) { <span class="text-success fw-semibold small">Saved.</span> }
-                @if (!string.IsNullOrEmpty(_codexApiError)) { <span class="text-danger small">@_codexApiError</span> }
+                @if (_codexApiSaved) { <span class="aiu-status-ok fw-semibold small">Saved.</span> }
+                @if (!string.IsNullOrEmpty(_codexApiError)) { <span class="aiu-status-crit small">@_codexApiError</span> }
             </div>
             <div class="form-text mt-2">
                 Codex API token totals are updated by Translate and by OpenAI usage refresh when available.
@@ -354,14 +352,13 @@
             {
                 <details class="mt-2 small">
                     <summary class="text-muted" style="cursor:pointer;">Raw page snippet (debug)</summary>
-                    <pre class="small mt-2"
-                         style="max-height:220px; overflow:auto; background:#f8fafc; padding:8px; border:1px solid #e2e8f0; font-size:11px; white-space:pre-wrap; word-break:break-word;">@_codexApiSnippet</pre>
+                    <pre class="small mt-2 aiu-snippet">@_codexApiSnippet</pre>
                 </details>
             }
         </div>
     </div>
 
-    <div class="card h-100">
+    <div class="card aiu-card h-100">
         <div class="card-header d-flex align-items-center">
             <span class="fw-semibold">Claude API</span>
             <a href="https://platform.claude.com/settings/billing" target="_blank"
@@ -373,14 +370,14 @@
                     <label class="form-label small text-muted mb-1">API credit balance (USD)</label>
                     <div class="input-group">
                         <span class="input-group-text">$</span>
-                        <input type="text" class="form-control font-monospace text-end"
+                               <input type="text" class="form-control aiu-mono text-end"
                                placeholder="0.00"
                                @bind="_apiCreditBalance" />
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="small text-muted">Last updated</div>
-                    <div class="font-monospace small">@FormatTs(_apiUpdatedAt)</div>
+                    <div class="aiu-mono small">@FormatTs(_apiUpdatedAt)</div>
                 </div>
             </div>
 
@@ -388,8 +385,8 @@
                 <button class="btn btn-primary btn-sm" @onclick="SaveApiAsync" disabled="@_apiSaving">
                     @(_apiSaving ? "Saving..." : "Save")
                 </button>
-                @if (_apiSaved) { <span class="ms-2 text-success fw-semibold small">Saved.</span> }
-                @if (!string.IsNullOrEmpty(_apiError)) { <span class="ms-2 text-danger small">@_apiError</span> }
+                @if (_apiSaved) { <span class="ms-2 aiu-status-ok fw-semibold small">Saved.</span> }
+                @if (!string.IsNullOrEmpty(_apiError)) { <span class="ms-2 aiu-status-crit small">@_apiError</span> }
             </div>
 
             @if (!string.IsNullOrEmpty(_billingScrapeError))
@@ -400,8 +397,7 @@
             {
                 <details class="mt-2 small">
                     <summary class="text-muted" style="cursor:pointer;">Raw page snippet (debug)</summary>
-                    <pre class="small mt-2"
-                         style="max-height:220px; overflow:auto; background:#f8fafc; padding:8px; border:1px solid #e2e8f0; font-size:11px; white-space:pre-wrap; word-break:break-word;">@_billingSnippet</pre>
+                    <pre class="small mt-2 aiu-snippet">@_billingSnippet</pre>
                 </details>
             }
         </div>
@@ -409,6 +405,38 @@
 </div>
 
 <style>
+    .aiu-card {
+        background: var(--panel, #fff);
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+    }
+    .aiu-session-card { max-width: 920px; }
+    .aiu-card > .card-header {
+        background: var(--panel-2, #f5f6f9);
+        border-bottom: 1px solid var(--line-2, #c6ccd5);
+    }
+    .aiu-mono { font-family: var(--mono, Bahnschrift, monospace); }
+    .aiu-badge { border-radius: 2px; font-weight: 600; }
+    .aiu-badge-ok,
+    .aiu-status-ok { color: var(--ok, #1f5fa8) !important; }
+    .aiu-badge-ok { background: var(--ok-wash, #eaf1f9); }
+    .aiu-badge-muted { background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); }
+    .aiu-status-crit { color: var(--crit, #c8342a) !important; }
+    .aiu-warning { color: var(--warn-ink, #92610a); }
+    .aiu-progress-main { background: var(--signal, #16202b); }
+    .aiu-progress-ok { background: var(--ok, #1f5fa8); }
+    .aiu-progress-neutral { background: var(--line-2, #c6ccd5); }
+    .aiu-snippet {
+        max-height: 220px;
+        overflow: auto;
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
+        padding: 8px;
+        border: 1px solid var(--line, #dde1e7);
+        font-size: 11px;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
     .ai-usage-grid {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
