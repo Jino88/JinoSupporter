@@ -145,12 +145,12 @@
                         <article class="qr-summary-card">
                             <span>NG 개수</span>
                             <strong>@summary.NgCount.ToString("N0")</strong>
-                                <small>최신 TestTime 결과 기준</small>
+                            <small>최신 TestTime 결과 기준</small>
                         </article>
                         <article class="qr-summary-card">
                             <span>NG Rate</span>
                             <strong>@FormatPpm(summary.NgRatePpm)</strong>
-                            <small>NG ÷ Input · PPM</small>
+                            <small>NG ÷ Input × 1,000,000 (ppm)</small>
                         </article>
                     </div>
                 }
@@ -973,8 +973,10 @@
     private static string FormatRowDate(DateOnly? date) =>
         date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "-";
 
-    private static string FormatPpm(double value) =>
-        $"{value.ToString("N0", CultureInfo.CurrentCulture)} ppm";
+    private static string FormatPpm(double? value) =>
+        value is double ppm
+            ? $"{ppm.ToString("N0", CultureInfo.CurrentCulture)} ppm"
+            : "-";
 
     private static string DisplayCell(string value) =>
         string.IsNullOrWhiteSpace(value) ? "-" : value;

@@ -564,7 +564,10 @@ public sealed record QrBakoDataColumn(string Name, string DataType);
 
 public sealed record QrBakoDataSummary(long InputCount, long NgCount)
 {
-    public double NgRatePpm => InputCount <= 0 ? 0 : NgCount / (double)InputCount * 1_000_000d;
+    // This app reports defect rates in ppm; without any input the rate is undefined and the UI shows "-".
+    public double? NgRatePpm => InputCount <= 0
+        ? null
+        : NgCount / (double)InputCount * 1_000_000d;
 }
 
 public sealed record QrBakoDataRow(IReadOnlyList<string> Values, DateTimeOffset? TestTime = null)
