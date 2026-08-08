@@ -96,11 +96,11 @@
             var hierDateCols  = VisibleDateCols.ToList();
             var hierWeekCols  = VisibleWeekCols.ToList();
             var hierMonthCols = VisibleMonthCols.ToList();
-            <div class="card mb-3 shadow-sm">
-                <div class="card-header small fw-semibold">
+            <div class="card mb-3 ngrate-report-card">
+                <div class="card-header ngrate-card-header small fw-semibold">
                     📊 Group → Model Name → Sub Group → Shift Group — TOTAL PPM (collapsible)
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body ngrate-card-body p-0">
                     <div class="pivot-wrap">
                         <table class="pivot-table text-fit-table">
                             <thead>
@@ -138,6 +138,7 @@
                                     <tr class="hier-group-row" @onclick="() => HierToggleGroup(gName)">
                                         <td class="label-td">
                                             <span class="tog-icon">@(gExp ? "▼" : "▶")</span>
+                                            <span class="ngrate-hier-level">GROUP</span>
                                             <strong>@gName</strong>
                                             <span class="text-muted ms-1" style="font-size:10px;">@visibleMids.Count models</span>
                                         </td>
@@ -168,6 +169,7 @@
                                             <tr class="hier-mid-row" @onclick="() => HierToggleMid(midKey)">
                                                 <td class="label-td" style="padding-left:32px; font-size:11.5px;">
                                                     <span class="tog-icon">@(midExp ? "▼" : "▶")</span>
+                                                    <span class="ngrate-hier-level">MODEL</span>
                                                     <span class="ms-1">@mid.Material</span>
                                                 </td>
                                                 @foreach (var col in hierDateCols)
@@ -228,8 +230,8 @@
         </div>
 
         <!-- ── Summary ───────────────────────────────────────────────────────── -->
-        <div class="card mb-3 shadow-sm">
-            <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+        <div class="card mb-3 ngrate-report-card">
+            <div class="card-header ngrate-card-header small fw-semibold d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span>Summary — NG PPM by Process Type</span>
                     @if (_hiddenGroups.Count > 0)
@@ -267,7 +269,7 @@
                     }
                 </div>
             </div>
-            <div class="card-body p-2">
+            <div class="card-body ngrate-card-body p-2">
                 <div class="pivot-wrap">
                     <table class="pivot-table text-fit-table">
                         <thead>
@@ -375,8 +377,8 @@
         </div>
 
         <!-- ── Process 10 NG ─────────────────────────────────────────────────── -->
-        <div class="card mb-3 shadow-sm">
-            <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+        <div class="card mb-3 ngrate-report-card">
+            <div class="card-header ngrate-card-header small fw-semibold d-flex justify-content-between align-items-center">
                 <span>Process 10 NG — Top 10 Worst Processes by PPM</span>
                 @if (_report.Top10Process.Any(r => r.Groups.Count > 0))
                 {
@@ -387,7 +389,7 @@
                     </div>
                 }
             </div>
-            <div class="card-body p-2">
+            <div class="card-body ngrate-card-body p-2">
                 <div class="pivot-wrap">
                     <table class="pivot-table text-fit-table">
                         <thead>
@@ -484,8 +486,8 @@
         </div>
 
         <!-- ── Worst 10 NG ───────────────────────────────────────────────────── -->
-        <div class="card mb-3 shadow-sm">
-            <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+        <div class="card mb-3 ngrate-report-card">
+            <div class="card-header ngrate-card-header small fw-semibold d-flex justify-content-between align-items-center">
                 <span>Worst 10 NG — Top 10 Worst NG Names by PPM</span>
                 @if (_report.Top10Ng.Any(r => r.Groups.Count > 0))
                 {
@@ -496,7 +498,7 @@
                     </div>
                 }
             </div>
-            <div class="card-body p-2">
+            <div class="card-body ngrate-card-body p-2">
                 <div class="pivot-wrap">
                     <table class="pivot-table text-fit-table">
                         <thead>
@@ -598,8 +600,8 @@
         <!-- ── Reason ─────────────────────────────────────────────────────────── -->
         @if (_report.ReasonRows.Count > 0)
         {
-            <div class="card mb-3 shadow-sm">
-                <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+            <div class="card mb-3 ngrate-report-card">
+                <div class="card-header ngrate-card-header small fw-semibold d-flex justify-content-between align-items-center">
                     <span>Reason — Defect Cause Classification</span>
                     @if (_report.ReasonRows.Any(r => !r.IsTotal && r.Groups.Count > 0))
                     {
@@ -610,7 +612,7 @@
                         </div>
                     }
                 </div>
-                <div class="card-body p-2">
+                <div class="card-body ngrate-card-body p-2">
                     <div class="pivot-wrap">
                         <table class="pivot-table text-fit-table">
                             <thead>
