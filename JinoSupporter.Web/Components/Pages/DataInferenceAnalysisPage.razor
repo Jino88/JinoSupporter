@@ -217,14 +217,14 @@
     }
     .dian-tag-btn:hover, .dian-file-btn:hover { background: var(--panel-2, #f5f6f9); border-color: #bfd4ff; }
     .dian-tag-btn.active {
-        background: #eaf2ff; border-color: #3b82f6; color: #1d4ed8;
+        background: #eaf2ff; border-color: var(--signal, #16202b); color: #1d4ed8;
     }
     .dian-file-btn {
         display: flex; flex-direction: column; gap: 3px; width: 100%; padding: 8px 9px;
         margin-bottom: 7px; border: 1px solid #e5eaf1; background: var(--panel, #fff); border-radius: 2px;
         text-align: left; cursor: pointer;
     }
-    .dian-file-btn.active { border-color: #2563eb; background: #eff6ff; }
+    .dian-file-btn.active { border-color: var(--signal, #16202b); background: var(--signal-wash, #edf0f4); }
     .dian-file-name {
         font-size: 12px; font-weight: 750; color: var(--ink, #0f1319);
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -248,7 +248,7 @@
         border: 1px solid #d0d5dd; background: var(--panel, #fff); color: #475467; border-radius: 2px;
         padding: 3px 10px; font-size: 11px; font-weight: 650; cursor: pointer;
     }
-    .dian-view-btn.active { background: #2563eb; color: var(--panel, #fff); border-color: #2563eb; }
+    .dian-view-btn.active { background: var(--signal, #16202b); color: var(--panel, #fff); border-color: var(--signal, #16202b); }
     .dian-view-btn:disabled { opacity: .45; cursor: default; }
     .dian-selected-tags {
         display: flex; flex-wrap: wrap; gap: 5px; padding: 7px 12px;

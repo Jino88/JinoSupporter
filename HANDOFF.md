@@ -1942,3 +1942,19 @@
 - Files: JinoSupporter.Web/Components 아래 .razor 20개
 - Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일. 드라이런으로 212곳을 먼저 확인하고, 인디고·초록·진한빨강 각각의 실제 쓰임을 grep 으로 읽어 의미를 확인한 뒤 매핑했다. 적용 후 남은 체계 밖 색을 재측정해 파랑 계열과 회색 몇 종만 남았음을 확인했다. 서버 재기동 후 /login 200.
 - Next: 파랑 계열 화면별 정리(링크는 파랑 유지, 기본 동작 버튼은 잉크로, 개선 지표는 --ok 로). 남은 회색 #617084·#dbe3ef·#dfe5ee 는 중립이라 토큰 매핑 후보다.
+
+## 2026-08-08 08:15 - [UI][CHANGE] SheetDesign: 선택 상태의 파랑을 잉크로, 디스크 소진 원인 정리
+- Agent: Claude
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: SheetDesign
+- Change: CHANGE
+- Prompt: "계속해" / "ㅇㅇ" / "했어"
+- Answer: 파랑이 "선택됨"과 "좋아짐" 두 가지를 동시에 뜻하던 충돌을 없앴다. 작업 중 D 드라이브 여유가 0이 되어 빌드가 실패했고, 원인이 내가 만든 검증용 빌드 산출물 누적임을 확인해 보고했다. 사용자가 공간을 확보한 뒤 검증을 마쳤다.
+- Applied: (1) .active/.selected/.pg-pill-on 등 선택 상태 규칙에서 파랑 배경·테두리를 잉크(--signal)와 --signal-wash 로 교체, 10개 파일 13개 규칙 (2) 글자색 파랑은 유지 — 링크와 개선 지표는 파랑이 맞는 의미다
+- Completed: 선택 상태가 잉크로 표시되어 파랑이 개선 한 가지만 뜻한다.
+- Decisions: 파랑을 일괄 치환하지 않고 선택 상태의 chrome(배경·테두리)만 바꿨다. 파랑은 앱 안에서 링크·기본 동작·개선 세 가지로 쓰이는데, 색 역할을 selector 로 분류해 보니 배경·테두리로 쓰인 곳만 의미 충돌이었고 글자색은 링크나 측정값이라 그대로 두는 것이 옳았다. 디스크는 .codex-verify 아래에 매번 새 이름으로 빌드한 산출물이 약 3GB 쌓인 것이 원인이었다(오늘치만 6개 1.2GB). 앞으로는 검증 빌드 경로를 하나로 재사용한다. 삭제는 사용자가 직접 수행했다.
+- Files: JinoSupporter.Web/Components 아래 .razor 10개
+- Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일. 드라이런으로 13개 규칙을 먼저 확인하고 적용했다. 적용 후 선택 상태에 파랑 배경이 남았는지 grep 으로 재확인해 0건. 서버 재기동 후 /login 200. 디스크 여유는 정리 후 7.81GB.
+- Next: 남은 회색 #617084·#dbe3ef·#dfe5ee 토큰 매핑, 그리고 화면별 세부 확인. 사용자 육안 확인이 필요한 시점이다.
