@@ -125,7 +125,7 @@
                         <span>@_result.Columns.Count.ToString("N0")개 컬럼</span>
                         @if (_result.TotalRows is long selectedTotal && selectedTotal > _result.Rows.Count)
                         {
-                            <b>최대 @_result.MaxRows.ToString("N0")건 제한</b>
+                            <b>최신 @_result.MaxRows.ToString("N0")건 제한 · QR 묶음은 표시 범위 기준</b>
                         }
                     </div>
                 </div>
