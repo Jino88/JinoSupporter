@@ -1,4 +1,4 @@
-﻿@page "/data-inference/ask"
+@page "/data-inference/ask"
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 @inject WebRepository Repo
@@ -414,7 +414,7 @@
         margin: 0 0 8px;
     }
     .diask-translating { font-size: 12px; color: var(--ink-2, #4a5461); display: inline-flex; align-items: center; }
-    .diask-overall { border-left: 4px solid #3b82f6; background: var(--panel-2, #f5f6f9); }
+    .diask-overall { border-left: 4px solid var(--ok, #1f5fa8); background: var(--panel-2, #f5f6f9); }
     .diask-answer-title {
         font-size: 13px; font-weight: 700; color: var(--ink, #0f1319); margin-bottom: 8px;
     }
@@ -479,12 +479,12 @@
     }
     .diask-ds-head {
         display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-        padding: 8px 14px; background: #f0f9ff; border-bottom: 1px solid #bae6fd;
+        padding: 8px 14px; background: var(--ok-wash, #eaf1f9); border-bottom: 1px solid var(--ok-wash, #eaf1f9);
     }
     .diask-ds-link {
-        font-size: 13px; font-weight: 700; color: #1d4ed8; text-decoration: none;
+        font-size: 13px; font-weight: 700; color: var(--ok, #1f5fa8); text-decoration: none;
     }
-    .diask-ds-link:hover { text-decoration: underline; color: #1e3a8a; }
+    .diask-ds-link:hover { text-decoration: underline; color: var(--ok, #1f5fa8); }
     .diask-ds-meta    { font-size: 11px; color: var(--ink-2, #4a5461); }
     .diask-ds-missing { color: var(--warn-ink, #92610a); font-style: italic; }
     .diask-ds-body    { padding: 10px 14px; font-size: 13px; color: var(--ink, #0f1319); line-height: 1.6; }
@@ -503,7 +503,7 @@
         padding: 1px 4px; font-size: 12px;
     }
     .diask-empty-note {
-        background: var(--warn-wash, #fdf4e0); border: 1px solid var(--warn-line, #f0cf8a); color: #78350f;
+        background: var(--warn-wash, #fdf4e0); border: 1px solid var(--warn-line, #f0cf8a); color: var(--warn-ink, #92610a);
         padding: 10px 14px; border-radius: 2px; font-size: 12px;
     }
     .diask-review-view {
@@ -544,7 +544,7 @@
     .diask-md pre,
     .diask-markdown pre {
         margin: 8px 0 12px; padding: 9px 10px; overflow-x: auto;
-        background: #f3f6f9; border: 1px solid var(--line, #dde1e7); border-radius: 2px;
+        background: var(--panel-2, #f5f6f9); border: 1px solid var(--line, #dde1e7); border-radius: 2px;
         font-size: 12px;
     }
     .diask-ai-md-visual {
@@ -580,15 +580,15 @@
         display: flex;
         align-items: flex-end;
         justify-content: center;
-        border-left: 1px solid #cfd8e3;
-        border-bottom: 1px solid #aebdca;
+        border-left: 1px solid var(--line, #dde1e7);
+        border-bottom: 1px solid var(--ink-3, #7f8a98);
         background: linear-gradient(to top, var(--panel-3, #eceef2) 1px, transparent 1px);
         background-size: 100% 29px;
     }
     .diask-ai-vbar {
         width: 46%;
         min-width: 22px;
-        border-radius: 2px 2px 0 0;
+        border-radius: 2px;
     }
     .diask-ai-vbar-label {
         min-height: 28px;
@@ -604,9 +604,9 @@
         line-height: 1.3;
         overflow-wrap: anywhere;
     }
-    .diask-ai-bar-danger { background: #c24135; }
-    .diask-ai-bar-warn   { background: #c47a1b; }
-    .diask-ai-bar-good   { background: #2f7d4b; }
+    .diask-ai-bar-danger { background: var(--crit, #c8342a); }
+    .diask-ai-bar-warn   { background: var(--warn, #fab219); }
+    .diask-ai-bar-good   { background: var(--ok, #1f5fa8); }
     .diask-ai-heatmap {
         display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 8px; margin-bottom: 10px;
@@ -627,40 +627,40 @@
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .diask-ai-heat em {
-        color: #526171; font-size: 11px; font-style: normal;
+        color: var(--ink-2, #4a5461); font-size: 11px; font-style: normal;
         font-variant-numeric: tabular-nums;
     }
     .diask-ai-heat-worse {
-        background: #fff1ef; border-color: #efb2aa; color: #9b2419;
+        background: var(--crit-wash, #fbedec); border-color: var(--crit-wash, #fbedec); color: var(--crit, #c8342a);
     }
     .diask-ai-heat-improved {
-        background: #edf8f0; border-color: #a9d9b8; color: #21673c;
+        background: var(--ok-wash, #eaf1f9); border-color: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8);
     }
     .diask-ai-heat-flat {
-        background: #fff8eb; border-color: #edcf94; color: #8a570f;
+        background: var(--warn-wash, #fdf4e0); border-color: var(--warn-line, #f0cf8a); color: var(--warn-ink, #92610a);
     }
     .diask-ai-heat-matrix {
         margin: 10px 0 12px;
-        border-collapse: separate;
+        border-collapse: collapse;
         border-spacing: 4px;
         font-size: 11px;
         width: 100%;
     }
     .diask-ai-heat-matrix th {
-        background: var(--panel-3, #eceef2); color: #28405c;
+        background: var(--panel-3, #eceef2); color: var(--signal, #16202b);
         font-size: 10px; font-weight: 900;
         padding: 6px 10px;
-        border: 1px solid #d4dee8;
+        border: 1px solid var(--line, #dde1e7);
         text-align: center;
         white-space: nowrap;
     }
     .diask-ai-heat-matrix th.diask-ai-heat-rowhead {
-        background: #f4f8fb; color: #17324a;
+        background: var(--panel-2, #f5f6f9); color: var(--signal, #16202b);
     }
     .diask-ai-heat-matrix td.diask-ai-heat-cell {
         min-width: 86px;
         padding: 8px 10px;
-        border: 1px solid #d4dee8;
+        border: 1px solid var(--line, #dde1e7);
         border-radius: 2px;
         text-align: center;
         vertical-align: middle;
@@ -678,12 +678,12 @@
         margin-top: 3px;
         font-size: 10px;
         font-style: normal;
-        color: #526171;
+        color: var(--ink-2, #4a5461);
         font-variant-numeric: tabular-nums;
     }
-    .diask-ai-heat-cell.diask-ai-heat-worse em { color: #9b2419; }
-    .diask-ai-heat-cell.diask-ai-heat-improved em { color: #21673c; }
-    .diask-ai-heat-cell.diask-ai-heat-flat em { color: #8a570f; }
+    .diask-ai-heat-cell.diask-ai-heat-worse em { color: var(--crit, #c8342a); }
+    .diask-ai-heat-cell.diask-ai-heat-improved em { color: var(--ok, #1f5fa8); }
+    .diask-ai-heat-cell.diask-ai-heat-flat em { color: var(--warn-ink, #92610a); }
 
     /* History panel */
     .diask-history-col {
@@ -707,7 +707,7 @@
     .diask-history-meta { font-size: 10px; color: var(--ink-3, #7f8a98); margin-top: 2px; }
     .diask-history-del  {
         position: absolute; top: 4px; right: 4px; width: 18px; height: 18px;
-        border-radius: 50%; border: none; background: transparent;
+        border-radius:2px; border: none; background: transparent;
         color: var(--ink-3, #7f8a98); font-size: 10px; cursor: pointer; padding: 0;
     }
     .diask-history-del:hover { background: var(--crit, #c8342a); color: var(--panel, #fff); }

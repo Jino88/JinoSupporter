@@ -1,4 +1,4 @@
-﻿@page "/data-inference/model-analysis"
+@page "/data-inference/model-analysis"
 @rendermode InteractiveServer
 @implements IDisposable
 @inject WebRepository Repo
@@ -1214,12 +1214,12 @@
 
 <style>
     .dima-root {
-        height: 100vh;
-        max-height: 100vh;
+        height: 100%;
+        max-height: 100%;
         min-height: 0;
         display: flex;
         flex-direction: column;
-        background: #f5f7fb;
+        background: var(--panel-2, #f5f6f9);
         color: var(--ink, #0f1319);
         overflow: hidden;
     }
@@ -1248,7 +1248,7 @@
 
     .dima-subtitle {
         font-size: 11px;
-        color: #667085;
+        color: var(--ink-3, #7f8a98);
         margin-top: 2px;
     }
 
@@ -1315,9 +1315,9 @@
         justify-content: space-between;
         gap: 8px;
         border-bottom: 1px solid var(--line, #dde1e7);
-        background: #fbfcfe;
+        background: var(--panel-2, #f5f6f9);
         font-size: 12px;
-        color: #344054;
+        color: var(--ink-2, #4a5461);
         flex-shrink: 0;
     }
 
@@ -1358,7 +1358,7 @@
     .dima-group-btn:hover,
     .dima-purpose-btn:hover {
         background: var(--panel-2, #f5f6f9);
-        border-color: #bfd4ff;
+        border-color: var(--ok-wash, #eaf1f9);
     }
 
     .dima-group-btn.active,
@@ -1396,7 +1396,7 @@
     .dima-report-purpose,
     .dima-report-meta {
         font-size: 11px;
-        color: #667085;
+        color: var(--ink-3, #7f8a98);
     }
 
     .dima-toolbar {
@@ -1424,7 +1424,7 @@
     .dima-label {
         font-size: 11px;
         font-weight: 650;
-        color: #475467;
+        color: var(--ink-2, #4a5461);
     }
 
     .dima-lang {
@@ -1445,15 +1445,15 @@
     }
 
     .dima-status.ok {
-        background: #ecfdf3;
-        color: #027a48;
-        border: 1px solid #abefc6;
+        background: var(--ok-wash, #eaf1f9);
+        color: var(--ok, #1f5fa8);
+        border: 1px solid var(--ok-wash, #eaf1f9);
     }
 
     .dima-status.error {
-        background: #fef3f2;
-        color: #b42318;
-        border: 1px solid #fecdca;
+        background: var(--crit-wash, #fbedec);
+        color: var(--crit, #c8342a);
+        border: 1px solid var(--crit-wash, #fbedec);
     }
 
     .dima-stats {
@@ -1471,7 +1471,7 @@
         padding: 7px 9px;
         border: 1px solid var(--line, #dde1e7);
         border-radius: 2px;
-        background: #fbfcfe;
+        background: var(--panel-2, #f5f6f9);
     }
 
     .dima-stats strong {
@@ -1486,7 +1486,7 @@
         display: block;
         margin-top: 2px;
         font-size: 10px;
-        color: #667085;
+        color: var(--ink-3, #7f8a98);
     }
 
     .dima-workspace {
@@ -1523,8 +1523,8 @@
     }
 
     .dima-report.new {
-        border-color: #93c5fd;
-        background: #f0f7ff;
+        border-color: var(--ok-wash, #eaf1f9);
+        background: var(--ok-wash, #eaf1f9);
     }
 
     .dima-report.missing {
@@ -1549,7 +1549,7 @@
     .dima-report-purpose {
         margin-top: 4px;
         line-height: 1.35;
-        color: #475467;
+        color: var(--ink-2, #4a5461);
     }
 
     .dima-report-meta {
@@ -1567,8 +1567,8 @@
     }
 
     .dima-report-meta .dima-pill-new {
-        background: #dbeafe;
-        color: #1d4ed8;
+        background: var(--ok-wash, #eaf1f9);
+        color: var(--ok, #1f5fa8);
         font-weight: 700;
     }
 
@@ -1651,7 +1651,7 @@
         padding: 10px 12px 4px;
         border: 1px solid var(--line, #dde1e7);
         border-radius: 2px;
-        background: #fbfcfe;
+        background: var(--panel-2, #f5f6f9);
     }
 
     .dima-table-only table {
@@ -1660,7 +1660,7 @@
 
     .dima-empty,
     .dima-empty-small {
-        color: #667085;
+        color: var(--ink-3, #7f8a98);
         font-size: 13px;
         display: flex;
         align-items: center;
@@ -1723,7 +1723,7 @@
     .dima-modal-sub {
         margin-top: 2px;
         font-size: 11px;
-        color: #667085;
+        color: var(--ink-3, #7f8a98);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -1736,13 +1736,13 @@
         gap: 5px;
         padding: 7px 14px;
         border-bottom: 1px solid var(--line, #dde1e7);
-        background: #fbfcfe;
+        background: var(--panel-2, #f5f6f9);
         flex-shrink: 0;
     }
 
     .dima-modal-meta span {
         font-size: 10px;
-        color: #475467;
+        color: var(--ink-2, #4a5461);
         background: var(--panel-3, #eceef2);
         border-radius: 2px;
         padding: 1px 6px;

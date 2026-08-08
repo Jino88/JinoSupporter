@@ -1,4 +1,4 @@
-﻿@page "/data-inference/validation"
+@page "/data-inference/validation"
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 @using JinoSupporter.Web.Services
@@ -135,7 +135,7 @@ else
                         @if (hasIssues)
                         {
                             <tr class="div-detail-row">
-                                <td colspan="7" style="padding:8px 16px; background:#fff7ed;">
+                                <td colspan="7" style="padding:8px 16px; background:var(--warn-wash, #fdf4e0);">
                                     <strong class="small">All issues:</strong>
                                     <ul class="mb-0 small">
                                         @foreach (var iss in issues)
@@ -157,12 +157,12 @@ else
                         @if (_expandedSummary is not null)
                         {
                             <tr class="div-detail-row">
-                                <td colspan="7" style="padding:8px 16px; background:#f8fafc;">
+                                <td colspan="7" style="padding:8px 16px; background:var(--panel-2, #f5f6f9);">
                                     <strong class="small">Summary:</strong>
                                     <span class="small">@_expandedSummary.Summary</span>
                                     @if (!string.IsNullOrEmpty(_expandedSummary.KeyFindings))
                                     {
-                                        <div class="small mt-1" style="white-space:pre-wrap; color:#475569;">@_expandedSummary.KeyFindings</div>
+                                        <div class="small mt-1" style="white-space:pre-wrap; color:var(--ink-2, #4a5461);">@_expandedSummary.KeyFindings</div>
                                     }
                                     @if (_expandedSummary.Tags.Count > 0)
                                     {
@@ -184,7 +184,7 @@ else
                                 issues.Select(i => (i.Variable ?? "", i.VariableDetail ?? "")));
                             <tr class="div-detail-row">
                                 <td colspan="7" style="padding:0;">
-                                    <div style="max-height:280px; overflow:auto; padding:8px 16px; background:#fff;">
+                                    <div style="max-height:280px; overflow:auto; padding:8px 16px; background:var(--panel, #ffffff);">
                                         <table class="div-sub">
                                             <thead>
                                                 <tr>
@@ -226,16 +226,16 @@ else
                         @if (_expandedImages.Count > 0)
                         {
                             <tr class="div-detail-row">
-                                <td colspan="7" style="padding:8px 16px; background:#fff;">
+                                <td colspan="7" style="padding:8px 16px; background:var(--panel, #ffffff);">
                                     <div class="small text-muted mb-1">🖼 AI Analysis Images (@_expandedImages.Count)</div>
                                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
                                         @foreach (var (img, idx) in _expandedImages.Select((x, i) => (x, i)))
                                         {
                                             <div class="div-img-thumb" @onclick="() => OpenViewer(img.DataUrl)"
-                                                 style="width:110px; height:110px; border:1px solid #e2e8f0; border-radius:4px; overflow:hidden; position:relative; cursor:zoom-in;">
+                                                 style="width:110px; height:110px; border:1px solid var(--panel-3, #eceef2); border-radius:2px; overflow:hidden; position:relative; cursor:zoom-in;">
                                                 <img src="@img.DataUrl" alt="@img.FileName"
                                                      style="width:100%; height:100%; object-fit:cover;" />
-                                                <div style="position:absolute; top:2px; left:4px; background:rgba(0,0,0,.6); color:#fff; font-size:10px; padding:1px 5px; border-radius:3px;">
+                                                <div style="position:absolute; top:2px; left:4px; background:rgba(0,0,0,.6); color:var(--panel, #ffffff); font-size:10px; padding:1px 5px; border-radius:2px;">
                                                     @(idx + 1)
                                                 </div>
                                             </div>
@@ -249,12 +249,12 @@ else
                         @if (_expandedFiles.Count > 0)
                         {
                             <tr class="div-detail-row">
-                                <td colspan="7" style="padding:8px 16px; background:#fff;">
+                                <td colspan="7" style="padding:8px 16px; background:var(--panel, #ffffff);">
                                     <div class="small text-muted mb-1">📎 Backup Files (@_expandedFiles.Count)</div>
                                     <div style="display:flex; gap:6px; flex-wrap:wrap;">
                                         @foreach (var f in _expandedFiles)
                                         {
-                                            <a class="badge bg-light text-dark" style="font-weight:500; border:1px solid #e2e8f0;"
+                                            <a class="badge bg-light text-dark" style="font-weight:500; border:1px solid var(--panel-3, #eceef2);"
                                                href="/data-inference/file/@f.Id" download="@f.FileName" target="_blank">
                                                 📄 @f.FileName
                                                 <span class="text-muted ms-1">@FormatSize(f.FileSize)</span>
@@ -267,7 +267,7 @@ else
                         else if (_expandedMeasurements.Count == 0 && _expandedSummary is null)
                         {
                             <tr class="div-detail-row">
-                                <td colspan="7" style="padding:8px 16px; color:#94a3b8; font-style:italic;" class="small">
+                                <td colspan="7" style="padding:8px 16px; color:var(--ink-3, #7f8a98); font-style:italic;" class="small">
                                     No measurements / summary / files to display.
                                 </td>
                             </tr>
@@ -328,7 +328,7 @@ else
     .div-sub th { background:var(--panel-2, #f5f6f9); font-weight:600; color:var(--ink-2, #4a5461); }
     .div-row-align { background:var(--crit-wash, #fbedec); color:var(--crit, #c8342a); font-weight:600; }
     .div-row-issue { background:var(--crit-wash, #fbedec); color:var(--crit, #c8342a); }
-    .div-row-issue td { border-color:#fca5a5 !important; }
+    .div-row-issue td { border-color:var(--crit-wash, #fbedec) !important; }
     .div-row-mark  { color:var(--crit, #c8342a); font-weight:700; text-align:center; width:22px; }
 
     .div-viewer-overlay {
