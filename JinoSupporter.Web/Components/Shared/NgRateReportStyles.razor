@@ -72,13 +72,15 @@
     .ngrate-setup-card {
         border: 1px solid var(--line, #dde1e7);
         background: var(--panel, #fff);
+        box-shadow: none !important;
     }
     .ngrate-report-card {
         border: 1px solid var(--line-2, #c6ccd5);
         background: var(--panel, #fff);
         box-shadow: none !important;
     }
-    .ngrate-card-header {
+    .ngrate-setup-card > .ngrate-card-header,
+    .ngrate-report-card > .ngrate-card-header {
         padding: .4rem .65rem;
         background: var(--panel-2, #f5f6f9);
         color: var(--ink-2, #4a5461);
@@ -86,11 +88,13 @@
         min-height: 30px;
         font-size: 11.5px;
     }
-    .ngrate-card-body {
+    .ngrate-setup-card > .ngrate-card-body,
+    .ngrate-report-card > .ngrate-card-body {
         padding: .65rem;
         background: var(--panel, #fff);
     }
-    .ngrate-card-body.p-0 {
+    .ngrate-setup-card > .ngrate-card-body.p-0,
+    .ngrate-report-card > .ngrate-card-body.p-0 {
         padding: 0 !important;
     }
     .ngrate-grid .gap-3,
