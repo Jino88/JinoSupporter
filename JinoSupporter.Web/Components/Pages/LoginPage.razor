@@ -16,7 +16,22 @@
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" href="app.css" />
     <style>
-        html, body { height: 100%; background: #f1f5f9; }
+        /* This page uses EmptyLayout, so instrument.scoped.css never loads and the
+           design tokens are undefined here. Loading the whole system would put
+           .ins .btn up against Bootstrap's .btn-primary on the one control that
+           has to work, so the few tokens this page needs are mirrored instead.
+           Values must stay in step with ui-redesign/assets/instrument.css. */
+        :root {
+            --plane: #e8eaee;
+            --panel: #ffffff;
+            --line:  #dde1e7;
+            --ink:   #0f1319;
+            --ink-2: #4a5461;
+        }
+
+        /* 100vh is correct here: this screen owns the viewport, unlike the pages
+           that open inside the shell and have to use var(--view-h). */
+        html, body { height: 100%; background: var(--plane); }
         .login-wrap {
             min-height: 100vh;
             display: flex;
@@ -24,20 +39,20 @@
             justify-content: center;
         }
         .login-card {
-            background: #fff;
-            border-radius: 16px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 2px;
             padding: 40px 44px;
             width: 360px;
-            box-shadow: 0 8px 32px rgba(0,0,0,.08);
         }
         .login-logo {
             font-size: 22px;
             font-weight: 800;
-            color: #1e293b;
+            color: var(--ink);
             letter-spacing: -0.5px;
             margin-bottom: 4px;
         }
-        .login-sub { font-size: 13px; color: #64748b; margin-bottom: 28px; }
+        .login-sub { font-size: 13px; color: var(--ink-2); margin-bottom: 28px; }
     </style>
 </head>
 <body>
