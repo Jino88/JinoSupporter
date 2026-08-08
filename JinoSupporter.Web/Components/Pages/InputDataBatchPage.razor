@@ -2194,9 +2194,9 @@
 
 <style>
     .input-data-root {
-        min-height: calc(100vh - 24px);
+        min-height: calc(var(--view-h, 100vh) - 24px);
         padding: 18px;
-        background: #f6f7fb;
+        background: var(--plane, #e8eaee);
         color: var(--ink, #0f1319);
     }
 
@@ -2399,7 +2399,7 @@
     }
 
     .input-data-root th {
-        background: var(--panel-3, #eceef2);
+        background: var(--panel-2, #f5f6f9);
         font-weight: 800;
     }
 
@@ -2531,7 +2531,7 @@
     .chip-row span {
         border: 1px solid var(--line, #dde1e7);
         border-radius: 2px;
-        background: var(--panel-3, #eceef2);
+        background: var(--panel-2, #f5f6f9);
         padding: 2px 5px;
         font-size: 11px;
         color: var(--ink-2, #4a5461);
@@ -2588,7 +2588,7 @@
         gap: 12px;
         padding: 8px 10px;
         border-bottom: 1px solid var(--line, #dde1e7);
-        background: var(--panel-3, #eceef2);
+        background: var(--panel-2, #f5f6f9);
     }
 
     .recognized-data-head strong {
@@ -2630,7 +2630,7 @@
         position: sticky;
         top: 0;
         z-index: 1;
-        background: var(--line, var(--line, #dde1e7));
+        background: var(--panel-2, #f5f6f9);
         font-weight: 800;
         color: var(--ink-2, #4a5461);
     }
@@ -2657,10 +2657,10 @@
     .review-warning,
     .open-file-status {
         margin: 8px 0 0;
-        border: 1px solid #fed7aa;
+        border: 1px solid var(--warn-line, #f0cf8a);
         border-radius: 2px;
-        background: #fff7ed;
-        color: #9a3412;
+        background: var(--warn-wash, #fdf4e0);
+        color: var(--warn-ink, #92610a);
         padding: 8px 10px;
         font-size: 12px;
         font-weight: 700;
@@ -2731,16 +2731,16 @@
         padding: 2px 6px;
         border: 1px solid var(--line-2, #c6ccd5);
         border-radius: 2px;
-        background: var(--line, var(--line, #dde1e7));
+        background: var(--panel-2, #f5f6f9);
         color: var(--ink, #0f1319);
         font-size: 11px;
         font-weight: 800;
     }
 
     .question-ref-head .actual-ref {
-        background: #ecfeff;
-        color: #155e75;
-        border-color: #a5f3fc;
+        background: var(--signal-wash, #edf0f4);
+        color: var(--signal, #16202b);
+        border-color: var(--signal, #16202b);
     }
 
     .question-ref-cells {

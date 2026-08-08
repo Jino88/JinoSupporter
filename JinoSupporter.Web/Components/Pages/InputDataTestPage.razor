@@ -366,17 +366,17 @@
 
 <style>
     .idt-root {
-        height: calc(100vh - 24px);
+        height: calc(var(--view-h, 100vh) - 24px);
         display: grid;
         grid-template-columns: 220px minmax(0, 1fr);
         gap: 10px;
         padding: 10px;
         overflow: hidden;
-        background: #f6f8fb;
+        background: var(--plane, #e8eaee);
     }
 
     .idt-left, .idt-step {
-        border: 1px solid #d9e2ee;
+        border: 1px solid var(--line, #dde1e7);
         background: var(--panel, #fff);
         border-radius: 2px;
     }
@@ -405,7 +405,7 @@
     .idt-kicker {
         font-size: 11px;
         font-weight: 800;
-        color: #0f766e;
+        color: var(--signal, #16202b);
         letter-spacing: .02em;
     }
 
@@ -442,13 +442,13 @@
     }
 
     .idt-drop:hover {
-        border-color: #0f766e;
-        background: #f0fdfa;
+        border-color: var(--signal, #16202b);
+        background: var(--signal-wash, #edf0f4);
     }
 
     .idt-drop.has-file {
-        border-color: #14b8a6;
-        background: #f0fdfa;
+        border-color: var(--signal, #16202b);
+        background: var(--signal-wash, #edf0f4);
     }
 
     .idt-file-input {
@@ -467,8 +467,8 @@
         width: 52px;
         height: 34px;
         border-radius: 2px;
-        background: #134e4a;
-        color: #ccfbf1;
+        background: var(--signal, #16202b);
+        color: var(--panel, #fff);
         font-size: 12px;
         font-weight: 850;
     }
@@ -504,9 +504,9 @@
     }
 
     .idt-file-meta .idt-warn {
-        border-color: #fed7aa;
-        background: #fff7ed;
-        color: #9a3412;
+        border-color: var(--warn-line, #f0cf8a);
+        background: var(--warn-wash, #fdf4e0);
+        color: var(--warn-ink, #92610a);
     }
 
     .idt-extract-card {
@@ -571,7 +571,7 @@
     }
 
     .idt-textarea:focus {
-        border-color: #2563eb;
+        border-color: var(--signal, #16202b);
     }
 
     .idt-textarea.purpose { min-height: 86px; }
@@ -636,9 +636,9 @@
         gap: 8px;
         margin: 0 2px 10px;
         padding: 10px;
-        border: 1px solid #bfdbfe;
+        border: 1px solid var(--line-2, #c6ccd5);
         border-radius: 2px;
-        background: #eff6ff;
+        background: var(--signal-wash, #edf0f4);
     }
 
     .idt-auto-head {
@@ -651,7 +651,7 @@
     .idt-auto-title {
         font-size: 13px;
         font-weight: 850;
-        color: #1e3a8a;
+        color: var(--signal, #16202b);
     }
 
     .idt-auto-subtitle {
@@ -663,10 +663,10 @@
     .idt-auto-close {
         width: 26px;
         height: 26px;
-        border: 1px solid #93c5fd;
+        border: 1px solid var(--line-2, #c6ccd5);
         border-radius: 2px;
         background: var(--panel, #fff);
-        color: #1d4ed8;
+        color: var(--signal, #16202b);
         font-size: 11px;
         font-weight: 850;
     }
@@ -700,7 +700,7 @@
         min-height: 260px;
         max-height: 360px;
         resize: vertical;
-        border: 1px solid #bfdbfe;
+        border: 1px solid var(--line-2, #c6ccd5);
         border-radius: 2px;
         padding: 8px;
         background: var(--panel, #fff);
@@ -718,7 +718,7 @@
 
     .idt-auto-empty {
         padding: 10px;
-        border: 1px dashed #93c5fd;
+        border: 1px dashed var(--line-2, #c6ccd5);
         border-radius: 2px;
         background: var(--panel, #fff);
         color: var(--ink-2, #4a5461);
@@ -738,7 +738,7 @@
         min-width: 0;
         margin: 0;
         padding: 8px;
-        border: 1px solid #dbeafe;
+        border: 1px solid var(--line, #dde1e7);
         border-radius: 2px;
         background: var(--panel, #fff);
         cursor: pointer;
@@ -821,7 +821,7 @@
     }
 
     .idt-step.running {
-        border-color: #60a5fa;
+        border-color: var(--signal, #16202b);
     }
 
     .idt-step-title {
@@ -863,7 +863,7 @@
         overflow: auto;
         border: 1px solid var(--line, #dde1e7);
         border-radius: 2px;
-        background: #fbfdff;
+        background: var(--panel, #fff);
         color: var(--ink, #0f1319);
         padding: 10px;
         font-size: 13px;
@@ -881,7 +881,7 @@
 
     .idt-result.error-text {
         border-color: var(--crit-wash, #fbedec);
-        background: #fff7f7;
+        background: var(--crit-wash, #fbedec);
         color: var(--crit, #c8342a);
     }
 
@@ -894,7 +894,7 @@
     .idt-ai-html-frame {
         display: block;
         width: 100%;
-        height: min(1200px, calc(100vh - 230px));
+        height: min(1200px, calc(var(--view-h, 100vh) - 230px));
         min-height: 620px;
         border: 0;
         background: var(--panel, #fff);
@@ -938,7 +938,7 @@
     }
 
     .idt-result.html-report th {
-        background: var(--panel-3, #eceef2);
+        background: var(--panel-2, #f5f6f9);
         font-weight: 800;
     }
 
@@ -971,9 +971,9 @@
     }
 
     .idt-result.html-report .idt-purpose-tags .idt-chip {
-        background: #dbeafe;
-        border-color: #93c5fd;
-        color: #1d4ed8;
+        background: var(--signal-wash, #edf0f4);
+        border-color: var(--line-2, #c6ccd5);
+        color: var(--signal, #16202b);
     }
 
     .idt-result.html-report .idt-check-tags .idt-chip {
@@ -1008,7 +1008,7 @@
     }
 
     .idt-result.html-report .idt-process {
-        border-left: 4px solid #2563eb;
+        border-left: 4px solid var(--signal, #16202b);
     }
 
     .idt-result.html-report .idt-mini-bars {
@@ -1047,7 +1047,7 @@
         display: block;
         height: 100%;
         border-radius: 2px;
-        background: #2563eb;
+        background: var(--signal, #16202b);
     }
 
     .idt-result.html-report .idt-bar-value {
@@ -1081,7 +1081,7 @@
     @@media (max-width: 980px) {
         .idt-root {
             height: auto;
-            min-height: calc(100vh - 24px);
+            min-height: calc(var(--view-h, 100vh) - 24px);
             grid-template-columns: 1fr;
             overflow: auto;
         }

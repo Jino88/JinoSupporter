@@ -308,16 +308,16 @@
     .daily-root {
         /* the shell hands this route a definite height (instrument.css 8b);
            --view-h keeps the classic shell close to the old value */
-        height: var(--view-h, calc(100vh - 24px));
+        height: calc(var(--view-h, 100vh) - 24px);
         display: grid;
         grid-template-columns: 290px minmax(0, 1fr);
         gap: 12px;
         padding: 10px;
-        background: #f6f8fb;
+        background: var(--plane, #e8eaee);
         overflow: hidden;
     }
     .daily-sidebar {
-        border: 1px solid #d8e0eb;
+        border: 1px solid var(--line, #dde1e7);
         background: var(--panel, #fff);
         border-radius: 2px;
         padding: 10px;
@@ -343,7 +343,7 @@
         gap: 3px;
         color: var(--ink, #0f1319);
     }
-    .daily-item:hover { border-color: #93c5fd; background: #f8fbff; }
+    .daily-item:hover { border-color: var(--line-2, #c6ccd5); background: var(--panel-2, #f5f6f9); }
     .daily-item.active { border-color: var(--signal, #16202b); background: var(--signal-wash, #edf0f4); }
     .daily-history {
         margin-top: 12px;
@@ -375,8 +375,8 @@
         padding: 7px;
         gap: 2px;
     }
-    .daily-history-card:hover { border-color: var(--ok-wash, #eaf1f9); background: #f7fff9; }
-    .daily-history-card.active { border-color: var(--ok, #1f5fa8); background: var(--ok-wash, #eaf1f9); }
+    .daily-history-card:hover { border-color: var(--line-2, #c6ccd5); background: var(--panel-2, #f5f6f9); }
+    .daily-history-card.active { border-color: var(--signal, #16202b); background: var(--signal-wash, #edf0f4); }
     .daily-history-top { display: flex; align-items: center; gap: 5px; min-width: 0; }
     .daily-history-title { min-width: 0; flex: 1; font-size: 11px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .daily-history-meta { font-size: 10px; color: var(--ink-2, #4a5461); }
@@ -406,7 +406,7 @@
     }
     .daily-main { min-width: 0; overflow-y: auto; }
     .daily-toolbar {
-        border: 1px solid #d8e0eb;
+        border: 1px solid var(--line, #dde1e7);
         background: var(--panel, #fff);
         border-radius: 2px;
         padding: 8px;
@@ -414,7 +414,7 @@
         flex-wrap: wrap;
     }
     .daily-extract-settings {
-        border: 1px solid #d8e0eb;
+        border: 1px solid var(--line, #dde1e7);
         background: var(--panel, #fff);
         border-radius: 2px;
         padding: 10px;
@@ -458,7 +458,7 @@
         min-width: 0;
         border: 1px solid var(--warn-line, #f0cf8a);
         background: var(--warn-wash, #fdf4e0);
-        color: #78350f;
+        color: var(--warn-ink, #92610a);
         border-radius: 2px;
         padding: 7px 10px;
         margin-bottom: 8px;
@@ -482,12 +482,12 @@
         font-weight: 900;
     }
     .daily-pending-badge.busy {
-        border-color: #93c5fd;
-        background: #dbeafe;
-        color: #1d4ed8;
+        border-color: var(--signal, #16202b);
+        background: var(--signal-wash, #edf0f4);
+        color: var(--signal, #16202b);
     }
     .daily-attached-files {
-        border: 1px solid #d8e0eb;
+        border: 1px solid var(--line, #dde1e7);
         background: var(--panel, #fff);
         border-radius: 2px;
         padding: 8px 10px;
@@ -518,9 +518,9 @@
     }
     .daily-attached-file {
         max-width: min(100%, 520px);
-        border: 1px solid #bfdbfe;
-        background: #eff6ff;
-        color: #1e3a8a;
+        border: 1px solid var(--line-2, #c6ccd5);
+        background: var(--signal-wash, #edf0f4);
+        color: var(--signal, #16202b);
         border-radius: 2px;
         padding: 3px 7px;
         font-size: 11px;
@@ -530,7 +530,7 @@
         white-space: nowrap;
     }
     .daily-history-diff-panel {
-        border: 1px solid #d8e0eb;
+        border: 1px solid var(--line, #dde1e7);
         background: var(--panel, #fff);
         border-radius: 2px;
         margin-bottom: 8px;
@@ -570,7 +570,7 @@
     .daily-history-diff-body {
         max-height: 260px;
         overflow: auto;
-        font: 11px/1.45 Consolas, "Courier New", monospace;
+        font: 11px/1.45 var(--mono, Bahnschrift, monospace);
     }
     .daily-diff-line {
         display: grid;
@@ -580,8 +580,8 @@
         white-space: pre-wrap;
         word-break: break-word;
     }
-    .daily-diff-line.add { background: var(--ok-wash, #eaf1f9); color: #14532d; }
-    .daily-diff-line.remove { background: var(--crit-wash, #fbedec); color: #7f1d1d; }
+    .daily-diff-line.add { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
+    .daily-diff-line.remove { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); }
     .daily-diff-kind {
         font-weight: 900;
         text-align: center;
@@ -590,7 +590,7 @@
         padding: 9px 10px;
         color: var(--ink-2, #4a5461);
         font-size: 12px;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family: var(--sans, "Segoe UI", sans-serif);
     }
     .daily-result-grid {
         display: grid;
@@ -599,7 +599,7 @@
         margin-bottom: 10px;
     }
     .daily-panel {
-        border: 1px solid #d8e0eb;
+        border: 1px solid var(--line, #dde1e7);
         background: var(--panel, #fff);
         border-radius: 2px;
         padding: 10px;
@@ -673,12 +673,12 @@
     }
     .daily-html-report th,
     .daily-html-report td {
-        border: 1px solid #d8e0eb;
+        border: 1px solid var(--line, #dde1e7);
         padding: 6px 7px;
         vertical-align: top;
     }
     .daily-html-report th {
-        background: #eef4ff;
+        background: var(--panel-2, #f5f6f9);
         font-weight: 800;
         color: var(--ink, #0f1319);
     }
@@ -700,16 +700,16 @@
         align-items: center;
         margin-top: 10px;
         padding: 9px 10px;
-        border: 1px dashed #93c5fd;
-        background: #eff6ff;
+        border: 1px dashed var(--warn-line, #f0cf8a);
+        background: var(--warn-wash, #fdf4e0);
         border-radius: 2px;
-        color: #1d4ed8;
+        color: var(--warn-ink, #92610a);
         font-size: 12px;
     }
     .daily-generated-html {
         max-height: calc(var(--view-h, 100vh) * .78);
         border-color: var(--ok-wash, #eaf1f9);
-        background: #fcfffd;
+        background: var(--ok-wash, #eaf1f9);
     }
     .daily-result-grid .daily-panel:last-child {
         min-height: calc(var(--view-h, 100vh) * .72);
@@ -750,7 +750,7 @@
         align-items: center;
     }
     .daily-summary-card {
-        border: 1px solid #d8e0eb;
+        border: 1px solid var(--line, #dde1e7);
         background: var(--panel-2, #f5f6f9);
         border-radius: 2px;
         padding: 5px 8px;
