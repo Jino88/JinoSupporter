@@ -2033,3 +2033,19 @@
 - Files: JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css, instrument.scoped.css, SHEET_PORTING_CONTRACT.md, Components 아래 .razor 11개
 - Verification: 전체 재컴파일(--no-incremental) 오류 0개, 경고 32개로 기존과 동일. scope-css.js check 로 생성물 동기 확인. 작업 중 라이트 테마 토큰 정의가 CRLF 매칭 실패로 누락된 채 참조만 들어가는 사고가 있었고, 스코프 출력 전체에서 정의 없는 var() 참조를 기계적으로 훑어 발견·수정했다(남은 --d 는 목업이 인라인으로 주는 값이며 var(--d, 0) 폴백이 있어 정상). 서버 재기동 완료.
 - Next: 기계적 정리는 소진됐다. 남은 것은 화면별 레이아웃 이식(시안의 기준선 편차 막대 같은 구조)이며 사용자 확인 결과에 따라 우선순위를 정한다.
+
+## 2026-08-08 15:05 - [DATA][ADD] QrBakoData: 중복 QR 그룹화·17자리 필터·요약 카드(ppm)
+- Agent: Claude
+- Session: S17
+- Task-ID: S17-20260808-113039006-03ff5857f8c544b9
+- Category: DATA
+- Feature: QrBakoData
+- Change: ADD
+- Prompt: "아 제대로 되긴 했는데 Product ID 가 기존이랑 다른것들 (현재 17자리 QR code 내용인데 , 막 11, 22, 1111111111 이런거 있는데 이거는 표시에서 제외해줘) . 그리고 날짜 체크 하면 거기에 맞는 데이터 서머리 를 위에 카드로 표시해줘 Input 개수 NG (Test Result 열) 개수, NG Rate . 중복 Product ID 제외하고"
+- Answer: 중복 ProductID의 합불 판정은 "한 번이라도 NG면 NG"가 아니라 재검사 성격이므로 최신 TestTime 행의 결과를 그 제품의 최종 판정으로 삼기로 했고, 불량률 단위는 ppm으로 확정했다.
+- Applied: (1) ProductID를 17자리인 행만 조회하고 제외 건수를 화면에 표기 (2) 같은 QR 코드를 + 익스팬더로 접고 TestTime 최신순 정렬, 검사날짜 체크박스로 여러 날짜 동시 조회 (3) 선택 날짜 기준 Input/NG/NG Rate 요약 카드를 중복 ProductID 제외(distinct) 기준으로 추가 (4) NG 판정을 ROW_NUMBER 로 뽑은 최신 TestTime 행으로 결정하고 NG Rate 를 ppm 으로 환산, Input 0 이면 "-" 표기 (5) 행 상한에 걸렸을 때 요약과 표의 모집단이 어긋나지 않도록 정합성 보강
+- Completed: 하위 세션(28)이 구현한 5개 커밋을 검증 후 main 에 병합했다. 사용자가 도중에 정정한 두 가지(최신시간 판정, ppm)가 코드에 실제 반영된 것을 병합 전에 확인했다.
+- Decisions: 사용자가 예로 든 `11`, `1111111111` 같은 값은 길이가 17이 아니어서 길이 필터만으로 걸러진다. 17자리이면서 같은 문자만 반복되는 값이 실제로 존재하는지 확인할 수 없었으므로 추측으로 규칙을 늘리지 않았다. BMES DB 는 조회 전용 제약을 유지했다(NOLOCK 4곳, ApplicationIntent=ReadOnly, 쓰기성 SQL 0건).
+- Files: JinoSupporter.Web/Services/QrBakoDataService.cs, JinoSupporter.Web/Components/Pages/QrBakoDataPage.razor
+- Verification: 병합 전 브랜치에서 최신판정(ROW_NUMBER/LatestRank)·ppm(1_000_000)·17자리 필터·쓰기성 SQL 부재를 소스에서 직접 확인. 병합 후 전체 재컴파일(--no-incremental) 오류 0개·경고 32개로 기존과 동일, 서버 5050 재기동 후 /login 200. 화면 동작의 최종 확인은 사용자가 수행한다.
+- Next: 남은 화면별 레이아웃 이식(F-Cost, Report/LPA, 이후 Test Data Analysis / Tools / Admin).
