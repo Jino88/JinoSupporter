@@ -4,7 +4,7 @@
 @if (_isCollapsed)
 {
     <button type="button"
-            class="card shadow-sm ngrate-top-toggle ngrate-top-toggle-collapsed"
+            class="card ngrate-top-toggle ngrate-top-toggle-collapsed"
             @onclick="ToggleCollapsed"
             title="Show report setup and progress log">
         <span class="fw-semibold">Report Setup / Progress Log</span>
@@ -30,15 +30,15 @@ else
 {
 <div class="@LayoutClass">
     <div class="@DataCellClass">
-        <div class="card shadow-sm h-100">
-            <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+        <div class="card h-100 ngrate-setup-card">
+            <div class="card-header ngrate-card-header small fw-semibold d-flex justify-content-between align-items-center">
                 <span>Report Setup</span>
                 <button type="button"
                         class="btn btn-link btn-sm p-0 text-secondary"
                         @onclick="ToggleCollapsed"
                         title="Hide report setup and progress log">Hide</button>
             </div>
-            <div class="card-body">
+            <div class="card-body ngrate-card-body">
                 <div class="ngrate-setup-grid">
                     <div class="ngrate-setup-main d-flex flex-column gap-3">
                         <div>
@@ -111,8 +111,8 @@ else
     </div>
 
     <div class="@ProgressCellClass">
-        <div class="card shadow-sm h-100 ngrate-log-card">
-            <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+        <div class="card h-100 ngrate-setup-card ngrate-log-card">
+            <div class="card-header ngrate-card-header small fw-semibold d-flex justify-content-between align-items-center">
                 <span>Progress / Log</span>
                 <span class="d-flex align-items-center gap-2">
                     @if (Logs.Count > 0)
@@ -125,7 +125,7 @@ else
                             title="Hide report setup and progress log">Hide</button>
                 </span>
             </div>
-            <div class="card-body p-0 ngrate-log-card-body">
+            <div class="card-body ngrate-card-body p-0 ngrate-log-card-body">
                 <div class="p-3 pb-2">
                     <div class="progress" style="height:5px;">
                         @if (IsBusy || IsReportBusy)

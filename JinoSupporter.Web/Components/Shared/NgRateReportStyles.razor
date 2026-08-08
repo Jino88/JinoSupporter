@@ -4,19 +4,20 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         grid-template-rows: auto;
-        gap: 12px;
+        gap: 8px;
         align-items: stretch;
     }
     .ngrate-top-toggle {
         width: 100%;
         border: 1px solid #dbe3ee;
         border-radius: 2px;
-        background: var(--panel, #fff);
-        color: var(--ink, #0f1319);
-        padding: .5rem .75rem;
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
+        padding: .4rem .65rem;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
+        font-size: 12px;
         text-align: left;
     }
     .ngrate-top-toggle:hover {
@@ -45,8 +46,8 @@
     }
     .ngrate-setup-grid {
         display: grid;
-        grid-template-columns: minmax(0, .92fr) minmax(280px, 1.08fr);
-        gap: 12px;
+        grid-template-columns: minmax(0, .82fr) minmax(280px, 1.18fr);
+        gap: 10px;
         align-items: stretch;
         min-height: 0;
     }
@@ -58,7 +59,7 @@
         display: flex;
         flex-direction: column;
         border-left: 1px solid #dbe3ee;
-        padding-left: 12px;
+        padding-left: 10px;
     }
     .ngrate-setup-groups-head {
         min-height: 24px;
@@ -68,16 +69,21 @@
         overflow: auto;
         min-height: 0;
     }
-    .ngrate-grid .card-header,
-    .ngrate-flow .card-header {
-        padding: .5rem .75rem;
+    .ngrate-setup-card {
+        border: 1px solid var(--line, #dde1e7);
+        background: var(--panel, #fff);
     }
-    .ngrate-grid .card-body,
-    .ngrate-flow .card-body {
-        padding: .75rem;
+    .ngrate-card-header {
+        padding: .4rem .65rem;
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
+        border-bottom: 1px solid var(--line-2, #c6ccd5);
     }
-    .ngrate-grid .card-body.p-0,
-    .ngrate-flow .card-body.p-0 {
+    .ngrate-card-body {
+        padding: .65rem;
+        background: var(--panel, #fff);
+    }
+    .ngrate-card-body.p-0 {
         padding: 0 !important;
     }
     .ngrate-grid .gap-3,
@@ -390,16 +396,27 @@
         font-size: 9px;
         font-weight: 700;
         line-height: 1.05;
+        font-variant-numeric: tabular-nums;
+    }
+    .pivot-table td .ppm-delta::before {
+        display: inline-block;
+        width: 1em;
+        margin-right: 2px;
+        color: currentColor;
+        text-align: center;
     }
     .pivot-table td .ppm-delta-up {
         color: var(--crit, #c8342a);
     }
+    .pivot-table td .ppm-delta-up::before { content: "\25B2"; }
     .pivot-table td .ppm-delta-down {
-        color: #2563eb;
+        color: var(--ok, #2563eb);
     }
+    .pivot-table td .ppm-delta-down::before { content: "\25BC"; }
     .pivot-table td .ppm-delta-flat {
         color: var(--ink-3, #7f8a98);
     }
+    .pivot-table td .ppm-delta-flat::before { content: "\2014"; }
     .pivot-table td.ppm-max-cell {
         font-weight: 700;
     }
@@ -411,8 +428,14 @@
         background: var(--line, var(--line, #dde1e7));
         color: var(--ink, #0f1319);
         font-weight: 700;
-        border-top: 1px solid var(--ink-3, #7f8a98) !important;
+        border-top: 2px solid var(--line-2, #c6ccd5) !important;
         border: 1px solid var(--line, #dde1e7);
+    }
+    .pivot-table tr.total-row td:first-child,
+    .pivot-table tr.hier-group-row td:first-child,
+    .grp-overall-row td:first-child,
+    .grp-total-row td:first-child {
+        border-left: 3px solid var(--ink, #0f1319) !important;
     }
     .pivot-table tr.rank-row:nth-child(odd) td,
     .pivot-table tr.hier-sub2-row td,
@@ -432,6 +455,12 @@
     .top10-group-head {
         background: var(--panel-3, #eceef2);
         color: var(--ink, #0f1319);
+    }
+    .pivot-table tr.hier-mid-row td,
+    .grp-mid-row td,
+    .wr-mid-row td {
+        font-weight: 600;
+        border-top: 1px solid var(--line-2, #c6ccd5) !important;
     }
     .pivot-table tr.rank-row:hover td,
     .pivot-table tr.group-row:hover td,
@@ -541,7 +570,7 @@
         border-color: var(--ink, #0f1319);
         color: var(--panel, #fff);
     }
-    .group-chip.empty {
+    .group-chip.ngrate-chip-empty {
         background: var(--panel-3, #eceef2);
         color: var(--ink-3, #7f8a98);
         border-color: var(--line-2, #c6ccd5);
@@ -549,7 +578,7 @@
         opacity: .55;
         text-decoration: line-through;
     }
-    .group-chip.empty:hover {
+    .group-chip.ngrate-chip-empty:hover {
         background: var(--panel-3, #eceef2);
     }
     .group-chip-clear {
