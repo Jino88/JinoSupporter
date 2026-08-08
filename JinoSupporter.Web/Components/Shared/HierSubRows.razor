@@ -23,6 +23,7 @@
     string rowCls   = capRow.IsLineShift ? LineShiftRowClass
                     : capRow.Depth == 1   ? Sub1RowClass
                     : Sub2RowClass;
+    string levelLabel = capRow.IsLineShift ? "SHIFT" : $"SUB {capRow.Depth}";
     bool   expanded = Expanded.Contains(capRow.RowId);
     string rowId    = capRow.RowId;
     <tr class="@rowCls @(capRow.HasChildren ? ExpandableRowClass : "")"
@@ -32,6 +33,7 @@
             { <span class="@TogIconClass">@(expanded ? "▼" : "▶")</span> }
             else
             { <span class="@TogIconClass" style="visibility:hidden;">▶</span> }
+            <span class="ngrate-hier-level">@levelLabel</span>
             <span class="ms-1">@capRow.Display</span>
         </td>
         @foreach (var col in DateCols)
