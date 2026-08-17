@@ -439,11 +439,20 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
     private string SelectedWeekHeader
         => _report?.WeekColumns.FirstOrDefault(w => string.Equals(w.Key, SelectedWeekKey, StringComparison.Ordinal))?.Header ?? string.Empty;
 
+    // 공정 NG 가 큰 순으로 보되, 같은 공정의 자재 행은 흩어지지 않게 묶어서 정렬한다.
     private List<ProcessMaterialNgProcessMaterialRow> SelectedProcessMaterialRows =>
         _report is null || string.IsNullOrWhiteSpace(SelectedWeekKey)
             ? []
             : _report.ProcessMaterialRows
                 .Where(r => GetWeekQty(r.NgByWeek, SelectedWeekKey) > 0)
+                .GroupBy(BuildProcessGroupKey, StringComparer.OrdinalIgnoreCase)
+                .OrderByDescending(g => g.Max(r => GetWeekQty(r.NgByWeek, SelectedWeekKey)))
+                .ThenBy(g => g.First().ProcessName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(g => g.First().ProcessCode, StringComparer.OrdinalIgnoreCase)
+                .SelectMany(g => g
+                    .OrderByDescending(r => GetWeekQty(r.NgByWeek, SelectedWeekKey))
+                    .ThenBy(r => r.RawMaterialName, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(r => r.RawMaterialCode, StringComparer.OrdinalIgnoreCase))
                 .ToList();
 
     private List<Test4MaterialSummaryRow> SelectedMaterialSummaryRows =>
