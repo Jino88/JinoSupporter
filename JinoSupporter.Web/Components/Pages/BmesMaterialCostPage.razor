@@ -1,0 +1,208 @@
+@page "/bmes/material-cost"
+@rendermode InteractiveServer
+@using System.Globalization
+@using JinoSupporter.Web.Services
+@inject BmesFcostActualService FCostActual
+@inject AppPathsService AppPaths
+@inject AppActivityLogger Activity
+
+<PageTitle>Material Cost</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span class="fw-semibold" style="font-size:18px;">₫</span>
+    <h5 class="mb-0 fw-semibold">Material Cost</h5>
+    <span class="badge bg-secondary-subtle text-secondary-emphasis">조회 전용</span>
+</div>
+
+<div class="matcost-toolbar mb-3">
+    <input class="form-control form-control-sm matcost-search"
+           placeholder="자재코드 또는 자재명"
+           @bind="_search"
+           @bind:event="oninput"
+           @onkeydown="OnSearchKeyDown" />
+    <input type="date" class="form-control form-control-sm matcost-date" @bind="_referenceDate" title="이 날짜에 유효한 단가를 조회합니다" />
+    <select class="form-select form-select-sm matcost-rows" @bind="_maxRows">
+        <option value="100">100건</option>
+        <option value="300">300건</option>
+        <option value="1000">1000건</option>
+    </select>
+    <button class="btn btn-primary btn-sm" @onclick="SearchAsync" disabled="@_isBusy">조회</button>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <div class="alert alert-danger py-2 small mb-3">@_errorMessage</div>
+}
+
+@if (_isBusy)
+{
+    <div class="alert alert-info py-2 small mb-3 d-flex align-items-center gap-2">
+        <span class="spinner-border spinner-border-sm" role="status"></span>
+        <span>단가를 조회하는 중입니다...</span>
+    </div>
+}
+else if (_rows.Count > 0)
+{
+    <div class="alert alert-light border py-2 small mb-3">
+        단가는 <strong>구매 정보레코드(INFR)</strong>를 먼저 쓰고, 없으면 <strong>입고 실적(STBI)</strong>의 금액÷수량을 씁니다.
+        VND 환산은 <strong>TCURR</strong>(KURST=BWCU) 월초 환율 기준입니다.
+    </div>
+}
+
+<section class="matcost-section">
+    <div class="matcost-section-title">
+        <h6>단가 목록</h6>
+        <span>@_rows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
+        @if (_searchedAt is not null)
+        {
+            <small class="text-muted ms-auto">@_searchedAt.Value.ToString("yyyy-MM-dd HH:mm:ss")</small>
+        }
+    </div>
+    <div class="matcost-table-scroll">
+        <table class="matcost-table">
+            <thead>
+                <tr>
+                    <th style="min-width:150px;">Material Code</th>
+                    <th style="min-width:280px;">Material Name</th>
+                    <th class="text-end" style="min-width:130px;">Unit Price</th>
+                    <th style="min-width:70px;">Currency</th>
+                    <th style="min-width:70px;">Unit</th>
+                    <th class="text-end" style="min-width:140px;">Unit Price (VND)</th>
+                    <th style="min-width:90px;">Source</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (_rows.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4 small">
+                            @(_searchedAt is null ? "자재코드나 자재명을 입력하고 조회하세요." : "조회 결과가 없습니다.")
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in _rows)
+                    {
+                        <tr>
+                            <td class="font-monospace">@row.MaterialCode</td>
+                            <td>@row.MaterialName</td>
+                            <td class="text-end">@FormatPrice(row.UnitPrice)</td>
+                            <td>@row.PriceCurrency</td>
+                            <td>@row.PriceUnit</td>
+                            <td class="text-end fw-semibold">@FormatPrice(row.UnitPriceVnd)</td>
+                            <td>
+                                @if (string.IsNullOrWhiteSpace(row.PriceSource))
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                                else
+                                {
+                                    <span class="badge @(row.PriceSource == "INFR" ? "bg-primary-subtle text-primary-emphasis" : "bg-warning-subtle text-warning-emphasis")">@row.PriceSource</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<style>
+    .matcost-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .matcost-search { max-width: 320px; }
+    .matcost-date { max-width: 170px; }
+    .matcost-rows { max-width: 110px; }
+
+    .matcost-section { border: 1px solid var(--line-2, #c6ccd5); border-radius: 8px; background: var(--panel, #fff); overflow: hidden; }
+    .matcost-section-title { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line-2, #c6ccd5); background: #f6f8fb; }
+    .matcost-section-title h6 { margin: 0; font-size: 13px; font-weight: 700; }
+    .matcost-section-title > span { display: inline-grid; min-width: 24px; height: 20px; place-items: center; padding: 0 6px; border-radius: 999px; background: #e5eaf1; color: #475467; font-size: 11px; font-weight: 700; }
+
+    .matcost-table-scroll { max-height: min(70vh, 900px); overflow: auto; }
+    .matcost-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .matcost-table thead th { position: sticky; top: 0; z-index: 1; padding: 7px 10px; border-bottom: 1px solid var(--line-2, #c6ccd5); background: #eef1f6; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .matcost-table tbody td { padding: 6px 10px; border-bottom: 1px solid #eef1f5; }
+    .matcost-table tbody tr:hover { background: #f7faff; }
+</style>
+
+@code {
+    private string _search = string.Empty;
+    private DateTime _referenceDate = DateTime.Today;
+    private int _maxRows = 300;
+    private bool _isBusy;
+    private string _errorMessage = string.Empty;
+    private DateTime? _searchedAt;
+    private List<BmesMaterialCostRow> _rows = [];
+
+    private async Task OnSearchKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+            await SearchAsync();
+    }
+
+    private async Task SearchAsync()
+    {
+        if (_isBusy) return;
+
+        // 검색어 없이 조회하면 MATE 전체를 훑게 되어 운영 DB 에 부담이 크다.
+        if (_search.Trim().Length < 2)
+        {
+            _errorMessage = "자재코드나 자재명을 2자 이상 입력하세요.";
+            _rows = [];
+            _searchedAt = null;
+            return;
+        }
+
+        _isBusy = true;
+        _errorMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            _rows = await FCostActual.FetchMaterialCostsAsync(new BmesMaterialCostQuery
+            {
+                Connection = BuildNetworkDbConnection(),
+                Search = _search,
+                ReferenceDate = _referenceDate,
+                MaxRows = _maxRows,
+            });
+            _searchedAt = DateTime.Now;
+        }
+        catch (Exception ex)
+        {
+            _rows = [];
+            _errorMessage = ex.Message;
+            Activity.Log("Material Cost", "Lookup failed: " + ex.Message);
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private BmesFcostDbConnection BuildNetworkDbConnection()
+    {
+        var c = AppPaths.Current;
+        return new BmesFcostDbConnection
+        {
+            Server = c.AdminDbQueryServer,
+            Port = c.AdminDbQueryPort > 0 ? c.AdminDbQueryPort : 1430,
+            Database = string.IsNullOrWhiteSpace(c.AdminDbQueryDatabase) ||
+                       string.Equals(c.AdminDbQueryDatabase, "master", StringComparison.OrdinalIgnoreCase)
+                ? "BMES_LIV"
+                : c.AdminDbQueryDatabase,
+            UserId = c.AdminDbQueryUserId,
+            Password = c.AdminDbQueryPassword,
+            TimeoutSeconds = Math.Clamp(Math.Max(c.AdminDbQueryTimeoutSeconds, 60), 1, 600),
+            Encrypt = c.AdminDbQueryEncrypt,
+            TrustServerCertificate = c.AdminDbQueryTrustServerCertificate,
+        };
+    }
+
+    private static string FormatPrice(decimal? value)
+        => value is null || value.Value == 0
+            ? "-"
+            : Math.Round(value.Value, MidpointRounding.AwayFromZero).ToString("N0", CultureInfo.InvariantCulture);
+}

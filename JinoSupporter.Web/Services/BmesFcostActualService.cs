@@ -36,6 +36,155 @@ public sealed partial class BmesFcostActualService(
         await conn.OpenAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// 자재 단가를 조회한다. 조회 전용이며 BMES DB 에 아무것도 쓰지 않는다.
+    /// 단가는 구매 정보레코드(dbo.INFR)를 1순위로, 없으면 입고 실적(dbo.STBI)의
+    /// 금액÷수량을 2순위로 쓴다. 원화·VND 환산은 dbo.TCURR(KURST='BWCU')을 따른다.
+    /// </summary>
+    public async Task<List<BmesMaterialCostRow>> FetchMaterialCostsAsync(
+        BmesMaterialCostQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        DateTime referenceDate = query.ReferenceDate == default ? DateTime.Today : query.ReferenceDate.Date;
+        DateTime monthStart = new(referenceDate.Year, referenceDate.Month, 1);
+        int maxRows = Math.Clamp(query.MaxRows <= 0 ? 300 : query.MaxRows, 1, 2000);
+        string search = (query.Search ?? string.Empty).Trim();
+
+        await using var conn = new SqlConnection(BuildConnectionString(query.Connection));
+        await conn.OpenAsync(cancellationToken);
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandTimeout = Math.Clamp(query.Connection.TimeoutSeconds, 1, MaxTimeoutSeconds);
+        cmd.CommandText = """
+            SELECT TOP (@MaxRows)
+                mat.MaterialCode,
+                mat.MaterialName,
+                resolvedPrice.UnitPrice,
+                resolvedPrice.PriceCurrency,
+                resolvedPrice.PriceUnit,
+                resolvedPrice.PriceSource,
+                CAST(CASE
+                    WHEN resolvedPrice.PriceCurrency = N'VND' THEN resolvedPrice.UnitPrice
+                    WHEN resolvedPrice.PriceCurrency = N'KRW' AND vndRate.KrwPerVnd > 0
+                        THEN resolvedPrice.UnitPrice / vndRate.KrwPerVnd
+                    WHEN krwRate.KrwPerCurrency > 0 AND vndRate.KrwPerVnd > 0
+                        THEN resolvedPrice.UnitPrice * krwRate.KrwPerCurrency / vndRate.KrwPerVnd
+                    ELSE NULL
+                END AS decimal(38, 10)) AS UnitPriceVnd
+            FROM (
+                SELECT TOP (@MaxRows)
+                    RTRIM(CAST(m.MATNR AS nvarchar(80))) AS MaterialCode,
+                    CAST(MIN(m.MAKTX) AS nvarchar(200)) AS MaterialName
+                FROM dbo.MATE AS m WITH (NOLOCK)
+                WHERE (@Search = N''
+                       OR RTRIM(CAST(m.MATNR AS nvarchar(80))) LIKE @Like
+                       OR CAST(m.MAKTX AS nvarchar(200)) LIKE @Like)
+                GROUP BY RTRIM(CAST(m.MATNR AS nvarchar(80)))
+                ORDER BY RTRIM(CAST(m.MATNR AS nvarchar(80)))
+            ) AS mat
+            OUTER APPLY (
+                SELECT TOP (1)
+                    CAST(CAST(i.KBETR AS decimal(38, 10)) / NULLIF(CAST(i.KPEIN AS decimal(38, 10)), 0) AS decimal(38, 10)) AS UnitPrice,
+                    UPPER(RTRIM(CAST(i.KONWA AS nvarchar(20)))) AS PriceCurrency,
+                    RTRIM(CAST(i.KMEIN AS nvarchar(40))) AS PriceUnit
+                FROM dbo.INFR AS i WITH (NOLOCK)
+                WHERE i.MATNR = mat.MaterialCode
+                  AND i.DATAB <= CONVERT(nvarchar(8), @ReferenceDate, 112)
+                  AND i.DATBI >= CONVERT(nvarchar(8), @ReferenceDate, 112)
+                ORDER BY
+                    CASE
+                        WHEN i.EKORG = @Plant THEN 0
+                        WHEN LEFT(i.EKORG, 2) = LEFT(@Plant, 2) THEN 1
+                        ELSE 2
+                    END,
+                    i.DATAB DESC,
+                    i.EKORG,
+                    i.LIFNR
+            ) AS price
+            OUTER APPLY (
+                SELECT TOP (1)
+                    CAST(CAST(s.DMBTR AS decimal(38, 10)) / NULLIF(CAST(s.MENGE AS decimal(38, 10)), 0) AS decimal(38, 10)) AS UnitPrice,
+                    UPPER(RTRIM(CAST(s.WAERS AS nvarchar(20)))) AS PriceCurrency,
+                    RTRIM(CAST(s.MEINS AS nvarchar(40))) AS PriceUnit
+                FROM dbo.STBI AS s WITH (NOLOCK)
+                WHERE s.MATNR = mat.MaterialCode
+                  AND s.MENGE > 0
+                  AND s.DMBTR > 0
+                  AND s.ZDATE >= @MonthStart
+                  AND s.ZDATE < DATEADD(MONTH, 1, @MonthStart)
+                ORDER BY
+                    CASE WHEN RTRIM(s.ZBUKRS) = @Fact THEN 0 ELSE 1 END,
+                    CASE
+                        WHEN RTRIM(s.GUBUN) = N'A' THEN 0
+                        WHEN RTRIM(s.GUBUN) = N'B' THEN 1
+                        WHEN RTRIM(s.GUBUN) = N'G' THEN 2
+                        ELSE 3
+                    END,
+                    s.ZDATE DESC
+            ) AS stockPrice
+            OUTER APPLY (
+                SELECT
+                    CASE WHEN price.UnitPrice IS NOT NULL AND NULLIF(price.PriceCurrency, N'') IS NOT NULL
+                         THEN price.UnitPrice ELSE stockPrice.UnitPrice END AS UnitPrice,
+                    CASE WHEN price.UnitPrice IS NOT NULL AND NULLIF(price.PriceCurrency, N'') IS NOT NULL
+                         THEN price.PriceCurrency ELSE stockPrice.PriceCurrency END AS PriceCurrency,
+                    CASE WHEN price.UnitPrice IS NOT NULL AND NULLIF(price.PriceCurrency, N'') IS NOT NULL
+                         THEN price.PriceUnit ELSE stockPrice.PriceUnit END AS PriceUnit,
+                    CASE WHEN price.UnitPrice IS NOT NULL AND NULLIF(price.PriceCurrency, N'') IS NOT NULL
+                         THEN N'INFR' WHEN stockPrice.UnitPrice IS NOT NULL THEN N'STBI'
+                         ELSE N'' END AS PriceSource
+            ) AS resolvedPrice
+            OUTER APPLY (
+                SELECT TOP (1)
+                    CAST(t.UKURS AS decimal(38, 10)) * CAST(t.TFACT AS decimal(38, 10)) / NULLIF(CAST(t.FFACT AS decimal(38, 10)), 0) AS KrwPerCurrency
+                FROM dbo.TCURR AS t WITH (NOLOCK)
+                WHERE RTRIM(t.KURST) = N'BWCU'
+                  AND RTRIM(t.TCURR) = N'KRW'
+                  AND RTRIM(t.FCURR) = resolvedPrice.PriceCurrency
+                  AND CONVERT(date, t.GDATU) = @MonthStart
+                ORDER BY t.GDATU DESC
+            ) AS krwRate
+            OUTER APPLY (
+                SELECT TOP (1)
+                    CAST(t.UKURS AS decimal(38, 10)) * CAST(t.TFACT AS decimal(38, 10)) / NULLIF(CAST(t.FFACT AS decimal(38, 10)), 0) AS KrwPerVnd
+                FROM dbo.TCURR AS t WITH (NOLOCK)
+                WHERE RTRIM(t.KURST) = N'BWCU'
+                  AND RTRIM(t.TCURR) = N'KRW'
+                  AND RTRIM(t.FCURR) = N'VND'
+                  AND CONVERT(date, t.GDATU) = @MonthStart
+                ORDER BY t.GDATU DESC
+            ) AS vndRate
+            ORDER BY mat.MaterialCode
+            """;
+
+        cmd.Parameters.Add(new SqlParameter("@MaxRows", SqlDbType.Int) { Value = maxRows });
+        cmd.Parameters.Add(new SqlParameter("@Search", SqlDbType.NVarChar, 200) { Value = search });
+        cmd.Parameters.Add(new SqlParameter("@Like", SqlDbType.NVarChar, 210) { Value = "%" + search + "%" });
+        cmd.Parameters.Add(new SqlParameter("@Plant", SqlDbType.NVarChar, 20) { Value = query.Plant ?? "3200" });
+        cmd.Parameters.Add(new SqlParameter("@Fact", SqlDbType.NVarChar, 20) { Value = query.Fact ?? "GN" });
+        cmd.Parameters.Add(new SqlParameter("@ReferenceDate", SqlDbType.Date) { Value = referenceDate });
+        cmd.Parameters.Add(new SqlParameter("@MonthStart", SqlDbType.Date) { Value = monthStart });
+
+        var rows = new List<BmesMaterialCostRow>();
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            rows.Add(new BmesMaterialCostRow
+            {
+                MaterialCode = ReadString(reader, "MaterialCode"),
+                MaterialName = ReadString(reader, "MaterialName"),
+                UnitPrice = ReadDecimal(reader, "UnitPrice"),
+                PriceCurrency = ReadString(reader, "PriceCurrency"),
+                PriceUnit = ReadString(reader, "PriceUnit"),
+                PriceSource = ReadString(reader, "PriceSource"),
+                UnitPriceVnd = ReadDecimal(reader, "UnitPriceVnd"),
+            });
+        }
+
+        _activity.Log("Material Cost", $"Lookup search='{search}', date={referenceDate:yyyy-MM-dd}, rows={rows.Count:N0}");
+        return rows;
+    }
+
     public async Task<BmesFcostActualResult> FetchAsync(
         BmesFcostActualQuery query,
         CancellationToken cancellationToken = default)
@@ -1867,6 +2016,30 @@ public sealed class BmesBomModelCatalogQuery
     public DateTime WorkDate { get; init; } = DateTime.Today;
     public IReadOnlyList<string> ProductCodePrefixes { get; init; } = ["P-S-", "P-M-", "P-N-", "P-H-"];
     public int MaxRows { get; init; } = 20000;
+}
+
+public sealed class BmesMaterialCostQuery
+{
+    public BmesFcostDbConnection Connection { get; init; } = new();
+    public string Search { get; init; } = string.Empty;
+    public string Plant { get; init; } = "3200";
+    public string Fact { get; init; } = "GN";
+    public DateTime ReferenceDate { get; init; } = DateTime.Today;
+    public int MaxRows { get; init; } = 300;
+}
+
+public sealed class BmesMaterialCostRow
+{
+    public string MaterialCode { get; init; } = string.Empty;
+    public string MaterialName { get; init; } = string.Empty;
+    public decimal? UnitPrice { get; init; }
+    public string PriceCurrency { get; init; } = string.Empty;
+    public string PriceUnit { get; init; } = string.Empty;
+
+    /// <summary>단가를 찾은 출처. INFR(구매 정보레코드) 또는 STBI(입고 실적).</summary>
+    public string PriceSource { get; init; } = string.Empty;
+
+    public decimal? UnitPriceVnd { get; init; }
 }
 
 public sealed class BmesFcostDbConnection
