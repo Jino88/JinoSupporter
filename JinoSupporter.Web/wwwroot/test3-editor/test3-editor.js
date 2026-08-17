@@ -10373,20 +10373,20 @@ function lr({ dotnet: e, initialSnapshot: t }) {
 				return;
 			}
 			if (r.kind === "cell") {
-				if (n.modelName !== r.modelName) {
-					T("같은 L/R 보드 안에서만 배치할 수 있습니다.");
-					return;
-				}
-				if (n.kind === "process") {
-					ce(n, r);
-					return;
-				}
 				if (n.kind === "material") {
 					if (!r.processId) {
 						T("자재는 공정이 배치된 셀에만 투입할 수 있습니다.");
 						return;
 					}
 					M(n.materialId, r.processId, n.usageQty, n.usageUnit);
+					return;
+				}
+				if (n.modelName !== r.modelName) {
+					T("같은 보드 안에서만 배치할 수 있습니다.");
+					return;
+				}
+				if (n.kind === "process") {
+					ce(n, r);
 					return;
 				}
 				if (n.kind === "merge") {
@@ -10568,15 +10568,14 @@ function lr({ dotnet: e, initialSnapshot: t }) {
 							}),
 							/* @__PURE__ */ (0, I.jsxs)("div", {
 								className: "t3r-palette-body",
-								children: [a.map((e) => _ === "process" ? /* @__PURE__ */ (0, I.jsx)(mr, {
+								children: [_ === "process" ? a.map((e) => /* @__PURE__ */ (0, I.jsx)(mr, {
 									side: e,
 									query: fe
-								}, e.modelName) : /* @__PURE__ */ (0, I.jsx)(gr, {
-									side: e,
-									materials: de.filter((t) => t.modelName === e.modelName),
+								}, e.modelName)) : /* @__PURE__ */ (0, I.jsx)(gr, {
+									materials: de,
 									onSave: (e, t, n) => void M(e.id, e.assignedProcessId, t, n),
 									onClear: (e) => void re("ReactClearMaterialAsync", e)
-								}, e.modelName)), _ === "material" && r.bomSource && /* @__PURE__ */ (0, I.jsx)("div", {
+								}), _ === "material" && r.bomSource && /* @__PURE__ */ (0, I.jsx)("div", {
 									className: "t3r-palette-note",
 									children: r.bomSource
 								})]
@@ -10601,7 +10600,7 @@ function lr({ dotnet: e, initialSnapshot: t }) {
 	});
 }
 function ur({ side: e, activeDrag: t, mergePick: n, firstInputByProcess: r, mergeSourcesByProcess: i, onAddSub: a, onRemoveLane: o, onStartPick: s, onClearMerge: c, onCellPick: l, onUnassign: u }) {
-	let d = nr(e), f = d.reduce((e, t) => Math.max(e, t.processes.length), 0), p = f + 1, m = d.map((e) => sr(e, r, i)), h = { gridTemplateColumns: `34px repeat(${Math.max(d.length, 1)}, minmax(178px, 1fr))` }, g = n?.modelName === e.modelName;
+	let d = nr(e), f = d.reduce((e, t) => Math.max(e, t.processes.length), 0), p = f + 1, m = d.map((e) => sr(e, r, i)), h = !!e.mirrorModelName, g = { gridTemplateColumns: `34px repeat(${Math.max(d.length, 1)}, minmax(178px, 1fr))` }, _ = n?.modelName === e.modelName;
 	return /* @__PURE__ */ (0, I.jsxs)("article", {
 		className: `t3r-board ${$n(e.sideLabel)}`,
 		children: [/* @__PURE__ */ (0, I.jsxs)("header", {
@@ -10609,13 +10608,23 @@ function ur({ side: e, activeDrag: t, mergePick: n, firstInputByProcess: r, merg
 			children: [
 				/* @__PURE__ */ (0, I.jsx)("span", {
 					className: "t3r-side-badge",
-					children: e.sideLabel || "-"
+					children: h ? `${e.sideLabel}+${e.mirrorSideLabel}` : e.sideLabel || "-"
 				}),
 				/* @__PURE__ */ (0, I.jsx)("span", {
 					className: "t3r-board-title",
-					children: er(e)
+					children: h ? "L/R 동시 편집" : er(e)
 				}),
-				/* @__PURE__ */ (0, I.jsx)("strong", { children: e.modelName }),
+				/* @__PURE__ */ (0, I.jsxs)("strong", {
+					title: h ? `${e.modelName} · ${e.mirrorModelName}` : e.modelName,
+					children: [e.modelName, h && /* @__PURE__ */ (0, I.jsxs)("em", {
+						className: "t3r-mirror-name",
+						children: [" · ", e.mirrorModelName]
+					})]
+				}),
+				h && /* @__PURE__ */ (0, I.jsx)("span", {
+					className: "t3r-mirror-note",
+					children: "한쪽만 배치하면 반대쪽에 같이 저장됩니다"
+				}),
 				/* @__PURE__ */ (0, I.jsx)("button", {
 					type: "button",
 					className: "t3r-link-button",
@@ -10627,7 +10636,7 @@ function ur({ side: e, activeDrag: t, mergePick: n, firstInputByProcess: r, merg
 			className: "t3r-matrix-scroll",
 			children: /* @__PURE__ */ (0, I.jsxs)("div", {
 				className: "t3r-matrix",
-				style: h,
+				style: g,
 				children: [
 					/* @__PURE__ */ (0, I.jsx)("div", {
 						className: "t3r-matrix-corner",
@@ -10636,7 +10645,7 @@ function ur({ side: e, activeDrag: t, mergePick: n, firstInputByProcess: r, merg
 					d.map((t) => /* @__PURE__ */ (0, I.jsx)(dr, {
 						side: e,
 						lane: t,
-						isPicking: g && n.laneCode === t.laneCode,
+						isPicking: _ && n.laneCode === t.laneCode,
 						onRemove: () => o(t.laneCode),
 						onStartPick: () => s(t.laneCode),
 						onClearMerge: () => c(t.laneCode)
@@ -10650,7 +10659,7 @@ function ur({ side: e, activeDrag: t, mergePick: n, firstInputByProcess: r, merg
 						step: r,
 						cellStep: m[i][r] ?? null,
 						activeDrag: t,
-						isPicking: g,
+						isPicking: _,
 						onPick: () => l(n, m[i][r]?.process ?? null),
 						onUnassign: u
 					}, `${n.laneCode}-${r}`))] }, `row-${r}`))
@@ -10804,7 +10813,11 @@ function pr({ side: e, lane: t, step: n, process: r, onUnassign: i }) {
 						title: r.processName,
 						children: r.processName
 					})]
-				}), r.processType && /* @__PURE__ */ (0, I.jsx)("small", { children: r.processType })]
+				}), /* @__PURE__ */ (0, I.jsxs)("small", { children: [r.processType, r.mirrorProcessCode && r.mirrorProcessCode !== r.processCode && /* @__PURE__ */ (0, I.jsxs)("em", {
+					className: "t3r-mirror-code",
+					title: "반대쪽 모델에서 같이 배치되는 공정",
+					children: ["↔ ", r.mirrorProcessCode]
+				})] })]
 			}),
 			/* @__PURE__ */ (0, I.jsx)("button", {
 				type: "button",
@@ -10892,36 +10905,20 @@ function hr({ process: e, side: t }) {
 		})]
 	});
 }
-function gr({ side: e, materials: t, onSave: n, onClear: r }) {
-	return /* @__PURE__ */ (0, I.jsxs)("section", {
+function gr({ materials: e, onSave: t, onClear: n }) {
+	return /* @__PURE__ */ (0, I.jsx)("section", {
 		className: "t3r-palette-group",
-		children: [/* @__PURE__ */ (0, I.jsxs)("header", {
-			className: `t3r-palette-group-head ${$n(e.sideLabel)}`,
-			children: [
-				/* @__PURE__ */ (0, I.jsx)("span", {
-					className: "t3r-side-badge",
-					children: e.sideLabel || "-"
-				}),
-				/* @__PURE__ */ (0, I.jsx)("strong", {
-					title: e.modelName,
-					children: e.modelName
-				}),
-				/* @__PURE__ */ (0, I.jsx)("span", {
-					className: "t3r-lane-count",
-					children: t.length
-				})
-			]
-		}), /* @__PURE__ */ (0, I.jsxs)("div", {
+		children: /* @__PURE__ */ (0, I.jsxs)("div", {
 			className: "t3r-palette-list",
-			children: [t.map((e) => /* @__PURE__ */ (0, I.jsx)(_r, {
+			children: [e.map((e) => /* @__PURE__ */ (0, I.jsx)(_r, {
 				material: e,
-				onSave: (t, r) => n(e, t, r),
-				onClear: () => r(e.id)
-			}, e.id)), t.length === 0 && /* @__PURE__ */ (0, I.jsx)("div", {
+				onSave: (n, r) => t(e, n, r),
+				onClear: () => n(e.id)
+			}, e.id)), e.length === 0 && /* @__PURE__ */ (0, I.jsx)("div", {
 				className: "t3r-empty",
 				children: "표시할 BOM 자재가 없습니다."
 			})]
-		})]
+		})
 	});
 }
 function _r({ material: e, onSave: t, onClear: n }) {
@@ -10951,10 +10948,18 @@ function _r({ material: e, onSave: t, onClear: n }) {
 					children: "⠿"
 				}), /* @__PURE__ */ (0, I.jsxs)("div", {
 					className: "t3r-card-content",
-					children: [/* @__PURE__ */ (0, I.jsx)("code", { children: e.materialCode }), /* @__PURE__ */ (0, I.jsx)("strong", {
-						title: e.materialName,
-						children: e.materialName
-					})]
+					children: [
+						/* @__PURE__ */ (0, I.jsx)("code", { children: e.materialCode }),
+						/* @__PURE__ */ (0, I.jsx)("strong", {
+							title: e.materialName,
+							children: e.materialName
+						}),
+						e.mirrorMaterialName && e.mirrorMaterialName !== e.materialName && /* @__PURE__ */ (0, I.jsxs)("em", {
+							className: "t3r-mirror-code",
+							title: `반대쪽 모델에는 ${e.mirrorMaterialCode} 로 투입됩니다`,
+							children: ["↔ ", e.mirrorMaterialName]
+						})
+					]
 				})]
 			}),
 			/* @__PURE__ */ (0, I.jsxs)("div", {

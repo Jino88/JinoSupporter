@@ -17,6 +17,11 @@ public sealed class Test3EditorSide
 {
     public string ModelName { get; init; } = string.Empty;
     public string SideLabel { get; init; } = string.Empty;
+
+    /// <summary>L/R 짝 모델. 값이 있으면 이 보드의 편집이 짝 모델에도 그대로 반영된다.</summary>
+    public string MirrorModelName { get; init; } = string.Empty;
+
+    public string MirrorSideLabel { get; init; } = string.Empty;
     public List<Test3EditorLane> Lanes { get; init; } = [];
     public List<Test3EditorProcess> AvailableProcesses { get; init; } = [];
 }
@@ -39,6 +44,9 @@ public sealed class Test3EditorProcess
     public string LaneCode { get; init; } = string.Empty;
     public string ProcessNo { get; init; } = string.Empty;
     public int Order { get; init; }
+
+    /// <summary>짝 모델에서 같이 배치되는 공정 코드. 짝이 없으면 빈 문자열.</summary>
+    public string MirrorProcessCode { get; init; } = string.Empty;
 }
 
 public sealed class Test3EditorMaterial
@@ -53,6 +61,11 @@ public sealed class Test3EditorMaterial
     public string AssignedProcessId { get; init; } = string.Empty;
     public string AssignedProcessLabel { get; init; } = string.Empty;
     public string ScopeLabel { get; init; } = string.Empty;
+
+    /// <summary>짝 모델에서 대신 투입되는 자재(-L → -R 치환 결과). 짝이 없으면 빈 문자열.</summary>
+    public string MirrorMaterialCode { get; init; } = string.Empty;
+
+    public string MirrorMaterialName { get; init; } = string.Empty;
 }
 
 public sealed class Test3EditorLayoutRequest

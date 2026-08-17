@@ -16,7 +16,7 @@
 
 <PageTitle>Test 3</PageTitle>
 
-<link rel="stylesheet" href="/test3-editor/test3-editor.css?v=20260817-2" />
+<link rel="stylesheet" href="/test3-editor/test3-editor.css?v=20260817-3" />
 <div class="d-flex align-items-center gap-2 mb-3">
     <span class="fw-semibold" style="font-size:18px;">T3</span>
     <h5 class="mb-0 fw-semibold">Test 3 · 공정/자재 Flow 편집</h5>
@@ -1478,7 +1478,7 @@
             _reactEditorReference = DotNetObjectReference.Create(this);
             _reactEditorModule = await JS.InvokeAsync<IJSObjectReference>(
                 "import",
-                "./test3-editor/test3-editor.js?v=20260817-2");
+                "./test3-editor/test3-editor.js?v=20260817-3");
             await _reactEditorModule.InvokeVoidAsync(
                 "mount",
                 _reactEditorHost,
@@ -1532,45 +1532,145 @@
     [JSInvokable]
     public async Task<Test3EditorSnapshot> ReactSaveMaterialAsync(Test3EditorMaterialRequest request)
     {
-        var assignment = BuildMaterialAssignments(GetReactOrderedRows())
-            .FirstOrDefault(item => string.Equals(item.Key, request.MaterialId, StringComparison.OrdinalIgnoreCase));
+        var orderedRows = GetReactOrderedRows();
+        var sourceProcess = orderedRows.FirstOrDefault(row =>
+            string.Equals(row.GroupKey, request.ProcessId?.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (sourceProcess is null)
+        {
+            SetStatus("자재의 최초 투입 공정은 실제 배치된 공정이어야 합니다.", true);
+            return BuildReactEditorSnapshot();
+        }
+
+        var assignments = BuildMaterialAssignments(orderedRows);
+        var assignment = assignments.FirstOrDefault(item =>
+            string.Equals(item.Key, request.MaterialId?.Trim(), StringComparison.OrdinalIgnoreCase));
         if (assignment is null)
         {
             SetStatus("선택한 BOM 자재를 찾지 못했습니다.", true);
             return BuildReactEditorSnapshot();
         }
 
-        string requestedProcessId = request.ProcessId?.Trim() ?? string.Empty;
-        var deployedProcess = GetReactOrderedRows().FirstOrDefault(row =>
-            string.Equals(row.GroupKey, requestedProcessId, StringComparison.OrdinalIgnoreCase));
-        if (deployedProcess is null ||
-            !string.Equals(ExtractSideTokenFromModel(deployedProcess.Process.ModelName), ExtractSideTokenFromModel(assignment.ModelName), StringComparison.OrdinalIgnoreCase))
+        var targets = BuildMaterialSaveTargets(assignment, sourceProcess, assignments);
+        if (targets.Count == 0)
         {
-            SetStatus("자재의 최초 투입 공정은 같은 L/R 모델에 실제 배치된 공정이어야 합니다.", true);
+            SetStatus("자재를 투입할 공정을 찾지 못했습니다.", true);
             return BuildReactEditorSnapshot();
         }
 
-        var edit = GetOrCreateMaterialEdit(assignment);
-        edit.ProcessGroupKey = requestedProcessId;
-        edit.UsageQtyText = request.UsageQty.ToString("0.######", CultureInfo.InvariantCulture);
-        edit.UsageUnit = request.UsageUnit?.Trim() ?? string.Empty;
-        await SaveMaterialAssignmentAsync(assignment);
+        var savedModels = new List<string>();
+        foreach (var target in targets)
+        {
+            var edit = GetOrCreateMaterialEdit(target.Assignment);
+            edit.ProcessGroupKey = target.ProcessRow.GroupKey;
+            edit.UsageQtyText = request.UsageQty.ToString("0.######", CultureInfo.InvariantCulture);
+            edit.UsageUnit = request.UsageUnit?.Trim() ?? string.Empty;
+            await SaveMaterialAssignmentAsync(target.Assignment);
+            if (_statusError)
+                return BuildReactEditorSnapshot();
+
+            savedModels.Add($"{BuildModelSideLabel(target.Assignment.ModelName)} {target.Assignment.RawMaterialName}");
+        }
+
+        SetStatus(
+            savedModels.Count > 1
+                ? $"{string.Join(" / ", savedModels)} 의 최초 투입 공정을 L/R 양쪽에 저장했습니다."
+                : $"{assignment.RawMaterialName}의 최초 투입 공정을 저장했습니다. 이후 마지막 공정까지 자동 적용됩니다.",
+            false);
         return BuildReactEditorSnapshot();
     }
 
     [JSInvokable]
     public async Task<Test3EditorSnapshot> ReactClearMaterialAsync(string materialId)
     {
-        var assignment = BuildMaterialAssignments(GetReactOrderedRows())
-            .FirstOrDefault(item => string.Equals(item.Key, materialId, StringComparison.OrdinalIgnoreCase));
+        var assignments = BuildMaterialAssignments(GetReactOrderedRows());
+        var assignment = assignments.FirstOrDefault(item =>
+            string.Equals(item.Key, materialId?.Trim(), StringComparison.OrdinalIgnoreCase));
         if (assignment is null)
         {
             SetStatus("선택한 BOM 자재를 찾지 못했습니다.", true);
             return BuildReactEditorSnapshot();
         }
 
-        await ClearMaterialAssignmentAsync(assignment);
+        var targets = new List<MaterialAssignment> { assignment };
+        string mirrorModel = ResolveMirrorModelName(assignment.ModelName);
+        if (mirrorModel.Length > 0 && FindMirrorAssignment(assignment, mirrorModel, assignments) is { } mirror)
+            targets.Add(mirror);
+
+        foreach (var target in targets)
+        {
+            await ClearMaterialAssignmentAsync(target);
+            if (_statusError)
+                return BuildReactEditorSnapshot();
+        }
+
+        SetStatus(
+            targets.Count > 1
+                ? $"{assignment.RawMaterialName}의 최초 투입 설정을 L/R 양쪽에서 해제했습니다."
+                : $"{assignment.RawMaterialName}의 최초 투입 설정을 해제했습니다.",
+            false);
         return BuildReactEditorSnapshot();
+    }
+
+    /// <summary>
+    /// 자재 저장 대상을 선택된 L/R 모델별로 하나씩 만든다.
+    /// 반대편 모델에는 좌우 토큰만 다른 짝 자재(-L → -R)와 짝 공정을 찾아 넣는다.
+    /// </summary>
+    private List<(MaterialAssignment Assignment, Test3ProcessRow ProcessRow)> BuildMaterialSaveTargets(
+        MaterialAssignment assignment,
+        Test3ProcessRow sourceProcess,
+        IReadOnlyList<MaterialAssignment> assignments)
+    {
+        var allRows = AllModelProcessRows;
+        var result = new List<(MaterialAssignment Assignment, Test3ProcessRow ProcessRow)>();
+
+        foreach (string modelName in SelectedRoutingModelNames)
+        {
+            var targetAssignment = string.Equals(modelName, assignment.ModelName, StringComparison.OrdinalIgnoreCase)
+                ? assignment
+                : FindMirrorAssignment(assignment, modelName, assignments);
+            if (targetAssignment is null)
+                continue;
+
+            var targetProcess = string.Equals(modelName, sourceProcess.Process.ModelName, StringComparison.OrdinalIgnoreCase)
+                ? sourceProcess
+                : BuildMirrorProcessIndex(allRows, modelName)?.Find(sourceProcess.Process);
+            if (targetProcess is null)
+                continue;
+
+            if (string.IsNullOrWhiteSpace(GetExactProcessSetting(targetProcess.Process)?.ProcessNo))
+                continue;
+
+            result.Add((targetAssignment, targetProcess));
+        }
+
+        return result;
+    }
+
+    private MaterialAssignment? FindMirrorAssignment(
+        MaterialAssignment source,
+        string targetModel,
+        IReadOnlyList<MaterialAssignment> assignments)
+    {
+        string key = NormalizeSideAgnosticMaterialKey(source.RawMaterialCode, source.RawMaterialName);
+        if (key.Length == 0)
+            return null;
+
+        var candidates = assignments
+            .Where(item => string.Equals(item.ModelName, targetModel, StringComparison.OrdinalIgnoreCase))
+            .Where(item => string.Equals(
+                NormalizeSideAgnosticMaterialKey(item.RawMaterialCode, item.RawMaterialName),
+                key,
+                StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (candidates.Count == 0)
+            return null;
+
+        string targetSide = ExtractSideTokenFromModel(targetModel);
+        return candidates.FirstOrDefault(item => string.Equals(
+                   ExtractSideTokenFromMaterial(item.RawMaterialCode, item.RawMaterialName),
+                   targetSide,
+                   StringComparison.OrdinalIgnoreCase))
+               ?? candidates[0];
     }
 
     [JSInvokable]
@@ -1589,71 +1689,129 @@
         return Task.FromResult(BuildReactEditorSnapshot());
     }
 
+    // L/R 짝이 있는 모델은 주 모델(L) 보드 하나만 내보낸다.
+    // 편집은 이 한 보드에서만 하고 짝 모델(R)에는 저장 시점에 그대로 복제된다.
     private Test3EditorSnapshot BuildReactEditorSnapshot()
     {
         var allRows = AllModelProcessRows;
         var orderedRows = GetReactOrderedRows();
+        string primaryModel = ResolvePrimaryModelName();
+        string mirrorModel = ResolveMirrorModelName(primaryModel);
+        var mirrorProcesses = BuildMirrorProcessIndex(allRows, mirrorModel);
         var sides = new List<Test3EditorSide>();
 
-        foreach (string modelName in SelectedRoutingModelNames)
+        if (primaryModel.Length > 0)
+            sides.Add(BuildReactSide(allRows, primaryModel, mirrorModel, mirrorProcesses));
+
+        return new Test3EditorSnapshot
         {
-            var modelRows = allRows
-                .Where(row => string.Equals(row.Process.ModelName, modelName, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-            var assignedRows = modelRows
-                .Select(row => new { Row = row, Setting = GetExactProcessSetting(row.Process) })
-                .Where(item => !string.IsNullOrWhiteSpace(item.Setting?.ProcessNo))
-                .ToList();
-            var laneCodes = assignedRows
-                .Select(item => ResolveLaneCode(item.Setting))
-                .Append("MAIN")
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(LaneSortIndex)
-                .ThenBy(value => value, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-            var lanes = new List<Test3EditorLane>();
+            ModelNames = _modelNames,
+            SelectedModel = _filterModel.Trim(),
+            Sides = sides,
+            Materials = BuildReactMaterials(orderedRows, primaryModel, mirrorModel),
+            BomBusy = _bomBusy,
+            BomSource = _bomLoadSource,
+            BomError = _bomError,
+            StatusMessage = _statusMessage,
+            StatusError = _statusError,
+        };
+    }
 
-            foreach (string laneCode in laneCodes)
-            {
-                var laneItems = assignedRows
-                    .Where(item => string.Equals(ResolveLaneCode(item.Setting), laneCode, StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(item => ResolveLaneOrder(item.Setting))
-                    .ThenBy(item => RoutingSortIndex(item.Row.Process))
-                    .ToList();
-                string mergeProcessNo = laneItems.LastOrDefault()?.Setting?.MergeProcessNo.Trim() ?? string.Empty;
-                var mergeTarget = assignedRows.FirstOrDefault(item =>
-                    string.Equals(ResolveLaneCode(item.Setting), "MAIN", StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(NormalizeProcessNo(item.Setting?.ProcessNo), NormalizeProcessNo(mergeProcessNo), StringComparison.OrdinalIgnoreCase));
-                lanes.Add(new Test3EditorLane
-                {
-                    LaneCode = laneCode,
-                    MergeTargetProcessId = mergeTarget?.Row.GroupKey ?? string.Empty,
-                    MergeTargetLabel = mergeTarget is null ? string.Empty : BuildReactProcessLabel(mergeTarget.Row, mergeTarget.Setting),
-                    Processes = laneItems
-                        .Select(item => BuildReactProcess(item.Row, item.Setting))
-                        .ToList(),
-                });
-            }
+    private Test3EditorSide BuildReactSide(
+        IReadOnlyList<Test3ProcessRow> allRows,
+        string modelName,
+        string mirrorModel,
+        MirrorProcessIndex? mirrorProcesses)
+    {
+        var modelRows = allRows
+            .Where(row => string.Equals(row.Process.ModelName, modelName, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        var assignedRows = modelRows
+            .Select(row => new { Row = row, Setting = GetExactProcessSetting(row.Process) })
+            .Where(item => !string.IsNullOrWhiteSpace(item.Setting?.ProcessNo))
+            .ToList();
+        var laneCodes = assignedRows
+            .Select(item => ResolveLaneCode(item.Setting))
+            .Append("MAIN")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(LaneSortIndex)
+            .ThenBy(value => value, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var lanes = new List<Test3EditorLane>();
 
-            var assignedIds = assignedRows
-                .Select(item => item.Row.GroupKey)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            sides.Add(new Test3EditorSide
+        foreach (string laneCode in laneCodes)
+        {
+            var laneItems = assignedRows
+                .Where(item => string.Equals(ResolveLaneCode(item.Setting), laneCode, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(item => ResolveLaneOrder(item.Setting))
+                .ThenBy(item => RoutingSortIndex(item.Row.Process))
+                .ToList();
+            string mergeProcessNo = laneItems.LastOrDefault()?.Setting?.MergeProcessNo.Trim() ?? string.Empty;
+            var mergeTarget = assignedRows.FirstOrDefault(item =>
+                string.Equals(ResolveLaneCode(item.Setting), "MAIN", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(NormalizeProcessNo(item.Setting?.ProcessNo), NormalizeProcessNo(mergeProcessNo), StringComparison.OrdinalIgnoreCase));
+            lanes.Add(new Test3EditorLane
             {
-                ModelName = modelName,
-                SideLabel = BuildModelSideLabel(modelName),
-                Lanes = lanes,
-                AvailableProcesses = modelRows
-                    .Where(row => !assignedIds.Contains(row.GroupKey))
-                    .OrderBy(row => RoutingSortIndex(row.Process))
-                    .ThenBy(row => row.Process.ProcessName, StringComparer.OrdinalIgnoreCase)
-                    .Select(row => BuildReactProcess(row, null))
+                LaneCode = laneCode,
+                MergeTargetProcessId = mergeTarget?.Row.GroupKey ?? string.Empty,
+                MergeTargetLabel = mergeTarget is null ? string.Empty : BuildReactProcessLabel(mergeTarget.Row, mergeTarget.Setting),
+                Processes = laneItems
+                    .Select(item => BuildReactProcess(item.Row, item.Setting, mirrorProcesses))
                     .ToList(),
             });
         }
 
+        var assignedIds = assignedRows
+            .Select(item => item.Row.GroupKey)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return new Test3EditorSide
+        {
+            ModelName = modelName,
+            SideLabel = BuildModelSideLabel(modelName),
+            MirrorModelName = mirrorModel,
+            MirrorSideLabel = mirrorModel.Length == 0 ? string.Empty : BuildModelSideLabel(mirrorModel),
+            Lanes = lanes,
+            AvailableProcesses = modelRows
+                .Where(row => !assignedIds.Contains(row.GroupKey))
+                .OrderBy(row => RoutingSortIndex(row.Process))
+                .ThenBy(row => row.Process.ProcessName, StringComparer.OrdinalIgnoreCase)
+                .Select(row => BuildReactProcess(row, null, mirrorProcesses))
+                .ToList(),
+        };
+    }
+
+    // 주 모델 자재만 내보내되, 짝 모델에만 있는 자재는 빠뜨리지 않고 함께 싣는다.
+    private List<Test3EditorMaterial> BuildReactMaterials(
+        IReadOnlyList<Test3ProcessRow> orderedRows,
+        string primaryModel,
+        string mirrorModel)
+    {
+        var assignments = BuildMaterialAssignments(orderedRows);
         var rowById = orderedRows.ToDictionary(row => row.GroupKey, StringComparer.OrdinalIgnoreCase);
-        var materials = BuildMaterialAssignments(orderedRows)
+        var primary = assignments
+            .Where(item => string.Equals(item.ModelName, primaryModel, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        var mirrorByKey = assignments
+            .Where(item => mirrorModel.Length > 0 &&
+                           string.Equals(item.ModelName, mirrorModel, StringComparison.OrdinalIgnoreCase))
+            .GroupBy(
+                item => NormalizeSideAgnosticMaterialKey(item.RawMaterialCode, item.RawMaterialName),
+                StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Key.Length > 0)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+        var primaryKeys = primary
+            .Select(item => NormalizeSideAgnosticMaterialKey(item.RawMaterialCode, item.RawMaterialName))
+            .Where(key => key.Length > 0)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        List<MaterialAssignment> mirrorOnly = mirrorModel.Length == 0
+            ? []
+            : assignments
+                .Where(item => string.Equals(item.ModelName, mirrorModel, StringComparison.OrdinalIgnoreCase))
+                .Where(item => !primaryKeys.Contains(NormalizeSideAgnosticMaterialKey(item.RawMaterialCode, item.RawMaterialName)))
+                .ToList();
+
+        return primary
+            .Concat(mirrorOnly)
             .Select(assignment =>
             {
                 rowById.TryGetValue(assignment.SavedProcessGroupKey, out var assignedRow);
@@ -1668,6 +1826,11 @@
                         .OrderByDescending(ResolveLaneOrder)
                         .Select(candidate => candidate?.MergeProcessNo.Trim() ?? string.Empty)
                         .FirstOrDefault() ?? string.Empty;
+                string materialKey = NormalizeSideAgnosticMaterialKey(assignment.RawMaterialCode, assignment.RawMaterialName);
+                bool isMirrorOnly = string.Equals(assignment.ModelName, mirrorModel, StringComparison.OrdinalIgnoreCase);
+                MaterialAssignment? mirror = null;
+                if (!isMirrorOnly && materialKey.Length > 0)
+                    mirrorByKey.TryGetValue(materialKey, out mirror);
                 return new Test3EditorMaterial
                 {
                     Id = assignment.Key,
@@ -1680,25 +1843,76 @@
                     AssignedProcessId = assignedRow?.GroupKey ?? string.Empty,
                     AssignedProcessLabel = assignedRow is null ? string.Empty : BuildReactProcessLabel(assignedRow, setting),
                     ScopeLabel = assignedRow is null ? "미설정" : BuildReactMaterialScope(laneCode, setting, laneMergeProcessNo),
+                    MirrorMaterialCode = mirror?.RawMaterialCode ?? string.Empty,
+                    MirrorMaterialName = mirror?.RawMaterialName ?? string.Empty,
                 };
             })
             .OrderBy(item => ModelSideSortIndex(item.ModelName))
             .ThenBy(item => item.MaterialName, StringComparer.OrdinalIgnoreCase)
             .ThenBy(item => item.MaterialCode, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
 
-        return new Test3EditorSnapshot
+    /// <summary>
+    /// 화면은 주 모델 보드 하나만 편집하므로, 저장 직전에 반대편 모델의 같은 배치를 만들어 붙인다.
+    /// 짝 모델에 대응 공정이 없는 공정은 조용히 빠지고, 같은 짝 공정이 두 번 걸리면 첫 번째만 남는다.
+    /// </summary>
+    private List<Test3EditorLaneRequest> ExpandLayoutLanesToMirror(
+        Test3EditorLayoutRequest? request,
+        IReadOnlyList<Test3ProcessRow> allRows,
+        Dictionary<string, Test3ProcessRow> rowsById)
+    {
+        var lanes = request?.Lanes?.ToList() ?? [];
+        var requestModels = lanes
+            .Select(lane => lane.ModelName?.Trim() ?? string.Empty)
+            .Where(model => model.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (requestModels.Count != 1)
+            return lanes;
+
+        string mirrorModel = ResolveMirrorModelName(requestModels[0]);
+        var mirrorProcesses = BuildMirrorProcessIndex(allRows, mirrorModel);
+        if (mirrorProcesses is null)
+            return lanes;
+
+        string ResolveMirrorId(string? sourceId)
         {
-            ModelNames = _modelNames,
-            SelectedModel = _filterModel.Trim(),
-            Sides = sides,
-            Materials = materials,
-            BomBusy = _bomBusy,
-            BomSource = _bomLoadSource,
-            BomError = _bomError,
-            StatusMessage = _statusMessage,
-            StatusError = _statusError,
-        };
+            string id = sourceId?.Trim() ?? string.Empty;
+            return id.Length > 0 && rowsById.TryGetValue(id, out var sourceRow)
+                ? mirrorProcesses.Find(sourceRow.Process)?.GroupKey ?? string.Empty
+                : string.Empty;
+        }
+
+        var usedMirrorIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var mirrorProcessIds = new List<List<string>>(lanes.Count);
+        foreach (var lane in lanes)
+        {
+            var ids = new List<string>(lane.ProcessIds.Count);
+            foreach (string sourceId in lane.ProcessIds)
+            {
+                string mirrorId = ResolveMirrorId(sourceId);
+                if (mirrorId.Length > 0 && usedMirrorIds.Add(mirrorId))
+                    ids.Add(mirrorId);
+            }
+
+            mirrorProcessIds.Add(ids);
+        }
+
+        var mirrored = new List<Test3EditorLaneRequest>(lanes.Count);
+        for (int index = 0; index < lanes.Count; index++)
+        {
+            string mergeTargetId = ResolveMirrorId(lanes[index].MergeTargetProcessId);
+            mirrored.Add(new Test3EditorLaneRequest
+            {
+                ModelName = mirrorModel,
+                LaneCode = lanes[index].LaneCode,
+                MergeTargetProcessId = usedMirrorIds.Contains(mergeTargetId) ? mergeTargetId : string.Empty,
+                ProcessIds = mirrorProcessIds[index],
+            });
+        }
+
+        return [.. lanes, .. mirrored];
     }
 
     private void SaveReactLayout(Test3EditorLayoutRequest request)
@@ -1712,7 +1926,7 @@
         var requested = new List<(Test3EditorLaneRequest Lane, string LaneCode, Test3ProcessRow Row, int Index)>();
         var usedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var lane in request?.Lanes ?? [])
+        foreach (var lane in ExpandLayoutLanesToMirror(request, allRows, rowsById))
         {
             string modelName = lane.ModelName?.Trim() ?? string.Empty;
             if (!selectedModels.Contains(modelName))
@@ -1794,7 +2008,10 @@
     private ProcessMaterialProcessRow? GetExactProcessSetting(RoutingProcessOption process)
         => _processSettings.FirstOrDefault(setting => ProcessSettingMatches(setting, process));
 
-    private Test3EditorProcess BuildReactProcess(Test3ProcessRow row, ProcessMaterialProcessRow? setting)
+    private Test3EditorProcess BuildReactProcess(
+        Test3ProcessRow row,
+        ProcessMaterialProcessRow? setting,
+        MirrorProcessIndex? mirrorProcesses = null)
         => new()
         {
             Id = row.GroupKey,
@@ -1805,7 +2022,74 @@
             LaneCode = string.IsNullOrWhiteSpace(setting?.ProcessNo) ? string.Empty : ResolveLaneCode(setting),
             ProcessNo = setting?.ProcessNo.Trim() ?? string.Empty,
             Order = string.IsNullOrWhiteSpace(setting?.ProcessNo) ? 0 : ResolveLaneOrder(setting),
+            MirrorProcessCode = mirrorProcesses?.Find(row.Process)?.Process.ProcessCode ?? string.Empty,
         };
+
+    /// <summary>선택된 L/R 중 편집 기준이 되는 모델. 목록은 L, R 순으로 정렬되어 있다.</summary>
+    private string ResolvePrimaryModelName()
+        => SelectedRoutingModelNames.FirstOrDefault() ?? string.Empty;
+
+    /// <summary>주 모델의 반대편 모델. L/R 짝이 아니면 빈 문자열.</summary>
+    private string ResolveMirrorModelName(string modelName)
+    {
+        var selected = SelectedRoutingModelNames;
+        if (selected.Count != 2 || string.IsNullOrWhiteSpace(modelName))
+            return string.Empty;
+
+        return selected.FirstOrDefault(model =>
+            !string.Equals(model, modelName, StringComparison.OrdinalIgnoreCase)) ?? string.Empty;
+    }
+
+    private static MirrorProcessIndex? BuildMirrorProcessIndex(
+        IReadOnlyList<Test3ProcessRow> allRows,
+        string mirrorModel)
+        => string.IsNullOrWhiteSpace(mirrorModel)
+            ? null
+            : new MirrorProcessIndex(allRows.Where(row =>
+                string.Equals(row.Process.ModelName, mirrorModel, StringComparison.OrdinalIgnoreCase)));
+
+    private static string BuildMirrorProcessKey(RoutingProcessOption process)
+        => NormalizeKey(process.ProcessCode) + "\t" + NormalizeSideAgnosticText(process.ProcessName);
+
+    /// <summary>
+    /// 반대편 모델의 같은 공정을 찾는다. 공정코드+좌우 무시한 공정명이 1순위,
+    /// 공정명만 일치가 2순위, 공정코드만 일치가 3순위다.
+    /// </summary>
+    private sealed class MirrorProcessIndex
+    {
+        private readonly Dictionary<string, Test3ProcessRow> _byCodeAndName = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, Test3ProcessRow> _byName = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, Test3ProcessRow> _byCode = new(StringComparer.OrdinalIgnoreCase);
+
+        public MirrorProcessIndex(IEnumerable<Test3ProcessRow> rows)
+        {
+            foreach (var row in rows)
+            {
+                _byCodeAndName.TryAdd(BuildMirrorProcessKey(row.Process), row);
+
+                string name = NormalizeSideAgnosticText(row.Process.ProcessName);
+                if (name.Length > 0)
+                    _byName.TryAdd(name, row);
+
+                string code = NormalizeKey(row.Process.ProcessCode);
+                if (code.Length > 0)
+                    _byCode.TryAdd(code, row);
+            }
+        }
+
+        public Test3ProcessRow? Find(RoutingProcessOption process)
+        {
+            if (_byCodeAndName.TryGetValue(BuildMirrorProcessKey(process), out var byCodeAndName))
+                return byCodeAndName;
+
+            string name = NormalizeSideAgnosticText(process.ProcessName);
+            if (name.Length > 0 && _byName.TryGetValue(name, out var byName))
+                return byName;
+
+            string code = NormalizeKey(process.ProcessCode);
+            return code.Length > 0 && _byCode.TryGetValue(code, out var byCode) ? byCode : null;
+        }
+    }
 
     private static string BuildReactProcessLabel(Test3ProcessRow row, ProcessMaterialProcessRow? setting)
     {
@@ -2930,9 +3214,11 @@
     private static bool IsSelectableMaterial(BmesBomMaterialCandidate material)
         => IsSelectableMaterial(material.MaterialCode, material.MaterialName);
 
+    // C-S-* 는 반제품(ASSY) 코드라 BOM 자재 후보에서 제외한다.
     private static bool IsSelectableMaterial(string code, string name)
         => (!string.IsNullOrWhiteSpace(code) || !string.IsNullOrWhiteSpace(name)) &&
-           !code.Trim().StartsWith("M-P-", StringComparison.OrdinalIgnoreCase);
+           !code.Trim().StartsWith("M-P-", StringComparison.OrdinalIgnoreCase) &&
+           !code.Trim().StartsWith("C-S", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsAssyFrameMaterial(string name)
         => NormalizeKey(name).Contains("ASSY FRAME", StringComparison.OrdinalIgnoreCase);

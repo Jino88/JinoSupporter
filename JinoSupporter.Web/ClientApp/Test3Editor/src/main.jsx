@@ -316,22 +316,24 @@ function Test3Editor({ dotnet, initialSnapshot }) {
     }
 
     if (overData.kind !== "cell") return;
-    if (activeData.modelName !== overData.modelName) {
-      setLocalError("같은 L/R 보드 안에서만 배치할 수 있습니다.");
-      return;
-    }
 
-    if (activeData.kind === "process") {
-      moveProcessToCell(activeData, overData);
-      return;
-    }
-
+    // 자재는 L/R 짝 자재가 서버에서 치환되므로 모델이 달라도 받는다.
     if (activeData.kind === "material") {
       if (!overData.processId) {
         setLocalError("자재는 공정이 배치된 셀에만 투입할 수 있습니다.");
         return;
       }
       void assignMaterial(activeData.materialId, overData.processId, activeData.usageQty, activeData.usageUnit);
+      return;
+    }
+
+    if (activeData.modelName !== overData.modelName) {
+      setLocalError("같은 보드 안에서만 배치할 수 있습니다.");
+      return;
+    }
+
+    if (activeData.kind === "process") {
+      moveProcessToCell(activeData, overData);
       return;
     }
 
@@ -510,20 +512,16 @@ function Test3Editor({ dotnet, initialSnapshot }) {
                     )}
                   </div>
                   <div className="t3r-palette-body">
-                    {sides.map((side) =>
-                      paletteTab === "process" ? (
-                        <ProcessPalette key={side.modelName} side={side} query={processQuery} />
-                      ) : (
-                        <MaterialPalette
-                          key={side.modelName}
-                          side={side}
-                          materials={filteredMaterials.filter((material) => material.modelName === side.modelName)}
-                          onSave={(material, usageQty, usageUnit) =>
-                            void assignMaterial(material.id, material.assignedProcessId, usageQty, usageUnit)
-                          }
-                          onClear={(materialId) => void invoke("ReactClearMaterialAsync", materialId)}
-                        />
-                      )
+                    {paletteTab === "process" ? (
+                      sides.map((side) => <ProcessPalette key={side.modelName} side={side} query={processQuery} />)
+                    ) : (
+                      <MaterialPalette
+                        materials={filteredMaterials}
+                        onSave={(material, usageQty, usageUnit) =>
+                          void assignMaterial(material.id, material.assignedProcessId, usageQty, usageUnit)
+                        }
+                        onClear={(materialId) => void invoke("ReactClearMaterialAsync", materialId)}
+                      />
                     )}
                     {paletteTab === "material" && snapshot.bomSource && (
                       <div className="t3r-palette-note">{snapshot.bomSource}</div>
@@ -568,15 +566,20 @@ function SideBoard({
   const stepCount = lanes.reduce((max, lane) => Math.max(max, lane.processes.length), 0);
   const rowCount = stepCount + 1;
   const laneSteps = lanes.map((lane) => buildLaneSteps(lane, firstInputByProcess, mergeSourcesByProcess));
+  const mirrored = Boolean(side.mirrorModelName);
   const gridStyle = { gridTemplateColumns: `34px repeat(${Math.max(lanes.length, 1)}, minmax(178px, 1fr))` };
   const isPicking = mergePick?.modelName === side.modelName;
 
   return (
     <article className={`t3r-board ${sideClass(side.sideLabel)}`}>
       <header className="t3r-board-head">
-        <span className="t3r-side-badge">{side.sideLabel || "-"}</span>
-        <span className="t3r-board-title">{sideTitle(side)}</span>
-        <strong>{side.modelName}</strong>
+        <span className="t3r-side-badge">{mirrored ? `${side.sideLabel}+${side.mirrorSideLabel}` : side.sideLabel || "-"}</span>
+        <span className="t3r-board-title">{mirrored ? "L/R 동시 편집" : sideTitle(side)}</span>
+        <strong title={mirrored ? `${side.modelName} · ${side.mirrorModelName}` : side.modelName}>
+          {side.modelName}
+          {mirrored && <em className="t3r-mirror-name"> · {side.mirrorModelName}</em>}
+        </strong>
+        {mirrored && <span className="t3r-mirror-note">한쪽만 배치하면 반대쪽에 같이 저장됩니다</span>}
         <button type="button" className="t3r-link-button" onClick={onAddSub}>
           + SUB 레인
         </button>
@@ -759,7 +762,14 @@ function CellProcess({ side, lane, step, process, onUnassign }) {
           <code>{process.processCode}</code>
           <strong title={process.processName}>{process.processName}</strong>
         </div>
-        {process.processType && <small>{process.processType}</small>}
+        <small>
+          {process.processType}
+          {process.mirrorProcessCode && process.mirrorProcessCode !== process.processCode && (
+            <em className="t3r-mirror-code" title="반대쪽 모델에서 같이 배치되는 공정">
+              ↔ {process.mirrorProcessCode}
+            </em>
+          )}
+        </small>
       </div>
       <button
         type="button"
@@ -835,14 +845,9 @@ function PaletteProcess({ process, side }) {
   );
 }
 
-function MaterialPalette({ side, materials, onSave, onClear }) {
+function MaterialPalette({ materials, onSave, onClear }) {
   return (
     <section className="t3r-palette-group">
-      <header className={`t3r-palette-group-head ${sideClass(side.sideLabel)}`}>
-        <span className="t3r-side-badge">{side.sideLabel || "-"}</span>
-        <strong title={side.modelName}>{side.modelName}</strong>
-        <span className="t3r-lane-count">{materials.length}</span>
-      </header>
       <div className="t3r-palette-list">
         {materials.map((material) => (
           <MaterialCard
@@ -891,6 +896,11 @@ function MaterialCard({ material, onSave, onClear }) {
         <div className="t3r-card-content">
           <code>{material.materialCode}</code>
           <strong title={material.materialName}>{material.materialName}</strong>
+          {material.mirrorMaterialName && material.mirrorMaterialName !== material.materialName && (
+            <em className="t3r-mirror-code" title={`반대쪽 모델에는 ${material.mirrorMaterialCode} 로 투입됩니다`}>
+              ↔ {material.mirrorMaterialName}
+            </em>
+          )}
         </div>
       </div>
       <div className="t3r-assignment">
