@@ -183,19 +183,21 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
                 <thead>
                     <tr>
                         <th style="min-width:150px;">Material Code</th>
-                        <th style="min-width:260px;">Material Name</th>
-                        <th class="text-end" style="min-width:120px;">Expected NG</th>
-                        <th class="text-end" style="min-width:120px;">F-COST Qty</th>
-                        <th class="text-end" style="min-width:120px;">Diff</th>
+                        <th style="min-width:240px;">Material Name</th>
+                        <th class="text-end" style="min-width:100px;">Expected NG</th>
+                        <th class="text-end" style="min-width:110px;">Unit Price</th>
+                        <th class="text-end" style="min-width:140px;">Expected F-COST</th>
+                        <th class="text-end" style="min-width:140px;">Actual F-COST</th>
+                        <th class="text-end" style="min-width:140px;">Diff</th>
                         <th class="text-end" style="min-width:90px;">Diff %</th>
-                        <th class="text-end" style="min-width:90px;">Source</th>
+                        <th class="text-end" style="min-width:80px;">Source</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (_fcostComparisonRows.Count == 0)
                     {
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4 small">No comparison rows.</td>
+                            <td colspan="9" class="text-center text-muted py-4 small">No comparison rows.</td>
                         </tr>
                     }
                     else
@@ -206,8 +208,10 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
                                 <td class="font-monospace">@row.MaterialCode</td>
                                 <td>@row.MaterialName</td>
                                 <td class="text-end">@FormatDecimalQty(row.ExpectedQty)</td>
-                                <td class="text-end">@FormatDecimalQty(row.FCostQty)</td>
-                                <td class="text-end fw-semibold">@FormatSignedDecimalQty(row.DiffQty)</td>
+                                <td class="text-end" title="@(row.UnitPriceVnd is > 0 ? "VND / 1개" : "단가를 찾지 못해 예상 금액을 계산할 수 없습니다")">@FormatDecimalQty(row.UnitPriceVnd ?? 0m)</td>
+                                <td class="text-end">@FormatAmount(row.ExpectedAmount)</td>
+                                <td class="text-end">@FormatAmount(row.ActualAmount)</td>
+                                <td class="text-end fw-semibold">@FormatSignedAmount(row.DiffAmount)</td>
                                 <td class="text-end">@FormatDiffPercent(row.DiffPercent)</td>
                                 <td class="text-end">@row.SourceRows.ToString("N0", CultureInfo.InvariantCulture)</td>
                             </tr>
@@ -614,6 +618,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
                 LineShifts = lineShifts,
             });
             _fcostComparisonRows = BuildFcostComparisonRows(result, period.Key);
+            _fcostComparisonRows = await FillMissingUnitPricesAsync(_fcostComparisonRows, connection, period.StartDate);
             progress?.Report($"Report-F-COST comparison rows={_fcostComparisonRows.Count:N0}");
         }
         catch (Exception ex)
@@ -653,10 +658,22 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
                 g =>
                 {
                     var first = g.First();
+                    decimal qty = g.Sum(r => r.EquivalentQtyByPeriod.GetValueOrDefault(periodKey));
+                    decimal amount = g.Sum(r => r.FCostByPeriod.GetValueOrDefault(periodKey));
+
+                    // 실적 금액÷실적 수량이 그 주차에 실제로 적용된 단가다.
+                    // 수량이 없으면 조회된 자재 단가를 쓴다.
+                    decimal? unitPrice = qty > 0
+                        ? amount / qty
+                        : g.Select(r => r.PriceByPeriod.GetValueOrDefault(periodKey)?.UnitPriceVnd)
+                            .FirstOrDefault(price => price is > 0);
+
                     return (
                         Code: first.MaterialCode,
                         Name: first.MaterialName,
-                        Qty: g.Sum(r => r.EquivalentQtyByPeriod.GetValueOrDefault(periodKey)),
+                        Qty: qty,
+                        Amount: amount,
+                        UnitPrice: unitPrice,
                         SourceRows: g.Sum(r => r.SourceRows));
                 },
                 StringComparer.OrdinalIgnoreCase);
@@ -670,15 +687,80 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
                 actual.TryGetValue(key, out var a);
                 string code = FirstNonBlank(e.Code, a.Code);
                 string name = FirstNonBlank(e.Name, a.Name);
-                decimal diff = a.Qty - e.Qty;
-                decimal? pct = e.Qty > 0 ? diff / e.Qty * 100m : null;
-                return new Test4FcostCompareRow(code, name, e.Qty, a.Qty, diff, pct, a.SourceRows);
+                return BuildCompareRow(code, name, e.Qty, a.Qty, a.Amount, a.UnitPrice, a.SourceRows);
             })
-            .Where(r => r.ExpectedQty > 0 || r.FCostQty > 0)
-            .OrderByDescending(r => Math.Abs(r.DiffQty))
+            .Where(r => r.ExpectedQty > 0 || r.FCostQty > 0 || r.ActualAmount > 0)
+            .OrderByDescending(r => Math.Abs(r.DiffAmount ?? 0m))
+            .ThenByDescending(r => r.ExpectedQty)
             .ThenBy(r => r.MaterialName, StringComparer.OrdinalIgnoreCase)
             .ThenBy(r => r.MaterialCode, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    private static Test4FcostCompareRow BuildCompareRow(
+        string code,
+        string name,
+        decimal expectedQty,
+        decimal fcostQty,
+        decimal actualAmount,
+        decimal? unitPrice,
+        long sourceRows)
+    {
+        decimal? expectedAmount = unitPrice is > 0 ? expectedQty * unitPrice.Value : null;
+        decimal? diffAmount = expectedAmount.HasValue ? actualAmount - expectedAmount.Value : null;
+        decimal? pct = expectedAmount is > 0 ? diffAmount / expectedAmount.Value * 100m : null;
+        return new Test4FcostCompareRow(
+            code, name, expectedQty, fcostQty, unitPrice, expectedAmount, actualAmount, diffAmount, pct, sourceRows);
+    }
+
+    /// <summary>
+    /// F-COST 실적이 없어 단가를 못 구한 자재는 구매 정보레코드/입고 실적에서 단가를 받아
+    /// 예상 금액을 채운다. 조회 전용이며 실패해도 기존 행을 그대로 둔다.
+    /// </summary>
+    private async Task<List<Test4FcostCompareRow>> FillMissingUnitPricesAsync(
+        List<Test4FcostCompareRow> rows,
+        BmesFcostDbConnection connection,
+        DateTime referenceDate)
+    {
+        var missing = rows
+            .Where(r => r.UnitPriceVnd is not > 0 && r.ExpectedQty > 0 && !string.IsNullOrWhiteSpace(r.MaterialCode))
+            .Select(r => r.MaterialCode.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (missing.Count == 0)
+            return rows;
+
+        try
+        {
+            var prices = await FCostActual.FetchMaterialCostsAsync(new BmesMaterialCostQuery
+            {
+                Connection = connection,
+                MaterialCodes = missing,
+                ReferenceDate = referenceDate,
+                MaxRows = missing.Count,
+            });
+            var priceByCode = prices
+                .Where(p => p.UnitPriceVnd is > 0)
+                .ToDictionary(p => p.MaterialCode.Trim(), p => p.UnitPriceVnd!.Value, StringComparer.OrdinalIgnoreCase);
+            if (priceByCode.Count == 0)
+                return rows;
+
+            return rows
+                .Select(r =>
+                    r.UnitPriceVnd is > 0 || !priceByCode.TryGetValue(r.MaterialCode.Trim(), out decimal price)
+                        ? r
+                        : BuildCompareRow(r.MaterialCode, r.MaterialName, r.ExpectedQty, r.FCostQty, r.ActualAmount, price, r.SourceRows))
+                .OrderByDescending(r => Math.Abs(r.DiffAmount ?? 0m))
+                .ThenByDescending(r => r.ExpectedQty)
+                .ThenBy(r => r.MaterialName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(r => r.MaterialCode, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Activity.Log("Test 4", "Unit price backfill failed: " + ex.Message);
+            return rows;
+        }
     }
 
     private List<BmesFcostRawBreakdownLineShift> BuildFcostLineShiftsForModel()
@@ -779,6 +861,20 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
             .ToString("N0", CultureInfo.InvariantCulture);
     }
 
+    // 금액은 VND 라 정수로 반올림한다. 단가를 못 구해 계산이 불가능하면 "-".
+    private static string FormatAmount(decimal? value)
+        => value is null || value.Value == 0
+            ? "-"
+            : Math.Round(value.Value, MidpointRounding.AwayFromZero).ToString("N0", CultureInfo.InvariantCulture);
+
+    private static string FormatSignedAmount(decimal? value)
+    {
+        if (value is null || value.Value == 0) return "-";
+        string prefix = value.Value > 0 ? "+" : "-";
+        return prefix + Math.Round(Math.Abs(value.Value), MidpointRounding.AwayFromZero)
+            .ToString("N0", CultureInfo.InvariantCulture);
+    }
+
     private static string FormatDiffPercent(decimal? value)
     {
         if (value is null || value == 0) return "-";
@@ -818,12 +914,19 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
         int ProcessCount,
         double MaterialNgQty);
 
+    /// <summary>
+    /// 예상 금액 = 예상 NG 수량 × 자재 단가(VND), 실적 금액 = F-COST 실적.
+    /// 차이는 금액 기준으로 본다.
+    /// </summary>
     private sealed record Test4FcostCompareRow(
         string MaterialCode,
         string MaterialName,
         decimal ExpectedQty,
         decimal FCostQty,
-        decimal DiffQty,
+        decimal? UnitPriceVnd,
+        decimal? ExpectedAmount,
+        decimal ActualAmount,
+        decimal? DiffAmount,
         decimal? DiffPercent,
         long SourceRows);
 }
