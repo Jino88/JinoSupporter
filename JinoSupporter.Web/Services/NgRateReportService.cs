@@ -316,7 +316,8 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         // 3. Load OrginalTable
         progress?.Report("Loading OrginalTable…");
         var loadSw = Stopwatch.StartNew();
-        var orgRows = LoadOrginalRows(dbPath, modelSet, requestedStart, requestedEnd);
+        var loadRange = ExpandPeriodForWeekAndMonth(requestedStart, requestedEnd);
+        var orgRows = LoadOrginalRows(dbPath, modelSet, loadRange?.Start, loadRange?.End.AddDays(-1));
         progress?.Report($"OrginalTable rows={orgRows.Count:N0} ({loadSw.ElapsedMilliseconds:N0} ms)");
         if (orgRows.Count == 0)
         {
@@ -650,7 +651,8 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         var ptLookup = LoadProcessTypeLookup(dbPath);
 
         progress?.Report("Loading OrginalTable (grouped NG detail)…");
-        var orgRows = LoadOrginalRows(dbPath, modelSet, periodStart, periodEnd);
+        var loadRange = ExpandPeriodForWeekAndMonth(periodStart, periodEnd);
+        var orgRows = LoadOrginalRows(dbPath, modelSet, loadRange?.Start, loadRange?.End.AddDays(-1));
         if (orgRows.Count == 0) return new LineShiftNgReport();
 
         foreach (var r in orgRows)
@@ -725,7 +727,8 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         var ptLookup = LoadProcessTypeLookup(dbPath);
 
         progress?.Report("Loading OrginalTable (LS×NG detail)…");
-        var orgRows = LoadOrginalRows(dbPath, modelSet);
+        var loadRange = ExpandPeriodForWeekAndMonth(periodStart, periodEnd);
+        var orgRows = LoadOrginalRows(dbPath, modelSet, loadRange?.Start, loadRange?.End.AddDays(-1));
         if (orgRows.Count == 0) return new LineShiftNgReport();
 
         foreach (var r in orgRows)
@@ -806,6 +809,25 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
                 g.Key.Key,
                 CalcPpm(g.Sum(r => r.QtyInput), g.Sum(r => r.QtyNg))))
             .ToList();
+    }
+
+    private static (DateTime Start, DateTime End)? ExpandPeriodForWeekAndMonth(DateTime? start, DateTime? end)
+    {
+        if (!start.HasValue || !end.HasValue) return null;
+        var first = start.Value.Date;
+        var last = end.Value.Date;
+        if (last < first) return null;
+        string firstWeek = GetWeekKey(first.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        var weekStart = first;
+        while (weekStart > DateTime.MinValue.Date && GetWeekKey(weekStart.AddDays(-1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)) == firstWeek)
+            weekStart = weekStart.AddDays(-1);
+        string lastWeek = GetWeekKey(last.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        var weekEnd = last;
+        while (weekEnd < DateTime.MaxValue.Date && GetWeekKey(weekEnd.AddDays(1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)) == lastWeek)
+            weekEnd = weekEnd.AddDays(1);
+        var monthStart = new DateTime(first.Year, first.Month, 1);
+        var monthEnd = new DateTime(last.Year, last.Month, DateTime.DaysInMonth(last.Year, last.Month));
+        return (weekStart < monthStart ? weekStart : monthStart, (weekEnd > monthEnd ? weekEnd : monthEnd).AddDays(1));
     }
 
     private static List<PeriodColumn> ExtractCols(List<ComboAgg> agg, Func<string, string> headerOf)
