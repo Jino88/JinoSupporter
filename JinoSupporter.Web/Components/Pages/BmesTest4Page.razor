@@ -185,10 +185,13 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
                         <th style="min-width:150px;">Material Code</th>
                         <th style="min-width:240px;">Material Name</th>
                         <th class="text-end" style="min-width:100px;">Expected NG</th>
-                        <th class="text-end" style="min-width:110px;">Unit Price</th>
-                        <th class="text-end" style="min-width:140px;">Expected F-COST</th>
-                        <th class="text-end" style="min-width:140px;">Actual F-COST</th>
-                        <th class="text-end" style="min-width:140px;">Diff</th>
+                        <th class="text-end" style="min-width:110px;">Unit Price (@AmountCurrencyLabel)</th>
+                        <th class="text-end" style="min-width:140px;">Expected F-COST (@AmountCurrencyLabel)</th>
+                        <th class="text-end" style="min-width:150px;"
+                            title="BMES F-COST 실적 금액(FCostVnd)을 환산한 값입니다. 이 컬럼의 합계가 FCOST Trend 의 해당 모델·주차 F-COST 와 같습니다.">
+                            Actual F-COST (@AmountCurrencyLabel)
+                        </th>
+                        <th class="text-end" style="min-width:140px;">Diff (@AmountCurrencyLabel)</th>
                         <th class="text-end" style="min-width:90px;">Diff %</th>
                         <th class="text-end" style="min-width:80px;">Source</th>
                     </tr>
@@ -208,7 +211,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
                                 <td class="font-monospace">@row.MaterialCode</td>
                                 <td>@row.MaterialName</td>
                                 <td class="text-end">@FormatDecimalQty(row.ExpectedQty)</td>
-                                <td class="text-end" title="@(row.UnitPriceVnd is > 0 ? "VND / 1개" : "단가를 찾지 못해 예상 금액을 계산할 수 없습니다")">@FormatDecimalQty(row.UnitPriceVnd ?? 0m)</td>
+                                <td class="text-end" title="@(row.UnitPriceVnd is > 0 ? $"자재 1개 단가 (원값 {row.UnitPriceVnd:N0} VND)" : "단가를 찾지 못해 예상 금액을 계산할 수 없습니다")">@FormatAmount(row.UnitPriceVnd)</td>
                                 <td class="text-end">@FormatAmount(row.ExpectedAmount)</td>
                                 <td class="text-end">@FormatAmount(row.ActualAmount)</td>
                                 <td class="text-end fw-semibold">@FormatSignedAmount(row.DiffAmount)</td>
@@ -218,6 +221,21 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
                         }
                     }
                 </tbody>
+                @if (_fcostComparisonRows.Count > 0)
+                {
+                    <tfoot>
+                        <tr class="test4-total-row">
+                            <td colspan="4" class="fw-semibold">합계</td>
+                            <td class="text-end fw-semibold">@FormatAmount(TotalExpectedAmountVnd)</td>
+                            <td class="text-end fw-semibold"
+                                title="FCOST Trend 의 같은 모델·주차 F-COST 와 같은 금액입니다">
+                                @FormatAmount(TotalActualAmountVnd)
+                            </td>
+                            <td class="text-end fw-semibold">@FormatSignedAmount(TotalActualAmountVnd - TotalExpectedAmountVnd)</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                }
             </table>
         </div>
     </section>
@@ -550,6 +568,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
     {
         _statusMessage = "Calculating material NG...";
         _fcostComparisonRows = [];
+        _vndToUsd = null;
         _fcostError = string.Empty;
         _report = await MaterialNg.GenerateAsync(dbPath, _modelFilter, progress);
         EnsureSelectedWeek();
@@ -578,6 +597,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
     private async Task LoadFcostComparisonAsync(IProgress<string>? progress = null)
     {
         _fcostComparisonRows = [];
+        _vndToUsd = null;
         _fcostError = string.Empty;
 
         if (_report is null || string.IsNullOrWhiteSpace(SelectedWeekKey))
@@ -617,6 +637,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
                 Periods = [period],
                 LineShifts = lineShifts,
             });
+            _vndToUsd = ResolveVndToUsd(result, period.Key);
             _fcostComparisonRows = BuildFcostComparisonRows(result, period.Key);
             _fcostComparisonRows = await FillMissingUnitPricesAsync(_fcostComparisonRows, connection, period.StartDate);
             progress?.Report($"Report-F-COST comparison rows={_fcostComparisonRows.Count:N0}");
@@ -625,6 +646,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
         {
             _fcostError = "Report-F-COST comparison failed: " + ex.Message;
             _fcostComparisonRows = [];
+        _vndToUsd = null;
         }
         finally
         {
@@ -695,6 +717,17 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
             .ThenBy(r => r.MaterialName, StringComparer.OrdinalIgnoreCase)
             .ThenBy(r => r.MaterialCode, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    // TCURR 환율은 KRW 기준으로 오므로 VND → KRW → USD 로 접는다.
+    private static decimal? ResolveVndToUsd(BmesFcostRawBreakdownResult fcost, string periodKey)
+    {
+        var rate = fcost.ExchangeRates.FirstOrDefault(r =>
+                       string.Equals(r.PeriodKey, periodKey, StringComparison.OrdinalIgnoreCase))
+                   ?? fcost.ExchangeRates.FirstOrDefault();
+        return rate?.KrwPerVnd is > 0 && rate.KrwPerUsd is > 0
+            ? rate.KrwPerVnd.Value / rate.KrwPerUsd.Value
+            : null;
     }
 
     private static Test4FcostCompareRow BuildCompareRow(
@@ -861,18 +894,41 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
             .ToString("N0", CultureInfo.InvariantCulture);
     }
 
-    // 금액은 VND 라 정수로 반올림한다. 단가를 못 구해 계산이 불가능하면 "-".
-    private static string FormatAmount(decimal? value)
-        => value is null || value.Value == 0
-            ? "-"
-            : Math.Round(value.Value, MidpointRounding.AwayFromZero).ToString("N0", CultureInfo.InvariantCulture);
+    /// <summary>
+    /// 금액은 내부적으로 VND(FCostVnd)로 다루고 화면에는 USD 로 환산해 보여 준다.
+    /// 환율은 F-COST 조회 결과의 TCURR 환율(KRW/USD, KRW/VND)에서 얻는다.
+    /// 환율을 못 구하면 VND 그대로 표시하고 머리글도 VND 로 바뀐다.
+    /// </summary>
+    private decimal? _vndToUsd;
 
-    private static string FormatSignedAmount(decimal? value)
+    private string AmountCurrencyLabel => _vndToUsd is > 0 ? "USD" : "VND";
+
+    private decimal? ToDisplayAmount(decimal? vnd)
+        => vnd is null ? null : _vndToUsd is > 0 ? vnd.Value * _vndToUsd.Value : vnd.Value;
+
+    private decimal TotalExpectedAmountVnd => _fcostComparisonRows.Sum(r => r.ExpectedAmount ?? 0m);
+
+    private decimal TotalActualAmountVnd => _fcostComparisonRows.Sum(r => r.ActualAmount);
+
+    private string FormatAmount(decimal? vnd)
     {
+        decimal? value = ToDisplayAmount(vnd);
+        return value is null || value.Value == 0 ? "-" : FormatMoney(value.Value);
+    }
+
+    private string FormatSignedAmount(decimal? vnd)
+    {
+        decimal? value = ToDisplayAmount(vnd);
         if (value is null || value.Value == 0) return "-";
-        string prefix = value.Value > 0 ? "+" : "-";
-        return prefix + Math.Round(Math.Abs(value.Value), MidpointRounding.AwayFromZero)
-            .ToString("N0", CultureInfo.InvariantCulture);
+        return (value.Value > 0 ? "+" : "-") + FormatMoney(Math.Abs(value.Value));
+    }
+
+    // USD 는 소수가 의미를 가지므로 크기에 따라 자릿수를 달리한다.
+    private static string FormatMoney(decimal value)
+    {
+        decimal abs = Math.Abs(value);
+        string format = abs >= 1000m ? "N0" : abs >= 1m ? "N2" : "0.####";
+        return value.ToString(format, CultureInfo.InvariantCulture);
     }
 
     private static string FormatDiffPercent(decimal? value)
