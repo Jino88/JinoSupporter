@@ -66,6 +66,11 @@ public sealed class Test3EditorMaterial
     public string MirrorMaterialCode { get; init; } = string.Empty;
 
     public string MirrorMaterialName { get; init; } = string.Empty;
+
+    /// <summary>BOM 원본 소요량(기준수량 기준). 화면에는 참고 표기로만 쓴다.</summary>
+    public decimal BomUsageQty { get; init; }
+
+    public string BomUsageUnit { get; init; } = string.Empty;
 }
 
 public sealed class Test3EditorLayoutRequest

@@ -941,8 +941,13 @@ function MaterialPalette({ materials, onSave, onClear }) {
 }
 
 function MaterialCard({ material, onSave, onClear }) {
+  // 소요량은 제품 1개 기준이다. BOM 원값(기준수량 기준)은 참고 표기로만 보여 준다.
   const [usageQty, setUsageQty] = useState(material.usageQty || 1);
   const [usageUnit, setUsageUnit] = useState(material.usageUnit || "PC");
+  const bomHint =
+    material.bomUsageQty > 0
+      ? `BOM 원값 ${material.bomUsageQty} ${material.bomUsageUnit || "PC"} (기준수량 기준). 여기 값은 제품 1개 기준입니다.`
+      : "제품 1개 기준 소요량";
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: dragMaterialId(material.id),
     data: {
@@ -986,6 +991,14 @@ function MaterialCard({ material, onSave, onClear }) {
         </strong>
         <small>{material.scopeLabel}</small>
       </div>
+      <div className="t3r-qty-label">
+        <span>제품 1개 기준 소요량</span>
+        {material.bomUsageQty > 0 && (
+          <em title={bomHint}>
+            BOM 원값 {material.bomUsageQty} {material.bomUsageUnit || "PC"}
+          </em>
+        )}
+      </div>
       <div className="t3r-material-controls">
         <input
           type="number"
@@ -994,8 +1007,9 @@ function MaterialCard({ material, onSave, onClear }) {
           value={usageQty}
           onChange={(event) => setUsageQty(event.target.value)}
           aria-label="사용량"
+          title={bomHint}
         />
-        <input value={usageUnit} onChange={(event) => setUsageUnit(event.target.value)} aria-label="사용 단위" />
+        <input value={usageUnit} onChange={(event) => setUsageUnit(event.target.value)} aria-label="사용 단위" title={bomHint} />
         {material.assignedProcessId && (
           <button type="button" className="t3r-link-button" onClick={() => onSave(usageQty, usageUnit)}>
             저장

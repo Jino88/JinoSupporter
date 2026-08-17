@@ -10964,7 +10964,7 @@ function yr({ materials: e, onSave: t, onClear: n }) {
 	});
 }
 function br({ material: e, onSave: t, onClear: n }) {
-	let [r, i] = (0, y.useState)(e.usageQty || 1), [a, o] = (0, y.useState)(e.usageUnit || "PC"), { attributes: s, listeners: c, setNodeRef: l, isDragging: u } = En({
+	let [r, i] = (0, y.useState)(e.usageQty || 1), [a, o] = (0, y.useState)(e.usageUnit || "PC"), s = e.bomUsageQty > 0 ? `BOM 원값 ${e.bomUsageQty} ${e.bomUsageUnit || "PC"} (기준수량 기준). 여기 값은 제품 1개 기준입니다.` : "제품 1개 기준 소요량", { attributes: c, listeners: l, setNodeRef: u, isDragging: d } = En({
 		id: qn(e.id),
 		data: {
 			kind: "material",
@@ -10976,11 +10976,11 @@ function br({ material: e, onSave: t, onClear: n }) {
 		}
 	});
 	return /* @__PURE__ */ (0, L.jsxs)("div", {
-		ref: l,
-		className: `t3r-material-card is-draggable ${e.assignedProcessId ? "configured" : ""} ${u ? "is-dragging" : ""}`,
+		ref: u,
+		className: `t3r-material-card is-draggable ${e.assignedProcessId ? "configured" : ""} ${d ? "is-dragging" : ""}`,
 		"aria-label": "자재를 최초 투입 공정 셀로 이동",
-		...s,
-		...or(c),
+		...c,
+		...or(l),
 		children: [
 			/* @__PURE__ */ (0, L.jsxs)("div", {
 				className: "t3r-material-head",
@@ -11016,6 +11016,18 @@ function br({ material: e, onSave: t, onClear: n }) {
 				]
 			}),
 			/* @__PURE__ */ (0, L.jsxs)("div", {
+				className: "t3r-qty-label",
+				children: [/* @__PURE__ */ (0, L.jsx)("span", { children: "제품 1개 기준 소요량" }), e.bomUsageQty > 0 && /* @__PURE__ */ (0, L.jsxs)("em", {
+					title: s,
+					children: [
+						"BOM 원값 ",
+						e.bomUsageQty,
+						" ",
+						e.bomUsageUnit || "PC"
+					]
+				})]
+			}),
+			/* @__PURE__ */ (0, L.jsxs)("div", {
 				className: "t3r-material-controls",
 				children: [
 					/* @__PURE__ */ (0, L.jsx)("input", {
@@ -11024,12 +11036,14 @@ function br({ material: e, onSave: t, onClear: n }) {
 						step: "any",
 						value: r,
 						onChange: (e) => i(e.target.value),
-						"aria-label": "사용량"
+						"aria-label": "사용량",
+						title: s
 					}),
 					/* @__PURE__ */ (0, L.jsx)("input", {
 						value: a,
 						onChange: (e) => o(e.target.value),
-						"aria-label": "사용 단위"
+						"aria-label": "사용 단위",
+						title: s
 					}),
 					e.assignedProcessId && /* @__PURE__ */ (0, L.jsx)("button", {
 						type: "button",
