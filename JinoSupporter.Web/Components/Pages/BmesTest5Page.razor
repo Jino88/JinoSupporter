@@ -190,6 +190,18 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
     <div class="alert alert-success py-2 small mb-3">@_statusMessage</div>
 }
 
+@if (_costBusy)
+{
+    <div class="alert alert-info py-2 small mb-3 d-flex align-items-center gap-2">
+        <span class="spinner-border spinner-border-sm" role="status"></span>
+        <span>자재 단가를 조회하는 중입니다...</span>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(_costError))
+{
+    <div class="alert alert-warning py-2 small mb-3">@_costError</div>
+}
+
 @foreach (var result in _results)
 {
     var rows = VisibleRows(result);
@@ -234,6 +246,9 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
                         <col class="t5-col-level" />
                         <col class="t5-col-material" />
                         <col class="t5-col-code" />
+                        <col class="t5-col-price" />
+                        <col class="t5-col-cur" />
+                        <col class="t5-col-vnd" />
                         <col class="t5-col-pdm" />
                         <col class="t5-col-type" />
                     </colgroup>
@@ -242,6 +257,9 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
                             <th>Lv</th>
                             <th>Material</th>
                             <th>Code</th>
+                            <th class="text-end t5-cost-col" title="구매 정보레코드(INFR) 우선, 없으면 입고 실적(STBI) 금액÷수량">Unit Price</th>
+                            <th class="t5-cost-col">Cur</th>
+                            <th class="text-end t5-cost-col" title="TCURR(KURST=BWCU) 월초 환율로 환산한 VND 단가">VND</th>
                             <th>PDMNO</th>
                             <th>PDTNO_TX</th>
                         </tr>
@@ -250,7 +268,7 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
                         @foreach (var product in ByProduct(rows))
                         {
                             <tr class="t5-product @(product.IsShared ? "shared" : "")">
-                                <td colspan="5">
+                                <td colspan="8">
                                     @product.Product
                                     <span class="badge bg-light text-dark ms-1">@product.Rows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
                                 </td>
@@ -268,7 +286,11 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
                                     <td class="text-muted small">@row.MaterialCode</td>
                                     @{
                                         var pdm = FindPdm(row);
+                                        var cost = FindCost(row);
                                     }
+                                    <td class="text-end small t5-cost-col" title="@(cost?.PriceSource is { Length: > 0 } src ? $"단가 출처 {src}" : null)">@FormatUnitPrice(cost?.UnitPrice)</td>
+                                    <td class="text-muted small t5-cost-col">@(cost?.PriceCurrency ?? "")</td>
+                                    <td class="text-end small t5-cost-col">@FormatVnd(cost?.UnitPriceVnd)</td>
                                     <td class="small">
                                         @if (pdm is not null && !string.IsNullOrWhiteSpace(pdm.Pdmno))
                                         {
@@ -463,8 +485,12 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
     .t5-table .t5-col-level { width: 52px; }
     .t5-table .t5-col-material { width: 360px; }
     .t5-table .t5-col-code { width: 155px; }
+    .t5-table .t5-col-price { width: 95px; }
+    .t5-table .t5-col-cur { width: 52px; }
+    .t5-table .t5-col-vnd { width: 90px; }
     .t5-table .t5-col-pdm { width: 145px; }
     .t5-table .t5-col-type { width: 180px; }
+    .t5-table .t5-cost-col { background: #f7fbff; }
 
     .t5-table th {
         position: sticky;
@@ -569,6 +595,12 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
     private HashSet<string> _selectedModels = new(StringComparer.OrdinalIgnoreCase);
 
     private List<ModelBomResult> _results = new();
+
+    /// <summary>자재코드별 단가. BOM 을 불러온 뒤 한 번에 조회해 채운다.</summary>
+    private Dictionary<string, BmesMaterialCostRow> _costByCode = new(StringComparer.OrdinalIgnoreCase);
+
+    private string _costError = string.Empty;
+    private bool _costBusy;
 
     private int _maxDepth = 6;
     private string _plant = "3200";
@@ -1363,6 +1395,7 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
 
             RefreshCachedModels();
             RefreshPdmMatches();
+            await LoadMaterialCostsAsync();
             Activity.Log(
                 "BOM & Drawing",
                 $"BOM models={results.Count} rows={total} cache={cacheLoads} server={serverLoads} pdm={_pdmMatched}");
@@ -1378,6 +1411,73 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
             StateHasChanged();
         }
     }
+
+    /// <summary>
+    /// 화면에 보이는 자재의 단가를 한 번에 조회한다. 조회 전용이며
+    /// 실패해도 BOM 표는 그대로 두고 경고만 남긴다.
+    /// </summary>
+    private async Task LoadMaterialCostsAsync()
+    {
+        _costByCode = new Dictionary<string, BmesMaterialCostRow>(StringComparer.OrdinalIgnoreCase);
+        _costError = string.Empty;
+
+        var codes = _results
+            .SelectMany(VisibleRows)
+            .Select(row => row.MaterialCode.Trim())
+            .Where(code => code.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (codes.Count == 0)
+            return;
+
+        var connection = BuildNetworkDbConnection();
+        if (string.IsNullOrWhiteSpace(connection.Server) || string.IsNullOrWhiteSpace(connection.UserId))
+        {
+            _costError = "단가를 조회하려면 네트워크 DB 연결 설정이 필요합니다.";
+            return;
+        }
+
+        _costBusy = true;
+        StateHasChanged();
+        try
+        {
+            var prices = await FCostActual.FetchMaterialCostsAsync(new BmesMaterialCostQuery
+            {
+                Connection = connection,
+                MaterialCodes = codes,
+                ReferenceDate = DateTime.Today,
+                MaxRows = codes.Count,
+            });
+            _costByCode = prices.ToDictionary(p => p.MaterialCode.Trim(), StringComparer.OrdinalIgnoreCase);
+            Activity.Log("BOM & Drawing", $"Material cost lookup codes={codes.Count} priced={_costByCode.Count}");
+        }
+        catch (Exception ex)
+        {
+            _costError = "단가 조회 실패: " + ex.Message;
+        }
+        finally
+        {
+            _costBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private BmesMaterialCostRow? FindCost(BmesBomMaterialCandidate row)
+        => _costByCode.TryGetValue(row.MaterialCode.Trim(), out var cost) ? cost : null;
+
+    // 단가는 USD 처럼 소수가 의미를 갖는 통화가 있어 유효숫자를 남긴다.
+    private static string FormatUnitPrice(decimal? value)
+    {
+        if (value is null || value.Value == 0) return "";
+        decimal abs = Math.Abs(value.Value);
+        string format = abs >= 1000m ? "N0" : abs >= 1m ? "N2" : "0.######";
+        return value.Value.ToString(format, CultureInfo.InvariantCulture);
+    }
+
+    private static string FormatVnd(decimal? value)
+        => value is null || value.Value == 0
+            ? ""
+            : Math.Round(value.Value, MidpointRounding.AwayFromZero).ToString("N0", CultureInfo.InvariantCulture);
 
     private async Task DownloadHtmlAsync()
     {
