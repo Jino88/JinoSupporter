@@ -337,22 +337,37 @@
 .t3r-cell.sub .t3r-cell-process { border-color: #ecd9b0; }
 .t3r-cell-process.is-dragging { opacity: .3; }
 
-.t3r-drag-handle, .t3r-icon-button, .t3r-link-button {
+.t3r-icon-button, .t3r-link-button {
   border: 0;
   background: transparent;
   cursor: pointer;
 }
+
+/* 카드 전체가 드래그 대상이므로 손잡이는 표시용 그립이다.
+   터치에서도 그립에서 시작하면 스크롤 대신 드래그가 되도록 touch-action 만 남긴다. */
 .t3r-drag-handle {
+  display: grid;
   align-self: stretch;
-  padding: 0;
-  border-radius: 4px;
-  color: #98a2b3;
+  place-items: center;
+  color: #b6c0cd;
   font-size: 14px;
   letter-spacing: -5px;
   touch-action: none;
 }
-.t3r-drag-handle:hover { background: #edf2f8; color: #344054; }
 .t3r-drag-handle.material { min-width: 26px; letter-spacing: 0; }
+
+.is-draggable { cursor: grab; -webkit-user-select: none; user-select: none; }
+.is-draggable:active { cursor: grabbing; }
+.is-draggable:hover { border-color: #9db6e8; }
+.is-draggable:focus-visible { outline: 2px solid var(--t3r-blue); outline-offset: 1px; }
+.is-draggable:hover .t3r-drag-handle { color: #667085; }
+/* 카드 안의 입력·버튼은 원래대로 쓸 수 있어야 한다 */
+.is-draggable input, .is-draggable textarea {
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.is-draggable button { cursor: pointer; }
 .t3r-icon-button { padding: 0; color: #b42318; font-size: 15px; line-height: 1; }
 .t3r-icon-button.plain { flex: 0 0 auto; margin-left: auto; color: var(--t3r-muted); font-size: 17px; }
 .t3r-link-button { padding: 3px 5px; color: var(--t3r-blue); font-size: 11px; font-weight: 800; }

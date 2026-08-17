@@ -10222,7 +10222,15 @@ function ar(e) {
 		processIds: t.processes.map((e) => e.id)
 	}))) };
 }
-function or(e) {
+var or = "input, textarea, select, button, a, [contenteditable='true']";
+function sr(e) {
+	if (!e) return e;
+	let t = (e) => e.target instanceof Element && e.target.closest(or) !== null;
+	return Object.fromEntries(Object.entries(e).map(([e, n]) => [e, (e) => {
+		t(e) || n(e);
+	}]));
+}
+function cr(e) {
 	return e.map((e) => ({
 		...e,
 		lanes: e.lanes.map((e) => ({
@@ -10232,7 +10240,7 @@ function or(e) {
 		availableProcesses: [...e.availableProcesses]
 	}));
 }
-function sr(e, t, n) {
+function lr(e, t, n) {
 	let r = [];
 	return e.processes.map((e) => {
 		let i = t.get(e.id) ?? [];
@@ -10245,10 +10253,10 @@ function sr(e, t, n) {
 		};
 	});
 }
-function cr(e) {
+function ur(e) {
 	return `${e.formula.join("+")}${e.merges.map((e) => ` +${e}`).join("")}`.trim();
 }
-function lr({ dotnet: e, initialSnapshot: t }) {
+function dr({ dotnet: e, initialSnapshot: t }) {
 	let n = Qn(t), [r, i] = (0, y.useState)(n), [a, o] = (0, y.useState)(n.sides), [s, c] = (0, y.useState)(n.selectedModel), [l, u] = (0, y.useState)(""), [d, f] = (0, y.useState)(""), [p, m] = (0, y.useState)(!1), [h, g] = (0, y.useState)(null), [_, v] = (0, y.useState)("process"), [b, x] = (0, y.useState)(!0), [S, C] = (0, y.useState)(null), [w, T] = (0, y.useState)(""), E = (0, y.useRef)(0), D = (0, y.useRef)(/* @__PURE__ */ new Map()), O = Te(we(Tt, { activationConstraint: { distance: 6 } }), we(bt)), ee = (0, y.useMemo)(() => {
 		let e = /* @__PURE__ */ new Map();
 		for (let t of r.materials) {
@@ -10324,12 +10332,12 @@ function lr({ dotnet: e, initialSnapshot: t }) {
 			lanes: n.lanes.filter((e) => e.laneCode !== t || e.processes.length > 0)
 		} : n));
 	}, se = (e, t, n) => {
-		let r = or(a), i = r.find((t) => t.modelName === e), o = i?.lanes.find((e) => e.laneCode === t);
+		let r = cr(a), i = r.find((t) => t.modelName === e), o = i?.lanes.find((e) => e.laneCode === t);
 		if (!o) return;
 		let s = i.lanes.find((e) => e.laneCode === "MAIN"), c = s?.processes.findIndex((e) => e.id === n) ?? -1;
 		o.mergeTargetProcessId = n, o.mergeTargetLabel = c >= 0 ? `MAIN #${c + 1} · ${s.processes[c].processName}` : "", C(null), A(r);
 	}, ce = (e, t) => {
-		let n = or(a), r = n.find((t) => t.modelName === e.modelName);
+		let n = cr(a), r = n.find((t) => t.modelName === e.modelName);
 		if (!r) return;
 		let i = r.availableProcesses.find((t) => t.id === e.processId);
 		r.availableProcesses = r.availableProcesses.filter((t) => t.id !== e.processId);
@@ -10346,7 +10354,7 @@ function lr({ dotnet: e, initialSnapshot: t }) {
 			laneCode: t.laneCode
 		}), A(n);
 	}, le = (e) => {
-		let t = or(a), n = t.find((t) => t.modelName === e.modelName);
+		let t = cr(a), n = t.find((t) => t.modelName === e.modelName);
 		if (!n) return;
 		let r = null;
 		for (let t of n.lanes) {
@@ -10508,7 +10516,7 @@ function lr({ dotnet: e, initialSnapshot: t }) {
 					className: `t3r-workspace ${b ? "" : "palette-collapsed"}`,
 					children: [/* @__PURE__ */ (0, I.jsx)("div", {
 						className: "t3r-boards",
-						children: a.map((e) => /* @__PURE__ */ (0, I.jsx)(ur, {
+						children: a.map((e) => /* @__PURE__ */ (0, I.jsx)(fr, {
 							side: e,
 							activeDrag: h,
 							mergePick: S,
@@ -10568,10 +10576,10 @@ function lr({ dotnet: e, initialSnapshot: t }) {
 							}),
 							/* @__PURE__ */ (0, I.jsxs)("div", {
 								className: "t3r-palette-body",
-								children: [_ === "process" ? a.map((e) => /* @__PURE__ */ (0, I.jsx)(mr, {
+								children: [_ === "process" ? a.map((e) => /* @__PURE__ */ (0, I.jsx)(gr, {
 									side: e,
 									query: fe
-								}, e.modelName)) : /* @__PURE__ */ (0, I.jsx)(gr, {
+								}, e.modelName)) : /* @__PURE__ */ (0, I.jsx)(vr, {
 									materials: de,
 									onSave: (e, t, n) => void M(e.id, e.assignedProcessId, t, n),
 									onClear: (e) => void re("ReactClearMaterialAsync", e)
@@ -10595,12 +10603,12 @@ function lr({ dotnet: e, initialSnapshot: t }) {
 			]
 		}), /* @__PURE__ */ (0, I.jsx)(Un, {
 			dropAnimation: null,
-			children: h ? /* @__PURE__ */ (0, I.jsx)(vr, { data: h }) : null
+			children: h ? /* @__PURE__ */ (0, I.jsx)(br, { data: h }) : null
 		})]
 	});
 }
-function ur({ side: e, activeDrag: t, mergePick: n, firstInputByProcess: r, mergeSourcesByProcess: i, onAddSub: a, onRemoveLane: o, onStartPick: s, onClearMerge: c, onCellPick: l, onUnassign: u }) {
-	let d = nr(e), f = d.reduce((e, t) => Math.max(e, t.processes.length), 0), p = f + 1, m = d.map((e) => sr(e, r, i)), h = !!e.mirrorModelName, g = { gridTemplateColumns: `34px repeat(${Math.max(d.length, 1)}, minmax(178px, 1fr))` }, _ = n?.modelName === e.modelName;
+function fr({ side: e, activeDrag: t, mergePick: n, firstInputByProcess: r, mergeSourcesByProcess: i, onAddSub: a, onRemoveLane: o, onStartPick: s, onClearMerge: c, onCellPick: l, onUnassign: u }) {
+	let d = nr(e), f = d.reduce((e, t) => Math.max(e, t.processes.length), 0), p = f + 1, m = d.map((e) => lr(e, r, i)), h = !!e.mirrorModelName, g = { gridTemplateColumns: `34px repeat(${Math.max(d.length, 1)}, minmax(178px, 1fr))` }, _ = n?.modelName === e.modelName;
 	return /* @__PURE__ */ (0, I.jsxs)("article", {
 		className: `t3r-board ${$n(e.sideLabel)}`,
 		children: [/* @__PURE__ */ (0, I.jsxs)("header", {
@@ -10642,7 +10650,7 @@ function ur({ side: e, activeDrag: t, mergePick: n, firstInputByProcess: r, merg
 						className: "t3r-matrix-corner",
 						children: "스텝"
 					}),
-					d.map((t) => /* @__PURE__ */ (0, I.jsx)(dr, {
+					d.map((t) => /* @__PURE__ */ (0, I.jsx)(pr, {
 						side: e,
 						lane: t,
 						isPicking: _ && n.laneCode === t.laneCode,
@@ -10653,7 +10661,7 @@ function ur({ side: e, activeDrag: t, mergePick: n, firstInputByProcess: r, merg
 					Array.from({ length: p }, (n, r) => /* @__PURE__ */ (0, I.jsxs)(y.Fragment, { children: [/* @__PURE__ */ (0, I.jsx)("div", {
 						className: `t3r-step-gutter ${r === f ? "is-tail" : ""}`,
 						children: r === f ? "+" : r + 1
-					}), d.map((n, i) => /* @__PURE__ */ (0, I.jsx)(fr, {
+					}), d.map((n, i) => /* @__PURE__ */ (0, I.jsx)(mr, {
 						side: e,
 						lane: n,
 						step: r,
@@ -10668,7 +10676,7 @@ function ur({ side: e, activeDrag: t, mergePick: n, firstInputByProcess: r, merg
 		})]
 	});
 }
-function dr({ side: e, lane: t, isPicking: n, onRemove: r, onStartPick: i, onClearMerge: a }) {
+function pr({ side: e, lane: t, isPicking: n, onRemove: r, onStartPick: i, onClearMerge: a }) {
 	let o = t.laneCode !== "MAIN", { attributes: s, listeners: c, setNodeRef: l, isDragging: u } = Dn({
 		id: Yn(e.modelName, t.laneCode),
 		data: {
@@ -10728,7 +10736,7 @@ function dr({ side: e, lane: t, isPicking: n, onRemove: r, onStartPick: i, onCle
 		})]
 	});
 }
-function fr({ side: e, lane: t, step: n, cellStep: r, activeDrag: i, isPicking: a, onPick: o, onUnassign: s }) {
+function mr({ side: e, lane: t, step: n, cellStep: r, activeDrag: i, isPicking: a, onPick: o, onUnassign: s }) {
 	let c = r?.process ?? null, { setNodeRef: l, isOver: u } = jn({
 		id: Xn(e.modelName, t.laneCode, n),
 		data: {
@@ -10740,13 +10748,13 @@ function fr({ side: e, lane: t, step: n, cellStep: r, activeDrag: i, isPicking: 
 		}
 	}), d = "";
 	i && i.modelName === e.modelName && (i.kind === "process" ? d = "can-drop" : i.kind === "material" ? d = c ? "can-drop" : "no-drop" : i.kind === "merge" && (d = t.laneCode === "MAIN" && c ? "can-drop" : "no-drop"));
-	let f = a && t.laneCode === "MAIN" && !!c, p = r ? cr(r) : "";
+	let f = a && t.laneCode === "MAIN" && !!c, p = r ? ur(r) : "";
 	return /* @__PURE__ */ (0, I.jsx)("div", {
 		ref: l,
 		className: `t3r-cell ${t.laneCode === "MAIN" ? "main" : "sub"} ${d} ${u ? "is-over" : ""} ${f ? "is-pick-target" : ""}`,
 		onClick: f ? o : void 0,
 		children: c ? /* @__PURE__ */ (0, I.jsxs)(I.Fragment, { children: [
-			/* @__PURE__ */ (0, I.jsx)(pr, {
+			/* @__PURE__ */ (0, I.jsx)(hr, {
 				side: e,
 				lane: t,
 				step: n,
@@ -10780,7 +10788,7 @@ function fr({ side: e, lane: t, step: n, cellStep: r, activeDrag: i, isPicking: 
 		})
 	});
 }
-function pr({ side: e, lane: t, step: n, process: r, onUnassign: i }) {
+function hr({ side: e, lane: t, step: n, process: r, onUnassign: i }) {
 	let { attributes: a, listeners: o, setNodeRef: s, isDragging: c } = Dn({
 		id: qn(r.id),
 		data: {
@@ -10795,14 +10803,14 @@ function pr({ side: e, lane: t, step: n, process: r, onUnassign: i }) {
 	});
 	return /* @__PURE__ */ (0, I.jsxs)("div", {
 		ref: s,
-		className: `t3r-cell-process ${c ? "is-dragging" : ""}`,
+		className: `t3r-cell-process is-draggable ${c ? "is-dragging" : ""}`,
+		"aria-label": "공정 이동",
+		...a,
+		...sr(o),
 		children: [
-			/* @__PURE__ */ (0, I.jsx)("button", {
-				type: "button",
+			/* @__PURE__ */ (0, I.jsx)("span", {
 				className: "t3r-drag-handle",
-				"aria-label": "공정 이동",
-				...a,
-				...o,
+				"aria-hidden": "true",
 				children: "⋮⋮"
 			}),
 			/* @__PURE__ */ (0, I.jsxs)("div", {
@@ -10831,7 +10839,7 @@ function pr({ side: e, lane: t, step: n, process: r, onUnassign: i }) {
 		]
 	});
 }
-function mr({ side: e, query: t }) {
+function gr({ side: e, query: t }) {
 	let { setNodeRef: n, isOver: r } = jn({
 		id: Zn(e.modelName),
 		data: {
@@ -10860,7 +10868,7 @@ function mr({ side: e, query: t }) {
 			]
 		}), /* @__PURE__ */ (0, I.jsxs)("div", {
 			className: "t3r-palette-list",
-			children: [i.map((t) => /* @__PURE__ */ (0, I.jsx)(hr, {
+			children: [i.map((t) => /* @__PURE__ */ (0, I.jsx)(_r, {
 				process: t,
 				side: e
 			}, t.id)), i.length === 0 && /* @__PURE__ */ (0, I.jsx)("div", {
@@ -10870,7 +10878,7 @@ function mr({ side: e, query: t }) {
 		})]
 	});
 }
-function hr({ process: e, side: t }) {
+function _r({ process: e, side: t }) {
 	let { attributes: n, listeners: r, setNodeRef: i, isDragging: a } = Dn({
 		id: qn(e.id),
 		data: {
@@ -10885,13 +10893,13 @@ function hr({ process: e, side: t }) {
 	});
 	return /* @__PURE__ */ (0, I.jsxs)("div", {
 		ref: i,
-		className: `t3r-palette-card ${a ? "is-dragging" : ""}`,
-		children: [/* @__PURE__ */ (0, I.jsx)("button", {
-			type: "button",
+		className: `t3r-palette-card is-draggable ${a ? "is-dragging" : ""}`,
+		"aria-label": "공정 배치",
+		...n,
+		...sr(r),
+		children: [/* @__PURE__ */ (0, I.jsx)("span", {
 			className: "t3r-drag-handle",
-			"aria-label": "공정 배치",
-			...n,
-			...r,
+			"aria-hidden": "true",
 			children: "⋮⋮"
 		}), /* @__PURE__ */ (0, I.jsxs)("div", {
 			className: "t3r-card-content",
@@ -10905,12 +10913,12 @@ function hr({ process: e, side: t }) {
 		})]
 	});
 }
-function gr({ materials: e, onSave: t, onClear: n }) {
+function vr({ materials: e, onSave: t, onClear: n }) {
 	return /* @__PURE__ */ (0, I.jsx)("section", {
 		className: "t3r-palette-group",
 		children: /* @__PURE__ */ (0, I.jsxs)("div", {
 			className: "t3r-palette-list",
-			children: [e.map((e) => /* @__PURE__ */ (0, I.jsx)(_r, {
+			children: [e.map((e) => /* @__PURE__ */ (0, I.jsx)(yr, {
 				material: e,
 				onSave: (n, r) => t(e, n, r),
 				onClear: () => n(e.id)
@@ -10921,7 +10929,7 @@ function gr({ materials: e, onSave: t, onClear: n }) {
 		})
 	});
 }
-function _r({ material: e, onSave: t, onClear: n }) {
+function yr({ material: e, onSave: t, onClear: n }) {
 	let [r, i] = (0, y.useState)(e.usageQty || 1), [a, o] = (0, y.useState)(e.usageUnit || "PC"), { attributes: s, listeners: c, setNodeRef: l, isDragging: u } = Dn({
 		id: Jn(e.id),
 		data: {
@@ -10935,16 +10943,16 @@ function _r({ material: e, onSave: t, onClear: n }) {
 	});
 	return /* @__PURE__ */ (0, I.jsxs)("div", {
 		ref: l,
-		className: `t3r-material-card ${e.assignedProcessId ? "configured" : ""} ${u ? "is-dragging" : ""}`,
+		className: `t3r-material-card is-draggable ${e.assignedProcessId ? "configured" : ""} ${u ? "is-dragging" : ""}`,
+		"aria-label": "자재를 최초 투입 공정 셀로 이동",
+		...s,
+		...sr(c),
 		children: [
 			/* @__PURE__ */ (0, I.jsxs)("div", {
 				className: "t3r-material-head",
-				children: [/* @__PURE__ */ (0, I.jsx)("button", {
-					type: "button",
+				children: [/* @__PURE__ */ (0, I.jsx)("span", {
 					className: "t3r-drag-handle material",
-					"aria-label": "자재를 최초 투입 공정 셀로 이동",
-					...s,
-					...c,
+					"aria-hidden": "true",
 					children: "⠿"
 				}), /* @__PURE__ */ (0, I.jsxs)("div", {
 					className: "t3r-card-content",
@@ -11006,25 +11014,25 @@ function _r({ material: e, onSave: t, onClear: n }) {
 		]
 	});
 }
-function vr({ data: e }) {
+function br({ data: e }) {
 	let t = e.kind === "material" ? "⠿" : e.kind === "merge" ? "↘" : "↕";
 	return /* @__PURE__ */ (0, I.jsxs)("div", {
 		className: `t3r-drag-preview ${e.kind}`,
 		children: [/* @__PURE__ */ (0, I.jsx)("span", { children: t }), /* @__PURE__ */ (0, I.jsx)("strong", { children: e.label || e.process?.processName || e.process?.processCode || "이동" })]
 	});
 }
-function yr(e, t, n) {
+function xr(e, t, n) {
 	let r = Gn.get(e);
 	r && r.unmount();
 	let i = (0, v.createRoot)(e);
-	Gn.set(e, i), i.render(/* @__PURE__ */ (0, I.jsx)(lr, {
+	Gn.set(e, i), i.render(/* @__PURE__ */ (0, I.jsx)(dr, {
 		dotnet: t,
 		initialSnapshot: n
 	}));
 }
-function br(e) {
+function Sr(e) {
 	let t = Gn.get(e);
 	t && (t.unmount(), Gn.delete(e));
 }
 //#endregion
-export { yr as mount, br as unmount };
+export { xr as mount, Sr as unmount };

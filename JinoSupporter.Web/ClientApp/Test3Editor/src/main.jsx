@@ -83,6 +83,25 @@ function buildLayoutRequest(sides) {
   };
 }
 
+// 카드 전체를 드래그 손잡이로 쓴다. 다만 카드 안의 입력·버튼 위에서 시작한 동작은
+// 드래그로 삼지 않아야 수량 입력과 저장·해제 버튼이 정상 동작한다.
+const INTERACTIVE_SELECTOR = "input, textarea, select, button, a, [contenteditable='true']";
+
+function cardDragListeners(listeners) {
+  if (!listeners) return listeners;
+  const startsOnControl = (event) =>
+    event.target instanceof Element && event.target.closest(INTERACTIVE_SELECTOR) !== null;
+  return Object.fromEntries(
+    Object.entries(listeners).map(([name, handler]) => [
+      name,
+      (event) => {
+        if (startsOnControl(event)) return;
+        handler(event);
+      }
+    ])
+  );
+}
+
 function cloneSides(sides) {
   return sides.map((side) => ({
     ...side,
@@ -753,10 +772,16 @@ function CellProcess({ side, lane, step, process, onUnassign }) {
   });
 
   return (
-    <div ref={setNodeRef} className={`t3r-cell-process ${isDragging ? "is-dragging" : ""}`}>
-      <button type="button" className="t3r-drag-handle" aria-label="공정 이동" {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      className={`t3r-cell-process is-draggable ${isDragging ? "is-dragging" : ""}`}
+      aria-label="공정 이동"
+      {...attributes}
+      {...cardDragListeners(listeners)}
+    >
+      <span className="t3r-drag-handle" aria-hidden="true">
         ⋮⋮
-      </button>
+      </span>
       <div className="t3r-card-content">
         <div className="t3r-card-title">
           <code>{process.processCode}</code>
@@ -830,10 +855,16 @@ function PaletteProcess({ process, side }) {
   });
 
   return (
-    <div ref={setNodeRef} className={`t3r-palette-card ${isDragging ? "is-dragging" : ""}`}>
-      <button type="button" className="t3r-drag-handle" aria-label="공정 배치" {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      className={`t3r-palette-card is-draggable ${isDragging ? "is-dragging" : ""}`}
+      aria-label="공정 배치"
+      {...attributes}
+      {...cardDragListeners(listeners)}
+    >
+      <span className="t3r-drag-handle" aria-hidden="true">
         ⋮⋮
-      </button>
+      </span>
       <div className="t3r-card-content">
         <div className="t3r-card-title">
           <code>{process.processCode}</code>
@@ -881,18 +912,17 @@ function MaterialCard({ material, onSave, onClear }) {
   return (
     <div
       ref={setNodeRef}
-      className={`t3r-material-card ${material.assignedProcessId ? "configured" : ""} ${isDragging ? "is-dragging" : ""}`}
+      className={`t3r-material-card is-draggable ${material.assignedProcessId ? "configured" : ""} ${
+        isDragging ? "is-dragging" : ""
+      }`}
+      aria-label="자재를 최초 투입 공정 셀로 이동"
+      {...attributes}
+      {...cardDragListeners(listeners)}
     >
       <div className="t3r-material-head">
-        <button
-          type="button"
-          className="t3r-drag-handle material"
-          aria-label="자재를 최초 투입 공정 셀로 이동"
-          {...attributes}
-          {...listeners}
-        >
+        <span className="t3r-drag-handle material" aria-hidden="true">
           ⠿
-        </button>
+        </span>
         <div className="t3r-card-content">
           <code>{material.materialCode}</code>
           <strong title={material.materialName}>{material.materialName}</strong>
