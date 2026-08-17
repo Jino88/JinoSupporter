@@ -47,14 +47,44 @@ public sealed partial class BmesFcostActualService(
     {
         DateTime referenceDate = query.ReferenceDate == default ? DateTime.Today : query.ReferenceDate.Date;
         DateTime monthStart = new(referenceDate.Year, referenceDate.Month, 1);
-        int maxRows = Math.Clamp(query.MaxRows <= 0 ? 300 : query.MaxRows, 1, 2000);
         string search = (query.Search ?? string.Empty).Trim();
+        var codes = (query.MaterialCodes ?? [])
+            .Select(code => (code ?? string.Empty).Trim())
+            .Where(code => code.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(1500)
+            .ToList();
+        int maxRows = Math.Clamp(
+            query.MaxRows <= 0 ? 300 : query.MaxRows,
+            1,
+            codes.Count > 0 ? Math.Max(codes.Count, 2000) : 2000);
 
         await using var conn = new SqlConnection(BuildConnectionString(query.Connection));
         await conn.OpenAsync(cancellationToken);
 
         await using var cmd = conn.CreateCommand();
         cmd.CommandTimeout = Math.Clamp(query.Connection.TimeoutSeconds, 1, MaxTimeoutSeconds);
+
+        // 자재코드 목록이 오면 그 코드만, 아니면 검색어 LIKE 로 고른다.
+        // 아래 문자열 조립에 들어가는 것은 파라미터 이름뿐이라 값이 SQL 로 섞이지 않는다.
+        string materialFilter;
+        if (codes.Count > 0)
+        {
+            var placeholders = new List<string>(codes.Count);
+            for (int index = 0; index < codes.Count; index++)
+            {
+                string name = "@code" + index.ToString(CultureInfo.InvariantCulture);
+                placeholders.Add(name);
+                cmd.Parameters.Add(new SqlParameter(name, SqlDbType.NVarChar, 80) { Value = codes[index] });
+            }
+
+            materialFilter = "RTRIM(CAST(m.MATNR AS nvarchar(80))) IN (" + string.Join(", ", placeholders) + ")";
+        }
+        else
+        {
+            materialFilter = "(@Search = N'' OR RTRIM(CAST(m.MATNR AS nvarchar(80))) LIKE @Like OR CAST(m.MAKTX AS nvarchar(200)) LIKE @Like)";
+        }
+
         cmd.CommandText = """
             SELECT TOP (@MaxRows)
                 mat.MaterialCode,
@@ -76,9 +106,7 @@ public sealed partial class BmesFcostActualService(
                     RTRIM(CAST(m.MATNR AS nvarchar(80))) AS MaterialCode,
                     CAST(MIN(m.MAKTX) AS nvarchar(200)) AS MaterialName
                 FROM dbo.MATE AS m WITH (NOLOCK)
-                WHERE (@Search = N''
-                       OR RTRIM(CAST(m.MATNR AS nvarchar(80))) LIKE @Like
-                       OR CAST(m.MAKTX AS nvarchar(200)) LIKE @Like)
+                WHERE /*MATERIAL_FILTER*/
                 GROUP BY RTRIM(CAST(m.MATNR AS nvarchar(80)))
                 ORDER BY RTRIM(CAST(m.MATNR AS nvarchar(80)))
             ) AS mat
@@ -157,6 +185,7 @@ public sealed partial class BmesFcostActualService(
             ORDER BY mat.MaterialCode
             """;
 
+        cmd.CommandText = cmd.CommandText.Replace("/*MATERIAL_FILTER*/", materialFilter, StringComparison.Ordinal);
         cmd.Parameters.Add(new SqlParameter("@MaxRows", SqlDbType.Int) { Value = maxRows });
         cmd.Parameters.Add(new SqlParameter("@Search", SqlDbType.NVarChar, 200) { Value = search });
         cmd.Parameters.Add(new SqlParameter("@Like", SqlDbType.NVarChar, 210) { Value = "%" + search + "%" });
@@ -2022,6 +2051,10 @@ public sealed class BmesMaterialCostQuery
 {
     public BmesFcostDbConnection Connection { get; init; } = new();
     public string Search { get; init; } = string.Empty;
+
+    /// <summary>지정하면 검색어 대신 이 자재코드들만 조회한다(BOM 전개용).</summary>
+    public IReadOnlyList<string> MaterialCodes { get; init; } = [];
+
     public string Plant { get; init; } = "3200";
     public string Fact { get; init; } = "GN";
     public DateTime ReferenceDate { get; init; } = DateTime.Today;

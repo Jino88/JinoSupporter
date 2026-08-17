@@ -3,6 +3,7 @@
 @using System.Globalization
 @using JinoSupporter.Web.Services
 @inject BmesFcostActualService FCostActual
+@inject BmesBomCacheService BomCache
 @inject AppPathsService AppPaths
 @inject AppActivityLogger Activity
 
@@ -16,7 +17,7 @@
 
 <div class="matcost-toolbar mb-3">
     <input class="form-control form-control-sm matcost-search"
-           placeholder="자재코드 또는 자재명"
+           placeholder="모델명(BOM 전개) 또는 자재코드/자재명"
            @bind="_search"
            @bind:event="oninput"
            @onkeydown="OnSearchKeyDown" />
@@ -27,6 +28,7 @@
         <option value="1000">1000건</option>
     </select>
     <button class="btn btn-primary btn-sm" @onclick="SearchAsync" disabled="@_isBusy">조회</button>
+    <button class="btn btn-outline-primary btn-sm" @onclick="SearchForceAsync" disabled="@_isBusy" title="BOM 캐시를 무시하고 서버에서 다시 전개합니다">BOM 새로고침</button>
 </div>
 
 @if (!string.IsNullOrWhiteSpace(_errorMessage))
@@ -38,7 +40,7 @@
 {
     <div class="alert alert-info py-2 small mb-3 d-flex align-items-center gap-2">
         <span class="spinner-border spinner-border-sm" role="status"></span>
-        <span>단가를 조회하는 중입니다...</span>
+        <span>@_statusMessage</span>
     </div>
 }
 else if (_rows.Count > 0)
@@ -46,13 +48,22 @@ else if (_rows.Count > 0)
     <div class="alert alert-light border py-2 small mb-3">
         단가는 <strong>구매 정보레코드(INFR)</strong>를 먼저 쓰고, 없으면 <strong>입고 실적(STBI)</strong>의 금액÷수량을 씁니다.
         VND 환산은 <strong>TCURR</strong>(KURST=BWCU) 월초 환율 기준입니다.
+        @if (_isBomMode)
+        {
+            <span> · BOM 소요량은 BOM 기준수량 기준 원값이라, 제품 1개 기준 금액은 별도로 환산해야 합니다.</span>
+        }
     </div>
 }
 
 <section class="matcost-section">
     <div class="matcost-section-title">
-        <h6>단가 목록</h6>
+        <h6>@(_isBomMode ? $"{_bomModelName} BOM 자재 단가" : "자재 단가")</h6>
         <span>@_rows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
+        @if (_isBomMode)
+        {
+            <span class="badge bg-primary-subtle text-primary-emphasis">BOM 전개</span>
+            <span class="text-muted small">@_bomSource</span>
+        }
         @if (_searchedAt is not null)
         {
             <small class="text-muted ms-auto">@_searchedAt.Value.ToString("yyyy-MM-dd HH:mm:ss")</small>
@@ -62,21 +73,30 @@ else if (_rows.Count > 0)
         <table class="matcost-table">
             <thead>
                 <tr>
+                    @if (_isBomMode)
+                    {
+                        <th class="text-center" style="min-width:44px;">Lv</th>
+                    }
                     <th style="min-width:150px;">Material Code</th>
-                    <th style="min-width:280px;">Material Name</th>
-                    <th class="text-end" style="min-width:130px;">Unit Price</th>
+                    <th style="min-width:270px;">Material Name</th>
+                    @if (_isBomMode)
+                    {
+                        <th class="text-end" style="min-width:100px;">BOM Qty</th>
+                        <th style="min-width:60px;">Qty Unit</th>
+                    }
+                    <th class="text-end" style="min-width:120px;">Unit Price</th>
                     <th style="min-width:70px;">Currency</th>
-                    <th style="min-width:70px;">Unit</th>
-                    <th class="text-end" style="min-width:140px;">Unit Price (VND)</th>
-                    <th style="min-width:90px;">Source</th>
+                    <th style="min-width:70px;">Price Unit</th>
+                    <th class="text-end" style="min-width:130px;">Unit Price (VND)</th>
+                    <th style="min-width:80px;">Source</th>
                 </tr>
             </thead>
             <tbody>
                 @if (_rows.Count == 0)
                 {
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4 small">
-                            @(_searchedAt is null ? "자재코드나 자재명을 입력하고 조회하세요." : "조회 결과가 없습니다.")
+                        <td colspan="@(_isBomMode ? 10 : 7)" class="text-center text-muted py-4 small">
+                            @(_searchedAt is null ? "모델명이나 자재코드를 입력하고 조회하세요." : "조회 결과가 없습니다.")
                         </td>
                     </tr>
                 }
@@ -85,16 +105,25 @@ else if (_rows.Count > 0)
                     @foreach (var row in _rows)
                     {
                         <tr>
+                            @if (_isBomMode)
+                            {
+                                <td class="text-center text-muted">@(row.BomLevel > 0 ? row.BomLevel.ToString(CultureInfo.InvariantCulture) : "-")</td>
+                            }
                             <td class="font-monospace">@row.MaterialCode</td>
                             <td>@row.MaterialName</td>
-                            <td class="text-end">@FormatPrice(row.UnitPrice)</td>
+                            @if (_isBomMode)
+                            {
+                                <td class="text-end">@FormatQty(row.BomUsageQty)</td>
+                                <td class="text-muted">@row.BomUsageUnit</td>
+                            }
+                            <td class="text-end">@FormatUnitPrice(row.UnitPrice)</td>
                             <td>@row.PriceCurrency</td>
                             <td>@row.PriceUnit</td>
-                            <td class="text-end fw-semibold">@FormatPrice(row.UnitPriceVnd)</td>
+                            <td class="text-end fw-semibold">@FormatVnd(row.UnitPriceVnd)</td>
                             <td>
                                 @if (string.IsNullOrWhiteSpace(row.PriceSource))
                                 {
-                                    <span class="text-muted">-</span>
+                                    <span class="text-muted" title="이 기준일에 INFR/STBI 어디에도 단가가 없습니다">-</span>
                                 }
                                 else
                                 {
@@ -111,14 +140,14 @@ else if (_rows.Count > 0)
 
 <style>
     .matcost-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .matcost-search { max-width: 320px; }
+    .matcost-search { max-width: 340px; }
     .matcost-date { max-width: 170px; }
     .matcost-rows { max-width: 110px; }
 
     .matcost-section { border: 1px solid var(--line-2, #c6ccd5); border-radius: 8px; background: var(--panel, #fff); overflow: hidden; }
     .matcost-section-title { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line-2, #c6ccd5); background: #f6f8fb; }
     .matcost-section-title h6 { margin: 0; font-size: 13px; font-weight: 700; }
-    .matcost-section-title > span { display: inline-grid; min-width: 24px; height: 20px; place-items: center; padding: 0 6px; border-radius: 999px; background: #e5eaf1; color: #475467; font-size: 11px; font-weight: 700; }
+    .matcost-section-title > span:first-of-type { display: inline-grid; min-width: 24px; height: 20px; place-items: center; padding: 0 6px; border-radius: 999px; background: #e5eaf1; color: #475467; font-size: 11px; font-weight: 700; }
 
     .matcost-table-scroll { max-height: min(70vh, 900px); overflow: auto; }
     .matcost-table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -128,13 +157,21 @@ else if (_rows.Count > 0)
 </style>
 
 @code {
+    private const string BomPlant = "3200";
+    private const int BomMaxDepth = 6;
+    private const int BomMaxRows = 2000;
+
     private string _search = string.Empty;
     private DateTime _referenceDate = DateTime.Today;
     private int _maxRows = 300;
     private bool _isBusy;
     private string _errorMessage = string.Empty;
+    private string _statusMessage = string.Empty;
     private DateTime? _searchedAt;
-    private List<BmesMaterialCostRow> _rows = [];
+    private bool _isBomMode;
+    private string _bomModelName = string.Empty;
+    private string _bomSource = string.Empty;
+    private List<MaterialCostViewRow> _rows = [];
 
     private async Task OnSearchKeyDown(KeyboardEventArgs args)
     {
@@ -142,14 +179,19 @@ else if (_rows.Count > 0)
             await SearchAsync();
     }
 
-    private async Task SearchAsync()
+    private Task SearchAsync() => RunSearchAsync(force: false);
+
+    private Task SearchForceAsync() => RunSearchAsync(force: true);
+
+    private async Task RunSearchAsync(bool force)
     {
         if (_isBusy) return;
 
+        string query = _search.Trim();
         // 검색어 없이 조회하면 MATE 전체를 훑게 되어 운영 DB 에 부담이 크다.
-        if (_search.Trim().Length < 2)
+        if (query.Length < 2)
         {
-            _errorMessage = "자재코드나 자재명을 2자 이상 입력하세요.";
+            _errorMessage = "모델명이나 자재코드를 2자 이상 입력하세요.";
             _rows = [];
             _searchedAt = null;
             return;
@@ -157,17 +199,90 @@ else if (_rows.Count > 0)
 
         _isBusy = true;
         _errorMessage = string.Empty;
+        _statusMessage = "BOM 을 전개하는 중입니다...";
         StateHasChanged();
 
         try
         {
-            _rows = await FCostActual.FetchMaterialCostsAsync(new BmesMaterialCostQuery
+            var connection = BuildNetworkDbConnection();
+
+            // 1) 먼저 모델로 보고 BOM 전개를 시도한다.
+            var bomRows = await TryLoadBomRowsAsync(query, force, connection);
+            if (bomRows.Rows.Count > 0)
             {
-                Connection = BuildNetworkDbConnection(),
-                Search = _search,
+                _statusMessage = $"BOM 자재 {bomRows.Rows.Count:N0}건의 단가를 조회하는 중입니다...";
+                StateHasChanged();
+
+                var byCode = bomRows.Rows
+                    .GroupBy(r => r.MaterialCode.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .Select(g => g.OrderBy(r => r.BomLevel).First())
+                    .ToList();
+
+                var prices = await FCostActual.FetchMaterialCostsAsync(new BmesMaterialCostQuery
+                {
+                    Connection = connection,
+                    MaterialCodes = byCode.Select(r => r.MaterialCode.Trim()).ToList(),
+                    ReferenceDate = _referenceDate,
+                    MaxRows = Math.Max(byCode.Count, _maxRows),
+                });
+                var priceByCode = prices.ToDictionary(p => p.MaterialCode.Trim(), StringComparer.OrdinalIgnoreCase);
+
+                _rows = byCode
+                    .Select(r =>
+                    {
+                        priceByCode.TryGetValue(r.MaterialCode.Trim(), out var price);
+                        return new MaterialCostViewRow
+                        {
+                            BomLevel = r.BomLevel,
+                            MaterialCode = r.MaterialCode.Trim(),
+                            MaterialName = string.IsNullOrWhiteSpace(price?.MaterialName) ? r.MaterialName.Trim() : price.MaterialName,
+                            BomUsageQty = r.UsageQty,
+                            BomUsageUnit = r.UsageUnit,
+                            UnitPrice = price?.UnitPrice,
+                            PriceCurrency = price?.PriceCurrency ?? string.Empty,
+                            PriceUnit = price?.PriceUnit ?? string.Empty,
+                            PriceSource = price?.PriceSource ?? string.Empty,
+                            UnitPriceVnd = price?.UnitPriceVnd,
+                        };
+                    })
+                    .OrderBy(r => r.BomLevel)
+                    .ThenBy(r => r.MaterialCode, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                _isBomMode = true;
+                _bomModelName = query;
+                _bomSource = bomRows.Source == "cache" ? "BOM 캐시" : "서버 조회";
+                _searchedAt = DateTime.Now;
+                return;
+            }
+
+            // 2) BOM 이 없으면 자재코드/자재명 검색으로 되돌아간다.
+            _statusMessage = "자재 단가를 조회하는 중입니다...";
+            StateHasChanged();
+
+            var found = await FCostActual.FetchMaterialCostsAsync(new BmesMaterialCostQuery
+            {
+                Connection = connection,
+                Search = query,
                 ReferenceDate = _referenceDate,
                 MaxRows = _maxRows,
             });
+
+            _rows = found
+                .Select(p => new MaterialCostViewRow
+                {
+                    MaterialCode = p.MaterialCode,
+                    MaterialName = p.MaterialName,
+                    UnitPrice = p.UnitPrice,
+                    PriceCurrency = p.PriceCurrency,
+                    PriceUnit = p.PriceUnit,
+                    PriceSource = p.PriceSource,
+                    UnitPriceVnd = p.UnitPriceVnd,
+                })
+                .ToList();
+            _isBomMode = false;
+            _bomModelName = string.Empty;
+            _bomSource = string.Empty;
             _searchedAt = DateTime.Now;
         }
         catch (Exception ex)
@@ -179,7 +294,40 @@ else if (_rows.Count > 0)
         finally
         {
             _isBusy = false;
+            _statusMessage = string.Empty;
         }
+    }
+
+    private async Task<(List<BmesBomMaterialCandidate> Rows, string Source)> TryLoadBomRowsAsync(
+        string model,
+        bool force,
+        BmesFcostDbConnection connection)
+    {
+        var cacheQuery = new BmesBomCacheQuery(model, BomPlant, DateTime.Today, BomMaxDepth, BomMaxRows);
+        if (!force)
+        {
+            BmesBomCacheEntry? cached = BomCache.TryLoad(cacheQuery);
+            if (cached is not null)
+                return (cached.Rows, "cache");
+        }
+
+        if (string.IsNullOrWhiteSpace(connection.Server) || string.IsNullOrWhiteSpace(connection.UserId))
+            return ([], string.Empty);
+
+        var rows = await FCostActual.FetchBomTreeAsync(new BmesBomMaterialQuery
+        {
+            Connection = connection,
+            ModelName = model,
+            Plant = BomPlant,
+            MaxRows = BomMaxRows,
+            MaxDepth = BomMaxDepth,
+            WorkDate = DateTime.Today,
+        });
+
+        if (rows.Count > 0)
+            BomCache.Save(cacheQuery, rows);
+
+        return (rows, "server");
     }
 
     private BmesFcostDbConnection BuildNetworkDbConnection()
@@ -195,14 +343,45 @@ else if (_rows.Count > 0)
                 : c.AdminDbQueryDatabase,
             UserId = c.AdminDbQueryUserId,
             Password = c.AdminDbQueryPassword,
-            TimeoutSeconds = Math.Clamp(Math.Max(c.AdminDbQueryTimeoutSeconds, 60), 1, 600),
+            TimeoutSeconds = Math.Clamp(Math.Max(c.AdminDbQueryTimeoutSeconds, 120), 1, 600),
             Encrypt = c.AdminDbQueryEncrypt,
             TrustServerCertificate = c.AdminDbQueryTrustServerCertificate,
         };
     }
 
-    private static string FormatPrice(decimal? value)
+    // 단가는 USD 처럼 소수가 의미를 갖는 통화가 있어 유효숫자를 남긴다.
+    private static string FormatUnitPrice(decimal? value)
+    {
+        if (value is null || value.Value == 0) return "-";
+        decimal abs = Math.Abs(value.Value);
+        string format = abs >= 1000m ? "N0" : abs >= 1m ? "N2" : "0.######";
+        return value.Value.ToString(format, CultureInfo.InvariantCulture);
+    }
+
+    // VND 는 소수 단위를 쓰지 않으므로 정수로 반올림한다.
+    private static string FormatVnd(decimal? value)
         => value is null || value.Value == 0
             ? "-"
             : Math.Round(value.Value, MidpointRounding.AwayFromZero).ToString("N0", CultureInfo.InvariantCulture);
+
+    private static string FormatQty(decimal? value)
+    {
+        if (value is null || value.Value == 0) return "-";
+        decimal abs = Math.Abs(value.Value);
+        return value.Value.ToString(abs >= 1m ? "N0" : "0.######", CultureInfo.InvariantCulture);
+    }
+
+    private sealed class MaterialCostViewRow
+    {
+        public int BomLevel { get; init; }
+        public string MaterialCode { get; init; } = string.Empty;
+        public string MaterialName { get; init; } = string.Empty;
+        public decimal? BomUsageQty { get; init; }
+        public string BomUsageUnit { get; init; } = string.Empty;
+        public decimal? UnitPrice { get; init; }
+        public string PriceCurrency { get; init; } = string.Empty;
+        public string PriceUnit { get; init; } = string.Empty;
+        public string PriceSource { get; init; } = string.Empty;
+        public decimal? UnitPriceVnd { get; init; }
+    }
 }
