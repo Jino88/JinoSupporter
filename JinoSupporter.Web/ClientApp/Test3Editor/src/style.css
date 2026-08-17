@@ -458,8 +458,19 @@
 
 .t3r-palette-search { padding: 8px; border-bottom: 1px solid var(--t3r-line); }
 .t3r-palette-search input { width: 100%; min-height: 30px; font-size: 11px; }
-/* flex-basis 를 0 으로 둬야 내용 높이와 무관하게 남은 공간만 쓰고 스크롤된다 */
-.t3r-palette-body { flex: 1 1 0; display: grid; align-content: start; gap: 10px; min-height: 0; padding: 10px; overflow-y: auto; }
+/* grid 로 두면 높이가 확정된 컨테이너에서 auto 행이 남은 공간에 맞춰 눌리고,
+   그 안의 overflow:hidden 그룹이 내용을 잘라 버려 스크롤이 생기지 않는다.
+   flex column + 자식 flex:0 0 auto 로 자식이 제 높이를 유지하게 한다. */
+.t3r-palette-body {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 10px;
+  overflow-y: auto;
+}
+.t3r-palette-body > * { flex: 0 0 auto; }
 .t3r-palette-note { color: var(--t3r-muted); font-size: 9px; text-align: right; }
 
 .t3r-palette-group {
