@@ -139,11 +139,13 @@
 
 /* ── 작업 영역: 매트릭스 + 팔레트 ───────────────────────── */
 
+/* 행 높이를 확정해야 양쪽 컬럼이 자기 안에서 스크롤된다.
+   auto 행이면 팔레트 내용만큼 행이 늘어나 스크롤이 생기지 않는다. */
 .t3r-workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 322px;
+  grid-template-rows: clamp(420px, 78vh, 980px);
   align-items: stretch;
-  min-height: 620px;
 }
 .t3r-workspace.palette-collapsed { grid-template-columns: minmax(0, 1fr) 38px; }
 
@@ -152,7 +154,8 @@
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 14px;
-  max-height: min(78vh, 980px);
+  height: 100%;
+  min-height: 0;
   padding: 14px;
   overflow: auto;
 }
@@ -401,9 +404,9 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  /* 그리드 행 높이를 넘기지 않아야 팔레트 안쪽에 스크롤바가 생긴다 */
+  /* 그리드 행 높이에 정확히 맞춰야 팔레트 안쪽에 스크롤바가 생긴다 */
+  height: 100%;
   min-height: 0;
-  max-height: min(78vh, 980px);
   border-left: 1px solid var(--t3r-line);
   background: #fbfcfe;
 }
@@ -455,7 +458,8 @@
 
 .t3r-palette-search { padding: 8px; border-bottom: 1px solid var(--t3r-line); }
 .t3r-palette-search input { width: 100%; min-height: 30px; font-size: 11px; }
-.t3r-palette-body { flex: 1 1 auto; display: grid; align-content: start; gap: 10px; min-height: 0; padding: 10px; overflow-y: auto; }
+/* flex-basis 를 0 으로 둬야 내용 높이와 무관하게 남은 공간만 쓰고 스크롤된다 */
+.t3r-palette-body { flex: 1 1 0; display: grid; align-content: start; gap: 10px; min-height: 0; padding: 10px; overflow-y: auto; }
 .t3r-palette-note { color: var(--t3r-muted); font-size: 9px; text-align: right; }
 
 .t3r-palette-group {
@@ -592,17 +596,18 @@
   .t3r-toolbar { align-items: stretch; flex-direction: column; }
   .t3r-model-search { flex: 0 0 auto; }
   .t3r-toolbar-actions { width: 100%; margin-left: 0; }
-  .t3r-workspace { grid-template-columns: minmax(0, 1fr); }
+  /* 한 컬럼으로 접히면 위아래 두 행이므로 각자 높이를 갖는다 */
+  .t3r-workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; }
   .t3r-workspace.palette-collapsed { grid-template-columns: minmax(0, 1fr); }
-  .t3r-palette { border-top: 1px solid var(--t3r-line); border-left: 0; }
+  .t3r-boards { height: auto; max-height: 58vh; }
+  .t3r-palette { height: auto; max-height: 58vh; border-top: 1px solid var(--t3r-line); border-left: 0; }
   .t3r-palette.is-collapsed { padding: 8px 0; }
   .t3r-palette-reopen { writing-mode: horizontal-tb; }
-  .t3r-palette-body { max-height: 460px; }
 }
 
 @media (max-width: 820px) {
   .t3r-model-search, .t3r-toolbar-actions { align-items: stretch; flex-direction: column; }
   .t3r-model-search input { width: 100%; max-width: none; }
   .t3r-board { min-width: 0; }
-  .t3r-boards { max-height: none; padding: 10px; }
+  .t3r-boards { max-height: 52vh; padding: 10px; }
 }

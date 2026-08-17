@@ -16,7 +16,7 @@
 
 <PageTitle>Test 3</PageTitle>
 
-<link rel="stylesheet" href="/test3-editor/test3-editor.css?v=20260817-3" />
+<link rel="stylesheet" href="/test3-editor/test3-editor.css?v=20260817-4" />
 <div class="d-flex align-items-center gap-2 mb-3">
     <span class="fw-semibold" style="font-size:18px;">T3</span>
     <h5 class="mb-0 fw-semibold">Test 3 · 공정/자재 Flow 편집</h5>
@@ -1478,7 +1478,7 @@
             _reactEditorReference = DotNetObjectReference.Create(this);
             _reactEditorModule = await JS.InvokeAsync<IJSObjectReference>(
                 "import",
-                "./test3-editor/test3-editor.js?v=20260817-3");
+                "./test3-editor/test3-editor.js?v=20260817-4");
             await _reactEditorModule.InvokeVoidAsync(
                 "mount",
                 _reactEditorHost,
