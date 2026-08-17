@@ -33,7 +33,6 @@
             can(AppMenus.BmesTest4) ||
             can(AppMenus.BmesTest5) ||
             can(AppMenus.BmesFCost) ||
-            can(AppMenus.BmesMaterialCost) ||
             can(AppMenus.QrBakoData) ||
             can(AppMenus.BmesDailyReport);
 
@@ -88,14 +87,6 @@
                     <div class="nav-item">
                         <NavLink class="nav-link nav-sublink" href="bmes/f-cost">
                             <span class="nav-icon" style="font-size:11px;">💰</span> F-Cost
-                        </NavLink>
-                    </div>
-                }
-                @if (can(AppMenus.BmesMaterialCost))
-                {
-                    <div class="nav-item">
-                        <NavLink class="nav-link nav-sublink" href="bmes/material-cost">
-                            <span class="nav-icon" style="font-size:11px;">₫</span> Material Cost
                         </NavLink>
                     </div>
                 }
