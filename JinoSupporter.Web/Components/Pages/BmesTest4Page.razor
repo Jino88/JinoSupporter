@@ -765,21 +765,26 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
     private static string FormatQty(double value)
         => value <= 0 ? "-" : Math.Round(value).ToString("N0", CultureInfo.InvariantCulture);
 
+    // 수량과 비율은 모두 정수로 반올림해서 보여 준다(0.5 는 올림).
     private static string FormatDecimalQty(decimal value)
-        => value <= 0 ? "-" : value.ToString("#,0.######", CultureInfo.InvariantCulture);
+        => value <= 0
+            ? "-"
+            : Math.Round(value, MidpointRounding.AwayFromZero).ToString("N0", CultureInfo.InvariantCulture);
 
     private static string FormatSignedDecimalQty(decimal value)
     {
         if (value == 0) return "-";
         string prefix = value > 0 ? "+" : "-";
-        return prefix + Math.Abs(value).ToString("#,0.######", CultureInfo.InvariantCulture);
+        return prefix + Math.Round(Math.Abs(value), MidpointRounding.AwayFromZero)
+            .ToString("N0", CultureInfo.InvariantCulture);
     }
 
     private static string FormatDiffPercent(decimal? value)
     {
         if (value is null || value == 0) return "-";
         string prefix = value > 0 ? "+" : "-";
-        return prefix + Math.Abs(value.Value).ToString("0.##", CultureInfo.InvariantCulture) + "%";
+        return prefix + Math.Round(Math.Abs(value.Value), MidpointRounding.AwayFromZero)
+            .ToString("N0", CultureInfo.InvariantCulture) + "%";
     }
 
     private static string BuildMaterialTitle(string code, string name)
