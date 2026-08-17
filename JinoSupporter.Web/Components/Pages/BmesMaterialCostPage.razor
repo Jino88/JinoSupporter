@@ -58,7 +58,8 @@ else if (_rows.Count > 0)
                 · <strong>BOM Qty</strong> 는 BOM 에 등록된 원값이고, <strong>Qty/1EA</strong> 와 <strong>Cost/1EA</strong> 는
                 기준수량 @_bomBaseQty.ToString("N0", CultureInfo.InvariantCulture) 로 나눈 제품 1개 기준 값입니다.
                 기준수량은 BOM 헤더에서 읽어오지 않고 위 입력값을 씁니다.
-                반제품(하위 자재를 가진 행)과 그 하위 자재가 함께 나오므로 전체를 그냥 더하면 이중 계산됩니다.
+                <strong>하위 BOM</strong> 배지가 붙은 반제품은 아래에 자기 구성 자재가 이어서 나옵니다.
+                같은 자재가 상위·하위 양쪽에 잡히므로 전체를 그냥 더하면 이중 계산됩니다.
             </span>
         }
     </div>
@@ -87,7 +88,11 @@ else if (_rows.Count > 0)
                         <th class="text-center" style="min-width:44px;">Lv</th>
                     }
                     <th style="min-width:150px;">Material Code</th>
-                    <th style="min-width:270px;">Material Name</th>
+                    <th style="min-width:280px;">Material Name</th>
+                    @if (_isBomMode)
+                    {
+                        <th style="min-width:150px;">Parent</th>
+                    }
                     @if (_isBomMode)
                     {
                         <th class="text-end" style="min-width:100px;">BOM Qty</th>
@@ -109,7 +114,7 @@ else if (_rows.Count > 0)
                 @if (_rows.Count == 0)
                 {
                     <tr>
-                        <td colspan="@(_isBomMode ? 12 : 7)" class="text-center text-muted py-4 small">
+                        <td colspan="@(_isBomMode ? 13 : 7)" class="text-center text-muted py-4 small">
                             @(_searchedAt is null ? "모델명이나 자재코드를 입력하고 조회하세요." : "조회 결과가 없습니다.")
                         </td>
                     </tr>
@@ -124,9 +129,20 @@ else if (_rows.Count > 0)
                                 <td class="text-center text-muted">@(row.BomLevel > 0 ? row.BomLevel.ToString(CultureInfo.InvariantCulture) : "-")</td>
                             }
                             <td class="font-monospace">@row.MaterialCode</td>
-                            <td>@row.MaterialName</td>
+                            <td style="@(_isBomMode && row.BomLevel > 1 ? $"padding-left:{10 + (row.BomLevel - 1) * 16}px;" : null)">
+                                @if (_isBomMode && row.BomLevel > 1)
+                                {
+                                    <span class="text-muted">└ </span>
+                                }
+                                @row.MaterialName
+                                @if (_isBomMode && row.HasChildren)
+                                {
+                                    <span class="badge bg-info-subtle text-info-emphasis ms-1" title="이 자재는 자기 하위 BOM 을 갖는 반제품입니다">하위 BOM</span>
+                                }
+                            </td>
                             @if (_isBomMode)
                             {
+                                <td class="font-monospace text-muted">@row.ParentMaterialCode</td>
                                 <td class="text-end">@FormatQty(row.BomUsageQty)</td>
                                 <td class="text-muted">@row.BomUsageUnit</td>
                                 <td class="text-end matcost-per-ea">@FormatPerUnit(PerUnitQty(row))</td>
@@ -238,21 +254,26 @@ else if (_rows.Count > 0)
                 _statusMessage = $"BOM 자재 {bomRows.Rows.Count:N0}건의 단가를 조회하는 중입니다...";
                 StateHasChanged();
 
-                var byCode = bomRows.Rows
-                    .GroupBy(r => r.MaterialCode.Trim(), StringComparer.OrdinalIgnoreCase)
-                    .Select(g => g.OrderBy(r => r.BomLevel).First())
+                // 반제품(C-S 등)은 자기 하위 BOM 을 그대로 갖고 있다.
+                // 코드로 접으면 그 계층이 사라지므로 트리 그대로 두고, 단가만 코드 단위로 조회한다.
+                var distinctCodes = bomRows.Rows
+                    .Select(r => r.MaterialCode.Trim())
+                    .Where(code => code.Length > 0)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
                 var prices = await FCostActual.FetchMaterialCostsAsync(new BmesMaterialCostQuery
                 {
                     Connection = connection,
-                    MaterialCodes = byCode.Select(r => r.MaterialCode.Trim()).ToList(),
+                    MaterialCodes = distinctCodes,
                     ReferenceDate = _referenceDate,
-                    MaxRows = Math.Max(byCode.Count, _maxRows),
+                    MaxRows = Math.Max(distinctCodes.Count, _maxRows),
                 });
                 var priceByCode = prices.ToDictionary(p => p.MaterialCode.Trim(), StringComparer.OrdinalIgnoreCase);
 
-                _rows = byCode
+                _rows = bomRows.Rows
+                    .OrderBy(r => r.BomPath, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(r => r.MaterialCode, StringComparer.OrdinalIgnoreCase)
                     .Select(r =>
                     {
                         priceByCode.TryGetValue(r.MaterialCode.Trim(), out var price);
@@ -261,6 +282,8 @@ else if (_rows.Count > 0)
                             BomLevel = r.BomLevel,
                             MaterialCode = r.MaterialCode.Trim(),
                             MaterialName = string.IsNullOrWhiteSpace(price?.MaterialName) ? r.MaterialName.Trim() : price.MaterialName,
+                            ParentMaterialCode = r.ParentMaterialCode.Trim(),
+                            HasChildren = r.HasChildren,
                             BomUsageQty = r.UsageQty,
                             BomUsageUnit = r.UsageUnit,
                             UnitPrice = price?.UnitPrice,
@@ -270,8 +293,6 @@ else if (_rows.Count > 0)
                             UnitPriceVnd = price?.UnitPriceVnd,
                         };
                     })
-                    .OrderBy(r => r.BomLevel)
-                    .ThenBy(r => r.MaterialCode, StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
                 _isBomMode = true;
@@ -418,6 +439,11 @@ else if (_rows.Count > 0)
         public int BomLevel { get; init; }
         public string MaterialCode { get; init; } = string.Empty;
         public string MaterialName { get; init; } = string.Empty;
+        public string ParentMaterialCode { get; init; } = string.Empty;
+
+        /// <summary>이 자재가 다시 자기 하위 BOM 을 갖는 반제품인지.</summary>
+        public bool HasChildren { get; init; }
+
         public decimal? BomUsageQty { get; init; }
         public string BomUsageUnit { get; init; } = string.Empty;
         public decimal? UnitPrice { get; init; }
