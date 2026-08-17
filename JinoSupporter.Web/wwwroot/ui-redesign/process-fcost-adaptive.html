@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>적응형 공정 자재 설정 시안 — GN LAB Supporter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..800;1,75..125,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/instrument.css">
+<style>
+  :root { --order-w: 338px; }
+  .pf-page { padding-bottom:30px; }
+  .pf-modelbar { display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; }
+  .pf-modelbar .spacer { min-width:20px; }
+  .pf-steps { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border:1px solid var(--line); background:var(--surface); }
+  .pf-step { display:grid; grid-template-columns:28px 1fr auto; align-items:center; gap:9px; min-height:58px; padding:9px 13px; border-right:1px solid var(--line); }
+  .pf-step:last-child { border-right:0; }
+  .pf-step__n { width:25px; height:25px; display:grid; place-items:center; border:1px solid var(--line-hard); background:var(--wash); color:var(--muted); font:700 10px/1 var(--mono); }
+  .pf-step__t { font-size:11px; font-weight:750; }
+  .pf-step__d { margin-top:3px; color:var(--muted); font-size:9px; }
+  .pf-step.is-on .pf-step__n { border-color:var(--signal); background:var(--signal-wash); color:var(--signal-ink); }
+  .pf-step.is-done .pf-step__n { border-color:var(--ok); background:var(--ok-wash); color:var(--ok); }
+  .pf-step__state { font:600 9px/1 var(--mono); color:var(--muted); }
+
+  .pf-workspace { display:grid; grid-template-columns:var(--order-w) minmax(0,1fr); gap:12px; align-items:start; }
+  .pf-order { position:sticky; top:58px; }
+  .pf-order .panel__body { padding:0; }
+  .pf-order-status { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--line); }
+  .pf-order-status > div { padding:10px 11px; border-right:1px solid var(--line); }
+  .pf-order-status > div:last-child { border-right:0; }
+  .pf-order-status span { display:block; color:var(--muted); font:600 8px/1 var(--mono); letter-spacing:.08em; }
+  .pf-order-status strong { display:block; margin-top:5px; font:700 18px/1 var(--mono); }
+  .pf-order-list { min-height:474px; max-height:630px; padding:8px; overflow:auto; background:var(--wash); }
+  .pf-order-list.is-empty { display:grid; place-items:center; }
+  .pf-empty { width:100%; padding:34px 20px; text-align:center; border:1px dashed var(--line-hard); background:var(--surface); }
+  .pf-empty__icon { width:42px; height:42px; margin:0 auto 12px; display:grid; place-items:center; border:1px solid var(--signal-line); background:var(--signal-wash); color:var(--signal-ink); font:700 16px/1 var(--mono); }
+  .pf-empty__t { font-size:12px; font-weight:750; }
+  .pf-empty__d { max-width:230px; margin:7px auto 0; color:var(--muted); font-size:10px; line-height:1.55; }
+  .pf-order-item { position:relative; display:grid; grid-template-columns:34px 16px 1fr 24px; align-items:center; gap:7px; min-height:58px; margin-bottom:6px; padding:7px 7px; border:1px solid var(--line); background:var(--surface); cursor:grab; user-select:none; }
+  .pf-order-item:active { cursor:grabbing; }
+  .pf-order-item.is-dragging { opacity:.35; border-style:dashed; }
+  .pf-order-item.is-over { border-color:var(--signal); box-shadow:inset 3px 0 0 var(--signal); }
+  .pf-order-item__no { display:grid; place-items:center; width:32px; height:32px; border:1px solid var(--signal-line); background:var(--signal-wash); color:var(--signal-ink); font:700 10px/1 var(--mono); }
+  .pf-grip { color:var(--muted); font:700 13px/1 var(--mono); letter-spacing:-3px; }
+  .pf-order-item__code { color:var(--muted); font:600 8px/1 var(--mono); }
+  .pf-order-item__name { margin-top:4px; font-size:10px; font-weight:750; line-height:1.25; }
+  .pf-order-item__type { margin-top:3px; color:var(--muted); font-size:8px; }
+  .pf-remove { width:23px; height:23px; border:1px solid var(--line); background:transparent; color:var(--muted); font:700 12px/1 var(--mono); cursor:pointer; }
+  .pf-remove:hover { border-color:var(--crit); color:var(--crit); }
+  .pf-autosave { display:flex; align-items:center; gap:6px; color:var(--muted); font-size:9px; }
+  .pf-autosave i { width:7px; height:7px; background:var(--ok); }
+
+  .pf-main { min-width:0; }
+  .pf-process-stage, .pf-material-stage { display:none; }
+  .pf-workspace[data-stage="process"] .pf-process-stage { display:block; }
+  .pf-workspace[data-stage="material"] .pf-material-stage { display:block; }
+  .pf-poolbar { display:flex; align-items:flex-end; gap:8px; flex-wrap:wrap; padding:10px 12px; border-bottom:1px solid var(--line); background:var(--wash); }
+  .pf-poolbar .field { gap:4px; }
+  .pf-pool { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; min-height:390px; padding:12px; align-content:start; }
+  .pf-process-card { display:grid; grid-template-columns:14px 1fr auto; align-items:center; gap:9px; min-height:62px; padding:9px 10px; border:1px solid var(--line); background:var(--surface); cursor:grab; user-select:none; }
+  .pf-process-card:hover { border-color:var(--signal); background:var(--signal-wash); }
+  .pf-process-card:active { cursor:grabbing; }
+  .pf-process-card.is-dragging { opacity:.35; }
+  .pf-process-card__move { color:var(--muted); font:700 12px/1 var(--mono); letter-spacing:-3px; }
+  .pf-process-card__code { color:var(--muted); font:600 8px/1 var(--mono); }
+  .pf-process-card__name { margin-top:4px; font-size:11px; font-weight:750; }
+  .pf-process-card__meta { margin-top:4px; color:var(--muted); font-size:8px; }
+  .pf-add { min-width:52px; height:26px; border:1px solid var(--line); background:var(--surface); color:var(--ink-2); font-size:9px; cursor:pointer; }
+  .pf-add:hover { border-color:var(--signal); color:var(--signal-ink); }
+  .pf-pool-empty { grid-column:1/-1; padding:45px 20px; text-align:center; color:var(--muted); border:1px dashed var(--line); font-size:10px; }
+  .pf-rule { display:grid; grid-template-columns:28px 1fr; gap:9px; align-items:start; margin:0 12px 12px; padding:10px 11px; border:1px solid var(--signal-line); background:var(--signal-wash); font-size:10px; line-height:1.5; }
+  .pf-rule__i { width:23px; height:23px; display:grid; place-items:center; background:var(--signal); color:#fff; font:700 10px/1 var(--mono); }
+
+  .pf-locked { margin-top:12px; border:1px solid var(--line); background:var(--wash); }
+  .pf-locked__inner { display:flex; align-items:center; gap:13px; min-height:78px; padding:13px 15px; }
+  .pf-lock { width:34px; height:34px; display:grid; place-items:center; border:1px solid var(--line-hard); background:var(--surface); color:var(--muted); font:700 12px/1 var(--mono); }
+  .pf-locked__t { font-size:11px; font-weight:750; }
+  .pf-locked__d { margin-top:4px; color:var(--muted); font-size:9px; }
+
+  .pf-material-head { display:flex; align-items:flex-start; gap:12px; padding:12px; border-bottom:1px solid var(--line); background:var(--wash); }
+  .pf-material-head__t { font-size:12px; font-weight:750; }
+  .pf-material-head__d { margin-top:4px; color:var(--muted); font-size:9px; }
+  .pf-material-tools { display:flex; align-items:flex-end; gap:7px; margin-left:auto; }
+  .pf-material-tools .field { gap:4px; }
+  .pf-table-wrap { overflow:auto; max-height:595px; }
+  .pf-table { min-width:980px; }
+  .pf-table th { position:sticky; top:0; z-index:2; }
+  .pf-table td { height:45px; vertical-align:middle; }
+  .pf-table .is-warn td { background:var(--warn-wash); }
+  .pf-material-name { font-size:10px; font-weight:750; }
+  .pf-material-sub { margin-top:3px; color:var(--muted); font-size:8px; }
+  .pf-compact { height:27px; padding:3px 7px; font-size:9px; }
+  .pf-process-select { min-width:190px; }
+  .pf-flow { display:flex; align-items:center; gap:3px; min-width:170px; }
+  .pf-flow__node { min-width:25px; height:20px; display:grid; place-items:center; padding:0 4px; border:1px solid var(--line); background:var(--wash); color:var(--muted); font:600 8px/1 var(--mono); }
+  .pf-flow__node.is-start { border-color:var(--signal); background:var(--signal-wash); color:var(--signal-ink); }
+  .pf-flow__line { height:1px; width:8px; background:var(--line-hard); }
+  .pf-table-foot { display:flex; align-items:center; gap:8px; padding:9px 11px; border-top:1px solid var(--line); background:var(--surface); }
+  .pf-coverage { display:grid; grid-template-columns:repeat(4,1fr); border-bottom:1px solid var(--line); }
+  .pf-coverage > div { padding:9px 10px; border-right:1px solid var(--line); }
+  .pf-coverage > div:last-child { border-right:0; }
+  .pf-coverage span { display:block; color:var(--muted); font:600 8px/1 var(--mono); }
+  .pf-coverage strong { display:block; margin-top:6px; font:700 17px/1 var(--mono); }
+  .pf-stage-banner { display:flex; align-items:center; gap:10px; margin-bottom:10px; padding:9px 11px; border:1px solid var(--ok); background:var(--ok-wash); color:var(--ink-2); font-size:9px; }
+  .pf-stage-banner strong { color:var(--ok); }
+
+  @media (max-width:1200px) {
+    :root { --order-w:286px; }
+    .pf-pool { grid-template-columns:1fr; }
+    .pf-modelbar .spacer { display:none; }
+  }
+  @media (max-width:820px) {
+    .pf-steps { grid-template-columns:1fr; }
+    .pf-step { border-right:0; border-bottom:1px solid var(--line); }
+    .pf-workspace { grid-template-columns:1fr; }
+    .pf-order { position:static; }
+    .pf-order-list { min-height:250px; max-height:390px; }
+    .pf-pool { grid-template-columns:1fr; }
+    .pf-material-head { flex-direction:column; }
+    .pf-material-tools { margin-left:0; flex-wrap:wrap; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail">
+    <div class="brand"><div class="brand__mark"></div><div class="brand__text"><div class="brand__name">GN LAB</div><div class="brand__sub">SUPPORTER</div></div></div>
+    <div class="rail__scroll"></div>
+    <div class="rail__foot"><div class="who"><div class="who__av">BJ</div><div style="min-width:0"><div class="who__name">Byun Jinho</div><div class="who__role">Administrator</div></div></div><div class="live"><i class="live__dot"></i><span class="live__text">BMES connected</span></div><button class="railbtn">Sign out</button></div>
+  </aside>
+  <div class="stage">
+    <header class="topbar"><button class="iconbtn" data-rail-toggle aria-label="Toggle navigation"></button><nav class="crumb"></nav><div class="readouts"></div><button class="iconbtn" data-theme-toggle aria-label="Toggle theme"></button><button class="iconbtn" data-icon="out" aria-label="Sign out"></button></header>
+    <nav class="tabs"></nav>
+    <main class="view pf-page">
+      <div class="pagehead">
+        <div><span class="code">PM-03 · ADAPTIVE PROCESS BUILDER</span><h1 class="pagehead__t">공정 순서와 최초 투입자재 설정</h1><p class="pagehead__d">먼저 모델의 공정을 원하는 순서로 구성합니다. 그 순서가 확정되면 자재마다 최초 투입공정을 지정하고 마지막 공정까지 자동 누적합니다.</p></div>
+        <div class="pagehead__actions"><button id="editOrderTop" class="btn" hidden>공정 순서 수정</button><button class="btn btn--sm">임시 저장</button><button class="btn btn--go">저장 및 검증</button></div>
+      </div>
+
+      <div class="deck">
+        <div class="deck__row pf-modelbar">
+          <div class="field"><span class="field__l">기준 모델 검색</span><select id="modelSelect" class="select" style="width:260px"><option>TIU-C11-20-L-ZZ</option><option>TIU-C11-20-R-ZZ</option><option>MSU-L20S15-07</option></select></div>
+          <div class="field"><span class="field__l">제품 코드</span><input class="input num" value="P-S-151100700" readonly style="width:155px"></div>
+          <div class="field"><span class="field__l">BOM 기준일</span><input class="input num" type="date" value="2026-08-15" style="width:145px"></div>
+          <button class="btn">모델 공정 검색</button>
+          <button class="btn">BOM 불러오기</button>
+          <span class="spacer"></span>
+          <span class="badge badge--ok">● ROUTING FOUND · 14</span>
+          <span class="badge">BOM CACHE · 44</span>
+        </div>
+      </div>
+
+      <div class="pf-steps">
+        <div id="step1" class="pf-step is-on"><span class="pf-step__n">1</span><div><div class="pf-step__t">공정 순서 만들기</div><div class="pf-step__d">검색된 공정을 좌측으로 옮겨 순서 구성</div></div><span class="pf-step__state">CURRENT</span></div>
+        <div id="step2" class="pf-step"><span class="pf-step__n">2</span><div><div class="pf-step__t">최초 투입공정 지정</div><div class="pf-step__d">BOM 자재마다 시작 공정 하나만 선택</div></div><span class="pf-step__state">LOCKED</span></div>
+        <div id="step3" class="pf-step"><span class="pf-step__n">3</span><div><div class="pf-step__t">누적 흐름 검증</div><div class="pf-step__d">투입공정부터 마지막 공정까지 자동 적용</div></div><span class="pf-step__state">LOCKED</span></div>
+      </div>
+
+      <div id="workspace" class="pf-workspace" data-stage="process">
+        <aside class="panel pf-order">
+          <div class="panel__head"><span class="panel__t">내 공정 순서</span><span id="orderMeta" class="panel__meta">아직 저장된 공정 없음</span></div>
+          <div class="pf-order-status"><div><span>등록 공정</span><strong id="orderCount">0</strong></div><div><span>저장 상태</span><strong id="saveState" style="font-size:11px;color:var(--muted)">미설정</strong></div></div>
+          <div id="orderList" class="pf-order-list is-empty"></div>
+          <div class="panel__foot"><span class="pf-autosave"><i></i><span id="autosaveText">끌어놓으면 순서가 즉시 임시 저장됩니다.</span></span></div>
+        </aside>
+
+        <div class="pf-main">
+          <section class="pf-process-stage">
+            <div class="panel">
+              <div class="panel__head"><span class="panel__t">검색된 모델의 공정</span><span id="poolMeta" class="panel__meta">TIU-C11-20-L-ZZ · ROUTING 14</span><div class="panel__tools"><span class="badge badge--ok">BMES ROUTING</span></div></div>
+              <div class="pf-poolbar"><div class="field"><span class="field__l">공정 검색</span><input id="processSearch" class="input" placeholder="공정코드 또는 공정명" style="width:260px"></div><div class="field"><span class="field__l">공정유형</span><select id="typeFilter" class="select" style="width:135px"><option value="">전체</option><option>Main</option><option>Sub</option><option>Inspection</option></select></div><span class="spacer"></span><span class="small faint">카드를 좌측으로 끌거나 `추가`를 누르세요.</span></div>
+              <div id="processPool" class="pf-pool"></div>
+              <div class="pf-rule"><span class="pf-rule__i">1</span><div><b>공정 순서는 모델마다 직접 만듭니다.</b><br>좌측 목록 안에서 위·아래로 다시 끌면 번호가 즉시 바뀌고 자동 저장됩니다. 빠진 공정은 언제든 오른쪽에서 추가할 수 있습니다.</div></div>
+              <div class="panel__foot"><span class="small">검색된 공정 <b id="visiblePoolCount">14</b>개 · 등록된 공정 <b id="registeredPoolCount">0</b>개</span><span class="spacer"></span><button id="continueBtn" class="btn btn--go" disabled>공정 순서 확정 · 자재 설정 계속</button></div>
+            </div>
+            <div class="pf-locked"><div class="pf-locked__inner"><span class="pf-lock">02</span><div><div class="pf-locked__t">최초 투입자재 설정은 아직 잠겨 있습니다.</div><div class="pf-locked__d">좌측에 공정을 배치하고 순서를 확정하면 BOM 자재 입력표가 이 위치에 자동으로 열립니다.</div></div></div></div>
+          </section>
+
+          <section class="pf-material-stage">
+            <div class="pf-stage-banner"><span class="code">ORDER READY</span><span><strong id="readyCount">6개 공정 순서가 적용되었습니다.</strong> 공정 순서를 바꾸면 아래 자재의 누적 적용범위도 즉시 다시 계산됩니다.</span><span class="spacer"></span><button id="editOrder" class="btn btn--sm">공정 추가·순서 수정</button></div>
+            <div class="panel">
+              <div class="panel__head"><span class="panel__t">BOM 자재별 최초 투입공정</span><span class="panel__meta">처음 들어가는 공정 하나만 지정</span><div class="panel__tools"><span class="badge badge--warn">미지정 2</span></div></div>
+              <div class="pf-coverage"><div><span>BOM 자재</span><strong>44</strong></div><div><span>공정 지정</span><strong style="color:var(--ok)">36</strong></div><div><span>미지정</span><strong style="color:var(--warn-ink)">6</strong></div><div><span>계산 제외</span><strong>2</strong></div></div>
+              <div class="pf-material-head"><div><div class="pf-material-head__t">자재가 처음 투입되는 공정을 선택하세요.</div><div class="pf-material-head__d">선택한 공정부터 마지막 공정까지 누적 WIP 자재로 자동 적용됩니다. 같은 자재를 후공정에 다시 등록하지 않습니다.</div></div><div class="pf-material-tools"><div class="field"><span class="field__l">자재 검색</span><input id="materialSearch" class="input" placeholder="코드 또는 자재명" style="width:200px"></div><div class="field"><span class="field__l">보기</span><select class="select" style="width:115px"><option>전체 자재</option><option>미지정만</option></select></div><button class="btn">선택 일괄 지정</button></div></div>
+              <div class="pf-table-wrap"><table class="dt pf-table"><thead><tr><th style="width:32px"><input type="checkbox"></th><th style="width:118px">자재코드</th><th>자재명 / 도면</th><th style="width:75px">사용량</th><th style="width:62px">단위</th><th style="width:205px">최초 투입공정</th><th style="width:205px">자동 누적 적용범위</th><th style="width:95px">처리방식</th></tr></thead><tbody id="materialBody"></tbody></table></div>
+              <div class="pf-table-foot"><span class="code">AUTO CASCADE</span><span class="small faint">공정 순서 변경 시 모든 자재의 적용범위를 자동 재계산</span><span class="spacer"></span><button class="btn btn--sm">임시 저장</button><button class="btn btn--go">저장 및 누적 흐름 검증</button></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="assets/instrument.js"></script>
+<script>
+Shell.render({
+  active:'f-cost',
+  crumb:['BMES','공정 F-COST','공정 순서·자재 설정'],
+  readouts:[{k:'BMES',v:'LINKED',cls:'is-ok'},{k:'MODEL',v:'TIU-C11-L'},{k:'ROUTING',v:'14'},{k:'DRAFT',v:'AUTO'}],
+  tabs:[{code:'BD-01',label:'BOM·도면',href:'#'},{code:'PM-03',label:'공정 설정',href:'#',on:true},{code:'FC-04',label:'예상 F-COST',href:'#'},{code:'FC-05',label:'실제 비교',href:'#'}]
+});
+
+const allProcesses = [
+  {id:'p01',code:'MES010',name:'FRAME ARRAY',type:'Main',machine:'AUTO LINE 01'},
+  {id:'p02',code:'MES020',name:'YOKE + MAGNET ASS\'Y',type:'Main',machine:'MAGNETIZER'},
+  {id:'p03',code:'MES025',name:'PLATE BONDING',type:'Sub',machine:'BONDING 02'},
+  {id:'p04',code:'MES030',name:'VOICE COIL BONDING',type:'Main',machine:'DISPENSER 03'},
+  {id:'p05',code:'MES035',name:'SUSPENSION BONDING',type:'Main',machine:'BONDING 04'},
+  {id:'p06',code:'MES040',name:'CENTER DOME BONDING',type:'Main',machine:'DISPENSER 05'},
+  {id:'p07',code:'MES050',name:'UV CURING',type:'Sub',machine:'UV OVEN 01'},
+  {id:'p08',code:'MES060',name:'DRY OVEN',type:'Sub',machine:'OVEN 02'},
+  {id:'p09',code:'MES070',name:'SOLDERING',type:'Main',machine:'SOLDER 01'},
+  {id:'p10',code:'MES080',name:'VISION CHECK',type:'Inspection',machine:'VISION 02'},
+  {id:'p11',code:'MES090',name:'F0 TEST',type:'Inspection',machine:'TESTER 03'},
+  {id:'p12',code:'MES100',name:'POLARITY CHECK',type:'Inspection',machine:'TESTER 04'},
+  {id:'p13',code:'MES110',name:'FINAL APPEARANCE',type:'Inspection',machine:'MANUAL'},
+  {id:'p14',code:'MES120',name:'PACKING',type:'Sub',machine:'PACK LINE'}
+];
+
+const materials = [
+  {code:'R-S-151100708',name:'FRAME-C11-20-L',pdm:'PDM 20240184 · DWG V1',qty:'1.000',unit:'EA',start:'p01'},
+  {code:'R-S-151100715',name:'YOKE-C11-20',pdm:'PDM 20240192 · DWG V2',qty:'1.000',unit:'EA',start:'p02'},
+  {code:'R-S-151100719',name:'MAGNET CENTER-C11',pdm:'PDM 20240201 · DWG V0',qty:'1.000',unit:'EA',start:'p02'},
+  {code:'R-S-151100723',name:'VOICE COIL-C11',pdm:'PDM 20240214 · DWG V3',qty:'1.000',unit:'EA',start:'p04'},
+  {code:'R-S-151100731',name:'CENTER DOME-C11',pdm:'PDM 20240228 · DWG V1',qty:'1.000',unit:'EA',start:'p06'},
+  {code:'C-C-000127',name:'BOND UV-89176T',pdm:'PDM 없음 · 소모성 자재',qty:'0.076',unit:'G',start:'p04'},
+  {code:'R-S-151100744',name:'SUSPENSION-C11',pdm:'PDM 20240303 · DWG V2',qty:'1.000',unit:'EA',start:'p05'},
+  {code:'M-P-000084',name:'AEM FILM 0.08T',pdm:'구매자재 · 단가단위 확인',qty:'91.869',unit:'MM',start:''},
+  {code:'M-P-000114',name:'LABEL PRODUCT',pdm:'포장 공정 자재',qty:'1.000',unit:'EA',start:''}
+];
+
+const params = new URLSearchParams(location.search);
+let sequence = params.get('demo') === 'configured' ? ['p01','p02','p04','p05','p06','p10'] : [];
+let stage = params.get('demo') === 'configured' ? 'material' : 'process';
+let dragInfo = null;
+const byId = id => allProcesses.find(p => p.id === id);
+const orderList = document.querySelector('#orderList');
+const processPool = document.querySelector('#processPool');
+const workspace = document.querySelector('#workspace');
+
+function setStage(next) {
+  stage = next;
+  workspace.dataset.stage = stage;
+  const material = stage === 'material';
+  document.querySelector('#step1').className = 'pf-step ' + (material ? 'is-done' : 'is-on');
+  document.querySelector('#step1 .pf-step__state').textContent = material ? 'DONE' : 'CURRENT';
+  document.querySelector('#step2').className = 'pf-step ' + (material ? 'is-on' : '');
+  document.querySelector('#step2 .pf-step__state').textContent = material ? 'CURRENT' : 'LOCKED';
+  document.querySelector('#step3 .pf-step__state').textContent = material ? 'READY' : 'LOCKED';
+  document.querySelector('#editOrderTop').hidden = !material;
+  document.querySelector('#readyCount').textContent = `${sequence.length}개 공정 순서가 적용되었습니다.`;
+  renderMaterials();
+}
+
+function flashSaved() {
+  document.querySelector('#saveState').textContent = '자동 저장됨';
+  document.querySelector('#saveState').style.color = 'var(--ok)';
+  document.querySelector('#autosaveText').textContent = `방금 저장됨 · ${sequence.length}개 공정`;
+  setTimeout(() => { document.querySelector('#autosaveText').textContent = '끌어놓으면 순서가 즉시 임시 저장됩니다.'; }, 1400);
+}
+
+function insertProcess(id, beforeId = null) {
+  sequence = sequence.filter(x => x !== id);
+  const index = beforeId ? sequence.indexOf(beforeId) : -1;
+  if (index >= 0) sequence.splice(index,0,id); else sequence.push(id);
+  flashSaved(); renderAll();
+}
+
+function removeProcess(id) {
+  sequence = sequence.filter(x => x !== id);
+  flashSaved(); renderAll();
+}
+
+function renderOrder() {
+  document.querySelector('#orderCount').textContent = sequence.length;
+  document.querySelector('#orderMeta').textContent = sequence.length ? `드래그로 상하 순서 수정 · ${sequence.length}개` : '아직 저장된 공정 없음';
+  document.querySelector('#registeredPoolCount').textContent = sequence.length;
+  document.querySelector('#continueBtn').disabled = sequence.length === 0;
+  orderList.classList.toggle('is-empty', sequence.length === 0);
+  if (!sequence.length) {
+    orderList.innerHTML = '<div class="pf-empty"><div class="pf-empty__icon">↙</div><div class="pf-empty__t">공정 순서가 비어 있습니다.</div><div class="pf-empty__d">오른쪽의 검색된 공정을 이곳으로 끌어오세요. 처음 놓은 공정이 01번이 됩니다.</div></div>';
+    return;
+  }
+  orderList.innerHTML = sequence.map((id,index) => {
+    const p = byId(id);
+    return `<div class="pf-order-item" draggable="true" data-id="${p.id}"><span class="pf-order-item__no">${String(index+1).padStart(2,'0')}</span><span class="pf-grip">⋮⋮</span><div><div class="pf-order-item__code">${p.code}</div><div class="pf-order-item__name">${p.name}</div><div class="pf-order-item__type">${p.type} · ${p.machine}</div></div><button class="pf-remove" data-remove="${p.id}" title="목록에서 빼기">×</button></div>`;
+  }).join('');
+  orderList.querySelectorAll('.pf-order-item').forEach(item => {
+    item.addEventListener('dragstart', e => { dragInfo={source:'order',id:item.dataset.id}; item.classList.add('is-dragging'); e.dataTransfer.effectAllowed='move'; });
+    item.addEventListener('dragend', () => { item.classList.remove('is-dragging'); document.querySelectorAll('.is-over').forEach(x=>x.classList.remove('is-over')); });
+    item.addEventListener('dragover', e => { e.preventDefault(); item.classList.add('is-over'); });
+    item.addEventListener('dragleave', () => item.classList.remove('is-over'));
+    item.addEventListener('drop', e => { e.preventDefault(); item.classList.remove('is-over'); if (dragInfo) insertProcess(dragInfo.id,item.dataset.id); });
+  });
+  orderList.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); removeProcess(btn.dataset.remove); }));
+}
+
+function renderPool() {
+  const q = document.querySelector('#processSearch').value.trim().toLowerCase();
+  const type = document.querySelector('#typeFilter').value;
+  const available = allProcesses.filter(p => !sequence.includes(p.id)).filter(p => !q || `${p.code} ${p.name} ${p.machine}`.toLowerCase().includes(q)).filter(p => !type || p.type===type);
+  document.querySelector('#visiblePoolCount').textContent = available.length;
+  if (!available.length) { processPool.innerHTML='<div class="pf-pool-empty">조건에 맞는 미등록 공정이 없습니다.</div>'; return; }
+  processPool.innerHTML = available.map(p => `<div class="pf-process-card" draggable="true" data-id="${p.id}"><span class="pf-process-card__move">⋮⋮</span><div><div class="pf-process-card__code">${p.code}</div><div class="pf-process-card__name">${p.name}</div><div class="pf-process-card__meta">${p.type} · ${p.machine}</div></div><button class="pf-add" data-add="${p.id}">추가 →</button></div>`).join('');
+  processPool.querySelectorAll('.pf-process-card').forEach(card => {
+    card.addEventListener('dragstart', e => { dragInfo={source:'pool',id:card.dataset.id}; card.classList.add('is-dragging'); e.dataTransfer.effectAllowed='move'; });
+    card.addEventListener('dragend', () => card.classList.remove('is-dragging'));
+  });
+  processPool.querySelectorAll('[data-add]').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); insertProcess(btn.dataset.add); }));
+}
+
+function flowHtml(startId) {
+  const index = sequence.indexOf(startId);
+  if (index < 0) return '<span class="badge badge--warn">공정 미지정</span>';
+  const visible = sequence.slice(index);
+  const compact = visible.length > 4 ? [visible[0],visible[1],'more',visible[visible.length-1]] : visible;
+  return `<div class="pf-flow">${compact.map((id,i) => id==='more' ? '<span class="pf-flow__line"></span><span class="pf-flow__node">…</span><span class="pf-flow__line"></span>' : `${i>0?'<span class="pf-flow__line"></span>':''}<span class="pf-flow__node ${i===0?'is-start':''}">${String(sequence.indexOf(id)+1).padStart(2,'0')}</span>`).join('')}</div>`;
+}
+
+function renderMaterials() {
+  if (stage !== 'material') return;
+  const options = '<option value="">미지정 — 공정 선택</option>' + sequence.map((id,i)=>`<option value="${id}">${String(i+1).padStart(2,'0')} · ${byId(id).name}</option>`).join('');
+  document.querySelector('#materialBody').innerHTML = materials.map((m,index) => {
+    if (m.start && !sequence.includes(m.start)) m.start='';
+    return `<tr class="${m.start?'':'is-warn'}" data-mat="${index}"><td><input type="checkbox"></td><td class="num">${m.code}</td><td><div class="pf-material-name">${m.name}</div><div class="pf-material-sub">${m.pdm}</div></td><td><input class="input pf-compact num" value="${m.qty}" style="width:68px"></td><td><select class="select pf-compact" style="width:58px"><option>${m.unit}</option></select></td><td><select class="select pf-compact pf-process-select" data-start="${index}">${options}</select></td><td data-flow="${index}">${flowHtml(m.start)}</td><td><select class="select pf-compact" style="width:90px"><option>완전 폐기</option><option>재작업</option><option>계산 제외</option></select></td></tr>`;
+  }).join('');
+  materials.forEach((m,index) => { const select=document.querySelector(`[data-start="${index}"]`); select.value=m.start; });
+  document.querySelectorAll('[data-start]').forEach(select => select.addEventListener('change', () => { const i=Number(select.dataset.start); materials[i].start=select.value; const row=select.closest('tr'); row.classList.toggle('is-warn',!select.value); row.querySelector(`[data-flow="${i}"]`).innerHTML=flowHtml(select.value); }));
+}
+
+function renderAll() { renderOrder(); renderPool(); renderMaterials(); }
+orderList.addEventListener('dragover', e => e.preventDefault());
+orderList.addEventListener('drop', e => { if (e.target===orderList || e.target.closest('.pf-empty')) { e.preventDefault(); if (dragInfo) insertProcess(dragInfo.id); } });
+document.querySelector('#processSearch').addEventListener('input',renderPool);
+document.querySelector('#typeFilter').addEventListener('change',renderPool);
+document.querySelector('#continueBtn').addEventListener('click',()=>setStage('material'));
+document.querySelector('#editOrder').addEventListener('click',()=>setStage('process'));
+document.querySelector('#editOrderTop').addEventListener('click',()=>setStage('process'));
+document.querySelector('#modelSelect').addEventListener('change',()=>{ sequence=[]; setStage('process'); flashSaved(); renderAll(); });
+renderAll(); setStage(stage);
+</script>
+</body>
+</html>

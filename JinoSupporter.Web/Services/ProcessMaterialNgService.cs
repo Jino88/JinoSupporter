@@ -390,62 +390,107 @@ public sealed class ProcessMaterialNgService(
         IReadOnlyList<ProcessMaterialMappingRow> mappings,
         IReadOnlyList<ProcessMaterialProcessRow> processSettings,
         Dictionary<string, List<ProcessMaterialMappingRow>> cache,
-        int depth = 0)
+        int depth = 0,
+        HashSet<string>? visiting = null)
     {
         string cacheKey = BuildExactProcessKey(process);
         if (cache.TryGetValue(cacheKey, out var cached))
             return cached;
 
         var direct = GetMappingsForProcess(process, mappings);
-        if (depth >= 8)
+        visiting ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!visiting.Add(cacheKey))
         {
             cache[cacheKey] = direct;
             return direct;
         }
 
-        string referenceNo = GetReferenceProcessNo(process, processSettings);
-        if (string.IsNullOrWhiteSpace(referenceNo))
+        try
         {
-            cache[cacheKey] = direct;
-            return direct;
-        }
+            int modelProcessCount = processSettings.Count(r =>
+                string.Equals(r.ModelName.Trim(), process.ModelName, StringComparison.OrdinalIgnoreCase));
+            if (depth >= Math.Max(16, modelProcessCount + 1))
+            {
+                cache[cacheKey] = direct;
+                return direct;
+            }
 
-        var referenceProcess = FindProcessByNo(process.ModelName, referenceNo, processCatalog, processSettings);
-        if (referenceProcess is null || IsSameProcess(referenceProcess, process))
+            var sourceProcesses = new List<ProcessMaterialNgProcess>();
+            string referenceNo = GetReferenceProcessNo(process, processSettings);
+            if (!string.IsNullOrWhiteSpace(referenceNo))
+            {
+                var referenceProcess = FindProcessByNo(process.ModelName, referenceNo, processCatalog, processSettings);
+                if (referenceProcess is not null && !IsSameProcess(referenceProcess, process))
+                    sourceProcesses.Add(referenceProcess);
+            }
+
+            string currentProcessNo = GetProcessNo(process, processSettings);
+            if (!string.IsNullOrWhiteSpace(currentProcessNo))
+            {
+                foreach (var mergeSource in processSettings
+                             .Where(setting => string.Equals(setting.ModelName.Trim(), process.ModelName, StringComparison.OrdinalIgnoreCase))
+                             .Where(setting => string.Equals(
+                                 NormalizeProcessNo(setting.MergeProcessNo),
+                                 NormalizeProcessNo(currentProcessNo),
+                                 StringComparison.OrdinalIgnoreCase)))
+                {
+                    var sourceProcess = FindProcessByNo(
+                        process.ModelName,
+                        mergeSource.ProcessNo,
+                        processCatalog,
+                        processSettings);
+                    if (sourceProcess is not null &&
+                        !IsSameProcess(sourceProcess, process) &&
+                        !sourceProcesses.Any(existing => IsSameProcess(existing, sourceProcess)))
+                    {
+                        sourceProcesses.Add(sourceProcess);
+                    }
+                }
+            }
+
+            if (sourceProcesses.Count == 0)
+            {
+                cache[cacheKey] = direct;
+                return direct;
+            }
+
+            var inheritedMappings = sourceProcesses
+                .SelectMany(sourceProcess => GetEffectiveMappingsForProcess(
+                    sourceProcess,
+                    processCatalog,
+                    mappings,
+                    processSettings,
+                    cache,
+                    depth + 1,
+                    visiting))
+                .ToList();
+
+            if (inheritedMappings.Count == 0)
+            {
+                cache[cacheKey] = direct;
+                return direct;
+            }
+
+            var directKeys = direct
+                .Select(r => NormalizeSideAgnosticMaterialKey(r.RawMaterialCode, r.RawMaterialName))
+                .Where(s => s.Length > 0)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var result = inheritedMappings
+                .Where(r => !directKeys.Contains(NormalizeSideAgnosticMaterialKey(r.RawMaterialCode, r.RawMaterialName)))
+                .Concat(direct)
+                .Where(IsSelectableMapping)
+                .GroupBy(r => BuildMaterialKey(r.RawMaterialCode, r.RawMaterialName), StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.First())
+                .ToList();
+
+            cache[cacheKey] = result;
+            return result;
+        }
+        finally
         {
-            cache[cacheKey] = direct;
-            return direct;
+            visiting.Remove(cacheKey);
         }
-
-        var referenceMappings = GetEffectiveMappingsForProcess(
-            referenceProcess,
-            processCatalog,
-            mappings,
-            processSettings,
-            cache,
-            depth + 1);
-
-        if (referenceMappings.Count == 0)
-        {
-            cache[cacheKey] = direct;
-            return direct;
-        }
-
-        var directKeys = direct
-            .Select(r => NormalizeSideAgnosticMaterialKey(r.RawMaterialCode, r.RawMaterialName))
-            .Where(s => s.Length > 0)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        var result = referenceMappings
-            .Where(r => !directKeys.Contains(NormalizeSideAgnosticMaterialKey(r.RawMaterialCode, r.RawMaterialName)))
-            .Concat(direct)
-            .Where(IsSelectableMapping)
-            .GroupBy(r => BuildMaterialKey(r.RawMaterialCode, r.RawMaterialName), StringComparer.OrdinalIgnoreCase)
-            .Select(g => g.First())
-            .ToList();
-
-        cache[cacheKey] = result;
-        return result;
     }
 
     private static List<ProcessMaterialMappingRow> GetMappingsForProcess(
@@ -621,14 +666,8 @@ public sealed class ProcessMaterialNgService(
         => IsSelectableMaterial(row.RawMaterialCode, row.RawMaterialName);
 
     private static bool IsSelectableMaterial(string code, string name)
-    {
-        bool isCs = code.StartsWith("C-S-", StringComparison.OrdinalIgnoreCase);
-        bool isRs = code.StartsWith("R-S-", StringComparison.OrdinalIgnoreCase);
-        return (isCs || isRs) && !(isCs && IsAssyFrameMaterial(name));
-    }
-
-    private static bool IsAssyFrameMaterial(string name)
-        => NormalizeKey(name).Contains("ASSY FRAME", StringComparison.OrdinalIgnoreCase);
+        => (!string.IsNullOrWhiteSpace(code) || !string.IsNullOrWhiteSpace(name)) &&
+           !code.Trim().StartsWith("M-P-", StringComparison.OrdinalIgnoreCase);
 
     private static string NormalizeSideAgnosticMaterialKey(string rawMaterialCode, string rawMaterialName)
     {

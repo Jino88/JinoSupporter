@@ -3,19 +3,35 @@
 @using System.Globalization
 @using System.Text
 @using JinoSupporter.Web.Services
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
 @inject ProcessMaterialMappingService MappingService
 @inject NgRateSettingsService NgRateSettings
 @inject BmesFcostActualService FCostActual
+@inject BmesBomCacheService BomCache
 @inject AppPathsService AppPaths
 @inject WebRepository Repo
 @inject AppActivityLogger Activity
+@inject IJSRuntime JS
 
 <PageTitle>Test 3</PageTitle>
 
-@{
-    var modelProcessRows = ModelProcessRows;
-    var bomMaterials = FilteredBomMaterials;
-}
+<link rel="stylesheet" href="/test3-editor/test3-editor.css?v=20260815-1" />
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span class="fw-semibold" style="font-size:18px;">T3</span>
+    <h5 class="mb-0 fw-semibold">Test 3 · 공정/자재 Flow 편집</h5>
+    <span class="badge bg-primary-subtle text-primary-emphasis">React</span>
+</div>
+<div @ref="_reactEditorHost" class="test3-react-host"></div>
+
+@if (!ReactEditorEnabled)
+{
+    var orderedProcessRows = OrderedProcessRows;
+    var availableProcessRows = AvailableProcessRows;
+    var orderedProcessLanes = BuildProcessLanes(orderedProcessRows);
+    var availableProcessLanes = BuildProcessLanes(availableProcessRows);
+    var materialAssignments = MaterialAssignments;
+    var materialLanes = BuildMaterialLanes(materialAssignments);
 
 <div class="d-flex align-items-center gap-2 mb-3">
     <span class="fw-semibold" style="font-size:18px;">T3</span>
@@ -36,286 +52,323 @@
         <option value="@model"></option>
     }
 </datalist>
-<div class="test3-shell @(IsModelProcessMode ? "with-bom" : "")">
-    <section class="test3-table-wrap">
-        <div class="test3-toolbar">
-            <span class="fw-semibold small">Mappings</span>
-            <span class="badge bg-secondary">@_rows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
-            @if (FilteredRows.Count != _rows.Count)
-            {
-                <span class="text-muted small">@FilteredRows.Count.ToString("N0", CultureInfo.InvariantCulture) shown</span>
-            }
-            <div class="ms-auto test3-filter">
-                <input class="form-control form-control-sm" placeholder="Model" @bind="_filterModel" @bind:event="oninput" @bind:after="OnFilterModelChangedAsync" />
-                <input class="form-control form-control-sm" placeholder="Process" @bind="_filterProcess" @bind:event="oninput" />
-                <input class="form-control form-control-sm" placeholder="Raw material" @bind="_filterMaterial" @bind:event="oninput" />
-            </div>
-            @if (!string.IsNullOrWhiteSpace(_filterModel))
-            {
-                <button class="btn btn-outline-primary btn-sm"
-                        @onclick="ReloadBomMaterialsAsync"
-                        disabled="@_bomBusy"
-                        title="Reload FCOST material candidates for the model">
-                    FCOST
-                </button>
-                <button class="btn btn-outline-danger btn-sm"
-                        @onclick="() => ResetVisibleProcessRegistrations(modelProcessRows)"
-                        disabled="@(!HasProcessRegistrations(modelProcessRows))"
-                        title="Delete process No and Ref registrations shown for this model">
-                    Reset
-                </button>
-            }
+<section class="test3-table-wrap">
+    <div class="test3-toolbar">
+        <span class="fw-semibold small">모델별 공정·자재 설정</span>
+        <span class="badge bg-secondary">@_rows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
+        @if (FilteredRows.Count != _rows.Count)
+        {
+            <span class="text-muted small">@FilteredRows.Count.ToString("N0", CultureInfo.InvariantCulture) shown</span>
+        }
+        <div class="ms-auto test3-filter">
+            <input class="form-control form-control-sm" list="test3-models" placeholder="모델 검색" @bind="_filterModel" @bind:event="oninput" @bind:after="OnFilterModelChangedAsync" />
+            <input class="form-control form-control-sm" placeholder="공정 검색" @bind="_filterProcess" @bind:event="oninput" />
+            <input class="form-control form-control-sm" placeholder="자재 검색" @bind="_filterMaterial" @bind:event="oninput" />
         </div>
+        @if (IsModelProcessMode)
+        {
+            <button class="btn btn-outline-primary btn-sm"
+                    @onclick="ReloadBomMaterialsAsync"
+                    disabled="@_bomBusy"
+                    title="선택한 모델의 BOM 자재를 서버에서 다시 불러옵니다">
+                BOM 다시 불러오기
+            </button>
+            <button class="btn btn-outline-danger btn-sm"
+                    @onclick="() => ResetVisibleProcessRegistrations(orderedProcessRows)"
+                    disabled="@(!HasProcessRegistrations(orderedProcessRows))"
+                    title="이 모델에 저장된 공정 순서를 모두 지웁니다">
+                공정 순서 초기화
+            </button>
+        }
+    </div>
+
+    @if (IsModelProcessMode)
+    {
+        <div class="test3-adaptive-shell">
+            <aside class="test3-sequence-pane">
+                <div class="test3-pane-title">
+                    <span class="fw-semibold small">저장된 공정 순서</span>
+                    <span class="badge bg-secondary">@orderedProcessRows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
+                    <span class="text-muted small">@_filterModel.Trim()</span>
+                </div>
+                <div class="test3-lane-stack">
+                    @foreach (var lane in orderedProcessLanes)
+                    {
+                        <section class="test3-process-lane"
+                                 @key="lane.ModelName"
+                                 @ondragover:preventDefault="true"
+                                 @ondrop="() => DropProcessAtSequenceEnd(lane.ModelName)">
+                            <div class="test3-lane-title">
+                                <span class="test3-side-badge @BuildModelSideClass(lane.ModelName)">@BuildModelSideLabel(lane.ModelName)</span>
+                                <strong>@lane.ModelName</strong>
+                                <span>@lane.Rows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
+                            </div>
+                            @if (lane.Rows.Count == 0)
+                            {
+                                <div class="test3-empty">오른쪽의 @BuildModelSideLabel(lane.ModelName) 공정을 여기로 끌어오세요.</div>
+                            }
+                            else
+                            {
+                                <div class="test3-sequence-list">
+                                    @foreach (var processRow in lane.Rows)
+                                    {
+                                        string processNo = GetProcessNo(processRow);
+                                        string rangeText = BuildProcessEffectiveRange(processRow.Process, lane.Rows);
+                                        <div class="test3-process-card sequence @BuildProcessDragRowClass(processRow.Process)"
+                                             @key="processRow.GroupKey"
+                                             draggable="true"
+                                             title="@BuildProcessTitle(processRow.Process)"
+                                             @ondragstart="() => StartProcessDrag(processRow.Process, true)"
+                                             @ondragend="EndProcessDrag"
+                                             @ondragover:preventDefault="true"
+                                             @ondragover="() => DragOverProcessRow(processRow.Process)"
+                                             @ondragleave="() => ClearDragOverProcessRow(processRow.Process)"
+                                             @ondrop:stopPropagation="true"
+                                             @ondrop="() => DropProcessOnSequence(processRow.Process)">
+                                            <div class="test3-seq-no">@processNo</div>
+                                            <div class="test3-card-main">
+                                                <div class="test3-card-heading">
+                                                    <span class="font-monospace">@processRow.Process.ProcessCode</span>
+                                                    <span>@processRow.Process.ProcessName</span>
+                                                </div>
+                                                <div class="test3-card-meta">@rangeText</div>
+                                            </div>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger btn-sm py-0 px-1"
+                                                    title="저장된 순서에서 제거"
+                                                    @onclick:stopPropagation="true"
+                                                    @onclick="() => RemoveProcessFromSequence(processRow)">
+                                                빼기
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </section>
+                    }
+                </div>
+            </aside>
+
+            <div class="test3-stage-pane">
+                <section class="test3-stage-section">
+                    <div class="test3-pane-title">
+                        <span class="fw-semibold small">검색된 모델의 공정</span>
+                        <span class="badge bg-secondary">@availableProcessRows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
+                        <span class="text-muted small">@_filterModel.Trim()</span>
+                    </div>
+                    <div class="test3-lane-stack"
+                         @ondragover:preventDefault="true"
+                         @ondrop="DropProcessBackToAvailable">
+                        @foreach (var lane in availableProcessLanes)
+                        {
+                            <section class="test3-process-lane" @key="lane.ModelName">
+                                <div class="test3-lane-title">
+                                    <span class="test3-side-badge @BuildModelSideClass(lane.ModelName)">@BuildModelSideLabel(lane.ModelName)</span>
+                                    <strong>@lane.ModelName</strong>
+                                    <span>@lane.Rows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
+                                </div>
+                                @if (lane.Rows.Count == 0)
+                                {
+                                    <div class="test3-empty">검색 조건에 맞는 공정이 모두 왼쪽에 등록되었습니다.</div>
+                                }
+                                else
+                                {
+                                    <div class="test3-routing-list">
+                                        @foreach (var processRow in lane.Rows)
+                                        {
+                                            <div class="test3-process-card"
+                                                 @key="processRow.GroupKey"
+                                                 draggable="true"
+                                                 title="@BuildProcessTitle(processRow.Process)"
+                                                 @ondragstart="() => StartProcessDrag(processRow.Process, false)"
+                                                 @ondragend="EndProcessDrag">
+                                                <div class="test3-card-main">
+                                                    <div class="test3-card-heading">
+                                                        <span class="font-monospace">@processRow.Process.ProcessCode</span>
+                                                        <span>@processRow.Process.ProcessName</span>
+                                                    </div>
+                                                </div>
+                                                <button type="button"
+                                                        class="btn btn-primary btn-sm py-0 px-2"
+                                                        @onclick="() => AddProcessToSequence(processRow)">
+                                                    추가
+                                                </button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </section>
+                        }
+                    </div>
+                </section>
+
+                <section class="test3-stage-section">
+                    <div class="test3-pane-title">
+                        <span class="fw-semibold small">BOM 자재 최초 투입 공정</span>
+                        @if (_bomBusy)
+                        {
+                            <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">@materialAssignments.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_bomLoadSource))
+                        {
+                            <span class="text-muted small">@_bomLoadSource</span>
+                        }
+                        <span class="text-muted small">@_filterModel.Trim()</span>
+                    </div>
+                    @if (orderedProcessRows.Count == 0)
+                    {
+                        <div class="test3-empty">먼저 왼쪽에 공정 순서를 저장한 뒤 자재별 최초 투입 공정을 지정하세요.</div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(_bomError))
+                    {
+                        <div class="text-danger small">@_bomError</div>
+                    }
+                    else if (!_bomBusy && materialAssignments.Count == 0)
+                    {
+                        <div class="test3-empty">현재 모델과 검색 조건에 해당하는 BOM 자재가 없습니다.</div>
+                    }
+                    else
+                    {
+                        <div class="test3-material-list">
+                            @foreach (var materialLane in materialLanes)
+                            {
+                                <section class="test3-process-lane" @key="materialLane.ModelName">
+                                    <div class="test3-lane-title">
+                                        <span class="test3-side-badge @BuildModelSideClass(materialLane.ModelName)">@BuildModelSideLabel(materialLane.ModelName)</span>
+                                        <strong>@materialLane.ModelName</strong>
+                                        <span>@materialLane.Assignments.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
+                                    </div>
+                                    @if (materialLane.Assignments.Count == 0)
+                                    {
+                                        <div class="test3-empty">해당 모델의 BOM 자재가 없습니다.</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="test3-material-lane-items">
+                                            @foreach (var assignment in materialLane.Assignments)
+                                            {
+                                                var assignmentProcessRows = GetMaterialProcessRows(assignment, orderedProcessRows);
+                                                <div class="test3-material-card" @key="assignment.Key" title="@BuildMaterialAssignmentTitle(assignment)">
+                                    <div class="test3-material-main">
+                                        <div class="test3-card-heading">
+                                            <span class="test3-side-badge @BuildModelSideClass(assignment.ModelName)">@BuildModelSideLabel(assignment.ModelName)</span>
+                                            <span class="font-monospace">@assignment.RawMaterialCode</span>
+                                            <span>@assignment.RawMaterialName</span>
+                                        </div>
+                                        <div class="test3-material-flow @(HasMaterialProcessSelection(assignment, orderedProcessRows) ? "configured" : "unconfigured")">
+                                            <span>최초 투입</span>
+                                            <strong>@BuildMaterialFirstProcessText(assignment, orderedProcessRows)</strong>
+                                        </div>
+                                        <div class="test3-card-meta">적용 범위 · @BuildMaterialScopeText(assignment, orderedProcessRows)</div>
+                                    </div>
+                                    <div class="test3-material-controls">
+                                        <select class="form-select form-select-sm"
+                                                value="@GetMaterialProcessValue(assignment)"
+                                                @onchange="e => SetMaterialProcessValue(assignment, e.Value?.ToString())">
+                                            <option value="">최초 투입 공정 선택</option>
+                                            @foreach (var processRow in assignmentProcessRows)
+                                            {
+                                                <option value="@processRow.GroupKey">@BuildProcessSelectLabel(processRow)</option>
+                                            }
+                                        </select>
+                                        <input class="form-control form-control-sm test3-qty-input"
+                                               value="@GetMaterialUsageQtyText(assignment)"
+                                               placeholder="사용량"
+                                               title="BOM 기준 자재 사용량"
+                                               inputmode="decimal"
+                                               @onchange="e => SetMaterialUsageQtyText(assignment, e.Value?.ToString())" />
+                                        <input class="form-control form-control-sm test3-unit-input"
+                                               value="@GetMaterialUsageUnit(assignment)"
+                                               placeholder="단위"
+                                               title="자재 사용 단위"
+                                               @onchange="e => SetMaterialUsageUnit(assignment, e.Value?.ToString())" />
+                                        <button type="button"
+                                                class="btn btn-primary btn-sm py-0 px-2"
+                                                disabled="@(!CanSaveMaterialAssignment(assignment))"
+                                                @onclick="() => SaveMaterialAssignmentAsync(assignment)">
+                                            저장
+                                        </button>
+                                        <button type="button"
+                                                class="btn btn-outline-danger btn-sm py-0 px-1"
+                                                disabled="@(!assignment.HasSavedMapping)"
+                                                @onclick="() => ClearMaterialAssignmentAsync(assignment)">
+                                            해제
+                                        </button>
+                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </section>
+                            }
+                        </div>
+                    }
+                </section>
+            </div>
+        </div>
+    }
+    else
+    {
         <div class="test3-table-scroll">
             <table class="test3-table">
                 <thead>
-                    @if (IsModelProcessMode)
-                    {
-                        <tr>
-                            <th style="width:34px;"></th>
-                            <th style="width:86px;">No</th>
-                            <th style="min-width:250px;">Model</th>
-                            <th style="min-width:110px;">Process Code</th>
-                            <th style="min-width:230px;">Process Name</th>
-                            <th style="min-width:420px;">Mapped FCOST Materials</th>
-                            <th style="min-width:90px;">Usage</th>
-                            <th style="min-width:160px;">Note</th>
-                        </tr>
-                    }
-                    else
-                    {
-                        <tr>
-                            <th style="min-width:150px;">Model</th>
-                            <th style="min-width:110px;">Process Code</th>
-                            <th style="min-width:210px;">Process Name</th>
-                            <th style="min-width:150px;">Raw Material Code</th>
-                            <th style="min-width:230px;">Raw Material Name</th>
-                            <th style="min-width:90px;">Usage</th>
-                            <th style="min-width:160px;">Note</th>
-                            <th style="width:92px;"></th>
-                        </tr>
-                    }
+                    <tr>
+                        <th style="min-width:150px;">Model</th>
+                        <th style="min-width:110px;">Process Code</th>
+                        <th style="min-width:210px;">Process Name</th>
+                        <th style="min-width:150px;">Raw Material Code</th>
+                        <th style="min-width:230px;">Raw Material Name</th>
+                        <th style="min-width:90px;">Usage</th>
+                        <th style="min-width:160px;">Note</th>
+                        <th style="width:92px;"></th>
+                    </tr>
                 </thead>
                 <tbody>
-                    @if (IsModelProcessMode)
+                    @if (FilteredRows.Count == 0)
                     {
-                        @if (modelProcessRows.Count == 0)
-                        {
-                            <tr>
-                                <td colspan="8" class="text-center text-muted py-4 small">No routing process rows for this model.</td>
-                            </tr>
-                        }
-                        else
-                        {
-                            @foreach (var processRow in modelProcessRows)
-                            {
-                                string processNo = GetProcessNo(processRow.Process);
-                                string referenceNo = GetReferenceProcessNo(processRow.Process);
-                                var referenceProcess = FindProcessByNo(processRow.Process.ModelName, referenceNo);
-                                <tr class="@BuildProcessDragRowClass(processRow.Process)"
-                                    @ondragover:preventDefault="true"
-                                    @ondragover="() => DragOverProcessRow(processRow.Process)"
-                                    @ondragleave="() => ClearDragOverProcessRow(processRow.Process)"
-                                    @ondrop="() => DropProcessRow(processRow.Process)">
-                                    <td class="test3-drag-cell">
-                                        <span class="test3-drag-handle"
-                                              draggable="true"
-                                              title="Drag to reorder"
-                                              @ondragstart="() => StartProcessDrag(processRow.Process)"
-                                              @ondragend="EndProcessDrag">::</span>
-                                    </td>
-                                    <td>
-                                        <div class="test3-process-no-cell">
-                                            <input class="test3-process-no"
-                                                   value="@processNo"
-                                                   placeholder="S2-1"
-                                                   title="Process number, for example S2-1"
-                                                   @onchange="e => SaveProcessNo(processRow.Process, e.Value?.ToString())" />
-                                            <button type="button"
-                                                    class="btn btn-outline-danger btn-sm py-0 px-1"
-                                                    disabled="@(!HasProcessRegistration(processRow.LinkedProcesses))"
-                                                    title="Delete this process No and Ref registration"
-                                                    @onclick="() => DeleteProcessRegistration(processRow.LinkedProcesses)">
-                                                Del
-                                            </button>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="test3-model-pair">
-                                            @foreach (var linkedProcess in processRow.LinkedProcesses)
-                                            {
-                                                <span class="test3-model-chip @BuildModelSideClass(linkedProcess)" title="@BuildProcessTitle(linkedProcess)">
-                                                    <small>@BuildModelSideLabel(linkedProcess)</small>
-                                                    <span>@linkedProcess.ModelName</span>
-                                                </span>
-                                            }
-                                        </div>
-                                    </td>
-                                    <td class="font-monospace">@processRow.Process.ProcessCode</td>
-                                    <td>@processRow.Process.ProcessName</td>
-                                    <td>
-                                        <div class="test3-drop-zone @(IsFocusedProcess(processRow.Process) ? "active" : "")"
-                                             role="button"
-                                             tabindex="0"
-                                             @onclick="() => FocusProcess(processRow.Process)">
-                                            @if (processRow.Mappings.Count == 0 && string.IsNullOrWhiteSpace(referenceNo))
-                                            {
-                                                <span class="test3-drop-placeholder">
-                                                    @(IsFocusedProcess(processRow.Process) ? "Focused - check candidates, then Add Selected" : "Click to focus process group")
-                                                </span>
-                                            }
-                                            else
-                                            {
-                                                @if (!string.IsNullOrWhiteSpace(referenceNo))
-                                                {
-                                                    <span class="test3-process-ref" title="@BuildReferenceTitle(referenceNo, referenceProcess)">
-                                                        <span>Ref @referenceNo</span>
-                                                        <button type="button"
-                                                                class="test3-chip-remove"
-                                                                title="Clear reference"
-                                                                @onclick:stopPropagation="true"
-                                                                @onclick="() => SaveReferenceProcessNo(processRow.Process, string.Empty)">
-                                                            x
-                                                        </button>
-                                                    </span>
-                                                }
-                                                @foreach (var mapped in processRow.Mappings)
-                                                {
-                                                    var mappingRole = GetMappingRole(processRow.Process, mapped, referenceProcess);
-                                                    <span class="test3-mapped-material @mappingRole.CssClass" title="@BuildMappingTitle(mapped, mappingRole)">
-                                                        @if (processRow.LinkedProcesses.Count > 1)
-                                                        {
-                                                            <small class="test3-map-role side">@BuildMappingSideLabel(mapped)</small>
-                                                        }
-                                                        @if (!string.IsNullOrWhiteSpace(mappingRole.Label))
-                                                        {
-                                                            <small class="test3-map-role">@mappingRole.Label</small>
-                                                        }
-                                                        <span class="font-monospace">@mapped.RawMaterialCode</span>
-                                                        <span>@mapped.RawMaterialName</span>
-                                                        <button type="button"
-                                                                class="test3-chip-remove"
-                                                                title="Delete mapping"
-                                                                @onclick:stopPropagation="true"
-                                                                @onclick="() => Delete(mapped.Id)">
-                                                            x
-                                                        </button>
-                                                    </span>
-                                                }
-                                            }
-                                            <input class="test3-ref-input"
-                                                   value="@referenceNo"
-                                                   placeholder="Ref"
-                                                   title="Reference another process number, for example S2-1"
-                                                   @onclick:stopPropagation="true"
-                                                   @onchange="e => SaveReferenceProcessNo(processRow.Process, e.Value?.ToString())" />
-                                        </div>
-                                    </td>
-                                    <td class="text-end">@FormatProcessUsage(processRow.Mappings)</td>
-                                    <td>@FormatProcessNotes(processRow.Mappings)</td>
-                                </tr>
-                            }
-                        }
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4 small">모델 검색 목록에서 정확한 모델명을 선택하면 공정 순서 설정 화면이 열립니다.</td>
+                        </tr>
                     }
                     else
                     {
-                        @if (FilteredRows.Count == 0)
+                        @foreach (var row in FilteredRows)
                         {
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4 small">No rows.</td>
+                                <td>@row.ModelName</td>
+                                <td class="font-monospace">@row.ProcessCode</td>
+                                <td>@row.ProcessName</td>
+                                <td class="font-monospace">@row.RawMaterialCode</td>
+                                <td>@row.RawMaterialName</td>
+                                <td class="text-end">@FormatUsage(row)</td>
+                                <td>@row.Note</td>
+                                <td class="test3-row-actions">
+                                    <button class="btn btn-outline-danger btn-sm py-0 px-1" @onclick="() => Delete(row.Id)">Del</button>
+                                </td>
                             </tr>
-                        }
-                        else
-                        {
-                            @foreach (var row in FilteredRows)
-                            {
-                                <tr>
-                                    <td>@row.ModelName</td>
-                                    <td class="font-monospace">@row.ProcessCode</td>
-                                    <td>@row.ProcessName</td>
-                                    <td class="font-monospace">@row.RawMaterialCode</td>
-                                    <td>@row.RawMaterialName</td>
-                                    <td class="text-end">@FormatUsage(row)</td>
-                                    <td>@row.Note</td>
-                                    <td class="test3-row-actions">
-                                        <button class="btn btn-outline-danger btn-sm py-0 px-1" @onclick="() => Delete(row.Id)">Del</button>
-                                    </td>
-                                </tr>
-                            }
                         }
                     }
                 </tbody>
             </table>
         </div>
-    </section>
-    @if (IsModelProcessMode)
-    {
-        <aside class="test3-bom-tray">
-            <div class="test3-bom-title">
-                <span class="fw-semibold small">FCOST Material Candidates</span>
-                <span class="text-muted small">@_filterModel.Trim()</span>
-                @if (_focusedProcess is not null)
-                {
-                    <span class="badge bg-primary">@_focusedProcess.ProcessName</span>
-                }
-                @if (_bomBusy)
-                {
-                    <span class="spinner-border spinner-border-sm text-primary" role="status" style="width:12px;height:12px;"></span>
-                }
-                else
-                {
-                    <span class="badge bg-secondary">@bomMaterials.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
-                }
-                @if (_selectedBomMaterialCodes.Count > 0)
-                {
-                    <span class="badge bg-success">@_selectedBomMaterialCodes.Count.ToString("N0", CultureInfo.InvariantCulture) selected</span>
-                }
-                <button type="button"
-                        class="btn btn-primary btn-sm py-0 px-2"
-                        disabled="@(_focusedProcess is null || _selectedBomMaterialCodes.Count == 0)"
-                        @onclick="AddSelectedBomMaterialsToFocusedProcessAsync">
-                    Add Selected
-                </button>
-                <button type="button"
-                        class="btn btn-outline-secondary btn-sm py-0 px-2"
-                        disabled="@(_selectedBomMaterialCodes.Count == 0)"
-                        @onclick="ClearSelectedBomMaterials">
-                    Clear
-                </button>
-            </div>
-            @if (!string.IsNullOrWhiteSpace(_bomError))
-            {
-                <div class="text-danger small">@_bomError</div>
-            }
-            else if (!_bomBusy && bomMaterials.Count == 0)
-            {
-                <div class="text-muted small">No C-S-/R-S- FCOST material candidates.</div>
-            }
-            else
-            {
-                <div class="test3-bom-list">
-                    @foreach (var material in bomMaterials)
-                    {
-                        <label class="test3-bom-card @(IsBomMaterialSelected(material) ? "selected" : "")"
-                               title="@BuildBomTitle(material)">
-                            <input type="checkbox"
-                                   checked="@IsBomMaterialSelected(material)"
-                                   @onchange="e => ToggleBomMaterialSelection(material, e.Value)" />
-                            <span class="font-monospace">@material.MaterialCode</span>
-                            <span>@material.MaterialName</span>
-                            @if (material.SourceRows > 0)
-                            {
-                                <small>@material.SourceRows.ToString("N0", CultureInfo.InvariantCulture) rows</small>
-                            }
-                        </label>
-                    }
-                </div>
-            }
-        </aside>
     }
-</div>
+</section>
+}
 
 <style>
+    .test3-react-host:empty {
+        min-height: 240px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--line-2, #c6ccd5);
+        background: var(--panel, #fff);
+        color: var(--muted, #6b7280);
+    }
+    .test3-react-host:empty::before { content: "공정 편집기를 불러오는 중입니다…"; }
     .test3-shell {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
@@ -342,6 +395,250 @@
         display: grid;
         grid-template-columns: repeat(3, minmax(110px, 180px));
         gap: 6px;
+    }
+    .test3-adaptive-shell {
+        display: grid;
+        grid-template-columns: minmax(230px, .8fr) minmax(230px, .9fr) minmax(360px, 1.35fr);
+        gap: 12px;
+        padding: 10px;
+        align-items: start;
+    }
+    .test3-sequence-pane,
+    .test3-stage-section {
+        min-width: 0;
+        border: 1px solid var(--line-2);
+        border-radius: 2px;
+        background: var(--panel);
+    }
+    .test3-sequence-pane {
+        position: sticky;
+        top: 8px;
+        max-height: calc(var(--view-h, 100vh) - 122px);
+        overflow: hidden;
+    }
+    .test3-stage-pane {
+        display: contents;
+    }
+    .test3-stage-section {
+        max-height: calc(var(--view-h, 100vh) - 122px);
+        overflow: hidden;
+    }
+    .test3-pane-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        min-height: 38px;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--line-2);
+        background: var(--panel-2);
+    }
+    .test3-empty {
+        color: var(--ink-3);
+        font-size: 12px;
+        padding: 12px;
+        line-height: 1.45;
+    }
+    .test3-lane-stack {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+        max-height: calc(var(--view-h, 100vh) - 174px);
+        overflow: auto;
+        padding: 8px;
+    }
+    .test3-process-lane {
+        min-width: 0;
+        border: 1px solid var(--line-2);
+        border-radius: 2px;
+        background: var(--panel);
+        overflow: hidden;
+    }
+    .test3-lane-title {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 6px;
+        align-items: center;
+        min-height: 30px;
+        padding: 5px 7px;
+        border-bottom: 1px solid var(--line-2);
+        background: var(--panel-2);
+        font-size: 10px;
+    }
+    .test3-lane-title strong {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .test3-side-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 20px;
+        border: 1px solid var(--line-2);
+        border-radius: 2px;
+        background: var(--panel-2);
+        color: var(--ink-2);
+        font-size: 9px;
+        font-weight: 800;
+    }
+    .test3-side-badge.left {
+        border-color: var(--signal);
+        background: var(--signal-wash);
+        color: var(--signal);
+    }
+    .test3-side-badge.right {
+        border-color: var(--ok);
+        background: var(--ok-wash);
+        color: var(--ok);
+    }
+    .test3-sequence-list,
+    .test3-routing-list,
+    .test3-material-list {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 6px;
+        padding: 8px;
+        overflow: auto;
+    }
+    .test3-sequence-list {
+        max-height: none;
+    }
+    .test3-routing-list {
+        max-height: none;
+    }
+    .test3-material-list {
+        max-height: calc(var(--view-h, 100vh) - 174px);
+        min-height: 180px;
+    }
+    .test3-material-lane-items {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 6px;
+        padding: 6px;
+    }
+    .test3-process-card,
+    .test3-material-card {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        border: 1px solid var(--line-2);
+        border-radius: 2px;
+        background: var(--panel);
+        color: var(--ink);
+        padding: 8px;
+    }
+    .test3-process-card {
+        cursor: grab;
+    }
+    .test3-process-card:active {
+        cursor: grabbing;
+    }
+    .test3-process-card.sequence {
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+    }
+    .test3-process-card.drag-over,
+    .test3-process-card.sequence.drag-over {
+        border-color: var(--signal);
+        background: var(--signal-wash);
+    }
+    .test3-process-card.drag-source {
+        opacity: .65;
+    }
+    .test3-seq-no {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border: 1px solid var(--line-2);
+        border-radius: 2px;
+        background: var(--panel-2);
+        color: var(--ink-2);
+        font-size: 11px;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+    }
+    .test3-card-main,
+    .test3-material-main {
+        min-width: 0;
+        display: grid;
+        gap: 5px;
+    }
+    .test3-card-heading {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        min-width: 0;
+        font-size: 12px;
+        font-weight: 700;
+    }
+    .test3-card-heading span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .test3-card-meta {
+        color: var(--ink-2);
+        font-size: 11px;
+        line-height: 1.35;
+    }
+    .test3-material-card {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+    }
+    .test3-material-flow {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 6px;
+        align-items: center;
+        min-width: 0;
+        border: 1px solid var(--line-2);
+        border-radius: 2px;
+        padding: 5px 7px;
+        font-size: 11px;
+    }
+    .test3-material-flow span {
+        color: var(--ink-3);
+        font-weight: 700;
+    }
+    .test3-material-flow strong {
+        min-width: 0;
+        overflow: hidden;
+        color: var(--ink);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .test3-material-flow.configured {
+        border-color: var(--ok);
+        background: var(--ok-wash);
+    }
+    .test3-material-flow.configured strong {
+        color: var(--ok);
+    }
+    .test3-material-flow.unconfigured {
+        border-color: var(--warn);
+        background: var(--warn-wash);
+    }
+    .test3-material-controls {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 82px 62px auto auto;
+        gap: 6px;
+        align-items: stretch;
+        min-width: 0;
+    }
+    .test3-material-controls select {
+        grid-column: 1 / -1;
+    }
+    .test3-qty-input {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+    .test3-unit-input {
+        text-transform: uppercase;
     }
     .test3-filter-processes {
         padding: 8px 10px;
@@ -636,31 +933,60 @@
         .test3-shell.with-bom { grid-template-columns: 1fr; }
         .test3-bom-tray { position: static; max-height: none; }
         .test3-bom-list { max-height: 260px; }
+        .test3-adaptive-shell { grid-template-columns: 1fr; }
+        .test3-sequence-pane { position: static; max-height: none; }
+        .test3-stage-section { max-height: none; }
+        .test3-sequence-list,
+        .test3-routing-list,
+        .test3-material-list { max-height: none; }
+        .test3-lane-stack { max-height: none; }
         .test3-filter { grid-template-columns: 1fr; }
         .test3-toolbar { align-items: stretch; flex-wrap: wrap; }
+    }
+    @@media (max-width: 560px) {
+        .test3-material-controls {
+            grid-template-columns: minmax(0, 1fr) minmax(64px, 80px);
+        }
+        .test3-material-controls select {
+            grid-column: 1 / -1;
+        }
     }
 </style>
 
 @code {
+    private bool ReactEditorEnabled { get; } = true;
+    private const string BomPlant = "3200";
+    private const int BomMaxDepth = 6;
+    private const int BomMaxRows = 2000;
+
     private List<ProcessMaterialMappingRow> _rows = [];
     private List<ProcessMaterialProcessRow> _processSettings = [];
     private List<string> _modelNames = [];
     private List<RoutingRow> _routingRows = [];
     private Dictionary<string, int> _routingOrderByProcess = new(StringComparer.OrdinalIgnoreCase);
     private string _filterModel = string.Empty;
+    private string _resolvedModelQuery = "\0";
+    private List<string> _selectedRoutingModelNames = [];
     private string _filterProcess = string.Empty;
     private string _filterMaterial = string.Empty;
     private List<BmesBomMaterialCandidate> _bomMaterials = [];
+    private Dictionary<string, string> _bomModelByProductCode = new(StringComparer.OrdinalIgnoreCase);
     private RoutingProcessOption? _focusedProcess;
     private HashSet<string> _selectedBomMaterialCodes = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, MaterialEditState> _materialEdits = new(StringComparer.OrdinalIgnoreCase);
     private string _draggedProcessGroupKey = string.Empty;
     private string _dragOverProcessGroupKey = string.Empty;
+    private bool _draggedProcessFromSequence;
     private string _loadedBomModel = string.Empty;
+    private string _bomLoadSource = string.Empty;
     private string _bomError = string.Empty;
     private int _bomLoadVersion;
     private bool _bomBusy;
     private string _statusMessage = string.Empty;
     private bool _statusError;
+    private ElementReference _reactEditorHost;
+    private IJSObjectReference? _reactEditorModule;
+    private DotNetObjectReference<BmesTest3Page>? _reactEditorReference;
 
     private List<ProcessMaterialMappingRow> FilteredRows =>
         _rows
@@ -673,13 +999,65 @@
             .ThenBy(r => r.RawMaterialName, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-    private bool IsModelProcessMode => !string.IsNullOrWhiteSpace(_filterModel);
+    private List<string> SelectedRoutingModelNames
+    {
+        get
+        {
+            string query = _filterModel.Trim();
+            if (!string.Equals(_resolvedModelQuery, query, StringComparison.OrdinalIgnoreCase))
+            {
+                _resolvedModelQuery = query;
+                _selectedRoutingModelNames = ResolveSelectedRoutingModelNames(query);
+            }
 
-    private List<Test3ProcessRow> ModelProcessRows =>
+            return _selectedRoutingModelNames;
+        }
+    }
+
+    private bool IsModelProcessMode => SelectedRoutingModelNames.Count > 0;
+
+    private List<string> ResolveSelectedRoutingModelNames(string value)
+    {
+        string query = value.Trim();
+        if (query.Length == 0)
+            return [];
+
+        var routingModels = _routingRows
+            .Select(r => r.ModelName.Trim())
+            .Where(model => model.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var sideVariants = routingModels
+            .Where(model => IsDirectSideVariant(query, model))
+            .OrderBy(ModelSideSortIndex)
+            .ThenBy(model => model, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (sideVariants.Count > 0)
+            return sideVariants;
+
+        return routingModels
+            .Where(model => string.Equals(model, query, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    private static bool IsDirectSideVariant(string baseModel, string candidate)
+    {
+        string prefix = baseModel.TrimEnd('-') + "-";
+        if (!candidate.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        string suffix = candidate[prefix.Length..];
+        return string.Equals(suffix, "L", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(suffix, "R", StringComparison.OrdinalIgnoreCase) ||
+               suffix.StartsWith("L-", StringComparison.OrdinalIgnoreCase) ||
+               suffix.StartsWith("R-", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private List<Test3ProcessRow> AllModelProcessRows =>
         !IsModelProcessMode
             ? []
-            : GetRoutingProcessOptions(_filterModel)
-                .Where(p => Matches(p.ProcessCode, _filterProcess) || Matches(p.ProcessName, _filterProcess))
+            : SelectedRoutingModelNames
+                .SelectMany(GetRoutingProcessOptions)
                 .GroupBy(BuildDisplayProcessGroupKey, StringComparer.OrdinalIgnoreCase)
                 .Select(g =>
                 {
@@ -692,23 +1070,74 @@
                         .ThenBy(m => m.RawMaterialName, StringComparer.OrdinalIgnoreCase)
                         .ThenBy(m => m.RawMaterialCode, StringComparer.OrdinalIgnoreCase)
                         .ToList();
-                    return new Test3ProcessRow(primary, processes, mappings);
+                    return new Test3ProcessRow(BuildProcessGroupKey(primary), primary, processes, mappings);
                 })
-                .OrderBy(r => ProcessSortGroup(r.Process))
-                .ThenBy(r => ProcessSortKey(r.Process), StringComparer.OrdinalIgnoreCase)
-                .ThenBy(r => RoutingSortIndex(r.Process))
+                .OrderBy(r => RoutingSortIndex(r.Process))
                 .ThenBy(r => NormalizeKey(r.Process.ProcessCode), StringComparer.OrdinalIgnoreCase)
                 .ThenBy(r => ProcessNameGroupSortKey(r.Process), StringComparer.OrdinalIgnoreCase)
                 .ThenBy(r => ExtractSideTokenFromModel(r.Process.ModelName), StringComparer.OrdinalIgnoreCase)
                 .ThenBy(r => r.Process.ModelName, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
+    private List<Test3ProcessRow> OrderedProcessRows =>
+        AllModelProcessRows
+            .Where(r => !string.IsNullOrWhiteSpace(GetProcessNo(r)))
+            .OrderBy(r => BuildProcessNoSortKey(GetProcessNo(r)), StringComparer.OrdinalIgnoreCase)
+            .ThenBy(r => RoutingSortIndex(r.Process))
+            .ThenBy(r => NormalizeKey(r.Process.ProcessCode), StringComparer.OrdinalIgnoreCase)
+            .ThenBy(r => ProcessNameGroupSortKey(r.Process), StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private List<Test3ProcessRow> AvailableProcessRows =>
+        AllModelProcessRows
+            .Where(r => string.IsNullOrWhiteSpace(GetProcessNo(r)))
+            .Where(r => Matches(r.Process.ProcessCode, _filterProcess) || Matches(r.Process.ProcessName, _filterProcess))
+            .OrderBy(r => RoutingSortIndex(r.Process))
+            .ThenBy(r => NormalizeKey(r.Process.ProcessCode), StringComparer.OrdinalIgnoreCase)
+            .ThenBy(r => ProcessNameGroupSortKey(r.Process), StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
     private List<BmesBomMaterialCandidate> FilteredBomMaterials =>
-        _bomMaterials
+        SelectMaterialSourceRows()
             .Where(IsSelectableMaterial)
             .Where(m => Matches(m.MaterialCode, _filterMaterial) || Matches(m.MaterialName, _filterMaterial))
-            .OrderBy(m => m.MaterialName, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(m => ModelSideSortIndex(ResolveMaterialModelName(m)))
+            .ThenBy(m => ResolveMaterialModelName(m), StringComparer.OrdinalIgnoreCase)
+            .ThenBy(m => m.MaterialName, StringComparer.OrdinalIgnoreCase)
             .ThenBy(m => m.MaterialCode, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private List<MaterialAssignment> MaterialAssignments =>
+        BuildMaterialAssignments(OrderedProcessRows);
+
+    private List<Test3ProcessLane> BuildProcessLanes(IReadOnlyList<Test3ProcessRow> rows)
+        => SelectedRoutingModelNames
+            .Select(modelName => new Test3ProcessLane(
+                modelName,
+                rows.Where(row => string.Equals(
+                        row.Process.ModelName,
+                        modelName,
+                        StringComparison.OrdinalIgnoreCase))
+                    .ToList()))
+            .ToList();
+
+    private List<Test3MaterialLane> BuildMaterialLanes(IReadOnlyList<MaterialAssignment> assignments)
+        => SelectedRoutingModelNames
+            .Select(modelName => new Test3MaterialLane(
+                modelName,
+                assignments.Where(assignment => string.Equals(
+                        assignment.ModelName,
+                        modelName,
+                        StringComparison.OrdinalIgnoreCase))
+                    .ToList()))
+            .ToList();
+
+    private List<Test3ProcessRow> GetOrderedProcessRows(string modelName)
+        => OrderedProcessRows
+            .Where(row => string.Equals(
+                row.Process.ModelName,
+                modelName,
+                StringComparison.OrdinalIgnoreCase))
             .ToList();
 
     protected override void OnInitialized()
@@ -720,6 +1149,7 @@
         _modelNames = Repo.GetModelGroups()
             .SelectMany(g => g.MidGroups.Select(m => m.Material))
             .Concat(_routingRows.Select(r => r.ModelName))
+            .Concat(_routingRows.Select(r => BuildRoutingBaseModelName(r.ModelName)))
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .Select(s => s.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -798,6 +1228,7 @@
     {
         _focusedProcess = null;
         _selectedBomMaterialCodes.Clear();
+        _materialEdits.Clear();
         await LoadBomMaterialsAsync(force: false);
     }
 
@@ -811,18 +1242,22 @@
         if (model.Length == 0)
         {
             _bomMaterials = [];
+            _bomModelByProductCode.Clear();
             _loadedBomModel = string.Empty;
+            _bomLoadSource = string.Empty;
             _bomError = string.Empty;
             _bomBusy = false;
             _bomLoadVersion++;
             return;
         }
 
-        if (model.Length < 3)
+        if (!IsModelProcessMode)
         {
             _bomMaterials = [];
+            _bomModelByProductCode.Clear();
             _loadedBomModel = string.Empty;
-            _bomError = "Type at least 3 model characters to load BOM candidates.";
+            _bomLoadSource = string.Empty;
+            _bomError = string.Empty;
             _bomBusy = false;
             _bomLoadVersion++;
             return;
@@ -831,47 +1266,67 @@
         if (!force && string.Equals(_loadedBomModel, model, StringComparison.OrdinalIgnoreCase))
             return;
 
-        var connection = BuildNetworkDbConnection();
-        if (string.IsNullOrWhiteSpace(connection.Server) || string.IsNullOrWhiteSpace(connection.UserId))
-        {
-            _bomMaterials = [];
-            _loadedBomModel = model;
-            _bomError = "Network DB connection is not configured.";
-            _bomBusy = false;
-            return;
-        }
-
         int version = ++_bomLoadVersion;
         _bomBusy = true;
         _bomError = string.Empty;
+        _bomLoadSource = string.Empty;
         StateHasChanged();
 
         try
         {
+            var connection = BuildNetworkDbConnection();
             var rows = new List<BmesBomMaterialCandidate>();
+            var modelByProductCode = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            int cacheLoads = 0;
+            int serverLoads = 0;
+            int failedLoads = 0;
+            var loadErrors = new List<string>();
+
             foreach (string modelQuery in GetBomModelQueries(model))
             {
-                rows.AddRange(await FCostActual.FetchBomMaterialsAsync(new BmesBomMaterialQuery
+                try
                 {
-                    Connection = connection,
-                    ModelName = modelQuery,
-                    Plant = "3200",
-                    MaxRows = 1000,
-                }));
+                    var load = await LoadBomRowsForModelAsync(modelQuery, force, connection);
+                    rows.AddRange(load.Rows);
+                    foreach (var material in load.Rows)
+                    {
+                        string productCode = NormalizeKey(material.ProductCode);
+                        if (productCode.Length > 0)
+                            modelByProductCode[productCode] = modelQuery;
+                    }
+                    if (string.Equals(load.Source, "cache", StringComparison.OrdinalIgnoreCase))
+                        cacheLoads++;
+                    else if (string.Equals(load.Source, "server", StringComparison.OrdinalIgnoreCase))
+                        serverLoads++;
+                }
+                catch (Exception ex)
+                {
+                    failedLoads++;
+                    loadErrors.Add($"{modelQuery}: {ex.Message}");
+                }
             }
 
             if (version != _bomLoadVersion)
                 return;
 
             _bomMaterials = rows
-                .GroupBy(m => NormalizeKey(m.MaterialCode) + "\t" + NormalizeKey(m.MaterialName), StringComparer.OrdinalIgnoreCase)
-                .Select(g => g.OrderByDescending(m => m.SourceRows).First())
+                .GroupBy(m => FirstNonBlank(m.BomPath, NormalizeKey(m.MaterialCode) + "\t" + NormalizeKey(m.MaterialName)), StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.OrderBy(m => m.BomLevel).ThenByDescending(m => m.SourceRows).First())
                 .OrderBy(m => ModelSideSortIndex(m.MaterialName))
+                .ThenBy(m => m.BomLevel)
                 .ThenBy(m => m.MaterialName, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(m => m.MaterialCode, StringComparer.OrdinalIgnoreCase)
                 .ToList();
+            _bomModelByProductCode = modelByProductCode;
             TrimSelectedBomMaterials();
+            TrimMaterialEdits();
             _loadedBomModel = model;
+            _bomLoadSource = $"BOM 캐시 {cacheLoads:N0} · 서버 {serverLoads:N0}";
+            _bomError = rows.Count == 0 && loadErrors.Count > 0
+                ? "BOM 자재를 불러오지 못했습니다: " + string.Join(" ", loadErrors.Take(2))
+                : failedLoads > 0
+                    ? $"일부 모델의 BOM을 불러오지 못했습니다({failedLoads:N0}). " + string.Join(" ", loadErrors.Take(1))
+                    : string.Empty;
         }
         catch (Exception ex)
         {
@@ -879,8 +1334,10 @@
                 return;
 
             _bomMaterials = [];
+            _bomModelByProductCode.Clear();
             _loadedBomModel = model;
-            _bomError = "FCOST material load failed: " + ex.Message;
+            _bomLoadSource = string.Empty;
+            _bomError = "BOM 자재를 불러오지 못했습니다: " + ex.Message;
         }
         finally
         {
@@ -890,6 +1347,36 @@
                 StateHasChanged();
             }
         }
+    }
+
+    private async Task<BomLoadResult> LoadBomRowsForModelAsync(
+        string model,
+        bool force,
+        BmesFcostDbConnection connection)
+    {
+        var cacheQuery = new BmesBomCacheQuery(model, BomPlant, DateTime.Today, BomMaxDepth, BomMaxRows);
+        if (!force)
+        {
+            BmesBomCacheEntry? cached = BomCache.TryLoad(cacheQuery);
+            if (cached is not null)
+                return new BomLoadResult(cached.Rows, "cache");
+        }
+
+        if (string.IsNullOrWhiteSpace(connection.Server) || string.IsNullOrWhiteSpace(connection.UserId))
+            throw new InvalidOperationException("로컬 BOM 캐시가 없고 네트워크 DB 연결도 설정되지 않았습니다.");
+
+        var rows = await FCostActual.FetchBomTreeAsync(new BmesBomMaterialQuery
+        {
+            Connection = connection,
+            ModelName = model,
+            Plant = BomPlant,
+            MaxRows = BomMaxRows,
+            MaxDepth = BomMaxDepth,
+            WorkDate = DateTime.Today,
+        });
+
+        BomCache.Save(cacheQuery, rows);
+        return new BomLoadResult(rows, "server");
     }
 
     private bool IsBomMaterialSelected(BmesBomMaterialCandidate material)
@@ -938,10 +1425,11 @@
         return string.Join(" ", classes);
     }
 
-    private void StartProcessDrag(RoutingProcessOption process)
+    private void StartProcessDrag(RoutingProcessOption process, bool fromSequence)
     {
         _draggedProcessGroupKey = BuildProcessGroupKey(process);
         _dragOverProcessGroupKey = string.Empty;
+        _draggedProcessFromSequence = fromSequence;
     }
 
     private void DragOverProcessRow(RoutingProcessOption process)
@@ -963,39 +1451,124 @@
     {
         _draggedProcessGroupKey = string.Empty;
         _dragOverProcessGroupKey = string.Empty;
+        _draggedProcessFromSequence = false;
     }
 
-    private void DropProcessRow(RoutingProcessOption targetProcess)
+    private void DropProcessOnSequence(RoutingProcessOption targetProcess)
     {
         if (string.IsNullOrWhiteSpace(_draggedProcessGroupKey))
             return;
 
+        var ordered = GetOrderedProcessRows(targetProcess.ModelName);
         string targetGroupKey = BuildProcessGroupKey(targetProcess);
-        if (string.Equals(_draggedProcessGroupKey, targetGroupKey, StringComparison.OrdinalIgnoreCase))
+        int targetIndex = ordered.FindIndex(g => string.Equals(g.GroupKey, targetGroupKey, StringComparison.OrdinalIgnoreCase));
+        if (targetIndex < 0)
         {
             EndProcessDrag();
             return;
         }
 
-        var groups = BuildProcessOrderGroups(ModelProcessRows);
-        int sourceIndex = groups.FindIndex(g => string.Equals(g.GroupKey, _draggedProcessGroupKey, StringComparison.OrdinalIgnoreCase));
-        int targetIndex = groups.FindIndex(g => string.Equals(g.GroupKey, targetGroupKey, StringComparison.OrdinalIgnoreCase));
-        if (sourceIndex < 0 || targetIndex < 0)
-        {
-            EndProcessDrag();
+        InsertDraggedProcessIntoSequence(targetIndex, targetProcess.ModelName);
+    }
+
+    private void DropProcessAtSequenceEnd(string modelName)
+    {
+        if (string.IsNullOrWhiteSpace(_draggedProcessGroupKey))
             return;
-        }
 
-        var positionLabels = BuildPositionProcessNoLabels(groups);
-        var reordered = groups.ToList();
-        var moved = reordered[sourceIndex];
-        reordered.RemoveAt(sourceIndex);
-        if (sourceIndex < targetIndex)
-            targetIndex--;
-        reordered.Insert(Math.Clamp(targetIndex, 0, reordered.Count), moved);
+        InsertDraggedProcessIntoSequence(GetOrderedProcessRows(modelName).Count, modelName);
+    }
 
-        ApplyDraggedProcessOrder(groups, reordered, positionLabels);
+    private void DropProcessBackToAvailable()
+    {
+        if (string.IsNullOrWhiteSpace(_draggedProcessGroupKey) || !_draggedProcessFromSequence)
+            return;
+
+        var row = OrderedProcessRows.FirstOrDefault(r =>
+            string.Equals(r.GroupKey, _draggedProcessGroupKey, StringComparison.OrdinalIgnoreCase));
+        if (row is not null)
+            RemoveProcessFromSequence(row);
+
         EndProcessDrag();
+    }
+
+    private void AddProcessToSequence(Test3ProcessRow processRow)
+    {
+        var ordered = GetOrderedProcessRows(processRow.Process.ModelName);
+        if (ordered.Any(row => string.Equals(row.GroupKey, processRow.GroupKey, StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        ordered.Add(processRow);
+        SaveProcessSequence(ordered, $"{processRow.Process.ProcessName} 공정을 순서 마지막에 추가했습니다.");
+    }
+
+    private void RemoveProcessFromSequence(Test3ProcessRow processRow)
+    {
+        var ordered = GetOrderedProcessRows(processRow.Process.ModelName)
+            .Where(row => !string.Equals(row.GroupKey, processRow.GroupKey, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        DeleteProcessRegistrations(GetProcessRegistrationIds(processRow.LinkedProcesses));
+        SaveProcessSequence(ordered, $"{processRow.Process.ProcessName} 공정을 순서에서 뺐습니다.");
+    }
+
+    private void InsertDraggedProcessIntoSequence(int targetIndex, string targetModelName)
+    {
+        string sourceGroupKey = _draggedProcessGroupKey;
+        var source = AllModelProcessRows.FirstOrDefault(row =>
+            string.Equals(row.GroupKey, sourceGroupKey, StringComparison.OrdinalIgnoreCase));
+        if (source is null)
+        {
+            EndProcessDrag();
+            return;
+        }
+
+        if (!string.Equals(source.Process.ModelName, targetModelName, StringComparison.OrdinalIgnoreCase))
+        {
+            SetStatus("L 공정과 R 공정은 서로 다른 순서 영역으로 이동할 수 없습니다.", true);
+            EndProcessDrag();
+            return;
+        }
+
+        var ordered = GetOrderedProcessRows(targetModelName);
+        int sourceIndex = ordered.FindIndex(row =>
+            string.Equals(row.GroupKey, sourceGroupKey, StringComparison.OrdinalIgnoreCase));
+        if (sourceIndex >= 0)
+        {
+            ordered.RemoveAt(sourceIndex);
+            if (sourceIndex < targetIndex)
+                targetIndex--;
+        }
+        else if (ordered.Any(row => string.Equals(row.GroupKey, sourceGroupKey, StringComparison.OrdinalIgnoreCase)))
+        {
+            EndProcessDrag();
+            return;
+        }
+
+        targetIndex = Math.Clamp(targetIndex, 0, ordered.Count);
+        ordered.Insert(targetIndex, source);
+        SaveProcessSequence(
+            ordered,
+            _draggedProcessFromSequence
+                ? "드래그한 순서로 공정 순서를 바로 저장했습니다."
+                : $"{source.Process.ProcessName} 공정을 드래그한 위치에 추가했습니다.");
+        EndProcessDrag();
+    }
+
+    private void SaveProcessSequence(IReadOnlyList<Test3ProcessRow> orderedRows, string statusMessage)
+    {
+        for (int i = 0; i < orderedRows.Count; i++)
+        {
+            string processNo = (i + 1).ToString(CultureInfo.InvariantCulture);
+            string referenceNo = i == 0 ? string.Empty : i.ToString(CultureInfo.InvariantCulture);
+            foreach (var target in orderedRows[i].LinkedProcesses)
+                UpsertProcessSetting(target, processNo, referenceNo);
+        }
+
+        _processSettings = MappingService.GetProcessRows();
+        TrimMaterialEdits();
+        Activity.Log("Test 3", $"Save adaptive process sequence model={_filterModel.Trim()}, rows={orderedRows.Count:N0}");
+        SetStatus(statusMessage, false);
     }
 
     private List<ProcessOrderGroup> BuildProcessOrderGroups(IReadOnlyList<Test3ProcessRow> processRows)
@@ -1109,7 +1682,7 @@
 
         if (selectedMaterials.Count == 0)
         {
-            SetStatus("Select FCOST material candidates first.", true);
+            SetStatus("Select BOM material candidates first.", true);
             return;
         }
 
@@ -1200,43 +1773,826 @@
     private static string BuildBomMaterialSelectionKey(BmesBomMaterialCandidate material)
         => NormalizeKey(material.MaterialCode);
 
-    private List<string> GetBomModelQueries(string model)
+    private List<BmesBomMaterialCandidate> SelectMaterialSourceRows()
     {
-        string query = model.Trim();
-        if (query.Length == 0)
-            return [];
+        var bomRows = _bomMaterials
+            .Where(IsSelectableMaterial);
 
-        var exactRows = _routingRows
-            .Where(r => string.Equals(r.ModelName.Trim(), query, StringComparison.OrdinalIgnoreCase))
+        var savedRows = AllModelProcessRows
+            .SelectMany(r => r.Mappings)
+            .Where(IsSelectableMapping)
+            .Select(r => new BmesBomMaterialCandidate
+            {
+                ProductCode = r.ModelName,
+                ProductName = r.ModelName,
+                MaterialCode = r.RawMaterialCode,
+                MaterialName = r.RawMaterialName,
+                UsageQty = r.UsageQty,
+                UsageUnit = r.UsageUnit,
+                Source = "saved mapping",
+            });
+
+        return bomRows
+            .Concat(savedRows)
+            .GroupBy(BuildMaterialCandidateKey, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g
+                .OrderBy(m => string.Equals(m.Source, "saved mapping", StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+                .ThenBy(m => m.BomLevel)
+                .ThenByDescending(m => m.SourceRows)
+                .First())
             .ToList();
+    }
 
-        IEnumerable<RoutingRow> candidates;
-        if (exactRows.Count > 0)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || !ReactEditorEnabled)
+            return;
+
+        try
         {
-            var familyKeys = exactRows
-                .Select(r => NormalizeSideAgnosticModelName(r.ModelName))
-                .Where(s => s.Length > 0)
+            _reactEditorReference = DotNetObjectReference.Create(this);
+            _reactEditorModule = await JS.InvokeAsync<IJSObjectReference>(
+                "import",
+                "./test3-editor/test3-editor.js?v=20260815-1");
+            await _reactEditorModule.InvokeVoidAsync(
+                "mount",
+                _reactEditorHost,
+                _reactEditorReference,
+                BuildReactEditorSnapshot());
+        }
+        catch (Exception ex)
+        {
+            Activity.Log("Test 3", "React editor mount failed: " + ex.Message);
+            SetStatus("React 공정 편집기를 불러오지 못했습니다: " + ex.Message, true);
+        }
+    }
+
+    [JSInvokable]
+    public async Task<Test3EditorSnapshot> ReactSelectModelAsync(string? model, bool force)
+    {
+        _filterModel = model?.Trim() ?? string.Empty;
+        _filterProcess = string.Empty;
+        _filterMaterial = string.Empty;
+        _focusedProcess = null;
+        _selectedBomMaterialCodes.Clear();
+        _materialEdits.Clear();
+        _statusMessage = string.Empty;
+        await LoadBomMaterialsAsync(force);
+        return BuildReactEditorSnapshot();
+    }
+
+    [JSInvokable]
+    public async Task<Test3EditorSnapshot> ReactReloadBomAsync()
+    {
+        await LoadBomMaterialsAsync(force: true);
+        return BuildReactEditorSnapshot();
+    }
+
+    [JSInvokable]
+    public Task<Test3EditorSnapshot> ReactSaveLayoutAsync(Test3EditorLayoutRequest request)
+    {
+        try
+        {
+            SaveReactLayout(request);
+            SetStatus("MAIN/SUB 공정 순서와 합류 위치를 저장했습니다.", false);
+        }
+        catch (Exception ex)
+        {
+            SetStatus(ex.Message, true);
+        }
+
+        return Task.FromResult(BuildReactEditorSnapshot());
+    }
+
+    [JSInvokable]
+    public async Task<Test3EditorSnapshot> ReactSaveMaterialAsync(Test3EditorMaterialRequest request)
+    {
+        var assignment = BuildMaterialAssignments(GetReactOrderedRows())
+            .FirstOrDefault(item => string.Equals(item.Key, request.MaterialId, StringComparison.OrdinalIgnoreCase));
+        if (assignment is null)
+        {
+            SetStatus("선택한 BOM 자재를 찾지 못했습니다.", true);
+            return BuildReactEditorSnapshot();
+        }
+
+        var edit = GetOrCreateMaterialEdit(assignment);
+        edit.ProcessGroupKey = request.ProcessId?.Trim() ?? string.Empty;
+        edit.UsageQtyText = request.UsageQty.ToString("0.######", CultureInfo.InvariantCulture);
+        edit.UsageUnit = request.UsageUnit?.Trim() ?? string.Empty;
+        await SaveMaterialAssignmentAsync(assignment);
+        return BuildReactEditorSnapshot();
+    }
+
+    [JSInvokable]
+    public async Task<Test3EditorSnapshot> ReactClearMaterialAsync(string materialId)
+    {
+        var assignment = BuildMaterialAssignments(GetReactOrderedRows())
+            .FirstOrDefault(item => string.Equals(item.Key, materialId, StringComparison.OrdinalIgnoreCase));
+        if (assignment is null)
+        {
+            SetStatus("선택한 BOM 자재를 찾지 못했습니다.", true);
+            return BuildReactEditorSnapshot();
+        }
+
+        await ClearMaterialAssignmentAsync(assignment);
+        return BuildReactEditorSnapshot();
+    }
+
+    [JSInvokable]
+    public Task<Test3EditorSnapshot> ReactResetLayoutAsync()
+    {
+        ResetVisibleProcessRegistrations(GetReactOrderedRows());
+        return Task.FromResult(BuildReactEditorSnapshot());
+    }
+
+    private Test3EditorSnapshot BuildReactEditorSnapshot()
+    {
+        var allRows = AllModelProcessRows;
+        var orderedRows = GetReactOrderedRows();
+        var sides = new List<Test3EditorSide>();
+
+        foreach (string modelName in SelectedRoutingModelNames)
+        {
+            var modelRows = allRows
+                .Where(row => string.Equals(row.Process.ModelName, modelName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            var assignedRows = modelRows
+                .Select(row => new { Row = row, Setting = GetExactProcessSetting(row.Process) })
+                .Where(item => !string.IsNullOrWhiteSpace(item.Setting?.ProcessNo))
+                .ToList();
+            var laneCodes = assignedRows
+                .Select(item => ResolveLaneCode(item.Setting))
+                .Append("MAIN")
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(LaneSortIndex)
+                .ThenBy(value => value, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            var lanes = new List<Test3EditorLane>();
+
+            foreach (string laneCode in laneCodes)
+            {
+                var laneItems = assignedRows
+                    .Where(item => string.Equals(ResolveLaneCode(item.Setting), laneCode, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(item => ResolveLaneOrder(item.Setting))
+                    .ThenBy(item => RoutingSortIndex(item.Row.Process))
+                    .ToList();
+                string mergeProcessNo = laneItems.LastOrDefault()?.Setting?.MergeProcessNo.Trim() ?? string.Empty;
+                var mergeTarget = assignedRows.FirstOrDefault(item =>
+                    string.Equals(ResolveLaneCode(item.Setting), "MAIN", StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(NormalizeProcessNo(item.Setting?.ProcessNo), NormalizeProcessNo(mergeProcessNo), StringComparison.OrdinalIgnoreCase));
+                lanes.Add(new Test3EditorLane
+                {
+                    LaneCode = laneCode,
+                    MergeTargetProcessId = mergeTarget?.Row.GroupKey ?? string.Empty,
+                    MergeTargetLabel = mergeTarget is null ? string.Empty : BuildReactProcessLabel(mergeTarget.Row, mergeTarget.Setting),
+                    Processes = laneItems
+                        .Select(item => BuildReactProcess(item.Row, item.Setting))
+                        .ToList(),
+                });
+            }
+
+            var assignedIds = assignedRows
+                .Select(item => item.Row.GroupKey)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            candidates = _routingRows.Where(r => familyKeys.Contains(NormalizeSideAgnosticModelName(r.ModelName)));
-        }
-        else
-        {
-            candidates = _routingRows.Where(r => r.ModelName.Contains(query, StringComparison.OrdinalIgnoreCase));
+            sides.Add(new Test3EditorSide
+            {
+                ModelName = modelName,
+                SideLabel = BuildModelSideLabel(modelName),
+                Lanes = lanes,
+                AvailableProcesses = modelRows
+                    .Where(row => !assignedIds.Contains(row.GroupKey))
+                    .OrderBy(row => RoutingSortIndex(row.Process))
+                    .ThenBy(row => row.Process.ProcessName, StringComparer.OrdinalIgnoreCase)
+                    .Select(row => BuildReactProcess(row, null))
+                    .ToList(),
+            });
         }
 
-        var result = candidates
-            .Select(r => r.ModelName.Trim())
-            .Where(s => s.Length > 0)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(ModelSideSortIndex)
-            .ThenBy(s => s, StringComparer.OrdinalIgnoreCase)
-            .Take(6)
+        var rowById = orderedRows.ToDictionary(row => row.GroupKey, StringComparer.OrdinalIgnoreCase);
+        var materials = BuildMaterialAssignments(orderedRows)
+            .Select(assignment =>
+            {
+                rowById.TryGetValue(assignment.SavedProcessGroupKey, out var assignedRow);
+                var setting = assignedRow is null ? null : GetExactProcessSetting(assignedRow.Process);
+                string laneCode = ResolveLaneCode(setting);
+                string laneMergeProcessNo = string.Equals(laneCode, "MAIN", StringComparison.OrdinalIgnoreCase)
+                    ? string.Empty
+                    : orderedRows
+                        .Where(row => string.Equals(row.Process.ModelName, assignment.ModelName, StringComparison.OrdinalIgnoreCase))
+                        .Select(row => GetExactProcessSetting(row.Process))
+                        .Where(candidate => string.Equals(ResolveLaneCode(candidate), laneCode, StringComparison.OrdinalIgnoreCase))
+                        .OrderByDescending(ResolveLaneOrder)
+                        .Select(candidate => candidate?.MergeProcessNo.Trim() ?? string.Empty)
+                        .FirstOrDefault() ?? string.Empty;
+                return new Test3EditorMaterial
+                {
+                    Id = assignment.Key,
+                    ModelName = assignment.ModelName,
+                    SideLabel = BuildModelSideLabel(assignment.ModelName),
+                    MaterialCode = assignment.RawMaterialCode,
+                    MaterialName = assignment.RawMaterialName,
+                    UsageQty = assignment.UsageQty,
+                    UsageUnit = assignment.UsageUnit,
+                    AssignedProcessId = assignedRow?.GroupKey ?? string.Empty,
+                    AssignedProcessLabel = assignedRow is null ? string.Empty : BuildReactProcessLabel(assignedRow, setting),
+                    ScopeLabel = assignedRow is null ? "미설정" : BuildReactMaterialScope(laneCode, setting, laneMergeProcessNo),
+                };
+            })
+            .OrderBy(item => ModelSideSortIndex(item.ModelName))
+            .ThenBy(item => item.MaterialName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(item => item.MaterialCode, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        if (!result.Any(s => string.Equals(s, query, StringComparison.OrdinalIgnoreCase)))
-            result.Insert(0, query);
+        return new Test3EditorSnapshot
+        {
+            ModelNames = _modelNames,
+            SelectedModel = _filterModel.Trim(),
+            Sides = sides,
+            Materials = materials,
+            BomBusy = _bomBusy,
+            BomSource = _bomLoadSource,
+            BomError = _bomError,
+            StatusMessage = _statusMessage,
+            StatusError = _statusError,
+        };
+    }
+
+    private void SaveReactLayout(Test3EditorLayoutRequest request)
+    {
+        var selectedModels = SelectedRoutingModelNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (selectedModels.Count == 0)
+            throw new InvalidOperationException("먼저 모델을 선택하세요.");
+
+        var allRows = AllModelProcessRows;
+        var rowsById = allRows.ToDictionary(row => row.GroupKey, StringComparer.OrdinalIgnoreCase);
+        var requested = new List<(Test3EditorLaneRequest Lane, string LaneCode, Test3ProcessRow Row, int Index)>();
+        var usedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var lane in request?.Lanes ?? [])
+        {
+            string modelName = lane.ModelName?.Trim() ?? string.Empty;
+            if (!selectedModels.Contains(modelName))
+                throw new InvalidOperationException("선택한 L/R 모델과 다른 공정 라인이 포함되어 있습니다.");
+
+            string laneCode = NormalizeLaneCode(lane.LaneCode);
+            for (int index = 0; index < lane.ProcessIds.Count; index++)
+            {
+                string processId = lane.ProcessIds[index]?.Trim() ?? string.Empty;
+                if (!rowsById.TryGetValue(processId, out var row) ||
+                    !string.Equals(row.Process.ModelName, modelName, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("공정 목록이 변경되었습니다. 모델을 다시 불러온 뒤 재시도하세요.");
+                }
+
+                if (!usedIds.Add(processId))
+                    throw new InvalidOperationException("같은 공정은 하나의 MAIN/SUB 라인에만 배치할 수 있습니다.");
+                requested.Add((lane, laneCode, row, index));
+            }
+        }
+
+        var processNoById = requested.ToDictionary(
+            item => item.Row.GroupKey,
+            item => BuildLaneProcessNo(item.LaneCode, item.Index + 1),
+            StringComparer.OrdinalIgnoreCase);
+        var requestedById = requested.ToDictionary(item => item.Row.GroupKey, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var setting in _processSettings
+                     .Where(setting => selectedModels.Contains(setting.ModelName.Trim()))
+                     .ToList())
+        {
+            var row = allRows.FirstOrDefault(candidate =>
+                candidate.LinkedProcesses.Any(process => ProcessSettingMatches(setting, process)));
+            if (row is null || !usedIds.Contains(row.GroupKey))
+                MappingService.DeleteProcess(setting.Id);
+        }
+
+        foreach (var item in requested)
+        {
+            string processNo = processNoById[item.Row.GroupKey];
+            string referenceNo = item.Index == 0
+                ? string.Empty
+                : BuildLaneProcessNo(item.LaneCode, item.Index);
+            string mergeProcessNo = string.Empty;
+
+            if (!string.Equals(item.LaneCode, "MAIN", StringComparison.OrdinalIgnoreCase) &&
+                item.Index == item.Lane.ProcessIds.Count - 1 &&
+                !string.IsNullOrWhiteSpace(item.Lane.MergeTargetProcessId))
+            {
+                string targetId = item.Lane.MergeTargetProcessId.Trim();
+                if (!requestedById.TryGetValue(targetId, out var target) ||
+                    !string.Equals(target.Row.Process.ModelName, item.Row.Process.ModelName, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(target.LaneCode, "MAIN", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException($"{item.LaneCode}의 합류 지점은 같은 L/R의 MAIN 공정이어야 합니다.");
+                }
+
+                mergeProcessNo = processNoById[targetId];
+            }
+
+            foreach (var process in item.Row.LinkedProcesses)
+                UpsertProcessSetting(process, processNo, referenceNo, item.LaneCode, mergeProcessNo);
+        }
+
+        _processSettings = MappingService.GetProcessRows();
+        TrimMaterialEdits();
+        Activity.Log("Test 3", $"Save React MAIN/SUB layout model={_filterModel.Trim()}, rows={requested.Count:N0}");
+    }
+
+    private List<Test3ProcessRow> GetReactOrderedRows()
+        => AllModelProcessRows
+            .Where(row => !string.IsNullOrWhiteSpace(GetExactProcessSetting(row.Process)?.ProcessNo))
+            .OrderBy(row => ModelSideSortIndex(row.Process.ModelName))
+            .ThenBy(row => LaneSortIndex(ResolveLaneCode(GetExactProcessSetting(row.Process))))
+            .ThenBy(row => ResolveLaneOrder(GetExactProcessSetting(row.Process)))
+            .ThenBy(row => RoutingSortIndex(row.Process))
+            .ToList();
+
+    private ProcessMaterialProcessRow? GetExactProcessSetting(RoutingProcessOption process)
+        => _processSettings.FirstOrDefault(setting => ProcessSettingMatches(setting, process));
+
+    private Test3EditorProcess BuildReactProcess(Test3ProcessRow row, ProcessMaterialProcessRow? setting)
+        => new()
+        {
+            Id = row.GroupKey,
+            ModelName = row.Process.ModelName,
+            ProcessCode = row.Process.ProcessCode,
+            ProcessName = row.Process.ProcessName,
+            ProcessType = row.Process.ProcessType,
+            LaneCode = string.IsNullOrWhiteSpace(setting?.ProcessNo) ? string.Empty : ResolveLaneCode(setting),
+            ProcessNo = setting?.ProcessNo.Trim() ?? string.Empty,
+            Order = string.IsNullOrWhiteSpace(setting?.ProcessNo) ? 0 : ResolveLaneOrder(setting),
+        };
+
+    private static string BuildReactProcessLabel(Test3ProcessRow row, ProcessMaterialProcessRow? setting)
+    {
+        string position = setting is null
+            ? string.Empty
+            : $"{ResolveLaneCode(setting)} #{ResolveLaneOrder(setting)} · ";
+        return position + FirstNonBlank(row.Process.ProcessName, row.Process.ProcessCode);
+    }
+
+    private static string BuildReactMaterialScope(
+        string laneCode,
+        ProcessMaterialProcessRow? setting,
+        string laneMergeProcessNo)
+    {
+        int order = ResolveLaneOrder(setting);
+        if (string.Equals(laneCode, "MAIN", StringComparison.OrdinalIgnoreCase))
+            return $"MAIN #{order} → MAIN 마지막";
+
+        return string.IsNullOrWhiteSpace(laneMergeProcessNo)
+            ? $"{laneCode} #{order} → {laneCode} 마지막"
+            : $"{laneCode} #{order} → {laneCode} 마지막 → {laneMergeProcessNo} → MAIN 마지막";
+    }
+
+    private static string ResolveLaneCode(ProcessMaterialProcessRow? setting)
+    {
+        if (!string.IsNullOrWhiteSpace(setting?.LaneCode))
+            return NormalizeLaneCode(setting.LaneCode);
+
+        string processNo = NormalizeProcessNo(setting?.ProcessNo);
+        int separator = processNo.IndexOf('-');
+        return separator > 0 ? NormalizeLaneCode(processNo[..separator]) : "MAIN";
+    }
+
+    private static int ResolveLaneOrder(ProcessMaterialProcessRow? setting)
+    {
+        string processNo = NormalizeProcessNo(setting?.ProcessNo);
+        int separator = processNo.LastIndexOf('-');
+        string number = separator >= 0 ? processNo[(separator + 1)..] : processNo;
+        return int.TryParse(number, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value)
+            ? value
+            : int.MaxValue;
+    }
+
+    private static string NormalizeLaneCode(string? value)
+    {
+        string laneCode = NormalizeKey(value ?? string.Empty);
+        if (string.Equals(laneCode, "MAIN", StringComparison.OrdinalIgnoreCase))
+            return "MAIN";
+        if (laneCode.StartsWith("SUB", StringComparison.OrdinalIgnoreCase) &&
+            int.TryParse(laneCode[3..], NumberStyles.Integer, CultureInfo.InvariantCulture, out int number) &&
+            number is >= 1 and <= 99)
+        {
+            return $"SUB{number}";
+        }
+
+        throw new InvalidOperationException("공정 라인은 MAIN 또는 SUB1~SUB99 형식이어야 합니다.");
+    }
+
+    private static int LaneSortIndex(string laneCode)
+    {
+        if (string.Equals(laneCode, "MAIN", StringComparison.OrdinalIgnoreCase))
+            return 0;
+        return int.TryParse(laneCode.AsSpan(Math.Min(3, laneCode.Length)), out int number)
+            ? number
+            : int.MaxValue;
+    }
+
+    private static string BuildLaneProcessNo(string laneCode, int order)
+        => $"{NormalizeLaneCode(laneCode)}-{order.ToString(CultureInfo.InvariantCulture)}";
+
+    private static string BuildRoutingBaseModelName(string? modelName)
+    {
+        string[] parts = (modelName ?? string.Empty)
+            .Trim()
+            .Split('-', StringSplitOptions.None);
+        for (int index = parts.Length - 1; index > 0; index--)
+        {
+            if (string.Equals(parts[index], "L", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(parts[index], "R", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Join('-', parts.Take(index));
+            }
+        }
+
+        return string.Empty;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_reactEditorModule is not null)
+        {
+            try
+            {
+                await _reactEditorModule.InvokeVoidAsync("unmount", _reactEditorHost);
+                await _reactEditorModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+
+        _reactEditorReference?.Dispose();
+    }
+
+    private List<MaterialAssignment> BuildMaterialAssignments(IReadOnlyList<Test3ProcessRow> orderedRows)
+    {
+        var processRows = AllModelProcessRows;
+        var result = new List<MaterialAssignment>();
+        foreach (var material in FilteredBomMaterials)
+        {
+            string key = BuildMaterialCandidateKey(material);
+            string modelName = ResolveMaterialModelName(material);
+            var materialProcessRows = processRows
+                .Where(row => string.Equals(
+                    row.Process.ModelName,
+                    modelName,
+                    StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            var savedMappings = _rows
+                .Where(r => IsExactMaterial(
+                    r.RawMaterialCode,
+                    r.RawMaterialName,
+                    material.MaterialCode,
+                    material.MaterialName))
+                .Where(r => materialProcessRows.Any(row => row.LinkedProcesses.Any(process =>
+                    string.Equals(r.ModelName.Trim(), process.ModelName, StringComparison.OrdinalIgnoreCase) &&
+                    ProcessMatches(r, process))))
+                .OrderBy(r => r.ModelName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(r => r.ProcessName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var savedProcessRow = orderedRows
+                .Where(row => string.Equals(
+                    row.Process.ModelName,
+                    modelName,
+                    StringComparison.OrdinalIgnoreCase))
+                .FirstOrDefault(row =>
+                savedMappings.Any(mapping => row.LinkedProcesses.Any(process =>
+                    string.Equals(mapping.ModelName.Trim(), process.ModelName, StringComparison.OrdinalIgnoreCase) &&
+                    ProcessMatches(mapping, process))));
+
+            var firstSaved = savedMappings.FirstOrDefault();
+            decimal usageQty = firstSaved?.UsageQty is > 0
+                ? firstSaved.UsageQty
+                : material.UsageQty is > 0
+                    ? material.UsageQty.Value
+                    : 1m;
+            string usageUnit = FirstNonBlank(firstSaved?.UsageUnit ?? string.Empty, material.UsageUnit, "PC");
+
+            result.Add(new MaterialAssignment(
+                key,
+                modelName,
+                material,
+                savedMappings,
+                savedProcessRow?.GroupKey ?? string.Empty,
+                usageQty,
+                usageUnit));
+        }
 
         return result;
+    }
+
+    private string BuildMaterialCandidateKey(BmesBomMaterialCandidate material)
+    {
+        string modelName = NormalizeKey(ResolveMaterialModelName(material));
+        string code = NormalizeKey(material.MaterialCode);
+        string materialKey = code.Length > 0 ? code : "NAME\t" + NormalizeKey(material.MaterialName);
+        return modelName + "\t" + materialKey;
+    }
+
+    private string ResolveMaterialModelName(BmesBomMaterialCandidate material)
+    {
+        var selectedModels = SelectedRoutingModelNames;
+        string productCode = material.ProductCode.Trim();
+        string exactModel = selectedModels.FirstOrDefault(model =>
+            string.Equals(model, productCode, StringComparison.OrdinalIgnoreCase)) ?? string.Empty;
+        if (exactModel.Length > 0)
+            return exactModel;
+
+        if (_bomModelByProductCode.TryGetValue(NormalizeKey(productCode), out string? mappedModel))
+            return mappedModel;
+
+        string materialSide = ExtractSideTokenFromMaterial(material.MaterialCode, material.MaterialName);
+        string sideModel = selectedModels.FirstOrDefault(model =>
+            string.Equals(ExtractSideTokenFromModel(model), materialSide, StringComparison.OrdinalIgnoreCase)) ?? string.Empty;
+        if (sideModel.Length > 0)
+            return sideModel;
+
+        return selectedModels.Count == 1 ? selectedModels[0] : string.Empty;
+    }
+
+    private List<Test3ProcessRow> GetMaterialProcessRows(
+        MaterialAssignment assignment,
+        IReadOnlyList<Test3ProcessRow> orderedRows)
+        => orderedRows
+            .Where(row => string.Equals(
+                row.Process.ModelName,
+                assignment.ModelName,
+                StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+    private string GetMaterialProcessValue(MaterialAssignment assignment)
+        => _materialEdits.TryGetValue(assignment.Key, out var edit)
+            ? edit.ProcessGroupKey
+            : assignment.SavedProcessGroupKey;
+
+    private void SetMaterialProcessValue(MaterialAssignment assignment, string? value)
+        => GetOrCreateMaterialEdit(assignment).ProcessGroupKey = value?.Trim() ?? string.Empty;
+
+    private string GetMaterialUsageQtyText(MaterialAssignment assignment)
+        => _materialEdits.TryGetValue(assignment.Key, out var edit)
+            ? edit.UsageQtyText
+            : assignment.UsageQty.ToString("0.######", CultureInfo.InvariantCulture);
+
+    private void SetMaterialUsageQtyText(MaterialAssignment assignment, string? value)
+        => GetOrCreateMaterialEdit(assignment).UsageQtyText = value?.Trim() ?? string.Empty;
+
+    private string GetMaterialUsageUnit(MaterialAssignment assignment)
+        => _materialEdits.TryGetValue(assignment.Key, out var edit)
+            ? edit.UsageUnit
+            : assignment.UsageUnit;
+
+    private void SetMaterialUsageUnit(MaterialAssignment assignment, string? value)
+        => GetOrCreateMaterialEdit(assignment).UsageUnit = value?.Trim() ?? string.Empty;
+
+    private MaterialEditState GetOrCreateMaterialEdit(MaterialAssignment assignment)
+    {
+        if (_materialEdits.TryGetValue(assignment.Key, out var edit))
+            return edit;
+
+        edit = new MaterialEditState
+        {
+            ProcessGroupKey = assignment.SavedProcessGroupKey,
+            UsageQtyText = assignment.UsageQty.ToString("0.######", CultureInfo.InvariantCulture),
+            UsageUnit = assignment.UsageUnit,
+        };
+        _materialEdits[assignment.Key] = edit;
+        return edit;
+    }
+
+    private bool CanSaveMaterialAssignment(MaterialAssignment assignment)
+    {
+        string processGroupKey = GetMaterialProcessValue(assignment);
+        return GetMaterialProcessRows(assignment, OrderedProcessRows)
+                   .Any(r => string.Equals(r.GroupKey, processGroupKey, StringComparison.OrdinalIgnoreCase)) &&
+               TryParseUsageQty(GetMaterialUsageQtyText(assignment), out decimal usageQty) &&
+               usageQty > 0 &&
+               !string.IsNullOrWhiteSpace(GetMaterialUsageUnit(assignment));
+    }
+
+    private Task SaveMaterialAssignmentAsync(MaterialAssignment assignment)
+    {
+        string processGroupKey = GetMaterialProcessValue(assignment);
+        var processRow = GetMaterialProcessRows(assignment, OrderedProcessRows).FirstOrDefault(r =>
+            string.Equals(r.GroupKey, processGroupKey, StringComparison.OrdinalIgnoreCase));
+        if (processRow is null)
+        {
+            SetStatus("최초 투입 공정을 선택하세요.", true);
+            return Task.CompletedTask;
+        }
+
+        if (!TryParseUsageQty(GetMaterialUsageQtyText(assignment), out decimal usageQty) || usageQty <= 0)
+        {
+            SetStatus("자재 사용량은 0보다 큰 숫자로 입력하세요.", true);
+            return Task.CompletedTask;
+        }
+
+        string usageUnit = GetMaterialUsageUnit(assignment).Trim();
+        if (usageUnit.Length == 0)
+        {
+            SetStatus("자재 단위를 입력하세요.", true);
+            return Task.CompletedTask;
+        }
+
+        try
+        {
+            var targetMappings = processRow.LinkedProcesses
+                .Select(targetProcess => new
+                {
+                    Process = targetProcess,
+                    Material = ResolveMaterialForTargetProcess(assignment.Material, targetProcess),
+                })
+                .Where(target => target.Material is not null)
+                .GroupBy(target => BuildLocalMappingKey(target.Process, target.Material!), StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .ToList();
+            if (targetMappings.Count == 0)
+            {
+                SetStatus("선택한 공정에 연결할 BOM 자재를 찾지 못했습니다.", true);
+                return Task.CompletedTask;
+            }
+
+            DeleteMaterialMappingsForCurrentModel(assignment);
+
+            int saved = 0;
+            foreach (var target in targetMappings)
+            {
+                var edit = BuildMappingEdit(target.Process, target.Material!, assignment.Material);
+                edit.UsageQty = usageQty;
+                edit.UsageUnit = usageUnit;
+                edit.Note = $"First input #{GetProcessNo(processRow)}; applies through final process";
+                MappingService.Upsert(edit);
+                saved++;
+            }
+
+            _rows = MappingService.GetAll();
+            _materialEdits.Remove(assignment.Key);
+            Activity.Log(
+                "Test 3",
+                $"Save first-input material={assignment.RawMaterialCode}, process={processRow.Process.ProcessName}, linkedRows={saved:N0}");
+            SetStatus(
+                saved > 0
+                    ? $"{assignment.RawMaterialName}의 최초 투입 공정을 저장했습니다. 이후 마지막 공정까지 자동 적용됩니다."
+                    : "저장할 연결 공정을 찾지 못했습니다.",
+                saved == 0);
+        }
+        catch (Exception ex)
+        {
+            SetStatus(ex.Message, true);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task ClearMaterialAssignmentAsync(MaterialAssignment assignment)
+    {
+        try
+        {
+            int removed = DeleteMaterialMappingsForCurrentModel(assignment);
+            _rows = MappingService.GetAll();
+            _materialEdits.Remove(assignment.Key);
+            Activity.Log("Test 3", $"Clear first-input material={assignment.RawMaterialCode}, rows={removed:N0}");
+            SetStatus($"{assignment.RawMaterialName}의 최초 투입 설정을 해제했습니다.", false);
+        }
+        catch (Exception ex)
+        {
+            SetStatus(ex.Message, true);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private int DeleteMaterialMappingsForCurrentModel(MaterialAssignment assignment)
+    {
+        var material = assignment.Material;
+        var processRows = AllModelProcessRows
+            .Where(row => string.Equals(
+                row.Process.ModelName,
+                assignment.ModelName,
+                StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        string sideAgnosticMaterialKey = NormalizeSideAgnosticMaterialKey(
+            material.MaterialCode,
+            material.MaterialName);
+        var ids = _rows
+            .Where(r =>
+                IsExactMaterial(
+                    r.RawMaterialCode,
+                    r.RawMaterialName,
+                    material.MaterialCode,
+                    material.MaterialName) ||
+                (sideAgnosticMaterialKey.Length > 0 &&
+                 string.Equals(
+                     NormalizeSideAgnosticMaterialKey(r.RawMaterialCode, r.RawMaterialName),
+                     sideAgnosticMaterialKey,
+                     StringComparison.OrdinalIgnoreCase)))
+            .Where(r => processRows.Any(row => row.LinkedProcesses.Any(process =>
+                string.Equals(r.ModelName.Trim(), process.ModelName, StringComparison.OrdinalIgnoreCase) &&
+                ProcessMatches(r, process))))
+            .Select(r => r.Id)
+            .Distinct()
+            .ToList();
+
+        int removed = 0;
+        foreach (long id in ids)
+        {
+            if (MappingService.Delete(id))
+                removed++;
+        }
+
+        return removed;
+    }
+
+    private void TrimMaterialEdits()
+    {
+        var validMaterialKeys = SelectMaterialSourceRows()
+            .Select(BuildMaterialCandidateKey)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var validProcessKeys = OrderedProcessRows
+            .Select(r => r.GroupKey)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (string key in _materialEdits.Keys.Where(key => !validMaterialKeys.Contains(key)).ToList())
+            _materialEdits.Remove(key);
+
+        foreach (var edit in _materialEdits.Values)
+        {
+            if (edit.ProcessGroupKey.Length > 0 && !validProcessKeys.Contains(edit.ProcessGroupKey))
+                edit.ProcessGroupKey = string.Empty;
+        }
+    }
+
+    private static bool TryParseUsageQty(string text, out decimal value)
+        => decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out value) ||
+           decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, out value);
+
+    private string BuildMaterialScopeText(MaterialAssignment assignment, IReadOnlyList<Test3ProcessRow> orderedRows)
+    {
+        var materialProcessRows = GetMaterialProcessRows(assignment, orderedRows);
+        string processGroupKey = GetMaterialProcessValue(assignment);
+        int startIndex = materialProcessRows.FindIndex(r =>
+            string.Equals(r.GroupKey, processGroupKey, StringComparison.OrdinalIgnoreCase));
+        if (startIndex < 0)
+            return "최초 투입 공정 미설정";
+
+        var first = materialProcessRows[startIndex];
+        var last = materialProcessRows[^1];
+        return $"#{GetProcessNo(first)} {first.Process.ProcessName} → #{GetProcessNo(last)} {last.Process.ProcessName} · {materialProcessRows.Count - startIndex:N0}개 공정 적용";
+    }
+
+    private bool HasMaterialProcessSelection(
+        MaterialAssignment assignment,
+        IReadOnlyList<Test3ProcessRow> orderedRows)
+        => FindMaterialFirstProcess(assignment, orderedRows) is not null;
+
+    private string BuildMaterialFirstProcessText(
+        MaterialAssignment assignment,
+        IReadOnlyList<Test3ProcessRow> orderedRows)
+    {
+        var processRow = FindMaterialFirstProcess(assignment, orderedRows);
+        return processRow is null
+            ? "미설정"
+            : $"#{GetProcessNo(processRow)} {processRow.Process.ProcessCode} · {processRow.Process.ProcessName}";
+    }
+
+    private Test3ProcessRow? FindMaterialFirstProcess(
+        MaterialAssignment assignment,
+        IReadOnlyList<Test3ProcessRow> orderedRows)
+    {
+        string processGroupKey = GetMaterialProcessValue(assignment);
+        return GetMaterialProcessRows(assignment, orderedRows).FirstOrDefault(row =>
+            string.Equals(row.GroupKey, processGroupKey, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string BuildMaterialAssignmentTitle(MaterialAssignment assignment)
+        => $"{assignment.RawMaterialCode} / {assignment.RawMaterialName} / BOM {assignment.UsageQty:0.######} {assignment.UsageUnit}";
+
+    private string BuildProcessEffectiveRange(RoutingProcessOption process, IReadOnlyList<Test3ProcessRow> orderedRows)
+    {
+        int index = orderedRows.ToList().FindIndex(r => r.LinkedProcesses.Any(p => IsSameProcess(p, process)));
+        return index <= 0
+            ? "이 공정부터 등록 자재를 누적 적용"
+            : $"앞의 {index:N0}개 공정 자재를 승계";
+    }
+
+    private string BuildProcessSelectLabel(Test3ProcessRow processRow)
+        => $"#{GetProcessNo(processRow)} {processRow.Process.ProcessCode} · {processRow.Process.ProcessName}";
+
+    private string GetProcessNo(Test3ProcessRow processRow)
+        => processRow.LinkedProcesses
+            .Select(GetProcessNo)
+            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
+
+    private List<string> GetBomModelQueries(string model)
+    {
+        var selectedModels = ResolveSelectedRoutingModelNames(model);
+        return selectedModels.Count > 0
+            ? selectedModels
+            : string.IsNullOrWhiteSpace(model)
+                ? []
+                : [model.Trim()];
     }
 
     private List<RoutingProcessOption> GetSimultaneousMappingProcesses(RoutingProcessOption process)
@@ -1472,8 +2828,14 @@
             false);
     }
 
-    private void UpsertProcessSetting(RoutingProcessOption process, string processNo, string referenceProcessNo)
+    private void UpsertProcessSetting(
+        RoutingProcessOption process,
+        string processNo,
+        string referenceProcessNo,
+        string? laneCode = null,
+        string? mergeProcessNo = null)
     {
+        var current = GetExactProcessSetting(process);
         MappingService.UpsertProcess(new ProcessMaterialProcessEdit
         {
             ModelName = process.ModelName,
@@ -1481,6 +2843,8 @@
             ProcessName = process.ProcessName,
             ProcessNo = processNo,
             ReferenceProcessNo = referenceProcessNo,
+            LaneCode = laneCode ?? current?.LaneCode ?? string.Empty,
+            MergeProcessNo = mergeProcessNo ?? current?.MergeProcessNo ?? string.Empty,
         });
         _processSettings = MappingService.GetProcessRows();
     }
@@ -1584,8 +2948,11 @@
         };
 
     private static string BuildModelSideLabel(RoutingProcessOption process)
+        => BuildModelSideLabel(process.ModelName);
+
+    private static string BuildModelSideLabel(string modelName)
     {
-        string side = ExtractSideTokenFromModel(process.ModelName);
+        string side = ExtractSideTokenFromModel(modelName);
         return string.IsNullOrWhiteSpace(side) ? "-" : side;
     }
 
@@ -1596,7 +2963,10 @@
     }
 
     private static string BuildModelSideClass(RoutingProcessOption process)
-        => ExtractSideTokenFromModel(process.ModelName) switch
+        => BuildModelSideClass(process.ModelName);
+
+    private static string BuildModelSideClass(string modelName)
+        => ExtractSideTokenFromModel(modelName) switch
         {
             "L" => "left",
             "R" => "right",
@@ -1772,7 +3142,7 @@
     {
         return string.Join(
             '\t',
-            NormalizeSideAgnosticModelName(process.ModelName),
+            NormalizeKey(process.ModelName),
             NormalizeKey(process.ProcessCode),
             NormalizeKey(process.ProcessName));
     }
@@ -1877,11 +3247,8 @@
         => IsSelectableMaterial(material.MaterialCode, material.MaterialName);
 
     private static bool IsSelectableMaterial(string code, string name)
-    {
-        bool isCs = code.StartsWith("C-S-", StringComparison.OrdinalIgnoreCase);
-        bool isRs = code.StartsWith("R-S-", StringComparison.OrdinalIgnoreCase);
-        return (isCs || isRs) && !(isCs && IsAssyFrameMaterial(name));
-    }
+        => (!string.IsNullOrWhiteSpace(code) || !string.IsNullOrWhiteSpace(name)) &&
+           !code.Trim().StartsWith("M-P-", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsAssyFrameMaterial(string name)
         => NormalizeKey(name).Contains("ASSY FRAME", StringComparison.OrdinalIgnoreCase);
@@ -2047,9 +3414,43 @@
         string ProcessType);
 
     private sealed record Test3ProcessRow(
+        string GroupKey,
         RoutingProcessOption Process,
         List<RoutingProcessOption> LinkedProcesses,
         List<ProcessMaterialMappingRow> Mappings);
+
+    private sealed record Test3ProcessLane(
+        string ModelName,
+        List<Test3ProcessRow> Rows);
+
+    private sealed record Test3MaterialLane(
+        string ModelName,
+        List<MaterialAssignment> Assignments);
+
+    private sealed record MaterialAssignment(
+        string Key,
+        string ModelName,
+        BmesBomMaterialCandidate Material,
+        List<ProcessMaterialMappingRow> SavedMappings,
+        string SavedProcessGroupKey,
+        decimal UsageQty,
+        string UsageUnit)
+    {
+        public string RawMaterialCode => Material.MaterialCode;
+        public string RawMaterialName => Material.MaterialName;
+        public bool HasSavedMapping => SavedMappings.Count > 0;
+    }
+
+    private sealed class MaterialEditState
+    {
+        public string ProcessGroupKey { get; set; } = string.Empty;
+        public string UsageQtyText { get; set; } = "1";
+        public string UsageUnit { get; set; } = "PC";
+    }
+
+    private sealed record BomLoadResult(
+        IReadOnlyList<BmesBomMaterialCandidate> Rows,
+        string Source);
 
     private sealed record ProcessOrderGroup(
         string GroupKey,

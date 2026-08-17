@@ -2129,3 +2129,158 @@
 - Files: JinoSupporter.Web/Components/Pages/GraphMakerPage.razor, ReportPage.razor, TranslatePage.razor, PcDownloadPage.razor, TestExcelConverterPage.razor, UsersPage.razor, AdminAiUsagesPage.razor, AiPromptPage.razor, WorkerStatusPage.razor, JinoSupporter.Web/Components/Shared/OcrTextEditor.razor
 - Verification: 워커 워크트리에서 빌드 시 RZ10007 오류 4건 발생 → 수정 후 오류 0, 경고 32개로 기준선과 동일. 내보내기용 C# 문자열 6줄이 바이트 단위로 동일한지 대조해 계약 8절 위반이 없음을 확인. 병합 후 전체 화면 재계측 결과 잔여 1건(로그인, 의도적). 전체 재빌드 오류 0, 서버 5050 재기동 후 /login 200.
 - Next: 사용자 확인. 화면별 세부 레이아웃(시안의 기준선 편차 막대 같은 구조)은 사용자가 우선순위를 정하면 이어서 한다.
+
+## 2026-08-15 15:46 - [DATA][ADD] ProcessFcostCalculation: Test 3·Test 4·BOM/Drawing 통합 구조 조사
+- Agent: Codex
+- Session: External
+- Task-ID: Unavailable
+- Category: DATA
+- Feature: ProcessFcostCalculation
+- Change: ADD
+- Completed: Test 3의 모델·공정별 자재 매핑, Test 4의 공정 Input/NG 집계, BOM & Drawing의 BOM/PDM 캐시, 기존 F-COST의 원자재 단가·실제 초과투입 금액 흐름을 연결해 이론 F-COST 산정 구조를 확정했다. 현재 로컬 매핑 JSON은 비어 있고 계산 계층은 아직 없으며, Test 4가 공정 NG를 모든 매핑 자재에 복제하면서 UsageQty를 적용하지 않는 핵심 공백을 확인했다.
+- Decisions: 이론 산정액은 `공정 NG 수량 × 공정 시점 누적 자재 사용량 × 기간 단가 × 폐기계수`로 계산하고 E008의 실제 초과투입 F-COST와 별도로 비교한다. 수동 마스터와 산정 스냅샷은 재생성 가능한 raw cache와 분리된 SQLite에 버전·유효기간·단위·BOM/가격 출처를 보존하며, 직접 투입만 계산할지 해당 공정까지의 누적 WIP를 계산할지와 BOM 기준수량·회수/재작업 정책을 구현 전에 확정해야 한다.
+- Files: None
+- Verification: Test 3·Test 4·BOM & Drawing·F-COST 페이지와 관련 서비스를 읽기 전용으로 대조했다. 실제 저장소에서 공정-자재 매핑 0건, RoutingTable 11,580행, BOM 캐시 7건/301행, F-COST raw 177,009행과 breakdown cache 31건을 확인했으며 앱·서버·외부 BMES 요청은 실행하지 않았다.
+- Next: 사용자에게 직접 투입/누적 WIP 산정 범위, BOM 기준수량·단위 환산, 폐기·회수·재작업 규칙을 확인한 뒤 SQLite 마스터/스냅샷과 ProcessMaterialFCostCalculationService를 먼저 구현한다.
+
+## 2026-08-15 15:49 - [DOCUMENTATION][ADD] ProcessFcostCalculation: 공정별 F-COST 구현안 문서화
+- Agent: Codex
+- Session: External
+- Task-ID: Unavailable
+- Category: DOCUMENTATION
+- Feature: ProcessFcostCalculation
+- Change: ADD
+- Completed: Test 3·Test 4·BOM & Drawing·기존 F-COST를 통합하는 계산식, 화면 구성, SQLite 저장 구조, 서비스 분리, 구현 단계와 검증 기준을 프로젝트 루트 문서로 정리했다. 예상 F-COST와 E008 실제 초과투입 F-COST의 의미 차이 및 구현 전 확정할 업무 규칙도 포함했다.
+- Decisions: 기본안은 누적 WIP, 완전 폐기계수 1.0, 단가·단위 누락 시 0원 처리 금지, 실제 F-COST와 예상 F-COST 별도 비교로 문서화했다. 수동 마스터와 계산 스냅샷은 재수집 가능한 raw cache와 분리된 `process_fcost.db`에 저장하는 구조를 제안했다.
+- Files: 공정별FCOST구현.md
+- Verification: Markdown 파일 존재 여부와 필수 절(목표, 계산식, 화면, 저장 구조, 구현 순서, 업무 규칙)을 확인했다. 문서만 추가했으므로 빌드·앱 실행은 수행하지 않았다.
+- Next: 사용자가 구현 전 업무 규칙과 권장 기본 정책을 확인하면 1단계 SQLite 마스터/저장소 구현을 시작한다.
+
+## 2026-08-15 16:00 - [UI][ADD] ProcessFcostSetupMockup: Test 3 빠른 입력 시안 제작
+- Agent: Codex
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: ProcessFcostSetupMockup
+- Change: ADD
+- Completed: 기존 검사성적서 디자인 시스템을 재사용해 Test 3를 자재 기준 엑셀형 빠른 입력 화면으로 재구성한 정적 HTML 시안과 렌더 이미지를 만들었다. 모델·BOM 선택, 입력 진행 단계, 자재별 최초 투입공정, 다중 선택 일괄 배치, 공정별 미리보기와 저장 전 검증을 한 화면에 배치했다.
+- Decisions: 기본 입력은 자재마다 최초 투입공정 하나를 고르는 방식으로 단순화하고, 폐기계수는 빠른 입력표에서 숨겨 처리방식의 상세 설정으로 남겼다. 기존 공정 중심 화면은 제거하지 않고 `공정별 확인` 보조 보기로 유지하는 구성을 시안에 반영했다.
+- Files: JinoSupporter.Web/wwwroot/ui-redesign/process-fcost-setup.html, artifacts/ui-mockups/process-fcost-setup.png
+- Verification: Chrome headless를 1600×1200, virtual-time 2.5초 조건으로 실행해 정적 HTML이 오류 없이 211,982바이트 PNG로 렌더되는 것을 확인하고 원본 해상도로 육안 점검했다. 실제 Blazor 코드와 서버는 실행하지 않았다.
+- Next: 사용자 피드백으로 표의 필수 열, 일괄 배치 방식, 공정별 미리보기 필요 여부를 확정한 뒤 Test 3 Blazor 화면에 이식한다.
+
+## 2026-08-15 15:46 - [DATA][CHANGE] BmesTest5ModelCatalog: BOM & Drawing 검색 누락 원인 진단
+- Agent: Codex
+- Session: External
+- Task-ID: Unavailable
+- Category: DATA
+- Feature: BmesTest5ModelCatalog
+- Change: CHANGE
+- Completed: BOM & Drawing의 모델 검색이 BMES 실시간 검색이 아니라 Plant별 로컬 카탈로그 검색이며, 동기화 SQL이 제품 코드를 `P-S-`로 제한해 다른 유효 제품 계열을 누락하는 것이 주원인임을 확인했다. 현재 Plant 3200 카탈로그는 2026-08-11 기준 21개뿐이며 모델그룹 17개 중 MSM/NSM/SI 계열 9개가 로컬 후보도 성공 캐시도 없어 검색되지 않는다.
+- Decisions: Plant 3200 실 DB를 읽기 전용으로 집계한 결과 이름이 있는 P-S 제품 442개 중 MAST 연결은 198개, BOMC 구성품이 있는 제품은 21개였고 현 카탈로그 21개와 일치했다. 그러나 누락 모델의 유효 BOM 제품은 `P-M-`, `P-N-`, `P-H-`, `C-M-`, `C-H-` 계열에 실제로 존재하므로 BOM 조회 실패가 아니라 카탈로그의 `P-S-` 전용 필터 문제다. `MSM-MARS3VENUS3`는 BMES에서 `BNM-MARS3-*`와 `BNM-VENUS3-*`로 분리되어 있어 접두사 확장만으로는 별칭 검색이 완전히 해결되지 않는다.
+- Files: None
+- Verification: `bmes_bom_cache.db`를 읽기 전용으로 확인해 Plant 3200 카탈로그 21개와 2026-08-11 동기화 상태를 확인했다. BMES_LIV에 `ApplicationIntent=ReadOnly`와 `NOLOCK` SELECT만 실행해 P-S 누적 조건별 442/198/21/21건과, 누락 예시인 MSM-S931B(P-M/C-M), MSM-NX14(P-N), SI-SM-G736B(P-M) 등에 유효 BOM이 있음을 확인했다. 앱·서버는 실행하지 않았다.
+- Next: 사용자 승인 시 모델 카탈로그의 `P-S-` 고정 필터를 유효 BOM이 있는 전체 완제품 코드 계열로 확장하고, 모델그룹 별칭을 실제 BMES 제품명 여러 개에 매핑한 뒤 로컬 검색 상위 10개 제한과 동기화 상태 표시를 함께 보완한다.
+
+## 2026-08-15 15:53 - [DATA][FIX] BmesTest5ModelCatalog: P-S·P-M·P-N·P-H 모델 동기화 확장
+- Agent: Codex
+- Session: External
+- Task-ID: Unavailable
+- Category: DATA
+- Feature: BmesTest5ModelCatalog
+- Change: FIX
+- Completed: BOM & Drawing의 모델명 동기화 대상을 기존 `P-S-` 단일 계열에서 `P-S-`, `P-M-`, `P-N-`, `P-H-` 네 계열로 확장했다. 여러 접두사를 안전하게 매개변수화해 SQL에 전달하며 빈 목록은 전체 제품을 노출하지 않고 0건을 반환한다.
+- Decisions: 사용자가 지정한 네 완제품 계열만 포함하며 `C-*`와 `P-A-`는 제외한다. 기존 Plant별 로컬 카탈로그는 자동 갱신하지 않으므로 페이지에서 `Sync model names`를 한 번 실행해야 새 범위로 교체된다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest5Page.razor, JinoSupporter.Web/Services/BmesFcostActualService.cs
+- Verification: 격리 출력 빌드는 최초 `--no-restore`에서 새 출력 폴더의 assets 파일 부재로 중단됐고, 복원 허용 재실행은 오류 0개·기존 경고 32개로 성공했다. 기존 PID 7632를 종료한 뒤 정상 `bin/Debug/net8.0` 경로로 다시 빌드해 오류 0개를 확인했고, 새 PID 4416을 5050 포트에 시작해 `/login` HTTP 200을 확인했다.
+- Next: `/bmes/test5`에서 `Sync model names`를 한 번 실행한 뒤 MSM/NSM/SI 계열 검색 결과를 확인한다. `MSM-MARS3VENUS3`는 별칭이 실제 `BNM-MARS3-*`·`BNM-VENUS3-*`로 갈라져 있어 별칭 매핑이 별도로 필요할 수 있다.
+## 2026-08-15 16:07 - [UI][CHANGE] AdaptiveTest3: implementation scope investigation
+- Agent: Codex
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: AdaptiveTest3
+- Change: CHANGE
+- Completed: Reviewed Test 3, ProcessMaterialMappingService, ProcessMaterialNgService, and BOM cache/fetch APIs to map the requested adaptive workflow onto existing persistence and BOM candidate loading. Confirmed the implementation can stay in BmesTest3Page.razor by reusing process settings for sequence numbers and mapping rows for first-input material assignments.
+- Decisions: Test 3 will read BOM & Drawing rows from BmesBomCacheService before any server fetch and will only use FCostActual.FetchBomTreeAsync on cache miss or explicit reload. The page will treat saved ProcessNo rows as the left sequence and unnumbered routing rows as the available routing list.
+- Files: None
+- Verification: Read-only inspection only; no build run because no implementation files changed yet.
+- Next: Replace the current Test 3 layout and handlers in JinoSupporter.Web/Components/Pages/BmesTest3Page.razor, then run the narrowest Web build.
+
+## 2026-08-15 16:27 - [UI][CHANGE] AdaptiveTest3: 적응형 공정 순서와 최초 투입 자재 설정 구현
+- Agent: Codex
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: AdaptiveTest3
+- Change: CHANGE
+- Completed: Test 3를 정확한 모델 선택 후 왼쪽 저장 공정 순서와 오른쪽 라우팅 공정으로 나누고, 추가·제거·상하 드래그 때 공정 번호와 이전 공정 참조를 즉시 저장하도록 구현했다. BOM 캐시 우선 자재 목록에서 자재별 최초 투입 공정·사용량·단위를 저장하면 이후 마지막 공정까지 승계되며, Test 4의 유효 자재 계산도 8공정 제한 없이 순환을 방지하면서 전체 순서를 따라가도록 보강했다.
+- Decisions: 공정 순서는 ProcessNo 1..N으로 정규화하고 각 공정은 바로 이전 ProcessNo를 ReferenceProcessNo로 참조한다. BOM은 BmesBomCacheService를 우선 사용하고 캐시 누락 또는 명시적 다시 불러오기 때만 FetchBomTreeAsync를 사용하며, 기존 C-S/R-S 및 ASSY FRAME 제외 정책은 유지한다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest3Page.razor, JinoSupporter.Web/Services/ProcessMaterialNgService.cs
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/adaptive-test3`를 실행해 오류 0개로 성공했다. 기존 프로젝트 경고 32개는 유지됐고 사용자 지침에 따라 앱·서버·BMES 런타임은 실행하지 않았다.
+- Next: Test 3에서 실제 모델 하나의 공정 순서와 자재 최초 투입 공정을 입력해 운영 데이터를 만들고, 그 저장 데이터를 사용해 `NG 수량 × BOM 사용량 × 단가` 기반 공정별 예상 F-COST 계산 화면과 스냅샷 저장을 구현한다.
+
+## 2026-08-15 16:33 - [UI][CHANGE] AdaptiveTest3: L/R 분리와 3열 자재 투입 표시
+- Agent: Codex
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: AdaptiveTest3
+- Change: CHANGE
+- Completed: Test 3의 공정 순서·BOM 조회·자재 최초 투입 저장을 선택한 정확한 L 또는 R 모델에만 적용하도록 분리했다. 화면을 저장 공정 순서, 검색 모델 공정, BOM 자재 최초 투입의 3열로 배치하고 각 자재 카드에 최초 투입 공정과 마지막 공정까지의 적용 범위를 강조 표시했다.
+- Decisions: L/R 모델은 공정 그룹 키와 BOM 캐시 조회 모두 정확한 모델명 기준으로 독립 처리하며 한쪽 저장이 반대쪽 공정·자재 설정을 자동 변경하지 않는다. 980px 이하에서는 적응형 1열로 접되 데스크톱에서는 세 영역을 동시에 보여준다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest3Page.razor
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/adaptive-test3-lr`를 실행해 오류 0개로 성공했다. 기존 프로젝트 경고 32개는 유지됐고 앱·서버·BMES 런타임은 실행하지 않았다.
+- Next: Test 3에서 L 모델과 R 모델을 각각 선택해 독립 공정 순서 및 자재 투입 표시를 확인한 뒤 공정별 예상 F-COST 계산 단계로 진행한다.
+
+## 2026-08-15 16:44 - [UI][CHANGE] AdaptiveTest3: 기준 모델 L/R 동시 작업과 전체 BOM 자재 표시
+- Agent: Codex
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: AdaptiveTest3
+- Change: CHANGE
+- Completed: `TIU-L5S3-01` 같은 기준 모델을 선택하면 직접 연결된 L/R 라우팅 모델을 찾아 세 열 안에 L·R 독립 레인으로 동시에 표시하도록 확장했다. BOM 자재 범위를 기존 C-S/R-S 최종 leaf 제한에서 중간 조립품과 M-P/C-S/R-S를 포함한 전체 BOM 행으로 넓혀 COIL 같은 자재도 최초 투입 공정에 지정할 수 있게 했다.
+- Decisions: L/R은 한 화면에 함께 표시하지만 공정 번호·드래그 순서·자재 매핑은 모델별로 독립 저장하며 다른 레인으로 공정을 이동할 수 없다. 동일 자재 코드가 L/R 양쪽에 있어도 BOM 제품 코드와 라우팅 모델 연결을 보존해 별도 자재 카드로 처리한다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest3Page.razor, JinoSupporter.Web/Services/ProcessMaterialNgService.cs
+- Verification: 로컬 BOM 캐시에서 TIU-L5S3-01 L/R 각각 34행과 `R-S-071110900 COIL-L5S3-01`이 HasChildren=1인 중간 BOM임을 읽기 전용 SQLite 조회로 확인했다. `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/adaptive-test3-lr`는 오류 0개로 성공했고 기존 경고 32개만 유지됐다.
+- Next: Test 3에서 기준 모델 `TIU-L5S3-01`을 선택해 L/R 각 39개 라우팅 공정 레인과 COIL 포함 BOM 자재 카드가 함께 보이는지 런타임에서 확인한다.
+
+## 2026-08-15 16:41 - [OTHER][CHANGE] FrontendArchitecture: Razor와 React 전환 적합성 조사
+- Agent: Codex
+- Session: External
+- Task-ID: Unavailable
+- Category: OTHER
+- Feature: FrontendArchitecture
+- Change: CHANGE
+- Completed: JinoSupporter의 프런트엔드 구성을 조사해 Web은 .NET 8 Interactive Server Blazor이고 WPF 앱도 BlazorWebView로 Razor 컴포넌트를 재사용하며, React 구성은 없음을 확인했다. Web 기준 Razor 컴포넌트 66개, 페이지 50개, C# 서비스 71개로 서버 서비스와의 결합이 커서 전체 React 전환보다 현행 Blazor 유지가 비용 대비 적합하다고 평가했다.
+- Decisions: React는 고빈도 클라이언트 상호작용, 오프라인 동작, 프런트엔드 독립 배포가 실제 요구사항이 될 때 특정 화면으로만 검토한다. 전면 전환은 API·인증·상태관리·Syncfusion UI·WPF 재사용 구조를 함께 재작성해야 하므로 현재 기본 방향으로 채택하지 않는다.
+- Files: None
+- Verification: JinoSupporter.Web.csproj, Program.cs, App.razor, Routes.razor, Razor 페이지와 BmesNgRateStandalone의 BlazorWebView 구성을 읽기 전용으로 확인했다. 코드 변경이 없어 빌드·런타임 검증은 실행하지 않았다.
+- Next: React가 필요한 구체적인 화면 성능 또는 UX 문제가 생기면 해당 화면 하나를 대상으로 Blazor 개선안과 React 프로토타입의 개발·운영 비용을 비교한다.
+
+## 2026-08-15 16:48 - [DATA][CHANGE] AdaptiveTest3: M-P BOM 자재 제외
+- Agent: Codex
+- Session: External
+- Task-ID: Unavailable
+- Category: DATA
+- Feature: AdaptiveTest3
+- Change: CHANGE
+- Completed: Test 3의 BOM 최초 투입 공정 설정과 Test 4의 유효 자재 계산에서 `M-P-` 자재를 제외했다. COIL 같은 C-S/R-S 중간 조립품은 계속 선택 가능하도록 유지했다.
+- Decisions: 자재 제외 조건은 코드가 `M-P-`로 시작하는 경우에만 적용하며 C-S/R-S의 leaf 여부와 무관하게 공정 투입 자재 후보로 유지한다.
+- Files: JinoSupporter.Web/Components/Pages/BmesTest3Page.razor, JinoSupporter.Web/Services/ProcessMaterialNgService.cs
+- Verification: `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/adaptive-test3-lr`를 실행해 오류 0개로 성공했다. 기존 프로젝트 경고 32개만 유지되었으며 앱·서버·BMES 호출은 실행하지 않았다.
+- Next: Test 3 편집 영역을 React island로 전환할 경우 MAIN/SUB 분기·합류 구조와 자재 최초 투입 공정의 저장 스키마를 먼저 확장한다.
+
+## 2026-08-15 17:06 - [UI][ADD] AdaptiveTest3: React MAIN/SUB 드래그 편집기 구현
+- Agent: Codex
+- Session: External
+- Task-ID: Unavailable
+- Category: UI
+- Feature: AdaptiveTest3
+- Change: ADD
+- Completed: Test 3의 3열 편집 영역을 React 19+dnd-kit island로 교체해 L/R 동시 조회, MAIN/SUB 공정 배치·재정렬, SUB 출력의 MAIN 합류, BOM 자재의 최초 투입 공정 드래그 저장을 구현했다. 공정 카드에는 최초 투입과 이후 계속 적용되는 자재를 구분해 표시하고 Test 4의 유효 자재 상속도 SUB 합류를 따라가도록 확장했다.
+- Decisions: 기존 Blazor 셸과 JSON 데이터는 유지하고 React는 JS interop 계약으로 연결했다. 공정번호는 `MAIN-1`, `SUB1-1` 형식으로 저장하며 SUB 마지막 공정의 `MergeProcessNo`가 같은 L/R의 MAIN 합류 공정을 가리킨다.
+- Files: .gitignore, 공정별FCOST구현.md, JinoSupporter.Web/ClientApp/Test3Editor/package.json, JinoSupporter.Web/ClientApp/Test3Editor/package-lock.json, JinoSupporter.Web/ClientApp/Test3Editor/vite.config.js, JinoSupporter.Web/ClientApp/Test3Editor/src/main.jsx, JinoSupporter.Web/ClientApp/Test3Editor/src/style.css, JinoSupporter.Web/Components/Pages/BmesTest3Page.razor, JinoSupporter.Web/Services/ProcessMaterialMappingService.cs, JinoSupporter.Web/Services/ProcessMaterialNgService.cs, JinoSupporter.Web/Services/Test3EditorContracts.cs, JinoSupporter.Web/wwwroot/test3-editor/test3-editor.css, JinoSupporter.Web/wwwroot/test3-editor/test3-editor.js
+- Verification: `npm run build`가 Vite 8.2.1에서 성공했고 산출물 CSS 9.83 kB·JS 347.67 kB를 생성했다. `dotnet build JinoSupporter.Web/JinoSupporter.Web.csproj --no-restore --artifacts-path .codex-verify/adaptive-test3-lr`도 오류 0개로 성공했으며 기존 경고 32개만 유지됐다. `git diff --check`도 통과했다.
+- Next: 사용자가 실제 Test 3 화면에서 기준 모델 선택→L/R 표시→공정 MAIN/SUB 드래그→SUB 합류→자재 투입 저장을 확인한 뒤, 다음 단계로 공정별 예상 F-COST 계산과 스냅샷 저장을 구현한다.

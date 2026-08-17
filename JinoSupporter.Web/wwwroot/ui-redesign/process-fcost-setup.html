@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>공정 자재 설정 시안 — GN LAB Supporter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..800;1,75..125,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/instrument.css">
+<style>
+  .setup-page { padding-bottom: 28px; }
+  .setup-steps { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border:1px solid var(--line); background:var(--surface); }
+  .setup-step { position:relative; padding:11px 14px 12px 46px; min-height:58px; border-right:1px solid var(--line); }
+  .setup-step:last-child { border-right:0; }
+  .setup-step__n { position:absolute; left:13px; top:13px; width:23px; height:23px; display:grid; place-items:center; border:1px solid var(--line-hard); background:var(--wash); color:var(--muted); font:600 11px/1 var(--mono); }
+  .setup-step.is-done .setup-step__n { border-color:var(--ok); color:var(--ok); background:var(--ok-wash); }
+  .setup-step.is-on .setup-step__n { border-color:var(--signal); color:var(--signal-ink); background:var(--signal-wash); }
+  .setup-step__t { font-size:12px; font-weight:700; letter-spacing:.02em; }
+  .setup-step__d { margin-top:3px; color:var(--muted); font-size:10px; }
+  .setup-grid { display:grid; grid-template-columns:minmax(0,1fr) 306px; gap:12px; align-items:start; }
+  .setup-side { display:grid; gap:12px; }
+  .setup-toolbar { display:flex; align-items:flex-end; gap:8px; flex-wrap:wrap; padding:10px 12px; border-bottom:1px solid var(--line); background:var(--wash); }
+  .setup-toolbar .field { gap:4px; }
+  .setup-search { width:220px; }
+  .setup-table-wrap { overflow:auto; max-height:520px; }
+  .setup-table { min-width:950px; }
+  .setup-table th { position:sticky; top:0; z-index:2; }
+  .setup-table td { height:42px; vertical-align:middle; }
+  .setup-table .row-warn td { background:var(--warn-wash); }
+  .setup-table .row-off td { color:var(--muted); background:var(--wash); }
+  .setup-table .material-name { font-weight:650; color:var(--ink); }
+  .setup-table .material-sub { margin-top:2px; color:var(--muted); font-size:9px; }
+  .setup-table .compact-input { width:72px; height:26px; padding:3px 7px; font:500 11px/1 var(--mono); }
+  .setup-table .compact-select { width:100%; min-width:148px; height:27px; padding:3px 23px 3px 7px; font-size:10px; }
+  .setup-table th:last-child, .setup-table td:last-child { display:none; }
+  .statebox { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border:1px solid var(--line); background:var(--wash); font:700 10px/1 var(--mono); color:var(--muted); }
+  .statebox.ok { border-color:var(--ok); color:var(--ok); background:var(--ok-wash); }
+  .statebox.warn { border-color:var(--warn); color:var(--warn-ink); background:var(--warn-wash); }
+  .setup-progress { height:5px; overflow:hidden; background:var(--wash); border-top:1px solid var(--line); }
+  .setup-progress > i { display:block; width:82%; height:100%; background:var(--signal); }
+  .process-list { display:grid; gap:7px; }
+  .process-card { border:1px solid var(--line); background:var(--surface); }
+  .process-card__head { display:flex; align-items:center; gap:8px; min-height:33px; padding:7px 9px; border-bottom:1px solid var(--line); background:var(--tbl-head); }
+  .process-card__no { width:34px; color:var(--signal-ink); font:700 10px/1 var(--mono); }
+  .process-card__name { min-width:0; flex:1; font-size:11px; font-weight:700; }
+  .process-card__body { min-height:35px; padding:7px 8px; display:flex; gap:4px; flex-wrap:wrap; align-content:flex-start; }
+  .mat-chip { display:inline-flex; align-items:center; min-height:20px; padding:3px 6px; border:1px solid var(--line); background:var(--wash); font-size:9px; color:var(--ink-2); }
+  .mat-chip.more { border-style:dashed; color:var(--muted); }
+  .checklist { display:grid; gap:8px; }
+  .checkline { display:grid; grid-template-columns:17px 1fr auto; align-items:center; gap:7px; font-size:10px; }
+  .checkline__i { width:16px; height:16px; display:grid; place-items:center; border:1px solid var(--line); font:700 9px/1 var(--mono); }
+  .checkline.ok .checkline__i { color:var(--ok); border-color:var(--ok); background:var(--ok-wash); }
+  .checkline.warn .checkline__i { color:var(--warn-ink); border-color:var(--warn); background:var(--warn-wash); }
+  .checkline.bad .checkline__i { color:var(--crit); border-color:var(--crit); background:var(--crit-wash); }
+  .setup-note { display:flex; align-items:center; gap:10px; padding:9px 12px; border:1px solid var(--signal-line); background:var(--signal-wash); color:var(--ink-2); font-size:10px; }
+  .setup-note strong { color:var(--signal-ink); }
+  .mini-kpi { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--line); }
+  .mini-kpi > div { padding:9px 10px; border-right:1px solid var(--line); }
+  .mini-kpi > div:last-child { border-right:0; }
+  .mini-kpi span { display:block; color:var(--muted); font:600 8px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase; }
+  .mini-kpi strong { display:block; margin-top:6px; font:650 18px/1 var(--mono); }
+  .sticky-actions { display:flex; align-items:center; gap:7px; padding:9px 12px; border-top:1px solid var(--line); background:var(--surface); }
+  @media (max-width:1180px) { .setup-grid { grid-template-columns:1fr; } .setup-side { grid-template-columns:1fr 1fr; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand__mark"></div>
+      <div class="brand__text"><div class="brand__name">GN LAB</div><div class="brand__sub">SUPPORTER</div></div>
+    </div>
+    <div class="rail__scroll"></div>
+    <div class="rail__foot">
+      <div class="who"><div class="who__av">BJ</div><div style="min-width:0"><div class="who__name">Byun Jinho</div><div class="who__role">Administrator</div></div></div>
+      <div class="live"><i class="live__dot"></i><span class="live__text">BMES connected</span></div>
+      <button class="railbtn">Sign out</button>
+    </div>
+  </aside>
+
+  <div class="stage">
+    <header class="topbar">
+      <button class="iconbtn" data-rail-toggle aria-label="Toggle navigation"></button>
+      <nav class="crumb"></nav>
+      <div class="readouts"></div>
+      <button class="iconbtn" data-theme-toggle aria-label="Toggle theme"></button>
+      <button class="iconbtn" data-icon="out" aria-label="Sign out"></button>
+    </header>
+    <nav class="tabs"></nav>
+
+    <main class="view setup-page">
+      <div class="pagehead rise" style="--d:0">
+        <div>
+          <span class="code">PM-03 · PROCESS MATERIAL MASTER</span>
+          <h1 class="pagehead__t">공정 자재 설정</h1>
+          <p class="pagehead__d">BOM 자재마다 <b>처음 투입되는 공정</b>만 지정합니다. 후공정의 누적 WIP 자재는 F-COST 계산 시 자동으로 합산됩니다.</p>
+        </div>
+        <div class="pagehead__actions">
+          <div class="seg">
+            <button class="seg__b is-on">빠른 입력</button>
+            <button class="seg__b">공정별 확인</button>
+          </div>
+          <button class="btn btn--sm">임시 저장</button>
+          <button class="btn btn--go">저장 및 검증</button>
+        </div>
+      </div>
+
+      <div class="deck rise" style="--d:1">
+        <div class="deck__row">
+          <div class="field">
+            <span class="field__l">기준 모델</span>
+            <select class="select" style="width:244px"><option>TIU-C11-20-L-ZZ</option></select>
+          </div>
+          <div class="field">
+            <span class="field__l">제품 구분</span>
+            <select class="select" style="width:130px"><option>L 제품</option><option>R 제품</option></select>
+          </div>
+          <div class="field">
+            <span class="field__l">BOM 기준일</span>
+            <input class="input num" type="date" value="2026-08-15" style="width:145px">
+          </div>
+          <div class="deck__sep"></div>
+          <button class="btn">유사 모델에서 복사</button>
+          <button class="btn">BOM 새로 불러오기</button>
+          <div class="deck__go">
+            <span class="badge badge--ok">● BOM CACHE · 44 ROWS</span>
+            <span class="badge">ROUTING · 16 PROCESS</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="setup-steps rise" style="--d:2">
+        <div class="setup-step is-done"><span class="setup-step__n">✓</span><div class="setup-step__t">모델 선택</div><div class="setup-step__d">BOM·Routing 준비 완료</div></div>
+        <div class="setup-step is-on"><span class="setup-step__n">2</span><div class="setup-step__t">투입공정 지정</div><div class="setup-step__d">자재 44개 중 36개 배치</div></div>
+        <div class="setup-step"><span class="setup-step__n">3</span><div class="setup-step__t">수량·단위 확인</div><div class="setup-step__d">단위 오류 1건 확인 필요</div></div>
+        <div class="setup-step"><span class="setup-step__n">4</span><div class="setup-step__t">저장 및 승인</div><div class="setup-step__d">검증 통과 후 적용</div></div>
+      </div>
+
+      <div class="stats rise" style="--d:3">
+        <div class="stat"><div class="stat__k"><span class="stat__label">BOM 자재</span></div><div class="stat__v">44<span class="stat__u">종</span></div><div class="stat__b"><span class="small faint">P-S-151100700</span></div></div>
+        <div class="stat"><div class="stat__k"><span class="stat__label">배치 완료</span></div><div class="stat__v">36<span class="stat__u">/ 44</span></div><div class="stat__b"><span class="stat__d is-down">82% COMPLETE</span></div></div>
+        <div class="stat"><div class="stat__k"><span class="stat__label">미배치</span></div><div class="stat__v" style="color:var(--warn-ink)">6<span class="stat__u">종</span></div><div class="stat__b"><span class="badge badge--warn">공정 지정 필요</span></div></div>
+        <div class="stat"><div class="stat__k"><span class="stat__label">계산 제외</span></div><div class="stat__v">2<span class="stat__u">종</span></div><div class="stat__b"><span class="small faint">포장재 · 보조재</span></div></div>
+        <div class="stat"><div class="stat__k"><span class="stat__label">검증 오류</span></div><div class="stat__v" style="color:var(--crit)">1<span class="stat__u">건</span></div><div class="stat__b"><span class="badge badge--crit">단위 불일치</span></div></div>
+      </div>
+
+      <div class="setup-note rise" style="--d:4"><span class="code">INPUT RULE</span><span><strong>한 자재는 처음 들어가는 공정에 한 번만 지정</strong>합니다. 여러 행을 체크한 뒤 상단의 일괄 배치를 사용하면 빠르게 입력할 수 있습니다.</span></div>
+
+      <div class="setup-grid rise" style="--d:5">
+        <section class="panel">
+          <div class="panel__head">
+            <span class="panel__t">BOM 자재 빠른 입력</span>
+            <span class="panel__meta">36 ASSIGNED · 6 UNASSIGNED · 2 EXCLUDED</span>
+            <div class="panel__tools"><span class="badge badge--warn">6건 작업 필요</span></div>
+          </div>
+          <div class="setup-toolbar">
+            <div class="field"><span class="field__l">자재 검색</span><input id="materialSearch" class="input setup-search" placeholder="코드 또는 자재명"></div>
+            <div class="field"><span class="field__l">보기</span><select id="rowFilter" class="select" style="width:125px"><option value="all">전체 자재</option><option value="unassigned">미배치만</option><option value="assigned">배치 완료</option></select></div>
+            <div class="deck__sep"></div>
+            <div class="field"><span class="field__l">선택 자재 일괄 배치</span><select id="bulkProcess" class="select" style="width:195px"><option value="">공정 선택…</option><option>S1 · FRAME ASS'Y</option><option>S2 · YOKE + MAGNET</option><option>S3 · COIL BONDING</option><option>S4 · DOME BONDING</option><option>S5 · VISION CHECK</option></select></div>
+            <button id="bulkApply" class="btn btn--go">선택 적용</button>
+            <span class="spacer"></span>
+            <button class="btn btn--sm">미배치만 자동 추천</button>
+          </div>
+          <div class="setup-table-wrap">
+            <table class="dt setup-table">
+              <thead><tr><th style="width:34px"><input id="checkAll" type="checkbox"></th><th style="width:40px">상태</th><th style="width:125px">자재코드</th><th>자재명 / 도면</th><th style="width:76px">BOM 수량</th><th style="width:70px">단위</th><th style="width:190px">최초 투입공정</th><th style="width:120px">처리방식</th><th style="width:70px">폐기계수</th></tr></thead>
+              <tbody id="materialRows">
+                <tr data-state="assigned" data-search="frame l5s3 01 l r-s-151100708"><td><input class="row-check" type="checkbox"></td><td><span class="statebox ok">✓</span></td><td class="num">R-S-151100708</td><td><div class="material-name">FRAME-L5S3-01-L</div><div class="material-sub">PDM 20240184 · DWG V1</div></td><td><input class="input compact-input" value="1.000"></td><td><select class="select compact-select" style="min-width:64px"><option>EA</option></select></td><td><select class="select compact-select process-select"><option>S1 · FRAME ASS'Y</option><option>S2 · YOKE + MAGNET</option><option>S3 · COIL BONDING</option></select></td><td><select class="select compact-select" style="min-width:105px"><option>완전 폐기</option><option>재작업</option></select></td><td><input class="input compact-input" value="1.00"></td></tr>
+                <tr data-state="assigned" data-search="yoke l5s3 r-s-151100715"><td><input class="row-check" type="checkbox"></td><td><span class="statebox ok">✓</span></td><td class="num">R-S-151100715</td><td><div class="material-name">YOKE-L5S3</div><div class="material-sub">PDM 20240192 · DWG V2</div></td><td><input class="input compact-input" value="1.000"></td><td><select class="select compact-select" style="min-width:64px"><option>EA</option></select></td><td><select class="select compact-select process-select"><option>S2 · YOKE + MAGNET</option><option>S1 · FRAME ASS'Y</option><option>S3 · COIL BONDING</option></select></td><td><select class="select compact-select" style="min-width:105px"><option>완전 폐기</option><option>재작업</option></select></td><td><input class="input compact-input" value="1.00"></td></tr>
+                <tr data-state="assigned" data-search="magnet center mg r-s-151100719"><td><input class="row-check" type="checkbox"></td><td><span class="statebox ok">✓</span></td><td class="num">R-S-151100719</td><td><div class="material-name">MAGNET CENTER-L5S3</div><div class="material-sub">PDM 20240201 · DWG V0</div></td><td><input class="input compact-input" value="1.000"></td><td><select class="select compact-select" style="min-width:64px"><option>EA</option></select></td><td><select class="select compact-select process-select"><option>S2 · YOKE + MAGNET</option><option>S1 · FRAME ASS'Y</option><option>S3 · COIL BONDING</option></select></td><td><select class="select compact-select" style="min-width:105px"><option>완전 폐기</option><option>재작업</option></select></td><td><input class="input compact-input" value="1.00"></td></tr>
+                <tr data-state="assigned" data-search="voice coil vc r-s-151100723"><td><input class="row-check" type="checkbox"></td><td><span class="statebox ok">✓</span></td><td class="num">R-S-151100723</td><td><div class="material-name">VOICE COIL-L5S3</div><div class="material-sub">PDM 20240214 · DWG V3</div></td><td><input class="input compact-input" value="1.000"></td><td><select class="select compact-select" style="min-width:64px"><option>EA</option></select></td><td><select class="select compact-select process-select"><option>S3 · COIL BONDING</option><option>S2 · YOKE + MAGNET</option><option>S4 · DOME BONDING</option></select></td><td><select class="select compact-select" style="min-width:105px"><option>완전 폐기</option><option>재작업</option></select></td><td><input class="input compact-input" value="1.00"></td></tr>
+                <tr data-state="unassigned" data-search="center dome cd r-s-151100731" class="row-warn"><td><input class="row-check" type="checkbox"></td><td><span class="statebox warn">!</span></td><td class="num">R-S-151100731</td><td><div class="material-name">CENTER DOME-L5S3</div><div class="material-sub">PDM 20240228 · DWG V1</div></td><td><input class="input compact-input" value="1.000"></td><td><select class="select compact-select" style="min-width:64px"><option>EA</option></select></td><td><select class="select compact-select process-select"><option value="">미지정 — 공정 선택</option><option>S3 · COIL BONDING</option><option>S4 · DOME BONDING</option></select></td><td><select class="select compact-select" style="min-width:105px"><option>완전 폐기</option><option>재작업</option></select></td><td><input class="input compact-input" value="1.00"></td></tr>
+                <tr data-state="unassigned" data-search="bond uv 89176t c-c-000127" class="row-warn"><td><input class="row-check" type="checkbox"></td><td><span class="statebox warn">!</span></td><td class="num">C-C-000127</td><td><div class="material-name">BOND UV-89176T</div><div class="material-sub">PDM 없음 · 소모성 자재</div></td><td><input class="input compact-input" value="0.076"></td><td><select class="select compact-select" style="min-width:64px"><option>G</option><option>KG</option></select></td><td><select class="select compact-select process-select"><option value="">미지정 — 공정 선택</option><option>S3 · COIL BONDING</option><option>S4 · DOME BONDING</option></select></td><td><select class="select compact-select" style="min-width:105px"><option>완전 폐기</option><option>재작업</option></select></td><td><input class="input compact-input" value="1.00"></td></tr>
+                <tr data-state="assigned" data-search="suspension sp r-s-151100744"><td><input class="row-check" type="checkbox"></td><td><span class="statebox ok">✓</span></td><td class="num">R-S-151100744</td><td><div class="material-name">SUSPENSION-L5S3</div><div class="material-sub">PDM 20240303 · DWG V2</div></td><td><input class="input compact-input" value="1.000"></td><td><select class="select compact-select" style="min-width:64px"><option>EA</option></select></td><td><select class="select compact-select process-select"><option>S4 · DOME BONDING</option><option>S3 · COIL BONDING</option></select></td><td><select class="select compact-select" style="min-width:105px"><option>완전 폐기</option><option>재작업</option></select></td><td><input class="input compact-input" value="1.00"></td></tr>
+                <tr data-state="assigned" data-search="film aem m-p-000084"><td><input class="row-check" type="checkbox"></td><td><span class="statebox ok">✓</span></td><td class="num">M-P-000084</td><td><div class="material-name">FILM AEM 0.08T</div><div class="material-sub">구매자재 · 단가단위 확인 필요</div></td><td><input class="input compact-input" value="91.869"></td><td><select class="select compact-select" style="min-width:64px;border-color:var(--crit)"><option>MM</option><option>M</option></select></td><td><select class="select compact-select process-select"><option>S1 · FRAME ASS'Y</option><option>S2 · YOKE + MAGNET</option></select></td><td><select class="select compact-select" style="min-width:105px"><option>완전 폐기</option><option>재작업</option></select></td><td><input class="input compact-input" value="1.00"></td></tr>
+                <tr data-state="excluded" data-search="label packing m-p-000114" class="row-off"><td><input class="row-check" type="checkbox"></td><td><span class="statebox">—</span></td><td class="num">M-P-000114</td><td><div class="material-name">LABEL PRODUCT</div><div class="material-sub">계산 제외 · 포장 공정 별도</div></td><td><input class="input compact-input" value="1.000" disabled></td><td><select class="select compact-select" style="min-width:64px" disabled><option>EA</option></select></td><td><select class="select compact-select process-select" disabled><option>계산 제외</option></select></td><td><select class="select compact-select" style="min-width:105px"><option>계산 제외</option></select></td><td><input class="input compact-input" value="0.00" disabled></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="setup-progress"><i></i></div>
+          <div class="sticky-actions"><span class="code">9 OF 44 ROWS SHOWN</span><span class="small faint">· 실제 화면에서는 전체 BOM 자재가 표시됩니다.</span><span class="spacer"></span><button class="btn btn--sm">변경 취소</button><button class="btn btn--go">저장 및 검증</button></div>
+        </section>
+
+        <aside class="setup-side">
+          <section class="panel">
+            <div class="panel__head"><span class="panel__t">공정별 배치 미리보기</span><span class="panel__meta">누적 WIP 기준</span></div>
+            <div class="mini-kpi"><div><span>공정 수</span><strong>16</strong></div><div><span>설정 진행률</span><strong>82%</strong></div></div>
+            <div class="panel__body">
+              <div class="process-list">
+                <div class="process-card"><div class="process-card__head"><span class="process-card__no">S1</span><span class="process-card__name">FRAME ASS'Y</span><span class="badge">7</span></div><div class="process-card__body"><span class="mat-chip">FRAME-L</span><span class="mat-chip">AEM FILM</span><span class="mat-chip more">+5</span></div></div>
+                <div class="process-card"><div class="process-card__head"><span class="process-card__no">S2</span><span class="process-card__name">YOKE + MAGNET</span><span class="badge">9</span></div><div class="process-card__body"><span class="mat-chip">YOKE</span><span class="mat-chip">C-MAGNET</span><span class="mat-chip more">+7</span></div></div>
+                <div class="process-card"><div class="process-card__head"><span class="process-card__no">S3</span><span class="process-card__name">COIL BONDING</span><span class="badge">8</span></div><div class="process-card__body"><span class="mat-chip">VOICE COIL</span><span class="mat-chip">UV BOND</span><span class="mat-chip more">+6</span></div></div>
+                <div class="process-card"><div class="process-card__head"><span class="process-card__no">S4</span><span class="process-card__name">DOME BONDING</span><span class="badge">6</span></div><div class="process-card__body"><span class="mat-chip">SUSPENSION</span><span class="mat-chip more">+5</span></div></div>
+                <div class="process-card"><div class="process-card__head"><span class="process-card__no">S5</span><span class="process-card__name">VISION CHECK</span><span class="badge badge--warn">0</span></div><div class="process-card__body"><span class="small faint">신규 투입 자재 없음 · 누적 WIP만 계산</span></div></div>
+              </div>
+            </div>
+            <div class="panel__foot"><span class="small">공정을 누르면 해당 자재만 표에서 필터링</span></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel__head"><span class="panel__t">저장 전 검증</span><span class="badge badge--crit">1 ERROR</span></div>
+            <div class="panel__body">
+              <div class="checklist">
+                <div class="checkline ok"><span class="checkline__i">✓</span><span>Routing 공정 연결</span><span class="num">16/16</span></div>
+                <div class="checkline warn"><span class="checkline__i">!</span><span>미배치 BOM 자재</span><span class="num">6</span></div>
+                <div class="checkline ok"><span class="checkline__i">✓</span><span>중복 투입공정</span><span class="num">0</span></div>
+                <div class="checkline bad"><span class="checkline__i">×</span><span>사용량·가격 단위 불일치</span><span class="num">1</span></div>
+                <div class="checkline ok"><span class="checkline__i">✓</span><span>L/R 공통 자재 연결</span><span class="num">12</span></div>
+                <div class="checkline ok"><span class="checkline__i">✓</span><span>도면번호 연결</span><span class="num">38/42</span></div>
+              </div>
+            </div>
+            <div class="panel__foot"><span class="small" style="color:var(--crit)">오류 1건을 수정해야 승인할 수 있습니다.</span></div>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="assets/instrument.js"></script>
+<script>
+Shell.render({
+  active: 'f-cost',
+  crumb: ['BMES', '공정 F-COST', '공정 자재 설정'],
+  readouts: [
+    { k: 'BMES', v: 'LINKED', cls: 'is-ok' },
+    { k: 'MODEL', v: 'TIU-C11-L' },
+    { k: 'BOM', v: '44 ROWS' },
+    { k: 'DRAFT', v: 'V1' }
+  ],
+  tabs: [
+    { code: 'BD-01', label: 'BOM·도면', href: '#' },
+    { code: 'PM-03', label: '공정 자재 설정', href: '#', on: true },
+    { code: 'FC-04', label: '예상 F-COST', href: '#' },
+    { code: 'FC-05', label: '실제 비교', href: '#' }
+  ]
+});
+
+const rows = [...document.querySelectorAll('#materialRows tr')];
+const search = document.querySelector('#materialSearch');
+const filter = document.querySelector('#rowFilter');
+const applyFilters = () => {
+  const q = search.value.trim().toLowerCase();
+  const state = filter.value;
+  rows.forEach(row => {
+    const matchText = !q || (row.dataset.search || '').includes(q);
+    const matchState = state === 'all' || row.dataset.state === state;
+    row.hidden = !(matchText && matchState);
+  });
+};
+search.addEventListener('input', applyFilters);
+filter.addEventListener('change', applyFilters);
+document.querySelector('#checkAll').addEventListener('change', e => {
+  rows.filter(row => !row.hidden).forEach(row => row.querySelector('.row-check').checked = e.target.checked);
+});
+document.querySelector('#bulkApply').addEventListener('click', () => {
+  const value = document.querySelector('#bulkProcess').value;
+  if (!value) return;
+  rows.filter(row => row.querySelector('.row-check').checked).forEach(row => {
+    const select = row.querySelector('.process-select');
+    if (!select || select.disabled) return;
+    if (![...select.options].some(option => option.text === value)) select.add(new Option(value, value));
+    select.value = value;
+    row.dataset.state = 'assigned';
+    row.classList.remove('row-warn');
+    row.querySelector('.statebox').className = 'statebox ok';
+    row.querySelector('.statebox').textContent = '✓';
+  });
+  applyFilters();
+});
+</script>
+</body>
+</html>

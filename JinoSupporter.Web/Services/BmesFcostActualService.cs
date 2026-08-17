@@ -828,17 +828,28 @@ public sealed partial class BmesFcostActualService(
     /// <summary>
     /// Downloads only the BMES finished-product code/name catalog for local searching. Test 5
     /// calls this explicitly when the user refreshes model names; normal typing never reaches
-    /// SQL Server. P-S finished products without a valid BOM for the selected plant/date are excluded.
+    /// SQL Server. Only products in the requested code families with a valid BOM for the selected
+    /// plant/date are returned.
     /// </summary>
     public async Task<List<BmesBomModelCandidate>> FetchBomModelCatalogAsync(
         BmesBomModelCatalogQuery query,
         CancellationToken cancellationToken = default)
     {
         int maxRows = Math.Clamp(query.MaxRows <= 0 ? 20000 : query.MaxRows, 1, 50000);
-        string codePrefix = NormalizeFilter(query.ProductCodePrefix);
+        List<string> codePrefixes = query.ProductCodePrefixes
+            .Select(NormalizeFilter)
+            .Where(prefix => prefix.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        string productCodeSql = "RTRIM(CAST(m.MATNR AS nvarchar(80)))";
+        string codePrefixFilter = codePrefixes.Count == 0
+            ? "1 = 0"
+            : string.Join(
+                Environment.NewLine + "                    OR ",
+                codePrefixes.Select((_, index) => $"{productCodeSql} LIKE @CodePrefixLike{index}"));
 
-        const string sql =
-            """
+        string sql =
+            $"""
             SELECT TOP (@MaxRows)
                 RTRIM(CAST(m.MATNR AS nvarchar(80))) AS ProductCode,
                 RTRIM(CAST(m.MAKTX AS nvarchar(200))) AS ProductName,
@@ -847,8 +858,7 @@ public sealed partial class BmesFcostActualService(
             WHERE ISNULL(m.MATNR, N'') <> N''
               AND ISNULL(m.MAKTX, N'') <> N''
               AND (
-                    @CodePrefix = N''
-                    OR RTRIM(CAST(m.MATNR AS nvarchar(80))) LIKE @CodePrefixLike
+                    {codePrefixFilter}
               )
               AND EXISTS (
                   SELECT 1
@@ -887,14 +897,13 @@ public sealed partial class BmesFcostActualService(
         {
             Value = query.WorkDate.Date,
         });
-        cmd.Parameters.Add(new SqlParameter("@CodePrefix", SqlDbType.NVarChar, 40)
+        for (int i = 0; i < codePrefixes.Count; i++)
         {
-            Value = codePrefix,
-        });
-        cmd.Parameters.Add(new SqlParameter("@CodePrefixLike", SqlDbType.NVarChar, 60)
-        {
-            Value = EscapeLike(codePrefix) + "%",
-        });
+            cmd.Parameters.Add(new SqlParameter($"@CodePrefixLike{i}", SqlDbType.NVarChar, 60)
+            {
+                Value = EscapeLike(codePrefixes[i]) + "%",
+            });
+        }
         cmd.Parameters.Add(new SqlParameter("@MaxRows", SqlDbType.Int) { Value = maxRows });
 
         var models = new List<BmesBomModelCandidate>();
@@ -1856,7 +1865,7 @@ public sealed class BmesBomModelCatalogQuery
     public BmesFcostDbConnection Connection { get; init; } = new();
     public string Plant { get; init; } = "3200";
     public DateTime WorkDate { get; init; } = DateTime.Today;
-    public string ProductCodePrefix { get; init; } = "P-S-";
+    public IReadOnlyList<string> ProductCodePrefixes { get; init; } = ["P-S-", "P-M-", "P-N-", "P-H-"];
     public int MaxRows { get; init; } = 20000;
 }
 

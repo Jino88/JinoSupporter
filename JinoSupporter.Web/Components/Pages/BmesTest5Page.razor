@@ -998,7 +998,7 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
 
     private string ModelCatalogTitle =>
         _modelCatalog.Count == 0
-            ? "Fetch only BOM-enabled P-S finished-product codes and model names from BMES, then search them locally."
+            ? "Fetch BOM-enabled P-S, P-M, P-N, and P-H product codes and model names from BMES, then search them locally."
             : $"{_modelCatalog.Count:N0} local model names · synced {_modelCatalogSyncedAt} · BOM date {_modelCatalogWorkDate:yyyy-MM-dd}";
 
     private async Task RefreshModelCatalogAsync()
@@ -1027,7 +1027,7 @@ else if (!string.IsNullOrWhiteSpace(_statusMessage))
                     Connection = connection,
                     Plant = _plant.Trim(),
                     WorkDate = _workDate.Date,
-                    ProductCodePrefix = "P-S-",
+                    ProductCodePrefixes = ["P-S-", "P-M-", "P-N-", "P-H-"],
                     MaxRows = 20000,
                 });
 

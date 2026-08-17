@@ -210,6 +210,8 @@ public sealed class ProcessMaterialMappingService
         row.ProcessName = edit.ProcessName.Trim();
         row.ProcessNo = edit.ProcessNo.Trim();
         row.ReferenceProcessNo = edit.ReferenceProcessNo.Trim();
+        row.LaneCode = edit.LaneCode.Trim();
+        row.MergeProcessNo = edit.MergeProcessNo.Trim();
     }
 
     private static ProcessMaterialMappingRow Clone(ProcessMaterialMappingRow row)
@@ -237,6 +239,8 @@ public sealed class ProcessMaterialMappingService
             ProcessName = row.ProcessName,
             ProcessNo = row.ProcessNo,
             ReferenceProcessNo = row.ReferenceProcessNo,
+            LaneCode = row.LaneCode,
+            MergeProcessNo = row.MergeProcessNo,
             CreatedAt = row.CreatedAt,
             UpdatedAt = row.UpdatedAt,
         };
@@ -278,6 +282,8 @@ public sealed class ProcessMaterialProcessRow
     public string ProcessName { get; set; } = string.Empty;
     public string ProcessNo { get; set; } = string.Empty;
     public string ReferenceProcessNo { get; set; } = string.Empty;
+    public string LaneCode { get; set; } = string.Empty;
+    public string MergeProcessNo { get; set; } = string.Empty;
     public string CreatedAt { get; set; } = string.Empty;
     public string UpdatedAt { get; set; } = string.Empty;
 }
@@ -289,4 +295,6 @@ public sealed class ProcessMaterialProcessEdit
     public string ProcessName { get; set; } = string.Empty;
     public string ProcessNo { get; set; } = string.Empty;
     public string ReferenceProcessNo { get; set; } = string.Empty;
+    public string LaneCode { get; set; } = string.Empty;
+    public string MergeProcessNo { get; set; } = string.Empty;
 }
