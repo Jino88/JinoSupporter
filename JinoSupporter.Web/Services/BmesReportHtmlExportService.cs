@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -129,6 +130,7 @@ public sealed class BmesReportHtmlExportService
         ReportProgressTracker? tracker,
         Action<string>? log)
     {
+        var totalSw = Stopwatch.StartNew();
         string token = Guid.NewGuid().ToString("N");
         string dir = Path.Combine(ExportRoot, token);
         Directory.CreateDirectory(dir);
@@ -162,7 +164,7 @@ public sealed class BmesReportHtmlExportService
             ["ExportProgress"] = Stage(StageDaily),
             ["OnExportComputed"] = (Action<HierReports?, NgRateReportService.NgRateReport?>)
                 ((hier, trend) => { sharedHierarchy = hier; sharedTrend = trend; }),
-        });
+        }, log);
         tracker?.MarkDone(StageDaily);
 
         // ── 원인 비중 ────────────────────────────────────────────────────────────
@@ -173,7 +175,7 @@ public sealed class BmesReportHtmlExportService
             ["ExportEnd"] = end,
             ["ExportGroups"] = groups,
             ["ExportSharedHierarchy"] = sharedHierarchy,
-        });
+        }, log);
         tracker?.MarkDone(StageCause);
 
         // ── Weekly ───────────────────────────────────────────────────────────────
@@ -187,7 +189,7 @@ public sealed class BmesReportHtmlExportService
             ["ExportGroups"] = groups,
             ["ExportSharedHierarchy"] = sharedHierarchy,
             ["ExportProgress"] = Stage(StageWeekly),
-        });
+        }, log);
         tracker?.MarkDone(StageWeekly);
 
         // ── F-COST ×4 ────────────────────────────────────────────────────────────
@@ -235,7 +237,7 @@ public sealed class BmesReportHtmlExportService
                     (Action<BmesFCostPage.FCostExportSnapshot>)(s => fcostSnapshot = s);
             }
 
-            bodies[key] = await RenderTabAsync<BmesFCostPage>(renderer, parameters);
+            bodies[key] = await RenderTabAsync<BmesFCostPage>(renderer, parameters, log);
         }
         // ── Additional KPI sources ───────────────────────────────────────────────
         // MES072410 returns the core-parts Total INAMT/FCOST/FRATE triplet, while
@@ -259,6 +261,7 @@ public sealed class BmesReportHtmlExportService
 
         // Only now that this run's file exists is it safe to drop the earlier ones.
         CleanupOldTokens(token);
+        log?.Invoke($"BMES report export complete in {totalSw.ElapsedMilliseconds:N0} ms (tabs={bodies.Count:N0})");
 
         return token;
     }
@@ -430,13 +433,16 @@ public sealed class BmesReportHtmlExportService
     };
 
     private static async Task<string> RenderTabAsync<TComponent>(
-        HtmlRenderer renderer, Dictionary<string, object?> parameters)
+        HtmlRenderer renderer, Dictionary<string, object?> parameters, Action<string>? log = null)
         where TComponent : IComponent =>
         await renderer.Dispatcher.InvokeAsync(async () =>
         {
+            var sw = Stopwatch.StartNew();
             var output = await renderer.RenderComponentAsync<TComponent>(
                 ParameterView.FromDictionary(parameters));
-            return output.ToHtmlString();
+            string html = output.ToHtmlString();
+            log?.Invoke($"Tab {typeof(TComponent).Name} rendered in {sw.ElapsedMilliseconds:N0} ms ({html.Length:N0} chars)");
+            return html;
         });
 
     private static string PlaceholderBody(string key) =>
