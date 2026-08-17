@@ -808,6 +808,7 @@
 
             var hier = await HierReportBuilder.BuildAsync(
                 NgRateReportSvc, dbPath, selectedGroups, progress,
+                _startDate, _endDate,
                 includeMidDetailReport: true);
 
             if (!hier.HasData || hier.ByGroup is null || hier.ByMid is null)

@@ -16,6 +16,7 @@ public sealed class HierReports
     public IReadOnlyDictionary<string, string> MidMapping { get; init; }
         = new Dictionary<string, string>(StringComparer.Ordinal);
     public IReadOnlyList<string> LineShifts { get; init; } = Array.Empty<string>();
+    public NgRateReportService.RequestSnapshot? Snapshot { get; init; }
 
     public bool HasData => ByGroup is not null && Groups.Count > 0;
 }
@@ -222,14 +223,15 @@ public static class HierReportBuilder
         progress?.Report(includeMidDetailReport
             ? "Starting hierarchy summary and Mid detail reports in parallel."
             : "Starting hierarchy summary report.");
+        var snapshot = svc.CreateRequestSnapshot(dbPath, periodStart, periodEnd, progress);
         var summaryProgress = WithProgressLabel(progress, "Hierarchy summary");
         var summaryTask = svc.GenerateSummaryReportAsync(
             dbPath, allMappingReadOnly, allGroupNames, summaryProgress, periodStart, periodEnd,
-            weightedGroupSummary: true);
+            weightedGroupSummary: true, snapshot: snapshot);
         var midProgress = WithProgressLabel(progress, "Mid detail");
         var byMidTask = includeMidDetailReport
             ? svc.GenerateReportAsync(
-                dbPath, midMapping, midList, midProgress, periodStart, periodEnd)
+                dbPath, midMapping, midList, midProgress, periodStart, periodEnd, snapshot: snapshot)
             : null;
 
         var summary = await summaryTask;
@@ -245,6 +247,7 @@ public static class HierReportBuilder
             Groups  = selectedGroups.ToList(),
             MidMapping = new Dictionary<string, string>(midMapping, StringComparer.Ordinal),
             LineShifts = lsList.ToList(),
+            Snapshot = snapshot,
         };
     }
 
