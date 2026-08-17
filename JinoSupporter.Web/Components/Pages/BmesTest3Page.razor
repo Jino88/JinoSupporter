@@ -1746,10 +1746,12 @@
                 .OrderBy(item => ResolveLaneOrder(item.Setting))
                 .ThenBy(item => RoutingSortIndex(item.Row.Process))
                 .ToList();
+            // 합류 대상은 MAIN 뿐 아니라 다른 SUB 레인일 수도 있다. ProcessNo 는 레인 접두사를 포함해 유일하다.
             string mergeProcessNo = laneItems.LastOrDefault()?.Setting?.MergeProcessNo.Trim() ?? string.Empty;
-            var mergeTarget = assignedRows.FirstOrDefault(item =>
-                string.Equals(ResolveLaneCode(item.Setting), "MAIN", StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(NormalizeProcessNo(item.Setting?.ProcessNo), NormalizeProcessNo(mergeProcessNo), StringComparison.OrdinalIgnoreCase));
+            var mergeTarget = mergeProcessNo.Length == 0
+                ? null
+                : assignedRows.FirstOrDefault(item =>
+                    string.Equals(NormalizeProcessNo(item.Setting?.ProcessNo), NormalizeProcessNo(mergeProcessNo), StringComparison.OrdinalIgnoreCase));
             lanes.Add(new Test3EditorLane
             {
                 LaneCode = laneCode,
@@ -1953,6 +1955,7 @@
             item => BuildLaneProcessNo(item.LaneCode, item.Index + 1),
             StringComparer.OrdinalIgnoreCase);
         var requestedById = requested.ToDictionary(item => item.Row.GroupKey, StringComparer.OrdinalIgnoreCase);
+        ValidateMergeTargets(requested, requestedById);
 
         foreach (var setting in _processSettings
                      .Where(setting => selectedModels.Contains(setting.ModelName.Trim()))
@@ -1972,19 +1975,14 @@
                 : BuildLaneProcessNo(item.LaneCode, item.Index);
             string mergeProcessNo = string.Empty;
 
+            // 합류 대상은 MAIN 뿐 아니라 다른 SUB 레인의 공정도 될 수 있다(SUB1 → SUB3).
+            // 유효성은 ValidateMergeTargets 에서 이미 확인했다.
             if (!string.Equals(item.LaneCode, "MAIN", StringComparison.OrdinalIgnoreCase) &&
                 item.Index == item.Lane.ProcessIds.Count - 1 &&
-                !string.IsNullOrWhiteSpace(item.Lane.MergeTargetProcessId))
+                !string.IsNullOrWhiteSpace(item.Lane.MergeTargetProcessId) &&
+                processNoById.TryGetValue(item.Lane.MergeTargetProcessId.Trim(), out string? targetProcessNo))
             {
-                string targetId = item.Lane.MergeTargetProcessId.Trim();
-                if (!requestedById.TryGetValue(targetId, out var target) ||
-                    !string.Equals(target.Row.Process.ModelName, item.Row.Process.ModelName, StringComparison.OrdinalIgnoreCase) ||
-                    !string.Equals(target.LaneCode, "MAIN", StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new InvalidOperationException($"{item.LaneCode}의 합류 지점은 같은 L/R의 MAIN 공정이어야 합니다.");
-                }
-
-                mergeProcessNo = processNoById[targetId];
+                mergeProcessNo = targetProcessNo;
             }
 
             foreach (var process in item.Row.LinkedProcesses)
@@ -1994,6 +1992,58 @@
         _processSettings = MappingService.GetProcessRows();
         TrimMaterialEdits();
         Activity.Log("Test 3", $"Save React MAIN/SUB layout model={_filterModel.Trim()}, rows={requested.Count:N0}");
+    }
+
+    /// <summary>
+    /// SUB 레인의 합류 대상을 검사한다. 대상은 같은 L/R 모델에 실제 배치된 공정이어야 하고,
+    /// 자기 레인이거나 서로 물고 도는 순환이면 거부한다. MAIN 이 아닌 SUB 레인 대상은 허용한다.
+    /// </summary>
+    private static void ValidateMergeTargets(
+        List<(Test3EditorLaneRequest Lane, string LaneCode, Test3ProcessRow Row, int Index)> requested,
+        Dictionary<string, (Test3EditorLaneRequest Lane, string LaneCode, Test3ProcessRow Row, int Index)> requestedById)
+    {
+        var mergeEdges = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var laneNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var item in requested)
+        {
+            if (string.Equals(item.LaneCode, "MAIN", StringComparison.OrdinalIgnoreCase) ||
+                item.Index != item.Lane.ProcessIds.Count - 1)
+            {
+                continue;
+            }
+
+            string targetId = item.Lane.MergeTargetProcessId?.Trim() ?? string.Empty;
+            if (targetId.Length == 0)
+                continue;
+
+            string modelName = item.Row.Process.ModelName;
+            if (!requestedById.TryGetValue(targetId, out var target) ||
+                !string.Equals(target.Row.Process.ModelName, modelName, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"{item.LaneCode}의 합류 지점은 같은 L/R 모델에 배치된 공정이어야 합니다.");
+            }
+
+            if (string.Equals(target.LaneCode, item.LaneCode, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"{item.LaneCode}은 자기 자신에 합류할 수 없습니다.");
+
+            string key = modelName + "\t" + item.LaneCode;
+            mergeEdges[key] = modelName + "\t" + target.LaneCode;
+            laneNames[key] = item.LaneCode;
+        }
+
+        foreach (string start in mergeEdges.Keys)
+        {
+            string current = start;
+            for (int step = 0; step <= mergeEdges.Count; step++)
+            {
+                if (!mergeEdges.TryGetValue(current, out string? next))
+                    break;
+                if (string.Equals(next, start, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"{laneNames[start]}의 합류 경로가 순환합니다. 서로 물고 도는 합류는 저장할 수 없습니다.");
+                current = next;
+            }
+        }
     }
 
     private List<Test3ProcessRow> GetReactOrderedRows()
@@ -2110,7 +2160,7 @@
 
         return string.IsNullOrWhiteSpace(laneMergeProcessNo)
             ? $"{laneCode} #{order} → {laneCode} 마지막"
-            : $"{laneCode} #{order} → {laneCode} 마지막 → {laneMergeProcessNo} → MAIN 마지막";
+            : $"{laneCode} #{order} → {laneCode} 마지막 → {laneMergeProcessNo} → 마지막 공정";
     }
 
     private static string ResolveLaneCode(ProcessMaterialProcessRow? setting)

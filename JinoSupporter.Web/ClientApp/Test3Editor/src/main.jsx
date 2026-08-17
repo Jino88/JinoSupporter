@@ -102,6 +102,31 @@ function cardDragListeners(listeners) {
   );
 }
 
+function findLaneOfProcess(side, processId) {
+  return side.lanes.find((lane) => lane.processes.some((process) => process.id === processId)) ?? null;
+}
+
+// SUB 는 MAIN 뿐 아니라 다른 SUB 에도 합류할 수 있다(SUB1 → SUB3).
+// 다만 자기 자신이나 서로 물고 도는 합류는 만들 수 없다.
+function wouldMergeCycle(side, sourceLaneCode, targetLaneCode) {
+  const nextLane = new Map();
+  for (const lane of side.lanes) {
+    if (lane.laneCode === "MAIN" || !lane.mergeTargetProcessId) continue;
+    const owner = findLaneOfProcess(side, lane.mergeTargetProcessId);
+    if (owner) nextLane.set(lane.laneCode, owner.laneCode);
+  }
+  nextLane.set(sourceLaneCode, targetLaneCode);
+
+  let current = targetLaneCode;
+  for (let step = 0; step <= nextLane.size; step += 1) {
+    if (current === sourceLaneCode) return true;
+    const next = nextLane.get(current);
+    if (!next) return false;
+    current = next;
+  }
+  return false;
+}
+
 function cloneSides(sides) {
   return sides.map((side) => ({
     ...side,
@@ -265,11 +290,21 @@ function Test3Editor({ dotnet, initialSnapshot }) {
     const side = next.find((item) => item.modelName === modelName);
     const lane = side?.lanes.find((item) => item.laneCode === laneCode);
     if (!lane) return;
-    const mainLane = side.lanes.find((item) => item.laneCode === "MAIN");
-    const targetIndex = mainLane?.processes.findIndex((item) => item.id === processId) ?? -1;
+
+    const targetLane = processId ? findLaneOfProcess(side, processId) : null;
+    if (processId && !targetLane) return;
+    if (targetLane && wouldMergeCycle(side, laneCode, targetLane.laneCode)) {
+      setLocalError(`${laneCode}을 ${targetLane.laneCode}에 합류시키면 합류 경로가 순환합니다.`);
+      setMergePick(null);
+      return;
+    }
+
+    const targetIndex = targetLane ? targetLane.processes.findIndex((item) => item.id === processId) : -1;
     lane.mergeTargetProcessId = processId;
     lane.mergeTargetLabel =
-      targetIndex >= 0 ? `MAIN #${targetIndex + 1} · ${mainLane.processes[targetIndex].processName}` : "";
+      targetIndex >= 0
+        ? `${targetLane.laneCode} #${targetIndex + 1} · ${targetLane.processes[targetIndex].processName}`
+        : "";
     setMergePick(null);
     void persistLayout(next);
   };
@@ -357,8 +392,12 @@ function Test3Editor({ dotnet, initialSnapshot }) {
     }
 
     if (activeData.kind === "merge") {
-      if (overData.laneCode !== "MAIN" || !overData.processId) {
-        setLocalError("SUB 산출물은 MAIN의 공정 셀에만 합류시킬 수 있습니다.");
+      if (!overData.processId) {
+        setLocalError("SUB 산출물은 공정이 배치된 셀에만 합류시킬 수 있습니다.");
+        return;
+      }
+      if (overData.laneCode === activeData.laneCode) {
+        setLocalError(`${activeData.laneCode}은 자기 자신에 합류할 수 없습니다.`);
         return;
       }
       updateMergeTarget(activeData.modelName, activeData.laneCode, overData.processId);
@@ -367,8 +406,12 @@ function Test3Editor({ dotnet, initialSnapshot }) {
 
   const handleCellPick = (side, lane, process) => {
     if (!mergePick || mergePick.modelName !== side.modelName) return;
-    if (lane.laneCode !== "MAIN" || !process) {
-      setLocalError("SUB 산출물은 MAIN의 공정 셀에만 합류시킬 수 있습니다.");
+    if (!process) {
+      setLocalError("SUB 산출물은 공정이 배치된 셀에만 합류시킬 수 있습니다.");
+      return;
+    }
+    if (lane.laneCode === mergePick.laneCode) {
+      setLocalError(`${lane.laneCode}은 자기 자신에 합류할 수 없습니다.`);
       return;
     }
     updateMergeTarget(side.modelName, mergePick.laneCode, process.id);
@@ -455,7 +498,7 @@ function Test3Editor({ dotnet, initialSnapshot }) {
 
         {mergePick && (
           <div className="t3r-pick-banner">
-            <strong>{mergePick.laneCode}</strong> 산출물을 합류시킬 <strong>MAIN 공정 셀</strong>을 클릭하세요.
+            <strong>{mergePick.laneCode}</strong> 산출물을 합류시킬 <strong>공정 셀</strong>을 클릭하세요. MAIN과 다른 SUB 레인 모두 가능합니다.
             <button type="button" className="t3r-link-button" onClick={() => setMergePick(null)}>
               취소
             </button>
@@ -632,7 +675,7 @@ function SideBoard({
                   step={rowIndex}
                   cellStep={laneSteps[laneIndex][rowIndex] ?? null}
                   activeDrag={activeDrag}
-                  isPicking={isPicking}
+                  pickLaneCode={isPicking ? mergePick.laneCode : ""}
                   onPick={() => onCellPick(lane, laneSteps[laneIndex][rowIndex]?.process ?? null)}
                   onUnassign={onUnassign}
                 />
@@ -670,12 +713,12 @@ function LaneHeader({ side, lane, isPicking, onRemove, onStartPick, onClearMerge
             ref={setNodeRef}
             type="button"
             className={`t3r-merge-handle ${isDragging ? "is-dragging" : ""} ${isPicking ? "is-picking" : ""}`}
-            title="MAIN 공정 셀로 끌어 놓거나 클릭한 뒤 MAIN 셀을 선택하세요"
+            title="합류시킬 공정 셀로 끌어 놓거나, 클릭한 뒤 대상 셀을 선택하세요. MAIN·다른 SUB 모두 가능합니다"
             onClick={onStartPick}
             {...attributes}
             {...listeners}
           >
-            {lane.laneCode} 산출물 → MAIN
+            {lane.laneCode} 산출물 합류 →
           </button>
           <span className="t3r-merge-label" title={lane.mergeTargetLabel || "합류 위치 미지정"}>
             {lane.mergeTargetLabel || "합류 위치 미지정"}
@@ -691,7 +734,7 @@ function LaneHeader({ side, lane, isPicking, onRemove, onStartPick, onClearMerge
   );
 }
 
-function MatrixCell({ side, lane, step, cellStep, activeDrag, isPicking, onPick, onUnassign }) {
+function MatrixCell({ side, lane, step, cellStep, activeDrag, pickLaneCode, onPick, onUnassign }) {
   const process = cellStep?.process ?? null;
   const { setNodeRef, isOver } = useDroppable({
     id: dropCellId(side.modelName, lane.laneCode, step),
@@ -708,9 +751,12 @@ function MatrixCell({ side, lane, step, cellStep, activeDrag, isPicking, onPick,
   if (activeDrag && activeDrag.modelName === side.modelName) {
     if (activeDrag.kind === "process") dropState = "can-drop";
     else if (activeDrag.kind === "material") dropState = process ? "can-drop" : "no-drop";
-    else if (activeDrag.kind === "merge") dropState = lane.laneCode === "MAIN" && process ? "can-drop" : "no-drop";
+    // 합류 대상은 자기 레인만 아니면 MAIN·다른 SUB 어디든 될 수 있다.
+    else if (activeDrag.kind === "merge") {
+      dropState = process && lane.laneCode !== activeDrag.laneCode ? "can-drop" : "no-drop";
+    }
   }
-  const pickTarget = isPicking && lane.laneCode === "MAIN" && Boolean(process);
+  const pickTarget = Boolean(pickLaneCode) && pickLaneCode !== lane.laneCode && Boolean(process);
   const formula = cellStep ? formulaText(cellStep) : "";
 
   return (
