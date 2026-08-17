@@ -16,348 +16,13 @@
 
 <PageTitle>Test 3</PageTitle>
 
-<link rel="stylesheet" href="/test3-editor/test3-editor.css?v=20260815-1" />
+<link rel="stylesheet" href="/test3-editor/test3-editor.css?v=20260817-2" />
 <div class="d-flex align-items-center gap-2 mb-3">
     <span class="fw-semibold" style="font-size:18px;">T3</span>
     <h5 class="mb-0 fw-semibold">Test 3 · 공정/자재 Flow 편집</h5>
     <span class="badge bg-primary-subtle text-primary-emphasis">React</span>
 </div>
 <div @ref="_reactEditorHost" class="test3-react-host"></div>
-
-@if (!ReactEditorEnabled)
-{
-    var orderedProcessRows = OrderedProcessRows;
-    var availableProcessRows = AvailableProcessRows;
-    var orderedProcessLanes = BuildProcessLanes(orderedProcessRows);
-    var availableProcessLanes = BuildProcessLanes(availableProcessRows);
-    var materialAssignments = MaterialAssignments;
-    var materialLanes = BuildMaterialLanes(materialAssignments);
-
-<div class="d-flex align-items-center gap-2 mb-3">
-    <span class="fw-semibold" style="font-size:18px;">T3</span>
-    <h5 class="mb-0 fw-semibold">Test 3</h5>
-</div>
-
-@if (!string.IsNullOrWhiteSpace(_statusMessage))
-{
-    <div class="alert @(_statusError ? "alert-danger" : "alert-success") py-2 small mb-3 d-flex align-items-center">
-        <span class="flex-fill">@_statusMessage</span>
-        <button class="btn-close btn-sm" @onclick="() => _statusMessage = string.Empty"></button>
-    </div>
-}
-
-<datalist id="test3-models">
-    @foreach (string model in _modelNames)
-    {
-        <option value="@model"></option>
-    }
-</datalist>
-<section class="test3-table-wrap">
-    <div class="test3-toolbar">
-        <span class="fw-semibold small">모델별 공정·자재 설정</span>
-        <span class="badge bg-secondary">@_rows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
-        @if (FilteredRows.Count != _rows.Count)
-        {
-            <span class="text-muted small">@FilteredRows.Count.ToString("N0", CultureInfo.InvariantCulture) shown</span>
-        }
-        <div class="ms-auto test3-filter">
-            <input class="form-control form-control-sm" list="test3-models" placeholder="모델 검색" @bind="_filterModel" @bind:event="oninput" @bind:after="OnFilterModelChangedAsync" />
-            <input class="form-control form-control-sm" placeholder="공정 검색" @bind="_filterProcess" @bind:event="oninput" />
-            <input class="form-control form-control-sm" placeholder="자재 검색" @bind="_filterMaterial" @bind:event="oninput" />
-        </div>
-        @if (IsModelProcessMode)
-        {
-            <button class="btn btn-outline-primary btn-sm"
-                    @onclick="ReloadBomMaterialsAsync"
-                    disabled="@_bomBusy"
-                    title="선택한 모델의 BOM 자재를 서버에서 다시 불러옵니다">
-                BOM 다시 불러오기
-            </button>
-            <button class="btn btn-outline-danger btn-sm"
-                    @onclick="() => ResetVisibleProcessRegistrations(orderedProcessRows)"
-                    disabled="@(!HasProcessRegistrations(orderedProcessRows))"
-                    title="이 모델에 저장된 공정 순서를 모두 지웁니다">
-                공정 순서 초기화
-            </button>
-        }
-    </div>
-
-    @if (IsModelProcessMode)
-    {
-        <div class="test3-adaptive-shell">
-            <aside class="test3-sequence-pane">
-                <div class="test3-pane-title">
-                    <span class="fw-semibold small">저장된 공정 순서</span>
-                    <span class="badge bg-secondary">@orderedProcessRows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
-                    <span class="text-muted small">@_filterModel.Trim()</span>
-                </div>
-                <div class="test3-lane-stack">
-                    @foreach (var lane in orderedProcessLanes)
-                    {
-                        <section class="test3-process-lane"
-                                 @key="lane.ModelName"
-                                 @ondragover:preventDefault="true"
-                                 @ondrop="() => DropProcessAtSequenceEnd(lane.ModelName)">
-                            <div class="test3-lane-title">
-                                <span class="test3-side-badge @BuildModelSideClass(lane.ModelName)">@BuildModelSideLabel(lane.ModelName)</span>
-                                <strong>@lane.ModelName</strong>
-                                <span>@lane.Rows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
-                            </div>
-                            @if (lane.Rows.Count == 0)
-                            {
-                                <div class="test3-empty">오른쪽의 @BuildModelSideLabel(lane.ModelName) 공정을 여기로 끌어오세요.</div>
-                            }
-                            else
-                            {
-                                <div class="test3-sequence-list">
-                                    @foreach (var processRow in lane.Rows)
-                                    {
-                                        string processNo = GetProcessNo(processRow);
-                                        string rangeText = BuildProcessEffectiveRange(processRow.Process, lane.Rows);
-                                        <div class="test3-process-card sequence @BuildProcessDragRowClass(processRow.Process)"
-                                             @key="processRow.GroupKey"
-                                             draggable="true"
-                                             title="@BuildProcessTitle(processRow.Process)"
-                                             @ondragstart="() => StartProcessDrag(processRow.Process, true)"
-                                             @ondragend="EndProcessDrag"
-                                             @ondragover:preventDefault="true"
-                                             @ondragover="() => DragOverProcessRow(processRow.Process)"
-                                             @ondragleave="() => ClearDragOverProcessRow(processRow.Process)"
-                                             @ondrop:stopPropagation="true"
-                                             @ondrop="() => DropProcessOnSequence(processRow.Process)">
-                                            <div class="test3-seq-no">@processNo</div>
-                                            <div class="test3-card-main">
-                                                <div class="test3-card-heading">
-                                                    <span class="font-monospace">@processRow.Process.ProcessCode</span>
-                                                    <span>@processRow.Process.ProcessName</span>
-                                                </div>
-                                                <div class="test3-card-meta">@rangeText</div>
-                                            </div>
-                                            <button type="button"
-                                                    class="btn btn-outline-danger btn-sm py-0 px-1"
-                                                    title="저장된 순서에서 제거"
-                                                    @onclick:stopPropagation="true"
-                                                    @onclick="() => RemoveProcessFromSequence(processRow)">
-                                                빼기
-                                            </button>
-                                        </div>
-                                    }
-                                </div>
-                            }
-                        </section>
-                    }
-                </div>
-            </aside>
-
-            <div class="test3-stage-pane">
-                <section class="test3-stage-section">
-                    <div class="test3-pane-title">
-                        <span class="fw-semibold small">검색된 모델의 공정</span>
-                        <span class="badge bg-secondary">@availableProcessRows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
-                        <span class="text-muted small">@_filterModel.Trim()</span>
-                    </div>
-                    <div class="test3-lane-stack"
-                         @ondragover:preventDefault="true"
-                         @ondrop="DropProcessBackToAvailable">
-                        @foreach (var lane in availableProcessLanes)
-                        {
-                            <section class="test3-process-lane" @key="lane.ModelName">
-                                <div class="test3-lane-title">
-                                    <span class="test3-side-badge @BuildModelSideClass(lane.ModelName)">@BuildModelSideLabel(lane.ModelName)</span>
-                                    <strong>@lane.ModelName</strong>
-                                    <span>@lane.Rows.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
-                                </div>
-                                @if (lane.Rows.Count == 0)
-                                {
-                                    <div class="test3-empty">검색 조건에 맞는 공정이 모두 왼쪽에 등록되었습니다.</div>
-                                }
-                                else
-                                {
-                                    <div class="test3-routing-list">
-                                        @foreach (var processRow in lane.Rows)
-                                        {
-                                            <div class="test3-process-card"
-                                                 @key="processRow.GroupKey"
-                                                 draggable="true"
-                                                 title="@BuildProcessTitle(processRow.Process)"
-                                                 @ondragstart="() => StartProcessDrag(processRow.Process, false)"
-                                                 @ondragend="EndProcessDrag">
-                                                <div class="test3-card-main">
-                                                    <div class="test3-card-heading">
-                                                        <span class="font-monospace">@processRow.Process.ProcessCode</span>
-                                                        <span>@processRow.Process.ProcessName</span>
-                                                    </div>
-                                                </div>
-                                                <button type="button"
-                                                        class="btn btn-primary btn-sm py-0 px-2"
-                                                        @onclick="() => AddProcessToSequence(processRow)">
-                                                    추가
-                                                </button>
-                                            </div>
-                                        }
-                                    </div>
-                                }
-                            </section>
-                        }
-                    </div>
-                </section>
-
-                <section class="test3-stage-section">
-                    <div class="test3-pane-title">
-                        <span class="fw-semibold small">BOM 자재 최초 투입 공정</span>
-                        @if (_bomBusy)
-                        {
-                            <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary">@materialAssignments.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(_bomLoadSource))
-                        {
-                            <span class="text-muted small">@_bomLoadSource</span>
-                        }
-                        <span class="text-muted small">@_filterModel.Trim()</span>
-                    </div>
-                    @if (orderedProcessRows.Count == 0)
-                    {
-                        <div class="test3-empty">먼저 왼쪽에 공정 순서를 저장한 뒤 자재별 최초 투입 공정을 지정하세요.</div>
-                    }
-                    else if (!string.IsNullOrWhiteSpace(_bomError))
-                    {
-                        <div class="text-danger small">@_bomError</div>
-                    }
-                    else if (!_bomBusy && materialAssignments.Count == 0)
-                    {
-                        <div class="test3-empty">현재 모델과 검색 조건에 해당하는 BOM 자재가 없습니다.</div>
-                    }
-                    else
-                    {
-                        <div class="test3-material-list">
-                            @foreach (var materialLane in materialLanes)
-                            {
-                                <section class="test3-process-lane" @key="materialLane.ModelName">
-                                    <div class="test3-lane-title">
-                                        <span class="test3-side-badge @BuildModelSideClass(materialLane.ModelName)">@BuildModelSideLabel(materialLane.ModelName)</span>
-                                        <strong>@materialLane.ModelName</strong>
-                                        <span>@materialLane.Assignments.Count.ToString("N0", CultureInfo.InvariantCulture)</span>
-                                    </div>
-                                    @if (materialLane.Assignments.Count == 0)
-                                    {
-                                        <div class="test3-empty">해당 모델의 BOM 자재가 없습니다.</div>
-                                    }
-                                    else
-                                    {
-                                        <div class="test3-material-lane-items">
-                                            @foreach (var assignment in materialLane.Assignments)
-                                            {
-                                                var assignmentProcessRows = GetMaterialProcessRows(assignment, orderedProcessRows);
-                                                <div class="test3-material-card" @key="assignment.Key" title="@BuildMaterialAssignmentTitle(assignment)">
-                                    <div class="test3-material-main">
-                                        <div class="test3-card-heading">
-                                            <span class="test3-side-badge @BuildModelSideClass(assignment.ModelName)">@BuildModelSideLabel(assignment.ModelName)</span>
-                                            <span class="font-monospace">@assignment.RawMaterialCode</span>
-                                            <span>@assignment.RawMaterialName</span>
-                                        </div>
-                                        <div class="test3-material-flow @(HasMaterialProcessSelection(assignment, orderedProcessRows) ? "configured" : "unconfigured")">
-                                            <span>최초 투입</span>
-                                            <strong>@BuildMaterialFirstProcessText(assignment, orderedProcessRows)</strong>
-                                        </div>
-                                        <div class="test3-card-meta">적용 범위 · @BuildMaterialScopeText(assignment, orderedProcessRows)</div>
-                                    </div>
-                                    <div class="test3-material-controls">
-                                        <select class="form-select form-select-sm"
-                                                value="@GetMaterialProcessValue(assignment)"
-                                                @onchange="e => SetMaterialProcessValue(assignment, e.Value?.ToString())">
-                                            <option value="">최초 투입 공정 선택</option>
-                                            @foreach (var processRow in assignmentProcessRows)
-                                            {
-                                                <option value="@processRow.GroupKey">@BuildProcessSelectLabel(processRow)</option>
-                                            }
-                                        </select>
-                                        <input class="form-control form-control-sm test3-qty-input"
-                                               value="@GetMaterialUsageQtyText(assignment)"
-                                               placeholder="사용량"
-                                               title="BOM 기준 자재 사용량"
-                                               inputmode="decimal"
-                                               @onchange="e => SetMaterialUsageQtyText(assignment, e.Value?.ToString())" />
-                                        <input class="form-control form-control-sm test3-unit-input"
-                                               value="@GetMaterialUsageUnit(assignment)"
-                                               placeholder="단위"
-                                               title="자재 사용 단위"
-                                               @onchange="e => SetMaterialUsageUnit(assignment, e.Value?.ToString())" />
-                                        <button type="button"
-                                                class="btn btn-primary btn-sm py-0 px-2"
-                                                disabled="@(!CanSaveMaterialAssignment(assignment))"
-                                                @onclick="() => SaveMaterialAssignmentAsync(assignment)">
-                                            저장
-                                        </button>
-                                        <button type="button"
-                                                class="btn btn-outline-danger btn-sm py-0 px-1"
-                                                disabled="@(!assignment.HasSavedMapping)"
-                                                @onclick="() => ClearMaterialAssignmentAsync(assignment)">
-                                            해제
-                                        </button>
-                                    </div>
-                                                </div>
-                                            }
-                                        </div>
-                                    }
-                                </section>
-                            }
-                        </div>
-                    }
-                </section>
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="test3-table-scroll">
-            <table class="test3-table">
-                <thead>
-                    <tr>
-                        <th style="min-width:150px;">Model</th>
-                        <th style="min-width:110px;">Process Code</th>
-                        <th style="min-width:210px;">Process Name</th>
-                        <th style="min-width:150px;">Raw Material Code</th>
-                        <th style="min-width:230px;">Raw Material Name</th>
-                        <th style="min-width:90px;">Usage</th>
-                        <th style="min-width:160px;">Note</th>
-                        <th style="width:92px;"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (FilteredRows.Count == 0)
-                    {
-                        <tr>
-                            <td colspan="8" class="text-center text-muted py-4 small">모델 검색 목록에서 정확한 모델명을 선택하면 공정 순서 설정 화면이 열립니다.</td>
-                        </tr>
-                    }
-                    else
-                    {
-                        @foreach (var row in FilteredRows)
-                        {
-                            <tr>
-                                <td>@row.ModelName</td>
-                                <td class="font-monospace">@row.ProcessCode</td>
-                                <td>@row.ProcessName</td>
-                                <td class="font-monospace">@row.RawMaterialCode</td>
-                                <td>@row.RawMaterialName</td>
-                                <td class="text-end">@FormatUsage(row)</td>
-                                <td>@row.Note</td>
-                                <td class="test3-row-actions">
-                                    <button class="btn btn-outline-danger btn-sm py-0 px-1" @onclick="() => Delete(row.Id)">Del</button>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-</section>
-}
 
 <style>
     .test3-react-host:empty {
@@ -1813,7 +1478,7 @@
             _reactEditorReference = DotNetObjectReference.Create(this);
             _reactEditorModule = await JS.InvokeAsync<IJSObjectReference>(
                 "import",
-                "./test3-editor/test3-editor.js?v=20260815-1");
+                "./test3-editor/test3-editor.js?v=20260817-2");
             await _reactEditorModule.InvokeVoidAsync(
                 "mount",
                 _reactEditorHost,
@@ -1875,8 +1540,18 @@
             return BuildReactEditorSnapshot();
         }
 
+        string requestedProcessId = request.ProcessId?.Trim() ?? string.Empty;
+        var deployedProcess = GetReactOrderedRows().FirstOrDefault(row =>
+            string.Equals(row.GroupKey, requestedProcessId, StringComparison.OrdinalIgnoreCase));
+        if (deployedProcess is null ||
+            !string.Equals(ExtractSideTokenFromModel(deployedProcess.Process.ModelName), ExtractSideTokenFromModel(assignment.ModelName), StringComparison.OrdinalIgnoreCase))
+        {
+            SetStatus("자재의 최초 투입 공정은 같은 L/R 모델에 실제 배치된 공정이어야 합니다.", true);
+            return BuildReactEditorSnapshot();
+        }
+
         var edit = GetOrCreateMaterialEdit(assignment);
-        edit.ProcessGroupKey = request.ProcessId?.Trim() ?? string.Empty;
+        edit.ProcessGroupKey = requestedProcessId;
         edit.UsageQtyText = request.UsageQty.ToString("0.######", CultureInfo.InvariantCulture);
         edit.UsageUnit = request.UsageUnit?.Trim() ?? string.Empty;
         await SaveMaterialAssignmentAsync(assignment);
@@ -1901,7 +1576,16 @@
     [JSInvokable]
     public Task<Test3EditorSnapshot> ReactResetLayoutAsync()
     {
-        ResetVisibleProcessRegistrations(GetReactOrderedRows());
+        try
+        {
+            ResetVisibleProcessRegistrations(GetReactOrderedRows());
+            SetStatus("선택한 L/R 모델의 공정 배치를 초기화했습니다.", false);
+        }
+        catch (Exception ex)
+        {
+            SetStatus(ex.Message, true);
+        }
+
         return Task.FromResult(BuildReactEditorSnapshot());
     }
 
