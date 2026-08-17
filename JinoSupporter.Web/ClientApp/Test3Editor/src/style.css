@@ -20,6 +20,41 @@
 .t3r-shell *, .t3r-shell *::before, .t3r-shell *::after { box-sizing: border-box; }
 .t3r-shell button, .t3r-shell input, .t3r-shell select { font: inherit; }
 
+/* 윈도우 기본 오버레이 스크롤바는 얇고 흐려서 스크롤이 되는지 모른다.
+   자리를 차지하는 클래식 스크롤바로 고정해 항상 보이게 한다. */
+.t3r-boards, .t3r-matrix-scroll, .t3r-palette-body {
+  scrollbar-width: auto;
+  scrollbar-color: #8a97a8 #e6eaf1;
+}
+
+.t3r-boards::-webkit-scrollbar,
+.t3r-matrix-scroll::-webkit-scrollbar,
+.t3r-palette-body::-webkit-scrollbar {
+  width: 13px;
+  height: 13px;
+}
+
+.t3r-boards::-webkit-scrollbar-track,
+.t3r-matrix-scroll::-webkit-scrollbar-track,
+.t3r-palette-body::-webkit-scrollbar-track {
+  border-radius: 8px;
+  background: #e6eaf1;
+}
+
+.t3r-boards::-webkit-scrollbar-thumb,
+.t3r-matrix-scroll::-webkit-scrollbar-thumb,
+.t3r-palette-body::-webkit-scrollbar-thumb {
+  border: 2px solid #e6eaf1;
+  border-radius: 8px;
+  background: #8a97a8;
+}
+
+.t3r-boards::-webkit-scrollbar-thumb:hover,
+.t3r-matrix-scroll::-webkit-scrollbar-thumb:hover,
+.t3r-palette-body::-webkit-scrollbar-thumb:hover { background: #5f6b7a; }
+
+.t3r-matrix-scroll::-webkit-scrollbar-corner { background: #e6eaf1; }
+
 /* ── 상단 툴바 ─────────────────────────────────────────── */
 
 .t3r-toolbar {
