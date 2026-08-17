@@ -27,6 +27,10 @@
         <option value="300">300건</option>
         <option value="1000">1000건</option>
     </select>
+    <div class="input-group input-group-sm matcost-base">
+        <span class="input-group-text" title="BOM 소요량이 몇 개 기준으로 등록되어 있는지. 이 값으로 나눠 1개 기준으로 환산합니다">BOM 기준수량</span>
+        <input type="number" min="1" step="1" class="form-control" @bind="_bomBaseQty" />
+    </div>
     <button class="btn btn-primary btn-sm" @onclick="SearchAsync" disabled="@_isBusy">조회</button>
     <button class="btn btn-outline-primary btn-sm" @onclick="SearchForceAsync" disabled="@_isBusy" title="BOM 캐시를 무시하고 서버에서 다시 전개합니다">BOM 새로고침</button>
 </div>
@@ -50,7 +54,12 @@ else if (_rows.Count > 0)
         VND 환산은 <strong>TCURR</strong>(KURST=BWCU) 월초 환율 기준입니다.
         @if (_isBomMode)
         {
-            <span> · BOM 소요량은 BOM 기준수량 기준 원값이라, 제품 1개 기준 금액은 별도로 환산해야 합니다.</span>
+            <span>
+                · <strong>BOM Qty</strong> 는 BOM 에 등록된 원값이고, <strong>Qty/1EA</strong> 와 <strong>Cost/1EA</strong> 는
+                기준수량 @_bomBaseQty.ToString("N0", CultureInfo.InvariantCulture) 로 나눈 제품 1개 기준 값입니다.
+                기준수량은 BOM 헤더에서 읽어오지 않고 위 입력값을 씁니다.
+                반제품(하위 자재를 가진 행)과 그 하위 자재가 함께 나오므로 전체를 그냥 더하면 이중 계산됩니다.
+            </span>
         }
     </div>
 }
@@ -83,11 +92,16 @@ else if (_rows.Count > 0)
                     {
                         <th class="text-end" style="min-width:100px;">BOM Qty</th>
                         <th style="min-width:60px;">Qty Unit</th>
+                        <th class="text-end matcost-per-ea" style="min-width:110px;">Qty / 1EA</th>
                     }
                     <th class="text-end" style="min-width:120px;">Unit Price</th>
                     <th style="min-width:70px;">Currency</th>
                     <th style="min-width:70px;">Price Unit</th>
                     <th class="text-end" style="min-width:130px;">Unit Price (VND)</th>
+                    @if (_isBomMode)
+                    {
+                        <th class="text-end matcost-per-ea" style="min-width:130px;">Cost / 1EA (VND)</th>
+                    }
                     <th style="min-width:80px;">Source</th>
                 </tr>
             </thead>
@@ -95,7 +109,7 @@ else if (_rows.Count > 0)
                 @if (_rows.Count == 0)
                 {
                     <tr>
-                        <td colspan="@(_isBomMode ? 10 : 7)" class="text-center text-muted py-4 small">
+                        <td colspan="@(_isBomMode ? 12 : 7)" class="text-center text-muted py-4 small">
                             @(_searchedAt is null ? "모델명이나 자재코드를 입력하고 조회하세요." : "조회 결과가 없습니다.")
                         </td>
                     </tr>
@@ -115,11 +129,16 @@ else if (_rows.Count > 0)
                             {
                                 <td class="text-end">@FormatQty(row.BomUsageQty)</td>
                                 <td class="text-muted">@row.BomUsageUnit</td>
+                                <td class="text-end matcost-per-ea">@FormatPerUnit(PerUnitQty(row))</td>
                             }
                             <td class="text-end">@FormatUnitPrice(row.UnitPrice)</td>
                             <td>@row.PriceCurrency</td>
                             <td>@row.PriceUnit</td>
-                            <td class="text-end fw-semibold">@FormatVnd(row.UnitPriceVnd)</td>
+                            <td class="text-end">@FormatVnd(row.UnitPriceVnd)</td>
+                            @if (_isBomMode)
+                            {
+                                <td class="text-end fw-semibold matcost-per-ea">@FormatVnd(PerUnitCost(row))</td>
+                            }
                             <td>
                                 @if (string.IsNullOrWhiteSpace(row.PriceSource))
                                 {
@@ -143,6 +162,9 @@ else if (_rows.Count > 0)
     .matcost-search { max-width: 340px; }
     .matcost-date { max-width: 170px; }
     .matcost-rows { max-width: 110px; }
+    .matcost-base { max-width: 230px; }
+
+    .matcost-table th.matcost-per-ea, .matcost-table td.matcost-per-ea { background: #f3f8ff; }
 
     .matcost-section { border: 1px solid var(--line-2, #c6ccd5); border-radius: 8px; background: var(--panel, #fff); overflow: hidden; }
     .matcost-section-title { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line-2, #c6ccd5); background: #f6f8fb; }
@@ -164,6 +186,9 @@ else if (_rows.Count > 0)
     private string _search = string.Empty;
     private DateTime _referenceDate = DateTime.Today;
     private int _maxRows = 300;
+
+    /// <summary>BOM 소요량이 몇 개 기준으로 등록되어 있는지. BOM 헤더에서 읽지 않고 사용자가 지정한다.</summary>
+    private decimal _bomBaseQty = 1000m;
     private bool _isBusy;
     private string _errorMessage = string.Empty;
     private string _statusMessage = string.Empty;
@@ -347,6 +372,23 @@ else if (_rows.Count > 0)
             Encrypt = c.AdminDbQueryEncrypt,
             TrustServerCertificate = c.AdminDbQueryTrustServerCertificate,
         };
+    }
+
+    private decimal? PerUnitQty(MaterialCostViewRow row)
+        => row.BomUsageQty is > 0 && _bomBaseQty > 0 ? row.BomUsageQty.Value / _bomBaseQty : null;
+
+    private decimal? PerUnitCost(MaterialCostViewRow row)
+    {
+        decimal? qty = PerUnitQty(row);
+        return qty is > 0 && row.UnitPriceVnd is > 0 ? qty.Value * row.UnitPriceVnd.Value : null;
+    }
+
+    // 1개 기준 소요량은 0.001 처럼 아주 작아질 수 있어 유효숫자를 넉넉히 남긴다.
+    private static string FormatPerUnit(decimal? value)
+    {
+        if (value is null || value.Value == 0) return "-";
+        decimal abs = Math.Abs(value.Value);
+        return value.Value.ToString(abs >= 1m ? "N2" : "0.########", CultureInfo.InvariantCulture);
     }
 
     // 단가는 USD 처럼 소수가 의미를 갖는 통화가 있어 유효숫자를 남긴다.
