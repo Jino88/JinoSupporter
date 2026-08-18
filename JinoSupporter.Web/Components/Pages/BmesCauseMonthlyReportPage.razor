@@ -1,5 +1,9 @@
 ﻿@using JinoSupporter.Web.Services
 
+@using JinoSupporter.Web.Services.BmesReports
+@using JinoSupporter.Web.Services.BmesReports.Contracts
+@inject BmesCauseMonthlyCalculationService CauseCalculation
+
 <div class="cause-report-shell">
     <div class="cause-report-main">
         <div class="cause-report-header">
@@ -7,7 +11,7 @@
                 <div class="cause-report-title">원인 비중</div>
                 <div class="cause-report-subtitle">MODEL / Type / Process / NG NAME / 해당월 불량률 / 원인 / 비중</div>
             </div>
-            <div class="cause-report-count">@CauseRows.Count row(s)</div>
+            <div class="cause-report-count">@DisplayRows.Count row(s)</div>
         </div>
 
         <div class="cause-table-wrap">
@@ -32,9 +36,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (int i = 0; i < CauseRows.Count; i++)
+                    @for (int i = 0; i < DisplayRows.Count; i++)
                     {
-                        var row = CauseRows[i];
+                        var row = DisplayRows[i];
                         if (row.IsSubtotal)
                         {
                             <tr class="cause-subtotal-row">
@@ -69,9 +73,9 @@
                                     double ppm = RowMonthPpm(row, i, col.Key);
                                     <td class="@MonthRateClass(ppm)">@FormatPpm(ppm)</td>
                                 }
-                                <td class="cause-center">@row.No</td>
+                                <td class="cause-center">@row.Number</td>
                                 <td>@row.Cause</td>
-                                <td class="cause-share">@row.Share</td>
+                                <td class="cause-share">@FormatShare(row.ShareRatio)</td>
                                 @foreach (var col in MonthColumns)
                                 {
                                     double ppm = WeightedMonthPpm(row, i, col.Key);
@@ -295,6 +299,7 @@
     private DateTime? _endDate;
     private HierReports? _hierarchy;
     private List<ModelGroupRecord> _selectedGroups = [];
+    private CauseMonthlyTabDto? _calculation;
 
     // ── Static-HTML export mode ────────────────────────────────────────────────
     // Fed the shared Daily hierarchy (no DB access of its own) via HtmlRenderer.
@@ -303,10 +308,22 @@
     [Parameter] public DateTime? ExportEnd { get; set; }
     [Parameter] public IReadOnlyList<ModelGroupRecord>? ExportGroups { get; set; }
     [Parameter] public HierReports? ExportSharedHierarchy { get; set; }
+    [Parameter] public CauseMonthlyTabDto? ExportCalculationSnapshot { get; set; }
     private bool _exportGenerated;
 
     protected override async Task OnParametersSetAsync()
     {
+        if (ExportMode && !_exportGenerated && ExportCalculationSnapshot is { } calculation)
+        {
+            _exportGenerated = true;
+            _calculation = calculation;
+            _startDate = ExportStart?.Date;
+            _endDate = ExportEnd?.Date;
+            _selectedGroups = ExportGroups?.ToList() ?? [];
+            _hierarchy = ExportSharedHierarchy;
+            return;
+        }
+
         if (ExportMode && !_exportGenerated
             && ExportStart is { } start && ExportEnd is { } end
             && ExportGroups is { Count: > 0 } groups && ExportSharedHierarchy is { } hierarchy)
@@ -319,8 +336,10 @@
     private IReadOnlyList<NgRateReportService.PeriodColumn> MonthColumns =>
         _hierarchy?.ByMid?.MonthCols ?? [];
 
-    private static IReadOnlyList<string> Models =>
-        CauseRows.Select(r => r.Model)
+    private IReadOnlyList<CauseRowDto> DisplayRows => _calculation?.Rows ?? [];
+
+    private IReadOnlyList<string> Models =>
+        (_calculation?.ModelMonthlyRows.Select(row => row.Model) ?? Enumerable.Empty<string>())
             .Where(m => !string.IsNullOrWhiteSpace(m))
             .Distinct(StringComparer.Ordinal)
             .ToList();
@@ -336,9 +355,28 @@
         _endDate = endDate.Date;
         _selectedGroups = selectedGroups.ToList();
         _hierarchy = sharedHierarchy;
+        if (sharedHierarchy.ByGroup is null)
+            throw new InvalidOperationException("Shared Daily report data is not ready.");
+        var request = BmesReportRequest.Create(startDate, endDate, selectedGroups);
+        _calculation = CauseCalculation.Calculate(request, new BmesDailyCalculationSnapshot
+        {
+            Hierarchy = sharedHierarchy,
+            TrendByMid = sharedHierarchy.ByGroup,
+            Tab = new(),
+            SourceDbPath = sharedHierarchy.ByGroup.DbPath,
+        });
         progress?.Report("Using Daily report data.");
         return InvokeAsync(StateHasChanged);
     }
+
+    private static double RowMonthPpm(CauseRowDto row, int rowIndex, string colKey) =>
+        row.PpmByPeriod.GetValueOrDefault(colKey) ?? 0;
+
+    private static double WeightedMonthPpm(CauseRowDto row, int rowIndex, string colKey) =>
+        row.WeightedPpmByPeriod.GetValueOrDefault(colKey) ?? 0;
+
+    private static string FormatShare(double? share) =>
+        share is null ? string.Empty : (share.Value * 100d).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "%";
 
     private double RowMonthPpm(CauseRow row, int rowIndex, string colKey)
     {
@@ -478,6 +516,11 @@
 
     private double ModelMonthPpm(string model, string colKey)
     {
+        if (_calculation is not null)
+            return _calculation.ModelMonthlyRows
+                .FirstOrDefault(row => string.Equals(row.Model, model, StringComparison.Ordinal))?
+                .PpmByPeriod.GetValueOrDefault(colKey) ?? 0;
+
         if (_hierarchy?.ByMid is null) return 0;
 
         var keys = FindModelKeys(model).ToList();
@@ -603,6 +646,11 @@
 
     private static string CauseRowClass(CauseRow row)
         => string.IsNullOrWhiteSpace(row.Cause) && string.IsNullOrWhiteSpace(row.Share)
+            ? "cause-row-empty"
+            : string.Empty;
+
+    private static string CauseRowClass(CauseRowDto row)
+        => string.IsNullOrWhiteSpace(row.Cause) && row.ShareRatio is null
             ? "cause-row-empty"
             : string.Empty;
 

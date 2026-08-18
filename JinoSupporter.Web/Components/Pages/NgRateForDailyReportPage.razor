@@ -1,11 +1,13 @@
 @using System.Globalization
 @using JinoSupporter.Web.Services
+@using JinoSupporter.Web.Services.BmesReports
 @inject NgRateService         NgRate
 @inject NgRateSettingsService NgRateSettings
 @inject NgRateReportService   NgRateReportSvc
 @inject WebRepository         Repo
 @inject IJSRuntime            JS
 @inject AppActivityLogger     Activity
+@inject BmesDailyReportCalculationService DailyCalculation
 
 <NgRateReportStyles />
 @ExportPeriodMeta()
@@ -452,10 +454,18 @@
     [Parameter] public IReadOnlyList<ModelGroupRecord>? ExportGroups { get; set; }
     [Parameter] public Action<HierReports?, NgRateReportService.NgRateReport?>? OnExportComputed { get; set; }
     [Parameter] public IProgress<string>? ExportProgress { get; set; }
+    [Parameter] public BmesDailyCalculationSnapshot? ExportCalculationSnapshot { get; set; }
     private bool _exportGenerated;
 
     protected override async Task OnParametersSetAsync()
     {
+        if (ExportMode && !_exportGenerated && ExportCalculationSnapshot is { } snapshot)
+        {
+            _exportGenerated = true;
+            ApplyCalculationSnapshot(snapshot, ExportGroups ?? snapshot.Hierarchy.Groups);
+            return;
+        }
+
         if (ExportMode && !_exportGenerated
             && ExportStart is { } start && ExportEnd is { } end
             && ExportGroups is { Count: > 0 } groups)
@@ -742,6 +752,61 @@
     }
 
     private async Task GetReportAsync()
+    {
+        if (_isReportBusy || _isBusy || _selectedGroupNames.Count == 0) return;
+        _isReportBusy = true;
+        _isBusy = true;
+        _reportError = string.Empty;
+        _errorMessage = string.Empty;
+        _logs.Clear();
+        StateHasChanged();
+        try
+        {
+            List<ModelGroupRecord> selectedGroups = SelectedGroups;
+            var request = BmesReportRequest.Create(_startDate, _endDate, selectedGroups);
+            var progress = new Progress<string>(AddLog);
+            BmesDailyCalculationSnapshot snapshot = await DailyCalculation.CalculateAsync(
+                request,
+                progress,
+                CancellationToken.None);
+            ApplyCalculationSnapshot(snapshot, selectedGroups);
+            Activity.Log("NG Rate Daily", $"Generate Report selectedGroups={selectedGroups.Count:N0}");
+        }
+        catch (Exception ex)
+        {
+            _reportError = $"Error: {ex.Message}";
+            _logs.Add($"[{DateTime.Now:HH:mm:ss}] [ERROR] {ex}");
+        }
+        finally
+        {
+            _isBusy = false;
+            _isReportBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyCalculationSnapshot(
+        BmesDailyCalculationSnapshot snapshot,
+        IReadOnlyList<ModelGroupRecord> selectedGroups)
+    {
+        _groupOverride = selectedGroups.ToList();
+        ReloadGroups();
+        _selectedGroupNames = selectedGroups.Select(group => group.Name).ToHashSet(StringComparer.Ordinal);
+        _savedDbPath = snapshot.SourceDbPath;
+        _report = snapshot.Hierarchy.ByGroup;
+        _reportByMid = snapshot.Hierarchy.ByMid;
+        _reportByModel = snapshot.Hierarchy.ByLs;
+        _reportBySubGroup = snapshot.Hierarchy.BySub1;
+        _reportBySubLeaf = snapshot.Hierarchy.BySub2;
+        _hierLookup = HierPpmLookup.From(snapshot.Hierarchy);
+        _expandedReasonSections.Clear();
+        _visibleDailyReasonModels.Clear();
+        _monthExpanded = false;
+        SyncModelOrder();
+        ExpandDailyReasonModelsByDefault();
+    }
+
+    private async Task GetReportLegacyAsync()
     {
         if (_isReportBusy || _isBusy || _selectedGroupNames.Count == 0) return;
         if (_endDate < _startDate)

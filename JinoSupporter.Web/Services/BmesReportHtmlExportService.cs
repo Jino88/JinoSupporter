@@ -5,6 +5,8 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using JinoSupporter.Web.Components.Pages;
+using JinoSupporter.Web.Services.BmesReports;
+using JinoSupporter.Web.Services.BmesReports.Contracts;
 
 namespace JinoSupporter.Web.Services;
 
@@ -43,6 +45,7 @@ public sealed class BmesReportHtmlExportService
     };
 
     private const string ReportFileName = "report.html";
+    private const string ReportJsonFileName = "report.json";
     private const string ReportCacheMetadataFileName = "cache.json";
     private static readonly TimeSpan CompleteReportCacheTtl = TimeSpan.FromMinutes(15);
 
@@ -78,6 +81,16 @@ public sealed class BmesReportHtmlExportService
         string path = Path.GetFullPath(Path.Combine(ExportRoot, token, ReportFileName));
         string root = Path.GetFullPath(ExportRoot);
         if (!path.StartsWith(root, StringComparison.OrdinalIgnoreCase)) return null; // path-escape guard
+        return File.Exists(path) ? path : null;
+    }
+
+    /// <summary>Validate token and return the generated v1 JSON artifact path, or null.</summary>
+    public string? ResolveReportJsonFile(string token)
+    {
+        if (!IsValidToken(token)) return null;
+        string path = Path.GetFullPath(Path.Combine(ExportRoot, token, ReportJsonFileName));
+        string root = Path.GetFullPath(ExportRoot);
+        if (!path.StartsWith(root, StringComparison.OrdinalIgnoreCase)) return null;
         return File.Exists(path) ? path : null;
     }
 
@@ -129,24 +142,22 @@ public sealed class BmesReportHtmlExportService
         ReportProgressTracker? tracker,
         Action<string>? log)
     {
-        string token = Guid.NewGuid().ToString("N");
-        string dir = Path.Combine(ExportRoot, token);
-        Directory.CreateDirectory(dir);
-
         using IServiceScope scope = _scopeFactory.CreateScope();
         await using var renderer = new HtmlRenderer(scope.ServiceProvider, _loggerFactory);
 
         var bodies = new Dictionary<string, string>(StringComparer.Ordinal);
-
-        IProgress<string> Stage(string name) =>
-            tracker?.For(name, log) ?? new Progress<string>(m => log?.Invoke(m));
-
-        // ── Daily (root) ─────────────────────────────────────────────────────────
-        // The only tab that scrapes BMES for NG-rate data. It publishes the hierarchy
-        // (원인 비중 / Weekly reuse it) and the trend summary (F-COST reuses it), so the
-        // whole report costs one scrape rather than one per tab.
-        HierReports? sharedHierarchy = null;
-        NgRateReportService.NgRateReport? sharedTrend = null;
+        var repository = scope.ServiceProvider.GetRequiredService<WebRepository>();
+        var orchestrator = scope.ServiceProvider.GetRequiredService<BmesReportOrchestrator>();
+        var request = BmesReportRequest.Create(
+            start,
+            end,
+            groups,
+            repository.GetWeeklyReportFormSettings());
+        BmesReportGenerationResult generation = await orchestrator.GenerateWithContextAsync(
+            request,
+            tracker,
+            log,
+            CancellationToken.None);
 
         bodies["daily"] = await RenderTabAsync<NgRateForDailyReportPage>(renderer, new()
         {
@@ -159,11 +170,8 @@ public sealed class BmesReportHtmlExportService
             ["ExportStart"] = start,
             ["ExportEnd"] = end,
             ["ExportGroups"] = groups,
-            ["ExportProgress"] = Stage(StageDaily),
-            ["OnExportComputed"] = (Action<HierReports?, NgRateReportService.NgRateReport?>)
-                ((hier, trend) => { sharedHierarchy = hier; sharedTrend = trend; }),
+            ["ExportCalculationSnapshot"] = generation.Daily,
         });
-        tracker?.MarkDone(StageDaily);
 
         // ── 원인 비중 ────────────────────────────────────────────────────────────
         bodies["cause-monthly"] = await RenderTabAsync<BmesCauseMonthlyReportPage>(renderer, new()
@@ -172,9 +180,9 @@ public sealed class BmesReportHtmlExportService
             ["ExportStart"] = start,
             ["ExportEnd"] = end,
             ["ExportGroups"] = groups,
-            ["ExportSharedHierarchy"] = sharedHierarchy,
+            ["ExportSharedHierarchy"] = generation.Daily.Hierarchy,
+            ["ExportCalculationSnapshot"] = generation.CauseMonthly,
         });
-        tracker?.MarkDone(StageCause);
 
         // ── Weekly ───────────────────────────────────────────────────────────────
         bodies["weekly"] = await RenderTabAsync<NgRateForWeeklyReportPage>(renderer, new()
@@ -185,30 +193,14 @@ public sealed class BmesReportHtmlExportService
             ["ExportStart"] = start,
             ["ExportEnd"] = end,
             ["ExportGroups"] = groups,
-            ["ExportSharedHierarchy"] = sharedHierarchy,
-            ["ExportProgress"] = Stage(StageWeekly),
+            ["ExportSharedHierarchy"] = generation.Daily.Hierarchy,
+            ["ExportCalculationSnapshot"] = generation.Weekly,
         });
-        tracker?.MarkDone(StageWeekly);
 
         // ── F-COST ×4 ────────────────────────────────────────────────────────────
         // Only the first variant builds the report (RAW backfill + report build + raw
         // material breakdown); the other three render the same snapshot with different
         // display flags.
-        BmesFCostPage.FCostExportSnapshot? fcostSnapshot = null;
-        IProgress<string> fcostProgress = Stage(StageFCost);
-        DateTime kpiQueryDate = end.Date > DateTime.Today ? DateTime.Today : end.Date;
-        log?.Invoke("Starting F-COST and KPI source loading in parallel.");
-        Task<FCostCorePartsKpiSnapshot?> corePartsKpiTask = LoadCorePartsKpiAsync(
-            scope.ServiceProvider,
-            start.Date,
-            kpiQueryDate,
-            fcostProgress);
-        Task<IpgDefectKpiSnapshot?> ipgKpiTask = LoadIpgKpiAsync(
-            scope.ServiceProvider,
-            start.Date,
-            kpiQueryDate,
-            fcostProgress);
-
         foreach ((string key, bool weeklyReport, bool allColumns, bool trendCard) in FCostVariants)
         {
             var parameters = new Dictionary<string, object?>
@@ -224,38 +216,28 @@ public sealed class BmesReportHtmlExportService
                 ["ExportStart"] = start,
                 ["ExportEnd"] = end,
                 ["ExportGroups"] = groups,
-                ["ExportSharedNgTrend"] = sharedTrend,
-                ["ExportSharedReport"] = fcostSnapshot,
-                ["ExportProgress"] = fcostProgress,
+                ["ExportCalculationSnapshot"] = generation.Fcost,
             };
-
-            if (fcostSnapshot is null)
-            {
-                parameters["OnExportComputed"] =
-                    (Action<BmesFCostPage.FCostExportSnapshot>)(s => fcostSnapshot = s);
-            }
 
             bodies[key] = await RenderTabAsync<BmesFCostPage>(renderer, parameters);
         }
-        // ── Additional KPI sources ───────────────────────────────────────────────
-        // MES072410 returns the core-parts Total INAMT/FCOST/FRATE triplet, while
-        // MES050032 returns one defect-PPM row per process. They are deliberately
-        // fetched here (after the reusable F-COST snapshot exists), so the ordinary
-        // F-COST component and its four rendered variants remain unchanged.
-        await Task.WhenAll(corePartsKpiTask, ipgKpiTask);
-        FCostCorePartsKpiSnapshot? corePartsKpi = await corePartsKpiTask;
-        IpgDefectKpiSnapshot? ipgKpi = await ipgKpiTask;
-
-        tracker?.MarkDone(StageFCost);
 
         // ── KPI ──────────────────────────────────────────────────────────────────
         // KPI uses the exact Total FCOST / TOTAL RATE values and visible-model defect
         // rates published by the F-COST leader snapshot, so it must be rendered after
         // the first F-COST export component has finished computing.
-        bodies["kpi"] = BuildKpiBody(fcostSnapshot, corePartsKpi, ipgKpi, end);
+        bodies["kpi"] = BuildKpiBody(generation.Fcost, generation.CorePartsKpi, generation.IpgKpi, end);
 
         string html = BuildCombinedHtml(bodies, DefaultReasonPpmThreshold);
-        await File.WriteAllTextAsync(Path.Combine(dir, ReportFileName), html, new UTF8Encoding(false));
+        string token = Guid.NewGuid().ToString("N");
+        string dir = Path.Combine(ExportRoot, token);
+        Directory.CreateDirectory(dir);
+        string htmlTemp = Path.Combine(dir, ReportFileName + ".tmp");
+        string jsonTemp = Path.Combine(dir, ReportJsonFileName + ".tmp");
+        await File.WriteAllTextAsync(htmlTemp, html, new UTF8Encoding(false));
+        await File.WriteAllBytesAsync(jsonTemp, BmesReportJson.SerializeToUtf8Bytes(generation.Document));
+        File.Move(htmlTemp, Path.Combine(dir, ReportFileName));
+        File.Move(jsonTemp, Path.Combine(dir, ReportJsonFileName));
 
         // Only now that this run's file exists is it safe to drop the earlier ones.
         CleanupOldTokens(token);
@@ -327,7 +309,9 @@ public sealed class BmesReportHtmlExportService
     {
         string payload = JsonSerializer.Serialize(new
         {
-            Version = 1,
+            Version = 2,
+            SchemaVersion = BmesReportContract.SchemaVersion,
+            CalculationVersion = BmesReportContract.CalculationVersion,
             Start = start.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             End = end.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             Groups = groups,
@@ -362,7 +346,8 @@ public sealed class BmesReportHtmlExportService
                 string candidateToken = Path.GetFileName(directory);
                 string metadataPath = Path.Combine(directory, ReportCacheMetadataFileName);
                 string reportPath = Path.Combine(directory, ReportFileName);
-                if (!File.Exists(metadataPath) || !File.Exists(reportPath))
+                string reportJsonPath = Path.Combine(directory, ReportJsonFileName);
+                if (!File.Exists(metadataPath) || !File.Exists(reportPath) || !File.Exists(reportJsonPath))
                     continue;
 
                 CompletedReportCacheEntry? entry = JsonSerializer.Deserialize<CompletedReportCacheEntry>(
@@ -370,6 +355,10 @@ public sealed class BmesReportHtmlExportService
                 if (entry is null ||
                     !string.Equals(entry.Token, candidateToken, StringComparison.OrdinalIgnoreCase) ||
                     !string.Equals(entry.CacheKey, cacheKey, StringComparison.Ordinal) ||
+                    !string.Equals(entry.SchemaVersion, BmesReportContract.SchemaVersion, StringComparison.Ordinal) ||
+                    !string.Equals(entry.CalculationVersion, BmesReportContract.CalculationVersion, StringComparison.Ordinal) ||
+                    !entry.HasLegacyHtml ||
+                    !entry.HasReportJson ||
                     now - entry.CreatedAtUtc > CompleteReportCacheTtl)
                 {
                     continue;
@@ -391,7 +380,14 @@ public sealed class BmesReportHtmlExportService
 
     private static void RememberCompletedReport(string cacheKey, string token)
     {
-        var entry = new CompletedReportCacheEntry(cacheKey, token, DateTimeOffset.UtcNow);
+        var entry = new CompletedReportCacheEntry(
+            cacheKey,
+            token,
+            DateTimeOffset.UtcNow,
+            BmesReportContract.SchemaVersion,
+            BmesReportContract.CalculationVersion,
+            HasLegacyHtml: true,
+            HasReportJson: true);
         _lastCompletedReport = entry;
         try
         {
@@ -413,13 +409,18 @@ public sealed class BmesReportHtmlExportService
         if (!IsValidToken(token))
             return null;
         string path = Path.Combine(ExportRoot, token, ReportFileName);
-        return File.Exists(path) ? path : null;
+        string jsonPath = Path.Combine(ExportRoot, token, ReportJsonFileName);
+        return File.Exists(path) && File.Exists(jsonPath) ? path : null;
     }
 
     private sealed record CompletedReportCacheEntry(
         string CacheKey,
         string Token,
-        DateTimeOffset CreatedAtUtc);
+        DateTimeOffset CreatedAtUtc,
+        string SchemaVersion = "",
+        string CalculationVersion = "",
+        bool HasLegacyHtml = false,
+        bool HasReportJson = false);
 
     private static readonly (string Key, bool WeeklyReport, bool AllColumns, bool TrendCard)[] FCostVariants =
     {
@@ -530,7 +531,7 @@ public sealed class BmesReportHtmlExportService
     ];
 
     private static string BuildKpiBody(
-        BmesFCostPage.FCostExportSnapshot? snapshot,
+        BmesFCostCalculationSnapshot? snapshot,
         FCostCorePartsKpiSnapshot? corePartsKpi,
         IpgDefectKpiSnapshot? ipgKpi,
         DateTime reportEnd)
@@ -541,7 +542,7 @@ public sealed class BmesReportHtmlExportService
         }
 
         List<KpiPeriodColumn> periods = BuildKpiPeriodColumns(snapshot.Report);
-        Dictionary<int, BmesFCostPage.FCostKpiPeriodValue> valuesByColumn =
+        Dictionary<int, BmesFCostKpiPeriodValue> valuesByColumn =
             snapshot.KpiPeriods.ToDictionary(value => value.ColumnIndex);
         Dictionary<string, FCostCorePartsKpiPeriod> corePartsByPeriod =
             BuildCorePartsKpiPeriodMap(corePartsKpi);
@@ -713,7 +714,7 @@ public sealed class BmesReportHtmlExportService
     private static string FormatKpiPeriodValue(
         KpiDefinition definition,
         KpiLineDefinition line,
-        BmesFCostPage.FCostKpiPeriodValue? value,
+        BmesFCostKpiPeriodValue? value,
         FCostCorePartsKpiPeriod? corePartsValue,
         IpgDefectKpiPeriod? ipgValue)
     {

@@ -1,12 +1,15 @@
 @* NG Rate For Weekly Report - same data shape as By Group, but with all DATE
    columns hidden in tables and charts. Only Week + Month periods are shown. *@
 @using JinoSupporter.Web.Services
+@using JinoSupporter.Web.Services.BmesReports
 @inject NgRateService         NgRate
 @inject NgRateSettingsService NgRateSettings
 @inject NgRateReportService   NgRateReportSvc
 @inject WebRepository         Repo
 @inject IJSRuntime            JS
 @inject AppActivityLogger     Activity
+@inject BmesDailyReportCalculationService DailyCalculation
+@inject BmesWeeklyReportCalculationService WeeklyCalculation
 @implements IAsyncDisposable
 
 <NgRateReportStyles />
@@ -770,10 +773,18 @@
     [Parameter] public IReadOnlyList<ModelGroupRecord>? ExportGroups { get; set; }
     [Parameter] public HierReports? ExportSharedHierarchy { get; set; }
     [Parameter] public IProgress<string>? ExportProgress { get; set; }
+    [Parameter] public BmesWeeklyCalculationSnapshot? ExportCalculationSnapshot { get; set; }
     private bool _exportGenerated;
 
     protected override async Task OnParametersSetAsync()
     {
+        if (ExportMode && !_exportGenerated && ExportCalculationSnapshot is { } snapshot)
+        {
+            _exportGenerated = true;
+            ApplyCalculationSnapshot(snapshot, ExportGroups ?? snapshot.Hierarchy.Groups);
+            return;
+        }
+
         if (ExportMode && !_exportGenerated
             && ExportStart is { } start && ExportEnd is { } end
             && ExportGroups is { Count: > 0 } groups)
@@ -1414,10 +1425,7 @@
         _externalProgress = progress;
         try
         {
-            if (sharedHierarchy?.ByGroup is not null)
-                await UseSharedHierarchyReportAsync(sharedHierarchy, progress);
-            else
-                await GetReportAsync();
+            await CalculateWithServiceAsync(sharedHierarchy, progress);
             if (_report is null)
                 throw new InvalidOperationException(string.IsNullOrWhiteSpace(_reportError)
                     ? "Weekly report did not produce results."
@@ -1427,6 +1435,60 @@
         {
             _externalProgress = null;
         }
+    }
+
+    private async Task CalculateWithServiceAsync(HierReports? sharedHierarchy, IProgress<string>? progress)
+    {
+        List<ModelGroupRecord> selectedGroups = _groups
+            .Where(group => _selectedGroupNames.Contains(group.Name))
+            .ToList();
+        var request = BmesReportRequest.Create(
+            _startDate,
+            _endDate,
+            selectedGroups,
+            _weeklyFormSettings);
+        BmesDailyCalculationSnapshot daily;
+        if (sharedHierarchy?.ByGroup is not null)
+        {
+            daily = new BmesDailyCalculationSnapshot
+            {
+                Hierarchy = sharedHierarchy,
+                TrendByMid = sharedHierarchy.ByGroup,
+                Tab = new(),
+                SourceDbPath = sharedHierarchy.ByGroup.DbPath,
+            };
+        }
+        else
+        {
+            daily = await DailyCalculation.CalculateAsync(request, progress, CancellationToken.None);
+        }
+
+        BmesWeeklyCalculationSnapshot weekly = await WeeklyCalculation.CalculateAsync(
+            request,
+            daily,
+            _weeklyFormSettings,
+            progress,
+            CancellationToken.None);
+        ApplyCalculationSnapshot(weekly, selectedGroups);
+    }
+
+    private void ApplyCalculationSnapshot(
+        BmesWeeklyCalculationSnapshot snapshot,
+        IReadOnlyList<ModelGroupRecord> selectedGroups)
+    {
+        _groupOverride = selectedGroups.ToList();
+        _groups = selectedGroups.ToList();
+        _selectedGroupNames = selectedGroups.Select(group => group.Name).ToHashSet(StringComparer.Ordinal);
+        _savedDbPath = snapshot.Hierarchy.ByGroup?.DbPath;
+        _report = snapshot.Hierarchy.ByGroup;
+        _reportByMid = snapshot.Hierarchy.ByMid;
+        _reportByModel = snapshot.Hierarchy.ByLs;
+        _reportBySubGroup = snapshot.Hierarchy.BySub1;
+        _reportBySubLeaf = snapshot.Hierarchy.BySub2;
+        _hierLookup = HierPpmLookup.From(snapshot.Hierarchy);
+        _lsNgReport = snapshot.LineShiftDetails;
+        _midNgReport = snapshot.MidDetails;
+        _pendingChartRender = true;
     }
 
     private async Task UseSharedHierarchyReportAsync(
@@ -1534,6 +1596,32 @@
     }
 
     private async Task GetReportAsync()
+    {
+        if (_isReportBusy || _isBusy || _selectedGroupNames.Count == 0) return;
+        _isReportBusy = true;
+        _isBusy = true;
+        _reportError = string.Empty;
+        _errorMessage = string.Empty;
+        _logs.Clear();
+        StateHasChanged();
+        try
+        {
+            await CalculateWithServiceAsync(null, new Progress<string>(AddLog));
+            Activity.Log("NG Rate Weekly", $"Generate Report selectedGroups={_selectedGroupNames.Count:N0}");
+        }
+        catch (Exception ex)
+        {
+            _reportError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isBusy = false;
+            _isReportBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GetReportLegacyAsync()
     {
         if (_isReportBusy || _isBusy || _selectedGroupNames.Count == 0) return;
         if (_endDate < _startDate)

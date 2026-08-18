@@ -6,6 +6,7 @@
 @using System.Globalization
 @using System.Text.Json
 @using JinoSupporter.Web.Services
+@using JinoSupporter.Web.Services.BmesReports
 @inject FCostService          FCost
 @inject FCostReportService    FCostReportSvc
 @inject BmesFcostActualService FCostActual
@@ -16,6 +17,7 @@
 @inject WebRepository         Repo
 @inject IJSRuntime            JS
 @inject AppActivityLogger     Activity
+@inject BmesFCostReportCalculationService FCostCalculation
 
 @if (ShowPageTitle)
 {
@@ -1308,6 +1310,7 @@
     [Parameter] public FCostExportSnapshot? ExportSharedReport { get; set; }
     [Parameter] public Action<FCostExportSnapshot>? OnExportComputed { get; set; }
     [Parameter] public IProgress<string>? ExportProgress { get; set; }
+    [Parameter] public BmesFCostCalculationSnapshot? ExportCalculationSnapshot { get; set; }
     private bool _exportGenerated;
 
     public sealed record FCostKpiPeriodValue(
@@ -1331,6 +1334,13 @@
     protected override async Task OnParametersSetAsync()
     {
         if (!ExportMode || _exportGenerated) return;
+
+        if (ExportCalculationSnapshot is { } calculation)
+        {
+            _exportGenerated = true;
+            ApplyCalculationSnapshot(calculation);
+            return;
+        }
 
         // Follower tab: reuse the leader's computed report, no data access at all.
         if (ExportSharedReport is { } snapshot)
@@ -3095,7 +3105,17 @@
         _sharedNgRateTrendReportTask = sharedNgRateTrendReportTask;
         try
         {
-            await GetReportAsync();
+            IReadOnlyList<ModelGroupRecord> groups = selectedGroups?.ToList() ?? Repo.GetModelGroups();
+            var request = BmesReportRequest.Create(startDate, endDate, groups);
+            NgRateReportService.NgRateReport? trend = sharedNgRateTrendReport;
+            if (trend is null && sharedNgRateTrendReportTask is not null)
+                trend = await sharedNgRateTrendReportTask;
+            BmesFCostCalculationSnapshot snapshot = await FCostCalculation.CalculateAsync(
+                request,
+                trend,
+                progress,
+                CancellationToken.None);
+            ApplyCalculationSnapshot(snapshot);
             if (_report is null)
                 throw new InvalidOperationException(string.IsNullOrWhiteSpace(_reportError)
                     ? "F-COST trend report did not produce results."
@@ -3108,6 +3128,22 @@
             _sharedNgRateTrendReport = null;
             _sharedNgRateTrendReportTask = null;
         }
+    }
+
+    private void ApplyCalculationSnapshot(BmesFCostCalculationSnapshot snapshot)
+    {
+        _report = snapshot.Report;
+        _ngRateTrendByMid = snapshot.NgRateTrendByMid;
+        _reportModelGroups = snapshot.ModelGroups.ToList();
+        _rawMaterialBreakdown = snapshot.RawMaterialBreakdown;
+        _rawStatus = snapshot.RawStatus;
+        _reportStartDate = snapshot.StartDate.ToDateTime(TimeOnly.MinValue);
+        _reportEndDate = snapshot.EndDate.ToDateTime(TimeOnly.MinValue);
+        _rawBreakdownError = snapshot.Warnings
+            .FirstOrDefault(warning => warning.Code == "fcost-raw-breakdown-unavailable")?.Message ?? string.Empty;
+        _showAllDayColumns = false;
+        _showAllWeekColumns = false;
+        _showAllMonthColumns = false;
     }
 
     private async Task ExportCsvAsync()
@@ -3431,6 +3467,42 @@
             : string.Empty;
 
     private async Task GetReportAsync()
+    {
+        if (_isReportBusy) return;
+        _isReportBusy = true;
+        _reportError = string.Empty;
+        _reportStatusMessage = string.Empty;
+        StateHasChanged();
+        try
+        {
+            IReadOnlyList<ModelGroupRecord> groups = _groupOverride?.ToList() ?? Repo.GetModelGroups();
+            var progress = new Progress<string>(message =>
+            {
+                _reportStatusMessage = message;
+                _externalProgress?.Report(message);
+                _ = InvokeAsync(StateHasChanged);
+            });
+            BmesFCostCalculationSnapshot snapshot = await FCostCalculation.CalculateAsync(
+                BmesReportRequest.Create(_reportStartDate, _reportEndDate, groups),
+                _sharedNgRateTrendReport,
+                progress,
+                CancellationToken.None);
+            ApplyCalculationSnapshot(snapshot);
+            _reportStatusMessage = $"Report ready: {_reportStartDate:yyyy-MM-dd} - {_reportEndDate:yyyy-MM-dd}.";
+        }
+        catch (Exception ex)
+        {
+            _externalProgress?.Report("[F-COST ERROR] " + ex);
+            _reportError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isReportBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GetReportLegacyAsync()
     {
         if (_isReportBusy) return;
         _isReportBusy = true;
