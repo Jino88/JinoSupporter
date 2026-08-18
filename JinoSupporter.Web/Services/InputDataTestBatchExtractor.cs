@@ -435,7 +435,7 @@ public sealed class InputDataTestBatchExtractor
                 Arguments = $"/c powershell.exe -NoProfile -ExecutionPolicy Bypass -File {QuoteCmdArg(scriptPath)}",
             };
             Process? proc = Process.Start(cmd);
-            if (proc is not null) ChildProcessJob.Assign(proc);
+            if (proc is not null && OperatingSystem.IsWindows()) ChildProcessJob.Assign(proc);
             return proc is not null;
         }
         catch { }
@@ -450,7 +450,7 @@ public sealed class InputDataTestBatchExtractor
                 Arguments = $"-d {QuoteCmdArg(workDir)} powershell.exe -NoProfile -ExecutionPolicy Bypass -File {QuoteCmdArg(scriptPath)}",
             };
             Process? proc = Process.Start(wt);
-            if (proc is not null) ChildProcessJob.Assign(proc);
+            if (proc is not null && OperatingSystem.IsWindows()) ChildProcessJob.Assign(proc);
             return proc is not null;
         }
         catch
@@ -610,7 +610,7 @@ public sealed class InputDataTestBatchExtractor
                 ? "Launching Excel COM renderer with visual image capture..."
                 : "Launching Excel COM text-only extractor...");
             proc.Start();
-            ChildProcessJob.Assign(proc);
+            if (OperatingSystem.IsWindows()) ChildProcessJob.Assign(proc);
         }
         catch (Exception ex)
         {
