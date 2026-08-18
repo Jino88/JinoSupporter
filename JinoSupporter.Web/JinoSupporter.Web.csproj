@@ -48,6 +48,36 @@
     </Content>
   </ItemGroup>
 
+  <!-- BMES React viewer host-cutover. The stable JS/CSS outputs stay committed for
+       deployed machines, while clean developer/CI builds install dependencies when
+       needed and rebuild only when viewer inputs are newer. Set
+       SkipBmesReportViewerBuild=true only as a local diagnostic escape hatch. -->
+  <ItemGroup>
+    <BmesReportViewerSource Include="ClientApp\BmesReport\src\**\*" />
+    <BmesReportViewerSource Include="ClientApp\BmesReport\package.json" />
+    <BmesReportViewerSource Include="ClientApp\BmesReport\package-lock.json" />
+    <BmesReportViewerSource Include="ClientApp\BmesReport\tsconfig.json" />
+    <BmesReportViewerSource Include="ClientApp\BmesReport\vite.config.ts" />
+  </ItemGroup>
+
+  <Target Name="EnsureBmesReportViewerDependencies"
+          Inputs="$(MSBuildProjectDirectory)\ClientApp\BmesReport\package.json;$(MSBuildProjectDirectory)\ClientApp\BmesReport\package-lock.json"
+          Outputs="$(MSBuildProjectDirectory)\ClientApp\BmesReport\node_modules\.package-lock.json"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(SkipBmesReportViewerBuild)' != 'true'">
+    <Exec Command="npm ci --no-audit --no-fund"
+          WorkingDirectory="$(MSBuildProjectDirectory)\ClientApp\BmesReport" />
+  </Target>
+
+  <Target Name="BuildBmesReportViewer"
+          BeforeTargets="Build;Publish"
+          DependsOnTargets="EnsureBmesReportViewerDependencies"
+          Inputs="@(BmesReportViewerSource)"
+          Outputs="$(MSBuildProjectDirectory)\wwwroot\bmes-report\bmes-report.js;$(MSBuildProjectDirectory)\wwwroot\bmes-report\bmes-report.css"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(SkipBmesReportViewerBuild)' != 'true'">
+    <Exec Command="npm run build"
+          WorkingDirectory="$(MSBuildProjectDirectory)\ClientApp\BmesReport" />
+  </Target>
+
   <!-- wwwroot/ui-redesign/assets/instrument.scoped.css is generated from
        instrument.css by tools/scope-css.js. Editing the source and forgetting to
        regenerate ships stale CSS with no visible failure, so the build checks.

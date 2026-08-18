@@ -47,6 +47,7 @@ public sealed class BmesReportHtmlExportService
     private const string ReportFileName = "report.html";
     private const string ReportJsonFileName = "report.json";
     private const string ReportCacheMetadataFileName = "cache.json";
+    private const int ReportCacheFormatVersion = 2;
     private static readonly TimeSpan CompleteReportCacheTtl = TimeSpan.FromMinutes(15);
 
     /// <summary>Serializes generation so one run cannot clean up another's token folder.</summary>
@@ -74,30 +75,40 @@ public sealed class BmesReportHtmlExportService
 
     private static string ExportRoot => AppStoragePaths.Combine("_temp", "bmes-report");
 
-    /// <summary>Validate token and return the on-disk combined report path, or null.</summary>
+    /// <summary>
+    /// Resolve a published token without ever treating the token as a path. Published
+    /// metadata (disk cache or same-process fallback) and legacy HTML are required, and
+    /// the 15-minute TTL is enforced on every view/data request as well as cache lookup.
+    /// </summary>
+    public BmesReportArtifacts? ResolveReportArtifacts(string token, DateTimeOffset? nowUtc = null) =>
+        ResolvePublishedArtifacts(token, nowUtc ?? DateTimeOffset.UtcNow);
+
+    /// <summary>Validate token, publication metadata and TTL, then return legacy HTML.</summary>
     public string? ResolveReportFile(string token)
-    {
-        if (!IsValidToken(token)) return null;
-        string path = Path.GetFullPath(Path.Combine(ExportRoot, token, ReportFileName));
-        string root = Path.GetFullPath(ExportRoot);
-        if (!path.StartsWith(root, StringComparison.OrdinalIgnoreCase)) return null; // path-escape guard
-        return File.Exists(path) ? path : null;
-    }
+        => ResolveReportArtifacts(token)?.LegacyHtmlPath;
 
-    /// <summary>Validate token and return the generated v1 JSON artifact path, or null.</summary>
+    /// <summary>Validate token, publication metadata, TTL and schema before returning JSON.</summary>
     public string? ResolveReportJsonFile(string token)
-    {
-        if (!IsValidToken(token)) return null;
-        string path = Path.GetFullPath(Path.Combine(ExportRoot, token, ReportJsonFileName));
-        string root = Path.GetFullPath(ExportRoot);
-        if (!path.StartsWith(root, StringComparison.OrdinalIgnoreCase)) return null;
-        return File.Exists(path) ? path : null;
-    }
+        => ResolveReportArtifacts(token)?.ReportJsonPath;
 
-    private static bool IsValidToken(string token) =>
+    public static bool IsValidToken(string token) =>
         !string.IsNullOrEmpty(token) &&
         token.Length is > 0 and <= 64 &&
         token.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'));
+
+    public static bool IsWithinCompleteReportTtl(DateTimeOffset createdAtUtc, DateTimeOffset nowUtc) =>
+        createdAtUtc <= nowUtc && nowUtc - createdAtUtc <= CompleteReportCacheTtl;
+
+    public static bool IsCurrentReportContract(int cacheVersion, string schemaVersion, string calculationVersion) =>
+        cacheVersion == ReportCacheFormatVersion &&
+        string.Equals(schemaVersion, BmesReportContract.SchemaVersion, StringComparison.Ordinal) &&
+        string.Equals(calculationVersion, BmesReportContract.CalculationVersion, StringComparison.Ordinal);
+
+    private static bool IsPathWithinRoot(string root, string candidate)
+    {
+        string rootedPrefix = Path.TrimEndingDirectorySeparator(root) + Path.DirectorySeparatorChar;
+        return candidate.StartsWith(rootedPrefix, StringComparison.OrdinalIgnoreCase);
+    }
 
     /// <summary>
     /// Generate the single combined report HTML under a fresh token folder (deleting
@@ -125,8 +136,7 @@ public sealed class BmesReportHtmlExportService
                 return cachedToken;
             }
 
-            string token = await GenerateAllTabsCoreAsync(start, end, groups, tracker, log);
-            RememberCompletedReport(cacheKey, token);
+            string token = await GenerateAllTabsCoreAsync(cacheKey, start, end, groups, tracker, log);
             return token;
         }
         finally
@@ -136,6 +146,7 @@ public sealed class BmesReportHtmlExportService
     }
 
     private async Task<string> GenerateAllTabsCoreAsync(
+        string cacheKey,
         DateTime start,
         DateTime end,
         IReadOnlyList<ModelGroupRecord> groups,
@@ -229,17 +240,28 @@ public sealed class BmesReportHtmlExportService
         bodies["kpi"] = BuildKpiBody(generation.Fcost, generation.CorePartsKpi, generation.IpgKpi, end);
 
         string html = BuildCombinedHtml(bodies, DefaultReasonPpmThreshold);
+        byte[] reportJson = BmesReportJson.SerializeToUtf8Bytes(generation.Document);
         string token = Guid.NewGuid().ToString("N");
         string dir = Path.Combine(ExportRoot, token);
-        Directory.CreateDirectory(dir);
-        string htmlTemp = Path.Combine(dir, ReportFileName + ".tmp");
-        string jsonTemp = Path.Combine(dir, ReportJsonFileName + ".tmp");
-        await File.WriteAllTextAsync(htmlTemp, html, new UTF8Encoding(false));
-        await File.WriteAllBytesAsync(jsonTemp, BmesReportJson.SerializeToUtf8Bytes(generation.Document));
-        File.Move(htmlTemp, Path.Combine(dir, ReportFileName));
-        File.Move(jsonTemp, Path.Combine(dir, ReportJsonFileName));
+        try
+        {
+            Directory.CreateDirectory(dir);
+            string htmlTemp = Path.Combine(dir, ReportFileName + ".tmp");
+            string jsonTemp = Path.Combine(dir, ReportJsonFileName + ".tmp");
+            await File.WriteAllTextAsync(htmlTemp, html, new UTF8Encoding(false));
+            await File.WriteAllBytesAsync(jsonTemp, reportJson);
+            File.Move(htmlTemp, Path.Combine(dir, ReportFileName));
+            File.Move(jsonTemp, Path.Combine(dir, ReportJsonFileName));
+            PublishCompletedReport(cacheKey, token);
+        }
+        catch
+        {
+            try { if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true); }
+            catch { /* best-effort removal; an unpublished folder is never route-visible */ }
+            throw;
+        }
 
-        // Only now that this run's file exists is it safe to drop the earlier ones.
+        // Only a fully published report (HTML + JSON + cache.json) may replace older tokens.
         CleanupOldTokens(token);
 
         return token;
@@ -324,8 +346,7 @@ public sealed class BmesReportHtmlExportService
         DateTimeOffset now = DateTimeOffset.UtcNow;
         if (_lastCompletedReport is { } memoryEntry &&
             string.Equals(memoryEntry.CacheKey, cacheKey, StringComparison.Ordinal) &&
-            now - memoryEntry.CreatedAtUtc <= CompleteReportCacheTtl &&
-            ResolveCachedReportPath(memoryEntry.Token) is not null)
+            ResolvePublishedArtifacts(memoryEntry.Token, now) is { IsCurrentContract: true, ReportJsonPath: not null })
         {
             token = memoryEntry.Token;
             return true;
@@ -344,27 +365,22 @@ public sealed class BmesReportHtmlExportService
                          .OrderByDescending(Directory.GetLastWriteTimeUtc))
             {
                 string candidateToken = Path.GetFileName(directory);
-                string metadataPath = Path.Combine(directory, ReportCacheMetadataFileName);
-                string reportPath = Path.Combine(directory, ReportFileName);
-                string reportJsonPath = Path.Combine(directory, ReportJsonFileName);
-                if (!File.Exists(metadataPath) || !File.Exists(reportPath) || !File.Exists(reportJsonPath))
-                    continue;
-
-                CompletedReportCacheEntry? entry = JsonSerializer.Deserialize<CompletedReportCacheEntry>(
-                    File.ReadAllText(metadataPath, Encoding.UTF8));
-                if (entry is null ||
-                    !string.Equals(entry.Token, candidateToken, StringComparison.OrdinalIgnoreCase) ||
-                    !string.Equals(entry.CacheKey, cacheKey, StringComparison.Ordinal) ||
-                    !string.Equals(entry.SchemaVersion, BmesReportContract.SchemaVersion, StringComparison.Ordinal) ||
-                    !string.Equals(entry.CalculationVersion, BmesReportContract.CalculationVersion, StringComparison.Ordinal) ||
-                    !entry.HasLegacyHtml ||
-                    !entry.HasReportJson ||
-                    now - entry.CreatedAtUtc > CompleteReportCacheTtl)
+                BmesReportArtifacts? artifacts = ResolvePublishedArtifacts(candidateToken, now);
+                if (artifacts is not { IsCurrentContract: true, ReportJsonPath: not null } ||
+                    !string.Equals(artifacts.CacheKey, cacheKey, StringComparison.Ordinal))
                 {
                     continue;
                 }
 
-                _lastCompletedReport = entry;
+                _lastCompletedReport = new CompletedReportCacheEntry(
+                    ReportCacheFormatVersion,
+                    artifacts.CacheKey,
+                    artifacts.Token,
+                    artifacts.CreatedAtUtc,
+                    BmesReportContract.SchemaVersion,
+                    BmesReportContract.CalculationVersion,
+                    HasLegacyHtml: true,
+                    HasReportJson: true);
                 token = candidateToken;
                 return true;
             }
@@ -378,9 +394,10 @@ public sealed class BmesReportHtmlExportService
         return false;
     }
 
-    private static void RememberCompletedReport(string cacheKey, string token)
+    private static void PublishCompletedReport(string cacheKey, string token)
     {
         var entry = new CompletedReportCacheEntry(
+            ReportCacheFormatVersion,
             cacheKey,
             token,
             DateTimeOffset.UtcNow,
@@ -388,32 +405,92 @@ public sealed class BmesReportHtmlExportService
             BmesReportContract.CalculationVersion,
             HasLegacyHtml: true,
             HasReportJson: true);
-        _lastCompletedReport = entry;
+        string directory = Path.Combine(ExportRoot, token);
+        string metadataPath = Path.Combine(directory, ReportCacheMetadataFileName);
+        string metadataTempPath = metadataPath + ".tmp";
         try
         {
-            string directory = Path.Combine(ExportRoot, token);
-            Directory.CreateDirectory(directory);
-            File.WriteAllText(
-                Path.Combine(directory, ReportCacheMetadataFileName),
-                JsonSerializer.Serialize(entry),
-                new UTF8Encoding(false));
+            File.WriteAllText(metadataTempPath, JsonSerializer.Serialize(entry), new UTF8Encoding(false));
+            File.Move(metadataTempPath, metadataPath);
         }
-        catch
+        catch (IOException)
         {
-            // In-memory reuse still works when metadata persistence is unavailable.
+            try { if (File.Exists(metadataTempPath)) File.Delete(metadataTempPath); }
+            catch { /* best-effort cache metadata cleanup */ }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            try { if (File.Exists(metadataTempPath)) File.Delete(metadataTempPath); }
+            catch { /* best-effort cache metadata cleanup */ }
+        }
+        _lastCompletedReport = entry;
+    }
+
+    private static BmesReportArtifacts? ResolvePublishedArtifacts(string token, DateTimeOffset now)
+    {
+        if (!IsValidToken(token)) return null;
+
+        string root = Path.GetFullPath(ExportRoot);
+        string directory = Path.GetFullPath(Path.Combine(root, token));
+        if (!IsPathWithinRoot(root, directory)) return null;
+
+        string metadataPath = Path.Combine(directory, ReportCacheMetadataFileName);
+        string legacyHtmlPath = Path.Combine(directory, ReportFileName);
+        if (!File.Exists(legacyHtmlPath)) return null;
+
+        try
+        {
+            CompletedReportCacheEntry? entry = File.Exists(metadataPath)
+                ? ReadCompletedReportEntry(metadataPath)
+                : _lastCompletedReport is { } memoryEntry &&
+                  string.Equals(memoryEntry.Token, token, StringComparison.Ordinal)
+                    ? memoryEntry
+                    : null;
+            if (entry is null ||
+                !string.Equals(entry.Token, token, StringComparison.Ordinal) ||
+                !IsWithinCompleteReportTtl(entry.CreatedAtUtc, now) ||
+                !entry.HasLegacyHtml)
+            {
+                return null;
+            }
+
+            bool isCurrentContract = IsCurrentReportContract(
+                entry.Version,
+                entry.SchemaVersion,
+                entry.CalculationVersion);
+            string reportJsonPath = Path.Combine(directory, ReportJsonFileName);
+            string? currentReportJsonPath = isCurrentContract && entry.HasReportJson && File.Exists(reportJsonPath)
+                ? reportJsonPath
+                : null;
+
+            return new BmesReportArtifacts(
+                token,
+                legacyHtmlPath,
+                currentReportJsonPath,
+                metadataPath,
+                entry.CacheKey,
+                entry.CreatedAtUtc,
+                isCurrentContract);
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return null;
+        }
+        catch (JsonException)
+        {
+            return null;
         }
     }
 
-    private static string? ResolveCachedReportPath(string token)
-    {
-        if (!IsValidToken(token))
-            return null;
-        string path = Path.Combine(ExportRoot, token, ReportFileName);
-        string jsonPath = Path.Combine(ExportRoot, token, ReportJsonFileName);
-        return File.Exists(path) && File.Exists(jsonPath) ? path : null;
-    }
+    private static CompletedReportCacheEntry? ReadCompletedReportEntry(string metadataPath) =>
+        JsonSerializer.Deserialize<CompletedReportCacheEntry>(File.ReadAllText(metadataPath, Encoding.UTF8));
 
     private sealed record CompletedReportCacheEntry(
+        int Version,
         string CacheKey,
         string Token,
         DateTimeOffset CreatedAtUtc,
@@ -1609,3 +1686,17 @@ public sealed class BmesReportHtmlExportService
         catch { /* best-effort cleanup */ }
     }
 }
+
+/// <summary>
+/// Files belonging to one TTL-valid, metadata-published report token. ReportJsonPath is
+/// null when JSON is absent or belongs to an unsupported cache/schema generation, so the
+/// host can safely fall back to the legacy HTML without exposing the JSON as a static file.
+/// </summary>
+public sealed record BmesReportArtifacts(
+    string Token,
+    string LegacyHtmlPath,
+    string? ReportJsonPath,
+    string MetadataPath,
+    string CacheKey,
+    DateTimeOffset CreatedAtUtc,
+    bool IsCurrentContract);

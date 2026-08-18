@@ -58,8 +58,8 @@
     </GroupPicker>
 </NgRateSetupPanel>
 
-@* The tab menu and all seven reports live INSIDE the generated HTML; the app just
-   shows that single file. Tab switching happens in the HTML (no Blazor involved). *@
+@* The iframe remains the same-origin isolation boundary for all eight report tabs.
+   Its view route chooses the React shell or the retained legacy report.html. *@
 <div class="bmes-report-tab-content">
     @if (_exportToken is null)
     {
@@ -69,8 +69,10 @@
     }
     else
     {
-        <iframe src="@($"/report/bmes/view/{_exportToken}")"
+        <iframe @key="_viewerRevision"
+                src="@($"/report/bmes/view/{_exportToken}?rev={_viewerRevision}")"
                 title="BMES Report"
+                referrerpolicy="no-referrer"
                 style="width:100%; height:82vh; border:0; display:block;"></iframe>
     }
 </div>
@@ -178,9 +180,10 @@
 
     private bool _isSelectionLoaded;
 
-    // Token for the current generated HTML bundle (temp folder name). The iframe
-    // points at /report/bmes/view/{token}; the tab menu lives inside that HTML.
+    // Token for the current generated HTML+JSON bundle (temp folder name). Revision
+    // forces the iframe to re-evaluate a runtime feature-flag rollback on cache reuse.
     private string? _exportToken;
+    private int _viewerRevision;
 
     protected override void OnInitialized()
     {
@@ -459,6 +462,7 @@
                 startDate, endDate, selectedGroups, _progress, AddLog);
 
             _exportToken = token;
+            _viewerRevision++;
             _hasSuccessfulResult = true;
             _progress.SettleUnfinished(failed: false);
             SaveStageBaselines();

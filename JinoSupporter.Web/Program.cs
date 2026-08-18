@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using Syncfusion.Blazor;
 using JinoSupporter.Web.Components;
@@ -106,6 +107,13 @@ builder.Services.AddScoped<BmesWeeklyReportCalculationService>();
 builder.Services.AddScoped<BmesFCostReportCalculationService>();
 builder.Services.AddScoped<BmesKpiReportCalculationService>();
 builder.Services.AddScoped<BmesReportOrchestrator>();
+builder.Services.AddOptions<BmesReportViewerOptions>()
+    .Bind(builder.Configuration.GetSection(BmesReportViewerOptions.SectionName))
+    .Validate(
+        options => !string.IsNullOrWhiteSpace(options.ViewerAssetVersion),
+        "BmesReport:ViewerAssetVersion must not be empty.")
+    .ValidateOnStart();
+builder.Services.AddSingleton<BmesReportViewerBootstrap>();
 // BMES report → self-contained static HTML export (memory-friendly iframe rendering)
 builder.Services.AddScoped<BmesReportHtmlExportService>();
 builder.Services.AddScoped<BmesFcostActualService>();
@@ -277,14 +285,56 @@ app.MapGet("/data-inference/export-all", (HttpContext ctx) =>
     return Results.File(zip, "application/zip", $"flagged_datasets_{ts}.zip");
 });
 
-// Serve the generated BMES report as a single self-contained static HTML file (all
-// tabs + menu inside it), shown in an iframe on /report/bmes.
-app.MapGet("/report/bmes/view/{token}", (string token, BmesReportHtmlExportService svc, HttpContext ctx) =>
+// Host-cutover view: keep the same-origin iframe and menu permission gate. React is the
+// configured default; false flag, explicit ?legacy=true, unavailable JSON/assets, or an
+// ESM mount failure all return to the same token's retained legacy report.html.
+app.MapGet("/report/bmes/view/{token}", (
+    string token,
+    bool? legacy,
+    BmesReportHtmlExportService svc,
+    BmesReportViewerBootstrap viewer,
+    MenuPermissionService permissions,
+    HttpContext ctx) =>
 {
-    if (ctx.User?.Identity?.IsAuthenticated != true) return Results.Unauthorized();
-    string? path = svc.ResolveReportFile(token);
-    if (path is null) return Results.NotFound();
-    return Results.File(path, "text/html; charset=utf-8");
+    if (GetBmesReportAccessFailure(ctx, permissions) is { } accessFailure)
+        return accessFailure;
+
+    BmesReportArtifacts? artifacts = svc.ResolveReportArtifacts(token);
+    if (artifacts is null) return Results.NotFound();
+
+    ctx.Response.Headers.CacheControl = "private, no-store";
+    ctx.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    ctx.Response.Headers["Referrer-Policy"] = "no-referrer";
+    BmesReportViewerSelection selection = viewer.Select(artifacts, forceLegacy: legacy is true);
+    if (selection.Mode == BmesReportViewerMode.React)
+    {
+        BmesReportBootstrapDocument document = viewer.BuildReactDocument(token);
+        ctx.Response.Headers["Content-Security-Policy"] = document.ContentSecurityPolicy;
+        return Results.Content(document.Html, "text/html; charset=utf-8", Encoding.UTF8);
+    }
+
+    return Results.File(artifacts.LegacyHtmlPath, "text/html; charset=utf-8");
+});
+
+// Authenticated same-origin data seam. report.json is never placed under wwwroot and is
+// served only for a TTL-valid token whose cache/schema metadata matches the current v1 contract.
+app.MapGet("/report/bmes/data/{token}", (
+    string token,
+    BmesReportHtmlExportService svc,
+    MenuPermissionService permissions,
+    HttpContext ctx) =>
+{
+    if (GetBmesReportAccessFailure(ctx, permissions) is { } accessFailure)
+        return accessFailure;
+
+    BmesReportArtifacts? artifacts = svc.ResolveReportArtifacts(token);
+    if (artifacts?.ReportJsonPath is null) return Results.NotFound();
+
+    ctx.Response.Headers.CacheControl = "private, no-cache, max-age=0";
+    ctx.Response.Headers.Pragma = "no-cache";
+    ctx.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    ctx.Response.Headers["Referrer-Policy"] = "no-referrer";
+    return Results.File(artifacts.ReportJsonPath, "application/json; charset=utf-8");
 });
 
 // Serve the generated LPA result as a single self-contained static HTML file (list +
@@ -497,6 +547,16 @@ static string AskHistoryOverallHtml(AskAiHistoryRecord history, string? lang)
     }
 
     return history.Overall;
+}
+
+static IResult? GetBmesReportAccessFailure(HttpContext context, MenuPermissionService permissions)
+{
+    if (context.User?.Identity?.IsAuthenticated != true)
+        return Results.Unauthorized();
+
+    bool allowed = permissions.IsAllowed(context.User, AppMenus.NgRate) ||
+                   permissions.IsAllowed(context.User, AppMenus.BmesFCost);
+    return allowed ? null : Results.Forbid();
 }
 
 static string PrepareAskHistoryHtml(string html)
