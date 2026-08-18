@@ -1,0 +1,120 @@
+{
+  "contractId": "jinosupporter.bmes-report",
+  "schemaVersion": "1.0.0",
+  "calculationVersion": "legacy-2026-08-18",
+  "generatedAtUtc": "2026-08-18T04:00:00Z",
+  "request": {
+    "startDate": "2026-08-01",
+    "endDate": "2026-08-18",
+    "timeZoneId": "Asia/Bangkok",
+    "groups": [{ "id": 1, "name": "Group A", "midGroups": [{ "material": "MODEL-A", "lineShifts": ["MAIN"] }] }]
+  },
+  "viewerDefaults": {
+    "defaultTab": "daily",
+    "minimumPpm": 500,
+    "dateColumnLimit": 7,
+    "weekColumnLimit": 4,
+    "monthColumnLimit": 3,
+    "fcostCurrency": "VND"
+  },
+  "status": { "state": "complete", "code": "ok", "message": null, "warnings": [], "errors": [] },
+  "tabs": {
+    "daily": {
+      "status": { "state": "complete", "code": "ok", "message": null, "warnings": [], "errors": [] },
+      "data": {
+        "periods": [
+          { "key": "2026-08-18", "kind": "date", "header": "08/18", "sortOrder": 1, "startDate": "2026-08-18", "endDateExclusive": "2026-08-19", "sourceIndex": null, "sourceCode": null, "sourcePDate": null },
+          { "key": "W:202633", "kind": "week", "header": "W33", "sortOrder": 2, "startDate": "2026-08-17", "endDateExclusive": "2026-08-24", "sourceIndex": null, "sourceCode": null, "sourcePDate": null },
+          { "key": "M:202608", "kind": "month", "header": "2026-08", "sortOrder": 3, "startDate": "2026-08-01", "endDateExclusive": "2026-09-01", "sourceIndex": null, "sourceCode": null, "sourcePDate": null }
+        ],
+        "summaryRows": [{
+          "rowId": "daily-total", "parentRowId": null, "depth": 0, "level": "total", "groupName": "Group A", "modelName": null,
+          "display": "Total", "processType": null,
+          "inputByPeriod": { "2026-08-18": 1000, "W:202633": 6000, "M:202608": 20000 },
+          "ngByPeriod": { "2026-08-18": 2, "W:202633": 8, "M:202608": 21 },
+          "ppmByPeriod": { "2026-08-18": 2000, "W:202633": 1333.333, "M:202608": 1050 }
+        }],
+        "modelSections": [{
+          "id": "model-a", "groupName": "Group A", "modelName": "MODEL-A", "lineShiftCount": 1,
+          "reasonRows": [
+            { "rowId": "reason-total", "parentRowId": null, "reason": "Total", "rank": null, "isTotal": true, "processType": null, "processName": null, "ngName": null, "ppmByPeriod": { "2026-08-18": 2200, "W:202633": 1400, "M:202608": 1100 } },
+            { "rowId": "reason-1", "parentRowId": "reason-total", "reason": "Solder", "rank": 1, "isTotal": false, "processType": "MAIN", "processName": "SMT", "ngName": "OPEN", "ppmByPeriod": { "2026-08-18": 1200, "W:202633": 700, "M:202608": 600 } },
+            { "rowId": "reason-2", "parentRowId": "reason-total", "reason": "Scratch", "rank": 2, "isTotal": false, "processType": "MAIN", "processName": "Assembly", "ngName": "SCRATCH", "ppmByPeriod": { "2026-08-18": 200, "W:202633": 300, "M:202608": 200 } }
+          ]
+        }],
+        "referenceDatePeriodKey": "2026-08-18"
+      }
+    },
+    "weekly": {
+      "status": { "state": "complete", "code": "ok", "message": null, "warnings": [], "errors": [] },
+      "data": {
+        "periods": [{ "key": "W:202633", "kind": "week", "header": "W33", "sortOrder": 1, "startDate": "2026-08-17", "endDateExclusive": "2026-08-24", "sourceIndex": null, "sourceCode": null, "sourcePDate": null }],
+        "targetRows": [{ "rowId": "target-a", "parentRowId": null, "display": "Group A", "rowKind": "group", "depth": 0, "isLineShift": false, "baselinePpm": 2000, "targetPpm": 1000, "achievementPercent": 75.5, "ppmByPeriod": { "W:202633": 1324 } }],
+        "summaryRows": [{ "rowId": "summary-a", "parentRowId": null, "depth": 0, "level": "group", "groupName": "Group A", "modelName": null, "processType": null, "display": "Group A", "ppmByPeriod": { "W:202633": 1324 } }],
+        "trendSeries": [{ "id": "trend-a", "label": "MODEL-A", "groupName": "Group A", "ppmByPeriod": { "W:202633": 1324 } }],
+        "topDefects": [{ "rank": 1, "lineShift": "MAIN", "processType": "MAIN", "processName": "SMT", "ngName": "OPEN", "ppmByPeriod": { "W:202633": 700 } }],
+        "sortReferencePeriodKey": "W:202633"
+      }
+    },
+    "kpi": {
+      "status": { "state": "complete", "code": "ok", "message": null, "warnings": [], "errors": [] },
+      "data": {
+        "periods": [{ "key": "W:202633", "kind": "week", "header": "W33", "sortOrder": 1, "startDate": "2026-08-17", "endDateExclusive": "2026-08-24", "sourceIndex": null, "sourceCode": null, "sourcePDate": null }],
+        "metrics": [{
+          "id": "total-fcost", "name": "Total F-COST", "type": "fcost", "baselineValue": 6.12, "targetValue": 2.0, "unit": "percent",
+          "lines": [
+            { "kind": "actual", "label": "Actual Rate", "unit": "percent", "annualValue": 2.5, "valuesByPeriod": { "W:202633": 2.4 } },
+            { "kind": "excess-cost", "label": "F-COST", "unit": "usd", "annualValue": 4300, "valuesByPeriod": { "W:202633": 320 } }
+          ]
+        }]
+      }
+    },
+    "cause-monthly": {
+      "status": { "state": "complete", "code": "ok", "message": null, "warnings": [], "errors": [] },
+      "data": {
+        "periods": [{ "key": "M:202608", "kind": "month", "header": "2026-08", "sortOrder": 1, "startDate": "2026-08-01", "endDateExclusive": "2026-09-01", "sourceIndex": null, "sourceCode": null, "sourcePDate": null }],
+        "rows": [{ "rowId": "cause-a", "model": "MODEL-A", "type": "MAIN", "process": "SMT", "ngName": "OPEN", "number": 1, "cause": "Solder", "shareRatio": 0.25, "isSubtotal": false, "ppmByPeriod": { "M:202608": 600 }, "weightedPpmByPeriod": { "M:202608": 150 } }],
+        "modelMonthlyRows": [{ "model": "MODEL-A", "ppmByPeriod": { "M:202608": 1050 } }]
+      }
+    },
+    "fcost": {
+      "status": { "state": "partial", "code": "fcost-raw-warning", "message": "일부 raw source에 경고가 있습니다.", "warnings": [{ "code": "fcost-raw-warning", "message": "Raw name fallback이 적용되었습니다.", "source": "fcost", "retryable": false }], "errors": [] },
+      "data": {
+        "view": { "mode": "regular", "allPeriods": false, "sourceTab": null },
+        "dataset": {
+          "periods": [{ "key": "W:202633", "kind": "week", "header": "W33", "sortOrder": 1, "startDate": "2026-08-17", "endDateExclusive": "2026-08-24", "sourceIndex": 0, "sourceCode": "W33", "sourcePDate": "20260817" }],
+          "totals": { "inputQtyByPeriod": { "W:202633": 10000 }, "fcostUsdByPeriod": { "W:202633": 320.25 }, "ratePercentByPeriod": { "W:202633": 3.2025 } },
+          "trendRows": [{ "rowId": "trend-f-a", "parentRowId": null, "depth": 0, "groupName": "Group A", "modelName": "MODEL-A", "ngGroupKey": "MAIN", "inputQtyByPeriod": { "W:202633": 10000 }, "fcostUsdByPeriod": { "W:202633": 320.25 }, "ngPpmByPeriod": { "W:202633": 1300 }, "fcostSharePercentByPeriod": { "W:202633": 100 } }],
+          "hierarchyRows": [{ "rowId": "hier-a", "parentRowId": null, "depth": 0, "groupName": "Group A", "modelName": "MODEL-A", "ngGroupKey": "MAIN", "display": "MODEL-A", "matchedMaterialCount": 1, "inputQtyByPeriod": { "W:202633": 10000 }, "fcostUsdByPeriod": { "W:202633": 320.25 }, "sourceRatePercentByPeriod": { "W:202633": 3.2025 } }],
+          "materials": [{ "displayName": "MAT-A", "productGroup": "PG", "modelNo": "MODEL-A", "material": "MAT-A", "verid": "V1", "inputQtyByPeriod": { "W:202633": 10000 }, "fcostUsdByPeriod": { "W:202633": 320.25 }, "sourceRatePercentByPeriod": { "W:202633": 3.2025 } }],
+          "unmappedMaterials": [],
+          "rawBreakdown": {
+            "sourceTable": "BMES_FCOST", "nameSource": "material", "warningMessage": "Fixture warning",
+            "periods": [{ "key": "W:202633", "kind": "week", "header": "W33", "sortOrder": 1, "startDate": "2026-08-17", "endDateExclusive": "2026-08-24", "sourceIndex": 0, "sourceCode": "W33", "sourcePDate": "20260817" }],
+            "exchangeRates": [{ "periodKey": "W:202633", "standardDate": "2026-08-17", "krwPerUsd": 1350.25, "krwPerVnd": 0.0525 }],
+            "rows": [{ "groupName": "Group A", "modelName": "MODEL-A", "materialCode": "MAT-A", "materialName": "Material A", "fcostVndByPeriod": { "W:202633": 2500000 }, "equivalentQtyByPeriod": { "W:202633": 100.5 }, "priceByPeriod": { "W:202633": { "unitPrice": 1200.5, "currency": "VND", "priceUnit": "EA", "unitPriceVnd": 1200.5, "isMixed": false } }, "totalFcostVnd": 2500000, "sourceRows": 5 }]
+          },
+          "targetDefectRate": {
+            "defaultBaselineRatePercent": 6.12,
+            "defaultTargetRatePercent": [2.0, 0.7],
+            "actionItems": ["SMT OPEN 개선"],
+            "rows": [{ "modelName": "MODEL-A", "targetPpm": 20000, "achievementPercent": 120, "actualPpmByPeriod": { "W:202633": 16000 } }],
+            "totalActualPpmByPeriod": { "W:202633": 16000 }
+          }
+        }
+      }
+    },
+    "fcost-all": {
+      "status": { "state": "complete", "code": "ok", "message": null, "warnings": [], "errors": [] },
+      "data": { "view": { "mode": "regular", "allPeriods": true, "sourceTab": "fcost" } }
+    },
+    "fcost-weekly": {
+      "status": { "state": "complete", "code": "ok", "message": null, "warnings": [], "errors": [] },
+      "data": { "view": { "mode": "target-defect-rate", "allPeriods": false, "sourceTab": "fcost" } }
+    },
+    "fcost-weekly-all": {
+      "status": { "state": "complete", "code": "ok", "message": null, "warnings": [], "errors": [] },
+      "data": { "view": { "mode": "target-defect-rate", "allPeriods": true, "sourceTab": "fcost" } }
+    }
+  }
+}
