@@ -104,7 +104,7 @@ Check(exportSource.Contains("SemaphoreSlim GenerationLock", StringComparison.Ord
 using (JsonDocument settings = JsonDocument.Parse(File.ReadAllText(Path.Combine(webProject, "appsettings.json"))))
 {
     JsonElement section = settings.RootElement.GetProperty(BmesReportViewerOptions.SectionName);
-    Check(section.GetProperty("ReactViewerEnabled").GetBoolean(), "operational default selects React");
+    Check(!section.GetProperty("ReactViewerEnabled").GetBoolean(), "operational default selects legacy HTML");
     Check(!string.IsNullOrWhiteSpace(section.GetProperty("ViewerAssetVersion").GetString()), "asset version configured");
 }
 

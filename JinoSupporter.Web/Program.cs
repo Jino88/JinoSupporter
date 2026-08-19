@@ -285,9 +285,9 @@ app.MapGet("/data-inference/export-all", (HttpContext ctx) =>
     return Results.File(zip, "application/zip", $"flagged_datasets_{ts}.zip");
 });
 
-// Host-cutover view: keep the same-origin iframe and menu permission gate. React is the
-// configured default; false flag, explicit ?legacy=true, unavailable JSON/assets, or an
-// ESM mount failure all return to the same token's retained legacy report.html.
+// Host-cutover view: keep the same-origin iframe and menu permission gate. The retained
+// legacy report.html is the configured default; React remains available as an opt-in
+// deployment mode with the same-token legacy fallback.
 app.MapGet("/report/bmes/view/{token}", (
     string token,
     bool? legacy,

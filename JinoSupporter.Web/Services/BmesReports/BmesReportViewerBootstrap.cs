@@ -6,15 +6,15 @@ using Microsoft.Extensions.Options;
 namespace JinoSupporter.Web.Services.BmesReports;
 
 /// <summary>
-/// Host-cutover controls for the staged BMES React migration. Setting
-/// <see cref="ReactViewerEnabled"/> to false is the immediate rollback path and does not
-/// invalidate already generated report tokens.
+/// Host-cutover controls for the staged BMES React migration. The legacy HTML viewer is
+/// the default; enabling <see cref="ReactViewerEnabled"/> opts into the React viewer
+/// without invalidating already generated report tokens.
 /// </summary>
 public sealed class BmesReportViewerOptions
 {
     public const string SectionName = "BmesReport";
 
-    public bool ReactViewerEnabled { get; set; } = true;
+    public bool ReactViewerEnabled { get; set; } = false;
 
     /// <summary>Deployment version appended only to the stable ESM/CSS URLs.</summary>
     public string ViewerAssetVersion { get; set; } = "20260818-1";
