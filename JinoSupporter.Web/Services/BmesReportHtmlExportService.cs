@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -153,6 +154,10 @@ public sealed class BmesReportHtmlExportService
         ReportProgressTracker? tracker,
         Action<string>? log)
     {
+        // End-to-end timing for the log line at the bottom of this method. The token and its
+        // directory are created after the tabs have rendered, so only the stopwatch starts here.
+        var totalSw = Stopwatch.StartNew();
+
         using IServiceScope scope = _scopeFactory.CreateScope();
         await using var renderer = new HtmlRenderer(scope.ServiceProvider, _loggerFactory);
 
@@ -181,8 +186,11 @@ public sealed class BmesReportHtmlExportService
             ["ExportStart"] = start,
             ["ExportEnd"] = end,
             ["ExportGroups"] = groups,
+            // The orchestrator already computed this tab and reported its own progress, so the
+            // render only formats the snapshot. That is what replaces the OnExportComputed
+            // callbacks this branch used to share one tab's result with the next.
             ["ExportCalculationSnapshot"] = generation.Daily,
-        });
+        }, log);
 
         // ── 원인 비중 ────────────────────────────────────────────────────────────
         bodies["cause-monthly"] = await RenderTabAsync<BmesCauseMonthlyReportPage>(renderer, new()
@@ -193,7 +201,7 @@ public sealed class BmesReportHtmlExportService
             ["ExportGroups"] = groups,
             ["ExportSharedHierarchy"] = generation.Daily.Hierarchy,
             ["ExportCalculationSnapshot"] = generation.CauseMonthly,
-        });
+        }, log);
 
         // ── Weekly ───────────────────────────────────────────────────────────────
         bodies["weekly"] = await RenderTabAsync<NgRateForWeeklyReportPage>(renderer, new()
@@ -206,7 +214,7 @@ public sealed class BmesReportHtmlExportService
             ["ExportGroups"] = groups,
             ["ExportSharedHierarchy"] = generation.Daily.Hierarchy,
             ["ExportCalculationSnapshot"] = generation.Weekly,
-        });
+        }, log);
 
         // ── F-COST ×4 ────────────────────────────────────────────────────────────
         // Only the first variant builds the report (RAW backfill + report build + raw
@@ -230,7 +238,7 @@ public sealed class BmesReportHtmlExportService
                 ["ExportCalculationSnapshot"] = generation.Fcost,
             };
 
-            bodies[key] = await RenderTabAsync<BmesFCostPage>(renderer, parameters);
+            bodies[key] = await RenderTabAsync<BmesFCostPage>(renderer, parameters, log);
         }
 
         // ── KPI ──────────────────────────────────────────────────────────────────
@@ -263,6 +271,7 @@ public sealed class BmesReportHtmlExportService
 
         // Only a fully published report (HTML + JSON + cache.json) may replace older tokens.
         CleanupOldTokens(token);
+        log?.Invoke($"BMES report export complete in {totalSw.ElapsedMilliseconds:N0} ms (tabs={bodies.Count:N0})");
 
         return token;
     }
@@ -508,13 +517,16 @@ public sealed class BmesReportHtmlExportService
     };
 
     private static async Task<string> RenderTabAsync<TComponent>(
-        HtmlRenderer renderer, Dictionary<string, object?> parameters)
+        HtmlRenderer renderer, Dictionary<string, object?> parameters, Action<string>? log = null)
         where TComponent : IComponent =>
         await renderer.Dispatcher.InvokeAsync(async () =>
         {
+            var sw = Stopwatch.StartNew();
             var output = await renderer.RenderComponentAsync<TComponent>(
                 ParameterView.FromDictionary(parameters));
-            return output.ToHtmlString();
+            string html = output.ToHtmlString();
+            log?.Invoke($"Tab {typeof(TComponent).Name} rendered in {sw.ElapsedMilliseconds:N0} ms ({html.Length:N0} chars)");
+            return html;
         });
 
     private static string PlaceholderBody(string key) =>

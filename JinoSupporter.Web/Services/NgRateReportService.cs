@@ -156,7 +156,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
     // ── Internal row type ─────────────────────────────────────────────────────────
 
-    private sealed class OrgRow
+    public sealed class OrgRow
     {
         public string MaterialName { get; set; } = "";
         public string LineShift    { get; set; } = "";
@@ -167,6 +167,62 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         public string ProductDate  { get; set; } = "";
         public double QtyInput     { get; set; }
         public double QtyNg        { get; set; }
+    }
+
+    public sealed class RequestSnapshot
+    {
+        internal RequestSnapshot(string dbPath, DateTime? rangeStart, DateTime? rangeEnd,
+            List<OrgRow> rows, Dictionary<(string, string, string), string> processTypeLookup)
+        {
+            DbPath = dbPath; RangeStart = rangeStart; RangeEnd = rangeEnd;
+            Rows = rows; ProcessTypeLookup = processTypeLookup;
+        }
+        public string DbPath { get; }
+        public DateTime? RangeStart { get; }
+        public DateTime? RangeEnd { get; }
+        internal List<OrgRow> Rows { get; }
+        internal Dictionary<(string, string, string), string> ProcessTypeLookup { get; }
+    }
+
+    public RequestSnapshot CreateRequestSnapshot(string dbPath, DateTime? periodStart, DateTime? periodEnd,
+        IProgress<string>? progress = null)
+    {
+        var range = ExpandPeriodForWeekAndMonth(periodStart, periodEnd);
+        progress?.Report("Loading ProcessType lookup (request snapshot)");
+        var lookupSw = Stopwatch.StartNew();
+        var lookup = LoadProcessTypeLookup(dbPath);
+        progress?.Report($"ProcessType lookup rows={lookup.Count:N0} ({lookupSw.ElapsedMilliseconds:N0} ms)");
+        progress?.Report("Loading OrginalTable (request snapshot)");
+        var loadSw = Stopwatch.StartNew();
+        var rows = LoadOrginalRows(dbPath, null, range?.Start, range?.End.AddDays(-1));
+        progress?.Report($"OrginalTable rows={rows.Count:N0} ({loadSw.ElapsedMilliseconds:N0} ms)");
+        var mapSw = Stopwatch.StartNew();
+        ApplyProcessTypeMapping(rows, lookup);
+        progress?.Report($"ProcessType mapping rows={rows.Count:N0} ({mapSw.ElapsedMilliseconds:N0} ms)");
+        return new RequestSnapshot(dbPath, range?.Start, range?.End, rows, lookup);
+    }
+
+    private static void ApplyProcessTypeMapping(List<OrgRow> rows, Dictionary<(string, string, string), string> lookup)
+    {
+        foreach (var r in rows)
+        {
+            if (!string.IsNullOrEmpty(r.ProcessType)) continue;
+            var material = NormalizeText(r.MaterialName);
+            var code = NormalizeText(r.ProcessCode);
+            var name = NormalizeText(r.ProcessName);
+            if (lookup.TryGetValue((material, code, name), out var pt)) r.ProcessType = pt;
+            else if (lookup.TryGetValue((string.Empty, code, name), out var pt2)) r.ProcessType = pt2;
+        }
+    }
+
+    private static bool SnapshotCovers(RequestSnapshot snapshot, string dbPath, DateTime? start, DateTime? end)
+    {
+        if (!string.Equals(snapshot.DbPath, dbPath, StringComparison.OrdinalIgnoreCase)) return false;
+        var requested = ExpandPeriodForWeekAndMonth(start, end);
+        if (!requested.HasValue) return !snapshot.RangeStart.HasValue && !snapshot.RangeEnd.HasValue;
+        return snapshot.RangeStart.HasValue && snapshot.RangeEnd.HasValue
+            && snapshot.RangeStart.Value <= requested.Value.Start
+            && snapshot.RangeEnd.Value >= requested.Value.End;
     }
 
     // ── Public API ────────────────────────────────────────────────────────────────
@@ -192,7 +248,8 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         IReadOnlyList<string> groupNames,
         IProgress<string>? progress = null,
         DateTime? periodStart = null,
-        DateTime? periodEnd = null)
+        DateTime? periodEnd = null,
+        RequestSnapshot? snapshot = null)
         => Task.Run(() =>
         {
             var modelLineShifts = lineShiftToGroup.Keys.ToList();
@@ -200,7 +257,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
             var groups          = groupNames.ToList();
             return GenerateReportCore(
                 dbPath, modelLineShifts, groups, mapping, progress,
-                requestedStart: periodStart, requestedEnd: periodEnd);
+                requestedStart: periodStart, requestedEnd: periodEnd, snapshot: snapshot);
         });
 
     /// <summary>
@@ -216,7 +273,8 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         IProgress<string>? progress = null,
         DateTime? periodStart = null,
         DateTime? periodEnd = null,
-        bool weightedGroupSummary = false)
+        bool weightedGroupSummary = false,
+        RequestSnapshot? snapshot = null)
         => Task.Run(() =>
         {
             var modelLineShifts = lineShiftToGroups.Keys.ToList();
@@ -230,7 +288,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
                 if (kv.Value.Count > 0) primary[kv.Key] = kv.Value[0];
             return GenerateReportCore(
                 dbPath, modelLineShifts, groupNames.ToList(), primary, progress, multi,
-                requestedStart: periodStart, requestedEnd: periodEnd,
+                requestedStart: periodStart, requestedEnd: periodEnd, snapshot: snapshot,
                 weightedGroupSummary: weightedGroupSummary);
         });
 
@@ -245,13 +303,14 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         IProgress<string>? progress = null,
         DateTime? periodStart = null,
         DateTime? periodEnd = null,
-        bool weightedGroupSummary = false)
+        bool weightedGroupSummary = false,
+        RequestSnapshot? snapshot = null)
     {
         var multi = lineShiftToGroup.ToDictionary(
             kv => kv.Key,
             kv => (IReadOnlyList<string>)new[] { kv.Value },
             StringComparer.Ordinal);
-        return GenerateSummaryReportAsync(dbPath, multi, groupNames, progress, periodStart, periodEnd, weightedGroupSummary);
+        return GenerateSummaryReportAsync(dbPath, multi, groupNames, progress, periodStart, periodEnd, weightedGroupSummary, snapshot);
     }
 
     public Task<NgRateReport> GenerateSummaryReportAsync(
@@ -261,7 +320,8 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         IProgress<string>? progress = null,
         DateTime? periodStart = null,
         DateTime? periodEnd = null,
-        bool weightedGroupSummary = false)
+        bool weightedGroupSummary = false,
+        RequestSnapshot? snapshot = null)
         => Task.Run(() =>
         {
             var modelLineShifts = lineShiftToGroups.Keys.ToList();
@@ -275,7 +335,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
             return GenerateReportCore(
                 dbPath, modelLineShifts, groupNames.ToList(), primary, progress, multi,
-                requestedStart: periodStart, requestedEnd: periodEnd,
+                requestedStart: periodStart, requestedEnd: periodEnd, snapshot: snapshot,
                 summaryOnly: true,
                 weightedGroupSummary: weightedGroupSummary);
         });
@@ -292,7 +352,8 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         DateTime? requestedStart = null,
         DateTime? requestedEnd = null,
         bool summaryOnly = false,
-        bool weightedGroupSummary = false)
+        bool weightedGroupSummary = false,
+        RequestSnapshot? snapshot = null)
     {
         // If caller didn't supply multi-mapping (e.g. the By-Group overload from
         // ModelGroups DB, which is inherently single-group), promote the single-valued
@@ -304,16 +365,24 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         var modelSet = modelLineShifts.Count > 0
             ? new HashSet<string>(modelLineShifts, StringComparer.Ordinal)
             : null;
+        var totalSw = Stopwatch.StartNew();
         var requestedCols = BuildRequestedPeriodColumns(requestedStart, requestedEnd);
 
         // 2. ProcessType lookup
         progress?.Report("Loading ProcessType lookup…");
-        var ptLookup = LoadProcessTypeLookup(dbPath);
+        var lookupSw = Stopwatch.StartNew();
+        var useSnapshot = snapshot is not null && SnapshotCovers(snapshot, dbPath, requestedStart, requestedEnd);
+        var ptLookup = useSnapshot ? snapshot!.ProcessTypeLookup : LoadProcessTypeLookup(dbPath);
+        progress?.Report($"ProcessType lookup rows={ptLookup.Count:N0} ({lookupSw.ElapsedMilliseconds:N0} ms)");
 
         // 3. Load OrginalTable
         progress?.Report("Loading OrginalTable…");
-        var orgRows = LoadOrginalRows(dbPath, modelSet);
-        progress?.Report($"  {orgRows.Count:N0} rows loaded.");
+        var loadSw = Stopwatch.StartNew();
+        var loadRange = ExpandPeriodForWeekAndMonth(requestedStart, requestedEnd);
+        var orgRows = useSnapshot ? snapshot!.Rows : LoadOrginalRows(dbPath, modelSet, loadRange?.Start, loadRange?.End.AddDays(-1));
+        progress?.Report($"OrginalTable rows={orgRows.Count:N0} ({loadSw.ElapsedMilliseconds:N0} ms)");
+        IEnumerable<OrgRow> sourceRows = useSnapshot && modelSet is not null
+            ? orgRows.Where(r => modelSet.Contains(r.LineShift)) : orgRows;
         if (orgRows.Count == 0)
         {
             var emptyReport = new NgRateReport
@@ -337,6 +406,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         // 4. Map ProcessType
         foreach (var r in orgRows)
         {
+            if (useSnapshot && modelSet is not null && !modelSet.Contains(r.LineShift)) continue;
             if (!string.IsNullOrEmpty(r.ProcessType)) continue;
             string material = NormalizeText(r.MaterialName);
             string code = NormalizeText(r.ProcessCode);
@@ -349,15 +419,18 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
         // 5. Compute PPM per (combo, period) — WPF approach: sum of combo PPMs
         progress?.Report("Pre-aggregating by period…");
-        var byDate  = BuildComboPpm(orgRows, r => r.ProductDate);
-        var byWeek  = BuildComboPpm(orgRows, r => GetWeekKey(r.ProductDate));
-        var byMonth = BuildComboPpm(orgRows, r => GetMonthKey(r.ProductDate));
+        var aggregateSw = Stopwatch.StartNew();
+        var byDate  = BuildComboPpm(sourceRows, r => r.ProductDate);
+        var byWeek  = BuildComboPpm(sourceRows, r => GetWeekKey(r.ProductDate));
+        var byMonth = BuildComboPpm(sourceRows, r => GetMonthKey(r.ProductDate));
 
         // 6. Extract period columns
         var dateCols  = requestedCols?.DateCols  ?? ExtractCols(byDate,  k => FormatDateHeader(k));
         var weekCols  = requestedCols?.WeekCols  ?? ExtractCols(byWeek,  FormatWeekHeader);
         var monthCols = requestedCols?.MonthCols ?? ExtractCols(byMonth, FormatMonthHeader);
         progress?.Report($"  {dateCols.Count} dates · {weekCols.Count} weeks · {monthCols.Count} months");
+
+        progress?.Report($"Period aggregation dates={dateCols.Count:N0}, weeks={weekCols.Count:N0}, months={monthCols.Count:N0} ({aggregateSw.ElapsedMilliseconds:N0} ms)");
 
         // 7. Build aggregation lookup
         // (ProcessType, PeriodKey) → sumPpm
@@ -372,21 +445,24 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
         // 8. Summary
         progress?.Report("Computing Summary…");
+        var summarySw = Stopwatch.StartNew();
         var summary = ComputeSummary(
             byDate, byWeek, byMonth,
             datePtMap, weekPtMap, monthPtMap,
             dateTotalMap, weekTotalMap, monthTotalMap,
             dateCols, weekCols, monthCols);
 
+        progress?.Report($"Summary complete ({summarySw.ElapsedMilliseconds:N0} ms)");
+        var groupSw = Stopwatch.StartNew();
         progress?.Report(summaryOnly ? "Computing group summaries..." : "Computing group summary base...");
         var needsGroupProcessRaw = !summaryOnly || !weightedGroupSummary;
-        var dateGrpProc  = needsGroupProcessRaw ? BuildGroupProcessRaw(orgRows, lsToGroups, r => r.ProductDate) : NewGroupProcessRaw();
-        var weekGrpProc  = needsGroupProcessRaw ? BuildGroupProcessRaw(orgRows, lsToGroups, r => GetWeekKey(r.ProductDate)) : NewGroupProcessRaw();
-        var monthGrpProc = needsGroupProcessRaw ? BuildGroupProcessRaw(orgRows, lsToGroups, r => GetMonthKey(r.ProductDate)) : NewGroupProcessRaw();
+        var dateGrpProc  = needsGroupProcessRaw ? BuildGroupProcessRaw(sourceRows, lsToGroups, r => r.ProductDate) : NewGroupProcessRaw();
+        var weekGrpProc  = needsGroupProcessRaw ? BuildGroupProcessRaw(sourceRows, lsToGroups, r => GetWeekKey(r.ProductDate)) : NewGroupProcessRaw();
+        var monthGrpProc = needsGroupProcessRaw ? BuildGroupProcessRaw(sourceRows, lsToGroups, r => GetMonthKey(r.ProductDate)) : NewGroupProcessRaw();
         var needsGroupRaw = weightedGroupSummary || !summaryOnly;
-        var dateGrpNg  = needsGroupRaw ? BuildGroupNgRaw(orgRows, lsToGroups, r => r.ProductDate) : NewGroupNgRaw();
-        var weekGrpNg  = needsGroupRaw ? BuildGroupNgRaw(orgRows, lsToGroups, r => GetWeekKey(r.ProductDate)) : NewGroupNgRaw();
-        var monthGrpNg = needsGroupRaw ? BuildGroupNgRaw(orgRows, lsToGroups, r => GetMonthKey(r.ProductDate)) : NewGroupNgRaw();
+        var dateGrpNg  = needsGroupRaw ? BuildGroupNgRaw(sourceRows, lsToGroups, r => r.ProductDate) : NewGroupNgRaw();
+        var weekGrpNg  = needsGroupRaw ? BuildGroupNgRaw(sourceRows, lsToGroups, r => GetWeekKey(r.ProductDate)) : NewGroupNgRaw();
+        var monthGrpNg = needsGroupRaw ? BuildGroupNgRaw(sourceRows, lsToGroups, r => GetMonthKey(r.ProductDate)) : NewGroupNgRaw();
         var groupSummary = groupNames.Count > 0
             ? weightedGroupSummary
                 ? ComputeWeightedGroupSummary(groupNames, dateGrpNg, weekGrpNg, monthGrpNg, dateCols, weekCols, monthCols)
@@ -396,9 +472,10 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
             ? MergeGroupRawIn(dateGrpNg, weekGrpNg, monthGrpNg)
             : new Dictionary<(string PT, string PN, string NG, string G, string PeriodKey), (double I, double N)>();
 
+        progress?.Report($"Group aggregation complete ({groupSw.ElapsedMilliseconds:N0} ms)");
         if (summaryOnly)
         {
-            progress?.Report("Report complete.");
+            progress?.Report($"Report complete ({totalSw.ElapsedMilliseconds:N0} ms total).");
             return new NgRateReport
             {
                 DateCols     = dateCols,
@@ -420,12 +497,15 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
         // 9. Process 10 NG
         progress?.Report("Computing Top 10 Processes…");
+        var topProcessSw = Stopwatch.StartNew();
         var top10Process = ComputeTop10Process(
             byDate, byWeek, byMonth,
             dateProcessMap, weekProcessMap, monthProcessMap,
             dateGrpProc, weekGrpProc, monthGrpProc,
             dateCols, weekCols, monthCols);
 
+        progress?.Report($"Top 10 Processes complete ({topProcessSw.ElapsedMilliseconds:N0} ms)");
+        var topNgSw = Stopwatch.StartNew();
         var dateNgMap  = BuildNgMap(byDate);
         var weekNgMap  = BuildNgMap(byWeek);
         var monthNgMap = BuildNgMap(byMonth);
@@ -437,6 +517,8 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
             dateNgMap, weekNgMap, monthNgMap,
             dateGrpNg, weekGrpNg, monthGrpNg,
             dateCols, weekCols, monthCols);
+
+        progress?.Report($"Worst 10 NG Names complete ({topNgSw.ElapsedMilliseconds:N0} ms)");
 
         // 11. Per-group input/NG quantities & Reason report
         progress?.Report("Computing group detail rows…");
@@ -451,7 +533,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         {
             var sw = Stopwatch.StartNew();
             progress?.Report("  [Group detail] Building Input Qty rows...");
-            var rows = BuildInputQtyRows(orgRows, lsToGroups, dateCols);
+            var rows = BuildInputQtyRows(sourceRows, lsToGroups, dateCols);
             progress?.Report($"  [Group detail] Input Qty rows={rows.Count:N0} ({sw.ElapsedMilliseconds:N0} ms)");
             return rows;
         });
@@ -459,7 +541,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         {
             var sw = Stopwatch.StartNew();
             progress?.Report("  [Group detail] Building NG Qty rows...");
-            var rows = BuildNgQtyRows(orgRows, lsToGroups, dateCols);
+            var rows = BuildNgQtyRows(sourceRows, lsToGroups, dateCols);
             progress?.Report($"  [Group detail] NG Qty rows={rows.Count:N0} ({sw.ElapsedMilliseconds:N0} ms)");
             return rows;
         });
@@ -472,7 +554,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
             sw.Restart();
             progress?.Report("  [Group detail] Building Reason rows...");
-            var rows = BuildReasonRows(orgRows, reasonLookup, lsToGroups, dateCols, weekCols, monthCols);
+            var rows = BuildReasonRows(sourceRows, reasonLookup, lsToGroups, dateCols, weekCols, monthCols);
             int reasonGroupCount = rows.Count(r => r.IsTotal);
             progress?.Report(
                 $"  [Group detail] Reason rows={rows.Count:N0}, reason groups={reasonGroupCount:N0} " +
@@ -496,7 +578,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
             $"  [Group detail] Raw map entries={groupRawIn.Count:N0} " +
             $"({stepSw.ElapsedMilliseconds:N0} ms, total {detailSw.ElapsedMilliseconds:N0} ms)");
 
-        progress?.Report("Report complete.");
+        progress?.Report($"Report complete ({totalSw.ElapsedMilliseconds:N0} ms total).");
         return new NgRateReport
         {
             DateCols     = dateCols,
@@ -522,23 +604,26 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
     public Task<GroupRawQtyReport> ComputeGroupRawQtyAsync(
         string dbPath,
         IReadOnlyDictionary<string, string> lineShiftToGroup,
-        IProgress<string>? progress = null)
-        => Task.Run(() => ComputeGroupRawQty(dbPath, lineShiftToGroup, progress));
+        IProgress<string>? progress = null,
+        RequestSnapshot? snapshot = null)
+        => Task.Run(() => ComputeGroupRawQty(dbPath, lineShiftToGroup, progress, snapshot));
 
     private GroupRawQtyReport ComputeGroupRawQty(
         string dbPath,
         IReadOnlyDictionary<string, string> lineShiftToGroup,
-        IProgress<string>? progress)
+        IProgress<string>? progress, RequestSnapshot? snapshot = null)
     {
         if (lineShiftToGroup.Count == 0) return new GroupRawQtyReport();
 
         var modelSet = new HashSet<string>(lineShiftToGroup.Keys, StringComparer.Ordinal);
         progress?.Report("Loading OrginalTable (group raw qty)…");
-        var orgRows = LoadOrginalRows(dbPath, modelSet);
+        var useSnapshot = snapshot is not null && SnapshotCovers(snapshot, dbPath, null, null);
+        var orgRows = useSnapshot ? snapshot!.Rows : LoadOrginalRows(dbPath, modelSet);
+        IEnumerable<OrgRow> sourceRows = useSnapshot ? orgRows.Where(r => modelSet.Contains(r.LineShift)) : orgRows;
         if (orgRows.Count == 0) return new GroupRawQtyReport();
 
         static Dictionary<string, Dictionary<string, (double Input, double Ng)>> BuildByPeriod(
-            List<OrgRow> rows,
+            IEnumerable<OrgRow> rows,
             IReadOnlyDictionary<string, string> lsToGroup,
             Func<OrgRow, string> getKey)
         {
@@ -570,9 +655,9 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
             return outer;
         }
 
-        var date  = BuildByPeriod(orgRows, lineShiftToGroup, r => r.ProductDate);
-        var week  = BuildByPeriod(orgRows, lineShiftToGroup, r => GetWeekKey(r.ProductDate));
-        var month = BuildByPeriod(orgRows, lineShiftToGroup, r => GetMonthKey(r.ProductDate));
+        var date  = BuildByPeriod(sourceRows, lineShiftToGroup, r => r.ProductDate);
+        var week  = BuildByPeriod(sourceRows, lineShiftToGroup, r => GetWeekKey(r.ProductDate));
+        var month = BuildByPeriod(sourceRows, lineShiftToGroup, r => GetMonthKey(r.ProductDate));
 
         var dateKeys  = date .Values.SelectMany(d => d.Keys).ToHashSet(StringComparer.Ordinal);
         var weekKeys  = week .Values.SelectMany(d => d.Keys).ToHashSet(StringComparer.Ordinal);
@@ -604,8 +689,8 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         IReadOnlyCollection<string> lineShifts,
         IProgress<string>? progress = null,
         DateTime? periodStart = null,
-        DateTime? periodEnd = null)
-        => Task.Run(() => ComputeLineShiftNgDetails(dbPath, lineShifts, progress, periodStart, periodEnd));
+        DateTime? periodEnd = null, RequestSnapshot? snapshot = null)
+        => Task.Run(() => ComputeLineShiftNgDetails(dbPath, lineShifts, progress, periodStart, periodEnd, snapshot));
 
     /// <summary>
     /// Same as ComputeLineShiftNgDetailsAsync but aggregates LineShifts per supplied mapping.
@@ -617,28 +702,32 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         IReadOnlyDictionary<string, string> lineShiftToGroup,
         IProgress<string>? progress = null,
         DateTime? periodStart = null,
-        DateTime? periodEnd = null)
-        => Task.Run(() => ComputeGroupedNgDetails(dbPath, lineShiftToGroup, progress, periodStart, periodEnd));
+        DateTime? periodEnd = null, RequestSnapshot? snapshot = null)
+        => Task.Run(() => ComputeGroupedNgDetails(dbPath, lineShiftToGroup, progress, periodStart, periodEnd, snapshot));
 
     private LineShiftNgReport ComputeGroupedNgDetails(
         string dbPath,
         IReadOnlyDictionary<string, string> lineShiftToGroup,
         IProgress<string>? progress,
         DateTime? periodStart = null,
-        DateTime? periodEnd = null)
+        DateTime? periodEnd = null, RequestSnapshot? snapshot = null)
     {
         if (lineShiftToGroup.Count == 0) return new LineShiftNgReport();
 
         var modelSet = new HashSet<string>(lineShiftToGroup.Keys, StringComparer.Ordinal);
         progress?.Report("Loading ProcessType lookup (grouped NG detail)…");
-        var ptLookup = LoadProcessTypeLookup(dbPath);
+        var useSnapshot = snapshot is not null && SnapshotCovers(snapshot, dbPath, periodStart, periodEnd);
+        var ptLookup = useSnapshot ? snapshot!.ProcessTypeLookup : LoadProcessTypeLookup(dbPath);
 
         progress?.Report("Loading OrginalTable (grouped NG detail)…");
-        var orgRows = LoadOrginalRows(dbPath, modelSet);
+        var loadRange = ExpandPeriodForWeekAndMonth(periodStart, periodEnd);
+        var orgRows = useSnapshot ? snapshot!.Rows : LoadOrginalRows(dbPath, modelSet, loadRange?.Start, loadRange?.End.AddDays(-1));
         if (orgRows.Count == 0) return new LineShiftNgReport();
+        IEnumerable<OrgRow> sourceRows = useSnapshot ? orgRows.Where(r => modelSet.Contains(r.LineShift)) : orgRows;
 
         foreach (var r in orgRows)
         {
+            if (useSnapshot && !modelSet.Contains(r.LineShift)) continue;
             if (!string.IsNullOrEmpty(r.ProcessType)) continue;
             string material = NormalizeText(r.MaterialName);
             string code = NormalizeText(r.ProcessCode);
@@ -651,7 +740,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
         progress?.Report("Aggregating by (Group, Process, NG)…");
         var details = new List<LineShiftNgDetail>();
-        foreach (var g in orgRows
+        foreach (var g in sourceRows
                      .Where(r => lineShiftToGroup.ContainsKey(r.LineShift))
                      .GroupBy(r => (Grp: lineShiftToGroup[r.LineShift],
                                     r.ProcessType, r.ProcessName, r.NgName)))
@@ -699,21 +788,25 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         IReadOnlyCollection<string> lineShifts,
         IProgress<string>? progress,
         DateTime? periodStart = null,
-        DateTime? periodEnd = null)
+        DateTime? periodEnd = null, RequestSnapshot? snapshot = null)
     {
         var modelSet = lineShifts.Count > 0
             ? new HashSet<string>(lineShifts, StringComparer.Ordinal)
             : null;
 
         progress?.Report("Loading ProcessType lookup (LS×NG detail)…");
-        var ptLookup = LoadProcessTypeLookup(dbPath);
+        var useSnapshot = snapshot is not null && SnapshotCovers(snapshot, dbPath, periodStart, periodEnd);
+        var ptLookup = useSnapshot ? snapshot!.ProcessTypeLookup : LoadProcessTypeLookup(dbPath);
 
         progress?.Report("Loading OrginalTable (LS×NG detail)…");
-        var orgRows = LoadOrginalRows(dbPath, modelSet);
+        var loadRange = ExpandPeriodForWeekAndMonth(periodStart, periodEnd);
+        var orgRows = useSnapshot ? snapshot!.Rows : LoadOrginalRows(dbPath, modelSet, loadRange?.Start, loadRange?.End.AddDays(-1));
         if (orgRows.Count == 0) return new LineShiftNgReport();
+        IEnumerable<OrgRow> sourceRows = useSnapshot ? orgRows.Where(r => modelSet.Contains(r.LineShift)) : orgRows;
 
         foreach (var r in orgRows)
         {
+            if (useSnapshot && !modelSet.Contains(r.LineShift)) continue;
             if (!string.IsNullOrEmpty(r.ProcessType)) continue;
             string material = NormalizeText(r.MaterialName);
             string code = NormalizeText(r.ProcessCode);
@@ -726,7 +819,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
         progress?.Report("Aggregating by (LineShift, Process, NG)…");
         var details = new List<LineShiftNgDetail>();
-        foreach (var g in orgRows
+        foreach (var g in sourceRows
                      .Where(r => !string.IsNullOrEmpty(r.LineShift))
                      .GroupBy(r => (r.LineShift, r.ProcessType, r.ProcessName, r.NgName)))
         {
@@ -778,7 +871,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
     /// Compute PPM per (ProcessType, ProcessName, NgName, PeriodKey).
     /// Same as WPF: PPM of each combo = QTYNG / QTYINPUT * 1,000,000.
     /// </summary>
-    private static List<ComboAgg> BuildComboPpm(List<OrgRow> rows, Func<OrgRow, string> getKey)
+    private static List<ComboAgg> BuildComboPpm(IEnumerable<OrgRow> rows, Func<OrgRow, string> getKey)
     {
         return rows
             .GroupBy(r => (r.ProcessType, r.ProcessName, r.NgName, Key: getKey(r)))
@@ -790,6 +883,25 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
                 g.Key.Key,
                 CalcPpm(g.Sum(r => r.QtyInput), g.Sum(r => r.QtyNg))))
             .ToList();
+    }
+
+    private static (DateTime Start, DateTime End)? ExpandPeriodForWeekAndMonth(DateTime? start, DateTime? end)
+    {
+        if (!start.HasValue || !end.HasValue) return null;
+        var first = start.Value.Date;
+        var last = end.Value.Date;
+        if (last < first) return null;
+        string firstWeek = GetWeekKey(first.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        var weekStart = first;
+        while (weekStart > DateTime.MinValue.Date && GetWeekKey(weekStart.AddDays(-1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)) == firstWeek)
+            weekStart = weekStart.AddDays(-1);
+        string lastWeek = GetWeekKey(last.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        var weekEnd = last;
+        while (weekEnd < DateTime.MaxValue.Date && GetWeekKey(weekEnd.AddDays(1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)) == lastWeek)
+            weekEnd = weekEnd.AddDays(1);
+        var monthStart = new DateTime(first.Year, first.Month, 1);
+        var monthEnd = new DateTime(last.Year, last.Month, DateTime.DaysInMonth(last.Year, last.Month));
+        return (weekStart < monthStart ? weekStart : monthStart, (weekEnd > monthEnd ? weekEnd : monthEnd).AddDays(1));
     }
 
     private static List<PeriodColumn> ExtractCols(List<ComboAgg> agg, Func<string, string> headerOf)
@@ -1138,7 +1250,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
     // Compute PPM per NgName first, then sum — matches the parent row formula
     private static Dictionary<(string, string, string, string), double> BuildGroupProcessRaw(
-        List<OrgRow> rows, Dictionary<string, List<string>> lsToGroups, Func<OrgRow, string> getKey)
+        IEnumerable<OrgRow> rows, Dictionary<string, List<string>> lsToGroups, Func<OrgRow, string> getKey)
         => rows
             .SelectMany(r => GroupsOf(lsToGroups, r.LineShift).Select(g => (r, G: g)))
             .GroupBy(x => (x.r.ProcessType, x.r.ProcessName,
@@ -1156,7 +1268,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         => new();
 
     private static Dictionary<(string, string, string, string, string), (double I, double N)> BuildGroupNgRaw(
-        List<OrgRow> rows, Dictionary<string, List<string>> lsToGroups, Func<OrgRow, string> getKey)
+        IEnumerable<OrgRow> rows, Dictionary<string, List<string>> lsToGroups, Func<OrgRow, string> getKey)
         => rows
             .SelectMany(r => GroupsOf(lsToGroups, r.LineShift).Select(g => (r, G: g)))
             .GroupBy(x => (x.r.ProcessType, x.r.ProcessName, x.r.NgName,
@@ -1341,7 +1453,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
     }
 
     private static List<InputQtyRow> BuildInputQtyRows(
-        List<OrgRow> rows,
+        IEnumerable<OrgRow> rows,
         Dictionary<string, List<string>> lineShiftToGroups,
         List<PeriodColumn> dateCols)
     {
@@ -1392,7 +1504,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
     }
 
     private static List<NgQtyRow> BuildNgQtyRows(
-        List<OrgRow> rows,
+        IEnumerable<OrgRow> rows,
         Dictionary<string, List<string>> lineShiftToGroups,
         List<PeriodColumn> dateCols)
     {
@@ -1444,7 +1556,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
     }
 
     private static List<ReasonRow> BuildReasonRows(
-        List<OrgRow> rows,
+        IEnumerable<OrgRow> rows,
         Dictionary<string, string> reasonLookup,
         Dictionary<string, List<string>> lineShiftToGroups,
         List<PeriodColumn> dateCols,
@@ -1628,7 +1740,11 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         return lookup;
     }
 
-    private static List<OrgRow> LoadOrginalRows(string dbPath, HashSet<string>? modelFilter)
+    private static List<OrgRow> LoadOrginalRows(
+        string dbPath,
+        HashSet<string>? modelFilter,
+        DateTime? requestedStart = null,
+        DateTime? requestedEnd = null)
     {
         var rows = new List<OrgRow>();
         using var conn = new SqliteConnection($"Data Source={dbPath};Mode=ReadOnly");
@@ -1641,11 +1757,19 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
             : "([MATERIALNAME] || '_' || [PRODUCTION_LINE])";
 
         using var cmd = conn.CreateCommand();
+        bool hasDateRange = requestedStart.HasValue && requestedEnd.HasValue
+            && requestedEnd.Value.Date >= requestedStart.Value.Date;
         cmd.CommandText = $"""
             SELECT [MATERIALNAME], {lineShiftExpr}, [PROCESSCODE], [PROCESSNAME],
                    [NGNAME], [QTYINPUT], [QTYNG], [PRODUCT_DATE]
             FROM [OrginalTable]
+            {(hasDateRange ? "WHERE [PRODUCT_DATE] >= @start AND [PRODUCT_DATE] < @endExclusive" : string.Empty)}
             """;
+        if (hasDateRange)
+        {
+            cmd.Parameters.AddWithValue("@start", requestedStart!.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            cmd.Parameters.AddWithValue("@endExclusive", requestedEnd!.Value.Date.AddDays(1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        }
         using var r = cmd.ExecuteReader();
         while (r.Read())
         {

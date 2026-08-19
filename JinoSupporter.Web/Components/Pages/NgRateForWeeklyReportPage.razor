@@ -1539,10 +1539,12 @@
                 return;
             }
 
+            var snapshot = sharedHierarchy.Snapshot
+                ?? NgRateReportSvc.CreateRequestSnapshot(dbPath, _startDate, _endDate, progress);
             _lsNgReport = await NgRateReportSvc.ComputeLineShiftNgDetailsAsync(
-                dbPath, mappings.LineShiftList, progress, _startDate, _endDate);
+                dbPath, mappings.LineShiftList, progress, _startDate, _endDate, snapshot);
             _midNgReport = await NgRateReportSvc.ComputeGroupedNgDetailsAsync(
-                dbPath, mappings.MidMapping, progress, _startDate, _endDate);
+                dbPath, mappings.MidMapping, progress, _startDate, _endDate, snapshot);
             _pendingChartRender = true;
         }
         catch (Exception ex)
@@ -1746,17 +1748,19 @@
                 return;
             }
 
-            _report           = await NgRateReportSvc.GenerateReportAsync(dbPath, mapping,      groupList, progress, _startDate, _endDate);
-            _reportByMid      = await NgRateReportSvc.GenerateSummaryReportAsync(dbPath, midMapping,   midList,   progress, _startDate, _endDate, weightedGroupSummary: true);
-            _reportByModel    = await NgRateReportSvc.GenerateSummaryReportAsync(dbPath, modelMapping, modelList, progress, _startDate, _endDate, weightedGroupSummary: true);
+            var snapshot = NgRateReportSvc.CreateRequestSnapshot(dbPath, _startDate, _endDate, progress);
+
+            _report           = await NgRateReportSvc.GenerateReportAsync(dbPath, mapping,      groupList, progress, _startDate, _endDate, snapshot);
+            _reportByMid      = await NgRateReportSvc.GenerateSummaryReportAsync(dbPath, midMapping,   midList,   progress, _startDate, _endDate, weightedGroupSummary: true, snapshot: snapshot);
+            _reportByModel    = await NgRateReportSvc.GenerateSummaryReportAsync(dbPath, modelMapping, modelList, progress, _startDate, _endDate, weightedGroupSummary: true, snapshot: snapshot);
             _reportBySubGroup = subList.Count > 0
-                ? await NgRateReportSvc.GenerateSummaryReportAsync(dbPath, subMapping, subList, progress, _startDate, _endDate, weightedGroupSummary: true)
+                ? await NgRateReportSvc.GenerateSummaryReportAsync(dbPath, subMapping, subList, progress, _startDate, _endDate, weightedGroupSummary: true, snapshot: snapshot)
                 : null;
             _reportBySubLeaf = subLeafList.Count > 0
-                ? await NgRateReportSvc.GenerateSummaryReportAsync(dbPath, subLeafMapping, subLeafList, progress, _startDate, _endDate, weightedGroupSummary: true)
+                ? await NgRateReportSvc.GenerateSummaryReportAsync(dbPath, subLeafMapping, subLeafList, progress, _startDate, _endDate, weightedGroupSummary: true, snapshot: snapshot)
                 : null;
-            _lsNgReport    = await NgRateReportSvc.ComputeLineShiftNgDetailsAsync(dbPath, modelList, progress, _startDate, _endDate);
-            _midNgReport   = await NgRateReportSvc.ComputeGroupedNgDetailsAsync(dbPath, midMapping, progress, _startDate, _endDate);
+            _lsNgReport    = await NgRateReportSvc.ComputeLineShiftNgDetailsAsync(dbPath, modelList, progress, _startDate, _endDate, snapshot);
+            _midNgReport   = await NgRateReportSvc.ComputeGroupedNgDetailsAsync(dbPath, midMapping, progress, _startDate, _endDate, snapshot);
             _hierLookup = new HierPpmLookup
             {
                 ByGroup = _report,
