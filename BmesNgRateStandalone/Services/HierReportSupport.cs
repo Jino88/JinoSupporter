@@ -220,32 +220,26 @@ public static class HierReportBuilder
             StringComparer.Ordinal);
 
         progress?.Report(includeMidDetailReport
-            ? "Starting hierarchy summary, Mid detail, and Sub Group detail reports in parallel."
+            ? "Starting hierarchy summary and Mid detail reports in parallel."
             : "Starting hierarchy summary report.");
         var summaryProgress = WithProgressLabel(progress, "Hierarchy summary");
-        var midProgress = WithProgressLabel(progress, "Mid detail");
-        var sub1Progress = WithProgressLabel(progress, "Sub Group detail");
         var summaryTask = svc.GenerateSummaryReportAsync(
             dbPath, allMappingReadOnly, allGroupNames, summaryProgress, periodStart, periodEnd,
             weightedGroupSummary: true);
+        var midProgress = WithProgressLabel(progress, "Mid detail");
         var byMidTask = includeMidDetailReport
-            ? svc.GenerateReportAsync(dbPath, midMapping, midList, midProgress, periodStart, periodEnd)
-            : null;
-        var bySub1Task = includeMidDetailReport && subList.Count > 0
-            ? svc.GenerateReportAsync(dbPath, subMapping, subList, sub1Progress, periodStart, periodEnd)
+            ? svc.GenerateReportAsync(
+                dbPath, midMapping, midList, midProgress, periodStart, periodEnd)
             : null;
 
         var summary = await summaryTask;
         var byMid = byMidTask is not null ? await byMidTask : summary;
-        var bySub1 = bySub1Task is not null
-            ? await bySub1Task
-            : (subList.Count > 0 ? summary : null);
 
         return new HierReports
         {
             ByGroup = summary,
             ByMid   = byMid,
-            BySub1  = bySub1,
+            BySub1  = subList.Count > 0 ? summary : null,
             BySub2  = subLeafList.Count > 0 ? summary : null,
             ByLs    = lsList.Count > 0 ? summary : null,
             Groups  = selectedGroups.ToList(),

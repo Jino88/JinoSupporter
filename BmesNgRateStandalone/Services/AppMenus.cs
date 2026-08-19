@@ -20,6 +20,7 @@ public static class AppMenus
     public const string BmesFCost          = "bmes-f-cost";
     public const string BmesTest3          = "bmes-test3";
     public const string BmesTest4          = "bmes-test4";
+    public const string BmesTest5          = "bmes-test5";
     public const string BmesLpa            = "bmes-lpa";
     public const string QrBakoData         = "qr-bako-data";
     public const string BmesDailyReport    = "bmes-daily-report";
@@ -48,6 +49,8 @@ public static class AppMenus
     public const string AdminPaths         = "admin-paths";
     public const string TestExcelConverter = "test-excel-converter";
     public const string AdminDbQuery       = "admin-db-query";
+    /// <summary>Preview of the redesigned UI; temporary, removed once the port lands.</summary>
+    public const string NewVer             = "new-ver";
 
     public static readonly MenuItemDef[] All =
     [
@@ -60,6 +63,7 @@ public static class AppMenus
         new(BmesReasonTable,    "Reason Table",             "BMES"),
         new(BmesTest3,          "Test 3",                   "BMES"),
         new(BmesTest4,          "Test 4",                   "BMES"),
+        new(BmesTest5,          "BOM & Drawing",            "BMES"),
         new(BmesLpa,            "LPA",                      "BMES"),
         new(QrBakoData,         "QR BAKO DATA",             "BMES"),
         new(BmesDailyReport,    "DAILY REPORT",             "BMES"),
@@ -75,6 +79,7 @@ public static class AppMenus
         new(AdminAiUsages,      "AI Usages",                "Admin"),
         new(TestExcelConverter, "Test Excel Converter",     "Admin"),
         new(AdminDbQuery,       "DB Query",                 "Admin"),
+        new(NewVer,             "New Ver",                  "Preview"),
     ];
 
     /// <summary>
@@ -86,22 +91,22 @@ public static class AppMenus
         [AppRoles.Admin] = All.Select(m => m.Id).ToArray(),
         [AppRoles.Manager] =
         [
-            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4,
+            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4, BmesTest5,
             QrBakoData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload
         ],
         [AppRoles.ManagerAi] =
         [
-            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4,
+            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4, BmesTest5,
             QrBakoData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload
         ],
         [AppRoles.Leader] =
         [
-            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4,
+            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4, BmesTest5,
             QrBakoData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload
         ],
         [AppRoles.Editor] =
         [
-            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4,
+            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4, BmesTest5,
             QrBakoData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload
         ],
         [AppRoles.Viewer] =

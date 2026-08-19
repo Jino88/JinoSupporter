@@ -117,11 +117,11 @@
             var hierDateCols  = GetVisibleDateCols(_reports[0].Report).ToList();
             var hierWeekCols  = GetVisibleWeekCols(_reports[0].Report).ToList();
             var hierMonthCols = GetVisibleMonthCols(_reports[0].Report).ToList();
-            <div class="card mb-3 shadow-sm">
-                <div class="card-header small fw-semibold">
+            <div class="card mb-3 ngrate-report-card">
+                <div class="card-header ngrate-card-header small fw-semibold">
                     Group -> Model -> Line -> Shift - TOTAL PPM (collapsible)
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body ngrate-card-body p-0">
                     <div class="pivot-wrap">
                         <table class="pivot-table text-fit-table">
                             <thead>
@@ -159,6 +159,7 @@
                                     <tr class="hier-group-row" @onclick="() => HierToggleGroup(gName)">
                                         <td class="label-td">
                                             <span class="tog-icon">@(gExp ? "v" : ">")</span>
+                                            <span class="ngrate-hier-level">GROUP</span>
                                             <strong>@gName</strong>
                                             <span class="text-muted ms-1" style="font-size:10px;">@visibleMids.Count models</span>
                                         </td>
@@ -189,6 +190,7 @@
                                             <tr class="hier-mid-row" @onclick="() => HierToggleMid(midKey)">
                                                 <td class="label-td" style="padding-left:32px; font-size:11.5px;">
                                                     <span class="tog-icon">@(midExp ? "v" : ">")</span>
+                                                    <span class="ngrate-hier-level">MODEL</span>
                                                     <span class="ms-1">@mid.Material</span>
                                                 </td>
                                                 @foreach (var col in hierDateCols)
@@ -253,8 +255,8 @@
             @if (_activeSection == "summary")
             {
                 <!-- Summary -->
-                <div class="card mb-3 shadow-sm">
-                    <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+                <div class="card mb-3 ngrate-report-card">
+                    <div class="card-header ngrate-card-header small fw-semibold d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center gap-2 flex-wrap">
                             <span>Summary - NG PPM by Process Type</span>
                             @if (rpt.GroupNames.Count > 0)
@@ -279,7 +281,7 @@
                             </div>
                         }
                     </div>
-                    <div class="card-body p-2">
+                    <div class="card-body ngrate-card-body p-2">
                         <div class="pivot-wrap">
                             <table class="pivot-table text-fit-table">
                                 <thead>
@@ -338,7 +340,7 @@
                                                     {
                                                         <tr class="group-row">
                                                             <td></td>
-                                                            <td class="label-td group-name-td">@grp</td>
+                                                            <td class="label-td group-name-td">↳ @grp</td>
                                                             @foreach (var col in dateCols)
                                                             {
                                                                 double v = grpRow.Ppm.GetValueOrDefault(col.Key);
@@ -374,8 +376,8 @@
             else if (_activeSection == "process")
             {
                 <!-- Process 10 NG -->
-                <div class="card mb-3 shadow-sm">
-                    <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+                <div class="card mb-3 ngrate-report-card">
+                    <div class="card-header ngrate-card-header small fw-semibold d-flex justify-content-between align-items-center">
                         <span>Process 10 NG - Top 10 Worst Processes by PPM</span>
                         @if (rpt.Top10Process.Any(r => r.Groups.Count > 0))
                         {
@@ -386,7 +388,7 @@
                             </div>
                         }
                     </div>
-                    <div class="card-body p-2">
+                    <div class="card-body ngrate-card-body p-2">
                         <div class="pivot-wrap">
                             <table class="pivot-table text-fit-table">
                                 <thead>
@@ -441,7 +443,7 @@
                                                 <tr class="group-row">
                                                     <td></td>
                                                     <td></td>
-                                                    <td class="label-td group-name-td">@grp.GroupName</td>
+                                                        <td class="label-td group-name-td">↳ @grp.GroupName</td>
                                                     @foreach (var col in dateCols)
                                                     {
                                                         double v = grp.Ppm.GetValueOrDefault(col.Key);
@@ -472,8 +474,8 @@
             else if (_activeSection == "ng")
             {
                 <!-- Worst 10 NG -->
-                <div class="card mb-3 shadow-sm">
-                    <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+                <div class="card mb-3 ngrate-report-card">
+                    <div class="card-header ngrate-card-header small fw-semibold d-flex justify-content-between align-items-center">
                         <span>Worst 10 NG - Top 10 Worst NG Names by PPM</span>
                         @if (rpt.Top10Ng.Any(r => r.Groups.Count > 0))
                         {
@@ -484,7 +486,7 @@
                             </div>
                         }
                     </div>
-                    <div class="card-body p-2">
+                    <div class="card-body ngrate-card-body p-2">
                         <div class="pivot-wrap">
                             <table class="pivot-table text-fit-table">
                                 <thead>
@@ -541,7 +543,7 @@
                                                 <tr class="group-row">
                                                     <td></td>
                                                     <td></td>
-                                                    <td class="label-td group-name-td">@grp.GroupName</td>
+                                                        <td class="label-td group-name-td">↳ @grp.GroupName</td>
                                                     <td></td>
                                                     @foreach (var col in dateCols)
                                                     {
@@ -575,8 +577,8 @@
                 <!-- Reason -->
                 @if (rpt.ReasonRows.Count > 0)
                 {
-                    <div class="card mb-3 shadow-sm">
-                        <div class="card-header small fw-semibold d-flex justify-content-between align-items-center">
+                    <div class="card mb-3 ngrate-report-card">
+                        <div class="card-header ngrate-card-header small fw-semibold d-flex justify-content-between align-items-center">
                             <span>Reason - Defect Cause Classification</span>
                             @if (rpt.ReasonRows.Any(r => !r.IsTotal && r.Groups.Count > 0))
                             {
@@ -587,7 +589,7 @@
                                 </div>
                             }
                         </div>
-                        <div class="card-body p-2">
+                        <div class="card-body ngrate-card-body p-2">
                             <div class="pivot-wrap">
                                 <table class="pivot-table text-fit-table">
                                     <thead>
@@ -693,7 +695,7 @@
                                                             <td></td>
                                                             <td></td>
                                                             <td></td>
-                                                            <td class="label-td group-name-td">@grp.GroupName</td>
+                                                            <td class="label-td group-name-td">↳ @grp.GroupName</td>
                                                             <td></td>
                                                             @foreach (var col in dateCols)
                                                             {

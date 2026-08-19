@@ -321,7 +321,7 @@ public sealed class FCostReportService(NgRateSettingsService settings)
         using var cmd = conn.CreateCommand();
         cmd.CommandText =
             """
-            SELECT QueryDate, RowNo, FetchedAt, RawJson,
+            SELECT QueryDate, RowNo, FetchedAt,
                    FaccoTx, PrdGrTx, VeridTx, ModNoTx, AssemTx, AbChgTx,
                    MCodeTx, MatnrTx, ZTypeTx, ZType, TSort, ZSort,
                    Facco, Werks, PrdGr, ModNo, Verid, AbChg, Cat01, Matnr, Assem,
@@ -342,7 +342,6 @@ public sealed class FCostReportService(NgRateSettingsService settings)
             string queryDate = r.IsDBNull(i) ? "" : r.GetString(i); i++;
             int rowNo = r.IsDBNull(i) ? 0 : r.GetInt32(i); i++;
             string fetched = r.IsDBNull(i) ? "" : r.GetString(i); i++;
-            string rawJson = r.IsDBNull(i) ? "" : r.GetString(i); i++;
 
             string Sx() { string v = r.IsDBNull(i) ? "" : r.GetString(i); i++; return v; }
             double Dx() { double v = r.IsDBNull(i) ? 0 : r.GetDouble(i); i++; return v; }
@@ -352,7 +351,7 @@ public sealed class FCostReportService(NgRateSettingsService settings)
                 Id = rowNo,
                 FetchedAt = fetched,
                 QueryDate = queryDate,
-                RawJson = rawJson,
+                RawJson = string.Empty,
                 FaccoTx = Sx(), PrdGrTx = Sx(), VeridTx = Sx(), ModNoTx = Sx(),
                 AssemTx = Sx(), AbChgTx = Sx(), MCodeTx = Sx(), MatnrTx = Sx(),
                 ZTypeTx = Sx(), ZType = Sx(), TSort = Sx(), ZSort = Sx(),

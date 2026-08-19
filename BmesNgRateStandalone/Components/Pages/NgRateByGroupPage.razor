@@ -49,8 +49,8 @@
 </NgRateSetupPanel>
 
 <!-- ══ Summary (per group × per date) ════════════════════════════════════════ -->
-<div class="card shadow-sm mt-3">
-    <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+<div class="card mt-3 ngrate-report-card">
+    <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
         <span>📊 Summary — group × Date / Week / Month (PPM)</span>
         @if (_report is not null)
         {
@@ -95,7 +95,7 @@
             </button>
         }
     </div>
-    <div class="card-body p-0">
+    <div class="card-body ngrate-card-body p-0">
         @if (!string.IsNullOrEmpty(_reportError))
         {
             <div class="alert alert-danger m-3 py-2 small">@_reportError</div>
@@ -170,6 +170,7 @@
                             <tr class="grp-total-row" @onclick="() => ToggleExpand(gName)">
                                 <td class="label-td">
                                     <span class="tog-icon">@(expanded ? "▼" : "▶")</span>
+                                    <span class="ngrate-hier-level">GROUP</span>
                                     <strong>@gName</strong>
                                 </td>
                                 @foreach (var col in VisibleDateCols)
@@ -230,26 +231,26 @@
 <!-- ══ Chart (per-group PPM trend over dates) ════════════════════════════════ -->
 @if (_report is not null && TotalColCount > 0 && _selectedGroupNames.Count > 0)
 {
-    <div class="card shadow-sm mt-3">
-        <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+    <div class="card mt-3 ngrate-report-card">
+        <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
             <span>📈 Group trend — PPM (Date / Week / Month)</span>
         </div>
-        <div class="card-body" style="height:320px;">
+        <div class="card-body ngrate-card-body" style="height:320px;">
             <canvas id="ngrateByGroupCanvas"></canvas>
         </div>
     </div>
 }
 
 <!-- ══ Summary 2 (per group × per model) ═════════════════════════════════════ -->
-<div class="card shadow-sm mt-3">
-    <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+<div class="card mt-3 ngrate-report-card">
+    <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
         <span>📊 Summary — Group → Model Name × Date / Week / Month (PPM)</span>
         @if (_reportByMid is not null)
         {
             <span class="text-muted" style="font-size:11px;">Model Name PPM = same combo-merged as per-model</span>
         }
     </div>
-    <div class="card-body p-0">
+    <div class="card-body ngrate-card-body p-0">
         @if (_report is null || _reportByMid is null)
         {
             <div class="text-muted small p-4 text-center">
@@ -322,6 +323,7 @@
                             <tr class="grp-total-row" @onclick="() => ToggleExpandModel(gName)">
                                 <td class="label-td">
                                     <span class="tog-icon">@(exp ? "▼" : "▶")</span>
+                                    <span class="ngrate-hier-level">GROUP</span>
                                     <strong>@gName</strong>
                                     <span class="text-muted ms-1" style="font-size:10px;">@midList.Count models</span>
                                 </td>
@@ -353,6 +355,7 @@
                                     <tr class="grp-sub-row grp-mid-row" @onclick="() => ToggleExpandMid(midKey)">
                                         <td class="label-td ps-4" style="font-size:11px;">
                                             <span class="tog-icon">@(midExp ? "▼" : "▶")</span>
+                                            <span class="ngrate-hier-level">MODEL</span>
                                             <span class="ms-1">@mid.Material</span>
                                             <span class="text-muted ms-1" style="font-size:10px;">@mid.LineShifts.Count</span>
                                         </td>
@@ -400,11 +403,11 @@
 <!-- ══ Chart 2 (per-model PPM trend) ═════════════════════════════════════════ -->
 @if (_reportByModel is not null && TotalColCount > 0 && _selectedGroupNames.Count > 0)
 {
-    <div class="card shadow-sm mt-3">
-        <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+    <div class="card mt-3 ngrate-report-card">
+        <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
             <span>📈 Group trend — PPM (Date / Week / Month)</span>
         </div>
-        <div class="card-body" style="height:320px;">
+        <div class="card-body ngrate-card-body" style="height:320px;">
             <canvas id="ngrateByGroupModelCanvas"></canvas>
         </div>
     </div>
@@ -414,8 +417,8 @@
 @if (_midNgReport is not null && _selectedGroupNames.Count > 0)
 {
     var (_refKey, _refBucket) = SortRefKey();
-    <div class="card shadow-sm mt-3">
-        <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+    <div class="card mt-3 ngrate-report-card">
+        <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
             <span>🥇 Top 10 per group — Model Name × Process × NG</span>
             <span class="text-muted" style="font-size:11px;">
                 @if (!string.IsNullOrEmpty(_refKey))
@@ -423,7 +426,7 @@
                 else { <text>No sort reference available.</text> }
             </span>
         </div>
-        <div class="card-body p-0">
+        <div class="card-body ngrate-card-body p-0">
             @foreach (var gName in _selectedGroupNames)
             {
                 // 중그룹 키는 "대그룹::Material" 형태. 현재 대그룹에 해당하는 키만 필터.
@@ -442,6 +445,7 @@
                     .ToList();
 
                 <div class="px-3 py-2 top10-group-head">
+                    <span class="ngrate-hier-level">GROUP</span>
                     <strong class="me-2">@gName</strong>
                     <span class="text-muted small">@top.Count rows</span>
                 </div>

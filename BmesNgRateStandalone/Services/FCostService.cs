@@ -176,6 +176,7 @@ public sealed class FCostService(NgRateSettingsService settings, AppActivityLogg
         bool force = false,
         int delayMs = 1200,
         DateTime? forceFromDate = null,
+        TimeSpan? forceRefreshTtl = null,
         IProgress<string>? progress = null,
         CancellationToken cancellationToken = default)
     {
@@ -197,6 +198,44 @@ public sealed class FCostService(NgRateSettingsService settings, AppActivityLogg
             StartDate = startDate,
             EndDate = endDate,
         };
+
+        int totalDays = (endDate - startDate).Days + 1;
+        var datesToFetch = new List<(DateTime Day, int Ordinal)>();
+        int scanOrdinal = 0;
+        for (DateTime day = startDate; day <= endDate; day = day.AddDays(1))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            scanOrdinal++;
+            result.AttemptedDays++;
+
+            bool isRefreshWindow =
+                forceFromDate is DateTime refreshFrom &&
+                day >= refreshFrom.Date;
+            bool cachedPullIsUsable = !force && RawPullSucceeded(
+                dbPath,
+                day,
+                isRefreshWindow ? forceRefreshTtl : null);
+            bool mustRefetch =
+                force ||
+                (isRefreshWindow &&
+                 (forceRefreshTtl is null || !cachedPullIsUsable));
+            if (!mustRefetch && cachedPullIsUsable)
+            {
+                result.SkippedDays++;
+                Log(progress, $"[{scanOrdinal:N0}/{totalDays:N0}] {day:yyyy-MM-dd}: skip (already OK)");
+                continue;
+            }
+
+            datesToFetch.Add((day, scanOrdinal));
+        }
+
+        if (datesToFetch.Count == 0)
+        {
+            Log(
+                progress,
+                $"RAW backfill done from cache: skipped={result.SkippedDays:N0}, no BMES login required");
+            return result;
+        }
 
         string id = _settings.LoginId;
         string pwd = _settings.Password;
@@ -236,23 +275,12 @@ public sealed class FCostService(NgRateSettingsService settings, AppActivityLogg
             return result;
         }
 
-        int totalDays = (endDate - startDate).Days + 1;
-        int idx = 0;
-        for (DateTime day = startDate; day <= endDate; day = day.AddDays(1))
+        for (int fetchIndex = 0; fetchIndex < datesToFetch.Count; fetchIndex++)
         {
+            (DateTime day, int ordinal) = datesToFetch[fetchIndex];
             cancellationToken.ThrowIfCancellationRequested();
-            idx++;
-            result.AttemptedDays++;
 
-            bool mustRefetch = force || (forceFromDate is DateTime refreshFrom && day >= refreshFrom.Date);
-            if (!mustRefetch && RawPullSucceeded(dbPath, day))
-            {
-                result.SkippedDays++;
-                Log(progress, $"[{idx:N0}/{totalDays:N0}] {day:yyyy-MM-dd}: skip (already OK)");
-                continue;
-            }
-
-            Log(progress, $"[{idx:N0}/{totalDays:N0}] {day:yyyy-MM-dd}: fetch");
+            Log(progress, $"[{ordinal:N0}/{totalDays:N0}] {day:yyyy-MM-dd}: fetch");
             try
             {
                 var fetched = await FetchFCostRowsAsync(client, day, progress);
@@ -281,7 +309,7 @@ public sealed class FCostService(NgRateSettingsService settings, AppActivityLogg
                 Log(progress, "[WARN] " + msg);
             }
 
-            if (delayMs > 0 && day < endDate)
+            if (delayMs > 0 && fetchIndex < datesToFetch.Count - 1)
                 await Task.Delay(delayMs, cancellationToken);
         }
 
@@ -544,20 +572,36 @@ public sealed class FCostService(NgRateSettingsService settings, AppActivityLogg
 
     // ── SQLite ───────────────────────────────────────────────────────────────────
 
-    private static bool RawPullSucceeded(string dbPath, DateTime queryDate)
+    private static bool RawPullSucceeded(
+        string dbPath,
+        DateTime queryDate,
+        TimeSpan? maxAge = null)
     {
         try
         {
             using var conn = new SqliteConnection($"Data Source={dbPath};Mode=ReadOnly");
             conn.Open();
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT Status, RowCount FROM FCostRawPulls WHERE QueryDate = @qdate;";
+            cmd.CommandText =
+                "SELECT Status, RowCount, FetchedAt FROM FCostRawPulls WHERE QueryDate = @qdate;";
             cmd.Parameters.AddWithValue("@qdate", queryDate.ToString("yyyy-MM-dd"));
             using var r = cmd.ExecuteReader();
             if (!r.Read()) return false;
             string status = r.IsDBNull(0) ? string.Empty : r.GetString(0);
             int rowCount = r.IsDBNull(1) ? 0 : Convert.ToInt32(r.GetValue(1));
-            return string.Equals(status, "OK", StringComparison.OrdinalIgnoreCase) && rowCount > 0;
+            if (!string.Equals(status, "OK", StringComparison.OrdinalIgnoreCase) || rowCount <= 0)
+                return false;
+
+            if (maxAge is not TimeSpan ttl)
+                return true;
+
+            string fetchedText = r.IsDBNull(2) ? string.Empty : r.GetString(2);
+            return DateTimeOffset.TryParse(
+                       fetchedText,
+                       CultureInfo.InvariantCulture,
+                       DateTimeStyles.RoundtripKind,
+                       out DateTimeOffset fetchedAt) &&
+                   DateTimeOffset.Now - fetchedAt <= ttl;
         }
         catch
         {

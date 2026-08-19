@@ -1217,9 +1217,9 @@
 
 <style>
     .gm-page {
-        min-height: calc(100vh - 32px);
-        background: #f8fafc;
-        color: #1f2937;
+        min-height: calc(var(--view-h, 100vh) - 32px);
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink, #0f1319);
         padding: 18px;
     }
 
@@ -1238,7 +1238,7 @@
 
     .gm-header p {
         margin: 3px 0 0;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-size: 13px;
     }
 
@@ -1266,16 +1266,16 @@
 
     .gm-panel,
     .gm-workspace {
-        background: #fff;
-        border: 1px solid #dbe3ef;
-        border-radius: 8px;
+        background: var(--panel, #fff);
+        border: 1px solid var(--line, #dde1e7);
+        border-radius: 2px;
         padding: 12px;
     }
 
     .gm-panel h2 {
         font-size: 13px;
         margin: 0 0 8px;
-        color: #334155;
+        color: var(--ink-2, #4a5461);
     }
 
     .gm-field {
@@ -1292,12 +1292,12 @@
     .gm-field label {
         font-size: 12px;
         font-weight: 600;
-        color: #475569;
+        color: var(--ink-2, #4a5461);
     }
 
     .gm-field-hint {
         font-size: 11px;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         line-height: 1.25;
     }
 
@@ -1326,7 +1326,7 @@
         gap: 7px;
         min-height: 28px;
         font-size: 12px;
-        color: #334155;
+        color: var(--ink-2, #4a5461);
         margin-bottom: 4px;
     }
 
@@ -1342,10 +1342,10 @@
     }
 
     .gm-stat-chip {
-        border: 1px solid #dbe3ef;
-        border-radius: 6px;
-        background: #f8fafc;
-        color: #334155;
+        border: 1px solid var(--line, #dde1e7);
+        border-radius: 2px;
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
         font-size: 12px;
         padding: 5px 8px;
         margin-bottom: 6px;
@@ -1366,7 +1366,7 @@
 
     .gm-group-row span {
         font-size: 12px;
-        color: #334155;
+        color: var(--ink-2, #4a5461);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -1380,20 +1380,20 @@
     }
 
     .gm-status span {
-        background: #e2e8f0;
-        border-radius: 5px;
+        background: var(--line, var(--line, #dde1e7));
+        border-radius: 2px;
         padding: 3px 7px;
         font-size: 12px;
-        color: #334155;
+        color: var(--ink-2, #4a5461);
     }
 
     .gm-chart-host {
         position: relative;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
+        border: 1px solid var(--line, var(--line, #dde1e7));
+        border-radius: 2px;
         padding: 8px;
         margin-top: 12px;
-        background: #fff;
+        background: var(--panel, #fff);
     }
 
     .gm-chart-canvas-frame {
@@ -1412,13 +1412,13 @@
         gap: 8px;
         margin-top: 10px;
         padding-top: 10px;
-        border-top: 1px solid #e2e8f0;
+        border-top: 1px solid var(--line, var(--line, #dde1e7));
     }
 
     .gm-chart-stat-card {
-        border: 1px solid #dbe3ef;
-        border-radius: 6px;
-        background: #f8fafc;
+        border: 1px solid var(--line, #dde1e7);
+        border-radius: 2px;
+        background: var(--panel-2, #f5f6f9);
         padding: 8px;
         min-width: 0;
     }
@@ -1426,7 +1426,7 @@
     .gm-chart-stat-title {
         font-size: 12px;
         font-weight: 700;
-        color: #0f172a;
+        color: var(--ink, #0f1319);
         margin-bottom: 6px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -1440,7 +1440,7 @@
         gap: 8px;
         font-size: 11px;
         line-height: 1.55;
-        color: #334155;
+        color: var(--ink-2, #4a5461);
     }
 
     .gm-chart-stat-row span {
@@ -1450,7 +1450,7 @@
     }
 
     .gm-chart-stat-row strong {
-        color: #111827;
+        color: var(--ink, #0f1319);
         font-weight: 700;
         flex: 0 0 auto;
     }
@@ -1464,24 +1464,23 @@
         display: grid;
         place-items: center;
         height: 520px;
-        color: #64748b;
-        border: 1px dashed #cbd5e1;
-        border-radius: 6px;
+        color: var(--ink-2, #4a5461);
+        border: 1px dashed var(--line-2, #c6ccd5);
+        border-radius: 2px;
     }
 
     .gm-sheet {
         margin-top: 12px;
         overflow: auto;
         max-height: 360px;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        background: #fff;
+        border: 1px solid var(--line, var(--line, #dde1e7));
+        border-radius: 2px;
+        background: var(--panel, #fff);
         outline: none;
     }
 
     .gm-sheet:focus {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+        border-color: var(--signal, #16202b);
     }
 
     .gm-sheet table {
@@ -1493,8 +1492,8 @@
 
     .gm-sheet th,
     .gm-sheet td {
-        border-right: 1px solid #dbe3ef;
-        border-bottom: 1px solid #dbe3ef;
+        border-right: 1px solid var(--line, #dde1e7);
+        border: 1px solid var(--line, #dde1e7);
         padding: 4px 7px;
         white-space: nowrap;
         min-width: 86px;
@@ -1507,8 +1506,8 @@
         position: sticky;
         top: 0;
         z-index: 3;
-        background: #eef2f7;
-        color: #334155;
+        background: var(--panel-3, #eceef2);
+        color: var(--ink-2, #4a5461);
         text-align: center;
         font-weight: 600;
     }
@@ -1526,15 +1525,15 @@
         z-index: 2;
         min-width: 48px !important;
         width: 48px;
-        background: #f1f5f9;
-        color: #64748b;
+        background: var(--panel-3, #eceef2);
+        color: var(--ink-2, #4a5461);
         text-align: right;
         font-weight: 500;
     }
 
     .gm-col-letter {
         font-size: 11px;
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         line-height: 1.1;
     }
 
@@ -1544,38 +1543,45 @@
     }
 
     .gm-sheet .gm-col-x {
-        background: #dbeafe;
-        box-shadow: inset 0 0 0 2px #2563eb;
+        background: var(--signal-wash, #edf0f4);
+        outline: 1px solid var(--signal, #16202b);
+        outline-offset: -1px;
     }
 
     .gm-sheet .gm-col-y {
-        background: #dcfce7;
-        box-shadow: inset 0 0 0 2px #16a34a;
+        background: var(--ok-wash, #eaf1f9);
+        outline: 1px solid var(--ok, #1f5fa8);
+        outline-offset: -1px;
     }
 
     .gm-sheet .gm-col-heat-x {
-        background: #fef3c7;
-        box-shadow: inset 0 0 0 2px #d97706;
+        background: var(--warn-wash, #fdf4e0);
+        outline: 1px solid var(--warn-line, #f0cf8a);
+        outline-offset: -1px;
     }
 
     .gm-sheet .gm-col-heat-y {
-        background: #fce7f3;
-        box-shadow: inset 0 0 0 2px #db2777;
+        background: var(--panel-2, #f5f6f9);
+        outline: 1px solid var(--line-2, #c6ccd5);
+        outline-offset: -1px;
     }
 
     .gm-sheet .gm-col-heat-v {
-        background: #ede9fe;
-        box-shadow: inset 0 0 0 2px #7c3aed;
+        background: var(--panel-3, #eceef2);
+        outline: 1px solid var(--line-2, #c6ccd5);
+        outline-offset: -1px;
     }
 
     .gm-sheet .gm-col-heat-ng {
-        background: #fee2e2;
-        box-shadow: inset 0 0 0 2px #dc2626;
+        background: var(--crit-wash, #fbedec);
+        outline: 1px solid var(--crit, #c8342a);
+        outline-offset: -1px;
     }
 
     .gm-sheet .gm-col-heat-input {
-        background: #cffafe;
-        box-shadow: inset 0 0 0 2px #0891b2;
+        background: var(--panel-2, #f5f6f9);
+        outline: 1px solid var(--line-2, #c6ccd5);
+        outline-offset: -1px;
     }
 
     .gm-sheet tr.gm-row-usl > th,
@@ -1591,24 +1597,25 @@
             transparent 4px,
             transparent 8px
         );
-        box-shadow: inset 0 1px 0 #111827, inset 0 -1px 0 #111827;
+        border-top: 1px solid var(--ink, #0f1319);
+        border-bottom: 1px solid var(--ink, #0f1319);
     }
 
     .gm-sheet tr.gm-row-usl > .gm-row-number::after {
         content: " USL";
-        color: #111827;
+        color: var(--ink, #0f1319);
         font-weight: 700;
     }
 
     .gm-sheet tr.gm-row-spec > .gm-row-number::after {
         content: " SPEC";
-        color: #111827;
+        color: var(--ink, #0f1319);
         font-weight: 700;
     }
 
     .gm-sheet tr.gm-row-lsl > .gm-row-number::after {
         content: " LSL";
-        color: #111827;
+        color: var(--ink, #0f1319);
         font-weight: 700;
     }
 

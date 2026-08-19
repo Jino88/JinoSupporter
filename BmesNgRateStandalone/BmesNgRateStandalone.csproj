@@ -41,6 +41,15 @@
 
   <Target Name="SyncBmesSourcesFromWeb" BeforeTargets="PrepareForBuild">
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\tools\SyncBmesFromWeb.ps1&quot;" />
+    <!-- The default Compile glob is expanded when the project is evaluated, which happens
+         before this target runs. A source file the sync script has just created for the
+         first time is therefore absent from that glob, and the build fails until a second
+         build re-evaluates the project. Re-including the synced C# tree here picks those
+         files up in the same build. Exclude keeps the files the glob already found from
+         being compiled twice, so this is a no-op once a synced file is committed. -->
+    <ItemGroup>
+      <Compile Include="Services\**\*.cs" Exclude="@(Compile)" />
+    </ItemGroup>
   </Target>
 
 </Project>

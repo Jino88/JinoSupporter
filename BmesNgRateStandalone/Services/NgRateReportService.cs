@@ -230,7 +230,8 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
                 if (kv.Value.Count > 0) primary[kv.Key] = kv.Value[0];
             return GenerateReportCore(
                 dbPath, modelLineShifts, groupNames.ToList(), primary, progress, multi,
-                requestedStart: periodStart, requestedEnd: periodEnd);
+                requestedStart: periodStart, requestedEnd: periodEnd,
+                weightedGroupSummary: weightedGroupSummary);
         });
 
     /// <summary>
@@ -378,9 +379,10 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
             dateCols, weekCols, monthCols);
 
         progress?.Report(summaryOnly ? "Computing group summaries..." : "Computing group summary base...");
-        var dateGrpProc  = BuildGroupProcessRaw(orgRows, lsToGroups, r => r.ProductDate);
-        var weekGrpProc  = BuildGroupProcessRaw(orgRows, lsToGroups, r => GetWeekKey(r.ProductDate));
-        var monthGrpProc = BuildGroupProcessRaw(orgRows, lsToGroups, r => GetMonthKey(r.ProductDate));
+        var needsGroupProcessRaw = !summaryOnly || !weightedGroupSummary;
+        var dateGrpProc  = needsGroupProcessRaw ? BuildGroupProcessRaw(orgRows, lsToGroups, r => r.ProductDate) : NewGroupProcessRaw();
+        var weekGrpProc  = needsGroupProcessRaw ? BuildGroupProcessRaw(orgRows, lsToGroups, r => GetWeekKey(r.ProductDate)) : NewGroupProcessRaw();
+        var monthGrpProc = needsGroupProcessRaw ? BuildGroupProcessRaw(orgRows, lsToGroups, r => GetMonthKey(r.ProductDate)) : NewGroupProcessRaw();
         var needsGroupRaw = weightedGroupSummary || !summaryOnly;
         var dateGrpNg  = needsGroupRaw ? BuildGroupNgRaw(orgRows, lsToGroups, r => r.ProductDate) : NewGroupNgRaw();
         var weekGrpNg  = needsGroupRaw ? BuildGroupNgRaw(orgRows, lsToGroups, r => GetWeekKey(r.ProductDate)) : NewGroupNgRaw();
@@ -1131,6 +1133,9 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         return new[] { lineShift };
     }
 
+    private static Dictionary<(string, string, string, string), double> NewGroupProcessRaw()
+        => new();
+
     // Compute PPM per NgName first, then sum — matches the parent row formula
     private static Dictionary<(string, string, string, string), double> BuildGroupProcessRaw(
         List<OrgRow> rows, Dictionary<string, List<string>> lsToGroups, Func<OrgRow, string> getKey)
@@ -1258,19 +1263,26 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         var dateWeighted = BuildWeightedGroupPpmMaps(dateGrpNg);
         var weekWeighted = BuildWeightedGroupPpmMaps(weekGrpNg);
         var monthWeighted = BuildWeightedGroupPpmMaps(monthGrpNg);
+        var processTypesByGroup = dateWeighted.ByProcessType.Keys
+            .Concat(weekWeighted.ByProcessType.Keys)
+            .Concat(monthWeighted.ByProcessType.Keys)
+            .Where(k => !string.IsNullOrEmpty(k.Group) && !string.IsNullOrEmpty(k.ProcessType))
+            .GroupBy(k => k.Group, StringComparer.Ordinal)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(k => k.ProcessType)
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(ProcessTypeOrder)
+                    .ThenBy(t => t, StringComparer.Ordinal)
+                    .ToList(),
+                StringComparer.Ordinal);
 
         foreach (string grp in groupNames)
         {
             // (ProcessType, PeriodKey) → sumPpm — sum over all ProcessNames in this group
             var summary = new List<SummaryPivotRow>();
 
-            var types = dateWeighted.ByProcessType.Keys.Where(k => k.Group == grp).Select(k => k.ProcessType)
-                .Concat(weekWeighted.ByProcessType.Keys.Where(k => k.Group == grp).Select(k => k.ProcessType))
-                .Concat(monthWeighted.ByProcessType.Keys.Where(k => k.Group == grp).Select(k => k.ProcessType))
-                .Where(t => !string.IsNullOrEmpty(t))
-                .ToHashSet()
-                .OrderBy(ProcessTypeOrder)
-                .ThenBy(t => t);
+            var types = processTypesByGroup.GetValueOrDefault(grp) ?? [];
 
             foreach (string pt in types)
             {

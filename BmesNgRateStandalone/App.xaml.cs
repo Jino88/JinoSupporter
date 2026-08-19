@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using BmesNgRateStandalone.Services;
+using BmesNgRateStandalone.Services.BmesReports;
 
 namespace BmesNgRateStandalone;
 
@@ -54,6 +55,7 @@ public partial class App : Application
             services.AddSingleton<FCostService>();
             services.AddSingleton<FCostReportService>();
             services.AddSingleton<BmesFcostActualService>();
+            services.AddSingleton<BmesFCostReportCalculationService>();
             services.AddSingleton<BmesLpaScrapeService>();
             services.AddSingleton<BmesLpaImageService>();
             services.AddSingleton<BmesLpaHtmlExportService>();

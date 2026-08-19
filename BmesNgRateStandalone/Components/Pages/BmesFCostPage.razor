@@ -6,6 +6,7 @@
 @using System.Globalization
 @using System.Text.Json
 @using BmesNgRateStandalone.Services
+@using BmesNgRateStandalone.Services.BmesReports
 @inject FCostService          FCost
 @inject FCostReportService    FCostReportSvc
 @inject BmesFcostActualService FCostActual
@@ -16,6 +17,7 @@
 @inject WebRepository         Repo
 @inject IJSRuntime            JS
 @inject AppActivityLogger     Activity
+@inject BmesFCostReportCalculationService FCostCalculation
 
 @if (ShowPageTitle)
 {
@@ -35,7 +37,7 @@
 <div class="row g-3">
 
     <div class="col-12">
-        <div class="card shadow-sm h-100">
+<div class="card fcost-card h-100">
             <div class="card-header small fw-semibold">Report</div>
             <div class="card-body d-flex flex-column gap-2">
                 <div class="small text-muted">
@@ -165,7 +167,7 @@
 
     @if ((IsTrendReportRoute || ShowMajorTrendCard) && trendRows.Count > 0)
     {
-        <div class="card shadow-sm mt-3 fcost-trend-card">
+<div class="card fcost-card mt-3 fcost-trend-card">
             <div class="card-body p-0">
                 <div class="fcost-trend-title"><span></span> @(ShowAllPeriodColumns ? "FCOST Trend (전체)" : "FCOST Trend")</div>
                 <div style="overflow-x:auto;">
@@ -281,7 +283,7 @@
             var rawBreakdownRows = BuildRawBreakdownViewRows();
             int rawBreakdownColSpan = 4 + _rawMaterialBreakdown.Periods.Count;
 
-            <div class="card shadow-sm mt-3 fcost-breakdown-card">
+<div class="card fcost-card mt-3 fcost-breakdown-card">
                 <div class="card-header small fw-semibold d-flex align-items-center gap-2 flex-wrap">
                     <span>FCOST Raw Material Breakdown</span>
                     <span class="text-muted" style="font-size:11px;">
@@ -431,7 +433,7 @@
 
     @if (ShowFCostWeeklyReport)
     {
-    <div class="card shadow-sm mt-3 fcost-weekly-card">
+<div class="card fcost-card mt-3 fcost-weekly-card">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
             <span>@(ShowAllPeriodColumns ? "Weekly Report (전체)" : "Weekly Report")</span>
                 <span class="text-muted" style="font-size:11px;">@(ShowAllPeriodColumns ? "목표 불량률 (Period 선택 전체 기간)" : "목표 불량률 (WEEK: 4주 내림차순, MONTH: 3달 내림차순)")</span>
@@ -591,7 +593,7 @@
 @if (!IsTrendReportRoute && ShowRegularFCostDetails && _report is not null && (_report.SubGroups.Count > 0 || _report.Total is not null))
 {
     var subColumnIndexes = VisibleFCostColumnIndexes();
-    <div class="card shadow-sm mt-3">
+<div class="card fcost-card mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
             <span>Model / Sub Group Summary - Input / F-Cost / 불량률%</span>
             <span class="text-muted" style="font-size:11px;">
@@ -804,7 +806,7 @@
 {
     var materialColumnIndexes = VisibleFCostColumnIndexes();
 
-    <div class="card shadow-sm mt-3">
+<div class="card fcost-card mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
             <span>F-Cost Query Date @_report.QueryDate</span>
             <span class="text-muted" style="font-size:11px;">
@@ -967,41 +969,44 @@
 }
 
 <style>
+    .ins .fcost-card,
+    .ins .fcost-card .card-header { border-radius: 2px !important; }
+
     .fcost-table { font-size: 12px; white-space: nowrap; border-collapse: collapse; width: 100%; }
     .fcost-table th {
-        background: #f1f5f9; font-weight: 700; font-size: 10px; color: #64748b;
+        background: var(--panel-2, #f5f6f9); font-weight: 700; font-size: 10px; color: var(--ink-2, #4a5461);
         text-transform: uppercase; letter-spacing: .4px;
-        padding: 5px 10px; text-align: right; border-bottom: 1px solid #e2e8f0;
+        padding: 5px 10px; text-align: right; border: 1px solid var(--line, #dde1e7);
         position: sticky; top: 0; z-index: 1;
     }
     .fcost-table th.label-th { text-align: left; }
     .fcost-table td {
-        padding: 4px 10px; border-bottom: 1px solid #f1f5f9;
-        text-align: right; font-family: monospace;
+        padding: 4px 10px; border: 1px solid var(--line, #dde1e7);
+        text-align: right; font-family: var(--mono, monospace); font-variant-numeric: tabular-nums;
     }
     .fcost-table td.label-td { text-align: left; font-family: inherit; }
 
-    .fcost-row-total td  { background: #fff3c4; color: #6b3a00; font-weight: 700;
-                            border-top: 2px solid #eab308; border-bottom: 2px solid #eab308; }
+    .fcost-row-total td  { background: var(--warn-wash, #fff3c4); color: var(--warn-ink, #92610a); font-weight: 700;
+                            border-top: 2px solid var(--warn, #fab219); border: 1px solid var(--line, #dde1e7); }
     .fcost-row-input td,
     .fcost-row-cost  td,
-    .fcost-row-rate  td  { background: #fff; color: #0f172a; font-weight: 500; }
-    .fcost-row-input td  { border-top: 1px solid #cbd5e1; }
+    .fcost-row-rate  td  { background: var(--panel, #fff); color: var(--ink, #0f1319); font-weight: 500; }
+    .fcost-row-input td  { border-top: 1px solid var(--line-2, #c6ccd5); }
     .fcost-row-rate  td  { font-weight: 600; }
 
     .ztype-badge {
         display: inline-block; font-size: 10px; font-weight: 700;
-        padding: 1px 7px; border: 1px solid #cbd5e1; border-radius: 3px;
-        background: #f8fafc; color: #475569;
+        padding: 1px 7px; border: 1px solid var(--line-2, #c6ccd5); border-radius: 2px;
+        background: var(--panel-2, #f5f6f9); color: var(--ink-2, #4a5461);
     }
-    .zero { color: #cbd5e1; }
+    .zero { color: var(--line-2, #c6ccd5); }
 
     /* SubGroup Summary ??Mid ??Sub1 ??Sub2 expand/collapse hierarchy */
-    .fcost-row-mid  td { background: #fff; color: #0f172a; font-weight: 700; }
-    .fcost-row-mid.fcost-row-input td { border-top: 2px solid #94a3b8; }
-    .fcost-row-sub1 td { background: #fff; color: #1e293b; font-weight: 600; }
-    .fcost-row-sub2 td { background: #fff;    color: #475569; font-weight: 500; font-size: 11.5px; }
-    .fcost-tog        { display: inline-block; width: 14px; color: #6366f1;
+    .fcost-row-mid  td { background: var(--panel, #fff); color: var(--ink, #0f1319); font-weight: 700; }
+    .fcost-row-mid.fcost-row-input td { border-top: 2px solid var(--ink-3, #7f8a98); }
+    .fcost-row-sub1 td { background: var(--panel, #fff); color: var(--ink, #0f1319); font-weight: 600; }
+    .fcost-row-sub2 td { background: var(--panel, #fff);    color: var(--ink-2, #4a5461); font-weight: 500; font-size: 11.5px; }
+    .fcost-tog        { display: inline-block; width: 14px; color: var(--signal, #16202b);
                         font-size: 10px; margin-right: 4px; }
     .fcost-tog-blank  { width: 14px; }
 
@@ -1009,17 +1014,17 @@
        period block. Heavier than the regular row border so the eye picks out where
        the day ??week ??month transition happens. */
     .fcost-table th.col-day-start,
-    .fcost-table td.col-day-start    { border-left: 2px solid #93c5fd; }
+    .fcost-table td.col-day-start    { border-left: 2px solid var(--line-2, #c6ccd5); }
     .fcost-table th.col-week-start,
-    .fcost-table td.col-week-start   { border-left: 2px solid #86efac; }
+    .fcost-table td.col-week-start   { border-left: 2px solid var(--ok-wash, #eaf1f9); }
     .fcost-table th.col-month-start,
-    .fcost-table td.col-month-start  { border-left: 2px solid #fcd34d; }
+    .fcost-table td.col-month-start  { border-left: 2px solid var(--warn-line, #f0cf8a); }
 
-    .fcost-weekly-card { border-color: #d7dee8; }
+    .fcost-weekly-card { border-color: var(--line-2, #c6ccd5); }
     .fcost-weekly-table { font-size: 12px; white-space: nowrap; border-collapse: collapse; width: max-content; table-layout: fixed; }
     .fcost-weekly-table th {
-        background: #e5e7eb; color: #1f2937; font-weight: 700;
-        padding: 8px 12px; text-align: center; border: 1px solid #64748b;
+        background: var(--panel-2, #f5f6f9); color: var(--ink, #0f1319); font-weight: 700;
+        padding: 8px 12px; text-align: center; border: 1px solid var(--ink-2, #4a5461);
     }
     .fcost-weekly-table th { width: 150px; min-width: 150px; }
     .fcost-weekly-table th.weekly-site-th,
@@ -1028,8 +1033,8 @@
     .fcost-weekly-table th.weekly-model-th,
     .fcost-weekly-table th.weekly-metric-th { width: 150px; min-width: 150px; text-align: center; }
     .fcost-weekly-table td {
-        width: 150px; min-width: 150px; padding: 6px 10px; text-align: center;
-        border: 1px solid #94a3b8; font-family: monospace; vertical-align: middle;
+        width: 150px; min-width: 150px; padding: 6px 10px; text-align: right;
+        border: 1px solid var(--line, #dde1e7); font-family: var(--mono, monospace); font-variant-numeric: tabular-nums; vertical-align: middle;
     }
     .fcost-weekly-table td.weekly-site-td,
     .fcost-weekly-table td.weekly-target-td,
@@ -1037,60 +1042,60 @@
     .fcost-weekly-table td.weekly-metric-td,
     .fcost-weekly-table td.weekly-model-target-td,
     .fcost-weekly-table td.weekly-model-achievement-td {
-        background: #fff; color: #0f172a; font-family: inherit; text-align: center;
+        background: var(--panel, #fff); color: var(--ink, #0f1319); font-family: inherit; text-align: center;
     }
     .fcost-weekly-table td.weekly-model-td { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
     .fcost-weekly-table .weekly-model-target-input {
         width: 100%; margin: 0; padding: 0; border: 0; outline: 0; background: transparent;
-        color: inherit; font: inherit; text-align: center; box-shadow: none;
+        color: inherit; font: inherit; text-align: center;
     }
     .fcost-weekly-table .weekly-model-achievement {
         font-weight: 700;
     }
-    .weekly-total-row td { background: #fff7cc; color: #6b3a00; font-weight: 700; }
-    .weekly-total-cost-row td { background: #fff; color: #0f172a; }
-    .weekly-total-input-row td { background: #fff; color: #0f172a; }
+    .weekly-total-row td { background: var(--warn-wash, #fff7cc); color: var(--warn-ink, #92610a); font-weight: 700; }
+    .weekly-total-cost-row td { background: var(--panel, #fff); color: var(--ink, #0f1319); }
+    .weekly-total-input-row td { background: var(--panel, #fff); color: var(--ink, #0f1319); }
     .fcost-weekly-table td.weekly-total-label {
-        background: #fff; color: #0f172a; font-family: inherit; font-weight: 700; text-align: center;
+        background: var(--panel, #fff); color: var(--ink, #0f1319); font-family: inherit; font-weight: 700; text-align: center;
     }
-    .weekly-model-row td { background: #fff; color: #0f172a; }
+    .weekly-model-row td { background: var(--panel, #fff); color: var(--ink, #0f1319); }
     .weekly-model-rate { font-weight: 700; margin-top: 1px; }
-    .weekly-model-cost-row td { background: #fff; color: #0f172a; }
-    .weekly-model-input-row td { background: #fff; color: #0f172a; }
-    .weekly-model-share-row td { background: #fff; color: #475569; font-size: 11px; }
-    .weekly-model-amount { color: #475569; font-weight: 600; }
-    .weekly-model-share { color: #475569; font-weight: 600; }
+    .weekly-model-cost-row td { background: var(--panel, #fff); color: var(--ink, #0f1319); }
+    .weekly-model-input-row td { background: var(--panel, #fff); color: var(--ink, #0f1319); }
+    .weekly-model-share-row td { background: var(--panel, #fff); color: var(--ink-2, #4a5461); font-size: 11px; }
+    .weekly-model-amount { color: var(--ink-2, #4a5461); font-weight: 600; }
+    .weekly-model-share { color: var(--ink-2, #4a5461); font-weight: 600; }
     .fcost-weekly-table th.col-day-start,
-    .fcost-weekly-table td.col-day-start    { border-left: 2px solid #93c5fd; }
+    .fcost-weekly-table td.col-day-start    { border-left: 2px solid var(--line-2, #c6ccd5); }
     .fcost-weekly-table th.col-week-start,
-    .fcost-weekly-table td.col-week-start   { border-left: 2px solid #86efac; }
+    .fcost-weekly-table td.col-week-start   { border-left: 2px solid var(--ok-wash, #eaf1f9); }
     .fcost-weekly-table th.col-month-start,
-    .fcost-weekly-table td.col-month-start  { border-left: 2px solid #fcd34d; }
+    .fcost-weekly-table td.col-month-start  { border-left: 2px solid var(--warn-line, #f0cf8a); }
     .fcost-weekly-config {
-        display: grid; gap: 8px; padding: 10px 12px; border-top: 1px solid #dbe3ef;
-        background: #f8fafc; font-size: 12px;
+        display: grid; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line, #dde1e7);
+        background: var(--panel-2, #f5f6f9); font-size: 12px;
     }
     .fcost-weekly-config-grid {
         display: grid; grid-template-columns: repeat(3, minmax(120px, 160px)); gap: 8px;
     }
     .fcost-weekly-config label span {
-        display: block; color: #64748b; font-size: 11px; font-weight: 700; margin-bottom: 3px;
+        display: block; color: var(--ink-2, #4a5461); font-size: 11px; font-weight: 700; margin-bottom: 3px;
     }
     .fcost-weekly-list-editor { max-width: 760px; }
     .fcost-weekly-saved-list {
-        display: grid; gap: 2px; color: #0f172a; font-size: 15px; background: #fff;
-        border: 1px solid #dbe3ef; padding: 8px 10px;
+        display: grid; gap: 2px; color: var(--ink, #0f1319); font-size: 15px; background: var(--panel, #fff);
+        border: 1px solid var(--line, #dde1e7); padding: 8px 10px;
     }
-    .weekly-list-bullet { color: #000; margin-right: 6px; }
+    .weekly-list-bullet { color: var(--ink, #0f1319); margin-right: 6px; }
 
-    .fcost-trend-card { border-color: #111827; }
+    .fcost-trend-card { border-color: var(--ink, #0f1319); }
     .fcost-trend-title {
-        padding: 4px 2px 5px; color: #000; font-size: 13px; font-weight: 800;
+        padding: 4px 2px 5px; color: var(--ink, #0f1319); font-size: 13px; font-weight: 800;
     }
     .fcost-trend-title span { margin-right: 5px; }
     .fcost-currency-tools {
         display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap;
-        color: #475569; font-size: 12px; font-weight: 700;
+        color: var(--ink-2, #4a5461); font-size: 12px; font-weight: 700;
     }
     .fcost-currency-tools label {
         display: flex; align-items: center; gap: 5px; margin: 0;
@@ -1107,17 +1112,17 @@
         width: 92px;
     }
     .fcost-rate-source {
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-size: 11px;
         line-height: 1.35;
         max-width: 640px;
         white-space: normal;
     }
     .fcost-currency-status {
-        color: #64748b; line-height: 32px;
+        color: var(--ink-2, #4a5461); line-height: 32px;
     }
     .fcost-currency-warning {
-        color: #b45309; line-height: 32px;
+        color: var(--warn-ink, #92610a); line-height: 32px;
     }
     .fcost-breakdown-currency-tools {
         margin-left: auto;
@@ -1130,15 +1135,15 @@
     }
     .fcost-trend-table {
         font-size: 12px; white-space: nowrap; border-collapse: collapse; width: 100%;
-        color: #000;
+        color: var(--ink, #0f1319);
     }
     .fcost-trend-table th {
-        background: #d9d9d9; color: #000; font-weight: 700;
-        padding: 5px 8px; border: 1px solid #111827; text-align: center;
+        background: var(--panel-2, #f5f6f9); color: var(--ink, #0f1319); font-weight: 700;
+        padding: 5px 8px; border: 1px solid var(--ink, #0f1319); text-align: center;
     }
     .fcost-trend-table td {
-        padding: 3px 8px; border: 1px solid #111827; text-align: right;
-        font-family: monospace; background: #fff; vertical-align: middle;
+        padding: 3px 8px; border: 1px solid var(--ink, #0f1319); text-align: right;
+        font-family: var(--mono, monospace); background: var(--panel, #fff); vertical-align: middle;
     }
     .fcost-trend-table .trend-model-th { min-width: 210px; }
     .fcost-trend-table .trend-metric-th { min-width: 88px; }
@@ -1149,12 +1154,12 @@
     .fcost-trend-table .trend-model-td {
         max-width: 240px; overflow: hidden; text-overflow: ellipsis;
     }
-    .fcost-trend-table .trend-model-muted { color: #9ca3af; }
-    .fcost-trend-table .trend-child-row td { background: #f8fafc; }
+    .fcost-trend-table .trend-model-muted { color: var(--ink-3, #7f8a98); }
+    .fcost-trend-table .trend-child-row td { background: var(--panel-2, #f5f6f9); }
     .fcost-trend-table .trend-child-model { padding-left: 24px; }
     .trend-expand-btn {
         width: 18px; height: 18px; padding: 0; margin-right: 5px;
-        border: 1px solid #6b7280; background: #fff; color: #111827;
+        border: 1px solid var(--ink-2, #4a5461); background: var(--panel, #fff); color: var(--ink, #0f1319);
         font-size: 12px; line-height: 16px; font-weight: 700; text-align: center;
     }
     .trend-expand-spacer {
@@ -1162,36 +1167,36 @@
     }
     .trend-bgroup-badge {
         display: inline-block; margin-right: 6px; padding: 1px 4px;
-        border: 1px solid #9ca3af; background: #eef2ff; color: #374151;
+        border: 1px solid var(--ink-3, #7f8a98); background: var(--signal-wash, #edf0f4); color: var(--ink-2, #4a5461);
         font-size: 10px; line-height: 1.2; font-weight: 700;
     }
     .fcost-trend-table .trend-period-start,
     .fcost-trend-table .col-week-start,
-    .fcost-trend-table .col-month-start { border-left: 3px double #111827; }
-    .trend-defect-row td { color: #000; }
+    .fcost-trend-table .col-month-start { border-left: 3px double var(--ink, #0f1319); }
+    .trend-defect-row td { color: var(--ink, #0f1319); }
     .trend-fcost-row td,
-    .trend-share-row td { color: #000; }
+    .trend-share-row td { color: var(--ink, #0f1319); }
     .fcost-trend-table .trend-total-row td {
-        background: #f8fafc; color: #000; font-weight: 800;
+        background: var(--panel-2, #f5f6f9); color: var(--ink, #0f1319); font-weight: 800;
     }
     .fcost-trend-table .trend-total-first-row td {
-        border-top: 2px solid #111827;
+        border-top: 2px solid var(--ink, #0f1319);
     }
     .fcost-breakdown-table {
         width: max-content; min-width: 100%; border-collapse: collapse;
-        font-size: 12px; color: #111827;
+        font-size: 12px; color: var(--ink, #0f1319);
     }
     .fcost-breakdown-table th,
     .fcost-breakdown-table td {
-        border: 1px solid #d7dee8; padding: 5px 7px; white-space: nowrap;
+        border: 1px solid var(--line-2, #c6ccd5); padding: 5px 7px; white-space: nowrap;
         text-align: right; font-variant-numeric: tabular-nums;
     }
     .fcost-breakdown-table th {
-        background: #f8fafc; color: #334155; font-weight: 700;
+        background: var(--panel-2, #f5f6f9); color: var(--ink-2, #4a5461); font-weight: 700;
         text-align: center;
     }
     .fcost-breakdown-table .breakdown-rate-hint {
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-size: 10px;
         font-weight: 500;
         line-height: 1.2;
@@ -1213,7 +1218,7 @@
     .fcost-breakdown-table .breakdown-material-th { min-width: 240px; }
     .fcost-breakdown-table .breakdown-price-th { min-width: 120px; }
     .fcost-breakdown-table .breakdown-price-td {
-        color: #0f172a;
+        color: var(--ink, #0f1319);
         font-size: 11px;
         font-weight: 600;
     }
@@ -1229,7 +1234,7 @@
         font-weight: 700;
     }
     .fcost-breakdown-table .breakdown-qty {
-        color: #0f172a;
+        color: var(--ink, #0f1319);
         font-size: 10px;
         font-weight: 600;
         line-height: 1.25;
@@ -1237,29 +1242,29 @@
         white-space: nowrap;
     }
     .fcost-breakdown-table .breakdown-price-line {
-        color: #64748b;
+        color: var(--ink-2, #4a5461);
         font-size: 10px;
         line-height: 1.25;
         margin-top: 2px;
     }
     .fcost-breakdown-table .breakdown-price-line {
-        color: #475569;
+        color: var(--ink-2, #4a5461);
     }
     .fcost-breakdown-table .breakdown-group-start td {
-        border-top: 2px solid #64748b;
+        border-top: 2px solid var(--ink-2, #4a5461);
     }
     .fcost-breakdown-table .breakdown-grand-total-row td {
-        background: #fff7cc; color: #111827; font-weight: 800;
-        border-top: 2px solid #111827; border-bottom: 2px solid #111827;
+        background: var(--warn-wash, #fff7cc); color: var(--ink, #0f1319); font-weight: 800;
+        border-top: 2px solid var(--ink, #0f1319); border: 1px solid var(--line, #dde1e7);
     }
     .fcost-breakdown-table .breakdown-total-row td {
-        background: #eff6ff; color: #111827; font-weight: 800;
+        background: var(--signal-wash, #edf0f4); color: var(--ink, #0f1319); font-weight: 800;
     }
     .fcost-breakdown-table .breakdown-subtotal-row td {
-        background: #f8fafc; color: #111827; font-weight: 700;
+        background: var(--panel-2, #f5f6f9); color: var(--ink, #0f1319); font-weight: 700;
     }
     .fcost-breakdown-table .breakdown-material-row td {
-        background: #fff;
+        background: var(--panel, #fff);
     }
     .breakdown-tree-label {
         display: flex; align-items: flex-start; gap: 6px;
@@ -1269,7 +1274,7 @@
     .breakdown-tree-label.depth-3 { padding-left: 38px; }
     .breakdown-expand-btn {
         flex: 0 0 auto; width: 18px; height: 18px; padding: 0;
-        border: 1px solid #94a3b8; background: #fff; color: #0f172a;
+        border: 1px solid var(--ink-3, #7f8a98); background: var(--panel, #fff); color: var(--ink, #0f1319);
         font-size: 12px; line-height: 16px; font-weight: 800; text-align: center;
     }
     .breakdown-expand-spacer {
@@ -1305,21 +1310,37 @@
     [Parameter] public FCostExportSnapshot? ExportSharedReport { get; set; }
     [Parameter] public Action<FCostExportSnapshot>? OnExportComputed { get; set; }
     [Parameter] public IProgress<string>? ExportProgress { get; set; }
+    [Parameter] public BmesFCostCalculationSnapshot? ExportCalculationSnapshot { get; set; }
     private bool _exportGenerated;
 
-    /// <summary>Everything the four F-COST export tabs render from, computed once.</summary>
+    public sealed record FCostKpiPeriodValue(
+        int ColumnIndex,
+        double TotalCost,
+        double TotalRate,
+        double MainDefectAveragePpm);
+
+    /// <summary>Everything the four F-COST export tabs and the KPI tab render from,
+    /// computed once.</summary>
     public sealed record FCostExportSnapshot(
         FCostReport Report,
         NgRateReportService.NgRateReport? NgRateTrendByMid,
         List<ModelGroupRecord> ModelGroups,
         BmesFcostRawBreakdownResult? RawMaterialBreakdown,
         FCostRawStatus? RawStatus,
+        IReadOnlyList<FCostKpiPeriodValue> KpiPeriods,
         DateTime StartDate,
         DateTime EndDate);
 
     protected override async Task OnParametersSetAsync()
     {
         if (!ExportMode || _exportGenerated) return;
+
+        if (ExportCalculationSnapshot is { } calculation)
+        {
+            _exportGenerated = true;
+            ApplyCalculationSnapshot(calculation);
+            return;
+        }
 
         // Follower tab: reuse the leader's computed report, no data access at all.
         if (ExportSharedReport is { } snapshot)
@@ -1349,7 +1370,7 @@
             {
                 OnExportComputed?.Invoke(new FCostExportSnapshot(
                     _report, _ngRateTrendByMid, _reportModelGroups, _rawMaterialBreakdown,
-                    _rawStatus, _reportStartDate, _reportEndDate));
+                    _rawStatus, BuildKpiPeriodValues(), _reportStartDate, _reportEndDate));
             }
         }
     }
@@ -1545,6 +1566,43 @@
             .ToList();
         AppendBmesRemainderTrendRow(fallbackRows, columnIndexes);
         return fallbackRows;
+    }
+
+    private IReadOnlyList<FCostKpiPeriodValue> BuildKpiPeriodValues()
+    {
+        if (_report?.Columns is not { Count: > 0 } columns)
+            return Array.Empty<FCostKpiPeriodValue>();
+
+        List<int> columnIndexes = Enumerable.Range(0, columns.Count)
+            .Where(index => columns[index].Kind is FCostPeriodKind.Week or FCostPeriodKind.Month)
+            .ToList();
+        if (columnIndexes.Count == 0)
+            return Array.Empty<FCostKpiPeriodValue>();
+
+        // Match the visible F-COST Trend model rows. "기타_누락" is a residual bucket,
+        // not a model, and a zero PPM is rendered as "-" in that table, so neither
+        // contributes to the model-average KPI.
+        List<FCostTrendModelRow> modelRows = BuildMajorTrendRows(columnIndexes)
+            .Where(row => row.ParentRowId is null &&
+                          row.Depth == 0 &&
+                          !string.Equals(row.ModelName, "기타_누락", StringComparison.Ordinal))
+            .ToList();
+
+        return columnIndexes
+            .Select(columnIndex =>
+            {
+                double[] modelPpm = modelRows
+                    .Select(row => row.NgPpmByColumn.GetValueOrDefault(columnIndex))
+                    .Where(ppm => ppm > 0)
+                    .ToArray();
+
+                return new FCostKpiPeriodValue(
+                    columnIndex,
+                    GetBmesTotalCost(columnIndex),
+                    GetBmesTotalRate(columnIndex),
+                    modelPpm.Length > 0 ? modelPpm.Average() : 0);
+            })
+            .ToList();
     }
 
     private static string TrendModelDisplayName(string modelName)
@@ -3047,7 +3105,17 @@
         _sharedNgRateTrendReportTask = sharedNgRateTrendReportTask;
         try
         {
-            await GetReportAsync();
+            IReadOnlyList<ModelGroupRecord> groups = selectedGroups?.ToList() ?? Repo.GetModelGroups();
+            var request = BmesReportRequest.Create(startDate, endDate, groups);
+            NgRateReportService.NgRateReport? trend = sharedNgRateTrendReport;
+            if (trend is null && sharedNgRateTrendReportTask is not null)
+                trend = await sharedNgRateTrendReportTask;
+            BmesFCostCalculationSnapshot snapshot = await FCostCalculation.CalculateAsync(
+                request,
+                trend,
+                progress,
+                CancellationToken.None);
+            ApplyCalculationSnapshot(snapshot);
             if (_report is null)
                 throw new InvalidOperationException(string.IsNullOrWhiteSpace(_reportError)
                     ? "F-COST trend report did not produce results."
@@ -3060,6 +3128,22 @@
             _sharedNgRateTrendReport = null;
             _sharedNgRateTrendReportTask = null;
         }
+    }
+
+    private void ApplyCalculationSnapshot(BmesFCostCalculationSnapshot snapshot)
+    {
+        _report = snapshot.Report;
+        _ngRateTrendByMid = snapshot.NgRateTrendByMid;
+        _reportModelGroups = snapshot.ModelGroups.ToList();
+        _rawMaterialBreakdown = snapshot.RawMaterialBreakdown;
+        _rawStatus = snapshot.RawStatus;
+        _reportStartDate = snapshot.StartDate.ToDateTime(TimeOnly.MinValue);
+        _reportEndDate = snapshot.EndDate.ToDateTime(TimeOnly.MinValue);
+        _rawBreakdownError = snapshot.Warnings
+            .FirstOrDefault(warning => warning.Code == "fcost-raw-breakdown-unavailable")?.Message ?? string.Empty;
+        _showAllDayColumns = false;
+        _showAllWeekColumns = false;
+        _showAllMonthColumns = false;
     }
 
     private async Task ExportCsvAsync()
@@ -3388,6 +3472,42 @@
         _isReportBusy = true;
         _reportError = string.Empty;
         _reportStatusMessage = string.Empty;
+        StateHasChanged();
+        try
+        {
+            IReadOnlyList<ModelGroupRecord> groups = _groupOverride?.ToList() ?? Repo.GetModelGroups();
+            var progress = new Progress<string>(message =>
+            {
+                _reportStatusMessage = message;
+                _externalProgress?.Report(message);
+                _ = InvokeAsync(StateHasChanged);
+            });
+            BmesFCostCalculationSnapshot snapshot = await FCostCalculation.CalculateAsync(
+                BmesReportRequest.Create(_reportStartDate, _reportEndDate, groups),
+                _sharedNgRateTrendReport,
+                progress,
+                CancellationToken.None);
+            ApplyCalculationSnapshot(snapshot);
+            _reportStatusMessage = $"Report ready: {_reportStartDate:yyyy-MM-dd} - {_reportEndDate:yyyy-MM-dd}.";
+        }
+        catch (Exception ex)
+        {
+            _externalProgress?.Report("[F-COST ERROR] " + ex);
+            _reportError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isReportBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GetReportLegacyAsync()
+    {
+        if (_isReportBusy) return;
+        _isReportBusy = true;
+        _reportError = string.Empty;
+        _reportStatusMessage = string.Empty;
         _report = null;
         _ngRateTrendByMid = null;
         _reportModelGroups = new();
@@ -3425,6 +3545,7 @@
                 end,
                 force: false,
                 forceFromDate: forceFrom,
+                forceRefreshTtl: TimeSpan.FromMinutes(15),
                 progress: progress);
             _rawStatus = FCost.GetRawStatus();
 

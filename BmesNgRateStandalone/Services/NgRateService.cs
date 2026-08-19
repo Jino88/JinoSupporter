@@ -23,10 +23,17 @@ public sealed class NgRateService(
     private const string BaseUrl = "https://bmes.bujeon.com";
     private const string DailyCacheSubdirectory = "daily";
     private const string MonthlyCacheSubdirectory = "monthly";
-    private readonly object _reusableDbLock = new();
-    private ReusableDb? _lastReusableDb;
+    private static readonly object ReusableDbLock = new();
+    private static ReusableDb? _lastReusableDb;
+    private static readonly TimeSpan RecentRangeReuseTtl = TimeSpan.FromMinutes(15);
+    private static readonly TimeSpan RecentSourceCacheTtl = TimeSpan.FromMinutes(15);
 
-    private sealed record ReusableDb(DateTime StartDate, DateTime EndDate, string DbPath);
+    private sealed record ReusableDb(
+        DateTime StartDate,
+        DateTime EndDate,
+        string LineShiftFilterKey,
+        DateTimeOffset CachedAt,
+        string DbPath);
     private sealed record BmesLoginResult(bool Succeeded, string Diagnostic);
 
     /// <summary>Mirrors a progress message to both the UI and the Debug/launching-console output.
@@ -84,22 +91,29 @@ public sealed class NgRateService(
     public async Task<string?> GetOrFetchAsync(
         DateTime startDate,
         DateTime endDate,
-        IProgress<string>? progress = null)
+        IProgress<string>? progress = null,
+        IReadOnlyCollection<string>? lineShiftFilter = null)
     {
-        if (TryGetReusableDb(startDate, endDate, out string? dbPath))
+        HashSet<string>? normalizedLineShifts = NormalizeLineShiftFilter(lineShiftFilter);
+        string filterKey = BuildLineShiftFilterKey(normalizedLineShifts);
+        if (TryGetReusableDb(startDate, endDate, filterKey, out string? dbPath))
         {
             Log(progress, $"Reusing fetched DB: {Path.GetFileName(dbPath)}");
             return dbPath;
         }
 
-        return await FetchAndSaveAsync(startDate, endDate, progress);
+        return await FetchAndSaveAsync(startDate, endDate, progress, normalizedLineShifts);
     }
 
     public async Task<string?> FetchAndSaveAsync(
         DateTime startDate,
         DateTime endDate,
-        IProgress<string>? progress = null)
+        IProgress<string>? progress = null,
+        IReadOnlyCollection<string>? lineShiftFilter = null)
     {
+        HashSet<string>? normalizedLineShifts = NormalizeLineShiftFilter(lineShiftFilter);
+        string filterKey = BuildLineShiftFilterKey(normalizedLineShifts);
+
         // Immediate ack so the UI shows the operation has actually started
         // (helps diagnose slow path-config / DB-init / cache-scan delays).
         var swStart = System.Diagnostics.Stopwatch.StartNew();
@@ -119,9 +133,10 @@ public sealed class NgRateService(
         progress?.Report($"[start] Save dir = {saveDir}  ({swStart.ElapsedMilliseconds} ms elapsed)");
 
         // ── 1. Classify dates ────────────────────────────────────────────────
-        // · Today / yesterday   → always fetch from server (data may still change)
+        // · Recent three days   → reuse monthly cache for a short TTL
         // · Otherwise           → use monthly DB cache if present, else fetch
-        var recentCutoff = DateTime.Today.AddDays(-2); // >= this date → always fetch (today / yesterday / 2 days ago)
+        // Recent three days use monthly cache markers for a short TTL.
+        var recentCutoff = DateTime.Today.AddDays(-2);
         var allDates = Enumerable
             .Range(0, (int)(endDate.Date - startDate.Date).TotalDays + 1)
             .Select(i => startDate.Date.AddDays(i))
@@ -132,11 +147,11 @@ public sealed class NgRateService(
 
         var oldDates = allDates.Where(d => d < recentCutoff).ToList();
         await Task.Run(() => EnsureMonthlyCacheFromDaily(oldDates, progress));
-        var monthlyCachedDates = GetMonthlyCachedDateSet(oldDates);
+        var monthlyCachedDates = GetMonthlyReusableCachedDateSet(allDates, recentCutoff);
 
         foreach (var date in allDates)
         {
-            if (date >= recentCutoff || !monthlyCachedDates.Contains(date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))
+            if (!monthlyCachedDates.Contains(date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))
                 toFetch.Add(date);
             else
                 toCache.Add(date);
@@ -146,6 +161,8 @@ public sealed class NgRateService(
         progress?.Report(
             $"Date range: {startDate:MM/dd} – {endDate:MM/dd}  " +
             $"(server: {toFetch.Count} day(s) / cache: {toCache.Count} day(s))");
+        if (normalizedLineShifts is { Count: > 0 })
+            progress?.Report($"LineShift pre-filter: {normalizedLineShifts.Count:N0} selected.");
 
         // ── 2. BMES server fetch ─────────────────────────────────────────────
         var freshRows = new List<Dictionary<string, string>>();
@@ -228,8 +245,8 @@ public sealed class NgRateService(
             serverRows = await Task.Run(() => RemoveDuplicates(serverRows));
             Log(progress, $"{serverRows.Count:N0} rows after deduplication.");
 
-            // Dates other than today/yesterday → cache to monthly DB (even 0-row → date marker, so next call skips server)
-            foreach (var date in toFetch.Where(d => d < recentCutoff))
+            // Cache every fetched date. Recent markers are reused only for a short TTL.
+            foreach (var date in toFetch)
             {
                 string dateStr = date.ToString("yyyy-MM-dd");
                 var    dayRows = serverRows
@@ -238,7 +255,9 @@ public sealed class NgRateService(
                 await Task.Run(() => SaveMonthlyDateDb(date, dayRows, progress));
             }
 
-            freshRows = serverRows;
+            freshRows = FilterRowsByLineShift(serverRows, normalizedLineShifts);
+            if (normalizedLineShifts is { Count: > 0 })
+                Log(progress, $"  Recent rows after LineShift filter: {freshRows.Count:N0}");
         }
 
         // ── 3. Load monthly cache ───────────────────────────────────────────
@@ -249,9 +268,14 @@ public sealed class NgRateService(
         foreach (var monthGroup in toCache.GroupBy(d => new DateTime(d.Year, d.Month, 1)).OrderBy(g => g.Key))
         {
             var dates = monthGroup.OrderBy(d => d).ToList();
-            var rows = await Task.Run(() => LoadFromMonthlyDb(monthGroup.Key, dates));
+            var rows = await Task.Run(
+                () => LoadFromMonthlyDb(monthGroup.Key, dates, normalizedLineShifts));
             cachedRows.AddRange(rows);
-            Log(progress, $"  Monthly cache hit {monthGroup.Key:yyyy-MM}: {rows.Count:N0} rows ({dates.Count:N0} day(s))");
+            Log(
+                progress,
+                normalizedLineShifts is { Count: > 0 }
+                    ? $"  Monthly cache filtered {monthGroup.Key:yyyy-MM}: {rows.Count:N0} rows ({dates.Count:N0} day(s))"
+                    : $"  Monthly cache hit {monthGroup.Key:yyyy-MM}: {rows.Count:N0} rows ({dates.Count:N0} day(s))");
         }
 
         // ── 4. Merge ─────────────────────────────────────────────────────────
@@ -288,18 +312,25 @@ public sealed class NgRateService(
         await Task.Run(() => ProcessData(tempPath, progress));
         Log(progress, $"[FetchAndSave] ProcessData done ({swProc.ElapsedMilliseconds} ms)");
 
-        RememberReusableDb(startDate, endDate, tempPath);
+        RememberReusableDb(startDate, endDate, filterKey, tempPath);
         Log(progress, $"Done. DB: {Path.GetFileName(tempPath)}  (total {swStart.ElapsedMilliseconds} ms since start)");
         return tempPath;
     }
 
-    private bool TryGetReusableDb(DateTime startDate, DateTime endDate, out string? dbPath)
+    private bool TryGetReusableDb(
+        DateTime startDate,
+        DateTime endDate,
+        string lineShiftFilterKey,
+        out string? dbPath)
     {
-        lock (_reusableDbLock)
+        lock (ReusableDbLock)
         {
             if (_lastReusableDb is { } cached
                 && cached.StartDate == startDate.Date
                 && cached.EndDate == endDate.Date
+                && string.Equals(cached.LineShiftFilterKey, lineShiftFilterKey, StringComparison.Ordinal)
+                && (endDate.Date < DateTime.Today.AddDays(-2) ||
+                    DateTimeOffset.Now - cached.CachedAt <= RecentRangeReuseTtl)
                 && File.Exists(cached.DbPath))
             {
                 dbPath = cached.DbPath;
@@ -311,11 +342,20 @@ public sealed class NgRateService(
         return false;
     }
 
-    private void RememberReusableDb(DateTime startDate, DateTime endDate, string dbPath)
+    private void RememberReusableDb(
+        DateTime startDate,
+        DateTime endDate,
+        string lineShiftFilterKey,
+        string dbPath)
     {
-        lock (_reusableDbLock)
+        lock (ReusableDbLock)
         {
-            _lastReusableDb = new ReusableDb(startDate.Date, endDate.Date, dbPath);
+            _lastReusableDb = new ReusableDb(
+                startDate.Date,
+                endDate.Date,
+                lineShiftFilterKey,
+                DateTimeOffset.Now,
+                dbPath);
         }
     }
 
@@ -460,14 +500,64 @@ public sealed class NgRateService(
         }
     }
 
-    private HashSet<string> GetMonthlyCachedDateSet(IReadOnlyList<DateTime> dates)
+    private HashSet<string> GetMonthlyReusableCachedDateSet(
+        IReadOnlyList<DateTime> dates,
+        DateTime recentCutoff)
     {
         var result = new HashSet<string>(StringComparer.Ordinal);
         foreach (var month in dates.Select(d => new DateTime(d.Year, d.Month, 1)).Distinct())
         {
             string monthPath = GetMonthlyDbPath(month);
-            foreach (string date in GetMonthlyCachedDates(monthPath))
-                result.Add(date);
+            if (!File.Exists(monthPath))
+                continue;
+
+            try
+            {
+                using var conn = new SqliteConnection($"Data Source={monthPath};Mode=ReadOnly");
+                conn.Open();
+                if (!TableExists(conn, "__NgRateCachedDates"))
+                    continue;
+
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText =
+                    "SELECT [PRODUCT_DATE], [CachedAt] FROM [__NgRateCachedDates]";
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    string dateText = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
+                    if (!DateTime.TryParseExact(
+                            dateText,
+                            "yyyy-MM-dd",
+                            CultureInfo.InvariantCulture,
+                            DateTimeStyles.None,
+                            out DateTime date))
+                    {
+                        continue;
+                    }
+
+                    if (date.Date < recentCutoff.Date)
+                    {
+                        result.Add(dateText);
+                        continue;
+                    }
+
+                    string cachedAtText = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+                    if (DateTime.TryParseExact(
+                            cachedAtText,
+                            "yyyy-MM-dd HH:mm:ss",
+                            CultureInfo.InvariantCulture,
+                            DateTimeStyles.None,
+                            out DateTime cachedAt) &&
+                        DateTime.Now - cachedAt <= RecentSourceCacheTtl)
+                    {
+                        result.Add(dateText);
+                    }
+                }
+            }
+            catch
+            {
+                // A missing/corrupt cache marker simply falls back to BMES.
+            }
         }
         return result;
     }
@@ -516,7 +606,10 @@ public sealed class NgRateService(
         return dates;
     }
 
-    private List<Dictionary<string, string>> LoadFromMonthlyDb(DateTime month, IReadOnlyList<DateTime> dates)
+    private List<Dictionary<string, string>> LoadFromMonthlyDb(
+        DateTime month,
+        IReadOnlyList<DateTime> dates,
+        IReadOnlyCollection<string>? lineShiftFilter = null)
     {
         var rows = new List<Dictionary<string, string>>();
         if (dates.Count == 0)
@@ -544,6 +637,20 @@ public sealed class NgRateService(
             foreach (var p in parameters)
                 cmd.Parameters.AddWithValue(p.Name, p.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
 
+            HashSet<string>? normalizedLineShifts = NormalizeLineShiftFilter(lineShiftFilter);
+            if (normalizedLineShifts is { Count: > 0 })
+            {
+                var lineShiftParameters = normalizedLineShifts
+                    .OrderBy(value => value, StringComparer.Ordinal)
+                    .Select((value, index) => (Value: value, Name: $"@ls{index}"))
+                    .ToList();
+                cmd.CommandText +=
+                    $" AND ([MATERIALNAME] || '_' || [PRODUCTION_LINE]) IN " +
+                    $"({string.Join(", ", lineShiftParameters.Select(p => p.Name))})";
+                foreach (var p in lineShiftParameters)
+                    cmd.Parameters.AddWithValue(p.Name, p.Value);
+            }
+
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
@@ -556,6 +663,37 @@ public sealed class NgRateService(
         catch { }
 
         return rows;
+    }
+
+    private static HashSet<string>? NormalizeLineShiftFilter(
+        IEnumerable<string>? lineShiftFilter)
+    {
+        if (lineShiftFilter is null)
+            return null;
+
+        var normalized = lineShiftFilter
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim())
+            .ToHashSet(StringComparer.Ordinal);
+        return normalized.Count == 0 ? null : normalized;
+    }
+
+    private static string BuildLineShiftFilterKey(IReadOnlyCollection<string>? lineShiftFilter)
+        => lineShiftFilter is not { Count: > 0 }
+            ? string.Empty
+            : string.Join('\n', lineShiftFilter.OrderBy(value => value, StringComparer.Ordinal));
+
+    private static List<Dictionary<string, string>> FilterRowsByLineShift(
+        List<Dictionary<string, string>> rows,
+        IReadOnlySet<string>? lineShiftFilter)
+    {
+        if (lineShiftFilter is not { Count: > 0 })
+            return rows;
+
+        return rows
+            .Where(row => lineShiftFilter.Contains(
+                GetCol(row, "MATERIALNAME") + "_" + GetCol(row, "PRODUCTION_LINE")))
+            .ToList();
     }
 
     private static void EnsureMonthlyCacheSchema(SqliteConnection conn)

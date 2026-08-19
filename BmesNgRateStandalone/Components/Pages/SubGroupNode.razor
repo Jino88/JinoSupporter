@@ -6,6 +6,8 @@
 
 <div class="sub-grp @(IsActive(Node) ? "sub-active" : "") @(CanAcceptDrop ? "sub-drop-target" : "") @(IsDragging ? "sub-dragging" : "")"
      style="margin-left: @(Depth * 10)px;"
+     role="treeitem"
+     aria-level="@(Depth + 1)"
      @onclick="() => OnSelect.InvokeAsync(Node)"
      @ondragover:preventDefault="true"
      @ondrop="() => OnDropOnSub.InvokeAsync(Node)"
@@ -23,13 +25,13 @@
                   draggable="true"
                   @ondragstart="() => OnDragStart.InvokeAsync(Node)"
                   @ondragend="() => OnDragEnd.InvokeAsync()"
-                  @onclick:stopPropagation="true">@GroupLabel</span>
+                  @onclick:stopPropagation="true">@GroupLabel @(Depth + 1)</span>
             <input class="sub-name-input"
                    value="@Node.Name"
                    @onchange="e => OnRename.InvokeAsync((Node, e.Value?.ToString() ?? string.Empty))"
                    @onclick:stopPropagation="true"
                    placeholder="@($"{GroupLabel} name")" />
-            <span class="text-muted ms-1" style="font-size:10px;">@Node.TotalLineShifts</span>
+            <span class="text-muted ms-1 font-monospace" style="font-size:10px;">@Node.TotalLineShifts shifts</span>
             <button class="btn btn-sm btn-outline-primary py-0 px-1 ms-auto"
                     style="font-size:9px; line-height:1.2;"
                     title="@($"Add {ChildGroupLabel}")"
@@ -44,7 +46,7 @@
     }
     @if (Node.LineShifts.Count == 0 && Node.SubGroups.Count == 0)
     {
-        <div class="text-muted small ps-3 py-1" style="font-size:10px;">(empty)</div>
+        <div class="text-muted small ps-3 py-1" style="font-size:10px;">(empty sub group)</div>
     }
     @if (Node.LineShifts.Count > 0)
     {
@@ -65,7 +67,7 @@
     }
     @if (Node.SubGroups.Count > 0)
     {
-        <div class="sub-list">
+        <div class="sub-list" role="group">
             @foreach (var child in Node.SubGroups)
             {
                 <SubGroupNode Node="@child"

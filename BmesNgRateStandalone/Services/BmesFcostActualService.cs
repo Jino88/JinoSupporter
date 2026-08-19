@@ -1,18 +1,32 @@
 using System.Data;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.Data.Sqlite;
 using Microsoft.Data.SqlClient;
 
 namespace BmesNgRateStandalone.Services;
 
-public sealed partial class BmesFcostActualService(AppActivityLogger activity)
+public sealed partial class BmesFcostActualService(
+    AppActivityLogger activity,
+    NgRateSettingsService settings)
 {
     private const int DefaultTimeoutSeconds = 300;
     private const int MaxTimeoutSeconds = 600;
     private const int DefaultMaxRows = 5000;
     private const int HardMaxRows = 50000;
+    private const int RawBreakdownCacheSchemaVersion = 1;
+    private static readonly TimeSpan RawBreakdownRecentMutableWindow = TimeSpan.FromDays(7);
+    private static readonly TimeSpan RawBreakdownRecentCacheTtl = TimeSpan.FromMinutes(15);
+    private static readonly JsonSerializerOptions RawBreakdownCacheJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
 
     private readonly AppActivityLogger _activity = activity;
+    private readonly NgRateSettingsService _settings = settings;
 
     public async Task TestConnectionAsync(
         BmesFcostDbConnection connection,
@@ -20,6 +34,184 @@ public sealed partial class BmesFcostActualService(AppActivityLogger activity)
     {
         await using var conn = new SqlConnection(BuildConnectionString(connection));
         await conn.OpenAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// 자재 단가를 조회한다. 조회 전용이며 BMES DB 에 아무것도 쓰지 않는다.
+    /// 단가는 구매 정보레코드(dbo.INFR)를 1순위로, 없으면 입고 실적(dbo.STBI)의
+    /// 금액÷수량을 2순위로 쓴다. 원화·VND 환산은 dbo.TCURR(KURST='BWCU')을 따른다.
+    /// </summary>
+    public async Task<List<BmesMaterialCostRow>> FetchMaterialCostsAsync(
+        BmesMaterialCostQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        DateTime referenceDate = query.ReferenceDate == default ? DateTime.Today : query.ReferenceDate.Date;
+        DateTime monthStart = new(referenceDate.Year, referenceDate.Month, 1);
+        string search = (query.Search ?? string.Empty).Trim();
+        var codes = (query.MaterialCodes ?? [])
+            .Select(code => (code ?? string.Empty).Trim())
+            .Where(code => code.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(1500)
+            .ToList();
+        int maxRows = Math.Clamp(
+            query.MaxRows <= 0 ? 300 : query.MaxRows,
+            1,
+            codes.Count > 0 ? Math.Max(codes.Count, 2000) : 2000);
+
+        await using var conn = new SqlConnection(BuildConnectionString(query.Connection));
+        await conn.OpenAsync(cancellationToken);
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandTimeout = Math.Clamp(query.Connection.TimeoutSeconds, 1, MaxTimeoutSeconds);
+
+        // 자재코드 목록이 오면 그 코드만, 아니면 검색어 LIKE 로 고른다.
+        // 아래 문자열 조립에 들어가는 것은 파라미터 이름뿐이라 값이 SQL 로 섞이지 않는다.
+        string materialFilter;
+        if (codes.Count > 0)
+        {
+            var placeholders = new List<string>(codes.Count);
+            for (int index = 0; index < codes.Count; index++)
+            {
+                string name = "@code" + index.ToString(CultureInfo.InvariantCulture);
+                placeholders.Add(name);
+                cmd.Parameters.Add(new SqlParameter(name, SqlDbType.NVarChar, 80) { Value = codes[index] });
+            }
+
+            materialFilter = "RTRIM(CAST(m.MATNR AS nvarchar(80))) IN (" + string.Join(", ", placeholders) + ")";
+        }
+        else
+        {
+            materialFilter = "(@Search = N'' OR RTRIM(CAST(m.MATNR AS nvarchar(80))) LIKE @Like OR CAST(m.MAKTX AS nvarchar(200)) LIKE @Like)";
+        }
+
+        cmd.CommandText = """
+            SELECT TOP (@MaxRows)
+                mat.MaterialCode,
+                mat.MaterialName,
+                resolvedPrice.UnitPrice,
+                resolvedPrice.PriceCurrency,
+                resolvedPrice.PriceUnit,
+                resolvedPrice.PriceSource,
+                CAST(CASE
+                    WHEN resolvedPrice.PriceCurrency = N'VND' THEN resolvedPrice.UnitPrice
+                    WHEN resolvedPrice.PriceCurrency = N'KRW' AND vndRate.KrwPerVnd > 0
+                        THEN resolvedPrice.UnitPrice / vndRate.KrwPerVnd
+                    WHEN krwRate.KrwPerCurrency > 0 AND vndRate.KrwPerVnd > 0
+                        THEN resolvedPrice.UnitPrice * krwRate.KrwPerCurrency / vndRate.KrwPerVnd
+                    ELSE NULL
+                END AS decimal(38, 10)) AS UnitPriceVnd
+            FROM (
+                SELECT TOP (@MaxRows)
+                    RTRIM(CAST(m.MATNR AS nvarchar(80))) AS MaterialCode,
+                    CAST(MIN(m.MAKTX) AS nvarchar(200)) AS MaterialName
+                FROM dbo.MATE AS m WITH (NOLOCK)
+                WHERE /*MATERIAL_FILTER*/
+                GROUP BY RTRIM(CAST(m.MATNR AS nvarchar(80)))
+                ORDER BY RTRIM(CAST(m.MATNR AS nvarchar(80)))
+            ) AS mat
+            OUTER APPLY (
+                SELECT TOP (1)
+                    CAST(CAST(i.KBETR AS decimal(38, 10)) / NULLIF(CAST(i.KPEIN AS decimal(38, 10)), 0) AS decimal(38, 10)) AS UnitPrice,
+                    UPPER(RTRIM(CAST(i.KONWA AS nvarchar(20)))) AS PriceCurrency,
+                    RTRIM(CAST(i.KMEIN AS nvarchar(40))) AS PriceUnit
+                FROM dbo.INFR AS i WITH (NOLOCK)
+                WHERE i.MATNR = mat.MaterialCode
+                  AND i.DATAB <= CONVERT(nvarchar(8), @ReferenceDate, 112)
+                  AND i.DATBI >= CONVERT(nvarchar(8), @ReferenceDate, 112)
+                ORDER BY
+                    CASE
+                        WHEN i.EKORG = @Plant THEN 0
+                        WHEN LEFT(i.EKORG, 2) = LEFT(@Plant, 2) THEN 1
+                        ELSE 2
+                    END,
+                    i.DATAB DESC,
+                    i.EKORG,
+                    i.LIFNR
+            ) AS price
+            OUTER APPLY (
+                SELECT TOP (1)
+                    CAST(CAST(s.DMBTR AS decimal(38, 10)) / NULLIF(CAST(s.MENGE AS decimal(38, 10)), 0) AS decimal(38, 10)) AS UnitPrice,
+                    UPPER(RTRIM(CAST(s.WAERS AS nvarchar(20)))) AS PriceCurrency,
+                    RTRIM(CAST(s.MEINS AS nvarchar(40))) AS PriceUnit
+                FROM dbo.STBI AS s WITH (NOLOCK)
+                WHERE s.MATNR = mat.MaterialCode
+                  AND s.MENGE > 0
+                  AND s.DMBTR > 0
+                  AND s.ZDATE >= @MonthStart
+                  AND s.ZDATE < DATEADD(MONTH, 1, @MonthStart)
+                ORDER BY
+                    CASE WHEN RTRIM(s.ZBUKRS) = @Fact THEN 0 ELSE 1 END,
+                    CASE
+                        WHEN RTRIM(s.GUBUN) = N'A' THEN 0
+                        WHEN RTRIM(s.GUBUN) = N'B' THEN 1
+                        WHEN RTRIM(s.GUBUN) = N'G' THEN 2
+                        ELSE 3
+                    END,
+                    s.ZDATE DESC
+            ) AS stockPrice
+            OUTER APPLY (
+                SELECT
+                    CASE WHEN price.UnitPrice IS NOT NULL AND NULLIF(price.PriceCurrency, N'') IS NOT NULL
+                         THEN price.UnitPrice ELSE stockPrice.UnitPrice END AS UnitPrice,
+                    CASE WHEN price.UnitPrice IS NOT NULL AND NULLIF(price.PriceCurrency, N'') IS NOT NULL
+                         THEN price.PriceCurrency ELSE stockPrice.PriceCurrency END AS PriceCurrency,
+                    CASE WHEN price.UnitPrice IS NOT NULL AND NULLIF(price.PriceCurrency, N'') IS NOT NULL
+                         THEN price.PriceUnit ELSE stockPrice.PriceUnit END AS PriceUnit,
+                    CASE WHEN price.UnitPrice IS NOT NULL AND NULLIF(price.PriceCurrency, N'') IS NOT NULL
+                         THEN N'INFR' WHEN stockPrice.UnitPrice IS NOT NULL THEN N'STBI'
+                         ELSE N'' END AS PriceSource
+            ) AS resolvedPrice
+            OUTER APPLY (
+                SELECT TOP (1)
+                    CAST(t.UKURS AS decimal(38, 10)) * CAST(t.TFACT AS decimal(38, 10)) / NULLIF(CAST(t.FFACT AS decimal(38, 10)), 0) AS KrwPerCurrency
+                FROM dbo.TCURR AS t WITH (NOLOCK)
+                WHERE RTRIM(t.KURST) = N'BWCU'
+                  AND RTRIM(t.TCURR) = N'KRW'
+                  AND RTRIM(t.FCURR) = resolvedPrice.PriceCurrency
+                  AND CONVERT(date, t.GDATU) = @MonthStart
+                ORDER BY t.GDATU DESC
+            ) AS krwRate
+            OUTER APPLY (
+                SELECT TOP (1)
+                    CAST(t.UKURS AS decimal(38, 10)) * CAST(t.TFACT AS decimal(38, 10)) / NULLIF(CAST(t.FFACT AS decimal(38, 10)), 0) AS KrwPerVnd
+                FROM dbo.TCURR AS t WITH (NOLOCK)
+                WHERE RTRIM(t.KURST) = N'BWCU'
+                  AND RTRIM(t.TCURR) = N'KRW'
+                  AND RTRIM(t.FCURR) = N'VND'
+                  AND CONVERT(date, t.GDATU) = @MonthStart
+                ORDER BY t.GDATU DESC
+            ) AS vndRate
+            ORDER BY mat.MaterialCode
+            """;
+
+        cmd.CommandText = cmd.CommandText.Replace("/*MATERIAL_FILTER*/", materialFilter, StringComparison.Ordinal);
+        cmd.Parameters.Add(new SqlParameter("@MaxRows", SqlDbType.Int) { Value = maxRows });
+        cmd.Parameters.Add(new SqlParameter("@Search", SqlDbType.NVarChar, 200) { Value = search });
+        cmd.Parameters.Add(new SqlParameter("@Like", SqlDbType.NVarChar, 210) { Value = "%" + search + "%" });
+        cmd.Parameters.Add(new SqlParameter("@Plant", SqlDbType.NVarChar, 20) { Value = query.Plant ?? "3200" });
+        cmd.Parameters.Add(new SqlParameter("@Fact", SqlDbType.NVarChar, 20) { Value = query.Fact ?? "GN" });
+        cmd.Parameters.Add(new SqlParameter("@ReferenceDate", SqlDbType.Date) { Value = referenceDate });
+        cmd.Parameters.Add(new SqlParameter("@MonthStart", SqlDbType.Date) { Value = monthStart });
+
+        var rows = new List<BmesMaterialCostRow>();
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            rows.Add(new BmesMaterialCostRow
+            {
+                MaterialCode = ReadString(reader, "MaterialCode"),
+                MaterialName = ReadString(reader, "MaterialName"),
+                UnitPrice = ReadDecimal(reader, "UnitPrice"),
+                PriceCurrency = ReadString(reader, "PriceCurrency"),
+                PriceUnit = ReadString(reader, "PriceUnit"),
+                PriceSource = ReadString(reader, "PriceSource"),
+                UnitPriceVnd = ReadDecimal(reader, "UnitPriceVnd"),
+            });
+        }
+
+        _activity.Log("Material Cost", $"Lookup search='{search}', date={referenceDate:yyyy-MM-dd}, rows={rows.Count:N0}");
+        return rows;
     }
 
     public async Task<BmesFcostActualResult> FetchAsync(
@@ -107,6 +299,15 @@ public sealed partial class BmesFcostActualService(AppActivityLogger activity)
                 Rows = [],
             };
         }
+
+        RawBreakdownCacheKey cacheKey = BuildRawBreakdownCacheKey(query, periods, lineShifts);
+        RawBreakdownCachePolicy cachePolicy = BuildRawBreakdownCachePolicy(periods);
+        BmesFcostRawBreakdownResult? cachedResult = await TryReadRawBreakdownCacheAsync(
+            cacheKey,
+            cachePolicy,
+            cancellationToken);
+        if (cachedResult is not null)
+            return cachedResult;
 
         await using var conn = new SqlConnection(BuildConnectionString(query.Connection));
         await conn.OpenAsync(cancellationToken);
@@ -212,13 +413,411 @@ public sealed partial class BmesFcostActualService(AppActivityLogger activity)
             "BMES F-COST Raw",
             $"Raw material breakdown periods={periods.Count:N0}, lineShifts={lineShifts.Count:N0}, rows={resultRows.Count:N0}");
 
-        return new BmesFcostRawBreakdownResult
+        var result = new BmesFcostRawBreakdownResult
         {
             Periods = periods,
             ExchangeRates = exchangeRates,
             Rows = resultRows,
         };
+        await StoreRawBreakdownCacheAsync(cacheKey, cachePolicy, result, cancellationToken);
+        return result;
     }
+
+    private async Task<BmesFcostRawBreakdownResult?> TryReadRawBreakdownCacheAsync(
+        RawBreakdownCacheKey cacheKey,
+        RawBreakdownCachePolicy cachePolicy,
+        CancellationToken cancellationToken)
+    {
+        return await Task.Run(
+            () =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                return TryReadRawBreakdownCache(cacheKey, cachePolicy);
+            },
+            cancellationToken);
+    }
+
+    private BmesFcostRawBreakdownResult? TryReadRawBreakdownCache(
+        RawBreakdownCacheKey cacheKey,
+        RawBreakdownCachePolicy cachePolicy)
+    {
+        try
+        {
+            string dbPath = GetRawBreakdownCacheDbPath();
+            if (string.IsNullOrWhiteSpace(dbPath))
+            {
+                LogRawBreakdownCache(cacheKey, "miss", "reason=no-db-path");
+                return null;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(dbPath) ?? ".");
+            using var conn = new SqliteConnection(BuildSqliteConnectionString(dbPath));
+            conn.Open();
+            EnsureRawBreakdownCacheTable(conn);
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText =
+                """
+                SELECT SchemaVersion, PayloadJson, ExpiresAtUtc
+                FROM FCostRawBreakdownCache
+                WHERE KeyHash = @key;
+                """;
+            cmd.Parameters.AddWithValue("@key", cacheKey.Hash);
+
+            using var reader = cmd.ExecuteReader();
+            if (!reader.Read())
+            {
+                LogRawBreakdownCache(cacheKey, "miss", CacheModeDetail(cachePolicy) + " reason=empty");
+                return null;
+            }
+
+            int schemaVersion = reader.IsDBNull(0) ? 0 : Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture);
+            if (schemaVersion != RawBreakdownCacheSchemaVersion)
+            {
+                LogRawBreakdownCache(cacheKey, "miss", CacheModeDetail(cachePolicy) + $" reason=schema-{schemaVersion}");
+                return null;
+            }
+
+            string payloadJson = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+            string expiresAtText = reader.IsDBNull(2) ? string.Empty : reader.GetString(2);
+            if (!string.IsNullOrWhiteSpace(expiresAtText))
+            {
+                if (!TryParseCacheInstant(expiresAtText, out DateTimeOffset expiresAtUtc))
+                {
+                    TryDeleteRawBreakdownCache(conn, cacheKey.Hash);
+                    LogRawBreakdownCache(cacheKey, "miss", CacheModeDetail(cachePolicy) + " reason=corrupt-expiry");
+                    return null;
+                }
+
+                if (expiresAtUtc <= DateTimeOffset.UtcNow)
+                {
+                    TryDeleteRawBreakdownCache(conn, cacheKey.Hash);
+                    LogRawBreakdownCache(cacheKey, "miss", CacheModeDetail(cachePolicy) + " reason=expired");
+                    return null;
+                }
+            }
+
+            BmesFcostRawBreakdownResult? result = JsonSerializer.Deserialize<BmesFcostRawBreakdownResult>(
+                payloadJson,
+                RawBreakdownCacheJsonOptions);
+            if (result is null)
+                throw new JsonException("Raw breakdown cache payload is empty.");
+            ValidateRawBreakdownCachePayload(result);
+
+            TryTouchRawBreakdownCache(conn, cacheKey.Hash);
+            LogRawBreakdownCache(
+                cacheKey,
+                "hit",
+                CacheModeDetail(cachePolicy) + $" rows={result.Rows.Count:N0}");
+            return result;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            LogRawBreakdownCache(cacheKey, "miss", "reason=unavailable " + CompactException(ex));
+            return null;
+        }
+    }
+
+    private async Task StoreRawBreakdownCacheAsync(
+        RawBreakdownCacheKey cacheKey,
+        RawBreakdownCachePolicy cachePolicy,
+        BmesFcostRawBreakdownResult result,
+        CancellationToken cancellationToken)
+    {
+        await Task.Run(
+            () =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                StoreRawBreakdownCache(cacheKey, cachePolicy, result);
+            },
+            cancellationToken);
+    }
+
+    private void StoreRawBreakdownCache(
+        RawBreakdownCacheKey cacheKey,
+        RawBreakdownCachePolicy cachePolicy,
+        BmesFcostRawBreakdownResult result)
+    {
+        try
+        {
+            string dbPath = GetRawBreakdownCacheDbPath();
+            if (string.IsNullOrWhiteSpace(dbPath))
+            {
+                LogRawBreakdownCache(cacheKey, "store-skip", "reason=no-db-path");
+                return;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(dbPath) ?? ".");
+            using var conn = new SqliteConnection(BuildSqliteConnectionString(dbPath));
+            conn.Open();
+            EnsureRawBreakdownCacheTable(conn);
+
+            DateTimeOffset nowUtc = DateTimeOffset.UtcNow;
+            DateTimeOffset? expiresAtUtc = cachePolicy.UsesTtl
+                ? nowUtc.Add(RawBreakdownRecentCacheTtl)
+                : null;
+            string payloadJson = JsonSerializer.Serialize(result, RawBreakdownCacheJsonOptions);
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText =
+                """
+                INSERT INTO FCostRawBreakdownCache
+                    (KeyHash, SchemaVersion, CacheKeyJson, PayloadJson, CreatedAtUtc, ExpiresAtUtc,
+                     LastHitAtUtc, HitCount, PeriodCount, LineShiftCount, RowCount)
+                VALUES
+                    (@key, @schema, @keyJson, @payload, @created, @expires,
+                     NULL, 0, @periods, @lineShifts, @rows)
+                ON CONFLICT(KeyHash) DO UPDATE SET
+                    SchemaVersion = excluded.SchemaVersion,
+                    CacheKeyJson = excluded.CacheKeyJson,
+                    PayloadJson = excluded.PayloadJson,
+                    CreatedAtUtc = excluded.CreatedAtUtc,
+                    ExpiresAtUtc = excluded.ExpiresAtUtc,
+                    LastHitAtUtc = NULL,
+                    HitCount = 0,
+                    PeriodCount = excluded.PeriodCount,
+                    LineShiftCount = excluded.LineShiftCount,
+                    RowCount = excluded.RowCount;
+                """;
+            cmd.Parameters.AddWithValue("@key", cacheKey.Hash);
+            cmd.Parameters.AddWithValue("@schema", RawBreakdownCacheSchemaVersion);
+            cmd.Parameters.AddWithValue("@keyJson", cacheKey.Json);
+            cmd.Parameters.AddWithValue("@payload", payloadJson);
+            cmd.Parameters.AddWithValue("@created", nowUtc.ToString("O", CultureInfo.InvariantCulture));
+            cmd.Parameters.AddWithValue(
+                "@expires",
+                expiresAtUtc is null
+                    ? DBNull.Value
+                    : expiresAtUtc.Value.ToString("O", CultureInfo.InvariantCulture));
+            cmd.Parameters.AddWithValue("@periods", cacheKey.PeriodCount);
+            cmd.Parameters.AddWithValue("@lineShifts", cacheKey.LineShiftCount);
+            cmd.Parameters.AddWithValue("@rows", result.Rows.Count);
+            cmd.ExecuteNonQuery();
+
+            string ttlText = expiresAtUtc is null
+                ? "ttl=historical"
+                : $"ttl={RawBreakdownRecentCacheTtl.TotalMinutes:N0}m expires={expiresAtUtc.Value:O}";
+            LogRawBreakdownCache(cacheKey, "store", $"{ttlText} rows={result.Rows.Count:N0}");
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            LogRawBreakdownCache(cacheKey, "store-fail", CompactException(ex));
+        }
+    }
+
+    private RawBreakdownCacheKey BuildRawBreakdownCacheKey(
+        BmesFcostRawBreakdownQuery query,
+        IReadOnlyList<BmesFcostRawBreakdownPeriod> periods,
+        IReadOnlyList<BmesFcostRawBreakdownLineShift> lineShifts)
+    {
+        string fact = NormalizeFilter(query.Fact);
+        string plant = NormalizeFilter(query.Plant);
+        string database = string.IsNullOrWhiteSpace(query.Connection.Database)
+            ? "BMES_LIV"
+            : query.Connection.Database.Trim();
+
+        var payload = new RawBreakdownCacheKeyPayload(
+            RawBreakdownCacheSchemaVersion,
+            database,
+            fact,
+            plant,
+            periods
+                .Select(p => new RawBreakdownCachePeriod(
+                    p.Ordinal,
+                    NormalizeFilter(p.Key),
+                    NormalizeFilter(p.Header),
+                    NormalizeFilter(p.Kind),
+                    p.StartDate.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    p.EndDateExclusive.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))
+                .ToList(),
+            lineShifts
+                .Select(l => new RawBreakdownCacheLineShift(
+                    NormalizeFilter(l.GroupName),
+                    NormalizeFilter(l.ModelName),
+                    NormalizeFilter(l.LineShift)))
+                .OrderBy(l => l.LineShift, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(l => l.GroupName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(l => l.ModelName, StringComparer.OrdinalIgnoreCase)
+                .ToList());
+        string json = JsonSerializer.Serialize(payload, RawBreakdownCacheJsonOptions);
+        return new RawBreakdownCacheKey(
+            Sha256Hex(json),
+            json,
+            fact,
+            plant,
+            payload.Periods.Count,
+            payload.LineShifts.Count);
+    }
+
+    private static RawBreakdownCachePolicy BuildRawBreakdownCachePolicy(
+        IReadOnlyList<BmesFcostRawBreakdownPeriod> periods)
+    {
+        DateTime mutableWindowStart = DateTime.Today.Subtract(RawBreakdownRecentMutableWindow);
+        bool usesTtl = periods.Any(p => p.EndDateExclusive.Date.AddDays(-1) >= mutableWindowStart);
+        return new RawBreakdownCachePolicy(usesTtl);
+    }
+
+    private string GetRawBreakdownCacheDbPath()
+        => Path.Combine(_settings.FCostDbSaveDirectory, "fcost_raw.db");
+
+    private static string BuildSqliteConnectionString(string dbPath)
+    {
+        var builder = new SqliteConnectionStringBuilder
+        {
+            DataSource = dbPath,
+            Mode = SqliteOpenMode.ReadWriteCreate,
+        };
+        return builder.ToString();
+    }
+
+    private static void EnsureRawBreakdownCacheTable(SqliteConnection conn)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText =
+            """
+            PRAGMA journal_mode=WAL;
+            PRAGMA busy_timeout=5000;
+
+            CREATE TABLE IF NOT EXISTS FCostRawBreakdownCache (
+                KeyHash TEXT PRIMARY KEY,
+                SchemaVersion INTEGER NOT NULL,
+                CacheKeyJson TEXT NOT NULL,
+                PayloadJson TEXT NOT NULL,
+                CreatedAtUtc TEXT NOT NULL,
+                ExpiresAtUtc TEXT NULL,
+                LastHitAtUtc TEXT NULL,
+                HitCount INTEGER NOT NULL DEFAULT 0,
+                PeriodCount INTEGER NOT NULL DEFAULT 0,
+                LineShiftCount INTEGER NOT NULL DEFAULT 0,
+                RowCount INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS IX_FCostRawBreakdownCache_ExpiresAtUtc
+                ON FCostRawBreakdownCache(ExpiresAtUtc);
+            """;
+        cmd.ExecuteNonQuery();
+    }
+
+    private static void TryTouchRawBreakdownCache(SqliteConnection conn, string keyHash)
+    {
+        try
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText =
+                """
+                UPDATE FCostRawBreakdownCache
+                SET LastHitAtUtc = @hit,
+                    HitCount = HitCount + 1
+                WHERE KeyHash = @key;
+                """;
+            cmd.Parameters.AddWithValue("@hit", DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+            cmd.Parameters.AddWithValue("@key", keyHash);
+            cmd.ExecuteNonQuery();
+        }
+        catch
+        {
+            // Cache hit accounting must not turn a valid payload into a miss.
+        }
+    }
+
+    private static void TryDeleteRawBreakdownCache(SqliteConnection conn, string keyHash)
+    {
+        try
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "DELETE FROM FCostRawBreakdownCache WHERE KeyHash = @key;";
+            cmd.Parameters.AddWithValue("@key", keyHash);
+            cmd.ExecuteNonQuery();
+        }
+        catch
+        {
+            // Best-effort cleanup only; the next read will still validate before use.
+        }
+    }
+
+    private static void ValidateRawBreakdownCachePayload(BmesFcostRawBreakdownResult result)
+    {
+        if (result.Periods is null ||
+            result.ExchangeRates is null ||
+            result.Rows is null)
+        {
+            throw new JsonException("Raw breakdown cache payload has null top-level collections.");
+        }
+
+        foreach (var row in result.Rows)
+        {
+            if (row.FCostByPeriod is null ||
+                row.EquivalentQtyByPeriod is null ||
+                row.PriceByPeriod is null)
+            {
+                throw new JsonException("Raw breakdown cache payload has null row dictionaries.");
+            }
+        }
+    }
+
+    private static bool TryParseCacheInstant(string value, out DateTimeOffset instant)
+        => DateTimeOffset.TryParse(
+            value,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+            out instant);
+
+    private void LogRawBreakdownCache(RawBreakdownCacheKey cacheKey, string action, string detail)
+    {
+        _activity.Log(
+            "BMES F-COST Raw",
+            $"cache {action} key={ShortHash(cacheKey.Hash)} fact={cacheKey.Fact} plant={cacheKey.Plant} periods={cacheKey.PeriodCount:N0} lineShifts={cacheKey.LineShiftCount:N0} {detail}");
+    }
+
+    private static string CacheModeDetail(RawBreakdownCachePolicy cachePolicy)
+        => cachePolicy.UsesTtl ? "mode=recent" : "mode=historical";
+
+    private static string Sha256Hex(string value)
+        => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
+
+    private static string ShortHash(string hash)
+        => hash.Length <= 12 ? hash : hash[..12];
+
+    private static string CompactException(Exception ex)
+    {
+        string message = Regex.Replace(ex.Message, @"\s+", " ").Trim();
+        if (message.Length > 120)
+            message = message[..120] + "...";
+
+        return string.IsNullOrWhiteSpace(message)
+            ? ex.GetType().Name
+            : $"{ex.GetType().Name}: {message}";
+    }
+
+    private sealed record RawBreakdownCacheKey(
+        string Hash,
+        string Json,
+        string Fact,
+        string Plant,
+        int PeriodCount,
+        int LineShiftCount);
+
+    private sealed record RawBreakdownCachePolicy(bool UsesTtl);
+
+    private sealed record RawBreakdownCacheKeyPayload(
+        int SchemaVersion,
+        string Database,
+        string Fact,
+        string Plant,
+        List<RawBreakdownCachePeriod> Periods,
+        List<RawBreakdownCacheLineShift> LineShifts);
+
+    private sealed record RawBreakdownCachePeriod(
+        int Ordinal,
+        string Key,
+        string Header,
+        string Kind,
+        string StartDate,
+        string EndDateExclusive);
+
+    private sealed record RawBreakdownCacheLineShift(
+        string GroupName,
+        string ModelName,
+        string LineShift);
 
     public async Task<List<BmesBomMaterialCandidate>> FetchBomMaterialsAsync(
         BmesBomMaterialQuery query,
@@ -239,7 +838,340 @@ public sealed partial class BmesFcostActualService(AppActivityLogger activity)
             cancellationToken);
     }
 
+    /// <summary>
+    /// Full MAST/BOMC BOM explosion for one model. Unlike <see cref="FetchBomMaterialsAsync"/>
+    /// the rows keep their parent/level context, so the same material may appear more than
+    /// once under different parents. <c>UsageQty</c> is the raw <c>BOMC.MENGE</c> of that one
+    /// BOM line — it is not rolled up across levels, because BOMC carries no documented base
+    /// quantity to normalise against.
+    /// </summary>
+    public async Task<List<BmesBomMaterialCandidate>> FetchBomTreeAsync(
+        BmesBomMaterialQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        string modelName = NormalizeFilter(query.ModelName);
+        if (string.IsNullOrWhiteSpace(modelName))
+            return [];
+
+        await using var conn = new SqlConnection(BuildConnectionString(query.Connection));
+        await conn.OpenAsync(cancellationToken);
+
+        var rows = await ReadBomRowsAsync(conn, BomMaterialsSql, "BOM", query, cancellationToken);
+
+        // MAST can hold several BOM alternatives per material, so the same component can
+        // arrive twice on one path; keep the first occurrence of each path.
+        rows = rows
+            .GroupBy(r => r.BomPath, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
+            .ToList();
+
+        return DecorateBomTree(rows);
+    }
+
+    /// <summary>
+    /// Searches the actual BMES product master instead of assuming that a report model-group
+    /// label is also a MATE product name. Only products that have an active BOM for the selected
+    /// plant/date are returned. Individual words and number fragments are ranked independently,
+    /// so a label such as "ASSY 338 RA1" can find a product such as "ASSY REAR-TAPE-338".
+    /// </summary>
+    public async Task<List<BmesBomModelCandidate>> SearchBomModelsAsync(
+        BmesBomModelSearchQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        string searchText = NormalizeFilter(query.SearchText);
+        int maxRows = Math.Clamp(query.MaxRows <= 0 ? 10 : query.MaxRows, 1, 30);
+        List<string> tokens = BomModelTokenRegex()
+            .Matches(searchText)
+            .Select(match => match.Value.Trim())
+            .Where(token => token.Length >= 2)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(token => token.Any(char.IsDigit))
+            .ThenByDescending(token => token.Length)
+            .Take(6)
+            .ToList();
+
+        if (searchText.Length < 2 || tokens.Count == 0)
+            return [];
+
+        const string productCodeSql = "RTRIM(CAST(m.MATNR AS nvarchar(80)))";
+        const string productNameSql = "RTRIM(CAST(m.MAKTX AS nvarchar(200)))";
+
+        var matchConditions = new List<string>();
+        var scoreParts = new List<string>
+        {
+            $"CASE WHEN {productNameSql} = @SearchText THEN 1200 WHEN {productCodeSql} = @SearchText THEN 1100 ELSE 0 END",
+            $"CASE WHEN {productNameSql} LIKE @SearchLike OR {productCodeSql} LIKE @SearchLike THEN 500 ELSE 0 END",
+        };
+
+        for (int i = 0; i < tokens.Count; i++)
+        {
+            string condition =
+                $"({productNameSql} LIKE @TokenLike{i} OR {productCodeSql} LIKE @TokenLike{i})";
+            matchConditions.Add(condition);
+
+            // Digits usually identify the product family more accurately than generic words
+            // such as ASSY, so make those matches dominate the BMES-side candidate ordering.
+            int weight = tokens[i].Any(char.IsDigit) ? 180 : 80;
+            scoreParts.Add($"CASE WHEN {condition} THEN {weight + Math.Min(tokens[i].Length, 20)} ELSE 0 END");
+        }
+
+        string matchSql = string.Join(Environment.NewLine + "            OR ", matchConditions);
+        string scoreSql = string.Join(Environment.NewLine + "                + ", scoreParts);
+        string sql =
+            $"""
+            WITH CandidateRows AS (
+                SELECT TOP (@ScanRows)
+                    {productCodeSql} AS ProductCode,
+                    {productNameSql} AS ProductName,
+                    {scoreSql} AS MatchScore
+                FROM dbo.MATE AS m WITH (NOLOCK)
+                WHERE ISNULL(m.MATNR, N'') <> N''
+                  AND ISNULL(m.MAKTX, N'') <> N''
+                  AND (
+                        {matchSql}
+                  )
+                  AND EXISTS (
+                      SELECT 1
+                      FROM dbo.MAST AS mast WITH (NOLOCK)
+                      JOIN dbo.BOMC AS bom WITH (NOLOCK)
+                        ON bom.STLNR = mast.STLNR
+                       AND bom.STLAL = mast.STLAL
+                       AND bom.STLAN = mast.STLAN
+                      WHERE RTRIM(CAST(mast.MATNR AS nvarchar(80))) = {productCodeSql}
+                        AND (@Plant = N'' OR RTRIM(CAST(mast.WERKS AS nvarchar(20))) = @Plant)
+                        AND ISNULL(bom.CMATE, N'') <> N''
+                        AND ISNULL(bom.USEYN, N'Y') = N'Y'
+                        AND (bom.SDATE IS NULL OR bom.SDATE <= @WorkDate)
+                        AND (bom.EDATE IS NULL OR bom.EDATE >= @WorkDate)
+                  )
+                ORDER BY
+                    MatchScore DESC,
+                    LEN({productNameSql}),
+                    {productNameSql},
+                    {productCodeSql}
+            )
+            SELECT
+                ProductCode,
+                ProductName,
+                MAX(MatchScore) AS MatchScore
+            FROM CandidateRows
+            GROUP BY ProductCode, ProductName
+            ORDER BY
+                MatchScore DESC,
+                LEN(ProductName),
+                ProductName,
+                ProductCode;
+            """;
+
+        await using var conn = new SqlConnection(BuildConnectionString(query.Connection));
+        await conn.OpenAsync(cancellationToken);
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = sql;
+        cmd.CommandTimeout = NormalizeTimeoutSeconds(query.Connection.TimeoutSeconds);
+        cmd.Parameters.Add(new SqlParameter("@SearchText", SqlDbType.NVarChar, 200) { Value = searchText });
+        cmd.Parameters.Add(new SqlParameter("@SearchLike", SqlDbType.NVarChar, 220) { Value = "%" + EscapeLike(searchText) + "%" });
+        cmd.Parameters.Add(new SqlParameter("@Plant", SqlDbType.NVarChar, 20) { Value = NormalizeFilter(query.Plant) });
+        cmd.Parameters.Add(new SqlParameter("@WorkDate", SqlDbType.Date) { Value = query.WorkDate.Date });
+        cmd.Parameters.Add(new SqlParameter("@ScanRows", SqlDbType.Int) { Value = Math.Clamp(maxRows * 30, 100, 600) });
+        for (int i = 0; i < tokens.Count; i++)
+        {
+            cmd.Parameters.Add(new SqlParameter($"@TokenLike{i}", SqlDbType.NVarChar, 220)
+            {
+                Value = "%" + EscapeLike(tokens[i]) + "%",
+            });
+        }
+
+        var candidates = new List<BmesBomModelCandidate>();
+        await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess, cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            candidates.Add(new BmesBomModelCandidate
+            {
+                ProductCode = ReadString(reader, "ProductCode"),
+                ProductName = ReadString(reader, "ProductName"),
+                MatchScore = ReadInt32(reader, "MatchScore"),
+            });
+        }
+
+        return candidates
+            .OrderByDescending(candidate => candidate.MatchScore)
+            .ThenBy(candidate => candidate.ProductName.Length)
+            .ThenBy(candidate => candidate.ProductName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(candidate => candidate.ProductCode, StringComparer.OrdinalIgnoreCase)
+            .Take(maxRows)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Downloads only the BMES finished-product code/name catalog for local searching. Test 5
+    /// calls this explicitly when the user refreshes model names; normal typing never reaches
+    /// SQL Server. Only products in the requested code families with a valid BOM for the selected
+    /// plant/date are returned.
+    /// </summary>
+    public async Task<List<BmesBomModelCandidate>> FetchBomModelCatalogAsync(
+        BmesBomModelCatalogQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        int maxRows = Math.Clamp(query.MaxRows <= 0 ? 20000 : query.MaxRows, 1, 50000);
+        List<string> codePrefixes = query.ProductCodePrefixes
+            .Select(NormalizeFilter)
+            .Where(prefix => prefix.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        string productCodeSql = "RTRIM(CAST(m.MATNR AS nvarchar(80)))";
+        string codePrefixFilter = codePrefixes.Count == 0
+            ? "1 = 0"
+            : string.Join(
+                Environment.NewLine + "                    OR ",
+                codePrefixes.Select((_, index) => $"{productCodeSql} LIKE @CodePrefixLike{index}"));
+
+        string sql =
+            $"""
+            SELECT TOP (@MaxRows)
+                RTRIM(CAST(m.MATNR AS nvarchar(80))) AS ProductCode,
+                RTRIM(CAST(m.MAKTX AS nvarchar(200))) AS ProductName,
+                CAST(0 AS int) AS MatchScore
+            FROM dbo.MATE AS m WITH (NOLOCK)
+            WHERE ISNULL(m.MATNR, N'') <> N''
+              AND ISNULL(m.MAKTX, N'') <> N''
+              AND (
+                    {codePrefixFilter}
+              )
+              AND EXISTS (
+                  SELECT 1
+                  FROM dbo.MAST AS mast WITH (NOLOCK)
+                  JOIN dbo.BOMC AS bom WITH (NOLOCK)
+                    ON bom.STLNR = mast.STLNR
+                   AND bom.STLAL = mast.STLAL
+                   AND bom.STLAN = mast.STLAN
+                  WHERE RTRIM(CAST(mast.MATNR AS nvarchar(80))) =
+                        RTRIM(CAST(m.MATNR AS nvarchar(80)))
+                    AND (@Plant = N'' OR RTRIM(CAST(mast.WERKS AS nvarchar(20))) = @Plant)
+                    AND ISNULL(bom.CMATE, N'') <> N''
+                    AND ISNULL(bom.USEYN, N'Y') = N'Y'
+                    AND (bom.SDATE IS NULL OR bom.SDATE <= @WorkDate)
+                    AND (bom.EDATE IS NULL OR bom.EDATE >= @WorkDate)
+              )
+            GROUP BY
+                RTRIM(CAST(m.MATNR AS nvarchar(80))),
+                RTRIM(CAST(m.MAKTX AS nvarchar(200)))
+            ORDER BY
+                ProductName,
+                ProductCode;
+            """;
+
+        await using var conn = new SqlConnection(BuildConnectionString(query.Connection));
+        await conn.OpenAsync(cancellationToken);
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = sql;
+        cmd.CommandTimeout = NormalizeTimeoutSeconds(query.Connection.TimeoutSeconds);
+        cmd.Parameters.Add(new SqlParameter("@Plant", SqlDbType.NVarChar, 20)
+        {
+            Value = NormalizeFilter(query.Plant),
+        });
+        cmd.Parameters.Add(new SqlParameter("@WorkDate", SqlDbType.Date)
+        {
+            Value = query.WorkDate.Date,
+        });
+        for (int i = 0; i < codePrefixes.Count; i++)
+        {
+            cmd.Parameters.Add(new SqlParameter($"@CodePrefixLike{i}", SqlDbType.NVarChar, 60)
+            {
+                Value = EscapeLike(codePrefixes[i]) + "%",
+            });
+        }
+        cmd.Parameters.Add(new SqlParameter("@MaxRows", SqlDbType.Int) { Value = maxRows });
+
+        var models = new List<BmesBomModelCandidate>();
+        await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess, cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            models.Add(new BmesBomModelCandidate
+            {
+                ProductCode = ReadString(reader, "ProductCode"),
+                ProductName = ReadString(reader, "ProductName"),
+            });
+        }
+
+        _activity.Log(
+            "BMES Test5",
+            $"Model-name catalog {NormalizeFilter(query.Plant)} {query.WorkDate:yyyy-MM-dd}: {models.Count:N0} row(s)");
+
+        return models;
+    }
+
+    /// <summary>
+    /// Fills in the parts the recursive CTE cannot produce: SQL Server forbids subqueries and
+    /// outer joins inside a recursive member, so the tree comes back with code-only paths and
+    /// no child flag.
+    /// </summary>
+    private static List<BmesBomMaterialCandidate> DecorateBomTree(List<BmesBomMaterialCandidate> rows)
+    {
+        var nameByCode = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in rows)
+        {
+            if (!string.IsNullOrWhiteSpace(row.MaterialCode) && !string.IsNullOrWhiteSpace(row.MaterialName))
+                nameByCode[row.MaterialCode] = row.MaterialName;
+            if (!string.IsNullOrWhiteSpace(row.ParentMaterialCode) && !string.IsNullOrWhiteSpace(row.ParentMaterialName))
+                nameByCode[row.ParentMaterialCode] = row.ParentMaterialName;
+            if (!string.IsNullOrWhiteSpace(row.ProductCode) && !string.IsNullOrWhiteSpace(row.ProductName))
+                nameByCode[row.ProductCode] = row.ProductName;
+        }
+
+        var parentPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in rows)
+        {
+            int cut = row.BomPath.LastIndexOf('>');
+            if (cut > 0)
+                parentPaths.Add(row.BomPath[..cut]);
+        }
+
+        return rows
+            .Select(row => new BmesBomMaterialCandidate
+            {
+                ProductCode = row.ProductCode,
+                ProductName = row.ProductName,
+                ParentMaterialCode = row.ParentMaterialCode,
+                ParentMaterialName = row.ParentMaterialName,
+                MaterialCode = row.MaterialCode,
+                MaterialName = row.MaterialName,
+                UsageQty = row.UsageQty,
+                UsageUnit = row.UsageUnit,
+                BomLevel = row.BomLevel,
+                BomPath = row.BomPath,
+                BomPathText = string.Join(
+                    " > ",
+                    row.BomPath
+                        .Split('>', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(code => nameByCode.TryGetValue(code, out string? name) ? name : code)),
+                HasChildren = parentPaths.Contains(row.BomPath),
+                SourceRows = row.SourceRows,
+                Source = row.Source,
+            })
+            .ToList();
+    }
+
     private static async Task<List<BmesBomMaterialCandidate>> FetchBomMaterialsWithSqlAsync(
+        SqlConnection conn,
+        string sql,
+        string source,
+        BmesBomMaterialQuery query,
+        CancellationToken cancellationToken)
+    {
+        var rows = await ReadBomRowsAsync(conn, sql, source, query, cancellationToken);
+
+        return rows
+            .Where(r => !string.IsNullOrWhiteSpace(r.MaterialCode) || !string.IsNullOrWhiteSpace(r.MaterialName))
+            .GroupBy(r => NormalizeFilter(r.MaterialCode) + "\t" + NormalizeFilter(r.MaterialName), StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.OrderByDescending(r => r.SourceRows).First())
+            .OrderBy(r => r.MaterialName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(r => r.MaterialCode, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static async Task<List<BmesBomMaterialCandidate>> ReadBomRowsAsync(
         SqlConnection conn,
         string sql,
         string source,
@@ -258,6 +1190,7 @@ public sealed partial class BmesFcostActualService(AppActivityLogger activity)
         cmd.Parameters.Add(new SqlParameter("@Plant", SqlDbType.NVarChar, 20) { Value = plant });
         cmd.Parameters.Add(new SqlParameter("@MaxRows", SqlDbType.Int) { Value = maxRows });
         cmd.Parameters.Add(new SqlParameter("@MaxDepth", SqlDbType.Int) { Value = Math.Clamp(query.MaxDepth <= 0 ? 6 : query.MaxDepth, 1, 12) });
+        cmd.Parameters.Add(new SqlParameter("@WorkDate", SqlDbType.Date) { Value = query.WorkDate.Date });
 
         var rows = new List<BmesBomMaterialCandidate>();
         await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess, cancellationToken);
@@ -282,13 +1215,7 @@ public sealed partial class BmesFcostActualService(AppActivityLogger activity)
             });
         }
 
-        return rows
-            .Where(r => !string.IsNullOrWhiteSpace(r.MaterialCode) || !string.IsNullOrWhiteSpace(r.MaterialName))
-            .GroupBy(r => NormalizeFilter(r.MaterialCode) + "\t" + NormalizeFilter(r.MaterialName), StringComparer.OrdinalIgnoreCase)
-            .Select(g => g.OrderByDescending(r => r.SourceRows).First())
-            .OrderBy(r => r.MaterialName, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(r => r.MaterialCode, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        return rows;
     }
 
     private static void ApplyPeriodPrice(
@@ -631,6 +1558,9 @@ public sealed partial class BmesFcostActualService(AppActivityLogger activity)
     [GeneratedRegex(@"^(?<year>\d{4})(?<month>\d{2})$")]
     private static partial Regex MonthPeriodRegex();
 
+    [GeneratedRegex(@"[\p{L}\p{N}]+")]
+    private static partial Regex BomModelTokenRegex();
+
     private const string FCostActualSql =
         """
         SELECT TOP (@MaxRows)
@@ -736,27 +1666,23 @@ public sealed partial class BmesFcostActualService(AppActivityLogger activity)
                 p.ProductCode,
                 p.ProductName,
                 p.ProductCode AS ParentMaterialCode,
-                p.ProductName AS ParentMaterialName,
-                RTRIM(CAST(stpo.IDNRK AS nvarchar(80))) AS MaterialCode,
-                ISNULL(componentName.MaterialName, N'') AS MaterialName,
-                CAST(stpo.MENGE AS decimal(38, 10)) AS UsageQty,
-                RTRIM(CAST(stpo.MEINS AS nvarchar(40))) AS UsageUnit,
+                RTRIM(CAST(b.CMATE AS nvarchar(80))) AS MaterialCode,
+                CAST(b.MENGE AS decimal(28, 6)) AS UsageQty,
+                RTRIM(CAST(b.MEINS AS nvarchar(40))) AS UsageUnit,
                 1 AS BomLevel,
-                CAST(p.ProductCode + N'>' + RTRIM(CAST(stpo.IDNRK AS nvarchar(80))) AS nvarchar(max)) AS BomPath,
-                CAST(p.ProductName + N' > ' + ISNULL(componentName.MaterialName, N'') AS nvarchar(max)) AS BomPathText
+                CAST(p.ProductCode + N'>' + RTRIM(CAST(b.CMATE AS nvarchar(80))) AS nvarchar(4000)) AS BomPath
             FROM ProductRows AS p
             JOIN dbo.MAST AS mast WITH (NOLOCK)
                 ON RTRIM(CAST(mast.MATNR AS nvarchar(80))) = p.ProductCode
                AND (@Plant = N'' OR RTRIM(CAST(mast.WERKS AS nvarchar(20))) = @Plant)
-            JOIN dbo.STPO AS stpo WITH (NOLOCK)
-                ON RTRIM(CAST(stpo.STLNR AS nvarchar(80))) = RTRIM(CAST(mast.STLNR AS nvarchar(80)))
-            OUTER APPLY (
-                SELECT TOP (1) CAST(m.MAKTX AS nvarchar(200)) AS MaterialName
-                FROM dbo.MATE AS m WITH (NOLOCK)
-                WHERE RTRIM(CAST(m.MATNR AS nvarchar(80))) = RTRIM(CAST(stpo.IDNRK AS nvarchar(80)))
-                ORDER BY m.MAKTX
-            ) AS componentName
-            WHERE ISNULL(stpo.IDNRK, N'') <> N''
+            JOIN dbo.BOMC AS b WITH (NOLOCK)
+                ON b.STLNR = mast.STLNR
+               AND b.STLAL = mast.STLAL
+               AND b.STLAN = mast.STLAN
+            WHERE ISNULL(b.CMATE, N'') <> N''
+              AND ISNULL(b.USEYN, N'Y') = N'Y'
+              AND (b.SDATE IS NULL OR b.SDATE <= @WorkDate)
+              AND (b.EDATE IS NULL OR b.EDATE >= @WorkDate)
 
             UNION ALL
 
@@ -764,49 +1690,53 @@ public sealed partial class BmesFcostActualService(AppActivityLogger activity)
                 bt.ProductCode,
                 bt.ProductName,
                 bt.MaterialCode AS ParentMaterialCode,
-                bt.MaterialName AS ParentMaterialName,
-                RTRIM(CAST(child.IDNRK AS nvarchar(80))) AS MaterialCode,
-                ISNULL(childName.MaterialName, N'') AS MaterialName,
-                CAST(bt.UsageQty * CAST(child.MENGE AS decimal(38, 10)) AS decimal(38, 10)) AS UsageQty,
-                RTRIM(CAST(child.MEINS AS nvarchar(40))) AS UsageUnit,
+                RTRIM(CAST(c.CMATE AS nvarchar(80))) AS MaterialCode,
+                CAST(c.MENGE AS decimal(28, 6)) AS UsageQty,
+                RTRIM(CAST(c.MEINS AS nvarchar(40))) AS UsageUnit,
                 bt.BomLevel + 1 AS BomLevel,
-                CAST(bt.BomPath + N'>' + RTRIM(CAST(child.IDNRK AS nvarchar(80))) AS nvarchar(max)) AS BomPath,
-                CAST(bt.BomPathText + N' > ' + ISNULL(childName.MaterialName, N'') AS nvarchar(max)) AS BomPathText
+                CAST(bt.BomPath + N'>' + RTRIM(CAST(c.CMATE AS nvarchar(80))) AS nvarchar(4000)) AS BomPath
             FROM BomTree AS bt
             JOIN dbo.MAST AS mast WITH (NOLOCK)
                 ON RTRIM(CAST(mast.MATNR AS nvarchar(80))) = bt.MaterialCode
                AND (@Plant = N'' OR RTRIM(CAST(mast.WERKS AS nvarchar(20))) = @Plant)
-            JOIN dbo.STPO AS child WITH (NOLOCK)
-                ON RTRIM(CAST(child.STLNR AS nvarchar(80))) = RTRIM(CAST(mast.STLNR AS nvarchar(80)))
-            OUTER APPLY (
-                SELECT TOP (1) CAST(m.MAKTX AS nvarchar(200)) AS MaterialName
-                FROM dbo.MATE AS m WITH (NOLOCK)
-                WHERE RTRIM(CAST(m.MATNR AS nvarchar(80))) = RTRIM(CAST(child.IDNRK AS nvarchar(80)))
-                ORDER BY m.MAKTX
-            ) AS childName
-            WHERE ISNULL(child.IDNRK, N'') <> N''
+            JOIN dbo.BOMC AS c WITH (NOLOCK)
+                ON c.STLNR = mast.STLNR
+               AND c.STLAL = mast.STLAL
+               AND c.STLAN = mast.STLAN
+            WHERE ISNULL(c.CMATE, N'') <> N''
+              AND ISNULL(c.USEYN, N'Y') = N'Y'
+              AND (c.SDATE IS NULL OR c.SDATE <= @WorkDate)
+              AND (c.EDATE IS NULL OR c.EDATE >= @WorkDate)
               AND bt.BomLevel < @MaxDepth
-              AND CHARINDEX(N'>' + RTRIM(CAST(child.IDNRK AS nvarchar(80))) + N'>', N'>' + bt.BomPath + N'>') = 0
+              AND CHARINDEX(N'>' + RTRIM(CAST(c.CMATE AS nvarchar(80))) + N'>', N'>' + bt.BomPath + N'>') = 0
         )
         SELECT TOP (@MaxRows)
             bt.ProductCode,
             bt.ProductName,
             bt.ParentMaterialCode,
-            bt.ParentMaterialName,
+            ISNULL(parentName.MaterialName, N'') AS ParentMaterialName,
             bt.MaterialCode,
-            bt.MaterialName,
+            ISNULL(childName.MaterialName, N'') AS MaterialName,
             bt.UsageQty,
             bt.UsageUnit,
             bt.BomLevel,
             bt.BomPath,
-            bt.BomPathText,
-            CASE WHEN EXISTS (
-                SELECT 1
-                FROM BomTree AS child
-                WHERE child.BomPath LIKE bt.BomPath + N'>%'
-            ) THEN 1 ELSE 0 END AS HasChildren,
+            bt.BomPath AS BomPathText,
+            CAST(0 AS int) AS HasChildren,
             CAST(1 AS bigint) AS SourceRows
         FROM BomTree AS bt
+        OUTER APPLY (
+            SELECT TOP (1) CAST(m.MAKTX AS nvarchar(200)) AS MaterialName
+            FROM dbo.MATE AS m WITH (NOLOCK)
+            WHERE RTRIM(CAST(m.MATNR AS nvarchar(80))) = bt.MaterialCode
+            ORDER BY m.MAKTX
+        ) AS childName
+        OUTER APPLY (
+            SELECT TOP (1) CAST(m.MAKTX AS nvarchar(200)) AS MaterialName
+            FROM dbo.MATE AS m WITH (NOLOCK)
+            WHERE RTRIM(CAST(m.MATNR AS nvarchar(80))) = bt.ParentMaterialCode
+            ORDER BY m.MAKTX
+        ) AS parentName
         ORDER BY
             bt.ProductName,
             bt.BomPath
@@ -1094,6 +2024,55 @@ public sealed class BmesBomMaterialQuery
     public string Plant { get; init; } = "3200";
     public int MaxRows { get; init; } = 300;
     public int MaxDepth { get; init; } = 6;
+
+    /// <summary>Date used against the <c>BOMC.SDATE</c>/<c>BOMC.EDATE</c> validity window.</summary>
+    public DateTime WorkDate { get; init; } = DateTime.Today;
+}
+
+public sealed class BmesBomModelSearchQuery
+{
+    public BmesFcostDbConnection Connection { get; init; } = new();
+    public string SearchText { get; init; } = string.Empty;
+    public string Plant { get; init; } = "3200";
+    public DateTime WorkDate { get; init; } = DateTime.Today;
+    public int MaxRows { get; init; } = 10;
+}
+
+public sealed class BmesBomModelCatalogQuery
+{
+    public BmesFcostDbConnection Connection { get; init; } = new();
+    public string Plant { get; init; } = "3200";
+    public DateTime WorkDate { get; init; } = DateTime.Today;
+    public IReadOnlyList<string> ProductCodePrefixes { get; init; } = ["P-S-", "P-M-", "P-N-", "P-H-"];
+    public int MaxRows { get; init; } = 20000;
+}
+
+public sealed class BmesMaterialCostQuery
+{
+    public BmesFcostDbConnection Connection { get; init; } = new();
+    public string Search { get; init; } = string.Empty;
+
+    /// <summary>지정하면 검색어 대신 이 자재코드들만 조회한다(BOM 전개용).</summary>
+    public IReadOnlyList<string> MaterialCodes { get; init; } = [];
+
+    public string Plant { get; init; } = "3200";
+    public string Fact { get; init; } = "GN";
+    public DateTime ReferenceDate { get; init; } = DateTime.Today;
+    public int MaxRows { get; init; } = 300;
+}
+
+public sealed class BmesMaterialCostRow
+{
+    public string MaterialCode { get; init; } = string.Empty;
+    public string MaterialName { get; init; } = string.Empty;
+    public decimal? UnitPrice { get; init; }
+    public string PriceCurrency { get; init; } = string.Empty;
+    public string PriceUnit { get; init; } = string.Empty;
+
+    /// <summary>단가를 찾은 출처. INFR(구매 정보레코드) 또는 STBI(입고 실적).</summary>
+    public string PriceSource { get; init; } = string.Empty;
+
+    public decimal? UnitPriceVnd { get; init; }
 }
 
 public sealed class BmesFcostDbConnection
@@ -1106,6 +2085,13 @@ public sealed class BmesFcostDbConnection
     public int TimeoutSeconds { get; init; } = 300;
     public bool Encrypt { get; init; } = true;
     public bool TrustServerCertificate { get; init; } = true;
+}
+
+public sealed class BmesBomModelCandidate
+{
+    public string ProductCode { get; init; } = string.Empty;
+    public string ProductName { get; init; } = string.Empty;
+    public int MatchScore { get; init; }
 }
 
 public sealed class BmesFcostActualResult
@@ -1199,9 +2185,9 @@ public sealed class BmesFcostRawMaterialBreakdownRow
     public string ModelName { get; init; } = string.Empty;
     public string MaterialCode { get; init; } = string.Empty;
     public string MaterialName { get; init; } = string.Empty;
-    public Dictionary<string, decimal> FCostByPeriod { get; } = new(StringComparer.Ordinal);
-    public Dictionary<string, decimal> EquivalentQtyByPeriod { get; } = new(StringComparer.Ordinal);
-    public Dictionary<string, BmesFcostRawMaterialPeriodPrice> PriceByPeriod { get; } = new(StringComparer.Ordinal);
+    public Dictionary<string, decimal> FCostByPeriod { get; init; } = new(StringComparer.Ordinal);
+    public Dictionary<string, decimal> EquivalentQtyByPeriod { get; init; } = new(StringComparer.Ordinal);
+    public Dictionary<string, BmesFcostRawMaterialPeriodPrice> PriceByPeriod { get; init; } = new(StringComparer.Ordinal);
     public decimal TotalFCostVnd { get; set; }
     public long SourceRows { get; set; }
 }

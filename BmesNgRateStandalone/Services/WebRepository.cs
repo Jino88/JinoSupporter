@@ -5053,6 +5053,20 @@ public sealed class WebRepository
         grantBmesTest4.Parameters.AddWithValue("@fcostMenu", AppMenus.BmesFCost);
         grantBmesTest4.ExecuteNonQuery();
 
+        using SqliteCommand grantBmesTest5 = conn.CreateCommand();
+        grantBmesTest5.Transaction = tx;
+        grantBmesTest5.CommandText = """
+            INSERT OR IGNORE INTO MenuPermissions (Role, MenuId)
+            SELECT DISTINCT Role, @newMenu
+            FROM MenuPermissions
+            WHERE MenuId IN (@test3Menu, @test4Menu, @modelGroupMenu);
+            """;
+        grantBmesTest5.Parameters.AddWithValue("@newMenu", AppMenus.BmesTest5);
+        grantBmesTest5.Parameters.AddWithValue("@test3Menu", AppMenus.BmesTest3);
+        grantBmesTest5.Parameters.AddWithValue("@test4Menu", AppMenus.BmesTest4);
+        grantBmesTest5.Parameters.AddWithValue("@modelGroupMenu", AppMenus.BmesMakeModelGroup);
+        grantBmesTest5.ExecuteNonQuery();
+
         using SqliteCommand grantQrBakoData = conn.CreateCommand();
         grantQrBakoData.Transaction = tx;
         grantQrBakoData.CommandText = "INSERT OR IGNORE INTO MenuPermissions (Role, MenuId) VALUES (@role, @menu);";

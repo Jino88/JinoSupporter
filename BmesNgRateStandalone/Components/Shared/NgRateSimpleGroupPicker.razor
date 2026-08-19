@@ -2,11 +2,11 @@
 
 <div class="ngrate-setup-groups-head small fw-semibold d-flex align-items-center gap-2 mb-2">
     <span>Sub Groups</span>
-    <span class="badge bg-secondary" style="font-size:10px;">@Groups.Count</span>
+    <span class="ngrate-picker-count">@Groups.Count groups</span>
     <button class="btn btn-outline-secondary btn-sm ms-auto" @onclick="OnReload">Refresh</button>
     <a class="btn btn-outline-secondary btn-sm" href="/bmes/make-model-group" target="_blank" title="Edit groups">Edit</a>
 </div>
-<div class="ngrate-setup-groups-body d-flex flex-column gap-2">
+<div class="ngrate-picker ngrate-setup-groups-body d-flex flex-column gap-2">
     @if (Groups.Count == 0)
     {
         <div class="text-muted small">
@@ -19,7 +19,7 @@
             <button class="btn btn-link btn-sm p-0" @onclick="OnSelectAll">All</button>
             <span class="text-muted">|</span>
             <button class="btn btn-link btn-sm p-0" @onclick="OnClearSelection">None</button>
-            <span class="text-muted ms-auto">@SelectedGroupNames.Count selected</span>
+            <span class="ngrate-picker-selection ms-auto">@SelectedGroupNames.Count selected</span>
         </div>
         <div class="ngrate-setup-groups-list">
             @foreach (var g in Groups)
@@ -28,8 +28,11 @@
                     <input type="checkbox"
                            checked="@SelectedGroupNames.Contains(g.Name)"
                            @onchange="e => OnToggleGroup.InvokeAsync((g.Name, (bool)e.Value!))" />
+                    <span class="ngrate-picker-level">GROUP</span>
                     <span class="grp-name">@g.Name</span>
-                    <span class="grp-count text-muted">@(g.MidGroups.Count) / @g.MidGroups.Sum(m => m.LineShifts.Count)</span>
+                    <span class="grp-count ngrate-picker-count">
+                        @g.MidGroups.Count models · @g.MidGroups.Sum(m => m.LineShifts.Count) shifts
+                    </span>
                 </label>
             }
         </div>

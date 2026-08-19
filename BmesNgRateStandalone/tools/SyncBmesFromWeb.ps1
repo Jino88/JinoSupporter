@@ -11,6 +11,15 @@ if (-not (Test-Path -LiteralPath $webRoot)) {
 $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 
 function Convert-Text([string] $text) {
+    # Nested namespaces are rewritten before the plain Services rules below. The @using rule
+    # for Services is an unanchored prefix match, so a generic pass would rewrite the outer
+    # segment of a nested name first and leave the specific rules with nothing to match.
+    $text = $text -replace 'namespace JinoSupporter\.Web\.Services\.BmesReports\.Contracts;', 'namespace BmesNgRateStandalone.Services.BmesReports.Contracts;'
+    $text = $text -replace 'namespace JinoSupporter\.Web\.Services\.BmesReports;', 'namespace BmesNgRateStandalone.Services.BmesReports;'
+    $text = $text -replace 'using JinoSupporter\.Web\.Services\.BmesReports\.Contracts;', 'using BmesNgRateStandalone.Services.BmesReports.Contracts;'
+    $text = $text -replace 'using JinoSupporter\.Web\.Services\.BmesReports;', 'using BmesNgRateStandalone.Services.BmesReports;'
+    $text = $text -replace '@using\s+JinoSupporter\.Web\.Services\.BmesReports\.Contracts', '@using BmesNgRateStandalone.Services.BmesReports.Contracts'
+    $text = $text -replace '@using\s+JinoSupporter\.Web\.Services\.BmesReports', '@using BmesNgRateStandalone.Services.BmesReports'
     $text = $text -replace 'namespace JinoSupporter\.Web\.Services;', 'namespace BmesNgRateStandalone.Services;'
     $text = $text -replace 'namespace JinoSupporter\.Web\.Services\.GraphMaker;', 'namespace BmesNgRateStandalone.Services.GraphMaker;'
     $text = $text -replace 'using JinoSupporter\.Web\.Services;', 'using BmesNgRateStandalone.Services;'
@@ -30,7 +39,53 @@ function Convert-Text([string] $text) {
     return $text
 }
 
-function Copy-Converted([string] $sourceRelative, [string] $targetRelative) {
+# Cuts one whole type declaration out of a synced file. Used to keep a source file inside
+# the standalone's dependency boundary without hand-editing the generated copy. The throws
+# make a boundary that no longer applies fail the build instead of silently removing
+# nothing, so a rename or move on the web side surfaces here rather than as drift.
+function Remove-TypeDeclaration([string] $text, [string] $declaration, [string] $reason) {
+    $start = $text.IndexOf($declaration, [System.StringComparison]::Ordinal)
+    if ($start -lt 0) {
+        throw "Sync boundary guard: '$declaration' no longer exists in the web source. Re-check the sync boundary in $PSCommandPath."
+    }
+
+    $open = $text.IndexOf('{', $start)
+    if ($open -lt 0) {
+        throw "Sync boundary guard: '$declaration' has no body."
+    }
+
+    $depth = 0
+    $end = -1
+    for ($i = $open; $i -lt $text.Length; $i++) {
+        if ($text[$i] -eq '{') {
+            $depth++
+        }
+        elseif ($text[$i] -eq '}') {
+            $depth--
+            if ($depth -eq 0) {
+                $end = $i + 1
+                break
+            }
+        }
+    }
+
+    if ($end -lt 0) {
+        throw "Sync boundary guard: unbalanced braces while removing '$declaration'."
+    }
+
+    $newline = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
+    $head = $text.Substring(0, $start).TrimEnd()
+    $tail = $text.Substring($end).TrimStart()
+
+    $result = $head + $newline + $newline + "// Removed by tools/SyncBmesFromWeb.ps1: $reason" + $newline
+    if ($tail.Length -gt 0) {
+        $result += $newline + $tail + $newline
+    }
+
+    return $result
+}
+
+function Copy-Converted([string] $sourceRelative, [string] $targetRelative, [scriptblock] $postConvert = $null) {
     $source = Join-Path $webRoot $sourceRelative
     $target = Join-Path $standaloneRoot $targetRelative
     if (-not (Test-Path -LiteralPath $source)) {
@@ -44,6 +99,9 @@ function Copy-Converted([string] $sourceRelative, [string] $targetRelative) {
 
     $text = [System.IO.File]::ReadAllText($source, [System.Text.Encoding]::UTF8)
     $text = Convert-Text $text
+    if ($null -ne $postConvert) {
+        $text = & $postConvert $text
+    }
     [System.IO.File]::WriteAllText($target, $text, $utf8NoBom)
 }
 
@@ -79,6 +137,25 @@ $serviceFiles = @(
     'Services\GraphMaker\GraphMakerCore.cs'
 )
 
+# The BMES report calculation slice that Components\Pages\BmesFCostPage.razor needs: the
+# F-Cost calculation service it injects, the models it returns, the projection helper that
+# service calls, and the DTO contracts underneath. The contracts are self-contained data
+# types, so all seven come over as one unit. Everything else under Services\BmesReports
+# stays in the web app: the daily, weekly, cause-monthly and KPI calculation services, the
+# orchestrator that drives them, and the viewer bootstrap, which belongs to the web report
+# host and its token store. The standalone ships none of that.
+$reportCalculationFiles = @(
+    'Services\BmesReports\Contracts\BmesReportDocumentDto.cs',
+    'Services\BmesReports\Contracts\CauseMonthlyTabDtos.cs',
+    'Services\BmesReports\Contracts\DailyTabDtos.cs',
+    'Services\BmesReports\Contracts\FCostTabDtos.cs',
+    'Services\BmesReports\Contracts\KpiTabDtos.cs',
+    'Services\BmesReports\Contracts\ReportCommonDtos.cs',
+    'Services\BmesReports\Contracts\WeeklyTabDtos.cs',
+    'Services\BmesReports\BmesReportProjection.cs',
+    'Services\BmesReports\BmesFCostReportCalculationService.cs'
+)
+
 $componentFiles = @(
     'Components\Shared\HierSubRows.razor',
     'Components\Shared\NgRateModelGroupPicker.razor',
@@ -101,6 +178,22 @@ $componentFiles = @(
 
 foreach ($file in $serviceFiles) {
     Copy-Converted $file $file
+}
+
+foreach ($file in $reportCalculationFiles) {
+    Copy-Converted $file $file
+}
+
+# BmesReportModels.cs holds the calculation snapshots the F-Cost page needs, but it also
+# declares the orchestrator's result type. That one type is the only thing in the synced
+# set that reaches past the boundary above: it carries FCostCorePartsKpiSnapshot and
+# IpgDefectKpiSnapshot, owned by two web-only services the standalone does not build.
+# Dropping the type keeps the boundary closed without copying those services in or
+# declaring hollow stand-ins for them here.
+Copy-Converted 'Services\BmesReports\BmesReportModels.cs' 'Services\BmesReports\BmesReportModels.cs' {
+    param([string] $text)
+    Remove-TypeDeclaration $text 'public sealed class BmesReportGenerationResult' `
+        'orchestrator result type, outside the standalone F-Cost calculation boundary'
 }
 
 foreach ($file in $componentFiles) {
