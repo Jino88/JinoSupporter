@@ -1,0 +1,11 @@
+# Line endings are declared here so a local core.autocrlf setting cannot decide them.
+#
+# Without this file, core.autocrlf=true made Git want CRLF in the working tree while the
+# committed blobs and the files the build generates are LF. The result was that
+# BmesNgRateStandalone/Services files reported as modified on a clean checkout even though
+# `git diff` was empty and the blob hash matched byte for byte — which pollutes `git status`
+# for every orchestrated worker and every merge gate that reads it.
+#
+# LF is what this repository already stores, so this declares the existing convention
+# rather than changing it.
+* text=auto eol=lf

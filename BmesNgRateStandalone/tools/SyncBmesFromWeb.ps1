@@ -102,6 +102,18 @@ function Copy-Converted([string] $sourceRelative, [string] $targetRelative, [scr
     if ($null -ne $postConvert) {
         $text = & $postConvert $text
     }
+
+    # Writing unconditionally rewrote every synced file on every build. The text is almost
+    # always identical, but the fresh timestamp is enough to make Git report the file as
+    # modified and to make MSBuild recompile it, so a clean checkout stopped looking clean
+    # the first time it was built and an orchestrated worker saw files it never touched.
+    if (Test-Path -LiteralPath $target) {
+        $existing = [System.IO.File]::ReadAllText($target, [System.Text.Encoding]::UTF8)
+        if ($existing -ceq $text) {
+            return
+        }
+    }
+
     [System.IO.File]::WriteAllText($target, $text, $utf8NoBom)
 }
 
