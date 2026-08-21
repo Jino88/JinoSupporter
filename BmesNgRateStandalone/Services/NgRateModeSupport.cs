@@ -330,30 +330,31 @@ public static class NgRateModeSupport
     {
         var mappings = BuildGroupMappings(selectedGroups);
         if (!mappings.HasData) return null;
+        var snapshot = svc.CreateRequestSnapshot(dbPath, periodStart, periodEnd, progress);
 
         var groupReport = await svc.GenerateReportAsync(
             dbPath, mappings.GroupMapping, mappings.GroupList,
-            progress, periodStart, periodEnd);
+            progress, periodStart, periodEnd, snapshot: snapshot);
         var midReport = await svc.GenerateSummaryReportAsync(
             dbPath, mappings.MidMapping, mappings.MidList,
-            progress, periodStart, periodEnd);
+            progress, periodStart, periodEnd, snapshot: snapshot);
         var lineShiftReport = await svc.GenerateSummaryReportAsync(
             dbPath, mappings.LineShiftMapping, mappings.LineShiftList,
-            progress, periodStart, periodEnd);
+            progress, periodStart, periodEnd, snapshot: snapshot);
         var sub1Report = mappings.Sub1List.Count > 0
             ? await svc.GenerateSummaryReportAsync(
                 dbPath, mappings.Sub1Mapping, mappings.Sub1List,
-                progress, periodStart, periodEnd)
+                 progress, periodStart, periodEnd, snapshot: snapshot)
             : null;
         var sub2Report = mappings.Sub2List.Count > 0
             ? await svc.GenerateSummaryReportAsync(
                 dbPath, mappings.Sub2Mapping, mappings.Sub2List,
-                progress, periodStart, periodEnd)
+                 progress, periodStart, periodEnd, snapshot: snapshot)
             : null;
         var lineShiftNgReport = await svc.ComputeLineShiftNgDetailsAsync(
-            dbPath, mappings.LineShiftList, progress, periodStart, periodEnd);
+            dbPath, mappings.LineShiftList, progress, periodStart, periodEnd, snapshot);
         var midNgReport = await svc.ComputeGroupedNgDetailsAsync(
-            dbPath, mappings.MidMapping, progress, periodStart, periodEnd);
+            dbPath, mappings.MidMapping, progress, periodStart, periodEnd, snapshot);
 
         return new NgRateGroupReportBundle(
             groupReport,

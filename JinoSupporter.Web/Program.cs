@@ -337,6 +337,46 @@ app.MapGet("/report/bmes/data/{token}", (
     return Results.File(artifacts.ReportJsonPath, "application/json; charset=utf-8");
 });
 
+// DAILY REPORT React island data seam. The singleton service owns the cache and
+// background refresh; this endpoint only exposes its current immutable snapshot to
+// an authenticated user who has the same menu permission as the Razor page.
+app.MapGet("/api/bmes/daily-report", (
+    BmesDailyReportService dailyReport,
+    MenuPermissionService permissions,
+    HttpContext ctx) =>
+{
+    if (GetBmesDailyReportAccessFailure(ctx, permissions) is { } accessFailure)
+        return accessFailure;
+
+    BmesDailyReportSnapshot? snapshot = dailyReport.Load();
+    dailyReport.EnsureFresh();
+    SetDailyReportNoCacheHeaders(ctx);
+    return Results.Json(new
+    {
+        snapshot,
+        isRefreshing = dailyReport.IsRefreshing,
+        logs = dailyReport.Logs,
+    });
+});
+
+app.MapPost("/api/bmes/daily-report/refresh", (
+    BmesDailyReportService dailyReport,
+    MenuPermissionService permissions,
+    HttpContext ctx) =>
+{
+    if (GetBmesDailyReportAccessFailure(ctx, permissions) is { } accessFailure)
+        return accessFailure;
+
+    dailyReport.EnsureFresh(force: true);
+    SetDailyReportNoCacheHeaders(ctx);
+    return Results.Json(new
+    {
+        snapshot = dailyReport.Load(),
+        isRefreshing = dailyReport.IsRefreshing,
+        logs = dailyReport.Logs,
+    });
+});
+
 // Serve the generated LPA result as a single self-contained static HTML file (list +
 // NG pivot + every row's checklist inside it), shown in an iframe on /bmes/lpa.
 app.MapGet("/bmes/lpa/view/{token}", (string token, BmesLpaHtmlExportService svc, HttpContext ctx) =>
@@ -557,6 +597,24 @@ static IResult? GetBmesReportAccessFailure(HttpContext context, MenuPermissionSe
     bool allowed = permissions.IsAllowed(context.User, AppMenus.NgRate) ||
                    permissions.IsAllowed(context.User, AppMenus.BmesFCost);
     return allowed ? null : Results.Forbid();
+}
+
+static IResult? GetBmesDailyReportAccessFailure(HttpContext context, MenuPermissionService permissions)
+{
+    if (context.User?.Identity?.IsAuthenticated != true)
+        return Results.Unauthorized();
+
+    return permissions.IsAllowed(context.User, AppMenus.BmesDailyReport)
+        ? null
+        : Results.Forbid();
+}
+
+static void SetDailyReportNoCacheHeaders(HttpContext context)
+{
+    context.Response.Headers.CacheControl = "private, no-cache, no-store, max-age=0";
+    context.Response.Headers.Pragma = "no-cache";
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["Referrer-Policy"] = "same-origin";
 }
 
 static string PrepareAskHistoryHtml(string html)

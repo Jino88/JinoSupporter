@@ -78,6 +78,35 @@
           WorkingDirectory="$(MSBuildProjectDirectory)\ClientApp\BmesReport" />
   </Target>
 
+  <!-- DAILY REPORT React island. Stable ESM/CSS outputs are committed for deployed
+       machines and rebuilt incrementally when any island input changes. -->
+  <ItemGroup>
+    <DailyReportViewerSource Include="ClientApp\DailyReport\src\**\*" />
+    <DailyReportViewerSource Include="ClientApp\DailyReport\test\**\*" />
+    <DailyReportViewerSource Include="ClientApp\DailyReport\package.json" />
+    <DailyReportViewerSource Include="ClientApp\DailyReport\package-lock.json" />
+    <DailyReportViewerSource Include="ClientApp\DailyReport\tsconfig.json" />
+    <DailyReportViewerSource Include="ClientApp\DailyReport\vite.config.ts" />
+  </ItemGroup>
+
+  <Target Name="RestoreDailyReportViewer"
+          Inputs="$(MSBuildProjectDirectory)\ClientApp\DailyReport\package.json;$(MSBuildProjectDirectory)\ClientApp\DailyReport\package-lock.json"
+          Outputs="$(MSBuildProjectDirectory)\ClientApp\DailyReport\node_modules\.package-lock.json"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(SkipDailyReportViewerBuild)' != 'true'">
+    <Exec Command="npm ci --no-audit --no-fund"
+          WorkingDirectory="$(MSBuildProjectDirectory)\ClientApp\DailyReport" />
+  </Target>
+
+  <Target Name="BuildDailyReportViewer"
+          BeforeTargets="Build;Publish"
+          DependsOnTargets="RestoreDailyReportViewer"
+          Inputs="@(DailyReportViewerSource)"
+          Outputs="$(MSBuildProjectDirectory)\wwwroot\daily-report\daily-report.js;$(MSBuildProjectDirectory)\wwwroot\daily-report\daily-report.css"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(SkipDailyReportViewerBuild)' != 'true'">
+    <Exec Command="npm run build"
+          WorkingDirectory="$(MSBuildProjectDirectory)\ClientApp\DailyReport" />
+  </Target>
+
   <!-- wwwroot/ui-redesign/assets/instrument.scoped.css is generated from
        instrument.css by tools/scope-css.js. Editing the source and forgetting to
        regenerate ships stale CSS with no visible failure, so the build checks.

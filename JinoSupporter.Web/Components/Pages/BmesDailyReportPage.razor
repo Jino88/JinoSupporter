@@ -3,11 +3,31 @@
 @attribute [Authorize]
 @using System.Globalization
 @using JinoSupporter.Web.Services
-@implements IDisposable
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
 @inject BmesDailyReportService DailyReport
+@inject IConfiguration Configuration
+@inject NavigationManager Navigation
+@inject IWebHostEnvironment HostEnvironment
+@inject IJSRuntime JS
+@inject AppActivityLogger Activity
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject MenuPermissionService Permissions
 
 <PageTitle>DAILY REPORT</PageTitle>
 
+@if (!_menuAuthorized)
+{
+<div class="alert alert-danger" role="alert">You do not have permission to view DAILY REPORT.</div>
+}
+else if (_reactMode)
+{
+<link rel="stylesheet" href="@($"/daily-report/daily-report.css?v={_assetVersion}")" />
+<div @ref="_reactHost" class="dr-react-host"></div>
+}
+else
+{
 <div class="dr-root">
 
     <div class="dr-titlebar">
@@ -159,7 +179,7 @@
                                             <th class="dr-th-num">Baseline</th>
                                             <th class="dr-th-num">Change</th>
                                             <th class="dr-th-bar">@(sec.IsWorse ? "Increase" : "Decrease")</th>
-                                            <th class="dr-th-spark">@(sec.IsDaily ? "Daily" : "Weekly") trend <span class="dr-th-hint">← latest</span></th>
+                                            <th class="dr-th-spark">@(sec.IsDaily ? "Daily" : "Weekly") trend <span class="dr-th-hint">latest → older</span></th>
                                             <th class="dr-th-cause">Top 5 defect causes <span class="dr-th-hint">vs baseline</span></th>
                                         </tr>
                                     </thead>
@@ -768,13 +788,75 @@
         gap: 4px;
     }
 </style>
+}
 
 @code {
+    private const string DefaultAssetVersion = "20260820-1";
+
     private BmesDailyReportSnapshot? _snapshot;
     private Timer? _progressTick;
+    private ElementReference _reactHost;
+    private IJSObjectReference? _reactModule;
+    private bool _reactMode;
+    private bool _reactMountAttempted;
+    private bool _legacyActive;
+    private bool _menuAuthorized;
+    private string _assetVersion = DefaultAssetVersion;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        AuthenticationState authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _menuAuthorized = Permissions.IsAllowed(authenticationState.User, AppMenus.BmesDailyReport);
+        if (!_menuAuthorized) return;
+
+        _assetVersion = Configuration["DailyReport:ViewerAssetVersion"]?.Trim() is { Length: > 0 } configuredVersion
+            ? configuredVersion
+            : DefaultAssetVersion;
+        _reactMode = Configuration.GetValue<bool>("DailyReport:ReactViewerEnabled")
+            && !ForceLegacyViewer()
+            && ReactAssetsExist();
+
+        if (_reactMode) return;
+        ActivateLegacy();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_reactMode || _reactMountAttempted) return;
+        _reactMountAttempted = true;
+
+        try
+        {
+            _reactModule = await JS.InvokeAsync<IJSObjectReference>(
+                "import",
+                $"./daily-report/daily-report.js?v={_assetVersion}");
+            await _reactModule.InvokeVoidAsync(
+                "mount",
+                _reactHost,
+                new
+                {
+                    dataUrl = "/api/bmes/daily-report",
+                    refreshUrl = "/api/bmes/daily-report/refresh",
+                });
+        }
+        catch (Exception ex)
+        {
+            Activity.Log("BmesDailyReport", "React viewer mount failed; using Razor fallback: " + ex.Message);
+            if (_reactModule is not null)
+            {
+                try { await _reactModule.InvokeVoidAsync("unmount", _reactHost); }
+                catch { }
+            }
+            _reactMode = false;
+            ActivateLegacy();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ActivateLegacy()
+    {
+        if (_legacyActive) return;
+        _legacyActive = true;
         _snapshot = DailyReport.Load();
         DailyReport.SnapshotChanged += OnSnapshotChanged;
 
@@ -782,6 +864,22 @@
         // snapshot kicks off one shared background refresh that swaps itself in.
         DailyReport.EnsureFresh();
         SyncProgressTick();
+    }
+
+    private bool ForceLegacyViewer()
+    {
+        var query = QueryHelpers.ParseQuery(Navigation.ToAbsoluteUri(Navigation.Uri).Query);
+        return query.TryGetValue("legacy", out var value)
+            && (string.Equals(value.ToString(), "true", StringComparison.OrdinalIgnoreCase)
+                || value.ToString() == "1");
+    }
+
+    private bool ReactAssetsExist()
+    {
+        string webRoot = HostEnvironment.WebRootPath
+            ?? Path.Combine(HostEnvironment.ContentRootPath, "wwwroot");
+        return File.Exists(Path.Combine(webRoot, "daily-report", "daily-report.js"))
+            && File.Exists(Path.Combine(webRoot, "daily-report", "daily-report.css"));
     }
 
     private void OnSnapshotChanged()
@@ -992,9 +1090,16 @@
         return pct.ToString("0.#", CultureInfo.InvariantCulture) + "%";
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        DailyReport.SnapshotChanged -= OnSnapshotChanged;
+        if (_legacyActive)
+            DailyReport.SnapshotChanged -= OnSnapshotChanged;
         StopProgressTick();
+
+        if (_reactModule is null) return;
+        try { await _reactModule.InvokeVoidAsync("unmount", _reactHost); }
+        catch { }
+        try { await _reactModule.DisposeAsync(); }
+        catch { }
     }
 }
