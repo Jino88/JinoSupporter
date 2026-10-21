@@ -15,7 +15,6 @@ public sealed class IpgDefectService(
     NgRateSettingsService settings,
     AppActivityLogger activity)
 {
-    private const string BaseUrl = "https://bmes.bujeon.com";
     private static readonly TimeSpan MutableCacheTtl = TimeSpan.FromMinutes(15);
     private readonly NgRateSettingsService _settings = settings;
     private readonly AppActivityLogger _activity = activity;
@@ -28,10 +27,9 @@ public sealed class IpgDefectService(
         if (TryReadSearchListCache(queryDate, "W", progress) is { } cached)
             return cached;
 
-        using HttpClient client = CreateClient();
-        await AuthenticateAsync(client, progress, cancellationToken);
+        using BmesWebSession session = await OpenSessionAsync(progress, cancellationToken);
         return await FetchSearchListAsync(
-            client,
+            session,
             queryDate,
             "W",
             progress,
@@ -55,19 +53,11 @@ public sealed class IpgDefectService(
         double? annualAveragePpm = null;
         IReadOnlyList<DateTime> weeklyQueryDates = BuildWeeklyQueryDates(start, end);
 
-        HttpClient? client = null;
-        bool authenticated = false;
-        async Task<HttpClient> GetAuthenticatedClientAsync()
+        BmesWebSession? session = null;
+        async Task<BmesWebSession> GetSessionAsync()
         {
-            if (client is null)
-                client = CreateClient();
-            if (!authenticated)
-            {
-                await AuthenticateAsync(client, progress, cancellationToken);
-                authenticated = true;
-            }
-
-            return client;
+            session ??= await OpenSessionAsync(progress, cancellationToken);
+            return session;
         }
 
         try
@@ -81,7 +71,7 @@ public sealed class IpgDefectService(
                         progress,
                         $"MES050032 weekly [{index + 1}/{weeklyQueryDates.Count}]: {queryDate:yyyy-MM-dd}");
                     IpgDefectParseResult parsed = await FetchSearchListCachedAsync(
-                        GetAuthenticatedClientAsync,
+                        GetSessionAsync,
                         queryDate,
                         "W",
                         progress,
@@ -103,7 +93,7 @@ public sealed class IpgDefectService(
             {
                 Report(progress, $"MES050032 monthly: {end:yyyy-MM-dd}");
                 IpgDefectParseResult parsed = await FetchSearchListCachedAsync(
-                    GetAuthenticatedClientAsync,
+                    GetSessionAsync,
                     end,
                     "M",
                     progress,
@@ -121,7 +111,7 @@ public sealed class IpgDefectService(
         }
         finally
         {
-            client?.Dispose();
+            session?.Dispose();
         }
 
         return new IpgDefectKpiSnapshot(
@@ -133,127 +123,12 @@ public sealed class IpgDefectService(
         => BuildSearchListPayload(queryDate, "W");
 
     public static string BuildSearchListPayload(DateTime queryDate, string periodCode)
-    {
-        string normalizedPeriodCode = NormalizePeriodCode(periodCode);
-        var payload = new
-        {
-            Condition = new
-            {
-                SDATE = queryDate.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                ZGUBN = normalizedPeriodCode,
-                V_FACCO = (string?)null,
-                V_MATNR = (string?)null,
-                V_WERKS = (string?)null,
-                V_VERID = (string?)null,
-                ZLRTP = "L",
-                ZTYPE = "A",
-                V_MAINS = "A",
-                V_COLNM = "COL0001",
-                V_CPTYP = "J02",
-            },
-            L_FACCO = new[] { "GN" },
-            L_DIVIS = new[] { "" },
-            L_CATEG = new[] { "" },
-            L_PRODU = new[] { "" },
-            L_ITEMS = new[] { "" },
-            L_MODEL = new[] { "" },
-            L_SERIE = new[] { "" },
-            L_MODEL2 = new[] { "" },
-            L_VERID = new[] { "" },
-            L_MATNR = new[] { "" },
-            REMEM = "N",
-        };
-        return JsonSerializer.Serialize(payload);
-    }
+        => BmesGateway.BuildIpgSearchListPayload(queryDate, periodCode);
+
 
     public static IpgDefectParseResult ParseSearchListJson(string json)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(json);
+        => BmesGateway.ParseIpgSearchList(json);
 
-        using JsonDocument document = JsonDocument.Parse(json);
-        JsonElement root = document.RootElement;
-        string resultCode = ReadText(root, "Result");
-        if (resultCode.Length > 0 &&
-            !string.Equals(resultCode, "S", StringComparison.OrdinalIgnoreCase))
-        {
-            string message = ReadText(root, "Msg");
-            throw new JsonException(
-                message.Length > 0
-                    ? $"MES050032 returned {resultCode}: {message}"
-                    : $"MES050032 returned {resultCode}.");
-        }
-
-        var columns = new List<IpgDefectColumn>();
-        if (TryGetProperty(root, "header", out JsonElement header) &&
-            header.ValueKind == JsonValueKind.Array)
-        {
-            foreach (JsonElement item in header.EnumerateArray())
-            {
-                string columnName = ReadText(item, "ZCOLN");
-                int index = ParseColumnIndex(columnName);
-                if (index is < 1 or > 14)
-                    continue;
-
-                columns.Add(new IpgDefectColumn(
-                    index,
-                    columnName,
-                    ReadText(item, "ZCOLT")));
-            }
-        }
-
-        if (!TryGetProperty(root, "ChartRec", out JsonElement chartRecords) ||
-            chartRecords.ValueKind != JsonValueKind.Array)
-        {
-            throw new JsonException("MES050032 response does not contain ChartRec.");
-        }
-
-        var rows = new List<IpgDefectRow>(chartRecords.GetArrayLength());
-        int observedColumnCount = 0;
-        foreach (JsonElement item in chartRecords.EnumerateArray())
-        {
-            if (item.ValueKind != JsonValueKind.Object)
-                continue;
-
-            var row = new IpgDefectRow
-            {
-                RawJson = item.GetRawText(),
-                Cptyp = ReadText(item, "CPTYP"),
-                CptypTx = ReadText(item, "CPTYP_TX"),
-                FaccoTx = ReadText(item, "FACCO_TX"),
-                ModnoTx = ReadText(item, "MODNO_TX"),
-                ZlrtpTx = ReadText(item, "ZLRTP_TX"),
-                MatnrTx = ReadText(item, "MATNR_TX"),
-                Facco = ReadText(item, "FACCO"),
-                Modno = ReadText(item, "MODNO"),
-                Zsort = ReadText(item, "ZSORT"),
-                Zlrtp = ReadText(item, "ZLRTP"),
-                Avegr = ReadNullableDouble(item, "AVEGR"),
-            };
-
-            for (int index = 1; index <= 14; index++)
-            {
-                string propertyName = $"COL{index:D4}";
-                if (TryGetProperty(item, propertyName, out JsonElement value))
-                {
-                    observedColumnCount = Math.Max(observedColumnCount, index);
-                    row.SetCol(index, ReadNullableDouble(value));
-                }
-            }
-
-            rows.Add(row);
-        }
-
-        columns = columns
-            .GroupBy(column => column.ColIndex)
-            .Select(group => group.First())
-            .OrderBy(column => column.ColIndex)
-            .ToList();
-
-        int columnCount = Math.Max(
-            observedColumnCount,
-            columns.Count > 0 ? columns.Max(column => column.ColIndex) : 0);
-        return new IpgDefectParseResult(rows, columns, columnCount);
-    }
 
     public static IpgDefectKpiSnapshot BuildKpiSnapshot(
         IpgDefectParseResult parsed,
@@ -307,48 +182,42 @@ public sealed class IpgDefectService(
         return !isRecentMutableQuery || fetchedAt >= now.Subtract(mutableTtl);
     }
 
-    private static HttpClient CreateClient()
-    {
-        var handler = new HttpClientHandler
-        {
-            UseCookies = true,
-            CookieContainer = new System.Net.CookieContainer(),
-        };
-        var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(300) };
-        client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
-        return client;
-    }
-
-    private async Task AuthenticateAsync(
-        HttpClient client,
+    private async Task<BmesWebSession> OpenSessionAsync(
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
-        string loginId = _settings.LoginId;
-        string password = _settings.Password;
-        if (string.IsNullOrWhiteSpace(loginId) || string.IsNullOrWhiteSpace(password))
-            throw new InvalidOperationException("BMES credentials are not configured.");
-
-        Report(progress, "MES050032: reading login token");
-        string token = await GetTokenAsync(client, cancellationToken);
-        if (string.IsNullOrEmpty(token))
-            throw new InvalidOperationException("Failed to read BMES login token.");
-
-        Report(progress, "MES050032: logging in with configured credentials");
-        if (!await LoginAsync(client, token, loginId, password, cancellationToken))
-            throw new InvalidOperationException("BMES login failed.");
+        BmesLoginOutcome outcome = await BmesWebSession.OpenAsync(
+            _settings.LoginId,
+            _settings.Password,
+            new BmesWebSessionOptions
+            {
+                Timeout = TimeSpan.FromSeconds(300),
+                TokenMessage = "MES050032: reading login token",
+                LoginMessage = "MES050032: logging in with configured credentials",
+            },
+            new Progress<string>(message => Report(progress, message)),
+            cancellationToken);
+        if (outcome.Session is not null)
+            return outcome.Session;
+        throw new InvalidOperationException(outcome.Failure switch
+        {
+            BmesLoginFailure.MissingCredentials => "BMES credentials are not configured.",
+            BmesLoginFailure.Token => "Failed to read BMES login token.",
+            _ => "BMES login failed.",
+        });
     }
 
+
     private async Task<IpgDefectParseResult> FetchSearchListAsync(
-        HttpClient client,
+        BmesWebSession session,
         DateTime queryDate,
         string periodCode,
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
         string normalizedPeriodCode = NormalizePeriodCode(periodCode);
-        string json = await FetchSearchListJsonAsync(
-            client,
+        string json = await BmesGateway.FetchIpgDefectJson(
+            session,
             queryDate,
             normalizedPeriodCode,
             cancellationToken);
@@ -359,7 +228,7 @@ public sealed class IpgDefectService(
     }
 
     private async Task<IpgDefectParseResult> FetchSearchListCachedAsync(
-        Func<Task<HttpClient>> authenticatedClientFactory,
+        Func<Task<BmesWebSession>> sessionFactory,
         DateTime queryDate,
         string periodCode,
         IProgress<string>? progress,
@@ -369,31 +238,13 @@ public sealed class IpgDefectService(
         if (TryReadSearchListCache(queryDate, normalizedPeriodCode, progress) is { } cached)
             return cached;
 
-        HttpClient client = await authenticatedClientFactory();
+        BmesWebSession session = await sessionFactory();
         return await FetchSearchListAsync(
-            client,
+            session,
             queryDate,
             normalizedPeriodCode,
             progress,
             cancellationToken);
-    }
-
-    private static async Task<string> FetchSearchListJsonAsync(
-        HttpClient client,
-        DateTime queryDate,
-        string periodCode,
-        CancellationToken cancellationToken)
-    {
-        string normalizedPeriodCode = NormalizePeriodCode(periodCode);
-        string payload = BuildSearchListPayload(queryDate, normalizedPeriodCode);
-        using var content = new StringContent(payload, Encoding.UTF8, "application/json");
-        using HttpResponseMessage response = await client.PostAsync(
-            BaseUrl + "/MES050032/SearchList",
-            content,
-            cancellationToken);
-        string json = await response.Content.ReadAsStringAsync(cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return json;
     }
 
     private void ReportParsed(
@@ -424,15 +275,8 @@ public sealed class IpgDefectService(
         return dates.OrderBy(date => date).ToList();
     }
 
-    private static string NormalizePeriodCode(string periodCode) =>
-        (periodCode ?? string.Empty).Trim().ToUpperInvariant() switch
-        {
-            "W" or "WEEK" => "W",
-            "M" or "MONTH" => "M",
-            _ => throw new ArgumentException(
-                "MES050032 period must be W (week) or M (month).",
-                nameof(periodCode)),
-        };
+    private static string NormalizePeriodCode(string periodCode)
+        => BmesGateway.NormalizeIpgPeriodCode(periodCode);
 
     private static string NormalizePeriodKind(string periodKind) =>
         NormalizePeriodCode(periodKind) == "M" ? "Month" : "Week";
@@ -616,139 +460,6 @@ public sealed class IpgDefectService(
 
     private static string ReadDbText(SqliteDataReader reader, int ordinal) =>
         reader.IsDBNull(ordinal) ? string.Empty : reader.GetString(ordinal);
-
-    private static async Task<string> GetTokenAsync(
-        HttpClient client,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            string html = await client.GetStringAsync(BaseUrl, cancellationToken);
-            Match match = Regex.Match(
-                html,
-                @"<input[^>]+name=""__RequestVerificationToken""[^>]+value=""([^""]+)""",
-                RegexOptions.IgnoreCase);
-            if (!match.Success)
-            {
-                match = Regex.Match(
-                    html,
-                    @"<input[^>]+value=""([^""]+)""[^>]+name=""__RequestVerificationToken""",
-                    RegexOptions.IgnoreCase);
-            }
-            return match.Success ? match.Groups[1].Value : string.Empty;
-        }
-        catch
-        {
-            return string.Empty;
-        }
-    }
-
-    private static async Task<bool> LoginAsync(
-        HttpClient client,
-        string token,
-        string loginId,
-        string password,
-        CancellationToken cancellationToken)
-    {
-        using var content = new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["UserInfo[USRID]"] = loginId,
-            ["UserInfo[PWNO]"] = password,
-            ["UserInfo[LANG]"] = "EN",
-            ["UserInfo[FACCO]"] = "GN",
-            ["UserInfo[STYPE]"] = "P",
-            ["UserInfo[VTYPE]"] = "P",
-            ["__RequestVerificationToken"] = token,
-        });
-        try
-        {
-            using HttpResponseMessage response = await client.PostAsync(
-                BaseUrl + "/MES000000/LoginCheck",
-                content,
-                cancellationToken);
-            string body = await response.Content.ReadAsStringAsync(cancellationToken);
-            return response.IsSuccessStatusCode &&
-                   body.Contains("\"Result\":\"M\"", StringComparison.OrdinalIgnoreCase);
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private static int ParseColumnIndex(string columnName)
-    {
-        string digits = new(columnName.Where(char.IsDigit).ToArray());
-        return int.TryParse(digits, NumberStyles.None, CultureInfo.InvariantCulture, out int index)
-            ? index
-            : 0;
-    }
-
-    private static string ReadText(JsonElement element, string propertyName)
-    {
-        if (!TryGetProperty(element, propertyName, out JsonElement value) ||
-            value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
-        {
-            return string.Empty;
-        }
-
-        return value.ValueKind == JsonValueKind.String
-            ? value.GetString() ?? string.Empty
-            : value.GetRawText();
-    }
-
-    private static double? ReadNullableDouble(JsonElement element, string propertyName)
-        => TryGetProperty(element, propertyName, out JsonElement value)
-            ? ReadNullableDouble(value)
-            : null;
-
-    private static double? ReadNullableDouble(JsonElement value)
-    {
-        if (value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
-            return null;
-        if (value.ValueKind == JsonValueKind.Number)
-            return value.TryGetDouble(out double numeric) ? numeric : null;
-        if (value.ValueKind != JsonValueKind.String)
-            return null;
-
-        string text = value.GetString()?.Trim() ?? string.Empty;
-        if (text.Length == 0)
-            return null;
-        return double.TryParse(
-            text,
-            NumberStyles.Float | NumberStyles.AllowThousands,
-            CultureInfo.InvariantCulture,
-            out double parsed)
-            ? parsed
-            : null;
-    }
-
-    private static bool TryGetProperty(
-        JsonElement element,
-        string propertyName,
-        out JsonElement value)
-    {
-        if (element.ValueKind == JsonValueKind.Object &&
-            element.TryGetProperty(propertyName, out value))
-        {
-            return true;
-        }
-
-        if (element.ValueKind == JsonValueKind.Object)
-        {
-            foreach (JsonProperty property in element.EnumerateObject())
-            {
-                if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
-                {
-                    value = property.Value;
-                    return true;
-                }
-            }
-        }
-
-        value = default;
-        return false;
-    }
 }
 
 public sealed record IpgDefectParseResult(

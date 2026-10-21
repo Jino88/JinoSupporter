@@ -14,7 +14,6 @@ public sealed class FCostCorePartsService(
     NgRateSettingsService settings,
     AppActivityLogger activity)
 {
-    private const string BaseUrl = "https://bmes.bujeon.com";
     private readonly NgRateSettingsService _settings = settings;
     private readonly AppActivityLogger _activity = activity;
 
@@ -109,28 +108,25 @@ public sealed class FCostCorePartsService(
             return result;
         }
 
-        using var handler = new HttpClientHandler
+        BmesLoginOutcome outcome = await BmesWebSession.OpenAsync(
+            loginId,
+            password,
+            new BmesWebSessionOptions
+            {
+                Timeout = TimeSpan.FromSeconds(300),
+                TokenMessage = "MES072410: reading login token",
+                LoginMessage = "MES072410: logging in with configured credentials",
+            },
+            new Progress<string>(message => Report(progress, message)),
+            cancellationToken);
+        if (outcome.Session is null)
         {
-            UseCookies = true,
-            CookieContainer = new System.Net.CookieContainer(),
-        };
-        using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(300) };
-        client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
-
-        Report(progress, "MES072410: reading login token");
-        string token = await GetTokenAsync(client, cancellationToken);
-        if (string.IsNullOrEmpty(token))
-        {
-            result.Failures.Add("Failed to read BMES login token.");
+            result.Failures.Add(outcome.Failure == BmesLoginFailure.Token
+                ? "Failed to read BMES login token."
+                : "BMES login failed.");
             return result;
         }
-
-        Report(progress, "MES072410: logging in with configured credentials");
-        if (!await LoginAsync(client, token, loginId, password, cancellationToken))
-        {
-            result.Failures.Add("BMES login failed.");
-            return result;
-        }
+        using BmesWebSession session = outcome.Session;
 
         for (int fetchIndex = 0; fetchIndex < datesToFetch.Count; fetchIndex++)
         {
@@ -141,7 +137,7 @@ public sealed class FCostCorePartsService(
             {
                 Report(progress, $"[{ordinal}/{totalDays}] {day:yyyy-MM-dd}: fetch");
                 FCostCorePartsParseResult parsed =
-                    await FetchDateAsync(client, day, cancellationToken);
+                    await BmesGateway.FetchCoreParts(session, day, cancellationToken);
                 await Task.Run(
                     () => SaveParsedToDatabase(dbPath, day, parsed),
                     cancellationToken);
@@ -168,69 +164,7 @@ public sealed class FCostCorePartsService(
     }
 
     public static FCostCorePartsParseResult ParseSearchListJson(string json)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(json);
-
-        using JsonDocument document = JsonDocument.Parse(json);
-        JsonElement root = document.RootElement;
-        if (!TryGetProperty(root, "data", out JsonElement data) ||
-            data.ValueKind != JsonValueKind.Object)
-        {
-            throw new JsonException("MES072410 response does not contain data.");
-        }
-
-        if (!TryGetProperty(data, "contents", out JsonElement contents) ||
-            contents.ValueKind != JsonValueKind.Array)
-        {
-            throw new JsonException("MES072410 response does not contain data.contents.");
-        }
-
-        var rows = new List<FCostCorePartsRow>(contents.GetArrayLength());
-        int columnCount = 0;
-        foreach (JsonElement item in contents.EnumerateArray())
-        {
-            if (item.ValueKind != JsonValueKind.Object)
-                continue;
-
-            var row = new FCostCorePartsRow
-            {
-                RawJson = item.GetRawText(),
-                FaccoTx = ReadText(item, "FACCO_TX"),
-                CptypTx = ReadText(item, "CPTYP_TX"),
-                ZtypeTx = ReadText(item, "ZTYPE_TX"),
-                Ztote = ReadText(item, "ZTOTE"),
-                Zsort01 = ReadText(item, "ZSORT_01"),
-                Zsort02 = ReadText(item, "ZSORT_02"),
-                Zsort03 = ReadText(item, "ZSORT_03"),
-                Zsort04 = ReadText(item, "ZSORT_04"),
-                Cptyp = ReadText(item, "CPTYP"),
-                Tsort = ReadText(item, "TSORT"),
-                Zsort = ReadText(item, "ZSORT"),
-                Facco = ReadText(item, "FACCO"),
-                Ztype = ReadText(item, "ZTYPE"),
-                Chk = ReadText(item, "CHK"),
-            };
-
-            for (int index = 1; index <= 14; index++)
-            {
-                string propertyName = $"COL{index:D4}";
-                if (TryGetProperty(item, propertyName, out JsonElement value))
-                {
-                    columnCount = Math.Max(columnCount, index);
-                    row.SetCol(index, ReadNullableDouble(value));
-                }
-            }
-
-            rows.Add(row);
-        }
-
-        ForwardFillTriplets(rows);
-        List<FCostCorePartsColumn> columns = ParseTrustedColumnMetadata(data);
-        if (columns.Count > 0)
-            columnCount = Math.Max(columnCount, columns.Max(column => column.ColIndex));
-
-        return new FCostCorePartsParseResult(rows, columns, columnCount);
-    }
+        => BmesGateway.ParseCorePartsSearchList(json);
 
     public static FCostCorePartsKpiSnapshot BuildKpiSnapshot(
         DateTime queryDate,
@@ -631,188 +565,10 @@ public sealed class FCostCorePartsService(
         return period.Kind + "|" + periodCode;
     }
 
-    private async Task<FCostCorePartsParseResult> FetchDateAsync(
-        HttpClient client,
-        DateTime queryDate,
-        CancellationToken cancellationToken)
-    {
-        string url =
-            $"{BaseUrl}/MES072410/SearchList?perPage=" +
-            $"&Condition.SDATE={queryDate:yyyy-MM-dd}" +
-            "&Condition.ZGUBN=D" +
-            "&L_FACCO%5B0%5D=GN" +
-            "&L_DIVIS%5B0%5D=" +
-            "&L_CATEG%5B0%5D=" +
-            "&L_PRODU%5B0%5D=" +
-            "&L_ITEMS%5B0%5D=" +
-            "&L_MODEL%5B0%5D=" +
-            "&L_SERIE%5B0%5D=" +
-            "&L_MODEL2%5B0%5D=" +
-            "&L_VERID%5B0%5D=" +
-            "&L_MATNR%5B0%5D=" +
-            "&REMEM=N&page=1";
-
-        using HttpResponseMessage response = await client.GetAsync(url, cancellationToken);
-        string json = await response.Content.ReadAsStringAsync(cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return ParseSearchListJson(json);
-    }
-
     private void Report(IProgress<string>? progress, string message)
     {
         _activity.Log("FCostCoreParts", message);
         progress?.Report(message);
-    }
-
-    private static async Task<string> GetTokenAsync(
-        HttpClient client,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            string html = await client.GetStringAsync(BaseUrl, cancellationToken);
-            Match match = Regex.Match(
-                html,
-                @"<input[^>]+name=""__RequestVerificationToken""[^>]+value=""([^""]+)""",
-                RegexOptions.IgnoreCase);
-            if (!match.Success)
-            {
-                match = Regex.Match(
-                    html,
-                    @"<input[^>]+value=""([^""]+)""[^>]+name=""__RequestVerificationToken""",
-                    RegexOptions.IgnoreCase);
-            }
-            return match.Success ? match.Groups[1].Value : string.Empty;
-        }
-        catch
-        {
-            return string.Empty;
-        }
-    }
-
-    private static async Task<bool> LoginAsync(
-        HttpClient client,
-        string token,
-        string loginId,
-        string password,
-        CancellationToken cancellationToken)
-    {
-        using var content = new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["UserInfo[USRID]"] = loginId,
-            ["UserInfo[PWNO]"] = password,
-            ["UserInfo[LANG]"] = "EN",
-            ["UserInfo[FACCO]"] = "GN",
-            ["UserInfo[STYPE]"] = "P",
-            ["UserInfo[VTYPE]"] = "P",
-            ["__RequestVerificationToken"] = token,
-        });
-        try
-        {
-            using HttpResponseMessage response = await client.PostAsync(
-                BaseUrl + "/MES000000/LoginCheck",
-                content,
-                cancellationToken);
-            string body = await response.Content.ReadAsStringAsync(cancellationToken);
-            return response.IsSuccessStatusCode &&
-                   body.Contains("\"Result\":\"M\"", StringComparison.OrdinalIgnoreCase);
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private static List<FCostCorePartsColumn> ParseTrustedColumnMetadata(JsonElement data)
-    {
-        var result = new List<FCostCorePartsColumn>();
-        if (!TryGetProperty(data, "BottomGridColumnList", out JsonElement metadata) ||
-            metadata.ValueKind != JsonValueKind.Array)
-        {
-            return result;
-        }
-
-        foreach (JsonElement item in metadata.EnumerateArray())
-        {
-            string columnName = ReadText(item, "ZCOLN");
-            int index = ParseColumnIndex(columnName);
-            if (index is < 1 or > 14)
-                continue;
-
-            string code = ReadText(item, "ZPVTT");
-            string header = ReadText(item, "ZPVTT_TX");
-            string pdate = ReadText(item, "PDATE");
-            if (string.IsNullOrWhiteSpace(code) &&
-                string.IsNullOrWhiteSpace(header) &&
-                string.IsNullOrWhiteSpace(pdate))
-            {
-                continue;
-            }
-
-            result.Add(new FCostCorePartsColumn(
-                index,
-                code,
-                header,
-                pdate,
-                InferPeriodKind(code, pdate)));
-        }
-
-        return result
-            .GroupBy(column => column.ColIndex)
-            .Select(group => group.First())
-            .OrderBy(column => column.ColIndex)
-            .ToList();
-    }
-
-    private static string InferPeriodKind(string code, string pdate)
-    {
-        string candidate = string.IsNullOrWhiteSpace(code) ? pdate : code;
-        if (candidate.Contains('-', StringComparison.Ordinal))
-            return "Week";
-        string digits = new(candidate.Where(char.IsDigit).ToArray());
-        return digits.Length switch
-        {
-            8 => "Day",
-            6 => "Month",
-            _ => "Unknown",
-        };
-    }
-
-    private static int ParseColumnIndex(string columnName)
-    {
-        string digits = new(columnName.Where(char.IsDigit).ToArray());
-        return int.TryParse(digits, NumberStyles.None, CultureInfo.InvariantCulture, out int index)
-            ? index
-            : 0;
-    }
-
-    private static void ForwardFillTriplets(IReadOnlyList<FCostCorePartsRow> rows)
-    {
-        FCostCorePartsRow? anchor = null;
-        foreach (FCostCorePartsRow row in rows)
-        {
-            if (string.Equals(row.Ztype, "INAMT", StringComparison.OrdinalIgnoreCase))
-            {
-                anchor = row;
-                continue;
-            }
-
-            bool continuation =
-                string.Equals(row.Ztype, "FCOST", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(row.Ztype, "FRATE", StringComparison.OrdinalIgnoreCase);
-            if (!continuation)
-            {
-                anchor = null;
-                continue;
-            }
-            if (anchor is null)
-                continue;
-
-            if (string.IsNullOrWhiteSpace(row.FaccoTx)) row.FaccoTx = anchor.FaccoTx;
-            if (string.IsNullOrWhiteSpace(row.CptypTx)) row.CptypTx = anchor.CptypTx;
-            if (string.IsNullOrWhiteSpace(row.Facco)) row.Facco = anchor.Facco;
-            if (string.IsNullOrWhiteSpace(row.Cptyp)) row.Cptyp = anchor.Cptyp;
-        }
     }
 
     private static int TotalMarkerPriority(FCostCorePartsRow row)
@@ -848,67 +604,6 @@ public sealed class FCostCorePartsService(
 
     private static string ReadDbText(SqliteDataReader reader, int ordinal)
         => reader.IsDBNull(ordinal) ? string.Empty : reader.GetString(ordinal);
-
-    private static string ReadText(JsonElement element, string propertyName)
-    {
-        if (!TryGetProperty(element, propertyName, out JsonElement value) ||
-            value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
-        {
-            return string.Empty;
-        }
-
-        return value.ValueKind == JsonValueKind.String
-            ? value.GetString() ?? string.Empty
-            : value.GetRawText();
-    }
-
-    private static double? ReadNullableDouble(JsonElement value)
-    {
-        if (value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
-            return null;
-        if (value.ValueKind == JsonValueKind.Number)
-            return value.TryGetDouble(out double numeric) ? numeric : null;
-        if (value.ValueKind != JsonValueKind.String)
-            return null;
-
-        string text = value.GetString()?.Trim() ?? string.Empty;
-        if (text.Length == 0)
-            return null;
-        return double.TryParse(
-            text,
-            NumberStyles.Float | NumberStyles.AllowThousands,
-            CultureInfo.InvariantCulture,
-            out double parsed)
-            ? parsed
-            : null;
-    }
-
-    private static bool TryGetProperty(
-        JsonElement element,
-        string propertyName,
-        out JsonElement value)
-    {
-        if (element.ValueKind == JsonValueKind.Object &&
-            element.TryGetProperty(propertyName, out value))
-        {
-            return true;
-        }
-
-        if (element.ValueKind == JsonValueKind.Object)
-        {
-            foreach (JsonProperty property in element.EnumerateObject())
-            {
-                if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
-                {
-                    value = property.Value;
-                    return true;
-                }
-            }
-        }
-
-        value = default;
-        return false;
-    }
 
     private static void EnsureDatabase(string dbPath)
     {

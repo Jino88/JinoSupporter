@@ -11,10 +11,6 @@ namespace JinoSupporter.Web.Services;
 public sealed class WorkerStatusService(NgRateSettingsService settings)
 {
     private readonly NgRateSettingsService _settings = settings;
-    // HTTPS, matching BmesLpaScrapeService: BMES now enforces TLS, and over plain http the
-    // anti-forgery cookie set on the token GET does not survive the redirect to https, so the
-    // LoginCheck POST fails validation ("Login failed"). https keeps the cookie on one origin.
-    private const string BaseUrl = "https://bmes.bujeon.com";
     private const int FreshFetchDays = 7;
     private static readonly JsonSerializerOptions CacheJsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -54,7 +50,7 @@ public sealed class WorkerStatusService(NgRateSettingsService settings)
         public Dictionary<string, string> Raw { get; init; } = new();
     }
 
-    private sealed class DepartmentRecord
+    public sealed class DepartmentRecord
     {
         public string DepartmentNo   { get; init; } = string.Empty;
         public string DepartmentCode { get; init; } = string.Empty;
@@ -141,30 +137,26 @@ public sealed class WorkerStatusService(NgRateSettingsService settings)
                 return result;
             }
 
-            using var handler = new HttpClientHandler
+            // 1. Token + 2. Login
+            BmesLoginOutcome outcome = await BmesWebSession.OpenAsync(
+                _settings.LoginId,
+                _settings.Password,
+                new BmesWebSessionOptions
+                {
+                    Timeout = TimeSpan.FromSeconds(60),
+                    TokenMessage = "Fetching verification token…",
+                    LoginMessage = "Logging in to BMES…",
+                },
+                progress,
+                CancellationToken.None);
+            if (outcome.Session is null)
             {
-                UseCookies      = true,
-                CookieContainer = new CookieContainer(),
-            };
-            using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(60) };
-            client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
-
-            // 1. Token
-            progress?.Report("Fetching verification token…");
-            string token = await GetTokenAsync(client);
-            if (string.IsNullOrEmpty(token))
-            {
-                result.ErrorMessage = "Failed to obtain CSRF token.";
+                result.ErrorMessage = outcome.Failure == BmesLoginFailure.Token
+                    ? "Failed to obtain CSRF token."
+                    : "Login failed — check credentials in Setting.";
                 return result;
             }
-
-            // 2. Login
-            progress?.Report("Logging in to BMES…");
-            if (!await LoginAsync(client, token))
-            {
-                result.ErrorMessage = "Login failed — check credentials in Setting.";
-                return result;
-            }
+            using BmesWebSession session = outcome.Session;
             progress?.Report("Login successful.");
 
             // 3. Fetch - read all people first, then resolve department membership only for new people.
@@ -175,7 +167,7 @@ public sealed class WorkerStatusService(NgRateSettingsService settings)
                 foreach (var date in toFetch.OrderBy(d => d))
                 {
                     progress?.Report($"Fetching departments for {date:yyyy-MM-dd}...");
-                    departments = await FetchDepartmentsAsync(client, date);
+                    departments = await FetchDepartmentsAsync(session, date);
                     if (departments.Count > 0)
                         break;
                 }
@@ -211,7 +203,7 @@ public sealed class WorkerStatusService(NgRateSettingsService settings)
                 progress?.Report($"Fetching worker status for {date:yyyy-MM-dd} ({dayIdx}/{toFetch.Count})...");
                 try
                 {
-                    var records = await FetchWorkerStatusAsync(client, date, aggregateDepartment);
+                    var records = await BmesGateway.FetchWorkerAttendance(session, date, aggregateDepartment);
                     foreach (var r in records) r.Date = date;
                     freshRecords.AddRange(records);
                     fetchedDates.Add(date);
@@ -228,7 +220,7 @@ public sealed class WorkerStatusService(NgRateSettingsService settings)
             progress?.Report(
                 $"Mapping department membership for {employeeFirstSeenDates.Count:N0} people across {toFetch.Count} server day(s)...");
             var employeeDepartments = await BuildEmployeeDepartmentMapAsync(
-                client,
+                session,
                 employeeFirstSeenDates,
                 departments,
                 aggregateDepartment,
@@ -319,69 +311,14 @@ public sealed class WorkerStatusService(NgRateSettingsService settings)
         }
     }
 
-    // ── Private: HTTP ──────────────────────────────────────────────────────────────
-
-    private static async Task<string> GetTokenAsync(HttpClient client)
-    {
-        try
-        {
-            string html = await client.GetStringAsync(BaseUrl);
-            var m = Regex.Match(html,
-                @"<input[^>]+name=""__RequestVerificationToken""[^>]+value=""([^""]+)""",
-                RegexOptions.IgnoreCase);
-            if (!m.Success)
-                m = Regex.Match(html,
-                    @"<input[^>]+value=""([^""]+)""[^>]+name=""__RequestVerificationToken""",
-                    RegexOptions.IgnoreCase);
-            return m.Success ? m.Groups[1].Value : string.Empty;
-        }
-        catch { return string.Empty; }
-    }
-
-    private async Task<bool> LoginAsync(HttpClient client, string token)
-    {
-        var content = new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["UserInfo.USRID"] = _settings.LoginId,
-            ["UserInfo.PWNO"]  = _settings.Password,
-            ["UserInfo.LANG"]  = "EN",
-            ["UserInfo.FACCO"] = "GN",
-            ["UserInfo.STYPE"] = "P",
-            ["UserInfo.VTYPE"] = "P",
-            ["__RequestVerificationToken"] = token,
-        });
-        try
-        {
-            var response = await client.PostAsync(BaseUrl + "/MES000000/LoginCheck", content);
-            string body  = await response.Content.ReadAsStringAsync();
-            return body.Contains("\"Result\":\"M\"");
-        }
-        catch { return false; }
-    }
+    // ── Private: department filter ─────────────────────────────────────────────────
 
     private static async Task<List<DepartmentRecord>> FetchDepartmentsAsync(
-        HttpClient client,
+        BmesWebSession session,
         DateTime date)
     {
-        string dateStr = date.ToString("yyyy-MM-dd");
-        var bodyObj = new
-        {
-            Condition = new
-            {
-                FACCO = "GN",
-                STDAT = dateStr,
-                KWORD = "",
-            }
-        };
-
-        string bodyJson = JsonSerializer.Serialize(bodyObj);
-        using var requestContent = new StringContent(bodyJson, Encoding.UTF8, "application/json");
-
-        var response = await client.PostAsync(BaseUrl + "/MES072900/SearchList", requestContent);
-        response.EnsureSuccessStatusCode();
-
-        string json = await response.Content.ReadAsStringAsync();
-        return ParseDepartmentList(json)
+        var all = await BmesGateway.FetchWorkerDepartments(session, date);
+        return all
             .Where(d => d.DepartmentCode.Contains("G09", StringComparison.OrdinalIgnoreCase))
             .Where(d => !string.IsNullOrWhiteSpace(d.DepartmentNo))
             .GroupBy(d => d.DepartmentNo, StringComparer.OrdinalIgnoreCase)
@@ -389,34 +326,6 @@ public sealed class WorkerStatusService(NgRateSettingsService settings)
             .OrderBy(d => d.DepartmentCode, StringComparer.OrdinalIgnoreCase)
             .ThenBy(d => d.DepartmentNo, StringComparer.OrdinalIgnoreCase)
             .ToList();
-    }
-
-    private static async Task<List<WorkerRecord>> FetchWorkerStatusAsync(
-        HttpClient client,
-        DateTime date,
-        DepartmentRecord department)
-    {
-        string dateStr = date.ToString("yyyy-MM-dd");
-        var bodyObj = new
-        {
-            Condition = new
-            {
-                ZTYPE = "A",
-                STDAT = dateStr,
-                DEPNO = department.DepartmentNo,
-                FACCO = "GN",
-                KWORD = "",
-            }
-        };
-
-        string bodyJson = JsonSerializer.Serialize(bodyObj);
-        using var requestContent = new StringContent(bodyJson, Encoding.UTF8, "application/json");
-
-        var response = await client.PostAsync(BaseUrl + "/MES072900/SearchPopupDetail", requestContent);
-        response.EnsureSuccessStatusCode();
-
-        string json = await response.Content.ReadAsStringAsync();
-        return ParseResponse(json, department);
     }
 
     private static DepartmentRecord SelectAggregateDepartment(IReadOnlyList<DepartmentRecord> departments)
@@ -446,7 +355,7 @@ public sealed class WorkerStatusService(NgRateSettingsService settings)
     }
 
     private static async Task<Dictionary<string, DepartmentRecord>> BuildEmployeeDepartmentMapAsync(
-        HttpClient client,
+        BmesWebSession session,
         IReadOnlyDictionary<string, DateTime> employeeFirstSeenDates,
         IReadOnlyList<DepartmentRecord> departments,
         DepartmentRecord aggregateDepartment,
@@ -478,7 +387,7 @@ public sealed class WorkerStatusService(NgRateSettingsService settings)
 
             foreach (var department in detailDepartments)
             {
-                var records = await FetchWorkerStatusAsync(client, dateGroup.Key, department);
+                var records = await BmesGateway.FetchWorkerAttendance(session, dateGroup.Key, department);
                 foreach (var record in records)
                 {
                     string key = EmployeeKey(record);
@@ -517,123 +426,6 @@ public sealed class WorkerStatusService(NgRateSettingsService settings)
         }
     }
 
-    // ── Parse ──────────────────────────────────────────────────────────────────────
-
-    private static List<DepartmentRecord> ParseDepartmentList(string json)
-    {
-        var departments = new List<DepartmentRecord>();
-        try
-        {
-            using var doc = JsonDocument.Parse(json);
-            if (!TryGetContentsArray(doc.RootElement, out var arr)) return departments;
-
-            foreach (var item in arr.EnumerateArray())
-            {
-                var raw = ReadStringMap(item);
-                string departmentName =
-                    FirstNonEmpty(
-                        raw.GetValueOrDefault("P_DEPTX", string.Empty),
-                        raw.GetValueOrDefault("G_DEPTX", string.Empty),
-                        raw.GetValueOrDefault("DEPTX", string.Empty));
-
-                departments.Add(new DepartmentRecord
-                {
-                    DepartmentNo   = raw.GetValueOrDefault("DEPNO", string.Empty).Trim(),
-                    DepartmentCode = raw.GetValueOrDefault("DPCOD", string.Empty).Trim(),
-                    DepartmentName = departmentName.Trim(),
-                    DepartmentType = raw.GetValueOrDefault("DTYNM", string.Empty).Trim(),
-                    Raw            = raw,
-                });
-            }
-        }
-        catch { }
-        return departments;
-    }
-
-    private static List<WorkerRecord> ParseResponse(string json, DepartmentRecord department)
-    {
-        var records = new List<WorkerRecord>();
-        try
-        {
-            using var doc = JsonDocument.Parse(json);
-            if (!TryGetContentsArray(doc.RootElement, out var arr)) return records;
-
-            foreach (var item in arr.EnumerateArray())
-            {
-                var raw = ReadStringMap(item);
-
-                records.Add(new WorkerRecord
-                {
-                    EmpNo          = raw.GetValueOrDefault("EMPNO",    string.Empty),
-                    Name           = raw.GetValueOrDefault("FNAME",    string.Empty),
-                    DepartmentNo   = department.DepartmentNo,
-                    DepartmentCode = department.DepartmentCode,
-                    DepartmentName = department.DepartmentName,
-                    DepartmentType = department.DepartmentType,
-                    WorkStatus     = raw.GetValueOrDefault("WKSTA_TX", string.Empty),
-                    DayType        = raw.GetValueOrDefault("DTYPE_TX", string.Empty),
-                    SchedStart     = raw.GetValueOrDefault("WSTIM",    string.Empty),
-                    SchedEnd       = raw.GetValueOrDefault("WETIM",    string.Empty),
-                    CheckIn        = raw.GetValueOrDefault("SDATM",    string.Empty),
-                    CheckOut       = raw.GetValueOrDefault("EDATM",    string.Empty),
-                    Factory        = raw.GetValueOrDefault("FACCO",    string.Empty),
-                    Raw            = raw,
-                });
-            }
-        }
-        catch { }
-        return records;
-    }
-
-    private static bool TryGetContentsArray(JsonElement root, out JsonElement arr)
-    {
-        if (root.ValueKind == JsonValueKind.Array)
-        {
-            arr = root;
-            return true;
-        }
-
-        if (root.TryGetProperty("data", out var data))
-        {
-            if (data.TryGetProperty("contents", out var contents) &&
-                contents.ValueKind == JsonValueKind.Array)
-            {
-                arr = contents;
-                return true;
-            }
-
-            if (data.ValueKind == JsonValueKind.Array)
-            {
-                arr = data;
-                return true;
-            }
-        }
-
-        if (root.TryGetProperty("rows", out var rows) && rows.ValueKind == JsonValueKind.Array)
-        {
-            arr = rows;
-            return true;
-        }
-
-        if (root.TryGetProperty("contents", out var contents2) &&
-            contents2.ValueKind == JsonValueKind.Array)
-        {
-            arr = contents2;
-            return true;
-        }
-
-        arr = default;
-        return false;
-    }
-
-    private static Dictionary<string, string> ReadStringMap(JsonElement item)
-    {
-        var raw = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var prop in item.EnumerateObject())
-            raw[prop.Name] = prop.Value.ValueKind == JsonValueKind.Null
-                ? string.Empty : prop.Value.ToString();
-        return raw;
-    }
 
     private static string EmployeeKey(WorkerRecord record)
         => !string.IsNullOrWhiteSpace(record.EmpNo)
@@ -668,9 +460,6 @@ public sealed class WorkerStatusService(NgRateSettingsService settings)
         => string.IsNullOrWhiteSpace(departmentCode)
             ? 0
             : departmentCode.Count(c => c == '-') + 1;
-
-    private static string FirstNonEmpty(params string[] values)
-        => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
 
     private sealed class StringTupleComparer : IEqualityComparer<(DateTime Date, string EmpNo)>
     {
