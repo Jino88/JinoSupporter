@@ -38,7 +38,9 @@ public sealed class BmesWebSession : IDisposable
     }
 
     /// <summary>Opens a logged-in session. On failure the result carries no session and
-    /// says which step failed, so callers can keep their own error wording.</summary>
+    /// says which step failed, so callers can keep their own error wording.
+    /// Like every BMES login before the gateway existed, a timeout or cancellation during
+    /// login is a failed step, not an exception.</summary>
     public static async Task<BmesLoginOutcome> OpenAsync(
         string loginId,
         string password,
@@ -99,7 +101,6 @@ public sealed class BmesWebSession : IDisposable
                     RegexOptions.IgnoreCase);
             return m.Success ? m.Groups[1].Value : string.Empty;
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch { return string.Empty; }
     }
 
@@ -123,7 +124,6 @@ public sealed class BmesWebSession : IDisposable
             bool ok = body.Contains("\"Result\":\"M\"", StringComparison.OrdinalIgnoreCase);
             return (ok, BuildLoginDiagnostic(response, body));
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception ex) { return (false, $"request error: {ex.GetType().Name}"); }
     }
 

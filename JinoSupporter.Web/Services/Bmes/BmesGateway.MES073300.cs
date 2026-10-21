@@ -50,7 +50,8 @@ public static partial class BmesGateway
             }
             json = await resp.Content.ReadAsStringAsync(cancellationToken);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+        catch (Exception ex)
         {
             progress?.Report($"[ERROR] Request failed: {ex.Message}");
             return null;

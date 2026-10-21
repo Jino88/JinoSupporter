@@ -22,7 +22,8 @@ public static partial class BmesGateway
 
         HttpResponseMessage resp;
         try   { resp = await session.Client.GetAsync(url, cancellationToken); }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+        catch (Exception ex)
         {
             progress?.Report($"[ERROR] Request failed: {ex.Message}");
             return null;
