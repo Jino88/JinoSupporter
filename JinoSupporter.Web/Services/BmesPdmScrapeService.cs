@@ -31,6 +31,7 @@ public sealed class BmesPdmScrapeService(NgRateSettingsService settings)
         var opened = await BmesWebSession.OpenAsync(loginId, password, new BmesWebSessionOptions
         {
             Timeout      = TimeSpan.FromSeconds(300),
+            AutomaticDecompression = System.Net.DecompressionMethods.All,
             TokenMessage = "Fetching verification token…",
             LoginMessage = "Logging in…",
         }, progress);
@@ -125,6 +126,7 @@ public sealed class BmesPdmScrapeService(NgRateSettingsService settings)
             Timeout    = TimeSpan.FromSeconds(300),
             Referrer   = new Uri($"{BmesWebSession.BaseUrl}/MES073300"),
             AjaxHeader = false,
+            AutomaticDecompression = System.Net.DecompressionMethods.All,
         });
         if (opened.Session is null)
         {
