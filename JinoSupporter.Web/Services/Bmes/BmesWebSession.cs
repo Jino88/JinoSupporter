@@ -28,6 +28,7 @@ public sealed class BmesWebSession : IDisposable
         {
             UseCookies = true,
             CookieContainer = new CookieContainer(),
+            AutomaticDecompression = options.AutomaticDecompression,
         };
         Client = new HttpClient(_handler) { Timeout = options.Timeout ?? DefaultTimeout };
         if (options.AjaxHeader)
@@ -152,6 +153,9 @@ public sealed record BmesWebSessionOptions
     public bool AjaxHeader { get; init; } = true;
 
     public Uri? Referrer { get; init; }
+
+    /// <summary>PDM file downloads arrive compressed; the SearchList screens do not need it.</summary>
+    public DecompressionMethods AutomaticDecompression { get; init; } = DecompressionMethods.None;
 
     /// <summary>Optional progress lines reported before each login step.</summary>
     public string? TokenMessage { get; init; }
